@@ -1,15 +1,9 @@
-﻿using Common;
-
-namespace GameEngine
+﻿namespace GameEngine
 {
     public class GameEngine
     {
-        private IStory _story;
-
-        public GameEngine(IStory story)
+        public GameEngine()
         {
-            _story = story;
-            _story.InitializeWorld();
         }
 
         public void Run()

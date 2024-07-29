@@ -1,13 +1,12 @@
-﻿using DataStore;
-using StandardLibrary;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Common
 {
     public interface IStory
     {
-        World World { get; }
-        Core Core { get; }
-        Player Player { get; }
-        void InitializeWorld();
     }
 }

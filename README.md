@@ -44,3 +44,13 @@ The Language library is a set of known constants that allow the platform to unde
 #### Open design discussion
 ##### Naming conventions
 The naming convention may change to lang-en-US.cs to signify which language file to use when compiling a story.
+
+## Licensing
+
+This project's grammar system is inspired by and partially derived from the Inform 6 grammar library.
+
+Original work copyright: Graham Nelson 1993-2004 and David Griffith 2012-2024
+
+This project is licensed under the Artistic License 2.0. The full text of the license can be found in the COPYING file in the project root.
+
+The original Inform 6 library can be found at: https://gitlab.com/DavidGriffith/inform6lib/

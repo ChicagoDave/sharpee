@@ -28,10 +28,27 @@ namespace DataStore
             }
         }
 
-        public T GetPropertyValue<T>(string propertyName)
+        public T? GetPropertyValue<T>(string propertyName)
         {
             var property = Properties.FirstOrDefault(p => p.Name == propertyName);
-            return property != null ? (T)property.Value : default(T);
+            if (property?.Value is T value)
+            {
+                return value;
+            }
+
+            if (property?.Value is not null)
+            {
+                try
+                {
+                    return (T)Convert.ChangeType(property.Value, typeof(T));
+                }
+                catch
+                {
+                    // Conversion failed, fall through to return default
+                }
+            }
+
+            return default;
         }
 
         public void SetPropertyValue(string propertyName, object value)

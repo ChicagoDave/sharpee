@@ -21,14 +21,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ParserLibrary", "ParserLibr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WorldModel", "WorldModel\WorldModel.csproj", "{74B1E08E-401E-4DC2-A89B-07F0D7D01B41}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StoryRunner.DataStore.Tests", "StoryRunner.DataStore.Tests\StoryRunner.DataStore.Tests.csproj", "{19CF6FD2-AA89-44BA-8F9C-61663EE04A5F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sharpee.Tests", "Sharpee.Tests\Sharpee.Tests.csproj", "{19CF6FD2-AA89-44BA-8F9C-61663EE04A5F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TextService", "TextService\TextService.csproj", "{BDE4D92D-0D19-4BC2-8F03-256EBB935A1F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E7EEBC23-7015-4D45-8E7C-A81EBFDB09A3}"
 	ProjectSection(SolutionItems) = preProject
+		COPYING = COPYING
 		README.md = README.md
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IFWorldModel", "IFWorldModel\IFWorldModel.csproj", "{30570FB4-C236-49C5-A076-C89B45C8C7E9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -80,6 +83,10 @@ Global
 		{BDE4D92D-0D19-4BC2-8F03-256EBB935A1F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BDE4D92D-0D19-4BC2-8F03-256EBB935A1F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BDE4D92D-0D19-4BC2-8F03-256EBB935A1F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{30570FB4-C236-49C5-A076-C89B45C8C7E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{30570FB4-C236-49C5-A076-C89B45C8C7E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{30570FB4-C236-49C5-A076-C89B45C8C7E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{30570FB4-C236-49C5-A076-C89B45C8C7E9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

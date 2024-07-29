@@ -55,41 +55,67 @@ namespace DataStore
             }
         }
 
-        public void ConnectNodes(string id1, string id2, string edgeType, string reverseEdgeType, params Property[]? properties)
+        public void ConnectNodesByName(string fromName, string toName, string edgeType, string reverseEdgeType, params Property[]? properties)
         {
-            List<Property> propertyList = new List<Property>();
-            if (properties != null)
-            {
-                propertyList = properties.ToList<Property>();
-            }
+            if (string.IsNullOrWhiteSpace(fromName) || string.IsNullOrWhiteSpace(toName))
+                throw new ArgumentException("Node names cannot be empty or null.");
 
-            Edge edge1 = new Edge(id1, id2, edgeType, propertyList);
-            Nodes[id1].Edges.Add(edge1);
-            PublishEdgeAdded(edge1);
+            string fromNodeId = GetNodeIdByName(fromName);
+            string toNodeId = GetNodeIdByName(toName);
 
-            if (reverseEdgeType != null)
-            {
-                Edge edge2 = new Edge(id2, id1, reverseEdgeType, propertyList);
-                Nodes[id2].Edges.Add(edge2);
-                PublishEdgeAdded(edge2);
-            }
+            if (fromNodeId == null || toNodeId == null)
+                throw new ArgumentException("One or both nodes do not exist in the graph.");
+
+            ConnectNodesById(fromNodeId, toNodeId, edgeType, reverseEdgeType, properties);
         }
 
-        public void DisconnectNodes(string id1, string id2)
+        public void ConnectNodesById(string fromNodeId, string toNodeId, string edgeType, string reverseEdgeType, params Property[]? properties)
         {
-            var edge1 = Nodes[id1].Edges.Find(e => e.Id2 == id2);
+            if (string.IsNullOrWhiteSpace(fromNodeId) || string.IsNullOrWhiteSpace(toNodeId))
+                throw new ArgumentException("Node IDs cannot be empty or null.");
+
+            if (!Nodes.ContainsKey(fromNodeId) || !Nodes.ContainsKey(toNodeId))
+                throw new ArgumentException("One or both nodes do not exist in the graph.");
+
+            List<Property> propertyList = properties?.ToList<Property>() ?? new List<Property>();
+
+            Edge edge1 = new Edge(fromNodeId, toNodeId, edgeType, propertyList);
+            Nodes[fromNodeId].Edges.Add(edge1);
+            PublishEdgeAdded(edge1);
+
+            Edge edge2 = new Edge(toNodeId, fromNodeId, reverseEdgeType, propertyList);
+            Nodes[toNodeId].Edges.Add(edge2);
+            PublishEdgeAdded(edge2);
+        }
+
+        public void DisconnectNodesById(string fromNodeId, string toNodeId)
+        {
+            var edge1 = Nodes[fromNodeId].Edges.Find(e => e.Id2 == toNodeId);
             if (edge1 != null)
             {
-                Nodes[id1].Edges.Remove(edge1);
+                Nodes[fromNodeId].Edges.Remove(edge1);
                 PublishEdgeRemoved(edge1);
             }
 
-            var edge2 = Nodes[id2].Edges.Find(e => e.Id1 == id2);
+            var edge2 = Nodes[toNodeId].Edges.Find(e => e.Id1 == toNodeId);
             if (edge2 != null)
             {
-                Nodes[id2].Edges.Remove(edge2);
+                Nodes[toNodeId].Edges.Remove(edge2);
                 PublishEdgeRemoved(edge2);
             }
+        }
+
+        public T? GetNodePropertyValue<T>(string nodeId, string propertyName)
+        {
+            if (Nodes.TryGetValue(nodeId, out var node))
+            {
+                var property = node.Properties.FirstOrDefault(p => p.Name == propertyName);
+                if (property != null && property.Value is T value)
+                {
+                    return value;
+                }
+            }
+            return default;
         }
 
         public void SetNodeProperty(string nodeId, string propertyName, object propertyValue)
@@ -134,6 +160,11 @@ namespace DataStore
         public void RemoveEventHandler(IGraphEventHandler handler)
         {
             eventHandlers.Remove(handler);
+        }
+
+        private string GetNodeIdByName(string nodeName)
+        {
+            return Nodes.FirstOrDefault(n => n.Value.Properties.Any(p => p.Name == "name" && p.Value?.ToString() == nodeName)).Key;
         }
 
         private void PublishNodeAdded(Node node)
