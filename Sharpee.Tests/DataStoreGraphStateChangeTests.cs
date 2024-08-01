@@ -2,8 +2,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
 
-#nullable enable
-
 namespace StoryRunner.DataStore.Tests
 {
     [TestClass]

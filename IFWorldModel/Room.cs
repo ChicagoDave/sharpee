@@ -13,12 +13,32 @@ namespace IFWorldModel
 
         public Room SetDescription(string description)
         {
-            return (Room)SetProperty("description", description);
+            SetProperty("description", description);
+            return this;
         }
 
         public string GetDescription()
         {
             return GetProperty<string>("description");
+        }
+
+        public Room AddScenery(string name, string description)
+        {
+            var scenery = new Scenery(_world, name)
+                .SetDescription(description)
+                .PlaceIn(this);
+            return this;
+        }
+
+        public Room AddScenery(params (string name, string description)[] sceneryItems)
+        {
+            foreach (var (name, description) in sceneryItems)
+            {
+                new Scenery(_world, name)
+                    .SetDescription(description)
+                    .PlaceIn(this);
+            }
+            return this;
         }
 
         public Room AddExit(string direction, Room destination)
