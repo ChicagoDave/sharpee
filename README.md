@@ -4,9 +4,7 @@ I started working on this project a few years ago as a learning exercise. I want
 
 When ChatGPT-4 was released, I started to take it slightly more seriously, but still slowly because there were limitations of my time, ChatGPT-4's capabilities and prompt-limits (original you got 25 prompts before being put on timeout).
 
-A few months ago, Anthropic released Claude Opus 3, a competitor to ChatGPT4. I tested it out and switched my paid subscription immediately. It also hallucinates at times, but it's super fast and I prefer its response style.
-
-I have since been seriously honing in on design decisions and completing portions of the platform.
+A few months ago, Anthropic released Claude Opus 3, a competitor to ChatGPT4. I tested it out and switched my paid subscription immediately. It also hallucinates at times, but it's super fast and I prefer its response style. Now I'm working with Anthropic projects, Claude Sonnet 3.5, and a template for always refreshing the prompt.
 
 More detailed discussions will occur at https://sharpee.plover.net/.
 
@@ -15,28 +13,24 @@ I also talk in a limited fashion on intfiction.org. It's no secret that the IF c
 ## Design Choices
 
 ### World Model
-The world model has its first version completed. It's built on an in-memory bidirectional graph data structure with a pub/sub state change event handler built in. Unit tests have it functioning as expected (for now).
+The world model has its first version completed. It's built on an in-memory bidirectional graph data structure with a pub/sub state change event handler built in. Unit tests have it functioning as expected (for now). I've added Event Handling so we can add a Rules Engine in the future.
+
+## IFWorldModel
+This sits between the Standard Library and an author's Story file and the lower level World Model (data store).
 
 ### Standard Library
-In an IF Platform, there is a translation from general programming to "IF" concepts. This class library is where that magic happens.
-
-#### Map
-A Fluent class that implements IF Rooms, Doors, Containers, and Supporters. It's intended to separate map building from storytelling.
+This is the standard IF "stuff".
 
 #### Story
-A Fluent class that implements things, the PC (player character), NPCs (Non-Playing Characters), the meta data for the story, the prologue, and of course, the turn loop.
+A Fluent class that implements an author's custom game artifacts and map.
 
 ### Grammar Library
 A fluent class that defines accepted input sentence structures.
 
 ### Text Service
-A simple service that allows the story and author to emit text with context.
+The Text Service will be called at the end of the turn loop, interrogate the world model and event log to determine what to emit.
 
 #### Open design discussion
-##### Push or Pull model?
-I'm starting with a push model where the game emits all text with context to the service.
-
-It's possible this could be flipped and the Text Service simply interrogates the Story for changes and current state to form output to the user.
 
 ### Language Library (english as the default)
 The Language library is a set of known constants that allow the platform to understand input and emit automated portions of text properly. It's values are used throughout the Standard Library and in the Grammar Library.
