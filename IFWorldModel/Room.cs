@@ -67,7 +67,12 @@ namespace IFWorldModel
         public Room GetExit(string direction)
         {
             var exitEdge = _world.Nodes[_id].Edges.FirstOrDefault(e => e.EdgeType == direction);
-            return exitEdge != null ? new Room(_world, exitEdge.Id2) : null;
+            if (exitEdge != null)
+            {
+                var connectedNode = _world.Nodes[exitEdge.Id2];
+                return new Room(_world, connectedNode.GetPropertyValue<string>("name");
+            }
+            return null;
         }
 
         private static bool IsDirectionEdge(string edgeType)
@@ -90,6 +95,8 @@ namespace IFWorldModel
                 "southwest" => "northeast",
                 "up" => "down",
                 "down" => "up",
+                "in" => "out",
+                "out" => "in",
                 _ => throw new ArgumentException("Invalid direction", nameof(direction)),
             };
         }

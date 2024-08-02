@@ -21,6 +21,9 @@ namespace GrammarLibrary
             Patterns.Add(new Pattern(elements));
             return this;
         }
+
+        // Corrected method to get patterns
+        public IReadOnlyList<Pattern> GetPatterns() => Patterns.AsReadOnly();
     }
 
     public class Pattern
@@ -85,5 +88,8 @@ namespace GrammarLibrary
         public static Choice Choice(params PatternElement[] options) => new Choice(options);
         public static Multi Multi() => new Multi();
         public static MultiInside MultiInside() => new MultiInside();
+
+        // Add a method to get all defined verbs
+        public static IReadOnlyList<Verb> GetAllVerbs() => Verbs.AsReadOnly();
     }
 }

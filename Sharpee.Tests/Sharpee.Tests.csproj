@@ -19,6 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\DataStore\DataStore.csproj" />
     <ProjectReference Include="..\GrammarLibrary\GrammarLibrary.csproj" />
+    <ProjectReference Include="..\IFWorldModel\IFWorldModel.csproj" />
     <ProjectReference Include="..\StandardLibrary\StandardLibrary.csproj" />
   </ItemGroup>
 

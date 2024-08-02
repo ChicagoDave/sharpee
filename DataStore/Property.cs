@@ -1,29 +1,86 @@
-﻿namespace DataStore
+﻿using System;
+
+namespace DataStore
 {
-    /// <summary>
-    /// Represents a key-value pair property that can be associated with nodes or edges in the graph.
-    /// </summary>
-    public class Property
+    public class Property : IProperty
     {
-        /// <summary>
-        /// Gets the name (key) of the property.
-        /// </summary>
         public string Name { get; }
+        private object? _value;
 
-        /// <summary>
-        /// Gets or sets the value of the property.
-        /// </summary>
-        public object Value { get; set; }
+        public Type ValueType => _value?.GetType() ?? typeof(object);
 
-        /// <summary>
-        /// Initializes a new instance of the Property class.
-        /// </summary>
-        /// <param name="name">The name (key) of the property.</param>
-        /// <param name="value">The initial value of the property.</param>
-        public Property(string name, object value)
+        public bool HasValue => _value != null;
+
+        public Property(string name, object? value = null)
         {
-            Name = name;
-            Value = value;
+            Name = name ?? throw new ArgumentNullException(nameof(name));
+            _value = value;
+        }
+
+        public T? GetValue<T>()
+        {
+            if (_value == null)
+            {
+                return default;
+            }
+
+            if (_value is T typedValue)
+            {
+                return typedValue;
+            }
+
+            try
+            {
+                return (T)Convert.ChangeType(_value, typeof(T));
+            }
+            catch (InvalidCastException)
+            {
+                throw new InvalidCastException($"Cannot convert property '{Name}' value of type {_value.GetType().Name} to {typeof(T).Name}");
+            }
+        }
+
+        public object? GetRawValue()
+        {
+            return _value;
+        }
+
+        public void SetValue(object? value)
+        {
+            _value = value;
+        }
+
+        public void RemoveValue()
+        {
+            _value = null;
+        }
+
+        public bool IsExecutable => _value is Delegate;
+
+        public object? Execute(params object[] args)
+        {
+            if (!IsExecutable)
+            {
+                throw new InvalidOperationException($"Property '{Name}' is not executable");
+            }
+
+            if (_value is not Delegate del)
+            {
+                throw new InvalidOperationException($"Property '{Name}' value is not a valid delegate");
+            }
+
+            try
+            {
+                return del.DynamicInvoke(args);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error executing property '{Name}': {ex.Message}", ex);
+            }
+        }
+
+        public override string ToString()
+        {
+            return $"{Name}: {_value ?? "null"}";
         }
     }
 }

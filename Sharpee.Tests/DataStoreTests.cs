@@ -1,167 +1,191 @@
-using DataStore;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using DataStore;
 using System;
 using System.Linq;
 
-namespace StoryRunner.DataStore.Tests
+namespace DataStore.Tests
 {
     [TestClass]
-    public class WorldTests
+    public class GraphTests
     {
-        [TestMethod]
-        public void AddNode_Should_AddNodeToGraph()
+        private Graph _graph;
+
+        [TestInitialize]
+        public void Initialize()
         {
-            // Arrange
-            var world = new World();
-
-            // Act
-            string nodeId = world.AddNode(new Property("name", "TestNode"), new Property("type", "TestType"));
-
-            // Assert
-            Assert.IsTrue(world.Nodes.ContainsKey(nodeId));
-            Assert.AreEqual("TestNode", world.Nodes[nodeId].GetPropertyValue<string>("name"));
-            Assert.AreEqual("TestType", world.Nodes[nodeId].GetPropertyValue<string>("type"));
+            _graph = new Graph();
         }
 
         [TestMethod]
-        public void RemoveNode_Should_RemoveNodeFromGraph()
+        public void AddNode_ShouldAddNodeToGraph()
         {
             // Arrange
-            var world = new World();
-            string nodeId = world.AddNode(new Property("name", "TestNode"), new Property("type", "TestType"));
+            var node = new TestNode("TestNode");
 
             // Act
-            world.RemoveNode(nodeId);
+            _graph.AddNode(node);
 
             // Assert
-            Assert.IsFalse(world.Nodes.ContainsKey(nodeId));
+            Assert.IsTrue(_graph.Nodes.ContainsKey(node.Id));
+            Assert.AreEqual(node, _graph.Nodes[node.Id]);
         }
 
         [TestMethod]
-        public void ConnectNodesById_Should_AddBidirectionalEdgeBetweenNodes()
+        public void AddEdgeType_ShouldAddBidirectionalEdgeType()
         {
             // Arrange
-            var world = new World();
-            world.AddEdgeType("there", "back");
-            string nodeId1 = world.AddNode(new Property("name", "Node1"), new Property("type", "TestType"));
-            string nodeId2 = world.AddNode(new Property("name", "Node2"), new Property("type", "TestType"));
+            string forwardName = "forward";
+            string reverseName = "reverse";
 
             // Act
-            world.ConnectNodesById(nodeId1, nodeId2, "there", "back");
+            _graph.AddEdgeType(forwardName, reverseName);
 
             // Assert
-            var node1Edges = world.Nodes[nodeId1].Edges;
-            Assert.IsTrue(node1Edges.Exists(e => e.EdgeType == "there" && e.Id2 == nodeId2));
-            var node2Edges = world.Nodes[nodeId2].Edges;
-            Assert.IsTrue(node2Edges.Exists(e => e.EdgeType == "back" && e.Id2 == nodeId1));
+            Assert.IsTrue(_graph.EdgeTypes.ContainsKey(forwardName));
+            Assert.IsTrue(_graph.EdgeTypes.ContainsKey(reverseName));
+            Assert.AreEqual(reverseName, _graph.EdgeTypes[forwardName].ReverseName);
+            Assert.AreEqual(forwardName, _graph.EdgeTypes[reverseName].ForwardName);
         }
 
         [TestMethod]
-        public void DisconnectNodesById_Should_RemoveEdgeBetweenNodes()
+        public void AddEdge_ShouldAddEdgeToGraph()
         {
             // Arrange
-            var world = new World();
-            world.AddEdgeType("there", "back");
-            string nodeId1 = world.AddNode(new Property("name", "Node1"), new Property("type", "TestType"));
-            string nodeId2 = world.AddNode(new Property("name", "Node2"), new Property("type", "TestType"));
-            world.ConnectNodesById(nodeId1, nodeId2, "there", "back");
+            var sourceNode = new TestNode("SourceNode");
+            var targetNode = new TestNode("TargetNode");
+            _graph.AddNode(sourceNode);
+            _graph.AddNode(targetNode);
+            _graph.AddEdgeType("TestEdge", "ReverseTestEdge");
+
+            var edge = new TestEdge("TestEdgeId", sourceNode, targetNode, "TestEdge");
 
             // Act
-            world.DisconnectNodesById(nodeId1, nodeId2);
+            _graph.AddEdge(edge);
 
             // Assert
-            Assert.IsFalse(world.Nodes[nodeId1].Edges.Exists(e => e.Id2 == nodeId2));
-            Assert.IsFalse(world.Nodes[nodeId2].Edges.Exists(e => e.Id2 == nodeId1));
+            Assert.IsTrue(_graph.Edges.ContainsKey(edge.Id));
+            Assert.AreEqual(edge, _graph.Edges[edge.Id]);
+            Assert.IsTrue(sourceNode.Edges.Contains(edge));
         }
 
         [TestMethod]
-        public void SetNodeProperty_Should_AddOrUpdateNodeProperty()
+        [ExpectedException(typeof(ArgumentException))]
+        public void AddEdge_WithNonExistentNodes_ShouldThrowException()
         {
             // Arrange
-            var world = new World();
-            string nodeId = world.AddNode(new Property("name", "TestNode"), new Property("type", "TestType"));
+            var sourceNode = new TestNode("SourceNode");
+            var targetNode = new TestNode("TargetNode");
+            _graph.AddEdgeType("TestEdge", "ReverseTestEdge");
+
+            var edge = new TestEdge("TestEdgeId", sourceNode, targetNode, "TestEdge");
 
             // Act
-            world.SetNodeProperty(nodeId, "prop1", "value1");
-            world.SetNodeProperty(nodeId, "prop1", "value2");
+            _graph.AddEdge(edge);
 
-            // Assert
-            var propertyValue = world.Nodes[nodeId].GetPropertyValue<string>("prop1");
-            Assert.IsNotNull(propertyValue);
-            Assert.AreEqual("value2", propertyValue);
+            // Assert is handled by ExpectedException
         }
 
         [TestMethod]
-        public void SetEdgeProperty_Should_AddOrUpdateEdgeProperty()
+        public void RemoveNode_ShouldRemoveNodeAndConnectedEdges()
         {
             // Arrange
-            var world = new World();
-            world.AddEdgeType("there", "back");
-            string nodeId1 = world.AddNode(new Property("name", "Node1"), new Property("type", "TestType"));
-            string nodeId2 = world.AddNode(new Property("name", "Node2"), new Property("type", "TestType"));
-            world.ConnectNodesById(nodeId1, nodeId2, "there", "back");
+            var sourceNode = new TestNode("SourceNode");
+            var targetNode = new TestNode("TargetNode");
+            _graph.AddNode(sourceNode);
+            _graph.AddNode(targetNode);
+            _graph.AddEdgeType("TestEdge", "ReverseTestEdge");
+
+            var edge = new TestEdge("TestEdgeId", sourceNode, targetNode, "TestEdge");
+            _graph.AddEdge(edge);
 
             // Act
-            world.SetEdgeProperty(nodeId1, nodeId2, "prop1", "value1");
-            world.SetEdgeProperty(nodeId1, nodeId2, "prop1", "value2");
+            _graph.RemoveNode(sourceNode.Id);
 
             // Assert
-            var edge = world.Nodes[nodeId1].Edges.Find(e => e.Id2 == nodeId2);
-            Assert.IsNotNull(edge);
-            var propertyValue = edge.Properties.Find(p => p.Name == "prop1")?.Value;
-            Assert.IsNotNull(propertyValue);
-            Assert.AreEqual("value2", propertyValue);
+            Assert.IsFalse(_graph.Nodes.ContainsKey(sourceNode.Id));
+            Assert.IsFalse(_graph.Edges.ContainsKey(edge.Id));
+            Assert.IsFalse(targetNode.Edges.Contains(edge));
         }
 
         [TestMethod]
-        public void AddEdgeType_Should_AddEdgeTypeToWorld()
+        public void RemoveEdge_ShouldRemoveEdgeFromGraphAndNodes()
         {
             // Arrange
-            var world = new World();
+            var sourceNode = new TestNode("SourceNode");
+            var targetNode = new TestNode("TargetNode");
+            _graph.AddNode(sourceNode);
+            _graph.AddNode(targetNode);
+            _graph.AddEdgeType("TestEdge", "ReverseTestEdge");
+
+            var edge = new TestEdge("TestEdgeId", sourceNode, targetNode, "TestEdge");
+            _graph.AddEdge(edge);
 
             // Act
-            world.AddEdgeType("there", "back");
+            _graph.RemoveEdge(edge.Id);
 
             // Assert
-            Assert.IsTrue(world.EdgeTypes.ContainsKey("there"));
-            Assert.AreEqual("back", world.EdgeTypes["there"].ReverseName);
+            Assert.IsFalse(_graph.Edges.ContainsKey(edge.Id));
+            Assert.IsFalse(sourceNode.Edges.Contains(edge));
         }
 
         [TestMethod]
-        public void GetNodePropertyValue_Should_ReturnNullForNonexistentProperty()
+        public void GetAdjacentNodes_ShouldReturnCorrectNodes()
         {
             // Arrange
-            var world = new World();
-            string nodeId = world.AddNode(new Property("name", "TestNode"), new Property("type", "TestType"));
+            var sourceNode = new TestNode("SourceNode");
+            var targetNode1 = new TestNode("TargetNode1");
+            var targetNode2 = new TestNode("TargetNode2");
+            _graph.AddNode(sourceNode);
+            _graph.AddNode(targetNode1);
+            _graph.AddNode(targetNode2);
+            _graph.AddEdgeType("TestEdge", "ReverseTestEdge");
+
+            _graph.AddEdge(new TestEdge("Edge1", sourceNode, targetNode1, "TestEdge"));
+            _graph.AddEdge(new TestEdge("Edge2", sourceNode, targetNode2, "TestEdge"));
 
             // Act
-            var node = world.Nodes[nodeId];
-            var value = node.GetPropertyValue<string>("nonexistentProp");
+            var adjacentNodes = _graph.GetAdjacentNodes(sourceNode.Id).ToList();
 
             // Assert
-            Assert.IsNull(value);
+            Assert.AreEqual(2, adjacentNodes.Count);
+            CollectionAssert.Contains(adjacentNodes, targetNode1);
+            CollectionAssert.Contains(adjacentNodes, targetNode2);
         }
 
         [TestMethod]
-        public void ConnectNodesByName_Should_ConnectNodesCorrectly()
+        public void GetEdgesBetween_ShouldReturnCorrectEdges()
         {
             // Arrange
-            var world = new World();
-            world.AddEdgeType("there", "back");
-            world.AddNode(new Property("name", "Node1"), new Property("type", "TestType"));
-            world.AddNode(new Property("name", "Node2"), new Property("type", "TestType"));
+            var sourceNode = new TestNode("SourceNode");
+            var targetNode = new TestNode("TargetNode");
+            _graph.AddNode(sourceNode);
+            _graph.AddNode(targetNode);
+            _graph.AddEdgeType("TestEdge1", "ReverseTestEdge1");
+            _graph.AddEdgeType("TestEdge2", "ReverseTestEdge2");
+
+            var edge1 = new TestEdge("Edge1", sourceNode, targetNode, "TestEdge1");
+            var edge2 = new TestEdge("Edge2", sourceNode, targetNode, "TestEdge2");
+            _graph.AddEdge(edge1);
+            _graph.AddEdge(edge2);
 
             // Act
-            world.ConnectNodesByName("Node1", "Node2", "there", "back");
+            var edgesBetween = _graph.GetEdgesBetween(sourceNode.Id, targetNode.Id).ToList();
 
             // Assert
-            var node1 = world.Nodes.Values.FirstOrDefault(n => n.GetPropertyValue<string>("name") == "Node1");
-            var node2 = world.Nodes.Values.FirstOrDefault(n => n.GetPropertyValue<string>("name") == "Node2");
-
-            Assert.IsNotNull(node1);
-            Assert.IsNotNull(node2);
-            Assert.IsTrue(node1.Edges.Exists(e => e.EdgeType == "there" && e.Id2 == node2.Id));
-            Assert.IsTrue(node2.Edges.Exists(e => e.EdgeType == "back" && e.Id2 == node1.Id));
+            Assert.AreEqual(2, edgesBetween.Count);
+            CollectionAssert.Contains(edgesBetween, edge1);
+            CollectionAssert.Contains(edgesBetween, edge2);
         }
+    }
+
+    // Helper classes for testing
+    public class TestNode : Node
+    {
+        public TestNode(string id) : base(id) { }
+    }
+
+    public class TestEdge : Edge
+    {
+        public TestEdge(string id, INode source, INode target, string type) : base(id, source, target, type) { }
     }
 }

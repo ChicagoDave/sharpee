@@ -1,99 +1,87 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace DataStore
+﻿namespace DataStore
 {
-    /// <summary>
-    /// Represents a node in the graph data structure.
-    /// </summary>
-    public class Node
+    public abstract class Node : INode
     {
-        /// <summary>
-        /// Gets the unique identifier of the node.
-        /// </summary>
         public string Id { get; }
+        public IDictionary<string, IProperty> Properties { get; }
+        private readonly List<IEdge> _outgoingEdges = new List<IEdge>();
+        private readonly List<IEdge> _incomingEdges = new List<IEdge>();
 
-        /// <summary>
-        /// Gets the list of edges connected to this node.
-        /// </summary>
-        public List<Edge> Edges { get; }
+        public IReadOnlyCollection<IEdge> OutgoingEdges => _outgoingEdges.AsReadOnly();
+        public IReadOnlyCollection<IEdge> IncomingEdges => _incomingEdges.AsReadOnly();
 
-        /// <summary>
-        /// Gets the list of properties associated with this node.
-        /// </summary>
-        public List<Property> Properties { get; }
-
-        /// <summary>
-        /// Initializes a new instance of the Node class with a given ID.
-        /// </summary>
-        /// <param name="id">The unique identifier for the node.</param>
         public Node(string id)
         {
-            Id = id;
-            Edges = new List<Edge>();
-            Properties = new List<Property>();
+            Id = id ?? throw new ArgumentNullException(nameof(id));
+            Properties = new Dictionary<string, IProperty>();
         }
 
-        /// <summary>
-        /// Initializes a new instance of the Node class with a given ID and initial properties.
-        /// </summary>
-        /// <param name="id">The unique identifier for the node.</param>
-        /// <param name="properties">The initial properties for the node.</param>
-        public Node(string id, List<Property> properties)
-            : this(id)
+        public void AddOutgoingEdge(IEdge edge)
         {
-            if (properties != null)
-            {
-                Properties.AddRange(properties);
-            }
+            if (edge == null) throw new ArgumentNullException(nameof(edge));
+            if (edge.Source != this) throw new InvalidOperationException("Edge source must be this node.");
+            _outgoingEdges.Add(edge);
         }
 
-        /// <summary>
-        /// Retrieves the value of a property with the specified name.
-        /// </summary>
-        /// <typeparam name="T">The expected type of the property value.</typeparam>
-        /// <param name="propertyName">The name of the property to retrieve.</param>
-        /// <returns>The value of the property if found and of the correct type; otherwise, the default value for type T.</returns>
+        public void AddIncomingEdge(IEdge edge)
+        {
+            if (edge == null) throw new ArgumentNullException(nameof(edge));
+            if (edge.Target != this) throw new InvalidOperationException("Edge target must be this node.");
+            _incomingEdges.Add(edge);
+        }
+
+        public bool RemoveOutgoingEdge(IEdge edge)
+        {
+            return _outgoingEdges.Remove(edge);
+        }
+
+        public bool RemoveIncomingEdge(IEdge edge)
+        {
+            return _incomingEdges.Remove(edge);
+        }
+
         public T? GetPropertyValue<T>(string propertyName)
         {
-            var property = Properties.FirstOrDefault(p => p.Name == propertyName);
-            if (property?.Value is T value)
+            if (Properties.TryGetValue(propertyName, out var property))
             {
-                return value;
+                return property.GetValue<T>();
             }
-
-            if (property?.Value is not null)
-            {
-                try
-                {
-                    return (T)Convert.ChangeType(property.Value, typeof(T));
-                }
-                catch
-                {
-                    // Conversion failed, fall through to return default
-                }
-            }
-
             return default;
         }
 
-        /// <summary>
-        /// Sets the value of a property with the specified name. If the property doesn't exist, it is created.
-        /// </summary>
-        /// <param name="propertyName">The name of the property to set.</param>
-        /// <param name="value">The value to set for the property.</param>
-        public void SetPropertyValue(string propertyName, object value)
+        public INode SetPropertyValue(string propertyName, object? value)
         {
-            var property = Properties.FirstOrDefault(p => p.Name == propertyName);
-            if (property != null)
+            if (Properties.TryGetValue(propertyName, out var existingProperty))
             {
-                property.Value = value;
+                existingProperty.SetValue(value);
             }
             else
             {
-                Properties.Add(new Property(propertyName, value));
+                Properties[propertyName] = new Property(propertyName, value);
             }
+            return this;
+        }
+
+        public IEnumerable<INode> GetAdjacentNodes()
+        {
+            return _outgoingEdges.Select(e => e.Target)
+                .Concat(_incomingEdges.Select(e => e.Source))
+                .OfType<INode>()  // This filters out null values and casts to INode
+                .Distinct();
+        }
+
+        public IEnumerable<INode> GetAdjacentNodesOfEdgeType(string edgeType)
+        {
+            return _outgoingEdges.Where(e => e.Type == edgeType).Select(e => e.Target)
+                .Concat(_incomingEdges.Where(e => e.Type == edgeType).Select(e => e.Source))
+                .OfType<INode>()
+                .Distinct();
+        }
+
+        public IEnumerable<IEdge> GetEdgesToNode(INode targetNode)
+        {
+            return _outgoingEdges.Where(e => e.Target == targetNode)
+                .Concat(_incomingEdges.Where(e => e.Source == targetNode));
         }
     }
 }

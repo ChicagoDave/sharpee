@@ -7,25 +7,13 @@ namespace DataStore
     /// </summary>
     public class EdgeType
     {
-        /// <summary>
-        /// Gets the name of this edge type.
-        /// </summary>
-        public string Name { get; }
-
-        /// <summary>
-        /// Gets the name of the reverse relationship for this edge type.
-        /// </summary>
+        public string ForwardName { get; }
         public string ReverseName { get; }
 
-        /// <summary>
-        /// Initializes a new instance of the EdgeType class.
-        /// </summary>
-        /// <param name="name">The name of the edge type.</param>
-        /// <param name="reverseName">The name of the reverse relationship.</param>
-        public EdgeType(string name, string reverseName)
+        public EdgeType(string forwardName, string reverseName)
         {
-            Name = name;
-            ReverseName = reverseName;
+            ForwardName = forwardName ?? throw new ArgumentNullException(nameof(forwardName));
+            ReverseName = reverseName ?? throw new ArgumentNullException(nameof(reverseName));
         }
     }
 }

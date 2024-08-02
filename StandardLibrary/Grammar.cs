@@ -11,16 +11,16 @@ namespace StandardLibrary
             DefineMetaVerbs();
 
             // GET/TAKE
-            new Verb("Get", "take")
+            Define("Get", "take")
                 .Pattern(Multi())
                 .Pattern(Multi(), Choice(Lit("from"), Lit("off")), Var("container"));
 
             // DROP
-            new Verb("Drop", "drop", "discard")
+            Define("Drop", "drop", "discard")
                 .Pattern(Multi());
 
             // LOOK
-            new Verb("Look", "l")
+            Define("Look", "l")
                 .Pattern()
                 .Pattern(Lit("at"), Multi())
                 .Pattern(Lit("in"), Var("container"))
@@ -28,100 +28,99 @@ namespace StandardLibrary
                 .Pattern(Lit("on"), Var("surface"));
 
             // INVENTORY
-            new Verb("Inventory", "i")
+            Define("Inventory", "i")
                 .Pattern();
 
             // Directions
-            new Verb("North", "n").Pattern();
-            new Verb("Northeast", "ne").Pattern();
-            new Verb("East", "e").Pattern();
-            new Verb("Southeast", "se").Pattern();
-            new Verb("South", "s").Pattern();
-            new Verb("Southwest", "sw").Pattern();
-            new Verb("West", "w").Pattern();
-            new Verb("Northwest", "nw").Pattern();
+            Define("North", "n").Pattern();
+            Define("Northeast", "ne").Pattern();
+            Define("East", "e").Pattern();
+            Define("Southeast", "se").Pattern();
+            Define("South", "s").Pattern();
+            Define("Southwest", "sw").Pattern();
+            Define("West", "w").Pattern();
+            Define("Northwest", "nw").Pattern();
 
             // IN/OUT
-            new Verb("In", "enter")
+            Define("In", "enter")
                 .Pattern()
                 .Pattern(Var("object"));
 
-            new Verb("Out", "exit")
+            Define("Out", "exit")
                 .Pattern()
                 .Pattern(Lit("of"), Var("object"));
 
             // UP/DOWN
-            new Verb("Up", "u")
+            Define("Up", "u")
                 .Pattern()
                 .Pattern(Var("object"));
 
-            new Verb("Down", "d")
+            Define("Down", "d")
                 .Pattern()
                 .Pattern(Var("object"));
 
             // XYZZY (Easter egg command)
-            new Verb("Xyzzy")
+            Define("Xyzzy")
                 .Pattern();
 
             // PUT x ON y
-            new Verb("Put")
+            Define("Put")
                 .Pattern(Multi(), Choice(Lit("on"), Lit("in"), Lit("under")), Var("target"));
 
             // REMOVE x
-            new Verb("Remove")
+            Define("Remove")
                 .Pattern(Multi())
                 .Pattern(Multi(), Choice(Lit("from"), Lit("off")), Var("object"));
 
             // HANG x ON y
-            new Verb("Hang")
+            Define("Hang")
                 .Pattern(Multi(), Lit("on"), Var("target"));
 
             // HANG UP x
-            new Verb("HangUp")
+            Define("HangUp")
                 .Pattern(Multi());
         }
 
         private static void DefineMetaVerbs()
         {
             // SCORE
-            new Verb("Score")
+            Define("Score")
                 .Pattern();
 
             // RESTART
-            new Verb("Restart")
+            Define("Restart")
                 .Pattern();
 
             // QUIT
-            new Verb("Quit", "q")
+            Define("Quit", "q")
                 .Pattern();
 
             // TURNS
-            new Verb("Turns")
+            Define("Turns")
                 .Pattern();
 
             // SAVE
-            new Verb("Save")
+            Define("Save")
                 .Pattern()
                 .Pattern(Var("filename"));
 
             // RESTORE
-            new Verb("Restore", "load")
+            Define("Restore", "load")
                 .Pattern()
                 .Pattern(Var("filename"));
 
             // VERBOSE
-            new Verb("Verbose")
+            Define("Verbose")
                 .Pattern();
 
             // BRIEF
-            new Verb("Brief")
+            Define("Brief")
                 .Pattern();
 
             // HELP
-            new Verb("Help", "?")
+            Define("Help", "?")
                 .Pattern()
                 .Pattern(Var("topic"));
         }
     }
-
 }

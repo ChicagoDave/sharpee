@@ -1,45 +1,58 @@
-﻿using System.Collections.Generic;
-
-namespace DataStore
+﻿namespace DataStore
 {
-    /// <summary>
-    /// Represents a directional connection between two nodes in the graph.
-    /// </summary>
-    public class Edge
+    public class Edge : IEdge
     {
-        /// <summary>
-        /// Gets the ID of the source node.
-        /// </summary>
-        public string Id1 { get; }
+        public string Id { get; }
+        public INode? Source { get; private set; }
+        public INode? Target { get; private set; }
+        public string Type { get; }
+        public IDictionary<string, IProperty> Properties { get; }
 
-        /// <summary>
-        /// Gets the ID of the target node.
-        /// </summary>
-        public string Id2 { get; }
-
-        /// <summary>
-        /// Gets the type of the edge.
-        /// </summary>
-        public string EdgeType { get; }
-
-        /// <summary>
-        /// Gets the list of properties associated with this edge.
-        /// </summary>
-        public List<Property> Properties { get; }
-
-        /// <summary>
-        /// Initializes a new instance of the Edge class.
-        /// </summary>
-        /// <param name="id1">The ID of the source node.</param>
-        /// <param name="id2">The ID of the target node.</param>
-        /// <param name="edgeType">The type of the edge.</param>
-        /// <param name="properties">Optional initial properties for the edge.</param>
-        public Edge(string id1, string id2, string edgeType, List<Property>? properties = null)
+        public Edge(string id, INode? source, INode? target, string type)
         {
-            Id1 = id1;
-            Id2 = id2;
-            EdgeType = edgeType;
-            Properties = properties?.ToList() ?? new List<Property>();
+            Id = id ?? throw new ArgumentNullException(nameof(id));
+            Type = type ?? throw new ArgumentNullException(nameof(type));
+            Properties = new Dictionary<string, IProperty>();
+
+            ConnectNodes(source, target);
+        }
+
+        public T? GetPropertyValue<T>(string propertyName)
+        {
+            if (Properties.TryGetValue(propertyName, out var property))
+            {
+                return property.GetValue<T>();
+            }
+            return default;
+        }
+
+        public void SetPropertyValue(string propertyName, object value)
+        {
+            if (Properties.TryGetValue(propertyName, out var existingProperty))
+            {
+                existingProperty.SetValue(value);
+            }
+            else
+            {
+                Properties[propertyName] = new Property(propertyName, value);
+            }
+        }
+
+        public void ConnectNodes(INode? source, INode? target)
+        {
+            DisconnectNodes();
+            Source = source;
+            Target = target;
+            Source?.AddOutgoingEdge(this);
+            Target?.AddIncomingEdge(this);
+        }
+
+        public void DisconnectNodes()
+        {
+            Source?.RemoveOutgoingEdge(this);
+            Target?.RemoveIncomingEdge(this);
+            Source = null;
+            Target = null;
         }
     }
 }
