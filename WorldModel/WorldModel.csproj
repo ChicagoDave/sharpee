@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="TraversalService.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\DataStore\DataStore.csproj" />
   </ItemGroup>
 

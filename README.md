@@ -1,6 +1,6 @@
 # Sharpee - A parser-based IF platform in C#/.NET Core
 
-I started working on this project a few years ago as a learning exercise. I wanted to understand all of the moving parts of a parser-based IF platform. This led to iteratively building parsers, world models, standard libraries, grammar definitions, turn loops, and event handlers.
+I started working on this project a few years ago as a learning exercise. I wanted to understand all of the moving parts of a parser-based IF platform. This led to iteratively building parsers, graph models, standard libraries, grammar definitions, turn loops, and event handlers.
 
 When ChatGPT-4 was released, I started to take it slightly more seriously, but still slowly because there were limitations of my time, ChatGPT-4's capabilities and prompt-limits (original you got 25 prompts before being put on timeout).
 
@@ -12,11 +12,11 @@ I also talk in a limited fashion on intfiction.org. It's no secret that the IF c
 
 ## Design Choices
 
-### World Model
-The world model has its first version completed. It's built on an in-memory bidirectional graph data structure with a pub/sub state change event handler built in. Unit tests have it functioning as expected (for now). I've added Event Handling so we can add a Rules Engine in the future.
+### graph Model
+The graph model has its first version completed. It's built on an in-memory bidirectional graph data structure with a pub/sub state change event handler built in. Unit tests have it functioning as expected (for now). I've added Event Handling so we can add a Rules Engine in the future.
 
 ## IFWorldModel
-This sits between the Standard Library and an author's Story file and the lower level World Model (data store).
+This sits between the Standard Library and an author's Story file and the lower level graph Model (data store).
 
 ### Standard Library
 This is the standard IF "stuff".
@@ -28,7 +28,7 @@ A Fluent class that implements an author's custom game artifacts and map.
 A fluent class that defines accepted input sentence structures.
 
 ### Text Service
-The Text Service will be called at the end of the turn loop, interrogate the world model and event log to determine what to emit.
+The Text Service will be called at the end of the turn loop, interrogate the graph model and event log to determine what to emit.
 
 #### Open design discussion
 

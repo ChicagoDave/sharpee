@@ -5,14 +5,14 @@ namespace StandardLibrary
 {
     public class Core
     {
-        private World _world;
+        private Graph _graph;
 
-        public Core(World world)
+        public Core(Graph graph)
         {
             // Load up the grammar definitions...
             StandardGrammar.DefineStandardGrammar();
 
-            _world = new World();
+            _graph = new Graph();
         }
 
     }

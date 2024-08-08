@@ -7,7 +7,7 @@ namespace IFWorldModel
 {
     public class Scenery : Thing
     {
-        public Scenery(World world, string name) : base(world, name, "scenery")
+        public Scenery(Graph graph, string name) : base(graph, name, "scenery")
         {
             SetProperty("movable", false);
             SetProperty("examinable", true);
@@ -34,8 +34,8 @@ namespace IFWorldModel
 
         public Room GetLocation()
         {
-            var containerEdge = _world.Nodes[_id].Edges.FirstOrDefault(e => e.EdgeType == "in");
-            return containerEdge != null ? new Room(_world, containerEdge.Id2) : null;
+            var containerEdge = _graph.Nodes[_id].Edges.FirstOrDefault(e => e.EdgeType == "in");
+            return containerEdge != null ? new Room(_graph, containerEdge.Id2) : null;
         }
 
         public new Scenery SetProperty(string propertyName, object value)

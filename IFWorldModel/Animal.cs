@@ -7,7 +7,7 @@ namespace IFWorldModel
 {
     public class Animal : Thing
     {
-        public Animal(World world, string name) : base(world, name, "animal")
+        public Animal(Graph graph, string name) : base(graph, name, "animal")
         {
             // The "animate" property is set to true by default in the constructor
             SetProperty("animate", true);

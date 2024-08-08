@@ -1,117 +1,256 @@
-﻿using DataStore;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using DataStore;
 
 namespace IFWorldModel
 {
-    public class Thing
+    public class Thing : INode, IContainer, ISupporter
     {
         protected readonly Graph _graph;
-        protected readonly string _id;
+
+        public string Id { get; }
+        public IDictionary<string, IProperty> Properties { get; }
+        private readonly List<IEdge> _outgoingEdges = new List<IEdge>();
+        private readonly List<IEdge> _incomingEdges = new List<IEdge>();
 
         public Thing(Graph graph, string name, string type)
         {
             _graph = graph ?? throw new ArgumentNullException(nameof(graph));
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Name cannot be null or whitespace", nameof(name));
-            if (string.IsNullOrWhiteSpace(type))
-                throw new ArgumentException("Type cannot be null or whitespace", nameof(type));
+            SetProperty("name", name);
+            SetProperty("type", type);
 
-            var node = new ThingNode(_graph.Nodes.Count.ToString());
-            node.SetPropertyValue("name", name)
-                .SetPropertyValue("type", type);
-            _graph.AddNode(node);
-            _id = node.Id;
+            _graph.AddNode(this);
         }
 
-        public string Name => GetRequiredProperty<string>("name");
-        public string Type => GetRequiredProperty<string>("type");
+        public string Name => GetPropertyValue<string>("name");
+        public string Type => GetPropertyValue<string>("type");
 
-        private T GetRequiredProperty<T>(string propertyName)
+        public virtual Thing Clone(Graph graph)
         {
-            var value = GetProperty<T>(propertyName);
-            if (value == null)
-            {
-                throw new InvalidOperationException($"Required property '{propertyName}' not found for Thing with id {_id}");
-            }
-            return value;
+            var clone = new Thing(graph, this.Name, this.Type);
+            CopyPropertiesTo(clone);
+            return clone;
         }
 
+        protected void CopyPropertiesTo(Thing target)
+        {
+            foreach (var prop in Properties)
+            {
+                if (prop.Key != "name" && prop.Key != "type")
+                {
+                    target.SetProperty(prop.Key, prop.Value.GetRawValue());
+                }
+            }
+        }
+
+        // Container and Supporter properties
+        public bool IsContainer { get; set; }
+        public bool IsSupporter { get; set; }
+
+        // Openable and Lockable properties
+        public bool IsOpen { get; set; }
+        public bool IsOpenable { get; set; }
+        public bool IsLockable { get; set; }
+        public bool IsLocked { get; set; }
+
+        // IContainer implementation
+        public IEnumerable<Thing> Contents =>
+            IsContainer && (IsOpen || !IsOpenable)
+                ? GetAdjacentNodesOfEdgeType("contains").OfType<Thing>()
+                : Enumerable.Empty<Thing>();
+
+        public virtual bool CanContain(Thing item) => IsContainer && (IsOpen || !IsOpenable);
+
+        public void AddItem(Thing item)
+        {
+            if (!CanContain(item))
+                throw new InvalidOperationException($"{Name} cannot contain {item.Name} (IsOpen: {IsOpen}, IsOpenable: {IsOpenable})");
+            _graph.CreateEdge(Guid.NewGuid().ToString(), this.Id, item.Id, "contains");
+        }
+
+        public void RemoveItem(Thing item)
+        {
+            if (!IsOpen && IsOpenable)
+                throw new InvalidOperationException($"Cannot remove {item.Name} from {Name} because it is closed.");
+            var edge = _graph.GetEdgesBetween(this.Id, item.Id).FirstOrDefault(e => e.Type == "contains");
+            if (edge != null)
+                _graph.RemoveEdge(edge);
+        }
+
+        public static Thing FromNode(Graph graph, INode node)
+        {
+            if (node == null)
+                throw new ArgumentNullException(nameof(node));
+
+            if (node is Thing thing)
+            {
+                return thing.Clone(graph);
+            }
+
+            // If it's not already a Thing, create a new Thing
+            var newThing = new Thing(graph, node.GetPropertyValue<string>("name"), node.GetPropertyValue<string>("type"));
+
+            // Copy all properties from the node to the new Thing
+            foreach (var property in node.Properties)
+            {
+                if (property.Key != "name" && property.Key != "type" && property.Key != "id")
+                {
+                    newThing.SetProperty(property.Key, property.Value.GetRawValue());
+                }
+            }
+
+            // Set specific boolean properties
+            newThing.IsContainer = node.GetPropertyValue<bool>("IsContainer");
+            newThing.IsSupporter = node.GetPropertyValue<bool>("IsSupporter");
+            newThing.IsOpen = node.GetPropertyValue<bool>("IsOpen");
+            newThing.IsOpenable = node.GetPropertyValue<bool>("IsOpenable");
+            newThing.IsLockable = node.GetPropertyValue<bool>("IsLockable");
+            newThing.IsLocked = node.GetPropertyValue<bool>("IsLocked");
+
+            // Note: We don't copy edges here because the new Thing is added to the graph
+            // and should establish its own connections
+
+            return newThing;
+        }
+
+        // ISupporter implementation
+        public IEnumerable<Thing> SupportedItems =>
+            IsSupporter ? GetAdjacentNodesOfEdgeType("supports").OfType<Thing>() : Enumerable.Empty<Thing>();
+
+        public virtual bool CanSupport(Thing item) => IsSupporter;
+
+        public void AddSupportedItem(Thing item)
+        {
+            if (!CanSupport(item))
+                throw new InvalidOperationException($"{Name} cannot support {item.Name}");
+            _graph.CreateEdge(Guid.NewGuid().ToString(), this.Id, item.Id, "supports");
+        }
+
+        public void RemoveSupportedItem(Thing item)
+        {
+            var edge = _graph.GetEdgesBetween(this.Id, item.Id).FirstOrDefault(e => e.Type == "supports");
+            if (edge != null)
+                _graph.RemoveEdge(edge);
+        }
+
+        // Openable and Lockable methods
+        public bool Open()
+        {
+            if (!IsOpenable || IsLocked)
+                return false;
+            IsOpen = true;
+            return true;
+        }
+
+        public bool Close()
+        {
+            if (!IsOpenable)
+                return false;
+            IsOpen = false;
+            return true;
+        }
+
+        public bool Lock()
+        {
+            if (!IsLockable || IsOpen)
+                return false;
+            IsLocked = true;
+            return true;
+        }
+
+        public bool Unlock()
+        {
+            if (!IsLockable)
+                return false;
+            IsLocked = false;
+            return true;
+        }
+
+        // Property management methods
         public Thing SetProperty(string propertyName, object value)
         {
-            if (string.IsNullOrWhiteSpace(propertyName))
-                throw new ArgumentException("Property name cannot be null or whitespace", nameof(propertyName));
-
-            if (!_graph.Nodes.TryGetValue(_id, out var node))
-                throw new InvalidOperationException($"Node with id {_id} not found in the graph");
-
-            node.SetPropertyValue(propertyName, value);
+            SetPropertyValue(propertyName, value);
             return this;
         }
 
-        public T? GetProperty<T>(string propertyName)
+        // Relationship check methods
+        public bool IsIn(Thing container) =>
+            _outgoingEdges.Any(e => e.Type == "contains" && e.Target.Id == container.Id);
+
+        public bool IsOn(Thing supporter) =>
+            _outgoingEdges.Any(e => e.Type == "supports" && e.Target.Id == supporter.Id);
+
+        // INode interface implementation
+        public IReadOnlyCollection<IEdge> OutgoingEdges => _outgoingEdges.AsReadOnly();
+        public IReadOnlyCollection<IEdge> IncomingEdges => _incomingEdges.AsReadOnly();
+
+        public void AddOutgoingEdge(IEdge edge)
         {
-            if (string.IsNullOrWhiteSpace(propertyName))
-                throw new ArgumentException("Property name cannot be null or whitespace", nameof(propertyName));
-
-            if (!_graph.Nodes.TryGetValue(_id, out var node))
-                throw new InvalidOperationException($"Node with id {_id} not found in the graph");
-
-            var value = node.GetPropertyValue<T>(propertyName);
-
-            // If T is a value type and the property doesn't exist, GetPropertyValue will return default(T)
-            // For reference types, it will return null if the property doesn't exist
-            return value;
+            if (edge == null) throw new ArgumentNullException(nameof(edge));
+            if (edge.Source != this) throw new InvalidOperationException("Edge source must be this node.");
+            _outgoingEdges.Add(edge);
         }
 
-        public Thing AddToContainer(Thing container)
+        public void AddIncomingEdge(IEdge edge)
         {
-            var edge = new ThingEdge($"{_id}-{container._id}", _graph.Nodes[_id], _graph.Nodes[container._id], "in");
-            _graph.AddEdge(edge);
-            return this;
+            if (edge == null) throw new ArgumentNullException(nameof(edge));
+            if (edge.Target != this) throw new InvalidOperationException("Edge target must be this node.");
+            _incomingEdges.Add(edge);
         }
 
-        public Thing RemoveFromContainer()
+        public bool RemoveOutgoingEdge(IEdge edge) => _outgoingEdges.Remove(edge);
+
+        public bool RemoveIncomingEdge(IEdge edge) => _incomingEdges.Remove(edge);
+
+        public IEnumerable<Thing> GetContents()
         {
-            var containerEdge = _graph.Edges.Values.FirstOrDefault(e => e.Source.Id == _id && e.Type == "in");
-            if (containerEdge != null)
+            return GetAdjacentNodesOfEdgeType("in")
+                .Select(node => Thing.FromNode(_graph, node));
+        }
+
+        public IEnumerable<INode> GetAdjacentNodes()
+        {
+            return _outgoingEdges.Select(e => e.Target)
+                .Concat(_incomingEdges.Select(e => e.Source))
+                .OfType<INode>()
+                .Distinct();
+        }
+
+        public IEnumerable<INode> GetAdjacentNodesOfEdgeType(string edgeType)
+        {
+            return _outgoingEdges.Where(e => e.Type == edgeType).Select(e => e.Target)
+                .Concat(_incomingEdges.Where(e => e.Type == edgeType).Select(e => e.Source))
+                .OfType<INode>()
+                .Distinct();
+        }
+
+        public IEnumerable<IEdge> GetEdgesToNode(INode targetNode)
+        {
+            return _outgoingEdges.Where(e => e.Target == targetNode)
+                .Concat(_incomingEdges.Where(e => e.Source == targetNode));
+        }
+
+        public T? GetPropertyValue<T>(string propertyName)
+        {
+            if (Properties.TryGetValue(propertyName, out var property))
             {
-                _graph.RemoveEdge(containerEdge.Id);
+                return property.GetValue<T>();
+            }
+            return default;
+        }
+
+        public INode SetPropertyValue(string propertyName, object? value)
+        {
+            if (Properties.TryGetValue(propertyName, out var existingProperty))
+            {
+                existingProperty.SetValue(value);
+            }
+            else
+            {
+                Properties[propertyName] = new Property(propertyName, value);
             }
             return this;
-        }
-
-        public IEnumerable<Thing> Contents()
-        {
-            return _graph.Edges.Values
-                .Where(e => e.Target.Id == _id && e.Type == "contains")
-                .Select(e => new Thing(_graph, e.Source.Id));
-        }
-
-        public bool IsIn(Thing container)
-        {
-            return _graph.Edges.Values.Any(e => e.Source.Id == _id && e.Target.Id == container._id && e.Type == "in");
-        }
-
-        public Thing MoveTo(Thing destination)
-        {
-            RemoveFromContainer();
-            AddToContainer(destination);
-            return this;
-        }
-
-        protected Thing(Graph graph, string id)
-        {
-            _graph = graph ?? throw new ArgumentNullException(nameof(graph));
-            _id = id ?? throw new ArgumentNullException(nameof(id));
-        }
-
-        private class ThingNode : Node
-        {
-            public ThingNode(string id) : base(id) { }
-        }
-
-        private class ThingEdge : Edge
-        {
-            public ThingEdge(string id, INode source, INode target, string type) : base(id, source, target, type) { }
         }
     }
 }

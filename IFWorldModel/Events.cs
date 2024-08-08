@@ -2,7 +2,7 @@
 
 public class Events : IGraphEventHandler
 {
-    private readonly World _world;
+    private readonly Graph _graph;
 
     public event Action<Node>? NodeAdded;
     public event Action<Node>? NodeRemoved;
@@ -10,10 +10,10 @@ public class Events : IGraphEventHandler
     public event Action<Edge>? EdgeRemoved;
     public event Action<string, Property>? PropertyChanged;
 
-    public Events(World world)
+    public Events(Graph graph)
     {
-        _world = world;
-        _world.AddEventHandler(this);
+        _graph = graph;
+        _graph.AddEventHandler(this);
     }
 
     public void HandleNodeAdded(Node node) => NodeAdded?.Invoke(node);

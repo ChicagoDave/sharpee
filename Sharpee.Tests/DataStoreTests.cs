@@ -6,7 +6,7 @@ using System.Linq;
 namespace DataStore.Tests
 {
     [TestClass]
-    public class GraphTests
+    public class DataStoreTests
     {
         private Graph _graph;
 
@@ -20,7 +20,7 @@ namespace DataStore.Tests
         public void AddNode_ShouldAddNodeToGraph()
         {
             // Arrange
-            var node = new TestNode("TestNode");
+            var node = new Node();
 
             // Act
             _graph.AddNode(node);
@@ -31,161 +31,144 @@ namespace DataStore.Tests
         }
 
         [TestMethod]
-        public void AddEdgeType_ShouldAddBidirectionalEdgeType()
-        {
-            // Arrange
-            string forwardName = "forward";
-            string reverseName = "reverse";
-
-            // Act
-            _graph.AddEdgeType(forwardName, reverseName);
-
-            // Assert
-            Assert.IsTrue(_graph.EdgeTypes.ContainsKey(forwardName));
-            Assert.IsTrue(_graph.EdgeTypes.ContainsKey(reverseName));
-            Assert.AreEqual(reverseName, _graph.EdgeTypes[forwardName].ReverseName);
-            Assert.AreEqual(forwardName, _graph.EdgeTypes[reverseName].ForwardName);
-        }
-
-        [TestMethod]
-        public void AddEdge_ShouldAddEdgeToGraph()
-        {
-            // Arrange
-            var sourceNode = new TestNode("SourceNode");
-            var targetNode = new TestNode("TargetNode");
-            _graph.AddNode(sourceNode);
-            _graph.AddNode(targetNode);
-            _graph.AddEdgeType("TestEdge", "ReverseTestEdge");
-
-            var edge = new TestEdge("TestEdgeId", sourceNode, targetNode, "TestEdge");
-
-            // Act
-            _graph.AddEdge(edge);
-
-            // Assert
-            Assert.IsTrue(_graph.Edges.ContainsKey(edge.Id));
-            Assert.AreEqual(edge, _graph.Edges[edge.Id]);
-            Assert.IsTrue(sourceNode.Edges.Contains(edge));
-        }
-
-        [TestMethod]
-        [ExpectedException(typeof(ArgumentException))]
-        public void AddEdge_WithNonExistentNodes_ShouldThrowException()
-        {
-            // Arrange
-            var sourceNode = new TestNode("SourceNode");
-            var targetNode = new TestNode("TargetNode");
-            _graph.AddEdgeType("TestEdge", "ReverseTestEdge");
-
-            var edge = new TestEdge("TestEdgeId", sourceNode, targetNode, "TestEdge");
-
-            // Act
-            _graph.AddEdge(edge);
-
-            // Assert is handled by ExpectedException
-        }
-
-        [TestMethod]
         public void RemoveNode_ShouldRemoveNodeAndConnectedEdges()
         {
             // Arrange
-            var sourceNode = new TestNode("SourceNode");
-            var targetNode = new TestNode("TargetNode");
+            var sourceNode = new Node();
+            var targetNode = new Node();
             _graph.AddNode(sourceNode);
             _graph.AddNode(targetNode);
-            _graph.AddEdgeType("TestEdge", "ReverseTestEdge");
 
-            var edge = new TestEdge("TestEdgeId", sourceNode, targetNode, "TestEdge");
-            _graph.AddEdge(edge);
+            var edge = _graph.CreateEdge(sourceNode.Id, targetNode.Id);
 
             // Act
             _graph.RemoveNode(sourceNode.Id);
 
             // Assert
             Assert.IsFalse(_graph.Nodes.ContainsKey(sourceNode.Id));
-            Assert.IsFalse(_graph.Edges.ContainsKey(edge.Id));
             Assert.IsFalse(targetNode.Edges.Contains(edge));
         }
 
         [TestMethod]
-        public void RemoveEdge_ShouldRemoveEdgeFromGraphAndNodes()
+        public void CreateEdge_ShouldCreateEdgeBetweenNodes()
         {
             // Arrange
-            var sourceNode = new TestNode("SourceNode");
-            var targetNode = new TestNode("TargetNode");
+            var sourceNode = new Node();
+            var targetNode = new Node();
             _graph.AddNode(sourceNode);
             _graph.AddNode(targetNode);
-            _graph.AddEdgeType("TestEdge", "ReverseTestEdge");
-
-            var edge = new TestEdge("TestEdgeId", sourceNode, targetNode, "TestEdge");
-            _graph.AddEdge(edge);
 
             // Act
-            _graph.RemoveEdge(edge.Id);
+            var edge = _graph.CreateEdge(sourceNode.Id, targetNode.Id);
 
             // Assert
-            Assert.IsFalse(_graph.Edges.ContainsKey(edge.Id));
+            Assert.IsTrue(sourceNode.Edges.Contains(edge));
+            Assert.IsTrue(targetNode.Edges.Contains(edge));
+            Assert.AreEqual(sourceNode, edge.Source);
+            Assert.AreEqual(targetNode, edge.Target);
+        }
+
+        [TestMethod]
+        public void RemoveEdge_ShouldRemoveEdgeFromNodes()
+        {
+            // Arrange
+            var sourceNode = new Node();
+            var targetNode = new Node();
+            _graph.AddNode(sourceNode);
+            _graph.AddNode(targetNode);
+
+            var edge = _graph.CreateEdge(sourceNode.Id, targetNode.Id);
+
+            // Act
+            _graph.RemoveEdge(edge);
+
+            // Assert
             Assert.IsFalse(sourceNode.Edges.Contains(edge));
+            Assert.IsFalse(targetNode.Edges.Contains(edge));
         }
 
         [TestMethod]
-        public void GetAdjacentNodes_ShouldReturnCorrectNodes()
+        public void Node_SetAndGetPropertyValue_ShouldWorkCorrectly()
         {
             // Arrange
-            var sourceNode = new TestNode("SourceNode");
-            var targetNode1 = new TestNode("TargetNode1");
-            var targetNode2 = new TestNode("TargetNode2");
-            _graph.AddNode(sourceNode);
-            _graph.AddNode(targetNode1);
-            _graph.AddNode(targetNode2);
-            _graph.AddEdgeType("TestEdge", "ReverseTestEdge");
-
-            _graph.AddEdge(new TestEdge("Edge1", sourceNode, targetNode1, "TestEdge"));
-            _graph.AddEdge(new TestEdge("Edge2", sourceNode, targetNode2, "TestEdge"));
+            var node = new Node();
+            string propertyName = "TestProperty";
+            string propertyValue = "TestValue";
 
             // Act
-            var adjacentNodes = _graph.GetAdjacentNodes(sourceNode.Id).ToList();
+            node.SetPropertyValue(propertyName, propertyValue);
+            var retrievedValue = node.GetPropertyValue<string>(propertyName);
 
             // Assert
-            Assert.AreEqual(2, adjacentNodes.Count);
-            CollectionAssert.Contains(adjacentNodes, targetNode1);
-            CollectionAssert.Contains(adjacentNodes, targetNode2);
+            Assert.AreEqual(propertyValue, retrievedValue);
         }
 
         [TestMethod]
-        public void GetEdgesBetween_ShouldReturnCorrectEdges()
+        public void Edge_SetAndGetPropertyValue_ShouldWorkCorrectly()
         {
             // Arrange
-            var sourceNode = new TestNode("SourceNode");
-            var targetNode = new TestNode("TargetNode");
-            _graph.AddNode(sourceNode);
-            _graph.AddNode(targetNode);
-            _graph.AddEdgeType("TestEdge1", "ReverseTestEdge1");
-            _graph.AddEdgeType("TestEdge2", "ReverseTestEdge2");
-
-            var edge1 = new TestEdge("Edge1", sourceNode, targetNode, "TestEdge1");
-            var edge2 = new TestEdge("Edge2", sourceNode, targetNode, "TestEdge2");
-            _graph.AddEdge(edge1);
-            _graph.AddEdge(edge2);
+            var sourceNode = new Node();
+            var targetNode = new Node();
+            var edge = new Edge(sourceNode, targetNode);
+            string propertyName = "TestProperty";
+            string propertyValue = "TestValue";
 
             // Act
-            var edgesBetween = _graph.GetEdgesBetween(sourceNode.Id, targetNode.Id).ToList();
+            edge.SetSourcePropertyValue(propertyName, propertyValue);
+            var retrievedValue = edge.GetSourcePropertyValue<string>(propertyName);
 
             // Assert
-            Assert.AreEqual(2, edgesBetween.Count);
-            CollectionAssert.Contains(edgesBetween, edge1);
-            CollectionAssert.Contains(edgesBetween, edge2);
+            Assert.AreEqual(propertyValue, retrievedValue);
         }
-    }
 
-    // Helper classes for testing
-    public class TestNode : Node
-    {
-        public TestNode(string id) : base(id) { }
-    }
+        [TestMethod]
+        public void Node_PropertyChanged_ShouldRaiseEvent()
+        {
+            // Arrange
+            var node = new Node();
+            string propertyName = "TestProperty";
+            string propertyValue = "TestValue";
+            bool eventRaised = false;
 
-    public class TestEdge : Edge
-    {
-        public TestEdge(string id, INode source, INode target, string type) : base(id, source, target, type) { }
+            node.PropertyChanged += (sender, e) =>
+            {
+                eventRaised = true;
+                Assert.AreEqual(propertyName, e.PropertyName);
+                Assert.AreEqual(null, e.OldValue);
+                Assert.AreEqual(propertyValue, e.NewValue);
+            };
+
+            // Act
+            node.SetPropertyValue(propertyName, propertyValue);
+
+            // Assert
+            Assert.IsTrue(eventRaised);
+        }
+
+        [TestMethod]
+        public void Edge_SourcePropertyChanged_ShouldRaiseEvent()
+        {
+            // Arrange
+            var sourceNode = new Node();
+            var targetNode = new Node();
+            var edge = new Edge(sourceNode, targetNode);
+            string propertyName = "TestProperty";
+            string propertyValue = "TestValue";
+            bool eventRaised = false;
+
+            edge.SourcePropertyChanged += (sender, e) =>
+            {
+                eventRaised = true;
+                Assert.AreEqual(propertyName, e.PropertyName);
+                Assert.AreEqual(null, e.OldValue);
+                Assert.AreEqual(propertyValue, e.NewValue);
+            };
+
+            // Act
+            edge.SetSourcePropertyValue(propertyName, propertyValue);
+
+            // Assert
+            Assert.IsTrue(eventRaised);
+        }
     }
 }

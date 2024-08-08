@@ -7,6 +7,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="ActionHistory.cs" />
+    <Compile Remove="ActionResult.cs" />
+    <Compile Remove="Animal.cs" />
+    <Compile Remove="Container.cs" />
+    <Compile Remove="Events.cs" />
+    <Compile Remove="ParsedAction.cs" />
+    <Compile Remove="Person.cs" />
+    <Compile Remove="Scenery.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\DataStore\DataStore.csproj" />
   </ItemGroup>
 

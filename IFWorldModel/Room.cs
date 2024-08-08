@@ -7,72 +7,101 @@ namespace IFWorldModel
 {
     public class Room : Thing
     {
-        public Room(World world, string name) : base(world, name, "room")
+        public Room(Graph graph, string name) : base(graph, name, "room")
         {
+            SetProperty("description", "");
+        }
+
+        public override Thing Clone(Graph graph)
+        {
+            var clone = new Room(graph, this.Name);
+            CopyPropertiesTo(clone);
+            return clone;
+        }
+
+        public string Description
+        {
+            get => GetPropertyValue<string>("description");
+            set => SetProperty("description", value);
         }
 
         public Room SetDescription(string description)
         {
-            SetProperty("description", description);
-            return this;
-        }
-
-        public string GetDescription()
-        {
-            return GetProperty<string>("description");
-        }
-
-        public Room AddScenery(string name, string description)
-        {
-            var scenery = new Scenery(_world, name)
-                .SetDescription(description)
-                .PlaceIn(this);
-            return this;
-        }
-
-        public Room AddScenery(params (string name, string description)[] sceneryItems)
-        {
-            foreach (var (name, description) in sceneryItems)
-            {
-                new Scenery(_world, name)
-                    .SetDescription(description)
-                    .PlaceIn(this);
-            }
+            Description = description;
             return this;
         }
 
         public Room AddExit(string direction, Room destination)
         {
-            _world.ConnectNodesById(_id, destination._id, direction, GetReverseDirection(direction));
+            if (destination == null)
+                throw new ArgumentNullException(nameof(destination));
+
+            var edgeId = Guid.NewGuid().ToString();
+            _graph.CreateEdge(edgeId, this.Id, destination.Id, direction);
             return this;
         }
 
         public Room RemoveExit(string direction)
         {
-            var exitEdge = _world.Nodes[_id].Edges.FirstOrDefault(e => e.EdgeType == direction);
+            var exitEdge = GetExitEdge(direction);
             if (exitEdge != null)
             {
-                _world.DisconnectNodesById(_id, exitEdge.Id2);
+                _graph.RemoveEdge(exitEdge);
             }
             return this;
         }
 
         public IEnumerable<(string Direction, Room Destination)> GetExits()
         {
-            return _world.Nodes[_id].Edges
-                .Where(e => IsDirectionEdge(e.EdgeType))
-                .Select(e => (e.EdgeType, new Room(_world, e.Id2)));
+            return _graph.EdgeTypes.Keys
+                .Where(IsDirectionEdge)
+                .Select(direction => (direction, GetExitRoom(direction)))
+                .Where(exit => exit.Item2 != null);
         }
 
         public Room GetExit(string direction)
         {
-            var exitEdge = _world.Nodes[_id].Edges.FirstOrDefault(e => e.EdgeType == direction);
-            if (exitEdge != null)
+            return GetExitRoom(direction);
+        }
+
+        public Room AddThing(Thing thing)
+        {
+            if (thing == null)
+                throw new ArgumentNullException(nameof(thing));
+
+            var edgeId = Guid.NewGuid().ToString();
+            _graph.CreateEdge(edgeId, thing.Id, this.Id, "in");
+            return this;
+        }
+
+        public Room RemoveThing(Thing thing)
+        {
+            if (thing == null)
+                throw new ArgumentNullException(nameof(thing));
+
+            var edge = _graph.GetEdgesBetween(thing.Id, this.Id).FirstOrDefault(e => e.Type == "in");
+            if (edge != null)
             {
-                var connectedNode = _world.Nodes[exitEdge.Id2];
-                return new Room(_world, connectedNode.GetPropertyValue<string>("name");
+                _graph.RemoveEdge(edge);
             }
-            return null;
+            return this;
+        }
+
+        public IEnumerable<Thing> GetContents()
+        {
+            return GetAdjacentNodesOfEdgeType("in")
+                .Select(node => Thing.FromNode(_graph, node));
+        }
+
+        private Room GetExitRoom(string direction)
+        {
+            var exitEdge = GetExitEdge(direction);
+            return exitEdge != null ? Room.FromNode(_graph, exitEdge.Target) : null;
+        }
+
+        private IEdge GetExitEdge(string direction)
+        {
+            return ((INode)this).OutgoingEdges.FirstOrDefault(e => e.Type == direction);
         }
 
         private static bool IsDirectionEdge(string edgeType)
@@ -81,24 +110,19 @@ namespace IFWorldModel
                 .Contains(edgeType.ToLower());
         }
 
-        private static string GetReverseDirection(string direction)
+        public static Room FromNode(Graph graph, INode node)
         {
-            return direction.ToLower() switch
+            if (node.GetPropertyValue<string>("type") != "room")
             {
-                "north" => "south",
-                "south" => "north",
-                "east" => "west",
-                "west" => "east",
-                "northeast" => "southwest",
-                "northwest" => "southeast",
-                "southeast" => "northwest",
-                "southwest" => "northeast",
-                "up" => "down",
-                "down" => "up",
-                "in" => "out",
-                "out" => "in",
-                _ => throw new ArgumentException("Invalid direction", nameof(direction)),
-            };
+                throw new ArgumentException("The provided node is not a room", nameof(node));
+            }
+
+            if (node is Room room)
+            {
+                return (Room)room.Clone(graph);
+            }
+
+            throw new ArgumentException("The provided node is not a Room instance", nameof(node));
         }
     }
 }

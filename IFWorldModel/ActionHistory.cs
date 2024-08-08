@@ -7,23 +7,23 @@ namespace IFWorldModel
 {
     public class ActionHistory
     {
-        private readonly World _world;
+        private readonly Graph _graph;
         private readonly string _actionHistoryNodeId;
         private const string ActionHistoryNodeType = "meta_action_history";
         private const string ActionHistoryPropertyName = "entries";
 
-        public ActionHistory(World world)
+        public ActionHistory(Graph graph)
         {
-            _world = world;
+            _graph = graph;
             _actionHistoryNodeId = EnsureActionHistoryNode();
         }
 
         private string EnsureActionHistoryNode()
         {
-            var actionHistoryNode = _world.Nodes.Values.FirstOrDefault(n => n.GetPropertyValue<string>("type") == ActionHistoryNodeType);
+            var actionHistoryNode = _graph.Nodes.Values.FirstOrDefault(n => n.GetPropertyValue<string>("type") == ActionHistoryNodeType);
             if (actionHistoryNode == null)
             {
-                return _world.AddNode(
+                return _graph.AddNode(
                     new Property("type", ActionHistoryNodeType),
                     new Property("name", "ActionHistory"),
                     new Property(ActionHistoryPropertyName, new List<ActionHistoryEntry>())
@@ -68,11 +68,11 @@ namespace IFWorldModel
 
         private List<ActionHistoryEntry> GetHistory()
         {
-            var history = _world.Nodes[_actionHistoryNodeId].GetPropertyValue<List<ActionHistoryEntry>>(ActionHistoryPropertyName);
+            var history = _graph.Nodes[_actionHistoryNodeId].GetPropertyValue<List<ActionHistoryEntry>>(ActionHistoryPropertyName);
             if (history == null)
             {
                 history = new List<ActionHistoryEntry>();
-                _world.SetNodeProperty(_actionHistoryNodeId, ActionHistoryPropertyName, history);
+                _graph.SetNodeProperty(_actionHistoryNodeId, ActionHistoryPropertyName, history);
             }
             return history;
         }

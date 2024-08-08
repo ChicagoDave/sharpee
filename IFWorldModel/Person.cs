@@ -7,7 +7,7 @@ namespace IFWorldModel
 {
     public class Person : Animal
     {
-        public Person(World world, string name) : base(world, name)
+        public Person(Graph graph, string name) : base(graph, name)
         {
             SetProperty("type", "person");
             SetProperty("sentient", true);

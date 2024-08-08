@@ -8,17 +8,17 @@ namespace WorldModel
 {
     public class TraversalService
     {
-        private readonly World _world;
+        private readonly Graph _graph;
 
-        public TraversalService(World world)
+        public TraversalService(Graph graph)
         {
-            _world = world;
+            _graph = graph;
         }
 
         public List<Node>? FindPath(string startNodeId, string endNodeId)
         {
-            var startNode = _world.Nodes[startNodeId];
-            var endNode = _world.Nodes[endNodeId];
+            var startNode = _graph.Nodes[startNodeId];
+            var endNode = _graph.Nodes[endNodeId];
 
             var visitedNodes = new HashSet<string>();
             var path = new List<Node>();
@@ -47,7 +47,7 @@ namespace WorldModel
                 var nextNodeId = edge.Id1 == currentNode.Id ? edge.Id2 : edge.Id1;
                 if (!visitedNodes.Contains(nextNodeId))
                 {
-                    var nextNode = _world.Nodes[nextNodeId];
+                    var nextNode = _graph.Nodes[nextNodeId];
                     if (FindPathRecursive(nextNode, endNode, visitedNodes, path))
                     {
                         return true;
@@ -61,13 +61,13 @@ namespace WorldModel
 
         public List<Node> GetConnectedNodes(string nodeId)
         {
-            var node = _world.Nodes[nodeId];
+            var node = _graph.Nodes[nodeId];
             var connectedNodes = new List<Node>();
 
             foreach (var edge in node.Edges)
             {
                 var connectedNodeId = edge.Id1 == nodeId ? edge.Id2 : edge.Id1;
-                var connectedNode = _world.Nodes[connectedNodeId];
+                var connectedNode = _graph.Nodes[connectedNodeId];
                 connectedNodes.Add(connectedNode);
             }
 
@@ -76,7 +76,7 @@ namespace WorldModel
 
         public List<Node> GetAdjacentNodes(string nodeId, string edgeType)
         {
-            var node = _world.Nodes[nodeId];
+            var node = _graph.Nodes[nodeId];
             var adjacentNodes = new List<Node>();
 
             foreach (var edge in node.Edges)
@@ -84,7 +84,7 @@ namespace WorldModel
                 if (edge.EdgeType == edgeType)
                 {
                     var adjacentNodeId = edge.Id1 == nodeId ? edge.Id2 : edge.Id1;
-                    var adjacentNode = _world.Nodes[adjacentNodeId];
+                    var adjacentNode = _graph.Nodes[adjacentNodeId];
                     adjacentNodes.Add(adjacentNode);
                 }
             }
@@ -93,21 +93,21 @@ namespace WorldModel
         }
         public List<Node> FindNodesWithProperty(string propertyName, object propertyValue)
         {
-            return _world.Nodes.Values
+            return _graph.Nodes.Values
                 .Where(node => node.Properties.Any(prop => prop.Name == propertyName && prop.Value.Equals(propertyValue)))
             .ToList();
         }
 
         public List<Node> FindNodesWithProperties(Dictionary<string, object> properties)
         {
-            return _world.Nodes.Values
+            return _graph.Nodes.Values
                 .Where(node => properties.All(prop => node.Properties.Any(p => p.Name == prop.Key && p.Value.Equals(prop.Value))))
                 .ToList();
         }
 
         public List<Edge> FindEdgesWithProperty(string propertyName, object propertyValue)
         {
-            return _world.Nodes.Values
+            return _graph.Nodes.Values
                 .SelectMany(node => node.Edges)
                 .Where(edge => edge.Properties.Any(prop => prop.Name == propertyName && prop.Value.Equals(propertyValue)))
                 .ToList();
@@ -115,7 +115,7 @@ namespace WorldModel
 
         public List<Edge> FindEdgesWithProperties(Dictionary<string, object> properties)
         {
-            return _world.Nodes.Values
+            return _graph.Nodes.Values
                 .SelectMany(node => node.Edges)
                 .Where(edge => properties.All(prop => edge.Properties.Any(p => p.Name == prop.Key && p.Value.Equals(prop.Value))))
                 .ToList();
@@ -123,19 +123,19 @@ namespace WorldModel
 
         public List<Node> FindConnectedNodesWithProperty(string nodeId, string propertyName, object propertyValue)
         {
-            var node = _world.Nodes[nodeId];
+            var node = _graph.Nodes[nodeId];
             return node.Edges
-                .Select(edge => edge.Id1 == nodeId ? _world.Nodes[edge.Id2] : _world.Nodes[edge.Id1])
+                .Select(edge => edge.Id1 == nodeId ? _graph.Nodes[edge.Id2] : _graph.Nodes[edge.Id1])
                 .Where(connectedNode => connectedNode.Properties.Any(prop => prop.Name == propertyName && prop.Value.Equals(propertyValue)))
                 .ToList();
         }
 
         public List<Node> FindAdjacentNodesWithProperty(string nodeId, string edgeType, string propertyName, object propertyValue)
         {
-            var node = _world.Nodes[nodeId];
+            var node = _graph.Nodes[nodeId];
             return node.Edges
                 .Where(edge => edge.EdgeType == edgeType)
-                .Select(edge => edge.Id1 == nodeId ? _world.Nodes[edge.Id2] : _world.Nodes[edge.Id1])
+                .Select(edge => edge.Id1 == nodeId ? _graph.Nodes[edge.Id2] : _graph.Nodes[edge.Id1])
                 .Where(adjacentNode => adjacentNode.Properties.Any(prop => prop.Name == propertyName && prop.Value.Equals(propertyValue)))
                 .ToList();
         }
