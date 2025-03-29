@@ -1,0 +1,228 @@
+// packages/core/src/parser/languages/en-US/__tests__/pos-tagger.test.ts
+
+import { createEnglishPosTagger } from '../pos-tagger';
+import { PartOfSpeech } from '../../../core/types';
+import { Token, TokenType } from '../../../core/types';
+
+describe('EnglishPosTagger', () => {
+  // Helper to create basic tokens
+  const createWordToken = (text: string): Token => ({
+    text,
+    normalized: text.toLowerCase(),
+    type: TokenType.WORD,
+    position: 0
+  });
+
+  let tagger: ReturnType<typeof createEnglishPosTagger>;
+
+  beforeEach(() => {
+    tagger = createEnglishPosTagger();
+  });
+
+  describe('basic tagging', () => {
+    it('should tag common words correctly', () => {
+      const tokens = [
+        createWordToken('take'),
+        createWordToken('the'),
+        createWordToken('red'),
+        createWordToken('book')
+      ];
+      
+      const tagged = tagger.tag(tokens);
+      
+      expect(tagged[0].partOfSpeech).toBe(PartOfSpeech.VERB);
+      expect(tagged[1].partOfSpeech).toBe(PartOfSpeech.ARTICLE);
+      expect(tagged[2].partOfSpeech).toBe(PartOfSpeech.ADJECTIVE);
+      expect(tagged[3].partOfSpeech).toBe(PartOfSpeech.NOUN);
+    });
+
+    it('should tag common IF verbs correctly', () => {
+      const ifVerbs = ['look', 'examine', 'inventory', 'take', 'drop', 'open', 'close'];
+      
+      for (const verb of ifVerbs) {
+        const tokens = [createWordToken(verb)];
+        const tagged = tagger.tag(tokens);
+        expect(tagged[0].partOfSpeech).toBe(PartOfSpeech.VERB);
+        expect(tagged[0].confidence).toBeGreaterThan(0.9);
+      }
+    });
+
+    it('should handle non-word tokens', () => {
+      const tokens: Token[] = [
+        { text: '42', type: TokenType.NUMBER, position: 0 },
+        { text: ',', type: TokenType.PUNCTUATION, position: 2 },
+        { text: '"hello"', type: TokenType.QUOTED, position: 4 }
+      ];
+      
+      const tagged = tagger.tag(tokens);
+      
+      expect(tagged[0].partOfSpeech).toBe(PartOfSpeech.ADJECTIVE); // Numbers typically act as adjectives
+      expect(tagged[1].partOfSpeech).toBe(PartOfSpeech.UNKNOWN);    // Punctuation doesn't have a POS
+      expect(tagged[2].partOfSpeech).toBe(PartOfSpeech.NOUN);       // Quoted text often functions as nouns
+    });
+  });
+
+  describe('lemmatization', () => {
+    it('should find base forms of verbs', () => {
+      const verbs = [
+        { form: 'walking', base: 'walk' },
+        { form: 'takes', base: 'take' },
+        { form: 'opened', base: 'open' },
+        { form: 'went', base: 'go' },
+        { form: 'saw', base: 'see' },
+        { form: 'dropped', base: 'drop' }
+      ];
+      
+      for (const verb of verbs) {
+        const tokens = [createWordToken(verb.form)];
+        const tagged = tagger.tag(tokens);
+        expect(tagged[0].partOfSpeech).toBe(PartOfSpeech.VERB);
+        expect(tagged[0].lemma).toBe(verb.base);
+      }
+    });
+
+    it('should find base forms of nouns', () => {
+      const nouns = [
+        { form: 'books', base: 'book' },
+        { form: 'keys', base: 'key' },
+        { form: 'boxes', base: 'box' },
+        { form: 'knives', base: 'knife' },
+        { form: 'stories', base: 'story' }
+      ];
+      
+      for (const noun of nouns) {
+        // Force it to be tagged as a noun with context
+        const tokens = [
+          createWordToken('the'),
+          createWordToken(noun.form)
+        ];
+        
+        const tagged = tagger.tag(tokens);
+        expect(tagged[1].partOfSpeech).toBe(PartOfSpeech.NOUN);
+        expect(tagged[1].lemma).toBe(noun.base);
+      }
+    });
+  });
+
+  describe('context rules', () => {
+    it('should use context to improve tagging accuracy', () => {
+      const tokens = [
+        createWordToken('put'),             // Verb
+        createWordToken('the'),             // Article
+        createWordToken('book'),            // Noun
+        createWordToken('on'),              // Preposition
+        createWordToken('the'),             // Article
+        createWordToken('table'),           // Noun
+        createWordToken('with'),            // Preposition
+        createWordToken('the'),             // Article
+        createWordToken('red'),             // Adjective
+        createWordToken('cover')            // Noun (could be verb, but context should help)
+      ];
+      
+      const tagged = tagger.tag(tokens);
+      
+      // "put" should be a verb with high confidence
+      expect(tagged[0].partOfSpeech).toBe(PartOfSpeech.VERB);
+      expect(tagged[0].confidence).toBeGreaterThan(0.9);
+      
+      // "book" should be a noun after "the"
+      expect(tagged[2].partOfSpeech).toBe(PartOfSpeech.NOUN);
+      
+      // "table" should be a noun after "the"
+      expect(tagged[5].partOfSpeech).toBe(PartOfSpeech.NOUN);
+      
+      // "cover" should be a noun after "the red"
+      expect(tagged[9].partOfSpeech).toBe(PartOfSpeech.NOUN);
+    });
+
+    it('should handle first word as verb in IF commands', () => {
+      const tokens = [
+        createWordToken('climb'),    // Common IF verb
+        createWordToken('down'),
+        createWordToken('ladder')
+      ];
+      
+      const tagged = tagger.tag(tokens);
+      
+      expect(tagged[0].partOfSpeech).toBe(PartOfSpeech.VERB);
+      expect(tagged[0].confidence).toBeGreaterThan(0.9);
+      
+      // Try with an unknown word
+      const tokens2 = [
+        createWordToken('blorb'),    // Unknown word, should be guessed as verb in first position
+        createWordToken('the'),
+        createWordToken('grue')
+      ];
+      
+      const tagged2 = tagger.tag(tokens2);
+      
+      expect(tagged2[0].partOfSpeech).toBe(PartOfSpeech.VERB);
+    });
+  });
+
+  describe('dictionary management', () => {
+    it('should allow adding custom dictionary entries', () => {
+      // Add a custom word
+      tagger.addDictionaryEntry('grue', PartOfSpeech.NOUN);
+      
+      const tokens = [createWordToken('grue')];
+      const tagged = tagger.tag(tokens);
+      
+      expect(tagged[0].partOfSpeech).toBe(PartOfSpeech.NOUN);
+      expect(tagged[0].confidence).toBeGreaterThan(0.9);
+    });
+
+    it('should allow adding command verbs', () => {
+      // Add a custom command verb
+      tagger.addCommandVerb('teleport');
+      
+      const tokens = [createWordToken('teleport')];
+      const tagged = tagger.tag(tokens);
+      
+      expect(tagged[0].partOfSpeech).toBe(PartOfSpeech.VERB);
+      expect(tagged[0].confidence).toBeGreaterThan(0.9);
+      
+      // Verify it's in the command verbs list
+      expect(tagger.getCommandVerbs()).toContain('teleport');
+    });
+  });
+
+  describe('configurability', () => {
+    it('should support disabling IF vocabulary', () => {
+      const taggerNoIF = createEnglishPosTagger({
+        includeIFVocabulary: false
+      });
+      
+      // 'x' is specifically an IF verb (short for examine)
+      const tokens = [createWordToken('x')];
+      
+      // With IF vocabulary
+      const tagged1 = tagger.tag(tokens);
+      expect(tagged1[0].partOfSpeech).toBe(PartOfSpeech.VERB);
+      expect(tagged1[0].confidence).toBeGreaterThan(0.9);
+      
+      // Without IF vocabulary
+      const tagged2 = taggerNoIF.tag(tokens);
+      expect(tagged2[0].partOfSpeech).not.toBe(PartOfSpeech.VERB);
+      expect(tagged2[0].confidence).toBeLessThan(0.9);
+    });
+
+    it('should support disabling aggressive verb identification', () => {
+      const taggerNoAggressive = createEnglishPosTagger({
+        aggressiveVerbIdentification: false
+      });
+      
+      // Made-up word that would normally be tagged as a verb in first position
+      const tokens = [createWordToken('zorb')];
+      
+      // With aggressive verb identification
+      const tagged1 = tagger.tag(tokens);
+      expect(tagged1[0].partOfSpeech).toBe(PartOfSpeech.VERB);
+      
+      // Without aggressive verb identification
+      const tagged2 = taggerNoAggressive.tag(tokens);
+      // Should default to noun or unknown with lower confidence
+      expect(tagged2[0].partOfSpeech).not.toBe(PartOfSpeech.VERB);
+    });
+  });
+});

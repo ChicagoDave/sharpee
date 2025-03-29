@@ -1,0 +1,13 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/stdlib" },
+    { "path": "packages/client-core" },
+    { "path": "packages/clients/react" },
+    { "path": "packages/clients/electron" },
+    { "path": "packages/extensions/portals" },
+    { "path": "packages/extensions/conversation" },
+    { "path": "stories/reflections" }
+  ]
+}

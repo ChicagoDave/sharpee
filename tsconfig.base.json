@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "declaration": true,
+    "sourceMap": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@core/*": ["packages/core/src/*"],
+      "@stdlib/*": ["packages/stdlib/src/*"],
+      "@extensions/*": ["packages/extensions/*"], // Remove the extra /src/*
+      "@mirrors/*": ["packages/extensions/mirrors/src/*"],
+      "@conversation/*": ["packages/extensions/conversation/src/*"],
+      "@time/*": ["packages/extensions/time/src/*"],
+      "@abilities/*": ["packages/extensions/abilities/src/*"],
+      "@cli/*": ["packages/cli/src/*"],
+      "@web-client/*": ["packages/web-client/src/*"],
+      "@dev-tools/*": ["packages/dev-tools/src/*"],
+      "@stories/*": ["stories/*"], // Remove the extra /src/*
+      "@reflections/*": ["stories/reflections/src/*"]
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "sharpee",
+  "version": "0.1.0",
+  "description": "A TypeScript-based Interactive Fiction Engine",
+  "private": true,
+  "workspaces": [
+    "packages/core",
+    "packages/standard-library",
+    "packages/extensions/*",
+    "packages/cli",
+    "packages/web-client",
+    "packages/dev-tools",
+    "stories/*"
+  ],
+  "scripts": {
+    "clean": "rimraf \"packages/*/dist\" \"packages/extensions/*/dist\" \"stories/*/dist\"",
+    "build": "lerna run build",
+    "test": "lerna run test"
+  },
+  "devDependencies": {
+    "lerna": "^7.4.1",
+    "typescript": "^5.2.2",
+    "rimraf": "^5.0.5"
+  },
+  "author": "",
+  "license": "MIT"
+}

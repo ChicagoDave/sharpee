@@ -1,0 +1,29 @@
+I was the founder of Textfyre and we developed a design system to create parser-based IF works on paper (in Word documents).
+
+This included the following:
+
+Description of the World
+The People of this World (generalized)
+Religion (if applicable)
+Magic or Technology
+Physics
+Astronomy
+Recent History
+Money
+Common Expressions or Colloquialisms
+
+Then
+
+Prologue
+The characters of the story
+The Player Character
+The NPCs
+A synopsis or screen play of the entire story broken up by set pieces or scenes. These scenes can have overlapping aspects of the world.
+
+Game Features
+Time
+Food
+
+Chapter sections to detail how each set piece functions, including a rundown and a detailed design where we describe locations (rooms), actions, puzzles, and how the PC moves the story forward to the next Chapter
+
+End Game
