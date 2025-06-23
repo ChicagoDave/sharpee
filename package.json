@@ -5,8 +5,12 @@
   "private": true,
   "workspaces": [
     "packages/core",
-    "packages/standard-library",
+    "packages/world-model",
+    "packages/stdlib",
+    "packages/forge",
+    "packages/lang-en-us",
     "packages/extensions/*",
+    "packages/ext-daemon",
     "packages/cli",
     "packages/web-client",
     "packages/dev-tools",
@@ -18,9 +22,9 @@
     "test": "lerna run test"
   },
   "devDependencies": {
-    "lerna": "^7.4.1",
-    "typescript": "^5.2.2",
-    "rimraf": "^5.0.5"
+    "lerna": "^8.2.2",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.2.2"
   },
   "author": "",
   "license": "MIT"

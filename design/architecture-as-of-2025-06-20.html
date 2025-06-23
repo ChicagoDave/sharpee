@@ -1,0 +1,268 @@
+<svg viewBox="0 0 1400 1000" xmlns="http://www.w3.org/2000/svg">
+  <!-- Title -->
+  <text x="700" y="30" text-anchor="middle" font-size="24" font-weight="bold" fill="#333">
+    Sharpee IF Platform - Complete Architecture
+  </text>
+  
+  <!-- Layer Headers -->
+  <rect x="50" y="60" width="1300" height="40" fill="#4a5568" />
+  <text x="700" y="85" text-anchor="middle" font-size="18" font-weight="bold" fill="white">
+    Three-Layer Architecture
+  </text>
+  
+  <!-- Forge Layer (Author API) -->
+  <g id="forge-layer">
+    <rect x="50" y="120" width="1300" height="200" fill="#e6f7ff" stroke="#1890ff" stroke-width="2" />
+    <text x="70" y="145" font-size="16" font-weight="bold" fill="#1890ff">Forge Layer (Author API)</text>
+    
+    <!-- Forge Components -->
+    <rect x="80" y="170" width="200" height="120" fill="#fff" stroke="#1890ff" rx="5" />
+    <text x="180" y="190" text-anchor="middle" font-weight="bold" font-size="14">ForgeEntity</text>
+    <text x="180" y="210" text-anchor="middle" font-size="12">- Fluent API</text>
+    <text x="180" y="225" text-anchor="middle" font-size="12">- Builder Pattern</text>
+    <text x="180" y="240" text-anchor="middle" font-size="12">- withIdentity()</text>
+    <text x="180" y="255" text-anchor="middle" font-size="12">- withContainer()</text>
+    <text x="180" y="270" text-anchor="middle" font-size="12">- inRoom()</text>
+    
+    <rect x="300" y="170" width="200" height="120" fill="#fff" stroke="#1890ff" rx="5" />
+    <text x="400" y="190" text-anchor="middle" font-weight="bold" font-size="14">ForgeWorld</text>
+    <text x="400" y="210" text-anchor="middle" font-size="12">- World Builder</text>
+    <text x="400" y="225" text-anchor="middle" font-size="12">- Game Setup</text>
+    <text x="400" y="240" text-anchor="middle" font-size="12">- createRoom()</text>
+    <text x="400" y="255" text-anchor="middle" font-size="12">- createItem()</text>
+    <text x="400" y="270" text-anchor="middle" font-size="12">- createPlayer()</text>
+    
+    <rect x="520" y="170" width="200" height="120" fill="#fff" stroke="#1890ff" rx="5" />
+    <text x="620" y="190" text-anchor="middle" font-weight="bold" font-size="14">Templates</text>
+    <text x="620" y="210" text-anchor="middle" font-size="12">- Common Objects</text>
+    <text x="620" y="225" text-anchor="middle" font-size="12">- Room Types</text>
+    <text x="620" y="240" text-anchor="middle" font-size="12">- NPC Templates</text>
+    <text x="620" y="255" text-anchor="middle" font-size="12">- Item Sets</text>
+    
+    <rect x="740" y="170" width="200" height="120" fill="#fff" stroke="#1890ff" rx="5" />
+    <text x="840" y="190" text-anchor="middle" font-weight="bold" font-size="14">Story Helpers</text>
+    <text x="840" y="210" text-anchor="middle" font-size="12">- Scene Builder</text>
+    <text x="840" y="225" text-anchor="middle" font-size="12">- Dialogue Trees</text>
+    <text x="840" y="240" text-anchor="middle" font-size="12">- Quest System</text>
+    <text x="840" y="255" text-anchor="middle" font-size="12">- Event Chains</text>
+  </g>
+  
+  <!-- StdLib Layer (IF Implementation) -->
+  <g id="stdlib-layer">
+    <rect x="50" y="340" width="1300" height="320" fill="#f0f9ff" stroke="#3b82f6" stroke-width="2" />
+    <text x="70" y="365" font-size="16" font-weight="bold" fill="#3b82f6">StdLib Layer (IF Implementation)</text>
+    
+    <!-- Actions -->
+    <rect x="80" y="390" width="280" height="240" fill="#fff" stroke="#3b82f6" rx="5" />
+    <text x="220" y="410" text-anchor="middle" font-weight="bold" font-size="14">Actions</text>
+    
+    <g transform="translate(90, 420)">
+      <rect x="0" y="0" width="120" height="80" fill="#e0e7ff" stroke="#6366f1" rx="3" />
+      <text x="60" y="20" text-anchor="middle" font-size="12" font-weight="bold">Commands</text>
+      <text x="60" y="35" text-anchor="middle" font-size="10">- Parse Rules</text>
+      <text x="60" y="48" text-anchor="middle" font-size="10">- Verb Mapping</text>
+      <text x="60" y="61" text-anchor="middle" font-size="10">- Noun Requirements</text>
+      <text x="60" y="74" text-anchor="middle" font-size="10">- takingCommand</text>
+      
+      <rect x="140" y="0" width="120" height="80" fill="#e0e7ff" stroke="#6366f1" rx="3" />
+      <text x="200" y="20" text-anchor="middle" font-size="12" font-weight="bold">Executors</text>
+      <text x="200" y="35" text-anchor="middle" font-size="10">- Action Logic</text>
+      <text x="200" y="48" text-anchor="middle" font-size="10">- Event Generation</text>
+      <text x="200" y="61" text-anchor="middle" font-size="10">- Validation</text>
+      <text x="200" y="74" text-anchor="middle" font-size="10">- takingAction</text>
+    </g>
+    
+    <text x="220" y="540" text-anchor="middle" font-size="11" font-style="italic">Core Actions:</text>
+    <text x="220" y="555" text-anchor="middle" font-size="10">taking, dropping, examining</text>
+    <text x="220" y="570" text-anchor="middle" font-size="10">looking, going, opening</text>
+    <text x="220" y="585" text-anchor="middle" font-size="10">closing, wearing, inventory</text>
+    <text x="220" y="600" text-anchor="middle" font-size="10">unlocking, removing, etc.</text>
+    
+    <!-- Services -->
+    <rect x="380" y="390" width="200" height="240" fill="#fff" stroke="#3b82f6" rx="5" />
+    <text x="480" y="410" text-anchor="middle" font-weight="bold" font-size="14">Services</text>
+    
+    <rect x="390" y="425" width="180" height="45" fill="#fef3c7" stroke="#f59e0b" rx="3" />
+    <text x="480" y="445" text-anchor="middle" font-size="12" font-weight="bold">Parser Service</text>
+    <text x="480" y="460" text-anchor="middle" font-size="10">Command → Action</text>
+    
+    <rect x="390" y="480" width="180" height="45" fill="#fef3c7" stroke="#f59e0b" rx="3" />
+    <text x="480" y="500" text-anchor="middle" font-size="12" font-weight="bold">Scope Service</text>
+    <text x="480" y="515" text-anchor="middle" font-size="10">Visibility & Reach</text>
+    
+    <rect x="390" y="535" width="180" height="45" fill="#fef3c7" stroke="#f59e0b" rx="3" />
+    <text x="480" y="555" text-anchor="middle" font-size="12" font-weight="bold">Turn Service</text>
+    <text x="480" y="570" text-anchor="middle" font-size="10">Action Processing</text>
+    
+    <!-- Text System -->
+    <rect x="600" y="390" width="200" height="240" fill="#fff" stroke="#3b82f6" rx="5" />
+    <text x="700" y="410" text-anchor="middle" font-weight="bold" font-size="14">Text System</text>
+    
+    <rect x="610" y="425" width="180" height="60" fill="#ecfdf5" stroke="#10b981" rx="3" />
+    <text x="700" y="445" text-anchor="middle" font-size="12" font-weight="bold">Event → Text</text>
+    <text x="700" y="460" text-anchor="middle" font-size="10">- Templates</text>
+    <text x="700" y="475" text-anchor="middle" font-size="10">- Formatting</text>
+    
+    <rect x="610" y="495" width="180" height="60" fill="#ecfdf5" stroke="#10b981" rx="3" />
+    <text x="700" y="515" text-anchor="middle" font-size="12" font-weight="bold">Language Service</text>
+    <text x="700" y="530" text-anchor="middle" font-size="10">- Verb Definitions</text>
+    <text x="700" y="545" text-anchor="middle" font-size="10">- Response Text</text>
+    
+    <rect x="610" y="565" width="180" height="50" fill="#ecfdf5" stroke="#10b981" rx="3" />
+    <text x="700" y="585" text-anchor="middle" font-size="12" font-weight="bold">Narration</text>
+    <text x="700" y="600" text-anchor="middle" font-size="10">Room Descriptions</text>
+    
+    <!-- Constants -->
+    <rect x="820" y="390" width="180" height="240" fill="#fff" stroke="#3b82f6" rx="5" />
+    <text x="910" y="410" text-anchor="middle" font-weight="bold" font-size="14">Constants</text>
+    
+    <text x="910" y="440" text-anchor="middle" font-size="12">IFActions</text>
+    <text x="910" y="455" text-anchor="middle" font-size="10">TAKING, DROPPING</text>
+    <text x="910" y="470" text-anchor="middle" font-size="10">EXAMINING, etc.</text>
+    
+    <text x="910" y="500" text-anchor="middle" font-size="12">IFEvents</text>
+    <text x="910" y="515" text-anchor="middle" font-size="10">TAKEN, DROPPED</text>
+    <text x="910" y="530" text-anchor="middle" font-size="10">ROOM_DESCRIBED</text>
+    
+    <text x="910" y="560" text-anchor="middle" font-size="12">ActionFailureReason</text>
+    <text x="910" y="575" text-anchor="middle" font-size="10">NOT_REACHABLE</text>
+    <text x="910" y="590" text-anchor="middle" font-size="10">ALREADY_OPEN</text>
+    <text x="910" y="605" text-anchor="middle" font-size="10">LOCKED, etc.</text>
+    
+    <!-- Game Runner -->
+    <rect x="1020" y="390" width="180" height="240" fill="#fff" stroke="#3b82f6" rx="5" />
+    <text x="1110" y="410" text-anchor="middle" font-weight="bold" font-size="14">Game Runner</text>
+    
+    <rect x="1030" y="430" width="160" height="80" fill="#fee2e2" stroke="#ef4444" rx="3" />
+    <text x="1110" y="455" text-anchor="middle" font-size="12" font-weight="bold">Runtime</text>
+    <text x="1110" y="475" text-anchor="middle" font-size="10">- Game Loop</text>
+    <text x="1110" y="490" text-anchor="middle" font-size="10">- Input Handler</text>
+    <text x="1110" y="505" text-anchor="middle" font-size="10">- State Manager</text>
+    
+    <rect x="1030" y="525" width="160" height="80" fill="#fee2e2" stroke="#ef4444" rx="3" />
+    <text x="1110" y="550" text-anchor="middle" font-size="12" font-weight="bold">Session</text>
+    <text x="1110" y="570" text-anchor="middle" font-size="10">- Save/Load</text>
+    <text x="1110" y="585" text-anchor="middle" font-size="10">- History</text>
+    <text x="1110" y="600" text-anchor="middle" font-size="10">- Undo/Redo</text>
+  </g>
+  
+  <!-- World Model Package (Extracted) -->
+  <g id="world-model-package">
+    <rect x="50" y="680" width="640" height="280" fill="#f0fdf4" stroke="#22c55e" stroke-width="3" stroke-dasharray="5,5" />
+    <text x="70" y="705" font-size="16" font-weight="bold" fill="#22c55e">World Model Package (Extracted)</text>
+    
+    <!-- Traits -->
+    <rect x="80" y="730" width="280" height="200" fill="#fff" stroke="#22c55e" rx="5" />
+    <text x="220" y="750" text-anchor="middle" font-weight="bold" font-size="14">Traits (Pure Data)</text>
+    
+    <text x="90" y="775" font-size="11">Core Traits:</text>
+    <text x="90" y="790" font-size="10">• IdentityTrait (name, description)</text>
+    <text x="90" y="805" font-size="10">• ContainerTrait (capacity, items)</text>
+    <text x="90" y="820" font-size="10">• RoomTrait (exits, visited)</text>
+    <text x="90" y="835" font-size="10">• WearableTrait (slot, worn)</text>
+    <text x="90" y="850" font-size="10">• OpenableTrait (isOpen)</text>
+    <text x="90" y="865" font-size="10">• LockableTrait (isLocked, key)</text>
+    <text x="90" y="880" font-size="10">• SupporterTrait (maxWeight)</text>
+    <text x="90" y="895" font-size="10">• SceneryTrait (reason)</text>
+    <text x="90" y="910" font-size="10">+ 6 more implemented traits</text>
+    
+    <!-- Behaviors -->
+    <rect x="380" y="730" width="280" height="200" fill="#fff" stroke="#22c55e" rx="5" />
+    <text x="520" y="750" text-anchor="middle" font-weight="bold" font-size="14">Behaviors (Static Logic)</text>
+    
+    <text x="390" y="775" font-size="11">All Static Methods:</text>
+    <text x="390" y="790" font-size="10">• IdentityBehavior.getName()</text>
+    <text x="390" y="805" font-size="10">• ContainerBehavior.canAccept()</text>
+    <text x="390" y="820" font-size="10">• RoomBehavior.getExit()</text>
+    <text x="390" y="835" font-size="10">• WearableBehavior.wear()</text>
+    <text x="390" y="850" font-size="10">• OpenableBehavior.open()</text>
+    <text x="390" y="865" font-size="10">• LockableBehavior.unlock()</text>
+    <text x="390" y="880" font-size="10">• SupporterBehavior.canAccept()</text>
+    <text x="390" y="895" font-size="10">• SceneryBehavior.isUntakeable()</text>
+    <text x="390" y="910" font-size="10">+ All behaviors implemented</text>
+  </g>
+  
+  <!-- Core Layer (IF-Agnostic) -->
+  <g id="core-layer">
+    <rect x="710" y="680" width="640" height="280" fill="#fef3c7" stroke="#f59e0b" stroke-width="2" />
+    <text x="730" y="705" font-size="16" font-weight="bold" fill="#f59e0b">Core Layer (IF-Agnostic)</text>
+    
+    <!-- Entity System -->
+    <rect x="740" y="730" width="280" height="200" fill="#fff" stroke="#f59e0b" rx="5" />
+    <text x="880" y="750" text-anchor="middle" font-weight="bold" font-size="14">Entity System</text>
+    
+    <rect x="750" y="765" width="260" height="50" fill="#fffbeb" stroke="#f59e0b" rx="3" />
+    <text x="880" y="785" text-anchor="middle" font-size="12" font-weight="bold">IFEntity</text>
+    <text x="880" y="800" text-anchor="middle" font-size="10">Base entity with traits</text>
+    
+    <rect x="750" y="825" width="260" height="50" fill="#fffbeb" stroke="#f59e0b" rx="3" />
+    <text x="880" y="845" text-anchor="middle" font-size="12" font-weight="bold">EntityStore</text>
+    <text x="880" y="860" text-anchor="middle" font-size="10">Entity management & location</text>
+    
+    <rect x="750" y="885" width="260" height="35" fill="#fffbeb" stroke="#f59e0b" rx="3" />
+    <text x="880" y="905" text-anchor="middle" font-size="12" font-weight="bold">Trait System</text>
+    
+    <!-- Event System -->
+    <rect x="1040" y="730" width="280" height="200" fill="#fff" stroke="#f59e0b" rx="5" />
+    <text x="1180" y="750" text-anchor="middle" font-weight="bold" font-size="14">Event System</text>
+    
+    <rect x="1050" y="765" width="260" height="70" fill="#fffbeb" stroke="#f59e0b" rx="3" />
+    <text x="1180" y="785" text-anchor="middle" font-size="12" font-weight="bold">SemanticEvent</text>
+    <text x="1180" y="800" text-anchor="middle" font-size="10">- type: string</text>
+    <text x="1180" y="815" text-anchor="middle" font-size="10">- payload: data</text>
+    <text x="1180" y="830" text-anchor="middle" font-size="10">- metadata: context</text>
+    
+    <rect x="1050" y="845" width="260" height="50" fill="#fffbeb" stroke="#f59e0b" rx="3" />
+    <text x="1180" y="865" text-anchor="middle" font-size="12" font-weight="bold">EventBus</text>
+    <text x="1180" y="880" text-anchor="middle" font-size="10">Pub/Sub system</text>
+    
+    <rect x="1050" y="905" width="120" height="30" fill="#fffbeb" stroke="#f59e0b" rx="3" />
+    <text x="1110" y="925" text-anchor="middle" font-size="10">createEvent()</text>
+    
+    <rect x="1180" y="905" width="120" height="30" fill="#fffbeb" stroke="#f59e0b" rx="3" />
+    <text x="1240" y="925" text-anchor="middle" font-size="10">emitEvent()</text>
+  </g>
+  
+  <!-- Arrows showing dependencies -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+    </marker>
+  </defs>
+  
+  <!-- Forge → StdLib -->
+  <path d="M 700 320 L 700 340" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- StdLib → World Model -->
+  <path d="M 370 660 L 370 680" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- StdLib → Core -->
+  <path d="M 1030 660 L 1030 680" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- World Model → Core -->
+  <path d="M 690 820 L 710 820" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- Legend -->
+  <g transform="translate(1220, 60)">
+    <rect x="0" y="0" width="120" height="120" fill="#fff" stroke="#666" rx="5" />
+    <text x="60" y="20" text-anchor="middle" font-size="12" font-weight="bold">Legend</text>
+    
+    <rect x="10" y="30" width="30" height="15" fill="#e6f7ff" stroke="#1890ff" />
+    <text x="45" y="42" font-size="10">Author API</text>
+    
+    <rect x="10" y="50" width="30" height="15" fill="#f0f9ff" stroke="#3b82f6" />
+    <text x="45" y="62" font-size="10">IF Logic</text>
+    
+    <rect x="10" y="70" width="30" height="15" fill="#f0fdf4" stroke="#22c55e" stroke-dasharray="2,2" />
+    <text x="45" y="82" font-size="10">Extracted</text>
+    
+    <rect x="10" y="90" width="30" height="15" fill="#fef3c7" stroke="#f59e0b" />
+    <text x="45" y="102" font-size="10">Core Data</text>
+  </g>
+  
+  <!-- Key Points -->
+  <g transform="translate(50, 980)">
+    <text x="0" y="0" font-size="12" font-weight="bold" fill="#333">Key Architecture Points:</text>
+    <text x="200" y="0" font-size="11" fill="#666">• World Model extracted to separate package • All behaviors use static methods • Clean layer separation • No circular dependencies</text>
+  </g>
+</svg>

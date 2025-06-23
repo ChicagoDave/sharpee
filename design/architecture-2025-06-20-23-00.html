@@ -1,0 +1,299 @@
+<svg viewBox="0 0 2000 1200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Title -->
+  <text x="1000" y="30" text-anchor="middle" font-size="24" font-weight="bold" fill="#1f2937">
+    Sharpee IF Platform - Layered Architecture
+  </text>
+  <text x="1000" y="55" text-anchor="middle" font-size="14" fill="#6b7280">
+    Updated: 2025-06-20
+  </text>
+  
+  <!-- Define arrow markers -->
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" 
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse" fill="#6b7280">
+      <path d="M 0 0 L 10 5 L 0 10 z" />
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="10" refY="5" 
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse" fill="#9333ea">
+      <path d="M 0 0 L 10 5 L 0 10 z" />
+    </marker>
+  </defs>
+  
+  <!-- Layer 1: Client Applications -->
+  <g id="client-layer">
+    <rect x="100" y="80" width="1200" height="100" fill="#fef2f2" stroke="#ef4444" stroke-width="2" rx="6"/>
+    <text x="120" y="105" font-size="16" font-weight="bold" fill="#ef4444">Client Applications</text>
+    
+    <rect x="200" y="110" width="200" height="50" fill="white" stroke="#ef4444" stroke-width="1.5" rx="4"/>
+    <text x="300" y="130" text-anchor="middle" font-size="12" font-weight="bold">Web Client</text>
+    <text x="300" y="145" text-anchor="middle" font-size="10">React UI, WebSocket</text>
+    
+    <rect x="450" y="110" width="200" height="50" fill="white" stroke="#ef4444" stroke-width="1.5" rx="4"/>
+    <text x="550" y="130" text-anchor="middle" font-size="12" font-weight="bold">CLI Client</text>
+    <text x="550" y="145" text-anchor="middle" font-size="10">Terminal REPL</text>
+    
+    <rect x="700" y="110" width="200" height="50" fill="white" stroke="#ef4444" stroke-width="1.5" rx="4"/>
+    <text x="800" y="130" text-anchor="middle" font-size="12" font-weight="bold">Electron Client</text>
+    <text x="800" y="145" text-anchor="middle" font-size="10">Desktop Application</text>
+    
+    <rect x="950" y="110" width="200" height="50" fill="white" stroke="#ef4444" stroke-width="1.5" rx="4"/>
+    <text x="1050" y="130" text-anchor="middle" font-size="12" font-weight="bold">VS Code Extension</text>
+    <text x="1050" y="145" text-anchor="middle" font-size="10">IDE Integration</text>
+  </g>
+  
+  <!-- White space -->
+  
+  <!-- Layer 2: Stories -->
+  <g id="stories-layer">
+    <rect x="100" y="220" width="1200" height="100" fill="#f3e8ff" stroke="#9333ea" stroke-width="2" rx="6"/>
+    <text x="120" y="245" font-size="16" font-weight="bold" fill="#9333ea">Stories / Games</text>
+    
+    <rect x="200" y="250" width="250" height="50" fill="white" stroke="#9333ea" stroke-width="1.5" rx="4"/>
+    <text x="325" y="270" text-anchor="middle" font-size="12" font-weight="bold">Example Story</text>
+    <text x="325" y="285" text-anchor="middle" font-size="10">Uses Forge API</text>
+    
+    <rect x="500" y="250" width="250" height="50" fill="white" stroke="#9333ea" stroke-width="1.5" rx="4"/>
+    <text x="625" y="270" text-anchor="middle" font-size="12" font-weight="bold">Tutorial Game</text>
+    <text x="625" y="285" text-anchor="middle" font-size="10">Teaching IF concepts</text>
+    
+    <rect x="800" y="250" width="250" height="50" fill="white" stroke="#9333ea" stroke-width="1.5" rx="4"/>
+    <text x="925" y="270" text-anchor="middle" font-size="12" font-weight="bold">Custom Game</text>
+    <text x="925" y="285" text-anchor="middle" font-size="10">With extensions</text>
+  </g>
+  
+  <!-- White space -->
+  
+  <!-- Layer 3: Forge -->
+  <g id="forge-layer">
+    <rect x="100" y="360" width="1200" height="120" fill="#e6f7ff" stroke="#1890ff" stroke-width="2" rx="6"/>
+    <text x="120" y="385" font-size="16" font-weight="bold" fill="#1890ff">Forge Layer (Author API)</text>
+    
+    <rect x="200" y="395" width="180" height="65" fill="white" stroke="#1890ff" stroke-width="1.5" rx="4"/>
+    <text x="290" y="415" text-anchor="middle" font-size="12" font-weight="bold">ForgeEntity</text>
+    <text x="290" y="430" text-anchor="middle" font-size="10">Fluent API</text>
+    <text x="290" y="443" text-anchor="middle" font-size="10">Builder Pattern</text>
+    <text x="290" y="456" text-anchor="middle" font-size="10">.withIdentity()</text>
+    
+    <rect x="420" y="395" width="180" height="65" fill="white" stroke="#1890ff" stroke-width="1.5" rx="4"/>
+    <text x="510" y="415" text-anchor="middle" font-size="12" font-weight="bold">ForgeWorld</text>
+    <text x="510" y="430" text-anchor="middle" font-size="10">World Builder</text>
+    <text x="510" y="443" text-anchor="middle" font-size="10">createRoom()</text>
+    <text x="510" y="456" text-anchor="middle" font-size="10">loadExtension()</text>
+    
+    <rect x="640" y="395" width="180" height="65" fill="white" stroke="#1890ff" stroke-width="1.5" rx="4"/>
+    <text x="730" y="415" text-anchor="middle" font-size="12" font-weight="bold">Templates</text>
+    <text x="730" y="430" text-anchor="middle" font-size="10">Common Objects</text>
+    <text x="730" y="443" text-anchor="middle" font-size="10">Room Types</text>
+    <text x="730" y="456" text-anchor="middle" font-size="10">Quick Start</text>
+    
+    <rect x="860" y="395" width="180" height="65" fill="white" stroke="#1890ff" stroke-width="1.5" rx="4"/>
+    <text x="950" y="415" text-anchor="middle" font-size="12" font-weight="bold">Story Helpers</text>
+    <text x="950" y="430" text-anchor="middle" font-size="10">Scene Builder</text>
+    <text x="950" y="443" text-anchor="middle" font-size="10">Event Chains</text>
+    <text x="950" y="456" text-anchor="middle" font-size="10">Dialogue Trees</text>
+  </g>
+  
+  <!-- White space -->
+  
+  <!-- Layer 4: Standard Library + Language/Parser -->
+  <g id="stdlib-layer">
+    <!-- Main StdLib -->
+    <rect x="100" y="520" width="800" height="180" fill="#f0f9ff" stroke="#3b82f6" stroke-width="2" rx="6"/>
+    <text x="120" y="545" font-size="16" font-weight="bold" fill="#3b82f6">Standard Library (IF Implementation)</text>
+    
+    <rect x="140" y="560" width="220" height="120" fill="white" stroke="#3b82f6" stroke-width="1.5" rx="4"/>
+    <text x="250" y="580" text-anchor="middle" font-size="12" font-weight="bold">Actions</text>
+    <text x="250" y="598" text-anchor="middle" font-size="10">Commands</text>
+    <text x="250" y="611" text-anchor="middle" font-size="10">Executors</text>
+    <text x="250" y="624" text-anchor="middle" font-size="10">Validation</text>
+    <text x="250" y="640" text-anchor="middle" font-size="9" font-style="italic">taking, dropping</text>
+    <text x="250" y="652" text-anchor="middle" font-size="9" font-style="italic">examining, going</text>
+    <text x="250" y="664" text-anchor="middle" font-size="9" font-style="italic">opening, unlocking</text>
+    
+    <rect x="380" y="560" width="200" height="120" fill="white" stroke="#3b82f6" stroke-width="1.5" rx="4"/>
+    <text x="480" y="580" text-anchor="middle" font-size="12" font-weight="bold">Services</text>
+    <text x="480" y="598" text-anchor="middle" font-size="10">Parser Service</text>
+    <text x="480" y="611" text-anchor="middle" font-size="10">Scope Service</text>
+    <text x="480" y="624" text-anchor="middle" font-size="10">Turn Service</text>
+    <text x="480" y="637" text-anchor="middle" font-size="10">Session Manager</text>
+    <text x="480" y="650" text-anchor="middle" font-size="10">Save/Load</text>
+    
+    <rect x="600" y="560" width="200" height="120" fill="white" stroke="#3b82f6" stroke-width="1.5" rx="4"/>
+    <text x="700" y="580" text-anchor="middle" font-size="12" font-weight="bold">Text System</text>
+    <text x="700" y="598" text-anchor="middle" font-size="10">Event → Text</text>
+    <text x="700" y="611" text-anchor="middle" font-size="10">Templates</text>
+    <text x="700" y="624" text-anchor="middle" font-size="10">Formatting</text>
+    <text x="700" y="637" text-anchor="middle" font-size="10">Narration</text>
+    
+    <rect x="820" y="560" width="60" height="120" fill="white" stroke="#3b82f6" stroke-width="1.5" rx="4"/>
+    <text x="850" y="615" text-anchor="middle" font-size="12" font-weight="bold" writing-mode="tb">Constants</text>
+    
+    <!-- Language/Parser (connected to the right) -->
+    <rect x="1100" y="520" width="360" height="180" fill="#fff0f5" stroke="#ec4899" stroke-width="2" rx="6"/>
+    <text x="1120" y="545" font-size="16" font-weight="bold" fill="#ec4899">Language / Parser / Grammar</text>
+    
+    <rect x="1120" y="560" width="150" height="120" fill="white" stroke="#ec4899" stroke-width="1.5" rx="4"/>
+    <text x="1195" y="580" text-anchor="middle" font-size="12" font-weight="bold">Parser</text>
+    <text x="1195" y="598" text-anchor="middle" font-size="10">Tokenizer</text>
+    <text x="1195" y="611" text-anchor="middle" font-size="10">Grammar Rules</text>
+    <text x="1195" y="624" text-anchor="middle" font-size="10">POS Tagging</text>
+    <text x="1195" y="637" text-anchor="middle" font-size="10">Disambiguation</text>
+    
+    <rect x="1290" y="560" width="150" height="120" fill="white" stroke="#ec4899" stroke-width="1.5" rx="4"/>
+    <text x="1365" y="580" text-anchor="middle" font-size="12" font-weight="bold">Language Packs</text>
+    <text x="1365" y="598" text-anchor="middle" font-size="10">lang-en-us</text>
+    <text x="1365" y="611" text-anchor="middle" font-size="10">Verbs</text>
+    <text x="1365" y="624" text-anchor="middle" font-size="10">Messages</text>
+    <text x="1365" y="637" text-anchor="middle" font-size="10">Templates</text>
+    <text x="1365" y="652" text-anchor="middle" font-size="9" font-style="italic">lang-es (future)</text>
+    
+    <!-- Bidirectional connection between StdLib and Language -->
+    <line x1="900" y1="610" x2="1100" y2="610" stroke="#6b7280" stroke-width="2" marker-end="url(#arrow)"/>
+    <line x1="1100" y1="620" x2="900" y2="620" stroke="#6b7280" stroke-width="2" marker-end="url(#arrow)"/>
+  </g>
+  
+  <!-- Extensions (side panel) -->
+  <g id="extensions">
+    <rect x="1600" y="360" width="360" height="120" fill="#f3e8ff" stroke="#9333ea" stroke-width="2" stroke-dasharray="5,5" rx="6"/>
+    <text x="1620" y="385" font-size="16" font-weight="bold" fill="#9333ea">Extension Packages</text>
+    
+    <rect x="1620" y="395" width="100" height="65" fill="white" stroke="#9333ea" stroke-width="1.5" rx="4"/>
+    <text x="1670" y="415" text-anchor="middle" font-size="11" font-weight="bold">Daemon</text>
+    <text x="1670" y="430" text-anchor="middle" font-size="9">Timed events</text>
+    <text x="1670" y="443" text-anchor="middle" font-size="9">Background</text>
+    <text x="1670" y="456" text-anchor="middle" font-size="8" font-style="italic">✓ implemented</text>
+    
+    <rect x="1730" y="395" width="100" height="65" fill="white" stroke="#9333ea" stroke-width="1.5" rx="4"/>
+    <text x="1780" y="415" text-anchor="middle" font-size="11" font-weight="bold">Dialogue</text>
+    <text x="1780" y="430" text-anchor="middle" font-size="9">Conversations</text>
+    <text x="1780" y="443" text-anchor="middle" font-size="9">Topics</text>
+    <text x="1780" y="456" text-anchor="middle" font-size="8" font-style="italic">planned</text>
+    
+    <rect x="1840" y="395" width="100" height="65" fill="white" stroke="#9333ea" stroke-width="1.5" rx="4"/>
+    <text x="1890" y="415" text-anchor="middle" font-size="11" font-weight="bold">Combat</text>
+    <text x="1890" y="430" text-anchor="middle" font-size="9">Battle system</text>
+    <text x="1890" y="443" text-anchor="middle" font-size="9">Weapons</text>
+    <text x="1890" y="456" text-anchor="middle" font-size="8" font-style="italic">planned</text>
+  </g>
+  
+  <!-- White space -->
+  
+  <!-- Layer 5: World Model -->
+  <g id="world-model-layer">
+    <rect x="100" y="740" width="1200" height="160" fill="#f0fdf4" stroke="#22c55e" stroke-width="2" stroke-dasharray="5,5" rx="6"/>
+    <text x="120" y="765" font-size="16" font-weight="bold" fill="#22c55e">World Model Package (@sharpee/world-model)</text>
+    
+    <rect x="140" y="780" width="250" height="100" fill="white" stroke="#22c55e" stroke-width="1.5" rx="4"/>
+    <text x="265" y="800" text-anchor="middle" font-size="12" font-weight="bold">Core Traits (Data Only)</text>
+    <text x="265" y="818" text-anchor="middle" font-size="10">Container, Wearable</text>
+    <text x="265" y="831" text-anchor="middle" font-size="10">Openable, Lockable</text>
+    <text x="265" y="844" text-anchor="middle" font-size="10">Room, Door, Exit</text>
+    <text x="265" y="857" text-anchor="middle" font-size="10">Actor, Scenery</text>
+    <text x="265" y="872" text-anchor="middle" font-size="9" font-style="italic">No NPC/Dialogue traits</text>
+    
+    <rect x="420" y="780" width="250" height="100" fill="white" stroke="#22c55e" stroke-width="1.5" rx="4"/>
+    <text x="545" y="800" text-anchor="middle" font-size="12" font-weight="bold">Behaviors (Static Methods)</text>
+    <text x="545" y="818" text-anchor="middle" font-size="10">ContainerBehavior</text>
+    <text x="545" y="831" text-anchor="middle" font-size="10">DoorBehavior ✨</text>
+    <text x="545" y="844" text-anchor="middle" font-size="10">ActorBehavior ✨</text>
+    <text x="545" y="857" text-anchor="middle" font-size="10">RoomBehavior</text>
+    <text x="545" y="872" text-anchor="middle" font-size="9">All static, no instances</text>
+    
+    <rect x="700" y="780" width="250" height="100" fill="white" stroke="#22c55e" stroke-width="1.5" rx="4"/>
+    <text x="825" y="800" text-anchor="middle" font-size="12" font-weight="bold">Extension System ✨</text>
+    <text x="825" y="818" text-anchor="middle" font-size="10">ITraitExtension</text>
+    <text x="825" y="831" text-anchor="middle" font-size="10">ExtensionLoader</text>
+    <text x="825" y="844" text-anchor="middle" font-size="10">ExtensionRegistry</text>
+    <text x="825" y="857" text-anchor="middle" font-size="10">Namespacing</text>
+    <text x="825" y="872" text-anchor="middle" font-size="9">Lifecycle hooks</text>
+    
+    <rect x="980" y="780" width="280" height="100" fill="white" stroke="#22c55e" stroke-width="1.5" rx="4"/>
+    <text x="1120" y="800" text-anchor="middle" font-size="12" font-weight="bold">Entity Management</text>
+    <text x="1120" y="818" text-anchor="middle" font-size="10">IFEntity (extends core Entity)</text>
+    <text x="1120" y="831" text-anchor="middle" font-size="10">EntityStore</text>
+    <text x="1120" y="844" text-anchor="middle" font-size="10">Trait validation</text>
+    <text x="1120" y="857" text-anchor="middle" font-size="10">Relationship tracking</text>
+  </g>
+  
+  <!-- White space -->
+  
+  <!-- Layer 6: Core -->
+  <g id="core-layer">
+    <rect x="100" y="940" width="1200" height="140" fill="#fef3c7" stroke="#f59e0b" stroke-width="2" rx="6"/>
+    <text x="120" y="965" font-size="16" font-weight="bold" fill="#f59e0b">Core Layer (IF-Agnostic Data Store)</text>
+    
+    <rect x="200" y="980" width="300" height="80" fill="white" stroke="#f59e0b" stroke-width="1.5" rx="4"/>
+    <text x="350" y="1000" text-anchor="middle" font-size="12" font-weight="bold">Entity System</text>
+    <text x="350" y="1018" text-anchor="middle" font-size="10">Entity (base class)</text>
+    <text x="350" y="1031" text-anchor="middle" font-size="10">World (entity storage)</text>
+    <text x="350" y="1044" text-anchor="middle" font-size="10">ValidatedTrait (base trait)</text>
+    
+    <rect x="550" y="980" width="300" height="80" fill="white" stroke="#f59e0b" stroke-width="1.5" rx="4"/>
+    <text x="700" y="1000" text-anchor="middle" font-size="12" font-weight="bold">Event System</text>
+    <text x="700" y="1018" text-anchor="middle" font-size="10">SemanticEvent</text>
+    <text x="700" y="1031" text-anchor="middle" font-size="10">EventBus (pub/sub)</text>
+    <text x="700" y="1044" text-anchor="middle" font-size="10">createEvent(), emitEvent()</text>
+    
+    <rect x="900" y="980" width="300" height="80" fill="white" stroke="#f59e0b" stroke-width="1.5" rx="4"/>
+    <text x="1050" y="1000" text-anchor="middle" font-size="12" font-weight="bold">Rule System</text>
+    <text x="1050" y="1018" text-anchor="middle" font-size="10">Rule definitions</text>
+    <text x="1050" y="1031" text-anchor="middle" font-size="10">Condition evaluation</text>
+    <text x="1050" y="1044" text-anchor="middle" font-size="10">Action execution</text>
+  </g>
+  
+  <!-- Legend -->
+  <g id="legend">
+    <rect x="50" y="1120" width="1900" height="60" fill="white" stroke="#e5e7eb" stroke-width="1" rx="4"/>
+    <text x="70" y="1145" font-size="12" font-weight="bold">Legend:</text>
+    
+    <rect x="150" y="1135" width="20" height="15" fill="#fef2f2" stroke="#ef4444"/>
+    <text x="175" y="1147" font-size="11">Client Layer</text>
+    
+    <rect x="280" y="1135" width="20" height="15" fill="#e6f7ff" stroke="#1890ff"/>
+    <text x="305" y="1147" font-size="11">Forge API</text>
+    
+    <rect x="410" y="1135" width="20" height="15" fill="#f0f9ff" stroke="#3b82f6"/>
+    <text x="435" y="1147" font-size="11">StdLib</text>
+    
+    <rect x="540" y="1135" width="20" height="15" fill="#f3e8ff" stroke="#9333ea" stroke-dasharray="2,1"/>
+    <text x="565" y="1147" font-size="11">Extensions</text>
+    
+    <rect x="670" y="1135" width="20" height="15" fill="#f0fdf4" stroke="#22c55e" stroke-dasharray="2,1"/>
+    <text x="695" y="1147" font-size="11">World Model</text>
+    
+    <rect x="800" y="1135" width="20" height="15" fill="#fef3c7" stroke="#f59e0b"/>
+    <text x="825" y="1147" font-size="11">Core</text>
+    
+    <text x="950" y="1147" font-size="11">✨ = New in this update</text>
+    
+    <text x="1100" y="1147" font-size="11" font-style="italic">Arrows show dependencies (top depends on bottom)</text>
+  </g>
+  
+  <!-- Dependency arrows -->
+  <g id="arrows" stroke-width="2" fill="none">
+    <!-- Client → Stories -->
+    <line x1="650" y1="180" x2="650" y2="220" stroke="#6b7280" marker-end="url(#arrow)"/>
+    
+    <!-- Stories → Forge -->
+    <line x1="625" y1="320" x2="625" y2="360" stroke="#6b7280" marker-end="url(#arrow)"/>
+    
+    <!-- Forge → StdLib -->
+    <line x1="500" y1="480" x2="500" y2="520" stroke="#6b7280" marker-end="url(#arrow)"/>
+    
+    <!-- Extensions → StdLib -->
+    <line x1="1780" y1="480" x2="1780" y2="510" stroke="#9333ea" stroke-dasharray="4,2"/>
+    <line x1="1780" y1="510" x2="850" y2="510" stroke="#9333ea" stroke-dasharray="4,2"/>
+    <line x1="850" y1="510" x2="850" y2="520" stroke="#9333ea" stroke-dasharray="4,2" marker-end="url(#arrow-purple)"/>
+    
+    <!-- StdLib → World Model -->
+    <line x1="500" y1="700" x2="500" y2="740" stroke="#6b7280" marker-end="url(#arrow)"/>
+    
+    <!-- Extensions → World Model -->
+    <line x1="1780" y1="480" x2="1780" y2="730" stroke="#9333ea" stroke-dasharray="4,2"/>
+    <line x1="1780" y1="730" x2="825" y2="730" stroke="#9333ea" stroke-dasharray="4,2"/>
+    <line x1="825" y1="730" x2="825" y2="740" stroke="#9333ea" stroke-dasharray="4,2" marker-end="url(#arrow-purple)"/>
+    
+    <!-- World Model → Core -->
+    <line x1="700" y1="900" x2="700" y2="940" stroke="#6b7280" marker-end="url(#arrow)"/>
+  </g>
+</svg>

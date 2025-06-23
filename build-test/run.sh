@@ -1,0 +1,1 @@
+cd /mnt/c/repotemp/sharpee && npm run build

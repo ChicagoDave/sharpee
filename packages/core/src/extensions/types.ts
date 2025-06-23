@@ -1,9 +1,5 @@
 // packages/core/src/extensions/types.ts
 
-import { ParsedCommand } from '../parser/core/types';
-import { CommandResult, GameContext } from '../execution/types';
-import { EntityId, WorldState } from '../world-model/types';
-import { ChannelDefinition } from '../channels/types';
 import { SemanticEvent } from '../events/types';
 
 /**
@@ -32,82 +28,30 @@ export interface Extension {
 }
 
 /**
- * Extension for command handling
+ * Extension for command handling (generic)
+ * The IF-specific version with ParsedCommand and GameContext is in stdlib
  */
 export interface CommandExtension extends Extension {
   /**
    * Verbs that this extension can handle
    */
   verbs: string[];
-  
-  /**
-   * Check if this extension can handle a command
-   */
-  canHandle: (command: ParsedCommand, context: GameContext) => boolean;
-  
-  /**
-   * Execute a command
-   */
-  execute: (command: ParsedCommand, context: GameContext) => Promise<CommandResult> | CommandResult;
-  
-  /**
-   * Validate a command (optional)
-   */
-  validate?: (command: ParsedCommand, context: GameContext) => { valid: boolean; error?: string };
 }
 
 /**
- * Extension for character abilities
+ * Extension for abilities (generic)
+ * The IF-specific version with GameContext is in stdlib
  */
 export interface AbilityExtension extends Extension {
   /**
-   * Check if the ability can be used
+   * Name of the ability
    */
-  canUse: (context: GameContext, target?: EntityId) => boolean;
-  
-  /**
-   * Execute the ability
-   */
-  execute: (context: GameContext, target?: EntityId) => Promise<CommandResult> | CommandResult;
-  
-  /**
-   * Initialize the ability (called once when registering)
-   */
-  initialize: (context: GameContext) => void;
+  abilityName: string;
 }
 
 /**
- * Extension for adding content channels
- */
-export interface ChannelExtension extends Extension {
-  /**
-   * Channel definitions provided by this extension
-   */
-  channelDefinitions: ChannelDefinition[];
-}
-
-/**
- * Extension for world model features
- */
-export interface WorldModelExtension extends Extension {
-  /**
-   * Initialize extension state
-   */
-  initialize: (state: WorldState) => WorldState;
-  
-  /**
-   * Clean up extension state
-   */
-  cleanup?: (state: WorldState) => WorldState;
-  
-  /**
-   * Process state changes 
-   */
-  processStateChange?: (prevState: WorldState, nextState: WorldState) => WorldState;
-}
-
-/**
- * Extension for event processing
+ * Extension for event processing (generic)
+ * The IF-specific version with GameContext is in stdlib
  */
 export interface EventExtension extends Extension {
   /**
@@ -118,11 +62,12 @@ export interface EventExtension extends Extension {
   /**
    * Process an event
    */
-  processEvent: (event: SemanticEvent, context: GameContext) => SemanticEvent[];
+  processEvent: (event: SemanticEvent) => SemanticEvent[];
 }
 
 /**
- * Extension for parser enhancements
+ * Extension for parser enhancements (generic)
+ * The IF-specific version with ParsedCommand is in stdlib
  */
 export interface ParserExtension extends Extension {
   /**
@@ -134,11 +79,6 @@ export interface ParserExtension extends Extension {
    * Pre-processing hook for input text
    */
   preProcessInput?: (input: string) => string;
-  
-  /**
-   * Post-processing hook for parsed commands
-   */
-  postProcessCommand?: (command: ParsedCommand) => ParsedCommand;
 }
 
 /**
@@ -147,8 +87,6 @@ export interface ParserExtension extends Extension {
 export enum ExtensionType {
   COMMAND = 'command',
   ABILITY = 'ability',
-  CHANNEL = 'channel',
-  WORLD_MODEL = 'world_model',
   EVENT = 'event',
   PARSER = 'parser'
 }
@@ -159,7 +97,5 @@ export enum ExtensionType {
 export type AnyExtension = 
   | CommandExtension
   | AbilityExtension
-  | ChannelExtension
-  | WorldModelExtension
   | EventExtension
   | ParserExtension;

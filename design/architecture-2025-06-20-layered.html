@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sharpee IF Platform - Layered Architecture (2025-06-20)</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f9fafb;
+        }
+        .container {
+            max-width: 2100px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+        }
+        h1 {
+            text-align: center;
+            color: #1f2937;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #6b7280;
+            margin-bottom: 40px;
+            font-size: 18px;
+        }
+        .diagram-container {
+            width: 100%;
+            overflow-x: auto;
+            background-color: #fafafa;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 50px;
+        }
+        svg {
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+            height: auto;
+        }
+        .section {
+            margin-top: 50px;
+        }
+        .section h2 {
+            color: #22c55e;
+            margin-bottom: 20px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .architecture-note {
+            background: linear-gradient(135deg, #e0e7ff 0%, #ede9fe 100%);
+            padding: 30px;
+            border-radius: 12px;
+            margin-top: 30px;
+            border-left: 4px solid #6366f1;
+        }
+        .architecture-note h3 {
+            color: #4c1d95;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        .architecture-note ul {
+            margin: 15px 0;
+            padding-left: 25px;
+            line-height: 1.8;
+        }
+        .layer-description {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        .layer-card {
+            background-color: #f8fafc;
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .layer-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .layer-card h3 {
+            color: #1e293b;
+            margin-bottom: 15px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .layer-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .badge-client { background-color: #fee2e2; color: #dc2626; }
+        .badge-stories { background-color: #f3e8ff; color: #7c3aed; }
+        .badge-forge { background-color: #dbeafe; color: #2563eb; }
+        .badge-stdlib { background-color: #e0e7ff; color: #4f46e5; }
+        .badge-worldmodel { background-color: #d1fae5; color: #059669; }
+        .badge-core { background-color: #fed7aa; color: #ea580c; }
+        
+        code {
+            background-color: #f1f5f9;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            color: #0f172a;
+        }
+        .highlight {
+            background-color: #fef3c7;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .new-badge {
+            background-color: #22c55e;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 14px;
+            font-size: 11px;
+            margin-left: 8px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sharpee IF Platform - Layered Architecture</h1>
+        <p class="subtitle">With Extension System Support - June 20, 2025</p>
+        
+        <div class="diagram-container">
+            ${document.getElementById('sharpee-architecture-proper').innerHTML}
+        </div>
+        
+        <section class="section">
+            <h2>Architecture Layers</h2>
+            <div class="layer-description">
+                <div class="layer-card">
+                    <h3><span class="layer-badge badge-client">Layer 1</span> Client Applications</h3>
+                    <p>User-facing applications that interact with the Sharpee platform. Each client provides a different interface for playing interactive fiction games.</p>
+                    <ul>
+                        <li><strong>Web Client:</strong> React-based browser interface</li>
+                        <li><strong>CLI Client:</strong> Terminal REPL for command-line play</li>
+                        <li><strong>Electron:</strong> Native desktop application</li>
+                        <li><strong>VS Code Extension:</strong> IDE integration for authors</li>
+                    </ul>
+                </div>
+                
+                <div class="layer-card">
+                    <h3><span class="layer-badge badge-stories">Layer 2</span> Stories / Games</h3>
+                    <p>Individual interactive fiction stories created using the Forge API. This layer represents the actual games that players experience.</p>
+                    <ul>
+                        <li>Use Forge's fluent API for world building</li>
+                        <li>Can load extensions for additional features</li>
+                        <li>Define rooms, objects, and interactions</li>
+                        <li>Configure game-specific behavior</li>
+                    </ul>
+                </div>
+                
+                <div class="layer-card">
+                    <h3><span class="layer-badge badge-forge">Layer 3</span> Forge (Author API)</h3>
+                    <p>High-level API for game authors. Provides intuitive, fluent interfaces for creating interactive fiction without dealing with low-level details.</p>
+                    <ul>
+                        <li><strong>ForgeEntity:</strong> Fluent API for creating objects</li>
+                        <li><strong>ForgeWorld:</strong> World builder and extension loader</li>
+                        <li><strong>Templates:</strong> Pre-built objects and rooms</li>
+                        <li><strong>Story Helpers:</strong> Scene and dialogue builders</li>
+                    </ul>
+                </div>
+                
+                <div class="layer-card">
+                    <h3><span class="layer-badge badge-stdlib">Layer 4</span> Standard Library</h3>
+                    <p>Core IF implementation layer. Handles all the standard interactive fiction mechanics, parsing, and game logic.</p>
+                    <ul>
+                        <li><strong>Actions:</strong> All standard IF commands</li>
+                        <li><strong>Services:</strong> Parser, scope, turn management</li>
+                        <li><strong>Text System:</strong> Event-to-text rendering</li>
+                        <li>Bidirectional connection with Language/Parser</li>
+                    </ul>
+                </div>
+                
+                <div class="layer-card">
+                    <h3><span class="layer-badge badge-worldmodel">Layer 5</span> World Model <span class="new-badge">Enhanced</span></h3>
+                    <p>Defines the structure of the IF world. Contains traits, behaviors, and the new extension system.</p>
+                    <ul>
+                        <li><strong>Core Traits:</strong> Only fundamental IF concepts</li>
+                        <li><strong>Static Behaviors:</strong> All logic uses static methods</li>
+                        <li><strong>Extension System:</strong> Infrastructure for plugins</li>
+                        <li><strong>Entity Management:</strong> IFEntity and EntityStore</li>
+                    </ul>
+                </div>
+                
+                <div class="layer-card">
+                    <h3><span class="layer-badge badge-core">Layer 6</span> Core (IF-Agnostic)</h3>
+                    <p>Foundation data store layer. Provides basic entity management and event system without any IF-specific concepts.</p>
+                    <ul>
+                        <li><strong>Entity System:</strong> Base entity and world storage</li>
+                        <li><strong>Event System:</strong> Pub/sub infrastructure</li>
+                        <li><strong>Rule System:</strong> Condition evaluation engine</li>
+                        <li>No IF-specific logic at this level</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+        
+        <section class="section">
+            <h2>Key Architectural Principles</h2>
+            <div class="architecture-note">
+                <h3>Design Philosophy</h3>
+                <ul>
+                    <li><strong>Clear Layering:</strong> Each layer has a specific responsibility and only depends on layers below it</li>
+                    <li><strong>White Space:</strong> Visual separation between layers emphasizes independence</li>
+                    <li><strong>Bidirectional Communication:</strong> Only StdLib ↔ Language/Parser have two-way communication</li>
+                    <li><strong>Extension Points:</strong> Extensions can plug into both StdLib and World Model layers</li>
+                    <li><strong>Minimal Core:</strong> The bottom layer remains IF-agnostic, just a data store</li>
+                </ul>
+                
+                <h3>What Changed in This Update</h3>
+                <ul>
+                    <li><span class="highlight">Proper Layering:</span> Reorganized to show true dependency hierarchy</li>
+                    <li><span class="highlight">Stories Layer:</span> Added explicit layer for games/stories</li>
+                    <li><span class="highlight">Language Integration:</span> Shows bidirectional connection with StdLib</li>
+                    <li><span class="highlight">Extension Placement:</span> Extensions shown as side components that plug in</li>
+                    <li><span class="highlight">Visual Clarity:</span> White space and clean arrows show relationships</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="section">
+            <h2>Extension System Architecture</h2>
+            <div class="architecture-note">
+                <p>The extension system allows third-party developers to add features without modifying core. Extensions can:</p>
+                <ul>
+                    <li>Define new traits (e.g., <code>DaemonTrait</code>, <code>DialogueTrait</code>)</li>
+                    <li>Add new actions and commands</li>
+                    <li>Register event handlers</li>
+                    <li>Provide services that integrate with game loop</li>
+                    <li>Include their own language/text templates</li>
+                </ul>
+                <p>All extension components are namespaced (e.g., <code>sharpee.daemon.RANDOM_MESSAGE</code>) to prevent conflicts.</p>
+            </div>
+        </section>
+    </div>
+</body>
+</html>

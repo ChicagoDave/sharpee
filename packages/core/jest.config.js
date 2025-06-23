@@ -19,11 +19,7 @@ module.exports = {
     transform: {
       '^.+\\.tsx?$': ['ts-jest', {
         tsconfig: 'tsconfig.json',
-      }],
-    },
-    globals: {
-      'ts-jest': {
         diagnostics: false,
-      },
+      }],
     },
   };

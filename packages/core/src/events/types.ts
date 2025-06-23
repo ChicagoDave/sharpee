@@ -1,9 +1,9 @@
 // packages/core/src/events/types.ts
 
-import { EntityId } from '../world-model/types';
+import { EntityId } from '../types/entity';
 
 /**
- * Represents a semantic event in the game
+ * Represents a semantic event in the system
  */
 export interface SemanticEvent {
   /**
@@ -70,6 +70,16 @@ export interface SemanticEvent {
    * Whether this event should be narrated
    */
   narrate?: boolean;
+  
+  /**
+   * Legacy support for data property (same as payload)
+   */
+  data?: Record<string, unknown>;
+  
+  /**
+   * Legacy support for metadata property
+   */
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -162,3 +172,8 @@ export interface EventSystemOptions {
    */
   emitFilter?: (event: SemanticEvent) => boolean;
 }
+
+/**
+ * Type alias for backwards compatibility
+ */
+export type Event = SemanticEvent;

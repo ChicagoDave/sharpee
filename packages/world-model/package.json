@@ -1,0 +1,43 @@
+{
+  "name": "@sharpee/world-model",
+  "version": "0.1.0",
+  "description": "World model for Sharpee IF platform - entities, traits, and behaviors",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "test": "jest",
+    "lint": "eslint src --ext .ts",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "keywords": [
+    "interactive-fiction",
+    "world-model",
+    "entity-component-system",
+    "traits"
+  ],
+  "author": "Sharpee Team",
+  "license": "MIT",
+  "dependencies": {
+    "@sharpee/core": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.5",
+    "@types/node": "^20.8.0",
+    "@typescript-eslint/eslint-plugin": "^6.7.4",
+    "@typescript-eslint/parser": "^6.7.4",
+    "eslint": "^8.50.0",
+    "jest": "^29.7.0",
+    "rimraf": "^5.0.5",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.2.2"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

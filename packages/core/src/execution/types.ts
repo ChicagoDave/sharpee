@@ -1,8 +1,8 @@
 // packages/core/src/execution/types.ts
 
-import { ParsedCommand } from '../parser/core/types';
-import { Entity, EntityId, WorldState } from '../world-model/types';
 import { SemanticEvent } from '../events/types';
+import { TextService } from '../events/text-processor';
+import { LanguageProvider } from '../language';
 
 /**
  * The result of executing a command
@@ -30,71 +30,45 @@ export interface CommandResult {
 }
 
 /**
- * Context object for command execution
+ * Generic parsed command interface
+ * The actual implementation with IF-specific details is in stdlib
  */
-export interface GameContext {
+export interface ParsedCommand {
   /**
-   * The current world state
+   * The raw command text
    */
-  worldState: WorldState;
+  raw: string;
 
   /**
-   * The player entity
+   * The command verb
    */
-  player: Entity;
+  verb?: string;
 
   /**
-   * The current location entity
+   * Additional command data
    */
-  currentLocation: Entity;
+  [key: string]: any;
+}
+
+/**
+ * Generic context interface for command execution
+ * The actual GameContext with IF-specific details is in stdlib
+ */
+export interface ExecutionContext {
+  /**
+   * The text service for processing events into text
+   */
+  textService: TextService;
 
   /**
-   * Function to get an entity by ID
+   * The language provider for text templates
    */
-  getEntity: (id: EntityId) => Entity | undefined;
+  languageProvider: LanguageProvider;
 
   /**
-   * Function to get entities by type
+   * Additional context data
    */
-  getEntitiesByType: (type: string) => Entity[];
-
-  /**
-   * Function to get entities with a specific relationship to an entity
-   */
-  getRelatedEntities: (entityId: EntityId, relationshipType: string) => Entity[];
-
-  /**
-   * Function to check if an entity is accessible to the player
-   */
-  isAccessible: (entityId: EntityId) => boolean;
-
-  /**
-   * Function to check if an entity is visible to the player
-   */
-  isVisible: (entityId: EntityId) => boolean;
-
-  /**
-   * Function to find an entity by name
-   */
-  findEntityByName: (name: string, options?: {
-    location?: EntityId;
-    includeInventory?: boolean;
-    typeFilter?: string[];
-  }) => Entity | undefined;
-
-  /**
-   * Function to find entities by name (for when there are multiple matches)
-   */
-  findEntitiesByName: (name: string, options?: {
-    location?: EntityId;
-    includeInventory?: boolean;
-    typeFilter?: string[];
-  }) => Entity[];
-
-  /**
-   * Function to update the world state (returns a new context)
-   */
-  updateWorldState: (updater: (state: WorldState) => WorldState) => GameContext;
+  [key: string]: any;
 }
 
 /**
@@ -109,17 +83,17 @@ export interface CommandHandler {
   /**
    * Check if this handler can handle the given command
    */
-  canHandle: (command: ParsedCommand, context: GameContext) => boolean;
+  canHandle: (command: ParsedCommand, context: ExecutionContext) => boolean;
 
   /**
    * Execute the command
    */
-  execute: (command: ParsedCommand, context: GameContext) => Promise<CommandResult> | CommandResult;
+  execute: (command: ParsedCommand, context: ExecutionContext) => Promise<CommandResult> | CommandResult;
 
   /**
    * Validate the command before execution
    */
-  validate?: (command: ParsedCommand, context: GameContext) => { valid: boolean; error?: string };
+  validate?: (command: ParsedCommand, context: ExecutionContext) => { valid: boolean; error?: string };
 }
 
 /**
@@ -139,12 +113,17 @@ export interface CommandRouter {
   /**
    * Get a handler for the command
    */
-  getHandler: (command: ParsedCommand, context: GameContext) => CommandHandler | undefined;
+  getHandler: (command: ParsedCommand, context: ExecutionContext) => CommandHandler | undefined;
 
   /**
    * Route and execute a command
    */
-  execute: (command: ParsedCommand, context: GameContext) => Promise<CommandResult>;
+  execute: (command: ParsedCommand, context: ExecutionContext, options?: CommandExecutionOptions) => Promise<CommandResult>;
+
+  /**
+   * Process the result of command execution and return text output
+   */
+  processResult?: (result: CommandResult) => string;
 }
 
 /**
@@ -156,9 +135,9 @@ export interface CommandHandlerFactory {
    */
   createHandler: (config: {
     verbs: string[];
-    canHandle?: (command: ParsedCommand, context: GameContext) => boolean;
-    execute: (command: ParsedCommand, context: GameContext) => Promise<CommandResult> | CommandResult;
-    validate?: (command: ParsedCommand, context: GameContext) => { valid: boolean; error?: string };
+    canHandle?: (command: ParsedCommand, context: ExecutionContext) => boolean;
+    execute: (command: ParsedCommand, context: ExecutionContext) => Promise<CommandResult> | CommandResult;
+    validate?: (command: ParsedCommand, context: ExecutionContext) => { valid: boolean; error?: string };
   }) => CommandHandler;
 }
 
@@ -174,15 +153,15 @@ export interface CommandExecutionOptions {
   /**
    * Custom validation callback
    */
-  customValidation?: (command: ParsedCommand, context: GameContext) => { valid: boolean; error?: string };
+  customValidation?: (command: ParsedCommand, context: ExecutionContext) => { valid: boolean; error?: string };
 
   /**
    * Pre-execution hooks
    */
-  preExecute?: ((command: ParsedCommand, context: GameContext) => Promise<void> | void)[];
+  preExecute?: ((command: ParsedCommand, context: ExecutionContext) => Promise<void> | void)[];
 
   /**
    * Post-execution hooks
    */
-  postExecute?: ((result: CommandResult, command: ParsedCommand, context: GameContext) => Promise<CommandResult> | CommandResult)[];
+  postExecute?: ((result: CommandResult, command: ParsedCommand, context: ExecutionContext) => Promise<CommandResult> | CommandResult)[];
 }
