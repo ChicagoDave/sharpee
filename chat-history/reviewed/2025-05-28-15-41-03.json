@@ -1,0 +1,46 @@
+{
+  "uuid": "bc56efd1-0348-4485-8345-42602ed658e8",
+  "name": "Refactoring Phase 2 Transition",
+  "created_at": "2025-05-28T20:41:03.050341Z",
+  "updated_at": "2025-05-28T20:52:05.428212Z",
+  "account": {
+    "uuid": "760c9b93-a257-47cd-bd61-d0b15a821e02"
+  },
+  "chat_messages": [
+    {
+      "uuid": "f58c6353-53b9-42d5-8a6e-eaefa50fa3f5",
+      "text": "refactoring - let's move to phase 2",
+      "content": [
+        {
+          "start_timestamp": "2025-05-28T20:41:04.045821Z",
+          "stop_timestamp": "2025-05-28T20:41:04.045821Z",
+          "type": "text",
+          "text": "refactoring - let's move to phase 2",
+          "citations": []
+        }
+      ],
+      "sender": "human",
+      "created_at": "2025-05-28T20:41:04.050932Z",
+      "updated_at": "2025-05-28T20:41:04.050932Z",
+      "attachments": [
+        {
+          "file_name": "paste.txt",
+          "file_size": 4876,
+          "file_type": "txt",
+          "extracted_content": "# Checklist: Move Entire World Model to Stdlib\r\n\r\n## Phase 1: Extract Core Types ✅\r\n- [x] Create `packages/core/src/types/` directory\r\n- [x] Create `packages/core/src/types/entity.ts` with ONLY:\r\n  - [x] `EntityId` type\r\n  - [x] `Entity` interface (generic)\r\n  - [x] `EntityCreationParams` interface\r\n  - [x] `EntityOperationOptions` interface\r\n- [x] Create `packages/core/src/types/relationship.ts` with ONLY:\r\n  - [x] `Relationship` interface (generic)\r\n  - [x] `RelationshipConfig` interface\r\n  - [x] `RelationshipConfigMap` type\r\n  - [x] Removed IF-specific RelationshipType enum\r\n- [x] Create `packages/core/src/types/attribute.ts` with ONLY:\r\n  - [x] `AttributeValue` type\r\n  - [x] `AttributeObject` interface\r\n  - [x] `AttributeArray` type\r\n  - [x] `AttributeConfig` interface\r\n  - [x] `AttributeConfigMap` type\r\n  - [x] Removed IF-specific StandardAttribute enum\r\n- [x] Create `packages/core/src/types/index.ts` to export all types\r\n- [x] Update `packages/core/src/index.ts` to export from `./types`\r\n\r\n## Phase 2: Move Entire World Model\r\n- [ ] Move `packages/core/src/world-model/` → `packages/stdlib/src/world-model/`\r\n  ```bash\r\n  mv packages/core/src/world-model packages/stdlib/src/world-model\r\n  ```\r\n- [ ] This includes ALL subdirectories:\r\n  - [ ] `if-entities/`\r\n  - [ ] `if-world/`\r\n  - [ ] `implementations/`\r\n  - [ ] `types/`\r\n  - [ ] `__tests__/`\r\n\r\n## Phase 3: Fix Type Names During Move\r\n- [ ] In `packages/stdlib/src/world-model/if-entities/types.ts`:\r\n  - [ ] Rename `CoreIFEntityType` → `IFEntityType`\r\n  - [ ] Rename `CoreIFRelationship` → `IFRelationship`\r\n- [ ] Delete duplicate files in stdlib:\r\n  - [ ] `packages/stdlib/src/constants/if-entity-types.ts`\r\n  - [ ] `packages/stdlib/src/constants/if-relationships.ts`\r\n- [ ] Update `packages/stdlib/src/constants/index.ts` to remove deleted exports\r\n\r\n## Phase 4: Update Imports in Moved Files\r\n- [ ] In all files under `packages/stdlib/src/world-model/`:\r\n  - [ ] Change `import { Entity, EntityId } from '../types'` → `import { Entity, EntityId } from '@sharpee/core/types'`\r\n  - [ ] Change `import { Entity, EntityId } from '../../types'` → `import { Entity, EntityId } from '@sharpee/core/types'`\r\n  - [ ] Fix any other relative imports that now need to reference core\r\n- [ ] In IF world implementation files:\r\n  - [ ] Change `IFEntityType` references (they should now be correct)\r\n  - [ ] Change `IFRelationship` references (they should now be correct)\r\n\r\n## Phase 5: Update Stdlib Exports\r\n- [ ] Create/update `packages/stdlib/src/world-model/index.ts` to export:\r\n  - [ ] All IF entity types and interfaces\r\n  - [ ] IF world implementation\r\n  - [ ] Entity factory\r\n  - [ ] Scope calculator\r\n  - [ ] Other world model components\r\n- [ ] Update `packages/stdlib/src/index.ts` to include:\r\n  ```typescript\r\n  export * from './world-model';\r\n  ```\r\n\r\n## Phase 6: Clean Up Core\r\n- [ ] Remove world-model exports from `packages/core/src/index.ts`:\r\n  - [ ] Remove `export * from './world-model/types'`\r\n  - [ ] Remove `export * from './world-model/if-entities/types'`\r\n  - [ ] Remove `export * from './world-model/if-entities/relationships'`\r\n  - [ ] Remove `export * from './world-model/if-world'`\r\n  - [ ] Remove any other world-model exports\r\n- [ ] Verify core only exports:\r\n  - [ ] Basic types\r\n  - [ ] Parser\r\n  - [ ] Execution\r\n  - [ ] Events\r\n  - [ ] Channels\r\n  - [ ] Extensions\r\n  - [ ] Rules\r\n  - [ ] Language\r\n  - [ ] Story\r\n  - [ ] Constants\r\n\r\n## Phase 7: Update Dependencies\r\n- [ ] Check if any core modules incorrectly depend on world-model:\r\n  - [ ] Parser modules\r\n  - [ ] Execution modules\r\n  - [ ] Event modules\r\n- [ ] If found, either:\r\n  - [ ] Remove the dependency (if it shouldn't exist)\r\n  - [ ] Update to import from `@sharpee/stdlib` (if legitimate)\r\n\r\n## Phase 8: Build and Test\r\n- [ ] Run `npm run build` in core - should succeed with no world-model\r\n- [ ] Run `npm run build` in stdlib - should succeed with world-model\r\n- [ ] Run tests in both packages\r\n- [ ] Fix any compilation errors\r\n\r\n## Phase 9: Update Other Packages\r\n- [ ] Check forge package for world-model imports\r\n- [ ] Check extension packages for world-model imports\r\n- [ ] Update any found imports to use `@sharpee/stdlib`\r\n\r\n## Phase 10: Final Cleanup\r\n- [ ] Delete any .backup files\r\n- [ ] Update documentation to reflect new structure\r\n- [ ] Commit with clear message about the architectural change\r\n\r\n## Success Criteria\r\n- [ ] Core has NO `world-model` directory\r\n- [ ] Core only exports generic types from `types/`\r\n- [ ] Stdlib contains the complete IF world model\r\n- [ ] No duplicate IF type definitions\r\n- [ ] All packages build successfully\r\n- [ ] All tests pass\r\n\r\n## Notes\r\n- The generic `Entity` interface stays in core as a basic type\r\n- ALL IF-specific code moves to stdlib\r\n- This includes the entire world model implementation\r\n- Core becomes simpler and truly IF-agnostic"
+        }
+      ],
+      "files": [
+        {
+          "file_name": "paste.txt"
+        }
+      ]
+    }
+  ],
+  "_extraction_metadata": {
+    "extraction_method": "exact_title_match",
+    "matched_title": "Refactoring Phase 2 Transition",
+    "extraction_timestamp": "2025-06-21T06:39:35.362Z",
+    "source": "claude_project_sharpee"
+  }
+}

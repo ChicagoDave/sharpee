@@ -1,47 +1,124 @@
-/**
- * Actor trait - represents entities that can perform actions
- * 
- * This is a minimal actor trait for core IF functionality.
- * More complex NPC/Player behaviors should be implemented as extensions.
- */
+// packages/world-model/src/traits/actor/actorTrait.ts
 
 import { Trait } from '../trait';
 import { TraitType } from '../trait-types';
+import { EntityId } from '@sharpee/core';
 
-export interface ActorData {
-  /** Whether this actor can currently perform actions */
-  canAct?: boolean;
-  
-  /** Whether this is the player character */
+/**
+ * Interface for the Actor trait data
+ */
+export interface IActorTrait {
+  /** Whether this actor is the player character */
   isPlayer?: boolean;
   
-  /** Current state of the actor (for simple state tracking) */
+  /** Whether this actor can be controlled by the player */
+  isPlayable?: boolean;
+  
+  /** Current state/mood of the actor */
   state?: string;
+  
+  /** Pronouns for this actor */
+  pronouns?: {
+    subject: string;    // he/she/they/it
+    object: string;     // him/her/them/it
+    possessive: string; // his/her/their/its
+    reflexive: string;  // himself/herself/themself/itself
+  };
+  
+  /** Inventory capacity */
+  inventoryLimit?: {
+    maxItems?: number;
+    maxWeight?: number;
+    maxVolume?: number;
+  };
+  
+  /** Custom properties for game-specific actor data */
+  customProperties?: Record<string, any>;
 }
 
 /**
- * Basic actor trait for entities that can perform actions
+ * Trait for entities that can act in the world (player, NPCs, etc.)
  * 
- * This is a minimal implementation for core IF. It provides:
- * - Basic ability to mark entities as actors
- * - Simple active/inactive state
- * - Player identification
- * 
- * More complex features (dialogue, AI, etc.) should be extensions.
+ * Actors can:
+ * - Perform actions
+ * - Hold inventory
+ * - Move between locations
+ * - Interact with objects
  */
-export class ActorTrait implements Trait, ActorData {
+export class ActorTrait implements Trait {
   static readonly type = TraitType.ACTOR;
   readonly type = TraitType.ACTOR;
   
-  // ActorData properties
-  canAct: boolean;
-  isPlayer: boolean;
-  state: string;
+  isPlayer: boolean = false;
+  isPlayable: boolean = true;
+  state?: string;
   
-  constructor(data: ActorData = {}) {
-    // Set defaults and merge with provided data
-    this.canAct = data.canAct ?? true;
-    this.isPlayer = data.isPlayer ?? false;
-    this.state = data.state ?? 'idle';
+  pronouns: {
+    subject: string;
+    object: string;
+    possessive: string;
+    reflexive: string;
+  } = {
+    subject: 'they',
+    object: 'them',
+    possessive: 'their',
+    reflexive: 'themself'
+  };
+  
+  inventoryLimit?: {
+    maxItems?: number;
+    maxWeight?: number;
+    maxVolume?: number;
+  };
+  
+  customProperties?: Record<string, any>;
+  
+  constructor(data?: Partial<ActorTrait>) {
+    if (data) {
+      Object.assign(this, data);
+      // Ensure pronouns have all required fields if provided
+      if (data.pronouns && this.pronouns !== data.pronouns) {
+        this.pronouns = { ...this.pronouns, ...data.pronouns };
+      }
+    }
+  }
+  
+  /**
+   * Set pronouns for this actor
+   */
+  setPronouns(pronouns: Partial<ActorTrait['pronouns']>): void {
+    this.pronouns = { ...this.pronouns, ...pronouns };
+  }
+  
+  /**
+   * Set inventory limits
+   */
+  setInventoryLimit(limit: Partial<ActorTrait['inventoryLimit']>): void {
+    this.inventoryLimit = { ...this.inventoryLimit, ...limit };
+  }
+  
+  /**
+   * Mark as player character
+   */
+  makePlayer(): void {
+    this.isPlayer = true;
+    this.isPlayable = true;
+  }
+  
+  /**
+   * Set custom property
+   */
+  setCustomProperty(key: string, value: any): void {
+    if (!this.customProperties) {
+      this.customProperties = {};
+    }
+    this.customProperties[key] = value;
+  }
+  
+  /**
+   * Get custom property
+   */
+  getCustomProperty(key: string): any {
+    return this.customProperties?.[key];
   }
 }

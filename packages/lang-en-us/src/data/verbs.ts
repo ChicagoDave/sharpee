@@ -3,8 +3,78 @@
  * @description Verb mappings for English language
  */
 
-import { VerbDefinition } from '@sharpee/stdlib/language/base';
-import { IFActions } from '@sharpee/stdlib/constants';
+/**
+ * Standard Interactive Fiction action identifiers
+ * These match the action IDs used in the IF system
+ */
+export const IFActions = {
+  // Movement actions
+  GOING: 'if.action.going',
+  ENTERING: 'if.action.entering',
+  EXITING: 'if.action.exiting',
+  CLIMBING: 'if.action.climbing',
+  
+  // Observation actions
+  LOOKING: 'if.action.looking',
+  EXAMINING: 'if.action.examining',
+  SEARCHING: 'if.action.searching',
+  LISTENING: 'if.action.listening',
+  SMELLING: 'if.action.smelling',
+  TOUCHING: 'if.action.touching',
+  
+  // Object manipulation
+  TAKING: 'if.action.taking',
+  DROPPING: 'if.action.dropping',
+  PUTTING: 'if.action.putting',
+  INSERTING: 'if.action.inserting',
+  OPENING: 'if.action.opening',
+  CLOSING: 'if.action.closing',
+  LOCKING: 'if.action.locking',
+  UNLOCKING: 'if.action.unlocking',
+  
+  // Device actions
+  SWITCHING_ON: 'if.action.switching_on',
+  SWITCHING_OFF: 'if.action.switching_off',
+  PUSHING: 'if.action.pushing',
+  PULLING: 'if.action.pulling',
+  TURNING: 'if.action.turning',
+  USING: 'if.action.using',
+  
+  // Social actions
+  GIVING: 'if.action.giving',
+  SHOWING: 'if.action.showing',
+  THROWING: 'if.action.throwing',
+  ATTACKING: 'if.action.attacking',
+  TALKING: 'if.action.talking',
+  ASKING: 'if.action.asking',
+  TELLING: 'if.action.telling',
+  ANSWERING: 'if.action.answering',
+  
+  // Wearable actions
+  WEARING: 'if.action.wearing',
+  TAKING_OFF: 'if.action.taking_off',
+  
+  // Consumption actions
+  EATING: 'if.action.eating',
+  DRINKING: 'if.action.drinking',
+  
+  // Meta actions
+  INVENTORY: 'if.action.inventory',
+  WAITING: 'if.action.waiting',
+  SAVING: 'if.action.saving',
+  RESTORING: 'if.action.restoring',
+  QUITTING: 'if.action.quitting',
+  HELP: 'if.action.help',
+  ABOUT: 'if.action.about',
+  SCORING: 'if.action.scoring'
+} as const;
+
+export interface VerbDefinition {
+  action: string;
+  verbs: string[];
+  requiresObject: boolean;
+  allowsIndirectObject?: boolean;
+}
 
 /**
  * English verb definitions mapping verbs to IF actions
@@ -213,7 +283,7 @@ export const englishVerbs: VerbDefinition[] = [
     requiresObject: false
   },
   {
-    action: IFActions.WAIT,
+    action: IFActions.WAITING,
     verbs: ['wait', 'z'],
     requiresObject: false
   },

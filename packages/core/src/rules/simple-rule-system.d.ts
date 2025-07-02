@@ -33,3 +33,4 @@ export declare class SimpleRuleSystemImpl implements SimpleRuleSystem {
  * Create a new simple rule system
  */
 export declare function createSimpleRuleSystem(): SimpleRuleSystem;
+//# sourceMappingURL=simple-rule-system.d.ts.map

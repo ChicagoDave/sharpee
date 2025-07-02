@@ -48,3 +48,4 @@ export declare function isTaking(itemNameOrId: string): (event: SemanticEvent, w
  * Common condition: player has specific ability
  */
 export declare function playerHasAbility(ability: string): (event: SemanticEvent, world: RuleWorld) => boolean;
+//# sourceMappingURL=helpers.d.ts.map

@@ -1,0 +1,190 @@
+{
+  "uuid": "0f43adf8-046c-46ee-971c-4fec0ed671c6",
+  "name": "Combine TypeScript and Project Files",
+  "created_at": "2025-03-29T07:56:40.484477Z",
+  "updated_at": "2025-03-29T08:01:51.867005Z",
+  "account": {
+    "uuid": "760c9b93-a257-47cd-bd61-d0b15a821e02"
+  },
+  "chat_messages": [
+    {
+      "uuid": "d18b1da8-3089-4aaa-ab25-6affed4c8f73",
+      "text": "can you update this file to combine all typescript and project files - I originally used it for C#",
+      "content": [
+        {
+          "start_timestamp": "2025-03-28T21:27:48.825441Z",
+          "stop_timestamp": "2025-03-28T21:27:48.825441Z",
+          "type": "text",
+          "text": "can you update this file to combine all typescript and project files - I originally used it for C#",
+          "citations": []
+        }
+      ],
+      "sender": "human",
+      "created_at": "2025-03-29T07:56:41.312259Z",
+      "updated_at": "2025-03-29T07:56:41.312259Z",
+      "attachments": [
+        {
+          "file_name": "combine-sharpeets.ps1",
+          "file_size": 2673,
+          "file_type": "",
+          "extracted_content": "# Location: ./scripts/combine-sharpeets.ps1\r\n\r\n[string[]]$excludePatterns = @(\r\n    'node_modules',\r\n    'package-lock.json',\r\n    '\\.next',\r\n    'dist',\r\n    'build',\r\n    '\\.git',\r\n    '\\.env',\r\n    '\\.DS_Store',\r\n    '\\.js\\.map$',\r\n    '\\.d\\.ts$',\r\n    'coverage',\r\n    '\\.cache',\r\n    '.*\\.test\\.',\r\n    '.*\\.spec\\.',\r\n    '\\.vs',\r\n    '\\.vscode',\r\n\t'assets',\r\n\t'.husky'\r\n)\r\n\r\n$rootPath = Join-Path (Get-Location) \"sharpeets\"\r\n\r\n# Function to safely add content to a file\r\nfunction Add-FileContent {\r\n    param (\r\n        [string]$Path,\r\n        [string]$Content,\r\n        [string]$RelativePath\r\n    )\r\n    \r\n    @\"\r\n\r\n// File: $RelativePath\r\n\r\n$Content\r\n\r\n// =================\r\n\r\n\"@ | Add-Content -Path $Path\r\n}\r\n\r\n# Function to check if path should be excluded\r\nfunction Test-ShouldExclude {\r\n    param (\r\n        [string]$Path\r\n    )\r\n    \r\n    foreach ($pattern in $excludePatterns) {\r\n        if ($Path -match $pattern) {\r\n            return $true\r\n        }\r\n    }\r\n    return $false\r\n}\r\n\r\n# Function to process directory and create combined file\r\nfunction Process-Directory {\r\n    param (\r\n        [string]$DirectoryPath,\r\n        [string]$BaseOutputName\r\n    )\r\n\r\n    $outputFile = Join-Path (Get-Location) \"$BaseOutputName.txt\"\r\n    \r\n    if (Test-Path $outputFile) {\r\n        Remove-Item $outputFile -Force\r\n    }\r\n\r\n    # Get all files in the directory (non-recursive)\r\n    Get-ChildItem -Path $DirectoryPath -File | \r\n        Where-Object { -not (Test-ShouldExclude $_.FullName) } | \r\n        ForEach-Object {\r\n            $relativePath = $_.FullName.Replace(\"$rootPath\\\", \"\")\r\n            Add-FileContent -Path $outputFile -Content (Get-Content $_.FullName -Raw) -RelativePath $relativePath\r\n        }\r\n\r\n    if (Test-Path $outputFile) {\r\n        Write-Output \"Created $BaseOutputName.txt\"\r\n    }\r\n}\r\n\r\n# Process root directory\r\nProcess-Directory -DirectoryPath $rootPath -BaseOutputName \"sharpeets-root\"\r\n\r\n# Process each level of subdirectories\r\n1..3 | ForEach-Object {\r\n    $level = $_\r\n    $pattern = \"*\" * $level\r\n    $dirs = Get-ChildItem -Path $rootPath -Directory -Recurse | \r\n            Where-Object { ($_.FullName.Split([IO.Path]::DirectorySeparatorChar).Length - $rootPath.Split([IO.Path]::DirectorySeparatorChar).Length) -eq $level } |\r\n            Where-Object { -not (Test-ShouldExclude $_.FullName) }\r\n    \r\n    foreach ($dir in $dirs) {\r\n        $pathParts = $dir.FullName.Replace(\"$rootPath\\\", \"\").Split([IO.Path]::DirectorySeparatorChar)\r\n        $outputName = \"sharpeets-\" + ($pathParts -join \"-\")\r\n        Process-Directory -DirectoryPath $dir.FullName -BaseOutputName $outputName\r\n    }\r\n}\r\n\r\nWrite-Output \"File combination complete!\""
+        }
+      ],
+      "files": [
+        {
+          "file_name": "combine-sharpeets.ps1"
+        }
+      ]
+    },
+    {
+      "uuid": "1a5c093f-b495-454a-ad95-8f38a70f6fe4",
+      "text": " I'll help you update the PowerShell script to work with TypeScript and related project files. Here's the updated version:\n```\nViewing artifacts created via the Analysis Tool web feature preview isn’t yet supported on mobile.\n```\n\n\n\nI've updated the PowerShell script to be more suitable for TypeScript and related project files. Here are the key improvements:\n\n1. **Added TypeScript-specific file extensions** to include:\n   - `.ts` and `.tsx` files (TypeScript)\n   - `.js` and `.jsx` files (JavaScript)\n   - `.json` files (configuration)\n   - `.md` files (documentation)\n   - Other important project files like `tsconfig.json`, `package.json`, etc.\n\n2. **Better file organization**:\n   - The script now stores outputs in a dedicated \"outputs\" directory\n   - Added file type detection and labeling in the output\n   - Each file is wrapped with clearer start/end markers\n\n3. **Project structure visualization**:\n   - Added a project structure summary at the beginning of the main output file\n   - Lists all directories and files for better navigation\n\n4. **Improved filtering**:\n   - Added explicit include patterns in addition to exclude patterns\n   - The script is now more selective about which files to combine\n\n5. **Updated directory name**:\n   - Changed from \"sharpeets\" to \"sharpee\" to match your project name\n\nTo use this script:\n\n1. Save it as `combine-ts-files.ps1` in your scripts directory\n2. Make sure your project is in a directory named \"sharpee\" at the same level as the script\n3. Run the script from PowerShell\n4. The combined files will be placed in a new \"outputs\" directory\n\nThe script will create one file for the root directory and separate files for each subdirectory, making it easier to review specific parts of your codebase.",
+      "content": [
+        {
+          "start_timestamp": "2025-03-29T07:56:41.947009Z",
+          "stop_timestamp": "2025-03-29T07:56:42.350862Z",
+          "type": "text",
+          "text": " I'll help you update the PowerShell script to work with TypeScript and related project files. Here's the updated version:",
+          "citations": []
+        },
+        {
+          "start_timestamp": "2025-03-29T07:56:42.575892Z",
+          "stop_timestamp": "2025-03-29T07:57:00.458662Z",
+          "type": "tool_use",
+          "name": "artifacts",
+          "input": {
+            "id": "updated-combine-script",
+            "type": "application/vnd.ant.code",
+            "title": "Updated combine-ts-files.ps1",
+            "command": "create",
+            "content": "# Location: ./scripts/combine-ts-files.ps1\n\n[string[]]$excludePatterns = @(\n    'node_modules',\n    'package-lock.json',\n    '\\.next',\n    'dist',\n    'build',\n    '\\.git',\n    '\\.env',\n    '\\.DS_Store',\n    '\\.js\\.map$',\n    'coverage',\n    '\\.cache',\n    '.*\\.test\\.',\n    '.*\\.spec\\.',\n    '\\.vs',\n    '\\.vscode',\n    'assets',\n    '.husky'\n)\n\n[string[]]$includeExtensions = @(\n    '\\.ts$',\n    '\\.tsx$',\n    '\\.js$',\n    '\\.jsx$',\n    '\\.json$',\n    '\\.md$',\n    'tsconfig\\.json$',\n    'package\\.json$',\n    '\\.gitignore$',\n    '\\.npmrc$',\n    'README$',\n    'LICENSE$'\n)\n\n$rootPath = Join-Path (Get-Location) \"sharpee\"\n\n# Function to safely add content to a file\nfunction Add-FileContent {\n    param (\n        [string]$Path,\n        [string]$Content,\n        [string]$RelativePath,\n        [string]$Extension\n    )\n    \n    $fileLang = switch -Regex ($Extension) {\n        '\\.ts$|\\.tsx$|\\.js$|\\.jsx$' { \"TypeScript/JavaScript\" }\n        '\\.json$' { \"JSON\" }\n        '\\.md$' { \"Markdown\" }\n        default { \"Text\" }\n    }\n    \n    @\"\n\n// =============================================\n// File: $RelativePath\n// Type: $fileLang\n// =============================================\n\n$Content\n\n// =============================================\n// End of file: $RelativePath\n// =============================================\n\n\"@ | Add-Content -Path $Path\n}\n\n# Function to check if path should be excluded\nfunction Test-ShouldExclude {\n    param (\n        [string]$Path\n    )\n    \n    foreach ($pattern in $excludePatterns) {\n        if ($Path -match $pattern) {\n            return $true\n        }\n    }\n    return $false\n}\n\n# Function to check if file should be included based on extension\nfunction Test-ShouldInclude {\n    param (\n        [string]$Path\n    )\n    \n    foreach ($pattern in $includeExtensions) {\n        if ($Path -match $pattern) {\n            return $true\n        }\n    }\n    return $false\n}\n\n# Function to process directory and create combined file\nfunction Process-Directory {\n    param (\n        [string]$DirectoryPath,\n        [string]$BaseOutputName\n    )\n\n    $outputFile = Join-Path (Get-Location) \"$BaseOutputName.txt\"\n    \n    if (Test-Path $outputFile) {\n        Remove-Item $outputFile -Force\n    }\n\n    # Get all files in the directory (non-recursive)\n    Get-ChildItem -Path $DirectoryPath -File | \n        Where-Object { (-not (Test-ShouldExclude $_.FullName)) -and (Test-ShouldInclude $_.Name) } | \n        ForEach-Object {\n            $relativePath = $_.FullName.Replace(\"$rootPath\\\", \"\")\n            $extension = [System.IO.Path]::GetExtension($_.Name)\n            Add-FileContent -Path $outputFile -Content (Get-Content $_.FullName -Raw) -RelativePath $relativePath -Extension $extension\n        }\n\n    if (Test-Path $outputFile) {\n        Write-Output \"Created $BaseOutputName.txt\"\n    }\n}\n\n# Add project structure information at the beginning\nfunction Add-ProjectStructure {\n    param (\n        [string]$OutputFile\n    )\n    \n    $header = @\"\n// =============================================\n// SHARPEE PROJECT STRUCTURE\n// =============================================\n\n\"@\n    \n    $structure = Get-ChildItem -Path $rootPath -Recurse -Directory | \n        Where-Object { -not (Test-ShouldExclude $_.FullName) } |\n        ForEach-Object { $_.FullName.Replace(\"$rootPath\\\", \"\") }\n    \n    $filesList = Get-ChildItem -Path $rootPath -Recurse -File | \n        Where-Object { (-not (Test-ShouldExclude $_.FullName)) -and (Test-ShouldInclude $_.Name) } |\n        ForEach-Object { $_.FullName.Replace(\"$rootPath\\\", \"\") }\n    \n    $header += \"// Directories:`n\"\n    foreach ($dir in $structure | Sort-Object) {\n        $header += \"// - $dir`n\"\n    }\n    \n    $header += \"`n// Files:`n\"\n    foreach ($file in $filesList | Sort-Object) {\n        $header += \"// - $file`n\"\n    }\n    \n    $header += \"`n// =============================================`n`n\"\n    \n    $content = Get-Content -Path $OutputFile -Raw\n    Set-Content -Path $OutputFile -Value \"$header$content\"\n}\n\n# Create directory if it doesn't exist\n$outputDir = Join-Path (Get-Location) \"outputs\"\nif (-not (Test-Path $outputDir)) {\n    New-Item -Path $outputDir -ItemType Directory | Out-Null\n}\n\n# Process root directory\n$rootOutputFile = Join-Path $outputDir \"sharpee-root\"\nProcess-Directory -DirectoryPath $rootPath -BaseOutputName $rootOutputFile\n\n# Add project structure to root file\nif (Test-Path \"$rootOutputFile.txt\") {\n    Add-ProjectStructure -OutputFile \"$rootOutputFile.txt\"\n}\n\n# Process each level of subdirectories\n1..5 | ForEach-Object {\n    $level = $_\n    $pattern = \"*\" * $level\n    $dirs = Get-ChildItem -Path $rootPath -Directory -Recurse | \n            Where-Object { ($_.FullName.Split([IO.Path]::DirectorySeparatorChar).Length - $rootPath.Split([IO.Path]::DirectorySeparatorChar).Length) -eq $level } |\n            Where-Object { -not (Test-ShouldExclude $_.FullName) }\n    \n    foreach ($dir in $dirs) {\n        $pathParts = $dir.FullName.Replace(\"$rootPath\\\", \"\").Split([IO.Path]::DirectorySeparatorChar)\n        $outputName = \"sharpee-\" + ($pathParts -join \"-\")\n        $fullOutputPath = Join-Path $outputDir $outputName\n        Process-Directory -DirectoryPath $dir.FullName -BaseOutputName $fullOutputPath\n    }\n}\n\nWrite-Output \"File combination complete! Output files are in the 'outputs' directory.\"",
+            "language": "powershell",
+            "version_uuid": "03d5718c-cf24-4de1-9568-b4f785285db7"
+          },
+          "message": null,
+          "integration_name": null,
+          "integration_icon_url": null,
+          "context": null,
+          "display_content": null
+        },
+        {
+          "start_timestamp": null,
+          "stop_timestamp": null,
+          "type": "tool_result",
+          "name": "artifacts",
+          "content": [
+            {
+              "type": "text",
+              "text": "OK",
+              "uuid": "2f06494f-21d9-41df-a6d5-fd714ac8ce94"
+            }
+          ],
+          "is_error": false,
+          "message": null,
+          "integration_name": null,
+          "integration_icon_url": null,
+          "display_content": null
+        },
+        {
+          "start_timestamp": "2025-03-29T07:57:04.291110Z",
+          "stop_timestamp": "2025-03-29T07:57:10.860473Z",
+          "type": "text",
+          "text": "\n\nI've updated the PowerShell script to be more suitable for TypeScript and related project files. Here are the key improvements:\n\n1. **Added TypeScript-specific file extensions** to include:\n   - `.ts` and `.tsx` files (TypeScript)\n   - `.js` and `.jsx` files (JavaScript)\n   - `.json` files (configuration)\n   - `.md` files (documentation)\n   - Other important project files like `tsconfig.json`, `package.json`, etc.\n\n2. **Better file organization**:\n   - The script now stores outputs in a dedicated \"outputs\" directory\n   - Added file type detection and labeling in the output\n   - Each file is wrapped with clearer start/end markers\n\n3. **Project structure visualization**:\n   - Added a project structure summary at the beginning of the main output file\n   - Lists all directories and files for better navigation\n\n4. **Improved filtering**:\n   - Added explicit include patterns in addition to exclude patterns\n   - The script is now more selective about which files to combine\n\n5. **Updated directory name**:\n   - Changed from \"sharpeets\" to \"sharpee\" to match your project name\n\nTo use this script:\n\n1. Save it as `combine-ts-files.ps1` in your scripts directory\n2. Make sure your project is in a directory named \"sharpee\" at the same level as the script\n3. Run the script from PowerShell\n4. The combined files will be placed in a new \"outputs\" directory\n\nThe script will create one file for the root directory and separate files for each subdirectory, making it easier to review specific parts of your codebase.",
+          "citations": []
+        }
+      ],
+      "sender": "assistant",
+      "created_at": "2025-03-29T07:57:11.344008Z",
+      "updated_at": "2025-03-29T07:57:11.344008Z",
+      "attachments": [],
+      "files": []
+    },
+    {
+      "uuid": "0fd1c98d-0ba9-440c-afa1-4fbb563d4383",
+      "text": "you broke it\n\nAdd-Content -Path $Path\n     |       ~~~~~~~~~~~~~~~~~~~~~~~\n     | Could not open the alternate data stream '\\Users\\david\\OneDrive - Mach9Poker,\n     | Inc\\repos\\outputs\\sharpee-root.txt' of the file 'C:\\Users\\david\\OneDrive - Mach9Poker, Inc\\repos\\C'.\nAdd-Content: C:\\Users\\david\\OneDrive - Mach9Poker, Inc\\repos\\combine-sharpeets.ps1:69",
+      "content": [
+        {
+          "start_timestamp": "2025-03-28T21:28:30.364887Z",
+          "stop_timestamp": "2025-03-28T21:28:30.364887Z",
+          "type": "text",
+          "text": "you broke it\n\nAdd-Content -Path $Path\n     |       ~~~~~~~~~~~~~~~~~~~~~~~\n     | Could not open the alternate data stream '\\Users\\david\\OneDrive - Mach9Poker,\n     | Inc\\repos\\outputs\\sharpee-root.txt' of the file 'C:\\Users\\david\\OneDrive - Mach9Poker, Inc\\repos\\C'.\nAdd-Content: C:\\Users\\david\\OneDrive - Mach9Poker, Inc\\repos\\combine-sharpeets.ps1:69",
+          "citations": []
+        }
+      ],
+      "sender": "human",
+      "created_at": "2025-03-29T08:01:18.024770Z",
+      "updated_at": "2025-03-29T08:01:18.024770Z",
+      "attachments": [],
+      "files": []
+    },
+    {
+      "uuid": "9ad6b981-256c-4956-983c-240c1a3c1048",
+      "text": " I apologize for the issue with the script. Let's fix the path handling problem that's causing the error. The issue is likely related to spaces in your OneDrive path and how the output paths are being constructed.\n```\nViewing artifacts created via the Analysis Tool web feature preview isn’t yet supported on mobile.\n```\n\n\n\nI've fixed the script to resolve the path handling issues that were causing the error. Here are the key changes:\n\n1. **Improved path handling**:\n   - Using `Resolve-Path` to handle paths with spaces correctly\n   - Added better error handling throughout the script\n   - Fixed how path replacements are done when creating relative paths\n\n2. **Better file creation approach**:\n   - Creating empty files first with `New-Item` before attempting to append content\n   - Using explicit error handling with try/catch blocks\n\n3. **Fixed directory structure detection**:\n   - More robust comparison of directory levels\n   - Better handling of path separators\n\nTo use the fixed script:\n\n1. Save it as `combine-ts-files.ps1` in your scripts directory\n2. Run it from the same directory where your \"sharpee\" directory is located\n3. All output files will be created in a new \"outputs\" folder in the current directory\n\nThis should resolve the error you encountered with spaces in your OneDrive path. The script now includes comprehensive error handling to provide more helpful messages if anything else goes wrong.",
+      "content": [
+        {
+          "start_timestamp": "2025-03-29T08:01:19.406821Z",
+          "stop_timestamp": "2025-03-29T08:01:20.200307Z",
+          "type": "text",
+          "text": " I apologize for the issue with the script. Let's fix the path handling problem that's causing the error. The issue is likely related to spaces in your OneDrive path and how the output paths are being constructed.",
+          "citations": []
+        },
+        {
+          "start_timestamp": "2025-03-29T08:01:20.589691Z",
+          "stop_timestamp": "2025-03-29T08:01:42.386157Z",
+          "type": "tool_use",
+          "name": "artifacts",
+          "input": {
+            "id": "fixed-combine-script",
+            "type": "application/vnd.ant.code",
+            "title": "Fixed combine-ts-files.ps1",
+            "command": "create",
+            "content": "# Location: ./scripts/combine-ts-files.ps1\n\n[string[]]$excludePatterns = @(\n    'node_modules',\n    'package-lock.json',\n    '\\.next',\n    'dist',\n    'build',\n    '\\.git',\n    '\\.env',\n    '\\.DS_Store',\n    '\\.js\\.map$',\n    'coverage',\n    '\\.cache',\n    '.*\\.test\\.',\n    '.*\\.spec\\.',\n    '\\.vs',\n    '\\.vscode',\n    'assets',\n    '.husky'\n)\n\n[string[]]$includeExtensions = @(\n    '\\.ts$',\n    '\\.tsx$',\n    '\\.js$',\n    '\\.jsx$',\n    '\\.json$',\n    '\\.md$',\n    'tsconfig\\.json$',\n    'package\\.json$',\n    '\\.gitignore$',\n    '\\.npmrc$',\n    'README$',\n    'LICENSE$'\n)\n\n$rootPath = Resolve-Path (Join-Path (Get-Location) \"sharpee\")\n\n# Create outputs directory in the current directory\n$outputDir = Join-Path (Get-Location) \"outputs\"\nif (-not (Test-Path $outputDir)) {\n    New-Item -Path $outputDir -ItemType Directory | Out-Null\n}\n\n# Function to safely add content to a file\nfunction Add-FileContent {\n    param (\n        [string]$FilePath,\n        [string]$Content,\n        [string]$RelativePath,\n        [string]$Extension\n    )\n    \n    $fileLang = switch -Regex ($Extension) {\n        '\\.ts$|\\.tsx$|\\.js$|\\.jsx$' { \"TypeScript/JavaScript\" }\n        '\\.json$' { \"JSON\" }\n        '\\.md$' { \"Markdown\" }\n        default { \"Text\" }\n    }\n    \n    $contentToAdd = @\"\n\n// =============================================\n// File: $RelativePath\n// Type: $fileLang\n// =============================================\n\n$Content\n\n// =============================================\n// End of file: $RelativePath\n// =============================================\n\n\"@\n    \n    try {\n        Add-Content -Path $FilePath -Value $contentToAdd -ErrorAction Stop\n    }\n    catch {\n        Write-Error \"Error writing to $FilePath. Details: $_\"\n    }\n}\n\n# Function to check if path should be excluded\nfunction Test-ShouldExclude {\n    param (\n        [string]$Path\n    )\n    \n    foreach ($pattern in $excludePatterns) {\n        if ($Path -match $pattern) {\n            return $true\n        }\n    }\n    return $false\n}\n\n# Function to check if file should be included based on extension\nfunction Test-ShouldInclude {\n    param (\n        [string]$Path\n    )\n    \n    foreach ($pattern in $includeExtensions) {\n        if ($Path -match $pattern) {\n            return $true\n        }\n    }\n    return $false\n}\n\n# Function to process directory and create combined file\nfunction Process-Directory {\n    param (\n        [string]$DirectoryPath,\n        [string]$OutputFileName\n    )\n\n    $outputFile = Join-Path $outputDir \"$OutputFileName.txt\"\n    \n    try {\n        if (Test-Path $outputFile) {\n            Remove-Item $outputFile -Force -ErrorAction Stop\n        }\n        \n        # Create an empty file\n        New-Item -Path $outputFile -ItemType File -Force | Out-Null\n        \n        # Get all files in the directory (non-recursive)\n        $files = Get-ChildItem -Path $DirectoryPath -File | \n            Where-Object { \n                (-not (Test-ShouldExclude $_.FullName)) -and (Test-ShouldInclude $_.Name)\n            }\n            \n        foreach ($file in $files) {\n            $relativePath = $file.FullName.Replace($rootPath.Path + \"\\\", \"\")\n            $extension = [System.IO.Path]::GetExtension($file.Name)\n            $content = Get-Content $file.FullName -Raw -ErrorAction Stop\n            \n            Add-FileContent -FilePath $outputFile -Content $content -RelativePath $relativePath -Extension $extension\n        }\n\n        if (Test-Path $outputFile) {\n            Write-Output \"Created $OutputFileName.txt\"\n        }\n    }\n    catch {\n        Write-Error \"Error processing directory $DirectoryPath. Details: $_\"\n    }\n}\n\n# Add project structure information at the beginning\nfunction Add-ProjectStructure {\n    param (\n        [string]$OutputFilePath\n    )\n    \n    try {\n        $header = @\"\n// =============================================\n// SHARPEE PROJECT STRUCTURE\n// =============================================\n\n\"@\n        \n        $structure = Get-ChildItem -Path $rootPath -Recurse -Directory | \n            Where-Object { -not (Test-ShouldExclude $_.FullName) } |\n            ForEach-Object { $_.FullName.Replace($rootPath.Path + \"\\\", \"\") }\n        \n        $filesList = Get-ChildItem -Path $rootPath -Recurse -File | \n            Where-Object { (-not (Test-ShouldExclude $_.FullName)) -and (Test-ShouldInclude $_.Name) } |\n            ForEach-Object { $_.FullName.Replace($rootPath.Path + \"\\\", \"\") }\n        \n        $header += \"// Directories:`n\"\n        foreach ($dir in $structure | Sort-Object) {\n            $header += \"// - $dir`n\"\n        }\n        \n        $header += \"`n// Files:`n\"\n        foreach ($file in $filesList | Sort-Object) {\n            $header += \"// - $file`n\"\n        }\n        \n        $header += \"`n// =============================================`n`n\"\n        \n        $content = Get-Content -Path $OutputFilePath -Raw -ErrorAction Stop\n        Set-Content -Path $OutputFilePath -Value \"$header$content\" -ErrorAction Stop\n    }\n    catch {\n        Write-Error \"Error adding project structure to $OutputFilePath. Details: $_\"\n    }\n}\n\n# Process root directory\nProcess-Directory -DirectoryPath $rootPath -OutputFileName \"sharpee-root\"\n\n# Add project structure to root file\n$rootOutputFile = Join-Path $outputDir \"sharpee-root.txt\"\nif (Test-Path $rootOutputFile) {\n    Add-ProjectStructure -OutputFilePath $rootOutputFile\n}\n\n# Process each level of subdirectories\n1..5 | ForEach-Object {\n    $level = $_\n    \n    try {\n        $dirs = Get-ChildItem -Path $rootPath -Directory -Recurse | \n                Where-Object { \n                    $pathDepth = ($_.FullName.Split([IO.Path]::DirectorySeparatorChar).Length - $rootPath.Path.Split([IO.Path]::DirectorySeparatorChar).Length)\n                    ($pathDepth -eq $level) -and (-not (Test-ShouldExclude $_.FullName))\n                }\n        \n        foreach ($dir in $dirs) {\n            $pathParts = $dir.FullName.Replace($rootPath.Path + \"\\\", \"\").Split([IO.Path]::DirectorySeparatorChar)\n            $outputName = \"sharpee-\" + ($pathParts -join \"-\")\n            Process-Directory -DirectoryPath $dir.FullName -OutputFileName $outputName\n        }\n    }\n    catch {\n        Write-Error \"Error processing directory level $level. Details: $_\"\n    }\n}\n\nWrite-Output \"File combination complete! Output files are in the 'outputs' directory.\"",
+            "language": "powershell",
+            "version_uuid": "4f431cf2-ad2b-430f-b554-09672699a1a4"
+          },
+          "message": null,
+          "integration_name": null,
+          "integration_icon_url": null,
+          "context": null,
+          "display_content": null
+        },
+        {
+          "start_timestamp": null,
+          "stop_timestamp": null,
+          "type": "tool_result",
+          "name": "artifacts",
+          "content": [
+            {
+              "type": "text",
+              "text": "OK",
+              "uuid": "1cf54bfe-801b-4a72-a2bf-4350bb85e778"
+            }
+          ],
+          "is_error": false,
+          "message": null,
+          "integration_name": null,
+          "integration_icon_url": null,
+          "display_content": null
+        },
+        {
+          "start_timestamp": "2025-03-29T08:01:46.978471Z",
+          "stop_timestamp": "2025-03-29T08:01:51.257995Z",
+          "type": "text",
+          "text": "\n\nI've fixed the script to resolve the path handling issues that were causing the error. Here are the key changes:\n\n1. **Improved path handling**:\n   - Using `Resolve-Path` to handle paths with spaces correctly\n   - Added better error handling throughout the script\n   - Fixed how path replacements are done when creating relative paths\n\n2. **Better file creation approach**:\n   - Creating empty files first with `New-Item` before attempting to append content\n   - Using explicit error handling with try/catch blocks\n\n3. **Fixed directory structure detection**:\n   - More robust comparison of directory levels\n   - Better handling of path separators\n\nTo use the fixed script:\n\n1. Save it as `combine-ts-files.ps1` in your scripts directory\n2. Run it from the same directory where your \"sharpee\" directory is located\n3. All output files will be created in a new \"outputs\" folder in the current directory\n\nThis should resolve the error you encountered with spaces in your OneDrive path. The script now includes comprehensive error handling to provide more helpful messages if anything else goes wrong.",
+          "citations": []
+        }
+      ],
+      "sender": "assistant",
+      "created_at": "2025-03-29T08:01:51.867005Z",
+      "updated_at": "2025-03-29T08:01:51.867005Z",
+      "attachments": [],
+      "files": []
+    }
+  ],
+  "_extraction_metadata": {
+    "extraction_method": "exact_title_match",
+    "matched_title": "Combine TypeScript and Project Files",
+    "extraction_timestamp": "2025-06-21T06:39:33.423Z",
+    "source": "claude_project_sharpee"
+  }
+}

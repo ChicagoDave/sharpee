@@ -290,4 +290,18 @@ export class IFEntity implements Entity {
     const identity = this.get(TraitType.IDENTITY);
     return identity ? (identity as any).description : undefined;
   }
+  
+  /**
+   * Get the weight of this entity
+   */
+  get weight(): number {
+    return (this.attributes.weight as number) || 0;
+  }
+  
+  /**
+   * Alias for has() method - for backwards compatibility
+   */
+  hasTrait(type: TraitType | string): boolean {
+    return this.has(type);
+  }
 }

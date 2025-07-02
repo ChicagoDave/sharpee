@@ -1,0 +1,1 @@
+{"version":3,"file":"command-executor.d.ts","sourceRoot":"","sources":["command-executor.ts"],"names":[],"mappings":"AAAA;;GAEG;AAEH,OAAO,KAAK,EAAE,aAAa,EAAE,MAAM,eAAe,CAAC;AACnD,OAAO,KAAK,EAAE,gBAAgB,EAAE,cAAc,EAAE,aAAa,EAAE,MAAM,aAAa,CAAC;AAEnF;;GAEG;AACH,MAAM,WAAW,eAAe;IAC9B;;;;OAIG;IACH,OAAO,CAAC,OAAO,EAAE,gBAAgB,GAAG,aAAa,CAAC,aAAa,EAAE,EAAE,cAAc,CAAC,CAAC;CACpF"}

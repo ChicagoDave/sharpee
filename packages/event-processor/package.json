@@ -1,0 +1,35 @@
+{
+  "name": "@sharpee/event-processor",
+  "version": "0.1.0",
+  "description": "Event processor for applying semantic events to the world model",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@sharpee/core": "workspace:*",
+    "@sharpee/world-model": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.19",
+    "jest": "^29.7.0",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "sharpee",
+    "interactive-fiction",
+    "if",
+    "events",
+    "event-processor"
+  ],
+  "author": "Sharpee Team",
+  "license": "MIT"
+}

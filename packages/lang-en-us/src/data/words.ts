@@ -25,6 +25,22 @@ export const englishWords = {
   ],
   
   /**
+   * Common nouns for basic parsing
+   */
+  commonNouns: [
+    'door', 'window', 'wall', 'floor', 'ceiling',
+    'table', 'chair', 'bed', 'desk', 'shelf',
+    'box', 'container', 'bag', 'chest', 'trunk',
+    'key', 'lock', 'handle', 'button', 'switch',
+    'book', 'paper', 'note', 'letter', 'sign',
+    'lamp', 'light', 'candle', 'torch', 'lantern',
+    'sword', 'knife', 'gun', 'weapon', 'tool',
+    'food', 'water', 'bottle', 'cup', 'plate',
+    'coin', 'money', 'treasure', 'gem', 'jewel',
+    'rope', 'chain', 'string', 'wire', 'cable'
+  ],
+  
+  /**
    * Pronouns
    */
   pronouns: [

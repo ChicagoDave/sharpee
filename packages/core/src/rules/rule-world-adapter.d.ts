@@ -40,3 +40,4 @@ export declare class SimpleRuleWorldAdapter implements RuleWorld {
  * Create a simple rule world from basic state
  */
 export declare function createSimpleRuleWorld(worldState: any, playerId?: EntityId, currentLocationId?: EntityId): RuleWorld;
+//# sourceMappingURL=rule-world-adapter.d.ts.map

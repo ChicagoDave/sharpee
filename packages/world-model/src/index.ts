@@ -9,6 +9,10 @@ export * from './behaviors';
 // Constants
 export * from './constants';
 
+// Commands and interfaces (IF-specific types)
+export * from './commands';
+export * from './interfaces';
+
 // Traits
 export * from './traits/trait';
 export * from './traits/trait-types';
@@ -35,5 +39,12 @@ export * from './traits/actor';
 // Extension system
 export * from './extensions';
 
+// World model
+export * from './world';
+
 // Types (to be added)
 // export * from './types';
+
+
+// Services
+export * from './services';

@@ -37,3 +37,4 @@ export interface AttributeConfig {
  * A map of attribute configurations
  */
 export type AttributeConfigMap = Record<string, AttributeConfig>;
+//# sourceMappingURL=attribute.d.ts.map

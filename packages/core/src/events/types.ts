@@ -82,50 +82,9 @@ export interface SemanticEvent {
   metadata?: Record<string, unknown>;
 }
 
-/**
- * Interface for event source that collects and manages events
- */
-export interface EventSource {
-  /**
-   * Add an event to the source
-   */
-  addEvent: (event: SemanticEvent) => void;
-  
-  /**
-   * Get all events in the source
-   */
-  getAllEvents: () => SemanticEvent[];
-  
-  /**
-   * Get events of a specific type
-   */
-  getEventsByType: (type: string) => SemanticEvent[];
-  
-  /**
-   * Get events involving a specific entity
-   */
-  getEventsByEntity: (entityId: EntityId) => SemanticEvent[];
-  
-  /**
-   * Get events with a specific tag
-   */
-  getEventsByTag: (tag: string) => SemanticEvent[];
-  
-  /**
-   * Clear all events
-   */
-  clearEvents: () => void;
-  
-  /**
-   * Apply a filter to the events
-   */
-  filter: (predicate: (event: SemanticEvent) => boolean) => SemanticEvent[];
-  
-  /**
-   * Get the event emitter associated with this source
-   */
-  getEmitter: () => EventEmitter;
-}
+// EventSource interface moved to semantic-event-source.ts
+// Re-export for backwards compatibility
+export { SemanticEventSource as EventSource } from './semantic-event-source';
 
 /**
  * Event listener for semantic events
@@ -152,6 +111,8 @@ export interface EventEmitter {
    */
   emit: (event: SemanticEvent) => void;
 }
+
+
 
 /**
  * Configuration options for the event system

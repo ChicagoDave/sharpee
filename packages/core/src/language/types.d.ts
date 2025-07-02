@@ -64,3 +64,4 @@ export interface LanguageMetadata {
     englishName: string;
     direction: 'ltr' | 'rtl';
 }
+//# sourceMappingURL=types.d.ts.map

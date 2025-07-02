@@ -20,9 +20,6 @@
   ],
   "author": "Sharpee Team",
   "license": "MIT",
-  "dependencies": {
-    "@sharpee/stdlib": "^0.1.0"
-  },
   "devDependencies": {
     "@types/jest": "^29.5.0",
     "@types/node": "^18.15.11",

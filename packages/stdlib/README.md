@@ -1,136 +1,191 @@
-# Sharpee Standard Library (stdlib)
+# @sharpee/stdlib
 
-The Standard Library provides the orchestration and service layer for the Sharpee Interactive Fiction platform. It sits between the pure data models in `@sharpee/world-model` and the author-facing API in `@sharpee/forge`.
+Standard library for the Sharpee IF Platform - parser, validator, actions, and language interfaces.
+
+## Overview
+
+The `@sharpee/stdlib` package provides the core IF functionality:
+- **Parser** - Converts user input to ParsedCommand structures (syntax only)
+- **Validator** - Resolves entities and validates commands against world state
+- **Actions** - Standard IF actions (take, drop, examine, go, etc.)
+- **Language System** - Message keys and formatting
+- **Vocabulary** - Standard English vocabulary for IF
 
 ## Architecture
 
+The stdlib implements Sharpee's three-phase command processing:
+
 ```
-┌─────────────┐
-│   Forge     │  Author-facing API (fluent, convenient)
-├─────────────┤
-│   StdLib    │  Orchestration, Services, Complex Logic ← THIS PACKAGE
-├─────────────┤
-│ World-Model │  Pure IF concepts (traits, behaviors)
-├─────────────┤
-│    Core     │  Base entity system, events
-└─────────────┘
+Input Text
+    ↓
+[Parser] - Grammar analysis only
+    ↓
+ParsedCommand - Structured but unresolved
+    ↓
+[Validator] - Entity resolution & validation
+    ↓
+ValidatedCommand - Ready for execution
+    ↓
+[Actions] - Business logic
+    ↓
+SemanticEvents - What happened
 ```
 
-## Core Services
+## Parser
 
-The stdlib provides several key services that handle complex operations:
-
-### InventoryService
-- Complex container operations
-- Weight and volume calculations
-- Item transfer with validation
-- Inventory queries and management
-
-### VisibilityService
-- Scope calculations (what can be seen/reached)
-- Lighting awareness
-- Container transparency
-- Pathfinding to objects
-
-### MovementService
-- Entity movement between locations
-- Navigation validation (doors, locks, etc.)
-- Pathfinding between rooms
-- Movement restrictions
-
-### RoomService
-- Room connections and exits
-- Lighting calculations
-- Room descriptions
-- Spatial relationships
-
-### ParserService
-- World-aware command parsing
-- Entity disambiguation
-- Scope-based resolution
-- Grammar pattern matching
-
-## Service-Based Actions
-
-Actions in stdlib use the service layer for all complex operations:
+The parser performs purely grammatical analysis without world knowledge:
 
 ```typescript
-export class TakingActionExecutor extends BaseActionExecutor {
-  protected validate(command: ParsedCommand, context: ActionContext): true | ActionFailureReason {
-    // Use visibility service for checks
-    const reachable = this.checkReachability(command.noun, context);
-    if (reachable !== true) return reachable;
-    
-    // Use inventory service for validation
-    const canContain = context.services.inventory.canContain(context.player, command.noun);
-    if (canContain !== true) return ActionFailureReason.CONTAINER_FULL;
-    
-    return true;
-  }
-  
-  protected doExecute(command: ParsedCommand, context: ActionContext): SemanticEvent[] {
-    // Use inventory service for the transfer
-    const transferred = context.services.inventory.transfer(
-      command.noun,
-      fromEntity,
-      context.player
-    );
-    
-    // Return appropriate events
-  }
-}
+import { BasicParser } from '@sharpee/stdlib/parser';
+
+const parser = new BasicParser();
+parser.registerVocabulary(standardVocabulary);
+
+const result = parser.parse("take the red ball");
+// Returns ParsedCommand with:
+// - action: "TAKE"
+// - directObject: { text: "red ball", candidates: ["ball", "red"] }
+// - pattern: "VERB_OBJ"
 ```
 
-## Benefits
+## Validator
 
-1. **Separation of Concerns**: Actions handle flow, services handle complexity
-2. **Reusability**: Services can be used by multiple actions and systems
-3. **Testability**: Each service can be tested independently
-4. **Consistency**: Business logic centralized in services
-5. **Extensibility**: New features added to services benefit all consumers
+The validator resolves entities and checks preconditions:
 
-## Usage
+```typescript
+import { CommandValidator } from '@sharpee/stdlib/validation';
+
+const validator = new CommandValidator(world, actionRegistry);
+
+const validated = validator.validate(parsedCommand, {
+  world,
+  player,
+  location: currentRoom,
+  scopeService
+});
+
+// Returns ValidatedCommand with:
+// - Resolved entities
+// - Action handler reference
+// - Validation score
+```
+
+### Entity Resolution Features
+
+- Adjective matching ("red ball" vs "blue ball")
+- Scope checking (visible, reachable, touchable)
+- Pronoun resolution ("it", "them") 
+- Synonym matching
+- Container contents ("ball in box")
+- Recent interaction bonus
+- Ambiguity resolution
+
+## Actions
+
+Standard IF actions are included:
 
 ```typescript
 import { 
-  createActionContext,
-  InventoryService,
-  VisibilityService,
-  TakingActionExecutor 
-} from '@sharpee/stdlib';
+  takingAction,
+  droppingAction,
+  examiningAction,
+  goingAction,
+  openingAction 
+} from '@sharpee/stdlib/actions';
 
-// Create context with services
-const context = createActionContext({
-  world,
-  player,
-  language
-});
-
-// Use services directly
-const visible = context.services.visibility.getVisibleEntities(player);
-const canTake = context.services.inventory.canContain(player, item);
-
-// Or through actions
-const action = new TakingActionExecutor();
-const events = action.execute(command, context);
-```
-
-## Migration from Direct Behavior Usage
-
-The stdlib is transitioning from direct behavior calls to service-based orchestration:
-
-### Old Approach
-```typescript
-// Direct behavior calls
-if (ContainerBehavior.canAccept(container, item)) {
-  world.moveEntity(item.id, container.id);
+// Actions implement the Action interface:
+interface Action {
+  id: string;
+  execute(command: ValidatedCommand, context: ActionContext): SemanticEvent[];
 }
 ```
 
-### New Approach
+### Available Actions
+
+- **Taking** - Pick up objects
+- **Dropping** - Put down objects  
+- **Examining** - Look at objects closely
+- **Going** - Move between rooms
+- **Opening** - Open containers/doors
+- More coming soon...
+
+## Language System
+
+Message formatting and resolution:
+
 ```typescript
-// Service orchestration
-const transferred = context.services.inventory.transfer(item, from, to);
+import { IFMessageResolver } from '@sharpee/stdlib/messages';
+
+const resolver = new IFMessageResolver();
+resolver.registerBundle('en-US', enUSBundle);
+
+// Format messages with parameters
+const message = resolver.resolve('item_taken', {
+  item: 'golden key'
+});
+// "You take the golden key."
 ```
 
-The service layer handles all the complexity: validation, side effects, events, etc.
+## Vocabulary
+
+Standard English vocabulary for IF:
+
+```typescript
+import { standardVocabulary } from '@sharpee/stdlib/vocabulary';
+
+// Includes common IF words:
+// - Verbs: take, drop, examine, go, etc.
+// - Prepositions: in, on, under, with, etc.
+// - Articles: the, a, an
+// - Common nouns and adjectives
+```
+
+## Integration Example
+
+```typescript
+import { 
+  BasicParser,
+  CommandValidator,
+  ActionRegistry,
+  standardActions,
+  standardVocabulary 
+} from '@sharpee/stdlib';
+
+// Set up parser
+const parser = new BasicParser();
+parser.registerVocabulary(standardVocabulary);
+
+// Set up actions
+const actionRegistry = new ActionRegistry();
+standardActions.forEach(action => actionRegistry.register(action));
+
+// Set up validator
+const validator = new CommandValidator(world, actionRegistry);
+
+// Process a command
+const parsed = parser.parse("take brass key");
+if (parsed.success) {
+  const validated = validator.validate(parsed.value, validationContext);
+  if (validated.success) {
+    const events = validated.value.actionHandler.execute(
+      validated.value,
+      actionContext
+    );
+    // Process events...
+  }
+}
+```
+
+## Design Philosophy
+
+The stdlib follows Sharpee's core principles:
+
+1. **Separation of Concerns** - Parser doesn't know about world, validator doesn't execute
+2. **Pure Functions** - Actions return events, don't mutate state
+3. **Extensible** - Easy to add new actions, vocabulary, messages
+4. **Type-Safe** - Full TypeScript support with proper types
+5. **Event-Driven** - All changes happen through semantic events
+
+## License
+
+MIT

@@ -15,10 +15,10 @@ export class IdentityTrait implements Trait {
   readonly type = TraitType.IDENTITY;
   
   /** Primary name of the entity */
-  name: string = '';
+  name = '';
   
   /** Full description shown when examining */
-  description: string = '';
+  description = '';
   
   /** Alternative names/aliases the entity can be referred to by */
   aliases: string[] = [];
@@ -27,13 +27,13 @@ export class IdentityTrait implements Trait {
   brief?: string;
   
   /** Whether the entity has a proper name (like "John" vs "a man") */
-  properName: boolean = false;
+  properName = false;
   
   /** Article to use with the name ("a", "an", "the", "some", or empty for proper names) */
-  article: string = 'a';
+  article = 'a';
   
   /** Whether this entity is concealed from normal view */
-  concealed: boolean = false;
+  concealed = false;
   
   /** Weight of the object (undefined = negligible/not tracked) */
   weight?: number;

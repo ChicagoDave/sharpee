@@ -1,79 +1,36 @@
 {
   "name": "@sharpee/stdlib",
   "version": "0.1.0",
-  "description": "Standard library for Sharpee interactive fiction engine",
+  "description": "Standard library for Sharpee IF Platform - command definitions and language interfaces",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --build",
     "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "lint": "eslint src --ext .ts",
-    "clean": "rimraf dist",
-    "prepublishOnly": "npm run clean && npm run build"
+    "clean": "rimraf dist"
   },
-  "peerDependencies": {
-    "@sharpee/core": "^0.1.0",
-    "@sharpee/world-model": "^0.1.0"
+  "dependencies": {
+    "@sharpee/core": "workspace:*",
+    "@sharpee/world-model": "workspace:*"
   },
   "devDependencies": {
-    "@sharpee/core": "^0.1.0",
-    "@sharpee/world-model": "^0.1.0",
-    "@types/jest": "^29.5.5",
-    "@typescript-eslint/eslint-plugin": "^5.59.0",
-    "@typescript-eslint/parser": "^5.59.0",
-    "eslint": "^8.38.0",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.19",
+    "@vitest/ui": "^3.2.4",
     "jest": "^29.7.0",
     "rimraf": "^5.0.5",
-    "ts-jest": "^29.1.1",
-    "typescript": "^5.2.2"
+    "typescript": "^5.3.3",
+    "vitest": "^3.2.4"
   },
   "files": [
     "dist"
   ],
-  "publishConfig": {
-    "access": "public"
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
-    },
-    "./handlers": {
-      "types": "./dist/handlers/index.d.ts",
-      "import": "./dist/handlers/index.js",
-      "require": "./dist/handlers/index.js"
-    },
-    "./channels": {
-      "types": "./dist/channels/index.d.ts",
-      "import": "./dist/channels/index.js",
-      "require": "./dist/channels/index.js"
-    },
-    "./containers": {
-      "types": "./dist/containers/index.d.ts",
-      "import": "./dist/containers/index.js",
-      "require": "./dist/containers/index.js"
-    },
-    "./physics": {
-      "types": "./dist/physics/index.d.ts",
-      "import": "./dist/physics/index.js",
-      "require": "./dist/physics/index.js"
-    },
-    "./characters": {
-      "types": "./dist/characters/index.d.ts",
-      "import": "./dist/characters/index.js",
-      "require": "./dist/characters/index.js"
-    },
-    "./actions": {
-      "types": "./dist/actions/index.d.ts",
-      "import": "./dist/actions/index.js",
-      "require": "./dist/actions/index.js"
-    }
-  },
-  "license": "MIT",
-  "engines": {
-    "node": ">=14.0.0"
-  }
+  "keywords": [
+    "sharpee",
+    "interactive-fiction",
+    "if",
+    "stdlib"
+  ],
+  "author": "Sharpee Team",
+  "license": "MIT"
 }

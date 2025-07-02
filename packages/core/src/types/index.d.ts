@@ -5,3 +5,5 @@
 export * from './entity';
 export * from './relationship';
 export * from './attribute';
+export * from './result';
+//# sourceMappingURL=index.d.ts.map

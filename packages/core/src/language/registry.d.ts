@@ -44,3 +44,4 @@ export declare class LanguageRegistry {
  * Get the global language registry
  */
 export declare function getLanguageRegistry(): LanguageRegistry;
+//# sourceMappingURL=registry.d.ts.map

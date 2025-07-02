@@ -61,3 +61,4 @@ export interface SimpleRuleSystem {
     /** Get all rules */
     getRules(): Rule[];
 }
+//# sourceMappingURL=types.d.ts.map

@@ -44,3 +44,4 @@ export interface EntityOperationOptions {
      */
     validateRelationships?: boolean;
 }
+//# sourceMappingURL=entity.d.ts.map

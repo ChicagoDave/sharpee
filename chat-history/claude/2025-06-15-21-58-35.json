@@ -1,0 +1,53 @@
+{
+  "uuid": "64b8e167-771c-4c47-8455-2931ccd87fd5",
+  "name": "Project Refactoring Archive Checklist",
+  "created_at": "2025-06-16T02:58:35.189673Z",
+  "updated_at": "2025-06-16T03:01:26.173113Z",
+  "account": {
+    "uuid": "760c9b93-a257-47cd-bd61-d0b15a821e02"
+  },
+  "chat_messages": [
+    {
+      "uuid": "f715fdab-52b8-4dac-88f3-712444193b6f",
+      "text": "refactor in progress\n\n### Move to /archive:\r\n- [ ] All test files in archived state\r\n- [ ] Old parser implementations\r\n- [ ] Migration scripts (after running them)\r\n- [ ] Backup world models\r\n- [ ] TODO files that are completed",
+      "content": [
+        {
+          "start_timestamp": "2025-06-16T02:58:36.277881Z",
+          "stop_timestamp": "2025-06-16T02:58:36.277881Z",
+          "type": "text",
+          "text": "refactor in progress\n\n### Move to /archive:\r\n- [ ] All test files in archived state\r\n- [ ] Old parser implementations\r\n- [ ] Migration scripts (after running them)\r\n- [ ] Backup world models\r\n- [ ] TODO files that are completed",
+          "citations": []
+        }
+      ],
+      "sender": "human",
+      "created_at": "2025-06-16T02:58:36.292680Z",
+      "updated_at": "2025-06-16T02:58:36.292680Z",
+      "attachments": [],
+      "files": []
+    },
+    {
+      "uuid": "321a9a27-8943-485c-8d91-68e63e1add1d",
+      "text": "we just started this and your screen blanked out\n\n### Move to /archive:\r\n- [ ] All test files in archived state\r\n- [ ] Old parser implementations\r\n- [ ] Migration scripts (after running them)\r\n- [ ] Backup world models\r\n- [ ] TODO files that are completed",
+      "content": [
+        {
+          "start_timestamp": "2025-06-16T03:01:26.170267Z",
+          "stop_timestamp": "2025-06-16T03:01:26.170267Z",
+          "type": "text",
+          "text": "we just started this and your screen blanked out\n\n### Move to /archive:\r\n- [ ] All test files in archived state\r\n- [ ] Old parser implementations\r\n- [ ] Migration scripts (after running them)\r\n- [ ] Backup world models\r\n- [ ] TODO files that are completed",
+          "citations": []
+        }
+      ],
+      "sender": "human",
+      "created_at": "2025-06-16T03:01:26.173113Z",
+      "updated_at": "2025-06-16T03:01:26.173113Z",
+      "attachments": [],
+      "files": []
+    }
+  ],
+  "_extraction_metadata": {
+    "extraction_method": "exact_title_match",
+    "matched_title": "Project Refactoring Archive Checklist",
+    "extraction_timestamp": "2025-06-21T06:39:36.156Z",
+    "source": "claude_project_sharpee"
+  }
+}

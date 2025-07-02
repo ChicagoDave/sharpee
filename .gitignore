@@ -71,5 +71,13 @@ packages/clients/electron/app/dist/
 # Generated code
 **/*.generated.*
 
+# Build artifacts in src directories (but not in node_modules)
+packages/**/src/**/*.d.ts
+packages/**/src/**/*.js
+packages/**/src/**/*.js.map
+# But keep actual source files
+!**/*.config.js
+!**/*.config.ts
+
 # Local development configuration
 .local/

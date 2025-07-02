@@ -1,53 +1,22 @@
 /**
- * Sharpee IF Parser
- * Pattern-based parser for interactive fiction commands
+ * Parser module exports
+ * 
+ * The parser system consists of:
+ * - Vocabulary types and registry
+ * - World-agnostic parser that produces ParsedCommand
+ * - Parser types and interfaces
  */
 
-// Core parser exports
-export { IFParserImpl, createIFParser } from './if-parser';
-export { EnhancedIFParser, createEnhancedIFParser } from './enhanced-if-parser';
+// Types
+export * from './vocabulary-types';
+export * from './parser-types';
+export * from './parser-internals';
 
-// Grammar exports
-export * from './grammar';
+// Registry
+export * from './vocabulary-registry';
 
-// Integration exports
-export * from './integration';
+// Parser
+export * from './basic-parser';
 
-// Type exports
-export {
-  IFParser,
-  ParsedIFCommand,
-  ResolvedIFCommand,
-  ParseResult,
-  ScopeContext,
-  GrammarPattern,
-  ScoredMatch,
-  MatchType,
-  DisambiguationRequest,
-  IFParserConfig,
-  ScoringConfig
-} from './if-parser-types';
-
-// Language support exports
-export { LanguageData, createEnglishData } from './languages/language-data';
-export { 
-  englishData,
-  lemmatize,
-  normalizePhrase,
-  isDirection,
-  isPronoun,
-  canonicalizeAction
-} from './languages/en-US';
-
-// Useful word lists
-export {
-  ARTICLES,
-  PREPOSITIONS,
-  PRONOUNS,
-  CONJUNCTIONS,
-  COMMON_ADJECTIVES,
-  DETERMINERS
-} from './languages/en-US/dictionaries';
-
-// Configuration helper
-export { createDefaultParserConfig } from './parser-config';
+// Re-export commonly used items
+export { vocabularyRegistry } from './vocabulary-registry';

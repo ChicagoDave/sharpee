@@ -19,16 +19,25 @@ export const IFEvents = {
   ITEM_PUT_ON: 'item_put_on',
   ITEM_REMOVED_FROM: 'item_removed_from',
   CONTAINER_EMPTIED: 'container_emptied',
+  CONTAINER_NOT_OPEN: 'container_not_open',
+  NOT_A_CONTAINER: 'not_a_container',
+  NOT_A_SUPPORTER: 'not_a_supporter',
+  DOESNT_FIT: 'doesnt_fit',
   
   // Openable events
   OPENED: 'opened',
   CLOSED: 'closed',
+  NOT_OPENABLE: 'not_openable',
   
   // Lockable events
   LOCKED: 'locked',
   UNLOCKED: 'unlocked',
   CONTAINER_LOCKED: 'container_locked',
   CONTAINER_UNLOCKED: 'container_unlocked',
+  ALREADY_LOCKED: 'already_locked',
+  ALREADY_UNLOCKED: 'already_unlocked',
+  UNLOCK_FAILED: 'unlock_failed',
+  NOT_LOCKABLE: 'not_lockable',
   
   // Switchable events
   SWITCHED_ON: 'switched_on',
@@ -81,6 +90,9 @@ export const IFEvents = {
   
   // General message events
   CUSTOM_MESSAGE: 'custom_message',
+  
+  // Visibility events
+  VISIBILITY_CHANGED: 'visibility_changed',
   
   // Action meta-events
   ACTION_PREVENTED: 'action_prevented',

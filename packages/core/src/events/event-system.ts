@@ -1,7 +1,8 @@
 // packages/core/src/events/event-system.ts
 
-import { SemanticEvent, EventSource, EventEmitter, EventListener } from './types';
+import { SemanticEvent } from './types';
 import { EntityId } from '../types/entity';
+import { SemanticEventSource, createSemanticEventSource } from './semantic-event-source';
 
 /**
  * Create a new semantic event
@@ -38,166 +39,9 @@ export function createEvent(
   };
 }
 
-/**
- * Implementation of the EventSource interface
- */
-export class EventSourceImpl implements EventSource {
-  private events: SemanticEvent[] = [];
-  private emitter: EventEmitterImpl;
-  private lastProcessedIndex: number = 0;
-
-  constructor() {
-    this.emitter = new EventEmitterImpl();
-  }
-
-  /**
-   * Add an event to the source
-   */
-  public addEvent(event: SemanticEvent): void {
-    this.events.push(event);
-    this.emitter.emit(event);
-  }
-
-  /**
-   * Get all events in the source
-   */
-  public getAllEvents(): SemanticEvent[] {
-    return [...this.events];
-  }
-
-  /**
-   * Get events since a specific event ID
-   */
-  public getEventsSince(eventId?: string): SemanticEvent[] {
-    if (!eventId) {
-      return this.getAllEvents();
-    }
-    
-    const index = this.events.findIndex(e => e.id === eventId);
-    if (index === -1) {
-      return this.getAllEvents();
-    }
-    
-    return this.events.slice(index + 1);
-  }
-
-  /**
-   * Get unprocessed events and mark them as processed
-   */
-  public getUnprocessedEvents(): SemanticEvent[] {
-    const unprocessed = this.events.slice(this.lastProcessedIndex);
-    this.lastProcessedIndex = this.events.length;
-    return unprocessed;
-  }
-
-  /**
-   * Get events of a specific type
-   */
-  public getEventsByType(type: string): SemanticEvent[] {
-    return this.events.filter(event => event.type === type);
-  }
-
-  /**
-   * Get events involving a specific entity
-   */
-  public getEventsByEntity(entityId: EntityId): SemanticEvent[] {
-    return this.events.filter(event => {
-      const entities = event.entities;
-      return (
-        entities.actor === entityId ||
-        entities.target === entityId ||
-        entities.instrument === entityId ||
-        entities.location === entityId ||
-        (entities.others && entities.others.includes(entityId))
-      );
-    });
-  }
-
-  /**
-   * Get events with a specific tag
-   */
-  public getEventsByTag(tag: string): SemanticEvent[] {
-    return this.events.filter(event => event.tags && event.tags.includes(tag));
-  }
-
-  /**
-   * Apply a filter to the events
-   */
-  public filter(predicate: (event: SemanticEvent) => boolean): SemanticEvent[] {
-    return this.events.filter(predicate);
-  }
-
-  /**
-   * Clear all events
-   */
-  public clearEvents(): void {
-    this.events = [];
-    this.lastProcessedIndex = 0;
-  }
-
-  /**
-   * Get the event emitter
-   */
-  public getEmitter(): EventEmitter {
-    return this.emitter;
-  }
-}
-
-/**
- * Implementation of the EventEmitter interface
- */
-export class EventEmitterImpl implements EventEmitter {
-  private listeners: Map<string, Set<EventListener>> = new Map();
-  private globalListeners: Set<EventListener> = new Set();
-
-  public on(type: string, listener: EventListener): void {
-    if (type === '*') {
-      this.globalListeners.add(listener);
-      return;
-    }
-
-    if (!this.listeners.has(type)) {
-      this.listeners.set(type, new Set());
-    }
-    this.listeners.get(type)!.add(listener);
-  }
-
-  public off(type: string, listener: EventListener): void {
-    if (type === '*') {
-      this.globalListeners.delete(listener);
-      return;
-    }
-
-    const typeListeners = this.listeners.get(type);
-    if (typeListeners) {
-      typeListeners.delete(listener);
-      if (typeListeners.size === 0) {
-        this.listeners.delete(type);
-      }
-    }
-  }
-
-  public emit(event: SemanticEvent): void {
-    const typeListeners = this.listeners.get(event.type);
-    if (typeListeners) {
-      for (const listener of typeListeners) {
-        try {
-          listener(event);
-        } catch (error) {
-          console.error(`Error in event listener for ${event.type}:`, error);
-        }
-      }
-    }
-
-    for (const listener of this.globalListeners) {
-      try {
-        listener(event);
-      } catch (error) {
-        console.error(`Error in global event listener for ${event.type}:`, error);
-      }
-    }
-  }
-}
+// Event source implementation moved to semantic-event-source.ts
+// Re-export for backwards compatibility
+export { SemanticEventSourceImpl as EventSourceImpl } from './semantic-event-source';
 
 /**
  * Generate a unique ID for an event
@@ -208,14 +52,8 @@ function generateEventId(): string {
 
 /**
  * Create a new event source
+ * @deprecated Use createSemanticEventSource from './semantic-event-source'
  */
-export function createEventSource(): EventSource {
-  return new EventSourceImpl();
-}
-
-/**
- * Create a new event emitter
- */
-export function createEventEmitter(): EventEmitter {
-  return new EventEmitterImpl();
+export function createEventSource(): SemanticEventSource {
+  return createSemanticEventSource();
 }

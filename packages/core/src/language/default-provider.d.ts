@@ -21,3 +21,4 @@ export declare class DefaultLanguageProviderFactory {
  * Create a new default language provider
  */
 export declare function createDefaultLanguageProvider(): LanguageProvider;
+//# sourceMappingURL=default-provider.d.ts.map

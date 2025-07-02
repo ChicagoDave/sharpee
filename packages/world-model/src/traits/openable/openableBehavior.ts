@@ -6,7 +6,7 @@ import { TraitType } from '../trait-types';
 import { OpenableTrait } from './openableTrait';
 import { SemanticEvent, createEvent } from '@sharpee/core';
 import { IFEvents } from '../../constants/if-events';
-import { ActionFailureReason } from '../../constants/action-failures';
+// No longer using ActionFailureReason enum
 
 /**
  * Behavior for openable entities.
@@ -44,7 +44,7 @@ export class OpenableBehavior extends Behavior {
         IFEvents.ACTION_FAILED,
         {
           action: 'open',
-          reason: ActionFailureReason.ALREADY_OPEN,
+          reason: 'already_open',
           customMessage: openable.alreadyOpenMessage
         },
         { target: entity.id, actor: actor.id }
@@ -77,7 +77,7 @@ export class OpenableBehavior extends Behavior {
         IFEvents.ACTION_FAILED,
         {
           action: 'close',
-          reason: ActionFailureReason.ALREADY_CLOSED,
+          reason: 'already_closed',
           customMessage: openable.alreadyClosedMessage
         },
         { target: entity.id, actor: actor.id }
@@ -89,7 +89,7 @@ export class OpenableBehavior extends Behavior {
         IFEvents.ACTION_FAILED,
         {
           action: 'close',
-          reason: ActionFailureReason.CANT_DO_THAT,
+          reason: 'cant_do_that',
           customMessage: "Once opened, it can't be closed."
         },
         { target: entity.id, actor: actor.id }

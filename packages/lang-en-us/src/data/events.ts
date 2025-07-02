@@ -3,13 +3,143 @@
  * @description Templates for event success messages
  */
 
-import { IFEvents } from '@sharpee/stdlib/constants';
+/**
+ * Standard Interactive Fiction events
+ * These match the event types used in the IF system
+ */
+export const IFEvents = {
+  // Core object manipulation
+  TAKEN: 'taken',
+  DROPPED: 'dropped',
+  MOVED: 'moved',
+  EXAMINED: 'examined',
+  
+  // Item-specific events
+  ITEM_TAKEN: 'item_taken',
+  ITEM_DROPPED: 'item_dropped',
+  ITEM_MOVED: 'item_moved',
+  ITEM_THROWN: 'item_thrown',
+  ITEM_GIVEN: 'item_given',
+  ITEM_SHOWN: 'item_shown',
+  ITEM_EXAMINED: 'item_examined',
+  ITEM_DESTROYED: 'item_destroyed',
+  ITEM_USED: 'item_used',
+  ITEM_WORN: 'item_worn',
+  ITEM_REMOVED: 'item_removed',
+  ITEM_EATEN: 'item_eaten',
+  ITEM_DRUNK: 'item_drunk',
+  ITEM_TOO_HEAVY: 'item_too_heavy',
+  
+  // Container/supporter events  
+  PUT_IN: 'put_in',
+  PUT_ON: 'put_on',
+  REMOVED_FROM: 'removed_from',
+  ITEM_PUT_IN: 'item_put_in',
+  ITEM_PUT_ON: 'item_put_on',
+  ITEM_REMOVED_FROM: 'item_removed_from',
+  CONTAINER_OPENED: 'container_opened',
+  CONTAINER_CLOSED: 'container_closed',
+  CONTAINER_LOCKED: 'container_locked',
+  CONTAINER_UNLOCKED: 'container_unlocked',
+  CONTAINER_EMPTIED: 'container_emptied',
+  
+  // Openable events
+  OPENED: 'opened',
+  CLOSED: 'closed',
+  
+  // Door events
+  DOOR_OPENED: 'door_opened',
+  DOOR_CLOSED: 'door_closed',
+  DOOR_LOCKED: 'door_locked',
+  DOOR_UNLOCKED: 'door_unlocked',
+  DOOR_KNOCKED: 'door_knocked',
+  
+  // Device events
+  DEVICE_SWITCHED_ON: 'device_switched_on',
+  DEVICE_SWITCHED_OFF: 'device_switched_off',
+  DEVICE_ACTIVATED: 'device_activated',
+  DEVICE_DEACTIVATED: 'device_deactivated',
+  DEVICE_USED: 'device_used',
+  DEVICE_BROKEN: 'device_broken',
+  DEVICE_FIXED: 'device_fixed',
+  
+  // Movement events
+  ROOM_ENTERED: 'room_entered',
+  ROOM_EXITED: 'room_exited',
+  PLAYER_MOVED: 'player_moved',
+  PLAYER_ENTERED: 'player_entered',
+  PLAYER_EXITED: 'player_exited',
+  NPC_MOVED: 'npc_moved',
+  NPC_ENTERED: 'npc_entered',
+  NPC_EXITED: 'npc_exited',
+  MOVEMENT_BLOCKED: 'movement_blocked',
+  
+  // Room/location events
+  ROOM_DESCRIBED: 'room_described',
+  ROOM_FIRST_ENTERED: 'room_first_entered',
+  ROOM_ILLUMINATED: 'room_illuminated',
+  ROOM_DARKENED: 'room_darkened',
+  LOCATION_ILLUMINATED: 'location_illuminated',
+  LOCATION_DARKENED: 'location_darkened',
+  
+  // Character interaction events
+  NPC_TALKED_TO: 'npc_talked_to',
+  NPC_ASKED_ABOUT: 'npc_asked_about',
+  NPC_TOLD_ABOUT: 'npc_told_about',
+  NPC_GIVEN_ITEM: 'npc_given_item',
+  NPC_SHOWN_ITEM: 'npc_shown_item',
+  NPC_ATTACKED: 'npc_attacked',
+  NPC_KISSED: 'npc_kissed',
+  NPC_DIED: 'npc_died',
+  
+  // Discovery events
+  SECRET_DISCOVERED: 'secret_discovered',
+  HIDDEN_ITEM_REVEALED: 'hidden_item_revealed',
+  NEW_EXIT_REVEALED: 'new_exit_revealed',
+  
+  // Inventory events
+  INVENTORY_CHECKED: 'inventory_checked',
+  INVENTORY_FULL: 'inventory_full',
+  
+  // Time/turn events
+  TURN_PASSED: 'turn_passed',
+  TIME_PASSED: 'time_passed',
+  WAITED: 'waited',
+  
+  // Scene events
+  SCENE_STARTED: 'scene_started',
+  SCENE_ENDED: 'scene_ended',
+  SCENE_CHANGED: 'scene_changed',
+  
+  // Score/achievement events
+  SCORE_INCREASED: 'score_increased',
+  ACHIEVEMENT_UNLOCKED: 'achievement_unlocked',
+  PUZZLE_SOLVED: 'puzzle_solved',
+  
+  // Game state events
+  GAME_STARTED: 'game_started',
+  GAME_ENDED: 'game_ended',
+  GAME_WON: 'game_won',
+  GAME_LOST: 'game_lost',
+  GAME_SAVED: 'game_saved',
+  GAME_RESTORED: 'game_restored',
+  GAME_RESTARTED: 'game_restarted',
+  
+  // Parser/command events
+  COMMAND_AMBIGUOUS: 'command_ambiguous',
+  COMMAND_INCOMPLETE: 'command_incomplete',
+  OBJECT_NOT_FOUND: 'object_not_found',
+  VERB_NOT_UNDERSTOOD: 'verb_not_understood'
+} as const;
+
+// Create a type from the const object values
+type IFEventType = typeof IFEvents[keyof typeof IFEvents];
 
 /**
  * Message templates for IF events
  * Uses template literals with {variable} placeholders
  */
-export const eventMessages: Partial<Record<IFEvents, string>> = {
+export const eventMessages: Partial<Record<IFEventType, string>> = {
   // Item manipulation
   [IFEvents.ITEM_TAKEN]: "Taken.",
   [IFEvents.ITEM_DROPPED]: "Dropped.",

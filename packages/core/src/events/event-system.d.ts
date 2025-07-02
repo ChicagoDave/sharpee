@@ -1,4 +1,6 @@
-import { SemanticEvent, EventSource, EventEmitter, EventListener, EntityId } from './types';
+import { SemanticEvent } from './types';
+import { EntityId } from '../types/entity';
+import { SemanticEventSource } from './semantic-event-source';
 /**
  * Create a new semantic event
  */
@@ -12,70 +14,10 @@ export declare function createEvent(type: string, payload?: Record<string, unkno
     priority?: number;
     narrate?: boolean;
 }): SemanticEvent;
-/**
- * Implementation of the EventSource interface
- */
-export declare class EventSourceImpl implements EventSource {
-    private events;
-    private emitter;
-    constructor(emitter?: EventEmitterImpl);
-    /**
-     * Add an event to the source
-     */
-    addEvent(event: SemanticEvent): void;
-    /**
-     * Get all events in the source
-     */
-    getAllEvents(): SemanticEvent[];
-    /**
-     * Get events of a specific type
-     */
-    getEventsByType(type: string): SemanticEvent[];
-    /**
-     * Get events involving a specific entity
-     */
-    getEventsByEntity(entityId: EntityId): SemanticEvent[];
-    /**
-     * Get events with a specific tag
-     */
-    getEventsByTag(tag: string): SemanticEvent[];
-    /**
-     * Clear all events
-     */
-    clearEvents(): void;
-    /**
-     * Apply a filter to the events
-     */
-    filter(predicate: (event: SemanticEvent) => boolean): SemanticEvent[];
-    /**
-     * Get the event emitter
-     */
-    getEmitter(): EventEmitter;
-}
-/**
- * Implementation of the EventEmitter interface
- */
-export declare class EventEmitterImpl implements EventEmitter {
-    private listeners;
-    private globalListeners;
-    /**
-     * Add an event listener
-     */
-    on(type: string, listener: EventListener): void;
-    /**
-     * Remove an event listener
-     */
-    off(type: string, listener: EventListener): void;
-    /**
-     * Emit an event
-     */
-    emit(event: SemanticEvent): void;
-}
+export { SemanticEventSourceImpl as EventSourceImpl } from './semantic-event-source';
 /**
  * Create a new event source
+ * @deprecated Use createSemanticEventSource from './semantic-event-source'
  */
-export declare function createEventSource(): EventSource;
-/**
- * Create a new event emitter
- */
-export declare function createEventEmitter(): EventEmitter;
+export declare function createEventSource(): SemanticEventSource;
+//# sourceMappingURL=event-system.d.ts.map

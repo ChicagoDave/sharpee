@@ -1,0 +1,92 @@
+{
+  "uuid": "e9d4b3c4-b7b5-49be-864d-e24bb90ca535",
+  "name": "Refactoring Sharpee IF Authoring Platform",
+  "created_at": "2025-05-25T17:25:08.189448Z",
+  "updated_at": "2025-05-25T17:25:53.517054Z",
+  "account": {
+    "uuid": "760c9b93-a257-47cd-bd61-d0b15a821e02"
+  },
+  "chat_messages": [
+    {
+      "uuid": "449761a2-6324-4d71-8094-8c55aade71d7",
+      "text": "We've been refactoring the project and Claude Desktop has been erasing responses.\n\nI tried using some other tools like Windsurfer, which I allowed to make updates, but that ended up being unusable.\n\nSo now let's review the code as it is and see if its even in a usable state or if we have to rollback all of the changes and restart the refactoring.\n\nSince there is a bug in Claude Desktop, we need to go in small increments.\n\nLet's only look at packages/core first.",
+      "content": [
+        {
+          "start_timestamp": "2025-05-25T17:25:10.085642Z",
+          "stop_timestamp": "2025-05-25T17:25:10.085642Z",
+          "type": "text",
+          "text": "We've been refactoring the project and Claude Desktop has been erasing responses.\n\nI tried using some other tools like Windsurfer, which I allowed to make updates, but that ended up being unusable.\n\nSo now let's review the code as it is and see if its even in a usable state or if we have to rollback all of the changes and restart the refactoring.\n\nSince there is a bug in Claude Desktop, we need to go in small increments.\n\nLet's only look at packages/core first.",
+          "citations": []
+        }
+      ],
+      "sender": "human",
+      "created_at": "2025-05-25T17:25:10.090024Z",
+      "updated_at": "2025-05-25T17:25:10.090024Z",
+      "attachments": [],
+      "files": []
+    },
+    {
+      "uuid": "c3290a1b-4bbd-4793-83fe-26a323df7f38",
+      "text": " I'll help you review the current state of your Sharpee IF authoring platform, focusing on the packages/core first as requested. Let me start by examining the core package structure and code to assess its current state.\n```\nThis block is not supported on your current device yet.\n```\n",
+      "content": [
+        {
+          "start_timestamp": "2025-05-25T17:25:12.168571Z",
+          "stop_timestamp": "2025-05-25T17:25:13.220907Z",
+          "type": "text",
+          "text": " I'll help you review the current state of your Sharpee IF authoring platform, focusing on the packages/core first as requested. Let me start by examining the core package structure and code to assess its current state.",
+          "citations": []
+        },
+        {
+          "start_timestamp": "2025-05-25T17:25:13.663150Z",
+          "stop_timestamp": "2025-05-25T17:25:14.058185Z",
+          "type": "tool_use",
+          "name": "list_directory",
+          "input": {
+            "path": "C:\\"
+          },
+          "message": "list_directory",
+          "integration_name": null,
+          "integration_icon_url": null,
+          "context": null,
+          "display_content": null
+        },
+        {
+          "start_timestamp": "2025-05-25T17:25:37.709170Z",
+          "stop_timestamp": "2025-05-25T17:25:37.709170Z",
+          "type": "text",
+          "text": "",
+          "citations": []
+        }
+      ],
+      "sender": "assistant",
+      "created_at": "2025-05-25T17:25:37.720639Z",
+      "updated_at": "2025-05-25T17:25:37.720639Z",
+      "attachments": [],
+      "files": []
+    },
+    {
+      "uuid": "ab116ccd-abad-4cac-84b5-68e3a472e0f8",
+      "text": "We've been refactoring the project and Claude Desktop has been erasing responses.\n\nI tried using some other tools like Windsurfer, which I allowed to make updates, but that ended up being unusable.\n\nSo now let's review the code as it is and see if its even in a usable state or if we have to rollback all of the changes and restart the refactoring.\n\nSince there is a bug in Claude Desktop, we need to go in small increments.\n\nLet's only look at packages/core first.\n\nThe project is in C:\\repotemp\\sharpee",
+      "content": [
+        {
+          "start_timestamp": "2025-05-25T17:25:53.514143Z",
+          "stop_timestamp": "2025-05-25T17:25:53.514143Z",
+          "type": "text",
+          "text": "We've been refactoring the project and Claude Desktop has been erasing responses.\n\nI tried using some other tools like Windsurfer, which I allowed to make updates, but that ended up being unusable.\n\nSo now let's review the code as it is and see if its even in a usable state or if we have to rollback all of the changes and restart the refactoring.\n\nSince there is a bug in Claude Desktop, we need to go in small increments.\n\nLet's only look at packages/core first.\n\nThe project is in C:\\repotemp\\sharpee",
+          "citations": []
+        }
+      ],
+      "sender": "human",
+      "created_at": "2025-05-25T17:25:53.517054Z",
+      "updated_at": "2025-05-25T17:25:53.517054Z",
+      "attachments": [],
+      "files": []
+    }
+  ],
+  "_extraction_metadata": {
+    "extraction_method": "exact_title_match",
+    "matched_title": "Refactoring Sharpee IF Authoring Platform",
+    "extraction_timestamp": "2025-06-21T06:39:34.937Z",
+    "source": "claude_project_sharpee"
+  }
+}

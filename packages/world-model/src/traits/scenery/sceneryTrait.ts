@@ -25,7 +25,7 @@ export class SceneryTrait implements Trait {
    * Whether this scenery is mentioned in room descriptions.
    * If false, the item won't be listed but can still be examined.
    */
-  mentioned: boolean = true;
+  mentioned = true;
   
   constructor(data?: Partial<SceneryTrait>) {
     if (data) {

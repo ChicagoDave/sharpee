@@ -1,0 +1,29 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "@sharpee/engine": ["../../packages/engine/src"],
+      "@sharpee/engine/*": ["../../packages/engine/src/*"],
+      "@sharpee/world-model": ["../../packages/world-model/src"],
+      "@sharpee/world-model/*": ["../../packages/world-model/src/*"],
+      "@sharpee/core": ["../../packages/core/src"],
+      "@sharpee/core/*": ["../../packages/core/src/*"],
+      "@sharpee/stdlib": ["../../packages/stdlib/src"],
+      "@sharpee/stdlib/*": ["../../packages/stdlib/src/*"],
+      "@sharpee/event-processor": ["../../packages/event-processor/src"],
+      "@sharpee/event-processor/*": ["../../packages/event-processor/src/*"],
+      "@sharpee/lang-en-us": ["../../packages/lang-en-us/src"],
+      "@sharpee/lang-en-us/*": ["../../packages/lang-en-us/src/*"]
+    }
+  },
+  "references": [
+    { "path": "../../packages/core" },
+    { "path": "../../packages/world-model" },
+    { "path": "../../packages/engine" },
+    { "path": "../../packages/event-processor" },
+    { "path": "../../packages/stdlib" },
+    { "path": "../../packages/lang-en-us" }
+  ]
+}

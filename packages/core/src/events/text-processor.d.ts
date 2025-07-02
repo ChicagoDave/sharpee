@@ -75,3 +75,4 @@ export declare class TextProcessor implements TextService {
  * @returns A new TextService instance
  */
 export declare function createTextService(languageProvider?: LanguageProvider): TextService;
+//# sourceMappingURL=text-processor.d.ts.map

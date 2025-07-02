@@ -1,0 +1,35 @@
+{
+  "name": "@sharpee/actions",
+  "version": "0.1.0",
+  "description": "Event-driven action system for Sharpee IF Platform",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@sharpee/core": "workspace:*",
+    "@sharpee/world-model": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.19",
+    "jest": "^29.7.0",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "sharpee",
+    "interactive-fiction",
+    "if",
+    "actions",
+    "event-driven"
+  ],
+  "author": "Sharpee Team",
+  "license": "MIT"
+}

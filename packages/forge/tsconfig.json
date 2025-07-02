@@ -9,6 +9,7 @@
     "exclude": ["node_modules", "dist", "**/*.test.ts"],
     "references": [
       { "path": "../core" },
+      { "path": "../world-model" },
       { "path": "../stdlib" }
     ]
   }

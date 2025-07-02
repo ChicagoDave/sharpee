@@ -23,19 +23,19 @@ export class DoorBehavior extends Behavior {
   
   /**
    * Get the other room when coming from a specific room
-   * @returns The other room ID, or null if the door doesn't connect to the current room
+   * @returns The other room ID, or undefined if the door doesn't connect to the current room
    */
-  static getOtherRoom(door: IFEntity, currentRoom: string): string | null {
+  static getOtherRoom(door: IFEntity, currentRoom: string): string | undefined {
     const trait = DoorBehavior.require<DoorTrait>(door, TraitType.DOOR);
     
     if (trait.room1 === currentRoom) {
       return trait.room2;
     } else if (trait.room2 === currentRoom) {
       // Check if traversal is allowed in this direction
-      return trait.bidirectional ? trait.room1 : null;
+      return trait.bidirectional ? trait.room1 : undefined;
     }
     
-    return null;
+    return undefined;
   }
   
   /**

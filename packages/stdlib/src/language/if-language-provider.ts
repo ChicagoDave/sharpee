@@ -1,227 +1,210 @@
-// packages/stdlib/src/language/if-language-provider.ts
+/**
+ * Language provider interface for Interactive Fiction
+ * 
+ * Defines how language packages provide text generation for the IF system.
+ * Language providers handle all user-facing text, keeping it separate from game logic.
+ */
 
-import { LanguageProvider } from '../core-imports';
-import { IFActions } from '../constants/if-actions';
-import { IFEvents } from '../constants/if-events';
-import { ActionVerbRegistry } from './action-verb-registry';
+import { SemanticEvent } from '@sharpee/core';
+import { IFEntity } from '@sharpee/world-model';
 
 /**
- * Extended language provider interface for Interactive Fiction
- * This adds IF-specific functionality on top of the core language provider
+ * Message context for text generation
  */
-export interface IFLanguageProvider extends LanguageProvider {
+export interface MessageContext {
   /**
-   * Get the verb registry for this language
+   * The event being described
    */
-  getVerbRegistry(): ActionVerbRegistry;
+  event: SemanticEvent;
   
   /**
-   * Get verbs associated with an action
+   * The player entity
    */
-  getActionVerbs(action: IFActions): string[];
+  player: IFEntity;
   
   /**
-   * Get the action associated with a verb
+   * Current location of the player
    */
-  getActionForVerb(verb: string): IFActions | undefined;
+  currentLocation: IFEntity;
   
   /**
-   * Get a message template for an IF event
+   * Get an entity by ID
    */
-  getEventMessage(event: IFEvents, params?: Record<string, any>): string;
+  getEntity(id: string): IFEntity | undefined;
   
   /**
-   * Get message template for an action phase
+   * Format an entity name appropriately
    */
-  getActionMessage(action: IFActions, phase: string, key: string, params?: Record<string, any>): string;
-  
-  /**
-   * Format an item name with appropriate article
-   */
-  formatItemName(name: string, options?: {
-    definite?: boolean;
-    capitalize?: boolean;
-    plural?: boolean;
-  }): string;
-  
-  /**
-   * Format a direction for display
-   */
-  formatDirection(direction: string): string;
-  
-  /**
-   * Get the canonical form of a direction
-   */
-  getCanonicalDirection(direction: string): string | undefined;
+  formatEntity(entity: IFEntity): string;
 }
 
 /**
- * Configuration options for IF language providers
+ * Text formatting options
  */
-export interface IFLanguageConfig {
+export interface FormatOptions {
   /**
-   * Custom event message templates
+   * Whether to capitalize the first letter
    */
-  eventMessages?: Record<IFEvents, string>;
+  capitalize?: boolean;
   
   /**
-   * Custom action messages organized by action/phase/key
+   * Whether to include articles (a, an, the)
    */
-  actionMessages?: Record<string, string>;
+  includeArticle?: boolean;
   
   /**
-   * Additional verb mappings
+   * Perspective for pronouns (first, second, third)
    */
-  customVerbs?: Record<IFActions, string[]>;
+  perspective?: 'first' | 'second' | 'third';
   
   /**
-   * Direction synonyms (e.g., "n" -> "north")
+   * Tense for verbs
    */
-  directionSynonyms?: Record<string, string>;
+  tense?: 'past' | 'present' | 'future';
 }
 
 /**
- * Base implementation of IF language provider
- * Concrete language implementations should extend this
+ * Language provider interface
+ * 
+ * Implementations provide text generation for specific languages
  */
-export abstract class BaseIFLanguageProvider implements IFLanguageProvider {
-  protected verbRegistry: ActionVerbRegistry;
-  protected eventMessages: Map<IFEvents, string>;
-  protected actionMessages: Map<string, string>;
-  protected directionSynonyms: Map<string, string>;
-  
-  constructor(config?: IFLanguageConfig) {
-    this.verbRegistry = new ActionVerbRegistry();
-    this.eventMessages = new Map();
-    this.actionMessages = new Map();
-    this.directionSynonyms = new Map();
-    
-    // Initialize with language-specific data
-    this.initialize();
-    
-    // Apply any custom configuration
-    if (config) {
-      this.applyConfig(config);
-    }
-  }
+export interface IFLanguageProvider {
+  /**
+   * Language code (e.g., 'en-US', 'es-ES')
+   */
+  readonly languageCode: string;
   
   /**
-   * Initialize language-specific data
-   * Subclasses should override this
+   * Language name (e.g., 'English (US)', 'Español')
    */
-  protected abstract initialize(): void;
+  readonly languageName: string;
   
   /**
-   * Apply configuration options
+   * Generate text for a semantic event
+   * 
+   * @param context Message context with event and world info
+   * @param options Formatting options
+   * @returns Generated text or undefined if not handled
    */
-  protected applyConfig(config: IFLanguageConfig): void {
-    // Apply custom event messages
-    if (config.eventMessages) {
-      for (const [event, message] of Object.entries(config.eventMessages)) {
-        this.eventMessages.set(event as IFEvents, message);
-      }
-    }
-    
-    // Apply custom action messages
-    if (config.actionMessages) {
-      for (const [key, message] of Object.entries(config.actionMessages)) {
-        this.actionMessages.set(key, message);
-      }
-    }
-    
-    // Apply custom verbs
-    if (config.customVerbs) {
-      for (const [action, verbs] of Object.entries(config.customVerbs)) {
-        this.verbRegistry.registerAction(action as IFActions, verbs);
-      }
-    }
-    
-    // Apply direction synonyms
-    if (config.directionSynonyms) {
-      for (const [synonym, canonical] of Object.entries(config.directionSynonyms)) {
-        this.directionSynonyms.set(synonym, canonical);
-      }
-    }
-  }
-  
-  // Core LanguageProvider methods (must be implemented by subclasses)
-  abstract formatMessage(key: string, params?: any): string;
-  abstract formatList(items: string[], options?: any): string;
-  
-  // IF-specific methods
-  
-  getVerbRegistry(): ActionVerbRegistry {
-    return this.verbRegistry;
-  }
-  
-  getActionVerbs(action: IFActions): string[] {
-    return this.verbRegistry.getVerbsForAction(action);
-  }
-  
-  getActionForVerb(verb: string): IFActions | undefined {
-    return this.verbRegistry.getActionForVerb(verb);
-  }
-  
-  getEventMessage(event: IFEvents, params?: Record<string, any>): string {
-    const template = this.eventMessages.get(event);
-    if (!template) {
-      return `[Missing message for event: ${event}]`;
-    }
-    
-    return this.formatMessageTemplate(template, params);
-  }
-  
-  getActionMessage(action: IFActions, phase: string, key: string, params?: Record<string, any>): string {
-    const messageKey = `${action}.${phase}.${key}`;
-    const template = this.actionMessages.get(messageKey);
-    if (!template) {
-      return `[Missing message: ${messageKey}]`;
-    }
-    
-    return this.formatMessageTemplate(template, params);
-  }
-  
-  formatItemName(name: string, options?: {
-    definite?: boolean;
-    capitalize?: boolean;
-    plural?: boolean;
-  }): string {
-    // Default implementation - subclasses should override for language-specific rules
-    let result = name;
-    
-    if (options?.definite) {
-      result = `the ${result}`;
-    } else if (!options?.plural) {
-      // Simple article detection
-      const firstChar = name[0].toLowerCase();
-      const article = 'aeiou'.includes(firstChar) ? 'an' : 'a';
-      result = `${article} ${result}`;
-    }
-    
-    if (options?.capitalize) {
-      result = result.charAt(0).toUpperCase() + result.slice(1);
-    }
-    
-    return result;
-  }
-  
-  formatDirection(direction: string): string {
-    // Default implementation
-    return direction;
-  }
-  
-  getCanonicalDirection(direction: string): string | undefined {
-    return this.directionSynonyms.get(direction) || direction;
-  }
+  generateEventText(
+    context: MessageContext, 
+    options?: FormatOptions
+  ): string | undefined;
   
   /**
-   * Helper to format a message template with parameters
+   * Get the display name for an entity
+   * 
+   * @param entity The entity to name
+   * @param options Formatting options
    */
-  protected formatMessageTemplate(template: string, params?: Record<string, any>): string {
-    if (!params) return template;
-    
-    return template.replace(/\{(\w+)\}/g, (match, key) => {
-      return params[key] !== undefined ? String(params[key]) : match;
-    });
-  }
+  getEntityName(
+    entity: IFEntity, 
+    options?: FormatOptions
+  ): string;
+  
+  /**
+   * Get the description for an entity
+   * 
+   * @param entity The entity to describe
+   */
+  getEntityDescription(entity: IFEntity): string | undefined;
+  
+  /**
+   * Format a list of items grammatically
+   * 
+   * @param items Array of item names
+   * @param conjunction Word to use before last item ('and', 'or')
+   */
+  formatList(
+    items: string[], 
+    conjunction?: string
+  ): string;
+  
+  /**
+   * Get standard message by key
+   * 
+   * @param key Message key (e.g., 'already_open', 'not_visible')
+   * @param params Parameters for message formatting
+   */
+  getMessage(
+    key: string, 
+    params?: Record<string, any>
+  ): string;
+  
+  /**
+   * Get command syntax help
+   * 
+   * @param actionId Action identifier
+   */
+  getCommandHelp(actionId: string): string | undefined;
+  
+  /**
+   * Get all command patterns for parsing
+   */
+  getCommandPatterns(): CommandPattern[];
 }
+
+/**
+ * Command pattern for parsing
+ */
+export interface CommandPattern {
+  /**
+   * Action this pattern triggers
+   */
+  actionId: string;
+  
+  /**
+   * Regular expression pattern
+   */
+  pattern: RegExp;
+  
+  /**
+   * Example usage
+   */
+  example: string;
+  
+  /**
+   * Priority for disambiguation (higher = preferred)
+   */
+  priority?: number;
+}
+
+/**
+ * Standard message keys
+ */
+export const MessageKeys = {
+  // Movement
+  NO_EXIT_THAT_WAY: 'no_exit_that_way',
+  DOOR_CLOSED: 'door_closed',
+  DOOR_LOCKED: 'door_locked',
+  TOO_DARK: 'too_dark',
+  
+  // Object manipulation
+  ALREADY_HAVE: 'already_have',
+  NOT_HELD: 'not_held',
+  TAKEN: 'taken',
+  DROPPED: 'dropped',
+  CANT_TAKE_SELF: 'cant_take_self',
+  CANT_TAKE_ROOM: 'cant_take_room',
+  FIXED_IN_PLACE: 'fixed_in_place',
+  
+  // Visibility
+  NOT_VISIBLE: 'not_visible',
+  NOT_REACHABLE: 'not_reachable',
+  
+  // Containers
+  CONTAINER_FULL: 'container_full',
+  CONTAINER_EMPTY: 'container_empty',
+  NOT_A_CONTAINER: 'not_a_container',
+  ALREADY_OPEN: 'already_open',
+  ALREADY_CLOSED: 'already_closed',
+  NOT_OPENABLE: 'not_openable',
+  
+  // General
+  NO_TARGET: 'no_target',
+  CANT_DO_THAT: 'cant_do_that',
+  NOTHING_HAPPENS: 'nothing_happens',
+  OK: 'ok'
+} as const;
+
+export type StandardMessageKeyId = typeof MessageKeys[keyof typeof MessageKeys];

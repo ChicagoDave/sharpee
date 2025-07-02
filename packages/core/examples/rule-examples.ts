@@ -75,7 +75,7 @@ export function setupGameRules(gameContext) {
         extensions: {
           ...state.extensions,
           globalState: {
-            ...(state.extensions?.globalState || {}),
+            ...(state.extensions?.globalState as any || {}),
             time: newTime
           }
         }

@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2024-01-01T00:00:00.000Z" agent="5.0" etag="sharpee-architecture" version="21.6.5" type="device">
+  <diagram name="Sharpee Architecture" id="sharpee-packages">
+    <mxGraphModel dx="2000" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3000" pageHeight="2000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Title -->
+        <mxCell id="title" value="Sharpee IF Engine - Package Architecture" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=24;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1200" y="20" width="600" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- Core Package -->
+        <mxCell id="core-pkg" value="@sharpee/core" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="100" y="100" width="400" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="core-exports" value="Exports:&#xa;• Entity, EntityId, EntityCreationParams&#xa;• SemanticEvent, EventData&#xa;• EventHandler, EventEmitter&#xa;• WorldChange, WorldSnapshot&#xa;• GameContext, TurnContext&#xa;• Channel types&#xa;• Base types and interfaces" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5" vertex="1" parent="1">
+          <mxGeometry x="100" y="140" width="400" height="120" as="geometry" />
+        </mxCell>
+        
+        <!-- World Model Package -->
+        <mxCell id="world-model-pkg" value="@sharpee/world-model" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="600" y="100" width="400" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="world-model-exports" value="Exports:&#xa;• WorldModel, IFEntity&#xa;• All Trait classes (IdentityTrait, ContainerTrait, etc.)&#xa;• TraitType enum, Trait interface&#xa;• ParsedCommand, ValidatedCommand&#xa;• Parser, CommandValidator interfaces&#xa;• Direction constants&#xa;• EntityStore, ScopeService&#xa;• Extension system types" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5" vertex="1" parent="1">
+          <mxGeometry x="600" y="140" width="400" height="140" as="geometry" />
+        </mxCell>
+        
+        <!-- Event Processor Package -->
+        <mxCell id="event-processor-pkg" value="@sharpee/event-processor" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="1100" y="100" width="400" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="event-processor-exports" value="Exports:&#xa;• EventProcessor class&#xa;• ProcessedEvents, ProcessorOptions&#xa;• EventHandler registration&#xa;• Standard event handlers&#xa;• Re-exports: SemanticEvent, WorldModel, WorldChange" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5" vertex="1" parent="1">
+          <mxGeometry x="1100" y="140" width="400" height="100" as="geometry" />
+        </mxCell>
+        
+        <!-- Standard Library Package -->
+        <mxCell id="stdlib-pkg" value="@sharpee/stdlib" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="100" y="350" width="400" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="stdlib-exports" value="Exports:&#xa;• Actions (Take, Drop, Look, Go, etc.)&#xa;• ActionRegistry, StandardActionRegistry&#xa;• BasicParser, CommandValidator&#xa;• VocabularyRegistry, LanguageProvider&#xa;• Standard action implementations&#xa;• Parser utilities&#xa;• Vocabulary types" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5" vertex="1" parent="1">
+          <mxGeometry x="100" y="390" width="400" height="120" as="geometry" />
+        </mxCell>
+        
+        <!-- Engine Package -->
+        <mxCell id="engine-pkg" value="@sharpee/engine" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="600" y="350" width="400" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="engine-exports" value="Exports:&#xa;• GameEngine, createGameEngine&#xa;• CommandExecutor, createCommandExecutor&#xa;• EventSequencer, EventSequenceUtils&#xa;• Story, StoryConfig interfaces&#xa;• TextService, TextChannel&#xa;• TurnResult, GameContext, EngineConfig&#xa;• createStandardEngine, createEngineWithStory" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5" vertex="1" parent="1">
+          <mxGeometry x="600" y="390" width="400" height="120" as="geometry" />
+        </mxCell>
+        
+        <!-- Language Package -->
+        <mxCell id="lang-pkg" value="@sharpee/lang-en-us" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="1100" y="350" width="400" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="lang-exports" value="Exports:&#xa;• EnglishLanguageProvider&#xa;• Message templates&#xa;• Verb definitions&#xa;• Direction vocabulary&#xa;• Articles, prepositions&#xa;• Pluralization rules" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5" vertex="1" parent="1">
+          <mxGeometry x="1100" y="390" width="400" height="100" as="geometry" />
+        </mxCell>
+        
+        <!-- Extension: Conversation -->
+        <mxCell id="ext-conversation-pkg" value="@sharpee/extension-conversation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="1600" y="100" width="400" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-conversation-exports" value="Exports:&#xa;• ConversationExtension&#xa;• ConversationTrait&#xa;• Dialogue system types&#xa;• Topic management&#xa;• NPC conversation handlers" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5" vertex="1" parent="1">
+          <mxGeometry x="1600" y="140" width="400" height="100" as="geometry" />
+        </mxCell>
+        
+        <!-- Client Core -->
+        <mxCell id="client-core-pkg" value="@sharpee/client-core" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="100" y="600" width="400" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="client-core-exports" value="Exports:&#xa;• Client base classes&#xa;• UI abstractions&#xa;• Command processing&#xa;• Output formatting&#xa;• Session management" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5" vertex="1" parent="1">
+          <mxGeometry x="100" y="640" width="400" height="100" as="geometry" />
+        </mxCell>
+        
+        <!-- Story: Cloak of Darkness -->
+        <mxCell id="story-cloak-pkg" value="@sharpee/story-cloak-of-darkness" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="600" y="600" width="400" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="story-cloak-exports" value="Exports:&#xa;• CloakOfDarknessStory class&#xa;• Story configuration&#xa;• Custom actions&#xa;• Game-specific logic" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5" vertex="1" parent="1">
+          <mxGeometry x="600" y="640" width="400" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Forge (Not Implemented) -->
+        <mxCell id="forge-pkg" value="@sharpee/forge (NOT IMPLEMENTED)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cccccc;strokeColor=#999999;fontStyle=1;fontSize=14;dashed=1" vertex="1" parent="1">
+          <mxGeometry x="1100" y="600" width="400" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="forge-exports" value="Planned Exports:&#xa;• StoryBuilder fluent API&#xa;• LocationBuilder, ItemBuilder&#xa;• CharacterBuilder, ActionBuilder&#xa;• Rule system&#xa;• Template management" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5;dashed=1" vertex="1" parent="1">
+          <mxGeometry x="1100" y="640" width="400" height="100" as="geometry" />
+        </mxCell>
+        
+        <!-- Dependencies Arrows -->
+        <!-- Core is used by everything -->
+        <mxCell id="arrow1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#6c8ebf;strokeWidth=2;" edge="1" parent="1" source="core-exports" target="world-model-pkg">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="300" y="300" />
+              <mxPoint x="800" y="300" />
+              <mxPoint x="800" y="80" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="arrow2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#6c8ebf;strokeWidth=2;" edge="1" parent="1" source="core-exports" target="event-processor-pkg">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="300" y="300" />
+              <mxPoint x="1300" y="300" />
+              <mxPoint x="1300" y="80" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- World Model to Event Processor -->
+        <mxCell id="arrow3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#6c8ebf;strokeWidth=2;" edge="1" parent="1" source="world-model-pkg" target="event-processor-pkg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Dependencies to Engine -->
+        <mxCell id="arrow4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;strokeColor=#82b366;strokeWidth=2;" edge="1" parent="1" source="world-model-exports" target="engine-pkg">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="800" y="320" />
+              <mxPoint x="700" y="320" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="arrow5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;strokeColor=#82b366;strokeWidth=2;" edge="1" parent="1" source="event-processor-exports" target="engine-pkg">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1300" y="320" />
+              <mxPoint x="900" y="320" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="arrow6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#82b366;strokeWidth=2;" edge="1" parent="1" source="stdlib-pkg" target="engine-pkg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Story uses Engine -->
+        <mxCell id="arrow7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#d79b00;strokeWidth=2;" edge="1" parent="1" source="engine-exports" target="story-cloak-pkg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Legend -->
+        <mxCell id="legend-title" value="Package Types:" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1600" y="350" width="120" height="30" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="legend-core" value="Core Infrastructure" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12" vertex="1" parent="1">
+          <mxGeometry x="1600" y="380" width="150" height="30" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="legend-runtime" value="Runtime/Engine" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12" vertex="1" parent="1">
+          <mxGeometry x="1600" y="420" width="150" height="30" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="legend-lang" value="Language Support" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12" vertex="1" parent="1">
+          <mxGeometry x="1600" y="460" width="150" height="30" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="legend-ext" value="Extensions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12" vertex="1" parent="1">
+          <mxGeometry x="1600" y="500" width="150" height="30" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="legend-client" value="Client/UI" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12" vertex="1" parent="1">
+          <mxGeometry x="1600" y="540" width="150" height="30" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="legend-story" value="Stories/Content" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12" vertex="1" parent="1">
+          <mxGeometry x="1600" y="580" width="150" height="30" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="legend-notimpl" value="Not Implemented" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cccccc;strokeColor=#999999;fontSize=12;dashed=1" vertex="1" parent="1">
+          <mxGeometry x="1600" y="620" width="150" height="30" as="geometry" />
+        </mxCell>
+        
+        <!-- Notes -->
+        <mxCell id="notes" value="Notes:&#xa;• Arrows show compile-time dependencies&#xa;• All packages depend on @sharpee/core for base types&#xa;• @sharpee/forge is excluded from builds&#xa;• Extension packages are optional&#xa;• Stories are standalone content packages" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=12;spacingTop=5" vertex="1" parent="1">
+          <mxGeometry x="100" y="800" width="400" height="100" as="geometry" />
+        </mxCell>
+        
+        <!-- Trait Details Box -->
+        <mxCell id="traits-title" value="Available Traits in @sharpee/world-model:" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1800" y="100" width="300" height="30" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="traits-list" value="• IdentityTrait - name, description, aliases&#xa;• ContainerTrait - can hold other entities&#xa;• SupporterTrait - entities can be placed on top&#xa;• RoomTrait - locations with exits&#xa;• ActorTrait - player/NPC capabilities&#xa;• WearableTrait - clothing/accessories&#xa;• EdibleTrait - food/consumables&#xa;• SceneryTrait - fixed decorations&#xa;• OpenableTrait - can be opened/closed&#xa;• LockableTrait - requires keys&#xa;• SwitchableTrait - on/off states&#xa;• ReadableTrait - has readable text&#xa;• LightSourceTrait - provides illumination&#xa;• DoorTrait - connects rooms&#xa;• ExitTrait - one-way passages&#xa;• EntryTrait - arrival points" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f0f0f0;strokeColor=#999999;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="1800" y="130" width="280" height="220" as="geometry" />
+        </mxCell>
+        
+        <!-- Action List Box -->
+        <mxCell id="actions-title" value="Standard Actions in @sharpee/stdlib:" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="2150" y="100" width="300" height="30" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="actions-list" value="• TAKE - pick up items&#xa;• DROP - put down items&#xa;• LOOK - examine surroundings&#xa;• EXAMINE - inspect specific items&#xa;• GO - move between rooms&#xa;• INVENTORY - list carried items&#xa;• OPEN - open containers/doors&#xa;• CLOSE - close containers/doors&#xa;• LOCK - lock with key&#xa;• UNLOCK - unlock with key&#xa;• PUT - place items in/on things&#xa;• WEAR - put on wearables&#xa;• REMOVE - take off wearables&#xa;• EAT - consume edibles&#xa;• READ - read text on items&#xa;• TURN ON/OFF - switch states" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f0f0f0;strokeColor=#999999;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="2150" y="130" width="250" height="220" as="geometry" />
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

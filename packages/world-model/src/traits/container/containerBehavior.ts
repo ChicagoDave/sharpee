@@ -25,16 +25,16 @@ export class ContainerBehavior extends Behavior {
   
   /**
    * Check if a container can accept an item
-   * @returns true if the item can be accepted, or a string describing why not
+   * @returns true if the item can be accepted
    */
-  static canAccept(container: IFEntity, item: IFEntity, world: IWorldQuery): boolean | string {
+  static canAccept(container: IFEntity, item: IFEntity, world: IWorldQuery): boolean {
     const trait = ContainerBehavior.require<ContainerTrait>(container, TraitType.CONTAINER);
     
     // Check if container is accessible (must be open if openable)
     if (container.has(TraitType.OPENABLE)) {
       const openable = container.get<OpenableTrait>(TraitType.OPENABLE);
       if (openable && !openable.isOpen) {
-        return "Container is closed";
+        return false;
       }
     }
     
@@ -42,26 +42,26 @@ export class ContainerBehavior extends Behavior {
     if (trait.allowedTypes && trait.allowedTypes.length > 0) {
       const itemType = item.type || 'object';
       if (!trait.allowedTypes.includes(itemType)) {
-        return "Container cannot hold that type of object";
+        return false;
       }
     }
     
     if (trait.excludedTypes && trait.excludedTypes.length > 0) {
       const itemType = item.type || 'object';
       if (trait.excludedTypes.includes(itemType)) {
-        return "Container cannot hold that type of object";
+        return false;
       }
     }
     
     // Check enterable restrictions for actors
     if (item.has(TraitType.ACTOR) && !trait.enterable) {
-      return "Cannot enter this container";
+      return false;
     }
     
     // Check capacity constraints
     if (trait.capacity) {
       const result = this.checkCapacity(container, item, world);
-      if (result !== true) return result;
+      if (!result) return false;
     }
     
     return true;
@@ -70,7 +70,7 @@ export class ContainerBehavior extends Behavior {
   /**
    * Check capacity constraints
    */
-  static checkCapacity(container: IFEntity, item: IFEntity, world: IWorldQuery): boolean | string {
+  static checkCapacity(container: IFEntity, item: IFEntity, world: IWorldQuery): boolean {
     const trait = ContainerBehavior.require<ContainerTrait>(container, TraitType.CONTAINER);
     const capacity = trait.capacity!;
     
@@ -78,7 +78,7 @@ export class ContainerBehavior extends Behavior {
     if (capacity.maxItems !== undefined) {
       const currentCount = world.getContents(container.id).length;
       if (currentCount >= capacity.maxItems) {
-        return "Container is full";
+        return false;
       }
     }
     
@@ -87,7 +87,7 @@ export class ContainerBehavior extends Behavior {
       const currentWeight = this.getTotalWeight(container, world);
       const itemWeight = IdentityBehavior.getWeight(item);
       if (currentWeight + itemWeight > capacity.maxWeight) {
-        return "Too heavy for container";
+        return false;
       }
     }
     
@@ -96,7 +96,7 @@ export class ContainerBehavior extends Behavior {
       const currentVolume = this.getTotalVolume(container, world);
       const itemVolume = IdentityBehavior.getVolume(item);
       if (currentVolume + itemVolume > capacity.maxVolume) {
-        return "Too large for container";
+        return false;
       }
     }
     

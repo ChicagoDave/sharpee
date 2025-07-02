@@ -1,4 +1,3 @@
-import { ChannelDefinition } from '../channels/types';
 import { SemanticEvent } from '../events/types';
 /**
  * Base interface for all extensions
@@ -42,15 +41,6 @@ export interface AbilityExtension extends Extension {
     abilityName: string;
 }
 /**
- * Extension for adding content channels
- */
-export interface ChannelExtension extends Extension {
-    /**
-     * Channel definitions provided by this extension
-     */
-    channelDefinitions: ChannelDefinition[];
-}
-/**
  * Extension for event processing (generic)
  * The IF-specific version with GameContext is in stdlib
  */
@@ -84,11 +74,11 @@ export interface ParserExtension extends Extension {
 export declare enum ExtensionType {
     COMMAND = "command",
     ABILITY = "ability",
-    CHANNEL = "channel",
     EVENT = "event",
     PARSER = "parser"
 }
 /**
  * Union type for all extension types
  */
-export type AnyExtension = CommandExtension | AbilityExtension | ChannelExtension | EventExtension | ParserExtension;
+export type AnyExtension = CommandExtension | AbilityExtension | EventExtension | ParserExtension;
+//# sourceMappingURL=types.d.ts.map

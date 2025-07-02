@@ -7,10 +7,30 @@
  * without knowledge of specific event types
  */
 
+// Export types first
 export * from './types';
-export * from './event-system';
 export * from './text-processor';
 export * from './standard-events';
+export * from './system-event';
+
+// Export event sources with specific names to avoid conflicts
+export {
+  GenericEventSource,
+  SimpleEventSource,
+  createEventSource as createGenericEventSource
+} from './event-source';
+
+export {
+  SemanticEventSource,
+  SemanticEventSourceImpl,
+  createSemanticEventSource
+} from './semantic-event-source';
+
+// Export from event-system but exclude conflicting createEventSource
+export {
+  createEvent,
+  EventSourceImpl
+} from './event-system';
 // message-resolver moved to stdlib (uses GameContext)
 // enhanced-text-processor moved to stdlib (uses GameContext) 
 // message-builder moved to stdlib (uses GameContext)

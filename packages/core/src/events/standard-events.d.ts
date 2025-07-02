@@ -19,3 +19,4 @@ export declare const EventCategories: {
     readonly SYSTEM: "system";
     readonly NARRATIVE: "narrative";
 };
+//# sourceMappingURL=standard-events.d.ts.map

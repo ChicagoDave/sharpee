@@ -11,6 +11,10 @@
     "dist",
     "**/*.test.ts",
     "../../archive",
-    "../../archive/**/*"
+    "../../archive/**/*",
+    "src/**/*.deleted",
+    "src/**/*.deleted/**/*",
+    "src/**/*.bak",
+    "src/**/*.old"
   ]
 }

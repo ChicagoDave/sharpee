@@ -1,0 +1,23 @@
+{
+  "name": "@sharpee/engine",
+  "version": "0.1.0",
+  "description": "Runtime engine for Sharpee IF Platform - game loop, command execution, and turn management",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf lib",
+    "prepare": "npm run clean && npm run build"
+  },
+  "dependencies": {
+    "@sharpee/core": "workspace:*",
+    "@sharpee/world-model": "workspace:*",
+    "@sharpee/event-processor": "workspace:*",
+    "@sharpee/stdlib": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "typescript": "^5.3.3",
+    "rimraf": "^5.0.5"
+  }
+}

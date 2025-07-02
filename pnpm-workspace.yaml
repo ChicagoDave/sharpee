@@ -1,0 +1,10 @@
+packages:
+  - 'packages/*'
+  - '!packages/forge'
+  - '!packages/extensions'
+  - '!packages/ext-*'
+  - '!packages/client-core'
+  - '!packages/web-client'
+  - '!packages/cli'
+  - '!packages/dev-tools'
+  - 'stories/*'

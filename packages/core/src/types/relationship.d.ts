@@ -41,3 +41,4 @@ export interface RelationshipConfig {
  * Map of relationship type configurations
  */
 export type RelationshipConfigMap = Record<string, RelationshipConfig>;
+//# sourceMappingURL=relationship.d.ts.map

@@ -3,7 +3,7 @@
  * @description Message templates for actions and events in English
  */
 
-import { IFActions, IFEvents } from '@sharpee/stdlib/constants';
+import { IFEvents } from './events';
 
 /**
  * English message templates

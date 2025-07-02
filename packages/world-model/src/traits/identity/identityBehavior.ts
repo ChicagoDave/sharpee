@@ -77,7 +77,6 @@ export class IdentityBehavior extends Behavior {
    * Get a possessive form of the entity's name
    */
   static getPossessiveName(entity: IFEntity): string {
-    const identity = IdentityBehavior.require<IdentityTrait>(entity, TraitType.IDENTITY);
     const name = IdentityBehavior.formatName(entity);
     
     // Handle names ending in 's'

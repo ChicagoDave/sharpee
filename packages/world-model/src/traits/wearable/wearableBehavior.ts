@@ -4,6 +4,7 @@ import { IFEntity } from '../../entities/if-entity';
 import { TraitType } from '../trait-types';
 import { WearableTrait } from './wearableTrait';
 import { SemanticEvent, createEvent } from '@sharpee/core';
+import { IFEvents } from '../../constants/if-events';
 
 /**
  * Behavior for wearable entities.
@@ -40,7 +41,7 @@ export class WearableBehavior {
     if (wearable.worn) {
       if (wearable.wornBy === actor.id) {
         return [createEvent(
-          'if.action.failed',
+          IFEvents.ACTION_FAILED,
           {
             action: 'wear',
             reason: 'already_wearing'
@@ -48,7 +49,7 @@ export class WearableBehavior {
         )];
       } else {
         return [createEvent(
-          'if.action.failed',
+          IFEvents.ACTION_FAILED,
           {
             action: 'wear',
             reason: 'worn_by_other',
@@ -65,7 +66,7 @@ export class WearableBehavior {
     wearable.wornBy = actor.id;
     
     return [createEvent(
-      'if.wearable.worn',
+      IFEvents.WORN,
       {
         item: item.id,
         actor: actor.id,
@@ -86,7 +87,7 @@ export class WearableBehavior {
     
     if (!wearable.worn) {
       return [createEvent(
-        'if.action.failed',
+        IFEvents.ACTION_FAILED,
         {
           action: 'remove',
           reason: 'not_wearing'
@@ -96,7 +97,7 @@ export class WearableBehavior {
     
     if (wearable.wornBy !== actor.id) {
       return [createEvent(
-        'if.action.failed',
+        IFEvents.ACTION_FAILED,
         {
           action: 'remove',
           reason: 'worn_by_other',
@@ -112,7 +113,7 @@ export class WearableBehavior {
     wearable.wornBy = undefined;
     
     return [createEvent(
-      'if.wearable.removed',
+      IFEvents.REMOVED,
       {
         item: item.id,
         actor: actor.id,

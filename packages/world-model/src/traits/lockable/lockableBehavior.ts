@@ -7,7 +7,7 @@ import { LockableTrait } from './lockableTrait';
 import { OpenableTrait } from '../openable/openableTrait';
 import { SemanticEvent, EntityId } from '@sharpee/core';
 import { IFEvents } from '../../constants/if-events';
-import { ActionFailureReason } from '../../constants/action-failures';
+// No longer using ActionFailureReason enum
 
 /**
  * Behavior for lockable entities.
@@ -38,6 +38,14 @@ export class LockableBehavior extends Behavior {
   }
   
   /**
+   * Check if a key can lock this entity (usually same as unlock)
+   */
+  static canLockWith(entity: IFEntity, keyId: EntityId): boolean {
+    // By default, same keys that unlock can also lock
+    return this.canUnlockWith(entity, keyId);
+  }
+  
+  /**
    * Check if this entity requires a key to unlock
    */
   static requiresKey(entity: IFEntity): boolean {
@@ -49,7 +57,7 @@ export class LockableBehavior extends Behavior {
    * Lock the entity
    * @returns Events describing what happened
    */
-  static lock(entity: IFEntity, actor: IFEntity): SemanticEvent[] {
+  static lock(entity: IFEntity, actor: IFEntity, keyEntity?: IFEntity): SemanticEvent[] {
     const lockable = LockableBehavior.require<LockableTrait>(entity, TraitType.LOCKABLE);
     const openable = LockableBehavior.require<OpenableTrait>(entity, TraitType.OPENABLE);
     
@@ -64,7 +72,7 @@ export class LockableBehavior extends Behavior {
         },
         payload: {
           action: 'lock',
-          reason: ActionFailureReason.ALREADY_LOCKED,
+          reason: 'already_locked',
           customMessage: lockable.alreadyLockedMessage
         }
       }];
@@ -82,10 +90,48 @@ export class LockableBehavior extends Behavior {
         },
         payload: {
           action: 'lock',
-          reason: ActionFailureReason.CANT_DO_THAT,
+          reason: 'cant_do_that',
           customMessage: "You can't lock something that's open."
         }
       }];
+    }
+    
+    // Check if key is required
+    if (LockableBehavior.requiresKey(entity)) {
+      if (!keyEntity) {
+        return [{
+          id: `${Date.now()}-${Math.random()}`,
+          timestamp: Date.now(),
+          type: IFEvents.ACTION_FAILED,
+          entities: {
+            actor: actor.id,
+            target: entity.id
+          },
+          payload: {
+            action: 'lock',
+            reason: 'no_key_specified'
+          }
+        }];
+      }
+      
+      // Check if key is valid
+      if (!this.canLockWith(entity, keyEntity.id)) {
+        return [{
+          id: `${Date.now()}-${Math.random()}`,
+          timestamp: Date.now(),
+          type: IFEvents.ACTION_FAILED,
+          entities: {
+            actor: actor.id,
+            target: entity.id,
+            instrument: keyEntity.id
+          },
+          payload: {
+            action: 'lock',
+            reason: 'wrong_key',
+            customMessage: lockable.wrongKeyMessage
+          }
+        }];
+      }
     }
     
     // Lock it
@@ -94,10 +140,11 @@ export class LockableBehavior extends Behavior {
     return [{
       id: `${Date.now()}-${Math.random()}`,
       timestamp: Date.now(),
-      type: IFEvents.CONTAINER_LOCKED,
+      type: IFEvents.LOCKED,
       entities: {
         actor: actor.id,
-        target: entity.id
+        target: entity.id,
+        instrument: keyEntity?.id
       },
       payload: {
         customMessage: lockable.lockMessage,
@@ -124,7 +171,7 @@ export class LockableBehavior extends Behavior {
         },
         payload: {
           action: 'unlock',
-          reason: ActionFailureReason.ALREADY_UNLOCKED,
+          reason: 'already_unlocked',
           customMessage: lockable.alreadyUnlockedMessage
         }
       }];
@@ -143,7 +190,7 @@ export class LockableBehavior extends Behavior {
           },
           payload: {
             action: 'unlock',
-            reason: ActionFailureReason.NO_KEY_SPECIFIED
+            reason: 'no_key_specified'
           }
         }];
       }
@@ -161,7 +208,7 @@ export class LockableBehavior extends Behavior {
           },
           payload: {
             action: 'unlock',
-            reason: ActionFailureReason.WRONG_KEY,
+            reason: 'wrong_key',
             customMessage: lockable.wrongKeyMessage
           }
         }];
@@ -174,7 +221,7 @@ export class LockableBehavior extends Behavior {
     return [{
       id: `${Date.now()}-${Math.random()}`,
       timestamp: Date.now(),
-      type: IFEvents.CONTAINER_UNLOCKED,
+      type: IFEvents.UNLOCKED,
       entities: {
         actor: actor.id,
         target: entity.id,

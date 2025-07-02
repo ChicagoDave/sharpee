@@ -14,15 +14,16 @@ export class DoorTrait implements Trait {
   readonly type = TraitType.DOOR;
   
   /** First room this door connects */
-  room1: string;
+  room1!: string;
   
   /** Second room this door connects */
-  room2: string;
+  room2!: string;
   
   /** Whether the door can be traversed in both directions */
-  bidirectional: boolean = true;
+  bidirectional = true;
   
   constructor(data?: Partial<DoorTrait>) {
+    // Set defaults first
     if (data) {
       Object.assign(this, data);
     }

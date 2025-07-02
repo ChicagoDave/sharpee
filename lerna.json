@@ -2,6 +2,7 @@
   "version": "0.1.0",
   "packages": [
     "packages/*",
+    "!packages/forge",
     "packages/extensions/*",
     "stories/*"
   ],

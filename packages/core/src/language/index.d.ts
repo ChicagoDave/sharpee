@@ -25,3 +25,4 @@ export declare function formatMessage(template: string, params?: any): string;
  * @returns The formatted list
  */
 export declare function formatList(items: string[], options?: any): string;
+//# sourceMappingURL=index.d.ts.map

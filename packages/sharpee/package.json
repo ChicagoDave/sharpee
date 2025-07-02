@@ -1,0 +1,27 @@
+{
+  "name": "@sharpee/sharpee",
+  "version": "0.1.0",
+  "description": "Main Sharpee IF Engine package - aggregates all components",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "dependencies": {
+    "@sharpee/core": "workspace:*",
+    "@sharpee/world-model": "workspace:*",
+    "@sharpee/engine": "workspace:*",
+    "@sharpee/stdlib": "workspace:*",
+    "@sharpee/event-processor": "workspace:*",
+    "@sharpee/lang-en-us": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "rimraf": "^5.0.5"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

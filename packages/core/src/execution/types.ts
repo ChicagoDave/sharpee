@@ -1,58 +1,11 @@
 // packages/core/src/execution/types.ts
 
-import { SemanticEvent } from '../events/types';
 import { TextService } from '../events/text-processor';
 import { LanguageProvider } from '../language';
 
 /**
- * The result of executing a command
- */
-export interface CommandResult {
-  /**
-   * Whether the command was successful
-   */
-  success: boolean;
-
-  /**
-   * Events generated during command execution
-   */
-  events: SemanticEvent[];
-
-  /**
-   * Error message if the command failed
-   */
-  error?: string;
-
-  /**
-   * Additional metadata about the command execution
-   */
-  metadata?: Record<string, unknown>;
-}
-
-/**
- * Generic parsed command interface
- * The actual implementation with IF-specific details is in stdlib
- */
-export interface ParsedCommand {
-  /**
-   * The raw command text
-   */
-  raw: string;
-
-  /**
-   * The command verb
-   */
-  verb?: string;
-
-  /**
-   * Additional command data
-   */
-  [key: string]: any;
-}
-
-/**
- * Generic context interface for command execution
- * The actual GameContext with IF-specific details is in stdlib
+ * Generic context interface for execution
+ * Domain-specific contexts should extend this interface
  */
 export interface ExecutionContext {
   /**
@@ -72,9 +25,11 @@ export interface ExecutionContext {
 }
 
 /**
- * Interface for command handlers
+ * Generic handler interface for any command-like system
+ * This is kept generic - specific implementations (IF, visual novel, etc)
+ * should define their own command and result types
  */
-export interface CommandHandler {
+export interface CommandHandler<TCommand = any, TResult = any> {
   /**
    * The verb or verbs that this handler can process
    */
@@ -83,68 +38,84 @@ export interface CommandHandler {
   /**
    * Check if this handler can handle the given command
    */
-  canHandle: (command: ParsedCommand, context: ExecutionContext) => boolean;
+  canHandle: (command: TCommand, context: ExecutionContext) => boolean;
 
   /**
    * Execute the command
    */
-  execute: (command: ParsedCommand, context: ExecutionContext) => Promise<CommandResult> | CommandResult;
+  execute: (command: TCommand, context: ExecutionContext) => Promise<TResult> | TResult;
 
   /**
    * Validate the command before execution
    */
-  validate?: (command: ParsedCommand, context: ExecutionContext) => { valid: boolean; error?: string };
+  validate?: (command: TCommand, context: ExecutionContext) => { valid: boolean; error?: string };
 }
 
 /**
- * Interface for command router
+ * Generic action interface
+ * Actions are handlers with unique identifiers
  */
-export interface CommandRouter {
+export interface Action<TCommand = any, TResult = any> extends CommandHandler<TCommand, TResult> {
+  /**
+   * Unique identifier for the action
+   */
+  id: string;
+  
+  /**
+   * Action metadata (if any)
+   */
+  metadata?: any;
+}
+
+/**
+ * Generic router interface for command-like systems
+ */
+export interface CommandRouter<TCommand = any, TResult = any> {
   /**
    * Register a command handler
    */
-  registerHandler: (handler: CommandHandler) => void;
+  registerHandler: (handler: CommandHandler<TCommand, TResult>) => void;
 
   /**
    * Unregister a command handler
    */
-  unregisterHandler: (handler: CommandHandler) => void;
+  unregisterHandler: (handler: CommandHandler<TCommand, TResult>) => void;
 
   /**
    * Get a handler for the command
    */
-  getHandler: (command: ParsedCommand, context: ExecutionContext) => CommandHandler | undefined;
+  getHandler: (command: TCommand, context: ExecutionContext) => CommandHandler<TCommand, TResult> | undefined;
 
   /**
    * Route and execute a command
    */
-  execute: (command: ParsedCommand, context: ExecutionContext, options?: CommandExecutionOptions) => Promise<CommandResult>;
+  execute: (command: TCommand, context: ExecutionContext, options?: CommandExecutionOptions<TCommand>) => Promise<TResult>;
 
   /**
    * Process the result of command execution and return text output
    */
-  processResult?: (result: CommandResult) => string;
+  processResult?: (result: TResult) => string;
 }
 
 /**
- * Interface for command handler factory
+ * Generic factory interface for creating handlers
  */
-export interface CommandHandlerFactory {
+export interface CommandHandlerFactory<TCommand = any, TResult = any> {
   /**
    * Create a standard command handler
    */
   createHandler: (config: {
     verbs: string[];
-    canHandle?: (command: ParsedCommand, context: ExecutionContext) => boolean;
-    execute: (command: ParsedCommand, context: ExecutionContext) => Promise<CommandResult> | CommandResult;
-    validate?: (command: ParsedCommand, context: ExecutionContext) => { valid: boolean; error?: string };
-  }) => CommandHandler;
+    canHandle?: (command: TCommand, context: ExecutionContext) => boolean;
+    execute: (command: TCommand, context: ExecutionContext) => Promise<TResult> | TResult;
+    validate?: (command: TCommand, context: ExecutionContext) => { valid: boolean; error?: string };
+  }) => CommandHandler<TCommand, TResult>;
 }
 
 /**
  * Options for command execution
  */
-export interface CommandExecutionOptions {
+export interface CommandExecutionOptions<TCommand = any, TResult = any> {
   /**
    * Whether to skip validation
    */
@@ -153,15 +124,15 @@ export interface CommandExecutionOptions {
   /**
    * Custom validation callback
    */
-  customValidation?: (command: ParsedCommand, context: ExecutionContext) => { valid: boolean; error?: string };
+  customValidation?: (command: TCommand, context: ExecutionContext) => { valid: boolean; error?: string };
 
   /**
    * Pre-execution hooks
    */
-  preExecute?: ((command: ParsedCommand, context: ExecutionContext) => Promise<void> | void)[];
+  preExecute?: ((command: TCommand, context: ExecutionContext) => Promise<void> | void)[];
 
   /**
    * Post-execution hooks
    */
-  postExecute?: ((result: CommandResult, command: ParsedCommand, context: ExecutionContext) => Promise<CommandResult> | CommandResult)[];
+  postExecute?: ((result: TResult, command: TCommand, context: ExecutionContext) => Promise<TResult> | TResult)[];
 }

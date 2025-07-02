@@ -43,3 +43,4 @@ export declare class RuleSystemAdapter implements RuleSystem {
  */
 export declare function createRuleSystem(): RuleSystem;
 export {};
+//# sourceMappingURL=compatibility.d.ts.map

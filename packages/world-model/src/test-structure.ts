@@ -9,15 +9,18 @@ const box = new IFEntity('box-1', 'container');
 
 // Test adding a trait
 const containerTrait = new ContainerTrait({
-  capacity: 10,
-  transparent: true
+  capacity: {
+    maxWeight: 10,
+    maxItems: 10
+  },
+  isTransparent: true
 });
 
 box.add(containerTrait);
 
 // Test checking for trait
 console.log('Has container trait:', box.has(TraitType.CONTAINER));
-console.log('Container capacity:', (box.get(TraitType.CONTAINER) as ContainerTrait)?.capacity);
+console.log('Container maxWeight:', (box.get(TraitType.CONTAINER) as ContainerTrait)?.capacity?.maxWeight);
 
 export function testWorldModel() {
   console.log('World model package is working!');

@@ -3,16 +3,21 @@
 // Core data structures
 export * from './types';
 
-// Event system
-export * from './events/types';
-export * from './events/event-system';
-export * from './events/standard-events';
+// Event system - export from the events index which has everything organized
+export * from './events';
 
 // Extension system
 export * from './extensions/types';
 
-// Execution system
-export * from './execution';
+// Execution system - export specific items to avoid conflicts
+export {
+  CommandHandler,
+  Action,
+  ExecutionContext,
+  CommandRouter,
+  CommandHandlerFactory,
+  CommandExecutionOptions
+} from './execution/types';
 
 // Rules system
 export * from './rules';
@@ -20,4 +25,7 @@ export * from './rules';
 // Language system
 export * from './language';
 
-// Remove channel exports - no longer needed
+
+
+// Debug infrastructure
+export * from './debug';

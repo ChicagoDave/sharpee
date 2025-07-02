@@ -9,3 +9,4 @@ export * from './compatibility';
 export { createSimpleRuleSystem } from './simple-rule-system';
 export { createSimpleRuleWorld } from './rule-world-adapter';
 export { RuleSystem, createRuleSystem } from './compatibility';
+//# sourceMappingURL=index.d.ts.map

@@ -1,0 +1,35 @@
+{
+  "uuid": "28453db3-fa42-4bd3-97eb-fdae6de106b5",
+  "name": "Sharpee: TypeScript Interactive Fiction Authoring Platform",
+  "created_at": "2025-05-23T02:10:13.864223Z",
+  "updated_at": "2025-05-23T02:11:26.421210Z",
+  "account": {
+    "uuid": "760c9b93-a257-47cd-bd61-d0b15a821e02"
+  },
+  "chat_messages": [
+    {
+      "uuid": "c08c2fe5-fde6-4914-9fc7-78589aa0c668",
+      "text": "Let's review the current code against our latest status:\n\nI'm working on Sharpee, a TypeScript-based Interactive Fiction authoring platform. \nProject location: C:\\repotemp\\sharpee (accessible via MCP)\nWe recently pivoted from an over-engineered approach to an IF-first design. Current status:\n- ✅ Core architecture (channels, events) - keeping these\n- ✅ New IF-specific parser with pattern matching and disambiguation \n- 🚧 Need to simplify world model with IF-specific concepts\n- ⏳ Need to implement the Forge authoring layer\nPlease review:\n1. ROADMAP.md for the development plan\n2. status-2025-05-22-parser-complete.md for what we just built\n3. The new parser in packages/core/src/parser/if-parser.ts\nNext task: Implement a simplified world model with IF-specific entity types (Room, Container, Door, etc.) and properties (takeable, openable, lit, etc.) to replace the generic graph database approach.\nKey goals:\n- Fluent API for non-programmer authors\n- Graph-based world model (keep this concept)\n- Separate text emission from game logic  \n- Multi-language support\n- Pattern-based parser (not NLP)\n- TypeScript implementation",
+      "content": [
+        {
+          "start_timestamp": "2025-05-23T02:10:14.693387Z",
+          "stop_timestamp": "2025-05-23T02:10:14.693387Z",
+          "type": "text",
+          "text": "Let's review the current code against our latest status:\n\nI'm working on Sharpee, a TypeScript-based Interactive Fiction authoring platform. \nProject location: C:\\repotemp\\sharpee (accessible via MCP)\nWe recently pivoted from an over-engineered approach to an IF-first design. Current status:\n- ✅ Core architecture (channels, events) - keeping these\n- ✅ New IF-specific parser with pattern matching and disambiguation \n- 🚧 Need to simplify world model with IF-specific concepts\n- ⏳ Need to implement the Forge authoring layer\nPlease review:\n1. ROADMAP.md for the development plan\n2. status-2025-05-22-parser-complete.md for what we just built\n3. The new parser in packages/core/src/parser/if-parser.ts\nNext task: Implement a simplified world model with IF-specific entity types (Room, Container, Door, etc.) and properties (takeable, openable, lit, etc.) to replace the generic graph database approach.\nKey goals:\n- Fluent API for non-programmer authors\n- Graph-based world model (keep this concept)\n- Separate text emission from game logic  \n- Multi-language support\n- Pattern-based parser (not NLP)\n- TypeScript implementation",
+          "citations": []
+        }
+      ],
+      "sender": "human",
+      "created_at": "2025-05-23T02:10:14.700609Z",
+      "updated_at": "2025-05-23T02:10:14.700609Z",
+      "attachments": [],
+      "files": []
+    }
+  ],
+  "_extraction_metadata": {
+    "extraction_method": "exact_title_match",
+    "matched_title": "Sharpee: TypeScript Interactive Fiction Authoring Platform",
+    "extraction_timestamp": "2025-06-21T06:39:34.988Z",
+    "source": "claude_project_sharpee"
+  }
+}

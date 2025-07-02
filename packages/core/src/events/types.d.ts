@@ -1,7 +1,4 @@
-/**
- * Generic entity ID type
- */
-export type EntityId = string;
+import { EntityId } from '../types/entity';
 /**
  * Represents a semantic event in the system
  */
@@ -68,43 +65,7 @@ export interface SemanticEvent {
      */
     metadata?: Record<string, unknown>;
 }
-/**
- * Interface for event source that collects and manages events
- */
-export interface EventSource {
-    /**
-     * Add an event to the source
-     */
-    addEvent: (event: SemanticEvent) => void;
-    /**
-     * Get all events in the source
-     */
-    getAllEvents: () => SemanticEvent[];
-    /**
-     * Get events of a specific type
-     */
-    getEventsByType: (type: string) => SemanticEvent[];
-    /**
-     * Get events involving a specific entity
-     */
-    getEventsByEntity: (entityId: EntityId) => SemanticEvent[];
-    /**
-     * Get events with a specific tag
-     */
-    getEventsByTag: (tag: string) => SemanticEvent[];
-    /**
-     * Clear all events
-     */
-    clearEvents: () => void;
-    /**
-     * Apply a filter to the events
-     */
-    filter: (predicate: (event: SemanticEvent) => boolean) => SemanticEvent[];
-    /**
-     * Get the event emitter associated with this source
-     */
-    getEmitter: () => EventEmitter;
-}
+export { SemanticEventSource as EventSource } from './semantic-event-source';
 /**
  * Event listener for semantic events
  */
@@ -144,3 +105,8 @@ export interface EventSystemOptions {
      */
     emitFilter?: (event: SemanticEvent) => boolean;
 }
+/**
+ * Type alias for backwards compatibility
+ */
+export type Event = SemanticEvent;
+//# sourceMappingURL=types.d.ts.map

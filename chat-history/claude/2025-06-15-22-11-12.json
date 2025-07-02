@@ -1,0 +1,35 @@
+{
+  "uuid": "26507995-af1c-4b87-b670-ede1fbac77b8",
+  "name": "Project Refactoring Checklist",
+  "created_at": "2025-06-16T03:11:12.507244Z",
+  "updated_at": "2025-06-16T03:13:29.603216Z",
+  "account": {
+    "uuid": "760c9b93-a257-47cd-bd61-d0b15a821e02"
+  },
+  "chat_messages": [
+    {
+      "uuid": "9051e4e6-cf63-461e-9e71-1e39b5b24648",
+      "text": "we're working refactor and the screen blanked again, but much of the work in this batch I think is completed\n\n### Move to /archive:\r\n- [ ] All test files in archived state\r\n- [ ] Old parser implementations\r\n- [ ] Migration scripts (after running them)\r\n- [ ] Backup world models\r\n- [ ] TODO files that are completed\n\njust review what's been done and update the checklist",
+      "content": [
+        {
+          "start_timestamp": "2025-06-16T03:11:13.169788Z",
+          "stop_timestamp": "2025-06-16T03:11:13.169788Z",
+          "type": "text",
+          "text": "we're working refactor and the screen blanked again, but much of the work in this batch I think is completed\n\n### Move to /archive:\r\n- [ ] All test files in archived state\r\n- [ ] Old parser implementations\r\n- [ ] Migration scripts (after running them)\r\n- [ ] Backup world models\r\n- [ ] TODO files that are completed\n\njust review what's been done and update the checklist",
+          "citations": []
+        }
+      ],
+      "sender": "human",
+      "created_at": "2025-06-16T03:11:13.177691Z",
+      "updated_at": "2025-06-16T03:11:13.177691Z",
+      "attachments": [],
+      "files": []
+    }
+  ],
+  "_extraction_metadata": {
+    "extraction_method": "exact_title_match",
+    "matched_title": "Project Refactoring Checklist",
+    "extraction_timestamp": "2025-06-21T06:39:36.166Z",
+    "source": "claude_project_sharpee"
+  }
+}

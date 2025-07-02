@@ -17,35 +17,35 @@ export class SupporterBehavior extends Behavior {
   
   /**
    * Check if a supporter can accept an item
-   * @returns true if the item can be accepted, or a string describing why not
+   * @returns true if the item can be accepted
    */
-  static canAccept(supporter: IFEntity, item: IFEntity, world: IWorldQuery): boolean | string {
+  static canAccept(supporter: IFEntity, item: IFEntity, world: IWorldQuery): boolean {
     const trait = SupporterBehavior.require<SupporterTrait>(supporter, TraitType.SUPPORTER);
     
     // Check type restrictions
     if (trait.allowedTypes && trait.allowedTypes.length > 0) {
       const itemType = item.type || 'object';
       if (!trait.allowedTypes.includes(itemType)) {
-        return "Cannot put that on this surface";
+        return false;
       }
     }
     
     if (trait.excludedTypes && trait.excludedTypes.length > 0) {
       const itemType = item.type || 'object';
       if (trait.excludedTypes.includes(itemType)) {
-        return "Cannot put that on this surface";
+        return false;
       }
     }
     
     // Check enterable restrictions for actors
     if (item.has(TraitType.ACTOR) && !trait.enterable) {
-      return "Cannot sit/stand on this";
+      return false;
     }
     
     // Check capacity constraints
     if (trait.capacity) {
       const result = this.checkCapacity(supporter, item, world);
-      if (result !== true) return result;
+      if (!result) return false;
     }
     
     return true;
@@ -54,7 +54,7 @@ export class SupporterBehavior extends Behavior {
   /**
    * Check capacity constraints
    */
-  static checkCapacity(supporter: IFEntity, item: IFEntity, world: IWorldQuery): boolean | string {
+  static checkCapacity(supporter: IFEntity, item: IFEntity, world: IWorldQuery): boolean {
     const trait = SupporterBehavior.require<SupporterTrait>(supporter, TraitType.SUPPORTER);
     const capacity = trait.capacity!;
     
@@ -62,7 +62,7 @@ export class SupporterBehavior extends Behavior {
     if (capacity.maxItems !== undefined) {
       const currentCount = world.getContents(supporter.id).length;
       if (currentCount >= capacity.maxItems) {
-        return "No room on surface";
+        return false;
       }
     }
     
@@ -71,7 +71,7 @@ export class SupporterBehavior extends Behavior {
       const currentWeight = this.getTotalWeight(supporter, world);
       const itemWeight = this.getItemTotalWeight(item, world);
       if (currentWeight + itemWeight > capacity.maxWeight) {
-        return "Too heavy for surface";
+        return false;
       }
     }
     
