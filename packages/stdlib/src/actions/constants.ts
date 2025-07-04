@@ -4,6 +4,25 @@
  * These are the common verbs/actions that players can perform
  */
 
+export const ActionIDs = {
+  // Movement actions
+  GOING: 'if.action.going',
+  
+  // Observation actions
+  LOOKING: 'if.action.looking',
+  EXAMINING: 'if.action.examining',
+  
+  // Object manipulation
+  TAKING: 'if.action.taking',
+  DROPPING: 'if.action.dropping',
+  
+  // Container/supporter actions
+  OPENING: 'if.action.opening',
+  
+  // Meta actions
+  INVENTORY: 'if.action.inventory',
+} as const;
+
 export const IFActions = {
   // Movement actions
   GOING: 'if.action.going',

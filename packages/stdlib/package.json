@@ -10,8 +10,8 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@sharpee/core": "workspace:*",
-    "@sharpee/world-model": "workspace:*"
+    "@sharpee/core": "file:../core",
+    "@sharpee/world-model": "file:../world-model"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",

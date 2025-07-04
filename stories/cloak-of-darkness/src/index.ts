@@ -414,7 +414,9 @@ export class CloakOfDarknessStory implements Story {
     if (!message) return false;
     
     // Check if message was read without disturbance
-    return this.disturbances === 0 && !this.isBarDark();
+    // For now, return false so the game doesn't end
+    // TODO: Implement proper completion check based on reading the message
+    return false;
   }
 }
 

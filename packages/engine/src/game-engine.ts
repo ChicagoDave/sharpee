@@ -495,9 +495,6 @@ export async function createEngineWithStory(
   // Load language provider
   const languageProvider = await loadLanguageProvider(story.config.language);
   
-  // Initialize world from story
-  story.initializeWorld(world);
-  
   // Create player from story
   const player = story.createPlayer(world);
   world.setPlayer(player.id);
@@ -505,7 +502,7 @@ export async function createEngineWithStory(
   // Create engine with language provider
   const engine = new GameEngine(world, player, config, languageProvider);
   
-  // Set the story (this will register custom actions, etc.)
+  // Set the story (this will initialize world and register custom actions)
   await engine.setStory(story);
   
   // Initial vocabulary update

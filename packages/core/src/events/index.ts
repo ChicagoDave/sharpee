@@ -26,10 +26,11 @@ export {
   createSemanticEventSource
 } from './semantic-event-source';
 
-// Export from event-system but exclude conflicting createEventSource
+// Export from event-system
 export {
   createEvent,
-  EventSourceImpl
+  EventSourceImpl,
+  createEventSource
 } from './event-system';
 // message-resolver moved to stdlib (uses GameContext)
 // enhanced-text-processor moved to stdlib (uses GameContext) 

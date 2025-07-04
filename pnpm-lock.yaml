@@ -51,16 +51,16 @@ importers:
   packages/engine:
     dependencies:
       '@sharpee/core':
-        specifier: workspace:*
+        specifier: file:../core
         version: link:../core
       '@sharpee/event-processor':
-        specifier: workspace:*
+        specifier: file:../event-processor
         version: link:../event-processor
       '@sharpee/stdlib':
-        specifier: workspace:*
+        specifier: file:../stdlib
         version: link:../stdlib
       '@sharpee/world-model':
-        specifier: workspace:*
+        specifier: file:../world-model
         version: link:../world-model
     devDependencies:
       '@types/node':
@@ -76,10 +76,10 @@ importers:
   packages/event-processor:
     dependencies:
       '@sharpee/core':
-        specifier: workspace:*
+        specifier: file:../core
         version: link:../core
       '@sharpee/world-model':
-        specifier: workspace:*
+        specifier: file:../world-model
         version: link:../world-model
     devDependencies:
       '@types/jest':
@@ -159,10 +159,10 @@ importers:
   packages/stdlib:
     dependencies:
       '@sharpee/core':
-        specifier: workspace:*
+        specifier: file:../core
         version: link:../core
       '@sharpee/world-model':
-        specifier: workspace:*
+        specifier: file:../world-model
         version: link:../world-model
     devDependencies:
       '@types/jest':
@@ -190,7 +190,7 @@ importers:
   packages/world-model:
     dependencies:
       '@sharpee/core':
-        specifier: workspace:*
+        specifier: file:../core
         version: link:../core
     devDependencies:
       '@types/jest':
@@ -224,10 +224,10 @@ importers:
   stories/cloak-of-darkness:
     dependencies:
       '@sharpee/engine':
-        specifier: workspace:*
+        specifier: file:../../packages/engine
         version: link:../../packages/engine
       '@sharpee/world-model':
-        specifier: workspace:*
+        specifier: file:../../packages/world-model
         version: link:../../packages/world-model
     devDependencies:
       '@types/jest':
@@ -244,6 +244,28 @@ importers:
         version: 5.0.10
       typescript:
         specifier: ^5.3.3
+        version: 5.8.3
+
+  stories/secretletter2025:
+    dependencies:
+      '@sharpee/engine':
+        specifier: file:../../packages/engine
+        version: link:../../packages/engine
+      '@sharpee/lang-en-us':
+        specifier: file:../../packages/lang-en-us
+        version: link:../../packages/lang-en-us
+      '@sharpee/stdlib':
+        specifier: file:../../packages/stdlib
+        version: link:../../packages/stdlib
+      '@sharpee/world-model':
+        specifier: file:../../packages/world-model
+        version: link:../../packages/world-model
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.4
+      typescript:
+        specifier: ^5.0.0
         version: 5.8.3
 
 packages:

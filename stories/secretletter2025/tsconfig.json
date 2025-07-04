@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "node",
+    "lib": ["ES2022"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "sourceMap": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "@sharpee/core": ["../../packages/core/dist/index.js"],
+      "@sharpee/world-model": ["../../packages/world-model/dist/index.js"],
+      "@sharpee/event-processor": ["../../packages/event-processor/dist/index.js"],
+      "@sharpee/stdlib": ["../../packages/stdlib/dist/index.js"],
+      "@sharpee/lang-en-us": ["../../packages/lang-en-us/dist/index.js"],
+      "@sharpee/engine": ["../../packages/engine/dist/index.js"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

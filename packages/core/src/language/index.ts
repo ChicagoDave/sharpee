@@ -7,22 +7,20 @@
 
 export * from './types';
 export * from './registry';
-export * from './default-provider';
 
 // Re-export commonly used functions
 import { getLanguageRegistry } from './registry';
 import { LanguageProvider } from './types';
-import { createDefaultLanguageProvider } from './default-provider';
 
 /**
  * Get the active language provider
  * @returns The currently active language provider
+ * @throws Error if no language provider is set
  */
 export function getActiveLanguageProvider(): LanguageProvider {
   const provider = getLanguageRegistry().getProvider();
   if (!provider) {
-    // Return a default provider if none is set
-    return createDefaultLanguageProvider();
+    throw new Error('No language provider has been set. A language provider must be registered and set before use.');
   }
   return provider;
 }

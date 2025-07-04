@@ -1,12 +1,28 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "src",
-    "composite": true,
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "lib": ["ES2022"],
+    "outDir": "./dist",
+    "rootDir": "./src",
     "declaration": true,
-    "declarationMap": true
+    "sourceMap": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@sharpee/core": ["./node_modules/@sharpee/core"],
+      "@sharpee/world-model": ["./node_modules/@sharpee/world-model"],
+      "@sharpee/event-processor": ["./node_modules/@sharpee/event-processor"],
+      "@sharpee/stdlib": ["./node_modules/@sharpee/stdlib"],
+      "@sharpee/lang-en-us": ["./node_modules/@sharpee/lang-en-us"],
+      "@sharpee/engine": ["./node_modules/@sharpee/engine"]
+    }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+  "exclude": ["node_modules", "dist"]
 }

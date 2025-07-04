@@ -228,5 +228,5 @@ export class EnglishLanguageProvider {
   }
 }
 
-// Default export
-export default EnglishLanguageProvider;
+// Default export - create an instance
+export default new EnglishLanguageProvider();

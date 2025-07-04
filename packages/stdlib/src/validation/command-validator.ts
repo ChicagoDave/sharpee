@@ -16,12 +16,13 @@ import type {
   ParsedCommand,
   ValidatedCommand,
   ValidatedObjectReference,
-  ValidationError
+  ValidationError,
+  WorldModel,
+  IFEntity
 } from '@sharpee/world-model';
 
-import type { WorldModel, IFEntity } from '@sharpee/world-model';
+import { ScopeService } from '@sharpee/world-model';
 import { ActionRegistry } from '../actions/registry';
-import { ScopeService } from '@sharpee/world-model/services/ScopeService';
 
 /**
  * Action metadata interface for declaring requirements
@@ -802,4 +803,3 @@ export class CommandValidatorImpl implements CommandValidator {
     });
   }
 }
-

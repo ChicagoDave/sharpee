@@ -1,0 +1,265 @@
+# Example Workflow Files
+
+These are complete, ready-to-use workflow files for the Sharpee project.
+
+## .github/workflows/ci.yml
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Build and test all packages
+        run: |
+          export BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          export BUILD_NUMBER=${{ github.run_number }}
+          export GIT_COMMIT=${{ github.sha }}
+          pnpm run ci:test
+          
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: packages/*/test-results/
+```
+
+## .github/workflows/release.yml
+
+```yaml
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Create Release Pull Request or Publish
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          version: pnpm run version
+          publish: pnpm run release
+          createGithubReleases: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # NPM_TOKEN: ${{ secrets.NPM_TOKEN }}  # Uncomment if publishing to npm
+```
+
+## .github/workflows/version-bump.yml
+
+```yaml
+name: Weekly Version Bump
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Every Monday at 9 AM UTC
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  version-bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+          
+      - name: Install dependencies
+        run: pnpm install
+        
+      - name: Configure Git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+      - name: Create changeset for minor bump
+        run: |
+          cat > .changeset/automated-minor-bump-$(date +%s).md << EOF
+          ---
+          "@sharpee/core": minor
+          "@sharpee/engine": minor
+          "@sharpee/stdlib": minor
+          "@sharpee/world": minor
+          "@sharpee/extensions": minor
+          "@sharpee/lang-en-us": minor
+          "@sharpee/cloak": minor
+          ---
+          
+          Weekly automated minor version bump
+          
+          Build: ${{ github.run_number }}
+          Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          EOF
+          
+      - name: Version packages
+        run: pnpm changeset version
+        
+      - name: Commit and push
+        run: |
+          git add .
+          git commit -m "chore: weekly minor version bump [skip ci]"
+          git push
+```
+
+## .changeset/config.json
+
+```json
+{
+  "$schema": "https://unpkg.com/@changesets/config@2.3.1/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": [],
+  "___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
+    "onlyUpdatePeerDependentsWhenOutOfRange": true
+  }
+}
+```
+
+## scripts/generate-build-info.js (For each package)
+
+```javascript
+#!/usr/bin/env node
+
+const fs = require('fs');
+const path = require('path');
+
+// Read package.json to get version
+const packageJson = JSON.parse(
+  fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')
+);
+
+const buildInfo = {
+  package: packageJson.name,
+  version: packageJson.version,
+  buildDate: process.env.BUILD_DATE || new Date().toISOString(),
+  buildNumber: process.env.BUILD_NUMBER || 'local',
+  gitCommit: process.env.GIT_COMMIT || 'local',
+  nodeVersion: process.version,
+  platform: process.platform
+};
+
+const content = `// Auto-generated build information
+// Do not edit this file manually
+
+export const BUILD_INFO = ${JSON.stringify(buildInfo, null, 2)} as const;
+
+export type BuildInfo = typeof BUILD_INFO;
+`;
+
+const outputDir = path.join(__dirname, '..', 'src');
+const outputPath = path.join(outputDir, 'build-info.ts');
+
+// Ensure src directory exists
+fs.mkdirSync(outputDir, { recursive: true });
+
+// Write the file
+fs.writeFileSync(outputPath, content);
+
+console.log(`Generated build info for ${packageJson.name} v${packageJson.version}`);
+console.log(`Build Date: ${buildInfo.buildDate}`);
+console.log(`Build Number: ${buildInfo.buildNumber}`);
+```
+
+## Example package.json scripts section
+
+```json
+{
+  "scripts": {
+    "prebuild": "node scripts/generate-build-info.js",
+    "build": "tsc",
+    "postbuild": "echo 'Build complete'",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src --ext .ts",
+    "type-check": "tsc --noEmit",
+    "clean": "rimraf dist src/build-info.ts"
+  }
+}
+```
+
+## .gitignore additions
+
+```gitignore
+# Build info files
+src/build-info.ts
+packages/*/src/build-info.ts
+
+# Test results
+test-results/
+packages/*/test-results/
+coverage/
+packages/*/coverage/
+
+# CI artifacts
+.changeset/*.md
+!.changeset/README.md
+!.changeset/config.json
+```

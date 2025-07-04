@@ -45,7 +45,7 @@ export class SimpleRuleSystemImpl implements SimpleRuleSystem {
     matchingRules.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
     let prevented = false;
-    let preventMessage: string | undefined;
+    let message: string | undefined;
     const allEvents: SemanticEvent[] = [];
     const allChanges: EntityChange[] = [];
 
@@ -57,12 +57,18 @@ export class SimpleRuleSystemImpl implements SimpleRuleSystem {
       }
 
       // Execute the rule
-      const result = rule.action(event, world);
+      let result: RuleResult;
+      try {
+        result = rule.action(event, world);
+      } catch (error) {
+        console.error(`Error executing rule ${rule.id}:`, error);
+        continue; // Skip this rule and continue with others
+      }
 
       // Handle prevention (first rule to prevent wins)
       if (result.prevent && !prevented) {
         prevented = true;
-        preventMessage = result.message;
+        message = result.message;
         
         // Create a narrative event for the prevent message
         if (result.message) {
@@ -87,6 +93,10 @@ export class SimpleRuleSystemImpl implements SimpleRuleSystem {
 
       // Handle message (create narrative event)
       if (result.message && !result.prevent) {
+        // Keep the message for the result
+        if (!message) {
+          message = result.message;
+        }
         allEvents.push(createEvent(
           StandardEventTypes.NARRATIVE,
           { message: result.message },
@@ -115,7 +125,7 @@ export class SimpleRuleSystemImpl implements SimpleRuleSystem {
 
     return {
       prevent: prevented,
-      message: preventMessage,
+      message,
       events: allEvents,
       changes: allChanges
     };

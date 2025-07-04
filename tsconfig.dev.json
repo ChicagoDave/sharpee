@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@sharpee/core": ["packages/core/src"],
+      "@sharpee/core/*": ["packages/core/src/*"],
+      "@sharpee/world-model": ["packages/world-model/src"],
+      "@sharpee/world-model/*": ["packages/world-model/src/*"],
+      "@sharpee/stdlib": ["packages/stdlib/src"],
+      "@sharpee/stdlib/*": ["packages/stdlib/src/*"],
+      "@sharpee/event-processor": ["packages/event-processor/src"],
+      "@sharpee/event-processor/*": ["packages/event-processor/src/*"],
+      "@sharpee/engine": ["packages/engine/src"],
+      "@sharpee/engine/*": ["packages/engine/src/*"],
+      "@sharpee/lang-en-us": ["packages/lang-en-us/src"],
+      "@sharpee/lang-en-us/*": ["packages/lang-en-us/src/*"]
+    }
+  }
+}

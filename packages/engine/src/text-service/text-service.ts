@@ -258,6 +258,59 @@ export class AllEventsTextService implements TextService {
         }
         break;
         
+      case 'player.looked':
+        // Just a marker event, the actual description comes from other events
+        text = '';
+        break;
+        
+      case 'text.room_description':
+        if (event.data && typeof event.data === 'object') {
+          const data = event.data as any;
+          // Get the room entity from world model if we have access
+          // For now, just indicate we need to describe the room
+          const roomId = data.roomId;
+          text = `\n[Room: ${roomId}]`;
+          // TODO: Get actual room description from world model
+          // This would require passing world model to text service
+        }
+        break;
+        
+      case 'text.list_contents':
+        if (event.data && typeof event.data === 'object') {
+          const data = event.data as any;
+          if (data.items && Array.isArray(data.items)) {
+            text = `You can see: ${data.items.join(', ')}`;
+          }
+        }
+        break;
+        
+      case 'player.checked_inventory':
+        // Just a marker event, NPCs might react
+        text = '';
+        break;
+        
+      case 'player.inventory_empty':
+        // Just a marker event
+        text = '';
+        break;
+        
+      case 'text.inventory_list':
+        if (event.data && typeof event.data === 'object') {
+          const data = event.data as any;
+          if (data.empty) {
+            text = 'You are carrying nothing.';
+          } else {
+            text = 'You are carrying:';
+            if (data.carried && data.carried.length > 0) {
+              text += `\n  ${data.carried.join('\n  ')}`;
+            }
+            if (data.worn && data.worn.length > 0) {
+              text += `\n\nYou are wearing:\n  ${data.worn.join('\n  ')}`;
+            }
+          }
+        }
+        break;
+        
       default:
         if (verbose && event.data) {
           text = `${event.type}: ${JSON.stringify(event.data, null, 2)}`;

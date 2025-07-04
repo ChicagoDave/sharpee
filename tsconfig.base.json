@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "ESNext",
+    "target": "ES2022",
+    "module": "commonjs",
     "moduleResolution": "node",
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "declaration": true,
     "sourceMap": true,
     "strict": true,
@@ -11,36 +12,6 @@
     "noImplicitAny": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "skipLibCheck": true,
-    "baseUrl": ".",
-    "paths": {
-      "@sharpee/core": ["packages/core/src"],
-      "@sharpee/core/*": ["packages/core/src/*"],
-      "@sharpee/world-model": ["packages/world-model/src"],
-      "@sharpee/world-model/*": ["packages/world-model/src/*"],
-      "@sharpee/stdlib": ["packages/stdlib/src"],
-      "@sharpee/stdlib/*": ["packages/stdlib/src/*"],
-      "@sharpee/event-processor": ["packages/event-processor/src"],
-      "@sharpee/event-processor/*": ["packages/event-processor/src/*"],
-      "@sharpee/engine": ["packages/engine/src"],
-      "@sharpee/engine/*": ["packages/engine/src/*"],
-      "@sharpee/forge": ["packages/forge/src"],
-      "@sharpee/forge/*": ["packages/forge/src/*"],
-      "@sharpee/lang-en-us": ["packages/lang-en-us/src"],
-      "@sharpee/lang-en-us/*": ["packages/lang-en-us/src/*"],
-      "@core/*": ["packages/core/src/*"],
-      "@stdlib/*": ["packages/stdlib/src/*"],
-      "@forge/*": ["packages/forge/src/*"],
-      "@extensions/*": ["packages/extensions/*"],
-      "@mirrors/*": ["packages/extensions/mirrors/src/*"],
-      "@conversation/*": ["packages/extensions/conversation/src/*"],
-      "@time/*": ["packages/extensions/time/src/*"],
-      "@abilities/*": ["packages/extensions/abilities/src/*"],
-      "@cli/*": ["packages/cli/src/*"],
-      "@web-client/*": ["packages/web-client/src/*"],
-      "@dev-tools/*": ["packages/dev-tools/src/*"],
-      "@stories/*": ["stories/*"],
-      "@reflections/*": ["stories/reflections/src/*"]
-    }
+    "skipLibCheck": true
   }
 }

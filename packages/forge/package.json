@@ -1,42 +1,42 @@
 {
-    "name": "@sharpee/forge",
-    "version": "0.1.0",
-    "description": "Author-friendly fluent API for Sharpee interactive fiction engine",
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
-    "scripts": {
-      "build": "tsc",
-      "test": "jest",
-      "test:watch": "jest --watch",
-      "test:coverage": "jest --coverage",
-      "lint": "eslint src --ext .ts",
-      "clean": "rimraf dist",
-      "prepublishOnly": "npm run clean && npm run build"
-    },
-    "peerDependencies": {
-      "@sharpee/core": "^0.1.0",
-      "@sharpee/stdlib": "^0.1.0"
-    },
-    "devDependencies": {
-      "@sharpee/core": "^0.1.0",
-      "@sharpee/stdlib": "^0.1.0",
-      "@types/jest": "^29.5.5",
-      "@typescript-eslint/eslint-plugin": "^5.59.0",
-      "@typescript-eslint/parser": "^5.59.0",
-      "eslint": "^8.38.0",
-      "jest": "^29.7.0",
-      "rimraf": "^5.0.5",
-      "ts-jest": "^29.1.1",
-      "typescript": "^5.2.2"
-    },
-    "files": [
-      "dist"
-    ],
-    "publishConfig": {
-      "access": "public"
-    },
-    "license": "MIT",
-    "engines": {
-      "node": ">=14.0.0"
-    }
+  "name": "@sharpee/forge",
+  "version": "0.1.0",
+  "description": "Author-friendly fluent API for Sharpee interactive fiction engine",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src --ext .ts",
+    "clean": "rimraf dist",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "peerDependencies": {
+    "@sharpee/core": "^0.1.0",
+    "@sharpee/stdlib": "^0.1.0"
+  },
+  "devDependencies": {
+    "@sharpee/core": "^0.1.0",
+    "@sharpee/stdlib": "^0.1.0",
+    "@types/jest": "^29.5.5",
+    "@typescript-eslint/eslint-plugin": "^5.59.0",
+    "@typescript-eslint/parser": "^5.59.0",
+    "eslint": "^8.38.0",
+    "jest": "^29.7.0",
+    "rimraf": "^5.0.5",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.2.2"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
   }
+}

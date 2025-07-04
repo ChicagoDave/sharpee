@@ -3,13 +3,9 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "composite": true
+    "declaration": true,
+    "declarationMap": true
   },
-  "include": [
-    "src/**/*"
-  ],
-  "references": [
-    { "path": "../core" },
-    { "path": "../world-model" }
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
 }

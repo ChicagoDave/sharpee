@@ -71,6 +71,19 @@ packages/clients/electron/app/dist/
 # Generated code
 **/*.generated.*
 
+# Package symlinks (created during build)
+packages/core/core
+packages/event-processor/event-processor
+packages/engine/engine
+packages/world-model/world-model
+packages/stdlib/stdlib
+packages/lang-en-us/lang-en-us
+packages/sharpee/sharpee
+packages/client-core/client-core
+packages/clients/clients
+packages/extensions/extensions
+packages/forge/forge
+
 # Build artifacts in src directories (but not in node_modules)
 packages/**/src/**/*.d.ts
 packages/**/src/**/*.js

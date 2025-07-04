@@ -366,7 +366,7 @@ export class BasicParser implements Parser {
 
       for (const dir of dirCandidates) {
         candidates.push({
-          action: 'GO', // Implicit go command
+          action: 'if.action.going', // Implicit go command
           nounText: tokens[0].word,
           nounCandidates: [dir.mapsTo],
           originalInput,

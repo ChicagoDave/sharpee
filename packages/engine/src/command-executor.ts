@@ -14,14 +14,12 @@ import {
 } from '@sharpee/world-model';
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
-import { 
-  ActionContext,
-  ActionRegistry
-} from '@sharpee/stdlib/actions';
 import {
   BasicParser,
   CommandValidator,
-  LanguageProvider
+  LanguageProvider,
+  ActionContext,
+  ActionRegistry
 } from '@sharpee/stdlib';
 
 import { 
@@ -175,12 +173,18 @@ export class CommandExecutor {
     // Process the events to update the world
     const processResult = this.eventProcessor.processEvents(sequencedEvents);
 
+    // Consider the turn successful if:
+    // 1. We have events (even if they're just text events)
+    // 2. OR we have world changes
+    // 3. OR no errors occurred
+    const success = sequencedEvents.length > 0 || processResult.changes.length > 0;
+
     return {
       turn,
       command: command.parsed,
       events: sequencedEvents,
       worldChanges: processResult.changes,
-      success: processResult.applied.length > 0
+      success
     };
   }
 
@@ -195,17 +199,17 @@ export class CommandExecutor {
       world: world as any, // Read-only interface
       player,
       currentLocation,
-      canSee: (entity) => world.canSee(player.id, entity.id),
-      canReach: (entity) => {
+      canSee: (entity: IFEntity) => world.canSee(player.id, entity.id),
+      canReach: (entity: IFEntity) => {
         // Simple implementation - can reach if can see
         // Could be enhanced with actual reach calculation
         return world.canSee(player.id, entity.id);
       },
-      canTake: (entity) => {
+      canTake: (entity: IFEntity) => {
         // Can take if not scenery, not a room, etc.
         return !entity.has('SCENERY') && !entity.has('ROOM');
       },
-      isInScope: (entity) => {
+      isInScope: (entity: IFEntity) => {
         const inScope = world.getInScope(player.id);
         return inScope.some(e => e.id === entity.id);
       },

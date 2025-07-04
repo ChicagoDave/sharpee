@@ -2,7 +2,6 @@
   "name": "@sharpee/story-cloak-of-darkness",
   "version": "0.1.0",
   "description": "The classic Cloak of Darkness IF demonstration game",
-  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -15,8 +14,8 @@
     "play": "node dist/test-runner.js"
   },
   "dependencies": {
-    "@sharpee/engine": "workspace:*",
-    "@sharpee/world-model": "workspace:*"
+    "@sharpee/engine": "file:../../packages/engine",
+    "@sharpee/world-model": "file:../../packages/world-model"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",

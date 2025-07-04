@@ -19,9 +19,17 @@
     "stories/*"
   ],
   "scripts": {
-    "clean": "rimraf \"packages/*/dist\" \"packages/extensions/*/dist\" \"stories/*/dist\"",
-    "build": "lerna run build",
-    "test": "lerna run test"
+    "clean": "pnpm -r run clean",
+    "build": "pnpm run build:clean && pnpm run build:all",
+    "build:clean": "pnpm run clean",
+    "build:all": "pnpm -r --workspace-concurrency=1 --stream run build",
+    "build:core": "pnpm --filter '@sharpee/core' run build",
+    "build:changed": "pnpm -r --filter '...[origin/main]' run build",
+    "dev": "pnpm -r --parallel run dev",
+    "test": "pnpm -r run test",
+    "test:changed": "pnpm -r --filter '...[origin/main]' run test",
+    "typecheck": "tsc --noEmit",
+    "lint": "pnpm -r run lint"
   },
   "devDependencies": {
     "lerna": "^8.2.2",

@@ -18,11 +18,23 @@ async function runStory() {
     
     // Start the engine
     engine.start();
+    console.log('Engine started, running:', (engine as any).running);
     
     // Listen for turn completion to display output
     engine.on('turn:complete', (result: TurnResult) => {
       console.log(`\nTurn ${result.turn}: ${result.command.rawInput}`);
       console.log('---');
+      console.log('Engine still running after turn:', (engine as any).running);
+    });
+    
+    // Listen for errors
+    engine.on('turn:failed', (error: Error, turn: number) => {
+      console.error(`Turn ${turn} failed:`, error.message);
+    });
+    
+    // Listen for game over
+    engine.on('game:over', (context) => {
+      console.log('Game over event fired!');
     });
     
     // Execute some test commands
@@ -40,7 +52,12 @@ async function runStory() {
     
     for (const command of commands) {
       console.log(`\n> ${command}`);
-      await engine.executeTurn(command);
+      try {
+        await engine.executeTurn(command);
+      } catch (error) {
+        console.error(`Error executing command '${command}':`, error);
+        // Continue with next command instead of crashing
+      }
     }
     
     console.log('\n=== Story Complete ===');

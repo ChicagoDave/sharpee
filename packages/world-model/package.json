@@ -20,7 +20,7 @@
   "author": "Sharpee Team",
   "license": "MIT",
   "dependencies": {
-    "@sharpee/core": "workspace:*"
+    "@sharpee/core": "file:../core"
   },
   "devDependencies": {
     "@types/jest": "^29.5.5",
