@@ -6,5 +6,5 @@
     "packages/extensions/*",
     "stories/*"
   ],
-  "npmClient": "npm"
+  "npmClient": "pnpm"
 }
