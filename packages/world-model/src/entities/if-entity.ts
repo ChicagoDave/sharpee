@@ -110,13 +110,13 @@ export class IFEntity implements Entity {
    */
   clone(newId: string): IFEntity {
     const cloned = new IFEntity(newId, this.type, {
-      attributes: { ...this.attributes },
+      attributes: JSON.parse(JSON.stringify(this.attributes)),
       relationships: JSON.parse(JSON.stringify(this.relationships)) // Deep copy
     });
     
-    // Clone traits (shallow copy for now)
+    // Clone traits (deep copy)
     for (const [type, trait] of this.traits) {
-      cloned.traits.set(type, { ...trait });
+      cloned.traits.set(type, JSON.parse(JSON.stringify(trait)));
     }
     
     return cloned;

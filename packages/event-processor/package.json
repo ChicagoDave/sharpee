@@ -6,7 +6,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "jest",
+    "test": "cross-env NODE_NO_WARNINGS=1 jest",
+    "test:verbose": "jest",
     "clean": "rimraf dist"
   },
   "dependencies": {
@@ -17,6 +18,7 @@
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "@types/node": "^20.11.19",
+    "cross-env": "^7.0.3",
     "jest": "^29.7.0",
     "rimraf": "^5.0.5",
     "ts-jest": "^29.1.2",

@@ -23,4 +23,5 @@ module.exports = {
         diagnostics: false,
       }],
     },
+    setupFilesAfterEnv: ['<rootDir>/tests/setup.ts']
   };

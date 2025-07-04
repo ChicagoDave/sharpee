@@ -7,7 +7,10 @@
   "scripts": {
     "build": "tsc",
     "clean": "rimraf dist",
-    "test": "jest",
+    "test": "cross-env NODE_NO_WARNINGS=1 jest",
+    "test:watch": "cross-env NODE_NO_WARNINGS=1 jest --watch",
+    "test:coverage": "cross-env NODE_NO_WARNINGS=1 jest --coverage",
+    "test:verbose": "jest --verbose",
     "lint": "eslint src --ext .ts",
     "prepublishOnly": "npm run clean && npm run build"
   },
@@ -28,6 +31,7 @@
     "@types/node": "^20.8.0",
     "@typescript-eslint/eslint-plugin": "^6.7.4",
     "@typescript-eslint/parser": "^6.7.4",
+    "cross-env": "^7.0.3",
     "eslint": "^8.50.0",
     "jest": "^29.7.0",
     "rimraf": "^5.0.5",

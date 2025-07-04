@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      cross-env:
+        specifier: ^7.0.3
+        version: 7.0.3
       lerna:
         specifier: ^8.2.2
         version: 8.2.3(encoding@0.1.13)
@@ -32,6 +35,9 @@ importers:
       '@typescript-eslint/parser':
         specifier: ^5.59.0
         version: 5.62.0(eslint@8.57.1)(typescript@5.8.3)
+      cross-env:
+        specifier: ^7.0.3
+        version: 7.0.3
       eslint:
         specifier: ^8.38.0
         version: 8.57.1
@@ -94,6 +100,9 @@ importers:
       '@types/node':
         specifier: ^20.11.19
         version: 20.19.4
+      cross-env:
+        specifier: ^7.0.3
+        version: 7.0.3
       jest:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@20.19.4)
@@ -233,6 +242,9 @@ importers:
       '@typescript-eslint/parser':
         specifier: ^6.7.4
         version: 6.21.0(eslint@8.57.1)(typescript@5.8.3)
+      cross-env:
+        specifier: ^7.0.3
+        version: 7.0.3
       eslint:
         specifier: ^8.50.0
         version: 8.57.1
@@ -1710,6 +1722,11 @@ packages:
   create-jest@29.7.0:
     resolution: {integrity: sha512-Adz2bdH0Vq3F53KEMJOoftQFutWCukm6J24wbPWRO4k1kMY7gS7ds/uoJkNuV8wDCtWWnuwGcJwpWcih+zEW1Q==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
+    hasBin: true
+
+  cross-env@7.0.3:
+    resolution: {integrity: sha512-+/HKd6EgcQCJGh2PSjZuUitQBQynKor4wrFbRg4DtAgS1aWO+gU52xpH7M9ScGgXSYmAVS9bIJ8EzuaGw0oNAw==}
+    engines: {node: '>=10.14', npm: '>=6', yarn: '>=1'}
     hasBin: true
 
   cross-spawn@7.0.6:
@@ -5678,6 +5695,10 @@ snapshots:
       - babel-plugin-macros
       - supports-color
       - ts-node
+
+  cross-env@7.0.3:
+    dependencies:
+      cross-spawn: 7.0.6
 
   cross-spawn@7.0.6:
     dependencies:
