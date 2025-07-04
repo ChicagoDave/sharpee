@@ -5,8 +5,8 @@
  */
 
 import { SemanticEvent } from '@sharpee/core';
-import { EventHandler } from '../types';
-import { WorldModel, IFEntity, IFEvents, TraitType, WearableTrait, RoomTrait } from '@sharpee/world-model';
+import { WorldModel, IFEntity, TraitType, WearableTrait, RoomTrait, EventHandler } from '@sharpee/world-model';
+import { IFEvents } from '@sharpee/if-domain';
 
 /**
  * Handle TAKEN event - move item to actor

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@sharpee/core": "file:../core",
+    "@sharpee/if-domain": "file:../if-domain",
     "@sharpee/world-model": "file:../world-model",
     "@sharpee/event-processor": "file:../event-processor",
     "@sharpee/stdlib": "file:../stdlib"

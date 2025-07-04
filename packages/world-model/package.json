@@ -20,7 +20,8 @@
   "author": "Sharpee Team",
   "license": "MIT",
   "dependencies": {
-    "@sharpee/core": "file:../core"
+    "@sharpee/core": "file:../core",
+    "@sharpee/if-domain": "file:../if-domain"
   },
   "devDependencies": {
     "@types/jest": "^29.5.5",

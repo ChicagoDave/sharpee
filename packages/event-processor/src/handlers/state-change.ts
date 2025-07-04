@@ -5,8 +5,8 @@
  */
 
 import { SemanticEvent } from '@sharpee/core';
-import { EventHandler } from '../types';
-import { WorldModel, IFEntity, IFEvents, TraitType, OpenableTrait, DoorTrait, LockableTrait, SwitchableTrait, WearableTrait, LightSourceTrait } from '@sharpee/world-model';
+import { WorldModel, IFEntity, TraitType, OpenableTrait, DoorTrait, LockableTrait, SwitchableTrait, WearableTrait, LightSourceTrait, EventHandler } from '@sharpee/world-model';
+import { IFEvents } from '@sharpee/if-domain';
 
 /**
  * Handle OPENED event - set openable trait to open

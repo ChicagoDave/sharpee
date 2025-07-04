@@ -12,7 +12,7 @@ import { SemanticEvent } from '@sharpee/core';
 export function registerStandardEventHandlers(world: WorldModel): void {
   
   // Handler for TAKEN event - moves entity to actor
-  world.registerEventHandler(IFEvents.TAKEN, (event: SemanticEvent, world: WorldModel) => {
+  world.registerEventHandler(IFEvents.TAKEN, (event, world) => {
     const { actor, target } = event.entities;
     if (actor && target) {
       world.moveEntity(target, actor);
@@ -20,7 +20,7 @@ export function registerStandardEventHandlers(world: WorldModel): void {
   });
   
   // Handler for DROPPED event - moves entity to actor's location
-  world.registerEventHandler(IFEvents.DROPPED, (event: SemanticEvent, world: WorldModel) => {
+  world.registerEventHandler(IFEvents.DROPPED, (event, world) => {
     const { actor, target } = event.entities;
     if (actor && target) {
       const actorLocation = world.getLocation(actor);
@@ -31,7 +31,7 @@ export function registerStandardEventHandlers(world: WorldModel): void {
   });
   
   // Handler for OPENED event - sets openable trait's isOpen to true
-  world.registerEventHandler(IFEvents.OPENED, (event: SemanticEvent, world: WorldModel) => {
+  world.registerEventHandler(IFEvents.OPENED, (event, world) => {
     const { target } = event.entities;
     if (target) {
       const entity = world.getEntity(target);
@@ -45,7 +45,7 @@ export function registerStandardEventHandlers(world: WorldModel): void {
   });
   
   // Handler for CLOSED event - sets openable trait's isOpen to false
-  world.registerEventHandler(IFEvents.CLOSED, (event: SemanticEvent, world: WorldModel) => {
+  world.registerEventHandler(IFEvents.CLOSED, (event, world) => {
     const { target } = event.entities;
     if (target) {
       const entity = world.getEntity(target);
@@ -59,7 +59,7 @@ export function registerStandardEventHandlers(world: WorldModel): void {
   });
   
   // Handler for LOCKED event
-  world.registerEventHandler(IFEvents.LOCKED, (event: SemanticEvent, world: WorldModel) => {
+  world.registerEventHandler(IFEvents.LOCKED, (event, world) => {
     const { target } = event.entities;
     if (target) {
       const entity = world.getEntity(target);
@@ -73,7 +73,7 @@ export function registerStandardEventHandlers(world: WorldModel): void {
   });
   
   // Handler for UNLOCKED event
-  world.registerEventHandler(IFEvents.UNLOCKED, (event: SemanticEvent, world: WorldModel) => {
+  world.registerEventHandler(IFEvents.UNLOCKED, (event, world) => {
     const { target } = event.entities;
     if (target) {
       const entity = world.getEntity(target);
@@ -87,7 +87,7 @@ export function registerStandardEventHandlers(world: WorldModel): void {
   });
   
   // Handler for EATEN event - removes entity from world
-  world.registerEventHandler(IFEvents.EATEN, (event: SemanticEvent, world: WorldModel) => {
+  world.registerEventHandler(IFEvents.EATEN, (event, world) => {
     const { target } = event.entities;
     if (target) {
       world.removeEntity(target);
@@ -103,7 +103,7 @@ export function registerStandardEventHandlers(world: WorldModel): void {
 export function registerStandardEventValidators(world: WorldModel): void {
   
   // Validator for TAKEN event
-  world.registerEventValidator(IFEvents.TAKEN, (event: SemanticEvent, world: WorldModel) => {
+  world.registerEventValidator(IFEvents.TAKEN, (event, world) => {
     const { actor, target } = event.entities;
     if (!actor || !target) return false;
     
@@ -121,7 +121,7 @@ export function registerStandardEventValidators(world: WorldModel): void {
   });
   
   // Validator for DROPPED event
-  world.registerEventValidator(IFEvents.DROPPED, (event: SemanticEvent, world: WorldModel) => {
+  world.registerEventValidator(IFEvents.DROPPED, (event, world) => {
     const { actor, target } = event.entities;
     if (!actor || !target) return false;
     
@@ -143,7 +143,7 @@ export function registerStandardEventValidators(world: WorldModel): void {
 export function registerStandardEventPreviewers(world: WorldModel): void {
   
   // Previewer for TAKEN event
-  world.registerEventPreviewer(IFEvents.TAKEN, (event: SemanticEvent, world: WorldModel) => {
+  world.registerEventPreviewer(IFEvents.TAKEN, (event, world) => {
     const { actor, target } = event.entities;
     if (!actor || !target) return [];
     
@@ -157,7 +157,7 @@ export function registerStandardEventPreviewers(world: WorldModel): void {
   });
   
   // Previewer for EATEN event
-  world.registerEventPreviewer(IFEvents.EATEN, (event: SemanticEvent, world: WorldModel) => {
+  world.registerEventPreviewer(IFEvents.EATEN, (event, world) => {
     const { target } = event.entities;
     if (!target) return [];
     

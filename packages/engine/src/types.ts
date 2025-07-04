@@ -5,39 +5,11 @@
  */
 
 import { SemanticEvent } from '@sharpee/core';
-import { ParsedCommand } from '@sharpee/world-model';
-import { WorldChange } from '@sharpee/world-model';
-import { IFEntity } from '@sharpee/world-model';
+import { ParsedCommand, IFEntity } from '@sharpee/world-model';
+import { WorldChange, TurnPhase, SequencedEvent, EventSequencer } from '@sharpee/if-domain';
 
-/**
- * Extended event with turn sequencing
- */
-export interface SequencedEvent extends SemanticEvent {
-  /**
-   * Turn and sequence information
-   */
-  sequence: {
-    /**
-     * Turn number (increments each command)
-     */
-    turn: number;
-    
-    /**
-     * Order within the turn (1, 2, 3...)
-     */
-    order: number;
-    
-    /**
-     * Sub-order for nested events (1.1, 1.2, etc.)
-     */
-    subOrder?: number;
-    
-    /**
-     * Phase of turn execution
-     */
-    phase?: TurnPhase;
-  };
-}
+// Re-export domain types
+export { TurnPhase, SequencedEvent, EventSequencer } from '@sharpee/if-domain';
 
 /**
  * Result of executing a turn
@@ -184,47 +156,4 @@ export interface GameState {
   saved: Date;
 }
 
-/**
- * Turn phases for event organization
- */
-export enum TurnPhase {
-  /**
-   * Pre-turn setup (before action)
-   */
-  PRE = 'pre',
-  
-  /**
-   * Main action execution
-   */
-  MAIN = 'main',
-  
-  /**
-   * Post-action consequences
-   */
-  POST = 'post',
-  
-  /**
-   * Cleanup and maintenance
-   */
-  CLEANUP = 'cleanup'
-}
 
-/**
- * Event sequencer interface
- */
-export interface EventSequencer {
-  /**
-   * Sequence events for a turn
-   */
-  sequence(events: SemanticEvent[], turn: number, startOrder?: number): SequencedEvent[];
-  
-  /**
-   * Get next order number
-   */
-  getNextOrder(turn: number): number;
-  
-  /**
-   * Reset sequencing for a new turn
-   */
-  resetTurn(turn: number): void;
-}

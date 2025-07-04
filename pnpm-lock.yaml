@@ -56,6 +56,9 @@ importers:
       '@sharpee/event-processor':
         specifier: file:../event-processor
         version: link:../event-processor
+      '@sharpee/if-domain':
+        specifier: file:../if-domain
+        version: link:../if-domain
       '@sharpee/stdlib':
         specifier: file:../stdlib
         version: link:../stdlib
@@ -78,6 +81,9 @@ importers:
       '@sharpee/core':
         specifier: file:../core
         version: link:../core
+      '@sharpee/if-domain':
+        specifier: file:../if-domain
+        version: link:../if-domain
       '@sharpee/world-model':
         specifier: file:../world-model
         version: link:../world-model
@@ -91,6 +97,25 @@ importers:
       jest:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@20.19.4)
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      ts-jest:
+        specifier: ^29.1.2
+        version: 29.4.0(@babel/core@7.28.0)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.28.0))(jest-util@29.7.0)(jest@29.7.0(@types/node@20.19.4))(typescript@5.8.3)
+      typescript:
+        specifier: ^5.3.3
+        version: 5.8.3
+
+  packages/if-domain:
+    dependencies:
+      '@sharpee/core':
+        specifier: file:../core
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.19
+        version: 20.19.4
       rimraf:
         specifier: ^5.0.5
         version: 5.0.10
@@ -192,6 +217,9 @@ importers:
       '@sharpee/core':
         specifier: file:../core
         version: link:../core
+      '@sharpee/if-domain':
+        specifier: file:../if-domain
+        version: link:../if-domain
     devDependencies:
       '@types/jest':
         specifier: ^29.5.5

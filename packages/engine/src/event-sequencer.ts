@@ -6,7 +6,7 @@
  */
 
 import { SemanticEvent } from '@sharpee/core';
-import { SequencedEvent, EventSequencer, TurnPhase } from './types';
+import { SequencedEvent, EventSequencer, TurnPhase } from '@sharpee/if-domain';
 
 /**
  * Default event sequencer implementation

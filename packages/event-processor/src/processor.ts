@@ -5,8 +5,8 @@
  */
 
 import { SemanticEvent } from '@sharpee/core';
-import { WorldModel, WorldChange } from '@sharpee/world-model';
-import { ProcessedEvents, ProcessorOptions } from './types';
+import { WorldModel } from '@sharpee/world-model';
+import { WorldChange, ProcessedEvents, ProcessorOptions } from '@sharpee/if-domain';
 import { registerStandardHandlers } from './handlers';
 
 export class EventProcessor {

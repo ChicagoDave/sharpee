@@ -5,42 +5,27 @@ import { TraitType } from '../traits/trait-types';
 import { SemanticEvent } from '@sharpee/core';
 import { SpatialIndex } from './SpatialIndex';
 import { VisibilityBehavior } from './VisibilityBehavior';
+import {
+  WorldState,
+  WorldConfig,
+  FindOptions,
+  ContentsOptions,
+  WorldChange
+} from '@sharpee/if-domain';
 
-// Re-export types that were in the interface file
-export interface WorldState {
-  [key: string]: any;
-}
-
-export interface WorldConfig {
-  enableSpatialIndex?: boolean;
-  maxDepth?: number; // Maximum containment depth
-  strictMode?: boolean; // Strict validation
-}
-
-export interface FindOptions {
-  includeScenery?: boolean;
-  includeInvisible?: boolean;
-  maxDepth?: number;
-}
-
-export interface ContentsOptions {
-  recursive?: boolean;
-  includeWorn?: boolean;
-  visibleOnly?: boolean;
-}
-
-export interface WorldChange {
-  type: 'move' | 'create' | 'delete' | 'modify' | 'relate' | 'unrelate';
-  entityId: string;
-  field?: string;
-  oldValue?: unknown;
-  newValue?: unknown;
-  details?: Record<string, unknown>;
-}
-
+// Event handler types - these are tightly coupled to WorldModel
 export type EventHandler = (event: SemanticEvent, world: WorldModel) => void;
 export type EventValidator = (event: SemanticEvent, world: WorldModel) => boolean;
 export type EventPreviewer = (event: SemanticEvent, world: WorldModel) => WorldChange[];
+
+// Re-export domain types for backward compatibility
+export {
+  WorldState,
+  WorldConfig,
+  FindOptions,
+  ContentsOptions,
+  WorldChange
+} from '@sharpee/if-domain';
 
 // Interface and class with same name in same file - TypeScript standard pattern
 export interface WorldModel {
