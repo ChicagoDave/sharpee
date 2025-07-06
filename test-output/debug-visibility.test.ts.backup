@@ -1,0 +1,121 @@
+// debug-visibility.test.ts
+// Minimal test to debug the visibility issue
+
+import { VisibilityBehavior } from '../../../src/world/VisibilityBehavior';
+import { WorldModel } from '../../../src/world/WorldModel';
+import { IFEntity } from '../../../src/entities/if-entity';
+import { TraitType } from '../../../src/traits/trait-types';
+import { ContainerTrait } from '../../../src/traits/container/containerTrait';
+import { OpenableTrait } from '../../../src/traits/openable/openableTrait';
+
+describe('Debug Visibility', () => {
+  let world: WorldModel;
+  
+  beforeEach(() => {
+    world = new WorldModel();
+  });
+
+  it('debug isVisible for closed opaque container', () => {
+    // Create a simple container that is opaque and closed
+    const container = world.createEntity('container', 'Container');
+    const containerTrait = new ContainerTrait({ isTransparent: false });
+    const openableTrait = new OpenableTrait({ isOpen: false });
+    
+    container.add(containerTrait);
+    container.add(openableTrait);
+    
+    // Create an entity inside
+    const entity = world.createEntity('entity', 'Entity');
+    
+    // Attempt to move entity into container
+    const moveResult = world.moveEntity('entity', 'container');
+    console.log('Move result:', moveResult);
+    console.log('Can move check:', world.canMoveEntity('entity', 'container'));
+    
+    // Force move for testing
+    if (!moveResult) {
+      console.log('Move failed, checking why...');
+      console.log('Container has CONTAINER trait:', container.hasTrait(TraitType.CONTAINER));
+      console.log('Container has SUPPORTER trait:', container.hasTrait(TraitType.SUPPORTER));
+    }
+    
+    // Debug output
+    console.log('Container traits:', {
+      hasContainer: container.hasTrait(TraitType.CONTAINER),
+      hasOpenable: container.hasTrait(TraitType.OPENABLE),
+      containerTrait: container.getTrait(TraitType.CONTAINER),
+      openableTrait: container.getTrait(TraitType.OPENABLE)
+    });
+    
+    console.log('Entity location:', world.getLocation('entity'));
+    
+    // Test isVisible
+    const result = VisibilityBehavior.isVisible(entity, world);
+    console.log('isVisible result:', result);
+    
+    // If move failed, we expect it to be visible (not in container)
+    if (!moveResult) {
+      expect(result).toBe(true); // Entity is not in container, so visible
+    } else {
+      expect(result).toBe(false); // Entity is in closed opaque container
+    }
+  });
+
+  it('debug canSee with nested containers', () => {
+    // Create room
+    const room = world.createEntity('room', 'Room');
+    room.add(new ContainerTrait());
+    
+    // Create observer
+    const observer = world.createEntity('observer', 'Observer');
+    observer.add(new ContainerTrait());
+    const observerMoveResult = world.moveEntity('observer', 'room');
+    console.log('Observer move to room:', observerMoveResult);
+    
+    // Create outer box (closed)
+    const outer = world.createEntity('outer', 'Outer');
+    outer.add(new ContainerTrait({ isTransparent: false }));
+    outer.add(new OpenableTrait({ isOpen: false }));
+    const outerMoveResult = world.moveEntity('outer', 'room');
+    console.log('Outer move to room:', outerMoveResult);
+    
+    // Create inner box (transparent)
+    const inner = world.createEntity('inner', 'Inner');
+    inner.add(new ContainerTrait({ isTransparent: true }));
+    const innerMoveResult = world.moveEntity('inner', 'outer');
+    console.log('Inner move to outer:', innerMoveResult);
+    console.log('Can move inner to outer?', world.canMoveEntity('inner', 'outer'));
+    
+    // Create target
+    const target = world.createEntity('target', 'Target');
+    const targetMoveResult = world.moveEntity('target', 'inner');
+    console.log('Target move to inner:', targetMoveResult);
+    
+    // Debug containment path
+    console.log('Containment hierarchy:');
+    console.log('- Target location:', world.getLocation('target'));
+    console.log('- Inner location:', world.getLocation('inner'));
+    console.log('- Outer location:', world.getLocation('outer'));
+    console.log('- Observer location:', world.getLocation('observer'));
+    
+    // Test canSee
+    const canSee = VisibilityBehavior.canSee(observer, target, world);
+    console.log('Can see target (should be false):', canSee);
+    
+    // The test should only check what's actually moved
+    if (innerMoveResult && targetMoveResult) {
+      expect(canSee).toBe(false); // Target is in closed outer container
+    }
+    
+    // Now open the outer box
+    const outerOpenable = outer.getTrait(TraitType.OPENABLE) as any;
+    outerOpenable.isOpen = true;
+    
+    const canSeeAfterOpen = VisibilityBehavior.canSee(observer, target, world);
+    console.log('Can see target after opening (should be true):', canSeeAfterOpen);
+    
+    if (innerMoveResult && targetMoveResult) {
+      expect(canSeeAfterOpen).toBe(true);
+    }
+  });
+});

@@ -26,10 +26,10 @@ export class ContainerTrait implements Trait {
   };
   
   /** Whether contents are visible when the container is closed */
-  isTransparent?: boolean = false;
+  isTransparent: boolean;
   
   /** Whether actors can enter this container */
-  enterable?: boolean = false;
+  enterable: boolean;
   
   /** Only these entity types can be placed in the container */
   allowedTypes?: string[];
@@ -38,8 +38,17 @@ export class ContainerTrait implements Trait {
   excludedTypes?: string[];
   
   constructor(data?: Partial<ContainerTrait>) {
+    // Set defaults
+    this.isTransparent = false;
+    this.enterable = false;
+    
+    // Override with provided data
     if (data) {
-      Object.assign(this, data);
+      if (data.capacity !== undefined) this.capacity = data.capacity;
+      if (data.isTransparent !== undefined) this.isTransparent = data.isTransparent;
+      if (data.enterable !== undefined) this.enterable = data.enterable;
+      if (data.allowedTypes !== undefined) this.allowedTypes = data.allowedTypes;
+      if (data.excludedTypes !== undefined) this.excludedTypes = data.excludedTypes;
     }
   }
 }

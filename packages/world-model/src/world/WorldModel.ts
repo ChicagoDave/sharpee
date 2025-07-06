@@ -337,9 +337,8 @@ export class WorldModel implements WorldModel {
     const observer = this.getEntity(observerId);
     if (!observer) return [];
 
-    return this.getAllEntities().filter(entity => 
-      this.canSee(observerId, entity.id)
-    );
+    // Use the VisibilityBehavior to get visible entities
+    return VisibilityBehavior.getVisible(observer, this);
   }
 
   getInScope(observerId: string): IFEntity[] {
@@ -494,30 +493,54 @@ export class WorldModel implements WorldModel {
       const exits = (room.getTrait(TraitType.ROOM) as any)?.exits || {};
       
       for (const [direction, exitInfo] of Object.entries(exits)) {
-        // Exit can be either a string ID or an object with destination/via
-        const exitId = typeof exitInfo === 'string' ? exitInfo : (exitInfo as any).via || (exitInfo as any).destination;
-        if (!exitId) continue;
-        
-        const exit = this.getEntity(exitId as string);
-        if (!exit) continue;
-
-        // Handle doors
         let targetRoom: string | undefined;
-        if (exit.hasTrait(TraitType.DOOR)) {
-          const door = exit.getTrait(TraitType.DOOR) as any;
-          targetRoom = door?.room1 === roomId ? door?.room2 : door?.room1;
-        } else if (exit.hasTrait(TraitType.EXIT)) {
-          targetRoom = (exit.getTrait(TraitType.EXIT) as any)?.destination;
-        } else if (typeof exitInfo === 'object' && (exitInfo as any).destination) {
-          targetRoom = (exitInfo as any).destination;
+        let pathElement: string | undefined;
+        
+        if (typeof exitInfo === 'string') {
+          // Simple string - treat as direct room connection
+          targetRoom = exitInfo;
+          pathElement = exitInfo; // For now, use room ID as path element
+        } else if (typeof exitInfo === 'object') {
+          // ExitInfo object
+          if ((exitInfo as any).via) {
+            // Has a door/exit entity
+            const exitEntity = this.getEntity((exitInfo as any).via);
+            if (!exitEntity) continue;
+            
+            pathElement = (exitInfo as any).via;
+            
+            // Get destination based on entity type
+            if (exitEntity.hasTrait(TraitType.DOOR)) {
+              const door = exitEntity.getTrait(TraitType.DOOR) as any;
+              targetRoom = door?.room1 === roomId ? door?.room2 : door?.room1;
+            } else if (exitEntity.hasTrait(TraitType.EXIT)) {
+              targetRoom = (exitEntity.getTrait(TraitType.EXIT) as any)?.to;
+            } else {
+              // Not a valid door/exit entity
+              continue;
+            }
+          } else if ((exitInfo as any).destination) {
+            // Direct room connection
+            targetRoom = (exitInfo as any).destination;
+            pathElement = targetRoom; // Use room ID as path element
+          }
         }
+        
+        if (!targetRoom || !pathElement) continue;
 
         if (targetRoom === toRoomId) {
-          return [...path, exitId as string];
+          // Found the destination - return path
+          // For direct connections, return empty array (no doors to pass through)
+          if (pathElement === targetRoom && path.length === 0) {
+            return [];
+          }
+          return [...path, pathElement];
         }
 
-        if (targetRoom && !visited.has(targetRoom)) {
-          queue.push({ roomId: targetRoom, path: [...path, exitId as string] });
+        if (!visited.has(targetRoom)) {
+          // For direct connections, don't add room ID to path
+          const newPath = pathElement === targetRoom ? path : [...path, pathElement];
+          queue.push({ roomId: targetRoom, path: newPath });
         }
       }
     }
@@ -626,7 +649,7 @@ export class WorldModel implements WorldModel {
     const handler = this.eventHandlers.get(event.type);
     if (!handler) {
       // No handler registered - event is recorded but has no effect
-      console.warn(`No handler registered for event type '${event.type}'`);
+      // Silent when no handler - this is a valid use case
     } else {
       // Apply the event through the handler
       handler(event, this);

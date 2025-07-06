@@ -24,8 +24,8 @@ export interface RoomData {
   /** Whether this is an outdoor location */
   outdoor?: boolean;
   
-  /** Base light level (0-10, where 0 is pitch black) */
-  baseLight?: number;
+  /** Whether this room is dark (requires light source to see) */
+  isDark?: boolean;
   
   /** Whether this room is affected by time of day (for outdoor locations) */
   isOutdoors?: boolean;
@@ -62,7 +62,7 @@ export class RoomTrait implements Trait, RoomData {
   exits: Record<string, ExitInfo>;
   blockedExits?: Record<string, string>;
   outdoor: boolean;
-  baseLight: number;
+  isDark: boolean;
   isOutdoors: boolean;
   isUnderground: boolean;
   initialDescription?: string;
@@ -77,7 +77,7 @@ export class RoomTrait implements Trait, RoomData {
     this.exits = data.exits ?? {};
     this.blockedExits = data.blockedExits;
     this.outdoor = data.outdoor ?? false;
-    this.baseLight = data.baseLight ?? 0;  // Default to dark
+    this.isDark = data.isDark ?? false;  // Default to lit
     this.isOutdoors = data.isOutdoors ?? false;
     this.isUnderground = data.isUnderground ?? false;
     this.initialDescription = data.initialDescription;

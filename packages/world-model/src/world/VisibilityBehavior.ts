@@ -27,7 +27,16 @@ export class VisibilityBehavior extends Behavior {
 
     // Must be in same room (or target is the room)
     if (target.hasTrait(TraitType.ROOM)) {
-      return observerRoom?.id === target.id;
+      // Check if we're in the target room
+      if (observerRoom?.id === target.id) {
+        // In a dark room, can't see the room itself without light
+        const roomTrait = target.getTrait(TraitType.ROOM);
+        if (roomTrait && (roomTrait as any).isDark && !this.hasLightSource(target, world)) {
+          return false;
+        }
+        return true;
+      }
+      return false;
     }
 
     if (!observerRoom || observerRoom.id !== targetRoom?.id) {
@@ -35,14 +44,19 @@ export class VisibilityBehavior extends Behavior {
     }
 
     // Check if room is dark
-    if (this.isRoomDark(observerRoom, world)) {
-      // Can only see light sources in the dark
-      return target.hasTrait(TraitType.LIGHT_SOURCE) && 
-             (target.getTrait(TraitType.LIGHT_SOURCE) as any)?.isOn === true;
+    const roomTrait = observerRoom.getTrait(TraitType.ROOM);
+    if (roomTrait && (roomTrait as any).isDark) {
+      // In a dark room, need light to see
+      if (!this.hasLightSource(observerRoom, world)) {
+        // Can only see light sources themselves when they're on
+        return target.hasTrait(TraitType.LIGHT_SOURCE) && 
+               (target.getTrait(TraitType.LIGHT_SOURCE) as any)?.isLit === true;
+      }
     }
 
     // Check line of sight through containers
-    return this.hasLineOfSight(observer.id, target.id, world);
+    const hasLineOfSight = this.hasLineOfSight(observer.id, target.id, world);
+    return hasLineOfSight;
   }
 
   /**
@@ -50,6 +64,7 @@ export class VisibilityBehavior extends Behavior {
    */
   static getVisible(observer: IFEntity, world: WorldModel): IFEntity[] {
     const visible: IFEntity[] = [];
+    const seen = new Set<string>(); // Track what we've already added
     const observerRoom = world.getContainingRoom(observer.id);
     
     if (!observerRoom) return visible;
@@ -57,40 +72,79 @@ export class VisibilityBehavior extends Behavior {
     // Add the room itself if visible
     if (this.canSee(observer, observerRoom, world)) {
       visible.push(observerRoom);
+      seen.add(observerRoom.id);
     }
 
     // Check all entities in scope
     const inScope = world.getInScope(observer.id);
     
     for (const entity of inScope) {
-      if (entity.id !== observer.id && this.canSee(observer, entity, world)) {
+      if (entity.id !== observer.id && 
+          !seen.has(entity.id) && 
+          this.canSee(observer, entity, world)) {
         visible.push(entity);
+        seen.add(entity.id);
       }
     }
 
     return visible;
   }
 
-  /**
-   * Checks if a room is dark (no active light sources)
-   */
-  private static isRoomDark(room: IFEntity, world: WorldModel): boolean {
-    // Check if room itself is a light source
-    if (room.hasTrait(TraitType.LIGHT_SOURCE)) {
-      const light = room.getTrait(TraitType.LIGHT_SOURCE);
-      if ((light as any)?.isOn) return false;
-    }
 
-    // Check for any active light sources in the room
+
+  /**
+   * Checks if a room has any active light sources
+   */
+  private static hasLightSource(room: IFEntity, world: WorldModel): boolean {
+    // Check all entities in the room
     const contents = world.getAllContents(room.id, { recursive: true });
     
     for (const entity of contents) {
       if (entity.hasTrait(TraitType.LIGHT_SOURCE)) {
-        const light = entity.getTrait(TraitType.LIGHT_SOURCE);
-        if ((light as any)?.isOn) return false;
+        const light = entity.getTrait(TraitType.LIGHT_SOURCE) as any;
+        if (light && light.isLit === true) {
+          // Check if the light is accessible (not in a closed container)
+          if (this.isAccessible(entity.id, room.id, world)) {
+            return true;
+          }
+        }
       }
     }
+    
+    return false;
+  }
 
+  /**
+   * Checks if an entity is accessible from a room (not blocked by closed containers)
+   */
+  private static isAccessible(entityId: string, roomId: string, world: WorldModel): boolean {
+    let current = entityId;
+    
+    while (current !== roomId) {
+      const parent = world.getLocation(current);
+      if (!parent) return false;
+      
+      const container = world.getEntity(parent);
+      if (!container) return false;
+      
+      // If it's in an opaque, closed container, it's not accessible
+      if (container.hasTrait(TraitType.CONTAINER)) {
+        const containerTrait = container.getTrait(TraitType.CONTAINER) as any;
+        const isTransparent = containerTrait?.isTransparent ?? false;
+        if (!isTransparent) {
+          if (container.hasTrait(TraitType.OPENABLE)) {
+            const openable = container.getTrait(TraitType.OPENABLE) as any;
+            const isOpen = openable?.isOpen ?? false;
+            if (!isOpen) {
+              return false; // Closed opaque container blocks access
+            }
+          }
+        }
+      }
+      
+      current = parent;
+    }
+    
     return true;
   }
 
@@ -111,13 +165,22 @@ export class VisibilityBehavior extends Behavior {
 
       // If it's in a container, check if we can see inside
       if (containerEntity.hasTrait(TraitType.CONTAINER)) {
-        const containerTrait = containerEntity.getTrait(TraitType.CONTAINER);
+        const containerTrait = containerEntity.getTrait(TraitType.CONTAINER) as any;
         
         // Opaque containers block sight when closed
-        if (!(containerTrait as any)?.isTransparent && 
-            containerEntity.hasTrait(TraitType.OPENABLE)) {
-          const openable = containerEntity.getTrait(TraitType.OPENABLE);
-          if (!(openable as any)?.isOpen) return false;
+        // Default isTransparent to false if not specified
+        const isTransparent = containerTrait?.isTransparent ?? false;
+        if (!isTransparent) {
+          // If it's opaque, check if it's openable and closed
+          if (containerEntity.hasTrait(TraitType.OPENABLE)) {
+            const openable = containerEntity.getTrait(TraitType.OPENABLE) as any;
+            // Default isOpen to false if not specified
+            const isOpen = openable?.isOpen ?? false;
+            if (!isOpen) {
+              return false; // Closed opaque container blocks sight
+            }
+          }
+          // If opaque but not openable, we can see through (it can't be closed)
         }
       }
     }
@@ -161,20 +224,35 @@ export class VisibilityBehavior extends Behavior {
       return false;
     }
 
-    // Check if in a closed opaque container
-    const location = world.getLocation(entity.id);
-    if (!location) return true; // Not contained, so visible
-
-    const container = world.getEntity(location);
-    if (!container) return true;
-
-    // Only hidden if in a closed, opaque container
-    if (container.hasTrait(TraitType.CONTAINER)) {
-      const containerTrait = container.getTrait(TraitType.CONTAINER);
-      if (!(containerTrait as any)?.isTransparent && container.hasTrait(TraitType.OPENABLE)) {
-        const openable = container.getTrait(TraitType.OPENABLE);
-        return (openable as any)?.isOpen === true;
+    // Check containment path for closed opaque containers
+    let current = entity.id;
+    
+    while (true) {
+      const location = world.getLocation(current);
+      if (!location) break; // Reached top level
+      
+      const container = world.getEntity(location);
+      if (!container) break;
+      
+      // Check if this container blocks visibility
+      if (container.hasTrait(TraitType.CONTAINER)) {
+        const containerTrait = container.getTrait(TraitType.CONTAINER) as any;
+        
+        // If container is opaque and closed, entity is not visible
+        const isTransparent = containerTrait?.isTransparent ?? false;
+        if (!isTransparent) {
+          if (container.hasTrait(TraitType.OPENABLE)) {
+            const openable = container.getTrait(TraitType.OPENABLE) as any;
+            const isOpen = openable?.isOpen ?? false;
+            if (!isOpen) {
+              return false; // In closed opaque container
+            }
+          }
+          // Opaque but not openable - can see through
+        }
       }
+      
+      current = location;
     }
 
     return true;
