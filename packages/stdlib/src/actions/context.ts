@@ -4,7 +4,7 @@
  * Provides query methods for actions without allowing state mutations
  */
 
-import { IFEntity, WorldModel } from '@sharpee/world-model';
+import { IFEntity, WorldModel, CapabilityData } from '@sharpee/world-model';
 import { ActionContext } from './types';
 
 export class ReadOnlyActionContext implements ActionContext {
@@ -141,5 +141,12 @@ export class ReadOnlyActionContext implements ActionContext {
    */
   getInScope(): IFEntity[] {
     return this.world.getInScope(this.player.id);
+  }
+  
+  /**
+   * Get capability data (convenience method)
+   */
+  getCapability(name: string): CapabilityData | undefined {
+    return this.world.getCapability(name);
   }
 }

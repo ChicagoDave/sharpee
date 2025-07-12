@@ -1,6 +1,6 @@
 # ADR-021: Parser Edge Cases and Complex Command Support
 
-Date: 2024-01-09
+Date: 2024-07-09
 Status: Proposed
 
 ## Context

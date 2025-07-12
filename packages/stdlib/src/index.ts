@@ -7,6 +7,7 @@
  * - Command syntax definitions for help
  * - Language provider interface for text generation
  * - Parser and validation components
+ * - Standard capability schemas
  * 
  * All state changes go through events - no direct mutations
  */
@@ -19,3 +20,4 @@ export * from './language';
 export * from './parser';
 export * from './validation';
 export * from './vocabulary';
+export * from './capabilities';

@@ -6,7 +6,7 @@
  */
 
 import { SemanticEvent } from '@sharpee/core';
-import { IFEntity, WorldModel, ValidatedCommand } from '@sharpee/world-model';
+import { IFEntity, WorldModel, ValidatedCommand, CapabilityData } from '@sharpee/world-model';
 
 /**
  * Read-only context for action execution
@@ -58,6 +58,11 @@ export interface ActionContext {
    * Get all entities in scope for the player
    */
   getInScope(): IFEntity[];
+  
+  /**
+   * Get capability data (convenience method)
+   */
+  getCapability(name: string): CapabilityData | undefined;
 }
 
 

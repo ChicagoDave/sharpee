@@ -4,7 +4,7 @@ Date: 2025-07-12
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -36,6 +36,7 @@ Extensions will be organized as separate packages (`@sharpee/ext-*`) rather than
 export class ScoringExtension implements Extension {
   static manifest = {
     id: 'standard/scoring',
+    capability: 'scoring',  // Declares which capability namespace this uses
     actions: [{
       id: 'SCORE',
       vocabulary: ['score', 'points', 'status'],
@@ -48,14 +49,50 @@ export class ScoringExtension implements Extension {
     messages: {
       'scoring.score_display': 'Your score is {score} out of {maxScore} points.',
       'scoring.no_score': "You haven't scored any points yet."
+    },
+    dataSchema: {  // Defines capability data structure
+      scoreValue: { type: 'number', default: 0 },
+      maxScore: { type: 'number', default: 0 },
+      achievements: { type: 'array', items: 'string', default: [] }
     }
   };
   
   initialize(context: ExtensionContext) {
+    // Register capability namespace and schema
+    context.world.registerCapability(this.constructor.manifest.capability, {
+      schema: this.constructor.manifest.dataSchema
+    });
+    
     // Auto-registration based on manifest
     context.registerFromManifest(this.constructor.manifest);
   }
 }
+```
+
+## Capability Data Model
+
+Extensions and standard library features use a capability-segregated data model where:
+
+1. **World Model hosts all data** but segregates by capability
+2. **Each capability owns its namespace** (e.g., `world.capabilities.scoring`)
+3. **Data schemas are defined by capabilities** not enforced by core
+4. **Text Service knows how to format capability data** through templates
+
+Example access pattern:
+```typescript
+// Reading capability data
+const score = context.world.capabilities.scoring?.data.scoreValue;
+
+// Updating capability data
+context.world.updateCapability('scoring', { 
+  scoreValue: score + points 
+});
+
+// Emitting capability events
+context.events.emit('capability:scoring:changed', {
+  scoreValue: score + points,
+  reason: 'puzzle_solved'
+});
 ```
 
 ## Standard vs Extension Features

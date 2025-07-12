@@ -1,7 +1,7 @@
 # ADR-20: Clothing and Pockets Design
 
 **Status:** Proposed  
-**Date:** 2025-01-08  
+**Date:** 2025-07-08  
 **Decision:** Use composition of existing traits for clothing with pockets
 
 ## Context

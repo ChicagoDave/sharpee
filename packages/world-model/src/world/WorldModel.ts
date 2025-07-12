@@ -7,6 +7,12 @@ import { SpatialIndex } from './SpatialIndex';
 import { VisibilityBehavior } from './VisibilityBehavior';
 import { DataStore } from './AuthorModel';
 import {
+  CapabilityStore,
+  CapabilityData,
+  CapabilitySchema,
+  CapabilityRegistration
+} from './capabilities';
+import {
   WorldState,
   WorldConfig,
   FindOptions,
@@ -32,6 +38,13 @@ export {
 export interface WorldModel {
   // Get the data store for sharing with AuthorModel
   getDataStore(): DataStore;
+  
+  // Capability Management
+  registerCapability(name: string, registration: Partial<CapabilityRegistration>): void;
+  updateCapability(name: string, data: Partial<CapabilityData>): void;
+  getCapability(name: string): CapabilityData | undefined;
+  hasCapability(name: string): boolean;
+  
   // Entity Management
   createEntity(displayName: string, type?: string): IFEntity;
   getEntity(id: string): IFEntity | undefined;
@@ -115,6 +128,7 @@ export class WorldModel implements WorldModel {
   private playerId: string | undefined;
   private spatialIndex: SpatialIndex;
   private config: WorldConfig;
+  private capabilities: CapabilityStore = {};
   
   // ID generation
   private idCounters: Map<string, number> = new Map();
@@ -134,6 +148,75 @@ export class WorldModel implements WorldModel {
       ...config
     };
     this.spatialIndex = new SpatialIndex();
+  }
+
+  // Capability Management
+  registerCapability(name: string, registration: Partial<CapabilityRegistration> = {}): void {
+    if (this.capabilities[name]) {
+      if (this.config.strictMode) {
+        throw new Error(`Capability '${name}' is already registered`);
+      }
+      return;
+    }
+
+    // Initialize capability with schema and initial data
+    const initialData: CapabilityData = {};
+    
+    // Apply schema defaults
+    if (registration.schema) {
+      for (const [field, fieldDef] of Object.entries(registration.schema)) {
+        if (fieldDef.default !== undefined) {
+          initialData[field] = fieldDef.default;
+        }
+      }
+    }
+    
+    // Override with provided initial data
+    if (registration.initialData) {
+      Object.assign(initialData, registration.initialData);
+    }
+    
+    this.capabilities[name] = {
+      data: initialData,
+      schema: registration.schema
+    };
+  }
+
+  updateCapability(name: string, updates: Partial<CapabilityData>): void {
+    const capability = this.capabilities[name];
+    if (!capability) {
+      if (this.config.strictMode) {
+        throw new Error(`Capability '${name}' is not registered`);
+      }
+      return;
+    }
+
+    // Validate updates against schema if present
+    if (capability.schema) {
+      for (const [field, value] of Object.entries(updates)) {
+        const fieldDef = capability.schema[field];
+        if (fieldDef) {
+          // Basic type validation
+          const actualType = Array.isArray(value) ? 'array' : typeof value;
+          if (actualType !== fieldDef.type && value !== null && value !== undefined) {
+            if (this.config.strictMode) {
+              throw new Error(`Invalid type for capability '${name}' field '${field}': expected ${fieldDef.type}, got ${actualType}`);
+            }
+          }
+        }
+      }
+    }
+
+    // Apply updates
+    Object.assign(capability.data, updates);
+  }
+
+  getCapability(name: string): CapabilityData | undefined {
+    return this.capabilities[name]?.data;
+  }
+
+  hasCapability(name: string): boolean {
+    return name in this.capabilities;
   }
 
   // ID Generation
@@ -658,7 +741,13 @@ export class WorldModel implements WorldModel {
         }))
       })),
       // Add ID system data
-      idCounters: Array.from(this.idCounters.entries())
+      idCounters: Array.from(this.idCounters.entries()),
+      // Add capabilities
+      capabilities: Object.entries(this.capabilities).map(([name, cap]) => ({
+        name,
+        data: cap.data,
+        schema: cap.schema
+      }))
     };
     return JSON.stringify(data, null, 2);
   }
@@ -702,6 +791,16 @@ export class WorldModel implements WorldModel {
       // Rebuild ID counters from existing entities for backward compatibility
       this.rebuildIdCounters();
     }
+
+    // Restore capabilities
+    if (data.capabilities) {
+      for (const { name, data: capData, schema } of data.capabilities) {
+        this.capabilities[name] = {
+          data: capData,
+          schema
+        };
+      }
+    }
   }
 
   clear(): void {
@@ -712,6 +811,7 @@ export class WorldModel implements WorldModel {
     this.relationships.clear();
     this.appliedEvents = [];
     this.idCounters.clear();
+    this.capabilities = {};
   }
 
   // Event Sourcing Implementation
@@ -828,7 +928,8 @@ export class WorldModel implements WorldModel {
       state: this.state,
       playerId: this.playerId,
       relationships: this.relationships,
-      idCounters: this.idCounters
+      idCounters: this.idCounters,
+      capabilities: this.capabilities
     };
   }
 }

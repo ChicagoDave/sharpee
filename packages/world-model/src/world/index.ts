@@ -17,3 +17,13 @@ export {
 export { SpatialIndex } from './SpatialIndex';
 export { VisibilityBehavior } from './VisibilityBehavior';
 export { AuthorModel, DataStore, ItemSpec } from './AuthorModel';
+
+// Export capability types
+export {
+  CapabilityData,
+  CapabilitySchema,
+  CapabilityStore,
+  CapabilityRegistration,
+  StandardCapabilities,
+  StandardCapabilityName
+} from './capabilities';
