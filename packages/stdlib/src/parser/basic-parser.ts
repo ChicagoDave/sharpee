@@ -559,6 +559,14 @@ export class BasicParser implements Parser {
       }
     }
 
+    // If no noun candidates found, just return all words as potential candidates
+    // This allows the validator to handle entity resolution
+    if (candidates.size === 0) {
+      for (const token of tokens) {
+        candidates.add(token.word);
+      }
+    }
+
     return Array.from(candidates);
   }
 

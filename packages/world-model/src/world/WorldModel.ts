@@ -5,6 +5,7 @@ import { TraitType } from '../traits/trait-types';
 import { SemanticEvent } from '@sharpee/core';
 import { SpatialIndex } from './SpatialIndex';
 import { VisibilityBehavior } from './VisibilityBehavior';
+import { DataStore } from './AuthorModel';
 import {
   WorldState,
   WorldConfig,
@@ -29,8 +30,10 @@ export {
 
 // Interface and class with same name in same file - TypeScript standard pattern
 export interface WorldModel {
+  // Get the data store for sharing with AuthorModel
+  getDataStore(): DataStore;
   // Entity Management
-  createEntity(id: string, displayName: string): IFEntity;
+  createEntity(displayName: string, type?: string): IFEntity;
   getEntity(id: string): IFEntity | undefined;
   hasEntity(id: string): boolean;
   removeEntity(id: string): boolean;
@@ -93,12 +96,28 @@ export interface WorldModel {
   clearEventHistory(): void;
 }
 
+// Type prefixes for entity ID generation
+const TYPE_PREFIXES: Record<string, string> = {
+  'room': 'r',
+  'door': 'd',
+  'item': 'i',
+  'actor': 'a',
+  'container': 'c',
+  'supporter': 's',
+  'scenery': 'y',
+  'exit': 'e',
+  'object': 'o'  // default
+};
+
 export class WorldModel implements WorldModel {
   private entities: Map<string, IFEntity> = new Map();
   private state: WorldState = {};
   private playerId: string | undefined;
   private spatialIndex: SpatialIndex;
   private config: WorldConfig;
+  
+  // ID generation
+  private idCounters: Map<string, number> = new Map();
   
   // Event sourcing support
   private eventHandlers = new Map<string, EventHandler>();
@@ -117,14 +136,42 @@ export class WorldModel implements WorldModel {
     this.spatialIndex = new SpatialIndex();
   }
 
-  // Entity Management
-  createEntity(id: string, displayName: string): IFEntity {
-    if (this.entities.has(id)) {
-      throw new Error(`Entity with id '${id}' already exists`);
+  // ID Generation
+  private generateId(type: string): string {
+    const prefix = TYPE_PREFIXES[type] || TYPE_PREFIXES['object'];
+    const counter = this.idCounters.get(prefix) || 0;
+    
+    // Increment counter
+    const nextCounter = counter + 1;
+    
+    // Check for overflow (base36 with 2 chars = 1296 max)
+    if (nextCounter > 1295) {
+      throw new Error(`ID overflow for type '${type}' (prefix '${prefix}'). Maximum 1296 entities per type.`);
     }
+    
+    this.idCounters.set(prefix, nextCounter);
+    
+    // Convert to base36 and pad to 2 characters
+    const base36 = nextCounter.toString(36).padStart(2, '0');
+    return `${prefix}${base36}`;
+  }
 
-    const entity = new IFEntity(id, displayName);
+  // Entity Management
+  createEntity(displayName: string, type: string = 'object'): IFEntity {
+    // Generate ID based on type
+    const id = this.generateId(type);
+
+    const entity = new IFEntity(id, type, {
+      attributes: {
+        displayName: displayName,
+        name: displayName, // For compatibility
+        entityType: type
+      }
+    });
+    
+    // Add to entity map
     this.entities.set(id, entity);
+    
     return entity;
   }
 
@@ -186,14 +233,20 @@ export class WorldModel implements WorldModel {
 
     if (options.visibleOnly) {
       // Filter to only visible entities
-      entities = entities.filter(e => !e.hasTrait(TraitType.SCENERY) || (e.getTrait(TraitType.SCENERY) as any)?.visible);
+      entities = entities.filter(e => {
+        const scenery = e.getTrait(TraitType.SCENERY);
+        return !scenery || (scenery as any).visible !== false;
+      });
     }
 
     if (!options.includeWorn) {
-      // Filter out worn items
+      // Filter out worn items (check both WEARABLE and CLOTHING traits)
       entities = entities.filter(e => {
         const wearable = e.getTrait(TraitType.WEARABLE);
-        return !wearable || !(wearable as any).isWorn;
+        const clothing = e.getTrait(TraitType.CLOTHING);
+        const wornFromWearable = wearable && (wearable as any).isWorn;
+        const wornFromClothing = clothing && (clothing as any).isWorn;
+        return !(wornFromWearable || wornFromClothing);
       });
     }
 
@@ -274,19 +327,29 @@ export class WorldModel implements WorldModel {
     const result: IFEntity[] = [];
     const visited = new Set<string>();
 
-    const traverse = (id: string, depth: number = 0) => {
+    const traverse = (id: string, depth: number = 0, isRoot: boolean = false) => {
       if (visited.has(id) || depth > this.config.maxDepth!) return;
       visited.add(id);
 
-      const contents = this.getContents(id, options);
+      // For the root entity, use the provided options
+      // For recursive calls, always include worn items to get complete contents
+      const contentsOptions = isRoot ? {
+        visibleOnly: options.visibleOnly,
+        includeWorn: options.includeWorn
+      } : {
+        visibleOnly: options.visibleOnly,
+        includeWorn: true  // Always include worn items when recursing
+      };
+      
+      const contents = this.getContents(id, contentsOptions);
       result.push(...contents);
 
       if (options.recursive) {
-        contents.forEach(item => traverse(item.id, depth + 1));
+        contents.forEach(item => traverse(item.id, depth + 1, false));
       }
     };
 
-    traverse(entityId);
+    traverse(entityId, 0, true);
     return result;
   }
 
@@ -323,10 +386,16 @@ export class WorldModel implements WorldModel {
       entities = entities.filter(e => !e.hasTrait(TraitType.SCENERY));
     }
 
-    if (!options.includeInvisible) {
+    // Only filter out invisible items if includeInvisible is explicitly false
+    // When includeInvisible is undefined or true, include all items
+    if (options.includeInvisible === false) {
       entities = entities.filter(e => {
         const scenery = e.getTrait(TraitType.SCENERY);
-        return !scenery || (scenery as any).visible !== false;
+        // If entity has scenery trait and visible is false, filter it out
+        if (scenery && (scenery as any).visible === false) {
+          return false;
+        }
+        return true;
       });
     }
 
@@ -354,13 +423,25 @@ export class WorldModel implements WorldModel {
     // Add room itself
     inScope.push(room);
 
-    // Add room contents recursively
-    const roomContents = this.getAllContents(room.id, { recursive: true });
+    // Add room contents recursively (including worn items)
+    const roomContents = this.getAllContents(room.id, { 
+      recursive: true,
+      includeWorn: true 
+    });
     inScope.push(...roomContents);
 
-    // Add carried items
-    const carried = this.getAllContents(observerId, { recursive: true });
+    // Add carried items (including worn items)
+    const carried = this.getAllContents(observerId, { 
+      recursive: true,
+      includeWorn: true 
+    });
     inScope.push(...carried);
+
+    // Add the observer to scope (but not to visible - you can't see yourself)
+    // This is needed for some game mechanics
+    if (!inScope.some(e => e.id === observer.id)) {
+      inScope.push(observer);
+    }
 
     // Filter to unique entities
     const unique = new Map<string, IFEntity>();
@@ -575,7 +656,9 @@ export class WorldModel implements WorldModel {
           type,
           related: Array.from(related)
         }))
-      }))
+      })),
+      // Add ID system data
+      idCounters: Array.from(this.idCounters.entries())
     };
     return JSON.stringify(data, null, 2);
   }
@@ -611,6 +694,14 @@ export class WorldModel implements WorldModel {
         this.relationships.set(entityId, entityRels);
       }
     }
+
+    // Restore ID system data
+    if (data.idCounters) {
+      this.idCounters = new Map(data.idCounters);
+    } else {
+      // Rebuild ID counters from existing entities for backward compatibility
+      this.rebuildIdCounters();
+    }
   }
 
   clear(): void {
@@ -620,6 +711,7 @@ export class WorldModel implements WorldModel {
     this.spatialIndex.clear();
     this.relationships.clear();
     this.appliedEvents = [];
+    this.idCounters.clear();
   }
 
   // Event Sourcing Implementation
@@ -700,5 +792,43 @@ export class WorldModel implements WorldModel {
 
   clearEventHistory(): void {
     this.appliedEvents = [];
+  }
+
+  // Rebuild ID counters by analyzing existing entities
+  private rebuildIdCounters(): void {
+    // Clear counters
+    this.idCounters.clear();
+    
+    // Find the highest ID for each prefix
+    for (const entity of this.entities.values()) {
+      const id = entity.id;
+      if (id.length >= 3) {
+        const prefix = id[0];
+        const numPart = id.substring(1);
+        
+        // Parse the numeric part (base36)
+        const num = parseInt(numPart, 36);
+        if (!isNaN(num)) {
+          const currentMax = this.idCounters.get(prefix) || 0;
+          if (num > currentMax) {
+            this.idCounters.set(prefix, num);
+          }
+        }
+      }
+    }
+  }
+
+  // Get the data store for sharing with AuthorModel
+  getDataStore(): DataStore {
+    // Return a reference to the WorldModel's internal state
+    // AuthorModel will share these same objects
+    return {
+      entities: this.entities,
+      spatialIndex: this.spatialIndex,
+      state: this.state,
+      playerId: this.playerId,
+      relationships: this.relationships,
+      idCounters: this.idCounters
+    };
   }
 }

@@ -105,7 +105,7 @@ export interface ActionRegistry {
   /**
    * Get an action executor by ID
    */
-  get(actionId: string): ActionExecutor | undefined;
+  get(actionId: string): ActionExecutor | any | undefined;
   
   /**
    * Get all registered actions

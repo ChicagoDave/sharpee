@@ -5,9 +5,9 @@ import { TraitType } from '../trait-types';
 import { EntityId } from '@sharpee/core';
 
 export interface ExitInfo {
-  /** The destination room ID */
+  /** The destination room ID (must be an entity ID, not a name) */
   destination: string;
-  /** Optional door/portal entity ID that must be traversed */
+  /** Optional door/portal entity ID that must be traversed (must be an entity ID, not a name) */
   via?: string;
 }
 

@@ -6,15 +6,13 @@
 
 import { SemanticEvent, SystemEvent } from '@sharpee/core';
 import { IFEntity } from '@sharpee/world-model';
-import { TurnResult } from '../types';
+import { TurnResult, SequencedEvent } from '../types';
 
 /**
  * Text output channel
  */
 export interface TextChannel {
-  id: string;
-  name: string;
-  write(text: string): void;
+  write(text: string, metadata?: any): void;
 }
 
 /**
@@ -59,19 +57,72 @@ export interface TextService {
    * Format a single event
    */
   formatEvent(
-    event: SemanticEvent | SystemEvent,
+    event: SemanticEvent | SystemEvent | SequencedEvent,
     options?: TextFormatOptions
   ): string;
+}
+
+/**
+ * Buffered text channel - stores text in memory
+ */
+export class BufferedTextChannel implements TextChannel {
+  private buffer: string[] = [];
+  
+  write(text: string, metadata?: any): void {
+    this.buffer.push(text);
+  }
+  
+  getBuffer(): string {
+    return this.buffer.join('');
+  }
+  
+  clear(): void {
+    this.buffer = [];
+  }
+}
+
+/**
+ * Console text channel - writes to console
+ */
+export class ConsoleTextChannel implements TextChannel {
+  write(text: string, metadata?: any): void {
+    console.log(text);
+  }
+}
+
+/**
+ * Multi text channel - writes to multiple channels
+ */
+export class MultiTextChannel implements TextChannel {
+  constructor(private channels: TextChannel[]) {}
+  
+  write(text: string, metadata?: any): void {
+    for (const channel of this.channels) {
+      channel.write(text, metadata);
+    }
+  }
+  
+  addChannel(channel: TextChannel): void {
+    this.channels.push(channel);
+  }
+  
+  removeChannel(channel: TextChannel): void {
+    const index = this.channels.indexOf(channel);
+    if (index !== -1) {
+      this.channels.splice(index, 1);
+    }
+  }
+  
+  getChannels(): TextChannel[] {
+    return [...this.channels];
+  }
 }
 
 /**
  * Standard output channel
  */
 export class StdoutChannel implements TextChannel {
-  readonly id = 'stdout';
-  readonly name = 'Standard Output';
-  
-  write(text: string): void {
+  write(text: string, metadata?: any): void {
     console.log(text);
   }
 }
@@ -108,9 +159,9 @@ export class AllEventsTextService implements TextService {
     const header = `\n=== Turn ${turnResult.turn} ===`;
     this.writeToChannels(header, channels);
     
-    // Show the command
-    if (turnResult.command) {
-      const cmdText = `> ${turnResult.command.rawInput || turnResult.command.action}`;
+    // Show the input
+    if (turnResult.input) {
+      const cmdText = `> ${turnResult.input}`;
       this.writeToChannels(cmdText, channels);
     }
     
@@ -131,7 +182,7 @@ export class AllEventsTextService implements TextService {
     
     // Show success/failure
     if (turnResult.error) {
-      this.writeToChannels(`\n[ERROR] ${turnResult.error.message}`, channels);
+      this.writeToChannels(`\n[ERROR] ${turnResult.error}`, channels);
     } else if (!turnResult.success) {
       this.writeToChannels('\n[Command failed]', channels);
     }
@@ -144,7 +195,7 @@ export class AllEventsTextService implements TextService {
    * Format a single event
    */
   formatEvent(
-    event: SemanticEvent | SystemEvent,
+    event: SemanticEvent | SystemEvent | SequencedEvent,
     options: TextFormatOptions = {}
   ): string {
     const {
@@ -156,8 +207,9 @@ export class AllEventsTextService implements TextService {
     let text = '';
     
     // Add timestamp if requested
-    if (includeTimestamps) {
-      text += `[${event.timestamp}] `;
+    if (includeTimestamps && event.timestamp) {
+      const timestamp = event.timestamp instanceof Date ? event.timestamp.toISOString() : event.timestamp;
+      text += `[${timestamp}] `;
     }
     
     // Add event type if requested
@@ -263,6 +315,57 @@ export class AllEventsTextService implements TextService {
         text = '';
         break;
         
+      case 'location.described':
+        if (event.data && typeof event.data === 'object') {
+          const data = event.data as any;
+          text = data.description || '';
+        }
+        break;
+        
+      case 'command.succeeded':
+        if (event.data && typeof event.data === 'object') {
+          const data = event.data as any;
+          text = data.message || '';
+        }
+        break;
+        
+      case 'object.examined':
+        if (event.data && typeof event.data === 'object') {
+          const data = event.data as any;
+          let text = '';
+          if (data.name) {
+            text = data.name;
+            if (data.description) {
+              text += ': ' + data.description;
+            }
+          } else if (data.description) {
+            text = data.description;
+          }
+          return text;
+        }
+        break;
+        
+      case 'inventory.added':
+        if (event.data && typeof event.data === 'object') {
+          const data = event.data as any;
+          text = `Added ${data.item} to inventory`;
+        }
+        break;
+        
+      case 'game.scored':
+        if (event.data && typeof event.data === 'object') {
+          const data = event.data as any;
+          text = `Score: ${data.points} points (Total: ${data.total})`;
+        }
+        break;
+        
+      case 'text.displayed':
+        if (event.data && typeof event.data === 'object') {
+          const data = event.data as any;
+          text = data.text || '';
+        }
+        break;
+        
       case 'text.room_description':
         if (event.data && typeof event.data === 'object') {
           const data = event.data as any;
@@ -350,7 +453,7 @@ export class AllEventsTextService implements TextService {
   /**
    * Check if event is a system event
    */
-  private isSystemEvent(event: SemanticEvent | SystemEvent): boolean {
+  private isSystemEvent(event: SemanticEvent | SystemEvent | SequencedEvent): boolean {
     return 'subsystem' in event;
   }
   
@@ -388,13 +491,18 @@ export class AllEventsTextService implements TextService {
    */
   private writeToChannels(text: string, channels: TextChannel[]): void {
     for (const channel of channels) {
-      channel.write(text);
+      try {
+        channel.write(text);
+      } catch (error) {
+        // Silently ignore channel write errors
+        // In production, we might want to log this
+      }
     }
   }
 }
 
 /**
- * Create a basic text service with stdout output
+ * Create a basic text service with buffered output
  */
 export function createBasicTextService(languageProvider?: any): {
   service: TextService;
@@ -402,6 +510,6 @@ export function createBasicTextService(languageProvider?: any): {
 } {
   return {
     service: new AllEventsTextService(languageProvider),
-    channels: [new StdoutChannel()]
+    channels: [new BufferedTextChannel()]
   };
 }

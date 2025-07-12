@@ -1,6 +1,6 @@
 # ADR-002: Debug Mode Meta Commands
 
-**Date:** 2025-01-11
+**Date:** 2025-06-11
 **Status:** Proposed
 **Context:** In-game debugging and troubleshooting
 

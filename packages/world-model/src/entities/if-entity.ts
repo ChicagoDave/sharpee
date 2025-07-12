@@ -18,9 +18,12 @@ export class IFEntity implements Entity {
   constructor(id: string, type: string, params?: Partial<EntityCreationParams>) {
     this.id = id;
     this.type = type;
-    this.attributes = params?.attributes || {};
+    this.attributes = params?.attributes ? { ...params.attributes } : {};
     this.relationships = params?.relationships || {};
     this.traits = new Map();
+    
+    // Store entityType in attributes when created by WorldModel
+    // (params?.attributes will contain it when set by WorldModel.createEntity)
   }
   
   /**
@@ -133,7 +136,9 @@ export class IFEntity implements Entity {
       relationships: this.relationships,
       traits: Array.from(this.traits.entries()).map(([_, trait]) => ({
         ...trait
-      }))
+      })),
+      // Include version for future compatibility
+      version: 2
     };
   }
   
@@ -141,7 +146,32 @@ export class IFEntity implements Entity {
    * Create entity from JSON data
    */
   static fromJSON(json: any): IFEntity {
-    const entity = new IFEntity(json.id, json.type, {
+    // Determine type - use stored type or try to infer from ID
+    let type = json.type || 'object';
+    
+    // If loading old format without explicit type, try to infer from attributes
+    if (!json.version && json.attributes) {
+      if (json.attributes.entityType) {
+        type = json.attributes.entityType;
+      } else if (json.id && json.id.match(/^[a-z][0-9a-z]{2}$/)) {
+        // Try to infer type from ID prefix for new format IDs
+        const prefix = json.id[0];
+        const typeMap: Record<string, string> = {
+          'r': 'room',
+          'd': 'door',
+          'i': 'item',
+          'a': 'actor',
+          'c': 'container',
+          's': 'supporter',
+          'y': 'scenery',
+          'e': 'exit',
+          'o': 'object'
+        };
+        type = typeMap[prefix] || 'object';
+      }
+    }
+    
+    const entity = new IFEntity(json.id, type, {
       attributes: json.attributes,
       relationships: json.relationships
     });
@@ -279,8 +309,24 @@ export class IFEntity implements Entity {
    * Get the name of this entity
    */
   get name(): string {
+    // First check for displayName (new system)
+    if (this.attributes.displayName) {
+      return this.attributes.displayName as string;
+    }
+    
+    // Then check identity trait
     const identity = this.get(TraitType.IDENTITY);
-    return identity ? (identity as any).name : this.id;
+    if (identity && (identity as any).name) {
+      return (identity as any).name;
+    }
+    
+    // Fall back to name attribute
+    if (this.attributes.name) {
+      return this.attributes.name as string;
+    }
+    
+    // Last resort: use ID
+    return this.id;
   }
   
   /**

@@ -1,7 +1,8 @@
 # ADR-005: Entity ID System Design
 
 Date: 2024-01-06
-Status: Proposed
+Status: Implemented (2025-07-06)
+Implementation: Complete
 
 ## Context
 
@@ -158,3 +159,55 @@ world.moveEntity(world.getId('Player')!, world.getId('Kitchen')!);
 - Case-insensitive name lookup will prevent common errors
 - Forge will completely hide this ID system from authors
 - Migration can be done incrementally by updating tests one at a time
+
+## Implementation Details (Added 2025-01-06)
+
+### What Was Built
+
+1. **ID Generation System**
+   - Auto-generates IDs like r01, d02, i03 based on entity type
+   - Maintains per-type counters in WorldModel
+   - Throws error on overflow (>1295 entities per type)
+
+2. **Name/ID Mapping**
+   - Bidirectional maps: nameToId and idToName
+   - Case-insensitive name lookup
+   - Automatic mapping on entity creation
+
+3. **Entity Name Resolution**
+   - entity.name getter with priority chain:
+     1. attributes.displayName (highest)
+     2. Identity trait name
+     3. attributes.name
+     4. ID (fallback)
+
+4. **Backwards Compatibility**
+   - Old createEntity(id, name) signature still works with deprecation warning
+   - Save/load system preserves ID mappings
+   - Automatic ID system rebuild for old saves
+
+5. **Test Infrastructure**
+   - Helper functions: getTestEntity, expectEntity, moveEntityByName
+   - Updated all integration tests
+   - Updated fixture functions
+
+### Key Insights
+
+1. **Separation of Concerns Works**: The existing architecture already separated names (for users) from IDs (for system), making the refactor smooth.
+
+2. **Command System Unchanged**: The CommandValidator already used entity.name for resolution and entity.id for operations, so no changes needed.
+
+3. **Test Readability Maintained**: Helper functions keep tests readable while using the new system.
+
+### Actual ID Limits
+
+- Format: [prefix][00-zz] gives 1296 IDs per type (36^2)
+- More than sufficient for any IF game
+- Clear error on overflow
+
+### Migration Path
+
+1. Update entity creation calls
+2. Use entity references or name resolution
+3. Update test assertions
+4. Old saves auto-migrate

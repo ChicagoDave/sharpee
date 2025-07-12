@@ -7,8 +7,11 @@ export class SpatialIndex {
   private childToParent: Map<string, string> = new Map();
 
   addChild(parentId: string, childId: string): void {
-    // Remove from any existing parent
-    this.remove(childId);
+    // Remove from any existing parent (but preserve this entity's children)
+    const currentParent = this.childToParent.get(childId);
+    if (currentParent) {
+      this.removeChild(currentParent, childId);
+    }
 
     // Add to new parent
     if (!this.parentToChildren.has(parentId)) {
@@ -30,13 +33,13 @@ export class SpatialIndex {
   }
 
   remove(entityId: string): void {
-    // Remove as child
+    // Remove as child from its parent
     const parent = this.childToParent.get(entityId);
     if (parent) {
       this.removeChild(parent, entityId);
     }
 
-    // Remove all children
+    // Remove all children relationships (this entity is being deleted)
     const children = this.parentToChildren.get(entityId);
     if (children) {
       // Copy to avoid mutation during iteration

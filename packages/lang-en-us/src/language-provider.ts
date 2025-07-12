@@ -139,26 +139,37 @@ export class EnglishLanguageProvider {
   }
 
   lemmatize(word: string): string {
+    if (!word) return '';
+    
     const lower = word.toLowerCase();
     
     // Check irregular plurals
     const singular = irregularPlurals.get(lower);
     if (singular) return singular;
     
+    // Handle special cases first
+    if (lower === 'yes' || lower === 'ties') return lower;
+    
     // Simple rules for common endings
     if (lower.endsWith('ies') && lower.length > 4) {
       return lower.slice(0, -3) + 'y';
     }
     if (lower.endsWith('es') && lower.length > 3) {
+      // Don't lemmatize words like 'yes'
+      if (lower === 'yes') return lower;
       return lower.slice(0, -2);
     }
     if (lower.endsWith('s') && !lower.endsWith('ss') && lower.length > 2) {
       return lower.slice(0, -1);
     }
     if (lower.endsWith('ed') && lower.length > 3) {
+      // Handle double consonants (dropped -> drop)
+      if (lower.length > 4 && lower[lower.length - 3] === lower[lower.length - 4]) {
+        return lower.slice(0, -3);
+      }
       return lower.slice(0, -2);
     }
-    if (lower.endsWith('ing') && lower.length > 4) {
+    if (lower.endsWith('ing') && lower.length > 4 && !lower.includes('-')) {
       return lower.slice(0, -3);
     }
     
@@ -180,6 +191,8 @@ export class EnglishLanguageProvider {
   }
 
   getIndefiniteArticle(noun: string): string {
+    if (!noun || noun.length === 0) return 'a';
+    
     const firstChar = noun[0].toLowerCase();
     const vowels = ['a', 'e', 'i', 'o', 'u'];
     
@@ -193,11 +206,19 @@ export class EnglishLanguageProvider {
   }
 
   pluralize(noun: string): string {
+    if (!noun) return 's';
+    
     const lower = noun.toLowerCase();
     
     // Check irregular plurals - the map is plural->singular, so we need to reverse lookup
     for (const [plural, singular] of irregularPlurals) {
       if (singular === lower) {
+        // Preserve the case pattern of the original noun
+        if (noun === noun.toUpperCase()) {
+          return plural.toUpperCase();
+        } else if (noun[0] === noun[0].toUpperCase()) {
+          return plural[0].toUpperCase() + plural.slice(1);
+        }
         return plural;
       }
     }
@@ -209,6 +230,10 @@ export class EnglishLanguageProvider {
     }
     
     if (lower.endsWith('y') && !['a', 'e', 'i', 'o', 'u'].includes(lower[lower.length - 2])) {
+      // Special handling for case preservation with -ies
+      if (noun === noun.toUpperCase()) {
+        return noun.slice(0, -1) + 'IES';
+      }
       return noun.slice(0, -1) + 'ies';
     }
     

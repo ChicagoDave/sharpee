@@ -20,6 +20,7 @@ export * from './scenery';
 export * from './supporter';
 export * from './switchable';
 export * from './wearable';
+export * from './clothing';
 export * from './edible';
 export * from './door';
 export * from './actor';

@@ -172,3 +172,50 @@ interface TurnResult {
   timing?: TimingInfo;
 }
 ```
+
+## Development
+
+```bash
+# Build the package
+pnpm build
+
+# Run tests
+pnpm test
+
+# Run tests with coverage
+pnpm test:coverage
+
+# Watch mode for tests
+pnpm test:watch
+```
+
+## Testing
+
+The engine package includes comprehensive test coverage:
+
+### Unit Tests
+- `game-engine.test.ts` - Core game engine functionality
+- `command-executor.test.ts` - Command parsing and execution
+- `event-sequencer.test.ts` - Event ordering and utilities
+- `story.test.ts` - Story interface and configuration
+- `text-service.test.ts` - Text output formatting
+- `types.test.ts` - Type definitions and contracts
+
+### Integration Tests
+- `integration.test.ts` - Full game flow and component interaction
+
+### Test Fixtures
+- `fixtures/index.ts` - Reusable test utilities and mocks
+
+### Running Tests
+
+```bash
+# Run all tests
+pnpm test
+
+# Run specific test file
+pnpm test game-engine
+
+# Generate coverage report
+pnpm test:coverage
+```

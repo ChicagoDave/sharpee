@@ -27,6 +27,12 @@ export class SceneryTrait implements Trait {
    */
   mentioned = true;
   
+  /**
+   * Whether this scenery is visible.
+   * If false, the item is hidden from view and queries unless explicitly requested.
+   */
+  visible = true;
+  
   constructor(data?: Partial<SceneryTrait>) {
     if (data) {
       Object.assign(this, data);

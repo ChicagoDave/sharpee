@@ -13,10 +13,10 @@ export class DoorTrait implements Trait {
   static readonly type = TraitType.DOOR;
   readonly type = TraitType.DOOR;
   
-  /** First room this door connects */
+  /** First room this door connects (must be an entity ID, not a name) */
   room1!: string;
   
-  /** Second room this door connects */
+  /** Second room this door connects (must be an entity ID, not a name) */
   room2!: string;
   
   /** Whether the door can be traversed in both directions */

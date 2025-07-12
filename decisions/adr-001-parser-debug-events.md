@@ -1,6 +1,6 @@
 # ADR-001: Parser Debug Events Architecture
 
-**Date:** 2025-01-11
+**Date:** 2025-06-11
 **Status:** Accepted
 **Context:** Parser troubleshooting and development
 

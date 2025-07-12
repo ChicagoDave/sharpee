@@ -175,64 +175,7 @@ export class RoomBehavior extends Behavior {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
     return roomTrait.visited;
   }
-  
-  /**
-   * Get total light level including time of day and light sources
-   */
-  static getTotalLight(room: IFEntity, world: IWorldQuery & { getTimeOfDay?: () => 'day' | 'night' }): number {
-    const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
-    let light = roomTrait.baseLight || 0;
-    
-    // Add light from time of day if outdoors
-    if (roomTrait.isOutdoors && !roomTrait.isUnderground && world.getTimeOfDay) {
-      light += world.getTimeOfDay() === 'day' ? 10 : 0;
-    }
-    
-    // Add light from all light sources in room
-    light += this.getLightFromSources(room, world);
-    
-    return Math.min(light, 10); // Cap at 10
-  }
-  
-  /**
-   * Check if room is dark (total light < 3)
-   */
-  static isDark(room: IFEntity, world: IWorldQuery & { getTimeOfDay?: () => 'day' | 'night' }): boolean {
-    return this.getTotalLight(room, world) < 3;
-  }
-  
-  /**
-   * Get light contribution from all light sources in the room
-   */
-  static getLightFromSources(room: IFEntity, world: IWorldQuery): number {
-    let totalLight = 0;
-    
-    // Get all items in room (recursive - includes contents of containers/supporters)
-    const items = world.getContents(room.id);
-    
-    for (const item of items) {
-      if (item.has(TraitType.LIGHT_SOURCE)) {
-        // We'll implement LightSourceBehavior later
-        // For now, just check if it has the trait
-        const lightSource = item.get(TraitType.LIGHT_SOURCE) as any;
-        if (lightSource?.isLit && !this.isLightBlocked(item, world)) {
-          totalLight += lightSource.brightness || 0;
-        }
-      }
-    }
-    
-    return totalLight;
-  }
-  
-  /**
-   * Check if a light source is blocked (e.g., in a closed container)
-   */
-  private static isLightBlocked(source: IFEntity, world: IWorldQuery): boolean {
-    // This logic would need to be implemented at the world model level
-    // since we need to get the container entity by ID
-    // For now, return false (not blocked)
-    return false;
-  }
+
   
   /**
    * Get all exits from the room

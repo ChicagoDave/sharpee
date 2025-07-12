@@ -6,10 +6,37 @@
 
 import { SemanticEvent } from '@sharpee/core';
 import { ParsedCommand, IFEntity } from '@sharpee/world-model';
-import { WorldChange, TurnPhase, SequencedEvent, EventSequencer } from '@sharpee/if-domain';
 
-// Re-export domain types
-export { TurnPhase, SequencedEvent, EventSequencer } from '@sharpee/if-domain';
+/**
+ * Basic game event (before sequencing)
+ */
+export interface GameEvent {
+  type: string;
+  data: any;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Sequenced event with turn and ordering information
+ */
+export interface SequencedEvent extends GameEvent {
+  sequence: number;
+  timestamp: Date;
+  turn: number;
+  scope: 'turn' | 'global' | 'system';
+  source?: string;
+}
+
+/**
+ * Timing data for performance tracking
+ */
+export interface TimingData {
+  parsing?: number;
+  execution?: number;
+  processing?: number;
+  total: number;
+  custom?: Record<string, number>;
+}
 
 /**
  * Result of executing a turn
@@ -21,9 +48,9 @@ export interface TurnResult {
   turn: number;
   
   /**
-   * Command that was executed
+   * Raw input string
    */
-  command: ParsedCommand;
+  input: string;
   
   /**
    * All events generated this turn (in sequence)
@@ -31,28 +58,19 @@ export interface TurnResult {
   events: SequencedEvent[];
   
   /**
-   * World changes that occurred
-   */
-  worldChanges: WorldChange[];
-  
-  /**
    * Whether the turn succeeded
    */
   success: boolean;
   
   /**
-   * Error if turn failed
+   * Error message if turn failed
    */
-  error?: Error;
+  error?: string;
   
   /**
    * Timing information
    */
-  timing?: {
-    start: number;
-    end: number;
-    duration: number;
-  };
+  timing?: TimingData;
 }
 
 /**

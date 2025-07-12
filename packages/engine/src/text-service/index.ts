@@ -5,10 +5,3 @@
  */
 
 export * from './text-service';
-
-// Re-export commonly used items
-export { 
-  createBasicTextService,
-  StdoutChannel,
-  AllEventsTextService
-} from './text-service';

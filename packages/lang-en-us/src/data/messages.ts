@@ -46,11 +46,13 @@ export const ActionFailureReason = {
   WRONG_KEY: 'wrong_key',
   NO_KEY_SPECIFIED: 'no_key_specified',
   NOT_A_KEY: 'not_a_key',
+  NOT_HOLDING_KEY: 'not_holding_key',
   
   // Device/switchable
   ALREADY_ON: 'already_on',
   ALREADY_OFF: 'already_off',
   NOT_SWITCHABLE: 'not_switchable',
+  NO_POWER: 'no_power',
   
   // Movement
   NO_EXIT_THAT_WAY: 'no_exit_that_way',
@@ -90,7 +92,15 @@ export const ActionFailureReason = {
   // Using/manipulation
   CANT_USE_THAT: 'cant_use_that',
   CANT_USE_TOGETHER: 'cant_use_together',
-  NOTHING_TO_USE_WITH: 'nothing_to_use_with'
+  NOTHING_TO_USE_WITH: 'nothing_to_use_with',
+  
+  // Device manipulation
+  CANT_PUSH_THAT: 'cant_push_that',
+  CANT_PULL_THAT: 'cant_pull_that',
+  CANT_TURN_THAT: 'cant_turn_that',
+  WONT_BUDGE: 'wont_budge',
+  WEARING_IT: 'wearing_it',
+  NO_TARGET: 'no_target'
 } as const;
 
 // Create a type from the const object values
@@ -138,11 +148,13 @@ export const failureMessages: Record<ActionFailureReasonType, string> = {
   [ActionFailureReason.WRONG_KEY]: "That doesn't seem to be the right key.",
   [ActionFailureReason.NO_KEY_SPECIFIED]: "You'll need to specify what to unlock it with.",
   [ActionFailureReason.NOT_A_KEY]: "That doesn't look like it would unlock anything.",
+  [ActionFailureReason.NOT_HOLDING_KEY]: "You need to be holding the key.",
   
   // Device/switchable
   [ActionFailureReason.ALREADY_ON]: "It's already on.",
   [ActionFailureReason.ALREADY_OFF]: "It's already off.",
   [ActionFailureReason.NOT_SWITCHABLE]: "That's not something you can switch.",
+  [ActionFailureReason.NO_POWER]: "It doesn't seem to have any power.",
   
   // Movement
   [ActionFailureReason.NO_EXIT_THAT_WAY]: "You can't go that way.",
@@ -183,6 +195,14 @@ export const failureMessages: Record<ActionFailureReasonType, string> = {
   [ActionFailureReason.CANT_USE_THAT]: "You can't use that.",
   [ActionFailureReason.CANT_USE_TOGETHER]: "You can't use those things together.",
   [ActionFailureReason.NOTHING_TO_USE_WITH]: "You need to specify what to use it with.",
+  
+  // Device manipulation
+  [ActionFailureReason.CANT_PUSH_THAT]: "You can't push that.",
+  [ActionFailureReason.CANT_PULL_THAT]: "You can't pull that.",
+  [ActionFailureReason.CANT_TURN_THAT]: "You can't turn that.",
+  [ActionFailureReason.WONT_BUDGE]: "It won't budge.",
+  [ActionFailureReason.WEARING_IT]: "You can't do that while wearing it.",
+  [ActionFailureReason.NO_TARGET]: "What do you want to push?",
 };
 
 /**

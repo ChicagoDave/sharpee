@@ -1,5 +1,7 @@
 # @sharpee/stdlib
 
+![Coverage](https://img.shields.io/badge/coverage-0%25-red)
+
 Standard library for the Sharpee IF Platform - parser, validator, actions, and language interfaces.
 
 ## Overview
@@ -185,6 +187,47 @@ The stdlib follows Sharpee's core principles:
 3. **Extensible** - Easy to add new actions, vocabulary, messages
 4. **Type-Safe** - Full TypeScript support with proper types
 5. **Event-Driven** - All changes happen through semantic events
+
+## Testing
+
+The stdlib package has comprehensive test coverage:
+
+```bash
+# Run tests
+pnpm test
+
+# Run tests with coverage
+pnpm test:coverage
+
+# Watch mode
+pnpm test:watch
+
+# View coverage report
+pnpm coverage:view
+
+# Update coverage badge
+pnpm coverage:badge
+```
+
+### Test Structure
+
+```
+tests/
+├── unit/           # Unit tests for individual components
+│   ├── actions/    # Action tests
+│   ├── parser/     # Parser tests
+│   ├── validation/ # Validator tests
+│   └── language/   # Language system tests
+└── integration/    # Integration tests
+```
+
+### Coverage Goals
+
+- Unit tests: >90% coverage
+- Integration tests: >80% coverage
+- All public APIs tested
+- All error paths tested
+- Debug events verified
 
 ## License
 

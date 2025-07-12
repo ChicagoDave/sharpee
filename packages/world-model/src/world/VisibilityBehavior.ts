@@ -75,7 +75,7 @@ export class VisibilityBehavior extends Behavior {
       seen.add(observerRoom.id);
     }
 
-    // Check all entities in scope
+    // Check all entities in scope (including worn items)
     const inScope = world.getInScope(observer.id);
     
     for (const entity of inScope) {
@@ -127,6 +127,13 @@ export class VisibilityBehavior extends Behavior {
       const container = world.getEntity(parent);
       if (!container) return false;
       
+      // Actors don't block access to their contents
+      if (container.hasTrait(TraitType.ACTOR)) {
+        // Items carried by actors are accessible
+        current = parent;
+        continue;
+      }
+      
       // If it's in an opaque, closed container, it's not accessible
       if (container.hasTrait(TraitType.CONTAINER)) {
         const containerTrait = container.getTrait(TraitType.CONTAINER) as any;
@@ -163,6 +170,12 @@ export class VisibilityBehavior extends Behavior {
       const containerEntity = world.getEntity(container);
       if (!containerEntity) return false;
 
+      // Actors are always visible-through (can see their inventory/worn items)
+      if (containerEntity.hasTrait(TraitType.ACTOR)) {
+        // Can always see what actors are carrying/wearing
+        continue;
+      }
+      
       // If it's in a container, check if we can see inside
       if (containerEntity.hasTrait(TraitType.CONTAINER)) {
         const containerTrait = containerEntity.getTrait(TraitType.CONTAINER) as any;
@@ -233,6 +246,12 @@ export class VisibilityBehavior extends Behavior {
       
       const container = world.getEntity(location);
       if (!container) break;
+      
+      // Actors don't block visibility of their contents
+      if (container.hasTrait(TraitType.ACTOR)) {
+        current = location;
+        continue;
+      }
       
       // Check if this container blocks visibility
       if (container.hasTrait(TraitType.CONTAINER)) {

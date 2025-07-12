@@ -5,110 +5,46 @@
  * and grouping within a turn.
  */
 
-import { SemanticEvent } from '@sharpee/core';
-import { SequencedEvent, EventSequencer, TurnPhase } from '@sharpee/if-domain';
+import { GameEvent, SequencedEvent } from './types';
 
 /**
- * Default event sequencer implementation
+ * Event sequencer class
  */
-export class DefaultEventSequencer implements EventSequencer {
-  private turnCounters: Map<number, number> = new Map();
+class EventSequencer {
+  private counter: number = Date.now();
 
   /**
-   * Sequence events for a turn
+   * Get next sequence number
    */
-  sequence(events: SemanticEvent[], turn: number, startOrder: number = 1): SequencedEvent[] {
-    let currentOrder = startOrder;
-    const sequenced: SequencedEvent[] = [];
-
-    for (const event of events) {
-      const sequencedEvent: SequencedEvent = {
-        ...event,
-        sequence: {
-          turn,
-          order: currentOrder++,
-          phase: this.determinePhase(event)
-        }
-      };
-
-      sequenced.push(sequencedEvent);
-    }
-
-    // Update counter
-    this.turnCounters.set(turn, currentOrder);
-
-    return sequenced;
+  next(): number {
+    return ++this.counter;
   }
 
   /**
-   * Get next order number for a turn
-   */
-  getNextOrder(turn: number): number {
-    return this.turnCounters.get(turn) || 1;
-  }
-
-  /**
-   * Reset sequencing for a new turn
+   * Reset turn counter (optional, for testing)
    */
   resetTurn(turn: number): void {
-    this.turnCounters.set(turn, 1);
+    // No-op in this implementation
   }
 
   /**
-   * Determine which phase an event belongs to
+   * Sequence a single event
    */
-  private determinePhase(event: SemanticEvent): TurnPhase {
-    // You can customize this based on event types
-    const type = event.type.toUpperCase();
-
-    // Pre-phase events
-    if (type.includes('BEFORE') || type.includes('PRE')) {
-      return TurnPhase.PRE;
-    }
-
-    // Post-phase events
-    if (type.includes('AFTER') || type.includes('POST')) {
-      return TurnPhase.POST;
-    }
-
-    // Cleanup events
-    if (type.includes('CLEANUP') || type.includes('RESET')) {
-      return TurnPhase.CLEANUP;
-    }
-
-    // Default to main phase
-    return TurnPhase.MAIN;
-  }
-
-  /**
-   * Create a sub-sequencer for nested events
-   */
-  createSubSequencer(parentOrder: number): SubSequencer {
-    return new SubSequencer(parentOrder);
-  }
-}
-
-/**
- * Sub-sequencer for nested events
- */
-export class SubSequencer {
-  private subOrder: number = 1;
-
-  constructor(private parentOrder: number) {}
-
-  /**
-   * Sequence a sub-event
-   */
-  sequence(event: SemanticEvent, turn: number): SequencedEvent {
+  sequence(event: GameEvent, turn: number): SequencedEvent {
     return {
       ...event,
-      sequence: {
-        turn,
-        order: this.parentOrder,
-        subOrder: this.subOrder++,
-        phase: TurnPhase.MAIN
-      }
+      sequence: this.next(),
+      timestamp: new Date(),
+      turn,
+      scope: 'turn'
     };
+  }
+
+  /**
+   * Sequence multiple events
+   */
+  sequenceAll(events: GameEvent[], turn: number): SequencedEvent[] {
+    return events.map(event => this.sequence(event, turn));
   }
 }
 
@@ -117,73 +53,106 @@ export class SubSequencer {
  */
 export class EventSequenceUtils {
   /**
-   * Sort events by sequence
+   * Sort events by sequence number
    */
   static sort(events: SequencedEvent[]): SequencedEvent[] {
-    return [...events].sort((a, b) => {
-      // First by turn
-      if (a.sequence.turn !== b.sequence.turn) {
-        return a.sequence.turn - b.sequence.turn;
-      }
+    return [...events].sort((a, b) => a.sequence - b.sequence);
+  }
 
-      // Then by order
-      if (a.sequence.order !== b.sequence.order) {
-        return a.sequence.order - b.sequence.order;
-      }
+  /**
+   * Filter events by type
+   */
+  static filterByType(events: SequencedEvent[], type: string): SequencedEvent[] {
+    return events.filter(e => e.type === type);
+  }
 
-      // Then by sub-order if present
-      const aSubOrder = a.sequence.subOrder || 0;
-      const bSubOrder = b.sequence.subOrder || 0;
-      return aSubOrder - bSubOrder;
-    });
+  /**
+   * Filter events by turn
+   */
+  static filterByTurn(events: SequencedEvent[], turn: number): SequencedEvent[] {
+    return events.filter(e => e.turn === turn);
+  }
+
+  /**
+   * Filter events by scope
+   */
+  static filterByScope(events: SequencedEvent[], scope: SequencedEvent['scope']): SequencedEvent[] {
+    return events.filter(e => e.scope === scope);
+  }
+
+  /**
+   * Group events by type
+   */
+  static groupByType(events: SequencedEvent[]): Record<string, SequencedEvent[]> {
+    const groups: Record<string, SequencedEvent[]> = {};
+    
+    for (const event of events) {
+      if (!groups[event.type]) {
+        groups[event.type] = [];
+      }
+      groups[event.type].push(event);
+    }
+    
+    return groups;
   }
 
   /**
    * Group events by turn
    */
-  static groupByTurn(events: SequencedEvent[]): Map<number, SequencedEvent[]> {
-    const groups = new Map<number, SequencedEvent[]>();
-
+  static groupByTurn(events: SequencedEvent[]): Record<number, SequencedEvent[]> {
+    const groups: Record<number, SequencedEvent[]> = {};
+    
     for (const event of events) {
-      const turn = event.sequence.turn;
-      if (!groups.has(turn)) {
-        groups.set(turn, []);
+      if (!groups[event.turn]) {
+        groups[event.turn] = [];
       }
-      groups.get(turn)!.push(event);
+      groups[event.turn].push(event);
     }
-
+    
     return groups;
   }
 
   /**
-   * Group events by phase within a turn
+   * Get latest event by type
    */
-  static groupByPhase(events: SequencedEvent[]): Map<TurnPhase, SequencedEvent[]> {
-    const groups = new Map<TurnPhase, SequencedEvent[]>();
-
-    for (const event of events) {
-      const phase = event.sequence.phase || TurnPhase.MAIN;
-      if (!groups.has(phase)) {
-        groups.set(phase, []);
-      }
-      groups.get(phase)!.push(event);
-    }
-
-    return groups;
+  static getLatestByType(events: SequencedEvent[], type: string): SequencedEvent | undefined {
+    const filtered = this.filterByType(events, type);
+    if (filtered.length === 0) return undefined;
+    
+    return filtered.reduce((latest, current) => 
+      current.sequence > latest.sequence ? current : latest
+    );
   }
 
   /**
-   * Get sequence string for display (e.g., "1.2.3")
+   * Count events by type
    */
-  static getSequenceString(event: SequencedEvent): string {
-    const { turn, order, subOrder } = event.sequence;
-    let str = `${turn}.${order}`;
-    if (subOrder !== undefined) {
-      str += `.${subOrder}`;
+  static countByType(events: SequencedEvent[]): Record<string, number> {
+    const counts: Record<string, number> = {};
+    
+    for (const event of events) {
+      counts[event.type] = (counts[event.type] || 0) + 1;
     }
-    return str;
+    
+    return counts;
+  }
+
+  /**
+   * Get events in sequence range
+   */
+  static getInRange(
+    events: SequencedEvent[], 
+    start: number, 
+    end: number, 
+    inclusive: boolean = true
+  ): SequencedEvent[] {
+    if (inclusive) {
+      return events.filter(e => e.sequence >= start && e.sequence <= end);
+    } else {
+      return events.filter(e => e.sequence > start && e.sequence < end);
+    }
   }
 }
 
 // Export singleton instance
-export const eventSequencer = new DefaultEventSequencer();
+export const eventSequencer = new EventSequencer();

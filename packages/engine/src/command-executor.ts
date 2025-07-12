@@ -19,13 +19,16 @@ import {
   CommandValidator,
   LanguageProvider,
   ActionContext,
-  ActionRegistry
+  ActionRegistry,
+  Action,
+  ActionResult
 } from '@sharpee/stdlib';
 
 import { 
   GameContext, 
   TurnResult, 
   SequencedEvent,
+  GameEvent,
   EngineConfig 
 } from './types';
 import { eventSequencer } from './event-sequencer';
@@ -70,15 +73,22 @@ export class CommandExecutor {
   private eventProcessor: EventProcessor;
   private autoResolve: boolean;
 
-  constructor(options: CommandExecutorOptions) {
-    this.parser = new BasicParser(options.languageProvider);
-    this.validator = new CommandValidator(
-      options.world, 
-      options.actionRegistry
-    );
-    this.actionRegistry = options.actionRegistry;
-    this.eventProcessor = options.eventProcessor;
-    this.autoResolve = options.autoResolveAmbiguities ?? true;
+  constructor(
+    world: WorldModel,
+    actionRegistry: ActionRegistry,
+    eventProcessor: EventProcessor,
+    languageProvider: LanguageProvider
+  ) {
+    if (!world) throw new Error('World model is required');
+    if (!actionRegistry) throw new Error('Action registry is required');
+    if (!eventProcessor) throw new Error('Event processor is required');
+    if (!languageProvider) throw new Error('Language provider is required');
+    
+    this.parser = new BasicParser(languageProvider);
+    this.validator = new CommandValidator(world, actionRegistry);
+    this.actionRegistry = actionRegistry;
+    this.eventProcessor = eventProcessor;
+    this.autoResolve = true;
   }
 
   /**
@@ -90,12 +100,17 @@ export class CommandExecutor {
     context: GameContext,
     config?: EngineConfig
   ): Promise<TurnResult> {
-    const startTime = Date.now();
+    const startTime = config?.collectTiming ? Date.now() : 0;
+    let parseEndTime = 0;
     const turn = context.currentTurn;
 
     try {
       // Phase 1: Parse the input
       const parseResult = this.parser.parse(input);
+      
+      if (config?.collectTiming) {
+        parseEndTime = Date.now();
+      }
       
       if (!parseResult.success) {
         throw new Error(parseResult.error.message);
@@ -117,10 +132,11 @@ export class CommandExecutor {
 
       // Add timing if configured
       if (config?.collectTiming) {
+        const endTime = Date.now();
         result.timing = {
-          start: startTime,
-          end: Date.now(),
-          duration: Date.now() - startTime
+          parsing: parseEndTime - startTime,
+          execution: endTime - parseEndTime,
+          total: endTime - startTime
         };
       }
 
@@ -132,13 +148,21 @@ export class CommandExecutor {
         config.onError(error as Error, context);
       }
 
+      // Create error event
+      const errorEvent = eventSequencer.sequence({
+        type: 'command.failed',
+        data: {
+          reason: (error as Error).message,
+          input
+        }
+      }, turn);
+      
       return {
         turn,
-        command: this.createErrorCommand(input),
-        events: [],
-        worldChanges: [],
+        input,
         success: false,
-        error: error as Error
+        events: [errorEvent],
+        error: (error as Error).message
       };
     }
   }
@@ -164,27 +188,60 @@ export class CommandExecutor {
     // Create action context
     const actionContext = this.createActionContext(world, context);
 
-    // Execute the action to get events
-    const rawEvents = action.execute(command, actionContext);
+    let events: GameEvent[] = [];
+    let success = true;
+    let error: string | undefined;
+
+    // Check if it's an Action (has patterns) or ActionExecutor
+    if ('patterns' in action) {
+      // It's an Action - execute expects only context and returns ActionResult
+      const actionResult = await (action as Action).execute(actionContext);
+      
+      // Create events from action result
+      events = actionResult.events || [];
+      if (actionResult.message) {
+        events.push({
+          type: 'command.succeeded',
+          data: { message: actionResult.message }
+        });
+      }
+      
+      success = actionResult.success;
+      error = actionResult.error;
+    } else {
+      // It's an ActionExecutor - execute expects command and context, returns SemanticEvent[]
+      const semanticEvents = (action as any).execute(command, actionContext);
+      
+      // Convert SemanticEvent[] to GameEvent[]
+      events = semanticEvents.map((se: SemanticEvent) => ({
+        type: se.type,
+        data: se.data,
+        metadata: { id: se.id, entities: se.entities }
+      }));
+    }
 
     // Sequence the events
-    const sequencedEvents = eventSequencer.sequence(rawEvents, turn);
+    const sequencedEvents = eventSequencer.sequenceAll(events, turn);
 
     // Process the events to update the world
-    const processResult = this.eventProcessor.processEvents(sequencedEvents);
-
-    // Consider the turn successful if:
-    // 1. We have events (even if they're just text events)
-    // 2. OR we have world changes
-    // 3. OR no errors occurred
-    const success = sequencedEvents.length > 0 || processResult.changes.length > 0;
+    if (sequencedEvents.length > 0) {
+      // Convert SequencedEvent[] to SemanticEvent[] for the event processor
+      const semanticEvents = sequencedEvents.map(e => ({
+        id: e.sequence.toString(),
+        type: e.type,
+        data: e.data,
+        timestamp: e.timestamp instanceof Date ? e.timestamp.getTime() : e.timestamp,
+        entities: e.data?.entities || {}
+      }));
+      this.eventProcessor.processEvents(semanticEvents);
+    }
 
     return {
       turn,
-      command: command.parsed,
+      input: command.parsed.rawInput || command.parsed.action,
+      success,
       events: sequencedEvents,
-      worldChanges: processResult.changes,
-      success
+      error
     };
   }
 
@@ -225,16 +282,11 @@ export class CommandExecutor {
     const recent: string[] = [];
     const recentTurns = context.history.slice(-5); // Last 5 turns
 
-    for (const turn of recentTurns) {
-      if (turn.command.directObject) {
-        recent.push(turn.command.directObject.text);
-      }
-      if (turn.command.indirectObject) {
-        recent.push(turn.command.indirectObject.text);
-      }
-    }
-
-    return [...new Set(recent)]; // Deduplicate
+    // TODO: Implement entity tracking from events
+    // For now, return empty array
+    // We would need to examine the events in each turn to extract entity references
+    
+    return recent;
   }
 
   /**
@@ -255,14 +307,12 @@ export function createCommandExecutor(
   world: WorldModel,
   actionRegistry: ActionRegistry,
   eventProcessor: EventProcessor,
-  languageProvider: LanguageProvider,
-  options?: Partial<CommandExecutorOptions>
+  languageProvider: LanguageProvider
 ): CommandExecutor {
-  return new CommandExecutor({
+  return new CommandExecutor(
     world,
     actionRegistry,
     eventProcessor,
-    languageProvider,
-    ...options
-  });
+    languageProvider
+  );
 }

@@ -6,6 +6,10 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
+    "test": "cross-env NODE_NO_WARNINGS=1 jest",
+    "test:verbose": "jest",
+    "test:watch": "cross-env NODE_NO_WARNINGS=1 jest --watch",
+    "test:coverage": "cross-env NODE_NO_WARNINGS=1 jest --coverage",
     "clean": "rimraf dist"
   },
   "dependencies": {
@@ -13,11 +17,20 @@
     "@sharpee/if-domain": "file:../if-domain",
     "@sharpee/world-model": "file:../world-model",
     "@sharpee/event-processor": "file:../event-processor",
-    "@sharpee/stdlib": "file:../stdlib"
+    "@sharpee/stdlib": "file:../stdlib",
+    "@sharpee/lang-en-us": "file:../lang-en-us"
   },
   "devDependencies": {
+    "@types/jest": "^29.5.0",
     "@types/node": "^20.11.19",
+    "cross-env": "^7.0.3",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
     "typescript": "^5.3.3",
     "rimraf": "^5.0.5"
-  }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
 }

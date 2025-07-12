@@ -4,3 +4,4 @@
 
 export * from './command-patterns';
 export * from './command-syntax';
+export * from './types';

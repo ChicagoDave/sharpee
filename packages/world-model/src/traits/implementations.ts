@@ -13,6 +13,7 @@ import { ContainerTrait } from './container/containerTrait';
 import { SupporterTrait } from './supporter/supporterTrait';
 import { RoomTrait } from './room/roomTrait';
 import { WearableTrait } from './wearable/wearableTrait';
+import { ClothingTrait } from './clothing/clothingTrait';
 import { EdibleTrait } from './edible/edibleTrait';
 import { SceneryTrait } from './scenery/sceneryTrait';
 
@@ -42,6 +43,7 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, TraitConstructor> = {
   [TraitType.SUPPORTER]: SupporterTrait,
   [TraitType.ROOM]: RoomTrait,
   [TraitType.WEARABLE]: WearableTrait,
+  [TraitType.CLOTHING]: ClothingTrait,
   [TraitType.EDIBLE]: EdibleTrait,
   [TraitType.SCENERY]: SceneryTrait,
   
@@ -94,6 +96,7 @@ export {
   SupporterTrait,
   RoomTrait,
   WearableTrait,
+  ClothingTrait,
   EdibleTrait,
   SceneryTrait,
   

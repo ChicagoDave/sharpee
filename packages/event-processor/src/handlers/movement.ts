@@ -131,6 +131,65 @@ export const handleRemovedFrom: EventHandler = (event: SemanticEvent, world: Wor
 };
 
 /**
+ * Handle ENTERED event - actor enters an object or vehicle
+ */
+export const handleEntered: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+  const { actor, target, location } = event.entities;
+  if (actor && location) {
+    // Update the entry trait occupants if present
+    const targetEntity = world.getEntity(target || location);
+    if (targetEntity && targetEntity.has(TraitType.ENTRY)) {
+      world.updateEntity(targetEntity.id, (entity: IFEntity) => {
+        const entryTrait = entity.get(TraitType.ENTRY) as any;
+        if (entryTrait && entryTrait.occupants) {
+          if (!entryTrait.occupants.includes(actor)) {
+            entryTrait.occupants.push(actor);
+          }
+        }
+      });
+    }
+    
+    // Move the actor to the new location
+    world.moveEntity(actor, location);
+  }
+};
+
+/**
+ * Handle EXITED event - actor exits an object or vehicle
+ */
+export const handleExited: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+  const { actor, location } = event.entities;
+  const fromLocation = event.data?.fromLocation as string;
+  
+  if (actor && location) {
+    // Update the entry trait occupants if present
+    if (fromLocation) {
+      const previousContainer = world.getEntity(fromLocation);
+      if (previousContainer && previousContainer.has(TraitType.ENTRY)) {
+        world.updateEntity(fromLocation, (entity: IFEntity) => {
+          const entryTrait = entity.get(TraitType.ENTRY) as any;
+          if (entryTrait && entryTrait.occupants) {
+            entryTrait.occupants = entryTrait.occupants.filter((id: string) => id !== actor);
+          }
+        });
+      }
+    }
+    
+    // Move the actor to the new location
+    world.moveEntity(actor, location);
+  }
+};
+
+/**
+ * Handle CLIMBED event - record climbing action (movement handled separately)
+ */
+export const handleClimbed: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+  // This event is mainly for tracking/logging purposes
+  // The actual movement is handled by ENTERED or ACTOR_MOVED events
+  // Could be used for achievements, scoring, or special effects
+};
+
+/**
  * Register all movement handlers
  */
 export function registerMovementHandlers(world: WorldModel): void {
@@ -141,4 +200,7 @@ export function registerMovementHandlers(world: WorldModel): void {
   world.registerEventHandler(IFEvents.PUT_IN, handlePutIn);
   world.registerEventHandler(IFEvents.PUT_ON, handlePutOn);
   world.registerEventHandler(IFEvents.REMOVED_FROM, handleRemovedFrom);
+  world.registerEventHandler(IFEvents.ENTERED, handleEntered);
+  world.registerEventHandler(IFEvents.EXITED, handleExited);
+  world.registerEventHandler(IFEvents.CLIMBED, handleClimbed);
 }

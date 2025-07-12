@@ -18,3 +18,4 @@ export * from './language';
 // Events use the core event system from @sharpee/core
 export * from './parser';
 export * from './validation';
+export * from './vocabulary';

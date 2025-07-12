@@ -7,6 +7,7 @@
   "scripts": {
     "build": "tsc",
     "test": "jest",
+    "test:coverage": "jest --coverage",
     "clean": "rimraf dist",
     "lint": "eslint src --ext .ts",
     "prepublishOnly": "npm run clean && npm run build"
@@ -20,6 +21,9 @@
   ],
   "author": "Sharpee Team",
   "license": "MIT",
+  "dependencies": {
+    "@sharpee/core": "workspace:*"
+  },
   "devDependencies": {
     "@types/jest": "^29.5.0",
     "@types/node": "^18.15.11",
@@ -30,12 +34,5 @@
     "rimraf": "^4.4.1",
     "ts-jest": "^29.1.0",
     "typescript": "^5.0.4"
-  },
-  "jest": {
-    "preset": "ts-jest",
-    "testEnvironment": "node",
-    "testMatch": [
-      "**/tests/**/*.test.ts"
-    ]
   }
 }

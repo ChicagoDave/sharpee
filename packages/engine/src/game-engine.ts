@@ -4,7 +4,6 @@
  * Manages game state, turn execution, and coordinates all subsystems
  */
 
-import { EventEmitter } from 'events';
 import { 
   WorldModel, 
   IFEntity,
@@ -31,7 +30,7 @@ import {
 import { Story, loadLanguageProvider } from './story';
 
 import { CommandExecutor, createCommandExecutor } from './command-executor';
-import { EventSequenceUtils } from './event-sequencer';
+import { EventSequenceUtils, eventSequencer } from './event-sequencer';
 import { TextService, TextChannel, createBasicTextService } from './text-service';
 
 /**
@@ -46,10 +45,13 @@ export interface GameEngineEvents {
   'game:over': (context: GameContext) => void;
 }
 
+type GameEngineEventName = keyof GameEngineEvents;
+type GameEngineEventListener<K extends GameEngineEventName> = GameEngineEvents[K];
+
 /**
  * Main game engine
  */
-export class GameEngine extends EventEmitter {
+export class GameEngine {
   private world: WorldModel;
   private context: GameContext;
   private config: EngineConfig;
@@ -61,6 +63,7 @@ export class GameEngine extends EventEmitter {
   private running = false;
   private story?: Story;
   private languageProvider?: LanguageProvider;
+  private eventListeners = new Map<GameEngineEventName, Set<Function>>();
 
   constructor(
     world: WorldModel,
@@ -68,7 +71,6 @@ export class GameEngine extends EventEmitter {
     config: EngineConfig = {},
     languageProvider?: LanguageProvider
   ) {
-    super();
     
     this.world = world;
     this.config = {
@@ -136,11 +138,10 @@ export class GameEngine extends EventEmitter {
       // Initialize story-specific world content
       story.initializeWorld(this.world);
       
-      // Create player if needed
-      if (!this.context.player) {
-        this.context.player = story.createPlayer(this.world);
-        this.world.setPlayer(this.context.player.id);
-      }
+      // Create player if needed (or replace existing one)
+      const newPlayer = story.createPlayer(this.world);
+      this.context.player = newPlayer;
+      this.world.setPlayer(newPlayer.id);
       
       // Update metadata
       this.context.metadata.title = story.config.title;
@@ -202,6 +203,26 @@ export class GameEngine extends EventEmitter {
     }
 
     const turn = this.context.currentTurn;
+    
+    // Validate input - return error result instead of throwing
+    if (input === null || input === undefined) {
+      const errorEvent = eventSequencer.sequence({
+        type: 'command.failed',
+        data: {
+          reason: 'Input cannot be null or undefined',
+          input: input
+        }
+      }, turn);
+      
+      return {
+        turn,
+        input: input,
+        success: false,
+        events: [errorEvent],
+        error: 'Input cannot be null or undefined'
+      };
+    }
+
     this.emit('turn:start', turn, input);
 
     try {
@@ -217,8 +238,12 @@ export class GameEngine extends EventEmitter {
       if (this.config.onEvent) {
         for (const event of result.events) {
           this.config.onEvent(event);
-          this.emit('event', event);
         }
+      }
+      
+      // Always emit events through the engine's event system
+      for (const event of result.events) {
+        this.emit('event', event);
       }
 
       // Update context
@@ -242,7 +267,7 @@ export class GameEngine extends EventEmitter {
 
       return result;
 
-    } catch (error) {
+    } catch (error: any) {
       this.emit('turn:failed', error as Error, turn);
       throw error;
     }
@@ -417,7 +442,7 @@ export class GameEngine extends EventEmitter {
   private serializeWorld(): unknown {
     // Simple implementation - override for better serialization
     return {
-      entities: this.world.getAllEntities().map(e => ({
+      entities: this.world.getAllEntities().map((e: IFEntity) => ({
         id: e.id,
         traits: Array.from(e.traits.entries())
       }))
@@ -431,6 +456,55 @@ export class GameEngine extends EventEmitter {
     // Simple implementation - override for better deserialization
     // Would need to rebuild world from serialized data
     console.warn('World deserialization not fully implemented');
+  }
+
+  /**
+   * Add event listener
+   */
+  on<K extends GameEngineEventName>(
+    event: K,
+    listener: GameEngineEventListener<K>
+  ): this {
+    if (!this.eventListeners.has(event)) {
+      this.eventListeners.set(event, new Set());
+    }
+    this.eventListeners.get(event)!.add(listener);
+    return this;
+  }
+
+  /**
+   * Remove event listener
+   */
+  off<K extends GameEngineEventName>(
+    event: K,
+    listener: GameEngineEventListener<K>
+  ): this {
+    const listeners = this.eventListeners.get(event);
+    if (listeners) {
+      listeners.delete(listener);
+    }
+    return this;
+  }
+
+  /**
+   * Emit event
+   */
+  private emit<K extends GameEngineEventName>(
+    event: K,
+    ...args: Parameters<GameEngineEventListener<K>>
+  ): boolean {
+    const listeners = this.eventListeners.get(event);
+    if (listeners) {
+      listeners.forEach(listener => {
+        try {
+          (listener as Function)(...args);
+        } catch (error) {
+          console.error(`Error in event listener for ${event}:`, error);
+        }
+      });
+      return true;
+    }
+    return false;
   }
 }
 

@@ -7,7 +7,14 @@
   "scripts": {
     "build": "tsc --build",
     "test": "jest",
-    "clean": "rimraf dist"
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:coverage:watch": "jest --coverage --watch",
+    "test:coverage:detailed": "jest --coverage --verbose",
+    "coverage:view": "open coverage/index.html",
+    "coverage:badge": "node scripts/coverage-badge.js",
+    "test:ci": "jest --coverage --ci --maxWorkers=2",
+    "clean": "rimraf dist coverage"
   },
   "dependencies": {
     "@sharpee/core": "file:../core",

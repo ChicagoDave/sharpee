@@ -13,6 +13,10 @@ export const IFEvents = {
   DROPPED: 'dropped',
   MOVED: 'moved',
   EXAMINED: 'examined',
+  PUSHED: 'pushed',
+  PULLED: 'pulled',
+  TURNED: 'turned',
+  USED: 'used',
   
   // Item-specific events
   ITEM_TAKEN: 'item_taken',
@@ -113,8 +117,13 @@ export const IFEvents = {
   
   // Score/achievement events
   SCORE_INCREASED: 'score_increased',
+  SCORE_DISPLAYED: 'score_displayed',
   ACHIEVEMENT_UNLOCKED: 'achievement_unlocked',
   PUZZLE_SOLVED: 'puzzle_solved',
+  
+  // Help/info events
+  HELP_DISPLAYED: 'help_displayed',
+  ABOUT_DISPLAYED: 'about_displayed',
   
   // Game state events
   GAME_STARTED: 'game_started',
@@ -191,6 +200,12 @@ export const eventMessages: Partial<Record<IFEventType, string>> = {
   [IFEvents.ITEM_EATEN]: "You eat {item}.",
   [IFEvents.ITEM_DRUNK]: "You drink {item}.",
   
+  // Device manipulation events
+  [IFEvents.PUSHED]: "You push {target}.",
+  [IFEvents.PULLED]: "You pull {target}.",
+  [IFEvents.TURNED]: "You turn {target}.",
+  [IFEvents.USED]: "You use {target}.",
+  
   // Movement events
   [IFEvents.PLAYER_MOVED]: "You go {direction}.",
   [IFEvents.PLAYER_ENTERED]: "You enter {location}.",
@@ -242,8 +257,13 @@ export const eventMessages: Partial<Record<IFEventType, string>> = {
   
   // Score/achievement events
   [IFEvents.SCORE_INCREASED]: "[Your score has gone up by {points} points.]",
+  [IFEvents.SCORE_DISPLAYED]: "", // Handled by template system
   [IFEvents.ACHIEVEMENT_UNLOCKED]: "[Achievement unlocked: {achievement}]",
   [IFEvents.PUZZLE_SOLVED]: "[You've solved a puzzle!]",
+  
+  // Help/info events
+  [IFEvents.HELP_DISPLAYED]: "", // Handled by template system
+  [IFEvents.ABOUT_DISPLAYED]: "", // Handled by template system,
   
   // Game state events
   [IFEvents.GAME_STARTED]: "Welcome to {title}!",

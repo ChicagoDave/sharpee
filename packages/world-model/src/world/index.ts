@@ -16,3 +16,4 @@ export {
 // Export other classes
 export { SpatialIndex } from './SpatialIndex';
 export { VisibilityBehavior } from './VisibilityBehavior';
+export { AuthorModel, DataStore, ItemSpec } from './AuthorModel';

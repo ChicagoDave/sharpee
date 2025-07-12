@@ -13,10 +13,10 @@ export class ExitTrait implements Trait {
   static readonly type = TraitType.EXIT;
   readonly type = TraitType.EXIT;
   
-  /** Source location ID */
+  /** Source location ID (must be an entity ID, not a name) */
   from: string;
   
-  /** Destination location ID */
+  /** Destination location ID (must be an entity ID, not a name) */
   to: string;
   
   /** Standard direction (north, south, up, etc.) - optional */

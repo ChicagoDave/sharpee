@@ -14,6 +14,7 @@ export const TraitType = {
   SUPPORTER: 'supporter',
   ROOM: 'room',
   WEARABLE: 'wearable',
+  CLOTHING: 'clothing',
   EDIBLE: 'edible',
   SCENERY: 'scenery',
   
@@ -64,6 +65,7 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   [TraitType.SUPPORTER]: TraitCategory.STANDARD,
   [TraitType.ROOM]: TraitCategory.STANDARD,
   [TraitType.WEARABLE]: TraitCategory.STANDARD,
+  [TraitType.CLOTHING]: TraitCategory.STANDARD,
   [TraitType.EDIBLE]: TraitCategory.STANDARD,
   [TraitType.SCENERY]: TraitCategory.STANDARD,
   
