@@ -5,29 +5,38 @@
  * It validates all conditions and returns appropriate events.
  */
 
-import { ActionExecutor, ActionContext } from '../types';
-import { createEvent, SemanticEvent } from '@sharpee/core';
-import { ValidatedCommand } from '@sharpee/world-model';
+import { Action, EnhancedActionContext } from '../enhanced-types';
+import { SemanticEvent } from '@sharpee/core';
+import { TraitType, RoomTrait, OpenableTrait, LockableTrait, IFEntity } from '@sharpee/world-model';
 import { IFActions } from '../constants';
-import { IFEvents, TraitType, RoomTrait, OpenableTrait, LockableTrait, IFEntity } from '@sharpee/world-model';
 
-export const goingAction: ActionExecutor = {
+export const goingAction: Action = {
   id: IFActions.GOING,
-  aliases: ['go', 'walk', 'move'],
+  requiredMessages: [
+    'no_direction',
+    'not_in_room',
+    'no_exits',
+    'no_exit_that_way',
+    'movement_blocked',
+    'door_closed',
+    'door_locked',
+    'destination_not_found',
+    'moved',
+    'moved_to',
+    'first_visit',
+    'too_dark',
+    'need_light'
+  ],
   
-  execute(command: ValidatedCommand, context: ActionContext): SemanticEvent[] {
+  execute(context: EnhancedActionContext): SemanticEvent[] {
     const actor = context.player;
     
     // Get the direction from the parsed command
-    const direction = command.parsed.extras?.direction as string || command.parsed.directObject?.text;
+    const direction = context.command.parsed.extras?.direction as string || 
+                     context.command.directObject?.parsed.text;
     
     if (!direction) {
-      return [createEvent(IFEvents.ACTION_FAILED, {
-        action: IFActions.GOING,
-        reason: 'no_direction'
-      }, {
-        actor: actor.id
-      })];
+      return context.emitError('no_direction');
     }
     
     // Normalize direction
@@ -37,80 +46,33 @@ export const goingAction: ActionExecutor = {
     const currentRoom = context.currentLocation;
     if (!currentRoom.has(TraitType.ROOM)) {
       // Actor is not in a room (maybe in a container?)
-      return [createEvent(IFEvents.ACTION_FAILED, {
-        action: IFActions.GOING,
-        reason: 'not_in_room'
-      }, {
-        actor: actor.id,
-        location: currentRoom.id
-      })];
+      return context.emitError('not_in_room');
     }
     
     // Get the room trait to access exits
-    const roomTrait = currentRoom.get(TraitType.ROOM) as { exits?: Record<string, any> };
+    const roomTrait = currentRoom.get(TraitType.ROOM) as RoomTrait;
     if (!roomTrait || !roomTrait.exits) {
-      return [createEvent(IFEvents.ACTION_FAILED, {
-        action: IFActions.GOING,
-        reason: 'no_exits'
-      }, {
-        actor: actor.id,
-        location: currentRoom.id
-      })];
+      return context.emitError('no_exits');
     }
     
     // Find the exit in the requested direction
     const exitConfig = roomTrait.exits[normalizedDirection];
     if (!exitConfig) {
-      return [createEvent(IFEvents.ACTION_FAILED, {
-        action: IFActions.GOING,
-        reason: 'no_exit_that_way',
-        direction: normalizedDirection
-      }, {
-        actor: actor.id,
-        location: currentRoom.id
-      })];
+      return context.emitError('no_exit_that_way', { direction: normalizedDirection });
     }
     
-    // Check if exit is visible
-    if (exitConfig.hidden) {
-      return [createEvent(IFEvents.ACTION_FAILED, {
-        action: IFActions.GOING,
-        reason: 'no_exit_that_way',
-        direction: normalizedDirection
-      }, {
-        actor: actor.id,
-        location: currentRoom.id
-      })];
-    }
-    
-    // Check if exit is blocked
-    if (exitConfig.blocked) {
-      return [createEvent(IFEvents.MOVEMENT_BLOCKED, {
-        direction: normalizedDirection,
-        reason: exitConfig.blockedReason || 'blocked'
-      }, {
-        actor: actor.id,
-        location: currentRoom.id
-      })];
-    }
-    
-    // Check if there's a door
-    if (exitConfig.door) {
-      const door = context.world.getEntity(exitConfig.door);
+    // Check if there's a door/portal
+    if (exitConfig.via) {
+      const door = context.world.getEntity(exitConfig.via);
       if (door) {
         // Check if door is open
         if (door.has(TraitType.OPENABLE)) {
           const openableTrait = door.get(TraitType.OPENABLE) as OpenableTrait;
           if (openableTrait && !openableTrait.isOpen) {
-            return [createEvent(IFEvents.ACTION_FAILED, {
-              action: IFActions.GOING,
-              reason: 'door_closed',
+            return context.emitError('door_closed', { 
               direction: normalizedDirection,
-              door: door.id
-            }, {
-              actor: actor.id,
-              location: currentRoom.id
-            })];
+              door: door.name
+            });
           }
         }
         
@@ -118,49 +80,39 @@ export const goingAction: ActionExecutor = {
         if (door.has(TraitType.LOCKABLE)) {
           const lockableTrait = door.get(TraitType.LOCKABLE) as LockableTrait;
           if (lockableTrait && lockableTrait.isLocked) {
-            return [createEvent(IFEvents.ACTION_FAILED, {
-              action: IFActions.GOING,
-              reason: 'door_locked',
+            return context.emitError('door_locked', { 
               direction: normalizedDirection,
-              door: door.id
-            }, {
-              actor: actor.id,
-              location: currentRoom.id
-            })];
+              door: door.name
+            });
           }
         }
       }
     }
     
     // Get destination
-    const destinationId = exitConfig.to;
+    const destinationId = exitConfig.destination;
     const destination = context.world.getEntity(destinationId);
     
     if (!destination) {
       // Destination doesn't exist
-      return [createEvent(IFEvents.ACTION_FAILED, {
-        action: IFActions.GOING,
-        reason: 'destination_not_found',
-        direction: normalizedDirection
-      }, {
-        actor: actor.id,
-        location: currentRoom.id
-      })];
+      return context.emitError('destination_not_found', { direction: normalizedDirection });
     }
     
-    // Check if destination is dark (this would be better as a behavior method)
-    // For now, check if room has a darkness/light property
-    // TODO: Implement proper darkness checking via RoomBehavior
+    // Check if destination is dark and player has no light
+    if (isDarkRoom(destination) && !hasLight(actor, context)) {
+      return context.emitError('too_dark', { direction: normalizedDirection });
+    }
     
     // Build event data
     const eventData: Record<string, unknown> = {
       direction: normalizedDirection,
       fromRoom: currentRoom.id,
-      toRoom: destination.id
+      toRoom: destination.id,
+      oppositeDirection: getOppositeDirection(normalizedDirection)
     };
     
     // Check if this is the first time entering the destination
-    const destRoomTrait = destination.get(TraitType.ROOM) as { visited?: boolean };
+    const destRoomTrait = destination.get(TraitType.ROOM) as RoomTrait;
     if (destRoomTrait && !destRoomTrait.visited) {
       eventData.firstVisit = true;
     }
@@ -169,31 +121,39 @@ export const goingAction: ActionExecutor = {
     const events: SemanticEvent[] = [];
     
     // Actor exits current room
-    events.push(createEvent(IFEvents.ACTOR_EXITED, {
+    events.push(context.emit('if.event.actor_exited', {
+      actorId: actor.id,
       direction: normalizedDirection,
       toRoom: destination.id
-    }, {
-      actor: actor.id,
-      location: currentRoom.id
     }));
     
     // Actor moves
-    events.push(createEvent(IFEvents.ACTOR_MOVED, eventData, {
-      actor: actor.id,
-      location: destination.id
-    }));
+    events.push(context.emit('if.event.actor_moved', eventData));
     
     // Actor enters new room
-    events.push(createEvent(IFEvents.ACTOR_ENTERED, {
+    events.push(context.emit('if.event.actor_entered', {
+      actorId: actor.id,
       direction: getOppositeDirection(normalizedDirection),
       fromRoom: currentRoom.id
-    }, {
-      actor: actor.id,
-      location: destination.id
     }));
     
+    // Success message
+    const messageParams = {
+      direction: normalizedDirection,
+      destination: destination.name
+    };
+    
+    let messageId = 'moved_to';
+    if (eventData.firstVisit) {
+      messageId = 'first_visit';
+    }
+    
+    events.push(...context.emitSuccess(messageId, messageParams));
+    
     return events;
-  }
+  },
+  
+  group: "movement"
 };
 
 /**
@@ -244,9 +204,19 @@ function getOppositeDirection(direction: string): string {
 }
 
 /**
+ * Check if a room is dark
+ */
+function isDarkRoom(room: IFEntity): boolean {
+  if (!room.has(TraitType.ROOM)) return false;
+  
+  const roomTrait = room.get(TraitType.ROOM) as RoomTrait;
+  return roomTrait.isDark || false;
+}
+
+/**
  * Check if actor has a light source
  */
-function checkForLight(actor: IFEntity, context: ActionContext): boolean {
+function hasLight(actor: IFEntity, context: EnhancedActionContext): boolean {
   // Check if actor itself provides light
   if (actor.has(TraitType.LIGHT_SOURCE)) {
     const lightTrait = actor.get(TraitType.LIGHT_SOURCE);

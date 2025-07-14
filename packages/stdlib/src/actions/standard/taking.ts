@@ -5,76 +5,55 @@
  * appropriate events. It NEVER mutates state directly.
  */
 
-import { ActionExecutor, ActionContext } from '../types';
-import { createEvent, SemanticEvent } from '@sharpee/core';
-import { ValidatedCommand } from '@sharpee/world-model';
+import { Action, EnhancedActionContext } from '../enhanced-types';
+import { SemanticEvent } from '@sharpee/core';
+import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../constants';
-import { IFEvents, TraitType, IFEntity } from '@sharpee/world-model';
 
-export const takingAction: ActionExecutor = {
+export const takingAction: Action = {
   id: IFActions.TAKING,
-  aliases: ['take', 'get', 'pick up', 'grab'],
+  requiredMessages: [
+    'no_target',
+    'cant_take_self',
+    'already_have',
+    'cant_take_room',
+    'fixed_in_place',
+    'container_full',
+    'too_heavy',
+    'taken',
+    'taken_from'
+  ],
   
-  execute(command: ValidatedCommand, context: ActionContext): SemanticEvent[] {
+  execute(context: EnhancedActionContext): SemanticEvent[] {
     const actor = context.player;
-    const noun = command.directObject?.entity as IFEntity | undefined;
+    const noun = context.command.directObject?.entity;
     
     // Validate we have a target
     if (!noun) {
-      // This should not happen with ValidatedCommand
-      return [createEvent(IFEvents.ACTION_FAILED, {
-        action: IFActions.TAKING,
-        reason: 'no_target'
-      }, {
-        actor: actor.id
-      })];
+      return context.emitError('no_target');
     }
     
     // Business logic checks only - visibility/reachability already validated
     
     // Can't take yourself
     if (noun.id === actor.id) {
-      return [createEvent(IFEvents.ACTION_FAILED, {
-        action: IFActions.TAKING,
-        reason: 'cant_take_self'
-      }, {
-        actor: actor.id,
-        target: noun.id
-      })];
+      return context.emitError('cant_take_self');
     }
     
     // Check if already held
     const currentLocation = context.world.getLocation(noun.id);
     if (currentLocation === actor.id) {
-      return [createEvent(IFEvents.ACTION_FAILED, {
-        action: IFActions.TAKING,
-        reason: 'already_have'
-      }, {
-        actor: actor.id,
-        target: noun.id
-      })];
+      return context.emitError('already_have', { item: noun.name });
     }
     
     // Can't take rooms (business rule)
     if (noun.has(TraitType.ROOM)) {
-      return [createEvent(IFEvents.ACTION_FAILED, {
-        action: IFActions.TAKING,
-        reason: 'cant_take_room'
-      }, {
-        actor: actor.id,
-        target: noun.id
-      })];
+      return context.emitError('cant_take_room', { item: noun.name });
     }
     
     // Can't take scenery (business rule - fixed in place)
     if (noun.has(TraitType.SCENERY)) {
-      return [createEvent(IFEvents.ACTION_FAILED, {
-        action: IFActions.TAKING,
-        reason: 'fixed_in_place'
-      }, {
-        actor: actor.id,
-        target: noun.id
-      })];
+      return context.emitError('fixed_in_place', { item: noun.name });
     }
     
     // Check container capacity if actor has container trait
@@ -97,13 +76,7 @@ export const takingAction: ActionExecutor = {
         
         const maxItems = (containerTrait as any).capacity.maxItems;
         if (maxItems !== undefined && itemCount >= maxItems) {
-          return [createEvent(IFEvents.ACTION_FAILED, {
-            action: IFActions.TAKING,
-            reason: 'container_full'
-          }, {
-            actor: actor.id,
-            target: noun.id
-          })];
+          return context.emitError('container_full');
         }
       }
       
@@ -115,13 +88,7 @@ export const takingAction: ActionExecutor = {
           const itemWeight = context.world.getTotalWeight(noun.id);
           
           if (currentWeight + itemWeight > (actorTrait as any).inventoryLimit.maxWeight) {
-            return [createEvent(IFEvents.ACTION_FAILED, {
-              action: IFActions.TAKING,
-              reason: 'too_heavy'
-            }, {
-              actor: actor.id,
-              target: noun.id
-            })];
+            return context.emitError('too_heavy', { item: noun.name });
           }
         }
       }
@@ -134,40 +101,48 @@ export const takingAction: ActionExecutor = {
       const wearableTrait = noun.get(TraitType.WEARABLE);
       if (wearableTrait && (wearableTrait as any).worn) {
         // Add a REMOVED event that will happen before TAKEN
-        events.push(createEvent(IFEvents.REMOVED, {
+        events.push(context.emit('if.event.removed', {
           implicit: true  // This removal is implicit, part of taking
-        }, {
-          actor: actor.id,
-          target: noun.id
         }));
       }
     }
     
-    // Build the TAKEN event with contextual information
-    const eventData: Record<string, unknown> = {};
+    // Build the success data with contextual information
+    const successData: Record<string, any> = {
+      item: noun.name
+    };
     
     // Add information about where it was taken from
     if (currentLocation) {
-      eventData.fromLocation = currentLocation;
-      
       const fromEntity = context.world.getEntity(currentLocation);
-      if (fromEntity) {
+      if (fromEntity && fromEntity.id !== context.currentLocation.id) {
+        // Item was in a container/supporter, not just lying in the room
+        successData.container = fromEntity.name;
+        successData.fromLocation = currentLocation;
+        
         if (fromEntity.has(TraitType.CONTAINER)) {
-          eventData.fromContainer = true;
+          successData.fromContainer = true;
         } else if (fromEntity.has(TraitType.SUPPORTER)) {
-          eventData.fromSupporter = true;
-        } else if (fromEntity.has(TraitType.ROOM)) {
-          eventData.fromRoom = true;
+          successData.fromSupporter = true;
         }
       }
     }
     
-    // Create the main TAKEN event
-    events.push(createEvent(IFEvents.TAKEN, eventData, {
-      actor: actor.id,
-      target: noun.id
+    // Create the main success event
+    const messageId = successData.container ? 'taken_from' : 'taken';
+    const successEvents = context.emitSuccess(messageId, successData);
+    
+    // Add the actual TAKEN event for world model updates
+    events.push(context.emit('if.event.taken', {
+      fromLocation: currentLocation,
+      ...successData
     }));
     
+    // Add the success message event
+    events.push(...successEvents);
+    
     return events;
-  }
+  },
+  
+  group: "object_manipulation"
 };

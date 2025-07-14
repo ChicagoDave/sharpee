@@ -9,7 +9,6 @@
 
 // Export types first
 export * from './types';
-export * from './text-processor';
 export * from './standard-events';
 export * from './system-event';
 

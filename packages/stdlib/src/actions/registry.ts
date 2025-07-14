@@ -1,118 +1,70 @@
 /**
  * Action registry implementation
+ * 
+ * Manages registration and lookup of actions.
+ * Actions are pure logic - patterns come from the language provider.
  */
 
-import { ActionExecutor, ActionRegistry } from './types';
-import { Action, ActionResult } from '../commands/types';
-import { SemanticEvent } from '@sharpee/core';
+import { Action, ActionRegistry as IActionRegistry } from './enhanced-types';
+import { LanguageProvider } from '@sharpee/if-domain';
 
-export { ActionRegistry } from './types';
+export { ActionRegistry } from './enhanced-types';
 
-export class StandardActionRegistry implements ActionRegistry {
-  private actions = new Map<string, ActionExecutor>();
-  private actionAdapters = new Map<string, Action>(); // For Action interface support
-  private aliases = new Map<string, string>(); // alias -> actionId
+export class StandardActionRegistry implements IActionRegistry {
+  private actions = new Map<string, Action>();
+  private actionsByPattern = new Map<string, Action[]>(); // pattern -> actions
+  private actionsByGroup = new Map<string, Action[]>(); // group -> actions
+  private languageProvider: LanguageProvider | null = null;
   
   /**
-   * Register an action executor or action
+   * Set the language provider for pattern resolution
+   * @param provider Language provider instance (required for pattern resolution)
    */
-  register(action: ActionExecutor | Action): void {
-    // Check if it's an Action (has patterns property)
-    if ('patterns' in action) {
-      // Store the Action for later use
-      this.actionAdapters.set(action.id, action);
-      
-      // Create an ActionExecutor adapter
-      const executor: ActionExecutor = {
-        id: action.id,
-        aliases: action.patterns,
-        execute: (command, context) => {
-          // Call the Action's execute method which expects only context
-          const resultOrPromise = action.execute(context);
-          
-          // Handle both sync and async results
-          if (resultOrPromise instanceof Promise) {
-            throw new Error('Async actions not supported in ActionExecutor adapter');
-          }
-          
-          const result = resultOrPromise as ActionResult;
-          
-          // Convert ActionResult to SemanticEvent[]
-          const events: SemanticEvent[] = [];
-          
-          // Convert events from ActionResult
-          if (result.events) {
-            result.events.forEach((event, index) => {
-              events.push({
-                id: `${action.id}_${Date.now()}_${index}`,
-                type: event.type,
-                data: event.data,
-                timestamp: Date.now(),
-                entities: {}
-              });
-            });
-          }
-          
-          // Add success/failure event
-          if (result.success && result.message) {
-            events.push({
-              id: `${action.id}_${Date.now()}_msg`,
-              type: 'action.message',
-              data: { message: result.message },
-              timestamp: Date.now(),
-              entities: {}
-            });
-          } else if (!result.success && result.error) {
-            events.push({
-              id: `${action.id}_${Date.now()}_err`,
-              type: 'action.error',
-              data: { error: result.error },
-              timestamp: Date.now(),
-              entities: {}
-            });
-          }
-          
-          return events;
-        },
-        canExecute: (command, context) => true
-      };
-      
-      this.actions.set(action.id, executor);
-      
-      // Register patterns as aliases
-      for (const pattern of action.patterns) {
-        this.aliases.set(pattern.toLowerCase(), action.id);
-      }
-    } else {
-      // It's already an ActionExecutor
-      this.actions.set(action.id, action);
-      
-      // Register aliases
-      if (action.aliases) {
-        for (const alias of action.aliases) {
-          this.aliases.set(alias.toLowerCase(), action.id);
-        }
-      }
+  setLanguageProvider(provider: LanguageProvider): void {
+    this.languageProvider = provider;
+    // Rebuild pattern mappings when language provider changes
+    this.rebuildPatternMappings();
+  }
+
+  /**
+   * Register an action
+   */
+  register(action: Action): void {
+    this.actions.set(action.id, action);
+    
+    // Add to group mapping if specified
+    if (action.group) {
+      const groupActions = this.actionsByGroup.get(action.group) || [];
+      groupActions.push(action);
+      this.actionsByGroup.set(action.group, groupActions);
+    }
+    
+    // Update pattern mappings if we have a language provider
+    if (this.languageProvider) {
+      this.updatePatternMappingsForAction(action);
     }
   }
   
   /**
-   * Get an action executor by ID
+   * Register multiple actions
    */
-  get(actionId: string): ActionExecutor | Action | undefined {
-    // Check if we have an Action adapter first
-    const action = this.actionAdapters.get(actionId);
-    if (action) {
-      return action;
+  registerMany(actions: Action[]): void {
+    for (const action of actions) {
+      this.register(action);
     }
-    
+  }
+
+  /**
+   * Get an action by ID
+   */
+  get(actionId: string): Action | undefined {
     return this.actions.get(actionId);
   }
   
   /**
    * Get all registered actions
    */
-  getAll(): ActionExecutor[] {
+  getAll(): Action[] {
     return Array.from(this.actions.values());
   }
   
@@ -124,21 +76,59 @@ export class StandardActionRegistry implements ActionRegistry {
   }
   
   /**
-   * Find an action by ID or alias
+   * Find actions by pattern
    */
-  find(actionIdOrAlias: string): ActionExecutor | undefined {
-    // Try direct ID lookup first
-    const direct = this.actions.get(actionIdOrAlias);
-    if (direct) {
-      return direct;
+  findByPattern(pattern: string): Action[] {
+    return this.actionsByPattern.get(pattern.toLowerCase()) || [];
+  }
+
+  /**
+   * Get actions by group
+   */
+  getByGroup(group: string): Action[] {
+    return this.actionsByGroup.get(group) || [];
+  }
+
+  /**
+   * Register messages for an action (placeholder for future implementation)
+   */
+  registerMessages(actionId: string, messages: Record<string, string>): void {
+    // This would be implemented when we have a message registry
+    // For now, messages are handled by the language provider
+  }
+
+  /**
+   * Update pattern mappings for a single action
+   */
+  private updatePatternMappingsForAction(action: Action): void {
+    if (!this.languageProvider) {
+      // Language provider not yet set - patterns will be mapped when it's provided
+      return;
     }
     
-    // Try alias lookup
-    const actionId = this.aliases.get(actionIdOrAlias.toLowerCase());
-    if (actionId) {
-      return this.actions.get(actionId);
+    const patterns = this.languageProvider.getActionPatterns(action.id);
+    if (patterns) {
+      for (const pattern of patterns) {
+        const normalizedPattern = pattern.toLowerCase();
+        const actions = this.actionsByPattern.get(normalizedPattern) || [];
+        if (!actions.includes(action)) {
+          actions.push(action);
+          // Sort by priority (higher priority first)
+          actions.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+          this.actionsByPattern.set(normalizedPattern, actions);
+        }
+      }
     }
+  }
+
+  /**
+   * Rebuild all pattern mappings from language provider
+   */
+  private rebuildPatternMappings(): void {
+    this.actionsByPattern.clear();
     
-    return undefined;
+    for (const action of this.actions.values()) {
+      this.updatePatternMappingsForAction(action);
+    }
   }
 }

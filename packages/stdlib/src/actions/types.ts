@@ -1,6 +1,9 @@
 /**
  * Core types for the event-driven action system
  * 
+ * @deprecated Most types in this file have been replaced by enhanced-types.ts
+ * Only ProcessedEvents and WorldChange remain relevant.
+ * 
  * Actions are pure functions that validate conditions and return events.
  * They NEVER mutate state directly.
  */
@@ -9,6 +12,8 @@ import { SemanticEvent } from '@sharpee/core';
 import { IFEntity, WorldModel, ValidatedCommand, CapabilityData } from '@sharpee/world-model';
 
 /**
+ * @deprecated Use ActionContext from enhanced-types.ts instead
+ * 
  * Read-only context for action execution
  * 
  * Provides query methods but NO mutation capabilities
@@ -68,6 +73,8 @@ export interface ActionContext {
 
 
 /**
+ * @deprecated Use Action interface from enhanced-types.ts instead
+ * 
  * Action executor interface
  * 
  * Actions validate conditions and return events describing what should happen
@@ -99,6 +106,8 @@ export interface ActionExecutor {
 }
 
 /**
+ * @deprecated Use ActionRegistry from enhanced-types.ts instead
+ * 
  * Registry for action executors
  */
 export interface ActionRegistry {

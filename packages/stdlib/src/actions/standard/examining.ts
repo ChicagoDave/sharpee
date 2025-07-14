@@ -5,59 +5,73 @@
  * It validates visibility but doesn't change state.
  */
 
-import { ActionExecutor, ActionContext } from '../types';
-import { createEvent, SemanticEvent } from '@sharpee/core';
-import { ValidatedCommand } from '@sharpee/world-model';
+import { Action, EnhancedActionContext } from '../enhanced-types';
+import { SemanticEvent } from '@sharpee/core';
+import { TraitType, IFEntity } from '@sharpee/world-model';
 import { IFActions } from '../constants';
-import { IFEvents, TraitType, IFEntity } from '@sharpee/world-model';
 
-export const examiningAction: ActionExecutor = {
+export const examiningAction: Action = {
   id: IFActions.EXAMINING,
-  aliases: ['examine', 'x', 'look at', 'inspect'],
+  requiredMessages: [
+    'no_target',
+    'not_visible',
+    'examined',
+    'examined_self',
+    'examined_container',
+    'examined_supporter',
+    'examined_readable',
+    'examined_switchable',
+    'examined_wearable',
+    'examined_door',
+    'nothing_special',
+    'description',
+    'brief_description'
+  ],
   
-  execute(command: ValidatedCommand, context: ActionContext): SemanticEvent[] {
+  execute(context: EnhancedActionContext): SemanticEvent[] {
     const actor = context.player;
-    const noun = command.directObject?.entity as IFEntity | undefined;
+    const noun = context.command.directObject?.entity;
     
     // Validate we have a target
     if (!noun) {
-      return [createEvent(IFEvents.ACTION_FAILED, {
-        action: IFActions.EXAMINING,
-        reason: 'no_target'
-      }, {
-        actor: actor.id
-      })];
+      return context.emitError('no_target');
     }
     
     // Check if visible
     if (!context.canSee(noun)) {
       // Special case: examining yourself always works
       if (noun.id === actor.id) {
-        return [createEvent(IFEvents.EXAMINED, {
-          self: true
-        }, {
-          actor: actor.id,
-          target: noun.id
-        })];
+        return [
+          context.emit('if.event.examined', { self: true }),
+          ...context.emitSuccess('examined_self')
+        ];
       }
       
-      return [createEvent(IFEvents.ACTION_FAILED, {
-        action: IFActions.EXAMINING,
-        reason: 'not_visible'
-      }, {
-        actor: actor.id,
-        target: noun.id
-      })];
+      return context.emitError('not_visible', { target: noun.name });
     }
     
     // Build examination event data
-    const eventData: Record<string, unknown> = {};
+    const eventData: Record<string, unknown> = {
+      targetId: noun.id,
+      targetName: noun.name
+    };
+    
+    const messageParams: Record<string, any> = {
+      target: noun.name
+    };
+    
+    let messageId = 'examined';
     
     // Add trait information for text generation
     if (noun.has(TraitType.IDENTITY)) {
       const identityTrait = noun.get(TraitType.IDENTITY);
       if (identityTrait) {
         eventData.hasDescription = !!(identityTrait as any).description;
+        eventData.hasBrief = !!(identityTrait as any).brief;
+        
+        if ((identityTrait as any).description) {
+          messageParams.description = (identityTrait as any).description;
+        }
       }
     }
     
@@ -67,15 +81,19 @@ export const examiningAction: ActionExecutor = {
       eventData.isContainer = true;
       eventData.hasContents = contents.length > 0;
       eventData.contentCount = contents.length;
+      eventData.contents = contents.map(e => ({ id: e.id, name: e.name }));
       
       // Check if open/closed
       if (noun.has(TraitType.OPENABLE)) {
         const openableTrait = noun.get(TraitType.OPENABLE);
         eventData.isOpenable = true;
         eventData.isOpen = openableTrait ? (openableTrait as any).isOpen : true;
+        messageParams.isOpen = eventData.isOpen;
       } else {
         eventData.isOpen = true; // Containers without openable trait are always open
       }
+      
+      messageId = 'examined_container';
     }
     
     // Supporter information
@@ -84,6 +102,11 @@ export const examiningAction: ActionExecutor = {
       eventData.isSupporter = true;
       eventData.hasContents = contents.length > 0;
       eventData.contentCount = contents.length;
+      eventData.contents = contents.map(e => ({ id: e.id, name: e.name }));
+      
+      if (!eventData.isContainer) { // Don't override container message
+        messageId = 'examined_supporter';
+      }
     }
     
     // Device information
@@ -91,6 +114,11 @@ export const examiningAction: ActionExecutor = {
       const switchableTrait = noun.get(TraitType.SWITCHABLE);
       eventData.isSwitchable = true;
       eventData.isOn = switchableTrait ? (switchableTrait as any).isOn : false;
+      messageParams.isOn = eventData.isOn;
+      
+      if (messageId === 'examined') { // Only set if not already specialized
+        messageId = 'examined_switchable';
+      }
     }
     
     // Readable information
@@ -98,6 +126,11 @@ export const examiningAction: ActionExecutor = {
       const readableTrait = noun.get(TraitType.READABLE);
       eventData.isReadable = true;
       eventData.hasText = readableTrait ? !!(readableTrait as any).text : false;
+      
+      if (eventData.hasText) {
+        messageParams.text = (readableTrait as any).text;
+        messageId = 'examined_readable';
+      }
     }
     
     // Wearable information
@@ -105,19 +138,35 @@ export const examiningAction: ActionExecutor = {
       const wearableTrait = noun.get(TraitType.WEARABLE);
       eventData.isWearable = true;
       eventData.isWorn = wearableTrait ? (wearableTrait as any).worn : false;
+      messageParams.isWorn = eventData.isWorn;
+      
+      if (messageId === 'examined') {
+        messageId = 'examined_wearable';
+      }
     }
     
-    // Lock information
-    if (noun.has(TraitType.LOCKABLE)) {
-      const lockableTrait = noun.get(TraitType.LOCKABLE);
-      eventData.isLockable = true;
-      eventData.isLocked = lockableTrait ? (lockableTrait as any).isLocked : false;
+    // Door information
+    if (noun.has(TraitType.DOOR)) {
+      eventData.isDoor = true;
+      messageId = 'examined_door';
+      
+      // Add lock status if lockable
+      if (noun.has(TraitType.LOCKABLE)) {
+        const lockableTrait = noun.get(TraitType.LOCKABLE);
+        eventData.isLockable = true;
+        eventData.isLocked = lockableTrait ? (lockableTrait as any).isLocked : false;
+        messageParams.isLocked = eventData.isLocked;
+      }
     }
     
     // Create the EXAMINED event
-    return [createEvent(IFEvents.EXAMINED, eventData, {
-      actor: actor.id,
-      target: noun.id
-    })];
-  }
+    const events: SemanticEvent[] = [];
+    
+    events.push(context.emit('if.event.examined', eventData));
+    events.push(...context.emitSuccess(messageId, messageParams));
+    
+    return events;
+  },
+  
+  group: "observation"
 };

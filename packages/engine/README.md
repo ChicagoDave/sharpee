@@ -41,6 +41,24 @@ import { WorldModel } from '@sharpee/world-model';
 // Create a game engine
 const engine = createStandardEngine();
 
+// Set language (NEW: automatic parser and language provider loading)
+await engine.setLanguage('en-US');
+
+// Or use a story with language configuration
+const story = {
+  config: {
+    id: 'my-story',
+    title: 'My Adventure',
+    author: 'Me',
+    version: '1.0.0',
+    language: 'en-US'  // Language automatically loaded
+  },
+  initializeWorld: (world) => { /* ... */ },
+  createPlayer: (world) => { /* ... */ }
+};
+
+await engine.setStory(story); // Automatically sets up language
+
 // Start the engine
 engine.start();
 
@@ -51,6 +69,10 @@ console.log(`Turn ${result.turn}: ${result.success ? 'Success' : 'Failed'}`);
 // Access game state
 const context = engine.getContext();
 console.log(`Current turn: ${context.currentTurn}`);
+
+// Access parser and language provider if needed
+const parser = engine.getParser();
+const languageProvider = engine.getLanguageProvider();
 ```
 
 ## Custom Game Engine
@@ -101,6 +123,35 @@ Events are automatically sequenced within turns:
 2.4 - LOOK event (auto-look in new room)
 ```
 
+## Language Management
+
+The engine automatically loads language providers and parsers based on language codes:
+
+```typescript
+// Set language directly
+await engine.setLanguage('en-US');  // Loads @sharpee/lang-en-us and @sharpee/parser-en-us
+
+// Change language at runtime
+await engine.setLanguage('es');     // Switches to Spanish
+
+// Language from story config
+const story = {
+  config: { language: 'ja', /* ... */ }
+};
+await engine.setStory(story);      // Automatically uses Japanese
+```
+
+### Naming Convention
+
+Language packages follow a predictable naming pattern:
+- Language Provider: `@sharpee/lang-{language-code}`
+- Parser: `@sharpee/parser-{language-code}`
+
+For example:
+- English (US): `@sharpee/lang-en-us`, `@sharpee/parser-en-us`
+- Spanish: `@sharpee/lang-es`, `@sharpee/parser-es`
+- Japanese: `@sharpee/lang-ja`, `@sharpee/parser-ja`
+
 ## Save/Load
 
 ```typescript
@@ -145,6 +196,10 @@ export default new Story()
 - `loadState(state)`: Load game state
 - `getHistory()`: Get turn history
 - `getRecentEvents(count)`: Get recent events
+- `setLanguage(languageCode: string)`: Set language (automatically loads parser and language provider)
+- `setStory(story: Story)`: Set story (automatically configures language from story config)
+- `getParser()`: Get current parser instance
+- `getLanguageProvider()`: Get current language provider instance
 
 ### Events
 

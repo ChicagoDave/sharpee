@@ -4,15 +4,15 @@
  * with entities and action IDs identified
  */
 
-import type { Entity } from '@sharpee/core';
 import type { ParsedObjectReference, ParsedCommand } from './parsed-command';
+import type { IFEntity } from '../entities/if-entity';
 
 /**
  * Resolved entity reference after validation
  */
 export interface ValidatedObjectReference {
   /** The resolved entity */
-  entity: Entity;
+  entity: IFEntity;
   
   /** Original parsed reference */
   parsed: ParsedObjectReference;

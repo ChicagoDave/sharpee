@@ -30,6 +30,7 @@ export * from './smelling';
 export * from './touching';
 export * from './putting';
 export * from './inserting';
+export * from './removing';
 export * from './giving';
 export * from './showing';
 export * from './throwing';
@@ -76,6 +77,7 @@ import { smellingAction } from './smelling';
 import { touchingAction } from './touching';
 import { puttingAction } from './putting';
 import { insertingAction } from './inserting';
+import { removingAction } from './removing';
 import { givingAction } from './giving';
 import { showingAction } from './showing';
 import { throwingAction } from './throwing';
@@ -122,6 +124,7 @@ export const standardActions = [
   touchingAction,
   puttingAction,
   insertingAction,
+  removingAction,
   givingAction,
   showingAction,
   throwingAction,

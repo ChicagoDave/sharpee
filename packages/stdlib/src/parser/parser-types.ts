@@ -17,17 +17,17 @@ export interface Token {
    * The original word
    */
   word: string;
-  
+
   /**
    * Normalized form (lowercase, etc.)
    */
   normalized: string;
-  
+
   /**
    * Position in the input
    */
   position: number;
-  
+
   /**
    * Possible parts of speech for this token
    */
@@ -42,22 +42,22 @@ export interface TokenCandidate {
    * Part of speech
    */
   partOfSpeech: PartOfSpeech;
-  
+
   /**
    * What this token maps to
    */
   mapsTo: string;
-  
+
   /**
    * Priority for disambiguation
    */
   priority: number;
-  
+
   /**
    * Source of this interpretation
    */
   source?: string;
-  
+
   /**
    * Additional metadata
    */
@@ -72,17 +72,17 @@ export interface ParserOptions {
    * Whether to allow partial matches
    */
   allowPartial?: boolean;
-  
+
   /**
    * Whether to expand abbreviations
    */
   expandAbbreviations?: boolean;
-  
+
   /**
    * Whether to ignore articles
    */
   ignoreArticles?: boolean;
-  
+
   /**
    * Minimum confidence threshold
    */
@@ -90,7 +90,7 @@ export interface ParserOptions {
 }
 
 /**
- * Parser interface - extends the core IParser
+ * Parser interface - extends the CoreParser
  */
 export interface Parser extends CoreParser {
   /**
@@ -98,7 +98,7 @@ export interface Parser extends CoreParser {
    * Useful for debugging and testing
    */
   tokenize(input: string): Token[];
-  
+
   /**
    * Set debug event callback for emitting parser debug events
    */

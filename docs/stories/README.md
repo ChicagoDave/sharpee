@@ -1,8 +1,8 @@
 # Story Development Guide
 
-Create interactive fiction games using the Sharpee platform.
+Create interactive fiction games using the Sharpee platform with TypeScript.
 
-> **Note:** The Forge visual authoring tool is planned but not yet implemented. Story development currently requires TypeScript/JavaScript knowledge.
+> **Note:** The Forge fluent authoring API is planned but not yet implemented. Story development currently uses the AuthorModel directly.
 
 ## Overview
 
@@ -10,14 +10,14 @@ Sharpee stories are TypeScript applications that:
 - Define the game world (rooms, items, NPCs)
 - Configure game mechanics (scoring, combat, puzzles)
 - Handle special events and story logic
-- Package everything for players
+- Use a fluent API for authoring (Forge - coming soon)
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+ and pnpm 8+
-- Basic TypeScript/JavaScript knowledge
+- TypeScript knowledge
 - Understanding of IF concepts (rooms, objects, commands)
 - Text editor (VS Code recommended)
 
@@ -106,55 +106,94 @@ async function main() {
 main().catch(console.error);
 ```
 
-### 3. Define the World
+## Current Authoring (AuthorModel)
+
+Until Forge is implemented, use the AuthorModel for unrestricted world building:
 
 ```typescript
 // src/world.ts
 import { WorldModel, AuthorModel } from '@sharpee/world-model';
 import { registerStandardCapabilities } from '@sharpee/stdlib';
-import { createRooms } from './rooms';
-import { createItems } from './items';
-import { createNPCs } from './npcs';
 
 export function createWorld(): WorldModel {
   const world = new WorldModel();
   const author = new AuthorModel(world.getDataStore());
 
-  // Register standard capabilities
+  // Register capabilities
   registerStandardCapabilities(world, ['scoring', 'gameMeta']);
 
-  // Initialize scoring
-  world.updateCapability('scoring', {
-    maxScore: 100
-  });
+  // Create rooms
+  const entrance = author.createEntity('Entrance Hall', 'room');
+  entrance.add(new RoomTrait({
+    description: 'A grand entrance hall with marble floors.'
+  }));
 
-  // Create the game world
-  const rooms = createRooms(author);
-  const items = createItems(author);
-  const npcs = createNPCs(author);
+  const library = author.createEntity('Library', 'room');
+  library.add(new RoomTrait({
+    description: 'Shelves of ancient books surround you.'
+  }));
 
-  // Place items and NPCs
-  placeObjects(author, rooms, items, npcs);
+  // Connect rooms
+  author.connect(entrance.id, library.id, 'north');
 
-  // Set starting location
+  // Create items
+  const lamp = author.createEntity('brass lamp', 'item');
+  lamp.attributes.description = 'An old brass lamp.';
+  
+  // Place items (even in closed containers!)
+  author.moveEntity(lamp.id, entrance.id);
+
+  // Create player
   const player = author.createEntity('You', 'actor');
   author.setPlayer(player.id);
-  author.moveEntity(player.id, rooms.entrance.id);
+  author.moveEntity(player.id, entrance.id);
 
   return world;
 }
-
-function placeObjects(author: AuthorModel, rooms: any, items: any, npcs: any) {
-  // Place items in rooms
-  author.moveEntity(items.lamp.id, rooms.entrance.id);
-  author.moveEntity(items.key.id, rooms.library.id);
-  
-  // Place NPCs
-  author.moveEntity(npcs.wizard.id, rooms.tower.id);
-}
 ```
 
-### 4. Create Rooms
+## Future: Forge Fluent API (Planned)
+
+Forge will provide a more intuitive, fluent TypeScript API for authoring:
+
+```typescript
+// What Forge will look like (NOT YET IMPLEMENTED)
+import { Forge } from '@sharpee/forge';
+
+const story = new Forge.Story('My Adventure');
+
+// Fluent room creation
+const entrance = story.room('Entrance Hall')
+  .description('A grand entrance hall with marble floors.')
+  .exits({ north: 'library' });
+
+const library = story.room('Library')
+  .description('Shelves of ancient books surround you.')
+  .exits({ south: 'entrance' });
+
+// Fluent item creation  
+const lamp = story.item('brass lamp')
+  .description('An old brass lamp.')
+  .in(entrance)
+  .onRub(() => {
+    story.say("A genie appears in a puff of smoke!");
+    story.score(25);
+  });
+
+// Fluent NPC creation
+const wizard = story.npc('Wizard')
+  .description('A wise old wizard.')
+  .in(library)
+  .topics({
+    'magic': "Magic is all around us.",
+    'lamp': "Try rubbing it three times."
+  });
+
+// Start the story
+story.start(entrance);
+```
+
+### 3. Create Rooms with AuthorModel
 
 ```typescript
 // src/rooms/index.ts
@@ -188,7 +227,7 @@ export function createRooms(author: AuthorModel) {
 }
 ```
 
-### 5. Create Items
+### 4. Create Items with AuthorModel
 
 ```typescript
 // src/items/index.ts
@@ -227,7 +266,7 @@ export function createItems(author: AuthorModel) {
 }
 ```
 
-### 6. Create NPCs
+### 5. Create NPCs with AuthorModel
 
 ```typescript
 // src/npcs/index.ts
@@ -252,7 +291,7 @@ export function createNPCs(author: AuthorModel) {
 }
 ```
 
-### 7. Add Custom Events
+### 6. Add Custom Events
 
 ```typescript
 // src/events/lamp-events.ts
@@ -413,9 +452,9 @@ describe('My Story', () => {
 });
 ```
 
-## Building and Distribution
+## Building and Running
 
-### Development Build
+### Development
 
 ```json
 // package.json
@@ -423,27 +462,21 @@ describe('My Story', () => {
   "scripts": {
     "dev": "ts-node src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "test": "jest"
   }
 }
 ```
 
-### Web Build (Coming Soon)
+### Running Your Story
 
 ```bash
-# Build for web player
-pnpm build:web
+# Development mode
+pnpm dev
 
-# Creates dist/web/ with HTML5 game
-```
-
-### Desktop Build (Planned)
-
-```bash
-# Build with Electron
-pnpm build:desktop
-
-# Creates installers for Windows/Mac/Linux
+# Production build
+pnpm build
+pnpm start
 ```
 
 ## Best Practices
@@ -462,22 +495,25 @@ Check out these example stories:
 - [Mystery Mansion](../../stories/mystery) - Classic mystery
 - [Space Station](../../stories/scifi) - Sci-fi adventure
 
-## Planned Features
+## Why Forge?
 
-### Forge Visual Editor (Coming Soon)
+The planned Forge API will make authoring more intuitive:
 
-A visual tool for creating stories without code:
-- Drag-and-drop room editor
-- Visual scripting for events
-- Built-in testing
-- One-click publishing
+1. **Fluent Interface** - Chain methods naturally
+2. **Type Safety** - Full IntelliSense support
+3. **Less Boilerplate** - Hide complexity
+4. **Better Errors** - Friendly error messages
+5. **Consistent Patterns** - Learn once, use everywhere
 
-### Story Hub (Planned)
+## Current Limitations
 
-- Share your stories online
-- Browse and play others' creations
-- Ratings and reviews
-- Achievement tracking
+Without Forge, you need to:
+- Manually manage entity IDs
+- Use lower-level APIs
+- Handle trait creation directly
+- Wire up events manually
+
+But AuthorModel is powerful and gives you complete control!
 
 ## Resources
 

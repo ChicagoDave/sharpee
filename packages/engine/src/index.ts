@@ -23,8 +23,7 @@ export * from './command-executor';
 // Main engine
 export * from './game-engine';
 
-// Text service
-export * from './text-service';
+// Note: Text service has been moved to @sharpee/text-service package
 
 // Re-export commonly used items
 export {

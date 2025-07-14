@@ -13,9 +13,9 @@
  */
 
 export * from './actions';
-export * from './commands';
-export * from './language';
-// Messages are handled by language providers - see language/if-language-provider.ts
+// Commands are now in language-specific packages like @sharpee/lang-en-us
+// Language providers are now in language-specific packages like @sharpee/lang-en-us
+// Messages are handled by language providers
 // Events use the core event system from @sharpee/core
 export * from './parser';
 export * from './validation';

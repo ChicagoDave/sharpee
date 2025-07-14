@@ -64,7 +64,7 @@ Writing interactive fiction using Sharpee.
 - Integrate extensions
 - Deploy your stories
 
-> **Note:** The Forge visual authoring tool is planned but not yet implemented. Story development currently requires TypeScript knowledge.
+> **Note:** The Forge fluent authoring API is planned but not yet implemented. Story development currently uses the AuthorModel API directly.
 
 ## Architecture
 

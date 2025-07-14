@@ -136,10 +136,10 @@ export interface ParseError {
  * @internal
  */
 export enum ParseErrorType {
-  NO_VERB = 'no_verb',
-  UNKNOWN_VERB = 'unknown_verb',
-  UNKNOWN_WORD = 'unknown_word',
-  AMBIGUOUS = 'ambiguous',
-  INCOMPLETE = 'incomplete',
-  PATTERN_MISMATCH = 'pattern_mismatch'
+  NO_VERB = 'NO_VERB',
+  UNKNOWN_VERB = 'UNKNOWN_VERB',
+  UNKNOWN_WORD = 'UNKNOWN_WORD',
+  AMBIGUOUS = 'AMBIGUOUS',
+  INCOMPLETE = 'INCOMPLETE',
+  PATTERN_MISMATCH = 'PATTERN_MISMATCH'
 }

@@ -17,8 +17,12 @@ import {
   StandardActionRegistry,
   standardActions,
   vocabularyRegistry,
-  LanguageProvider
+  Parser,
+  ParserFactory
 } from '@sharpee/stdlib';
+import { LanguageProvider } from '@sharpee/if-domain';
+import { TextService, TextServiceContext, TextOutput } from '@sharpee/if-services';
+import { SemanticEvent, createSemanticEventSource } from '@sharpee/core';
 
 import {
   GameContext,
@@ -27,11 +31,10 @@ import {
   GameState,
   SequencedEvent
 } from './types';
-import { Story, loadLanguageProvider } from './story';
+import { Story, loadLanguageProvider, loadTextService } from './story';
 
 import { CommandExecutor, createCommandExecutor } from './command-executor';
 import { EventSequenceUtils, eventSequencer } from './event-sequencer';
-import { TextService, TextChannel, createBasicTextService } from './text-service';
 
 /**
  * Game engine events
@@ -43,6 +46,8 @@ export interface GameEngineEvents {
   'event': (event: SequencedEvent) => void;
   'state:changed': (context: GameContext) => void;
   'game:over': (context: GameContext) => void;
+  'text:output': (text: string, turn: number) => void;
+  'text:channel': (channel: string, text: string, turn: number) => void;
 }
 
 type GameEngineEventName = keyof GameEngineEvents;
@@ -58,11 +63,12 @@ export class GameEngine {
   private commandExecutor!: CommandExecutor;
   private eventProcessor: EventProcessor;
   private actionRegistry: ActionRegistry;
-  private textService: TextService;
-  private textChannels: TextChannel[];
+  private textService?: TextService;
+  private turnEvents = new Map<number, SemanticEvent[]>();
   private running = false;
   private story?: Story;
   private languageProvider?: LanguageProvider;
+  private parser?: Parser;
   private eventListeners = new Map<GameEngineEventName, Set<Function>>();
 
   constructor(
@@ -100,21 +106,10 @@ export class GameEngine {
     // Create subsystems
     this.eventProcessor = new EventProcessor(this.world);
     
-    // If we have a language provider, use it. Otherwise we'll need to set story later
+    // If we have a language provider, use it
     if (languageProvider) {
       this.languageProvider = languageProvider;
-      this.commandExecutor = createCommandExecutor(
-        this.world,
-        this.actionRegistry,
-        this.eventProcessor,
-        this.languageProvider
-      );
     }
-    
-    // Create text service
-    const { service, channels } = createBasicTextService();
-    this.textService = service;
-    this.textChannels = channels;
   }
 
   /**
@@ -123,48 +118,134 @@ export class GameEngine {
   async setStory(story: Story): Promise<void> {
     this.story = story;
     
-    // Load the language provider based on story configuration
+    // Set language from story configuration
+    await this.setLanguage(story.config.language);
+    
+    // Set text service from story configuration
+    await this.setTextServiceFromConfig(story.config.textService);
+    
+    // Initialize story-specific world content
+    story.initializeWorld(this.world);
+    
+    // Create player if needed (or replace existing one)
+    const newPlayer = story.createPlayer(this.world);
+    this.context.player = newPlayer;
+    this.world.setPlayer(newPlayer.id);
+    
+    // Update metadata
+    this.context.metadata.title = story.config.title;
+    this.context.metadata.author = Array.isArray(story.config.author) 
+      ? story.config.author.join(', ') 
+      : story.config.author;
+    this.context.metadata.version = story.config.version;
+    
+    // Register any custom actions
+    if (story.getCustomActions) {
+      const customActions = story.getCustomActions();
+      for (const action of customActions) {
+        this.actionRegistry.register(action);
+      }
+    }
+    
+    // Story-specific initialization
+    if (story.initialize) {
+      story.initialize();
+    }
+  }
+
+  /**
+   * Set the language for this engine
+   */
+  async setLanguage(languageCode: string): Promise<void> {
+    if (!languageCode) {
+      throw new Error('Language code is required');
+    }
+
     try {
-      this.languageProvider = await loadLanguageProvider(story.config.language);
+      // Load language provider
+      this.languageProvider = await loadLanguageProvider(languageCode);
       
-      // Create or recreate command executor with the language provider
+      // Update action registry with language provider
+      if (this.actionRegistry.setLanguageProvider) {
+        this.actionRegistry.setLanguageProvider(this.languageProvider);
+      }
+      
+      // Update text service with language provider
+      if (this.textService) {
+        this.textService.setLanguageProvider(this.languageProvider);
+      }
+      
+      // Load parser dynamically
+      const parserPackageName = `@sharpee/parser-${languageCode.toLowerCase()}`;
+      try {
+        const parserModule = await import(parserPackageName);
+        
+        // Try to get the parser class from various export patterns
+        let ParserClass;
+        if (parserModule.Parser && typeof parserModule.Parser === 'function') {
+          ParserClass = parserModule.Parser;
+        } else if (parserModule.default && typeof parserModule.default === 'function') {
+          ParserClass = parserModule.default;
+        } else if (parserModule.EnglishParser && typeof parserModule.EnglishParser === 'function') {
+          ParserClass = parserModule.EnglishParser;
+        } else {
+          const exportedClasses = Object.values(parserModule).filter(
+            (exp: any) => typeof exp === 'function' && exp.name && exp.name.includes('Parser')
+          );
+          if (exportedClasses.length > 0) {
+            ParserClass = exportedClasses[0];
+          } else {
+            throw new Error(`No parser class found in ${parserPackageName}`);
+          }
+        }
+        
+        // Register the parser with the factory
+        ParserFactory.registerParser(languageCode, ParserClass as any);
+        
+        // Create parser instance
+        this.parser = ParserFactory.createParser(languageCode, this.languageProvider);
+        
+      } catch (error: any) {
+        if (error.message?.includes('Cannot find module')) {
+          throw new Error(`Parser package not found for language: ${languageCode}. Expected package: ${parserPackageName}`);
+        }
+        throw new Error(`Failed to load parser for ${languageCode}: ${error.message}`);
+      }
+      
+      // Create or recreate command executor
       this.commandExecutor = createCommandExecutor(
         this.world,
         this.actionRegistry,
         this.eventProcessor,
-        this.languageProvider
+        this.languageProvider,
+        this.parser
       );
       
-      // Initialize story-specific world content
-      story.initializeWorld(this.world);
-      
-      // Create player if needed (or replace existing one)
-      const newPlayer = story.createPlayer(this.world);
-      this.context.player = newPlayer;
-      this.world.setPlayer(newPlayer.id);
-      
-      // Update metadata
-      this.context.metadata.title = story.config.title;
-      this.context.metadata.author = Array.isArray(story.config.author) 
-        ? story.config.author.join(', ') 
-        : story.config.author;
-      this.context.metadata.version = story.config.version;
-      
-      // Register any custom actions
-      if (story.getCustomActions) {
-        const customActions = story.getCustomActions();
-        for (const action of customActions) {
-          this.actionRegistry.register(action);
-        }
-      }
-      
-      // Story-specific initialization
-      if (story.initialize) {
-        story.initialize();
-      }
-    } catch (error) {
-      throw new Error(`Failed to initialize story: ${error}`);
+    } catch (error: any) {
+      throw new Error(`Failed to set language: ${error.message}`);
     }
+  }
+
+  /**
+   * Set text service from story configuration
+   */
+  private async setTextServiceFromConfig(config?: Story['config']['textService']): Promise<void> {
+    const textService = await loadTextService(config);
+    this.setTextService(textService);
+  }
+
+  /**
+   * Get the current parser
+   */
+  getParser(): Parser | undefined {
+    return this.parser;
+  }
+
+  /**
+   * Get the current language provider
+   */
+  getLanguageProvider(): LanguageProvider | undefined {
+    return this.languageProvider;
   }
 
   /**
@@ -177,6 +258,10 @@ export class GameEngine {
 
     if (!this.commandExecutor) {
       throw new Error('Engine must have a story set before starting');
+    }
+
+    if (!this.textService) {
+      throw new Error('Engine must have a text service set before starting');
     }
 
     this.running = true;
@@ -204,7 +289,7 @@ export class GameEngine {
 
     const turn = this.context.currentTurn;
     
-    // Validate input - return error result instead of throwing
+    // Validate input
     if (input === null || input === undefined) {
       const errorEvent = eventSequencer.sequence({
         type: 'command.failed',
@@ -234,6 +319,9 @@ export class GameEngine {
         this.config
       );
 
+      // Store events for this turn
+      this.turnEvents.set(turn, result.events);
+
       // Emit events if configured
       if (this.config.onEvent) {
         for (const event of result.events) {
@@ -250,11 +338,55 @@ export class GameEngine {
       this.updateContext(result);
 
       // Process text output
-      this.textService.processTurn(result, this.textChannels, {
-        includeEventTypes: this.config.debug || false,
-        includeSystemEvents: this.config.debug || false,
-        verbose: this.config.debug || false
-      });
+      if (this.textService) {
+        // Create context for text service
+        const textContext: TextServiceContext = {
+          currentTurn: turn,
+          getCurrentTurnEvents: () => this.turnEvents.get(turn) || [],
+          getEventsByType: (type: string) => {
+            const events = this.turnEvents.get(turn) || [];
+            return events.filter(e => e.type === type);
+          },
+          getAllEvents: () => {
+            const allEvents: SemanticEvent[] = [];
+            for (const [, events] of this.turnEvents) {
+              allEvents.push(...events);
+            }
+            return allEvents;
+          },
+          world: this.world,
+          getPlayer: () => this.context.player,
+          getContents: (locationId: string) => this.world.getContents(locationId),
+          getLocation: (entityId: string) => {
+            const entity = this.world.getEntity(entityId);
+            if (!entity) return null;
+            return this.world.getLocation(entityId);
+          }
+        };
+        
+        // Initialize text service with context
+        this.textService.initialize(textContext);
+        
+        // Process turn and get output
+        const output = this.textService.processTurn();
+        
+        // Emit appropriate output based on type
+        if (typeof output === 'string') {
+          this.emit('text:output', output, turn);
+        } else if (output.type === 'json') {
+          this.emit('text:output', JSON.stringify(output, null, 2), turn);
+        } else if (output.type === 'channeled') {
+          // Emit each channel separately
+          for (const [channel, text] of output.channels) {
+            this.emit('text:channel', channel, text, turn);
+          }
+          // Also emit the main channel as text:output
+          const mainText = output.channels.get('main');
+          if (mainText) {
+            this.emit('text:output', mainText, turn);
+          }
+        }
+      }
 
       // Emit completion
       this.emit('turn:complete', result);
@@ -285,6 +417,25 @@ export class GameEngine {
    */
   getWorld(): WorldModel {
     return this.world;
+  }
+
+  /**
+   * Get the text service
+   */
+  getTextService(): TextService | undefined {
+    return this.textService;
+  }
+
+  /**
+   * Set a custom text service
+   */
+  setTextService(service: TextService): void {
+    this.textService = service;
+    
+    // Set language provider if we have one
+    if (this.languageProvider) {
+      this.textService.setLanguageProvider(this.languageProvider);
+    }
   }
 
   /**
@@ -361,25 +512,10 @@ export class GameEngine {
       vocabularyRegistry.registerEntity({
         entityId: entity.id,
         nouns: nouns,
-        adjectives: [], // Could extract from description or add as trait property
+        adjectives: [],
         inScope
       });
     }
-  }
-
-  /**
-   * Set text service and channels
-   */
-  setTextService(service: TextService, channels: TextChannel[]): void {
-    this.textService = service;
-    this.textChannels = channels;
-  }
-  
-  /**
-   * Add a text output channel
-   */
-  addTextChannel(channel: TextChannel): void {
-    this.textChannels.push(channel);
   }
   
   /**
@@ -454,7 +590,6 @@ export class GameEngine {
    */
   private deserializeWorld(data: unknown): void {
     // Simple implementation - override for better deserialization
-    // Would need to rebuild world from serialized data
     console.warn('World deserialization not fully implemented');
   }
 
@@ -522,8 +657,6 @@ export function createGameEngine(
 
 /**
  * Create a basic game engine with standard setup
- * Note: This creates an engine without a language provider,
- * so you must call setStory() before using it
  */
 export function createStandardEngine(config?: EngineConfig): GameEngine {
   // Create world
@@ -547,7 +680,7 @@ export function createStandardEngine(config?: EngineConfig): GameEngine {
     }
   }));
 
-  // Create engine (without language provider)
+  // Create engine
   const engine = new GameEngine(world, player, config);
 
   // Initial vocabulary update
@@ -566,17 +699,14 @@ export async function createEngineWithStory(
   // Create world
   const world = new WorldModel();
   
-  // Load language provider
-  const languageProvider = await loadLanguageProvider(story.config.language);
-  
   // Create player from story
   const player = story.createPlayer(world);
   world.setPlayer(player.id);
   
-  // Create engine with language provider
-  const engine = new GameEngine(world, player, config, languageProvider);
+  // Create engine
+  const engine = new GameEngine(world, player, config);
   
-  // Set the story (this will initialize world and register custom actions)
+  // Set the story
   await engine.setStory(story);
   
   // Initial vocabulary update

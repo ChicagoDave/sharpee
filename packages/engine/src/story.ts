@@ -3,7 +3,8 @@
  */
 
 import { WorldModel, IFEntity } from '@sharpee/world-model';
-import { LanguageProvider } from '@sharpee/stdlib';
+import { LanguageProvider } from '@sharpee/if-domain';
+import { TextService } from '@sharpee/if-services';
 
 /**
  * Story configuration
@@ -34,6 +35,28 @@ export interface StoryConfig {
    * Used to load the appropriate language package
    */
   language: string;
+  
+  /**
+   * Text service configuration
+   */
+  textService?: {
+    /**
+     * Text service type (e.g., "template", "direct", "custom")
+     * Defaults to "template" if not specified
+     */
+    type?: string;
+    
+    /**
+     * Text service package name (for custom implementations)
+     * e.g., "@mycompany/my-text-service"
+     */
+    package?: string;
+    
+    /**
+     * Configuration to pass to the text service
+     */
+    config?: Record<string, any>;
+  };
   
   /**
    * Story description
@@ -157,5 +180,59 @@ export async function loadLanguageProvider(languageCode: string): Promise<Langua
       throw new Error(`Unsupported language: ${languageCode}`);
     }
     throw new Error(`Failed to load language package ${packageName}: ${error.message}`);
+  }
+}
+
+/**
+ * Helper to load a text service based on configuration
+ */
+export async function loadTextService(config?: StoryConfig['textService']): Promise<TextService> {
+  const type = config?.type || 'template';
+  const packageName = config?.package || `@sharpee/text-service-${type}`;
+  const serviceConfig = config?.config || {};
+  
+  try {
+    // Dynamic import of the text service package
+    const serviceModule = await import(packageName);
+    
+    // Try different export patterns
+    let service: TextService;
+    
+    // Look for a factory function
+    if (typeof serviceModule.createTextService === 'function') {
+      service = serviceModule.createTextService(serviceConfig);
+    }
+    // Look for a default export that's a class
+    else if (serviceModule.default && typeof serviceModule.default === 'function') {
+      const ServiceClass = serviceModule.default;
+      service = new ServiceClass(serviceConfig);
+    }
+    // Look for a named export that's a class
+    else if (serviceModule.TextService && typeof serviceModule.TextService === 'function') {
+      const ServiceClass = serviceModule.TextService;
+      service = new ServiceClass(serviceConfig);
+    }
+    // Look for any class ending with TextService
+    else {
+      const serviceClasses = Object.entries(serviceModule)
+        .filter(([name, value]) => 
+          name.endsWith('TextService') && 
+          typeof value === 'function'
+        );
+      
+      if (serviceClasses.length > 0) {
+        const [, ServiceClass] = serviceClasses[0];
+        service = new (ServiceClass as any)(serviceConfig);
+      } else {
+        throw new Error(`No text service implementation found in ${packageName}`);
+      }
+    }
+    
+    return service;
+  } catch (error: any) {
+    if (error.message?.includes('Cannot find module')) {
+      throw new Error(`Text service package not found: ${packageName}`);
+    }
+    throw new Error(`Failed to load text service ${packageName}: ${error.message}`);
   }
 }

@@ -22,10 +22,5 @@ export {
 // Rules system
 export * from './rules';
 
-// Language system
-export * from './language';
-
-
-
 // Debug infrastructure
 export * from './debug';

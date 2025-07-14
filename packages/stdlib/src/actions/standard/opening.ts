@@ -5,108 +5,92 @@
  * appropriate events. It NEVER mutates state directly.
  */
 
-import { ActionExecutor, ActionContext } from '../types';
-import { createEvent, SemanticEvent } from '@sharpee/core';
-import { ValidatedCommand } from '@sharpee/world-model';
+import { Action, EnhancedActionContext } from '../enhanced-types';
+import { SemanticEvent } from '@sharpee/core';
+import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../constants';
-import { IFEvents, TraitType, IFEntity } from '@sharpee/world-model';
 
-export const openingAction: ActionExecutor = {
+export const openingAction: Action = {
   id: IFActions.OPENING,
-  aliases: ['open'],
+  requiredMessages: [
+    'no_target',
+    'not_openable',
+    'already_open',
+    'locked',
+    'opened',
+    'revealing',
+    'its_empty',
+    'cant_reach'
+  ],
+  group: 'container_manipulation',
   
-  execute(command: ValidatedCommand, context: ActionContext): SemanticEvent[] {
+  execute(context: EnhancedActionContext): SemanticEvent[] {
     const actor = context.player;
-    const noun = command.directObject?.entity as IFEntity | undefined;
+    const noun = context.command.directObject?.entity;
     
     // Validate we have a target
     if (!noun) {
-      return [createEvent(IFEvents.ACTION_FAILED, {
-        action: IFActions.OPENING,
-        reason: 'no_target'
-      }, {
-        actor: actor.id
-      })];
+      return context.emitError('no_target');
     }
     
-    // Check if visible
-    if (!context.canSee(noun)) {
-      return [createEvent(IFEvents.ACTION_FAILED, {
-        action: IFActions.OPENING,
-        reason: 'not_visible'
-      }, {
-        actor: actor.id,
-        target: noun.id
-      })];
-    }
-    
-    // Check if reachable
-    if (!context.canReach(noun)) {
-      return [createEvent(IFEvents.ACTION_FAILED, {
-        action: IFActions.OPENING,
-        reason: 'not_reachable'
-      }, {
-        actor: actor.id,
-        target: noun.id
-      })];
-    }
+    // Visibility and reachability are already validated by the command processor
     
     // Check if it's openable
     if (!noun.has(TraitType.OPENABLE)) {
-      return [createEvent(IFEvents.NOT_OPENABLE, {}, {
-        actor: actor.id,
-        target: noun.id
-      })];
+      return context.emitError('not_openable', { item: noun.name });
     }
     
     const openableTrait = noun.get(TraitType.OPENABLE);
     
     // Check if already open
     if (openableTrait && (openableTrait as any).isOpen) {
-      return [createEvent(IFEvents.ACTION_FAILED, {
-        action: IFActions.OPENING,
-        reason: 'already_open'
-      }, {
-        actor: actor.id,
-        target: noun.id
-      })];
+      return context.emitError('already_open', { item: noun.name });
     }
     
     // Check if locked
     if (noun.has(TraitType.LOCKABLE)) {
       const lockableTrait = noun.get(TraitType.LOCKABLE);
       if (lockableTrait && (lockableTrait as any).isLocked) {
-        return [createEvent(IFEvents.ACTION_FAILED, {
-          action: IFActions.OPENING,
-          reason: 'locked'
-        }, {
-          actor: actor.id,
-          target: noun.id
-        })];
+        return context.emitError('locked', { item: noun.name });
       }
     }
     
     // Build event data
-    const eventData: Record<string, unknown> = {};
+    const eventData: Record<string, unknown> = {
+      item: noun.name
+    };
     
-    // Add information about what type of thing was opened
+    // Determine success message based on what was revealed
+    let messageId = 'opened';
+    
     if (noun.has(TraitType.CONTAINER)) {
       eventData.isContainer = true;
       const contents = context.world.getContents(noun.id);
       eventData.hasContents = contents.length > 0;
       eventData.revealedItems = contents.length;
+      
+      if (contents.length > 0) {
+        messageId = 'revealing';
+        eventData.container = noun.name;
+        eventData.items = contents.map(e => e.name);
+      } else {
+        messageId = 'its_empty';
+        eventData.container = noun.name;
+      }
     }
     
     if (noun.has(TraitType.DOOR)) {
       eventData.isDoor = true;
-      // Doors connect rooms, but don't have a connected door property
-      // The door itself IS the connection
     }
     
-    // Create the OPENED event
-    return [createEvent(IFEvents.OPENED, eventData, {
-      actor: actor.id,
-      target: noun.id
-    })];
+    const events: SemanticEvent[] = [];
+    
+    // Create the OPENED event for world model updates
+    events.push(context.emit('if.event.opened', eventData));
+    
+    // Create the success message
+    events.push(...context.emitSuccess(messageId, eventData));
+    
+    return events;
   }
 };

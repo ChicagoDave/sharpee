@@ -3,8 +3,13 @@
  * 
  * The parser system consists of:
  * - Vocabulary types and registry
- * - World-agnostic parser that produces ParsedCommand
- * - Parser types and interfaces
+ * - Parser interfaces and types
+ * - Parser factory for language registration
+ * 
+ * Language-specific parsers are in separate packages:
+ * - @sharpee/parser-en-us - English parser
+ * - @sharpee/parser-es - Spanish parser (future)
+ * - @sharpee/parser-ja - Japanese parser (future)
  */
 
 // Types
@@ -15,8 +20,8 @@ export * from './parser-internals';
 // Registry
 export * from './vocabulary-registry';
 
-// Parser
-export * from './basic-parser';
+// Factory
+export * from './parser-factory';
 
 // Re-export commonly used items
 export { vocabularyRegistry } from './vocabulary-registry';

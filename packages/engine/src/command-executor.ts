@@ -15,7 +15,6 @@ import {
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import {
-  BasicParser,
   CommandValidator,
   LanguageProvider,
   ActionContext,
@@ -58,6 +57,11 @@ export interface CommandExecutorOptions {
   languageProvider: LanguageProvider;
   
   /**
+   * Parser to use
+   */
+  parser: Parser;
+  
+  /**
    * Whether to auto-resolve ambiguities
    */
   autoResolveAmbiguities?: boolean;
@@ -77,14 +81,16 @@ export class CommandExecutor {
     world: WorldModel,
     actionRegistry: ActionRegistry,
     eventProcessor: EventProcessor,
-    languageProvider: LanguageProvider
+    languageProvider: LanguageProvider,
+    parser: Parser
   ) {
     if (!world) throw new Error('World model is required');
     if (!actionRegistry) throw new Error('Action registry is required');
     if (!eventProcessor) throw new Error('Event processor is required');
     if (!languageProvider) throw new Error('Language provider is required');
+    if (!parser) throw new Error('Parser is required');
     
-    this.parser = new BasicParser(languageProvider);
+    this.parser = parser;
     this.validator = new CommandValidator(world, actionRegistry);
     this.actionRegistry = actionRegistry;
     this.eventProcessor = eventProcessor;
@@ -307,12 +313,14 @@ export function createCommandExecutor(
   world: WorldModel,
   actionRegistry: ActionRegistry,
   eventProcessor: EventProcessor,
-  languageProvider: LanguageProvider
+  languageProvider: LanguageProvider,
+  parser: Parser
 ): CommandExecutor {
   return new CommandExecutor(
     world,
     actionRegistry,
     eventProcessor,
-    languageProvider
+    languageProvider,
+    parser
   );
 }

@@ -71,6 +71,12 @@ importers:
       '@sharpee/stdlib':
         specifier: file:../stdlib
         version: link:../stdlib
+      '@sharpee/text-service':
+        specifier: file:../text-service
+        version: file:packages/text-service
+      '@sharpee/text-service-basic':
+        specifier: file:../text-service-basic
+        version: file:packages/text-service-basic
       '@sharpee/world-model':
         specifier: file:../world-model
         version: link:../world-model
@@ -181,6 +187,46 @@ importers:
         specifier: ^5.0.4
         version: 5.8.3
 
+  packages/parser-en-us:
+    dependencies:
+      '@sharpee/core':
+        specifier: workspace:*
+        version: link:../core
+      '@sharpee/stdlib':
+        specifier: workspace:*
+        version: link:../stdlib
+      '@sharpee/world-model':
+        specifier: workspace:*
+        version: link:../world-model
+    devDependencies:
+      '@types/jest':
+        specifier: ^29.5.5
+        version: 29.5.14
+      '@types/node':
+        specifier: ^20.8.0
+        version: 20.19.4
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^6.7.4
+        version: 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
+      '@typescript-eslint/parser':
+        specifier: ^6.7.4
+        version: 6.21.0(eslint@8.57.1)(typescript@5.8.3)
+      eslint:
+        specifier: ^8.50.0
+        version: 8.57.1
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@20.19.4)
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      ts-jest:
+        specifier: ^29.1.1
+        version: 29.4.0(@babel/core@7.28.0)(@jest/transform@29.7.0)(@jest/types@30.0.1)(babel-jest@29.7.0(@babel/core@7.28.0))(jest-util@30.0.2)(jest@29.7.0(@types/node@20.19.4))(typescript@5.8.3)
+      typescript:
+        specifier: ^5.2.2
+        version: 5.8.3
+
   packages/sharpee:
     dependencies:
       '@sharpee/core':
@@ -239,6 +285,59 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@20.19.4)(@vitest/ui@3.2.4)(yaml@2.8.0)
+
+  packages/text-service:
+    dependencies:
+      '@sharpee/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/jest':
+        specifier: ^29.5.5
+        version: 29.5.14
+      '@types/node':
+        specifier: ^20.8.0
+        version: 20.19.4
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@20.19.4)
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      ts-jest:
+        specifier: ^29.1.1
+        version: 29.4.0(@babel/core@7.28.0)(@jest/transform@29.7.0)(@jest/types@30.0.1)(babel-jest@29.7.0(@babel/core@7.28.0))(jest-util@30.0.2)(jest@29.7.0(@types/node@20.19.4))(typescript@5.8.3)
+      typescript:
+        specifier: ^5.2.2
+        version: 5.8.3
+
+  packages/text-service-basic:
+    dependencies:
+      '@sharpee/core':
+        specifier: workspace:*
+        version: link:../core
+      '@sharpee/text-service':
+        specifier: workspace:*
+        version: link:../text-service
+    devDependencies:
+      '@types/jest':
+        specifier: ^29.5.5
+        version: 29.5.14
+      '@types/node':
+        specifier: ^20.8.0
+        version: 20.19.4
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@20.19.4)
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      ts-jest:
+        specifier: ^29.1.1
+        version: 29.4.0(@babel/core@7.28.0)(@jest/transform@29.7.0)(@jest/types@30.0.1)(babel-jest@29.7.0(@babel/core@7.28.0))(jest-util@30.0.2)(jest@29.7.0(@types/node@20.19.4))(typescript@5.8.3)
+      typescript:
+        specifier: ^5.2.2
+        version: 5.8.3
 
   packages/world-model:
     dependencies:
@@ -1104,6 +1203,12 @@ packages:
 
   '@sharpee/lang-en-us@file:packages/lang-en-us':
     resolution: {directory: packages/lang-en-us, type: directory}
+
+  '@sharpee/text-service-basic@file:packages/text-service-basic':
+    resolution: {directory: packages/text-service-basic, type: directory}
+
+  '@sharpee/text-service@file:packages/text-service':
+    resolution: {directory: packages/text-service, type: directory}
 
   '@sigstore/bundle@2.3.2':
     resolution: {integrity: sha512-wueKWDk70QixNLB363yHc2D2ItTgYiMTdPwK8D9dKQMR3ZQ0c35IxP5xnwQ8cNLoCgCRcHf14kE+CLIvNX1zmA==}
@@ -4970,6 +5075,15 @@ snapshots:
     optional: true
 
   '@sharpee/lang-en-us@file:packages/lang-en-us':
+    dependencies:
+      '@sharpee/core': link:packages/core
+
+  '@sharpee/text-service-basic@file:packages/text-service-basic':
+    dependencies:
+      '@sharpee/core': link:packages/core
+      '@sharpee/text-service': link:packages/text-service
+
+  '@sharpee/text-service@file:packages/text-service':
     dependencies:
       '@sharpee/core': link:packages/core
 

@@ -2,10 +2,12 @@
  * English Language Provider
  * 
  * Self-contained language implementation with no external dependencies
+ * Enhanced to support getMessage interface for text service
  */
 
 import { englishVerbs } from './data/verbs';
 import { englishWords, irregularPlurals, abbreviations } from './data/words';
+import { standardActionLanguage } from './actions';
 
 /**
  * Verb vocabulary definition
@@ -53,6 +55,115 @@ export class EnglishLanguageProvider {
   readonly languageCode = 'en-US';
   readonly languageName = 'English (US)';
   readonly textDirection = 'ltr' as const;
+  
+  // Message storage
+  private messages = new Map<string, string>();
+  
+  constructor() {
+    // Load all action messages
+    this.loadActionMessages();
+  }
+  
+  /**
+   * Load messages from all action language definitions
+   */
+  private loadActionMessages(): void {
+    for (const actionLang of standardActionLanguage) {
+      if (actionLang.messages) {
+        Object.entries(actionLang.messages).forEach(([key, value]) => {
+          // Store with full action ID prefix
+          const fullKey = `${actionLang.actionId}.${key}`;
+          this.messages.set(fullKey, value);
+        });
+      }
+    }
+  }
+  
+  /**
+   * Get a message by its ID with optional parameter substitution
+   * @param messageId Full message ID (e.g., 'if.action.taking.taken')
+   * @param params Parameters to substitute in the message
+   * @returns The resolved message text, or null if not found
+   */
+  getMessage(messageId: string, params?: Record<string, any>): string | null {
+    let message = this.messages.get(messageId);
+    
+    if (!message) {
+      return null;
+    }
+    
+    // Perform parameter substitution
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        const placeholder = `{${key}}`;
+        message = message!.replace(new RegExp(placeholder, 'g'), String(value));
+      });
+    }
+    
+    return message;
+  }
+  
+  /**
+   * Get entity name/description
+   * @param entity Entity object or ID
+   * @returns Entity name or fallback
+   */
+  getEntityName(entity: any): string {
+    if (!entity) return 'something';
+    
+    // If it's a string, return it
+    if (typeof entity === 'string') {
+      return entity;
+    }
+    
+    // Try various properties
+    if (entity.name) {
+      return entity.name;
+    }
+    
+    // Try identity trait
+    if (entity.traits && entity.traits.get) {
+      const identity = entity.traits.get('IDENTITY');
+      if (identity && identity.name) {
+        return identity.name;
+      }
+    }
+    
+    // Try direct trait access
+    if (entity.get && typeof entity.get === 'function') {
+      const identity = entity.get('IDENTITY');
+      if (identity && identity.name) {
+        return identity.name;
+      }
+    }
+    
+    // Fall back to ID
+    if (entity.id) {
+      return entity.id;
+    }
+    
+    return 'something';
+  }
+  
+  /**
+   * Get all messages for a given action
+   * @param actionId Action identifier
+   * @returns Map of message keys to messages
+   */
+  getActionMessages(actionId: string): Map<string, string> | null {
+    const actionMessages = new Map<string, string>();
+    const prefix = `${actionId}.`;
+    
+    // Find all messages for this action
+    for (const [key, value] of this.messages) {
+      if (key.startsWith(prefix)) {
+        const messageKey = key.substring(prefix.length);
+        actionMessages.set(messageKey, value);
+      }
+    }
+    
+    return actionMessages.size > 0 ? actionMessages : null;
+  }
 
   getVerbs(): VerbVocabulary[] {
     return englishVerbs.map(verb => ({

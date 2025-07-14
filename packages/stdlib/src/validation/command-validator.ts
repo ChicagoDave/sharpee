@@ -12,7 +12,6 @@ import type {
 } from '@sharpee/core';
 
 import type {
-  CommandValidator,
   ParsedCommand,
   ValidatedCommand,
   ValidatedObjectReference,
@@ -55,9 +54,21 @@ interface ResolutionContext {
 
 
 /**
+ * Validator interface - resolves entities and checks preconditions
+ */
+export interface CommandValidator {
+  /**
+   * Validate parsed command against world state
+   * @param command Parsed command to validate
+   * @returns Validated command or validation error
+   */
+  validate(command: ParsedCommand): Result<ValidatedCommand, ValidationError>;
+}
+
+/**
  * Enhanced command validator with full entity resolution
  */
-export class CommandValidatorImpl implements CommandValidator {
+export class CommandValidator implements CommandValidator {
   private world: WorldModel;
   private actionRegistry: ActionRegistry;
   private scopeService: ScopeService;
@@ -101,12 +112,25 @@ export class CommandValidatorImpl implements CommandValidator {
       };
     }
 
+    // Get object references from parsed command
+    const directObjectRef = command.structure?.directObject ? {
+      text: command.structure.directObject.head,
+      candidates: command.structure.directObject.candidates,
+      modifiers: command.structure.directObject.modifiers
+    } : undefined;
+    
+    const indirectObjectRef = command.structure?.indirectObject ? {
+      text: command.structure.indirectObject.head,
+      candidates: command.structure.indirectObject.candidates,
+      modifiers: command.structure.indirectObject.modifiers
+    } : undefined;
+
     // 2. Validate direct object if required
     let directObject: ValidatedObjectReference | undefined;
-    if (command.directObject) {
+    if (directObjectRef) {
       const metadata = this.getActionMetadata(actionHandler);
       const scope = metadata.directObjectScope || 'visible';
-      const resolved = this.resolveEntity(command.directObject, 'direct', scope, command);
+      const resolved = this.resolveEntity(directObjectRef, 'direct', scope, command);
       if (!resolved.success) {
         return resolved;
       }
@@ -125,10 +149,10 @@ export class CommandValidatorImpl implements CommandValidator {
 
     // 3. Validate indirect object if present
     let indirectObject: ValidatedObjectReference | undefined;
-    if (command.indirectObject) {
+    if (indirectObjectRef) {
       const metadata = this.getActionMetadata(actionHandler);
       const scope = metadata.indirectObjectScope || 'visible';
-      const resolved = this.resolveEntity(command.indirectObject, 'indirect', scope, command);
+      const resolved = this.resolveEntity(indirectObjectRef, 'indirect', scope, command);
       if (!resolved.success) {
         return resolved;
       }

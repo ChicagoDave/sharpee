@@ -1,23 +1,10 @@
 // packages/core/src/execution/types.ts
 
-import { TextService } from '../events/text-processor';
-import { LanguageProvider } from '../language';
-
 /**
  * Generic context interface for execution
  * Domain-specific contexts should extend this interface
  */
 export interface ExecutionContext {
-  /**
-   * The text service for processing events into text
-   */
-  textService: TextService;
-
-  /**
-   * The language provider for text templates
-   */
-  languageProvider: LanguageProvider;
-
   /**
    * Additional context data
    */
@@ -60,7 +47,7 @@ export interface Action<TCommand = any, TResult = any> extends CommandHandler<TC
    * Unique identifier for the action
    */
   id: string;
-  
+
   /**
    * Action metadata (if any)
    */
