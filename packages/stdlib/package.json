@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@sharpee/core": "file:../core",
+    "@sharpee/if-domain": "file:../if-domain",
     "@sharpee/world-model": "file:../world-model"
   },
   "devDependencies": {

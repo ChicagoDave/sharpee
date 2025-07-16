@@ -61,6 +61,7 @@ export const IFActions = {
   // Meta actions
   INVENTORY: 'if.action.inventory',
   WAITING: 'if.action.waiting',
+  SLEEPING: 'if.action.sleeping',
   SAVING: 'if.action.saving',
   RESTORING: 'if.action.restoring',
   QUITTING: 'if.action.quitting',
@@ -285,6 +286,11 @@ export const englishVerbs: VerbDefinition[] = [
   {
     action: IFActions.WAITING,
     verbs: ['wait', 'z'],
+    requiresObject: false
+  },
+  {
+    action: IFActions.SLEEPING,
+    verbs: ['sleep', 'nap', 'doze', 'rest', 'slumber'],
     requiresObject: false
   },
   {

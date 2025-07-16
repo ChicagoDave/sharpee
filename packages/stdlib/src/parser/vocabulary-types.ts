@@ -233,38 +233,38 @@ export interface GrammarPattern {
 /**
  * Common grammar patterns
  */
-export const GrammarPatterns = {
-  VERB_ONLY: { 
+export const GrammarPatterns = Object.freeze({
+  VERB_ONLY: Object.freeze({ 
     name: 'verb_only',
-    elements: ['VERB'],
+    elements: Object.freeze(['VERB']),
     example: 'look'
-  },
-  VERB_NOUN: {
+  }),
+  VERB_NOUN: Object.freeze({
     name: 'verb_noun', 
-    elements: ['VERB', 'NOUN'],
+    elements: Object.freeze(['VERB', 'NOUN']),
     example: 'take sword'
-  },
-  VERB_NOUN_PREP_NOUN: {
+  }),
+  VERB_NOUN_PREP_NOUN: Object.freeze({
     name: 'verb_noun_prep_noun',
-    elements: ['VERB', 'NOUN', 'PREP', 'NOUN'],
+    elements: Object.freeze(['VERB', 'NOUN', 'PREP', 'NOUN']),
     example: 'put sword in chest'
-  },
-  VERB_PREP_NOUN: {
+  }),
+  VERB_PREP_NOUN: Object.freeze({
     name: 'verb_prep_noun',
-    elements: ['VERB', 'PREP', 'NOUN'],
+    elements: Object.freeze(['VERB', 'PREP', 'NOUN']),
     example: 'look at painting'
-  },
-  VERB_DIRECTION: {
+  }),
+  VERB_DIRECTION: Object.freeze({
     name: 'verb_direction',
-    elements: ['VERB', 'DIRECTION'],
+    elements: Object.freeze(['VERB', 'DIRECTION']),
     example: 'go north'
-  },
-  DIRECTION_ONLY: {
+  }),
+  DIRECTION_ONLY: Object.freeze({
     name: 'direction_only',
-    elements: ['DIRECTION'],
+    elements: Object.freeze(['DIRECTION']),
     example: 'north'
-  }
-} as const;
+  })
+});
 
 /**
  * Type for standard grammar pattern names

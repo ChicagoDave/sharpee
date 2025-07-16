@@ -109,6 +109,7 @@ export const IFEvents = {
   TURN_PASSED: 'turn_passed',
   TIME_PASSED: 'time_passed',
   WAITED: 'waited',
+  SLEPT: 'slept',
   
   // Scene events
   SCENE_STARTED: 'scene_started',
@@ -249,6 +250,7 @@ export const eventMessages: Partial<Record<IFEventType, string>> = {
   [IFEvents.TURN_PASSED]: "Time passes.",
   [IFEvents.TIME_PASSED]: "Time passes.",
   [IFEvents.WAITED]: "You wait.",
+  [IFEvents.SLEPT]: "You sleep.",
   
   // Scene events
   [IFEvents.SCENE_STARTED]: "{scene} begins.",

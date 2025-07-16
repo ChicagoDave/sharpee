@@ -5,6 +5,7 @@
  * Enhanced to support getMessage interface for text service
  */
 
+import { LanguageProvider, ActionHelp } from '@sharpee/if-domain';
 import { englishVerbs } from './data/verbs';
 import { englishWords, irregularPlurals, abbreviations } from './data/words';
 import { standardActionLanguage } from './actions';
@@ -51,7 +52,7 @@ export interface GrammarPattern {
 /**
  * English language data and rules
  */
-export class EnglishLanguageProvider {
+export class EnglishLanguageProvider implements LanguageProvider {
   readonly languageCode = 'en-US';
   readonly languageName = 'English (US)';
   readonly textDirection = 'ltr' as const;
@@ -85,11 +86,11 @@ export class EnglishLanguageProvider {
    * @param params Parameters to substitute in the message
    * @returns The resolved message text, or null if not found
    */
-  getMessage(messageId: string, params?: Record<string, any>): string | null {
+  getMessage(messageId: string, params?: Record<string, any>): string {
     let message = this.messages.get(messageId);
     
     if (!message) {
-      return null;
+      return messageId; // Return the ID as fallback
     }
     
     // Perform parameter substitution
@@ -101,6 +102,75 @@ export class EnglishLanguageProvider {
     }
     
     return message;
+  }
+  
+  /**
+   * Check if a message exists
+   * @param messageId The message identifier
+   * @returns True if the message exists
+   */
+  hasMessage(messageId: string): boolean {
+    return this.messages.has(messageId);
+  }
+  
+  /**
+   * Get patterns/aliases for an action
+   * @param actionId The action identifier (e.g., 'if.action.taking')
+   * @returns Array of patterns or undefined if action not found
+   */
+  getActionPatterns(actionId: string): string[] | undefined {
+    const actionLang = standardActionLanguage.find(lang => lang.actionId === actionId);
+    return actionLang?.patterns;
+  }
+  
+  /**
+   * Get structured help information for an action
+   * @param actionId The action identifier (e.g., 'if.action.taking')
+   * @returns Structured help information or undefined if not found
+   */
+  getActionHelp(actionId: string): ActionHelp | undefined {
+    const actionLang = standardActionLanguage.find(lang => lang.actionId === actionId);
+    if (!actionLang) {
+      return undefined;
+    }
+    
+    // Extract verbs from patterns
+    const verbs: string[] = [];
+    if (actionLang.patterns) {
+      actionLang.patterns.forEach(pattern => {
+        // Extract the verb from patterns like "take [something]"
+        const match = pattern.match(/^(\w+)/);
+        if (match) {
+          const verb = match[1].toUpperCase();
+          if (!verbs.includes(verb)) {
+            verbs.push(verb);
+          }
+        }
+      });
+    }
+    
+    
+    // Parse examples from help object
+    let examples: string[] = [];
+    if (actionLang.help?.examples) {
+      // Split by comma and trim
+      examples = actionLang.help.examples.split(',').map(ex => ex.trim());
+    }
+    
+    return {
+      description: actionLang.help?.description || 'No description available.',
+      verbs,
+      examples,
+      summary: actionLang.help?.summary
+    };
+  }
+  
+  /**
+   * Get all supported actions
+   * @returns Array of action IDs
+   */
+  getSupportedActions(): string[] {
+    return standardActionLanguage.map(lang => lang.actionId);
   }
   
   /**

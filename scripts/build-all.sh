@@ -1,53 +1,44 @@
 #!/bin/bash
-# Build all packages in dependency order
+# Build all Sharpee packages in dependency order (no tests)
+# Stops on first failure and logs all output
 
-echo -e "\033[33mBuilding all packages...\033[0m"
+set -e  # Exit on first error
 
-# Function to run npm build in a directory
+# Setup
+REPO_ROOT="/mnt/c/repotemp/sharpee"
+LOG_DIR="$REPO_ROOT/logs"
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+
+cd "$REPO_ROOT"
+
+# Function to build a package
 build_package() {
-    local package_name="$1"
-    local package_path="$2"
+    local package=$1
+    local name=$2
     
-    echo -e "\n\033[36mBuilding $package_name...\033[0m"
-    
-    if [ -d "$package_path" ]; then
-        pushd "$package_path" > /dev/null
-        
-        # Run the build
-        if npm run build; then
-            echo -e "  \033[32m$package_name built successfully!\033[0m"
-        else
-            echo -e "  \033[31mERROR: $package_name build failed!\033[0m"
-            popd > /dev/null
-            exit 1
-        fi
-        
-        popd > /dev/null
+    echo -n "[$name] "
+    if pnpm --filter "$package" build > "$LOG_DIR/build-$name-$TIMESTAMP.log" 2>&1; then
+        echo "✓"
     else
-        echo -e "  \033[33mWarning: $package_path does not exist, skipping...\033[0m"
+        echo "✗"
+        echo "Failed. See: logs/build-$name-$TIMESTAMP.log"
+        exit 1
     fi
 }
 
-# Build order (based on dependencies)
-# Level 1: No dependencies
-build_package "core" "packages/core"
+echo "Building all packages..."
+echo ""
 
-# Level 2: Depends on core
-build_package "world-model" "packages/world-model"
-build_package "event-processor" "packages/event-processor"
+# Build order based on dependencies
+build_package "@sharpee/core" "core"
+build_package "@sharpee/world-model" "world-model"
+build_package "@sharpee/if-domain" "if-domain"
+build_package "@sharpee/event-processor" "event-processor"
+build_package "@sharpee/lang-en-us" "lang-en-us"
+build_package "@sharpee/parser-en-us" "parser-en-us"
+build_package "@sharpee/stdlib" "stdlib"
+build_package "@sharpee/engine" "engine"
+build_package "@sharpee/test-stories" "test-stories"
 
-# Level 3: Depends on core and others
-build_package "stdlib" "packages/stdlib"
-build_package "lang-en-us" "packages/lang-en-us"
-
-# Level 4: Depends on multiple packages
-build_package "engine" "packages/engine"
-
-# Extensions
-build_package "conversation" "packages/extensions/conversation"
-
-# Client packages
-build_package "client-core" "packages/client-core"
-build_package "forge" "packages/forge"
-
-echo -e "\n\033[32mAll packages built successfully!\033[0m"
+echo ""
+echo "Build complete. Logs: $LOG_DIR"

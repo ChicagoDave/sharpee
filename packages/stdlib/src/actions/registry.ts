@@ -39,6 +39,16 @@ export class StandardActionRegistry implements IActionRegistry {
       this.actionsByGroup.set(action.group, groupActions);
     }
     
+    // Handle direct aliases (backward compatibility)
+    if ('aliases' in action && Array.isArray((action as any).aliases)) {
+      const aliases = (action as any).aliases as string[];
+      for (const alias of aliases) {
+        const normalizedAlias = alias.toLowerCase();
+        // For direct aliases, only keep the latest action (override previous)
+        this.actionsByPattern.set(normalizedAlias, [action]);
+      }
+    }
+    
     // Update pattern mappings if we have a language provider
     if (this.languageProvider) {
       this.updatePatternMappingsForAction(action);
@@ -87,6 +97,21 @@ export class StandardActionRegistry implements IActionRegistry {
    */
   getByGroup(group: string): Action[] {
     return this.actionsByGroup.get(group) || [];
+  }
+
+  /**
+   * Find an action by ID or pattern (backward compatibility)
+   * @param idOrPattern Action ID or pattern to search for
+   * @returns First matching action or undefined
+   */
+  find(idOrPattern: string): Action | undefined {
+    // First try direct ID lookup
+    const directLookup = this.get(idOrPattern);
+    if (directLookup) return directLookup;
+    
+    // Then try pattern lookup
+    const patternMatches = this.findByPattern(idOrPattern);
+    return patternMatches[0]; // Return first match
   }
 
   /**

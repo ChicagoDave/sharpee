@@ -1,0 +1,144 @@
+We are in the unit testing and integration testing stage of development for the Sharpee interactive fiction framework.
+
+We don't really need scripts, but if we do they should be in WSL Bash.
+
+For builds and tests, I will run them. Unless asked, I don't need scripts.
+
+File system is still Windows 11 but I develop using bash in WSL.
+
+Root is C:\repotemp\sharpee
+
+We're using pnpm to build and test the projects.
+
+The story is run with a temp config to combine all of the packages properly and uses symbolic links.
+
+tests in each package go in /tests (e.g. /packages/core/tests)
+
+any code changes should be discussed for design issues
+
+## Architecture Design Records
+located in /decisions
+
+## Core Principles
+- query-able world model (underlying data and relationships)
+- no virtual machine
+- multiple language hooks
+- all text is send through events to an event source data store (in-memory) and after a turn is completed (all world model changes are completed) a text service uses templates and language service to emit formatted text or list of text channels (all separate from turn functionality)
+- fluent author layer
+- standard library with moderate complexity for modifications done by mid to junior to novice programmers, but also allow established devs some room to do crazy things
+
+// ❌ WRONG
+return "You can't take that.";
+
+// ✅ RIGHT
+return getMessage('cant_take_that');
+
+## Current Testing Status
+We are creating golden tests for actions in the stdlib package. Currently at **38/46 actions tested (83% coverage)** ✅ EXCEEDED 80% TARGET!
+
+### ✅ Completed Categories (6/9):
+1. **Object Manipulation (11/11)** - taking, dropping, examining, opening, locking, unlocking, inserting, removing, putting, giving, showing
+2. **Movement & Navigation (5/5)** - going, entering, exiting, climbing, looking
+3. **Character Actions (7/7)** - wearing, taking_off, eating, drinking, touching, smelling, listening
+4. **Communication (4/4)** - talking, asking, telling, answering
+5. **Exploration (1/1)** - searching
+6. **Device Interaction (3/3)** - switching_on, switching_off, using
+
+### 📝 In Progress Categories:
+- **Combat & Physical (4/5)** - ✅ attacking, throwing, pushing, pulling, ❌ turning
+- **Information & Meta (1/7)** - ✅ inventory, ❌ scoring, help, about, saving, restoring, quitting
+- **Miscellaneous (2/2)** - ✅ closing, waiting
+
+### Remaining Actions (8 total):
+1. **turning.ts** - Final physical manipulation action
+2. **scoring.ts** - Score display system
+3. **help.ts** - Help system
+4. **about.ts** - Game information
+5. **saving.ts** - Save game state
+6. **restoring.ts** - Restore saved game
+7. **quitting.ts** - Exit game
+
+## Testing Patterns Established
+
+### Golden Test Structure
+Each action test follows this pattern:
+1. **Action Metadata** - Verify ID, required messages, and group
+2. **Precondition Checks** - Test all failure conditions
+3. **Successful Execution** - Test success scenarios
+4. **Event Structure** - Validate event format and entities
+5. **Testing Pattern Examples** - Additional patterns specific to the action
+
+### Key Testing Utilities
+- `createEntity()` - Create mock entities with traits
+- `createTestContext()` - Create action execution context
+- `expectEvent()` - Validate event structure
+- `TestData` - Helper for common test setups
+- `createCommand()` - Create validated commands
+
+### Important Test Patterns
+1. Actions are pure functions returning events, never mutating state
+2. Actions thoroughly validate preconditions
+3. The framework supports complex interactions like implicit actions
+4. Event-driven architecture allows for rich world model updates
+5. All text must use message IDs, never hardcoded strings
+
+## Recent Sessions Progress
+
+### Session 7 - Physical Manipulation Actions
+- ✅ throwing.ts - Projectile mechanics with fragility, hit/miss, and NPC reactions
+- ✅ pushing.ts - Button/switch activation, heavy object movement, hidden passages
+- ✅ pulling.ts - Lever/cord mechanics, attached objects, bell ringing
+
+### Session 6 - Device & Combat Actions
+- ✅ switching_on.ts - Device activation with power/light handling
+- ✅ switching_off.ts - Device deactivation with darkness detection
+- ✅ attacking.ts - Combat system with fragility and NPC reactions
+
+### Session 5 - High Priority Actions
+- ✅ answering.ts - NPC question response system
+- ✅ inventory.ts - Observable inventory checking with weight/burden
+- ✅ searching.ts - Object and location searching with concealment
+- ✅ using.ts - Generic object usage with type detection
+
+### Session 4 - Character Actions Completed
+- ✅ eating.ts - Food/edible system with portions and effects
+- ✅ drinking.ts - Liquid consumption from items and containers
+- ✅ touching.ts - Tactile interactions detecting properties
+- ✅ smelling.ts - Olfactory detection of various objects
+- ✅ listening.ts - Auditory detection of devices and sounds
+
+### Sessions 1-3
+- Completed all Object Manipulation actions
+- Completed all Movement & Navigation actions
+- Completed wearing and taking_off actions
+- Completed all Communication actions
+
+## Key Implementation Insights
+
+### Action Categories and Behaviors
+- **Object Manipulation**: Validate visibility, reachability, ownership; handle container/supporter logic
+- **Movement**: Check exits, door states, vehicle/container entry
+- **Character Actions**: Sensory actions detect object properties; consumption actions handle edible traits
+- **Communication**: NPC interactions with interest systems and conversation states
+- **Device Interaction**: Power systems, light propagation, automatic behaviors
+- **Combat & Physical**: Fragility detection, weapon requirements, NPC reactions, projectile mechanics, weight-based movement
+
+### Common Preconditions
+- Visibility checks (canSee)
+- Reachability checks (canReach)
+- Trait requirements (has specific trait)
+- State validations (is open, is locked, etc.)
+- Relationship checks (holding, wearing, etc.)
+
+### Event Patterns
+- Semantic events for world model updates
+- Success/error events for user feedback
+- Observable events that NPCs can react to
+- Side effect events (item destruction, state changes)
+
+## Next Steps
+We've exceeded our 80% coverage target! The remaining 8 actions are:
+1. Complete Combat & Physical (1 remaining: turning)
+2. Complete Information & Meta (6 remaining: scoring, help, about, saving, restoring, quitting)
+
+The framework is well-architected with clear separation of concerns, comprehensive trait system, and robust event-driven design that enables complex interactive fiction mechanics.

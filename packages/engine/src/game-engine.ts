@@ -9,7 +9,8 @@ import {
   IFEntity,
   IdentityTrait,
   ActorTrait,
-  ContainerTrait
+  ContainerTrait,
+  StandardCapabilities
 } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import { 
@@ -18,7 +19,10 @@ import {
   standardActions,
   vocabularyRegistry,
   Parser,
-  ParserFactory
+  ParserFactory,
+  CommandHistoryData,
+  CommandHistoryEntry,
+  IFActions
 } from '@sharpee/stdlib';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { TextService, TextServiceContext, TextOutput } from '@sharpee/if-services';
@@ -322,6 +326,11 @@ export class GameEngine {
       // Store events for this turn
       this.turnEvents.set(turn, result.events);
 
+      // Update command history if command was successful
+      if (result.success) {
+        this.updateCommandHistory(result, input, turn);
+      }
+
       // Emit events if configured
       if (this.config.onEvent) {
         for (const event of result.events) {
@@ -557,6 +566,110 @@ export class GameEngine {
     this.updateScopeVocabulary();
 
     this.emit('state:changed', this.context);
+  }
+
+  /**
+   * Update command history capability
+   */
+  private updateCommandHistory(result: TurnResult, input: string, turn: number): void {
+    // Get command history capability
+    const historyData = this.world.getCapability(StandardCapabilities.COMMAND_HISTORY) as CommandHistoryData | null;
+    if (!historyData) {
+      // Command history capability not registered
+      return;
+    }
+
+    // Check if this was an AGAIN command execution
+    const executeCommandEvent = result.events.find(e => e.type === 'if.event.execute_command');
+    if (executeCommandEvent && executeCommandEvent.data?.isRepeat) {
+      // This is the AGAIN action itself - execute the repeated command
+      const repeatedCommand = executeCommandEvent.data.command;
+      const originalText = executeCommandEvent.data.originalText;
+      
+      // Execute the repeated command
+      // Note: This is a simplified approach. In a full implementation, you might want to
+      // re-parse and re-execute through the normal flow
+      this.executeTurn(originalText).then(repeatedResult => {
+        // The repeated command will update its own history
+      }).catch(error => {
+        console.error('Failed to repeat command:', error);
+      });
+      
+      // Don't record the AGAIN command itself
+      return;
+    }
+
+    // Get the action ID from the result
+    const actionId = result.actionId;
+    if (!actionId) {
+      // No action was executed (parse error, etc.)
+      return;
+    }
+
+    // Don't record non-repeatable actions
+    const nonRepeatable = [
+      IFActions.AGAIN,
+      IFActions.SAVING,
+      IFActions.RESTORING,
+      IFActions.QUITTING,
+      IFActions.RESTARTING,
+      IFActions.VERSION,
+      IFActions.VERIFYING
+    ];
+    
+    if (nonRepeatable.includes(actionId)) {
+      return;
+    }
+
+    // Extract the parsed command structure
+    let parsedCommand: any = {
+      verb: result.parsedCommand?.action || input.split(' ')[0]
+    };
+
+    // If we have a full parsed command structure, use it
+    if (result.parsedCommand) {
+      const parsed = result.parsedCommand;
+      
+      // Handle new ParsedCommand structure
+      if (parsed.structure) {
+        parsedCommand = {
+          verb: parsed.structure.verb?.text || parsed.action,
+          directObject: parsed.structure.directObject?.text,
+          preposition: parsed.structure.preposition?.text,
+          indirectObject: parsed.structure.indirectObject?.text
+        };
+      }
+      // Handle old ParsedCommandV1 structure
+      else if (parsed.directObject || parsed.indirectObject) {
+        parsedCommand = {
+          verb: parsed.action,
+          directObject: parsed.directObject?.text,
+          preposition: parsed.preposition,
+          indirectObject: parsed.indirectObject?.text
+        };
+      }
+    }
+
+    // Create the history entry
+    const entry: CommandHistoryEntry = {
+      actionId,
+      originalText: input,
+      parsedCommand,
+      turnNumber: turn,
+      timestamp: Date.now()
+    };
+
+    // Add to history
+    if (!historyData.entries) {
+      historyData.entries = [];
+    }
+    historyData.entries.push(entry);
+
+    // Trim to maxEntries if needed
+    const maxEntries = historyData.maxEntries || 100;
+    if (historyData.entries.length > maxEntries) {
+      historyData.entries = historyData.entries.slice(-maxEntries);
+    }
   }
 
   /**

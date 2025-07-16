@@ -71,6 +71,16 @@ export interface TurnResult {
    * Timing information
    */
   timing?: TimingData;
+  
+  /**
+   * The action ID that was executed (if any)
+   */
+  actionId?: string;
+  
+  /**
+   * The parsed command (if successfully parsed)
+   */
+  parsedCommand?: any;
 }
 
 /**

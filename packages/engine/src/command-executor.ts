@@ -247,7 +247,9 @@ export class CommandExecutor {
       input: command.parsed.rawInput || command.parsed.action,
       success,
       events: sequencedEvents,
-      error
+      error,
+      actionId: command.actionId,
+      parsedCommand: command.parsed
     };
   }
 

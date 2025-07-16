@@ -13,6 +13,7 @@ import type {
 
 import type {
   ParsedCommand,
+  NounPhrase,
   ValidatedCommand,
   ValidatedObjectReference,
   ValidationError,
@@ -20,7 +21,6 @@ import type {
   IFEntity
 } from '@sharpee/world-model';
 
-import { ScopeService } from '@sharpee/world-model';
 import { ActionRegistry } from '../actions/registry';
 
 /**
@@ -71,14 +71,12 @@ export interface CommandValidator {
 export class CommandValidator implements CommandValidator {
   private world: WorldModel;
   private actionRegistry: ActionRegistry;
-  private scopeService: ScopeService;
   private resolutionContext: ResolutionContext;
   private systemEvents?: GenericEventSource<SystemEvent>;
 
   constructor(world: WorldModel, actionRegistry: ActionRegistry) {
     this.world = world;
     this.actionRegistry = actionRegistry;
-    this.scopeService = new ScopeService(world);
     this.resolutionContext = {
       recentEntities: new Map()
     };
@@ -112,25 +110,12 @@ export class CommandValidator implements CommandValidator {
       };
     }
 
-    // Get object references from parsed command
-    const directObjectRef = command.structure?.directObject ? {
-      text: command.structure.directObject.head,
-      candidates: command.structure.directObject.candidates,
-      modifiers: command.structure.directObject.modifiers
-    } : undefined;
-    
-    const indirectObjectRef = command.structure?.indirectObject ? {
-      text: command.structure.indirectObject.head,
-      candidates: command.structure.indirectObject.candidates,
-      modifiers: command.structure.indirectObject.modifiers
-    } : undefined;
-
     // 2. Validate direct object if required
     let directObject: ValidatedObjectReference | undefined;
-    if (directObjectRef) {
+    if (command.structure?.directObject) {
       const metadata = this.getActionMetadata(actionHandler);
       const scope = metadata.directObjectScope || 'visible';
-      const resolved = this.resolveEntity(directObjectRef, 'direct', scope, command);
+      const resolved = this.resolveEntity(command.structure.directObject, 'direct', scope, command);
       if (!resolved.success) {
         return resolved;
       }
@@ -149,10 +134,10 @@ export class CommandValidator implements CommandValidator {
 
     // 3. Validate indirect object if present
     let indirectObject: ValidatedObjectReference | undefined;
-    if (indirectObjectRef) {
+    if (command.structure?.indirectObject) {
       const metadata = this.getActionMetadata(actionHandler);
       const scope = metadata.indirectObjectScope || 'visible';
-      const resolved = this.resolveEntity(indirectObjectRef, 'indirect', scope, command);
+      const resolved = this.resolveEntity(command.structure.indirectObject, 'indirect', scope, command);
       if (!resolved.success) {
         return resolved;
       }
@@ -228,7 +213,7 @@ export class CommandValidator implements CommandValidator {
    * Resolve an entity reference with full matching logic
    */
   private resolveEntity(
-    ref: ParsedCommand['directObject'],
+    ref: NounPhrase,
     objectType: 'direct' | 'indirect',
     requiredScope: 'visible' | 'reachable' | 'touchable',
     command: ParsedCommand
@@ -373,24 +358,45 @@ export class CommandValidator implements CommandValidator {
     const player = this.world.getPlayer();
     if (!player) return [];
 
+    // Use world's getInScope if available for better filtering
+    if (this.world.getInScope) {
+      const inScope = this.world.getInScope(player.id);
+      
+      switch (scope) {
+        case 'visible':
+          return inScope.filter(e => this.isEntityVisible(e));
+        case 'reachable':
+          return inScope.filter(e => this.isEntityReachable(e));
+        case 'touchable':
+          return inScope.filter(e => this.isEntityTouchable(e));
+        default:
+          return inScope;
+      }
+    }
+
+    // Fallback to getAllEntities with filtering
     const allEntities = this.world.getAllEntities();
+    // Exclude the player and rooms from consideration
+    const filteredEntities = allEntities.filter(e => 
+      e.id !== player.id && e.type !== 'room'
+    );
     
     switch (scope) {
       case 'visible':
-        return allEntities.filter(e => this.isEntityVisible(e));
+        return filteredEntities.filter(e => this.isEntityVisible(e));
       case 'reachable':
-        return allEntities.filter(e => this.isEntityReachable(e));
+        return filteredEntities.filter(e => this.isEntityReachable(e));
       case 'touchable':
-        return allEntities.filter(e => this.isEntityTouchable(e));
+        return filteredEntities.filter(e => this.isEntityTouchable(e));
       default:
-        return allEntities;
+        return filteredEntities;
     }
   }
 
   /**
    * Score entities against a reference
    */
-  private scoreEntities(entities: IFEntity[], ref: ParsedCommand['directObject']): ScoredEntityMatch[] {
+  private scoreEntities(entities: IFEntity[], ref: NounPhrase): ScoredEntityMatch[] {
     if (!ref) return [];
 
     const scored: ScoredEntityMatch[] = [];
@@ -494,7 +500,7 @@ export class CommandValidator implements CommandValidator {
    */
   private resolveAmbiguity(
     matches: ScoredEntityMatch[],
-    ref: ParsedCommand['directObject'],
+    ref: NounPhrase,
     command: ParsedCommand
   ): ScoredEntityMatch | null {
     this.emitDebugEvent('ambiguity_resolution', command, {
@@ -528,7 +534,7 @@ export class CommandValidator implements CommandValidator {
     if (ref && ref.modifiers && ref.modifiers.length > 0) {
       const perfectMatches = matches.filter(m => {
         const adjectives = this.getEntityAdjectives(m.entity).map(a => a.toLowerCase());
-        return ref.modifiers!.every(mod => adjectives.includes(mod.toLowerCase()));
+        return ref.modifiers!.every((mod: string) => adjectives.includes(mod.toLowerCase()));
       });
 
       if (perfectMatches.length === 1) {
@@ -607,9 +613,9 @@ export class CommandValidator implements CommandValidator {
     const player = this.world.getPlayer();
     if (!player) return false;
 
-    // Use scope service if available
-    if (this.scopeService.canSee) {
-      return this.scopeService.canSee(player, entity);
+    // Use world model's canSee if available
+    if (this.world.canSee) {
+      return this.world.canSee(player.id, entity.id);
     }
 
     // Fallback logic
@@ -639,12 +645,8 @@ export class CommandValidator implements CommandValidator {
     const player = this.world.getPlayer();
     if (!player) return false;
 
-    // Use scope service if available
-    if (this.scopeService.canReach) {
-      return this.scopeService.canReach(player, entity);
-    }
-
-    // Fallback - visible entities are reachable
+    // For now, reachable = visible
+    // Games can override this by implementing custom scope rules
     return this.isEntityVisible(entity);
   }
 

@@ -135,16 +135,16 @@ build_and_test "@sharpee/if-domain" "if-domain" true  # Skip tests - no tests de
 build_and_test "@sharpee/lang-en-us" "lang-en-us"  # No dependencies
 
 # Level 2 dependencies
-build_and_test "@sharpee/if-services" "if-services" true  # Skip tests - no tests yet
 build_and_test "@sharpee/world-model" "world-model"  # Depends on core + if-domain
 
-# Level 3 dependencies
+# Level 3 dependencies  
+build_and_test "@sharpee/if-services" "if-services" true  # Skip tests - no tests yet
 build_and_test "@sharpee/event-processor" "event-processor"  # Depends on core + if-domain + world-model
 build_and_test "@sharpee/stdlib" "stdlib"  # Depends on core + world-model
 build_and_test "@sharpee/parser-en-us" "parser-en-us"
-build_and_test "@sharpee/text-service-template" "text-service-template" true  # Skip tests - no tests defined
 
 # Level 4 dependencies
+build_and_test "@sharpee/text-service-template" "text-service-template" true  # Skip tests - no tests defined
 build_and_test "@sharpee/engine" "engine"
 build_and_test "@sharpee/forge" "forge"
 build_and_test "@sharpee/client-core" "client-core"
@@ -171,14 +171,14 @@ echo "  2. Foundation packages (depend only on core):"
 echo "     - @sharpee/if-domain (no tests)"
 echo "     - @sharpee/lang-en-us (no dependencies)"
 echo "  3. Second-level packages:"
-echo "     - @sharpee/if-services (depends on core + if-domain + world-model)"
 echo "     - @sharpee/world-model (depends on core + if-domain)"
 echo "  4. Third-level packages:"
+echo "     - @sharpee/if-services (depends on core + if-domain + world-model)"
 echo "     - @sharpee/event-processor (depends on core + if-domain + world-model)"
 echo "     - @sharpee/stdlib (depends on core + world-model)"
 echo "     - @sharpee/parser-en-us (depends on stdlib)"
+echo "  5. Fourth-level packages:"
 echo "     - @sharpee/text-service-template (depends on if-services)"
-echo "  5. Higher-level packages:"
 echo "     - @sharpee/engine"
 echo "     - @sharpee/forge"
 echo "     - @sharpee/client-core"

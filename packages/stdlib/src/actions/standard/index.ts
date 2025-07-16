@@ -14,6 +14,7 @@ export * from './going';
 export * from './looking';
 export * from './inventory';
 export * from './waiting';
+export * from './sleeping';
 export * from './scoring';
 export * from './help';
 export * from './about';
@@ -50,6 +51,7 @@ export * from './attacking';
 export * from './saving';
 export * from './restoring';
 export * from './quitting';
+export * from './again';
 
 // Import all actions for easy registration
 import { takingAction } from './taking';
@@ -61,6 +63,7 @@ import { goingAction } from './going';
 import { lookingAction } from './looking';
 import { inventoryAction } from './inventory';
 import { waitingAction } from './waiting';
+import { sleepingAction } from './sleeping';
 import { scoringAction } from './scoring';
 import { helpAction } from './help';
 import { aboutAction } from './about';
@@ -97,6 +100,7 @@ import { attackingAction } from './attacking';
 import { savingAction } from './saving';
 import { restoringAction } from './restoring';
 import { quittingAction } from './quitting';
+import { againAction } from './again';
 
 export const standardActions = [
   takingAction,
@@ -108,6 +112,7 @@ export const standardActions = [
   lookingAction,
   inventoryAction,
   waitingAction,
+  sleepingAction,
   scoringAction,
   helpAction,
   aboutAction,
@@ -143,5 +148,6 @@ export const standardActions = [
   attackingAction,
   savingAction,
   restoringAction,
-  quittingAction
+  quittingAction,
+  againAction
 ];
