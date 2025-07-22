@@ -26,7 +26,7 @@ import {
 } from '@sharpee/stdlib';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { TextService, TextServiceContext, TextOutput } from '@sharpee/if-services';
-import { SemanticEvent, createSemanticEventSource } from '@sharpee/core';
+import { SemanticEvent, createSemanticEventSource, SaveData, SaveRestoreHooks, SaveResult, RestoreResult, SerializedEvent, SerializedEntity, SerializedLocation, SerializedRelationship, SerializedSpatialIndex, SerializedTurn, EngineState, SaveMetadata, SerializedParserState, QueryManager, createQueryManager, PendingQuery, PlatformEvent, isPlatformRequestEvent, PlatformEventType, SaveContext, RestoreContext, QuitContext, RestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent } from '@sharpee/core';
 
 import {
   GameContext,
@@ -74,6 +74,10 @@ export class GameEngine {
   private languageProvider?: LanguageProvider;
   private parser?: Parser;
   private eventListeners = new Map<GameEngineEventName, Set<Function>>();
+  private saveRestoreHooks?: SaveRestoreHooks;
+  private eventSource = createSemanticEventSource();
+  private queryManager: QueryManager;
+  private pendingPlatformOps: PlatformEvent[] = [];
 
   constructor(
     world: WorldModel,
@@ -114,6 +118,12 @@ export class GameEngine {
     if (languageProvider) {
       this.languageProvider = languageProvider;
     }
+    
+    // Create query manager
+    this.queryManager = createQueryManager();
+    
+    // Listen for client.query events
+    this.setupQueryHandling();
   }
 
   /**
@@ -280,6 +290,85 @@ export class GameEngine {
   }
 
   /**
+   * Setup query handling
+   */
+  private setupQueryHandling(): void {
+    // Listen for client.query events from the event source
+    this.eventSource.getEmitter().on('client.query', (event: SemanticEvent) => {
+      this.handleClientQuery(event);
+    });
+    
+    // Listen for query manager events and forward them
+    this.queryManager.on('query:pending', (query) => {
+      // Emit a semantic event for the text service
+      const queryEvent: SemanticEvent = {
+        id: `evt_query_${Date.now()}`,
+        type: 'query.pending',
+        timestamp: Date.now(),
+        entities: {},
+        data: { query },
+        payload: { query }
+      };
+      this.eventSource.emit(queryEvent);
+    });
+    
+    this.queryManager.on('query:invalid', (input, result, query) => {
+      // Emit validation error event
+      const errorEvent: SemanticEvent = {
+        id: `evt_invalid_${Date.now()}`,
+        type: 'query.invalid',
+        timestamp: Date.now(),
+        entities: {},
+        data: { 
+          input,
+          message: result.message,
+          hint: result.hint
+        },
+        payload: { input, result, query }
+      };
+      this.eventSource.emit(errorEvent);
+    });
+  }
+  
+  /**
+   * Handle a client query event
+   */
+  private async handleClientQuery(event: SemanticEvent): Promise<void> {
+    const queryData = event.data || event.payload || {};
+    
+    // Create a PendingQuery from the event data
+    const query: PendingQuery = {
+      id: queryData.queryId || `query_${Date.now()}`,
+      source: queryData.source || 'system',
+      type: queryData.type || 'multiple_choice',
+      messageId: queryData.messageId,
+      messageParams: queryData.messageParams,
+      options: queryData.options,
+      context: queryData.context || {},
+      allowInterruption: queryData.allowInterruption !== false,
+      validator: queryData.validator,
+      timeout: queryData.timeout,
+      created: Date.now(),
+      priority: queryData.priority
+    };
+    
+    // Register quit handler if needed
+    if (query.type === 'quit_confirmation' && !this.queryManager['handlers'].has('quit')) {
+      const { createQuitQueryHandler } = await import('@sharpee/stdlib');
+      const quitHandler = createQuitQueryHandler();
+      this.queryManager.registerHandler('quit', quitHandler);
+      
+      // Connect quit handler events to engine event source
+      quitHandler.getEventSource().subscribe((evt) => {
+        this.eventSource.emit(evt);
+      });
+    }
+    
+    // Ask the query
+    await this.queryManager.askQuery(query);
+  }
+
+  /**
    * Execute a turn
    */
   async executeTurn(input: string): Promise<TurnResult> {
@@ -315,6 +404,30 @@ export class GameEngine {
     this.emit('turn:start', turn, input);
 
     try {
+      // Check if query manager should handle this input
+      if (this.queryManager.hasPendingQuery()) {
+        const queryResult = this.queryManager.processInput(input);
+        
+        if (queryResult === 'handled' || queryResult === 'interrupt') {
+          // Query handled the input, return a minimal turn result
+          const queryHandledEvent = eventSequencer.sequence({
+            type: 'query.response',
+            data: {
+              input,
+              handled: true,
+              wasInterruption: queryResult === 'interrupt'
+            }
+          }, turn);
+          
+          return {
+            turn,
+            input,
+            success: true,
+            events: [queryHandledEvent]
+          };
+        }
+        // If 'pass', continue normal command processing
+      }
       // Execute the command
       const result = await this.commandExecutor.execute(
         input,
@@ -325,6 +438,21 @@ export class GameEngine {
 
       // Store events for this turn
       this.turnEvents.set(turn, result.events);
+      
+      // Also track in event source for save/restore
+      for (const event of result.events) {
+        this.eventSource.emit(event);
+        
+        // Check if this is a client.query event
+        if (event.type === 'client.query') {
+          // The handleClientQuery will be called by the event listener
+        }
+        
+        // Check if this is a platform request event
+        if (isPlatformRequestEvent(event)) {
+          this.pendingPlatformOps.push(event as PlatformEvent);
+        }
+      }
 
       // Update command history if command was successful
       if (result.success) {
@@ -345,6 +473,11 @@ export class GameEngine {
 
       // Update context
       this.updateContext(result);
+
+      // Process pending platform operations before text service
+      if (this.pendingPlatformOps.length > 0) {
+        await this.processPlatformOperations();
+      }
 
       // Process text output
       if (this.textService) {
@@ -434,6 +567,13 @@ export class GameEngine {
   getTextService(): TextService | undefined {
     return this.textService;
   }
+  
+  /**
+   * Get the query manager
+   */
+  getQueryManager(): QueryManager {
+    return this.queryManager;
+  }
 
   /**
    * Set a custom text service
@@ -448,7 +588,124 @@ export class GameEngine {
   }
 
   /**
-   * Save game state
+   * Register save/restore hooks
+   */
+  registerSaveRestoreHooks(hooks: SaveRestoreHooks): void {
+    this.saveRestoreHooks = hooks;
+  }
+
+  /**
+   * Save game state using registered hooks
+   */
+  async save(): Promise<boolean> {
+    if (!this.saveRestoreHooks) {
+      return false; // No save capability
+    }
+
+    try {
+      const saveData = this.createSaveData();
+      await this.saveRestoreHooks.onSaveRequested(saveData);
+      return true;
+    } catch (error) {
+      console.error('Save failed:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Restore game state using registered hooks
+   */
+  async restore(): Promise<boolean> {
+    if (!this.saveRestoreHooks) {
+      return false; // No restore capability
+    }
+
+    try {
+      const saveData = await this.saveRestoreHooks.onRestoreRequested();
+      if (!saveData) {
+        return false; // User cancelled or no save available
+      }
+
+      this.loadSaveData(saveData);
+      return true;
+    } catch (error) {
+      console.error('Restore failed:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Create save data from current engine state
+   */
+  private createSaveData(): SaveData {
+    const metadata: SaveMetadata = {
+      storyId: this.story?.config.id || 'unknown',
+      storyVersion: this.story?.config.version || '0.0.0',
+      turnCount: this.context.currentTurn - 1,
+      playTime: Date.now() - this.context.metadata.started.getTime(),
+      description: `Turn ${this.context.currentTurn - 1}`
+    };
+
+    const engineState: EngineState = {
+      eventSource: this.serializeEventSource(),
+      spatialIndex: this.serializeSpatialIndex(),
+      turnHistory: this.serializeTurnHistory(),
+      parserState: this.serializeParserState()
+    };
+
+    return {
+      version: '1.0.0',
+      timestamp: Date.now(),
+      metadata,
+      engineState,
+      storyConfig: {
+        id: this.story?.config.id || 'unknown',
+        version: this.story?.config.version || '0.0.0',
+        title: this.story?.config.title || 'Unknown',
+        author: this.story?.config.author || 'Unknown'
+      }
+    };
+  }
+
+  /**
+   * Load save data into engine
+   */
+  private loadSaveData(saveData: SaveData): void {
+    // Validate save compatibility
+    if (saveData.version !== '1.0.0') {
+      throw new Error(`Unsupported save version: ${saveData.version}`);
+    }
+
+    if (saveData.storyConfig.id !== this.story?.config.id) {
+      throw new Error(`Save is for different story: ${saveData.storyConfig.id}`);
+    }
+
+    // Restore event source
+    this.deserializeEventSource(saveData.engineState.eventSource);
+
+    // Restore spatial index (world state)
+    this.deserializeSpatialIndex(saveData.engineState.spatialIndex);
+
+    // Restore turn history
+    this.deserializeTurnHistory(saveData.engineState.turnHistory);
+
+    // Restore parser state if present
+    if (saveData.engineState.parserState) {
+      this.deserializeParserState(saveData.engineState.parserState);
+    }
+
+    // Update context
+    this.context.currentTurn = saveData.metadata.turnCount + 1;
+    this.context.metadata.lastPlayed = new Date();
+
+    // Update vocabulary for current scope
+    this.updateScopeVocabulary();
+
+    this.emit('state:changed', this.context);
+  }
+
+  /**
+   * @deprecated Use save() instead
    */
   saveState(): GameState {
     return {
@@ -461,7 +718,7 @@ export class GameEngine {
   }
 
   /**
-   * Load game state
+   * @deprecated Use restore() instead
    */
   loadState(state: GameState): void {
     // Validate version
@@ -673,6 +930,164 @@ export class GameEngine {
   }
 
   /**
+   * Process pending platform operations
+   */
+  private async processPlatformOperations(): Promise<void> {
+    // Process each pending operation
+    for (const platformOp of this.pendingPlatformOps) {
+      try {
+        switch (platformOp.type) {
+          case PlatformEventType.SAVE_REQUESTED: {
+            const context = platformOp.payload.context as SaveContext;
+            if (this.saveRestoreHooks?.onSaveRequested) {
+              const saveData = this.createSaveData();
+              // Add any additional context from the platform event
+              if (context?.saveName) {
+                saveData.metadata.description = context.saveName;
+              }
+              if (context?.metadata) {
+                Object.assign(saveData.metadata, context.metadata);
+              }
+              
+              await this.saveRestoreHooks.onSaveRequested(saveData);
+              
+              // Emit completion event
+              const completionEvent = createSaveCompletedEvent(true);
+              this.eventSource.emit(completionEvent);
+              this.turnEvents.get(this.context.currentTurn - 1)?.push(completionEvent);
+            } else {
+              // No save hook registered
+              const errorEvent = createSaveCompletedEvent(false, 'No save handler registered');
+              this.eventSource.emit(errorEvent);
+              this.turnEvents.get(this.context.currentTurn - 1)?.push(errorEvent);
+            }
+            break;
+          }
+          
+          case PlatformEventType.RESTORE_REQUESTED: {
+            const context = platformOp.payload.context as RestoreContext;
+            if (this.saveRestoreHooks?.onRestoreRequested) {
+              const saveData = await this.saveRestoreHooks.onRestoreRequested();
+              if (saveData) {
+                this.loadSaveData(saveData);
+                
+                // Emit completion event
+                const completionEvent = createRestoreCompletedEvent(true);
+                this.eventSource.emit(completionEvent);
+                this.turnEvents.get(this.context.currentTurn - 1)?.push(completionEvent);
+              } else {
+                // User cancelled or no save available
+                const errorEvent = createRestoreCompletedEvent(false, 'No save data available or restore cancelled');
+                this.eventSource.emit(errorEvent);
+                this.turnEvents.get(this.context.currentTurn - 1)?.push(errorEvent);
+              }
+            } else {
+              // No restore hook registered
+              const errorEvent = createRestoreCompletedEvent(false, 'No restore handler registered');
+              this.eventSource.emit(errorEvent);
+              this.turnEvents.get(this.context.currentTurn - 1)?.push(errorEvent);
+            }
+            break;
+          }
+          
+          case PlatformEventType.QUIT_REQUESTED: {
+            const context = platformOp.payload.context as QuitContext;
+            if (this.saveRestoreHooks?.onQuitRequested) {
+              const shouldQuit = await this.saveRestoreHooks.onQuitRequested(context);
+              if (shouldQuit) {
+                // Emit confirmation event
+                const confirmEvent = createQuitConfirmedEvent();
+                this.eventSource.emit(confirmEvent);
+                this.turnEvents.get(this.context.currentTurn - 1)?.push(confirmEvent);
+                
+                // Stop the engine
+                this.stop();
+              } else {
+                // Quit was cancelled
+                const cancelEvent = createQuitCancelledEvent();
+                this.eventSource.emit(cancelEvent);
+                this.turnEvents.get(this.context.currentTurn - 1)?.push(cancelEvent);
+              }
+            } else {
+              // No quit hook registered - default behavior is to quit
+              const confirmEvent = createQuitConfirmedEvent();
+              this.eventSource.emit(confirmEvent);
+              this.turnEvents.get(this.context.currentTurn - 1)?.push(confirmEvent);
+              
+              // Stop the engine
+              this.stop();
+            }
+            break;
+          }
+          
+          case PlatformEventType.RESTART_REQUESTED: {
+            const context = platformOp.payload.context as RestartContext;
+            if (this.saveRestoreHooks?.onRestartRequested) {
+              const shouldRestart = await this.saveRestoreHooks.onRestartRequested(context);
+              if (shouldRestart) {
+                // Emit completion event
+                const completionEvent = createRestartCompletedEvent(true);
+                this.eventSource.emit(completionEvent);
+                this.turnEvents.get(this.context.currentTurn - 1)?.push(completionEvent);
+                
+                // Re-initialize the story
+                if (this.story) {
+                  await this.setStory(this.story);
+                  this.start();
+                }
+              } else {
+                // Restart was cancelled
+                const cancelEvent = createRestartCompletedEvent(false);
+                this.eventSource.emit(cancelEvent);
+                this.turnEvents.get(this.context.currentTurn - 1)?.push(cancelEvent);
+              }
+            } else {
+              // No restart hook registered - default behavior is to restart
+              const completionEvent = createRestartCompletedEvent(true);
+              this.eventSource.emit(completionEvent);
+              this.turnEvents.get(this.context.currentTurn - 1)?.push(completionEvent);
+              
+              // Re-initialize the story
+              if (this.story) {
+                await this.setStory(this.story);
+                this.start();
+              }
+            }
+            break;
+          }
+        }
+      } catch (error) {
+        console.error(`Error processing platform operation ${platformOp.type}:`, error);
+        
+        // Emit appropriate error event based on operation type
+        let errorEvent: PlatformEvent;
+        switch (platformOp.type) {
+          case PlatformEventType.SAVE_REQUESTED:
+            errorEvent = createSaveCompletedEvent(false, error instanceof Error ? error.message : 'Unknown error');
+            break;
+          case PlatformEventType.RESTORE_REQUESTED:
+            errorEvent = createRestoreCompletedEvent(false, error instanceof Error ? error.message : 'Unknown error');
+            break;
+          case PlatformEventType.QUIT_REQUESTED:
+            errorEvent = createQuitCancelledEvent();
+            break;
+          case PlatformEventType.RESTART_REQUESTED:
+            errorEvent = createRestartCompletedEvent(false);
+            break;
+          default:
+            continue;
+        }
+        
+        this.eventSource.emit(errorEvent);
+        this.turnEvents.get(this.context.currentTurn - 1)?.push(errorEvent);
+      }
+    }
+    
+    // Clear pending operations
+    this.pendingPlatformOps = [];
+  }
+
+  /**
    * Check if game is over
    */
   private isGameOver(): boolean {
@@ -704,6 +1119,214 @@ export class GameEngine {
   private deserializeWorld(data: unknown): void {
     // Simple implementation - override for better deserialization
     console.warn('World deserialization not fully implemented');
+  }
+
+  /**
+   * Serialize event source
+   */
+  private serializeEventSource(): SerializedEvent[] {
+    const events: SerializedEvent[] = [];
+    
+    // Get all events from the event source
+    for (const event of this.eventSource.getAllEvents()) {
+      events.push({
+        id: event.id,
+        type: event.type,
+        timestamp: event.timestamp || Date.now(),
+        data: event.data || {},
+        metadata: event.metadata
+      });
+    }
+    
+    return events;
+  }
+
+  /**
+   * Deserialize event source
+   */
+  private deserializeEventSource(events: SerializedEvent[]): void {
+    // Clear existing event source
+    this.eventSource = createSemanticEventSource();
+    
+    // Replay events
+    for (const event of events) {
+      this.eventSource.emit({
+        id: event.id,
+        type: event.type,
+        timestamp: event.timestamp,
+        data: event.data,
+        metadata: event.metadata
+      });
+    }
+  }
+
+  /**
+   * Serialize spatial index (world state)
+   */
+  private serializeSpatialIndex(): SerializedSpatialIndex {
+    const entities: Record<string, SerializedEntity> = {};
+    const locations: Record<string, SerializedLocation> = {};
+    const relationships: Record<string, SerializedRelationship[]> = {};
+    
+    // Serialize all entities
+    for (const entity of this.world.getAllEntities()) {
+      const traits: Record<string, unknown> = {};
+      
+      // Serialize each trait
+      for (const [name, trait] of entity.traits) {
+        traits[name] = this.serializeTrait(trait);
+      }
+      
+      entities[entity.id] = {
+        id: entity.id,
+        traits,
+        entityType: entity.constructor.name
+      };
+    }
+    
+    // Serialize locations and their contents
+    const allLocations = this.world.getAllLocations();
+    for (const location of allLocations) {
+      const contents = this.world.getContents(location.id);
+      locations[location.id] = {
+        id: location.id,
+        properties: {
+          name: location.get('IDENTITY')?.name || 'Unknown',
+          description: location.get('IDENTITY')?.description || ''
+        },
+        contents: contents.map(e => e.id),
+        connections: this.world.getConnections(location.id)
+      };
+    }
+    
+    // TODO: Serialize other relationships
+    
+    return { entities, locations, relationships };
+  }
+
+  /**
+   * Deserialize spatial index
+   */
+  private deserializeSpatialIndex(index: SerializedSpatialIndex): void {
+    // Clear existing world
+    this.world = new WorldModel();
+    
+    // Restore entities
+    for (const [id, data] of Object.entries(index.entities)) {
+      const entity = this.world.createEntity(id);
+      
+      // Restore traits
+      for (const [name, traitData] of Object.entries(data.traits)) {
+        const trait = this.deserializeTrait(name, traitData);
+        if (trait) {
+          entity.add(trait);
+        }
+      }
+    }
+    
+    // Restore locations and contents
+    for (const [locationId, data] of Object.entries(index.locations)) {
+      // Place entities in their locations
+      for (const entityId of data.contents) {
+        const entity = this.world.getEntity(entityId);
+        if (entity) {
+          this.world.setLocation(entity, locationId);
+        }
+      }
+    }
+    
+    // Restore player reference
+    const playerId = this.context.player.id;
+    const player = this.world.getEntity(playerId);
+    if (player) {
+      this.context.player = player;
+      this.world.setPlayer(playerId);
+    }
+  }
+
+  /**
+   * Serialize turn history
+   */
+  private serializeTurnHistory(): SerializedTurn[] {
+    const turns: SerializedTurn[] = [];
+    
+    for (const [turnNumber, result] of this.context.history.entries()) {
+      turns.push({
+        turnNumber: turnNumber + 1,
+        eventIds: result.events.map(e => e.id),
+        timestamp: result.events[0]?.timestamp || Date.now(),
+        command: result.input
+      });
+    }
+    
+    return turns;
+  }
+
+  /**
+   * Deserialize turn history
+   */
+  private deserializeTurnHistory(turns: SerializedTurn[]): void {
+    // Clear existing history
+    this.context.history = [];
+    
+    // Restore turn results
+    for (const turn of turns) {
+      // Find the events for this turn
+      const events = this.eventSource.getAllEvents().filter(e => 
+        turn.eventIds.includes(e.id)
+      );
+      
+      // Create a minimal turn result
+      this.context.history.push({
+        turn: turn.turnNumber,
+        input: turn.command || '',
+        success: true,
+        events: events as SequencedEvent[]
+      });
+    }
+  }
+
+  /**
+   * Serialize parser state
+   */
+  private serializeParserState(): SerializedParserState | undefined {
+    if (!this.parser) {
+      return undefined;
+    }
+    
+    // Parser state serialization is parser-specific
+    // For now, return empty object
+    return {};
+  }
+
+  /**
+   * Deserialize parser state
+   */
+  private deserializeParserState(state: SerializedParserState): void {
+    // Parser state restoration is parser-specific
+    // For now, do nothing
+  }
+
+  /**
+   * Serialize a trait
+   */
+  private serializeTrait(trait: unknown): unknown {
+    // Most traits are POJOs and can be serialized directly
+    if (typeof trait === 'object' && trait !== null) {
+      // Handle special cases if needed
+      return { ...trait };
+    }
+    return trait;
+  }
+
+  /**
+   * Deserialize a trait
+   */
+  private deserializeTrait(name: string, data: unknown): unknown {
+    // This would need to reconstruct the proper trait classes
+    // For now, return the data as-is
+    // In a full implementation, you'd use a trait factory
+    return data;
   }
 
   /**

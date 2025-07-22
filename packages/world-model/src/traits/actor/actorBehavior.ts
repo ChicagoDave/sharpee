@@ -55,8 +55,8 @@ export class ActorBehavior extends Behavior {
     const actorTrait = ActorBehavior.require<ActorTrait>(actor, TraitType.ACTOR);
     
     // Check inventory limits
-    if (actorTrait.inventoryLimit) {
-      const limit = actorTrait.inventoryLimit;
+    if (actorTrait.capacity) {
+      const limit = actorTrait.capacity;
       
       // Check item count
       if (limit.maxItems !== undefined) {
@@ -119,8 +119,8 @@ export class ActorBehavior extends Behavior {
     const actorTrait = ActorBehavior.require<ActorTrait>(actor, TraitType.ACTOR);
     const result: { items?: number; weight?: number; volume?: number } = {};
     
-    if (actorTrait.inventoryLimit) {
-      const limit = actorTrait.inventoryLimit;
+    if (actorTrait.capacity) {
+      const limit = actorTrait.capacity;
       
       if (limit.maxItems !== undefined) {
         const current = world.getContents(actor.id).length;

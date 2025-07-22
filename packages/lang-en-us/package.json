@@ -22,7 +22,8 @@
   "author": "Sharpee Team",
   "license": "MIT",
   "dependencies": {
-    "@sharpee/core": "workspace:*"
+    "@sharpee/core": "workspace:*",
+    "@sharpee/if-domain": "workspace:*"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",

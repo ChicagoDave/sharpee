@@ -1,36 +1,47 @@
 # Test Fixes Summary
 
-## Fixes Applied
+## Issues Found and Fixed
 
-### 1. Entity Creation Consistency
-- Updated WorldModel and AuthorModel to pass entityType in attributes during construction
-- This ensures all entities have consistent attributes regardless of creation method
+### 1. Enhanced Context Issues
+- **Problem**: The `createEvent` method in `EnhancedActionContext` was trying to access `this.player.id` without checking if `player` exists
+- **Fix**: Added null checks for `player`, `currentLocation`, and command objects before accessing their properties
 
-### 2. Updated Tests to Use AuthorModel
-Fixed multiple test files to use AuthorModel for setup when physics rules would be violated:
-- `container-visibility-fix.test.ts` - Use AuthorModel for placing items in closed containers
-- `trait-combinations.test.ts` - Use AuthorModel for complex container setups
-- `visibility-chains.test.ts` - Use AuthorModel for nested closed containers
-- `minimal-visibility.test.ts` - Fixed to use new createEntity(name, type) signature
+### 2. Missing Room References
+- **Problem**: Several test files had references to undefined `room` variable when setting entity locations
+- **Fix**: Updated tests to use `TestData.basicSetup()` which properly returns `{ world, player, room }`
 
-### 3. Fixed Specific Test Issues
-- `entity-system-updates.test.ts` - Fixed mixed old/new entity test
-- `room-navigation.test.ts` - Changed firstVisit to visited property
-- Skipped tests that have design issues (duplicate entity names, etc.)
+### 3. World Model Method Calls
+- **Problem**: Actions were calling `context.world.getLocation()` which may not exist in all world implementations
+- **Fix**: 
+  - Changed to use `context.world.getContainingRoom()` where appropriate
+  - Added optional chaining for `getLocation` calls: `context.world.getLocation?.()`
 
-## Root Cause Analysis
+### 4. Undefined currentLocation
+- **Problem**: The restarting action tried to access `context.currentLocation.name` without checking if it exists
+- **Fix**: Added optional chaining: `context.currentLocation?.name`
 
-The main issue was that after implementing AuthorModel (per ADR-014), many tests were still trying to use WorldModel directly for setup. WorldModel enforces physics rules (can't put items in closed containers), while AuthorModel bypasses these for world setup.
+## Files Modified
 
-## Remaining Issues
+1. **Enhanced Context** (`src/actions/enhanced-context.ts`)
+   - Added null checks in `createEvent` method
+   - Added validation in `createMockEnhancedContext`
 
-1. **Scope/Visibility Logic**: Some tests are failing because items in containers aren't being included in scope
-2. **Duplicate Entity Names**: Some tests create entities with the same name, causing errors
-3. **Test Design**: Some tests need to be redesigned to work with the new system
+2. **Test Utils** (`tests/test-utils.ts`)
+   - Improved `createTestContext` to ensure entities are properly initialized
 
-## Recommendations
+3. **Actions**:
+   - `telling.ts` - Changed to use `getContainingRoom` instead of `getLocation`
+   - `using.ts` - Added optional chaining for `getLocation`
+   - `switching_off.ts` - Changed to use `getContainingRoom`
+   - `switching_on.ts` - Changed to use `getContainingRoom`
+   - `restarting.ts` - Added optional chaining for `currentLocation`
 
-1. Run tests again to see current status
-2. Debug the scope/visibility issues in WorldModel
-3. Update any remaining tests that violate physics rules
-4. Consider adding better error messages when physics rules are violated
+4. **Test Files**:
+   - `using-golden.test.ts` - Fixed room references
+   - `searching-golden.test.ts` - Fixed room reference
+
+## Design Considerations
+
+The main architectural issue was that the actions were making assumptions about the world model interface that weren't guaranteed. The fixes maintain the event-driven architecture while being more defensive about accessing properties that might not exist.
+
+The test setup was also improved to ensure that basic entities (player and room) are always available when creating test contexts.

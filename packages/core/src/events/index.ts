@@ -11,6 +11,7 @@
 export * from './types';
 export * from './standard-events';
 export * from './system-event';
+export * from './platform-events';
 
 // Export event sources with specific names to avoid conflicts
 export {

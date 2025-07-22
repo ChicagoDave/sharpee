@@ -33,7 +33,7 @@ export const goingAction: Action = {
     
     // Get the direction from the parsed command
     const direction = context.command.parsed.extras?.direction as string || 
-                     context.command.directObject?.parsed.text;
+                     context.command.directObject?.entity?.name;
     
     if (!direction) {
       return context.emitError('no_direction');
@@ -65,14 +65,14 @@ export const goingAction: Action = {
     if (exitConfig.via) {
       const door = context.world.getEntity(exitConfig.via);
       if (door) {
+        let isClosed = false;
+        let isLocked = false;
+        
         // Check if door is open
         if (door.has(TraitType.OPENABLE)) {
           const openableTrait = door.get(TraitType.OPENABLE) as OpenableTrait;
           if (openableTrait && !openableTrait.isOpen) {
-            return context.emitError('door_closed', { 
-              direction: normalizedDirection,
-              door: door.name
-            });
+            isClosed = true;
           }
         }
         
@@ -80,11 +80,25 @@ export const goingAction: Action = {
         if (door.has(TraitType.LOCKABLE)) {
           const lockableTrait = door.get(TraitType.LOCKABLE) as LockableTrait;
           if (lockableTrait && lockableTrait.isLocked) {
-            return context.emitError('door_locked', { 
-              direction: normalizedDirection,
-              door: door.name
-            });
+            isLocked = true;
           }
+        }
+        
+        // Report the door state - let text service decide how to describe it
+        if (isLocked) {
+          return context.emitError('door_locked', { 
+            direction: normalizedDirection,
+            door: door.name,
+            isClosed,
+            isLocked
+          });
+        } else if (isClosed) {
+          return context.emitError('door_closed', { 
+            direction: normalizedDirection,
+            door: door.name,
+            isClosed,
+            isLocked: false
+          });
         }
       }
     }

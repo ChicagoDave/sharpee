@@ -42,7 +42,11 @@ export const examiningAction: Action = {
       // Special case: examining yourself always works
       if (noun.id === actor.id) {
         return [
-          context.emit('if.event.examined', { self: true }),
+          context.emit('if.event.examined', { 
+            targetId: noun.id,
+            targetName: noun.name,
+            self: true 
+          }),
           ...context.emitSuccess('examined_self')
         ];
       }
@@ -56,9 +60,7 @@ export const examiningAction: Action = {
       targetName: noun.name
     };
     
-    const messageParams: Record<string, any> = {
-      target: noun.name
-    };
+    const messageParams: Record<string, any> = {};
     
     let messageId = 'examined';
     
@@ -161,6 +163,11 @@ export const examiningAction: Action = {
     
     // Create the EXAMINED event
     const events: SemanticEvent[] = [];
+    
+    // Add target to message params only if using basic examined message
+    if (messageId === 'examined') {
+      messageParams.target = noun.name;
+    }
     
     events.push(context.emit('if.event.examined', eventData));
     events.push(...context.emitSuccess(messageId, messageParams));

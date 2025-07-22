@@ -6,6 +6,7 @@ import { SemanticEvent } from '@sharpee/core';
 import { SpatialIndex } from './SpatialIndex';
 import { VisibilityBehavior } from './VisibilityBehavior';
 import { DataStore } from './AuthorModel';
+import { canContain } from '../traits/container/container-utils';
 import {
   CapabilityStore,
   CapabilityData,
@@ -370,8 +371,8 @@ export class WorldModel implements WorldModel {
       return false;
     }
 
-    // Check if target can contain
-    if (!target.hasTrait(TraitType.CONTAINER) && !target.hasTrait(TraitType.SUPPORTER)) {
+    // Check if target can contain - using our new utility
+    if (!canContain(target)) {
       return false;
     }
 

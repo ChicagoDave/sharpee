@@ -24,3 +24,6 @@ export * from './rules';
 
 // Debug infrastructure
 export * from './debug';
+
+// Query system
+export * from './query';

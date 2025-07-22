@@ -1,7 +1,7 @@
 # ADR-018: Conversational State Management
 
 ## Status
-Proposed
+Partially Implemented
 
 ## Context
 Interactive fiction requires managing conversational state between the system and the player character (PC). There are multiple scenarios where the system needs to ask the player a question and await a response:
@@ -339,6 +339,26 @@ Different input fields for commands vs responses.
 - Ink's choice/branching system
 - Modern chat UI patterns (typing indicators, etc.)
 
+## Platform Query Integration
+
+The query system has been extended to work with platform events (ADR-035):
+
+### Platform Query Handlers
+- **QuitQueryHandler**: Processes quit confirmation responses and emits platform events
+- **RestartQueryHandler**: Handles restart confirmations
+- Both handlers support save-and-quit/restart options
+
+### Event Flow
+1. Action emits platform event (e.g., `platform.quit_requested`)
+2. Platform hook can optionally use query system for confirmation
+3. Query handler processes response and emits appropriate platform event
+4. Engine processes platform operation based on final event
+
+This allows flexible client implementations:
+- Clients can handle confirmations directly in their hooks
+- Or use the query system for text-based confirmations
+- Or implement their own UI (modal dialogs, etc.)
+
 ## Future Considerations
 
 - **Voice Integration**: Handle voice input/output
@@ -346,3 +366,4 @@ Different input fields for commands vs responses.
 - **Undo/Redo**: How to handle undo across conversations
 - **Save/Load**: Preserving conversation state
 - **Localization**: Translating prompts and validations
+- **Platform Queries**: Extended for save name input, restore slot selection

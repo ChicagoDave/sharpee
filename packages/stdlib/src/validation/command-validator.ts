@@ -97,7 +97,18 @@ export class CommandValidator implements CommandValidator {
     const warnings: string[] = [];
 
     // 1. Validate action exists
-    const actionHandler = this.actionRegistry.get(command.action);
+    // First try direct lookup by action ID
+    let actionHandler = this.actionRegistry.get(command.action);
+    
+    // If not found, try to find by pattern (verb)
+    if (!actionHandler) {
+      const verb = command.structure?.verb?.text || command.action;
+      const matches = this.actionRegistry.findByPattern(verb);
+      if (matches.length > 0) {
+        actionHandler = matches[0]; // Take the highest priority match
+      }
+    }
+    
     if (!actionHandler) {
       return {
         success: false,
@@ -110,7 +121,7 @@ export class CommandValidator implements CommandValidator {
       };
     }
 
-    // 2. Validate direct object if required
+    // 2. Resolve direct object if present in parsed command
     let directObject: ValidatedObjectReference | undefined;
     if (command.structure?.directObject) {
       const metadata = this.getActionMetadata(actionHandler);
@@ -120,19 +131,10 @@ export class CommandValidator implements CommandValidator {
         return resolved;
       }
       directObject = resolved.value;
-    } else if (this.actionRequiresDirectObject(actionHandler)) {
-      return {
-        success: false,
-        error: {
-          type: 'VALIDATION_ERROR',
-          code: 'ENTITY_NOT_FOUND',
-          message: `Action '${command.action}' requires a direct object`,
-          parsed: command
-        }
-      };
     }
+    // If no direct object in parsed command, that's fine - let the action decide if it needs one
 
-    // 3. Validate indirect object if present
+    // 3. Resolve indirect object if present in parsed command
     let indirectObject: ValidatedObjectReference | undefined;
     if (command.structure?.indirectObject) {
       const metadata = this.getActionMetadata(actionHandler);
@@ -731,13 +733,7 @@ export class CommandValidator implements CommandValidator {
     return synonyms;
   }
 
-  /**
-   * Check if action requires a direct object
-   */
-  private actionRequiresDirectObject(action: any): boolean {
-    const metadata = this.getActionMetadata(action);
-    return metadata.requiresDirectObject;
-  }
+
 
   /**
    * Get action metadata
@@ -750,13 +746,10 @@ export class CommandValidator implements CommandValidator {
       return action.metadata as ActionMetadata;
     }
 
-    // Default metadata based on action ID
-    const requiresDirectObject = ['TAKE', 'DROP', 'EXAMINE', 'OPEN', 'CLOSE', 'PUT', 'LOCK', 'UNLOCK'];
-    const requiresIndirectObject = ['PUT', 'LOCK', 'UNLOCK'];
-
+    // Default metadata - actions handle their own requirements
     return {
-      requiresDirectObject: requiresDirectObject.includes(action.id),
-      requiresIndirectObject: requiresIndirectObject.includes(action.id),
+      requiresDirectObject: false,
+      requiresIndirectObject: false,
       directObjectScope: 'visible',
       indirectObjectScope: 'visible'
     };

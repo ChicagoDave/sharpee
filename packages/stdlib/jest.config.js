@@ -8,6 +8,13 @@ module.exports = {
     "**/tests/**/*.test.ts"
   ],
   
+  // Module name mapper for resolving packages
+  moduleNameMapper: {
+    '^@sharpee/world-model$': '<rootDir>/../world-model/src/index.ts',
+    '^@sharpee/core$': '<rootDir>/../core/src/index.ts',
+    '^@sharpee/if-domain$': '<rootDir>/../if-domain/src/index.ts'
+  },
+  
   // Coverage configuration
   collectCoverage: true,
   coverageDirectory: 'coverage',
@@ -71,13 +78,13 @@ module.exports = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
-      tsconfig: 'tsconfig.json',
+      tsconfig: 'tsconfig.test.json',
       diagnostics: false,
     }],
   },
   
   // Test environment setup
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
+  // setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'], // Removed - no longer needed
   
   // Test timeout
   testTimeout: 10000,

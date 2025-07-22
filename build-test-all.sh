@@ -26,7 +26,7 @@ show_usage() {
     echo ""
     echo "Package names (in build order):"
     echo "  core, if-domain, lang-en-us, if-services, world-model, event-processor,"
-    echo "  stdlib, parser-en-us, text-service-template, engine, forge, client-core,"
+    echo "  parser-en-us, stdlib, text-service-template, engine, forge, client-core,"
     echo "  extension-conversation, client-react, client-electron, sharpee"
     echo ""
     echo "Examples:"
@@ -140,8 +140,8 @@ build_and_test "@sharpee/world-model" "world-model"  # Depends on core + if-doma
 # Level 3 dependencies  
 build_and_test "@sharpee/if-services" "if-services" true  # Skip tests - no tests yet
 build_and_test "@sharpee/event-processor" "event-processor"  # Depends on core + if-domain + world-model
-build_and_test "@sharpee/stdlib" "stdlib"  # Depends on core + world-model
-build_and_test "@sharpee/parser-en-us" "parser-en-us"
+build_and_test "@sharpee/parser-en-us" "parser-en-us"  # Depends on core + if-domain + world-model
+build_and_test "@sharpee/stdlib" "stdlib"  # Depends on core + world-model + if-domain
 
 # Level 4 dependencies
 build_and_test "@sharpee/text-service-template" "text-service-template" true  # Skip tests - no tests defined
@@ -175,8 +175,8 @@ echo "     - @sharpee/world-model (depends on core + if-domain)"
 echo "  4. Third-level packages:"
 echo "     - @sharpee/if-services (depends on core + if-domain + world-model)"
 echo "     - @sharpee/event-processor (depends on core + if-domain + world-model)"
-echo "     - @sharpee/stdlib (depends on core + world-model)"
-echo "     - @sharpee/parser-en-us (depends on stdlib)"
+echo "     - @sharpee/parser-en-us (depends on core + if-domain + world-model)"
+echo "     - @sharpee/stdlib (depends on core + world-model + if-domain)"
 echo "  5. Fourth-level packages:"
 echo "     - @sharpee/text-service-template (depends on if-services)"
 echo "     - @sharpee/engine"

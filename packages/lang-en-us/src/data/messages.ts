@@ -230,6 +230,20 @@ export const systemMessages = {
   restoreSuccess: "Game restored.",
   restoreFailed: "Failed to restore game.",
   
+  // Platform events
+  saving_game: "Saving game...",
+  game_saved: "Game saved successfully.",
+  save_failed: "Save failed: {error}",
+  restoring_game: "Restoring game...",
+  game_restored: "Game restored successfully.",
+  restore_failed: "Restore failed: {error}",
+  quitting_game: "Quitting game...",
+  quit_confirmed: "Thanks for playing!",
+  quit_cancelled: "Quit cancelled.",
+  restarting_game: "Restarting game...",
+  game_restarted: "Game restarted.",
+  restart_cancelled: "Restart cancelled.",
+  
   // Meta
   quitConfirm: "Are you sure you want to quit? (yes/no)",
   scoreDisplay: "Your score is {score} out of {maxScore}.",

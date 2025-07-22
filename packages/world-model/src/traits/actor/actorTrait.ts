@@ -25,12 +25,18 @@ export interface IActorTrait {
     reflexive: string;  // himself/herself/themself/itself
   };
   
-  /** Inventory capacity */
-  inventoryLimit?: {
+  /** Inventory capacity - actors can carry items */
+  capacity?: {
     maxItems?: number;
     maxWeight?: number;
     maxVolume?: number;
   };
+  
+  /** Only these entity types can be carried by the actor */
+  allowedTypes?: string[];
+  
+  /** These entity types cannot be carried by the actor */
+  excludedTypes?: string[];
   
   /** Custom properties for game-specific actor data */
   customProperties?: Record<string, any>;
@@ -41,11 +47,14 @@ export interface IActorTrait {
  * 
  * Actors can:
  * - Perform actions
- * - Hold inventory
+ * - Hold inventory (actors inherently have container functionality)
  * - Move between locations
  * - Interact with objects
+ * 
+ * Like rooms, actors have built-in container functionality for their inventory.
+ * The actual containment relationships are stored in the SpatialIndex.
  */
-export class ActorTrait implements Trait {
+export class ActorTrait implements Trait, IActorTrait {
   static readonly type = TraitType.ACTOR;
   readonly type = TraitType.ACTOR;
   
@@ -65,21 +74,38 @@ export class ActorTrait implements Trait {
     reflexive: 'themself'
   };
   
-  inventoryLimit?: {
+  // Container functionality for inventory
+  capacity?: {
     maxItems?: number;
     maxWeight?: number;
     maxVolume?: number;
   };
+  allowedTypes?: string[];
+  excludedTypes?: string[];
+  
+  // Actors are not transparent (can't see inside inventory) and not enterable
+  readonly isTransparent: boolean = false;
+  readonly enterable: boolean = false;
   
   customProperties?: Record<string, any>;
   
-  constructor(data?: Partial<ActorTrait>) {
+  constructor(data?: Partial<IActorTrait>) {
     if (data) {
-      Object.assign(this, data);
-      // Ensure pronouns have all required fields if provided
-      if (data.pronouns && this.pronouns !== data.pronouns) {
+      // Handle basic properties
+      this.isPlayer = data.isPlayer ?? this.isPlayer;
+      this.isPlayable = data.isPlayable ?? this.isPlayable;
+      this.state = data.state;
+      this.customProperties = data.customProperties;
+      
+      // Handle pronouns
+      if (data.pronouns) {
         this.pronouns = { ...this.pronouns, ...data.pronouns };
       }
+      
+      // Handle container properties
+      this.capacity = data.capacity;
+      this.allowedTypes = data.allowedTypes;
+      this.excludedTypes = data.excludedTypes;
     }
   }
   
@@ -93,8 +119,8 @@ export class ActorTrait implements Trait {
   /**
    * Set inventory limits
    */
-  setInventoryLimit(limit: Partial<ActorTrait['inventoryLimit']>): void {
-    this.inventoryLimit = { ...this.inventoryLimit, ...limit };
+  setInventoryLimit(limit: Partial<{ maxItems?: number; maxWeight?: number; maxVolume?: number }>): void {
+    this.capacity = { ...this.capacity, ...limit };
   }
   
   /**

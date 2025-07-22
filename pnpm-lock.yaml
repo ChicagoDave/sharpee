@@ -183,6 +183,9 @@ importers:
       '@sharpee/core':
         specifier: workspace:*
         version: link:../core
+      '@sharpee/if-domain':
+        specifier: workspace:*
+        version: link:../if-domain
     devDependencies:
       '@types/jest':
         specifier: ^29.5.0
@@ -217,9 +220,9 @@ importers:
       '@sharpee/core':
         specifier: workspace:*
         version: link:../core
-      '@sharpee/stdlib':
+      '@sharpee/if-domain':
         specifier: workspace:*
-        version: link:../stdlib
+        version: link:../if-domain
       '@sharpee/world-model':
         specifier: workspace:*
         version: link:../world-model
@@ -288,10 +291,16 @@ importers:
       '@sharpee/if-domain':
         specifier: file:../if-domain
         version: link:../if-domain
+      '@sharpee/lang-en-us':
+        specifier: file:../lang-en-us
+        version: file:packages/lang-en-us
       '@sharpee/world-model':
         specifier: file:../world-model
         version: link:../world-model
     devDependencies:
+      '@sharpee/parser-en-us':
+        specifier: file:../parser-en-us
+        version: file:packages/parser-en-us
       '@types/jest':
         specifier: ^29.5.12
         version: 29.5.14
@@ -1197,6 +1206,9 @@ packages:
 
   '@sharpee/lang-en-us@file:packages/lang-en-us':
     resolution: {directory: packages/lang-en-us, type: directory}
+
+  '@sharpee/parser-en-us@file:packages/parser-en-us':
+    resolution: {directory: packages/parser-en-us, type: directory}
 
   '@sigstore/bundle@2.3.2':
     resolution: {integrity: sha512-wueKWDk70QixNLB363yHc2D2ItTgYiMTdPwK8D9dKQMR3ZQ0c35IxP5xnwQ8cNLoCgCRcHf14kE+CLIvNX1zmA==}
@@ -5065,6 +5077,13 @@ snapshots:
   '@sharpee/lang-en-us@file:packages/lang-en-us':
     dependencies:
       '@sharpee/core': link:packages/core
+      '@sharpee/if-domain': link:packages/if-domain
+
+  '@sharpee/parser-en-us@file:packages/parser-en-us':
+    dependencies:
+      '@sharpee/core': link:packages/core
+      '@sharpee/if-domain': link:packages/if-domain
+      '@sharpee/world-model': link:packages/world-model
 
   '@sigstore/bundle@2.3.2':
     dependencies:

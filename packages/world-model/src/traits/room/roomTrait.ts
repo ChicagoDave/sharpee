@@ -47,11 +47,33 @@ export interface RoomData {
   
   /** Tags for categorizing rooms */
   tags?: string[];
+  
+  // Container functionality for rooms
+  /** Capacity constraints for the room (optional) */
+  capacity?: {
+    /** Maximum total weight the room can hold (in kg) */
+    maxWeight?: number;
+    
+    /** Maximum total volume the room can hold (in liters) */
+    maxVolume?: number;
+    
+    /** Maximum number of items the room can hold */
+    maxItems?: number;
+  };
+  
+  /** Only these entity types can be placed in the room */
+  allowedTypes?: string[];
+  
+  /** These entity types cannot be placed in the room */
+  excludedTypes?: string[];
 }
 
 /**
  * Room trait marks an entity as a location/room in the game world.
  * Rooms are special entities that represent locations and can contain other entities.
+ * 
+ * Rooms inherently have container functionality - they can hold items, actors, and other entities.
+ * The actual containment relationships are stored in the SpatialIndex, not in the trait itself.
  */
 export class RoomTrait implements Trait, RoomData {
   static readonly type = TraitType.ROOM;
@@ -71,6 +93,19 @@ export class RoomTrait implements Trait, RoomData {
   region?: string;
   tags: string[];
   
+  // Container functionality
+  capacity?: {
+    maxWeight?: number;
+    maxVolume?: number;
+    maxItems?: number;
+  };
+  allowedTypes?: string[];
+  excludedTypes?: string[];
+  
+  // Rooms are always transparent (contents visible) and enterable
+  readonly isTransparent: boolean = true;
+  readonly enterable: boolean = true;
+  
   constructor(data: RoomData = {}) {
     // Set defaults and merge with provided data
     this.visited = data.visited ?? false;
@@ -85,5 +120,10 @@ export class RoomTrait implements Trait, RoomData {
     this.ambientSmell = data.ambientSmell;
     this.region = data.region;
     this.tags = data.tags ?? [];
+    
+    // Container properties
+    this.capacity = data.capacity;
+    this.allowedTypes = data.allowedTypes;
+    this.excludedTypes = data.excludedTypes;
   }
 }

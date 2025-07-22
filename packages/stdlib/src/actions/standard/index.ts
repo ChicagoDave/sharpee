@@ -44,13 +44,14 @@ export * from './taking_off';
 export * from './eating';
 export * from './drinking';
 export * from './talking';
-export * from './asking';
-export * from './telling';
-export * from './answering';
+// export * from './asking'; // Moved to conversation extension
+// export * from './telling'; // Moved to conversation extension
+// export * from './answering'; // Moved to conversation extension
 export * from './attacking';
 export * from './saving';
 export * from './restoring';
 export * from './quitting';
+export * from './restarting';
 export * from './again';
 
 // Import all actions for easy registration
@@ -93,13 +94,14 @@ import { takingOffAction } from './taking_off';
 import { eatingAction } from './eating';
 import { drinkingAction } from './drinking';
 import { talkingAction } from './talking';
-import { askingAction } from './asking';
-import { tellingAction } from './telling';
-import { answeringAction } from './answering';
+// import { askingAction } from './asking'; // Moved to conversation extension
+// import { tellingAction } from './telling'; // Moved to conversation extension
+// import { answeringAction } from './answering'; // Moved to conversation extension
 import { attackingAction } from './attacking';
 import { savingAction } from './saving';
 import { restoringAction } from './restoring';
 import { quittingAction } from './quitting';
+import { restartingAction } from './restarting';
 import { againAction } from './again';
 
 export const standardActions = [
@@ -142,12 +144,13 @@ export const standardActions = [
   eatingAction,
   drinkingAction,
   talkingAction,
-  askingAction,
-  tellingAction,
-  answeringAction,
+  // askingAction, // Moved to conversation extension
+  // tellingAction, // Moved to conversation extension
+  // answeringAction, // Moved to conversation extension
   attackingAction,
   savingAction,
   restoringAction,
   quittingAction,
+  restartingAction,
   againAction
 ];

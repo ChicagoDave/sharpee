@@ -62,6 +62,9 @@ export const openingAction: Action = {
     
     // Determine success message based on what was revealed
     let messageId = 'opened';
+    const messageParams: Record<string, any> = {
+      item: noun.name
+    };
     
     if (noun.has(TraitType.CONTAINER)) {
       eventData.isContainer = true;
@@ -71,12 +74,11 @@ export const openingAction: Action = {
       
       if (contents.length > 0) {
         messageId = 'revealing';
-        eventData.container = noun.name;
-        eventData.items = contents.map(e => e.name);
-      } else {
-        messageId = 'its_empty';
-        eventData.container = noun.name;
+        messageParams.container = noun.name;
+        messageParams.items = contents.map(e => e.name);
       }
+      // Note: We use 'opened' for empty containers, not 'its_empty'
+      // 'its_empty' might be used by a separate 'look in' or 'search' action
     }
     
     if (noun.has(TraitType.DOOR)) {
@@ -88,8 +90,8 @@ export const openingAction: Action = {
     // Create the OPENED event for world model updates
     events.push(context.emit('if.event.opened', eventData));
     
-    // Create the success message
-    events.push(...context.emitSuccess(messageId, eventData));
+    // Create the success message with only the needed params
+    events.push(...context.emitSuccess(messageId, messageParams));
     
     return events;
   }

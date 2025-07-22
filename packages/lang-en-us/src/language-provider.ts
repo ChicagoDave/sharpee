@@ -5,54 +5,17 @@
  * Enhanced to support getMessage interface for text service
  */
 
-import { LanguageProvider, ActionHelp } from '@sharpee/if-domain';
+import { LanguageProvider, ParserLanguageProvider, ActionHelp, VerbVocabulary, DirectionVocabulary, SpecialVocabulary, LanguageGrammarPattern } from '@sharpee/if-domain';
 import { englishVerbs } from './data/verbs';
 import { englishWords, irregularPlurals, abbreviations } from './data/words';
 import { standardActionLanguage } from './actions';
 
-/**
- * Verb vocabulary definition
- */
-export interface VerbVocabulary {
-  actionId: string;
-  verbs: string[];
-  pattern?: string;
-  prepositions?: string[];
-}
-
-/**
- * Direction vocabulary definition
- */
-export interface DirectionVocabulary {
-  direction: string;
-  words: string[];
-  abbreviations?: string[];
-}
-
-/**
- * Special vocabulary definition
- */
-export interface SpecialVocabulary {
-  articles: string[];
-  pronouns: string[];
-  allWords: string[];
-  exceptWords: string[];
-}
-
-/**
- * Grammar pattern definition
- */
-export interface GrammarPattern {
-  name: string;
-  pattern: string;
-  example: string;
-  priority: number;
-}
+// Types are now imported from @sharpee/if-domain
 
 /**
  * English language data and rules
  */
-export class EnglishLanguageProvider implements LanguageProvider {
+export class EnglishLanguageProvider implements ParserLanguageProvider {
   readonly languageCode = 'en-US';
   readonly languageName = 'English (US)';
   readonly textDirection = 'ltr' as const;
@@ -284,7 +247,7 @@ export class EnglishLanguageProvider implements LanguageProvider {
     return englishWords.prepositions;
   }
 
-  getGrammarPatterns(): GrammarPattern[] {
+  getGrammarPatterns(): LanguageGrammarPattern[] {
     return [
       {
         name: 'verb_noun_prep_noun',

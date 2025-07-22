@@ -19,7 +19,8 @@
   "dependencies": {
     "@sharpee/core": "file:../core",
     "@sharpee/if-domain": "file:../if-domain",
-    "@sharpee/world-model": "file:../world-model"
+    "@sharpee/world-model": "file:../world-model",
+    "@sharpee/lang-en-us": "file:../lang-en-us"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
@@ -28,7 +29,8 @@
     "jest": "^29.7.0",
     "rimraf": "^5.0.5",
     "typescript": "^5.3.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@sharpee/parser-en-us": "file:../parser-en-us"
   },
   "files": [
     "dist"
