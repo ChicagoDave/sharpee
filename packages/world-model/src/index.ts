@@ -35,6 +35,23 @@ export * from './traits/wearable';
 export * from './traits/edible';
 export * from './traits/door';
 export * from './traits/actor';
+export * from './traits/attached';
+export * from './traits/bell-pull';
+export * from './traits/breakable';
+export * from './traits/button';
+export * from './traits/clothing';
+export * from './traits/cord';
+export * from './traits/crank';
+export * from './traits/dial';
+export * from './traits/fragile';
+export * from './traits/knob';
+export * from './traits/lever';
+export * from './traits/moveable-scenery';
+export * from './traits/pullable';
+export * from './traits/pushable';
+export * from './traits/turnable';
+export * from './traits/valve';
+export * from './traits/wheel';
 
 // Extension system
 export * from './extensions';

@@ -89,7 +89,7 @@ export const IFActions = {
   WAVING: 'if.action.waving',
   
   // Using actions
-  USING: 'if.action.using',
+  // USING: 'if.action.using', // Removed - USE is not idiomatic IF
   CONSULTING: 'if.action.consulting',
   
   // Meta actions

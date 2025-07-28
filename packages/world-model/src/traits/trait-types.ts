@@ -25,8 +25,28 @@ export const TraitType = {
   READABLE: 'readable',
   LIGHT_SOURCE: 'lightSource',
   
+  // Manipulation traits
+  PULLABLE: 'pullable',
+  LEVER: 'lever',
+  CORD: 'cord',
+  BELL_PULL: 'bellPull',
+  ATTACHED: 'attached',
+  PUSHABLE: 'pushable',
+  BUTTON: 'button',
+  MOVEABLE_SCENERY: 'moveableScenery',
+  TURNABLE: 'turnable',
+  DIAL: 'dial',
+  KNOB: 'knob',
+  WHEEL: 'wheel',
+  CRANK: 'crank',
+  VALVE: 'valve',
+  
   // Spatial traits
   DOOR: 'door',
+  
+  // Object property traits
+  FRAGILE: 'fragile',
+  BREAKABLE: 'breakable',
   
   // Basic traits
   ACTOR: 'actor',
@@ -76,9 +96,29 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   [TraitType.READABLE]: TraitCategory.INTERACTIVE,
   [TraitType.LIGHT_SOURCE]: TraitCategory.INTERACTIVE,
   
+  // Manipulation
+  [TraitType.PULLABLE]: TraitCategory.INTERACTIVE,
+  [TraitType.LEVER]: TraitCategory.INTERACTIVE,
+  [TraitType.CORD]: TraitCategory.INTERACTIVE,
+  [TraitType.BELL_PULL]: TraitCategory.INTERACTIVE,
+  [TraitType.ATTACHED]: TraitCategory.INTERACTIVE,
+  [TraitType.PUSHABLE]: TraitCategory.INTERACTIVE,
+  [TraitType.BUTTON]: TraitCategory.INTERACTIVE,
+  [TraitType.MOVEABLE_SCENERY]: TraitCategory.INTERACTIVE,
+  [TraitType.TURNABLE]: TraitCategory.INTERACTIVE,
+  [TraitType.DIAL]: TraitCategory.INTERACTIVE,
+  [TraitType.KNOB]: TraitCategory.INTERACTIVE,
+  [TraitType.WHEEL]: TraitCategory.INTERACTIVE,
+  [TraitType.CRANK]: TraitCategory.INTERACTIVE,
+  [TraitType.VALVE]: TraitCategory.INTERACTIVE,
+  
   // Spatial
   [TraitType.DOOR]: TraitCategory.STANDARD,
   [TraitType.EXIT]: TraitCategory.STANDARD,
+  
+  // Object property
+  [TraitType.FRAGILE]: TraitCategory.STANDARD,
+  [TraitType.BREAKABLE]: TraitCategory.STANDARD,
   
   // Basic
   [TraitType.ACTOR]: TraitCategory.STANDARD,

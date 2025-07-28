@@ -1,193 +1,224 @@
 #!/bin/bash
-# Build and test all Sharpee packages in dependency order
-# Stops on first failure and logs all output
-#
-# Usage: ./build-test-all.sh [--skip-until PACKAGE_NAME]
-# Example: ./build-test-all.sh --skip-until lang-en-us
 
-set -e  # Exit on first error
+# Enhanced build and test script with action-specific testing support
+set -e
 
-# Setup
-REPO_ROOT="/mnt/c/repotemp/sharpee"
-LOG_DIR="$REPO_ROOT/logs"
-TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+# Color codes
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Default values
 SKIP_UNTIL=""
-SKIPPING=false
-AUTO_INSTALL=false
+ACTION=""
+VERBOSE=false
+FORCE_BUILD=false
 
-# Function to show usage
-show_usage() {
-    echo "Usage: $0 [OPTIONS]"
-    echo ""
-    echo "Options:"
-    echo "  --skip-until PACKAGE_NAME  Skip all packages until PACKAGE_NAME (inclusive)"
-    echo "  --install                  Run 'pnpm install' before building"
-    echo "  --help, -h                 Show this help message"
-    echo ""
-    echo "Package names (in build order):"
-    echo "  core, if-domain, lang-en-us, if-services, world-model, event-processor,"
-    echo "  parser-en-us, stdlib, text-service-template, engine, forge, client-core,"
-    echo "  extension-conversation, client-react, client-electron, sharpee"
-    echo ""
-    echo "Examples:"
-    echo "  $0                           # Build and test all packages"
-    echo "  $0 --install                 # Install deps, then build and test all"
-    echo "  $0 --skip-until lang-en-us  # Start from lang-en-us (skip core through event-processor)"
-}
+# Create logs directory if it doesn't exist
+mkdir -p /mnt/c/repotemp/sharpee/logs
+
+# Generate timestamp for log files
+TIMESTAMP=$(date +"%Y%m%d-%H%M")
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
-    case $1 in
-        --skip-until)
-            SKIP_UNTIL="$2"
-            SKIPPING=true
-            shift 2
-            ;;
-        --install)
-            AUTO_INSTALL=true
-            shift
-            ;;
-        --help|-h)
-            show_usage
-            exit 0
-            ;;
-        *)
-            echo "Unknown option: $1"
-            echo "Use --help for usage information"
-            exit 1
-            ;;
-    esac
+  case $1 in
+    --skip-until)
+      SKIP_UNTIL="$2"
+      shift 2
+      ;;
+    --action)
+      ACTION="$2"
+      shift 2
+      ;;
+    --verbose)
+      VERBOSE=true
+      shift
+      ;;
+    --build)
+      FORCE_BUILD=true
+      shift
+      ;;
+    *)
+      echo "Unknown option: $1"
+      echo "Usage: $0 [--skip-until package] [--action action-name] [--verbose] [--build]"
+      echo "  --skip-until: Skip packages until the specified one"
+      echo "  --action: Test only the specified action (requires --skip-until stdlib)"
+      echo "  --verbose: Show detailed output"
+      echo "  --build: Force build of the package even when using --skip-until"
+      exit 1
+      ;;
+  esac
 done
 
-cd "$REPO_ROOT"
+# Navigate to project root
+cd /mnt/c/repotemp/sharpee
 
-# Function to build and test a package
-build_and_test() {
-    local package=$1
-    local name=$2
-    local skip_test=${3:-false}
-    
-    # Check if we should start processing
-    if [ "$SKIPPING" = "true" ] && [ "$name" = "$SKIP_UNTIL" ]; then
-        SKIPPING=false
-        echo "Starting from package: $name"
-    fi
-    
-    # Skip if we haven't reached the target package yet
-    if [ "$SKIPPING" = "true" ]; then
-        echo "[$name] - skipped"
-        return
-    fi
-    
-    echo "[$name]"
-    
-    # Build
-    echo -n "  Building... "
-    if pnpm --filter "$package" build > "$LOG_DIR/build-$name-$TIMESTAMP.log" 2>&1; then
-        echo "✓"
-    else
-        echo "✗"
-        echo "  See: logs/build-$name-$TIMESTAMP.log"
-        exit 1
-    fi
-    
-    # Test (skip if requested)
-    if [ "$skip_test" = "true" ]; then
-        echo "  Testing... skipped"
-    else
-        echo -n "  Testing... "
-        if pnpm --filter "$package" test > "$LOG_DIR/test-$name-$TIMESTAMP.log" 2>&1; then
-            echo "✓"
-        else
-            echo "✗"
-            echo "  See: logs/test-$name-$TIMESTAMP.log"
-            exit 1
-        fi
-    fi
+echo -e "${BLUE}=== Sharpee Build & Test Script ===${NC}"
+echo -e "${BLUE}Configuration:${NC}"
+echo -e "  Test Runner: Vitest"
+echo -e "  Skip until: ${SKIP_UNTIL:-none}"
+echo -e "  Action: ${ACTION:-all}"
+echo -e "  Verbose: $VERBOSE"
+echo -e "  Force build: $FORCE_BUILD"
+echo ""
+
+# Function to run tests for a package
+run_package_tests() {
+  local package=$1
+  local test_cmd="pnpm test:ci"
+  local log_file=""
+  
+  # Special handling for stdlib with action parameter
+  if [[ "$package" == "stdlib" && -n "$ACTION" ]]; then
+    echo -e "${YELLOW}Testing specific action: $ACTION${NC}"
+    test_cmd="pnpm test:ci ${ACTION}-golden.test.ts"
+    log_file="/mnt/c/repotemp/sharpee/logs/${ACTION}-action-tests-${TIMESTAMP}.log"
+  else
+    log_file="/mnt/c/repotemp/sharpee/logs/${package}-tests-${TIMESTAMP}.log"
+  fi
+  
+  echo -e "${BLUE}Running tests for $package...${NC}"
+  cd packages/$package
+  
+  # Always save to log file
+  echo "Running: $test_cmd" > "$log_file"
+  echo "Timestamp: $(date)" >> "$log_file"
+  echo "Package: $package" >> "$log_file"
+  echo "----------------------------------------" >> "$log_file"
+  
+  if $VERBOSE; then
+    # Show output and save to log
+    $test_cmd 2>&1 | tee -a "$log_file"
+    local exit_code=${PIPESTATUS[0]}
+  else
+    # Just save to log
+    $test_cmd >> "$log_file" 2>&1
+    local exit_code=$?
+  fi
+  
+  if [ $exit_code -eq 0 ]; then
+    echo -e "${GREEN}✓ Tests passed${NC}"
+    echo -e "  Log saved to: $log_file"
+  else
+    echo -e "${RED}✗ Tests failed${NC}"
+    echo -e "${RED}Last 50 lines of output:${NC}"
+    tail -n 50 "$log_file"
+    echo -e "  Full log saved to: $log_file"
+    cd ../..
+    return 1
+  fi
+  
+  cd ../..
 }
 
-# Check if node_modules exists at root
-if [ ! -d "$REPO_ROOT/node_modules" ]; then
-    if [ "$AUTO_INSTALL" = "true" ]; then
-        echo "Running 'pnpm install' to install dependencies..."
-        pnpm install
-        echo ""
-    else
-        echo "WARNING: node_modules not found at root. You may need to run 'pnpm install' first."
-        echo "         Or use --install option to run it automatically."
-        echo ""
-    fi
-fi
+# Function to build a package
+build_package() {
+  local package=$1
+  local log_file="/mnt/c/repotemp/sharpee/logs/${package}-build-${TIMESTAMP}.log"
+  
+  echo -e "${BLUE}Building $package...${NC}"
+  cd packages/$package
+  
+  echo "Building: pnpm build" > "$log_file"
+  echo "Timestamp: $(date)" >> "$log_file"
+  echo "Package: $package" >> "$log_file"
+  echo "----------------------------------------" >> "$log_file"
+  
+  if $VERBOSE; then
+    # Show output and save to log
+    pnpm build 2>&1 | tee -a "$log_file"
+    local exit_code=${PIPESTATUS[0]}
+  else
+    # Just save to log
+    pnpm build >> "$log_file" 2>&1
+    local exit_code=$?
+  fi
+  
+  if [ $exit_code -eq 0 ]; then
+    echo -e "${GREEN}✓ Build successful${NC}"
+  else
+    echo -e "${RED}✗ Build failed${NC}"
+    cat "$log_file"
+    echo -e "  Full log saved to: $log_file"
+    cd ../..
+    return 1
+  fi
+  
+  cd ../..
+}
 
-echo "Building and testing all packages..."
-echo "Timestamp: $TIMESTAMP"
+# Package list in dependency order
+PACKAGES=(
+  "core"
+  "if-domain"
+  "world-model"
+  "lang-en-us"
+  "parser-en-us"
+  "stdlib"
+  "engine"
+  "server"
+  "play-web"
+  "authoring"
+)
+
+# Find starting point
+START_INDEX=0
 if [ -n "$SKIP_UNTIL" ]; then
-    echo "Skipping packages until: $SKIP_UNTIL"
+  for i in "${!PACKAGES[@]}"; do
+    if [ "${PACKAGES[$i]}" == "$SKIP_UNTIL" ]; then
+      START_INDEX=$i
+      echo -e "${YELLOW}Skipping to package: $SKIP_UNTIL${NC}"
+      break
+    fi
+  done
 fi
+
+# Validate action parameter
+if [ -n "$ACTION" ] && [ "$SKIP_UNTIL" != "stdlib" ]; then
+  echo -e "${RED}Error: --action requires --skip-until stdlib${NC}"
+  exit 1
+fi
+
+# Process packages
+for ((i=$START_INDEX; i<${#PACKAGES[@]}; i++)); do
+  package="${PACKAGES[$i]}"
+  
+  echo ""
+  echo -e "${BLUE}=== Processing $package ===${NC}"
+  
+  # Determine if we should build this package
+  should_build=true
+  
+  # Skip building if we're testing a specific action in stdlib AND --build wasn't specified
+  if [[ "$package" == "stdlib" && -n "$ACTION" && "$FORCE_BUILD" != "true" ]]; then
+    echo -e "${YELLOW}Skipping build for action-specific test (use --build to force)${NC}"
+    should_build=false
+  fi
+  
+  # Build the package if needed
+  if [ "$should_build" = "true" ]; then
+    if ! build_package "$package"; then
+      echo -e "${RED}Build failed for $package${NC}"
+      exit 1
+    fi
+  fi
+  
+  # Run tests
+  if ! run_package_tests "$package"; then
+    echo -e "${RED}Tests failed for $package${NC}"
+    exit 1
+  fi
+  
+  # If we're testing a specific action, stop after stdlib
+  if [[ "$package" == "stdlib" && -n "$ACTION" ]]; then
+    echo ""
+    echo -e "${GREEN}Action test completed for: $ACTION${NC}"
+    exit 0
+  fi
+done
+
 echo ""
-
-# Build order based on dependencies
-# Core packages (no dependencies)
-build_and_test "@sharpee/core" "core"
-
-# Level 1 dependencies (depend only on core)
-build_and_test "@sharpee/if-domain" "if-domain" true  # Skip tests - no tests defined
-build_and_test "@sharpee/lang-en-us" "lang-en-us"  # No dependencies
-
-# Level 2 dependencies
-build_and_test "@sharpee/world-model" "world-model"  # Depends on core + if-domain
-
-# Level 3 dependencies  
-build_and_test "@sharpee/if-services" "if-services" true  # Skip tests - no tests yet
-build_and_test "@sharpee/event-processor" "event-processor"  # Depends on core + if-domain + world-model
-build_and_test "@sharpee/parser-en-us" "parser-en-us"  # Depends on core + if-domain + world-model
-build_and_test "@sharpee/stdlib" "stdlib"  # Depends on core + world-model + if-domain
-
-# Level 4 dependencies
-build_and_test "@sharpee/text-service-template" "text-service-template" true  # Skip tests - no tests defined
-build_and_test "@sharpee/engine" "engine"
-build_and_test "@sharpee/forge" "forge"
-build_and_test "@sharpee/client-core" "client-core"
-
-# Extensions (can be built after core)
-build_and_test "@sharpee/extension-conversation" "extension-conversation"
-
-# Client packages (depend on client-core)
-build_and_test "@sharpee/client-react" "client-react"
-build_and_test "@sharpee/client-electron" "client-electron"
-
-# Aggregator package
-build_and_test "@sharpee/sharpee" "sharpee" true  # Skip tests - aggregator package
-
-echo ""
-echo "======================================"
-echo "All packages built and tested successfully!"
-echo "======================================"
-echo ""
-echo "Packages built (in dependency order):"
-echo "  1. Core packages:"
-echo "     - @sharpee/core"
-echo "  2. Foundation packages (depend only on core):"
-echo "     - @sharpee/if-domain (no tests)"
-echo "     - @sharpee/lang-en-us (no dependencies)"
-echo "  3. Second-level packages:"
-echo "     - @sharpee/world-model (depends on core + if-domain)"
-echo "  4. Third-level packages:"
-echo "     - @sharpee/if-services (depends on core + if-domain + world-model)"
-echo "     - @sharpee/event-processor (depends on core + if-domain + world-model)"
-echo "     - @sharpee/parser-en-us (depends on core + if-domain + world-model)"
-echo "     - @sharpee/stdlib (depends on core + world-model + if-domain)"
-echo "  5. Fourth-level packages:"
-echo "     - @sharpee/text-service-template (depends on if-services)"
-echo "     - @sharpee/engine"
-echo "     - @sharpee/forge"
-echo "     - @sharpee/client-core"
-echo "  6. Extensions:"
-echo "     - @sharpee/extension-conversation"
-echo "  7. Client implementations:"
-echo "     - @sharpee/client-react"
-echo "     - @sharpee/client-electron"
-echo "  8. Main package:"
-echo "     - @sharpee/sharpee (aggregator, no tests)"
-echo ""
-echo "Logs available in: $LOG_DIR"
+echo -e "${GREEN}=== All builds and tests completed successfully! ===${NC}"

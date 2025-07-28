@@ -1,33 +1,17 @@
-# Build stdlib package script for PowerShell 7
-Set-Location "C:\repotemp\sharpee"
+#!/usr/bin/env pwsh
+$ErrorActionPreference = "Stop"
+$timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+$logFile = "logs/build-stdlib-$timestamp.log"
 
-Write-Host "Building stdlib package..." -ForegroundColor Cyan
+Write-Host "Building stdlib package..." -ForegroundColor Blue
+Set-Location packages/stdlib
+pnpm run build 2>&1 | Tee-Object -FilePath "../../$logFile"
+$exitCode = $LASTEXITCODE
+Set-Location ../..
 
-# Navigate to stdlib
-Set-Location "packages\stdlib"
-
-# Clean old build
-if (Test-Path "dist") {
-    Remove-Item -Recurse -Force "dist"
-}
-
-# Build with TypeScript
-Write-Host "Running TypeScript compiler..." -ForegroundColor Yellow
-& npx tsc
-
-if ($LASTEXITCODE -eq 0) {
-    Write-Host "✓ stdlib built successfully!" -ForegroundColor Green
-    
-    # Count files
-    $jsFiles = (Get-ChildItem -Path "dist" -Filter "*.js" -Recurse).Count
-    $dtsFiles = (Get-ChildItem -Path "dist" -Filter "*.d.ts" -Recurse).Count
-    Write-Host "  Files: $jsFiles JS, $dtsFiles TS declarations" -ForegroundColor Gray
+if ($exitCode -ne 0) {
+    Write-Host "Build failed! See $logFile for details" -ForegroundColor Red
+    exit $exitCode
 } else {
-    Write-Host "✗ stdlib build failed!" -ForegroundColor Red
-    exit 1
+    Write-Host "Build succeeded!" -ForegroundColor Green
 }
-
-# Return to root
-Set-Location "..\..\"
-
-Write-Host "Build complete!" -ForegroundColor Green

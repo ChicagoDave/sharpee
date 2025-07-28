@@ -33,16 +33,19 @@
     "build:core": "pnpm --filter '@sharpee/core' run build",
     "build:changed": "pnpm -r --filter '...[origin/main]' run build",
     "dev": "pnpm -r --parallel run dev",
-    "test": "pnpm -r run test",
-    "test:changed": "pnpm -r --filter '...[origin/main]' run test",
+    "test": "vitest",
+    "test:ci": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "lint": "pnpm -r run lint"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^3.2.4",
     "cross-env": "^7.0.3",
     "lerna": "^8.2.2",
     "rimraf": "^5.0.5",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "vitest": "^3.2.4"
   },
   "author": "",
   "license": "MIT"

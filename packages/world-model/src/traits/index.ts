@@ -25,6 +25,13 @@ export * from './edible';
 export * from './door';
 export * from './actor';
 
+// Manipulation traits
+export * from './pullable';
+export * from './lever';
+export * from './cord';
+export * from './bell-pull';
+export * from './attached';
+
 // Register function
 export * from './register-all';
 

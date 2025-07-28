@@ -18,9 +18,7 @@
     "@sharpee/world-model": "file:../../packages/world-model"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.12",
     "@types/node": "^20.11.19",
-    "jest": "^29.7.0",
     "rimraf": "^5.0.5",
     "typescript": "^5.3.3"
   },
