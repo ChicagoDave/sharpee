@@ -1,0 +1,743 @@
+/**
+ * Golden test for answering action - demonstrates testing NPC conversation responses
+ * 
+ * This shows patterns for testing actions that:
+ * - Respond to pending questions from NPCs
+ * - Validate response types (yes/no, open-ended)
+ * - Check question expiry times
+ * - Handle specific or expected answers
+ * - Support both automatic and manual triggering
+ */
+
+import { describe, test, expect, beforeEach } from '@jest/globals';
+import { answeringAction } from '../../../src/actions/standard/answering';
+import { IFActions } from '../../../src/actions/constants';
+import { TraitType } from '@sharpee/world-model';
+import { 
+  createRealTestContext, 
+  expectEvent,
+  TestData,
+  createCommand,
+  setupBasicWorld
+} from '../../test-utils';
+import type { EnhancedActionContext } from '../../../src/actions/enhanced-types';
+
+describe('answeringAction (Golden Pattern)', () => {
+  describe('Action Metadata', () => {
+    test('should have correct ID', () => {
+      expect(answeringAction.id).toBe(IFActions.ANSWERING);
+    });
+
+    test('should declare required messages', () => {
+      expect(answeringAction.requiredMessages).toContain('no_question');
+      expect(answeringAction.requiredMessages).toContain('no_one_asked');
+      expect(answeringAction.requiredMessages).toContain('too_late');
+      expect(answeringAction.requiredMessages).toContain('answered');
+      expect(answeringAction.requiredMessages).toContain('answered_yes');
+      expect(answeringAction.requiredMessages).toContain('answered_no');
+      expect(answeringAction.requiredMessages).toContain('gave_answer');
+      expect(answeringAction.requiredMessages).toContain('accepted');
+      expect(answeringAction.requiredMessages).toContain('rejected');
+      expect(answeringAction.requiredMessages).toContain('noted');
+      expect(answeringAction.requiredMessages).toContain('confused_by_answer');
+      expect(answeringAction.requiredMessages).toContain('invalid_response');
+      expect(answeringAction.requiredMessages).toContain('needs_yes_or_no');
+      expect(answeringAction.requiredMessages).toContain('unclear_answer');
+    });
+
+    test('should belong to social group', () => {
+      expect(answeringAction.group).toBe('social');
+    });
+  });
+
+  describe('Precondition Checks', () => {
+    test('should fail when no pending question exists', () => {
+      const { world, player } = setupBasicWorld();
+      
+      const command = createCommand(IFActions.ANSWERING);
+      const context = createRealTestContext(answeringAction, world, command);
+      
+      // No pendingQuestion in context
+      const events = answeringAction.execute(context);
+      
+      expectEvent(events, 'action.error', {
+        messageId: expect.stringContaining('no_question')
+      });
+    });
+
+    test('should fail when question has expired', () => {
+      const { world, player } = setupBasicWorld();
+      
+      const command = createCommand(IFActions.ANSWERING);
+      const context = createRealTestContext(answeringAction, world, command) as any;
+      
+      // Add expired question to context
+      context.pendingQuestion = {
+        id: 'q1',
+        askerId: 'guard',
+        askerName: 'the guard',
+        expiryTime: Date.now() - 1000 // Expired 1 second ago
+      };
+      
+      const events = answeringAction.execute(context);
+      
+      expectEvent(events, 'action.error', {
+        messageId: expect.stringContaining('too_late')
+      });
+    });
+
+    test('should fail with unclear response when no response text provided', () => {
+      const { world, player } = setupBasicWorld();
+      
+      const command = createCommand(IFActions.ANSWERING);
+      const context = createRealTestContext(answeringAction, world, command) as any;
+      
+      // Add open-ended question to context
+      context.pendingQuestion = {
+        id: 'q1',
+        askerId: 'wizard',
+        askerName: 'the wizard'
+      };
+      
+      const events = answeringAction.execute(context);
+      
+      expectEvent(events, 'action.error', {
+        messageId: expect.stringContaining('unclear_answer')
+      });
+    });
+
+    test('should fail when yes/no required but different answer given', () => {
+      const { world, player } = setupBasicWorld();
+      
+      const command = createCommand(IFActions.ANSWERING);
+      command.parsed.extras = { response: 'maybe' };
+      
+      const context = createRealTestContext(answeringAction, world, command) as any;
+      
+      // Add yes/no question to context
+      context.pendingQuestion = {
+        id: 'q1',
+        askerId: 'guard',
+        askerName: 'the guard',
+        requiresYesNo: true,
+        validResponses: ['yes', 'no']
+      };
+      
+      const events = answeringAction.execute(context);
+      
+      expectEvent(events, 'action.error', {
+        messageId: expect.stringContaining('needs_yes_or_no')
+      });
+    });
+
+    test('should fail with invalid response for restricted answers', () => {
+      const { world, player } = setupBasicWorld();
+      
+      const command = createCommand(IFActions.ANSWERING);
+      command.parsed.extras = { response: 'blue' };
+      
+      const context = createRealTestContext(answeringAction, world, command) as any;
+      
+      // Add multiple choice question to context
+      context.pendingQuestion = {
+        id: 'q1',
+        askerId: 'sphinx',
+        askerName: 'the sphinx',
+        validResponses: ['red', 'green', 'yellow']
+      };
+      
+      const events = answeringAction.execute(context);
+      
+      expectEvent(events, 'action.error', {
+        messageId: expect.stringContaining('invalid_response')
+      });
+    });
+  });
+
+  describe('Successful Yes/No Responses', () => {
+    test('should handle "yes" response correctly', () => {
+      const { world, player } = setupBasicWorld();
+      
+      const command = createCommand(IFActions.ANSWERING);
+      command.parsed.extras = { response: 'yes' };
+      
+      const context = createRealTestContext(answeringAction, world, command) as any;
+      
+      // Add yes/no question to context
+      context.pendingQuestion = {
+        id: 'q1',
+        askerId: 'merchant',
+        askerName: 'the merchant',
+        validResponses: ['yes', 'no']
+      };
+      
+      const events = answeringAction.execute(context);
+      
+      // Should emit ANSWERED event
+      expectEvent(events, 'if.event.answered', {
+        questionId: 'q1',
+        questioner: 'merchant',
+        questionerName: 'the merchant',
+        response: 'yes',
+        validResponse: true
+      });
+      
+      // Should emit answered_yes message
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('answered_yes'),
+        params: { response: 'yes' }
+      });
+    });
+
+    test('should handle "no" response correctly', () => {
+      const { world, player } = setupBasicWorld();
+      
+      const command = createCommand(IFActions.ANSWERING);
+      command.parsed.extras = { response: 'no' };
+      
+      const context = createRealTestContext(answeringAction, world, command) as any;
+      
+      // Add yes/no question to context
+      context.pendingQuestion = {
+        id: 'q2',
+        askerId: 'guard',
+        askerName: 'the guard',
+        validResponses: ['yes', 'no']
+      };
+      
+      const events = answeringAction.execute(context);
+      
+      // Should emit answered_no message
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('answered_no'),
+        params: { response: 'no' }
+      });
+    });
+
+    test('should detect expected answer and add acceptance message', () => {
+      const { world, player } = setupBasicWorld();
+      
+      const command = createCommand(IFActions.ANSWERING);
+      command.parsed.extras = { response: 'yes' };
+      
+      const context = createRealTestContext(answeringAction, world, command) as any;
+      
+      // Add question expecting "yes"
+      context.pendingQuestion = {
+        id: 'q1',
+        askerId: 'knight',
+        askerName: 'the knight',
+        validResponses: ['yes', 'no'],
+        expectedResponse: 'yes'
+      };
+      
+      const events = answeringAction.execute(context);
+      
+      // Should emit ANSWERED event with expectedAnswer flag
+      expectEvent(events, 'if.event.answered', {
+        expectedAnswer: true
+      });
+      
+      // Should emit acceptance message
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('accepted')
+      });
+    });
+
+    test('should detect unexpected answer and add rejection message', () => {
+      const { world, player } = setupBasicWorld();
+      
+      const command = createCommand(IFActions.ANSWERING);
+      command.parsed.extras = { response: 'no' };
+      
+      const context = createRealTestContext(answeringAction, world, command) as any;
+      
+      // Add question expecting "yes" but will get "no"
+      context.pendingQuestion = {
+        id: 'q1',
+        askerId: 'guard',
+        askerName: 'the guard',
+        validResponses: ['yes', 'no'],
+        expectedResponse: 'yes',
+        requiresSpecificAnswer: true
+      };
+      
+      const events = answeringAction.execute(context);
+      
+      // Should not have expectedAnswer flag
+      expectEvent(events, 'if.event.answered', {
+        expectedAnswer: undefined
+      });
+      
+      // Should emit rejection message
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('rejected')
+      });
+    });
+  });
+
+  describe('Multiple Choice Responses', () => {
+    test('should handle valid multiple choice answer', () => {
+      const { world, player } = setupBasicWorld();
+      
+      const command = createCommand(IFActions.ANSWERING);
+      command.parsed.extras = { response: 'red' };
+      
+      const context = createRealTestContext(answeringAction, world, command) as any;
+      
+      // Add multiple choice question
+      context.pendingQuestion = {
+        id: 'q1',
+        askerId: 'sphinx',
+        askerName: 'the sphinx',
+        validResponses: ['red', 'green', 'blue']
+      };
+      
+      const events = answeringAction.execute(context);
+      
+      // Should emit ANSWERED event with valid response
+      expectEvent(events, 'if.event.answered', {
+        response: 'red',
+        validResponse: true
+      });
+      
+      // Should emit generic answered message
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('answered'),
+        params: { response: 'red' }
+      });
+    });
+
+    test('should note answer when no expected response', () => {
+      const { world, player } = setupBasicWorld();
+      
+      const command = createCommand(IFActions.ANSWERING);
+      command.parsed.extras = { response: 'green' };
+      
+      const context = createRealTestContext(answeringAction, world, command) as any;
+      
+      // Add question without specific expected answer
+      context.pendingQuestion = {
+        id: 'q1',
+        askerId: 'artist',
+        askerName: 'the artist',
+        validResponses: ['red', 'green', 'blue']
+      };
+      
+      const events = answeringAction.execute(context);
+      
+      // Should emit noted message (neutral response)
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('noted')
+      });
+    });
+  });
+
+  describe('Open-Ended Responses', () => {
+    test('should handle open-ended text response', () => {
+      const { world, player } = setupBasicWorld();
+      
+      const command = createCommand(IFActions.ANSWERING);
+      command.parsed.extras = { response: 'my name is Arthur' };
+      
+      const context = createRealTestContext(answeringAction, world, command) as any;
+      
+      // Add open-ended question
+      context.pendingQuestion = {
+        id: 'q1',
+        askerId: 'oracle',
+        askerName: 'the oracle'
+        // No validResponses = open-ended
+      };
+      
+      const events = answeringAction.execute(context);
+      
+      // Should emit ANSWERED event
+      expectEvent(events, 'if.event.answered', {
+        response: 'my name is Arthur'
+      });
+      
+      // Should emit answered message with the response
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('answered'),
+        params: { response: 'my name is Arthur' }
+      });
+    });
+
+    test('should handle response from action text', () => {
+      const { world, player } = setupBasicWorld();
+      
+      const command = createCommand(IFActions.ANSWERING);
+      // Response might come from parsed action text
+      command.parsed.action = 'yes';
+      
+      const context = createRealTestContext(answeringAction, world, command) as any;
+      
+      // Add yes/no question
+      context.pendingQuestion = {
+        id: 'q1',
+        askerId: 'guard',
+        askerName: 'the guard',
+        validResponses: ['yes', 'no']
+      };
+      
+      const events = answeringAction.execute(context);
+      
+      // Should use action text as response
+      expectEvent(events, 'if.event.answered', {
+        response: 'yes'
+      });
+    });
+
+    test('should prefer extras.text over action for response', () => {
+      const { world, player } = setupBasicWorld();
+      
+      const command = createCommand(IFActions.ANSWERING);
+      command.parsed.extras = { text: 'the password is swordfish' };
+      command.parsed.action = 'answer';
+      
+      const context = createRealTestContext(answeringAction, world, command) as any;
+      
+      // Add open-ended question
+      context.pendingQuestion = {
+        id: 'q1',
+        askerId: 'guardian',
+        askerName: 'the guardian'
+      };
+      
+      const events = answeringAction.execute(context);
+      
+      // Should prefer extras.text
+      expectEvent(events, 'if.event.answered', {
+        response: 'the password is swordfish'
+      });
+    });
+  });
+
+  describe('Complex Question Scenarios', () => {
+    test('should handle question with expiry time still valid', () => {
+      const { world, player } = setupBasicWorld();
+      
+      const command = createCommand(IFActions.ANSWERING);
+      command.parsed.extras = { response: 'yes' };
+      
+      const context = createRealTestContext(answeringAction, world, command) as any;
+      
+      // Add question expiring in future
+      context.pendingQuestion = {
+        id: 'q1',
+        askerId: 'guard',
+        askerName: 'the guard',
+        validResponses: ['yes', 'no'],
+        expiryTime: Date.now() + 60000 // Expires in 1 minute
+      };
+      
+      const events = answeringAction.execute(context);
+      
+      // Should succeed
+      expectEvent(events, 'if.event.answered', {
+        questionId: 'q1'
+      });
+    });
+
+    test('should normalize response case for validation', () => {
+      const { world, player } = setupBasicWorld();
+      
+      const command = createCommand(IFActions.ANSWERING);
+      command.parsed.extras = { response: 'YES' }; // Uppercase
+      
+      const context = createRealTestContext(answeringAction, world, command) as any;
+      
+      // Add question with lowercase valid responses
+      context.pendingQuestion = {
+        id: 'q1',
+        askerId: 'guard',
+        askerName: 'the guard',
+        validResponses: ['yes', 'no']
+      };
+      
+      const events = answeringAction.execute(context);
+      
+      // Should normalize and match
+      expectEvent(events, 'if.event.answered', {
+        response: 'YES',
+        validResponse: true
+      });
+      
+      // Should emit answered_yes message
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('answered_yes')
+      });
+    });
+
+    test('should provide default response when none given', () => {
+      const { world, player } = setupBasicWorld();
+      
+      const command = createCommand(IFActions.ANSWERING);
+      // No response in extras or action
+      
+      const context = createRealTestContext(answeringAction, world, command) as any;
+      
+      // Add open-ended question
+      context.pendingQuestion = {
+        id: 'q1',
+        askerId: 'wizard',
+        askerName: 'the wizard'
+      };
+      
+      const events = answeringAction.execute(context);
+      
+      // Should fail with unclear_answer
+      expectEvent(events, 'action.error', {
+        messageId: expect.stringContaining('unclear_answer')
+      });
+    });
+  });
+
+  describe('Event Structure Validation', () => {
+    test('should include proper entities in all events', () => {
+      const { world, player, room } = setupBasicWorld();
+      
+      const command = createCommand(IFActions.ANSWERING);
+      command.parsed.extras = { response: 'yes' };
+      
+      const context = createRealTestContext(answeringAction, world, command) as any;
+      
+      context.pendingQuestion = {
+        id: 'q1',
+        askerId: 'guard',
+        askerName: 'the guard',
+        validResponses: ['yes', 'no']
+      };
+      
+      const events = answeringAction.execute(context);
+      
+      events.forEach(event => {
+        if (event.entities) {
+          expect(event.entities.actor).toBe(player.id);
+          expect(event.entities.location).toBe(room.id);
+          // No target for answering (questioner is in data)
+          expect(event.entities.target).toBeUndefined();
+        }
+      });
+    });
+
+    test('should include all question metadata in event', () => {
+      const { world, player } = setupBasicWorld();
+      
+      const command = createCommand(IFActions.ANSWERING);
+      command.parsed.extras = { response: 'the secret word' };
+      
+      const context = createRealTestContext(answeringAction, world, command) as any;
+      
+      context.pendingQuestion = {
+        id: 'riddle_1',
+        askerId: 'sphinx',
+        askerName: 'the ancient sphinx',
+        validResponses: ['the secret word'],
+        expectedResponse: 'the secret word'
+      };
+      
+      const events = answeringAction.execute(context);
+      
+      const answeredEvent = events.find(e => e.type === 'if.event.answered');
+      expect(answeredEvent?.data).toMatchObject({
+        questionId: 'riddle_1',
+        questioner: 'sphinx',
+        questionerName: 'the ancient sphinx',
+        response: 'the secret word',
+        validResponse: true,
+        expectedAnswer: true
+      });
+    });
+  });
+});
+
+describe('Testing Pattern Examples for Answering', () => {
+  test('pattern: conversation flow states', () => {
+    // Test various question states and transitions
+    const conversationStates = [
+      {
+        state: 'initial_greeting',
+        question: { id: 'greet1', askerId: 'innkeeper' },
+        validResponses: ['hello', 'hi', 'greetings']
+      },
+      {
+        state: 'password_challenge',
+        question: { id: 'pass1', askerId: 'guard', requiresSpecificAnswer: true },
+        validResponses: ['friend'],
+        expectedResponse: 'friend'
+      },
+      {
+        state: 'riddle',
+        question: { id: 'riddle1', askerId: 'sphinx' },
+        validResponses: ['time', 'a clock', 'clock']
+      },
+      {
+        state: 'yes_no_prompt',
+        question: { id: 'confirm1', askerId: 'merchant', requiresYesNo: true },
+        validResponses: ['yes', 'no']
+      }
+    ];
+    
+    conversationStates.forEach(({ state, question, validResponses }) => {
+      // Verify question structure
+      expect(question.id).toBeDefined();
+      expect(question.askerId).toBeDefined();
+      expect(validResponses).toBeInstanceOf(Array);
+      expect(validResponses.length).toBeGreaterThan(0);
+    });
+  });
+
+  test('pattern: timed response scenarios', () => {
+    // Test various timing configurations
+    const timingScenarios = [
+      {
+        name: 'urgent_decision',
+        expiryTime: Date.now() + 5000, // 5 seconds
+        description: 'Quick yes/no decision'
+      },
+      {
+        name: 'puzzle_solving',
+        expiryTime: Date.now() + 60000, // 1 minute
+        description: 'Time to think about a riddle'
+      },
+      {
+        name: 'no_time_limit',
+        expiryTime: undefined,
+        description: 'Open-ended conversation'
+      },
+      {
+        name: 'expired',
+        expiryTime: Date.now() - 1000, // Already expired
+        description: 'Missed opportunity'
+      }
+    ];
+    
+    timingScenarios.forEach(({ name, expiryTime }) => {
+      if (expiryTime !== undefined) {
+        const isExpired = expiryTime < Date.now();
+        const timeRemaining = expiryTime - Date.now();
+        
+        // Verify timing logic
+        if (name === 'expired') {
+          expect(isExpired).toBe(true);
+        } else if (expiryTime) {
+          expect(isExpired).toBe(false);
+          expect(timeRemaining).toBeGreaterThan(0);
+        }
+      }
+    });
+  });
+
+  test('pattern: response validation types', () => {
+    // Test different validation configurations
+    const validationTypes = [
+      {
+        type: 'boolean',
+        validResponses: ['yes', 'no'],
+        requiresYesNo: true,
+        invalidExamples: ['maybe', 'perhaps', 'ok']
+      },
+      {
+        type: 'multiple_choice',
+        validResponses: ['north', 'south', 'east', 'west'],
+        requiresYesNo: false,
+        invalidExamples: ['up', 'down', 'forward']
+      },
+      {
+        type: 'password',
+        validResponses: ['open sesame'],
+        requiresSpecificAnswer: true,
+        expectedResponse: 'open sesame',
+        invalidExamples: ['opensesame', 'open', 'sesame']
+      },
+      {
+        type: 'open_ended',
+        validResponses: undefined,
+        invalidExamples: [] // All responses valid
+      }
+    ];
+    
+    validationTypes.forEach(({ type, validResponses, invalidExamples }) => {
+      if (validResponses) {
+        // Check case insensitivity
+        const normalized = validResponses.map(r => r.toLowerCase());
+        expect(normalized).toEqual(validResponses);
+        
+        // Verify invalid examples wouldn't match
+        invalidExamples.forEach(invalid => {
+          expect(validResponses.includes(invalid)).toBe(false);
+        });
+      }
+    });
+  });
+
+  test('pattern: NPC reaction messages', () => {
+    // Test different NPC reaction scenarios
+    const reactionScenarios = [
+      {
+        scenario: 'correct_password',
+        expectedAnswer: true,
+        message: 'accepted'
+      },
+      {
+        scenario: 'wrong_password',
+        expectedAnswer: false,
+        requiresSpecificAnswer: true,
+        message: 'rejected'
+      },
+      {
+        scenario: 'noted_preference',
+        expectedAnswer: false,
+        requiresSpecificAnswer: false,
+        message: 'noted'
+      },
+      {
+        scenario: 'yes_response',
+        response: 'yes',
+        message: 'answered_yes'
+      },
+      {
+        scenario: 'no_response',
+        response: 'no',
+        message: 'answered_no'
+      }
+    ];
+    
+    reactionScenarios.forEach(({ message }) => {
+      // Verify all reaction messages are in required messages
+      expect(answeringAction.requiredMessages).toContain(message);
+    });
+  });
+
+  test('pattern: response source priority', () => {
+    // Test where responses can come from
+    const responseSources = [
+      { source: 'extras.response', priority: 1 },
+      { source: 'extras.text', priority: 2 },
+      { source: 'parsed.action', priority: 3 }
+    ];
+    
+    // Create test commands with different sources
+    const commands = responseSources.map(({ source }) => {
+      const cmd = createCommand(IFActions.ANSWERING);
+      if (source === 'extras.response') {
+        cmd.parsed.extras = { response: 'test' };
+      } else if (source === 'extras.text') {
+        cmd.parsed.extras = { text: 'test' };
+      } else {
+        cmd.parsed.action = 'test';
+      }
+      return cmd;
+    });
+    
+    // Verify all commands have a response source
+    commands.forEach(cmd => {
+      const response = cmd.parsed.extras?.response || 
+                      cmd.parsed.extras?.text ||
+                      cmd.parsed.action;
+      expect(response).toBeDefined();
+    });
+  });
+});

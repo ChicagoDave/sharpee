@@ -1,0 +1,32 @@
+{
+  "name": "@sharpee/if-domain",
+  "version": "0.1.0",
+  "description": "Core domain model and contracts for Sharpee Interactive Fiction Platform",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@sharpee/core": "file:../core"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "typescript": "^5.3.3",
+    "rimraf": "^5.0.5"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "sharpee",
+    "interactive-fiction",
+    "if",
+    "domain",
+    "events",
+    "contracts"
+  ],
+  "author": "Sharpee Team",
+  "license": "MIT"
+}

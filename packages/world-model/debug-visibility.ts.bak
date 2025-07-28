@@ -1,0 +1,74 @@
+// Debug script to test isVisible logic
+import { WorldModel } from '../src/world/WorldModel';
+import { IFEntity } from '../src/entities/if-entity';
+import { VisibilityBehavior } from '../src/world/VisibilityBehavior';
+import { ContainerTrait } from '../src/traits/container/containerTrait';
+import { OpenableTrait } from '../src/traits/openable/openableTrait';
+
+const world = new WorldModel();
+
+// Create test entities
+const container = world.createEntity('container', 'Container');
+container.add(new ContainerTrait({ isTransparent: false }));
+container.add(new OpenableTrait({ isOpen: false }));
+
+const entity = world.createEntity('entity', 'Entity');
+world.moveEntity('entity', 'container');
+
+// Debug the isVisible logic
+console.log('=== Debug isVisible ===');
+console.log('Entity location:', world.getLocation('entity'));
+console.log('Container traits:');
+console.log('- Has container trait:', container.hasTrait('container'));
+console.log('- Has openable trait:', container.hasTrait('openable'));
+
+const containerTrait = container.getTrait('container') as any;
+const openableTrait = container.getTrait('openable') as any;
+
+console.log('Container properties:');
+console.log('- isTransparent:', containerTrait?.isTransparent);
+console.log('- isOpen:', openableTrait?.isOpen);
+
+// Test isVisible
+const result = VisibilityBehavior.isVisible(entity, world);
+console.log('\nResult:', result);
+console.log('Expected: false');
+
+// Let's trace through the logic manually
+let current = entity.id;
+console.log('\n=== Manual trace ===');
+while (true) {
+  const location = world.getLocation(current);
+  console.log(`Current: ${current}, Location: ${location}`);
+  
+  if (!location) {
+    console.log('No location - breaking');
+    break;
+  }
+  
+  const cont = world.getEntity(location);
+  if (!cont) {
+    console.log('No container entity - breaking');
+    break;
+  }
+  
+  if (cont.hasTrait('container')) {
+    const trait = cont.getTrait('container') as any;
+    console.log(`Container ${location}:`);
+    console.log(`- isTransparent: ${trait?.isTransparent}`);
+    
+    if (!trait?.isTransparent) {
+      if (cont.hasTrait('openable')) {
+        const open = cont.getTrait('openable') as any;
+        console.log(`- Has openable, isOpen: ${open?.isOpen}`);
+        if (!open?.isOpen) {
+          console.log('BLOCKED by closed opaque container!');
+        }
+      } else {
+        console.log('- No openable trait (can see through)');
+      }
+    }
+  }
+  
+  current = location;
+}

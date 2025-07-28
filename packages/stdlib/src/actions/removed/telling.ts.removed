@@ -1,0 +1,146 @@
+/**
+ * Telling action - tell NPCs about specific topics
+ * 
+ * This action handles telling NPCs information using
+ * "tell [npc] about [topic]" syntax.
+ */
+
+import { Action, EnhancedActionContext } from '../enhanced-types';
+import { SemanticEvent } from '@sharpee/core';
+import { TraitType, ActorTrait } from '@sharpee/world-model';
+import { IFActions } from '../constants';
+
+export const tellingAction: Action = {
+  id: IFActions.TELLING,
+  requiredMessages: [
+    'no_target',
+    'no_topic',
+    'not_visible',
+    'too_far',
+    'not_actor',
+    'told',
+    'informed',
+    'interested',
+    'very_interested',
+    'grateful',
+    'already_knew',
+    'not_interested',
+    'bored',
+    'dismissive',
+    'ignores'
+  ],
+  
+  execute(context: EnhancedActionContext): SemanticEvent[] {
+    const actor = context.player;
+    const target = context.command.directObject?.entity;
+    const topic = context.command.parsed.extras?.topic || 
+                  context.command.parsed.structure.preposition?.text ||
+                  context.command.indirectObject?.parsed.text;
+    
+    // Must have someone to tell
+    if (!target) {
+      return context.emitError('no_target');
+    }
+    
+    // Must have a topic
+    if (!topic) {
+      return context.emitError('no_topic');
+    }
+    
+    // Check if target is visible
+    if (!context.canSee(target)) {
+      return context.emitError('not_visible', { target: target.name });
+    }
+    
+    // Check if target is in same location
+    const targetRoom = context.world.getContainingRoom(target.id);
+    const actorRoom = context.world.getContainingRoom(actor.id);
+    
+    if (!targetRoom || !actorRoom || targetRoom.id !== actorRoom.id) {
+      return context.emitError('too_far', { target: target.name });
+    }
+    
+    // Check if target is an actor
+    if (!target.has(TraitType.ACTOR)) {
+      return context.emitError('not_actor');
+    }
+    
+    // Build event data
+    const eventData: Record<string, unknown> = {
+      target: target.id,
+      targetName: target.name,
+      topic: topic
+    };
+    
+    const messageParams: Record<string, any> = {
+      target: target.name,
+      topic: topic
+    };
+    
+    let messageId = 'told';
+    
+    // Check if NPC cares about this information
+    const targetActor = target.get(TraitType.ACTOR) as ActorTrait;
+    if (targetActor && (targetActor as any).conversation) {
+      const conversation = (targetActor as any).conversation;
+      const topicKey = topic.toLowerCase().replace(/\s+/g, '_');
+      
+      // Check interests
+      if (conversation.interests && conversation.interests.includes(topicKey)) {
+        eventData.interested = true;
+        eventData.topicKey = topicKey;
+        
+        // Check if this is new information
+        if (conversation.knownFacts && conversation.knownFacts.includes(topicKey)) {
+          messageId = 'already_knew';
+        } else if (conversation.veryInterested && conversation.veryInterested.includes(topicKey)) {
+          messageId = 'very_interested';
+          eventData.veryInterested = true;
+        } else {
+          messageId = 'interested';
+        }
+      }
+      // Check if NPC finds this boring
+      else if (conversation.boringTopics && conversation.boringTopics.includes(topicKey)) {
+        eventData.interested = false;
+        messageId = 'bored';
+      }
+      // Check if NPC is dismissive of certain topics
+      else if (conversation.dismissiveTopics && conversation.dismissiveTopics.includes(topicKey)) {
+        eventData.interested = false;
+        messageId = 'dismissive';
+      }
+      // Check mood/personality
+      else if (conversation.personality === 'friendly') {
+        messageId = 'informed';
+      } else if (conversation.personality === 'grumpy') {
+        messageId = 'not_interested';
+      } else {
+        // Random disinterest
+        const disinterestedResponses = ['not_interested', 'ignores'];
+        messageId = Math.random() > 0.5 ? 'told' : 
+                   disinterestedResponses[Math.floor(Math.random() * disinterestedResponses.length)];
+      }
+      
+      // Special case: grateful for important info
+      if (conversation.importantInfo && conversation.importantInfo.includes(topicKey) && 
+          !conversation.knownFacts?.includes(topicKey)) {
+        messageId = 'grateful';
+        eventData.important = true;
+      }
+    }
+    
+    // Create events
+    const events: SemanticEvent[] = [];
+    
+    // Create TOLD event for world model
+    events.push(context.emit('if.event.told', eventData));
+    
+    // Add success message
+    events.push(...context.emitSuccess(messageId, messageParams));
+    
+    return events;
+  },
+  
+  group: "social"
+};

@@ -1,0 +1,39 @@
+{
+  "name": "@sharpee/parser-en-us",
+  "version": "0.1.0",
+  "description": "English (US) parser for Sharpee Interactive Fiction Platform",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "test": "vitest",
+    "test:ci": "vitest run",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@sharpee/core": "workspace:*",
+    "@sharpee/if-domain": "workspace:*",
+    "@sharpee/world-model": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "@typescript-eslint/eslint-plugin": "^6.7.4",
+    "@typescript-eslint/parser": "^6.7.4",
+    "eslint": "^8.50.0",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.2.2"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "interactive-fiction",
+    "parser",
+    "english",
+    "natural-language"
+  ],
+  "author": "",
+  "license": "MIT"
+}

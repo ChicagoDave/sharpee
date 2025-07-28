@@ -1,0 +1,747 @@
+/**
+ * Golden test for asking action - demonstrates testing NPC knowledge systems
+ * 
+ * This shows patterns for testing actions that:
+ * - Allow actors to ask NPCs about specific topics
+ * - Parse topic from command structure
+ * - Check NPC knowledge bases
+ * - Handle requirements and conditions for topics
+ * - Track previously asked topics
+ * - Vary responses for unknown topics
+ */
+
+import { describe, test, expect, beforeEach } from '@jest/globals';
+import { askingAction } from '../../../src/actions/standard/asking';
+import { IFActions } from '../../../src/actions/constants';
+import { TraitType, WorldModel } from '@sharpee/world-model';
+import { 
+  createRealTestContext,
+  expectEvent,
+  TestData,
+  createCommand,
+  setupBasicWorld
+} from '../../test-utils';
+import type { EnhancedActionContext } from '../../../src/actions/enhanced-types';
+
+describe('askingAction (Golden Pattern)', () => {
+  describe('Action Metadata', () => {
+    test('should have correct ID', () => {
+      expect(askingAction.id).toBe(IFActions.ASKING);
+    });
+
+    test('should declare required messages', () => {
+      expect(askingAction.requiredMessages).toContain('no_target');
+      expect(askingAction.requiredMessages).toContain('no_topic');
+      expect(askingAction.requiredMessages).toContain('not_visible');
+      expect(askingAction.requiredMessages).toContain('too_far');
+      expect(askingAction.requiredMessages).toContain('not_actor');
+      expect(askingAction.requiredMessages).toContain('unknown_topic');
+      expect(askingAction.requiredMessages).toContain('responds');
+      expect(askingAction.requiredMessages).toContain('already_told');
+      expect(askingAction.requiredMessages).toContain('must_do_first');
+    });
+
+    test('should belong to social group', () => {
+      expect(askingAction.group).toBe('social');
+    });
+  });
+
+  describe('Precondition Checks', () => {
+    test('should fail when no target specified', () => {
+      const { world, player } = setupBasicWorld();
+      const command = createCommand(IFActions.ASKING);
+      const context = createRealTestContext(askingAction, world, command);
+      
+      const events = askingAction.execute(context);
+      
+      expectEvent(events, 'action.error', {
+        messageId: expect.stringContaining('no_target'),
+        reason: 'no_target'
+      });
+    });
+
+    test('should fail when no topic specified', () => {
+      const { world, player, room } = setupBasicWorld();
+      
+      // Create NPC
+      const npc = world.createEntity('wise librarian', 'actor');
+      npc.add({
+        type: TraitType.ACTOR
+      });
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.ASKING, {
+        entity: npc
+      });
+      // No topic in command
+      
+      const context = createRealTestContext(askingAction, world, command);
+      
+      const events = askingAction.execute(context);
+      
+      expectEvent(events, 'action.error', {
+        messageId: expect.stringContaining('no_topic'),
+        reason: 'no_topic'
+      });
+    });
+
+    test('should fail when target is not visible', () => {
+      const { world, player, room } = setupBasicWorld();
+      
+      // Create NPC in a different location (not visible)
+      const otherRoom = world.createEntity('Other Room', 'room');
+      otherRoom.add({ type: TraitType.ROOM });
+      
+      const npc = world.createEntity('traveling merchant', 'actor');
+      npc.add({
+        type: TraitType.ACTOR
+      });
+      world.moveEntity(npc.id, otherRoom.id); // NPC in different room
+      
+      const command = createCommand(IFActions.ASKING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'prices' };
+      
+      const context = createRealTestContext(askingAction, world, command);
+      
+      const events = askingAction.execute(context);
+      
+      expectEvent(events, 'action.error', {
+        messageId: expect.stringContaining('not_visible'),
+        params: { target: 'traveling merchant' }
+      });
+    });
+
+    test('should fail when target is too far away', () => {
+      const { world, player, room } = setupBasicWorld();
+      
+      // Create another room
+      const otherRoom = world.createEntity('Other Room', 'room');
+      otherRoom.add({ type: TraitType.ROOM });
+      
+      // Create NPC in other room
+      const npc = world.createEntity('castle guard', 'actor');
+      npc.add({
+        type: TraitType.ACTOR
+      });
+      world.moveEntity(npc.id, otherRoom.id);
+      
+      const command = createCommand(IFActions.ASKING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'castle' };
+      
+      const context = createRealTestContext(askingAction, world, command);
+      
+      const events = askingAction.execute(context);
+      
+      expectEvent(events, 'action.error', {
+        messageId: expect.stringContaining('not_visible'),
+        params: { target: 'castle guard' }
+      });
+    });
+
+    test('should fail when target is not an actor', () => {
+      const { world, player, room, object } = TestData.withObject('ancient statue');
+      
+      const command = createCommand(IFActions.ASKING, {
+        entity: object
+      });
+      command.parsed.extras = { topic: 'history' };
+      
+      const context = createRealTestContext(askingAction, world, command);
+      
+      const events = askingAction.execute(context);
+      
+      expectEvent(events, 'action.error', {
+        messageId: expect.stringContaining('not_actor'),
+        reason: 'not_actor'
+      });
+    });
+  });
+
+  describe('Topic Parsing', () => {
+    test('should parse topic from extras', () => {
+      const { world, player, room } = setupBasicWorld();
+      
+      // Create NPC with conversation topics
+      const npc = world.createEntity('learned scholar', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          topics: {
+            history: { text: 'The town was founded centuries ago...' }
+          }
+        }
+      });
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.ASKING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'history' };
+      
+      const context = createRealTestContext(askingAction, world, command);
+      
+      const events = askingAction.execute(context);
+      
+      // Should emit ASKED event with topic
+      expectEvent(events, 'if.event.asked', {
+        target: 'scholar',
+        topic: 'history',
+        knownTopic: true
+      });
+    });
+
+    test('should parse topic from preposition text', () => {
+      const { world, player, room } = setupBasicWorld();
+      
+      // Create NPC
+      const npc = world.createEntity('friendly innkeeper', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          topics: {
+            rooms: { text: 'We have several rooms available.' }
+          }
+        }
+      });
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.ASKING, {
+        entity: npc
+      });
+      command.parsed.structure.preposition = {
+        tokens: [2],
+        text: 'rooms'
+      };
+      
+      const context = createRealTestContext(askingAction, world, command);
+      
+      const events = askingAction.execute(context);
+      
+      expectEvent(events, 'if.event.asked', {
+        topic: 'rooms',
+        knownTopic: true
+      });
+    });
+
+    test('should parse topic from indirect object', () => {
+      const { world, player, room } = setupBasicWorld();
+      
+      // Create NPC
+      const npc = world.createEntity('mysterious wizard', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          topics: {
+            magic: { text: 'Magic flows through all things...' }
+          }
+        }
+      });
+      world.moveEntity(npc.id, room.id);
+      
+      // Create a topic entity to use as indirect object
+      const topicEntity = world.createEntity('magic', 'thing');
+      world.moveEntity(topicEntity.id, room.id);
+      
+      const command = createCommand(IFActions.ASKING, 
+        {
+          entity: npc
+        }, 
+        {
+          entity: topicEntity,
+          text: 'magic'
+        }
+      );
+      
+      const context = createRealTestContext(askingAction, world, command);
+      
+      const events = askingAction.execute(context);
+      
+      expectEvent(events, 'if.event.asked', {
+        topic: 'magic',
+        knownTopic: true
+      });
+    });
+  });
+
+  describe('Known Topics', () => {
+    test('should respond to known topic', () => {
+      const { world, player, room } = setupBasicWorld();
+      
+      // Create NPC
+      const npc = world.createEntity('gruff barkeeper', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          topics: {
+            beer: { text: 'We serve the finest ale in town!' }
+          }
+        }
+      });
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.ASKING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'beer' };
+      
+      const context = createRealTestContext(askingAction, world, command);
+      
+      const events = askingAction.execute(context);
+      
+      // Should emit responds message
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('responds'),
+        params: { 
+          target: 'gruff barkeeper',
+          topic: 'beer'
+        }
+      });
+    });
+
+    test('should provide detailed explanation for detailed topics', () => {
+      const { world, player, room } = setupBasicWorld();
+      
+      // Create NPC
+      const npc = world.createEntity('history professor', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          topics: {
+            ancient_ruins: { 
+              text: 'The ruins date back to the First Age...',
+              detailed: true
+            }
+          }
+        }
+      });
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.ASKING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'ancient ruins' };
+      
+      const context = createRealTestContext(askingAction, world, command);
+      
+      const events = askingAction.execute(context);
+      
+      // Should emit explains message for detailed topic
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('explains'),
+        params: { 
+          target: 'history professor',
+          topic: 'ancient ruins'
+        }
+      });
+    });
+
+    test('should handle spaces in topic names', () => {
+      const { world, player, room } = setupBasicWorld();
+      
+      // Create NPC
+      const npc = world.createEntity('village sage', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          topics: {
+            lost_treasure: { text: 'Many have sought the lost treasure...' }
+          }
+        }
+      });
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.ASKING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'lost treasure' };
+      
+      const context = createRealTestContext(askingAction, world, command);
+      
+      const events = askingAction.execute(context);
+      
+      // Should normalize topic to match key
+      expectEvent(events, 'if.event.asked', {
+        topic: 'lost treasure',
+        topicKey: 'lost_treasure',
+        knownTopic: true
+      });
+    });
+  });
+
+  describe('Previously Asked Topics', () => {
+    test('should recognize previously asked topics', () => {
+      const { world, player, room } = setupBasicWorld();
+      
+      // Create NPC
+      const npc = world.createEntity('tour guide', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          topics: {
+            landmarks: { 
+              text: 'The main landmarks are...',
+              asked: true  // Already asked
+            }
+          }
+        }
+      });
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.ASKING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'landmarks' };
+      
+      const context = createRealTestContext(askingAction, world, command);
+      
+      const events = askingAction.execute(context);
+      
+      // Should emit ASKED event with previouslyAsked flag
+      expectEvent(events, 'if.event.asked', {
+        previouslyAsked: true
+      });
+      
+      // Should emit already_told message
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('already_told'),
+        params: { 
+          target: 'tour guide',
+          topic: 'landmarks'
+        }
+      });
+    });
+  });
+
+  describe('Topic Requirements', () => {
+    test('should handle topics with unmet requirements', () => {
+      const { world, player, room } = setupBasicWorld();
+      
+      // Create NPC
+      const npc = world.createEntity('stern gatekeeper', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          topics: {
+            secret_passage: { 
+              text: 'There is a hidden way...',
+              requires: 'trust',
+              requirementsMet: false
+            }
+          }
+        }
+      });
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.ASKING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'secret passage' };
+      
+      const context = createRealTestContext(askingAction, world, command);
+      
+      const events = askingAction.execute(context);
+      
+      // Should emit not_yet message
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('not_yet'),
+        params: { 
+          target: 'stern gatekeeper',
+          topic: 'secret passage'
+        }
+      });
+    });
+
+    test('should handle topics with requirements and hints', () => {
+      const { world, player, room } = setupBasicWorld();
+      
+      // Create NPC
+      const npc = world.createEntity('wise alchemist', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          topics: {
+            potion_recipe: { 
+              text: 'To brew the potion...',
+              requires: 'ingredients',
+              requirementsMet: false,
+              requiresHint: true
+            }
+          }
+        }
+      });
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.ASKING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'potion recipe' };
+      
+      const context = createRealTestContext(askingAction, world, command);
+      
+      const events = askingAction.execute(context);
+      
+      // Should emit must_do_first message
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('must_do_first'),
+        params: { 
+          target: 'wise alchemist',
+          topic: 'potion recipe'
+        }
+      });
+    });
+
+    test('should handle topics with met requirements', () => {
+      const { world, player, room } = setupBasicWorld();
+      
+      // Create NPC
+      const npc = world.createEntity('trusted mentor', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          topics: {
+            advanced_technique: { 
+              text: 'Now that you have proven yourself...',
+              requires: 'experience',
+              requirementsMet: true
+            }
+          }
+        }
+      });
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.ASKING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'advanced technique' };
+      
+      const context = createRealTestContext(askingAction, world, command);
+      
+      const events = askingAction.execute(context);
+      
+      // Should emit earned_trust message
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('earned_trust'),
+        params: { 
+          target: 'trusted mentor',
+          topic: 'advanced technique'
+        }
+      });
+    });
+  });
+
+  describe('Unknown Topics', () => {
+    test('should handle unknown topics with NPC conversation', () => {
+      const { world, player, room } = setupBasicWorld();
+      
+      // Create NPC
+      const npc = world.createEntity('simple villager', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          topics: {
+            weather: { text: 'Nice day, isn\'t it?' }
+            // Does not know about 'dragons'
+          }
+        }
+      });
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.ASKING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'dragons' };
+      
+      const context = createRealTestContext(askingAction, world, command);
+      
+      const events = askingAction.execute(context);
+      
+      // Should emit ASKED event with knownTopic false
+      expectEvent(events, 'if.event.asked', {
+        topic: 'dragons',
+        knownTopic: false
+      });
+      
+      // Should emit one of the unknown topic messages
+      const event = events.find(e => e.type === 'action.success');
+      expect(event).toBeDefined();
+      expect(['unknown_topic', 'shrugs', 'no_idea', 'confused']).toContain(
+        event?.data.messageId.split('.').pop()
+      );
+    });
+
+    test('should handle NPC without topics', () => {
+      const { world, player, room } = setupBasicWorld();
+      
+      // Create NPC
+      const npc = world.createEntity('silent mime', 'actor');
+      npc.add({
+        type: TraitType.ACTOR
+        // No conversation object
+      });
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.ASKING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'anything' };
+      
+      const context = createRealTestContext(askingAction, world, command);
+      
+      const events = askingAction.execute(context);
+      
+      // Should emit shrugs message
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('shrugs'),
+        params: { 
+          target: 'silent mime',
+          topic: 'anything'
+        }
+      });
+    });
+  });
+
+  describe('Event Structure Validation', () => {
+    test('should include proper entities in all events', () => {
+      const { world, player, room } = setupBasicWorld();
+      
+      // Create NPC
+      const npc = world.createEntity('mysterious oracle', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          topics: {
+            future: { text: 'The future is clouded...' }
+          }
+        }
+      });
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.ASKING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'future' };
+      
+      const context = createRealTestContext(askingAction, world, command);
+      
+      const events = askingAction.execute(context);
+      
+      events.forEach(event => {
+        if (event.entities) {
+          expect(event.entities.actor).toBe(player.id);
+          expect(event.entities.target).toBe(npc.id);
+          expect(event.entities.location).toBe(room.id);
+        }
+      });
+    });
+  });
+});
+
+describe('Testing Pattern Examples for Asking', () => {
+  test('pattern: topic knowledge systems', () => {
+    const world = new WorldModel();
+    
+    // Test various topic configurations
+    const topicSystems = [
+      {
+        name: 'quest_giver',
+        topics: {
+          quest: { 
+            text: 'I need you to retrieve the artifact.',
+            requires: 'intro_complete',
+            requirementsMet: false
+          },
+          reward: {
+            text: 'You will be well compensated.',
+            asked: false
+          },
+          artifact: {
+            text: 'It is an ancient relic of power.',
+            detailed: true
+          }
+        }
+      },
+      {
+        name: 'merchant',
+        topics: {
+          prices: { text: 'My prices are fair.' },
+          goods: { text: 'I have many fine items.' },
+          special_item: {
+            text: 'Ah, you know about that?',
+            requires: 'reputation',
+            requirementsMet: true
+          }
+        }
+      }
+    ];
+    
+    topicSystems.forEach(({ name, topics }) => {
+      const npc = world.createEntity(name, 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: { topics }
+      });
+      
+      const actorTrait = npc.getTrait(TraitType.ACTOR) as any;
+      expect(actorTrait.conversation.topics).toEqual(topics);
+    });
+  });
+
+  test('pattern: dynamic topic responses', () => {
+    // Test topics that change based on game state
+    const dynamicTopics = {
+      town_news: {
+        text: 'Nothing much happening lately.',
+        variants: {
+          dragon_active: 'A dragon has been spotted near the mountains!',
+          festival_time: 'The harvest festival starts tomorrow!',
+          quest_complete: 'Everyone is talking about your heroic deeds!'
+        }
+      },
+      local_rumors: {
+        text: 'I don\'t listen to gossip.',
+        personality_based: {
+          gossipy: 'Oh, I heard the most interesting thing!',
+          secretive: 'I couldn\'t possibly say...',
+          friendly: 'Well, between you and me...'
+        }
+      }
+    };
+    
+    // Topics can have multiple response variants
+    expect(dynamicTopics.town_news.variants).toBeDefined();
+    expect(dynamicTopics.local_rumors.personality_based).toBeDefined();
+  });
+
+  test('pattern: topic requirement chains', () => {
+    // Test topics that unlock other topics
+    const topicChain = {
+      introduction: {
+        text: 'Hello, I\'m the town elder.',
+        unlocks: ['history', 'problems']
+      },
+      history: {
+        text: 'Our town has stood for centuries...',
+        requires: 'introduction',
+        unlocks: ['ancient_threat']
+      },
+      problems: {
+        text: 'We\'ve been having some troubles...',
+        requires: 'introduction',
+        unlocks: ['missing_people', 'strange_sounds']
+      },
+      ancient_threat: {
+        text: 'There is an old evil that stirs...',
+        requires: ['history', 'problems'],
+        detailed: true
+      }
+    };
+    
+    // Verify requirement chains
+    expect(topicChain.ancient_threat.requires).toContain('history');
+    expect(topicChain.ancient_threat.requires).toContain('problems');
+  });
+});

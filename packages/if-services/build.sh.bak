@@ -1,0 +1,11 @@
+#!/bin/bash
+
+echo "Building @sharpee/if-services..."
+
+# Clean dist directory
+rm -rf dist
+
+# Build TypeScript
+npx tsc
+
+echo "@sharpee/if-services build complete!"

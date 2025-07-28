@@ -1,0 +1,219 @@
+/**
+ * Golden test for taking action - demonstrates testing object acquisition
+ * 
+ * This shows patterns for testing actions that:
+ * - Require a direct object
+ * - Check visibility and reachability
+ * - Modify object locations (through events)
+ * - Have multiple failure conditions
+ */
+
+import { describe, test, expect, beforeEach } from '@jest/globals';
+import { takingAction } from '../../../src/actions/standard/taking';
+import { IFActions } from '../../../src/actions/constants';
+import { TraitType } from '@sharpee/world-model';
+import { 
+  createEntity, 
+  createTestContext, 
+  expectEvent,
+  TestData 
+} from '../../test-utils';
+
+describe('takingAction (Golden Pattern)', () => {
+  describe('Action Metadata', () => {
+    test('should have correct ID', () => {
+      expect(takingAction.id).toBe(IFActions.TAKING);
+    });
+
+    test('should declare required messages', () => {
+      expect(takingAction.requiredMessages).toContain('taken');
+      expect(takingAction.requiredMessages).toContain('already_have');
+      expect(takingAction.requiredMessages).toContain('cant_take');
+      expect(takingAction.requiredMessages).toContain('not_here');
+      expect(takingAction.requiredMessages).toContain('cant_reach');
+    });
+
+    test('should belong to object_manipulation group', () => {
+      expect(takingAction.group).toBe('object_manipulation');
+    });
+  });
+
+  describe('Precondition Checks', () => {
+    test('should fail when no target specified', () => {
+      const context = createTestContext(takingAction);
+      
+      const events = takingAction.execute(context);
+      
+      expectEvent(events, 'action.error', {
+        messageId: expect.stringContaining('no_target'),
+        reason: 'no_target'
+      });
+    });
+
+    test('should fail when object not visible', () => {
+      // Test when object is in another room
+      const { world, player } = TestData.basicSetup();
+      const otherRoom = createEntity('room2', 'Other Room', 'room');
+      const ball = createEntity('ball', 'red ball', 'thing');
+      
+      (world as any).addTestEntity(otherRoom);
+      (world as any).addTestEntity(ball);
+      (world as any).setTestLocation(ball.id, otherRoom.id);
+      
+      const context = createTestContext(takingAction, {
+        world,
+        player,
+        command: {
+          parsed: { action: IFActions.TAKING } as any,
+          actionId: IFActions.TAKING,
+          directObject: { entity: ball } as any
+        }
+      });
+      
+      const events = takingAction.execute(context);
+      
+      expectEvent(events, 'action.error', {
+        messageId: expect.stringContaining('not_here'),
+        params: { item: 'red ball' }
+      });
+    });
+
+    test('should fail when already carrying object', () => {
+      const { world, player, item } = TestData.withInventoryItem('ball', 'red ball');
+      
+      const context = createTestContext(takingAction, {
+        world,
+        player,
+        command: {
+          parsed: { action: IFActions.TAKING } as any,
+          actionId: IFActions.TAKING,
+          directObject: { entity: item } as any
+        }
+      });
+      
+      const events = takingAction.execute(context);
+      
+      expectEvent(events, 'action.error', {
+        messageId: expect.stringContaining('already_have'),
+        params: { item: 'red ball' }
+      });
+    });
+
+    test('should fail when object is scenery', () => {
+      const { world, player, room } = TestData.basicSetup();
+      const scenery = createEntity('fountain', 'ornate fountain', 'thing', {
+        [TraitType.SCENERY]: { type: TraitType.SCENERY }
+      });
+      
+      (world as any).addTestEntity(scenery);
+      (world as any).setTestLocation(scenery.id, room.id);
+      
+      const context = createTestContext(takingAction, {
+        world,
+        player,
+        command: {
+          parsed: { action: IFActions.TAKING } as any,
+          actionId: IFActions.TAKING,
+          directObject: { entity: scenery } as any
+        }
+      });
+      
+      const events = takingAction.execute(context);
+      
+      expectEvent(events, 'action.error', {
+        messageId: expect.stringContaining('cant_take'),
+        params: { item: 'ornate fountain' }
+      });
+    });
+  });
+
+  describe('Successful Taking', () => {
+    test('should take a simple object', () => {
+      const { world, player, object } = TestData.withObject('ball', 'red ball');
+      
+      const context = createTestContext(takingAction, {
+        world,
+        player,
+        command: {
+          parsed: { action: IFActions.TAKING } as any,
+          actionId: IFActions.TAKING,
+          directObject: { entity: object } as any
+        }
+      });
+      
+      const events = takingAction.execute(context);
+      
+      // Should emit TAKEN event
+      expectEvent(events, 'if.event.taken', {
+        item: 'red ball',
+        from: 'room1'
+      });
+      
+      // Should emit success message
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('taken'),
+        params: { item: 'red ball' }
+      });
+    });
+
+    test('should handle taking from containers', () => {
+      const { world, player, room } = TestData.basicSetup();
+      
+      // Create container with object inside
+      const box = createEntity('box', 'wooden box', 'container', {
+        [TraitType.CONTAINER]: { type: TraitType.CONTAINER },
+        [TraitType.OPENABLE]: { type: TraitType.OPENABLE, isOpen: true }
+      });
+      const coin = createEntity('coin', 'gold coin', 'thing');
+      
+      (world as any).addTestEntity(box);
+      (world as any).addTestEntity(coin);
+      (world as any).setTestLocation(box.id, room.id);
+      (world as any).setTestLocation(coin.id, box.id);
+      
+      const context = createTestContext(takingAction, {
+        world,
+        player,
+        command: {
+          parsed: { action: IFActions.TAKING } as any,
+          actionId: IFActions.TAKING,
+          directObject: { entity: coin } as any
+        }
+      });
+      
+      const events = takingAction.execute(context);
+      
+      expectEvent(events, 'if.event.taken', {
+        item: 'gold coin',
+        from: 'box',
+        fromContainer: true
+      });
+    });
+  });
+
+  describe('Event Structure Validation', () => {
+    test('should include proper entities in all events', () => {
+      const { world, player, object } = TestData.withObject('ball', 'ball');
+      
+      const context = createTestContext(takingAction, {
+        world,
+        player,
+        command: {
+          parsed: { action: IFActions.TAKING } as any,
+          actionId: IFActions.TAKING,
+          directObject: { entity: object } as any
+        }
+      });
+      
+      const events = takingAction.execute(context);
+      
+      events.forEach(event => {
+        if (event.entities) {
+          expect(event.entities.actor).toBe('player');
+          expect(event.entities.target).toBe('ball');
+          expect(event.entities.location).toBe('room1');
+        }
+      });
+    });
+  });
+});

@@ -1,0 +1,693 @@
+/**
+ * Golden test for telling action - demonstrates testing information sharing
+ * 
+ * This shows patterns for testing actions that:
+ * - Allow actors to tell NPCs about topics
+ * - Parse topic from command structure
+ * - Check NPC interests and reactions
+ * - Handle already known information
+ * - Vary responses based on NPC personality
+ * - Track important information sharing
+ */
+
+import { describe, test, expect, beforeEach } from '@jest/globals';
+import { tellingAction } from '../../../src/actions/standard/telling';
+import { IFActions } from '../../../src/actions/constants';
+import { TraitType, WorldModel } from '@sharpee/world-model';
+import { 
+  createRealTestContext,
+  setupBasicWorld,
+  expectEvent,
+  TestData,
+  createCommand
+} from '../../test-utils';
+import type { EnhancedActionContext } from '../../../src/actions/enhanced-types';
+
+describe('tellingAction (Golden Pattern)', () => {
+  describe('Action Metadata', () => {
+    test('should have correct ID', () => {
+      expect(tellingAction.id).toBe(IFActions.TELLING);
+    });
+
+    test('should declare required messages', () => {
+      expect(tellingAction.requiredMessages).toContain('no_target');
+      expect(tellingAction.requiredMessages).toContain('no_topic');
+      expect(tellingAction.requiredMessages).toContain('not_visible');
+      expect(tellingAction.requiredMessages).toContain('too_far');
+      expect(tellingAction.requiredMessages).toContain('not_actor');
+      expect(tellingAction.requiredMessages).toContain('told');
+      expect(tellingAction.requiredMessages).toContain('interested');
+      expect(tellingAction.requiredMessages).toContain('very_interested');
+      expect(tellingAction.requiredMessages).toContain('grateful');
+      expect(tellingAction.requiredMessages).toContain('already_knew');
+      expect(tellingAction.requiredMessages).toContain('not_interested');
+    });
+
+    test('should belong to social group', () => {
+      expect(tellingAction.group).toBe('social');
+    });
+  });
+
+  describe('Precondition Checks', () => {
+    test('should fail when no target specified', () => {
+      const { world } = setupBasicWorld();
+      const context = createRealTestContext(tellingAction, world, createCommand(IFActions.TELLING));
+      
+      const events = tellingAction.execute(context);
+      
+      expectEvent(events, 'action.error', {
+        messageId: expect.stringContaining('no_target'),
+        reason: 'no_target'
+      });
+    });
+
+    test('should fail when no topic specified', () => {
+      const { world, player, room } = setupBasicWorld();
+      const npc = world.createEntity('palace guard', 'actor');
+      npc.add({
+        type: TraitType.ACTOR
+      });
+      
+      world.moveEntity(npc.id, room.id);
+      
+      const context = createRealTestContext(tellingAction, world, createCommand(IFActions.TELLING, {
+        entity: npc
+      }));
+      // No topic
+      
+      const events = tellingAction.execute(context);
+      
+      expectEvent(events, 'action.error', {
+        messageId: expect.stringContaining('no_topic'),
+        reason: 'no_topic'
+      });
+    });
+
+    test('should fail when target is not visible', () => {
+      const { world, player } = setupBasicWorld();
+      const npc = world.createEntity('mysterious spy', 'actor');
+      npc.add({
+        type: TraitType.ACTOR
+      });
+      
+      // Put NPC in different room
+      const otherRoom = world.createEntity('Other Room', 'room');
+      world.moveEntity(npc.id, otherRoom.id);
+      
+      const command = createCommand(IFActions.TELLING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'secret' };
+      
+      const context = createRealTestContext(tellingAction, world, command);
+      
+      const events = tellingAction.execute(context);
+      
+      expectEvent(events, 'action.error', {
+        messageId: expect.stringContaining('not_visible'),
+        params: { target: 'mysterious spy' }
+      });
+    });
+
+    test('should fail when target is too far away', () => {
+      const { world, player } = setupBasicWorld();
+      const otherRoom = world.createEntity('Other Room', 'room');
+      const npc = world.createEntity('royal messenger', 'actor');
+      npc.add({
+        type: TraitType.ACTOR
+      });
+      
+      world.moveEntity(npc.id, otherRoom.id);
+      
+      const command = createCommand(IFActions.TELLING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'news' };
+      
+      const context = createRealTestContext(tellingAction, world, command);
+      
+      const events = tellingAction.execute(context);
+      
+      expectEvent(events, 'action.error', {
+        messageId: expect.stringContaining('not_visible'),
+        params: { target: 'royal messenger' }
+      });
+    });
+
+    test('should fail when target is not an actor', () => {
+      const { world, player, room } = setupBasicWorld();
+      const painting = world.createEntity('old painting', 'object');
+      world.moveEntity(painting.id, room.id);
+      
+      const command = createCommand(IFActions.TELLING, {
+        entity: painting
+      });
+      command.parsed.extras = { topic: 'story' };
+      
+      const context = createRealTestContext(tellingAction, world, command);
+      
+      const events = tellingAction.execute(context);
+      
+      expectEvent(events, 'action.error', {
+        messageId: expect.stringContaining('not_actor'),
+        reason: 'not_actor'
+      });
+    });
+  });
+
+  describe('Basic Telling', () => {
+    test('should tell NPC without conversation system', () => {
+      const { world, player, room } = setupBasicWorld();
+      const npc = world.createEntity('service robot', 'actor');
+      npc.add({
+        type: TraitType.ACTOR
+        // No conversation object
+      });
+      
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.TELLING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'weather' };
+      
+      const context = createRealTestContext(tellingAction, world, command);
+      
+      const events = tellingAction.execute(context);
+      
+      // Should emit TOLD event
+      expectEvent(events, 'if.event.told', {
+        target: npc.id,
+        targetName: 'service robot',
+        topic: 'weather'
+      });
+      
+      // Should emit basic told message
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('told'),
+        params: { 
+          target: 'service robot',
+          topic: 'weather'
+        }
+      });
+    });
+  });
+
+  describe('NPC Interests', () => {
+    test('should detect interested NPC', () => {
+      const { world, player, room } = setupBasicWorld();
+      const npc = world.createEntity('curious scholar', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          interests: ['magic', 'history', 'artifacts']
+        }
+      });
+      
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.TELLING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'magic' };
+      
+      const context = createRealTestContext(tellingAction, world, command);
+      
+      const events = tellingAction.execute(context);
+      
+      // Should emit TOLD event with interested flag
+      expectEvent(events, 'if.event.told', {
+        target: npc.id,
+        topic: 'magic',
+        interested: true,
+        topicKey: 'magic'
+      });
+      
+      // Should emit interested message
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('interested'),
+        params: { 
+          target: 'curious scholar',
+          topic: 'magic'
+        }
+      });
+    });
+
+    test('should detect very interested NPC', () => {
+      const { world, player, room } = setupBasicWorld();
+      const npc = world.createEntity('avid collector', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          interests: ['treasures', 'rare_coins'],
+          veryInterested: ['rare_coins']
+        }
+      });
+      
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.TELLING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'rare coins' };
+      
+      const context = createRealTestContext(tellingAction, world, command);
+      
+      const events = tellingAction.execute(context);
+      
+      // Should emit TOLD event with veryInterested flag
+      expectEvent(events, 'if.event.told', {
+        topic: 'rare coins',
+        interested: true,
+        veryInterested: true,
+        topicKey: 'rare_coins'
+      });
+      
+      // Should emit very_interested message
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('very_interested'),
+        params: { 
+          target: 'avid collector',
+          topic: 'rare coins'
+        }
+      });
+    });
+
+    test('should handle already known information', () => {
+      const { world, player, room } = setupBasicWorld();
+      const npc = world.createEntity('wise sage', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          interests: ['prophecy', 'visions'],
+          knownFacts: ['prophecy']  // Already knows this
+        }
+      });
+      
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.TELLING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'prophecy' };
+      
+      const context = createRealTestContext(tellingAction, world, command);
+      
+      const events = tellingAction.execute(context);
+      
+      // Should emit already_knew message
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('already_knew'),
+        params: { 
+          target: 'wise sage',
+          topic: 'prophecy'
+        }
+      });
+    });
+  });
+
+  describe('NPC Disinterest', () => {
+    test('should handle boring topics', () => {
+      const { world, player, room } = setupBasicWorld();
+      const npc = world.createEntity('battle-hardened warrior', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          interests: ['combat', 'weapons'],
+          boringTopics: ['poetry', 'flowers', 'cooking']
+        }
+      });
+      
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.TELLING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'poetry' };
+      
+      const context = createRealTestContext(tellingAction, world, command);
+      
+      const events = tellingAction.execute(context);
+      
+      // Should emit TOLD event with not interested flag
+      expectEvent(events, 'if.event.told', {
+        topic: 'poetry',
+        interested: false
+      });
+      
+      // Should emit bored message
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('bored'),
+        params: { 
+          target: 'battle-hardened warrior',
+          topic: 'poetry'
+        }
+      });
+    });
+
+    test('should handle dismissive topics', () => {
+      const { world, player, room } = setupBasicWorld();
+      const npc = world.createEntity('arrogant noble', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          dismissiveTopics: ['commoners', 'peasants', 'poverty']
+        }
+      });
+      
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.TELLING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'commoners' };
+      
+      const context = createRealTestContext(tellingAction, world, command);
+      
+      const events = tellingAction.execute(context);
+      
+      // Should emit dismissive message
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('dismissive'),
+        params: { 
+          target: 'arrogant noble',
+          topic: 'commoners'
+        }
+      });
+    });
+  });
+
+  describe('Personality-Based Responses', () => {
+    test('should handle friendly personality', () => {
+      const { world, player, room } = setupBasicWorld();
+      const npc = world.createEntity('friendly innkeeper', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          personality: 'friendly'
+          // No specific interests
+        }
+      });
+      
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.TELLING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'travels' };
+      
+      const context = createRealTestContext(tellingAction, world, command);
+      
+      const events = tellingAction.execute(context);
+      
+      // Should emit informed message for friendly NPC
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('informed'),
+        params: { 
+          target: 'friendly innkeeper',
+          topic: 'travels'
+        }
+      });
+    });
+
+    test('should handle grumpy personality', () => {
+      const { world, player, room } = setupBasicWorld();
+      const npc = world.createEntity('grumpy hermit', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          personality: 'grumpy'
+        }
+      });
+      
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.TELLING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'news' };
+      
+      const context = createRealTestContext(tellingAction, world, command);
+      
+      const events = tellingAction.execute(context);
+      
+      // Should emit not_interested message for grumpy NPC
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('not_interested'),
+        params: { 
+          target: 'grumpy hermit',
+          topic: 'news'
+        }
+      });
+    });
+  });
+
+  describe('Important Information', () => {
+    test('should handle grateful response for important info', () => {
+      const { world, player, room } = setupBasicWorld();
+      const npc = world.createEntity('guard captain', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          importantInfo: ['danger', 'threat', 'attack_plans'],
+          interests: ['security', 'danger']
+        }
+      });
+      
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.TELLING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'danger' };
+      
+      const context = createRealTestContext(tellingAction, world, command);
+      
+      const events = tellingAction.execute(context);
+      
+      // Should emit TOLD event with important flag
+      expectEvent(events, 'if.event.told', {
+        topic: 'danger',
+        interested: true,
+        important: true
+      });
+      
+      // Should emit grateful message
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('grateful'),
+        params: { 
+          target: 'guard captain',
+          topic: 'danger'
+        }
+      });
+    });
+
+    test('should not be grateful for already known important info', () => {
+      const { world, player, room } = setupBasicWorld();
+      const npc = world.createEntity('army general', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          importantInfo: ['enemy_position'],
+          interests: ['enemy_position'],
+          knownFacts: ['enemy_position']  // Already knows
+        }
+      });
+      
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.TELLING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'enemy position' };
+      
+      const context = createRealTestContext(tellingAction, world, command);
+      
+      const events = tellingAction.execute(context);
+      
+      // Should emit already_knew message, not grateful
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('already_knew'),
+        params: { 
+          target: 'army general',
+          topic: 'enemy position'
+        }
+      });
+    });
+  });
+
+  describe('Topic Parsing', () => {
+    test('should normalize topic with spaces', () => {
+      const { world, player, room } = setupBasicWorld();
+      const npc = world.createEntity('sharp detective', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          interests: ['missing_person', 'strange_noises']
+        }
+      });
+      
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.TELLING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'missing person' };
+      
+      const context = createRealTestContext(tellingAction, world, command);
+      
+      const events = tellingAction.execute(context);
+      
+      // Should normalize topic key
+      expectEvent(events, 'if.event.told', {
+        topic: 'missing person',
+        topicKey: 'missing_person',
+        interested: true
+      });
+    });
+  });
+
+  describe('Random Responses', () => {
+    test('should sometimes ignore uninteresting topics', () => {
+      const { world, player, room } = setupBasicWorld();
+      const npc = world.createEntity('busy peasant', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          // No specific interests or personality
+        }
+      });
+      
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.TELLING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'philosophy' };
+      
+      const context = createRealTestContext(tellingAction, world, command);
+      
+      const events = tellingAction.execute(context);
+      
+      // Should emit one of the disinterested messages
+      const event = events.find(e => e.type === 'action.success');
+      expect(event).toBeDefined();
+      const messageId = event?.data.messageId.split('.').pop();
+      expect(['told', 'not_interested', 'ignores']).toContain(messageId);
+    });
+  });
+
+  describe('Event Structure Validation', () => {
+    test('should include proper entities in all events', () => {
+      const { world, player, room } = setupBasicWorld();
+      const npc = world.createEntity('court scribe', 'actor');
+      npc.add({
+        type: TraitType.ACTOR,
+        conversation: {
+          interests: ['documents', 'records']
+        }
+      });
+      
+      world.moveEntity(npc.id, room.id);
+      
+      const command = createCommand(IFActions.TELLING, {
+        entity: npc
+      });
+      command.parsed.extras = { topic: 'records' };
+      
+      const context = createRealTestContext(tellingAction, world, command);
+      
+      const events = tellingAction.execute(context);
+      
+      events.forEach(event => {
+        if (event.entities) {
+          expect(event.entities.actor).toBe(player.id);
+          expect(event.entities.target).toBe(npc.id);
+          expect(event.entities.location).toBe(room.id);
+        }
+      });
+    });
+  });
+});
+
+describe('Testing Pattern Examples for Telling', () => {
+  test('pattern: information value system', () => {
+    // Test different types of information value
+    const world = new WorldModel();
+    const informationTypes = [
+      {
+        npc: 'spy_master',
+        conversation: {
+          interests: ['secrets', 'plots', 'alliances'],
+          veryInterested: ['assassination_plot'],
+          importantInfo: ['assassination_plot', 'invasion_plans'],
+          knownFacts: ['old_alliance']
+        }
+      },
+      {
+        npc: 'merchant',
+        conversation: {
+          interests: ['trade_routes', 'prices', 'goods'],
+          boringTopics: ['politics', 'war'],
+          importantInfo: ['new_supplier', 'market_crash']
+        }
+      },
+      {
+        npc: 'scholar',
+        conversation: {
+          interests: ['knowledge', 'books', 'history'],
+          dismissiveTopics: ['gossip', 'rumors'],
+          veryInterested: ['ancient_text', 'lost_library']
+        }
+      }
+    ];
+    
+    informationTypes.forEach(({ npc, conversation }) => {
+      const entity = world.createEntity(npc, 'actor');
+      entity.add({
+        type: TraitType.ACTOR,
+        conversation
+      });
+      
+      const actorTrait = entity.get(TraitType.ACTOR) as any;
+      expect(actorTrait.conversation).toEqual(conversation);
+    });
+  });
+
+  test('pattern: NPC information networks', () => {
+    // Test NPCs that share information
+    const informationNetwork = {
+      guard_network: {
+        members: ['guard_captain', 'gate_guard', 'patrol_guard'],
+        sharedInfo: ['threats', 'suspicious_activity', 'wanted_criminals']
+      },
+      merchant_guild: {
+        members: ['guild_master', 'shop_owner', 'trader'],
+        sharedInfo: ['prices', 'new_goods', 'trade_disruptions']
+      },
+      rumor_mill: {
+        members: ['innkeeper', 'bartender', 'gossip'],
+        sharedInfo: ['scandals', 'affairs', 'local_news']
+      }
+    };
+    
+    // Each network has members and shared interests
+    Object.values(informationNetwork).forEach(network => {
+      expect(network.members.length).toBeGreaterThan(0);
+      expect(network.sharedInfo.length).toBeGreaterThan(0);
+    });
+  });
+
+  test('pattern: progressive information reveals', () => {
+    // Test information that unlocks based on trust/relationship
+    const progressiveInfo = {
+      low_trust: ['general_news', 'common_knowledge'],
+      medium_trust: ['personal_opinion', 'local_secrets'],
+      high_trust: ['dangerous_secrets', 'hidden_location', 'true_identity']
+    };
+    
+    // Information becomes more valuable with trust
+    expect(progressiveInfo.low_trust).not.toContain('dangerous_secrets');
+    expect(progressiveInfo.high_trust).not.toContain('general_news');
+  });
+});

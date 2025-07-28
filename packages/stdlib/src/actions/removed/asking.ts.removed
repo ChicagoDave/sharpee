@@ -1,0 +1,136 @@
+/**
+ * Asking action - ask NPCs about specific topics
+ * 
+ * This action handles asking NPCs about topics using
+ * "ask [npc] about [topic]" syntax.
+ */
+
+import { Action, EnhancedActionContext } from '../enhanced-types';
+import { SemanticEvent } from '@sharpee/core';
+import { TraitType, ActorTrait } from '@sharpee/world-model';
+import { IFActions } from '../constants';
+
+export const askingAction: Action = {
+  id: IFActions.ASKING,
+  requiredMessages: [
+    'no_target',
+    'no_topic',
+    'not_visible',
+    'too_far',
+    'not_actor',
+    'unknown_topic',
+    'shrugs',
+    'no_idea',
+    'confused',
+    'responds',
+    'explains',
+    'already_told',
+    'remembers',
+    'not_yet',
+    'must_do_first',
+    'earned_trust'
+  ],
+  
+  execute(context: EnhancedActionContext): SemanticEvent[] {
+    const actor = context.player;
+    const target = context.command.directObject?.entity;
+    const topic = context.command.parsed.extras?.topic || 
+                  context.command.parsed.structure.preposition?.text ||
+                  context.command.indirectObject?.parsed.text;
+    
+    // Must have someone to ask
+    if (!target) {
+      return context.emitError('no_target');
+    }
+    
+    // Must have a topic
+    if (!topic) {
+      return context.emitError('no_topic');
+    }
+    
+    // Check if target is visible
+    if (!context.canSee(target)) {
+      return context.emitError('not_visible', { target: target.name });
+    }
+    
+    // Check if target is reachable (same room)
+    if (!context.canReach(target)) {
+      return context.emitError('too_far', { target: target.name });
+    }
+    
+    // Check if target is an actor
+    if (!target.has(TraitType.ACTOR)) {
+      return context.emitError('not_actor');
+    }
+    
+    // Build event data
+    const eventData: Record<string, unknown> = {
+      target: target.id,
+      targetName: target.name,
+      topic: topic
+    };
+    
+    const messageParams: Record<string, any> = {
+      target: target.name,
+      topic: topic
+    };
+    
+    let messageId = 'unknown_topic';
+    
+    // Check if NPC knows about this topic
+    const targetActor = target.get(TraitType.ACTOR) as ActorTrait;
+    if (targetActor && (targetActor as any).conversation?.topics) {
+      const topics = (targetActor as any).conversation.topics;
+      const topicKey = topic.toLowerCase().replace(/\s+/g, '_');
+      
+      if (topics[topicKey]) {
+        eventData.knownTopic = true;
+        eventData.topicKey = topicKey;
+        
+        const topicData = topics[topicKey];
+        
+        // Check if topic has been asked before
+        if (topicData.asked) {
+          eventData.previouslyAsked = true;
+          messageId = 'already_told';
+        }
+        // Check if topic requires conditions
+        else if (topicData.requires) {
+          eventData.hasRequirements = true;
+          
+          // Check if requirements are met (simplified)
+          if (topicData.requirementsMet) {
+            messageId = 'earned_trust';
+          } else {
+            messageId = topicData.requiresHint ? 'must_do_first' : 'not_yet';
+          }
+        }
+        // Topic is available
+        else {
+          messageId = topicData.detailed ? 'explains' : 'responds';
+        }
+      } else {
+        // Unknown topic - vary the response
+        eventData.knownTopic = false;
+        const unknownResponses = ['unknown_topic', 'shrugs', 'no_idea', 'confused'];
+        messageId = unknownResponses[Math.floor(Math.random() * unknownResponses.length)];
+      }
+    } else {
+      // NPC without conversation topics
+      messageId = 'shrugs';
+    }
+    
+    // Create events
+    const events: SemanticEvent[] = [];
+    
+    // Create ASKED event for world model
+    events.push(context.emit('if.event.asked', eventData));
+    
+    // Add success message
+    events.push(...context.emitSuccess(messageId, messageParams));
+    
+    return events;
+  },
+  
+  group: "social"
+};

@@ -19,8 +19,7 @@ import {
   LanguageProvider,
   ActionContext,
   ActionRegistry,
-  Action,
-  ActionResult
+  Action
 } from '@sharpee/stdlib';
 
 import { 
@@ -198,33 +197,22 @@ export class CommandExecutor {
     let success = true;
     let error: string | undefined;
 
-    // Check if it's an Action (has patterns) or ActionExecutor
-    if ('patterns' in action) {
-      // It's an Action - execute expects only context and returns ActionResult
-      const actionResult = await (action as Action).execute(actionContext);
-      
-      // Create events from action result
-      events = actionResult.events || [];
-      if (actionResult.message) {
-        events.push({
-          type: 'command.succeeded',
-          data: { message: actionResult.message }
-        });
-      }
-      
-      success = actionResult.success;
-      error = actionResult.error;
-    } else {
-      // It's an ActionExecutor - execute expects command and context, returns SemanticEvent[]
-      const semanticEvents = (action as any).execute(command, actionContext);
-      
-      // Convert SemanticEvent[] to GameEvent[]
-      events = semanticEvents.map((se: SemanticEvent) => ({
-        type: se.type,
-        data: se.data,
-        metadata: { id: se.id, entities: se.entities }
-      }));
-    }
+    // All actions now use the modern Action pattern - execute returns SemanticEvent[]
+    const semanticEvents = await (action as Action).execute(actionContext);
+    
+    // Convert SemanticEvent[] to GameEvent[]
+    events = semanticEvents.map((se: SemanticEvent) => ({
+      type: se.type,
+      data: se.data,
+      metadata: { id: se.id, entities: se.entities }
+    }));
+    
+    // Determine success based on whether we have error events
+    success = !semanticEvents.some(e => e.type === 'action.error');
+    
+    // Extract error message if present
+    const errorEvent = semanticEvents.find(e => e.type === 'action.error');
+    error = errorEvent ? errorEvent.data?.reason || 'Action failed' : undefined;
 
     // Sequence the events
     const sequencedEvents = eventSequencer.sequenceAll(events, turn);

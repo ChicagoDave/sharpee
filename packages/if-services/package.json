@@ -1,0 +1,34 @@
+{
+  "name": "@sharpee/if-services",
+  "version": "0.1.0",
+  "description": "Runtime service interfaces for Sharpee Interactive Fiction Platform",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@sharpee/core": "file:../core",
+    "@sharpee/if-domain": "file:../if-domain",
+    "@sharpee/world-model": "file:../world-model"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "sharpee",
+    "interactive-fiction",
+    "if",
+    "services",
+    "runtime"
+  ],
+  "author": "Sharpee Team",
+  "license": "MIT"
+}

@@ -1,0 +1,65 @@
+# GitHub Actions workflow for stdlib testing
+# Place this in .github/workflows/stdlib-test.yml
+
+name: stdlib Tests
+
+on:
+  push:
+    paths:
+      - 'packages/stdlib/**'
+      - '.github/workflows/stdlib-test.yml'
+  pull_request:
+    paths:
+      - 'packages/stdlib/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+    
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+    
+    - name: Install dependencies
+      run: pnpm install
+    
+    - name: Build packages
+      run: pnpm -r build
+    
+    - name: Run stdlib tests with coverage
+      run: |
+        cd packages/stdlib
+        pnpm test:ci
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./packages/stdlib/coverage/lcov.info
+        flags: stdlib
+        name: stdlib-coverage
+    
+    - name: Archive coverage results
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: packages/stdlib/coverage/
+    
+    - name: Comment PR with coverage
+      uses: romeovs/lcov-reporter-action@v0.3.1
+      if: github.event_name == 'pull_request'
+      with:
+        lcov-file: ./packages/stdlib/coverage/lcov.info
+        github-token: ${{ secrets.GITHUB_TOKEN }}

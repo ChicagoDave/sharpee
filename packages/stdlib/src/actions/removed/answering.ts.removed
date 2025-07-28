@@ -1,0 +1,130 @@
+/**
+ * Answering action - answer questions from NPCs
+ * 
+ * This action handles responding to NPC questions or prompts.
+ * It can be triggered automatically or manually.
+ */
+
+import { Action, EnhancedActionContext } from '../enhanced-types';
+import { SemanticEvent } from '@sharpee/core';
+import { IFActions } from '../constants';
+
+export const answeringAction: Action = {
+  id: IFActions.ANSWERING,
+  requiredMessages: [
+    'no_question',
+    'no_one_asked',
+    'too_late',
+    'answered',
+    'answered_yes',
+    'answered_no',
+    'gave_answer',
+    'accepted',
+    'rejected',
+    'noted',
+    'confused_by_answer',
+    'invalid_response',
+    'needs_yes_or_no',
+    'unclear_answer'
+  ],
+  
+  execute(context: EnhancedActionContext): SemanticEvent[] {
+    const actor = context.player;
+    const response = context.command.parsed.extras?.response || 
+                    context.command.parsed.extras?.text ||
+                    context.command.parsed.action; // 'yes', 'no', etc.
+    
+    // Check if there's a pending question
+    // This would be tracked in game state
+    const pendingQuestion = (context as any).pendingQuestion;
+    
+    if (!pendingQuestion) {
+      return context.emitError('no_question');
+    }
+    
+    // Build event data
+    const eventData: Record<string, unknown> = {
+      questionId: pendingQuestion.id,
+      questioner: pendingQuestion.askerId,
+      questionerName: pendingQuestion.askerName,
+      response: response || 'default'
+    };
+    
+    const messageParams: Record<string, any> = {
+      response: response || 'something'
+    };
+    
+    let messageId = 'gave_answer';
+    
+    // Check if response is valid for the question
+    if (pendingQuestion.validResponses) {
+      const normalizedResponse = response?.toLowerCase();
+      
+      if (normalizedResponse && pendingQuestion.validResponses.includes(normalizedResponse)) {
+        eventData.validResponse = true;
+        
+        // Specific messages for yes/no
+        if (normalizedResponse === 'yes') {
+          messageId = 'answered_yes';
+        } else if (normalizedResponse === 'no') {
+          messageId = 'answered_no';
+        } else {
+          messageId = 'answered';
+        }
+        
+        // Check if the answer is what was expected
+        if (pendingQuestion.expectedResponse === normalizedResponse) {
+          eventData.expectedAnswer = true;
+        }
+      } else {
+        eventData.validResponse = false;
+        
+        // Determine error message
+        if (pendingQuestion.requiresYesNo) {
+          return context.emitError('needs_yes_or_no');
+        } else if (!response) {
+          return context.emitError('unclear_answer');
+        } else {
+          return context.emitError('invalid_response');
+        }
+      }
+    } else {
+      // Open-ended question
+      if (response) {
+        messageId = 'answered';
+        messageParams.response = response;
+      } else {
+        return context.emitError('unclear_answer');
+      }
+    }
+    
+    // Check if question has expired
+    if (pendingQuestion.expiryTime && Date.now() > pendingQuestion.expiryTime) {
+      return context.emitError('too_late');
+    }
+    
+    // Create events
+    const events: SemanticEvent[] = [];
+    
+    // Create ANSWERED event for world model
+    events.push(context.emit('if.event.answered', eventData));
+    
+    // Add success message
+    events.push(...context.emitSuccess(messageId, messageParams));
+    
+    // Add reaction message if appropriate
+    if (eventData.validResponse) {
+      if (eventData.expectedAnswer) {
+        events.push(...context.emitSuccess('accepted', messageParams));
+      } else if (pendingQuestion.requiresSpecificAnswer) {
+        events.push(...context.emitSuccess('rejected', messageParams));
+      } else {
+        events.push(...context.emitSuccess('noted', messageParams));
+      }
+    }
+    
+    return events;
+  },
+  
+  group: "social"
+};

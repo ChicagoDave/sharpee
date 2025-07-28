@@ -1,0 +1,251 @@
+/**
+ * Using action - generic use of objects and devices
+ * 
+ * This action handles generic usage of objects, which can:
+ * - Activate devices
+ * - Use tools with other objects
+ * - Consume items
+ * - Fallback for complex device operations
+ */
+
+import { Action, EnhancedActionContext } from '../enhanced-types';
+import { SemanticEvent } from '@sharpee/core';
+import { TraitType, IdentityTrait } from '@sharpee/world-model';
+import { IFActions } from '../constants';
+
+export const usingAction: Action = {
+  id: IFActions.USING,
+  requiredMessages: [
+    'no_target',
+    'not_visible',
+    'not_reachable',
+    'target_not_visible',
+    'target_not_reachable',
+    'nothing_to_use_with',
+    'cant_use_together',
+    'device_used',
+    'device_activated',
+    'device_toggled',
+    'tool_used',
+    'tool_applied',
+    'tool_modifies',
+    'tool_fixes',
+    'tool_breaks',
+    'consumed',
+    'potion_drunk',
+    'medicine_taken',
+    'food_eaten',
+    'key_used',
+    'unlocks',
+    'already_unlocked',
+    'wrong_key',
+    'opens_item',
+    'reads_item',
+    'generic_use',
+    'nothing_happens',
+    'not_useful_here'
+  ],
+  
+  execute(context: EnhancedActionContext): SemanticEvent[] {
+    const actor = context.player;
+    const item = context.command.directObject?.entity;
+    const target = context.command.indirectObject?.entity;
+    const preposition = context.command.parsed.structure.preposition?.text;
+    
+    // Must have something to use
+    if (!item) {
+      return context.emitError('no_target');
+    }
+    
+    // Check if item is visible
+    if (!context.canSee(item)) {
+      return context.emitError('not_visible', { item: item.name });
+    }
+    
+    // Check if item is reachable (or held)
+    const itemLocation = context.world.getLocation?.(item.id);
+    const isHeld = itemLocation === actor.id;
+    
+    if (!isHeld && !context.canReach(item)) {
+      return context.emitError('not_reachable', { item: item.name });
+    }
+    
+    // If using with/on something, check target
+    if (target) {
+      if (!context.canSee(target)) {
+        return context.emitError('target_not_visible', { target: target.name });
+      }
+      
+      if (!context.canReach(target)) {
+        return context.emitError('target_not_reachable', { target: target.name });
+      }
+    }
+    
+    // Determine use type based on object properties
+    let useType: 'device' | 'tool' | 'consumable' | 'key' | 'generic' = 'generic';
+    const eventData: Record<string, unknown> = {
+      item: item.id,
+      itemName: item.name,
+      target: target?.id,
+      targetName: target?.name,
+      preposition: preposition
+    };
+    
+    const messageParams: Record<string, any> = {
+      item: item.name,
+      target: target?.name
+    };
+    
+    let messageId = 'generic_use';
+    
+    // Check object traits and properties
+    if (item.has(TraitType.SWITCHABLE)) {
+      useType = 'device';
+      const switchable = item.get(TraitType.SWITCHABLE) as { isOn?: boolean };
+      eventData.willToggle = true;
+      eventData.currentState = switchable.isOn;
+      eventData.newState = !switchable.isOn;
+      messageParams.newState = switchable.isOn ? 'off' : 'on';
+      messageId = 'device_toggled';
+    } else if (item.has(TraitType.EDIBLE)) {
+      useType = 'consumable';
+      eventData.consumed = true;
+      const edible = item.get(TraitType.EDIBLE) as { isDrink?: boolean };
+      if (edible.isDrink) {
+        eventData.consumeType = 'drink';
+        messageId = 'potion_drunk';
+      } else {
+        eventData.consumeType = 'eat';
+        messageId = 'food_eaten';
+      }
+    } else if (item.has(TraitType.IDENTITY)) {
+      const identity = item.get(TraitType.IDENTITY) as IdentityTrait;
+      const name = identity.name?.toLowerCase() || '';
+      const description = identity.description?.toLowerCase() || '';
+      
+      // Check for tool-like objects
+      if (name.includes('tool') || name.includes('hammer') || 
+          name.includes('screwdriver') || name.includes('wrench') ||
+          name.includes('knife') || name.includes('saw') ||
+          description.includes('tool')) {
+        useType = 'tool';
+        
+        if (!target) {
+          return context.emitError('nothing_to_use_with', messageParams);
+        }
+        
+        // Tools might fix, break, or modify targets
+        if (target.has(TraitType.SWITCHABLE) && name.includes('screwdriver')) {
+          eventData.toolAction = 'fix';
+          messageId = 'tool_fixes';
+        } else if (name.includes('hammer')) {
+          // Check if target seems fragile based on name
+          const targetIdentity = target.get(TraitType.IDENTITY) as IdentityTrait;
+          if (targetIdentity && targetIdentity.name?.toLowerCase().includes('glass')) {
+            eventData.toolAction = 'break';
+            messageId = 'tool_breaks';
+          } else {
+            eventData.toolAction = 'modify';
+            messageId = 'tool_modifies';
+          }
+        } else {
+          eventData.toolAction = 'modify';
+          messageId = 'tool_modifies';
+        }
+      } else if (name.includes('key')) {
+        useType = 'key';
+        
+        if (!target) {
+          return context.emitError('nothing_to_use_with', messageParams);
+        }
+        
+        // Check if target is lockable
+        if (!target.has(TraitType.LOCKABLE)) {
+          return context.emitError('cant_use_together', messageParams);
+        }
+        
+        const lockable = target.get(TraitType.LOCKABLE) as { isLocked?: boolean; keyId?: string };
+        if (!lockable.isLocked) {
+          messageId = 'already_unlocked';
+        } else if (lockable.keyId && lockable.keyId !== item.id) {
+          messageId = 'wrong_key';
+        } else {
+          eventData.unlockAttempt = true;
+          messageId = 'unlocks';
+        }
+      } else if (name.includes('potion') || name.includes('elixir') ||
+                 name.includes('medicine') || description.includes('drink')) {
+        useType = 'consumable';
+        eventData.consumed = true;
+        eventData.consumeType = 'drink';
+        
+        if (name.includes('medicine')) {
+          messageId = 'medicine_taken';
+        } else {
+          messageId = 'potion_drunk';
+        }
+      }
+    }
+    
+    // Generic use might delegate to more specific actions
+    if (useType === 'generic') {
+      // If it's openable, try opening
+      if (item.has(TraitType.OPENABLE)) {
+        const openable = item.get(TraitType.OPENABLE) as { isOpen?: boolean };
+        eventData.delegates = 'open';
+        eventData.willOpen = !openable.isOpen;
+        messageId = 'opens_item';
+      }
+      // If it's readable, try reading
+      else if (item.has(TraitType.READABLE)) {
+        eventData.delegates = 'read';
+        messageId = 'reads_item';
+      }
+      // Otherwise, generic feedback
+      else {
+        eventData.genericUse = true;
+        messageId = 'nothing_happens';
+      }
+    }
+    
+    // Build use event
+    eventData.useType = useType;
+    
+    // Add success indicators
+    switch (useType) {
+      case 'device':
+        eventData.activated = true;
+        break;
+      case 'tool':
+        if (target) {
+          eventData.toolUsed = true;
+          eventData.targetAffected = true;
+        }
+        break;
+      case 'consumable':
+        eventData.willConsume = true;
+        break;
+      case 'key':
+        // Unlock attempt already set above
+        break;
+      case 'generic':
+        if (!eventData.delegates) {
+          eventData.nothingHappens = true;
+        }
+        break;
+    }
+    
+    // Create events
+    const events: SemanticEvent[] = [];
+    
+    // Create USED event for world model
+    events.push(context.emit('if.event.used', eventData));
+    
+    // Add success message
+    events.push(...context.emitSuccess(messageId, messageParams));
+    
+    return events;
+  },
+  
+  group: "interaction"
+};

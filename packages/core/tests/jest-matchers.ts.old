@@ -1,0 +1,36 @@
+// Custom Jest matchers
+
+declare global {
+  namespace jest {
+    interface Matchers<R> {
+      toStartWith(expected: string): R;
+      toEndWith(expected: string): R;
+    }
+  }
+}
+
+expect.extend({
+  toStartWith(received: string, expected: string) {
+    const pass = received.startsWith(expected);
+    return {
+      pass,
+      message: () => 
+        pass
+          ? `expected ${received} not to start with ${expected}`
+          : `expected ${received} to start with ${expected}`
+    };
+  },
+  
+  toEndWith(received: string, expected: string) {
+    const pass = received.endsWith(expected);
+    return {
+      pass,
+      message: () =>
+        pass
+          ? `expected ${received} not to end with ${expected}`
+          : `expected ${received} to end with ${expected}`
+    };
+  }
+});
+
+export {};
