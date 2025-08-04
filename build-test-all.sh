@@ -15,6 +15,7 @@ SKIP_UNTIL=""
 ACTION=""
 VERBOSE=false
 FORCE_BUILD=false
+FAILURES_ONLY=false
 
 # Create logs directory if it doesn't exist
 mkdir -p /mnt/c/repotemp/sharpee/logs
@@ -41,13 +42,18 @@ while [[ $# -gt 0 ]]; do
       FORCE_BUILD=true
       shift
       ;;
+    --failures-only)
+      FAILURES_ONLY=true
+      shift
+      ;;
     *)
       echo "Unknown option: $1"
-      echo "Usage: $0 [--skip-until package] [--action action-name] [--verbose] [--build]"
+      echo "Usage: $0 [--skip-until package] [--action action-name] [--verbose] [--build] [--failures-only]"
       echo "  --skip-until: Skip packages until the specified one"
       echo "  --action: Test only the specified action (requires --skip-until stdlib)"
       echo "  --verbose: Show detailed output"
       echo "  --build: Force build of the package even when using --skip-until"
+      echo "  --failures-only: Run only previously failing tests (uses vitest's --changed)"
       exit 1
       ;;
   esac
@@ -63,6 +69,7 @@ echo -e "  Skip until: ${SKIP_UNTIL:-none}"
 echo -e "  Action: ${ACTION:-all}"
 echo -e "  Verbose: $VERBOSE"
 echo -e "  Force build: $FORCE_BUILD"
+echo -e "  Failures only: $FAILURES_ONLY"
 echo ""
 
 # Function to run tests for a package
@@ -71,7 +78,16 @@ run_package_tests() {
   local test_cmd="pnpm test:ci"
   local log_file=""
   
-  # Special handling for stdlib with action parameter
+  cd packages/$package
+  
+  # Check if package has test scripts by looking in package.json
+  if ! grep -q '"test:ci"' package.json; then
+    echo -e "${YELLOW}⚠ No tests configured for $package, skipping...${NC}"
+    cd ../..
+    return 0
+  fi
+  
+  # Build test command based on options
   if [[ "$package" == "stdlib" && -n "$ACTION" ]]; then
     echo -e "${YELLOW}Testing specific action: $ACTION${NC}"
     test_cmd="pnpm test:ci ${ACTION}-golden.test.ts"
@@ -80,8 +96,22 @@ run_package_tests() {
     log_file="/mnt/c/repotemp/sharpee/logs/${package}-tests-${TIMESTAMP}.log"
   fi
   
+  # Add failures-only option if enabled
+  if [ "$FAILURES_ONLY" = "true" ]; then
+    # First check if we have a previous test results file
+    local results_file=".vitest-results.json"
+    if [ -f "$results_file" ]; then
+      echo -e "${YELLOW}Running only previously failing tests${NC}"
+      test_cmd="$test_cmd --changed $results_file"
+    else
+      echo -e "${YELLOW}No previous test results found, running all tests${NC}"
+    fi
+  fi
+  
+  # Always save test results for future --failures-only runs
+  test_cmd="$test_cmd --reporter=default --reporter=json --outputFile=.vitest-results.json"
+  
   echo -e "${BLUE}Running tests for $package...${NC}"
-  cd packages/$package
   
   # Always save to log file
   echo "Running: $test_cmd" > "$log_file"

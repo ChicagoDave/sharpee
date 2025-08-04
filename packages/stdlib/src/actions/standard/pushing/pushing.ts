@@ -8,13 +8,15 @@
  * - General pushing feedback
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
+import { ActionMetadata } from '../../../validation';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType, PushableTrait, SwitchableTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { ScopeLevel } from '../../../scope/types';
 import { PushedEventData } from './pushing-events';
 
-export const pushingAction: Action = {
+export const pushingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.PUSHING,
   requiredMessages: [
     'no_target',
@@ -33,8 +35,14 @@ export const pushingAction: Action = {
     'pushing_does_nothing',
     'fixed_in_place'
   ],
+  
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.REACHABLE
+  },
 
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const target = context.command.directObject?.entity;
     const direction = context.command.parsed.extras?.direction as string;
@@ -48,25 +56,7 @@ export const pushingAction: Action = {
       })];
     }
 
-    // Check if target is visible
-    if (!context.canSee(target)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_visible',
-        reason: 'not_visible',
-        params: { target: target.name }
-      })];
-    }
-
-    // Check if target is reachable
-    if (!context.canReach(target)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_reachable',
-        reason: 'not_reachable',
-        params: { target: target.name }
-      })];
-    }
+    // Scope validation is now handled by CommandValidator
 
     // Can't push worn items
     if (target.has(TraitType.WEARABLE)) {

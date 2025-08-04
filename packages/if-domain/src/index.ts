@@ -26,3 +26,6 @@ export * from './parser-contracts';
 
 // Vocabulary contracts
 export * from './vocabulary-contracts';
+
+// Grammar system
+export * from './grammar';

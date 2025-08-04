@@ -7,7 +7,7 @@
  * - Ensure consistent behavior with related actions
  */
 
-import { describe, test, expect, beforeEach, jest } from '@jest/globals';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { insertingAction } from '../../../src/actions/standard/inserting';
 import { puttingAction } from '../../../src/actions/standard/putting';
 import { IFActions } from '../../../src/actions/constants';
@@ -19,7 +19,7 @@ import {
   TestData,
   createCommand
 } from '../../test-utils';
-import type { EnhancedActionContext } from '../../../src/actions/enhanced-types';
+import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('insertingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -57,9 +57,9 @@ describe('insertingAction (Golden Pattern)', () => {
       
       // Mock putting action to verify delegation
       const originalExecute = puttingAction.execute;
-      let delegatedContext: EnhancedActionContext | null = null;
+      let delegatedContext: ActionContext | null = null;
       
-      puttingAction.execute = jest.fn((context) => {
+      puttingAction.execute = vi.fn((context) => {
         delegatedContext = context;
         return originalExecute.call(puttingAction, context);
       });
@@ -249,29 +249,6 @@ describe('insertingAction (Golden Pattern)', () => {
       });
     });
 
-    test('should fail when item not held', () => {
-      const { world, player, room } = setupBasicWorld();
-      
-      const key = world.createEntity('brass key', 'object');
-      const drawer = world.createEntity('desk drawer', 'container');
-      drawer.add({ type: TraitType.CONTAINER });
-      
-      world.moveEntity(key.id, room.id);  // Key on floor
-      world.moveEntity(drawer.id, room.id);
-      
-      const command = createCommand(IFActions.INSERTING, {
-        entity: key,
-        secondEntity: drawer
-      });
-      const context = createRealTestContext(insertingAction, world, command);
-      
-      const events = insertingAction.execute(context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_held'),
-        params: { item: 'brass key' }
-      });
-    });
   });
 
   describe('Event Structure Validation', () => {

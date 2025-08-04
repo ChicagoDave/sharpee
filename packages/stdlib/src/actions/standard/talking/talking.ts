@@ -5,13 +5,15 @@
  * More specific conversation topics use ASK/TELL.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType, ActorTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { TalkedEventData } from './talking-events';
+import { ActionMetadata } from '../../../validation';
+import { ScopeLevel } from '../../../scope/types';
 
-export const talkingAction: Action = {
+export const talkingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.TALKING,
   requiredMessages: [
     'no_target',
@@ -34,7 +36,7 @@ export const talkingAction: Action = {
     'nothing_to_say'
   ],
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const target = context.command.directObject?.entity;
     
@@ -142,11 +144,19 @@ export const talkingAction: Action = {
         }
       }
       
-      // Check if NPC has topics to discuss
-      if (eventData.hasTopics && messageId === 'talked') {
-        messageId = 'has_topics';
-      } else if (!eventData.hasTopics && messageId === 'talked') {
-        messageId = 'nothing_to_say';
+      // Don't override special greetings with topic messages
+      const isSpecialGreeting = ['formal_greeting', 'casual_greeting', 'first_meeting', 
+                                'friendly_greeting', 'remembers_you'].includes(messageId);
+      
+      // Only check topics if not a special greeting
+      if (!isSpecialGreeting) {
+        if (eventData.hasTopics) {
+          messageId = 'has_topics';
+        } else if (messageId === 'greets_again' && !eventData.hasTopics && 
+                   conversation.topics !== undefined) {
+          // Only say "nothing to say" if topics were explicitly defined as empty
+          messageId = 'nothing_to_say';
+        }
       }
     } else {
       // NPC without conversation system
@@ -169,5 +179,11 @@ export const talkingAction: Action = {
     return events;
   },
   
-  group: "social"
+  group: "social",
+  
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.AUDIBLE
+  }
 };

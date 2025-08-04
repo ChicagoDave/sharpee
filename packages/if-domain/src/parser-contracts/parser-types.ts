@@ -5,7 +5,7 @@
  * that must be resolved against the world model.
  */
 
-import { PartOfSpeech } from '../vocabulary-contracts/vocabulary-types';
+import { PartOfSpeech, VerbVocabulary, VocabularyEntry } from '../vocabulary-contracts/vocabulary-types';
 import type { SystemEvent } from '@sharpee/core';
 
 /**
@@ -112,6 +112,38 @@ export interface Parser extends BaseParser {
 
   /**
    * Set debug event callback for emitting parser debug events
+   * @deprecated Use setPlatformEventEmitter instead
    */
   setDebugCallback?(callback: (event: SystemEvent) => void): void;
+
+  /**
+   * Set platform event emitter for parser debugging
+   * The emitter should accept SemanticEvent objects
+   */
+  setPlatformEventEmitter?(emitter: (event: any) => void): void;
+
+  /**
+   * Set the world context for scope constraint evaluation
+   * @param world The world model
+   * @param actorId The current actor performing the command
+   * @param currentLocation The actor's current location
+   */
+  setWorldContext?(world: any, actorId: string, currentLocation: string): void;
+
+  /**
+   * Register additional verbs after parser creation
+   * Used for story-specific vocabulary
+   */
+  registerVerbs?(verbs: VerbVocabulary[]): void;
+
+  /**
+   * Register additional vocabulary entries after parser creation
+   * More generic than registerVerbs - can handle any part of speech
+   */
+  registerVocabulary?(entries: VocabularyEntry[]): void;
+
+  /**
+   * Enable or disable a specific verb by action ID
+   */
+  setVerbEnabled?(actionId: string, enabled: boolean): void;
 }

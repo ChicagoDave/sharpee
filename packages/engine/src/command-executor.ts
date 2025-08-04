@@ -5,21 +5,22 @@
  */
 
 import { SemanticEvent } from '@sharpee/core';
+import { LanguageProvider } from '@sharpee/if-domain';
 import { 
   ParsedCommand, 
   ValidatedCommand,
   Parser,
-  ValidationError,
-  CommandValidator as ICommandValidator
+  ValidationError
 } from '@sharpee/world-model';
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import {
   CommandValidator,
-  LanguageProvider,
   ActionContext,
   ActionRegistry,
-  Action
+  Action,
+  ScopeResolver,
+  createScopeResolver
 } from '@sharpee/stdlib';
 
 import { 
@@ -30,6 +31,7 @@ import {
   EngineConfig 
 } from './types';
 import { eventSequencer } from './event-sequencer';
+import { createActionContext } from './action-context-factory';
 
 /**
  * Command executor options
@@ -71,7 +73,7 @@ export interface CommandExecutorOptions {
  */
 export class CommandExecutor {
   private parser: Parser;
-  private validator: ICommandValidator;
+  private validator: CommandValidator;
   private actionRegistry: ActionRegistry;
   private eventProcessor: EventProcessor;
   private autoResolve: boolean;
@@ -191,7 +193,7 @@ export class CommandExecutor {
     }
 
     // Create action context
-    const actionContext = this.createActionContext(world, context);
+    const actionContext = this.createActionContext(world, context, command, action);
 
     let events: GameEvent[] = [];
     let success = true;
@@ -212,7 +214,7 @@ export class CommandExecutor {
     
     // Extract error message if present
     const errorEvent = semanticEvents.find(e => e.type === 'action.error');
-    error = errorEvent ? errorEvent.data?.reason || 'Action failed' : undefined;
+    error = errorEvent ? String(errorEvent.data?.reason || 'Action failed') : undefined;
 
     // Sequence the events
     const sequencedEvents = eventSequencer.sequenceAll(events, turn);
@@ -242,33 +244,25 @@ export class CommandExecutor {
   }
 
   /**
+   * Scope resolver instance
+   */
+  private scopeResolver?: ScopeResolver;
+
+  /**
    * Create action context from game context
    */
-  private createActionContext(world: WorldModel, context: GameContext): ActionContext {
-    const player = context.player;
-    const currentLocation = world.getContainingRoom(player.id) || player;
+  private createActionContext(
+    world: WorldModel, 
+    context: GameContext,
+    command: ValidatedCommand,
+    action: Action
+  ): ActionContext {
+    // Create scope resolver if not exists
+    if (!this.scopeResolver) {
+      this.scopeResolver = createScopeResolver(world);
+    }
 
-    return {
-      world: world as any, // Read-only interface
-      player,
-      currentLocation,
-      canSee: (entity: IFEntity) => world.canSee(player.id, entity.id),
-      canReach: (entity: IFEntity) => {
-        // Simple implementation - can reach if can see
-        // Could be enhanced with actual reach calculation
-        return world.canSee(player.id, entity.id);
-      },
-      canTake: (entity: IFEntity) => {
-        // Can take if not scenery, not a room, etc.
-        return !entity.has('SCENERY') && !entity.has('ROOM');
-      },
-      isInScope: (entity: IFEntity) => {
-        const inScope = world.getInScope(player.id);
-        return inScope.some(e => e.id === entity.id);
-      },
-      getVisible: () => world.getVisible(player.id),
-      getInScope: () => world.getInScope(player.id)
-    };
+    return createActionContext(world, context, command, action, this.scopeResolver);
   }
 
   /**
@@ -291,7 +285,17 @@ export class CommandExecutor {
   private createErrorCommand(input: string): ParsedCommand {
     return {
       action: 'UNKNOWN',
-      rawInput: input
+      rawInput: input,
+      tokens: [],
+      structure: {
+        verb: { 
+          tokens: [],
+          text: 'unknown',
+          head: 'unknown'
+        }
+      },
+      pattern: '',
+      confidence: 0
     };
   }
 }

@@ -10,7 +10,7 @@
  * - Handle directional movement
  */
 
-import { describe, test, expect, beforeEach, jest } from '@jest/globals';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { pullingAction } from '../../../src/actions/standard/pulling';
 import { IFActions } from '../../../src/actions/constants';
 import { 
@@ -83,28 +83,6 @@ describe('pullingAction (Golden Pattern)', () => {
       });
     });
 
-    test('should fail when target is not visible', () => {
-      const { world, player } = setupBasicWorld();
-      const lever = world.createEntity('control lever', 'object');
-      lever.add(new PullableTrait({ pullType: 'lever' }));
-      
-      // Put lever in a different room so it's not visible
-      const otherRoom = world.createEntity('other room', 'room');
-      world.moveEntity(lever.id, otherRoom.id);
-      
-      const command = createCommand(
-        IFActions.PULLING,
-        { entity: lever }
-      );
-      const context = createRealTestContext(pullingAction, world, command);
-      
-      const events = pullingAction.execute(context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_visible'),
-        params: { target: 'control lever' }
-      });
-    });
 
     test('should fail when target is not pullable', () => {
       const { world, player, room } = setupBasicWorld();

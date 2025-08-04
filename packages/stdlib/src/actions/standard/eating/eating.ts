@@ -5,13 +5,15 @@
  * It validates that the item is edible and not a drink.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType, EdibleTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { EatenEventData, ImplicitTakenEventData } from './eating-events';
+import { ActionMetadata } from '../../../validation';
+import { ScopeLevel } from '../../../scope/types';
 
-export const eatingAction: Action = {
+export const eatingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.EATING,
   requiredMessages: [
     'no_item',
@@ -37,8 +39,13 @@ export const eatingAction: Action = {
     'devoured',
     'munched'
   ],
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.REACHABLE
+  },
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const item = context.command.directObject?.entity;
     
@@ -51,29 +58,11 @@ export const eatingAction: Action = {
       })];
     }
     
-    // Check if item is visible
-    if (!context.canSee(item)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_visible',
-        reason: 'not_visible',
-        params: { item: item.name }
-      })];
-    }
+    // Scope validation is now handled by CommandValidator
     
-    // Check if item is reachable or held
+    // Check if item is held
     const itemLocation = context.world.getLocation(item.id);
     const isHeld = itemLocation === actor.id;
-    const isReachable = context.canReach(item);
-    
-    if (!isHeld && !isReachable) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_reachable',
-        reason: 'not_reachable',
-        params: { item: item.name }
-      })];
-    }
     
     // Check if item is edible
     if (!item.has(TraitType.EDIBLE)) {

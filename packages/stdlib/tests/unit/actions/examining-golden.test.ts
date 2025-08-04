@@ -19,7 +19,7 @@ import {
   createCommand,
   setupBasicWorld
 } from '../../test-utils';
-import type { EnhancedActionContext } from '../../../src/actions/enhanced-types';
+import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('examiningAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {

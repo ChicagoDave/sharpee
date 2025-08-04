@@ -44,6 +44,12 @@ export function isContainerCapable(trait: Trait): trait is ContainerCapable {
  * Check if an entity can contain other entities
  */
 export function canContain(entity: IFEntity): boolean {
+  // Check by entity type first (rooms and actors are containers by default)
+  if (entity.type === 'room' || entity.type === 'actor') {
+    return true;
+  }
+  
+  // Then check for explicit container traits
   return (
     entity.hasTrait(TraitType.CONTAINER) ||
     entity.hasTrait(TraitType.ROOM) ||
@@ -72,6 +78,17 @@ export function getContainerTrait(entity: IFEntity): ContainerCapable | undefine
   const actor = entity.getTrait(TraitType.ACTOR);
   if (actor && isContainerCapable(actor)) {
     return actor;
+  }
+  
+  // For entities without traits, provide default container capabilities based on type
+  if (entity.type === 'room' || entity.type === 'actor') {
+    // Return a default container capability
+    return {
+      type: entity.type === 'room' ? TraitType.ROOM : TraitType.ACTOR,
+      isTransparent: entity.type === 'room', // Rooms are transparent by default
+      enterable: entity.type === 'room', // Only rooms are enterable
+      capacity: undefined // No capacity limits by default
+    } as ContainerCapable;
   }
   
   return undefined;

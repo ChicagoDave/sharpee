@@ -8,10 +8,12 @@
  * MIGRATED: To new folder structure with typed events (ADR-042)
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType, RoomTrait, OpenableTrait, LockableTrait, IFEntity } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { ActionMetadata } from '../../../validation';
+import { ScopeLevel } from '../../../scope/types';
 
 // Import our typed event data
 import { 
@@ -21,7 +23,7 @@ import {
   GoingErrorData 
 } from './going-events';
 
-export const goingAction: Action = {
+export const goingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.GOING,
   requiredMessages: [
     'no_direction',
@@ -39,7 +41,7 @@ export const goingAction: Action = {
     'need_light'
   ],
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     
     // Get the direction from the parsed command
@@ -202,6 +204,14 @@ export const goingAction: Action = {
       fromRoom: currentRoom.id
     };
     
+    // Actually move the player!
+    context.world.moveEntity(actor.id, destination.id);
+    
+    // Mark the destination room as visited
+    if (destRoomTrait && !destRoomTrait.visited) {
+      destRoomTrait.visited = true;
+    }
+    
     // Success message parameters
     const messageParams = {
       direction: normalizedDirection,
@@ -226,7 +236,13 @@ export const goingAction: Action = {
     ];
   },
   
-  group: "movement"
+  group: "movement",
+  
+  metadata: {
+    requiresDirectObject: false,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.VISIBLE
+  }
 };
 
 /**
@@ -289,7 +305,7 @@ function isDarkRoom(room: IFEntity): boolean {
 /**
  * Check if actor has a light source
  */
-function hasLight(actor: IFEntity, context: EnhancedActionContext): boolean {
+function hasLight(actor: IFEntity, context: ActionContext): boolean {
   // Check if actor itself provides light
   if (actor.has(TraitType.LIGHT_SOURCE)) {
     const lightTrait = actor.get(TraitType.LIGHT_SOURCE);

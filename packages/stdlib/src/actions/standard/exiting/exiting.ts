@@ -4,13 +4,15 @@
  * This action handles exiting objects that the actor is currently inside/on.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType, EntryTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ExitedEventData } from './exiting-events';
+import { ActionMetadata } from '../../../validation';
+import { ScopeLevel } from '../../../scope/types';
 
-export const exitingAction: Action = {
+export const exitingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.EXITING,
   requiredMessages: [
     'already_outside',
@@ -22,7 +24,7 @@ export const exitingAction: Action = {
   ],
   group: 'movement',
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const currentLocation = context.world.getLocation(actor.id);
     
@@ -43,8 +45,13 @@ export const exitingAction: Action = {
       })];
     }
     
-    // Check if we're in a room - can't exit from a room without a direction
-    if (currentContainer.has(TraitType.ROOM)) {
+    // Check if we're in something we can exit from
+    // Must be in a container, supporter, or entry - not just a plain room
+    const isExitable = currentContainer.has(TraitType.CONTAINER) || 
+                      currentContainer.has(TraitType.SUPPORTER) ||
+                      currentContainer.has(TraitType.ENTRY);
+    
+    if (!isExitable) {
       return [context.event('action.error', {
         actionId: context.action.id,
         messageId: 'already_outside',
@@ -66,6 +73,13 @@ export const exitingAction: Action = {
     let canExit = true;
     let preposition = 'from';
     
+    // Determine preposition based on container type
+    if (currentContainer.has(TraitType.CONTAINER)) {
+      preposition = 'out of';
+    } else if (currentContainer.has(TraitType.SUPPORTER)) {
+      preposition = 'off';
+    }
+    
     if (currentContainer.has(TraitType.ENTRY)) {
       const entryTrait = currentContainer.get(TraitType.ENTRY) as EntryTrait;
       // Note: We check canEnter because if you can't enter, you probably can't exit either
@@ -73,12 +87,13 @@ export const exitingAction: Action = {
       if (!entryTrait.canEnter) {
         canExit = false;
       }
-      preposition = entryTrait.preposition || 'in';
+      // Entry trait can override preposition
+      const entryPrep = entryTrait.preposition || 'in';
       // Convert preposition for exiting
-      if (preposition === 'in') preposition = 'out of';
-      else if (preposition === 'on') preposition = 'off';
-      else if (preposition === 'under') preposition = 'from under';
-      else if (preposition === 'behind') preposition = 'from behind';
+      if (entryPrep === 'in') preposition = 'out of';
+      else if (entryPrep === 'on') preposition = 'off';
+      else if (entryPrep === 'under') preposition = 'from under';
+      else if (entryPrep === 'behind') preposition = 'from behind';
     }
     
     // Check if container needs to be open to exit
@@ -129,5 +144,11 @@ export const exitingAction: Action = {
       }));
     
     return events;
+  },
+  
+  metadata: {
+    requiresDirectObject: false,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.REACHABLE
   }
 };

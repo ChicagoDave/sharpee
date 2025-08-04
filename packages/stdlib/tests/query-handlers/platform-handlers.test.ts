@@ -2,7 +2,7 @@
  * Tests for platform query handlers
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach } from 'vitest';
 import { 
   QuitQueryHandler,
   RestartQueryHandler,

@@ -8,15 +8,17 @@
  * MIGRATED: To new folder structure with typed events (ADR-042)
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType, IFEntity } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { ActionMetadata } from '../../../validation';
+import { ScopeLevel } from '../../../scope/types';
 
 // Import our typed event data
 import { ExaminedEventData, ExaminingErrorData } from './examining-events';
 
-export const examiningAction: Action = {
+export const examiningAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.EXAMINING,
   requiredMessages: [
     'no_target',
@@ -34,7 +36,7 @@ export const examiningAction: Action = {
     'brief_description'
   ],
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const noun = context.command.directObject?.entity;
     
@@ -232,5 +234,11 @@ export const examiningAction: Action = {
     ];
   },
   
-  group: "observation"
+  group: "observation",
+  
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.VISIBLE
+  }
 };

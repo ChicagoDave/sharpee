@@ -5,7 +5,7 @@
 import { GameEngine, createGameEngine, createStandardEngine, createEngineWithStory } from '../src/game-engine';
 import { MinimalTestStory } from './stories/minimal-test-story';
 import { createMockAction, MockTextChannel } from './fixtures';
-import { createBasicTextService } from '../src/text-service';
+import { createMockTextService } from '../src/test-helpers/mock-text-service';
 
 describe('GameEngine', () => {
   let engine: GameEngine;
@@ -123,7 +123,7 @@ describe('GameEngine', () => {
       
       // Set up mock text channel
       mockChannel = new MockTextChannel();
-      const { service } = createBasicTextService();
+      const service = createMockTextService();
       engine.setTextService(service, [mockChannel]);
     });
 
@@ -355,7 +355,7 @@ describe('GameEngine', () => {
     });
 
     it('should allow setting custom text service', () => {
-      const { service } = createBasicTextService();
+      const service = createMockTextService();
       const mockChannel = new MockTextChannel();
       
       engine.setTextService(service, [mockChannel]);

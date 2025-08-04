@@ -2,6 +2,7 @@
  * Tests for EventSequencer
  */
 
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { eventSequencer, EventSequenceUtils } from '../src/event-sequencer';
 import { GameEvent, SequencedEvent } from '../src/types';
 import { createTestEvent } from './fixtures';
@@ -9,7 +10,7 @@ import { createTestEvent } from './fixtures';
 describe('EventSequencer', () => {
   beforeEach(() => {
     // Reset sequencer state if needed
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('sequence generation', () => {

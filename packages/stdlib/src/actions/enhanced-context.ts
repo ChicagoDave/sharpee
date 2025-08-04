@@ -6,41 +6,74 @@
  */
 
 import { createEvent as coreCreateEvent, SemanticEvent } from '@sharpee/core';
-import { IFEntity, WorldModel, ValidatedCommand, TraitType } from '@sharpee/world-model';
+import { IFEntity, WorldModel, TraitType } from '@sharpee/world-model';
 import { 
   ActionContext, 
-  EnhancedActionContext, 
   Action, 
   EventTypes,
   MessageNamespaces 
 } from './enhanced-types';
+import { ScopeResolver } from '../scope/types';
+import { StandardScopeResolver } from '../scope/scope-resolver';
+import { ValidatedCommand } from '../validation/types';
 
 /**
- * Implementation of enhanced action context
+ * Internal implementation of unified action context
  * 
- * ADR-041: Simplified to only expose event() method
+ * Phase 2: Factory pattern with unified ActionContext interface
  */
-export class EnhancedActionContextImpl implements EnhancedActionContext {
+class InternalActionContext implements ActionContext {
   private sequenceCounter = 0;
+  public readonly scopeResolver: ScopeResolver;
   
   constructor(
-    private baseContext: ActionContext,
+    public readonly world: WorldModel,
+    public readonly player: IFEntity,
+    public readonly currentLocation: IFEntity,
     public readonly action: Action,
-    public readonly command: ValidatedCommand
-  ) {}
+    public readonly command: ValidatedCommand,
+    scopeResolver?: ScopeResolver
+  ) {
+    // Use provided scope resolver or create a standard one
+    this.scopeResolver = scopeResolver || new StandardScopeResolver(world);
+  }
   
-  // Delegate base context properties
-  get world(): WorldModel { return this.baseContext.world; }
-  get player(): IFEntity { return this.baseContext.player; }
-  get currentLocation(): IFEntity { return this.baseContext.currentLocation; }
+  // World querying methods
+  canSee(entity: IFEntity): boolean { 
+    return this.scopeResolver.canSee(this.player, entity); 
+  }
   
-  // Delegate base context methods
-  canSee(entity: IFEntity): boolean { return this.baseContext.canSee(entity); }
-  canReach(entity: IFEntity): boolean { return this.baseContext.canReach(entity); }
-  canTake(entity: IFEntity): boolean { return this.baseContext.canTake(entity); }
-  isInScope(entity: IFEntity): boolean { return this.baseContext.isInScope(entity); }
-  getVisible(): IFEntity[] { return this.baseContext.getVisible(); }
-  getInScope(): IFEntity[] { return this.baseContext.getInScope(); }
+  canReach(entity: IFEntity): boolean {
+    return this.scopeResolver.canReach(this.player, entity);
+  }
+  
+  canTake(entity: IFEntity): boolean { 
+    return !entity.has(TraitType.SCENERY) && !entity.has(TraitType.ROOM) && !entity.has(TraitType.DOOR); 
+  }
+  
+  isInScope(entity: IFEntity): boolean { 
+    // An entity is in scope if we can perceive it in any way
+    return this.scopeResolver.getScope(this.player, entity) !== 'out_of_scope';
+  }
+  
+  getVisible(): IFEntity[] { 
+    return this.scopeResolver.getVisible(this.player); 
+  }
+  
+  getInScope(): IFEntity[] { 
+    // Get all entities that are perceivable in any way
+    const visible = this.scopeResolver.getVisible(this.player);
+    const audible = this.scopeResolver.getAudible(this.player);
+    const reachable = this.scopeResolver.getReachable(this.player);
+    
+    // Combine and deduplicate
+    const allInScope = new Map<string, IFEntity>();
+    [...visible, ...audible, ...reachable].forEach(entity => {
+      allInScope.set(entity.id, entity);
+    });
+    
+    return Array.from(allInScope.values());
+  }
   
   /**
    * Create an event with automatic entity injection and metadata enrichment
@@ -70,6 +103,13 @@ export class EnhancedActionContextImpl implements EnhancedActionContext {
       
       const entities = this.getEventEntities();
       return coreCreateEvent(type, payload, entities);
+    }
+    
+    // For domain events (like if.action.inventory, if.event.examined), 
+    // pass the data directly without wrapping
+    if (type.startsWith('if.')) {
+      const entities = this.getEventEntities();
+      return coreCreateEvent(type, eventData, entities);
     }
     
     // If the data already has our structure, extract it
@@ -133,86 +173,51 @@ export class EnhancedActionContextImpl implements EnhancedActionContext {
   /**
    * Helper to create context for another action (used in composite actions)
    */
-  createSubContext(action: Action): EnhancedActionContext {
-    return new EnhancedActionContextImpl(this.baseContext, action, this.command);
+  createSubContext(action: Action): ActionContext {
+    return new InternalActionContext(this.world, this.player, this.currentLocation, action, this.command, this.scopeResolver);
   }
 }
 
 /**
- * Factory function to create enhanced context from base context
+ * Factory function to create unified action context
+ * 
+ * Phase 2: Factory pattern implementation
  */
-export function createEnhancedContext(
-  baseContext: ActionContext,
-  action: Action,
-  command: ValidatedCommand
-): EnhancedActionContext {
-  return new EnhancedActionContextImpl(baseContext, action, command);
-}
-
-/**
- * Helper to create a mock enhanced context for testing
- */
-export function createMockEnhancedContext(
+export function createActionContext(
   world: WorldModel,
   player: IFEntity,
   action: Action,
-  command?: Partial<ValidatedCommand>
-): EnhancedActionContext {
+  command: ValidatedCommand,
+  scopeResolver?: ScopeResolver
+): ActionContext {
+  // Get immediate location (container/supporter/room that player is in)
+  const locationId = world.getLocation(player.id);
+  const currentLocation = locationId ? world.getEntity(locationId) : null;
+  if (!currentLocation) {
+    throw new Error('Player has no valid location');
+  }
+  return new InternalActionContext(world, player, currentLocation, action, command, scopeResolver);
+}
+
+/**
+ * Helper to create a mock action context for testing
+ */
+export function createMockActionContext(
+  world: WorldModel,
+  player: IFEntity,
+  action: Action,
+  command?: Partial<ValidatedCommand>,
+  scopeResolver?: ScopeResolver
+): ActionContext {
   if (!world) {
-    throw new Error('createMockEnhancedContext: world is required');
+    throw new Error('createMockActionContext: world is required');
   }
   if (!player) {
-    throw new Error('createMockEnhancedContext: player is required');
+    throw new Error('createMockActionContext: player is required');
   }
   if (!action) {
-    throw new Error('createMockEnhancedContext: action is required');
+    throw new Error('createMockActionContext: action is required');
   }
-  
-  const currentLocation = world.getContainingRoom(player.id) || player;
-  
-  const baseContext: ActionContext = {
-    world,
-    player,
-    currentLocation,
-    command: command as ValidatedCommand,
-    canSee: (entity) => world.canSee(player.id, entity.id),
-    canReach: (entity) => {
-      // First must be able to see it
-      if (!world.canSee(player.id, entity.id)) return false;
-      
-      // Can always reach things we're carrying
-      if (world.getLocation(entity.id) === player.id) return true;
-      
-      // Can reach things in the same room
-      const playerRoom = world.getContainingRoom(player.id);
-      const entityRoom = world.getContainingRoom(entity.id);
-      if (playerRoom && entityRoom && playerRoom.id === entityRoom.id) {
-        // Check if it's in a closed container
-        let current = entity.id;
-        while (current) {
-          const container = world.getLocation(current);
-          if (!container || container === playerRoom.id) break;
-          
-          const containerEntity = world.getEntity(container);
-          if (containerEntity?.has(TraitType.CONTAINER)) {
-            const containerTrait = containerEntity.get(TraitType.CONTAINER) as any;
-            if (containerEntity.has(TraitType.OPENABLE)) {
-              const openable = containerEntity.get(TraitType.OPENABLE) as any;
-              if (!openable?.isOpen) return false;
-            }
-          }
-          current = container;
-        }
-        return true;
-      }
-      
-      return false;
-    },
-    canTake: (entity) => !entity.has(TraitType.SCENERY) && !entity.has(TraitType.ROOM) && !entity.has(TraitType.DOOR),
-    isInScope: (entity) => world.getInScope(player.id).some(e => e.id === entity.id),
-    getVisible: () => world.getVisible(player.id),
-    getInScope: () => world.getInScope(player.id)
-  };
   
   const validatedCommand: ValidatedCommand = {
     parsed: {
@@ -227,5 +232,5 @@ export function createMockEnhancedContext(
     ...command
   };
   
-  return new EnhancedActionContextImpl(baseContext, action, validatedCommand);
+  return createActionContext(world, player, action, validatedCommand, scopeResolver);
 }

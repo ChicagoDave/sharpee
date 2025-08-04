@@ -6,7 +6,7 @@
  * These tests verify that the correct events are emitted with the right context.
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach } from 'vitest';
 import { quittingAction } from '../../../src/actions/standard/quitting';
 import { IFActions } from '../../../src/actions/constants';
 import { 

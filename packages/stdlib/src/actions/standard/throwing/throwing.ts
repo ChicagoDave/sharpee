@@ -7,13 +7,15 @@
  * - Target reacting to being hit
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
+import { ActionMetadata } from '../../../validation';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType, IdentityTrait, ActorTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { ScopeLevel } from '../../../scope/types';
 import { ThrowingEventMap } from './throwing-events';
 
-export const throwingAction: Action = {
+export const throwingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.THROWING,
   requiredMessages: [
     'no_item',
@@ -42,7 +44,14 @@ export const throwingAction: Action = {
     'target_angry'
   ],
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: true,
+    directObjectScope: ScopeLevel.CARRIED,
+    indirectObjectScope: ScopeLevel.VISIBLE
+  },
+  
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const item = context.command.directObject?.entity;
     const target = context.command.indirectObject?.entity;
@@ -57,16 +66,7 @@ export const throwingAction: Action = {
       })];
     }
     
-    // Check if actor is holding the item
-    const itemLocation = context.world.getLocation?.(item.id);
-    if (itemLocation !== actor.id) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_holding',
-        reason: 'not_holding',
-        params: { item: item.name }
-      })];
-    }
+    // Scope checks handled by parser based on metadata
     
     // Determine throw type and validate
     let throwType: 'at_target' | 'directional' | 'general';
@@ -77,15 +77,7 @@ export const throwingAction: Action = {
       // Throwing at a specific target
       throwType = 'at_target';
       
-      // Check if target is visible
-      if (!context.canSee(target)) {
-        return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'target_not_visible',
-        reason: 'target_not_visible',
-        params: { target: target.name }
-      })];
-      }
+      // Target visibility handled by parser based on metadata
       
       // Target should be in the same room (can't throw through walls)
       const targetLocation = context.world.getLocation?.(target.id);

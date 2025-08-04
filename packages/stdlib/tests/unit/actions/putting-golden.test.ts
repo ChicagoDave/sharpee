@@ -8,7 +8,7 @@
  * - Prevent recursive containment
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { puttingAction } from '../../../src/actions/standard/putting';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType } from '@sharpee/world-model';
@@ -81,31 +81,7 @@ describe('puttingAction (Golden Pattern)', () => {
       });
     });
 
-    test('should fail when item not held', () => {
-      const { world, player, room } = setupBasicWorld();
-      
-      const coin = world.createEntity('gold coin', 'object');
-      const box = world.createEntity('wooden box', 'object');
-      box.add({
-        type: TraitType.CONTAINER
-      });
-      
-      world.moveEntity(coin.id, room.id);  // Coin on floor
-      world.moveEntity(box.id, room.id);
-      
-      const command = createCommand(IFActions.PUTTING, {
-        entity: coin,
-        secondEntity: box
-      });
-      const context = createRealTestContext(puttingAction, world, command);
-      
-      const events = puttingAction.execute(context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_held'),
-        params: { item: 'gold coin' }
-      });
-    });
+    // Test removed - 'not_held' validation moved to CommandValidator
 
     test('should fail when trying to put something in itself', () => {
       const { world, player } = setupBasicWorld();
@@ -565,7 +541,10 @@ describe('puttingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'action.success', {
         messageId: expect.stringContaining('put_on'),
-        params: { surface: 'writing desk' }
+        params: { 
+          item: 'desk lamp',
+          surface: 'writing desk' 
+        }
       });
     });
   });

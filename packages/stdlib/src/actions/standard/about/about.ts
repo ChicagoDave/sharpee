@@ -6,15 +6,16 @@
  * directly for the information it needs.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants';
+import { ActionMetadata } from '../../../validation';
 import { AboutDisplayedEventData } from './about-events';
 
-export const aboutAction: Action = {
+export const aboutAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.ABOUT,
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     // Simply emit an event signaling that about info should be displayed
     // The text service will handle querying the story config and formatting
     const eventData: AboutDisplayedEventData = {
@@ -27,5 +28,10 @@ export const aboutAction: Action = {
     ];
   },
   
-  group: "meta"
+  group: "meta",
+  
+  metadata: {
+    requiresDirectObject: false,
+    requiresIndirectObject: false
+  }
 };

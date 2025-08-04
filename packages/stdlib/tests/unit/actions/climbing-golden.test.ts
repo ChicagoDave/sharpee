@@ -8,7 +8,7 @@
  * - Generate appropriate movement events
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach } from 'vitest';
 import { climbingAction } from '../../../src/actions/standard/climbing';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel } from '@sharpee/world-model';
@@ -19,7 +19,7 @@ import {
   createCommand,
   setupBasicWorld
 } from '../../test-utils';
-import type { EnhancedActionContext } from '../../../src/actions/enhanced-types';
+import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('climbingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {

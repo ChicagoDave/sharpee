@@ -5,13 +5,14 @@
  * without changing the world state.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { StandardCapabilities } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { ActionMetadata } from '../../../validation';
 import { ScoreDisplayedEventData } from './scoring-events';
 
-export const scoringAction: Action = {
+export const scoringAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.SCORING,
   requiredMessages: [
     'scoring_not_enabled',
@@ -32,7 +33,7 @@ export const scoringAction: Action = {
     'game_complete'
   ],
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     
     // Get scoring capability data
@@ -150,5 +151,10 @@ export const scoringAction: Action = {
     return events;
   },
   
-  group: "meta"
+  group: "meta",
+  
+  metadata: {
+    requiresDirectObject: false,
+    requiresIndirectObject: false
+  }
 };

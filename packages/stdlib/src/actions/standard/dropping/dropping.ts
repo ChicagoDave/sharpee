@@ -8,15 +8,17 @@
  * MIGRATED: To new folder structure with typed events (ADR-042)
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { ActionMetadata } from '../../../validation';
+import { ScopeLevel } from '../../../scope/types';
 
 // Import our typed event data
 import { DroppedEventData, DroppingErrorData } from './dropping-events';
 
-export const droppingAction: Action = {
+export const droppingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.DROPPING,
   requiredMessages: [
     'no_target',
@@ -32,7 +34,7 @@ export const droppingAction: Action = {
     'dropped_carelessly'
   ],
 
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const noun = context.command.directObject?.entity;
 
@@ -153,5 +155,11 @@ export const droppingAction: Action = {
     ];
   },
 
-  group: "object_manipulation"
+  group: "object_manipulation",
+  
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.CARRIED
+  }
 };

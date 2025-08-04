@@ -100,6 +100,38 @@ export interface StoryConfig {
 }
 
 /**
+ * Custom vocabulary that a story can provide
+ */
+export interface CustomVocabulary {
+  /**
+   * Custom verbs for this story
+   */
+  verbs?: Array<{
+    actionId: string;
+    verbs: string[];
+    pattern?: string;
+    prepositions?: string[];
+  }>;
+  
+  /**
+   * Custom nouns (future expansion)
+   */
+  nouns?: Array<{
+    word: string;
+    entityId?: string;
+    priority?: number;
+  }>;
+  
+  /**
+   * Custom adjectives (future expansion)
+   */
+  adjectives?: Array<{
+    word: string;
+    entityId?: string;
+  }>;
+}
+
+/**
  * Story interface - what a story module exports
  */
 export interface Story {
@@ -122,6 +154,12 @@ export interface Story {
    * Get custom actions for this story (optional)
    */
   getCustomActions?(): any[];
+  
+  /**
+   * Get custom vocabulary for this story (optional)
+   * Called after story initialization to register custom verbs, nouns, etc.
+   */
+  getCustomVocabulary?(): CustomVocabulary;
   
   /**
    * Story-specific initialization (optional)
@@ -188,10 +226,18 @@ export async function loadLanguageProvider(languageCode: string): Promise<Langua
  */
 export async function loadTextService(config?: StoryConfig['textService']): Promise<TextService> {
   const type = config?.type || 'template';
-  const packageName = config?.package || `@sharpee/text-service-${type}`;
+  // Use the unified text-services package by default
+  const packageName = config?.package || '@sharpee/text-services';
   const serviceConfig = config?.config || {};
   
   try {
+    // Special handling for test environment
+    if (packageName === '@sharpee/text-service-template' && process.env.NODE_ENV === 'test') {
+      // Use mock text service for tests
+      const { createMockTextService } = await import('./test-helpers/mock-text-service');
+      return createMockTextService();
+    }
+    
     // Dynamic import of the text service package
     const serviceModule = await import(packageName);
     
@@ -200,7 +246,7 @@ export async function loadTextService(config?: StoryConfig['textService']): Prom
     
     // Look for a factory function
     if (typeof serviceModule.createTextService === 'function') {
-      service = serviceModule.createTextService(serviceConfig);
+      service = serviceModule.createTextService(type, serviceConfig);
     }
     // Look for a default export that's a class
     else if (serviceModule.default && typeof serviceModule.default === 'function') {

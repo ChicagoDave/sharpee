@@ -5,11 +5,11 @@
  * action execution with proper language provider integration.
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach } from 'vitest';
 import { StandardActionRegistry } from '../../src/actions';
 import { waitingAction } from '../../src/actions/standard/waiting';
 import { CommandValidator } from '../../src/validation/command-validator';
-import { WorldModel, IFEntity } from '@sharpee/world-model';
+import { WorldModel, IFEntity, TraitType } from '@sharpee/world-model';
 import { createRealTestContext } from '../test-utils';
 import type { 
   LanguageProvider, 
@@ -25,9 +25,9 @@ class MockLanguageProvider implements Partial<LanguageProvider> {
   ]);
 
   private messages = new Map<string, string>([
-    ['if.action.waiting.waited', 'Time passes.'],
-    ['if.action.waiting.waited_patiently', 'You wait patiently.'],
-    ['if.action.waiting.waited_briefly', 'You wait for a moment.'],
+    ['waited', 'Time passes.'],
+    ['waited_patiently', 'You wait patiently.'],
+    ['waited_briefly', 'You wait for a moment.'],
     ['if.action.waiting.time_passes', 'You wait for a while.'],
     ['if.action.waiting.nothing_happens', 'You wait, but nothing happens.'],
     ['if.action.waiting.grows_restless', 'You grow restless from waiting.'],
@@ -98,8 +98,10 @@ describe('Action Integration Test Pattern', () => {
     // Setup world model
     world = new WorldModel();
     player = world.createEntity('Player', 'actor');
+    player.add({ type: TraitType.ACTOR, isPlayer: true });
     world.setPlayer(player.id); // Set player in world model
-    const room = world.createEntity('Test Room', 'location');
+    const room = world.createEntity('Test Room', 'room');
+    room.add({ type: TraitType.ROOM });
     world.moveEntity(player.id, room.id);
     
     // Setup validator
@@ -153,7 +155,7 @@ describe('Action Integration Test Pattern', () => {
       const events = waitingAction.execute(context);
       
       // Find success message event
-      const successEvent = events.find(e => e.type === 'message.success');
+      const successEvent = events.find(e => e.type === 'action.success');
       expect(successEvent).toBeDefined();
       
       if (successEvent) {
@@ -190,8 +192,10 @@ describe('Testing Complex Actions with Dependencies', () => {
     // Example of testing an action with more complex validation
     const world = new WorldModel();
     const player = world.createEntity('Player', 'actor');
+    player.add({ type: TraitType.ACTOR, isPlayer: true });
     world.setPlayer(player.id); // Set player in world model
-    const room = world.createEntity('Test Room', 'location');
+    const room = world.createEntity('Test Room', 'room');
+    room.add({ type: TraitType.ROOM });
     const ball = world.createEntity('red ball', 'object');
     
     world.moveEntity(player.id, room.id);
@@ -203,20 +207,38 @@ describe('Testing Complex Actions with Dependencies', () => {
         const item = context.command.directObject?.entity;
         
         if (!item) {
-          return context.emitError('no_target');
+          return [context.event('action.error', {
+            actionId: 'if.action.taking',
+            messageId: 'no_target',
+            reason: 'no_target'
+          })];
         }
         
         if (!context.canTake(item)) {
-          return context.emitError('cant_take', { item: item.name });
+          return [context.event('action.error', {
+            actionId: 'if.action.taking',
+            messageId: 'cant_take',
+            reason: 'cant_take',
+            params: { item: item.name }
+          })];
         }
         
         if (world.getLocation(item.id) === context.player.id) {
-          return context.emitError('already_have', { item: item.name });
+          return [context.event('action.error', {
+            actionId: 'if.action.taking',
+            messageId: 'already_have',
+            reason: 'already_have',
+            params: { item: item.name }
+          })];
         }
         
         return [
-          context.emit('if.event.taken', { item: item.name }),
-          ...context.emitSuccess('taken', { item: item.name })
+          context.event('if.event.taken', { item: item.name }),
+          context.event('action.success', { 
+            actionId: 'if.action.taking',
+            messageId: 'taken',
+            params: { item: item.name }
+          })
         ];
       }
     };

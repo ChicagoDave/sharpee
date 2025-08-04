@@ -6,12 +6,13 @@
  * still act during this time.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants';
+import { ActionMetadata } from '../../../validation';
 import { SleptEventData } from './sleeping-events';
 
-export const sleepingAction: Action = {
+export const sleepingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.SLEEPING,
   requiredMessages: [
     'slept',
@@ -29,7 +30,7 @@ export const sleepingAction: Action = {
     'peaceful_sleep'
   ],
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     
     // Sleep is usually successful unless there are special conditions
@@ -144,5 +145,10 @@ export const sleepingAction: Action = {
     return events;
   },
   
-  group: "meta"
+  group: "meta",
+  
+  metadata: {
+    requiresDirectObject: false,
+    requiresIndirectObject: false
+  }
 };

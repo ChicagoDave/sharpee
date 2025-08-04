@@ -11,7 +11,7 @@ import {
 import { 
   GameEngine,
   createGameEngine
-} from '../../src/game-engine';
+} from '../src/game-engine';
 import {
   SaveRestoreHooks,
   SaveData,

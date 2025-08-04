@@ -7,14 +7,20 @@
  */
 
 import { SemanticEvent } from '@sharpee/core';
-import { IFEntity, WorldModel, ValidatedCommand } from '@sharpee/world-model';
+import { IFEntity, WorldModel } from '@sharpee/world-model';
+import { ScopeResolver } from '../scope/types';
+import { ValidatedCommand } from '../validation/types';
 
 /**
- * Read-only context for action execution
+ * Unified action context interface
  * 
- * Provides query methods but NO mutation capabilities
+ * Provides both world querying capabilities and event creation methods.
+ * This is the single context interface used by all actions.
+ * 
+ * Phase 2: Consolidates ActionContext and EnhancedActionContext into one interface
  */
 export interface ActionContext {
+  // World querying capabilities
   /**
    * Read-only access to the world model
    */
@@ -34,6 +40,11 @@ export interface ActionContext {
    * The validated command being executed
    */
   readonly command: ValidatedCommand;
+  
+  /**
+   * The scope resolver for determining what's perceivable
+   */
+  readonly scopeResolver: ScopeResolver;
   
   /**
    * Check if an entity is visible to the player
@@ -64,17 +75,8 @@ export interface ActionContext {
    * Get all entities in scope for the player
    */
   getInScope(): IFEntity[];
-}
-
-/**
- * Enhanced action context with helper methods for event creation
- * 
- * This makes it easy to create properly formatted events with message IDs
- * while maintaining the event-driven architecture.
- * 
- * ADR-041: Simplified to a single event() method for consistency
- */
-export interface EnhancedActionContext extends ActionContext {
+  
+  // Event creation capabilities
   /**
    * The action being executed (for message resolution)
    */
@@ -90,7 +92,7 @@ export interface EnhancedActionContext extends ActionContext {
    * @example
    * // Simple error
    * return [context.event('action.error', { 
-   *   actionId: this.id, 
+   *   actionId: context.action.id, 
    *   messageId: 'no_target' 
    * })]
    * 
@@ -100,13 +102,25 @@ export interface EnhancedActionContext extends ActionContext {
    * return [
    *   context.event('if.event.taken', eventData),
    *   context.event('action.success', { 
-   *     actionId: this.id, 
+   *     actionId: context.action.id, 
    *     messageId: 'taken',
    *     params: eventData
    *   })
    * ]
    */
   event(type: string, data: any): SemanticEvent;
+}
+
+/**
+ * @deprecated Use ActionContext instead. Will be removed in Phase 2.2.
+ * 
+ * Enhanced action context with helper methods for event creation
+ * 
+ * This interface is now redundant as ActionContext includes all capabilities.
+ * Kept temporarily for backward compatibility during migration.
+ */
+export interface EnhancedActionContext extends ActionContext {
+  // All methods now inherited from unified ActionContext
 }
 
 /**
@@ -131,16 +145,16 @@ export interface Action {
   /**
    * Execute the action and return events
    * 
-   * @param context Enhanced context with helper methods
+   * @param context Unified action context with helper methods
    * @returns Array of events describing what should happen
    */
-  execute(context: EnhancedActionContext): SemanticEvent[];
+  execute(context: ActionContext): SemanticEvent[];
   
   /**
    * Optional method to validate if this action can handle the command
    * By default, pattern matching is sufficient
    */
-  canExecute?(context: EnhancedActionContext): boolean;
+  canExecute?(context: ActionContext): boolean;
   
   /**
    * Message ID for the action description (for help/documentation)
@@ -280,7 +294,7 @@ export interface MessageRegistry {
  * Helper type for action definitions
  */
 export type ActionDefinition = Omit<Action, 'execute'> & {
-  execute: (context: EnhancedActionContext) => SemanticEvent[];
+  execute: (context: ActionContext) => SemanticEvent[];
 };
 
 /**

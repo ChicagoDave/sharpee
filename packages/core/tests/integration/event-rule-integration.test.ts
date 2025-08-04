@@ -5,6 +5,7 @@ import {
   StandardEventTypes
 } from '../../src';
 import { Rule, RuleWorld } from '../../src/rules';
+import { vi } from 'vitest';
 
 describe('Event and Rule Integration', () => {
   let eventSource: ReturnType<typeof createSemanticEventSource>;
@@ -448,7 +449,7 @@ describe('Event and Rule Integration', () => {
 
     it('should continue processing when rules throw errors', () => {
       const results: string[] = [];
-      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       ruleSystem.addRule({
         id: 'error-rule',

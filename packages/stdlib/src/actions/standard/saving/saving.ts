@@ -5,12 +5,13 @@
  * It emits a platform event that the engine will process after turn completion.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent, createSaveRequestedEvent, SaveContext } from '@sharpee/core';
 import { IFActions } from '../../constants';
+import { ActionMetadata } from '../../../validation';
 import { SaveRequestedEventData } from './saving-events';
 
-export const savingAction: Action = {
+export const savingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.SAVING,
   requiredMessages: [
     'game_saved',
@@ -33,7 +34,7 @@ export const savingAction: Action = {
     'save_exported'
   ],
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     
     // Extract save slot or name if provided
@@ -44,6 +45,7 @@ export const savingAction: Action = {
     
     // Get game state info
     const sharedData = context.world.getCapability('sharedData') || {};
+    console.log('Saving action - sharedData:', sharedData);
     const score = sharedData.score || 0;
     const moves = sharedData.moves || 0;
     const turnCount = sharedData.turnCount || 0;
@@ -133,5 +135,10 @@ export const savingAction: Action = {
     return events;
   },
   
-  group: "meta"
+  group: "meta",
+  
+  metadata: {
+    requiresDirectObject: false,
+    requiresIndirectObject: false
+  }
 };

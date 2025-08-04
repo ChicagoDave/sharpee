@@ -8,7 +8,7 @@
  * - Fire simple state change events
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach } from 'vitest';
 import { waitingAction } from '../../../src/actions/standard/waiting';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel } from '@sharpee/world-model';
@@ -19,7 +19,7 @@ import {
   createCommand,
   setupBasicWorld
 } from '../../test-utils';
-import type { EnhancedActionContext } from '../../../src/actions/enhanced-types';
+import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('waitingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -220,10 +220,10 @@ describe('waitingAction (Golden Pattern)', () => {
       const context = createRealTestContext(waitingAction, world, command);
       
       // Create spies for mutation methods
-      const moveEntitySpy = jest.spyOn(world, 'moveEntity');
-      const updateEntitySpy = jest.spyOn(world, 'updateEntity');
-      const setStateSpy = jest.spyOn(world, 'setState');
-      const setStateValueSpy = jest.spyOn(world, 'setStateValue');
+      const moveEntitySpy = vi.spyOn(world, 'moveEntity');
+      const updateEntitySpy = vi.spyOn(world, 'updateEntity');
+      const setStateSpy = vi.spyOn(world, 'setState');
+      const setStateValueSpy = vi.spyOn(world, 'setStateValue');
       
       // Execute action
       waitingAction.execute(context);
@@ -247,10 +247,10 @@ describe('waitingAction (Golden Pattern)', () => {
       const context = createRealTestContext(waitingAction, world, command);
       
       // Create spies for entity modification
-      const playerAddSpy = jest.spyOn(player, 'add');
-      const playerRemoveSpy = jest.spyOn(player, 'remove');
-      const roomAddSpy = jest.spyOn(room, 'add');
-      const roomRemoveSpy = jest.spyOn(room, 'remove');
+      const playerAddSpy = vi.spyOn(player, 'add');
+      const playerRemoveSpy = vi.spyOn(player, 'remove');
+      const roomAddSpy = vi.spyOn(room, 'add');
+      const roomRemoveSpy = vi.spyOn(room, 'remove');
       
       // Execute action
       waitingAction.execute(context);
@@ -277,13 +277,13 @@ describe('Language Provider Integration Patterns', () => {
     // This is a mock example of how to test that integration
     
     const mockLanguageProvider = {
-      getActionPatterns: jest.fn((actionId: string) => {
+      getActionPatterns: vi.fn((actionId: string) => {
         if (actionId === IFActions.WAITING) {
           return ['wait', 'z'];
         }
         return [];
       }),
-      getActionAliases: jest.fn((actionId: string) => {
+      getActionAliases: vi.fn((actionId: string) => {
         if (actionId === IFActions.WAITING) {
           return ['wait', 'z', 'pause', 'rest'];
         }
@@ -300,7 +300,7 @@ describe('Language Provider Integration Patterns', () => {
   test('example: how to test message resolution', () => {
     // Messages are resolved through the language provider
     const mockLanguageProvider = {
-      getMessage: jest.fn((messageId: string, params?: any) => {
+      getMessage: vi.fn((messageId: string, params?: any) => {
         const messages: Record<string, string> = {
           'if.action.waiting.waited': 'Time passes.',
           'if.action.waiting.waited_in_vehicle': 'You wait in the {vehicle}.',

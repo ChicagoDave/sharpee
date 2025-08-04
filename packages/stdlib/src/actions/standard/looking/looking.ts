@@ -2,13 +2,14 @@
  * Looking action - Provides description of current location and visible items
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { ActionMetadata } from '../../../validation';
 import { LookingEventMap } from './looking-events';
 
-export const lookingAction: Action = {
+export const lookingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.LOOKING,
   requiredMessages: [
     'room_description',
@@ -23,7 +24,7 @@ export const lookingAction: Action = {
     'examine_surroundings'
   ],
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const player = context.player;
     const location = context.currentLocation;
     
@@ -36,9 +37,7 @@ export const lookingAction: Action = {
       timestamp: Date.now()
     };
     
-    const params: Record<string, any> = {
-      location: location.name
-    };
+    const params: Record<string, any> = {};
     
     // Check if location is dark (no light sources)
     let isDark = false;
@@ -77,6 +76,7 @@ export const lookingAction: Action = {
     
     if (isDark) {
       // Can't see in the dark
+      params.location = location.name;
       events.push(context.event('action.success', {
         actionId: context.action.id,
         messageId: 'room_dark',
@@ -87,14 +87,20 @@ export const lookingAction: Action = {
     
     // Determine location type and appropriate message
     let messageId = 'room_description';
+    let isSpecialLocation = false;
+    
+    // Always include location name
+    params.location = location.name;
     
     // Check if we're in a special location
     if (location.hasTrait(TraitType.CONTAINER)) {
       messageId = 'in_container';
       params.container = location.name;
+      isSpecialLocation = true;
     } else if (location.hasTrait(TraitType.SUPPORTER)) {
       messageId = 'on_supporter';
       params.supporter = location.name;
+      isSpecialLocation = true;
     } else {
       // Check for brief/verbose mode
       const verboseMode = (context as any).verboseMode ?? true;
@@ -113,13 +119,6 @@ export const lookingAction: Action = {
       timestamp: Date.now()
     };
     events.push(context.event('if.event.room_description', roomDescData));
-    
-    // Add the room description message
-    events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId,
-        params
-      }));
     
     // Get visible items (excluding the room itself and the player)
     const visible = context.getVisible().filter(
@@ -150,33 +149,42 @@ export const lookingAction: Action = {
       };
       events.push(context.event('if.event.list_contents', listData));
       
-      // Add contents list message
-      const itemList = visible.map(e => e.name).join(', ');
-      events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: 'contents_list',
-        params: { 
-          items: itemList,
-          count: visible.length 
-        }
-      }));
+      // When there are contents and we're not in a special location, use contents_list message
+      if (!isSpecialLocation) {
+        const itemList = visible.map(e => e.name).join(', ');
+        messageId = 'contents_list';
+        // Remove location from params when listing contents
+        delete params.location;
+        params.items = itemList;
+        params.count = visible.length;
+      }
     }
+    
+    // Add the room description message
+    events.push(context.event('action.success', {
+        actionId: context.action.id,
+        messageId,
+        params
+      }));
     
     // Check command verb for variations
     const verb = context.command.parsed.structure.verb?.text.toLowerCase() || 'look';
-    if (verb === 'l') {
-      // Short form, no additional message
-    } else if (verb === 'examine' && !context.command.directObject) {
+    if (verb === 'examine' && !context.command.directObject) {
       // "examine" without object means examine surroundings
-      events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: 'examine_surroundings',
-        params
-      }));
+      // Replace the previous success event with examine_surroundings
+      const lastEvent = events[events.length - 1];
+      if (lastEvent.type === 'action.success' && lastEvent.payload) {
+        lastEvent.payload.messageId = 'examine_surroundings';
+      }
     }
     
     return events;
   },
   
-  group: "observation"
+  group: "observation",
+  
+  metadata: {
+    requiresDirectObject: false,
+    requiresIndirectObject: false
+  }
 };

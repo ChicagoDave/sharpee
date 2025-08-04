@@ -8,15 +8,17 @@
  * MIGRATED: To new folder structure with typed events (ADR-042)
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
+import { ActionMetadata } from '../../../validation';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { ScopeLevel } from '../../../scope/types';
 
 // Import our typed event data
 import { TakenEventData, TakingErrorData, RemovedEventData } from './taking-events';
 
-export const takingAction: Action = {
+export const takingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.TAKING,
   requiredMessages: [
     'no_target',
@@ -30,7 +32,13 @@ export const takingAction: Action = {
     'taken_from'
   ],
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.REACHABLE
+  },
+  
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const noun = context.command.directObject?.entity;
     
@@ -43,7 +51,8 @@ export const takingAction: Action = {
       })];
     }
     
-    // Business logic checks only - visibility/reachability already validated
+    // Business logic checks
+    // (Scope validation is now handled by CommandValidator)
     
     // Can't take yourself
     if (noun.id === actor.id) {

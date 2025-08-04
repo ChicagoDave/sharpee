@@ -57,6 +57,24 @@ export interface ParserLanguageProvider extends LanguageProvider {
   getPrepositions(): string[];
 
   /**
+   * Get determiners for the language
+   * @returns Array of determiner strings
+   */
+  getDeterminers(): string[];
+
+  /**
+   * Get conjunctions for the language
+   * @returns Array of conjunction strings
+   */
+  getConjunctions(): string[];
+
+  /**
+   * Get number words for the language
+   * @returns Array of number strings (both words and digits)
+   */
+  getNumbers(): string[];
+
+  /**
    * Get grammar patterns for the language
    * @returns Array of grammar pattern definitions
    */

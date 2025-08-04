@@ -20,7 +20,7 @@ import {
   TestData,
   createCommand
 } from '../../test-utils';
-import type { EnhancedActionContext } from '../../../src/actions/enhanced-types';
+import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('goingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {

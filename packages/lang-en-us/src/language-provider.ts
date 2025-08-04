@@ -247,6 +247,18 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     return englishWords.prepositions;
   }
 
+  getDeterminers(): string[] {
+    return englishWords.determiners || [];
+  }
+
+  getConjunctions(): string[] {
+    return englishWords.conjunctions || [];
+  }
+
+  getNumbers(): string[] {
+    return englishWords.numberWords || [];
+  }
+
   getGrammarPatterns(): LanguageGrammarPattern[] {
     return [
       {

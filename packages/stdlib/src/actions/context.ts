@@ -4,15 +4,31 @@
  * Provides query methods for actions without allowing state mutations
  */
 
-import { IFEntity, WorldModel, CapabilityData } from '@sharpee/world-model';
-import { ActionContext } from './types';
+import { IFEntity, WorldModel, CapabilityData, ValidatedCommand } from '@sharpee/world-model';
+import { ActionContext, Action } from './enhanced-types';
+import { SemanticEvent } from '@sharpee/core';
+import { ScopeResolver } from '../scope/types';
 
+/**
+ * @deprecated Use createActionContext from enhanced-context.ts instead
+ * This class is kept for backward compatibility but will be removed in Phase 4
+ */
 export class ReadOnlyActionContext implements ActionContext {
+  public readonly action: Action;
+  public readonly scopeResolver: ScopeResolver;
+  
   constructor(
     public readonly world: WorldModel,
     public readonly player: IFEntity,
-    public readonly currentLocation: IFEntity
-  ) {}
+    public readonly currentLocation: IFEntity,
+    public readonly command: ValidatedCommand,
+    action?: Action,
+    scopeResolver?: ScopeResolver
+  ) {
+    // Temporary compatibility - action is required by interface but this class is deprecated
+    this.action = action || { id: 'unknown', execute: () => [] };
+    this.scopeResolver = scopeResolver || ({} as ScopeResolver); // Temporary fix for deprecated class
+  }
   
   /**
    * Check if an entity is visible to the player
@@ -148,5 +164,13 @@ export class ReadOnlyActionContext implements ActionContext {
    */
   getCapability(name: string): CapabilityData | undefined {
     return this.world.getCapability(name);
+  }
+  
+  /**
+   * Event creation method (required by ActionContext interface)
+   * @deprecated This implementation throws an error - use createActionContext instead
+   */
+  event(type: string, data: any): SemanticEvent {
+    throw new Error('ReadOnlyActionContext does not support event creation. Use createActionContext from enhanced-context.ts instead.');
   }
 }

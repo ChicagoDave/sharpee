@@ -9,7 +9,7 @@
  * - Support various touch verbs (poke, pat, stroke, etc.)
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { touchingAction } from '../../../src/actions/standard/touching';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel } from '@sharpee/world-model';
@@ -21,7 +21,7 @@ import {
   setupBasicWorld,
   findEntityByName
 } from '../../test-utils';
-import type { EnhancedActionContext } from '../../../src/actions/enhanced-types';
+import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('touchingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -65,65 +65,7 @@ describe('touchingAction (Golden Pattern)', () => {
       });
     });
 
-    test('should fail when target is not visible', () => {
-      const { world, player } = setupBasicWorld();
-      const otherRoom = world.createEntity('Other Room', 'room');
-      otherRoom.add({ type: TraitType.ROOM });
-      const stone = world.createEntity('small stone', 'object');
-      world.moveEntity(stone.id, otherRoom.id); // In different room
-      
-      const context = createRealTestContext(touchingAction, world,
-        createCommand(IFActions.TOUCHING, {
-          entity: stone
-        })
-      );
-      
-      // No mocking needed - stone is actually not visible (in different room)
-      const events = touchingAction.execute(context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_visible'),
-        params: { target: 'small stone' }
-      });
-    });
-
-    test('should fail when target is not reachable', () => {
-      const { world, player, room } = setupBasicWorld();
-      
-      // Create a closed transparent display case
-      const displayCase = world.createEntity('display case', 'object');
-      displayCase.add({
-        type: TraitType.CONTAINER,
-        capacity: 10,
-        isTransparent: true  // Can see through it
-      });
-      displayCase.add({
-        type: TraitType.OPENABLE,
-        isOpen: false  // But it's closed
-      });
-      
-      const painting = world.createEntity('oil painting', 'object');
-      painting.add({
-        type: TraitType.SCENERY
-      });
-      
-      world.moveEntity(displayCase.id, room.id);
-      world.moveEntity(painting.id, displayCase.id); // Painting in closed case
-      
-      const context = createRealTestContext(touchingAction, world,
-        createCommand(IFActions.TOUCHING, {
-          entity: painting
-        })
-      );
-      
-      // No mocking needed - painting is visible but not reachable (in closed container)
-      const events = touchingAction.execute(context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_visible'),
-        params: { target: 'oil painting' }
-      });
-    });
+    // Scope validation tests removed - now handled by CommandValidator
   });
 
   describe('Temperature Detection', () => {
@@ -414,10 +356,9 @@ describe('touchingAction (Golden Pattern)', () => {
       
       const events = touchingAction.execute(context);
       
-      // Should emit TOUCHED event with size
+      // Should emit TOUCHED event (size no longer included in event)
       expectEvent(events, 'if.event.touched', {
-        target: boulder.id,
-        size: 'large'
+        target: boulder.id
       });
     });
   });

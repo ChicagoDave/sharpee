@@ -9,12 +9,13 @@
  * and the text service retrieves the actual help content.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants';
+import { ActionMetadata } from '../../../validation';
 import { HelpDisplayedEventData } from './help-events';
 
-export const helpAction: Action = {
+export const helpAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.HELP,
   requiredMessages: [
     'general_help',
@@ -30,7 +31,7 @@ export const helpAction: Action = {
     'help_footer'
   ],
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     
     const eventData: HelpDisplayedEventData = {};
@@ -81,5 +82,10 @@ export const helpAction: Action = {
     return [context.event('if.event.help_displayed', eventData)];
   },
   
-  group: "meta"
+  group: "meta",
+  
+  metadata: {
+    requiresDirectObject: false,
+    requiresIndirectObject: false
+  }
 };

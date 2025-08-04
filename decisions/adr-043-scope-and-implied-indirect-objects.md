@@ -1,7 +1,7 @@
 # ADR-043: Scope Resolution and Implied Indirect Objects
 
 **Status:** Proposed  
-**Date:** 2025-07-27  
+**Date:** 2025-08-02  
 **Deciders:** Development Team
 
 ## Context

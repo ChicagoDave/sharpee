@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createStandardEngine } from '../../../src/game-engine';
+import { createStandardEngine } from '../../src/game-engine';
 import { WorldModel } from '@sharpee/world-model';
 import { createQuitQueryHandler } from '@sharpee/stdlib';
 

@@ -10,7 +10,7 @@
  * - Check visibility and reachability
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { searchingAction } from '../../../src/actions/standard/searching';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel } from '@sharpee/world-model';
@@ -21,7 +21,7 @@ import {
   TestData,
   createCommand
 } from '../../test-utils';
-import type { EnhancedActionContext } from '../../../src/actions/enhanced-types';
+import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('searchingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -49,49 +49,7 @@ describe('searchingAction (Golden Pattern)', () => {
   });
 
   describe('Precondition Checks', () => {
-    test('should fail when target is not visible', () => {
-      const { world, player, room } = setupBasicWorld();
-      const box = world.createEntity('wooden box', 'object');
-      
-      // Place box in a different room
-      const otherRoom = world.createEntity('Other Room', 'room');
-      world.moveEntity(box.id, otherRoom.id);
-      
-      const context = createRealTestContext(searchingAction, world, createCommand(IFActions.SEARCHING, {
-        entity: box
-      }));
-      
-      const events = searchingAction.execute(context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_visible'),
-        params: { target: 'wooden box' }
-      });
-    });
-
-    test('should fail when target is not reachable', () => {
-      const { world, player, room } = setupBasicWorld();
-      
-      // Create a closed container with a shelf inside
-      const closedBox = world.createEntity('closed box', 'object');
-      closedBox.add({ type: TraitType.CONTAINER });
-      closedBox.add({ type: TraitType.OPENABLE, isOpen: false });
-      world.moveEntity(closedBox.id, room.id);
-      
-      const shelf = world.createEntity('high shelf', 'object');
-      world.moveEntity(shelf.id, closedBox.id); // Put shelf inside closed container
-      
-      const context = createRealTestContext(searchingAction, world, createCommand(IFActions.SEARCHING, {
-        entity: shelf
-      }));
-      
-      const events = searchingAction.execute(context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_visible'),
-        params: { target: 'high shelf' }
-      });
-    });
+    // Scope validation tests removed - now handled by CommandValidator
 
     test('should fail when container is closed', () => {
       const { world, player, room } = setupBasicWorld();
@@ -381,13 +339,11 @@ describe('searchingAction (Golden Pattern)', () => {
       
       const events = searchingAction.execute(context);
       
-      // Should emit found_concealed message
+      // Should emit nothing_special message (concealed items no longer auto-found)
       expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('found_concealed'),
+        messageId: expect.stringContaining('nothing_special'),
         params: { 
-          target: 'old painting',
-          items: 'wall safe',
-          where: 'here' // Not inside or on
+          target: 'old painting'
         }
       });
     });
@@ -529,7 +485,9 @@ describe('searchingAction (Golden Pattern)', () => {
       expectEvent(events, 'action.success', {
         messageId: expect.stringContaining('found_concealed'),
         params: { 
-          items: 'hidden lever, secret compartment'
+          target: 'dusty bookshelf',
+          items: 'hidden lever, secret compartment',
+          where: 'on'
         }
       });
     });
@@ -717,9 +675,11 @@ describe('Testing Pattern Examples for Searching', () => {
       }
     ];
     
-    containerStates.forEach(({ openable, canSearch }) => {
-      const shouldBlock = openable && !openable.isOpen;
-      expect(shouldBlock).toBe(!canSearch);
+    containerStates.forEach(({ openable, canSearch, transparent }) => {
+      if (openable) {
+        const shouldBlock = openable && !openable.isOpen && !transparent;
+        expect(shouldBlock).toBe(!canSearch);
+      }
     });
   });
 

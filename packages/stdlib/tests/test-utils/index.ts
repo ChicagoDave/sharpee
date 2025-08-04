@@ -15,7 +15,7 @@ import {
   ValidatedCommand
 } from '@sharpee/world-model';
 import { registerStandardCapabilities } from '../../src/capabilities';
-import { EnhancedActionContext, EnhancedActionContextImpl } from '../../src/actions/enhanced-context';
+import { createActionContext } from '../../src/actions/enhanced-context';
 import { Action, ActionContext } from '../../src/actions/enhanced-types';
 
 /**
@@ -56,31 +56,31 @@ export function createRealTestContext(
   action: Action,
   world: WorldModel,
   command: ValidatedCommand
-): EnhancedActionContext {
+): ActionContext {
   const player = world.getPlayer();
   if (!player) {
     throw new Error('No player set in world model');
   }
   
   const locationId = world.getLocation(player.id);
-  if (!locationId) {
-    throw new Error('Player has no location');
-  }
+  let location = null;
+  let currentLocation = null;
   
-  const location = world.getEntity(locationId);
-  if (!location) {
-    throw new Error('Player location entity not found');
+  if (locationId) {
+    location = world.getEntity(locationId);
+    if (!location) {
+      throw new Error('Player location entity not found');
+    }
+    // Use the immediate location for currentLocation (for actions like looking)
+    currentLocation = location;
   }
-  
-  // Get the containing room for currentLocation (per design discussion)
-  const currentLocation = world.getContainingRoom(player.id) || location;
   
   // Create base context with shared data support
   const baseContext: ActionContext = {
     world,
     player,
     command,
-    currentLocation,
+    currentLocation: currentLocation!,
     canSee: (entity) => world.canSee(player.id, entity.id),
     canReach: (entity) => {
       // Basic reachability logic
@@ -92,7 +92,21 @@ export function createRealTestContext(
       // Check if in same room
       const playerRoom = world.getContainingRoom(player.id);
       const entityRoom = world.getContainingRoom(entity.id);
-      return playerRoom && entityRoom && playerRoom.id === entityRoom.id;
+      if (!playerRoom || !entityRoom || playerRoom.id !== entityRoom.id) {
+        return false;
+      }
+      
+      // Check position-based reachability
+      const entityIdentity = entity.get(TraitType.IDENTITY);
+      if (entityIdentity && (entityIdentity as any).position) {
+        const pos = (entityIdentity as any).position;
+        // Items with y > 3 are considered out of reach
+        if (pos.y && pos.y > 3) {
+          return false;
+        }
+      }
+      
+      return true;
     },
     canTake: (entity) => !entity.hasTrait(TraitType.SCENERY) && !entity.hasTrait(TraitType.ROOM) && !entity.hasTrait(TraitType.DOOR),
     isInScope: (entity) => world.getInScope(player.id).some(e => e.id === entity.id),
@@ -112,7 +126,7 @@ export function createRealTestContext(
     })
   } as ActionContext & { getSharedData?: () => any };
   
-  return new EnhancedActionContextImpl(baseContext, action, command);
+  return createActionContext(world, player, action, command);
 }
 
 /**
@@ -231,6 +245,7 @@ export function createCommand(
  */
 export const createTestContext = createRealTestContext;
 
+
 /**
  * Asserts that an event exists in the event list with the expected properties
  * 
@@ -257,14 +272,14 @@ export function expectEvent(
       if (key === 'messageId' || key === 'params' || key === 'reason') {
         // These are at the payload/data level, not nested
         const topLevelData = event.payload || event.data || {};
-        if (typeof value === 'object' && value.asymmetricMatch) {
+        if (typeof value === 'object' && value && value.asymmetricMatch) {
           expect(topLevelData[key]).toEqual(value);
         } else {
           expect(topLevelData[key]).toEqual(value);
         }
       } else {
         // Regular event data is in the nested data field
-        if (typeof value === 'object' && value.asymmetricMatch) {
+        if (typeof value === 'object' && value && value.asymmetricMatch) {
           expect(eventData[key]).toEqual(value);
         } else {
           expect(eventData[key]).toEqual(value);

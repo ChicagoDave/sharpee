@@ -29,11 +29,7 @@ export class VisibilityBehavior extends Behavior {
     if (target.hasTrait(TraitType.ROOM)) {
       // Check if we're in the target room
       if (observerRoom?.id === target.id) {
-        // In a dark room, can't see the room itself without light
-        const roomTrait = target.getTrait(TraitType.ROOM);
-        if (roomTrait && (roomTrait as any).isDark && !this.hasLightSource(target, world)) {
-          return false;
-        }
+        // Always know what room you're in, even in darkness
         return true;
       }
       return false;
@@ -48,9 +44,19 @@ export class VisibilityBehavior extends Behavior {
     if (roomTrait && (roomTrait as any).isDark) {
       // In a dark room, need light to see
       if (!this.hasLightSource(observerRoom, world)) {
-        // Can only see light sources themselves when they're on
-        return target.hasTrait(TraitType.LIGHT_SOURCE) && 
-               (target.getTrait(TraitType.LIGHT_SOURCE) as any)?.isLit === true;
+        // Special cases in darkness:
+        // 1. Can see lit light sources
+        if (target.hasTrait(TraitType.LIGHT_SOURCE) && 
+            (target.getTrait(TraitType.LIGHT_SOURCE) as any)?.isLit === true) {
+          return true;
+        }
+        // 2. Can see items you're carrying (by feel)
+        const targetLocation = world.getLocation(target.id);
+        if (targetLocation === observer.id) {
+          return true;
+        }
+        // Otherwise can't see in darkness
+        return false;
       }
     }
 
@@ -75,19 +81,122 @@ export class VisibilityBehavior extends Behavior {
       seen.add(observerRoom.id);
     }
 
-    // Check all entities in scope (including worn items)
-    const inScope = world.getInScope(observer.id);
+    // Check if room is dark
+    const roomTrait = observerRoom.getTrait(TraitType.ROOM);
+    const isDark = roomTrait && (roomTrait as any).isDark;
+    const hasLight = this.hasLightSource(observerRoom, world);
     
-    for (const entity of inScope) {
-      if (entity.id !== observer.id && 
-          !seen.has(entity.id) && 
-          this.canSee(observer, entity, world)) {
+    // If it's dark and no light, only see specific things
+    if (isDark && !hasLight) {
+      // Can always see what you're carrying (by feel)
+      const carried = world.getContents(observer.id);
+      for (const entity of carried) {
+        if (!seen.has(entity.id)) {
+          visible.push(entity);
+          seen.add(entity.id);
+        }
+      }
+      
+      // Add any lit light sources in the room
+      const roomContents = world.getAllContents(observerRoom.id, { recursive: true });
+      for (const entity of roomContents) {
+        if (entity.hasTrait(TraitType.LIGHT_SOURCE)) {
+          const light = entity.getTrait(TraitType.LIGHT_SOURCE) as any;
+          if (light && light.isLit === true && !seen.has(entity.id)) {
+            visible.push(entity);
+            seen.add(entity.id);
+          }
+        }
+      }
+      return visible;
+    }
+
+    // Get contents of the room
+    const roomContents = world.getContents(observerRoom.id);
+    
+    // Add visible entities in the room
+    for (const entity of roomContents) {
+      if (entity.id !== observer.id && !seen.has(entity.id)) {
+        // Check if entity is visible
+        const scenery = entity.getTrait(TraitType.SCENERY);
+        if (scenery && (scenery as any).visible === false) {
+          continue;
+        }
+        
         visible.push(entity);
         seen.add(entity.id);
+        
+        // Check contents of this entity if it's a container/supporter/actor
+        if (entity.hasTrait(TraitType.CONTAINER) || 
+            entity.hasTrait(TraitType.SUPPORTER) || 
+            entity.hasTrait(TraitType.ACTOR)) {
+          this.addVisibleContents(entity, visible, seen, world);
+        }
+      }
+    }
+    
+    // Add carried items
+    const carried = world.getContents(observer.id);
+    for (const entity of carried) {
+      if (!seen.has(entity.id)) {
+        visible.push(entity);
+        seen.add(entity.id);
+        
+        // Check contents of carried containers
+        if (entity.hasTrait(TraitType.CONTAINER) || entity.hasTrait(TraitType.SUPPORTER)) {
+          this.addVisibleContents(entity, visible, seen, world);
+        }
       }
     }
 
     return visible;
+  }
+
+  /**
+   * Recursively adds visible contents of a container/supporter/actor
+   */
+  private static addVisibleContents(
+    container: IFEntity, 
+    visible: IFEntity[], 
+    seen: Set<string>, 
+    world: WorldModel
+  ): void {
+    // Check if we can see inside this container
+    if (container.hasTrait(TraitType.CONTAINER)) {
+      const containerTrait = container.getTrait(TraitType.CONTAINER) as any;
+      const isTransparent = containerTrait?.isTransparent ?? false;
+      
+      if (!isTransparent && container.hasTrait(TraitType.OPENABLE)) {
+        const openable = container.getTrait(TraitType.OPENABLE) as any;
+        const isOpen = openable?.isOpen ?? false;
+        if (!isOpen) {
+          return; // Can't see inside closed opaque container
+        }
+      }
+    }
+    
+    // Get contents (including worn items for actors)
+    const contents = world.getContents(container.id, { includeWorn: true });
+    
+    for (const entity of contents) {
+      if (!seen.has(entity.id)) {
+        // Check if entity is visible
+        const scenery = entity.getTrait(TraitType.SCENERY);
+        if (scenery && (scenery as any).visible === false) {
+          continue;
+        }
+        
+        visible.push(entity);
+        seen.add(entity.id);
+        
+        // Recurse into nested containers
+        if (entity.hasTrait(TraitType.CONTAINER) || 
+            entity.hasTrait(TraitType.SUPPORTER) || 
+            entity.hasTrait(TraitType.ACTOR)) {
+          this.addVisibleContents(entity, visible, seen, world);
+        }
+      }
+    }
   }
 
 

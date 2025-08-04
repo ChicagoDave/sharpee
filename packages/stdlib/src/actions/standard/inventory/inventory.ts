@@ -8,13 +8,14 @@
  * the world model directly since items are core entities.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType, WearableTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { ActionMetadata } from '../../../validation';
 import { InventoryEventMap, InventoryItem } from './inventory-events';
 
-export const inventoryAction: Action = {
+export const inventoryAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.INVENTORY,
   requiredMessages: [
     'inventory_empty',
@@ -36,7 +37,7 @@ export const inventoryAction: Action = {
     'burden_overloaded'
   ],
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const player = context.player;
     const location = context.currentLocation;
     
@@ -70,7 +71,13 @@ export const inventoryAction: Action = {
       if (actorTrait && (actorTrait as any).inventoryLimit?.maxWeight !== undefined) {
         hasWeightLimit = true;
         weightLimit = (actorTrait as any).inventoryLimit.maxWeight;
-        totalWeight = context.world.getTotalWeight(player.id);
+        // Calculate weight manually from items
+        carried.forEach(item => {
+          const identity = item.get(TraitType.IDENTITY);
+          if (identity && (identity as any).weight) {
+            totalWeight += (identity as any).weight;
+          }
+        });
       }
     }
     
@@ -185,5 +192,10 @@ export const inventoryAction: Action = {
     return events;
   },
   
-  group: "meta"
+  group: "meta",
+  
+  metadata: {
+    requiresDirectObject: false,
+    requiresIndirectObject: false
+  }
 };

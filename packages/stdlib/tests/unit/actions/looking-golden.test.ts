@@ -9,7 +9,7 @@
  * - Handle special locations (containers, supporters)
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach } from 'vitest';
 import { lookingAction } from '../../../src/actions/standard/looking';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType } from '@sharpee/world-model';
@@ -21,7 +21,7 @@ import {
   createCommand
 } from '../../test-utils';
 import { WorldModel } from '@sharpee/world-model';
-import type { EnhancedActionContext } from '../../../src/actions/enhanced-types';
+import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('lookingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {

@@ -1,31 +1,25 @@
-# Sharpee Interactive Fiction Platform
+# Sharpee Documentation
 
-Welcome to Sharpee! This guide will help you get started based on your development needs.
+## Package Documentation
+- [stdlib/](stdlib/) - Standard library scope, perception, and witness system docs
+- [platform/](platform/) - Platform documentation
+- [extensions/](extensions/) - Extension system documentation
 
-## Who Are You?
+## Architecture & Design
+- [architecture/](architecture/) - System architecture documentation
+- [design/](design/) - Design documents
+- [api/](api/) - API documentation
+- [ADRs](../decisions/) - Architecture Decision Records
 
-### 🏗️ Platform Developer
-You want to contribute to Sharpee's core functionality or fix bugs in the engine.
+## Implementation Guides
+- [actions/](actions/) - Action system documentation
+- [stories/](stories/) - Story development guides
+- [tutorials/](tutorials/) - Tutorial documentation
 
-**[Get Started with Platform Development](./platform/getting-started.md)**
+## Recent Work
+- [world-model-test-triage.md](world-model-test-triage.md) - Analysis of world-model test failures
+- [world-model-implementation-plan.md](world-model-implementation-plan.md) - Plan for fixing scope/visibility separation
+- [scope-systems-clarification.md](scope-systems-clarification.md) - Clarification of parser vs perception scope
 
-### 🧩 Extension Developer  
-You want to create reusable packages that add new features to Sharpee (traits, behaviors, actions).
-
-**[Get Started with Extension Development](./extensions/getting-started.md)**
-
-### 📖 Story Developer
-You want to create interactive fiction games using Sharpee.
-
-**[Get Started with Story Development](./stories/getting-started.md)**
-
-## Quick Links
-
-- [Architecture Overview](./platform/architecture.md)
-- [API Reference](./api/index.md)
-- [Examples](./examples/index.md)
-- [Troubleshooting](./troubleshooting.md)
-
-## Project Status
-
-Sharpee is currently in active development. Core features are stable, but APIs may change before 1.0 release.
+## Archived
+- [archived/](archived/) - Older documentation kept for reference

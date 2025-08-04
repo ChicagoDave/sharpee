@@ -15,7 +15,9 @@
   },
   "dependencies": {
     "@sharpee/engine": "file:../../packages/engine",
-    "@sharpee/world-model": "file:../../packages/world-model"
+    "@sharpee/world-model": "file:../../packages/world-model",
+    "@sharpee/lang-en-us": "file:../../packages/lang-en-us",
+    "@sharpee/parser-en-us": "file:../../packages/parser-en-us"
   },
   "devDependencies": {
     "@types/node": "^20.11.19",

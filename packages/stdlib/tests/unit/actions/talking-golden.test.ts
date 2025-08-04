@@ -9,7 +9,7 @@
  * - Detect available conversation topics
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach } from 'vitest';
 import { talkingAction } from '../../../src/actions/standard/talking';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel } from '@sharpee/world-model';
@@ -20,7 +20,7 @@ import {
   TestData,
   createCommand
 } from '../../test-utils';
-import type { EnhancedActionContext } from '../../../src/actions/enhanced-types';
+import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('talkingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -60,50 +60,6 @@ describe('talkingAction (Golden Pattern)', () => {
       });
     });
 
-    test('should fail when target is not visible', () => {
-      const { world, player } = setupBasicWorld();
-      const npc = world.createEntity('security guard', 'actor');
-      npc.add({
-        type: TraitType.ACTOR
-      });
-      
-      // Put NPC in different room
-      const otherRoom = world.createEntity('Other Room', 'room');
-      world.moveEntity(npc.id, otherRoom.id);
-      
-      const context = createRealTestContext(talkingAction, world, createCommand(IFActions.TALKING, {
-        entity: npc
-      }));
-      
-      const events = talkingAction.execute(context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_visible'),
-        params: { target: 'security guard' }
-      });
-    });
-
-    test('should fail when target is too far away', () => {
-      const { world, player } = setupBasicWorld();
-      const otherRoom = world.createEntity('Other Room', 'room');
-      const npc = world.createEntity('friendly shopkeeper', 'actor');
-      npc.add({
-        type: TraitType.ACTOR
-      });
-      
-      world.moveEntity(npc.id, otherRoom.id); // NPC in different room
-      
-      const context = createRealTestContext(talkingAction, world, createCommand(IFActions.TALKING, {
-        entity: npc
-      }));
-      
-      const events = talkingAction.execute(context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_visible'),
-        params: { target: 'friendly shopkeeper' }
-      });
-    });
 
     test('should fail when target is not an actor', () => {
       const { world, player, room } = setupBasicWorld();

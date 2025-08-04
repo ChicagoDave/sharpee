@@ -5,13 +5,15 @@
  * NPCs may accept or refuse items based on their state.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
+import { ActionMetadata } from '../../../validation';
+import { ScopeLevel } from '../../../scope/types';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType, ActorTrait, IdentityTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { GivingEventMap } from './giving-events';
 
-export const givingAction: Action = {
+export const givingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.GIVING,
   requiredMessages: [
     'no_item',
@@ -31,7 +33,14 @@ export const givingAction: Action = {
     'reluctantly_accepts'
   ],
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: true,
+    directObjectScope: ScopeLevel.CARRIED,
+    indirectObjectScope: ScopeLevel.REACHABLE
+  },
+  
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const item = context.command.directObject?.entity;
     const recipient = context.command.indirectObject?.entity;
@@ -53,36 +62,7 @@ export const givingAction: Action = {
       })];
     }
     
-    // Check if actor is holding the item
-    const itemLocation = context.world.getLocation(item.id);
-    if (itemLocation !== actor.id) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_holding',
-        reason: 'not_holding',
-        params: { item: item.name }
-      })];
-    }
-    
-    // Check if recipient is visible
-    if (!context.canSee(recipient)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'recipient_not_visible',
-        reason: 'recipient_not_visible',
-        params: { recipient: recipient.name }
-      })];
-    }
-    
-    // Check if recipient is reachable
-    if (!context.canReach(recipient)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'recipient_not_reachable',
-        reason: 'recipient_not_reachable',
-        params: { recipient: recipient.name }
-      })];
-    }
+    // Scope checks handled by parser based on metadata
     
     // Check if recipient is an actor (can receive items)
     if (!recipient.has(TraitType.ACTOR)) {
@@ -179,6 +159,7 @@ export const givingAction: Action = {
       return [context.event('action.error', {
         actionId: context.action.id,
         messageId: refusalReason || 'refuses',
+        reason: refusalReason || 'refuses',
         params
       })];
     }

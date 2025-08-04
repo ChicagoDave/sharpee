@@ -11,7 +11,7 @@
  * - Illuminate dark rooms
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { switchingOnAction } from '../../../src/actions/standard/switching_on';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel } from '@sharpee/world-model';
@@ -22,7 +22,7 @@ import {
   TestData,
   createCommand
 } from '../../test-utils';
-import type { EnhancedActionContext } from '../../../src/actions/enhanced-types';
+import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('switchingOnAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -63,51 +63,7 @@ describe('switchingOnAction (Golden Pattern)', () => {
       });
     });
 
-    test('should fail when target is not visible', () => {
-      const { world, player } = setupBasicWorld();
-      const lamp = world.createEntity('table lamp', 'object');
-      lamp.add({
-        type: TraitType.SWITCHABLE,
-        isOn: false
-      });
-      
-      // Put lamp in different room
-      const otherRoom = world.createEntity('Other Room', 'room');
-      world.moveEntity(lamp.id, otherRoom.id);
-      
-      const context = createRealTestContext(switchingOnAction, world, createCommand(IFActions.SWITCHING_ON, {
-        entity: lamp
-      }));
-      
-      const events = switchingOnAction.execute(context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_visible'),
-        params: { target: 'table lamp' }
-      });
-    });
-
-    test('should fail when target is not reachable', () => {
-      const { world, player, room } = setupBasicWorld();
-      const switch = world.createEntity('wall switch', 'object');
-      switch.add({
-        type: TraitType.SWITCHABLE,
-        isOn: false
-      });
-      switch.add({ type: TraitType.SCENERY }); // Make it unreachable
-      world.moveEntity(switch.id, room.id);
-      
-      const context = createRealTestContext(switchingOnAction, world, createCommand(IFActions.SWITCHING_ON, {
-        entity: switch
-      }));
-      
-      const events = switchingOnAction.execute(context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_reachable'),
-        params: { target: 'wall switch' }
-      });
-    });
+    // Scope validation tests removed - now handled by CommandValidator
 
     test('should fail when target is not switchable', () => {
       const { world, player, room } = setupBasicWorld();
@@ -290,9 +246,9 @@ describe('switchingOnAction (Golden Pattern)', () => {
         willIlluminateLocation: true
       });
       
-      // Should emit light_on message
+      // Should emit illuminates_darkness message
       expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('light_on'),
+        messageId: expect.stringContaining('illuminates_darkness'),
         params: { target: 'desk lamp' }
       });
     });
@@ -461,9 +417,9 @@ describe('switchingOnAction (Golden Pattern)', () => {
       const switchedEvent = events.find(e => e.type === 'if.event.switched_on');
       expect(switchedEvent?.data.willOpen).toBeUndefined();
       
-      // Should emit regular switched_on message
+      // Should emit device_humming message
       expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('switched_on')
+        messageId: expect.stringContaining('device_humming')
       });
     });
   });

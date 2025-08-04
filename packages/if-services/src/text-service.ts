@@ -53,6 +53,12 @@ export interface TextServiceContext {
    * Get location of an entity
    */
   getLocation(entityId: string): string | null;
+  
+  /**
+   * Get platform events for the current turn (optional)
+   * These are debug/system events from parser, world model, etc.
+   */
+  getPlatformEvents?(): SemanticEvent[];
 }
 
 /**

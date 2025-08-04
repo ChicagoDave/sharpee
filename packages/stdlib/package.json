@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc --build",
     "test": "vitest",
-    "test:ci": "vitest run",
+    "test:ci": "CI=true vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:coverage:watch": "vitest --coverage",

@@ -9,7 +9,7 @@
  * - Handle silence when no sounds are present
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach } from 'vitest';
 import { listeningAction } from '../../../src/actions/standard/listening';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType } from '@sharpee/world-model';
@@ -20,7 +20,7 @@ import {
   TestData,
   createCommand
 } from '../../test-utils';
-import type { EnhancedActionContext } from '../../../src/actions/enhanced-types';
+import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('listeningAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -47,29 +47,6 @@ describe('listeningAction (Golden Pattern)', () => {
     });
   });
 
-  describe('Precondition Checks', () => {
-    test('should fail when target is not visible', () => {
-      const { world, player } = setupBasicWorld();
-      const otherRoom = world.createEntity('other room', 'room');
-      const radio = world.createEntity('old radio', 'object');
-      
-      // Put radio in a different room so it's not visible
-      world.moveEntity(radio.id, otherRoom.id);
-      
-      const command = createCommand(IFActions.LISTENING, {
-        entity: radio
-      });
-      
-      const context = createRealTestContext(listeningAction, world, command);
-      
-      const events = listeningAction.execute(context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_visible'),
-        params: { target: 'old radio' }
-      });
-    });
-  });
 
   describe('Listening to Specific Objects', () => {
     test('should detect sound from active device', () => {

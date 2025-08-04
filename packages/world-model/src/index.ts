@@ -59,9 +59,8 @@ export * from './extensions';
 // World model
 export * from './world';
 
-// Types (to be added)
-// export * from './types';
-
-
 // Services
 export * from './services';
+
+// Scope system
+export * from './scope';

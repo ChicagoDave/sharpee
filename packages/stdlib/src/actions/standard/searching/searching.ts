@@ -5,13 +5,15 @@
  * to find concealed items or discover additional details.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType, IdentityTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { SearchedEventData } from './searching-events';
+import { ActionMetadata } from '../../../validation';
+import { ScopeLevel } from '../../../scope/types';
 
-export const searchingAction: Action = {
+export const searchingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.SEARCHING,
   requiredMessages: [
     'not_visible',
@@ -26,33 +28,20 @@ export const searchingAction: Action = {
     'searched_object',
     'found_concealed'
   ],
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.REACHABLE
+  },
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const target = context.command.directObject?.entity;
     
     // If no target, search the current location
     const searchTarget = target || context.currentLocation;
     
-    // Check if actor can see the target
-    if (target && !context.canSee(target)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_visible',
-        reason: 'not_visible',
-        params: { target: target.name }
-      })];
-    }
-    
-    // Check if actor can reach the target (for objects, not locations)
-    if (target && !context.canReach(target)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_reachable',
-        reason: 'not_reachable',
-        params: { target: target.name }
-      })];
-    }
+    // Scope validation is now handled by CommandValidator
     
     // Check if it's a container that needs to be open
     if (searchTarget.has(TraitType.CONTAINER) && searchTarget.has(TraitType.OPENABLE)) {
@@ -127,8 +116,14 @@ export const searchingAction: Action = {
       messageId = 'searched_location';
     } else {
       // Searching a regular object
-      messageId = contents.length > 0 || concealedItems.length > 0 ? 
-                 'searched_object' : 'nothing_special';
+      if (concealedItems.length > 0) {
+        // Found concealed items in regular object
+        params.items = concealedItems.map(item => item.name).join(', ');
+        params.where = 'here';
+        messageId = 'found_concealed';
+      } else {
+        messageId = contents.length > 0 ? 'searched_object' : 'nothing_special';
+      }
     }
     
     events.push(context.event('action.success', {

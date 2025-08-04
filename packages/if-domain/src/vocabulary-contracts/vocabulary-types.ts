@@ -19,7 +19,10 @@ export const PartOfSpeech = {
   ARTICLE: 'article',
   PRONOUN: 'pronoun',
   DIRECTION: 'direction',
-  SPECIAL: 'special'
+  SPECIAL: 'special',
+  DETERMINER: 'determiner',
+  CONJUNCTION: 'conjunction',
+  NUMBER: 'number'
 } as const;
 
 export type PartOfSpeech = typeof PartOfSpeech[keyof typeof PartOfSpeech];

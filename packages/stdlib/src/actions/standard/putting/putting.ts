@@ -5,13 +5,15 @@
  * It determines the appropriate preposition based on the target's traits.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
+import { ActionMetadata } from '../../../validation';
+import { ScopeLevel } from '../../../scope/types';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType, ContainerTrait, SupporterTrait, OpenableTrait, IdentityTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { PuttingEventMap } from './putting-events';
 
-export const puttingAction: Action = {
+export const puttingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.PUTTING,
   requiredMessages: [
     'no_target',
@@ -30,7 +32,14 @@ export const puttingAction: Action = {
   ],
   group: 'object_manipulation',
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: true,
+    directObjectScope: ScopeLevel.CARRIED,
+    indirectObjectScope: ScopeLevel.REACHABLE
+  },
+  
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const item = context.command.directObject?.entity;
     const target = context.command.indirectObject?.entity;
@@ -55,16 +64,7 @@ export const puttingAction: Action = {
       })];
     }
     
-    // Check if actor is holding the item
-    const itemLocation = context.world.getLocation(item.id);
-    if (itemLocation !== actor.id) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_held',
-        reason: 'not_held',
-        params: { item: item.name }
-      })];
-    }
+    // Scope checks handled by parser based on metadata
     
     // Prevent putting something inside/on itself
     if (item.id === target.id) {

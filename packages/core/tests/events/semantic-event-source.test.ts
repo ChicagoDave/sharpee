@@ -3,6 +3,7 @@ import {
   createSemanticEventSource,
   SemanticEvent 
 } from '../../src/events';
+import { vi } from 'vitest';
 
 describe('SemanticEventSource', () => {
   let eventSource: SemanticEventSource;
@@ -299,10 +300,10 @@ describe('SemanticEventSource', () => {
   describe('Error Handling', () => {
     // Mock console.error for these tests
     const originalConsoleError = console.error;
-    let consoleErrorMock: jest.Mock;
+    let consoleErrorMock: any;
     
     beforeEach(() => {
-      consoleErrorMock = jest.fn();
+      consoleErrorMock = vi.fn();
       console.error = consoleErrorMock;
     });
     

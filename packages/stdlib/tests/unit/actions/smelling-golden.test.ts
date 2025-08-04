@@ -10,7 +10,7 @@
  * - Handle distance limitations for smelling
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { smellingAction } from '../../../src/actions/standard/smelling';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel } from '@sharpee/world-model';
@@ -21,7 +21,7 @@ import {
   TestData,
   createCommand
 } from '../../test-utils';
-import type { EnhancedActionContext } from '../../../src/actions/enhanced-types';
+import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('smellingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -46,48 +46,6 @@ describe('smellingAction (Golden Pattern)', () => {
 
     test('should belong to sensory group', () => {
       expect(smellingAction.group).toBe('sensory');
-    });
-  });
-
-  describe('Precondition Checks', () => {
-    test('should fail when target is not visible', () => {
-      const { world, player } = setupBasicWorld();
-      const otherRoom = world.createEntity('Other Room', 'room');
-      otherRoom.add({ type: TraitType.ROOM });
-      const flower = world.createEntity('red rose', 'object');
-      
-      world.moveEntity(flower.id, otherRoom.id); // In different room
-      
-      const context = createRealTestContext(smellingAction, world, createCommand(IFActions.SMELLING, {
-        entity: flower
-      }));
-      
-      // No mocking needed - flower is actually not visible (in different room)
-      const events = smellingAction.execute(context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_visible'),
-        params: { target: 'red rose' }
-      });
-    });
-
-    test('should fail when target is too far away', () => {
-      const { world, player } = setupBasicWorld();
-      const otherRoom = world.createEntity('Other Room', 'room');
-      const perfume = world.createEntity('bottle of perfume', 'object');
-      
-      world.moveEntity(perfume.id, otherRoom.id); // In different room
-      
-      const context = createRealTestContext(smellingAction, world, createCommand(IFActions.SMELLING, {
-        entity: perfume
-      }));
-      
-      const events = smellingAction.execute(context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('too_far'),
-        params: { target: 'bottle of perfume' }
-      });
     });
   });
 

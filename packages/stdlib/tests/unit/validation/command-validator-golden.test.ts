@@ -5,11 +5,12 @@
  * with the refactored architecture using the real parser.
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach } from 'vitest';
 import { CommandValidator } from '../../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../../src/actions/registry';
-import { WorldModel, IFEntity, TraitType } from '@sharpee/world-model';
+import { AuthorModel, WorldModel, IFEntity, TraitType } from '@sharpee/world-model';
 import { createCommand, createParserWithWorld, parseCommand } from '../../test-utils';
+import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
 import type { 
   SystemEvent,
   GenericEventSource
@@ -43,6 +44,7 @@ class TestEventSource implements GenericEventSource<SystemEvent> {
 
 describe('CommandValidator (Golden Pattern)', () => {
   let world: WorldModel;
+  let author: AuthorModel;
   let player: IFEntity;
   let room: IFEntity;
   let registry: StandardActionRegistry;
@@ -51,13 +53,15 @@ describe('CommandValidator (Golden Pattern)', () => {
   let parser: any;
 
   beforeEach(() => {
-    // Create real world
+    // Create world model and author model for test setup
     world = new WorldModel();
+    author = new AuthorModel(world.getDataStore(), world);
     
-    // Create player and room
-    player = world.createEntity('yourself', 'actor');
-    room = world.createEntity('Test Room', 'location');
-    world.moveEntity(player.id, room.id);
+    // Create player and room using AuthorModel to bypass sanity checks
+    player = author.createEntity('yourself', 'actor');
+    room = author.createEntity('Test Room', 'location');
+    room.add({ type: TraitType.ROOM });
+    author.moveEntity(player.id, room.id);
     world.setPlayer(player.id);
     
     // Create parser with world
@@ -108,7 +112,7 @@ describe('CommandValidator (Golden Pattern)', () => {
             directObject: { 
               tokens: [1], 
               text: 'ball',
-              head: 'ball',
+          head: 'ball',
               modifiers: [],
               articles: [],
               determiners: [],
@@ -151,14 +155,14 @@ describe('CommandValidator (Golden Pattern)', () => {
     });
 
     test('validates simple entity resolution', () => {
-      // Add a box to the world
-      const box = world.createEntity('wooden box', 'container');
+      // Add a box using AuthorModel
+      const box = author.createEntity('box', 'container');
       box.add({
         type: TraitType.IDENTITY,
-        name: 'wooden box',
+        name: 'box',
         adjectives: ['wooden', 'old']
       });
-      world.moveEntity(box.id, room.id);
+      author.moveEntity(box.id, room.id);
       
       // Create a command with action ID already resolved
       const command = createCommand('if.action.taking');
@@ -190,22 +194,22 @@ describe('CommandValidator (Golden Pattern)', () => {
     let blueBall: IFEntity;
 
     beforeEach(() => {
-      // Add colored balls
-      redBall = world.createEntity('red ball', 'ball');
+      // Add colored balls using AuthorModel
+      redBall = author.createEntity('ball', 'ball');
       redBall.add({
         type: TraitType.IDENTITY,
-        name: 'red ball',
+        name: 'ball',
         adjectives: ['red', 'small']
       });
-      world.moveEntity(redBall.id, room.id);
+      author.moveEntity(redBall.id, room.id);
       
-      blueBall = world.createEntity('blue ball', 'ball');
+      blueBall = author.createEntity('ball', 'ball');
       blueBall.add({
         type: TraitType.IDENTITY,
-        name: 'blue ball',
+        name: 'ball',
         adjectives: ['blue', 'large']
       });
-      world.moveEntity(blueBall.id, room.id);
+      author.moveEntity(blueBall.id, room.id);
     });
 
     test('resolves entity with adjective', () => {
@@ -214,12 +218,12 @@ describe('CommandValidator (Golden Pattern)', () => {
         verb: { tokens: [0], text: 'take', head: 'take' },
         directObject: {
           tokens: [1, 2],
-          text: 'red ball',
+          text: 'ball',
           head: 'ball',
           modifiers: ['red'],
           articles: [],
           determiners: [],
-          candidates: ['red', 'ball']
+          candidates: ['ball']
         }
       };
 
@@ -269,12 +273,12 @@ describe('CommandValidator (Golden Pattern)', () => {
 
   describe('Scope Rules', () => {
     test('allows taking visible objects', () => {
-      const ball = world.createEntity('ball', 'ball');
+      const ball = author.createEntity('ball', 'ball');
       ball.add({
         type: TraitType.IDENTITY,
         name: 'ball'
       });
-      world.moveEntity(ball.id, room.id);
+      author.moveEntity(ball.id, room.id);
       
       const command = createCommand('if.action.taking');
       command.parsed.structure = {
@@ -295,13 +299,13 @@ describe('CommandValidator (Golden Pattern)', () => {
     });
 
     test('allows examining inventory items', () => {
-      const key = world.createEntity('brass key', 'key');
+      const key = author.createEntity('key', 'key');
       key.add({
         type: TraitType.IDENTITY,
-        name: 'brass key',
+        name: 'key',
         adjectives: ['brass', 'small']
       });
-      world.moveEntity(key.id, player.id); // In inventory
+      author.moveEntity(key.id, player.id); // In inventory
       
       const command = createCommand('if.action.examining');
       command.parsed.structure = {
@@ -326,16 +330,17 @@ describe('CommandValidator (Golden Pattern)', () => {
     });
 
     test('prevents taking objects from other rooms', () => {
-      const ball = world.createEntity('red ball', 'ball');
+      const ball = author.createEntity('ball', 'ball');
       ball.add({
         type: TraitType.IDENTITY,
-        name: 'red ball',
+        name: 'ball',
         adjectives: ['red']
       });
       
       // Create another room and put ball there
-      const room2 = world.createEntity('Other Room', 'location');
-      world.moveEntity(ball.id, room2.id);
+      const room2 = author.createEntity('Other Room', 'location');
+      room2.add({ type: TraitType.ROOM });
+      author.moveEntity(ball.id, room2.id);
       
       const parsed = parseCommand('take red ball', world);
       expect(parsed).not.toBeNull();
@@ -351,12 +356,12 @@ describe('CommandValidator (Golden Pattern)', () => {
 
   describe('Debug Events', () => {
     test('emits entity resolution debug events', () => {
-      const ball = world.createEntity('red ball', 'ball');
+      const ball = author.createEntity('ball', 'ball');
       ball.add({
         type: TraitType.IDENTITY,
         name: 'red ball'
       });
-      world.moveEntity(ball.id, room.id);
+      author.moveEntity(ball.id, room.id);
       
       const parsed = parseCommand('take red ball', world);
       expect(parsed).not.toBeNull();
@@ -370,12 +375,12 @@ describe('CommandValidator (Golden Pattern)', () => {
     });
 
     test('emits scope check debug events', () => {
-      const box = world.createEntity('box', 'container');
+      const box = author.createEntity('box', 'container');
       box.add({
         type: TraitType.IDENTITY,
         name: 'box'
       });
-      world.moveEntity(box.id, room.id);
+      author.moveEntity(box.id, room.id);
       
       const command = createCommand('if.action.taking');
       command.parsed.structure = {
@@ -403,18 +408,18 @@ describe('CommandValidator (Golden Pattern)', () => {
   describe('Ambiguity Resolution', () => {
     test('returns ambiguity error when multiple matches', () => {
       // Add two balls
-      const ball1 = world.createEntity('ball', 'ball');
+      const ball1 = author.createEntity('ball', 'ball');
       ball1.add({
         type: TraitType.IDENTITY,
         name: 'ball'
       });
-      const ball2 = world.createEntity('ball', 'ball');
+      const ball2 = author.createEntity('ball', 'ball');
       ball2.add({
         type: TraitType.IDENTITY,
         name: 'ball'
       });
-      world.moveEntity(ball1.id, room.id);
-      world.moveEntity(ball2.id, room.id);
+      author.moveEntity(ball1.id, room.id);
+      author.moveEntity(ball2.id, room.id);
       
       const command = createCommand('if.action.taking');
       command.parsed.structure = {
@@ -441,22 +446,22 @@ describe('CommandValidator (Golden Pattern)', () => {
 
     test('auto-resolves when adjectives disambiguate', () => {
       // Add two balls with different adjectives
-      const smallBall = world.createEntity('small ball', 'ball');
+      const smallBall = author.createEntity('ball', 'ball');
       smallBall.add({
         type: TraitType.IDENTITY,
-        name: 'small ball',
+        name: 'ball',
         adjectives: ['small', 'red']
       });
       
-      const largeBall = world.createEntity('large ball', 'ball');
+      const largeBall = author.createEntity('ball', 'ball');
       largeBall.add({
         type: TraitType.IDENTITY,
-        name: 'large ball',
+        name: 'ball',
         adjectives: ['large', 'blue']
       });
       
-      world.moveEntity(smallBall.id, room.id);
-      world.moveEntity(largeBall.id, room.id);
+      author.moveEntity(smallBall.id, room.id);
+      author.moveEntity(largeBall.id, room.id);
       
       const command = createCommand('if.action.taking');
       command.parsed.structure = {
@@ -483,13 +488,13 @@ describe('CommandValidator (Golden Pattern)', () => {
 
   describe('Synonym Resolution', () => {
     test('resolves entity by synonym', () => {
-      const box = world.createEntity('wooden box', 'box');
+      const box = author.createEntity('box', 'box');
       box.add({
         type: TraitType.IDENTITY,
-        name: 'wooden box',
+        name: 'box',
         synonyms: ['container', 'crate', 'chest']
       });
-      world.moveEntity(box.id, room.id);
+      author.moveEntity(box.id, room.id);
       
       const command = createCommand('if.action.taking');
       command.parsed.structure = {
@@ -514,12 +519,12 @@ describe('CommandValidator (Golden Pattern)', () => {
     });
 
     test('resolves entity by type name', () => {
-      const box = world.createEntity('wooden box', 'box');
+      const box = author.createEntity('box', 'box');
       box.add({
         type: TraitType.IDENTITY,
         name: 'wooden box'
       });
-      world.moveEntity(box.id, room.id);
+      author.moveEntity(box.id, room.id);
       
       const command = createCommand('if.action.taking');
       command.parsed.structure = {
@@ -546,12 +551,12 @@ describe('CommandValidator (Golden Pattern)', () => {
 
   describe('Complex Commands', () => {
     test('validates commands with prepositions', () => {
-      const ball = world.createEntity('red ball', 'ball');
+      const ball = author.createEntity('ball', 'ball');
       ball.add({
         type: TraitType.IDENTITY,
         name: 'red ball'
       });
-      const box = world.createEntity('wooden box', 'container');
+      const box = author.createEntity('box', 'container');
       box.add({
         type: TraitType.IDENTITY,
         name: 'wooden box'
@@ -559,8 +564,8 @@ describe('CommandValidator (Golden Pattern)', () => {
       box.add({
         type: TraitType.CONTAINER
       });
-      world.moveEntity(ball.id, player.id); // Ball in inventory
-      world.moveEntity(box.id, room.id);
+      author.moveEntity(ball.id, player.id); // Ball in inventory
+      author.moveEntity(box.id, room.id);
       
       const command = createCommand('if.action.putting');
       command.parsed.structure = {

@@ -5,13 +5,15 @@
  * appropriate events. It NEVER mutates state directly.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
+import { ActionMetadata } from '../../../validation';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { ScopeLevel } from '../../../scope';
 import { SwitchedOnEventData } from './switching_on-events';
 
-export const switchingOnAction: Action = {
+export const switchingOnAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.SWITCHING_ON,
   requiredMessages: [
     'no_target',
@@ -29,7 +31,7 @@ export const switchingOnAction: Action = {
     'illuminates_darkness'
   ],
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const noun = context.command.directObject?.entity;
     
@@ -42,25 +44,7 @@ export const switchingOnAction: Action = {
       })];
     }
     
-    // Check if visible
-    if (!context.canSee(noun)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_visible',
-        reason: 'not_visible',
-        params: { target: noun.name }
-      })];
-    }
-    
-    // Check if reachable
-    if (!context.canReach(noun)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_reachable',
-        reason: 'not_reachable',
-        params: { target: noun.name }
-      })];
-    }
+    // Scope checks handled by framework due to directObjectScope: REACHABLE
     
     // Check if it's switchable
     if (!noun.has(TraitType.SWITCHABLE)) {
@@ -191,5 +175,11 @@ export const switchingOnAction: Action = {
     return events;
   },
   
-  group: "device_manipulation"
+  group: "device_manipulation",
+  
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.REACHABLE
+  }
 };

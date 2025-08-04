@@ -9,7 +9,7 @@
  * - Track portions and consumption state
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach } from 'vitest';
 import { eatingAction } from '../../../src/actions/standard/eating';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType } from '@sharpee/world-model';
@@ -20,7 +20,7 @@ import {
   createCommand,
   setupBasicWorld
 } from '../../test-utils';
-import type { EnhancedActionContext } from '../../../src/actions/enhanced-types';
+import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('eatingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -30,8 +30,6 @@ describe('eatingAction (Golden Pattern)', () => {
 
     test('should declare required messages', () => {
       expect(eatingAction.requiredMessages).toContain('no_item');
-      expect(eatingAction.requiredMessages).toContain('not_visible');
-      expect(eatingAction.requiredMessages).toContain('not_reachable');
       expect(eatingAction.requiredMessages).toContain('not_edible');
       expect(eatingAction.requiredMessages).toContain('is_drink');
       expect(eatingAction.requiredMessages).toContain('already_consumed');
@@ -66,69 +64,6 @@ describe('eatingAction (Golden Pattern)', () => {
       });
     });
 
-    test('should fail when item is not visible', () => {
-      const { world, player, room } = setupBasicWorld();
-      
-      const otherRoom = world.createEntity('Other Room', 'room');
-      otherRoom.add({ type: TraitType.ROOM });
-      
-      const apple = world.createEntity('red apple', 'object');
-      apple.add({
-        type: TraitType.EDIBLE,
-        consumed: false
-      });
-      world.moveEntity(apple.id, otherRoom.id); // In different room
-      
-      const command = createCommand(IFActions.EATING, {
-        entity: apple
-      });
-      const context = createRealTestContext(eatingAction, world, command);
-      
-      // No mocking needed - apple is actually not visible (in different room)
-      const events = eatingAction.execute(context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_visible'),
-        params: { item: 'red apple' }
-      });
-    });
-
-    test('should fail when item is not reachable', () => {
-      const { world, player, room } = setupBasicWorld();
-      
-      // Create a closed transparent container
-      const glassCage = world.createEntity('glass cage', 'container');
-      glassCage.add({
-        type: TraitType.CONTAINER,
-        capacity: 10,
-        isTransparent: true  // Can see through it
-      });
-      glassCage.add({
-        type: TraitType.OPENABLE,
-        isOpen: false  // But it's closed
-      });
-      world.moveEntity(glassCage.id, room.id);
-      
-      const cake = world.createEntity('chocolate cake', 'object');
-      cake.add({
-        type: TraitType.EDIBLE,
-        consumed: false
-      });
-      world.moveEntity(cake.id, glassCage.id); // Cake in closed container
-      
-      const command = createCommand(IFActions.EATING, {
-        entity: cake
-      });
-      const context = createRealTestContext(eatingAction, world, command);
-      
-      // No mocking needed - cake is visible (transparent container) but not reachable (closed)
-      const events = eatingAction.execute(context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_visible'),
-        params: { item: 'chocolate cake' }
-      });
-    });
 
     test('should fail when item is not edible', () => {
       const { world, player, object } = TestData.withObject('small rock');

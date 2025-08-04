@@ -8,7 +8,7 @@
  * - General rotation feedback
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { 
   TraitType, 
@@ -16,8 +16,10 @@ import {
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { TurnedEventData } from './turning-events';
+import { ActionMetadata } from '../../../validation';
+import { ScopeLevel } from '../../../scope/types';
 
-export const turningAction: Action = {
+export const turningAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.TURNING,
   requiredMessages: [
     'no_target',
@@ -46,8 +48,13 @@ export const turningAction: Action = {
     'spun',
     'nothing_happens'
   ],
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.REACHABLE
+  },
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const target = context.command.directObject?.entity;
     const direction = context.command.parsed.extras?.direction as string; // left, right, clockwise, etc.
@@ -62,25 +69,7 @@ export const turningAction: Action = {
       })];
     }
     
-    // Check if target is visible
-    if (!context.canSee(target)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_visible',
-        reason: 'not_visible',
-        params: { target: target.name }
-      })];
-    }
-    
-    // Check if target is reachable
-    if (!context.canReach(target)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_reachable',
-        reason: 'not_reachable',
-        params: { target: target.name }
-      })];
-    }
+    // Scope validation is now handled by CommandValidator
     
     // Can't turn worn items
     if (target.has(TraitType.WEARABLE)) {
@@ -225,6 +214,7 @@ export const turningAction: Action = {
               eventData.turnsReset = true;
             }
           } else {
+            eventData.mechanismActivated = false;
             eventData.turnsRemaining = turnable.turnsRequired - turnsMade;
             messageId = 'requires_more_turns';
           }
@@ -321,7 +311,9 @@ export const turningAction: Action = {
     }
     
     // Use verb-specific messages for generic turns
-    if (messageId === 'nothing_happens' || messageId === 'turned') {
+    if (messageId === 'nothing_happens' || messageId === 'turned' || 
+        messageId === 'knob_turned' || messageId === 'wheel_turned' || 
+        messageId === 'crank_turned' || messageId === 'turnable_handled') {
       const verb = context.command.parsed.structure.verb?.text.toLowerCase() || 'turn';
       switch (verb) {
         case 'rotate':
@@ -330,8 +322,12 @@ export const turningAction: Action = {
         case 'spin':
           messageId = 'spun';
           break;
+        case 'twist':
+          messageId = 'twisted';
+          break;
         default:
-          messageId = 'turned';
+          // Keep the original message
+          break;
       }
     }
     

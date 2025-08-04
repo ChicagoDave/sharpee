@@ -8,7 +8,7 @@
  * - Handle multiple valid keys
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach } from 'vitest';
 import { lockingAction } from '../../../src/actions/standard/locking';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType } from '@sharpee/world-model';
@@ -19,7 +19,7 @@ import {
   TestData,
   createCommand
 } from '../../test-utils';
-import type { EnhancedActionContext } from '../../../src/actions/enhanced-types';
+import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('lockingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -438,7 +438,7 @@ describe('lockingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'action.success', {
         params: { 
-          sound: 'heavy clunk'
+          item: 'bank vault'
         }
       });
     });

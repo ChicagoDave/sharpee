@@ -5,13 +5,15 @@
  * Useful for puzzles where NPCs react to seeing specific items.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
+import { ActionMetadata } from '../../../validation';
+import { ScopeLevel } from '../../../scope/types';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType, ActorTrait, IdentityTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ShowingEventMap, ShownEventData } from './showing-events';
 
-export const showingAction: Action = {
+export const showingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.SHOWING,
   requiredMessages: [
     'no_item',
@@ -30,7 +32,14 @@ export const showingAction: Action = {
     'wearing_shown'
   ],
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: true,
+    directObjectScope: ScopeLevel.CARRIED,
+    indirectObjectScope: ScopeLevel.VISIBLE
+  },
+  
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const item = context.command.directObject?.entity;
     const viewer = context.command.indirectObject?.entity;
@@ -52,29 +61,10 @@ export const showingAction: Action = {
       })];
     }
     
-    // Check if actor has the item (either holding or wearing)
-    const itemLocation = context.world.getLocation?.(item.id);
-    const isWearing = item.has(TraitType.WEARABLE) && 
-                     (item.get(TraitType.WEARABLE) as { worn?: boolean })?.worn;
-    
-    if (itemLocation !== actor.id && !isWearing) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_carrying',
-        reason: 'not_carrying',
-        params: { item: item.name }
-      })];
-    }
-    
-    // Check if viewer is visible
-    if (!context.canSee(viewer)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'viewer_not_visible',
-        reason: 'viewer_not_visible',
-        params: { viewer: viewer.name }
-      })];
-    }
+    // Scope checks handled by parser based on metadata
+    const wearableTrait = item.has(TraitType.WEARABLE) ? 
+                         item.get(TraitType.WEARABLE) as { worn?: boolean } : null;
+    const isWearing = wearableTrait?.worn === true;
     
     // Check if viewer is close enough to see
     const viewerLocation = context.world.getLocation?.(viewer.id);
@@ -114,7 +104,7 @@ export const showingAction: Action = {
       itemName: item.name,
       viewer: viewer.id,
       viewerName: viewer.name,
-      isWorn: isWearing || false
+      isWorn: isWearing
     };
     
     const params: Record<string, any> = {

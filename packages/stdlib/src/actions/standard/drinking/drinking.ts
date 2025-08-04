@@ -5,13 +5,15 @@
  * with the isDrink property set to true.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType, EdibleTrait, ContainerTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { DrunkEventData, ImplicitTakenEventData } from './drinking-events';
+import { ActionMetadata } from '../../../validation';
+import { ScopeLevel } from '../../../scope/types';
 
-export const drinkingAction: Action = {
+export const drinkingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.DRINKING,
   requiredMessages: [
     'no_item',
@@ -40,8 +42,13 @@ export const drinkingAction: Action = {
     'quaffed',
     'gulped'
   ],
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.REACHABLE
+  },
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const item = context.command.directObject?.entity;
     
@@ -54,29 +61,11 @@ export const drinkingAction: Action = {
       })];
     }
     
-    // Check if item is visible
-    if (!context.canSee(item)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_visible',
-        reason: 'not_visible',
-        params: { item: item.name }
-      })];
-    }
+    // Scope validation is now handled by CommandValidator
     
-    // Check if item is reachable or held
+    // Check if item is held
     const itemLocation = context.world.getLocation(item.id);
     const isHeld = itemLocation === actor.id;
-    const isReachable = context.canReach(item);
-    
-    if (!isHeld && !isReachable) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_reachable',
-        reason: 'not_reachable',
-        params: { item: item.name }
-      })];
-    }
     
     // Check if item is drinkable
     let isDrinkable = false;
@@ -222,7 +211,6 @@ export const drinkingAction: Action = {
       
       if ((containerTrait as any).liquidType) {
         eventData.liquidType = (containerTrait as any).liquidType;
-        params.liquidType = (containerTrait as any).liquidType;
       }
       
       if ((containerTrait as any).liquidAmount !== undefined) {
@@ -233,6 +221,10 @@ export const drinkingAction: Action = {
           messageId = 'empty_now';
         } else if (messageId === 'drunk') {
           messageId = 'from_container';
+          // Add liquidType to params only for from_container message
+          if ((containerTrait as any).liquidType) {
+            params.liquidType = (containerTrait as any).liquidType;
+          }
         }
       } else {
         messageId = 'drunk_from';

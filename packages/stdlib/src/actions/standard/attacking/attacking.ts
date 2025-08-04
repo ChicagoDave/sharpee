@@ -5,13 +5,15 @@
  * It's deliberately simple - games can extend with combat systems.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType, FragileTrait, BreakableTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { AttackedEventData, ItemDestroyedEventData } from './attacking-events';
+import { ActionMetadata } from '../../../validation';
+import { ScopeLevel } from '../../../scope/types';
 
-export const attackingAction: Action = {
+export const attackingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.ATTACKING,
   requiredMessages: [
     'no_target',
@@ -46,7 +48,7 @@ export const attackingAction: Action = {
     'partial_break'
   ],
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const target = context.command.directObject?.entity;
     const weapon = context.command.indirectObject?.entity;
@@ -390,5 +392,11 @@ export const attackingAction: Action = {
     return events;
   },
   
-  group: "interaction"
+  group: "interaction",
+  
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.REACHABLE
+  }
 };

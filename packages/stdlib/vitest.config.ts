@@ -7,6 +7,8 @@ export default defineConfig({
     environment: 'node',
     include: ['**/tests/**/*.test.ts'],
     exclude: ['**/tests/**/*.test.ts.removed', '**/tests/**/*.test.ts.template'],
+    reporters: process.env.CI ? ['default', 'hanging-process'] : ['default'],
+    teardownTimeout: 20000, // Increase teardown timeout
     coverage: {
       provider: 'v8',
       reporter: ['text', 'text-summary', 'html', 'lcov', 'json'],

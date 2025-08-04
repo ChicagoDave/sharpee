@@ -6,8 +6,7 @@
  */
 
 import { GameEngine, Story, EngineConfig } from '../../src';
-import { World, EntityBuilder } from '@sharpee/world-model';
-import { EventSourceServer } from '@sharpee/core';
+import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { IFDomain, IFChangeType } from '@sharpee/if-domain';
 import type { ParsedCommand } from '@sharpee/world-model';
 
@@ -178,8 +177,7 @@ class MockRefactoredLanguageProvider {
 }
 
 describe('Engine with language refactoring', () => {
-  let world: World;
-  let eventSource: EventSourceServer;
+  let world: WorldModel;
   let parser: MockLanguageAgnosticParser;
   let language: MockRefactoredLanguageProvider;
   let story: Story;
@@ -187,58 +185,44 @@ describe('Engine with language refactoring', () => {
 
   beforeEach(() => {
     // Set up world
-    world = new World('test-world');
-    eventSource = new EventSourceServer();
+    world = new WorldModel();
     parser = new MockLanguageAgnosticParser();
     language = new MockRefactoredLanguageProvider();
     
     // Create simple test world
-    const room = new EntityBuilder('room')
-      .withName('Test Room')
-      .withDescription('A simple test room.')
-      .withTrait('if.trait.room')
-      .build();
+    const room = world.createEntity('room');
+    room.add({ type: 'identity', name: 'Test Room', description: 'A simple test room.' });
+    room.add({ type: 'room' });
       
-    const ball = new EntityBuilder('ball')
-      .withName('red ball')
-      .withDescription('A small red ball.')
-      .withTrait('if.trait.portable')
-      .build();
+    const ball = world.createEntity('ball');
+    ball.add({ type: 'identity', name: 'red ball', description: 'A small red ball.' });
       
-    const player = new EntityBuilder('player')
-      .withName('Player')
-      .withTrait('if.trait.player')
-      .build();
+    const player = world.createEntity('player');
+    player.add({ type: 'identity', name: 'Player' });
+    player.add({ type: 'actor' });
       
-    world.addEntity(room);
-    world.addEntity(ball);
-    world.addEntity(player);
-    
-    world.relate(player, 'if.rel.within', room);
-    world.relate(ball, 'if.rel.within', room);
+    world.moveEntity(player.id, room.id);
+    world.moveEntity(ball.id, room.id);
     
     // Create story
     story = {
-      metadata: {
+      config: {
+        id: 'test-refactoring',
         title: 'Test Story',
         author: 'Test',
-        version: '1.0.0'
+        version: '1.0.0',
+        language: 'en-us'
       },
-      getInitialWorld: () => world,
-      getConfiguration: () => ({})
+      initializeWorld: (w: WorldModel) => {
+        // World already initialized above
+      },
+      createPlayer: (w: WorldModel) => player,
+      customActions: [],
+      saveRestoreHooks: undefined
     };
     
-    // Create engine with refactored components
-    const config: EngineConfig = {
-      story,
-      // @ts-ignore - Using mock parser
-      parser,
-      // @ts-ignore - Using mock language
-      language,
-      eventSource
-    };
-    
-    engine = new GameEngine(config);
+    // Create engine
+    engine = new GameEngine(world, player);
   });
 
   describe('Language-agnostic command processing', () => {

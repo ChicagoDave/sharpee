@@ -5,12 +5,13 @@
  * It emits a platform event that the engine will process after turn completion.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent, createRestoreRequestedEvent, RestoreContext } from '@sharpee/core';
 import { IFActions } from '../../constants';
+import { ActionMetadata } from '../../../validation';
 import { RestoreRequestedEventData } from './restoring-events';
 
-export const restoringAction: Action = {
+export const restoringAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.RESTORING,
   requiredMessages: [
     'game_restored',
@@ -35,7 +36,7 @@ export const restoringAction: Action = {
     'save_imported'
   ],
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     
     // Extract save slot or name if provided
@@ -116,5 +117,10 @@ export const restoringAction: Action = {
     return events;
   },
   
-  group: "meta"
+  group: "meta",
+  
+  metadata: {
+    requiresDirectObject: false,
+    requiresIndirectObject: false
+  }
 };

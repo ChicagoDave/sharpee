@@ -5,13 +5,15 @@
  * scents in their current location.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType, EdibleTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { SmelledEventData } from './smelling-events';
+import { ActionMetadata } from '../../../validation';
+import { ScopeLevel } from '../../../scope/types';
 
-export const smellingAction: Action = {
+export const smellingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.SMELLING,
   requiredMessages: [
     'not_visible',
@@ -30,36 +32,32 @@ export const smellingAction: Action = {
     'smelled',
     'smelled_environment'
   ],
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.DETECTABLE
+  },
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const target = context.command.directObject?.entity;
     
-    // If target specified, check visibility
+    // If target specified, check distance and visibility
     if (target) {
-      if (!context.canSee(target)) {
+      // Check if in different rooms first (too far to smell)
+      const targetRoom = context.world.getContainingRoom(target.id);
+      const actorRoom = context.world.getContainingRoom(actor.id);
+      
+      if (targetRoom && actorRoom && targetRoom.id !== actorRoom.id) {
         return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_visible',
-        reason: 'not_visible',
-        params: { target: target.name }
-      })];
+          actionId: context.action.id,
+          messageId: 'too_far',
+          reason: 'too_far',
+          params: { target: target.name }
+        })];
       }
       
-      // For smelling, we typically don't need to reach the object
-      // but it should be reasonably close
-      const targetLocation = context.world.getLocation(target.id);
-      const actorLocation = context.world.getLocation(actor.id);
-      
-      // Check if target is in the same location or being carried
-      if (targetLocation !== actorLocation && targetLocation !== actor.id) {
-        return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'too_far',
-        reason: 'too_far',
-        params: { target: target.name }
-      })];
-      }
+      // Scope validation is now handled by CommandValidator
     }
     
     // Build event data

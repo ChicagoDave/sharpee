@@ -5,13 +5,15 @@
  * are containers/supporters marked as enterable.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType, EntryTrait, ContainerTrait, SupporterTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { EnteredEventData } from './entering-events';
+import { ActionMetadata } from '../../../validation';
+import { ScopeLevel } from '../../../scope/types';
 
-export const enteringAction: Action = {
+export const enteringAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.ENTERING,
   requiredMessages: [
     'no_target',
@@ -25,7 +27,7 @@ export const enteringAction: Action = {
   ],
   group: 'movement',
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const target = context.command.directObject?.entity;
     
@@ -174,5 +176,11 @@ export const enteringAction: Action = {
       }));
     
     return events;
+  },
+  
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.REACHABLE
   }
 };

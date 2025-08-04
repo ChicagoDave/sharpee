@@ -5,12 +5,13 @@
  * time-based events to occur.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants';
+import { ActionMetadata } from '../../../validation';
 import { WaitedEventData } from './waiting-events';
 
-export const waitingAction: Action = {
+export const waitingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.WAITING,
   requiredMessages: [
     'waited',
@@ -27,7 +28,7 @@ export const waitingAction: Action = {
     'grows_restless'
   ],
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     
     // Waiting is always successful - it's a simple time-passing action
@@ -105,5 +106,10 @@ export const waitingAction: Action = {
     return events;
   },
   
-  group: "meta"
+  group: "meta",
+  
+  metadata: {
+    requiresDirectObject: false,
+    requiresIndirectObject: false
+  }
 };

@@ -2,6 +2,7 @@
  * Tests for Types
  */
 
+import { describe, it, expect, vi } from 'vitest';
 import {
   GameEvent,
   SequencedEvent,
@@ -271,7 +272,7 @@ describe('Types', () => {
     });
 
     it('should support all configuration options', () => {
-      const onEvent = jest.fn();
+      const onEvent = vi.fn();
       
       const config: EngineConfig = {
         maxHistory: 50,

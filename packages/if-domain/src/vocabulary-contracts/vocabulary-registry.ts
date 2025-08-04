@@ -228,6 +228,36 @@ export class VocabularyRegistry {
   }
 
   /**
+   * Register additional verbs dynamically (e.g., from stories)
+   * These have lower priority than standard verbs by default
+   */
+  registerDynamicVerbs(verbs: VerbVocabulary[], source: string = 'story'): void {
+    const entries: VocabularyEntry[] = [];
+
+    for (const verbDef of verbs) {
+      for (const verb of verbDef.verbs) {
+        entries.push({
+          word: verb.toLowerCase(),
+          partOfSpeech: PartOfSpeech.VERB,
+          mapsTo: verbDef.actionId,
+          source: source as any,
+          priority: 80, // Lower than standard verbs
+          metadata: {
+            pattern: verbDef.pattern,
+            prepositions: verbDef.prepositions
+          }
+        });
+      }
+    }
+
+    this.registerProvider({
+      id: `dynamic-verbs-${source}`,
+      getVocabulary: () => entries,
+      priority: 80
+    });
+  }
+
+  /**
    * Register direction vocabulary
    */
   registerDirections(directions: DirectionVocabulary[]): void {
@@ -260,6 +290,94 @@ export class VocabularyRegistry {
 
     this.registerProvider({
       id: 'standard-directions',
+      getVocabulary: () => entries,
+      priority: 100
+    });
+  }
+
+  /**
+   * Register prepositions
+   */
+  registerPrepositions(prepositions: string[]): void {
+    const entries: VocabularyEntry[] = [];
+
+    for (const prep of prepositions) {
+      entries.push({
+        word: prep.toLowerCase(),
+        partOfSpeech: PartOfSpeech.PREPOSITION,
+        mapsTo: prep.toUpperCase(),
+        source: 'base'
+      });
+    }
+
+    this.registerProvider({
+      id: 'standard-prepositions',
+      getVocabulary: () => entries,
+      priority: 100
+    });
+  }
+
+  /**
+   * Register determiners (beyond articles)
+   */
+  registerDeterminers(determiners: string[]): void {
+    const entries: VocabularyEntry[] = [];
+
+    for (const det of determiners) {
+      entries.push({
+        word: det.toLowerCase(),
+        partOfSpeech: PartOfSpeech.DETERMINER,
+        mapsTo: det.toUpperCase(),
+        source: 'base'
+      });
+    }
+
+    this.registerProvider({
+      id: 'standard-determiners',
+      getVocabulary: () => entries,
+      priority: 100
+    });
+  }
+
+  /**
+   * Register conjunctions
+   */
+  registerConjunctions(conjunctions: string[]): void {
+    const entries: VocabularyEntry[] = [];
+
+    for (const conj of conjunctions) {
+      entries.push({
+        word: conj.toLowerCase(),
+        partOfSpeech: PartOfSpeech.CONJUNCTION,
+        mapsTo: conj.toUpperCase(),
+        source: 'base'
+      });
+    }
+
+    this.registerProvider({
+      id: 'standard-conjunctions',
+      getVocabulary: () => entries,
+      priority: 100
+    });
+  }
+
+  /**
+   * Register numbers (both words and digits)
+   */
+  registerNumbers(numbers: string[]): void {
+    const entries: VocabularyEntry[] = [];
+
+    for (const num of numbers) {
+      entries.push({
+        word: num.toLowerCase(),
+        partOfSpeech: PartOfSpeech.NUMBER,
+        mapsTo: num,
+        source: 'base'
+      });
+    }
+
+    this.registerProvider({
+      id: 'standard-numbers',
       getVocabulary: () => entries,
       priority: 100
     });

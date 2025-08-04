@@ -4,6 +4,7 @@ import {
   DebugEventTypes,
   DebugEventCallback 
 } from '../../src/debug/types';
+import { vi } from 'vitest';
 
 describe('Debug Types', () => {
   describe('DebugEvent Structure', () => {
@@ -84,7 +85,7 @@ describe('Debug Types', () => {
     it('should handle disabled context', () => {
       const context: DebugContext = {
         enabled: false,
-        emit: jest.fn()
+        emit: vi.fn()
       };
 
       // Component would check enabled flag before emitting

@@ -5,13 +5,15 @@
  * appropriate events. It NEVER mutates state directly.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
+import { ActionMetadata } from '../../../validation';
 import { SemanticEvent, EntityId } from '@sharpee/core';
 import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { ScopeLevel } from '../../../scope';
 import { UnlockedEventData } from './unlocking-events';
 
-export const unlockingAction: Action = {
+export const unlockingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.UNLOCKING,
   requiredMessages: [
     'no_target',
@@ -27,7 +29,7 @@ export const unlockingAction: Action = {
   ],
   group: 'lock_manipulation',
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const noun = context.command.directObject?.entity;
     const withKey = context.command.indirectObject?.entity;
@@ -53,6 +55,8 @@ export const unlockingAction: Action = {
     
     const lockableTrait = noun.get(TraitType.LOCKABLE);
     const lockableData = lockableTrait as any;
+    
+    // Scope checks handled by framework due to directObjectScope: REACHABLE
     
     // Check if already unlocked
     if (!lockableData.isLocked) {
@@ -162,5 +166,11 @@ export const unlockingAction: Action = {
         params: params
       })
     ];
+  },
+  
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.REACHABLE
   }
 };

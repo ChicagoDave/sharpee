@@ -10,7 +10,7 @@ import {
   CommandHistoryData,
   IFActions 
 } from '@sharpee/stdlib';
-import { createTemplateTextService } from '@sharpee/text-service-template';
+import { createMockTextService } from '../../src/test-helpers/mock-text-service';
 import { Story } from '../../src/story';
 
 describe('Command History Integration', () => {
@@ -54,7 +54,7 @@ describe('Command History Integration', () => {
     await engine.setStory(story);
     
     // Set text service
-    const textService = createTemplateTextService();
+    const textService = createMockTextService();
     engine.setTextService(textService);
     
     // Start the engine
@@ -199,7 +199,7 @@ describe('Command History Integration', () => {
       
       // Set up minimal requirements
       await bareEngine.setLanguage('en');
-      bareEngine.setTextService(createTemplateTextService());
+      bareEngine.setTextService(createMockTextService());
       bareEngine.start();
       
       // Execute a command - should work even without command history

@@ -2,7 +2,7 @@
 
 import { IFEntity } from '../entities/if-entity';
 import { TraitType } from '../traits/trait-types';
-import { SemanticEvent } from '@sharpee/core';
+import { SemanticEvent, SemanticEventSource } from '@sharpee/core';
 import { SpatialIndex } from './SpatialIndex';
 import { VisibilityBehavior } from './VisibilityBehavior';
 import { DataStore } from './AuthorModel';
@@ -20,6 +20,9 @@ import {
   ContentsOptions,
   WorldChange
 } from '@sharpee/if-domain';
+import { ScopeRegistry } from '../scope/scope-registry';
+import { ScopeEvaluator } from '../scope/scope-evaluator';
+import { ScopeRule, ScopeContext } from '../scope/scope-rule';
 
 // Event handler types - these are tightly coupled to WorldModel
 export type EventHandler = (event: SemanticEvent, world: WorldModel) => void;
@@ -108,6 +111,12 @@ export interface WorldModel {
   getAppliedEvents(): SemanticEvent[];
   getEventsSince(timestamp: number): SemanticEvent[];
   clearEventHistory(): void;
+  
+  // Scope Management
+  getScopeRegistry(): ScopeRegistry;
+  addScopeRule(rule: ScopeRule): void;
+  removeScopeRule(ruleId: string): boolean;
+  evaluateScope(actorId: string, actionId?: string): string[];
 }
 
 // Type prefixes for entity ID generation
@@ -141,7 +150,13 @@ export class WorldModel implements WorldModel {
   private appliedEvents: SemanticEvent[] = [];
   private maxEventHistory = 1000; // Configurable limit
 
-  constructor(config: WorldConfig = {}) {
+  private platformEvents?: SemanticEventSource;
+  
+  // Scope system
+  private scopeRegistry: ScopeRegistry;
+  private scopeEvaluator: ScopeEvaluator;
+
+  constructor(config: WorldConfig = {}, platformEvents?: SemanticEventSource) {
     this.config = {
       enableSpatialIndex: true,
       maxDepth: 10,
@@ -149,6 +164,33 @@ export class WorldModel implements WorldModel {
       ...config
     };
     this.spatialIndex = new SpatialIndex();
+    this.platformEvents = platformEvents;
+    
+    // Initialize scope system
+    this.scopeRegistry = new ScopeRegistry();
+    this.scopeEvaluator = new ScopeEvaluator(this.scopeRegistry);
+    
+    // Register default scope rules
+    this.registerDefaultScopeRules();
+  }
+
+  // Platform event emission helper
+  private emitPlatformEvent(type: string, data: any): void {
+    if (this.platformEvents) {
+      this.platformEvents.addEvent({
+        id: `world_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: Date.now(),
+        type: `platform.world.${type}`,
+        entities: {},
+        payload: { 
+          subsystem: 'world',
+          ...data 
+        },
+        tags: ['platform', 'world', 'debug'],
+        priority: 0,
+        narrate: false
+      });
+    }
   }
 
   // Capability Management
@@ -339,6 +381,11 @@ export class WorldModel implements WorldModel {
 
   moveEntity(entityId: string, targetId: string | null): boolean {
     if (!this.canMoveEntity(entityId, targetId)) {
+      this.emitPlatformEvent('move_entity_failed', {
+        entityId,
+        targetId,
+        reason: 'cannot_move'
+      });
       return false;
     }
 
@@ -352,6 +399,13 @@ export class WorldModel implements WorldModel {
     if (targetId) {
       this.spatialIndex.addChild(targetId, entityId);
     }
+    
+    // Emit platform event
+    this.emitPlatformEvent('entity_moved', {
+      entityId,
+      fromLocation: currentLocation,
+      toLocation: targetId
+    });
 
     return true;
   }
@@ -486,63 +540,7 @@ export class WorldModel implements WorldModel {
     return entities;
   }
 
-  getVisible(observerId: string): IFEntity[] {
-    const observer = this.getEntity(observerId);
-    if (!observer) return [];
-
-    // Use the VisibilityBehavior to get visible entities
-    return VisibilityBehavior.getVisible(observer, this);
-  }
-
-  getInScope(observerId: string): IFEntity[] {
-    const observer = this.getEntity(observerId);
-    if (!observer) return [];
-
-    const room = this.getContainingRoom(observerId);
-    if (!room) return [];
-
-    // Get all entities in the same room
-    const inScope: IFEntity[] = [];
-    
-    // Add room itself
-    inScope.push(room);
-
-    // Add room contents recursively (including worn items)
-    const roomContents = this.getAllContents(room.id, { 
-      recursive: true,
-      includeWorn: true 
-    });
-    inScope.push(...roomContents);
-
-    // Add carried items (including worn items)
-    const carried = this.getAllContents(observerId, { 
-      recursive: true,
-      includeWorn: true 
-    });
-    inScope.push(...carried);
-
-    // Add the observer to scope (but not to visible - you can't see yourself)
-    // This is needed for some game mechanics
-    if (!inScope.some(e => e.id === observer.id)) {
-      inScope.push(observer);
-    }
-
-    // Filter to unique entities
-    const unique = new Map<string, IFEntity>();
-    inScope.forEach(e => unique.set(e.id, e));
-    
-    return Array.from(unique.values());
-  }
-
-  canSee(observerId: string, targetId: string): boolean {
-    const observer = this.getEntity(observerId);
-    const target = this.getEntity(targetId);
-    
-    if (!observer || !target) return false;
-    if (observerId === targetId) return true;
-
-    return VisibilityBehavior.canSee(observer, target, this);
-  }
+  // Scope methods moved to end of class to use new scope system
 
   // Relationship Queries
   private relationships = new Map<string, Map<string, Set<string>>>();
@@ -932,5 +930,172 @@ export class WorldModel implements WorldModel {
       idCounters: this.idCounters,
       capabilities: this.capabilities
     };
+  }
+
+  // Scope Management Methods
+  getScopeRegistry(): ScopeRegistry {
+    return this.scopeRegistry;
+  }
+
+  addScopeRule(rule: ScopeRule): void {
+    this.scopeRegistry.addRule(rule);
+    this.emitPlatformEvent('scope_rule_added', { 
+      ruleId: rule.id,
+      fromLocations: rule.fromLocations,
+      forActions: rule.forActions
+    });
+  }
+
+  removeScopeRule(ruleId: string): boolean {
+    const removed = this.scopeRegistry.removeRule(ruleId);
+    if (removed) {
+      this.emitPlatformEvent('scope_rule_removed', { ruleId });
+    }
+    return removed;
+  }
+
+  evaluateScope(actorId: string, actionId?: string): string[] {
+    const actor = this.getEntity(actorId);
+    if (!actor) {
+      console.warn('evaluateScope: No actor found for ID:', actorId);
+      return [];
+    }
+
+    const currentLocation = this.getLocation(actorId);
+    if (!currentLocation) {
+      console.warn('evaluateScope: No location found for actor:', actorId);
+      return [];
+    }
+
+    const context: ScopeContext = {
+      world: this,
+      actorId,
+      actionId,
+      currentLocation
+    };
+
+    const result = this.scopeEvaluator.evaluate(context);
+    return Array.from(result.entityIds);
+  }
+
+  /**
+   * Register default scope rules for standard visibility
+   */
+  private registerDefaultScopeRules(): void {
+    // Basic visibility rule - entities in same room
+    this.addScopeRule({
+      id: 'default_room_visibility',
+      fromLocations: '*',
+      includeEntities: (context) => {
+        const room = this.getEntity(context.currentLocation);
+        if (!room) {
+          console.warn('No room found for location:', context.currentLocation);
+          return [];
+        }
+        
+        // Get all entities in the room
+        const contents = this.getContents(context.currentLocation);
+        const entityIds = contents.map(e => e.id);
+        
+        // Add the room itself
+        entityIds.push(context.currentLocation);
+        
+        // Add nested contents (in containers, on supporters)
+        for (const entity of contents) {
+          const nested = this.getAllContents(entity.id);
+          entityIds.push(...nested.map(e => e.id));
+        }
+        
+        return entityIds;
+      },
+      priority: 50,
+      source: 'core'
+    });
+
+    // Carried items are always in scope
+    this.addScopeRule({
+      id: 'default_inventory_visibility',
+      fromLocations: '*',
+      includeEntities: (context) => {
+        const carried = this.getContents(context.actorId);
+        const entityIds = carried.map(e => e.id);
+        
+        // Add nested contents of carried items
+        for (const entity of carried) {
+          const nested = this.getAllContents(entity.id);
+          entityIds.push(...nested.map(e => e.id));
+        }
+        
+        return entityIds;
+      },
+      priority: 100,
+      source: 'core'
+    });
+  }
+
+  /**
+   * Get physically visible entities using VisibilityBehavior (line-of-sight)
+   * 
+   * Returns entities that can actually be seen by the observer based on:
+   * - Physical location (must be in same room)
+   * - Container state (can't see inside closed opaque containers)
+   * - Lighting conditions (limited visibility in darkness)
+   * - Scenery visibility flags
+   * 
+   * This is for perception and display purposes. For command resolution,
+   * use getInScope() instead which includes entities that can be referenced
+   * even if not visible.
+   * 
+   * @param observerId - The entity doing the observing
+   * @returns Array of entities that are physically visible
+   */
+  getVisible(observerId: string): IFEntity[] {
+    const observer = this.getEntity(observerId);
+    if (!observer) return [];
+    return VisibilityBehavior.getVisible(observer, this);
+  }
+
+  /**
+   * Get entities in scope for command resolution using the scope system
+   * 
+   * Returns entities that can be referenced in commands, including:
+   * - All entities in the current room
+   * - Items in containers (even closed ones)
+   * - Carried items and their contents
+   * - Entities made available by scope rules (e.g., through windows)
+   * 
+   * This is for parser/command resolution. For physical visibility,
+   * use getVisible() instead.
+   * 
+   * @param observerId - The entity whose scope to evaluate
+   * @returns Array of entities that can be referenced in commands
+   */
+  getInScope(observerId: string): IFEntity[] {
+    const entityIds = this.evaluateScope(observerId);
+    return entityIds
+      .map(id => this.getEntity(id))
+      .filter((e): e is IFEntity => e !== undefined);
+  }
+
+  /**
+   * Check if observer can physically see target (line-of-sight)
+   * 
+   * Uses VisibilityBehavior to determine if target is visible based on:
+   * - Physical location
+   * - Container state
+   * - Lighting conditions
+   * 
+   * This is for perception checks. To check if an entity can be
+   * referenced in commands, check if it's in getInScope() instead.
+   * 
+   * @param observerId - The entity doing the observing
+   * @param targetId - The entity being observed
+   * @returns true if observer can see target
+   */
+  canSee(observerId: string, targetId: string): boolean {
+    const observer = this.getEntity(observerId);
+    const target = this.getEntity(targetId);
+    if (!observer || !target) return false;
+    return VisibilityBehavior.canSee(observer, target, this);
   }
 }

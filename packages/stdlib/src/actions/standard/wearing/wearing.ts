@@ -5,13 +5,15 @@
  * It validates that the item can be worn and isn't already worn.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
+import { ActionMetadata } from '../../../validation';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType, WearableTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { ScopeLevel } from '../../../scope';
 import { WornEventData, ImplicitTakenEventData } from './wearing-events';
 
-export const wearingAction: Action = {
+export const wearingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.WEARING,
   requiredMessages: [
     'no_target',
@@ -24,7 +26,7 @@ export const wearingAction: Action = {
   ],
   group: 'wearable_manipulation',
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const item = context.command.directObject?.entity;
     
@@ -59,27 +61,19 @@ export const wearingAction: Action = {
       })];
     }
     
+    // Scope checks handled by framework due to directObjectScope: REACHABLE
+    
     // Check if actor is holding the item
     const itemLocation = context.world.getLocation?.(item.id);
     const events: SemanticEvent[] = [];
     
     if (itemLocation !== actor.id) {
-      // Check if it's in the same room (can pick up and wear)
-      if (itemLocation === context.world.getLocation?.(actor.id)) {
-        // Add implicit TAKEN event
-        const implicitTakenData: ImplicitTakenEventData = {
-          implicit: true,
-          item: item.name
-        };
-        events.push(context.event('if.event.taken', implicitTakenData));
-      } else {
-        return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_held',
-        reason: 'not_held',
-        params: { item: item.name }
-      })];
-      }
+      // Add implicit TAKEN event since item is reachable
+      const implicitTakenData: ImplicitTakenEventData = {
+        implicit: true,
+        item: item.name
+      };
+      events.push(context.event('if.event.taken', implicitTakenData));
     }
     
     // Check for body part conflicts (but not if items can be layered)
@@ -156,5 +150,11 @@ export const wearingAction: Action = {
       }));
     
     return events;
+  },
+  
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.REACHABLE
   }
 };

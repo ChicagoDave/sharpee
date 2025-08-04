@@ -5,13 +5,15 @@
  * texture, temperature, or other tactile properties.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType, IdentityTrait, SwitchableTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { TouchedEventData } from './touching-events';
+import { ActionMetadata } from '../../../validation';
+import { ScopeLevel } from '../../../scope/types';
 
-export const touchingAction: Action = {
+export const touchingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.TOUCHING,
   requiredMessages: [
     'no_target',
@@ -36,8 +38,13 @@ export const touchingAction: Action = {
     'patted',
     'stroked'
   ],
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.REACHABLE
+  },
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const target = context.command.directObject?.entity;
     
@@ -50,25 +57,7 @@ export const touchingAction: Action = {
       })];
     }
     
-    // Check if actor can see the target
-    if (!context.canSee(target)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_visible',
-        reason: 'not_visible',
-        params: { target: target.name }
-      })];
-    }
-    
-    // Check if actor can reach the target
-    if (!context.canReach(target)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_reachable',
-        reason: 'not_reachable',
-        params: { target: target.name }
-      })];
-    }
+    // Scope validation is now handled by CommandValidator
     
     // Build event data with tactile properties
     const eventData: TouchedEventData = {

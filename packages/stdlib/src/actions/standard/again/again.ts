@@ -6,14 +6,15 @@
  * the same direction or taking multiple objects.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants';
+import { ActionMetadata } from '../../../validation';
 import { StandardCapabilities } from '@sharpee/world-model';
 import { CommandHistoryData, CommandHistoryEntry } from '../../../capabilities/command-history';
 import { RepeatingCommandEventData, ExecuteCommandEventData } from './again-events';
 
-export const againAction: Action = {
+export const againAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.AGAIN,
   requiredMessages: [
     'no_command_to_repeat',
@@ -25,7 +26,7 @@ export const againAction: Action = {
     'repeating_action'
   ],
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     // Get command history from capabilities
     const historyData = context.world.getCapability(StandardCapabilities.COMMAND_HISTORY) as CommandHistoryData | null;
     
@@ -109,5 +110,10 @@ export const againAction: Action = {
   group: "meta",
   
   descriptionMessageId: 'again_description',
-  examplesMessageId: 'again_examples'
+  examplesMessageId: 'again_examples',
+  
+  metadata: {
+    requiresDirectObject: false,
+    requiresIndirectObject: false
+  }
 };

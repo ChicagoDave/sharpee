@@ -21,18 +21,30 @@ import {
   WearableTrait,
   SupporterTrait,
   SceneryTrait,
-  ReadableTrait
+  ReadableTrait,
+  ScopeRule,
+  LightSourceTrait
 } from '@sharpee/world-model';
 
 /**
  * Cloak of Darkness story configuration
  */
 export const config: StoryConfig = {
+  id: "cloak-of-darkness",
   title: "Cloak of Darkness",
   author: "Roger Firth (Sharpee implementation)",
   version: "1.0.0",
   language: "en-us",
-  description: "A basic IF demonstration - hang up your cloak!"
+  description: "A basic IF demonstration - hang up your cloak!",
+  textService: {
+    type: "cli-events",
+    config: {
+      showTurnHeader: true,
+      showLocation: true,
+      showEventData: true,
+      showPlatformEvents: true
+    }
+  }
 };
 
 /**
@@ -44,6 +56,7 @@ export class CloakOfDarknessStory implements Story {
   private world!: WorldModel;
   private message = "You have won!"; // The message in the sawdust
   private disturbances = 0; // Times the message has been disturbed
+  private roomIds: Record<string, string> = {}; // Map of room names to IDs
   
   /**
    * Update the message based on current game state
@@ -83,11 +96,27 @@ export class CloakOfDarknessStory implements Story {
   initializeWorld(world: WorldModel): void {
     this.world = world;
     
-    // Create the three rooms
-    const foyer = this.createFoyer();
-    const cloakroom = this.createCloakroom();
-    const bar = this.createBar();
-    const outside = this.createOutside();
+    // Remove default visibility rules so we can control darkness properly
+    world.removeScopeRule('default_room_visibility');
+    world.removeScopeRule('default_inventory_visibility');
+    
+    // Set up darkness rules using scope system
+    this.setupDarknessRules();
+    
+    // Create all rooms first without exits
+    const foyer = this.createFoyerBase();
+    const cloakroom = this.createCloakroomBase();
+    const bar = this.createBarBase();
+    const outside = this.createOutsideBase();
+    
+    // Store room IDs for later reference
+    this.roomIds['foyer'] = foyer.id;
+    this.roomIds['cloakroom'] = cloakroom.id;
+    this.roomIds['bar'] = bar.id;
+    this.roomIds['outside'] = outside.id;
+    
+    // Now add exits with proper IDs
+    this.addExits(foyer, cloakroom, bar, outside);
     
     // Create the cloak
     const cloak = this.createCloak();
@@ -101,6 +130,7 @@ export class CloakOfDarknessStory implements Story {
     // Set initial player location to foyer
     const player = world.getPlayer();
     if (player) {
+      console.log(`Moving player ${player.id} to foyer ${foyer.id}`);
       world.moveEntity(player.id, foyer.id);
       // Give player the cloak initially
       world.moveEntity(cloak.id, player.id);
@@ -108,9 +138,118 @@ export class CloakOfDarknessStory implements Story {
   }
   
   /**
+   * Set up darkness rules using the scope system
+   */
+  private setupDarknessRules(): void {
+    // Basic visibility rule - handles both lit and dark rooms
+    const basicVisibilityRule: ScopeRule = {
+      id: 'cloak_basic_visibility',
+      fromLocations: '*',
+      includeEntities: (context) => {
+        const results: string[] = [];
+        const location = context.world.getEntity(context.currentLocation);
+        const roomTrait = location?.get<RoomTrait>('room');
+        const isDark = roomTrait?.isDark === true;
+        
+        // Always include current location
+        results.push(context.currentLocation);
+        
+        // Check if player is carrying the cloak
+        const carried = context.world.getContents(context.actorId);
+        const hasCloak = carried.some(item => item.attributes.name === 'cloak');
+        
+        // In dark room with cloak - can only see the room itself
+        if (isDark && hasCloak) {
+          // Cloak absorbs all light - return only the room
+          return results;
+        }
+        
+        // Otherwise, see everything in the room
+        const contents = context.world.getContents(context.currentLocation);
+        results.push(...contents.map(e => e.id));
+        
+        // Also see nested contents (in containers, on supporters)
+        for (const entity of contents) {
+          const nested = context.world.getAllContents(entity.id);
+          results.push(...nested.map(e => e.id));
+        }
+        
+        return results;
+      },
+      priority: 100
+    };
+    
+    // Inventory is visible unless in pitch darkness
+    const inventoryRule: ScopeRule = {
+      id: 'cloak_inventory_visibility',
+      fromLocations: '*',
+      includeEntities: (context) => {
+        const location = context.world.getEntity(context.currentLocation);
+        const roomTrait = location?.get<RoomTrait>('room');
+        const isDark = roomTrait?.isDark === true;
+        
+        // Check if player is carrying the cloak
+        const carried = context.world.getContents(context.actorId);
+        const hasCloak = carried.some(item => item.attributes.name === 'cloak');
+        
+        // In pitch darkness (dark room with cloak), can't even see inventory
+        if (isDark && hasCloak) {
+          return [];
+        }
+        
+        // Otherwise, can see carried items
+        const results = carried.map(e => e.id);
+        
+        // Add nested contents of carried items
+        for (const entity of carried) {
+          const nested = context.world.getAllContents(entity.id);
+          results.push(...nested.map(e => e.id));
+        }
+        
+        return results;
+      },
+      priority: 150
+    };
+    
+    this.world.addScopeRule(basicVisibilityRule);
+    this.world.addScopeRule(inventoryRule);
+  }
+
+  /**
    * Create the player entity
    */
   createPlayer(world: WorldModel): IFEntity {
+    // Check if a player already exists
+    const existingPlayer = world.getPlayer();
+    if (existingPlayer) {
+      // Just update the existing player with our traits
+      existingPlayer.add(new IdentityTrait({
+        name: 'yourself',
+        description: 'As good-looking as ever.',
+        aliases: ['self', 'myself', 'me', 'yourself'],
+        properName: true,
+        article: ''
+      }));
+      
+      // These might already exist, but add them anyway
+      if (!existingPlayer.has('actor')) {
+        existingPlayer.add(new ActorTrait({
+          isPlayer: true
+        }));
+      }
+      
+      if (!existingPlayer.has('container')) {
+        existingPlayer.add(new ContainerTrait({
+          capacity: {
+            maxItems: 10
+          }
+        }));
+      }
+      
+      return existingPlayer;
+    }
+    
+    // Otherwise create a new player
     const player = world.createEntity('player', 'yourself');
     
     player.add(new IdentityTrait({
@@ -135,18 +274,53 @@ export class CloakOfDarknessStory implements Story {
   }
   
   /**
-   * Create the Foyer (starting room)
+   * Add exits to rooms after all rooms are created
    */
-  private createFoyer(): IFEntity {
+  private addExits(foyer: IFEntity, cloakroom: IFEntity, bar: IFEntity, outside: IFEntity): void {
+    // Update foyer exits with actual IDs
+    const foyerTrait = foyer.get(RoomTrait) as RoomTrait;
+    if (foyerTrait) {
+      foyerTrait.exits = {
+        north: { destination: outside.id },
+        south: { destination: bar.id },
+        west: { destination: cloakroom.id }
+      };
+    }
+    
+    // Update cloakroom exits
+    const cloakroomTrait = cloakroom.get(RoomTrait) as RoomTrait;
+    if (cloakroomTrait) {
+      cloakroomTrait.exits = {
+        east: { destination: foyer.id }
+      };
+    }
+    
+    // Update bar exits
+    const barTrait = bar.get(RoomTrait) as RoomTrait;
+    if (barTrait) {
+      barTrait.exits = {
+        north: { destination: foyer.id }
+      };
+    }
+    
+    // Update outside exits
+    const outsideTrait = outside.get(RoomTrait) as RoomTrait;
+    if (outsideTrait) {
+      outsideTrait.exits = {
+        south: { destination: foyer.id }
+      };
+    }
+  }
+  
+  /**
+   * Create the Foyer (starting room) without exits
+   */
+  private createFoyerBase(): IFEntity {
     const foyer = this.world.createEntity('foyer', 'Foyer of the Opera House');
     
     foyer.add(new RoomTrait({
-      exits: {
-        north: { destination: 'outside' },
-        south: { destination: 'bar' },
-        west: { destination: 'cloakroom' }
-      },
-      baseLight: 10 // Well lit
+      exits: {}, // Will be added later
+      isDark: false // Well lit
     }));
     
     foyer.add(new IdentityTrait({
@@ -157,22 +331,18 @@ export class CloakOfDarknessStory implements Story {
       article: 'the'
     }));
     
-    // Foyer is well-lit by its baseLight property, no need for separate light source
-    
     return foyer;
   }
   
   /**
-   * Create the Cloakroom
+   * Create the Cloakroom without exits
    */
-  private createCloakroom(): IFEntity {
+  private createCloakroomBase(): IFEntity {
     const cloakroom = this.world.createEntity('cloakroom', 'Cloakroom');
     
     cloakroom.add(new RoomTrait({
-      exits: {
-        east: { destination: 'foyer' }
-      },
-      baseLight: 10 // Well lit
+      exits: {}, // Will be added later
+      isDark: false // Well lit
     }));
     
     cloakroom.add(new IdentityTrait({
@@ -183,22 +353,18 @@ export class CloakOfDarknessStory implements Story {
       article: 'the'
     }));
     
-    // Cloakroom is well-lit by its baseLight property
-    
     return cloakroom;
   }
   
   /**
-   * Create the Bar (dark room with the message)
+   * Create the Bar (dark room with the message) without exits
    */
-  private createBar(): IFEntity {
+  private createBarBase(): IFEntity {
     const bar = this.world.createEntity('bar', 'Foyer Bar');
     
     bar.add(new RoomTrait({
-      exits: {
-        north: { destination: 'foyer' }
-      },
-      baseLight: 0 // Dark!
+      exits: {}, // Will be added later
+      isDark: true // Dark!
     }));
     
     bar.add(new IdentityTrait({
@@ -209,22 +375,18 @@ export class CloakOfDarknessStory implements Story {
       article: 'the'
     }));
     
-    // The bar is dark - no light source!
-    
     return bar;
   }
   
   /**
-   * Create the Outside (ending/exit)
+   * Create the Outside (ending/exit) without exits
    */
-  private createOutside(): IFEntity {
+  private createOutsideBase(): IFEntity {
     const outside = this.world.createEntity('outside', 'Outside');
     
     outside.add(new RoomTrait({
-      exits: {
-        south: { destination: 'foyer' }
-      },
-      baseLight: 10, // Well lit
+      exits: {}, // Will be added later
+      isDark: false, // Well lit
       isOutdoors: true
     }));
     
@@ -235,8 +397,6 @@ export class CloakOfDarknessStory implements Story {
       properName: false,
       article: ''
     }));
-    
-    // Outside is well-lit by its baseLight property
     
     return outside;
   }
@@ -256,7 +416,7 @@ export class CloakOfDarknessStory implements Story {
     }));
     
     cloak.add(new WearableTrait({
-      worn: false
+      isWorn: false
     }));
     
     // The cloak's darkness effect will be handled by game logic
@@ -319,7 +479,7 @@ export class CloakOfDarknessStory implements Story {
   }
   
   /**
-   * Check if the bar is dark
+   * Check if the bar is dark (player can't see)
    */
   private isBarDark(): boolean {
     const player = this.world.getPlayer();
@@ -327,16 +487,15 @@ export class CloakOfDarknessStory implements Story {
     
     // Check if player is in the bar
     const playerRoom = this.world.getContainingRoom(player.id);
-    if (!playerRoom || playerRoom.id !== 'bar') {
+    if (!playerRoom || playerRoom.id !== this.roomIds['bar']) {
       return false; // Not in bar, doesn't matter
     }
     
-    // Check if player is carrying the cloak
-    const cloak = this.world.getEntity('cloak');
-    if (!cloak) return false;
+    // Check visibility using scope system
+    const visible = this.world.getVisible(player.id);
     
-    const cloakLocation = this.world.getLocation(cloak.id);
-    return cloakLocation === player.id;
+    // If we can only see the room itself, it's dark
+    return visible.length === 1 && visible[0].id === this.roomIds['bar'];
   }
   
   /**
@@ -354,19 +513,257 @@ export class CloakOfDarknessStory implements Story {
   }
   
   /**
+   * Get custom vocabulary for this story
+   */
+  getCustomVocabulary() {
+    return {
+      verbs: [
+        {
+          actionId: 'HANG',
+          verbs: ['hang', 'hook'],
+          pattern: 'VERB_NOUN_PREP_NOUN'
+        },
+        {
+          actionId: 'READ',
+          verbs: ['read', 'examine'],
+          pattern: 'VERB_NOUN'
+        }
+      ]
+    };
+  }
+  
+  /**
    * Get custom actions for this story
    */
   getCustomActions(): any[] {
-    // We'll add a custom action to track sawdust disturbance
-    return [{
-      id: 'DISTURB_SAWDUST',
-      verbs: ['disturb', 'trample', 'mess'],
+    return [
+      // Custom HANG action for hanging the cloak
+      {
+        id: 'HANG',
+        // verbs are registered via getCustomVocabulary
+        patterns: ['VERB NOUN PREP NOUN'],
+        
+        execute: (context: any) => {
+          const events: any[] = [];
+          console.log('HANG action executed!');
+          console.log('Command:', JSON.stringify(context.command, null, 2));
+          
+          const { directObject, preposition, indirectObject } = context.command;
+          
+          // Check if we have the required parts
+          if (!directObject || !preposition || !indirectObject) {
+            return [context.event('action.error', {
+              actionId: context.action.id,
+              messageId: 'incomplete_command',
+              reason: 'missing_parts'
+            })];
+          }
+          
+          // Check if it's "hang X on Y"
+          const prep = preposition.text?.toLowerCase();
+          if (prep !== 'on') {
+            return [context.event('action.error', {
+              actionId: context.action.id,
+              messageId: 'cant_hang_that_way',
+              reason: 'wrong_preposition'
+            })];
+          }
+          
+          // Get the entities
+          const item = directObject.entity;
+          const supporter = indirectObject.entity;
+          
+          if (!item || !supporter) {
+            return [context.event('action.error', {
+              actionId: context.action.id,
+              messageId: 'not_found',
+              reason: 'entity_not_found'
+            })];
+          }
+          
+          // Check if we're hanging the cloak on the hook
+          if (item.name === 'cloak' && supporter.name === 'hook') {
+            // Check if player is carrying the cloak
+            const cloakLocation = context.world.getLocation(item.id);
+            if (cloakLocation !== context.player.id) {
+              return [context.event('action.error', {
+                actionId: context.action.id,
+                messageId: 'not_carrying',
+                reason: 'not_carrying',
+                params: { item: item.name }
+              })];
+            }
+            
+            // Move the cloak to the hook
+            context.world.moveEntity(item.id, supporter.id);
+            
+            // Success!
+            return [
+              context.event('if.event.object_moved', {
+                objectId: item.id,
+                fromLocation: cloakLocation,
+                toLocation: supporter.id,
+                actorId: context.player.id
+              }),
+              context.event('action.success', {
+                actionId: context.action.id,
+                messageId: 'hung_cloak',
+                params: {
+                  item: item.name,
+                  supporter: supporter.name
+                }
+              })
+            ];
+          } else {
+            // Generic hang message
+            return [context.event('action.error', {
+              actionId: context.action.id,
+              messageId: 'cant_hang_that',
+              reason: 'invalid_combination',
+              params: {
+                item: item.name,
+                supporter: supporter.name
+              }
+            })];
+          }
+        },
+        
+        metadata: {
+          requiresDirectObject: true,
+          requiresIndirectObject: true,
+          directObjectScope: 'CARRIED',
+          indirectObjectScope: 'REACHABLE'
+        }
+      },
+      
+      // Custom READ action for reading the message
+      {
+        id: 'READ',
+        patterns: ['VERB NOUN'],
+        
+        execute: (context: any) => {
+          const { directObject } = context.command;
+          
+          if (!directObject) {
+            return [context.event('action.error', {
+              actionId: context.action.id,
+              messageId: 'what_to_read',
+              reason: 'missing_object'
+            })];
+          }
+          
+          const item = directObject.entity;
+          if (!item) {
+            return [context.event('action.error', {
+              actionId: context.action.id,
+              messageId: 'not_found',
+              reason: 'entity_not_found'
+            })];
+          }
+          
+          // Check if it's the message
+          if (item.name === 'message') {
+            const readable = item.get(ReadableTrait);
+            
+            if (!readable || !readable.isReadable) {
+              // Can't read it (too dark or too disturbed)
+              return [context.event('action.error', {
+                actionId: context.action.id,
+                messageId: 'cant_read_message',
+                reason: readable?.text || "You can't read that.",
+                params: { item: item.name }
+              })];
+            }
+            
+            // Success! Mark as complete if undisturbed
+            if (this.disturbances === 0) {
+              this.world.setStateValue('message_read_successfully', true);
+            }
+            
+            return [context.event('action.success', {
+              actionId: context.action.id,
+              messageId: 'read_message',
+              params: {
+                text: readable.text,
+                description: item.get(IdentityTrait)?.description
+              }
+            })];
+          }
+          
+          // Not the message
+          return [context.event('action.error', {
+            actionId: context.action.id,
+            messageId: 'nothing_to_read',
+            reason: 'not_readable',
+            params: { item: item.name }
+          })];
+        },
+        
+        metadata: {
+          requiresDirectObject: true,
+          directObjectScope: 'VISIBLE'
+        }
+      },
+      
+      // Override GO action to handle bar entry in darkness
+      {
+      id: 'GO_ENHANCED',
+      verbs: ['go', 'walk'],
+      priority: 100, // Higher priority than standard GO
+      
+      // Let standard GO do validation
+      validate: () => ({ valid: true }),
+      
       execute: (command: any, context: any) => {
-        this.disturbances++;
-        return [{
-          type: 'game_message',
-          message: 'You accidentally disturb the sawdust on the floor.'
-        }];
+        const events: any[] = [];
+        const direction = command.parsed?.direction || command.entities?.direction;
+        
+        // Get current location
+        const currentLoc = context.world.getLocation(context.actor.id);
+        const currentRoom = context.world.getEntity(currentLoc);
+        
+        if (currentRoom) {
+          const roomTrait = currentRoom.get(RoomTrait);
+          const exit = roomTrait?.exits?.[direction];
+          
+          // Check if we're entering the bar
+          if (exit?.destination === this.roomIds['bar']) {
+            // Move the player
+            context.world.moveEntity(context.actor.id, this.roomIds['bar']);
+            
+            // Record the movement
+            events.push(context.event('actor_moved', {
+              actor: context.actor.id,
+              from: currentLoc,
+              to: 'bar',
+              direction: direction
+            }));
+            
+            // Check if it's dark (carrying cloak)
+            if (this.isBarDark()) {
+              this.disturbances++;
+              this.updateMessage();
+              
+              // Add message about stumbling
+              events.push(context.event('game_message', {
+                message: 'Blundering around in the dark isn\'t a good idea!'
+              }));
+            } else {
+              // Update message visibility
+              this.updateMessage();
+            }
+            
+            return events;
+          }
+        }
+        
+        // Not going to bar, use standard GO action
+        const standardGo = context.stdlib.getAction('GO');
+        if (standardGo) {
+          return standardGo.execute(command, context);
+        }
+        
+        return events;
       }
     }];
   }
@@ -375,34 +772,8 @@ export class CloakOfDarknessStory implements Story {
    * Story-specific initialization
    */
   initialize(): void {
-    // Set up event handlers for entering the bar in darkness
-    this.world.registerEventHandler('entity_moved', (event: any, world: any) => {
-      const data = event.data as any;
-      
-      // Check if player entered the bar
-      if (data.entity === 'player' && data.to === 'bar') {
-        // Check if it's dark (carrying cloak)
-        if (this.isBarDark()) {
-          this.disturbances++;
-          this.updateMessage(); // Update the message state
-          
-          // Emit a message about stumbling in the dark
-          setTimeout(() => {
-            world.applyEvent({
-              id: `dark_stumble_${Date.now()}`,
-              timestamp: Date.now(),
-              type: 'game_message',
-              data: {
-                message: 'Blundering around in the dark isn\'t a good idea!'
-              }
-            });
-          }, 100);
-        } else {
-          // Player entered bar with light, update message in case it needs to be displayed
-          this.updateMessage();
-        }
-      }
-    });
+    // Initialize message state
+    this.updateMessage();
   }
   
   /**
@@ -410,13 +781,7 @@ export class CloakOfDarknessStory implements Story {
    */
   isComplete(): boolean {
     // Story is complete when the message has been read successfully
-    const message = this.world.getEntity('message');
-    if (!message) return false;
-    
-    // Check if message was read without disturbance
-    // For now, return false so the game doesn't end
-    // TODO: Implement proper completion check based on reading the message
-    return false;
+    return this.world.getStateValue('message_read_successfully') === true;
   }
 }
 

@@ -2,13 +2,14 @@
  * Tests for GameEngine language management
  */
 
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameEngine, createStandardEngine } from '../src/game-engine';
 import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait } from '@sharpee/world-model';
 import { Parser, ParserFactory, LanguageProvider } from '@sharpee/stdlib';
 
 // Mock modules
-jest.mock('../src/story', () => ({
-  loadLanguageProvider: jest.fn()
+vi.mock('../src/story', () => ({
+  loadLanguageProvider: vi.fn()
 }));
 
 // Create a mock parser class

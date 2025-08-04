@@ -20,7 +20,11 @@ import {
   ParserLanguageProvider,
   adaptVerbVocabulary,
   adaptDirectionVocabulary,
-  adaptSpecialVocabulary
+  adaptSpecialVocabulary,
+  VerbVocabulary,
+  VocabularyEntry,
+  PatternMatch,
+  Constraint
 } from '@sharpee/if-domain';
 
 import type { 
@@ -36,6 +40,10 @@ import type {
 import { PartOfSpeech } from '@sharpee/world-model';
 
 import type { SystemEvent, Result } from '@sharpee/core';
+import { EnglishGrammarEngine } from './english-grammar-engine';
+import { defineCoreGrammar } from './core-grammar';
+import { scope, StoryGrammar } from '@sharpee/if-domain';
+import { StoryGrammarImpl } from './story-grammar-impl';
 
 // Type alias for clarity
 type CommandResult<T, E> = Result<T, E>;
@@ -97,13 +105,27 @@ export class EnglishParser implements Parser {
   private options: ParserOptions;
   private language: ParserLanguageProvider;
   private onDebugEvent?: (event: SystemEvent) => void;
-  
-  // Compound verb mappings
-  private compoundVerbs: Map<string, { action: string; particles: string[] }> = new Map();
+  private platformEventEmitter?: (event: any) => void;
+  private grammarEngine: EnglishGrammarEngine;
+  private storyGrammar: StoryGrammarImpl;
+  private worldContext: {
+    world: any;
+    actorId: string;
+    currentLocation: string;
+  } | null = null;
 
   constructor(language: ParserLanguageProvider, options: ParserOptions = {}) {
     this.language = language;
     this.options = { ...DEFAULT_OPTIONS, ...options };
+    
+    // Initialize grammar engine
+    this.grammarEngine = new EnglishGrammarEngine();
+    const grammar = this.grammarEngine.createBuilder();
+    defineCoreGrammar(grammar);
+    
+    // Initialize story grammar
+    this.storyGrammar = new StoryGrammarImpl(this.grammarEngine);
+    
     this.initializeVocabulary();
   }
 
@@ -118,21 +140,6 @@ export class EnglishParser implements Parser {
     const verbs = adaptVerbVocabulary(this.language);
     vocabularyRegistry.registerVerbs(verbs);
     
-    // Build compound verb mappings from verb definitions
-    for (const verbDef of this.language.getVerbs()) {
-      for (const verb of verbDef.verbs) {
-        // Check if this is a multi-word verb
-        const words = verb.split(' ');
-        if (words.length > 1) {
-          // It's a compound verb
-          this.compoundVerbs.set(verb, {
-            action: verbDef.actionId,
-            particles: words.slice(1)
-          });
-        }
-      }
-    }
-    
     // Register directions (adapting from language provider format)
     const directions = adaptDirectionVocabulary(this.language);
     vocabularyRegistry.registerDirections(directions);
@@ -140,6 +147,22 @@ export class EnglishParser implements Parser {
     // Register special vocabulary (adapting from language provider format)
     const special = adaptSpecialVocabulary(this.language);
     vocabularyRegistry.registerSpecial(special);
+    
+    // Register prepositions
+    const prepositions = this.language.getPrepositions();
+    vocabularyRegistry.registerPrepositions(prepositions);
+    
+    // Register determiners
+    const determiners = this.language.getDeterminers();
+    vocabularyRegistry.registerDeterminers(determiners);
+    
+    // Register conjunctions
+    const conjunctions = this.language.getConjunctions();
+    vocabularyRegistry.registerConjunctions(conjunctions);
+    
+    // Register numbers
+    const numbers = this.language.getNumbers();
+    vocabularyRegistry.registerNumbers(numbers);
   }
 
   /**
@@ -150,11 +173,100 @@ export class EnglishParser implements Parser {
   }
 
   /**
+   * Set platform event emitter for parser debugging
+   */
+  setPlatformEventEmitter(emitter: ((event: any) => void) | undefined): void {
+    this.platformEventEmitter = emitter;
+  }
+
+  /**
+   * Set the world context for scope constraint evaluation
+   */
+  setWorldContext(world: any, actorId: string, currentLocation: string): void {
+    this.worldContext = { world, actorId, currentLocation };
+  }
+
+  /**
+   * Emit a platform debug event
+   */
+  private emitPlatformEvent(type: string, data: any): void {
+    if (this.platformEventEmitter) {
+      this.platformEventEmitter({
+        id: `parser_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: Date.now(),
+        type: `platform.parser.${type}`,
+        entities: {},
+        payload: {
+          subsystem: 'parser',
+          ...data
+        },
+        tags: ['platform', 'parser', 'debug'],
+        priority: 0,
+        narrate: false
+      });
+    }
+  }
+
+  /**
+   * Register additional verbs after parser creation
+   * Used for story-specific vocabulary
+   */
+  registerVerbs(verbs: VerbVocabulary[]): void {
+    // Register with vocabulary registry
+    vocabularyRegistry.registerDynamicVerbs(verbs, 'story');
+  }
+
+  /**
+   * Register additional vocabulary entries
+   * More generic than registerVerbs - can handle any part of speech
+   */
+  registerVocabulary(entries: VocabularyEntry[]): void {
+    // Group by part of speech and register appropriately
+    const verbs: VerbVocabulary[] = [];
+    
+    for (const entry of entries) {
+      if (entry.partOfSpeech === VocabPartOfSpeech.VERB) {
+        // Find or create verb definition for this action
+        let verbDef = verbs.find(v => v.actionId === entry.mapsTo);
+        if (!verbDef) {
+          verbDef = {
+            actionId: entry.mapsTo,
+            verbs: [],
+            pattern: entry.metadata?.pattern as string,
+            prepositions: entry.metadata?.prepositions as string[]
+          };
+          verbs.push(verbDef);
+        }
+        verbDef.verbs.push(entry.word);
+      }
+      // Future: handle other parts of speech
+    }
+    
+    if (verbs.length > 0) {
+      this.registerVerbs(verbs);
+    }
+  }
+
+  /**
    * Parse input text into structured command with rich information
    */
   parse(input: string): CommandResult<ParsedCommand, CoreParseError> {
+    // Emit parse start event
+    this.emitPlatformEvent('parse_start', { input });
+    
     // Tokenize with full position tracking
     const tokens = this.tokenizeRich(input);
+    
+    // Emit tokenize platform event
+    this.emitPlatformEvent('tokenize_complete', {
+      input,
+      tokens: tokens.map(t => ({
+        word: t.word,
+        normalized: t.normalized,
+        partOfSpeech: t.partOfSpeech,
+        candidateCount: t.candidates.length
+      }))
+    });
     
     // Emit tokenize debug event
     if (this.onDebugEvent) {
@@ -186,6 +298,17 @@ export class EnglishParser implements Parser {
     // Try to find command structure
     const candidates = this.findCommandStructures(tokens, input);
     
+    // Emit pattern matching platform event
+    this.emitPlatformEvent('pattern_matching_complete', {
+      input,
+      candidateCount: candidates.length,
+      patterns: candidates.map(c => ({
+        pattern: c.pattern,
+        action: c.action,
+        confidence: c.confidence
+      }))
+    });
+    
     // Emit pattern match debug event
     if (this.onDebugEvent) {
       this.onDebugEvent({
@@ -206,6 +329,14 @@ export class EnglishParser implements Parser {
     }
     
     if (candidates.length === 0) {
+      // Emit parse error platform event
+      this.emitPlatformEvent('parse_failed', {
+        input,
+        reason: 'no_matching_patterns',
+        tokenCount: tokens.length,
+        hadVerb: tokens.some(t => t.partOfSpeech.includes(PartOfSpeech.VERB))
+      });
+      
       // Emit parse error debug event
       if (this.onDebugEvent) {
         this.onDebugEvent({
@@ -275,6 +406,29 @@ export class EnglishParser implements Parser {
       action: best.action
     };
     
+    // Add extras if present
+    if ((best as any).direction) {
+      parsed.extras = {
+        direction: (best as any).direction
+      };
+    } else if ((best as any).extras) {
+      parsed.extras = (best as any).extras;
+    }
+    
+    // Emit parse success platform event
+    this.emitPlatformEvent('parse_success', {
+      input,
+      action: parsed.action,
+      pattern: parsed.pattern,
+      confidence: parsed.confidence,
+      structure: {
+        verb: parsed.structure.verb?.text,
+        directObject: parsed.structure.directObject?.text,
+        preposition: parsed.structure.preposition?.text,
+        indirectObject: parsed.structure.indirectObject?.text
+      }
+    });
+    
     return {
       success: true,
       value: parsed
@@ -286,12 +440,53 @@ export class EnglishParser implements Parser {
    */
   private tokenizeRich(input: string): Token[] {
     const tokens: Token[] = [];
-    const words = input.trim().split(/(\s+)/); // Keep whitespace for position tracking
     let position = 0;
+    
+    // First extract quoted strings and replace them with placeholders
+    const quotedStrings: { placeholder: string; content: string; position: number }[] = [];
+    let processedInput = input;
+    
+    // Handle double quotes
+    const doubleQuoteRegex = /"([^"]*)"/g;
+    let match;
+    let quoteIndex = 0;
+    
+    while ((match = doubleQuoteRegex.exec(input)) !== null) {
+      const placeholder = `__QUOTE_${quoteIndex}__`;
+      const content = match[1];
+      const quotePosition = match.index;
+      
+      quotedStrings.push({ placeholder, content, position: quotePosition });
+      processedInput = processedInput.replace(match[0], placeholder);
+      quoteIndex++;
+    }
+    
+    // Now tokenize the processed input
+    const words = processedInput.trim().split(/(\s+)/); // Keep whitespace for position tracking
     
     for (const segment of words) {
       // Skip pure whitespace segments
       if (/^\s+$/.test(segment)) {
+        position += segment.length;
+        continue;
+      }
+      
+      // Check if this is a quoted string placeholder
+      const quotedString = quotedStrings.find(qs => qs.placeholder === segment);
+      if (quotedString) {
+        // Create a token for the quoted string
+        tokens.push({
+          word: `"${quotedString.content}"`,
+          normalized: quotedString.content.toLowerCase(),
+          position,
+          length: quotedString.content.length + 2, // Include quotes
+          partOfSpeech: [PartOfSpeech.NOUN], // Treat quoted strings as nouns
+          candidates: [{
+            id: 'quoted_string',
+            type: 'noun',
+            confidence: 1.0
+          }]
+        });
         position += segment.length;
         continue;
       }
@@ -335,293 +530,256 @@ export class EnglishParser implements Parser {
    * Find possible command structures in the tokens
    */
   private findCommandStructures(tokens: Token[], input: string): RichCandidate[] {
+    // Create grammar context with world model if available
+    const context = {
+      world: this.worldContext?.world || null,
+      actorId: this.worldContext?.actorId || 'player',
+      currentLocation: this.worldContext?.currentLocation || 'current',
+      slots: new Map()
+    };
+    
+    // Convert tokens to internal format for grammar engine
+    const internalTokens: InternalToken[] = tokens.map(t => ({
+      word: t.word,
+      normalized: t.normalized,
+      position: t.position,
+      candidates: t.candidates.map(c => ({
+        partOfSpeech: c.type as VocabPartOfSpeech,
+        mapsTo: c.id,
+        priority: c.confidence || 0
+      } as InternalTokenCandidate))
+    }));
+    
+    // Use grammar engine to find matches
+    const matches = this.grammarEngine.findMatches(internalTokens, context);
+    
+    // Convert grammar matches to RichCandidates
     const candidates: RichCandidate[] = [];
     
-    // Try to identify compound verbs first
-    const compoundVerbResult = this.tryCompoundVerb(tokens);
-    if (compoundVerbResult) {
-      candidates.push(...this.buildStructuresFromCompoundVerb(tokens, compoundVerbResult, input));
+    for (const match of matches) {
+      const candidate = this.convertGrammarMatch(match, tokens);
+      if (candidate) {
+        candidates.push(candidate);
+      } else if (input.includes('throw')) {
+        console.log('Failed to convert match:', match.rule.pattern);
+      }
     }
-    
-    // Try standard patterns
-    candidates.push(...this.tryStandardPatterns(tokens, input));
     
     return candidates;
   }
 
   /**
-   * Try to identify a compound verb at the start of the tokens
+   * Convert a grammar match to a RichCandidate
    */
-  private tryCompoundVerb(tokens: Token[]): { action: string; verbTokens: number[]; particles: string[] } | null {
-    if (tokens.length < 2) return null;
+  private convertGrammarMatch(match: PatternMatch, tokens: Token[]): RichCandidate | null {
+    const rule = match.rule;
     
-    // Check if first token is a verb
-    if (!tokens[0].partOfSpeech.includes(PartOfSpeech.VERB)) return null;
+    // Extract verb tokens from the beginning of the match
+    const verbTokenIndices: number[] = [];
+    let verbEndIndex = 0;
     
-    // Check two-word compounds
-    const twoWord = `${tokens[0].normalized} ${tokens[1].normalized}`;
-    if (this.compoundVerbs.has(twoWord)) {
-      const compound = this.compoundVerbs.get(twoWord)!;
-      return {
-        action: compound.action,
-        verbTokens: [0, 1],
-        particles: compound.particles
-      };
-    }
-    
-    // Check three-word compounds (rare but possible)
-    if (tokens.length >= 3) {
-      const threeWord = `${tokens[0].normalized} ${tokens[1].normalized} ${tokens[2].normalized}`;
-      if (this.compoundVerbs.has(threeWord)) {
-        const compound = this.compoundVerbs.get(threeWord)!;
-        return {
-          action: compound.action,
-          verbTokens: [0, 1, 2],
-          particles: compound.particles
-        };
+    // Find verb tokens at the start
+    for (let i = 0; i < tokens.length; i++) {
+      if (tokens[i].partOfSpeech.includes(PartOfSpeech.VERB)) {
+        verbTokenIndices.push(i);
+        verbEndIndex = i + 1;
+      } else {
+        break;
       }
     }
-    
-    return null;
-  }
-
-  /**
-   * Build command structures from a compound verb
-   */
-  private buildStructuresFromCompoundVerb(
-    tokens: Token[], 
-    compound: { action: string; verbTokens: number[]; particles: string[] },
-    input: string
-  ): RichCandidate[] {
-    const candidates: RichCandidate[] = [];
-    const remainingTokens = tokens.slice(compound.verbTokens.length);
     
     // Build verb phrase
     const verbPhrase: VerbPhrase = {
-      tokens: compound.verbTokens,
-      text: compound.verbTokens.map(i => tokens[i].word).join(' '),
-      head: tokens[compound.verbTokens[0]].normalized,
-      particles: compound.particles
+      tokens: verbTokenIndices,
+      text: verbTokenIndices.map(i => tokens[i].word).join(' '),
+      head: verbTokenIndices.length > 0 ? tokens[verbTokenIndices[0]].normalized : ''
     };
     
-    // If no more tokens, it's just the compound verb
-    if (remainingTokens.length === 0) {
-      candidates.push({
-        tokens,
-        verb: verbPhrase,
-        pattern: 'VERB_ONLY',
-        confidence: 1.0,
-        action: compound.action
-      });
-      return candidates;
-    }
+    // For complex patterns with multiple slots and prepositions,
+    // we need to analyze the pattern structure
+    const slotEntries = Array.from(match.slots.entries());
     
-    // Check if next token is a preposition (invalid pattern)
-    if (remainingTokens.length > 0 && 
-        tokens[compound.verbTokens.length].partOfSpeech.includes(PartOfSpeech.PREPOSITION)) {
-      // Invalid pattern - verb directly followed by preposition
-      return candidates;
-    }
+    // Sort slots by their token positions
+    slotEntries.sort((a, b) => (a[1].tokens[0] || 0) - (b[1].tokens[0] || 0));
     
-    // Try to parse the rest as a noun phrase
-    const nounPhraseResult = this.parseNounPhrase(tokens, compound.verbTokens.length);
-    if (nounPhraseResult) {
-      candidates.push({
-        tokens,
-        verb: verbPhrase,
-        directObject: nounPhraseResult.phrase,
-        pattern: 'VERB_NOUN',
-        confidence: 0.9,
-        action: compound.action
-      });
-    }
+    // Extract structure based on pattern and position
+    let directObject: NounPhrase | undefined;
+    let preposition: PrepPhrase | undefined;
+    let indirectObject: NounPhrase | undefined;
+    let extras: any = {};
     
-    return candidates;
-  }
-
-  /**
-   * Try standard parsing patterns
-   */
-  private tryStandardPatterns(tokens: Token[], input: string): RichCandidate[] {
-    const candidates: RichCandidate[] = [];
+    // Analyze the pattern to understand the expected structure
+    const patternParts = rule.pattern.split(/\s+/);
+    const slotPositions: { [slotName: string]: number } = {};
+    let positionCounter = 0;
     
-    // Direction only
-    if (tokens.length === 1 && tokens[0].candidates.some(c => c.type === VocabPartOfSpeech.DIRECTION)) {
-      const dirCandidate = tokens[0].candidates.find(c => c.type === VocabPartOfSpeech.DIRECTION)!;
-      candidates.push({
-        tokens,
-        verb: {
-          tokens: [],
-          text: 'go',
-          head: 'go'
-        },
-        directObject: {
-          tokens: [0],
-          text: tokens[0].word,
-          head: tokens[0].normalized,
-          modifiers: [],
-          articles: [],
-          determiners: [],
-          candidates: [dirCandidate.id]
-        },
-        pattern: 'DIRECTION_ONLY',
-        confidence: 0.9,
-        action: 'if.action.going'
-      });
-    }
-    
-    // Verb only
-    if (tokens.length === 1 && tokens[0].partOfSpeech.includes(PartOfSpeech.VERB)) {
-      const verbCandidate = tokens[0].candidates.find(c => c.type === VocabPartOfSpeech.VERB)!;
-      candidates.push({
-        tokens,
-        verb: {
-          tokens: [0],
-          text: tokens[0].word,
-          head: tokens[0].normalized
-        },
-        pattern: 'VERB_ONLY',
-        confidence: 1.0,
-        action: verbCandidate.id
-      });
-    }
-    
-    // Verb + X patterns
-    if (tokens.length >= 2 && tokens[0].partOfSpeech.includes(PartOfSpeech.VERB)) {
-      const verbCandidate = tokens[0].candidates.find(c => c.type === VocabPartOfSpeech.VERB)!;
-      
-      // Check if second token is a preposition (invalid for VERB + NOUN)
-      const hasImmediatePrep = tokens[1].partOfSpeech.includes(PartOfSpeech.PREPOSITION);
-      
-      // Try VERB + NOUN (but not VERB + PREP)
-      if (!hasImmediatePrep) {
-        const nounResult = this.parseNounPhrase(tokens, 1);
-        if (nounResult && nounResult.endIndex === tokens.length) {
-          candidates.push({
-            tokens,
-            verb: {
-              tokens: [0],
-              text: tokens[0].word,
-              head: tokens[0].normalized
-            },
-            directObject: nounResult.phrase,
-            pattern: 'VERB_NOUN',
-            confidence: 0.8,
-            action: verbCandidate.id
-          });
-        }
+    // Map slot names to their positions in the pattern
+    for (const part of patternParts) {
+      if (part.startsWith(':')) {
+        const slotName = part.substring(1);
+        slotPositions[slotName] = positionCounter++;
       }
+    }
+    
+    // Process slots based on the pattern structure
+    for (const [slotName, slotData] of slotEntries) {
+      const slotTokens = slotData.tokens.map((idx: number) => tokens[idx]);
       
-      // Try VERB + NOUN + PREP + NOUN
-      if (tokens.length >= 4) {
-        // Find preposition
-        for (let i = 2; i < tokens.length - 1; i++) {
-          if (tokens[i].partOfSpeech.includes(PartOfSpeech.PREPOSITION)) {
-            const noun1Result = this.parseNounPhrase(tokens, 1, i);
-            const noun2Result = this.parseNounPhrase(tokens, i + 1);
-            
-            if (noun1Result && noun2Result) {
-              const prepCandidate = tokens[i].candidates.find(c => c.type === VocabPartOfSpeech.PREPOSITION)!;
-              
-              candidates.push({
-                tokens,
-                verb: {
-                  tokens: [0],
-                  text: tokens[0].word,  
-                  head: tokens[0].normalized
-                },
-                directObject: noun1Result.phrase,
-                preposition: {
-                  tokens: [i],
-                  text: tokens[i].word
-                },
-                indirectObject: noun2Result.phrase,
-                pattern: 'VERB_NOUN_PREP_NOUN',
-                confidence: 0.7,
-                action: verbCandidate.id
-              });
-            }
+      const phrase: NounPhrase = {
+        tokens: slotData.tokens,
+        text: slotData.text,
+        head: slotTokens[slotTokens.length - 1]?.normalized || slotData.text,
+        modifiers: [],
+        articles: [],
+        determiners: [],
+        candidates: [slotData.text]
+      };
+      
+      // Determine where this slot should go based on the pattern
+      if (rule.pattern.includes(' with :' + slotName)) {
+        // This slot comes after 'with', put it in extras
+        extras[slotName] = phrase;
+      } else if (rule.pattern.includes('give :recipient :item')) {
+        // Special case for give patterns
+        if (slotName === 'item') {
+          directObject = phrase;
+        } else if (slotName === 'recipient') {
+          indirectObject = phrase;
+        }
+      } else if (rule.pattern.includes('give :item to :recipient')) {
+        // Give with 'to' pattern
+        if (slotName === 'item') {
+          directObject = phrase;
+        } else if (slotName === 'recipient') {
+          indirectObject = phrase;
+        }
+      } else if (rule.pattern.includes('show :recipient :item')) {
+        // Special case for show recipient item
+        if (slotName === 'item') {
+          directObject = phrase;
+        } else if (slotName === 'recipient') {
+          indirectObject = phrase;
+        }
+      } else if (rule.pattern.includes('show :item to :recipient')) {
+        // Show with 'to' pattern
+        if (slotName === 'item') {
+          directObject = phrase;
+        } else if (slotName === 'recipient') {
+          indirectObject = phrase;
+        }
+      } else if (rule.pattern.includes(':item from :container')) {
+        // Take from pattern
+        if (slotName === 'item') {
+          directObject = phrase;
+        } else if (slotName === 'container') {
+          indirectObject = phrase;
+        }
+      } else {
+        // General case: first slot is direct object, second is indirect object
+        const slotPosition = slotPositions[slotName];
+        if (slotPosition === 0 && !directObject) {
+          directObject = phrase;
+        } else if (slotPosition === 1 && !indirectObject) {
+          indirectObject = phrase;
+        } else {
+          // Additional slots or already assigned slots go to extras
+          if (!extras[slotName]) {
+            extras[slotName] = phrase;
           }
         }
       }
     }
     
-    return candidates;
+    // Find prepositions between direct and indirect objects
+    if (directObject && indirectObject) {
+      const directObjLastToken = directObject.tokens[directObject.tokens.length - 1];
+      const indirectObjFirstToken = indirectObject.tokens[0];
+      
+      for (let i = directObjLastToken + 1; i < indirectObjFirstToken; i++) {
+        if (tokens[i].partOfSpeech.includes(PartOfSpeech.PREPOSITION)) {
+          preposition = {
+            tokens: [i],
+            text: tokens[i].word
+          };
+          break;
+        }
+      }
+    }
+    
+    // For direction commands, handle specially
+    if (rule.action === 'if.action.going' && !directObject) {
+      // Extract direction from pattern
+      const directionToken = tokens.find(t => 
+        t.candidates.some(c => c.type === VocabPartOfSpeech.DIRECTION) ||
+        ['north', 'south', 'east', 'west', 'up', 'down', 'in', 'out', 'n', 's', 'e', 'w', 'u', 'd'].includes(t.normalized)
+      );
+      
+      if (directionToken) {
+        return {
+          tokens,
+          verb: verbPhrase,
+          pattern: 'DIRECTION_ONLY',
+          confidence: match.confidence,
+          action: rule.action,
+          direction: directionToken.normalized
+        } as any;
+      }
+    }
+    
+    // Determine pattern type
+    let pattern = 'VERB_ONLY';
+    if (directObject && indirectObject) {
+      if (preposition) {
+        pattern = 'VERB_NOUN_PREP_NOUN';
+      } else {
+        pattern = 'VERB_NOUN_NOUN';
+      }
+    } else if (directObject) {
+      pattern = 'VERB_NOUN';
+    }
+    
+    const candidate: RichCandidate = {
+      tokens,
+      verb: verbPhrase,
+      directObject,
+      preposition,
+      indirectObject,
+      pattern,
+      confidence: match.confidence,
+      action: rule.action
+    };
+    
+    // Add extras if present
+    if (Object.keys(extras).length > 0) {
+      (candidate as any).extras = extras;
+    }
+    
+    return candidate;
   }
 
   /**
-   * Parse a noun phrase starting at the given index
+   * Register story-specific grammar rules
+   * @deprecated Use getStoryGrammar() for full API
    */
-  private parseNounPhrase(
-    tokens: Token[], 
-    startIndex: number, 
-    endIndex?: number
-  ): { phrase: NounPhrase; endIndex: number } | null {
-    const end = endIndex ?? tokens.length;
-    if (startIndex >= end) return null;
+  registerGrammar(pattern: string, action: string, constraints?: Record<string, Constraint>): void {
+    const builder = this.storyGrammar.define(pattern)
+      .mapsTo(action);
     
-    const phraseTokens: number[] = [];
-    const articles: string[] = [];
-    const determiners: string[] = [];
-    const modifiers: string[] = [];
-    let headNoun: string | null = null;
-    let headIndex = -1;
-    const candidates: string[] = [];
-    
-    // Scan tokens in the range
-    for (let i = startIndex; i < end; i++) {
-      const token = tokens[i];
-      
-      // Stop at prepositions BEFORE adding to phrase
-      if (token.partOfSpeech.includes(PartOfSpeech.PREPOSITION)) {
-        break;
-      }
-      
-      phraseTokens.push(i);
-      
-      if (token.partOfSpeech.includes(PartOfSpeech.ARTICLE)) {
-        articles.push(token.normalized);
-      } else if (token.partOfSpeech.includes(PartOfSpeech.DETERMINER)) {
-        determiners.push(token.normalized);
-      } else if (token.partOfSpeech.includes(PartOfSpeech.ADJECTIVE)) {
-        modifiers.push(token.normalized);
-      } else if (token.partOfSpeech.includes(PartOfSpeech.NOUN)) {
-        // Use the last noun as the head
-        headNoun = token.normalized;
-        headIndex = i;
-        // Add all noun candidates
-        const nounCandidates = token.candidates
-          .filter(c => c.type === VocabPartOfSpeech.NOUN)
-          .map(c => c.id);
-        candidates.push(...nounCandidates);
+    // Apply constraints if provided
+    if (constraints) {
+      for (const [slot, constraint] of Object.entries(constraints)) {
+        builder.where(slot, constraint);
       }
     }
     
-    // Must have at least one token that could be a noun
-    if (phraseTokens.length === 0) return null;
-    
-    // If no explicit noun found, treat the last word as the head
-    if (!headNoun && phraseTokens.length > 0) {
-      const lastIndex = phraseTokens[phraseTokens.length - 1];
-      headNoun = tokens[lastIndex].normalized;
-      candidates.push(headNoun);
-    }
-    
-    // Build the complete text
-    const text = phraseTokens.map(i => tokens[i].word).join(' ');
-    
-    return {
-      phrase: {
-        tokens: phraseTokens,
-        text,
-        head: headNoun!,
-        modifiers,
-        articles,
-        determiners,
-        candidates: candidates.length > 0 ? candidates : [headNoun!]
-      },
-      endIndex: phraseTokens[phraseTokens.length - 1] + 1
-    };
+    builder.build();
+  }
+
+  /**
+   * Get the story grammar API
+   */
+  getStoryGrammar(): StoryGrammar {
+    return this.storyGrammar;
   }
 
   /**

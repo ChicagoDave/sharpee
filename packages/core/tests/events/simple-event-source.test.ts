@@ -1,4 +1,5 @@
 import { SimpleEventSource, createEventSource } from '../../src/events';
+import { vi } from 'vitest';
 
 describe('SimpleEventSource', () => {
   describe('Basic Functionality', () => {
@@ -50,10 +51,10 @@ describe('SimpleEventSource', () => {
   describe('Error Handling', () => {
     // Mock console.error for this test
     const originalConsoleError = console.error;
-    let consoleErrorMock: jest.Mock;
+    let consoleErrorMock: any;
     
     beforeEach(() => {
-      consoleErrorMock = jest.fn();
+      consoleErrorMock = vi.fn();
       console.error = consoleErrorMock;
     });
     

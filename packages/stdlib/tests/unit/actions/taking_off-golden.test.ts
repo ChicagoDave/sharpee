@@ -8,7 +8,7 @@
  * - Validate that items are actually worn
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach } from 'vitest';
 import { takingOffAction } from '../../../src/actions/standard/taking_off';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel } from '@sharpee/world-model';
@@ -19,7 +19,7 @@ import {
   TestData,
   createCommand
 } from '../../test-utils';
-import type { EnhancedActionContext } from '../../../src/actions/enhanced-types';
+import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('takingOffAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {

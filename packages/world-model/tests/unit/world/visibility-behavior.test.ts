@@ -161,9 +161,10 @@ describe('VisibilityBehavior', () => {
       world.moveEntity(observer.id, darkRoom.id);
       world.moveEntity(target.id, darkRoom.id);
       
-      // Can't see anything in the dark
+      // Can't see objects in the dark
       expect(VisibilityBehavior.canSee(observer, target, world)).toBe(false);
-      expect(VisibilityBehavior.canSee(observer, darkRoom, world)).toBe(false);
+      // But can always know what room you're in
+      expect(VisibilityBehavior.canSee(observer, darkRoom, world)).toBe(true);
     });
 
     it('should only see lit light sources in dark room', () => {
@@ -212,9 +213,10 @@ describe('VisibilityBehavior', () => {
       // Turn on lamp (but it's in closed box)
       (lamp.getTrait(TraitType.LIGHT_SOURCE) as any).isLit = true;
       
-      // Still can't see in the dark
+      // Still can't see box in the dark (light is inside closed container)
       expect(VisibilityBehavior.canSee(observer, box, world)).toBe(false);
-      expect(VisibilityBehavior.canSee(observer, darkRoom, world)).toBe(false);
+      // But can always know what room you're in
+      expect(VisibilityBehavior.canSee(observer, darkRoom, world)).toBe(true);
       
       // Open box
       (box.getTrait(TraitType.OPENABLE) as any).isOpen = true;

@@ -5,13 +5,15 @@
  * appropriate events. It NEVER mutates state directly.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
+import { ActionMetadata } from '../../../validation';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { ScopeLevel } from '../../../scope';
 import { LockedEventData } from './locking-events';
 
-export const lockingAction: Action = {
+export const lockingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.LOCKING,
   requiredMessages: [
     'no_target',
@@ -27,7 +29,7 @@ export const lockingAction: Action = {
   ],
   group: 'lock_manipulation',
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const noun = context.command.directObject?.entity;
     const withKey = context.command.indirectObject?.entity;
@@ -53,6 +55,8 @@ export const lockingAction: Action = {
     
     const lockableTrait = noun.get(TraitType.LOCKABLE);
     const lockableData = lockableTrait as any;
+    
+    // Scope checks handled by framework due to directObjectScope: REACHABLE
     
     // Check if already locked
     if (lockableData.isLocked) {
@@ -155,6 +159,14 @@ export const lockingAction: Action = {
       item: noun.name
     };
     
+    // Add container/door info
+    if (noun.has(TraitType.CONTAINER)) {
+      params.isContainer = true;
+    }
+    if (noun.has(TraitType.DOOR)) {
+      params.isDoor = true;
+    }
+    
     if (withKey) {
       messageId = 'locked_with';
       params.key = withKey.name;
@@ -169,5 +181,11 @@ export const lockingAction: Action = {
         params: params
       })
     ];
+  },
+  
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.REACHABLE
   }
 };

@@ -2,7 +2,7 @@
  * Tests for the refactored capability system
  */
 
-import { describe, test, expect } from '@jest/globals';
+import { describe, test, expect } from 'vitest';
 import {
   StandardCapabilitySchemas,
   registerStandardCapabilities,

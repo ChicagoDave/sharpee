@@ -8,7 +8,8 @@
  * - Detaching attached items
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
+import { ActionMetadata } from '../../../validation';
 import { SemanticEvent } from '@sharpee/core';
 import { 
   TraitType, 
@@ -19,10 +20,17 @@ import {
   AttachedTrait 
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { ScopeLevel } from '../../../scope/types';
 import { PulledEventData } from './pulling-events';
 
-export const pullingAction: Action = {
+export const pullingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.PULLING,
+  
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.REACHABLE
+  },
   requiredMessages: [
     'no_target',
     'not_visible',
@@ -52,7 +60,7 @@ export const pullingAction: Action = {
     'max_pulls_reached'
   ],
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const target = context.command.directObject?.entity;
     const direction = context.command.parsed.extras?.direction as string;
@@ -66,25 +74,7 @@ export const pullingAction: Action = {
       })];
     }
     
-    // Check if target is visible
-    if (!context.canSee(target)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_visible',
-        reason: 'not_visible',
-        params: { target: target.name }
-      })];
-    }
-    
-    // Check if target is reachable
-    if (!context.canReach(target)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_reachable',
-        reason: 'not_reachable',
-        params: { target: target.name }
-      })];
-    }
+    // Scope validation is now handled by CommandValidator
     
     // Can't pull worn items
     if (target.has(TraitType.WEARABLE)) {
@@ -131,12 +121,29 @@ export const pullingAction: Action = {
       })];
     }
     
-    // Check strength requirements
-    if (pullableTrait.requiresStrength) {
+    // Check strength requirements (but not for cords or heavy objects - they handle it differently)
+    if (pullableTrait.requiresStrength && pullableTrait.pullType !== 'cord' && pullableTrait.pullType !== 'heavy') {
       // For now, we'll assume the player has standard strength
       // Games can extend this to check actor strength
       const playerStrength = 10; // Default strength
       if (pullableTrait.requiresStrength > playerStrength) {
+        return [context.event('action.error', {
+        actionId: context.action.id,
+        messageId: 'too_heavy',
+        reason: 'too_heavy',
+        params: { 
+            target: target.name,
+            requiredStrength: pullableTrait.requiresStrength 
+          }
+      })];
+      }
+    }
+    
+    // For heavy objects, check if they're too heavy to move at all
+    if (pullableTrait.pullType === 'heavy' && pullableTrait.requiresStrength) {
+      const playerStrength = 10; // Default strength
+      // Allow pulling with effort up to 4x player strength
+      if (pullableTrait.requiresStrength > playerStrength * 4) {
         return [context.event('action.error', {
         actionId: context.action.id,
         messageId: 'too_heavy',
@@ -235,8 +242,9 @@ export const pullingAction: Action = {
           eventData.tension = cordTrait.tension;
           
           // Check if cord breaks
-          if (cordTrait.breakable && pullableTrait.requiresStrength) {
-            const pullForce = 15; // Default pull force
+          if (cordTrait.breakable) {
+            // Use requiresStrength as the pull force, or default to 15
+            const pullForce = pullableTrait.requiresStrength || 15;
             if (cordTrait.breakStrength && pullForce >= cordTrait.breakStrength) {
               eventData.breaks = true;
               messageId = 'cord_breaks';
@@ -359,7 +367,7 @@ export const pullingAction: Action = {
       }));
     
     // Handle special effects
-    if (pullableTrait.detachesOnPull && eventData.detached) {
+    if (eventData.detached && eventData.attachedTo) {
       events.push(context.event('if.event.detached', {
         item: target.id,
         from: eventData.attachedTo

@@ -5,13 +5,15 @@
  * in directions (up, down). It can result in movement or just changing position.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
+import { ActionMetadata } from '../../../validation';
+import { ScopeLevel } from '../../../scope/types';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType, EntryTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ClimbedEventData } from './climbing-events';
 
-export const climbingAction: Action = {
+export const climbingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.CLIMBING,
   requiredMessages: [
     'no_target',
@@ -26,7 +28,7 @@ export const climbingAction: Action = {
   ],
   group: 'movement',
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const target = context.command.directObject?.entity;
     const direction = context.command.parsed.extras?.direction as string;
@@ -47,6 +49,12 @@ export const climbingAction: Action = {
         messageId: 'no_target',
         reason: 'no_target'
       })];
+  },
+  
+  metadata: {
+    requiresDirectObject: false,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.REACHABLE
   }
 };
 
@@ -55,7 +63,7 @@ export const climbingAction: Action = {
  */
 function handleDirectionalClimbing(
   direction: string, 
-  context: EnhancedActionContext
+  context: ActionContext
 ): SemanticEvent[] {
   // Normalize direction
   const normalizedDirection = direction.toLowerCase();
@@ -130,7 +138,7 @@ function handleDirectionalClimbing(
  */
 function handleObjectClimbing(
   target: any,
-  context: EnhancedActionContext
+  context: ActionContext
 ): SemanticEvent[] {
   // Check if object is climbable
   let isClimbable = false;

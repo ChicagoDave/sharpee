@@ -10,7 +10,9 @@ import {
   IdentityTrait,
   ActorTrait,
   ContainerTrait,
-  StandardCapabilities
+  StandardCapabilities,
+  Trait,
+  TraitType
 } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import { 
@@ -26,7 +28,7 @@ import {
 } from '@sharpee/stdlib';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { TextService, TextServiceContext, TextOutput } from '@sharpee/if-services';
-import { SemanticEvent, createSemanticEventSource, SaveData, SaveRestoreHooks, SaveResult, RestoreResult, SerializedEvent, SerializedEntity, SerializedLocation, SerializedRelationship, SerializedSpatialIndex, SerializedTurn, EngineState, SaveMetadata, SerializedParserState, QueryManager, createQueryManager, PendingQuery, PlatformEvent, isPlatformRequestEvent, PlatformEventType, SaveContext, RestoreContext, QuitContext, RestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent } from '@sharpee/core';
+import { SemanticEvent, createSemanticEventSource, SaveData, SaveRestoreHooks, SaveResult, RestoreResult, SerializedEvent, SerializedEntity, SerializedLocation, SerializedRelationship, SerializedSpatialIndex, SerializedTurn, EngineState, SaveMetadata, SerializedParserState, QueryManager, createQueryManager, PendingQuery, PlatformEvent, isPlatformRequestEvent, PlatformEventType, SaveContext, RestoreContext, QuitContext, RestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, SemanticEventSource } from '@sharpee/core';
 
 import {
   GameContext,
@@ -39,6 +41,7 @@ import { Story, loadLanguageProvider, loadTextService } from './story';
 
 import { CommandExecutor, createCommandExecutor } from './command-executor';
 import { EventSequenceUtils, eventSequencer } from './event-sequencer';
+import { toSequencedEvent, toSemanticEvent } from './event-adapter';
 
 /**
  * Game engine events
@@ -66,7 +69,8 @@ export class GameEngine {
   private config: EngineConfig;
   private commandExecutor!: CommandExecutor;
   private eventProcessor: EventProcessor;
-  private actionRegistry: ActionRegistry;
+  private platformEvents: SemanticEventSource;
+  private actionRegistry: StandardActionRegistry;
   private textService?: TextService;
   private turnEvents = new Map<number, SemanticEvent[]>();
   private running = false;
@@ -113,6 +117,7 @@ export class GameEngine {
 
     // Create subsystems
     this.eventProcessor = new EventProcessor(this.world);
+    this.platformEvents = createSemanticEventSource();
     
     // If we have a language provider, use it
     if (languageProvider) {
@@ -165,6 +170,21 @@ export class GameEngine {
     if (story.initialize) {
       story.initialize();
     }
+    
+    // Register custom vocabulary if parser is available
+    if (story.getCustomVocabulary && this.parser && this.parser.registerVerbs) {
+      const customVocab = story.getCustomVocabulary();
+      
+      // Register custom verbs
+      if (customVocab.verbs && customVocab.verbs.length > 0) {
+        this.parser.registerVerbs(customVocab.verbs);
+      }
+      
+      // Future: Register other vocabulary types
+      // if (customVocab.nouns && this.parser.registerNouns) {
+      //   this.parser.registerNouns(customVocab.nouns);
+      // }
+    }
   }
 
   /**
@@ -180,9 +200,7 @@ export class GameEngine {
       this.languageProvider = await loadLanguageProvider(languageCode);
       
       // Update action registry with language provider
-      if (this.actionRegistry.setLanguageProvider) {
-        this.actionRegistry.setLanguageProvider(this.languageProvider);
-      }
+      this.actionRegistry.setLanguageProvider(this.languageProvider);
       
       // Update text service with language provider
       if (this.textService) {
@@ -218,6 +236,16 @@ export class GameEngine {
         
         // Create parser instance
         this.parser = ParserFactory.createParser(languageCode, this.languageProvider);
+        
+        // Wire parser with platform events
+        if (this.parser && 'setPlatformEventEmitter' in this.parser) {
+          console.log('[ENGINE] Wiring parser with platform events');
+          (this.parser as any).setPlatformEventEmitter((event: any) => {
+            this.platformEvents.addEvent(event);
+          });
+        } else {
+          console.log('[ENGINE] Parser does not support platform events');
+        }
         
       } catch (error: any) {
         if (error.message?.includes('Cannot find module')) {
@@ -338,22 +366,22 @@ export class GameEngine {
     
     // Create a PendingQuery from the event data
     const query: PendingQuery = {
-      id: queryData.queryId || `query_${Date.now()}`,
-      source: queryData.source || 'system',
-      type: queryData.type || 'multiple_choice',
-      messageId: queryData.messageId,
-      messageParams: queryData.messageParams,
-      options: queryData.options,
-      context: queryData.context || {},
+      id: String(queryData.queryId || `query_${Date.now()}`),
+      source: String(queryData.source || 'system') as any,
+      type: String(queryData.type || 'multiple_choice') as any,
+      messageId: String(queryData.messageId || ''),
+      messageParams: queryData.messageParams as Record<string, any> | undefined,
+      options: queryData.options as string[] | undefined,
+      context: (queryData.context || {}) as Record<string, any>,
       allowInterruption: queryData.allowInterruption !== false,
-      validator: queryData.validator,
-      timeout: queryData.timeout,
+      validator: queryData.validator ? String(queryData.validator) : undefined,
+      timeout: queryData.timeout ? Number(queryData.timeout) : undefined,
       created: Date.now(),
-      priority: queryData.priority
+      priority: queryData.priority ? Number(queryData.priority) : undefined
     };
     
     // Register quit handler if needed
-    if (query.type === 'quit_confirmation' && !this.queryManager['handlers'].has('quit')) {
+    if (query.messageId === 'quit_confirmation' && !this.queryManager['handlers'].has('quit')) {
       const { createQuitQueryHandler } = await import('@sharpee/stdlib');
       const quitHandler = createQuitQueryHandler();
       this.queryManager.registerHandler('quit', quitHandler);
@@ -436,21 +464,23 @@ export class GameEngine {
         this.config
       );
 
-      // Store events for this turn
-      this.turnEvents.set(turn, result.events);
+      // Store events for this turn (convert to SemanticEvent)
+      const semanticEvents = result.events.map(e => toSemanticEvent(e));
+      this.turnEvents.set(turn, semanticEvents);
       
       // Also track in event source for save/restore
-      for (const event of result.events) {
-        this.eventSource.emit(event);
+      for (const sequencedEvent of result.events) {
+        const semanticEvent = toSemanticEvent(sequencedEvent);
+        this.eventSource.emit(semanticEvent);
         
         // Check if this is a client.query event
-        if (event.type === 'client.query') {
+        if (semanticEvent.type === 'client.query') {
           // The handleClientQuery will be called by the event listener
         }
         
         // Check if this is a platform request event
-        if (isPlatformRequestEvent(event)) {
-          this.pendingPlatformOps.push(event as PlatformEvent);
+        if (isPlatformRequestEvent(semanticEvent)) {
+          this.pendingPlatformOps.push(semanticEvent as PlatformEvent);
         }
       }
 
@@ -502,7 +532,13 @@ export class GameEngine {
           getLocation: (entityId: string) => {
             const entity = this.world.getEntity(entityId);
             if (!entity) return null;
-            return this.world.getLocation(entityId);
+            return this.world.getLocation(entityId) || null;
+          },
+          getPlatformEvents: () => {
+            // Get all platform events for the current turn
+            // Platform events have the turn in their payload
+            return this.platformEvents.getAllEvents()
+              .filter(e => e.tags?.includes('platform'));
           }
         };
         
@@ -662,7 +698,9 @@ export class GameEngine {
         id: this.story?.config.id || 'unknown',
         version: this.story?.config.version || '0.0.0',
         title: this.story?.config.title || 'Unknown',
-        author: this.story?.config.author || 'Unknown'
+        author: Array.isArray(this.story?.config.author) 
+          ? this.story.config.author.join(', ') 
+          : (this.story?.config.author || 'Unknown')
       }
     };
   }
@@ -802,6 +840,23 @@ export class GameEngine {
   }
 
   /**
+   * Emit a platform event with turn metadata
+   */
+  emitPlatformEvent(event: Omit<SemanticEvent, 'id' | 'timestamp'>): void {
+    const fullEvent: SemanticEvent = {
+      ...event,
+      id: `platform_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: Date.now(),
+      metadata: {
+        ...event.metadata,
+        turn: this.context.currentTurn
+      }
+    };
+    
+    this.platformEvents.addEvent(fullEvent);
+  }
+
+  /**
    * Update context after a turn
    */
   private updateContext(result: TurnResult): void {
@@ -874,7 +929,7 @@ export class GameEngine {
       IFActions.VERIFYING
     ];
     
-    if (nonRepeatable.includes(actionId)) {
+    if (nonRepeatable.includes(actionId as any)) {
       return;
     }
 
@@ -1155,7 +1210,8 @@ export class GameEngine {
         type: event.type,
         timestamp: event.timestamp,
         data: event.data,
-        metadata: event.metadata
+        metadata: event.metadata,
+        entities: {}
       });
     }
   }
@@ -1185,17 +1241,19 @@ export class GameEngine {
     }
     
     // Serialize locations and their contents
-    const allLocations = this.world.getAllLocations();
+    const allLocations = this.world.getAllEntities().filter(e => 
+      e.type === 'room' || e.type === 'location' || e.has('if.trait.room')
+    );
     for (const location of allLocations) {
       const contents = this.world.getContents(location.id);
       locations[location.id] = {
         id: location.id,
         properties: {
-          name: location.get('IDENTITY')?.name || 'Unknown',
-          description: location.get('IDENTITY')?.description || ''
+          name: (location.get(TraitType.IDENTITY) as any)?.name || 'Unknown',
+          description: (location.get(TraitType.IDENTITY) as any)?.description || ''
         },
         contents: contents.map(e => e.id),
-        connections: this.world.getConnections(location.id)
+        connections: this.extractConnections(location)
       };
     }
     
@@ -1230,7 +1288,7 @@ export class GameEngine {
       for (const entityId of data.contents) {
         const entity = this.world.getEntity(entityId);
         if (entity) {
-          this.world.setLocation(entity, locationId);
+          this.world.moveEntity(entity.id, locationId);
         }
       }
     }
@@ -1253,8 +1311,8 @@ export class GameEngine {
     for (const [turnNumber, result] of this.context.history.entries()) {
       turns.push({
         turnNumber: turnNumber + 1,
-        eventIds: result.events.map(e => e.id),
-        timestamp: result.events[0]?.timestamp || Date.now(),
+        eventIds: result.events.map(e => e.source || `${e.turn}-${e.sequence}`),
+        timestamp: result.events[0]?.timestamp.getTime() || Date.now(),
         command: result.input
       });
     }
@@ -1277,11 +1335,16 @@ export class GameEngine {
       );
       
       // Create a minimal turn result
+      // Convert SemanticEvents to SequencedEvents
+      const sequencedEvents = events.map((event, index) => 
+        toSequencedEvent(event, turn.turnNumber, index)
+      );
+      
       this.context.history.push({
         turn: turn.turnNumber,
         input: turn.command || '',
         success: true,
-        events: events as SequencedEvent[]
+        events: sequencedEvents
       });
     }
   }
@@ -1322,11 +1385,52 @@ export class GameEngine {
   /**
    * Deserialize a trait
    */
-  private deserializeTrait(name: string, data: unknown): unknown {
+  private deserializeTrait(name: string, data: unknown): Trait | null {
     // This would need to reconstruct the proper trait classes
-    // For now, return the data as-is
+    // For now, return the data as-is with the type field
     // In a full implementation, you'd use a trait factory
-    return data;
+    if (data && typeof data === 'object') {
+      return { type: name, ...data } as Trait;
+    }
+    return null;
+  }
+
+  /**
+   * Extract connections from a location entity
+   */
+  private extractConnections(location: IFEntity): Record<string, string> {
+    const connections: Record<string, string> = {};
+    
+    // Check for ROOM trait with exits
+    const roomTrait = location.get('if.trait.room') as any;
+    if (roomTrait?.exits) {
+      Object.entries(roomTrait.exits).forEach(([direction, exit]: [string, any]) => {
+        if (exit.destination) {
+          connections[direction] = exit.destination;
+        }
+      });
+    }
+    
+    // Check for doors in this location
+    const contents = this.world.getContents(location.id);
+    contents.forEach(entity => {
+      const doorTrait = entity.get('if.trait.door') as any;
+      if (doorTrait) {
+        // Door connects two rooms
+        const otherRoom = doorTrait.room1 === location.id ? doorTrait.room2 : doorTrait.room1;
+        if (otherRoom) {
+          // Try to determine direction from door name or exit trait
+          const name = entity.name?.toLowerCase() || '';
+          if (name.includes('north')) connections.north = otherRoom;
+          else if (name.includes('south')) connections.south = otherRoom;
+          else if (name.includes('east')) connections.east = otherRoom;
+          else if (name.includes('west')) connections.west = otherRoom;
+          else connections.door = otherRoom; // Generic door connection
+        }
+      }
+    });
+    
+    return connections;
   }
 
   /**
@@ -1395,7 +1499,7 @@ export function createGameEngine(
  * Create a basic game engine with standard setup
  */
 export function createStandardEngine(config?: EngineConfig): GameEngine {
-  // Create world
+  // Create world (without platform events for standard engine)
   const world = new WorldModel();
 
   // Create player entity
@@ -1432,8 +1536,11 @@ export async function createEngineWithStory(
   story: Story,
   config?: EngineConfig
 ): Promise<GameEngine> {
-  // Create world
-  const world = new WorldModel();
+  // Create platform events first (using semantic event source)
+  const platformEvents = createSemanticEventSource();
+  
+  // Create world with platform events
+  const world = new WorldModel({}, platformEvents);
   
   // Create player from story
   const player = story.createPlayer(world);
@@ -1442,7 +1549,14 @@ export async function createEngineWithStory(
   // Create engine
   const engine = new GameEngine(world, player, config);
   
-  // Set the story
+  // Replace the engine's platformEvents with the one we created
+  // (to ensure they're the same instance)
+  (engine as any).platformEvents = platformEvents;
+  
+  // Set language first (from story config)
+  await engine.setLanguage(story.config.language);
+  
+  // Then set the story (which can now register custom vocabulary)
   await engine.setStory(story);
   
   // Initial vocabulary update

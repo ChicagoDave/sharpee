@@ -10,7 +10,7 @@
  * - Distinguish between fixed and moveable objects
  */
 
-import { describe, test, expect, beforeEach, jest } from '@jest/globals';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { pushingAction } from '../../../src/actions/standard/pushing';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType } from '@sharpee/world-model';
@@ -65,60 +65,6 @@ describe('pushingAction (Golden Pattern)', () => {
       });
     });
 
-    test('should fail when target is not visible', () => {
-      const { world, player } = setupBasicWorld();
-      const button = world.createEntity('red button', 'object');
-      button.add({
-        type: TraitType.PUSHABLE,
-        pushType: 'button'
-      });
-      
-      // Put button in a different room so it's not visible
-      const otherRoom = world.createEntity('other room', 'room');
-      world.moveEntity(button.id, otherRoom.id);
-      
-      const command = createCommand(
-        IFActions.PUSHING,
-        { entity: button }
-      );
-      const context = createRealTestContext(pushingAction, world, command);
-      
-      const events = pushingAction.execute(context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_visible'),
-        params: { target: 'red button' }
-      });
-    });
-
-    test('should fail when target is not reachable', () => {
-      const { world, player, room } = setupBasicWorld();
-      const boulder = world.createEntity('large boulder', 'object');
-      boulder.add({
-        type: TraitType.PUSHABLE,
-        pushType: 'moveable'
-      });
-      boulder.add({
-        type: TraitType.IDENTITY,
-        name: 'large boulder',
-        position: { x: 0, y: 5, z: 0 } // High up
-      });
-      
-      world.moveEntity(boulder.id, room.id);
-      
-      const command = createCommand(
-        IFActions.PUSHING,
-        { entity: boulder }
-      );
-      const context = createRealTestContext(pushingAction, world, command);
-      
-      const events = pushingAction.execute(context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_visible'),
-        params: { target: 'large boulder' }
-      });
-    });
 
     test('should fail when pushing worn items', () => {
       const { world, player } = setupBasicWorld();

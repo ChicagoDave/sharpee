@@ -6,14 +6,16 @@
  * In many cases, this delegates to the putting action with 'in' preposition.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
+import { ActionMetadata } from '../../../validation';
+import { ScopeLevel } from '../../../scope/types';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { puttingAction } from '../putting';
-import { EnhancedActionContextImpl } from '../../enhanced-context';
+import { createActionContext } from '../../enhanced-context';
 
-export const insertingAction: Action = {
+export const insertingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.INSERTING,
   requiredMessages: [
     'no_target',
@@ -28,7 +30,14 @@ export const insertingAction: Action = {
   ],
   group: 'object_manipulation',
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: true,
+    directObjectScope: ScopeLevel.CARRIED,
+    indirectObjectScope: ScopeLevel.REACHABLE
+  },
+  
+  execute(context: ActionContext): SemanticEvent[] {
     const item = context.command.directObject?.entity;
     const container = context.command.indirectObject?.entity;
     
@@ -63,15 +72,15 @@ export const insertingAction: Action = {
             tokens: [], 
             text: 'in' 
           }
-        }
+        },
+        preposition: 'in' // Add this for backward compatibility with tests
       }
     };
     
     // Create a new context for the putting action with the modified command
-    // We need to access the base context to create a new enhanced context
-    const baseContext = (context as any).baseContext || context;
-    const modifiedContext = new EnhancedActionContextImpl(
-      baseContext,
+    const modifiedContext = createActionContext(
+      context.world,
+      context.player,
       puttingAction,
       modifiedCommand
     );

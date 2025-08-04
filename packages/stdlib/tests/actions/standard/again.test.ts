@@ -2,16 +2,17 @@
  * Tests for the AGAIN action
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach } from 'vitest';
 import { againAction } from '../../../src/actions/standard/again';
 import { IFActions } from '../../../src/actions/constants';
-import { StandardCapabilities, WorldModel, IFEntity } from '@sharpee/world-model';
+import { StandardCapabilities, WorldModel, IFEntity, TraitType } from '@sharpee/world-model';
 import { CommandHistoryData, registerStandardCapabilities } from '../../../src/capabilities';
-import { createTestContext, createCommand } from '../../test-utils';
+import { createRealTestContext, createCommand } from '../../test-utils';
 
 describe('AGAIN Action', () => {
   let world: WorldModel;
   let player: IFEntity;
+  let room: IFEntity;
 
   beforeEach(() => {
     // Create world with command history capability
@@ -21,6 +22,11 @@ describe('AGAIN Action', () => {
     // Create basic entities for context
     player = world.createEntity('Player', 'actor');
     world.setPlayer(player.id);
+    
+    // Create a room for the player to be in
+    room = world.createEntity('Test Room', 'room');
+    room.add({ type: TraitType.ROOM });
+    world.moveEntity(player.id, room.id);
   });
 
   const setCommandHistory = (historyData: CommandHistoryData) => {
@@ -46,13 +52,13 @@ describe('AGAIN Action', () => {
 
   describe('execute', () => {
     test('should fail when no command history exists', () => {
-      const command = createCommand({ action: 'again' });
-      const context = createTestContext(againAction, world, command);
+      const command = createCommand(IFActions.AGAIN);
+      const context = createRealTestContext(againAction, world, command);
       
       const events = againAction.execute(context);
       
       expect(events).toHaveLength(1);
-      const errorEvent = events.find(e => e.type === 'message.error');
+      const errorEvent = events.find(e => e.type === 'action.error');
       expect(errorEvent).toBeDefined();
       expect(errorEvent?.data.messageId).toBe('no_command_to_repeat');
     });
@@ -63,13 +69,13 @@ describe('AGAIN Action', () => {
       };
       setCommandHistory(historyData);
       
-      const command = createCommand({ action: 'again' });
-      const context = createTestContext(againAction, world, command);
+      const command = createCommand(IFActions.AGAIN);
+      const context = createRealTestContext(againAction, world, command);
       
       const events = againAction.execute(context);
       
       expect(events).toHaveLength(1);
-      const errorEvent = events.find(e => e.type === 'message.error');
+      const errorEvent = events.find(e => e.type === 'action.error');
       expect(errorEvent?.data.messageId).toBe('no_command_to_repeat');
     });
 
@@ -86,8 +92,8 @@ describe('AGAIN Action', () => {
       };
       setCommandHistory(historyData);
       
-      const command = createCommand({ action: 'again' });
-      const context = createTestContext(againAction, world, command);
+      const command = createCommand(IFActions.AGAIN);
+      const context = createRealTestContext(againAction, world, command);
       
       const events = againAction.execute(context);
       
@@ -115,8 +121,8 @@ describe('AGAIN Action', () => {
       };
       setCommandHistory(historyData);
       
-      const command = createCommand({ action: 'again' });
-      const context = createTestContext(againAction, world, command);
+      const command = createCommand(IFActions.AGAIN);
+      const context = createRealTestContext(againAction, world, command);
       
       const events = againAction.execute(context);
       
@@ -137,8 +143,8 @@ describe('AGAIN Action', () => {
       };
       setCommandHistory(historyData);
       
-      const command = createCommand({ action: 'again' });
-      const context = createTestContext(againAction, world, command);
+      const command = createCommand(IFActions.AGAIN);
+      const context = createRealTestContext(againAction, world, command);
       
       const events = againAction.execute(context);
       
@@ -160,13 +166,13 @@ describe('AGAIN Action', () => {
       };
       setCommandHistory(historyData);
       
-      const command = createCommand({ action: 'again' });
-      const context = createTestContext(againAction, world, command);
+      const command = createCommand(IFActions.AGAIN);
+      const context = createRealTestContext(againAction, world, command);
       
       const events = againAction.execute(context);
       
       expect(events).toHaveLength(1);
-      const errorEvent = events.find(e => e.type === 'message.error');
+      const errorEvent = events.find(e => e.type === 'action.error');
       expect(errorEvent?.data.messageId).toBe('cant_repeat_again');
     });
 
@@ -182,13 +188,13 @@ describe('AGAIN Action', () => {
       };
       setCommandHistory(historyData);
       
-      const command = createCommand({ action: 'again' });
-      const context = createTestContext(againAction, world, command);
+      const command = createCommand(IFActions.AGAIN);
+      const context = createRealTestContext(againAction, world, command);
       
       const events = againAction.execute(context);
       
       expect(events).toHaveLength(1);
-      const errorEvent = events.find(e => e.type === 'message.error');
+      const errorEvent = events.find(e => e.type === 'action.error');
       expect(errorEvent?.data.messageId).toBe('cant_repeat_meta');
       expect(errorEvent?.data.params).toEqual({ action: 'save' });
     });
@@ -205,13 +211,13 @@ describe('AGAIN Action', () => {
       };
       setCommandHistory(historyData);
       
-      const command = createCommand({ action: 'again' });
-      const context = createTestContext(againAction, world, command);
+      const command = createCommand(IFActions.AGAIN);
+      const context = createRealTestContext(againAction, world, command);
       
       const events = againAction.execute(context);
       
       expect(events).toHaveLength(1);
-      const errorEvent = events.find(e => e.type === 'message.error');
+      const errorEvent = events.find(e => e.type === 'action.error');
       expect(errorEvent?.data.messageId).toBe('cant_repeat_meta');
       expect(errorEvent?.data.params).toEqual({ action: 'restore' });
     });
@@ -228,13 +234,13 @@ describe('AGAIN Action', () => {
       };
       setCommandHistory(historyData);
       
-      const command = createCommand({ action: 'again' });
-      const context = createTestContext(againAction, world, command);
+      const command = createCommand(IFActions.AGAIN);
+      const context = createRealTestContext(againAction, world, command);
       
       const events = againAction.execute(context);
       
       expect(events).toHaveLength(1);
-      const errorEvent = events.find(e => e.type === 'message.error');
+      const errorEvent = events.find(e => e.type === 'action.error');
       expect(errorEvent?.data.messageId).toBe('cant_repeat_meta');
       expect(errorEvent?.data.params).toEqual({ action: 'quit' });
     });
@@ -251,13 +257,13 @@ describe('AGAIN Action', () => {
       };
       setCommandHistory(historyData);
       
-      const command = createCommand({ action: 'again' });
-      const context = createTestContext(againAction, world, command);
+      const command = createCommand(IFActions.AGAIN);
+      const context = createRealTestContext(againAction, world, command);
       
       const events = againAction.execute(context);
       
       expect(events).toHaveLength(1);
-      const errorEvent = events.find(e => e.type === 'message.error');
+      const errorEvent = events.find(e => e.type === 'action.error');
       expect(errorEvent?.data.messageId).toBe('cant_repeat_meta');
       expect(errorEvent?.data.params).toEqual({ action: 'restart' });
     });
@@ -274,13 +280,13 @@ describe('AGAIN Action', () => {
       };
       setCommandHistory(historyData);
       
-      const command = createCommand({ action: 'again' });
-      const context = createTestContext(againAction, world, command);
+      const command = createCommand(IFActions.AGAIN);
+      const context = createRealTestContext(againAction, world, command);
       
       const events = againAction.execute(context);
       
       expect(events).toHaveLength(1);
-      const errorEvent = events.find(e => e.type === 'message.error');
+      const errorEvent = events.find(e => e.type === 'action.error');
       expect(errorEvent?.data.messageId).toBe('cant_repeat_meta');
       expect(errorEvent?.data.params).toEqual({ action: 'version' });
     });
@@ -297,13 +303,13 @@ describe('AGAIN Action', () => {
       };
       setCommandHistory(historyData);
       
-      const command = createCommand({ action: 'again' });
-      const context = createTestContext(againAction, world, command);
+      const command = createCommand(IFActions.AGAIN);
+      const context = createRealTestContext(againAction, world, command);
       
       const events = againAction.execute(context);
       
       expect(events).toHaveLength(1);
-      const errorEvent = events.find(e => e.type === 'message.error');
+      const errorEvent = events.find(e => e.type === 'action.error');
       expect(errorEvent?.data.messageId).toBe('cant_repeat_meta');
       expect(errorEvent?.data.params).toEqual({ action: 'verify' });
     });
@@ -329,8 +335,8 @@ describe('AGAIN Action', () => {
       };
       setCommandHistory(historyData);
       
-      const command = createCommand({ action: 'again' });
-      const context = createTestContext(againAction, world, command);
+      const command = createCommand(IFActions.AGAIN);
+      const context = createRealTestContext(againAction, world, command);
       
       const events = againAction.execute(context);
       
@@ -357,8 +363,8 @@ describe('AGAIN Action', () => {
       };
       setCommandHistory(historyData);
       
-      const command = createCommand({ action: 'again' });
-      const context = createTestContext(againAction, world, command);
+      const command = createCommand(IFActions.AGAIN);
+      const context = createRealTestContext(againAction, world, command);
       
       const events = againAction.execute(context);
       

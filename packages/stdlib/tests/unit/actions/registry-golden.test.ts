@@ -4,7 +4,7 @@
  * Tests the action registry with the real English language provider
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach } from 'vitest';
 import { StandardActionRegistry } from '../../../src/actions/registry';
 import EnglishLanguageProvider from '@sharpee/lang-en-us';
 import type { Action } from '../../../src/actions/enhanced-types';
@@ -185,8 +185,10 @@ describe('StandardActionRegistry (Golden Pattern)', () => {
       registry.register(lookingAction);
       
       // Pattern lookup is case-insensitive
-      expect(registry.findByPattern('LOOK [around]')).toContainEqual(lookingAction);
-      expect(registry.findByPattern('look [around]')).toContainEqual(lookingAction);
+      expect(registry.findByPattern('LOOK')).toContainEqual(lookingAction);
+      expect(registry.findByPattern('look')).toContainEqual(lookingAction);
+      expect(registry.findByPattern('LOOK AROUND')).toContainEqual(lookingAction);
+      expect(registry.findByPattern('look around')).toContainEqual(lookingAction);
     });
 
     test('should return empty array for unknown patterns', () => {

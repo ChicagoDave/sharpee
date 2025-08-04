@@ -8,7 +8,7 @@
  * - Handle both containers and supporters
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach } from 'vitest';
 import { removingAction } from '../../../src/actions/standard/removing';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel } from '@sharpee/world-model';
@@ -19,7 +19,7 @@ import {
   TestData,
   createCommand
 } from '../../test-utils';
-import type { EnhancedActionContext } from '../../../src/actions/enhanced-types';
+import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('removingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -159,11 +159,15 @@ describe('removingAction (Golden Pattern)', () => {
       chest.add({ type: TraitType.CONTAINER });
       chest.add({ 
         type: TraitType.OPENABLE,
-        isOpen: false  // Closed
+        isOpen: true  // Start open to allow placing gem
       });
       
       world.moveEntity(chest.id, room.id);
       world.moveEntity(gem.id, chest.id);  // Gem in chest
+      
+      // Now close the container
+      const openableTrait = chest.get(TraitType.OPENABLE);
+      (openableTrait as any).isOpen = false;
       
       const context = createRealTestContext(removingAction, world, createCommand(IFActions.REMOVING, {
         entity: gem,
@@ -205,8 +209,9 @@ describe('removingAction (Golden Pattern)', () => {
       
       // Should emit TAKEN event (same as taking)
       expectEvent(events, 'if.event.taken', {
-        itemId: coin.id,
+        item: 'silver coin',
         fromLocation: box.id,
+        container: 'small box',
         fromContainer: true,
         fromSupporter: false
       });
@@ -240,8 +245,9 @@ describe('removingAction (Golden Pattern)', () => {
       const events = removingAction.execute(context);
       
       expectEvent(events, 'if.event.taken', {
-        itemId: apple.id,
+        item: 'red apple',
         fromLocation: basket.id,
+        container: 'wicker basket',
         fromContainer: true
       });
     });
@@ -265,8 +271,9 @@ describe('removingAction (Golden Pattern)', () => {
       const events = removingAction.execute(context);
       
       expectEvent(events, 'if.event.taken', {
-        itemId: lamp.id,
+        item: 'desk lamp',
         fromLocation: desk.id,
+        container: 'wooden desk',
         fromContainer: false,
         fromSupporter: true
       });
@@ -336,7 +343,10 @@ describe('removingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'action.success', {
         messageId: expect.stringContaining('removed_from'),
-        params: { container: 'writing desk' }
+        params: { 
+          item: 'fountain pen',
+          container: 'writing desk' 
+        }
       });
     });
   });
@@ -376,7 +386,7 @@ describe('Removing Action Edge Cases', () => {
     const { world, player, room } = setupBasicWorld();
     
     const marble = world.createEntity('glass marble', 'object');
-    const jar = world.createEntity('glass jar', 'object');
+    const jar = world.createEntity('empty jar', 'object');
     jar.add({ type: TraitType.CONTAINER });
     
     world.moveEntity(jar.id, room.id);
@@ -393,15 +403,17 @@ describe('Removing Action Edge Cases', () => {
     const events = removingAction.execute(context);
     
     expectEvent(events, 'if.event.taken', {
-      itemId: marble.id,
-      fromLocation: jar.id
+      item: 'glass marble',
+      fromLocation: jar.id,
+      container: 'empty jar',
+      fromContainer: true
     });
   });
 
   test('should handle nested containers', () => {
     const { world, player, room } = setupBasicWorld();
     
-    const coin = world.createEntity('ancient coin', 'object');
+    const coin = world.createEntity('silver coin', 'object');
     const pouch = world.createEntity('leather pouch', 'object');
     pouch.add({ type: TraitType.CONTAINER });
     const chest = world.createEntity('treasure chest', 'object');
@@ -421,13 +433,15 @@ describe('Removing Action Edge Cases', () => {
     
     // Should remove from immediate container (pouch)
     expectEvent(events, 'if.event.taken', {
-      itemId: coin.id,
-      fromLocation: pouch.id
+      item: 'silver coin',
+      fromLocation: pouch.id,
+      container: 'leather pouch',
+      fromContainer: true
     });
     
     expectEvent(events, 'action.success', {
       params: { 
-        item: 'ancient coin',
+        item: 'silver coin',
         container: 'leather pouch'
       }
     });

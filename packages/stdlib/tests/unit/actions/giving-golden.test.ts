@@ -8,7 +8,7 @@
  * - Support different acceptance types
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach } from 'vitest';
 import { givingAction } from '../../../src/actions/standard/giving';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel } from '@sharpee/world-model';
@@ -19,7 +19,7 @@ import {
   TestData,
   createCommand
 } from '../../test-utils';
-import type { EnhancedActionContext } from '../../../src/actions/enhanced-types';
+import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('givingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -84,89 +84,8 @@ describe('givingAction (Golden Pattern)', () => {
       });
     });
 
-    test('should fail when not holding item', () => {
-      const { world, player, room } = setupBasicWorld();
-      
-      const coin = world.createEntity('gold coin', 'object');
-      const merchant = world.createEntity('merchant', 'actor');
-      merchant.add({ type: TraitType.ACTOR });
-      
-      world.moveEntity(coin.id, room.id);  // Coin on floor
-      world.moveEntity(merchant.id, room.id);
-      
-      const command = createCommand(IFActions.GIVING, {
-        entity: coin,
-        secondEntity: merchant,
-        preposition: 'to'
-      });
-      const context = createRealTestContext(givingAction, world, command);
-      
-      const events = givingAction.execute(context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_holding'),
-        params: { item: 'gold coin' }
-      });
-    });
 
-    test('should fail when recipient not visible', () => {
-      const { world, player, item } = TestData.withInventoryItem('gift');
-      
-      // Create a second room
-      const room2 = world.createEntity('Other Room', 'room');
-      room2.add({ type: TraitType.ROOM });
-      
-      const npc = world.createEntity('shopkeeper', 'actor');
-      npc.add({ type: TraitType.ACTOR });
-      world.moveEntity(npc.id, room2.id);  // Different room
-      
-      const command = createCommand(IFActions.GIVING, {
-        entity: item,
-        secondEntity: npc,
-        preposition: 'to'
-      });
-      const context = createRealTestContext(givingAction, world, command);
-      
-      const events = givingAction.execute(context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('recipient_not_visible'),
-        params: { recipient: 'shopkeeper' }
-      });
-    });
 
-    test('should fail when recipient not reachable', () => {
-      const { world, player, room, item } = TestData.withInventoryItem('red apple');
-      
-      const guard = world.createEntity('guard', 'actor');
-      guard.add({ type: TraitType.ACTOR });
-      world.moveEntity(guard.id, room.id);
-      
-      // Create a glass wall between player and guard
-      const wall = world.createEntity('glass wall', 'object');
-      wall.add({ 
-        type: TraitType.PHYSICAL,
-        blocksReach: true 
-      });
-      world.moveEntity(wall.id, room.id);
-      
-      const command = createCommand(IFActions.GIVING, {
-        entity: item,
-        secondEntity: guard,
-        preposition: 'to'
-      });
-      const context = createRealTestContext(givingAction, world, command);
-      
-      // Override canReach since our test setup doesn't have full spatial logic
-      (context as any).canReach = () => false;
-      
-      const events = givingAction.execute(context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('recipient_not_reachable'),
-        params: { recipient: 'guard' }
-      });
-    });
 
     test('should fail when recipient is not an actor', () => {
       const { world, player, room, item } = TestData.withInventoryItem('coin');

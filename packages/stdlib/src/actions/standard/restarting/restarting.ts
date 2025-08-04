@@ -5,12 +5,13 @@
  * The engine will handle any necessary confirmations through its restart hook.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent, createRestartRequestedEvent, RestartContext } from '@sharpee/core';
 import { IFActions } from '../../constants';
+import { ActionMetadata } from '../../../validation';
 import { RestartRequestedEventData } from './restarting-events';
 
-export const restartingAction: Action = {
+export const restartingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.RESTARTING,
   requiredMessages: [
     // Confirmation messages
@@ -23,7 +24,7 @@ export const restartingAction: Action = {
     'new_game'
   ],
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const events: SemanticEvent[] = [];
     
     // Get game state for context
@@ -84,5 +85,10 @@ export const restartingAction: Action = {
     return events;
   },
   
-  group: "meta"
+  group: "meta",
+  
+  metadata: {
+    requiresDirectObject: false,
+    requiresIndirectObject: false
+  }
 };

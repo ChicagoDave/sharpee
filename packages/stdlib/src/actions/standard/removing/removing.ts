@@ -5,13 +5,15 @@
  * It's essentially a targeted form of taking.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
+import { ActionMetadata } from '../../../validation';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { ScopeLevel } from '../../../scope';
 import { RemovingEventMap } from './removing-events';
 
-export const removingAction: Action = {
+export const removingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.REMOVING,
   requiredMessages: [
     'no_target',
@@ -26,7 +28,7 @@ export const removingAction: Action = {
   ],
   group: 'object_manipulation',
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const item = context.command.directObject?.entity;
     const source = context.command.indirectObject?.entity;
@@ -50,9 +52,22 @@ export const removingAction: Action = {
       })];
     }
     
-    // Check if the item is actually in/on the source
+    // Scope checks handled by framework due to directObjectScope: REACHABLE
+    
     const itemLocation = context.world.getLocation(item.id);
-    if (itemLocation !== source.id) {
+    
+    // Check if player already has the item
+    if (itemLocation === actor.id) {
+      return [context.event('action.error', {
+        actionId: context.action.id,
+        messageId: 'already_have',
+        reason: 'already_have',
+        params: { item: item.name }
+      })];
+    }
+    
+    // Check if the item is actually in/on the source
+    if (!itemLocation || itemLocation !== source.id) {
       if (source.has(TraitType.CONTAINER)) {
         return [context.event('action.error', {
         actionId: context.action.id,
@@ -86,16 +101,6 @@ export const removingAction: Action = {
       }
     }
     
-    // Check if player already has the item (shouldn't happen, but safety check)
-    if (itemLocation === actor.id) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'already_have',
-        reason: 'already_have',
-        params: { item: item.name }
-      })];
-    }
-    
     // Container-specific checks
     if (source.has(TraitType.CONTAINER)) {
       // Check if container is open
@@ -103,11 +108,11 @@ export const removingAction: Action = {
         const openableTrait = source.get(TraitType.OPENABLE);
         if (openableTrait && !(openableTrait as any).isOpen) {
           return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'container_closed',
-        reason: 'container_closed',
-        params: { container: source.name }
-      })];
+            actionId: context.action.id,
+            messageId: 'container_closed',
+            reason: 'container_closed',
+            params: { container: source.name }
+          })];
         }
       }
     }
@@ -134,7 +139,7 @@ export const removingAction: Action = {
       fromLocation: source.id,
       container: source.name,
       fromContainer: source.has(TraitType.CONTAINER),
-      fromSupporter: source.has(TraitType.SUPPORTER)
+      fromSupporter: source.has(TraitType.SUPPORTER) && !source.has(TraitType.CONTAINER)
     };
     
     events.push(context.event('if.event.taken', takenData));
@@ -147,5 +152,11 @@ export const removingAction: Action = {
       }));
     
     return events;
+  },
+  
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: true,
+    directObjectScope: ScopeLevel.REACHABLE
   }
 };

@@ -5,13 +5,15 @@
  * It validates layering rules and provides appropriate feedback.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
+import { ActionMetadata } from '../../../validation';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType, WearableTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { ScopeLevel } from '../../../scope';
 import { RemovedEventData } from './taking-off-events';
 
-export const takingOffAction: Action = {
+export const takingOffAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.TAKING_OFF,
   requiredMessages: [
     'no_target',
@@ -22,7 +24,7 @@ export const takingOffAction: Action = {
   ],
   group: 'wearable_manipulation',
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const item = context.command.directObject?.entity;
     
@@ -35,16 +37,7 @@ export const takingOffAction: Action = {
       })];
     }
     
-    // Check if item is on the actor
-    const itemLocation = context.world.getLocation?.(item.id);
-    if (itemLocation !== actor.id) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_wearing',
-        reason: 'not_wearing',
-        params: { item: item.name }
-      })];
-    }
+    // Scope checks handled by framework due to directObjectScope: CARRIED
     
     // Check if item is wearable
     if (!item.has(TraitType.WEARABLE)) {
@@ -133,5 +126,11 @@ export const takingOffAction: Action = {
       }));
     
     return events;
+  },
+  
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.CARRIED
   }
 };

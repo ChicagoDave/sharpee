@@ -5,13 +5,15 @@
  * or from specific objects.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
+import { ActionMetadata } from '../../../validation';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { ScopeLevel } from '../../../scope';
 import { ListenedEventData } from './listening-events';
 
-export const listeningAction: Action = {
+export const listeningAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.LISTENING,
   requiredMessages: [
     'not_visible',
@@ -27,21 +29,11 @@ export const listeningAction: Action = {
     'listened_environment'
   ],
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const target = context.command.directObject?.entity;
     
-    // If target specified, check visibility
-    if (target) {
-      if (!context.canSee(target)) {
-        return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_visible',
-        reason: 'not_visible',
-        params: { target: target.name }
-      })];
-      }
-    }
+    // Scope checks handled by framework due to directObjectScope: AUDIBLE
     
     // Build event data
     const eventData: ListenedEventData = {};
@@ -134,5 +126,11 @@ export const listeningAction: Action = {
     return events;
   },
   
-  group: "sensory"
+  group: "sensory",
+  
+  metadata: {
+    requiresDirectObject: false,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.AUDIBLE
+  }
 };

@@ -1,1 +1,0 @@
-cd /mnt/c/repotemp/sharpee/packages/stdlib && pnpm build 2>&1

@@ -7,7 +7,7 @@
  * UPDATED: Uses new simplified context.event() method (ADR-041)
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
@@ -15,8 +15,10 @@ import { IFActions } from '../../constants';
 // Import our payload types
 import { ClosedEventData } from './closing-event-data';
 import { PreventsClosingErrorData } from './closing-error-prevents-closing';
+import { ActionMetadata } from '../../../validation';
+import { ScopeLevel } from '../../../scope/types';
 
-export const closingAction: Action = {
+export const closingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.CLOSING,
   requiredMessages: [
     'no_target',
@@ -26,9 +28,14 @@ export const closingAction: Action = {
     'cant_reach',
     'prevents_closing'
   ],
+  metadata: {
+    requiresDirectObject: true,
+    requiresIndirectObject: false,
+    directObjectScope: ScopeLevel.REACHABLE
+  },
   group: 'container_manipulation',
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const noun = context.command.directObject?.entity;
     

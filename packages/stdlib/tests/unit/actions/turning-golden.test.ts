@@ -10,7 +10,7 @@
  * - Distinguish between turnable and fixed objects
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { turningAction } from '../../../src/actions/standard/turning';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel, TurnableTrait } from '@sharpee/world-model';
@@ -21,7 +21,7 @@ import {
   createCommand,
   setupBasicWorld
 } from '../../test-utils';
-import type { EnhancedActionContext } from '../../../src/actions/enhanced-types';
+import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('turningAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {

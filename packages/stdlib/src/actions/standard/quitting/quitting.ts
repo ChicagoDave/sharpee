@@ -5,12 +5,13 @@
  * The engine will handle any necessary confirmations through its quit hook.
  */
 
-import { Action, EnhancedActionContext } from '../../enhanced-types';
+import { Action, ActionContext } from '../../enhanced-types';
 import { SemanticEvent, createQuitRequestedEvent, QuitContext } from '@sharpee/core';
 import { IFActions } from '../../constants';
+import { ActionMetadata } from '../../../validation';
 import { QuitRequestedEventData } from './quitting-events';
 
-export const quittingAction: Action = {
+export const quittingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.QUITTING,
   requiredMessages: [
     // Query messages
@@ -22,7 +23,7 @@ export const quittingAction: Action = {
     'game_ending'
   ],
   
-  execute(context: EnhancedActionContext): SemanticEvent[] {
+  execute(context: ActionContext): SemanticEvent[] {
     const events: SemanticEvent[] = [];
     
     // Get game state for context
@@ -83,5 +84,10 @@ export const quittingAction: Action = {
     return events;
   },
   
-  group: "meta"
+  group: "meta",
+  
+  metadata: {
+    requiresDirectObject: false,
+    requiresIndirectObject: false
+  }
 };

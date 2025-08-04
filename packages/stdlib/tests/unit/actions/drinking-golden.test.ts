@@ -9,7 +9,7 @@
  * - Support implicit taking when item is in room
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach } from 'vitest';
 import { drinkingAction } from '../../../src/actions/standard/drinking';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType } from '@sharpee/world-model';
@@ -20,7 +20,7 @@ import {
   createCommand,
   setupBasicWorld
 } from '../../test-utils';
-import type { EnhancedActionContext } from '../../../src/actions/enhanced-types';
+import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('drinkingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -59,67 +59,6 @@ describe('drinkingAction (Golden Pattern)', () => {
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_item'),
         reason: 'no_item'
-      });
-    });
-
-    test('should fail when item is not visible', () => {
-      const { world, player, room } = setupBasicWorld();
-      
-      // Create water in a different room
-      const otherRoom = world.createEntity('Other Room', 'room');
-      otherRoom.add({ type: TraitType.ROOM });
-      
-      const water = world.createEntity('glass of water', 'object');
-      water.add({
-        type: TraitType.EDIBLE,
-        consumed: false,
-        isDrink: true
-      });
-      world.moveEntity(water.id, otherRoom.id);
-      
-      const command = createCommand(IFActions.DRINKING, {
-        entity: water
-      });
-      const context = createRealTestContext(drinkingAction, world, command);
-      
-      const events = drinkingAction.execute(context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_visible'),
-        params: { item: 'glass of water' }
-      });
-    });
-
-    test('should fail when item is not reachable', () => {
-      const { world, player, room } = setupBasicWorld();
-      
-      // Create juice in a closed container
-      const box = world.createEntity('closed box', 'container');
-      box.add({ type: TraitType.CONTAINER });
-      box.add({ 
-        type: TraitType.OPENABLE,
-        isOpen: false 
-      });
-      world.moveEntity(box.id, room.id);
-      
-      const juice = world.createEntity('orange juice', 'object');
-      juice.add({
-        type: TraitType.EDIBLE,
-        consumed: false,
-        isDrink: true
-      });
-      world.moveEntity(juice.id, box.id);
-      
-      const command = createCommand(IFActions.DRINKING, {
-        entity: juice
-      });
-      const context = createRealTestContext(drinkingAction, world, command);
-      
-      const events = drinkingAction.execute(context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_visible'),
-        params: { item: 'orange juice' }
       });
     });
 
