@@ -3,7 +3,7 @@
  */
 
 import { describe, test, expect, beforeEach, vi } from 'vitest';
-import { WorldModel, TraitType } from '@sharpee/world-model';
+import { WorldModel, TraitType, EntityType } from '@sharpee/world-model';
 import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
 import { StandardWitnessSystem } from '../../../src/scope/witness-system';
 import { StateChange, WitnessLevel, SenseType } from '../../../src/scope/types';
@@ -30,14 +30,14 @@ describe('StandardWitnessSystem', () => {
     witnessSystem = new StandardWitnessSystem(world, scopeResolver);
 
     // Create basic test world
-    room = world.createEntity('Test Room', 'room');
+    room = world.createEntity('Test Room', EntityType.ROOM);
     room.add({ type: TraitType.ROOM });
 
-    player = world.createEntity('Player', 'actor');
+    player = world.createEntity('Player', EntityType.ACTOR);
     player.add({ type: TraitType.ACTOR, isPlayer: true });
     player.add({ type: TraitType.CONTAINER });
     
-    npc = world.createEntity('Bob', 'actor');
+    npc = world.createEntity('Bob', EntityType.ACTOR);
     npc.add({ type: TraitType.ACTOR, isPlayer: false });
     npc.add({ type: TraitType.CONTAINER });
     
@@ -48,7 +48,7 @@ describe('StandardWitnessSystem', () => {
 
   describe('Basic Witnessing', () => {
     test('should record witnesses for movement in same room', () => {
-      const ball = world.createEntity('red ball', 'thing');
+      const ball = world.createEntity('red ball', EntityType.OBJECT);
       world.moveEntity(ball.id, room.id);
 
       const change: StateChange = {
@@ -72,7 +72,7 @@ describe('StandardWitnessSystem', () => {
     });
 
     test('should not record actor as witness of their own action', () => {
-      const ball = world.createEntity('red ball', 'thing');
+      const ball = world.createEntity('red ball', EntityType.OBJECT);
       world.moveEntity(ball.id, room.id);
 
       const change: StateChange = {
@@ -91,13 +91,13 @@ describe('StandardWitnessSystem', () => {
     });
 
     test('should not witness events in different rooms', () => {
-      const otherRoom = world.createEntity('Other Room', 'room');
+      const otherRoom = world.createEntity('Other Room', EntityType.ROOM);
       otherRoom.add({ type: TraitType.ROOM });
       
       // Move NPC to other room
       world.moveEntity(npc.id, otherRoom.id);
       
-      const ball = world.createEntity('red ball', 'thing');
+      const ball = world.createEntity('red ball', EntityType.OBJECT);
       world.moveEntity(ball.id, room.id);
 
       const change: StateChange = {
@@ -118,7 +118,7 @@ describe('StandardWitnessSystem', () => {
 
   describe('Knowledge Management', () => {
     test('should track discovered entities', () => {
-      const coin = world.createEntity('gold coin', 'thing');
+      const coin = world.createEntity('gold coin', EntityType.OBJECT);
       world.moveEntity(coin.id, room.id);
 
       // Player discovers the coin
@@ -140,7 +140,7 @@ describe('StandardWitnessSystem', () => {
     });
 
     test('should track entity movement history', () => {
-      const ball = world.createEntity('ball', 'thing');
+      const ball = world.createEntity('ball', EntityType.OBJECT);
       world.moveEntity(ball.id, room.id);
 
       // First movement
@@ -173,7 +173,7 @@ describe('StandardWitnessSystem', () => {
     });
 
     test('should update visual properties when witnessed', () => {
-      const door = world.createEntity('door', 'thing');
+      const door = world.createEntity('door', EntityType.DOOR);
       door.add({ type: TraitType.OPENABLE, isOpen: false });
       world.moveEntity(door.id, room.id);
 
@@ -196,7 +196,7 @@ describe('StandardWitnessSystem', () => {
     });
 
     test('should mark entities as non-existent when destroyed', () => {
-      const vase = world.createEntity('vase', 'thing');
+      const vase = world.createEntity('vase', EntityType.OBJECT);
       world.moveEntity(vase.id, room.id);
 
       // First, discover the vase
@@ -222,7 +222,7 @@ describe('StandardWitnessSystem', () => {
 
   describe('Witness Events', () => {
     test('should emit action witness event', () => {
-      const ball = world.createEntity('ball', 'thing');
+      const ball = world.createEntity('ball', EntityType.OBJECT);
       world.moveEntity(ball.id, room.id);
 
       const change: StateChange = {
@@ -259,7 +259,7 @@ describe('StandardWitnessSystem', () => {
     });
 
     test('should emit movement witness event', () => {
-      const ball = world.createEntity('ball', 'thing');
+      const ball = world.createEntity('ball', EntityType.OBJECT);
       world.moveEntity(ball.id, room.id);
 
       const change: StateChange = {
@@ -324,7 +324,7 @@ describe('StandardWitnessSystem', () => {
 
   describe('Witness Levels', () => {
     test('should assign FULL level when can reach', () => {
-      const ball = world.createEntity('ball', 'thing');
+      const ball = world.createEntity('ball', EntityType.OBJECT);
       world.moveEntity(ball.id, room.id);
 
       const change: StateChange = {
@@ -370,9 +370,9 @@ describe('StandardWitnessSystem', () => {
   describe('getKnownEntities', () => {
     test('should return all known entities for an actor', () => {
       // Create and witness multiple entities
-      const ball = world.createEntity('ball', 'thing');
-      const coin = world.createEntity('coin', 'thing');
-      const key = world.createEntity('key', 'thing');
+      const ball = world.createEntity('ball', EntityType.OBJECT);
+      const coin = world.createEntity('coin', EntityType.OBJECT);
+      const key = world.createEntity('key', EntityType.OBJECT);
       
       world.moveEntity(ball.id, room.id);
       world.moveEntity(coin.id, room.id);

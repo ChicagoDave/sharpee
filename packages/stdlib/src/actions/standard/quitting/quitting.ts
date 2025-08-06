@@ -58,6 +58,16 @@ export const quittingAction: Action & { metadata: ActionMetadata } = {
     const platformEvent = createQuitRequestedEvent(quitContext);
     events.push(platformEvent);
     
+    // Also emit a client.query event for the quit confirmation
+    // This allows the UI to show the query immediately
+    events.push(context.event('client.query', {
+      source: 'system',
+      type: 'quit_confirmation',
+      messageId: 'quit_confirm_query',
+      options: ['quit', 'cancel'],
+      context: quitContext
+    }));
+    
     // Emit a notification that quit was requested
     // The actual quit handling will be done by the platform
     const eventData: QuitRequestedEventData = {

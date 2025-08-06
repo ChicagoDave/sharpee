@@ -3,18 +3,18 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { WorldModel, TraitType } from '@sharpee/world-model';
+import { WorldModel, TraitType, EntityType } from '@sharpee/world-model';
 
 describe('World Model Debug', () => {
   it('should properly track entity locations', () => {
     const world = new WorldModel();
     
     // Create a room
-    const room = world.createEntity('Test Room', 'room');
+    const room = world.createEntity('Test Room', EntityType.ROOM);
     room.add({ type: TraitType.ROOM });
     
     // Create a player
-    const player = world.createEntity('player', 'actor');
+    const player = world.createEntity('player', EntityType.ACTOR);
     player.add({ type: TraitType.ACTOR, isPlayer: true });
     
     // Set player as the active player
@@ -50,13 +50,13 @@ describe('World Model Debug', () => {
   it('should track nested locations', () => {
     const world = new WorldModel();
     
-    const room = world.createEntity('Room', 'room');
+    const room = world.createEntity('Room', EntityType.ROOM);
     room.add({ type: TraitType.ROOM });
     
-    const box = world.createEntity('box', 'container');
+    const box = world.createEntity('box', EntityType.CONTAINER);
     box.add({ type: TraitType.CONTAINER, open: false });
     
-    const coin = world.createEntity('coin', 'thing');
+    const coin = world.createEntity('coin', EntityType.OBJECT);
     
     // Move box to room
     world.moveEntity(box.id, room.id);

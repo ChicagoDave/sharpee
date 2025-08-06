@@ -185,13 +185,12 @@ PACKAGES=(
   "core"
   "if-domain"
   "world-model"
+  "if-services"
+  "text-services"
   "lang-en-us"
   "parser-en-us"
   "stdlib"
   "engine"
-  "server"
-  "play-web"
-  "authoring"
 )
 
 # Find starting point

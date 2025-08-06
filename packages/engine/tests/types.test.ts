@@ -12,7 +12,7 @@ import {
   GameState,
   TimingData
 } from '../src/types';
-import { IFEntity, WorldModel, IdentityTrait } from '@sharpee/world-model';
+import { IFEntity, WorldModel, IdentityTrait, EntityType } from '@sharpee/world-model';
 
 describe('Types', () => {
   describe('GameEvent', () => {
@@ -185,7 +185,7 @@ describe('Types', () => {
   describe('GameContext', () => {
     it('should create valid game context', () => {
       const world = new WorldModel();
-      const player = world.createEntity('player', 'Player');
+      const player = world.createEntity('Player', EntityType.ACTOR);
       player.add(new IdentityTrait({ name: 'Player' }));
       
       const context: GameContext = {
@@ -206,7 +206,7 @@ describe('Types', () => {
 
     it('should support optional metadata fields', () => {
       const world = new WorldModel();
-      const player = world.createEntity('player', 'Player');
+      const player = world.createEntity('Player', EntityType.ACTOR);
       
       const context: GameContext = {
         currentTurn: 10,
@@ -229,7 +229,7 @@ describe('Types', () => {
 
     it('should maintain turn history', () => {
       const world = new WorldModel();
-      const player = world.createEntity('player', 'Player');
+      const player = world.createEntity('Player', EntityType.ACTOR);
       
       const history: TurnResult[] = [
         {
@@ -315,7 +315,7 @@ describe('Types', () => {
   describe('GameState', () => {
     it('should create valid game state', () => {
       const world = new WorldModel();
-      const player = world.createEntity('player', 'Player');
+      const player = world.createEntity('Player', EntityType.ACTOR);
       
       const context: GameContext = {
         currentTurn: 5,
@@ -344,7 +344,7 @@ describe('Types', () => {
 
     it('should preserve full context in save state', () => {
       const world = new WorldModel();
-      const player = world.createEntity('player', 'Player');
+      const player = world.createEntity('Player', EntityType.ACTOR);
       
       const context: GameContext = {
         currentTurn: 10,

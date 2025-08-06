@@ -2,13 +2,14 @@
  * Integration tests for Engine package using story-based testing
  */
 
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { 
   GameEngine, 
   createStandardEngine, 
   createEngineWithStory 
 } from '../src/game-engine';
 import { MinimalTestStory, ActionTestStory, CompletionTestStory, ComplexWorldTestStory } from './stories';
-import { MockTextChannel } from './fixtures';
+import { MockTextChannel } from './fixtures/index';
 import { TurnResult } from '../src/types';
 
 describe('Engine Integration Tests', () => {
@@ -25,7 +26,8 @@ describe('Engine Integration Tests', () => {
       });
       
       textChannel = new MockTextChannel();
-      engine.addTextChannel(textChannel);
+      // Note: addTextChannel method doesn't exist in current implementation
+      // Text service needs to be configured differently
     });
 
     it('should complete a full game session', async () => {
@@ -93,7 +95,7 @@ describe('Engine Integration Tests', () => {
       const completionStory = new CompletionTestStory();
       const completionEngine = await createEngineWithStory(completionStory);
       
-      const gameOverSpy = jest.fn();
+      const gameOverSpy = vi.fn();
       completionEngine.on('game:over', gameOverSpy);
       
       completionEngine.start();
@@ -262,7 +264,7 @@ describe('Engine Integration Tests', () => {
       
       const engine = await createEngineWithStory(story);
       const textChannel = new MockTextChannel();
-      engine.addTextChannel(textChannel);
+      // Note: addTextChannel method doesn't exist in current implementation
       
       engine.start();
       await engine.executeTurn('examine key');
@@ -284,7 +286,7 @@ describe('Engine Integration Tests', () => {
       engine.start();
       
       // Spy on vocabulary update after engine is started
-      const vocabSpy = jest.spyOn(engine, 'updateScopeVocabulary');
+      const vocabSpy = vi.spyOn(engine, 'updateScopeVocabulary');
       vocabSpy.mockClear(); // Clear any previous calls
       
       // Execute turn (which might change scope)
@@ -330,7 +332,7 @@ describe('Engine Integration Tests', () => {
       const story = new ComplexWorldTestStory();
       const engine = await createEngineWithStory(story);
       const textChannel = new MockTextChannel();
-      engine.addTextChannel(textChannel);
+      // Note: addTextChannel method doesn't exist in current implementation
       
       engine.start();
       
@@ -366,7 +368,7 @@ describe('Engine Integration Tests', () => {
       story.setTurnLimit(3);
       
       const engine = await createEngineWithStory(story);
-      const gameOverSpy = jest.fn();
+      const gameOverSpy = vi.fn();
       engine.on('game:over', gameOverSpy);
       
       engine.start();
@@ -388,7 +390,7 @@ describe('Engine Integration Tests', () => {
       story.setScoreCompletionThreshold(50);
       
       const engine = await createEngineWithStory(story);
-      const gameOverSpy = jest.fn();
+      const gameOverSpy = vi.fn();
       engine.on('game:over', gameOverSpy);
       
       engine.start();

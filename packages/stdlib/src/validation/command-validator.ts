@@ -333,7 +333,8 @@ export class CommandValidator implements CommandValidator {
     } else {
       // For other scopes, use targeted search by head noun
       // Look for entities by name, type, or synonym
-      candidates = this.getEntitiesByName(searchTerm);
+      const byName = this.getEntitiesByName(searchTerm);
+      candidates = byName;
       
       // Also check type matches
       const byType = this.getEntitiesByType(searchTerm);
@@ -342,6 +343,14 @@ export class CommandValidator implements CommandValidator {
       // And synonym matches
       const bySynonym = this.getEntitiesBySynonym(searchTerm);
       candidates.push(...bySynonym);
+      
+      this.emitDebugEvent('entity_search', command, {
+        searchTerm,
+        byName: byName.length,
+        byType: byType.length,
+        bySynonym: bySynonym.length,
+        totalBeforeDedupe: candidates.length
+      });
       
       // Remove duplicates
       const uniqueIds = new Set(candidates.map(e => e.id));
@@ -353,11 +362,32 @@ export class CommandValidator implements CommandValidator {
     // Now filter by scope
     const entitiesInScope = this.filterByScope(candidates, requiredScope);
     
+    // Get detailed scope information for all candidates
+    const candidateScopes: any[] = [];
+    const player = this.world.getPlayer();
+    if (player) {
+      for (const entity of candidates) {
+        const entityScope = this.scopeResolver.getScope(player, entity);
+        candidateScopes.push({
+          id: entity.id,
+          name: this.getEntityName(entity),
+          type: entity.type,
+          location: this.world.getLocation(entity.id),
+          scope: entityScope,
+          meetsRequired: this.filterByScope([entity], requiredScope).length > 0,
+          visible: this.isEntityVisible(entity),
+          reachable: this.isEntityReachable(entity),
+          touchable: this.isEntityTouchable(entity)
+        });
+      }
+    }
+    
     this.emitDebugEvent('scope_check', command, {
       objectType,
       requiredScope,
       totalCandidates: candidates.length,
       entitiesInScope: entitiesInScope.length,
+      candidateScopes,
       scopeDetails: entitiesInScope.map(e => ({
         id: e.id,
         name: this.getEntityName(e),
@@ -914,12 +944,13 @@ export class CommandValidator implements CommandValidator {
   private getEntitySynonyms(entity: IFEntity): string[] {
     const synonyms: string[] = [];
 
-    // Get identity trait
+    // Get identity trait  
+    // Note: Entities use 'aliases' not 'synonyms' (synonyms are for verbs)
     const identity = entity.get('identity');
-    if (identity && typeof identity === 'object' && 'synonyms' in identity) {
-      const syn = (identity as any).synonyms;
-      if (Array.isArray(syn)) {
-        synonyms.push(...syn.map(String));
+    if (identity && typeof identity === 'object' && 'aliases' in identity) {
+      const aliases = (identity as any).aliases;
+      if (Array.isArray(aliases)) {
+        synonyms.push(...aliases.map(String));
       }
     }
 
@@ -1002,7 +1033,7 @@ export class CommandValidator implements CommandValidator {
    * Emit a debug event
    */
   private emitDebugEvent(
-    debugType: 'entity_resolution' | 'scope_check' | 'ambiguity_resolution' | 'validation_error',
+    debugType: 'entity_resolution' | 'entity_search' | 'scope_check' | 'ambiguity_resolution' | 'validation_error',
     command: ParsedCommand,
     data: any
   ): void {

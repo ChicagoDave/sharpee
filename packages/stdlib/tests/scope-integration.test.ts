@@ -5,7 +5,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CommandValidator } from '../src/validation/command-validator';
 import { StandardActionRegistry } from '../src/actions/registry';
-import { WorldModel, AuthorModel, IFEntity, TraitType } from '@sharpee/world-model';
+import { WorldModel, AuthorModel, IFEntity, TraitType, EntityType } from '@sharpee/world-model';
 import { StandardScopeResolver } from '../src/scope/scope-resolver';
 import { takingAction } from '../src/actions/standard/taking/taking';
 import { throwingAction } from '../src/actions/standard/throwing/throwing';
@@ -29,10 +29,10 @@ describe('Scope Integration Tests', () => {
     validator = new CommandValidator(world, registry, scopeResolver);
     
     // Create test world using AuthorModel for setup
-    room = author.createEntity('Test Room', 'room');
+    room = author.createEntity('Test Room', EntityType.ROOM);
     room.add({ type: TraitType.ROOM });
     
-    player = author.createEntity('player', 'actor');
+    player = author.createEntity('player', EntityType.ACTOR);
     player.add({ type: TraitType.ACTOR, isPlayer: true });
     player.add({ type: TraitType.CONTAINER, capacity: { maxItems: 10 } });
     
@@ -52,13 +52,13 @@ describe('Scope Integration Tests', () => {
   describe('REACHABLE scope validation', () => {
     it('should fail when trying to take an object that is not reachable', () => {
       // Create a closed chest in the room (AuthorModel allows this)
-      const chest = author.createEntity('chest', 'container');
+      const chest = author.createEntity('chest', EntityType.CONTAINER);
       chest.add({ type: TraitType.CONTAINER });
       chest.add({ type: TraitType.OPENABLE, isOpen: false });
       author.moveEntity(chest.id, room.id);
       
       // Put gem in closed chest (AuthorModel allows this setup)
-      const gem = author.createEntity('gem', 'thing');
+      const gem = author.createEntity('gem', EntityType.OBJECT);
       author.moveEntity(gem.id, chest.id);
       
       const command = {
@@ -93,7 +93,7 @@ describe('Scope Integration Tests', () => {
     });
     
     it('should succeed when object is reachable', () => {
-      const coin = author.createEntity('coin', 'thing');
+      const coin = author.createEntity('coin', EntityType.OBJECT);
       author.moveEntity(coin.id, room.id);
       
       const command = {
@@ -120,10 +120,10 @@ describe('Scope Integration Tests', () => {
   
   describe('CARRIED scope validation', () => {
     it('should fail when trying to throw something not carried', () => {
-      const rock = author.createEntity('rock', 'thing');
+      const rock = author.createEntity('rock', EntityType.OBJECT);
       author.moveEntity(rock.id, room.id);
       
-      const target = author.createEntity('window', 'thing');
+      const target = author.createEntity('window', EntityType.OBJECT);
       author.moveEntity(target.id, room.id);
       
       const command = {
@@ -156,10 +156,10 @@ describe('Scope Integration Tests', () => {
     });
     
     it('should succeed when object is carried', () => {
-      const rock = author.createEntity('rock', 'thing');
+      const rock = author.createEntity('rock', EntityType.OBJECT);
       author.moveEntity(rock.id, player.id); // In player's inventory
       
-      const target = author.createEntity('window', 'thing');
+      const target = author.createEntity('window', EntityType.OBJECT);
       author.moveEntity(target.id, room.id);
       
       const command = {
@@ -193,17 +193,17 @@ describe('Scope Integration Tests', () => {
   
   describe('AUDIBLE scope validation', () => {
     it('should succeed when listening to something audible from another room', () => {
-      const nextRoom = author.createEntity('Next Room', 'room');
+      const nextRoom = author.createEntity('Next Room', EntityType.ROOM);
       nextRoom.add({ type: TraitType.ROOM });
       
       // Connect rooms with an open passage
-      const passage = author.createEntity('passage', 'door');
+      const passage = author.createEntity('passage', EntityType.DOOR);
       passage.add({ type: TraitType.DOOR, room1: room.id, room2: nextRoom.id });
       passage.add({ type: TraitType.OPENABLE, isOpen: true });
       author.moveEntity(passage.id, room.id);
       
       // Create a loud chime in the next room (avoiding "bell" vs "doorbell" confusion)
-      const chime = author.createEntity('chime', 'thing');
+      const chime = author.createEntity('chime', EntityType.OBJECT);
       // Don't override the identity trait - it's already set by createEntity
       const identity = chime.get(TraitType.IDENTITY);
       if (identity) {
@@ -238,17 +238,17 @@ describe('Scope Integration Tests', () => {
   
   describe('DETECTABLE scope validation', () => {
     it('should succeed when smelling something smelly from another room', () => {
-      const nextRoom = author.createEntity('Kitchen', 'room');
+      const nextRoom = author.createEntity('Kitchen', EntityType.ROOM);
       nextRoom.add({ type: TraitType.ROOM });
       
       // Connect rooms with open passage
-      const passage = author.createEntity('passage', 'door');
+      const passage = author.createEntity('passage', EntityType.DOOR);
       passage.add({ type: TraitType.DOOR, room1: room.id, room2: nextRoom.id });
       passage.add({ type: TraitType.OPENABLE, isOpen: true });
       author.moveEntity(passage.id, room.id);
       
       // Create smelly cheese in kitchen
-      const cheese = author.createEntity('cheese', 'thing');
+      const cheese = author.createEntity('cheese', EntityType.OBJECT);
       cheese.add({ type: TraitType.IDENTITY, name: 'cheese', customProperties: { smelly: true } });
       author.moveEntity(cheese.id, nextRoom.id);
       
@@ -274,17 +274,17 @@ describe('Scope Integration Tests', () => {
     });
     
     it('should fail when smelling something behind closed door', () => {
-      const nextRoom = author.createEntity('Kitchen', 'room');
+      const nextRoom = author.createEntity('Kitchen', EntityType.ROOM);
       nextRoom.add({ type: TraitType.ROOM });
       
       // Connect rooms with closed passage  
-      const passage = author.createEntity('passage', 'door');
+      const passage = author.createEntity('passage', EntityType.DOOR);
       passage.add({ type: TraitType.DOOR, room1: room.id, room2: nextRoom.id });
       passage.add({ type: TraitType.OPENABLE, isOpen: false });
       author.moveEntity(passage.id, room.id);
       
       // Create smelly cheese in kitchen
-      const cheese = author.createEntity('cheese', 'thing');
+      const cheese = author.createEntity('cheese', EntityType.OBJECT);
       cheese.add({ type: TraitType.IDENTITY, name: 'cheese', customProperties: { smelly: true } });
       author.moveEntity(cheese.id, nextRoom.id);
       
@@ -314,7 +314,7 @@ describe('Scope Integration Tests', () => {
   
   describe('Scope info in ValidatedCommand', () => {
     it('should include scope info in validated command', () => {
-      const coin = author.createEntity('coin', 'thing');
+      const coin = author.createEntity('coin', EntityType.OBJECT);
       author.moveEntity(coin.id, room.id);
       
       const command = {

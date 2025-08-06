@@ -4,7 +4,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { WorldModel, AuthorModel, TraitType, IFEntity } from '@sharpee/world-model';
+import { WorldModel, AuthorModel, TraitType, IFEntity, EntityType } from '@sharpee/world-model';
 import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
 import { ScopeLevel } from '../../../src/scope/types';
 
@@ -22,11 +22,11 @@ describe('Sensory Extensions', () => {
     resolver = new StandardScopeResolver(world);
 
     // Create test world using AuthorModel
-    room = author.createEntity('Living Room', 'room');
+    room = author.createEntity('Living Room', EntityType.ROOM);
     room.add({ type: TraitType.ROOM });
     room.add({ type: TraitType.IDENTITY, name: 'Living Room' });
 
-    hallway = author.createEntity('Hallway', 'room');
+    hallway = author.createEntity('Hallway', EntityType.ROOM);
     hallway.add({ type: TraitType.ROOM });
     hallway.add({ type: TraitType.IDENTITY, name: 'Hallway' });
 
@@ -42,7 +42,7 @@ describe('Sensory Extensions', () => {
       destination: room.id
     });
 
-    player = author.createEntity('Player', 'actor');
+    player = author.createEntity('Player', EntityType.ACTOR);
     player.add({ type: TraitType.ACTOR, isPlayer: true });
     player.add({ type: TraitType.CONTAINER });
     player.add({ type: TraitType.IDENTITY, name: 'Player' });
@@ -53,7 +53,7 @@ describe('Sensory Extensions', () => {
 
   describe('Hearing', () => {
     test('should hear entities in same room', () => {
-      const radio = author.createEntity('radio', 'thing');
+      const radio = author.createEntity('radio', EntityType.OBJECT);
       radio.add({ type: TraitType.IDENTITY, name: 'radio' });
       author.moveEntity(radio.id, room.id);
 
@@ -63,7 +63,7 @@ describe('Sensory Extensions', () => {
 
     test('should hear through open doors', () => {
       // Create door connecting the rooms
-      const door = author.createEntity('door', 'door');
+      const door = author.createEntity(EntityType.DOOR, EntityType.DOOR);
       door.add({ 
         type: TraitType.DOOR,
         room1: room.id,
@@ -73,7 +73,7 @@ describe('Sensory Extensions', () => {
       // Door must be placed in one of the rooms
       author.moveEntity(door.id, room.id);
 
-      const npc = author.createEntity('Bob', 'actor');
+      const npc = author.createEntity('Bob', EntityType.ACTOR);
       npc.add({ type: TraitType.ACTOR });
       npc.add({ type: TraitType.IDENTITY, name: 'Bob' });
       author.moveEntity(npc.id, hallway.id);
@@ -85,7 +85,7 @@ describe('Sensory Extensions', () => {
 
     test('should hear through closed doors (muffled)', () => {
       // Create closed door
-      const door = author.createEntity('door', 'door');
+      const door = author.createEntity(EntityType.DOOR, EntityType.DOOR);
       door.add({ 
         type: TraitType.DOOR,
         room1: room.id,
@@ -95,7 +95,7 @@ describe('Sensory Extensions', () => {
       // Place door in one of the rooms
       author.moveEntity(door.id, room.id);
 
-      const npc = author.createEntity('Bob', 'actor');
+      const npc = author.createEntity('Bob', EntityType.ACTOR);
       npc.add({ type: TraitType.ACTOR });
       npc.add({ type: TraitType.IDENTITY, name: 'Bob' });
       author.moveEntity(npc.id, hallway.id);
@@ -105,10 +105,10 @@ describe('Sensory Extensions', () => {
     });
 
     test('should not hear in unconnected rooms', () => {
-      const basement = author.createEntity('Basement', 'room');
+      const basement = author.createEntity('Basement', EntityType.ROOM);
       basement.add({ type: TraitType.ROOM });
 
-      const npc = author.createEntity('Bob', 'actor');
+      const npc = author.createEntity('Bob', EntityType.ACTOR);
       npc.add({ type: TraitType.ACTOR });
       author.moveEntity(npc.id, basement.id);
 
@@ -118,12 +118,12 @@ describe('Sensory Extensions', () => {
 
     test('should get all audible entities', () => {
       // In same room
-      const radio = author.createEntity('radio', 'thing');
+      const radio = author.createEntity('radio', EntityType.OBJECT);
       radio.add({ type: TraitType.IDENTITY, name: 'radio' });
       author.moveEntity(radio.id, room.id);
 
       // In connected room with door
-      const door = author.createEntity('door', 'door');
+      const door = author.createEntity(EntityType.DOOR, EntityType.DOOR);
       door.add({ 
         type: TraitType.DOOR,
         room1: room.id,
@@ -133,15 +133,15 @@ describe('Sensory Extensions', () => {
       // Place door in one of the rooms
       author.moveEntity(door.id, room.id);
 
-      const npc = author.createEntity('Bob', 'actor');
+      const npc = author.createEntity('Bob', EntityType.ACTOR);
       npc.add({ type: TraitType.ACTOR });
       npc.add({ type: TraitType.IDENTITY, name: 'Bob' });
       author.moveEntity(npc.id, hallway.id);
 
       // In unconnected room
-      const basement = author.createEntity('Basement', 'room');
+      const basement = author.createEntity('Basement', EntityType.ROOM);
       basement.add({ type: TraitType.ROOM });
-      const mouse = author.createEntity('mouse', 'thing');
+      const mouse = author.createEntity('mouse', EntityType.OBJECT);
       mouse.add({ type: TraitType.IDENTITY, name: 'mouse' });
       author.moveEntity(mouse.id, basement.id);
 
@@ -155,7 +155,7 @@ describe('Sensory Extensions', () => {
       // Should hear: radio (same room), door (in same room), npc (through door)
       // Should NOT hear: mouse (unconnected room)
       expect(audibleNonRooms.map(e => e.name)).toContain('radio');
-      expect(audibleNonRooms.map(e => e.name)).toContain('door');
+      expect(audibleNonRooms.map(e => e.name)).toContain(EntityType.DOOR);
       expect(audibleNonRooms.map(e => e.name)).toContain('Bob');
       expect(audibleNonRooms.map(e => e.name)).not.toContain('mouse');
     });
@@ -163,7 +163,7 @@ describe('Sensory Extensions', () => {
 
   describe('Smell', () => {
     test('should smell food items in same room', () => {
-      const bread = author.createEntity('fresh bread', 'thing');
+      const bread = author.createEntity('fresh bread', EntityType.OBJECT);
       bread.add({ type: TraitType.EDIBLE });
       bread.add({ type: TraitType.IDENTITY, name: 'fresh bread' });
       author.moveEntity(bread.id, room.id);
@@ -172,7 +172,7 @@ describe('Sensory Extensions', () => {
     });
 
     test('should smell actors in same room', () => {
-      const npc = author.createEntity('Bob', 'actor');
+      const npc = author.createEntity('Bob', EntityType.ACTOR);
       npc.add({ type: TraitType.ACTOR });
       npc.add({ type: TraitType.IDENTITY, name: 'Bob' });
       author.moveEntity(npc.id, room.id);
@@ -181,7 +181,7 @@ describe('Sensory Extensions', () => {
     });
 
     test('should smell through open doors', () => {
-      const door = author.createEntity('door', 'door');
+      const door = author.createEntity(EntityType.DOOR, EntityType.DOOR);
       door.add({ 
         type: TraitType.DOOR,
         room1: room.id,
@@ -191,7 +191,7 @@ describe('Sensory Extensions', () => {
       // Place door in one of the rooms
       author.moveEntity(door.id, room.id);
 
-      const bread = author.createEntity('fresh bread', 'thing');
+      const bread = author.createEntity('fresh bread', EntityType.OBJECT);
       bread.add({ type: TraitType.EDIBLE });
       bread.add({ type: TraitType.IDENTITY, name: 'fresh bread' });
       author.moveEntity(bread.id, hallway.id);
@@ -202,7 +202,7 @@ describe('Sensory Extensions', () => {
     });
 
     test('should not smell through closed doors', () => {
-      const door = author.createEntity('door', 'door');
+      const door = author.createEntity(EntityType.DOOR, EntityType.DOOR);
       door.add({ 
         type: TraitType.DOOR,
         room1: room.id,
@@ -212,7 +212,7 @@ describe('Sensory Extensions', () => {
       // Place door in one of the rooms
       author.moveEntity(door.id, room.id);
 
-      const bread = author.createEntity('fresh bread', 'thing');
+      const bread = author.createEntity('fresh bread', EntityType.OBJECT);
       bread.add({ type: TraitType.EDIBLE });
       bread.add({ type: TraitType.IDENTITY, name: 'fresh bread' });
       author.moveEntity(bread.id, hallway.id);
@@ -221,7 +221,7 @@ describe('Sensory Extensions', () => {
     });
 
     test('should not smell non-scented items', () => {
-      const rock = author.createEntity('rock', 'thing');
+      const rock = author.createEntity('rock', EntityType.OBJECT);
       rock.add({ type: TraitType.IDENTITY, name: 'rock' });
       author.moveEntity(rock.id, room.id);
 
@@ -238,7 +238,7 @@ describe('Sensory Extensions', () => {
         customProperties: { isDark: true }
       });
       
-      const ball = author.createEntity('ball', 'thing');
+      const ball = author.createEntity('ball', EntityType.OBJECT);
       ball.add({ type: TraitType.IDENTITY, name: 'ball' });
       author.moveEntity(ball.id, room.id);
 
@@ -256,7 +256,7 @@ describe('Sensory Extensions', () => {
       });
       
       // Give player a lit torch
-      const torch = author.createEntity('torch', 'thing');
+      const torch = author.createEntity('torch', EntityType.OBJECT);
       torch.add({ 
         type: TraitType.IDENTITY,
         name: 'torch',
@@ -264,7 +264,7 @@ describe('Sensory Extensions', () => {
       });
       author.moveEntity(torch.id, player.id);
 
-      const ball = author.createEntity('ball', 'thing');
+      const ball = author.createEntity('ball', EntityType.OBJECT);
       ball.add({ type: TraitType.IDENTITY, name: 'ball' });
       author.moveEntity(ball.id, room.id);
 
@@ -287,7 +287,7 @@ describe('Sensory Extensions', () => {
         customProperties: { providesLight: true }
       });
 
-      const ball = author.createEntity('ball', 'thing');
+      const ball = author.createEntity('ball', EntityType.OBJECT);
       ball.add({ type: TraitType.IDENTITY, name: 'ball' });
       author.moveEntity(ball.id, room.id);
 
@@ -296,7 +296,7 @@ describe('Sensory Extensions', () => {
 
     test('should see in lit rooms', () => {
       // Rooms are lit by default
-      const ball = author.createEntity('ball', 'thing');
+      const ball = author.createEntity('ball', EntityType.OBJECT);
       ball.add({ type: TraitType.IDENTITY, name: 'ball' });
       author.moveEntity(ball.id, room.id);
 

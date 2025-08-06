@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { exitingAction } from '../../../src/actions/standard/exiting';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType } from '@sharpee/world-model';
 import { 
   createRealTestContext,
   setupBasicWorld,
@@ -59,7 +59,7 @@ describe('exitingAction (Golden Pattern)', () => {
     test.skip('should fail when no location set', () => {
       // SKIPPED: The new context creation requires player to have a valid location
       const world = new WorldModel();
-      const player = world.createEntity('yourself', 'actor');
+      const player = world.createEntity('yourself', EntityType.ACTOR);
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
       // Player has no location
@@ -77,11 +77,11 @@ describe('exitingAction (Golden Pattern)', () => {
 
     test('should fail when container has no parent location', () => {
       const world = new WorldModel();
-      const player = world.createEntity('yourself', 'actor');
+      const player = world.createEntity('yourself', EntityType.ACTOR);
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
       
-      const floatingBox = world.createEntity('floating box', 'container');
+      const floatingBox = world.createEntity('floating box', EntityType.CONTAINER);
       floatingBox.add({ type: TraitType.CONTAINER });
       
       world.moveEntity(player.id, floatingBox.id);
@@ -102,7 +102,7 @@ describe('exitingAction (Golden Pattern)', () => {
       // SKIPPED: Requires scope logic to properly set context.currentLocation for entities in containers
       const { world, player, room } = setupBasicWorld();
       
-      const crate = world.createEntity('shipping crate', 'container');
+      const crate = world.createEntity('shipping crate', EntityType.CONTAINER);
       crate.add({
         type: TraitType.CONTAINER,
         enterable: true
@@ -130,7 +130,7 @@ describe('exitingAction (Golden Pattern)', () => {
       // SKIPPED: Requires scope logic to properly set context.currentLocation for entities with ENTRY trait
       const { world, player, room } = setupBasicWorld();
       
-      const booth = world.createEntity('phone booth', 'fixture');
+      const booth = world.createEntity('phone booth', EntityType.SCENERY);
       booth.add({
         type: TraitType.ENTRY,
         canEnter: false  // Can't enter means can't exit
@@ -155,7 +155,7 @@ describe('exitingAction (Golden Pattern)', () => {
     test('should exit from container', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const box = world.createEntity('cardboard box', 'container');
+      const box = world.createEntity('cardboard box', EntityType.CONTAINER);
       box.add({
         type: TraitType.CONTAINER,
         enterable: true
@@ -189,7 +189,7 @@ describe('exitingAction (Golden Pattern)', () => {
     test('should exit from supporter', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const platform = world.createEntity('raised platform', 'furniture');
+      const platform = world.createEntity('raised platform', EntityType.SUPPORTER);
       platform.add({
         type: TraitType.SUPPORTER,
         enterable: true
@@ -222,7 +222,7 @@ describe('exitingAction (Golden Pattern)', () => {
       // SKIPPED: Requires scope logic to properly set context.currentLocation for entities in vehicles
       const { world, player, room } = setupBasicWorld();
       
-      const car = world.createEntity('red car', 'vehicle');
+      const car = world.createEntity('red car', EntityType.OBJECT);
       car.add({
         type: TraitType.ENTRY,
         canEnter: true,
@@ -256,7 +256,7 @@ describe('exitingAction (Golden Pattern)', () => {
       prepositionTests.forEach(({ enter, exit }) => {
         const { world, player, room } = setupBasicWorld();
         
-        const furniture = world.createEntity('furniture', 'furniture');
+        const furniture = world.createEntity('furniture', EntityType.SUPPORTER);
         furniture.add({
           type: TraitType.ENTRY,
           canEnter: true,
@@ -287,7 +287,7 @@ describe('exitingAction (Golden Pattern)', () => {
     test('should exit from open container', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const trunk = world.createEntity('car trunk', 'container');
+      const trunk = world.createEntity('car trunk', EntityType.CONTAINER);
       trunk.add({
         type: TraitType.CONTAINER,
         enterable: true
@@ -317,7 +317,7 @@ describe('exitingAction (Golden Pattern)', () => {
     test('should include proper entities in all events', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const bed = world.createEntity('comfortable bed', 'furniture');
+      const bed = world.createEntity('comfortable bed', EntityType.SUPPORTER);
       bed.add({
         type: TraitType.SUPPORTER,
         enterable: true
@@ -346,17 +346,17 @@ describe('Testing Pattern Examples for Exiting', () => {
     // Test exiting from nested containment
     const world = new WorldModel();
     
-    const room = world.createEntity('Room', 'room');
+    const room = world.createEntity('Room', EntityType.ROOM);
     room.add({ type: TraitType.ROOM });
     
-    const car = world.createEntity('car', 'vehicle');
+    const car = world.createEntity('car', EntityType.OBJECT);
     car.add({
       type: TraitType.ENTRY,
       canEnter: true,
       preposition: 'in'
     });
     
-    const suitcase = world.createEntity('suitcase', 'container');
+    const suitcase = world.createEntity('suitcase', EntityType.CONTAINER);
     suitcase.add({
       type: TraitType.CONTAINER,
       enterable: true
@@ -374,7 +374,7 @@ describe('Testing Pattern Examples for Exiting', () => {
     // Shows how exit doesn't modify traits, just location
     const { world, player, room } = setupBasicWorld();
     
-    const pod = world.createEntity('escape pod', 'vehicle');
+    const pod = world.createEntity('escape pod', EntityType.OBJECT);
     pod.add({
       type: TraitType.ENTRY,
       canEnter: true,

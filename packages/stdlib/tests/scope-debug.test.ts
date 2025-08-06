@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { WorldModel, AuthorModel, TraitType } from '@sharpee/world-model';
+import { WorldModel, AuthorModel, TraitType, EntityType } from '@sharpee/world-model';
 import { StandardScopeResolver } from '../src/scope/scope-resolver';
 
 describe('Scope Debug', () => {
@@ -13,23 +13,23 @@ describe('Scope Debug', () => {
     const scopeResolver = new StandardScopeResolver(world);
     
     // Create room
-    const room = author.createEntity('room', 'room');
+    const room = author.createEntity('room', EntityType.ROOM);
     room.add({ type: TraitType.ROOM });
     
     // Create player
-    const player = author.createEntity('player', 'actor');
+    const player = author.createEntity('player', EntityType.ACTOR);
     player.add({ type: TraitType.ACTOR, isPlayer: true });
     world.setPlayer(player.id);
     author.moveEntity(player.id, room.id);
     
     // Create closed box (AuthorModel allows this)
-    const box = author.createEntity('box', 'container');
+    const box = author.createEntity('box', EntityType.CONTAINER);
     box.add({ type: TraitType.CONTAINER });
     box.add({ type: TraitType.OPENABLE, isOpen: false }); // Closed from the start
     author.moveEntity(box.id, room.id);
     
     // Create coin and put in closed box (AuthorModel allows this)
-    const coin = author.createEntity('coin', 'thing');
+    const coin = author.createEntity('coin', EntityType.OBJECT);
     author.moveEntity(coin.id, box.id);
     
     // Debug output

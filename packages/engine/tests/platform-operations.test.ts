@@ -2,15 +2,17 @@
  * Tests for GameEngine platform operations
  */
 
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { 
   WorldModel,
   IFEntity,
   IdentityTrait,
-  ActorTrait
+  ActorTrait,
+  EntityType
 } from '@sharpee/world-model';
 import { 
   GameEngine,
-  createGameEngine
+  createStandardEngine
 } from '../src/game-engine';
 import {
   SaveRestoreHooks,
@@ -25,29 +27,25 @@ import {
   QuitContext,
   RestartContext
 } from '@sharpee/core';
+import { MinimalTestStory } from './stories';
 
 describe('GameEngine Platform Operations', () => {
-  let world: WorldModel;
-  let player: IFEntity;
   let engine: GameEngine;
+  let story: MinimalTestStory;
   let mockHooks: SaveRestoreHooks;
   
-  beforeEach(() => {
-    // Create world and player
-    world = new WorldModel();
-    player = world.createEntity('player');
-    player.add(new IdentityTrait({ name: 'Player' }));
-    player.add(new ActorTrait({ isPlayer: true }));
-    
-    // Create engine
-    engine = createGameEngine(world, player);
+  beforeEach(async () => {
+    // Create engine with story
+    engine = createStandardEngine();
+    story = new MinimalTestStory();
+    await engine.setStory(story);
     
     // Create mock hooks
     mockHooks = {
-      onSaveRequested: jest.fn().mockResolvedValue(undefined),
-      onRestoreRequested: jest.fn().mockResolvedValue(null),
-      onQuitRequested: jest.fn().mockResolvedValue(true),
-      onRestartRequested: jest.fn().mockResolvedValue(true)
+      onSaveRequested: vi.fn().mockResolvedValue(undefined),
+      onRestoreRequested: vi.fn().mockResolvedValue(null),
+      onQuitRequested: vi.fn().mockResolvedValue(true),
+      onRestartRequested: vi.fn().mockResolvedValue(true)
     };
     
     engine.registerSaveRestoreHooks(mockHooks);
@@ -56,7 +54,6 @@ describe('GameEngine Platform Operations', () => {
   describe('Platform Event Detection', () => {
     it('should detect and queue platform events during turn execution', async () => {
       // Start engine
-      await engine.setLanguage('en-US');
       engine.start();
       
       // Create a save requested event
@@ -119,7 +116,7 @@ describe('GameEngine Platform Operations', () => {
     });
 
     it('should emit save failed event when hook throws', async () => {
-      mockHooks.onSaveRequested = jest.fn().mockRejectedValue(new Error('Disk full'));
+      mockHooks.onSaveRequested = vi.fn().mockRejectedValue(new Error('Disk full'));
       
       const saveEvent = createSaveRequestedEvent({ timestamp: Date.now() });
       engine['pendingPlatformOps'].push(saveEvent);
@@ -140,7 +137,7 @@ describe('GameEngine Platform Operations', () => {
     it('should emit error event when no save hook registered', async () => {
       engine.registerSaveRestoreHooks({
         onSaveRequested: undefined as any,
-        onRestoreRequested: jest.fn()
+        onRestoreRequested: vi.fn()
       });
       
       const saveEvent = createSaveRequestedEvent({ timestamp: Date.now() });
@@ -205,7 +202,7 @@ describe('GameEngine Platform Operations', () => {
         }
       } as any;
       
-      mockHooks.onRestoreRequested = jest.fn().mockResolvedValue(mockSaveData);
+      mockHooks.onRestoreRequested = vi.fn().mockResolvedValue(mockSaveData);
       
       const restoreEvent = createRestoreRequestedEvent({});
       engine['pendingPlatformOps'].push(restoreEvent);
@@ -223,7 +220,7 @@ describe('GameEngine Platform Operations', () => {
     });
 
     it('should emit restore failed event when no save data available', async () => {
-      mockHooks.onRestoreRequested = jest.fn().mockResolvedValue(null);
+      mockHooks.onRestoreRequested = vi.fn().mockResolvedValue(null);
       
       const restoreEvent = createRestoreRequestedEvent({});
       engine['pendingPlatformOps'].push(restoreEvent);
@@ -258,7 +255,7 @@ describe('GameEngine Platform Operations', () => {
     });
 
     it('should stop engine and emit confirmation when quit confirmed', async () => {
-      mockHooks.onQuitRequested = jest.fn().mockResolvedValue(true);
+      mockHooks.onQuitRequested = vi.fn().mockResolvedValue(true);
       
       const quitEvent = createQuitRequestedEvent({});
       engine['pendingPlatformOps'].push(quitEvent);
@@ -280,7 +277,7 @@ describe('GameEngine Platform Operations', () => {
     });
 
     it('should emit cancelled event when quit declined', async () => {
-      mockHooks.onQuitRequested = jest.fn().mockResolvedValue(false);
+      mockHooks.onQuitRequested = vi.fn().mockResolvedValue(false);
       
       const quitEvent = createQuitRequestedEvent({});
       engine['pendingPlatformOps'].push(quitEvent);
@@ -298,8 +295,8 @@ describe('GameEngine Platform Operations', () => {
 
     it('should quit by default when no hook registered', async () => {
       engine.registerSaveRestoreHooks({
-        onSaveRequested: jest.fn(),
-        onRestoreRequested: jest.fn(),
+        onSaveRequested: vi.fn(),
+        onRestoreRequested: vi.fn(),
         onQuitRequested: undefined
       });
       
@@ -330,7 +327,7 @@ describe('GameEngine Platform Operations', () => {
     });
 
     it('should reinitialize story and emit completion when restart confirmed', async () => {
-      mockHooks.onRestartRequested = jest.fn().mockResolvedValue(true);
+      mockHooks.onRestartRequested = vi.fn().mockResolvedValue(true);
       
       // Mock story
       const mockStory = {
@@ -341,12 +338,12 @@ describe('GameEngine Platform Operations', () => {
           author: 'Test Author',
           language: 'en-US'
         },
-        initializeWorld: jest.fn(),
-        createPlayer: jest.fn().mockReturnValue(player)
+        initializeWorld: vi.fn(),
+        createPlayer: vi.fn().mockReturnValue(story.getPlayer())
       };
       
       engine['story'] = mockStory as any;
-      engine.setStory = jest.fn();
+      engine.setStory = vi.fn();
       
       const restartEvent = createRestartRequestedEvent({});
       engine['pendingPlatformOps'].push(restartEvent);
@@ -366,7 +363,7 @@ describe('GameEngine Platform Operations', () => {
     });
 
     it('should emit cancelled event when restart declined', async () => {
-      mockHooks.onRestartRequested = jest.fn().mockResolvedValue(false);
+      mockHooks.onRestartRequested = vi.fn().mockResolvedValue(false);
       
       const restartEvent = createRestartRequestedEvent({});
       engine['pendingPlatformOps'].push(restartEvent);
@@ -396,11 +393,11 @@ describe('GameEngine Platform Operations', () => {
       engine['pendingPlatformOps'].push(quitEvent);
       
       const callOrder: string[] = [];
-      mockHooks.onSaveRequested = jest.fn().mockImplementation(() => {
+      mockHooks.onSaveRequested = vi.fn().mockImplementation(() => {
         callOrder.push('save');
         return Promise.resolve();
       });
-      mockHooks.onQuitRequested = jest.fn().mockImplementation(() => {
+      mockHooks.onQuitRequested = vi.fn().mockImplementation(() => {
         callOrder.push('quit');
         return Promise.resolve(true);
       });
@@ -412,8 +409,8 @@ describe('GameEngine Platform Operations', () => {
     });
 
     it('should continue processing even if one operation fails', async () => {
-      mockHooks.onSaveRequested = jest.fn().mockRejectedValue(new Error('Save failed'));
-      mockHooks.onQuitRequested = jest.fn().mockResolvedValue(true);
+      mockHooks.onSaveRequested = vi.fn().mockRejectedValue(new Error('Save failed'));
+      mockHooks.onQuitRequested = vi.fn().mockResolvedValue(true);
       
       const saveEvent = createSaveRequestedEvent({ timestamp: Date.now() });
       const quitEvent = createQuitRequestedEvent({});

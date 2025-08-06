@@ -164,13 +164,25 @@ export class CommandExecutor {
         }
       }, turn);
       
-      return {
+      const errorResult: TurnResult = {
         turn,
         input,
         success: false,
         events: [errorEvent],
         error: (error as Error).message
       };
+      
+      // Add timing if configured
+      if (config?.collectTiming) {
+        const endTime = Date.now();
+        errorResult.timing = {
+          parsing: parseEndTime - startTime,
+          execution: endTime - (parseEndTime || startTime),
+          total: endTime - startTime
+        };
+      }
+      
+      return errorResult;
     }
   }
 

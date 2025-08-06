@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { droppingAction } from '../../../src/actions/standard/dropping'; // Now from folder
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, EntityType } from '@sharpee/world-model';
 import { 
   createRealTestContext,
   setupBasicWorld,
@@ -440,7 +440,7 @@ describe('Dropping Action Edge Cases', () => {
     const { world, player, room } = setupBasicWorld();
     
     // Create a non-room, non-container location (e.g., a vehicle)
-    const car = world.createEntity('red car', 'vehicle');
+    const car = world.createEntity('red car', EntityType.OBJECT);
     const keys = world.createEntity('car keys', 'object');
     
     world.moveEntity(player.id, car.id);

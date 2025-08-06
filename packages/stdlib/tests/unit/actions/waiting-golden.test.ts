@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { waitingAction } from '../../../src/actions/standard/waiting';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType } from '@sharpee/world-model';
 import { 
   createRealTestContext, 
   expectEvent,
@@ -98,7 +98,7 @@ describe('waitingAction (Golden Pattern)', () => {
       const { world, player } = setupBasicWorld();
       
       // Create a vehicle room
-      const vehicle = world.createEntity('spaceship', 'room');
+      const vehicle = world.createEntity('spaceship', EntityType.ROOM);
       vehicle.add({ 
         type: TraitType.ROOM,
         // Add vehicle trait/marker 

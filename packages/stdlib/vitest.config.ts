@@ -5,8 +5,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['**/tests/**/*.test.ts'],
-    exclude: ['**/tests/**/*.test.ts.removed', '**/tests/**/*.test.ts.template'],
+    include: ['tests/**/*.test.ts'],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/tests/**/*.test.ts.removed', '**/tests/**/*.test.ts.template'],
     reporters: process.env.CI ? ['default', 'hanging-process'] : ['default'],
     teardownTimeout: 20000, // Increase teardown timeout
     coverage: {

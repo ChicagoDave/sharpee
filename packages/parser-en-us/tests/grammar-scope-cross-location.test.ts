@@ -21,48 +21,54 @@ class MockWorldModelWithLocations {
     const couch: Entity = {
       id: 'couch',
       name: 'couch',
+      attributes: { name: 'couch' },
       visible: true,
       portable: false,
       supporter: true
-    };
+    } as any;
     
     const tv: Entity = {
       id: 'tv',
       name: 'television',
+      attributes: { name: 'television' },
       visible: true,
       portable: false
-    };
+    } as any;
     
     // Kitchen entities
     const stove: Entity = {
       id: 'stove',
       name: 'stove',
+      attributes: { name: 'stove' },
       visible: true,
       portable: false
-    };
+    } as any;
     
     const pot: Entity = {
       id: 'pot',
       name: 'pot',
+      attributes: { name: 'pot' },
       visible: true,
       portable: true,
       noisy: true // For testing sound-based scope
-    };
+    } as any;
     
     // Garden entities (visible through window)
     const tree: Entity = {
       id: 'tree',
       name: 'tree',
+      attributes: { name: 'tree' },
       visible: true,
       portable: false
-    };
+    } as any;
     
     const bird: Entity = {
       id: 'bird',
       name: 'bird',
+      attributes: { name: 'bird' },
       visible: true,
       portable: false
-    };
+    } as any;
 
     // Add entities
     this.entities.set('couch', couch);
@@ -235,7 +241,7 @@ describe('Cross-Location Scope Constraints', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.sensing');
-        expect(result.value.structure.directObject).toBe('pot');
+        expect(result.value.structure.directObject?.text).toBe('pot');
       }
     });
   });
@@ -251,7 +257,7 @@ describe('Cross-Location Scope Constraints', () => {
       const result = parser.parse('examine pot');
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.value.structure.directObject).toBe('pot');
+        expect(result.value.structure.directObject?.text).toBe('pot');
       }
     });
   });

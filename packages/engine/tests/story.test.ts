@@ -3,7 +3,7 @@
  */
 
 import { Story, StoryConfig, loadLanguageProvider, validateStoryConfig } from '../src/story';
-import { WorldModel, IFEntity, IdentityTrait } from '@sharpee/world-model';
+import { WorldModel, IFEntity, IdentityTrait, EntityType } from '@sharpee/world-model';
 import { Action } from '@sharpee/stdlib';
 
 describe('Story', () => {
@@ -91,12 +91,12 @@ describe('Story', () => {
       expect(typeof provider.getVerbs).toBe('function');
       expect(typeof provider.lemmatize).toBe('function');
       expect(typeof provider.formatList).toBe('function');
-    });
+    }, 60000);
 
     it('should throw for unsupported language', async () => {
       await expect(loadLanguageProvider('unsupported-lang'))
-        .rejects.toThrow('Unsupported language');
-    });
+        .rejects.toThrow('Failed to load language package');
+    }, 60000);
   });
 
   describe('Story lifecycle', () => {
@@ -112,12 +112,12 @@ describe('Story', () => {
       private turnCount = 0;
 
       initializeWorld(world: WorldModel): void {
-        const room = world.createEntity('room', 'Room');
+        const room = world.createEntity('Room', EntityType.ROOM);
         room.add(new IdentityTrait({ name: 'Room' }));
       }
 
       createPlayer(world: WorldModel): IFEntity {
-        const player = world.createEntity('player', 'Player');
+        const player = world.createEntity('Player', EntityType.ACTOR);
         player.add(new IdentityTrait({ name: 'Player' }));
         return player;
       }

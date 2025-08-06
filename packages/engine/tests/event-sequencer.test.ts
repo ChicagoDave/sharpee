@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { eventSequencer, EventSequenceUtils } from '../src/event-sequencer';
 import { GameEvent, SequencedEvent } from '../src/types';
-import { createTestEvent } from './fixtures';
+import { createTestEvent } from './fixtures/index';
 
 describe('EventSequencer', () => {
   beforeEach(() => {

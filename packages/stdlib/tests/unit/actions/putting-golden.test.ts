@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { puttingAction } from '../../../src/actions/standard/putting';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, EntityType } from '@sharpee/world-model';
 import { 
   createRealTestContext,
   setupBasicWorld,
@@ -111,7 +111,7 @@ describe('puttingAction (Golden Pattern)', () => {
     test('should fail when trying to put something on itself', () => {
       const { world, player } = setupBasicWorld();
       
-      const table = world.createEntity('folding table', 'supporter');
+      const table = world.createEntity('folding table', EntityType.SUPPORTER);
       table.add({ type: TraitType.SUPPORTER });
       
       world.moveEntity(table.id, player.id);  // Player holds table
@@ -134,8 +134,8 @@ describe('puttingAction (Golden Pattern)', () => {
     test('should fail when item already in destination', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const key = world.createEntity('brass key', 'thing');
-      const drawer = world.createEntity('desk drawer', 'container');
+      const key = world.createEntity('brass key', EntityType.OBJECT);
+      const drawer = world.createEntity('desk drawer', EntityType.CONTAINER);
       drawer.add({ type: TraitType.CONTAINER });
       
       world.moveEntity(drawer.id, room.id);
@@ -208,8 +208,8 @@ describe('puttingAction (Golden Pattern)', () => {
     test('should auto-detect container without preposition', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const letter = world.createEntity('sealed letter', 'thing');
-      const envelope = world.createEntity('large envelope', 'container');
+      const letter = world.createEntity('sealed letter', EntityType.OBJECT);
+      const envelope = world.createEntity('large envelope', EntityType.CONTAINER);
       envelope.add({ type: TraitType.CONTAINER });
       
       world.moveEntity(letter.id, player.id);
@@ -234,8 +234,8 @@ describe('puttingAction (Golden Pattern)', () => {
     test('should fail when container is closed', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const coin = world.createEntity('silver coin', 'thing');
-      const chest = world.createEntity('locked chest', 'container');
+      const coin = world.createEntity('silver coin', EntityType.OBJECT);
+      const chest = world.createEntity('locked chest', EntityType.CONTAINER);
       chest.add({ type: TraitType.CONTAINER });
       chest.add({ 
         type: TraitType.OPENABLE,
@@ -263,8 +263,8 @@ describe('puttingAction (Golden Pattern)', () => {
     test('should fail with wrong preposition for container', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const ball = world.createEntity('tennis ball', 'thing');
-      const box = world.createEntity('cardboard box', 'container');
+      const ball = world.createEntity('tennis ball', EntityType.OBJECT);
+      const box = world.createEntity('cardboard box', EntityType.CONTAINER);
       box.add({ type: TraitType.CONTAINER });
       
       world.moveEntity(ball.id, player.id);
@@ -290,8 +290,8 @@ describe('puttingAction (Golden Pattern)', () => {
     test('should put on supporter with explicit preposition', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const book = world.createEntity('thick book', 'thing');
-      const table = world.createEntity('round table', 'supporter');
+      const book = world.createEntity('thick book', EntityType.OBJECT);
+      const table = world.createEntity('round table', EntityType.SUPPORTER);
       table.add({ type: TraitType.SUPPORTER });
       
       world.moveEntity(book.id, player.id);
@@ -324,8 +324,8 @@ describe('puttingAction (Golden Pattern)', () => {
     test('should auto-detect supporter without preposition', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const vase = world.createEntity('crystal vase', 'thing');
-      const shelf = world.createEntity('wooden shelf', 'supporter');
+      const vase = world.createEntity('crystal vase', EntityType.OBJECT);
+      const shelf = world.createEntity('wooden shelf', EntityType.SUPPORTER);
       shelf.add({ type: TraitType.SUPPORTER });
       
       world.moveEntity(vase.id, player.id);
@@ -350,8 +350,8 @@ describe('puttingAction (Golden Pattern)', () => {
     test('should fail with wrong preposition for supporter', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const cup = world.createEntity('coffee cup', 'thing');
-      const counter = world.createEntity('kitchen counter', 'supporter');
+      const cup = world.createEntity('coffee cup', EntityType.OBJECT);
+      const counter = world.createEntity('kitchen counter', EntityType.SUPPORTER);
       counter.add({ type: TraitType.SUPPORTER });
       
       world.moveEntity(cup.id, player.id);
@@ -377,8 +377,8 @@ describe('puttingAction (Golden Pattern)', () => {
     test('should respect container item limit', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const newCoin = world.createEntity('copper coin', 'thing');
-      const pouch = world.createEntity('coin pouch', 'container');
+      const newCoin = world.createEntity('copper coin', EntityType.OBJECT);
+      const pouch = world.createEntity('coin pouch', EntityType.CONTAINER);
       pouch.add({ 
         type: TraitType.CONTAINER,
         capacity: { maxItems: 5 }
@@ -387,7 +387,7 @@ describe('puttingAction (Golden Pattern)', () => {
       // Create 5 existing coins
       const coins = [];
       for (let i = 1; i <= 5; i++) {
-        const coin = world.createEntity(`coin ${i}`, 'thing');
+        const coin = world.createEntity(`coin ${i}`, EntityType.OBJECT);
         coins.push(coin);
         world.moveEntity(coin.id, pouch.id);
       }
@@ -413,20 +413,20 @@ describe('puttingAction (Golden Pattern)', () => {
     test('should respect container weight limit', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const brick = world.createEntity('heavy brick', 'thing');
+      const brick = world.createEntity('heavy brick', EntityType.OBJECT);
       brick.add({
         type: TraitType.IDENTITY,
         weight: 5
       });
       
-      const bag = world.createEntity('canvas bag', 'container');
+      const bag = world.createEntity('canvas bag', EntityType.CONTAINER);
       bag.add({ 
         type: TraitType.CONTAINER,
         capacity: { maxWeight: 10 }
       });
       
       // Existing heavy item
-      const rock = world.createEntity('large rock', 'thing');
+      const rock = world.createEntity('large rock', EntityType.OBJECT);
       rock.add({
         type: TraitType.IDENTITY,
         weight: 6
@@ -454,8 +454,8 @@ describe('puttingAction (Golden Pattern)', () => {
     test('should respect supporter item limit', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const plate = world.createEntity('dinner plate', 'thing');
-      const tray = world.createEntity('serving tray', 'supporter');
+      const plate = world.createEntity('dinner plate', EntityType.OBJECT);
+      const tray = world.createEntity('serving tray', EntityType.SUPPORTER);
       tray.add({ 
         type: TraitType.SUPPORTER,
         capacity: { maxItems: 3 }
@@ -464,7 +464,7 @@ describe('puttingAction (Golden Pattern)', () => {
       // Create 3 existing plates
       const plates = [];
       for (let i = 1; i <= 3; i++) {
-        const p = world.createEntity(`plate ${i}`, 'thing');
+        const p = world.createEntity(`plate ${i}`, EntityType.OBJECT);
         plates.push(p);
         world.moveEntity(p.id, tray.id);
       }
@@ -492,8 +492,8 @@ describe('puttingAction (Golden Pattern)', () => {
     test('should prefer container for dual-nature objects without preposition', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const pen = world.createEntity('fountain pen', 'thing');
-      const desk = world.createEntity('writing desk', 'furniture');
+      const pen = world.createEntity('fountain pen', EntityType.OBJECT);
+      const desk = world.createEntity('writing desk', EntityType.SUPPORTER);
       desk.add({ type: TraitType.CONTAINER });  // Has drawers
       desk.add({ type: TraitType.SUPPORTER });   // Has surface
       
@@ -517,8 +517,8 @@ describe('puttingAction (Golden Pattern)', () => {
     test('should respect explicit preposition for dual-nature objects', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const lamp = world.createEntity('desk lamp', 'thing');
-      const desk = world.createEntity('writing desk', 'furniture');
+      const lamp = world.createEntity('desk lamp', EntityType.OBJECT);
+      const desk = world.createEntity('writing desk', EntityType.SUPPORTER);
       desk.add({ type: TraitType.CONTAINER });  // Has drawers
       desk.add({ type: TraitType.SUPPORTER });   // Has surface
       
@@ -586,20 +586,20 @@ describe('Putting Action Edge Cases', () => {
   test('should handle volume capacity', () => {
     const { world, player, room } = setupBasicWorld();
     
-    const watermelon = world.createEntity('large watermelon', 'thing');
+    const watermelon = world.createEntity('large watermelon', EntityType.OBJECT);
     watermelon.add({
       type: TraitType.IDENTITY,
       volume: 8
     });
     
-    const basket = world.createEntity('fruit basket', 'container');
+    const basket = world.createEntity('fruit basket', EntityType.CONTAINER);
     basket.add({ 
       type: TraitType.CONTAINER,
       capacity: { maxVolume: 10 }
     });
     
     // Existing fruit
-    const apple = world.createEntity('red apple', 'thing');
+    const apple = world.createEntity('red apple', EntityType.OBJECT);
     apple.add({
       type: TraitType.IDENTITY,
       volume: 3
@@ -628,10 +628,10 @@ describe('Putting Action Edge Cases', () => {
   test('should handle items without weight/volume properties', () => {
     const { world, player, room } = setupBasicWorld();
     
-    const feather = world.createEntity('feather', 'thing');
+    const feather = world.createEntity('feather', EntityType.OBJECT);
     // No identity trait with weight/volume
     
-    const pouch = world.createEntity('small pouch', 'container');
+    const pouch = world.createEntity('small pouch', EntityType.CONTAINER);
     pouch.add({ 
       type: TraitType.CONTAINER,
       capacity: { maxWeight: 5 }
@@ -659,8 +659,8 @@ describe('Putting Action Edge Cases', () => {
   test('should handle target that is neither container nor supporter', () => {
     const { world, player, room } = setupBasicWorld();
     
-    const coin = world.createEntity('gold coin', 'thing');
-    const statue = world.createEntity('marble statue', 'thing');  // Just a thing
+    const coin = world.createEntity('gold coin', EntityType.OBJECT);
+    const statue = world.createEntity('marble statue', EntityType.OBJECT);  // Just a thing
     
     world.moveEntity(coin.id, player.id);
     world.moveEntity(statue.id, room.id);
@@ -682,8 +682,8 @@ describe('Putting Action Edge Cases', () => {
   test('should handle alternative prepositions', () => {
     const { world, player, room } = setupBasicWorld();
     
-    const book = world.createEntity('novel', 'thing');
-    const shelf = world.createEntity('bookshelf', 'supporter');
+    const book = world.createEntity('novel', EntityType.OBJECT);
+    const shelf = world.createEntity('bookshelf', EntityType.SUPPORTER);
     shelf.add({ type: TraitType.SUPPORTER });
     
     world.moveEntity(book.id, player.id);
@@ -707,8 +707,8 @@ describe('Putting Action Edge Cases', () => {
   test('should handle container without capacity limits', () => {
     const { world, player, room } = setupBasicWorld();
     
-    const item = world.createEntity('mysterious item', 'thing');
-    const vortex = world.createEntity('dimensional vortex', 'container');
+    const item = world.createEntity('mysterious item', EntityType.OBJECT);
+    const vortex = world.createEntity('dimensional vortex', EntityType.CONTAINER);
     vortex.add({ 
       type: TraitType.CONTAINER
       // No capacity limits
@@ -736,14 +736,14 @@ describe('Putting Action Edge Cases', () => {
   test('should handle complex capacity calculation with multiple items', () => {
     const { world, player, room } = setupBasicWorld();
     
-    const newBook = world.createEntity('thick encyclopedia', 'thing');
+    const newBook = world.createEntity('thick encyclopedia', EntityType.OBJECT);
     newBook.add({
       type: TraitType.IDENTITY,
       weight: 3,
       volume: 4
     });
     
-    const shelf = world.createEntity('bookshelf', 'supporter');
+    const shelf = world.createEntity('bookshelf', EntityType.SUPPORTER);
     shelf.add({ 
       type: TraitType.SUPPORTER,
       capacity: { 
@@ -755,7 +755,7 @@ describe('Putting Action Edge Cases', () => {
     // Create existing books
     const books = [];
     for (let i = 1; i <= 5; i++) {
-      const book = world.createEntity(`book ${i}`, 'thing');
+      const book = world.createEntity(`book ${i}`, EntityType.OBJECT);
       book.add({
         type: TraitType.IDENTITY,
         weight: 2

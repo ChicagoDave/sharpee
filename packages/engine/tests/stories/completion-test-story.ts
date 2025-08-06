@@ -3,7 +3,7 @@
  */
 
 import { Story, StoryConfig } from '../../src/story';
-import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait } from '@sharpee/world-model';
+import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait, EntityType } from '@sharpee/world-model';
 
 interface CompletionCondition {
   id: string;
@@ -61,7 +61,7 @@ export class CompletionTestStory implements Story {
 
   initializeWorld(world: WorldModel): void {
     // Create test room
-    this._room = world.createEntity('completion-test-room', 'Completion Test Room');
+    this._room = world.createEntity('Completion Test Room', EntityType.ROOM);
     this._room.add(new IdentityTrait({
       name: 'Completion Test Room',
       description: 'A room where victory awaits.',
@@ -70,7 +70,7 @@ export class CompletionTestStory implements Story {
     this._room.add(new ContainerTrait({ portable: false }));
 
     // Create treasure (finding it can complete the game)
-    const treasure = world.createEntity('treasure', 'Treasure');
+    const treasure = world.createEntity('Treasure', EntityType.OBJECT);
     treasure.add(new IdentityTrait({
       name: 'golden treasure',
       aliases: ['treasure', 'gold'],
@@ -80,7 +80,7 @@ export class CompletionTestStory implements Story {
     treasure.add(new ContainerTrait({ portable: true }));
     
     // Create exit door (using it can complete the game)
-    const exitDoor = world.createEntity('exit-door', 'Exit Door');
+    const exitDoor = world.createEntity('Exit Door', EntityType.DOOR);
     exitDoor.add(new IdentityTrait({
       name: 'exit door',
       aliases: ['door', 'exit'],
@@ -95,7 +95,7 @@ export class CompletionTestStory implements Story {
   }
 
   createPlayer(world: WorldModel): IFEntity {
-    this._player = world.createEntity('player', 'Player');
+    this._player = world.createEntity('Player', EntityType.ACTOR);
     this._player.add(new IdentityTrait({
       name: 'yourself',
       aliases: ['self', 'me', 'myself'],

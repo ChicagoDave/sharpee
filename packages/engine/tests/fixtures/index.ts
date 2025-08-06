@@ -2,7 +2,7 @@
  * Test fixtures for @sharpee/engine tests
  */
 
-import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait } from '@sharpee/world-model';
+import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait, EntityType } from '@sharpee/world-model';
 import { Action, ActionContext, ActionResult } from '@sharpee/stdlib';
 import { SequencedEvent } from '../../src/types';
 
@@ -16,7 +16,7 @@ export function createTestWorld(): { world: WorldModel; player: IFEntity; room: 
   const world = new WorldModel();
   
   // Create a simple room
-  const room = world.createEntity('test-room', 'Test Room');
+  const room = world.createEntity('Test Room', EntityType.ROOM);
   room.add(new IdentityTrait({
     name: 'Test Room',
     description: 'A simple test room.',
@@ -26,7 +26,7 @@ export function createTestWorld(): { world: WorldModel; player: IFEntity; room: 
   room.add(new ContainerTrait({ portable: false }));
   
   // Create player
-  const player = world.createEntity('player', 'You');
+  const player = world.createEntity('You', EntityType.ACTOR);
   player.add(new IdentityTrait({
     name: 'You',
     aliases: ['self', 'me', 'myself'],
@@ -105,4 +105,20 @@ export class MockTextChannel {
   getLastMessage(): string | undefined {
     return this.messages[this.messages.length - 1]?.text;
   }
+}
+
+/**
+ * Create a standard engine with a minimal test story for tests that need to start immediately
+ * This helps avoid the "Engine must have a story set before starting" error
+ */
+export async function createTestEngine(config?: any): Promise<any> {
+  // Import dynamically to avoid circular dependencies
+  const { createStandardEngine } = await import('../../src/game-engine');
+  const { MinimalTestStory } = await import('../stories/minimal-test-story');
+  
+  const engine = createStandardEngine(config);
+  const story = new MinimalTestStory();
+  await engine.setStory(story);
+  
+  return engine;
 }

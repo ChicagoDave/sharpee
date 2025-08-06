@@ -19,38 +19,43 @@ class MockWorldModel {
     const sword: Entity = {
       id: 'sword',
       name: 'sword',
+      attributes: { name: 'sword' },
       visible: true,
       portable: true
-    };
+    } as any;
     
     const guard: Entity = {
       id: 'guard',
       name: 'guard',
+      attributes: { name: 'guard' },
       visible: true,
       portable: false,
       animate: true
-    };
+    } as any;
     
     const ball: Entity = {
       id: 'ball',
       name: 'ball',
+      attributes: { name: 'ball' },
       visible: true,
       portable: true
-    };
+    } as any;
     
     const window: Entity = {
       id: 'window',
       name: 'window',
+      attributes: { name: 'window' },
       visible: true,
       portable: false
-    };
+    } as any;
     
     const hiddenKey: Entity = {
       id: 'hidden_key',
       name: 'key',
+      attributes: { name: 'key' },
       visible: false,
       portable: true
-    };
+    } as any;
 
     // Add entities
     this.entities.set('sword', sword);
@@ -174,7 +179,7 @@ describe('Grammar Scope Constraints', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.taking');
-        expect(result.value.structure.directObject).toBe('sword');
+        expect(result.value.structure.directObject?.text).toBe('sword');
       }
     });
 
@@ -194,8 +199,8 @@ describe('Grammar Scope Constraints', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.giving');
-        expect(result.value.structure.directObject).toBe('sword');
-        expect(result.value.structure.indirectObject).toBe('guard');
+        expect(result.value.structure.directObject?.text).toBe('sword');
+        expect(result.value.structure.indirectObject?.text).toBe('guard');
       }
     });
   });
@@ -244,9 +249,9 @@ describe('Grammar Scope Constraints', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.throwing');
-        expect(result.value.structure.directObject).toBe('ball');
-        expect(result.value.structure.preposition).toBe('at');
-        expect(result.value.structure.indirectObject).toBe('window');
+        expect(result.value.structure.directObject?.text).toBe('ball');
+        expect(result.value.structure.preposition?.text).toBe('at');
+        expect(result.value.structure.indirectObject?.text).toBe('window');
       }
     });
   });

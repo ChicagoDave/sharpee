@@ -14,7 +14,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { attackingAction } from '../../../src/actions/standard/attacking';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, FragileTrait, BreakableTrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, FragileTrait, BreakableTrait, EntityType } from '@sharpee/world-model';
 import { 
   createRealTestContext,
   expectEvent,
@@ -86,10 +86,10 @@ describe('attackingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       // Create guard in a different room
-      const otherRoom = world.createEntity('Other Room', 'room');
+      const otherRoom = world.createEntity('Other Room', EntityType.ROOM);
       otherRoom.add({ type: TraitType.ROOM });
       
-      const guard = world.createEntity('palace guard', 'actor');
+      const guard = world.createEntity('palace guard', EntityType.ACTOR);
       guard.add({
         type: TraitType.ACTOR
       });
@@ -112,7 +112,7 @@ describe('attackingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       // Create enemy behind glass
-      const glassCage = world.createEntity('glass cage', 'container');
+      const glassCage = world.createEntity('glass cage', EntityType.CONTAINER);
       glassCage.add({
         type: TraitType.CONTAINER,
         isTransparent: true
@@ -123,7 +123,7 @@ describe('attackingAction (Golden Pattern)', () => {
       });
       world.moveEntity(glassCage.id, room.id);
       
-      const enemy = world.createEntity('distant enemy', 'actor');
+      const enemy = world.createEntity('distant enemy', EntityType.ACTOR);
       enemy.add({
         type: TraitType.ACTOR
       });
@@ -160,13 +160,13 @@ describe('attackingAction (Golden Pattern)', () => {
     test.skip('should require holding weapon', () => {  // Skip: depends on scope logic
       const { world, player, room } = setupBasicWorld();
       
-      const goblin = world.createEntity('angry goblin', 'actor');
+      const goblin = world.createEntity('angry goblin', EntityType.ACTOR);
       goblin.add({
         type: TraitType.ACTOR
       });
       world.moveEntity(goblin.id, room.id);
       
-      const sword = world.createEntity('steel sword', 'thing');
+      const sword = world.createEntity('steel sword', EntityType.OBJECT);
       world.moveEntity(sword.id, room.id); // On floor, not held
       
       const command = createCommand(IFActions.ATTACKING,
@@ -186,7 +186,7 @@ describe('attackingAction (Golden Pattern)', () => {
     test('should block violence in peaceful games', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const npc = world.createEntity('innocent child', 'actor');
+      const npc = world.createEntity('innocent child', EntityType.ACTOR);
       npc.add({
         type: TraitType.ACTOR
       });
@@ -212,7 +212,7 @@ describe('attackingAction (Golden Pattern)', () => {
     test.skip('should perform basic unarmed attack', () => {  // Skip: depends on scope logic
       const { world, player, room } = setupBasicWorld();
       
-      const bandit = world.createEntity('rough bandit', 'actor');
+      const bandit = world.createEntity('rough bandit', EntityType.ACTOR);
       bandit.add({
         type: TraitType.ACTOR
       });
@@ -253,7 +253,7 @@ describe('attackingAction (Golden Pattern)', () => {
     test.skip('should handle punch verb', () => {  // Skip: depends on scope logic
       const { world, player, room } = setupBasicWorld();
       
-      const thug = world.createEntity('street thug', 'actor');
+      const thug = world.createEntity('street thug', EntityType.ACTOR);
       thug.add({
         type: TraitType.ACTOR
       });
@@ -282,7 +282,7 @@ describe('attackingAction (Golden Pattern)', () => {
     test.skip('should handle kick verb', () => {  // Skip: depends on scope logic
       const { world, player, room } = setupBasicWorld();
       
-      const enemy = world.createEntity('sworn enemy', 'actor');
+      const enemy = world.createEntity('sworn enemy', EntityType.ACTOR);
       enemy.add({
         type: TraitType.ACTOR
       });
@@ -313,13 +313,13 @@ describe('attackingAction (Golden Pattern)', () => {
     test.skip('should attack with held weapon', () => {  // Skip: depends on scope logic
       const { world, player, room } = setupBasicWorld();
       
-      const orc = world.createEntity('fierce orc', 'actor');
+      const orc = world.createEntity('fierce orc', EntityType.ACTOR);
       orc.add({
         type: TraitType.ACTOR
       });
       world.moveEntity(orc.id, room.id);
       
-      const axe = world.createEntity('battle axe', 'thing');
+      const axe = world.createEntity('battle axe', EntityType.OBJECT);
       world.moveEntity(axe.id, player.id); // Held by player
       
       const command = createCommand(IFActions.ATTACKING,
@@ -351,13 +351,13 @@ describe('attackingAction (Golden Pattern)', () => {
     test.skip('should use hit_with for hit verb', () => {  // Skip: depends on scope logic
       const { world, player, room } = setupBasicWorld();
       
-      const zombie = world.createEntity('shambling zombie', 'actor');
+      const zombie = world.createEntity('shambling zombie', EntityType.ACTOR);
       zombie.add({
         type: TraitType.ACTOR
       });
       world.moveEntity(zombie.id, room.id);
       
-      const club = world.createEntity('wooden club', 'thing');
+      const club = world.createEntity('wooden club', EntityType.OBJECT);
       world.moveEntity(club.id, player.id);
       
       const command = createCommand(IFActions.ATTACKING,
@@ -384,7 +384,7 @@ describe('attackingAction (Golden Pattern)', () => {
     test.skip('should prevent attacking indestructible scenery', () => {  // Skip: depends on scope logic
       const { world, player, room } = setupBasicWorld();
       
-      const wall = world.createEntity('stone wall', 'thing');
+      const wall = world.createEntity('stone wall', EntityType.SCENERY);
       wall.add({
         type: TraitType.SCENERY
       });
@@ -406,7 +406,7 @@ describe('attackingAction (Golden Pattern)', () => {
     test.skip('should break fragile glass objects', () => {  // Skip: depends on scope logic
       const { world, player, room } = setupBasicWorld();
       
-      const vase = world.createEntity('crystal vase', 'thing');
+      const vase = world.createEntity('crystal vase', EntityType.OBJECT);
       vase.add({
         type: TraitType.FRAGILE,
         fragileMaterial: 'crystal',
@@ -451,7 +451,7 @@ describe('attackingAction (Golden Pattern)', () => {
     test.skip('should use break verb with fragile objects', () => {  // Skip: depends on scope logic
       const { world, player, room } = setupBasicWorld();
       
-      const window = world.createEntity('frosted window', 'thing');
+      const window = world.createEntity('frosted window', EntityType.OBJECT);
       window.add({
         type: TraitType.FRAGILE,
         fragileMaterial: 'glass',
@@ -480,7 +480,7 @@ describe('attackingAction (Golden Pattern)', () => {
     test.skip('should handle fragile objects with custom break messages', () => {  // Skip: depends on scope logic
       const { world, player, room } = setupBasicWorld();
       
-      const ornament = world.createEntity('delicate ornament', 'thing');
+      const ornament = world.createEntity('delicate ornament', EntityType.OBJECT);
       ornament.add({
         type: TraitType.FRAGILE,
         fragileMaterial: 'porcelain',
@@ -509,7 +509,7 @@ describe('attackingAction (Golden Pattern)', () => {
     test.skip('should handle fragile objects that trigger events when broken', () => {  // Skip: depends on scope logic
       const { world, player, room } = setupBasicWorld();
       
-      const alarm = world.createEntity('glass alarm', 'thing');
+      const alarm = world.createEntity('glass alarm', EntityType.OBJECT);
       alarm.add({
         type: TraitType.FRAGILE,
         fragileMaterial: 'glass',
@@ -538,7 +538,7 @@ describe('attackingAction (Golden Pattern)', () => {
     test.skip('should reject breaking non-fragile/non-breakable objects', () => {  // Skip: depends on scope logic
       const { world, player, room } = setupBasicWorld();
       
-      const statue = world.createEntity('bronze statue', 'thing');
+      const statue = world.createEntity('bronze statue', EntityType.OBJECT);
       world.moveEntity(statue.id, room.id);
       
       const command = createCommand(IFActions.ATTACKING, {
@@ -562,7 +562,7 @@ describe('attackingAction (Golden Pattern)', () => {
     test.skip('should require specific tool for breakable objects', () => {  // Skip: depends on scope logic
       const { world, player, room } = setupBasicWorld();
       
-      const padlock = world.createEntity('heavy padlock', 'thing');
+      const padlock = world.createEntity('heavy padlock', EntityType.OBJECT);
       padlock.add({
         type: TraitType.BREAKABLE,
         breakMethod: 'cutting',
@@ -571,7 +571,7 @@ describe('attackingAction (Golden Pattern)', () => {
       } as BreakableTrait);
       world.moveEntity(padlock.id, room.id);
       
-      const hammer = world.createEntity('hammer', 'thing');
+      const hammer = world.createEntity('hammer', EntityType.OBJECT);
       world.moveEntity(hammer.id, player.id);
       
       const command = createCommand(IFActions.ATTACKING,
@@ -594,7 +594,7 @@ describe('attackingAction (Golden Pattern)', () => {
     test('should check strength requirements', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const gate = world.createEntity('iron gate', 'thing');
+      const gate = world.createEntity('iron gate', EntityType.OBJECT);
       gate.add({
         type: TraitType.BREAKABLE,
         breakMethod: 'force',
@@ -618,7 +618,7 @@ describe('attackingAction (Golden Pattern)', () => {
     test.skip('should handle partial breaking with multiple hits', () => {  // Skip: depends on scope logic
       const { world, player, room } = setupBasicWorld();
       
-      const crate = world.createEntity('wooden crate', 'thing');
+      const crate = world.createEntity('wooden crate', EntityType.OBJECT);
       crate.add({
         type: TraitType.BREAKABLE,
         breakMethod: 'force',
@@ -661,7 +661,7 @@ describe('attackingAction (Golden Pattern)', () => {
     test.skip('should break objects after enough hits', () => {  // Skip: depends on scope logic
       const { world, player, room } = setupBasicWorld();
       
-      const barrel = world.createEntity('oak barrel', 'thing');
+      const barrel = world.createEntity('oak barrel', EntityType.OBJECT);
       barrel.add({
         type: TraitType.BREAKABLE,
         breakMethod: 'force',
@@ -711,7 +711,7 @@ describe('attackingAction (Golden Pattern)', () => {
     test.skip('should attack non-fragile objects without breaking', () => {  // Skip: depends on scope logic
       const { world, player, room } = setupBasicWorld();
       
-      const dummy = world.createEntity('training dummy', 'thing');
+      const dummy = world.createEntity('training dummy', EntityType.OBJECT);
       world.moveEntity(dummy.id, room.id);
       
       const command = createCommand(IFActions.ATTACKING, {
@@ -743,7 +743,7 @@ describe('attackingAction (Golden Pattern)', () => {
     test('should generate random NPC reactions', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const knight = world.createEntity('armored knight', 'actor');
+      const knight = world.createEntity('armored knight', EntityType.ACTOR);
       knight.add({
         type: TraitType.ACTOR
       });
@@ -776,7 +776,7 @@ describe('attackingAction (Golden Pattern)', () => {
     test.skip('should include proper entities in all events', () => {  // Skip: depends on scope logic
       const { world, player, room } = setupBasicWorld();
       
-      const target = world.createEntity('practice target', 'thing');
+      const target = world.createEntity('practice target', EntityType.OBJECT);
       world.moveEntity(target.id, room.id);
       
       const command = createCommand(IFActions.ATTACKING, {

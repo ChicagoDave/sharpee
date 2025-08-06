@@ -313,7 +313,7 @@ describe('EdibleTrait', () => {
 
   describe('entity integration', () => {
     it('should attach to entity correctly', () => {
-      const entity = world.createEntity('apple', 'Red Apple');
+      const entity = world.createEntity('Red Apple', 'item');
       const trait = new EdibleTrait({ nutrition: 3 });
       
       entity.add(trait);
@@ -323,14 +323,14 @@ describe('EdibleTrait', () => {
     });
 
     it('should create various edible entities', () => {
-      const bread = world.createEntity('bread', 'Loaf of Bread');
+      const bread = world.createEntity('Loaf of Bread', 'item');
       bread.add(new EdibleTrait({
         nutrition: 5,
         servings: 6,
         consumeMessage: 'You eat a piece of bread.'
       }));
       
-      const potion = world.createEntity('potion', 'Healing Potion');
+      const potion = world.createEntity('Healing Potion', 'item');
       potion.add(new EdibleTrait({
         liquid: true,
         nutrition: 0,
@@ -339,7 +339,7 @@ describe('EdibleTrait', () => {
         remainsType: 'empty_vial'
       }));
       
-      const wine = world.createEntity('wine', 'Bottle of Wine');
+      const wine = world.createEntity('Bottle of Wine', 'item');
       wine.add(new EdibleTrait({
         liquid: true,
         nutrition: 2,
@@ -355,7 +355,7 @@ describe('EdibleTrait', () => {
     });
 
     it('should work with containers for liquids', () => {
-      const bottle = world.createEntity('water_bottle', 'Water Bottle');
+      const bottle = world.createEntity('Water Bottle', 'container');
       
       bottle.add(new ContainerTrait());
       bottle.add(new EdibleTrait({

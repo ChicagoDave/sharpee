@@ -23,7 +23,8 @@ import {
   SceneryTrait,
   ReadableTrait,
   ScopeRule,
-  LightSourceTrait
+  LightSourceTrait,
+  EntityType
 } from '@sharpee/world-model';
 
 /**
@@ -148,7 +149,7 @@ export class CloakOfDarknessStory implements Story {
       includeEntities: (context) => {
         const results: string[] = [];
         const location = context.world.getEntity(context.currentLocation);
-        const roomTrait = location?.get<RoomTrait>('room');
+        const roomTrait = location?.get('room') as RoomTrait | undefined;
         const isDark = roomTrait?.isDark === true;
         
         // Always include current location
@@ -156,7 +157,7 @@ export class CloakOfDarknessStory implements Story {
         
         // Check if player is carrying the cloak
         const carried = context.world.getContents(context.actorId);
-        const hasCloak = carried.some(item => item.attributes.name === 'cloak');
+        const hasCloak = carried.some((item: IFEntity) => item.attributes.name === 'cloak');
         
         // In dark room with cloak - can only see the room itself
         if (isDark && hasCloak) {
@@ -166,12 +167,12 @@ export class CloakOfDarknessStory implements Story {
         
         // Otherwise, see everything in the room
         const contents = context.world.getContents(context.currentLocation);
-        results.push(...contents.map(e => e.id));
+        results.push(...contents.map((e: IFEntity) => e.id));
         
         // Also see nested contents (in containers, on supporters)
         for (const entity of contents) {
           const nested = context.world.getAllContents(entity.id);
-          results.push(...nested.map(e => e.id));
+          results.push(...nested.map((e: IFEntity) => e.id));
         }
         
         return results;
@@ -185,12 +186,12 @@ export class CloakOfDarknessStory implements Story {
       fromLocations: '*',
       includeEntities: (context) => {
         const location = context.world.getEntity(context.currentLocation);
-        const roomTrait = location?.get<RoomTrait>('room');
+        const roomTrait = location?.get('room') as RoomTrait | undefined;
         const isDark = roomTrait?.isDark === true;
         
         // Check if player is carrying the cloak
         const carried = context.world.getContents(context.actorId);
-        const hasCloak = carried.some(item => item.attributes.name === 'cloak');
+        const hasCloak = carried.some((item: IFEntity) => item.attributes.name === 'cloak');
         
         // In pitch darkness (dark room with cloak), can't even see inventory
         if (isDark && hasCloak) {
@@ -198,12 +199,12 @@ export class CloakOfDarknessStory implements Story {
         }
         
         // Otherwise, can see carried items
-        const results = carried.map(e => e.id);
+        const results = carried.map((e: IFEntity) => e.id);
         
         // Add nested contents of carried items
         for (const entity of carried) {
           const nested = context.world.getAllContents(entity.id);
-          results.push(...nested.map(e => e.id));
+          results.push(...nested.map((e: IFEntity) => e.id));
         }
         
         return results;
@@ -250,7 +251,7 @@ export class CloakOfDarknessStory implements Story {
     }
     
     // Otherwise create a new player
-    const player = world.createEntity('player', 'yourself');
+    const player = world.createEntity('yourself', EntityType.ACTOR);
     
     player.add(new IdentityTrait({
       name: 'yourself',
@@ -316,7 +317,7 @@ export class CloakOfDarknessStory implements Story {
    * Create the Foyer (starting room) without exits
    */
   private createFoyerBase(): IFEntity {
-    const foyer = this.world.createEntity('foyer', 'Foyer of the Opera House');
+    const foyer = this.world.createEntity('Foyer of the Opera House', EntityType.ROOM);
     
     foyer.add(new RoomTrait({
       exits: {}, // Will be added later
@@ -338,7 +339,7 @@ export class CloakOfDarknessStory implements Story {
    * Create the Cloakroom without exits
    */
   private createCloakroomBase(): IFEntity {
-    const cloakroom = this.world.createEntity('cloakroom', 'Cloakroom');
+    const cloakroom = this.world.createEntity('Cloakroom', EntityType.ROOM);
     
     cloakroom.add(new RoomTrait({
       exits: {}, // Will be added later
@@ -360,7 +361,7 @@ export class CloakOfDarknessStory implements Story {
    * Create the Bar (dark room with the message) without exits
    */
   private createBarBase(): IFEntity {
-    const bar = this.world.createEntity('bar', 'Foyer Bar');
+    const bar = this.world.createEntity('Foyer Bar', EntityType.ROOM);
     
     bar.add(new RoomTrait({
       exits: {}, // Will be added later
@@ -382,7 +383,7 @@ export class CloakOfDarknessStory implements Story {
    * Create the Outside (ending/exit) without exits
    */
   private createOutsideBase(): IFEntity {
-    const outside = this.world.createEntity('outside', 'Outside');
+    const outside = this.world.createEntity('Outside', EntityType.ROOM);
     
     outside.add(new RoomTrait({
       exits: {}, // Will be added later
@@ -405,7 +406,7 @@ export class CloakOfDarknessStory implements Story {
    * Create the velvet cloak
    */
   private createCloak(): IFEntity {
-    const cloak = this.world.createEntity('cloak', 'velvet cloak');
+    const cloak = this.world.createEntity('velvet cloak', EntityType.ITEM);
     
     cloak.add(new IdentityTrait({
       name: 'velvet cloak',
@@ -428,7 +429,7 @@ export class CloakOfDarknessStory implements Story {
    * Create the hook in the cloakroom
    */
   private createHook(cloakroom: IFEntity): IFEntity {
-    const hook = this.world.createEntity('hook', 'brass hook');
+    const hook = this.world.createEntity('brass hook', EntityType.SUPPORTER);
     
     hook.add(new IdentityTrait({
       name: 'brass hook',
@@ -456,7 +457,7 @@ export class CloakOfDarknessStory implements Story {
    * Create the message in the sawdust
    */
   private createMessage(bar: IFEntity): IFEntity {
-    const message = this.world.createEntity('message', 'message');
+    const message = this.world.createEntity('message in the sawdust', EntityType.SCENERY);
     
     message.add(new IdentityTrait({
       name: 'message in the sawdust',

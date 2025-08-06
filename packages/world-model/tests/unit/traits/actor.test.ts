@@ -317,7 +317,7 @@ describe('ActorTrait', () => {
 
   describe('entity integration', () => {
     it('should attach to entity correctly', () => {
-      const entity = world.createEntity('guard', 'Palace Guard');
+      const entity = world.createEntity('Palace Guard', 'actor');
       const trait = new ActorTrait();
       
       entity.add(trait);
@@ -327,7 +327,7 @@ describe('ActorTrait', () => {
     });
 
     it('should work with container trait for inventory', () => {
-      const entity = world.createEntity('player', 'Hero');
+      const entity = world.createEntity('Hero', 'actor');
       
       entity.add(new ActorTrait({ isPlayer: true }));
       entity.add(new ContainerTrait());
@@ -340,7 +340,7 @@ describe('ActorTrait', () => {
     });
 
     it('should create NPCs with custom properties', () => {
-      const merchant = world.createEntity('merchant', 'Shop Keeper');
+      const merchant = world.createEntity('Shop Keeper', 'actor');
       
       const actorTrait = new ActorTrait({
         state: 'trading',
@@ -367,7 +367,7 @@ describe('ActorTrait', () => {
     });
 
     it('should create player with inventory limits', () => {
-      const player = world.createEntity('player', 'You');
+      const player = world.createEntity('You', 'actor');
       
       const actorTrait = new ActorTrait({
         isPlayer: true,
@@ -461,9 +461,9 @@ describe('ActorTrait', () => {
 
   describe('complex scenarios', () => {
     it('should handle multiple actors in a world', () => {
-      const player = world.createEntity('player', 'Hero');
-      const guard = world.createEntity('guard', 'Guard');
-      const merchant = world.createEntity('merchant', 'Merchant');
+      const player = world.createEntity('Hero', 'actor');
+      const guard = world.createEntity('Guard', 'actor');
+      const merchant = world.createEntity('Merchant', 'actor');
       
       player.add(new ActorTrait({ 
         isPlayer: true,
@@ -491,7 +491,7 @@ describe('ActorTrait', () => {
     });
 
     it('should support actor transformation', () => {
-      const entity = world.createEntity('werewolf', 'Villager');
+      const entity = world.createEntity('Villager', 'actor');
       
       const humanForm = new ActorTrait({
         state: 'human',

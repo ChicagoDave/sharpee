@@ -1,7 +1,14 @@
 // WorldModel.ts - Core world model interface and implementation for Sharpee IF Platform
 
 import { IFEntity } from '../entities/if-entity';
+import { EntityType, isEntityType } from '../entities/entity-types';
 import { TraitType } from '../traits/trait-types';
+import { RoomTrait } from '../traits/room';
+import { ContainerTrait } from '../traits/container';
+import { SupporterTrait } from '../traits/supporter';
+import { ActorTrait } from '../traits/actor';
+import { DoorTrait } from '../traits/door';
+import { SceneryTrait } from '../traits/scenery';
 import { SemanticEvent, SemanticEventSource } from '@sharpee/core';
 import { SpatialIndex } from './SpatialIndex';
 import { VisibilityBehavior } from './VisibilityBehavior';
@@ -51,6 +58,7 @@ export interface WorldModel {
   
   // Entity Management
   createEntity(displayName: string, type?: string): IFEntity;
+  createEntityWithTraits(type: EntityType): IFEntity;
   getEntity(id: string): IFEntity | undefined;
   hasEntity(id: string): boolean;
   removeEntity(id: string): boolean;
@@ -284,6 +292,11 @@ export class WorldModel implements WorldModel {
 
   // Entity Management
   createEntity(displayName: string, type: string = 'object'): IFEntity {
+    // Validate entity type
+    if (!isEntityType(type)) {
+      throw new Error(`Unknown entity type: '${type}'. Valid types are: ${Object.values(EntityType).join(', ')}`);
+    }
+    
     // Generate ID based on type
     const id = this.generateId(type);
 
@@ -294,6 +307,45 @@ export class WorldModel implements WorldModel {
         entityType: type
       }
     });
+    
+    // Add to entity map
+    this.entities.set(id, entity);
+    
+    return entity;
+  }
+
+  /**
+   * Create an entity with type safety and automatic trait assignment
+   * @param type The entity type (from EntityType constants)
+   * @returns The created entity with appropriate default traits
+   */
+  createEntityWithTraits(type: EntityType): IFEntity {
+    const id = this.generateId(type);
+    const entity = new IFEntity(id, type);
+    
+    // Auto-add appropriate default trait based on type
+    switch (type) {
+      case EntityType.ROOM:
+        entity.add(new RoomTrait({ exits: {} }));
+        break;
+      case EntityType.CONTAINER:
+        entity.add(new ContainerTrait());
+        break;
+      case EntityType.SUPPORTER:
+        entity.add(new SupporterTrait());
+        break;
+      case EntityType.ACTOR:
+        entity.add(new ActorTrait());
+        break;
+      case EntityType.DOOR:
+        // Door trait requires room1 and room2 to be set
+        // These must be configured after creation when room IDs are known
+        break;
+      case EntityType.SCENERY:
+        entity.add(new SceneryTrait());
+        break;
+      // ITEM, OBJECT, and EXIT don't need special traits by default
+    }
     
     // Add to entity map
     this.entities.set(id, entity);

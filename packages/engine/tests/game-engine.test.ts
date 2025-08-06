@@ -2,10 +2,12 @@
  * Tests for GameEngine using story-based testing
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { GameEngine, createGameEngine, createStandardEngine, createEngineWithStory } from '../src/game-engine';
 import { MinimalTestStory } from './stories/minimal-test-story';
-import { createMockAction, MockTextChannel } from './fixtures';
+import { createMockAction, MockTextChannel } from './fixtures/index';
 import { createMockTextService } from '../src/test-helpers/mock-text-service';
+import { EntityType } from '@sharpee/world-model';
 
 describe('GameEngine', () => {
   let engine: GameEngine;
@@ -152,8 +154,8 @@ describe('GameEngine', () => {
     });
 
     it('should emit turn events', async () => {
-      const turnStartSpy = jest.fn();
-      const turnCompleteSpy = jest.fn();
+      const turnStartSpy = vi.fn();
+      const turnCompleteSpy = vi.fn();
       
       engine.on('turn:start', turnStartSpy);
       engine.on('turn:complete', turnCompleteSpy);
@@ -165,7 +167,7 @@ describe('GameEngine', () => {
     });
 
     it('should handle turn execution errors', async () => {
-      const turnFailedSpy = jest.fn();
+      const turnFailedSpy = vi.fn();
       engine.on('turn:failed', turnFailedSpy);
       
       // Force an error by stopping the engine mid-execution
@@ -273,7 +275,7 @@ describe('GameEngine', () => {
     });
 
     it('should update vocabulary for entities in scope', () => {
-      const updateSpy = jest.spyOn(engine, 'updateEntityVocabulary');
+      const updateSpy = vi.spyOn(engine, 'updateEntityVocabulary');
       
       engine.updateScopeVocabulary();
       
@@ -284,7 +286,7 @@ describe('GameEngine', () => {
 
     it('should mark entities correctly as in/out of scope', () => {
       const world = engine.getWorld();
-      const entity = world.createEntity('test-item', 'Test Item');
+      const entity = world.createEntity('Test Item', EntityType.OBJECT);
       
       // Out of scope initially
       engine.updateEntityVocabulary(entity, false);
@@ -313,7 +315,7 @@ describe('GameEngine', () => {
     });
 
     it('should emit events during turn execution', async () => {
-      const eventSpy = jest.fn();
+      const eventSpy = vi.fn();
       engine.on('event', eventSpy);
       
       await engine.executeTurn('look');
@@ -323,7 +325,7 @@ describe('GameEngine', () => {
     });
 
     it('should call onEvent config callback', async () => {
-      const onEventSpy = jest.fn();
+      const onEventSpy = vi.fn();
       
       const configuredEngine = createStandardEngine({ onEvent: onEventSpy });
       await configuredEngine.setStory(story);
@@ -356,10 +358,8 @@ describe('GameEngine', () => {
 
     it('should allow setting custom text service', () => {
       const service = createMockTextService();
-      const mockChannel = new MockTextChannel();
       
-      engine.setTextService(service, [mockChannel]);
-      expect(() => engine.addTextChannel(mockChannel)).not.toThrow();
+      expect(() => engine.setTextService(service)).not.toThrow();
     });
   });
 

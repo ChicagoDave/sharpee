@@ -3,7 +3,7 @@
  */
 
 import { Story, StoryConfig } from '../../src/story';
-import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait } from '@sharpee/world-model';
+import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait, EntityType } from '@sharpee/world-model';
 
 /**
  * Minimal test story with one room and basic player
@@ -29,7 +29,7 @@ export class MinimalTestStory implements Story {
     this._worldInitCalled = true;
     
     // Create a simple test room
-    this._room = world.createEntity('test-room', 'Test Room');
+    this._room = world.createEntity('Test Room', EntityType.ROOM);
     this._room.add(new IdentityTrait({
       name: 'Test Room',
       description: 'A simple room for testing.',
@@ -41,7 +41,7 @@ export class MinimalTestStory implements Story {
 
   createPlayer(world: WorldModel): IFEntity {
     // Create player entity
-    this._player = world.createEntity('player', 'Player');
+    this._player = world.createEntity('Player', EntityType.ACTOR);
     this._player.add(new IdentityTrait({
       name: 'yourself',
       aliases: ['self', 'me', 'myself'],

@@ -326,7 +326,7 @@ describe('Parser Grammar Engine Integration', () => {
       if (result.success) {
         // When a slot is at the end of the pattern, it consumes all remaining tokens
         // This allows for complex descriptions like "painting on wall"
-        expect(result.value.structure.directObject).toBe('painting on wall');
+        expect(result.value.structure.directObject?.text).toBe('painting on wall');
       }
     });
   });
@@ -338,7 +338,7 @@ describe('Parser Grammar Engine Integration', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.examining');
-        expect(result.value.structure.directObject).toBe('painting');
+        expect(result.value.structure.directObject?.text).toBe('painting');
       }
     });
     
@@ -348,7 +348,7 @@ describe('Parser Grammar Engine Integration', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.examining_carefully');
-        expect(result.value.structure.directObject).toBe('painting');
+        expect(result.value.structure.directObject?.text).toBe('painting');
       }
     });
     
@@ -398,7 +398,7 @@ describe('Parser Grammar Engine Integration', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.saying');
-        expect(result.value.structure.directObject).toBe('"hello"');
+        expect(result.value.structure.directObject?.text).toBe('"hello"');
       }
     });
     
@@ -408,8 +408,8 @@ describe('Parser Grammar Engine Integration', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.saying_to');
-        expect(result.value.structure.directObject).toBe('"hello world"');
-        expect(result.value.structure.indirectObject).toBe('guard');
+        expect(result.value.structure.directObject?.text).toBe('"hello world"');
+        expect(result.value.structure.indirectObject?.text).toBe('guard');
       }
     });
     
@@ -419,7 +419,7 @@ describe('Parser Grammar Engine Integration', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.writing');
-        expect(result.value.structure.directObject).toBe('"Important message"');
+        expect(result.value.structure.directObject?.text).toBe('"Important message"');
       }
     });
     
@@ -429,8 +429,8 @@ describe('Parser Grammar Engine Integration', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.writing_on');
-        expect(result.value.structure.directObject).toBe('"Secret note"');
-        expect(result.value.structure.indirectObject).toBe('paper');
+        expect(result.value.structure.directObject?.text).toBe('"Secret note"');
+        expect(result.value.structure.indirectObject?.text).toBe('paper');
       }
     });
     
@@ -440,7 +440,7 @@ describe('Parser Grammar Engine Integration', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.shouting');
-        expect(result.value.structure.directObject).toBe('"Help!"');
+        expect(result.value.structure.directObject?.text).toBe('"Help!"');
       }
     });
     
@@ -450,8 +450,8 @@ describe('Parser Grammar Engine Integration', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.whispering');
-        expect(result.value.structure.directObject).toBe('"psst"');
-        expect(result.value.structure.indirectObject).toBe('thief');
+        expect(result.value.structure.directObject?.text).toBe('"psst"');
+        expect(result.value.structure.indirectObject?.text).toBe('thief');
       }
     });
     
@@ -461,7 +461,7 @@ describe('Parser Grammar Engine Integration', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.saying');
-        expect(result.value.structure.directObject).toBe('""');
+        expect(result.value.structure.directObject?.text).toBe('""');
       }
     });
     
@@ -471,7 +471,7 @@ describe('Parser Grammar Engine Integration', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.saying');
-        expect(result.value.structure.directObject).toBe('"Hello, world! How are you?"');
+        expect(result.value.structure.directObject?.text).toBe('"Hello, world! How are you?"');
       }
     });
   });
@@ -483,8 +483,8 @@ describe('Parser Grammar Engine Integration', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.taking_with');
-        expect(result.value.structure.directObject).toBe('coin');
-        expect(result.value.structure.indirectObject).toBe('box');
+        expect(result.value.structure.directObject?.text).toBe('coin');
+        expect(result.value.structure.indirectObject?.text).toBe('box');
         expect(result.value.extras?.tool?.text).toBe('tweezers');
       }
     });
@@ -495,7 +495,7 @@ describe('Parser Grammar Engine Integration', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.unlocking');
-        expect(result.value.structure.directObject).toBe('door');
+        expect(result.value.structure.directObject?.text).toBe('door');
         expect(result.value.extras?.key?.text).toBe('key');
       }
     });
@@ -506,7 +506,7 @@ describe('Parser Grammar Engine Integration', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.cutting');
-        expect(result.value.structure.directObject).toBe('rope');
+        expect(result.value.structure.directObject?.text).toBe('rope');
         expect(result.value.extras?.tool?.text).toBe('knife');
       }
     });
@@ -517,7 +517,7 @@ describe('Parser Grammar Engine Integration', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.attacking');
-        expect(result.value.structure.directObject).toBe('goblin');
+        expect(result.value.structure.directObject?.text).toBe('goblin');
         expect(result.value.extras?.weapon?.text).toBe('sword');
       }
     });
@@ -528,7 +528,7 @@ describe('Parser Grammar Engine Integration', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.opening_with');
-        expect(result.value.structure.directObject).toBe('chest');
+        expect(result.value.structure.directObject?.text).toBe('chest');
         expect(result.value.extras?.tool?.text).toBe('crowbar');
       }
     });
@@ -539,7 +539,7 @@ describe('Parser Grammar Engine Integration', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.digging');
-        expect(result.value.structure.directObject).toBe('hole');
+        expect(result.value.structure.directObject?.text).toBe('hole');
         expect(result.value.extras?.tool?.text).toBe('shovel');
       }
     });

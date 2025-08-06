@@ -42,24 +42,27 @@ class MockWorldModel {
     this.entities.set('crystal', {
       id: 'crystal',
       name: 'crystal',
+      attributes: { name: 'crystal' },
       visible: true,
       magical: true
-    });
+    } as any);
     
     this.entities.set('sword', {
       id: 'sword',
       name: 'sword',
+      attributes: { name: 'sword' },
       visible: true,
       portable: true,
       weapon: true
-    });
+    } as any);
     
     this.entities.set('dragon', {
       id: 'dragon',
       name: 'dragon',
+      attributes: { name: 'dragon' },
       visible: true,
       creature: true
-    });
+    } as any);
   }
 
   getEntity(id: string): Entity | undefined {
@@ -99,7 +102,7 @@ describe('Story Grammar API', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('story.action.casting');
-        expect(result.value.structure.directObject).toBe('fireball');
+        expect(result.value.structure.directObject?.text).toBe('fireball');
       }
     });
 
@@ -277,7 +280,7 @@ describe('Story Grammar API', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('story.action.attacking');
-        expect(result.value.structure.directObject).toBe('dragon');
+        expect(result.value.structure.directObject?.text).toBe('dragon');
         // 'with' patterns store the tool in extras
         expect((result.value as any).extras?.weapon?.text).toBe('sword');
       }

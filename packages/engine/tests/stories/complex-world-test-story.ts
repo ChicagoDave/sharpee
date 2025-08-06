@@ -3,7 +3,7 @@
  */
 
 import { Story, StoryConfig } from '../../src/story';
-import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait } from '@sharpee/world-model';
+import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait, EntityType } from '@sharpee/world-model';
 
 /**
  * Complex world test story with multiple rooms, objects, and containers
@@ -66,7 +66,7 @@ export class ComplexWorldTestStory implements Story {
   }
 
   createPlayer(world: WorldModel): IFEntity {
-    this._player = world.createEntity('player', 'Player');
+    this._player = world.createEntity('Player', EntityType.ACTOR);
     this._player.add(new IdentityTrait({
       name: 'yourself',
       aliases: ['self', 'me', 'myself'],
@@ -90,7 +90,7 @@ export class ComplexWorldTestStory implements Story {
 
   // Helper methods for creating world entities
   private createRoom(world: WorldModel, id: string, name: string, description: string): IFEntity {
-    const room = world.createEntity(id, name);
+    const room = world.createEntity(name, EntityType.ROOM);
     room.add(new IdentityTrait({
       name,
       description,
@@ -103,7 +103,7 @@ export class ComplexWorldTestStory implements Story {
   }
 
   private createObject(world: WorldModel, id: string, name: string, description: string): IFEntity {
-    const obj = world.createEntity(id, name);
+    const obj = world.createEntity(name, EntityType.OBJECT);
     obj.add(new IdentityTrait({
       name,
       description,
@@ -116,7 +116,7 @@ export class ComplexWorldTestStory implements Story {
   }
 
   private createContainer(world: WorldModel, id: string, name: string, description: string, portable: boolean): IFEntity {
-    const container = world.createEntity(id, name);
+    const container = world.createEntity(name, EntityType.CONTAINER);
     container.add(new IdentityTrait({
       name,
       description,

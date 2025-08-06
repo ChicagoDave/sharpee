@@ -5,6 +5,7 @@ import { IFEntity } from '../../../src/entities/if-entity';
 import { TraitType } from '../../../src/traits/trait-types';
 import { WorldModel } from '../../../src/world/WorldModel';
 import { OpenableTrait } from '../../../src/traits/openable/openableTrait';
+import { EntityType } from '../../../src/entities/entity-types';
 
 describe('ReadableTrait', () => {
   let world: WorldModel;
@@ -299,7 +300,7 @@ Line 3: Content begins here...`
 
   describe('entity integration', () => {
     it('should attach to entity correctly', () => {
-      const entity = world.createEntity('sign', 'Wooden Sign');
+      const entity = world.createEntity('Wooden Sign', EntityType.SCENERY);
       const trait = new ReadableTrait({
         text: 'Welcome to the Inn'
       });
@@ -311,20 +312,20 @@ Line 3: Content begins here...`
     });
 
     it('should create various readable entities', () => {
-      const book = world.createEntity('book', 'Ancient Tome');
+      const book = world.createEntity('Ancient Tome', EntityType.ITEM);
       book.add(new ReadableTrait({
         readableType: 'book',
         text: 'The secrets of the ancients...',
         language: 'ancient'
       }));
       
-      const sign = world.createEntity('sign', 'Warning Sign');
+      const sign = world.createEntity('Warning Sign', EntityType.SCENERY);
       sign.add(new ReadableTrait({
         readableType: 'sign',
         text: 'DANGER: Do not feed the dragon!'
       }));
       
-      const letter = world.createEntity('letter', 'Sealed Letter');
+      const letter = world.createEntity('Sealed Letter', EntityType.ITEM);
       letter.add(new ReadableTrait({
         readableType: 'note',
         text: 'Meet me at midnight by the old oak tree.',
@@ -337,7 +338,7 @@ Line 3: Content begins here...`
     });
 
     it('should work with openable books', () => {
-      const book = world.createEntity('spellbook', 'Spellbook');
+      const book = world.createEntity('Spellbook', EntityType.CONTAINER);
       
       book.add(new OpenableTrait({
         isOpen: false,
@@ -452,7 +453,7 @@ Line 3: Content begins here...`
     });
 
     it('should handle inscribed objects', () => {
-      const sword = world.createEntity('sword', 'Ancient Sword');
+      const sword = world.createEntity('Ancient Sword', EntityType.ITEM);
       
       sword.add(new ReadableTrait({
         readableType: 'inscription',

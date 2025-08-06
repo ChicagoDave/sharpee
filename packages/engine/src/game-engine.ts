@@ -12,7 +12,8 @@ import {
   ContainerTrait,
   StandardCapabilities,
   Trait,
-  TraitType
+  TraitType,
+  EntityType
 } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import { 
@@ -140,8 +141,10 @@ export class GameEngine {
     // Set language from story configuration
     await this.setLanguage(story.config.language);
     
-    // Set text service from story configuration
-    await this.setTextServiceFromConfig(story.config.textService);
+    // Set text service from story configuration (skip if already set)
+    if (!this.textService) {
+      await this.setTextServiceFromConfig(story.config.textService);
+    }
     
     // Initialize story-specific world content
     story.initializeWorld(this.world);
@@ -506,7 +509,7 @@ export class GameEngine {
 
       // Process pending platform operations before text service
       if (this.pendingPlatformOps.length > 0) {
-        await this.processPlatformOperations();
+        await this.processPlatformOperations(turn);
       }
 
       // Process text output
@@ -535,10 +538,17 @@ export class GameEngine {
             return this.world.getLocation(entityId) || null;
           },
           getPlatformEvents: () => {
-            // Get all platform events for the current turn
-            // Platform events have the turn in their payload
+            // Get platform events for the current turn only
+            // Filter by turn number in the event data
+            const currentTurn = turn;
             return this.platformEvents.getAllEvents()
-              .filter(e => e.tags?.includes('platform'));
+              .filter(e => {
+                if (!e.tags?.includes('platform')) return false;
+                // Check if event has turn data
+                const eventTurn = e.data?.turn || e.metadata?.turn;
+                // If no turn data, assume it's from initialization (turn 0)
+                return eventTurn === undefined ? currentTurn === 1 : eventTurn === currentTurn;
+              });
           }
         };
         
@@ -987,7 +997,8 @@ export class GameEngine {
   /**
    * Process pending platform operations
    */
-  private async processPlatformOperations(): Promise<void> {
+  private async processPlatformOperations(turn?: number): Promise<void> {
+    const currentTurn = turn ?? this.context.currentTurn;
     // Process each pending operation
     for (const platformOp of this.pendingPlatformOps) {
       try {
@@ -1009,12 +1020,12 @@ export class GameEngine {
               // Emit completion event
               const completionEvent = createSaveCompletedEvent(true);
               this.eventSource.emit(completionEvent);
-              this.turnEvents.get(this.context.currentTurn - 1)?.push(completionEvent);
+              this.turnEvents.get(currentTurn)?.push(completionEvent);
             } else {
               // No save hook registered
               const errorEvent = createSaveCompletedEvent(false, 'No save handler registered');
               this.eventSource.emit(errorEvent);
-              this.turnEvents.get(this.context.currentTurn - 1)?.push(errorEvent);
+              this.turnEvents.get(currentTurn)?.push(errorEvent);
             }
             break;
           }
@@ -1029,49 +1040,35 @@ export class GameEngine {
                 // Emit completion event
                 const completionEvent = createRestoreCompletedEvent(true);
                 this.eventSource.emit(completionEvent);
-                this.turnEvents.get(this.context.currentTurn - 1)?.push(completionEvent);
+                this.turnEvents.get(currentTurn)?.push(completionEvent);
               } else {
                 // User cancelled or no save available
                 const errorEvent = createRestoreCompletedEvent(false, 'No save data available or restore cancelled');
                 this.eventSource.emit(errorEvent);
-                this.turnEvents.get(this.context.currentTurn - 1)?.push(errorEvent);
+                this.turnEvents.get(currentTurn)?.push(errorEvent);
               }
             } else {
               // No restore hook registered
               const errorEvent = createRestoreCompletedEvent(false, 'No restore handler registered');
               this.eventSource.emit(errorEvent);
-              this.turnEvents.get(this.context.currentTurn - 1)?.push(errorEvent);
+              this.turnEvents.get(currentTurn)?.push(errorEvent);
             }
             break;
           }
           
           case PlatformEventType.QUIT_REQUESTED: {
             const context = platformOp.payload.context as QuitContext;
-            if (this.saveRestoreHooks?.onQuitRequested) {
-              const shouldQuit = await this.saveRestoreHooks.onQuitRequested(context);
-              if (shouldQuit) {
-                // Emit confirmation event
-                const confirmEvent = createQuitConfirmedEvent();
-                this.eventSource.emit(confirmEvent);
-                this.turnEvents.get(this.context.currentTurn - 1)?.push(confirmEvent);
-                
-                // Stop the engine
-                this.stop();
-              } else {
-                // Quit was cancelled
-                const cancelEvent = createQuitCancelledEvent();
-                this.eventSource.emit(cancelEvent);
-                this.turnEvents.get(this.context.currentTurn - 1)?.push(cancelEvent);
-              }
-            } else {
-              // No quit hook registered - default behavior is to quit
-              const confirmEvent = createQuitConfirmedEvent();
-              this.eventSource.emit(confirmEvent);
-              this.turnEvents.get(this.context.currentTurn - 1)?.push(confirmEvent);
-              
-              // Stop the engine
-              this.stop();
+            
+            // The quit action already emitted a client.query event
+            // For now, just auto-confirm quit (tests will need to be updated to handle actual query flow)
+            // TODO: Implement proper query handling with hooks
+            const confirmEvent = createQuitConfirmedEvent();
+            this.eventSource.emit(confirmEvent);
+            const turnEvents = this.turnEvents.get(currentTurn);
+            if (turnEvents) {
+              turnEvents.push(confirmEvent);
             }
+            
             break;
           }
           
@@ -1083,7 +1080,7 @@ export class GameEngine {
                 // Emit completion event
                 const completionEvent = createRestartCompletedEvent(true);
                 this.eventSource.emit(completionEvent);
-                this.turnEvents.get(this.context.currentTurn - 1)?.push(completionEvent);
+                this.turnEvents.get(currentTurn)?.push(completionEvent);
                 
                 // Re-initialize the story
                 if (this.story) {
@@ -1094,13 +1091,13 @@ export class GameEngine {
                 // Restart was cancelled
                 const cancelEvent = createRestartCompletedEvent(false);
                 this.eventSource.emit(cancelEvent);
-                this.turnEvents.get(this.context.currentTurn - 1)?.push(cancelEvent);
+                this.turnEvents.get(currentTurn)?.push(cancelEvent);
               }
             } else {
               // No restart hook registered - default behavior is to restart
               const completionEvent = createRestartCompletedEvent(true);
               this.eventSource.emit(completionEvent);
-              this.turnEvents.get(this.context.currentTurn - 1)?.push(completionEvent);
+              this.turnEvents.get(currentTurn)?.push(completionEvent);
               
               // Re-initialize the story
               if (this.story) {
@@ -1134,7 +1131,7 @@ export class GameEngine {
         }
         
         this.eventSource.emit(errorEvent);
-        this.turnEvents.get(this.context.currentTurn - 1)?.push(errorEvent);
+        this.turnEvents.get(currentTurn)?.push(errorEvent);
       }
     }
     
@@ -1503,7 +1500,7 @@ export function createStandardEngine(config?: EngineConfig): GameEngine {
   const world = new WorldModel();
 
   // Create player entity
-  const player = world.createEntity('player', 'You');
+  const player = world.createEntity('You', EntityType.ACTOR);
   
   // Add traits to player
   player.add(new IdentityTrait({

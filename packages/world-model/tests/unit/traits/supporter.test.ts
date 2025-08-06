@@ -188,7 +188,7 @@ describe('SupporterTrait', () => {
 
   describe('entity integration', () => {
     it('should attach to entity correctly', () => {
-      const entity = world.createEntity('table', 'Wooden Table');
+      const entity = world.createEntity('Wooden Table', 'supporter');
       const trait = new SupporterTrait();
       
       entity.add(trait);
@@ -198,18 +198,18 @@ describe('SupporterTrait', () => {
     });
 
     it('should create various supporter entities', () => {
-      const table = world.createEntity('table', 'Dining Table');
+      const table = world.createEntity('Dining Table', 'supporter');
       table.add(new SupporterTrait({
         capacity: { maxWeight: 100, maxItems: 20 }
       }));
       
-      const shelf = world.createEntity('shelf', 'Bookshelf');
+      const shelf = world.createEntity('Bookshelf', 'supporter');
       shelf.add(new SupporterTrait({
         capacity: { maxWeight: 50 },
         allowedTypes: ['book', 'scroll', 'box']
       }));
       
-      const altar = world.createEntity('altar', 'Stone Altar');
+      const altar = world.createEntity('Stone Altar', 'supporter');
       altar.add(new SupporterTrait({
         capacity: { maxItems: 3 },
         excludedTypes: ['cursed']
@@ -221,7 +221,7 @@ describe('SupporterTrait', () => {
     });
 
     it('should work with scenery supporters', () => {
-      const counter = world.createEntity('counter', 'Kitchen Counter');
+      const counter = world.createEntity('Kitchen Counter', 'supporter');
       
       counter.add(new SceneryTrait({
         cantTakeMessage: 'The counter is built into the kitchen.'
@@ -235,19 +235,19 @@ describe('SupporterTrait', () => {
     });
 
     it('should work with enterable supporters', () => {
-      const bed = world.createEntity('bed', 'Comfortable Bed');
+      const bed = world.createEntity('Comfortable Bed', 'supporter');
       bed.add(new SupporterTrait({
         enterable: true,
         capacity: { maxWeight: 200 }
       }));
       
-      const chair = world.createEntity('chair', 'Wooden Chair');
+      const chair = world.createEntity('Wooden Chair', 'supporter');
       chair.add(new SupporterTrait({
         enterable: true,
         capacity: { maxWeight: 150, maxItems: 1 }
       }));
       
-      const bench = world.createEntity('bench', 'Park Bench');
+      const bench = world.createEntity('Park Bench', 'supporter');
       bench.add(new SupporterTrait({
         enterable: true,
         capacity: { maxWeight: 300 }
@@ -389,7 +389,7 @@ describe('SupporterTrait', () => {
 
   describe('complex scenarios', () => {
     it('should handle multi-purpose supporters', () => {
-      const workbench = world.createEntity('workbench', 'Crafting Workbench');
+      const workbench = world.createEntity('Crafting Workbench', 'supporter');
       
       workbench.add(new SupporterTrait({
         capacity: { maxWeight: 100, maxItems: 20 },
@@ -434,7 +434,7 @@ describe('SupporterTrait', () => {
     });
 
     it('should handle dynamic supporter states', () => {
-      const drawbridge = world.createEntity('drawbridge', 'Drawbridge');
+      const drawbridge = world.createEntity('Drawbridge', 'supporter');
       
       const supporterTrait = new SupporterTrait({
         enterable: true,

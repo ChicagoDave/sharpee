@@ -4,7 +4,7 @@
 
 import { CommandExecutor, createCommandExecutor } from '../src/command-executor';
 import { ActionTestStory } from './stories';
-import { createMockAction } from './fixtures';
+import { createMockAction } from './fixtures/index';
 import { WorldModel } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import { StandardActionRegistry, ActionResult, ActionContext, ParserFactory } from '@sharpee/stdlib';

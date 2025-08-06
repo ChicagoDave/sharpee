@@ -6,7 +6,7 @@
  */
 
 import { GameEngine, createStandardEngine } from '@sharpee/engine';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, EntityType } from '@sharpee/world-model';
 
 // Example 1: Setting language directly
 async function example1() {
@@ -42,7 +42,7 @@ async function example2() {
     
     createPlayer(world: WorldModel) {
       // Create and return player entity...
-      return world.createEntity('player', 'Tú');
+      return world.createEntity('Tú', EntityType.ACTOR);
     }
   };
   

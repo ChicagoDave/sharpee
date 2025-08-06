@@ -3,7 +3,7 @@
  */
 
 import { Story, StoryConfig } from '../../src/story';
-import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait } from '@sharpee/world-model';
+import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait, EntityType } from '@sharpee/world-model';
 
 interface StateMarker {
   id: string;
@@ -33,7 +33,7 @@ export class GameStateTestStory implements Story {
 
   initializeWorld(world: WorldModel): void {
     // Create test room with state
-    this._room = world.createEntity('state-test-room', 'State Test Room');
+    this._room = world.createEntity('State Test Room', EntityType.ROOM);
     this._room.add(new IdentityTrait({
       name: 'State Test Room',
       description: 'A room that tracks state changes.',
@@ -42,7 +42,7 @@ export class GameStateTestStory implements Story {
     this._room.add(new ContainerTrait({ portable: false }));
 
     // Create objects with different states
-    const door = world.createEntity('door', 'Door');
+    const door = world.createEntity('Door', EntityType.DOOR);
     door.add(new IdentityTrait({
       name: 'wooden door',
       aliases: ['door'],
@@ -55,7 +55,7 @@ export class GameStateTestStory implements Story {
     (door as any).isOpen = false;
     (door as any).isLocked = true;
     
-    const lamp = world.createEntity('lamp', 'Lamp');
+    const lamp = world.createEntity('Lamp', EntityType.OBJECT);
     lamp.add(new IdentityTrait({
       name: 'brass lamp',
       aliases: ['lamp', 'light'],
@@ -79,7 +79,7 @@ export class GameStateTestStory implements Story {
   }
 
   createPlayer(world: WorldModel): IFEntity {
-    this._player = world.createEntity('player', 'Player');
+    this._player = world.createEntity('Player', EntityType.ACTOR);
     this._player.add(new IdentityTrait({
       name: 'yourself',
       aliases: ['self', 'me', 'myself'],

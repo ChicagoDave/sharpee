@@ -3,7 +3,7 @@
  */
 
 import { Story, StoryConfig } from '../../src/story';
-import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait } from '@sharpee/world-model';
+import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait, EntityType } from '@sharpee/world-model';
 import { Action, ActionContext, ActionResult } from '@sharpee/stdlib';
 import { GameEvent } from '@sharpee/event-processor';
 
@@ -47,7 +47,7 @@ export class EventTestStory implements Story {
 
   initializeWorld(world: WorldModel): void {
     // Create test room
-    this._room = world.createEntity('event-test-room', 'Event Test Room');
+    this._room = world.createEntity('Event Test Room', EntityType.ROOM);
     this._room.add(new IdentityTrait({
       name: 'Event Test Room',
       description: 'A room for testing event generation.',
@@ -56,7 +56,7 @@ export class EventTestStory implements Story {
     this._room.add(new ContainerTrait({ portable: false }));
 
     // Create test objects that will generate events
-    const testItem = world.createEntity('test-item', 'Test Item');
+    const testItem = world.createEntity('Test Item', EntityType.OBJECT);
     testItem.add(new IdentityTrait({
       name: 'test item',
       aliases: ['item', 'thing'],
@@ -69,7 +69,7 @@ export class EventTestStory implements Story {
   }
 
   createPlayer(world: WorldModel): IFEntity {
-    this._player = world.createEntity('player', 'Player');
+    this._player = world.createEntity('Player', EntityType.ACTOR);
     this._player.add(new IdentityTrait({
       name: 'yourself',
       aliases: ['self', 'me', 'myself'],

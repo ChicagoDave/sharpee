@@ -8,6 +8,7 @@ import { RoomTrait } from '../../../src/traits/room/roomTrait';
 import { ContainerTrait } from '../../../src/traits/container/containerTrait';
 import { OpenableTrait } from '../../../src/traits/openable/openableTrait';
 import { ReadableTrait } from '../../../src/traits/readable/readableTrait';
+import { EntityType } from '../../../src/entities/entity-types';
 
 describe('SceneryTrait', () => {
   let world: WorldModel;
@@ -120,7 +121,7 @@ describe('SceneryTrait', () => {
 
   describe('entity integration', () => {
     it('should attach to entity correctly', () => {
-      const entity = world.createEntity('fountain', 'Stone Fountain');
+      const entity = world.createEntity('Stone Fountain', EntityType.SCENERY);
       const trait = new SceneryTrait();
       
       entity.add(trait);
@@ -130,17 +131,17 @@ describe('SceneryTrait', () => {
     });
 
     it('should create various scenery entities', () => {
-      const fireplace = world.createEntity('fireplace', 'Stone Fireplace');
+      const fireplace = world.createEntity('Stone Fireplace', EntityType.SCENERY);
       fireplace.add(new SceneryTrait({
         cantTakeMessage: 'The fireplace is built into the wall.'
       }));
       
-      const window = world.createEntity('window', 'Large Window');
+      const window = world.createEntity('Large Window', EntityType.SCENERY);
       window.add(new SceneryTrait({
         cantTakeMessage: 'You can\'t take the window!'
       }));
       
-      const carpet = world.createEntity('carpet', 'Ornate Carpet');
+      const carpet = world.createEntity('Ornate Carpet', EntityType.SCENERY);
       carpet.add(new SceneryTrait({
         cantTakeMessage: 'The carpet is far too large and heavy to carry.'
       }));
@@ -151,17 +152,17 @@ describe('SceneryTrait', () => {
     });
 
     it('should work with room decorations', () => {
-      const room = world.createEntity('library', 'Library');
+      const room = world.createEntity('Library', EntityType.ROOM);
       room.add(new RoomTrait());
       room.add(new ContainerTrait());
       
-      const chandelier = world.createEntity('chandelier', 'Crystal Chandelier');
+      const chandelier = world.createEntity('Crystal Chandelier', EntityType.SCENERY);
       chandelier.add(new SceneryTrait({
         cantTakeMessage: 'The chandelier is suspended from the ceiling.',
         mentioned: true
       }));
       
-      const wallpaper = world.createEntity('wallpaper', 'Faded Wallpaper');
+      const wallpaper = world.createEntity('Faded Wallpaper', EntityType.SCENERY);
       wallpaper.add(new SceneryTrait({
         mentioned: false // Hidden scenery
       }));
@@ -174,7 +175,7 @@ describe('SceneryTrait', () => {
 
     it('should work with interactive scenery', () => {
       // Scenery that can be opened
-      const cabinet = world.createEntity('cabinet', 'Wall Cabinet');
+      const cabinet = world.createEntity('Wall Cabinet', EntityType.SCENERY);
       cabinet.add(new SceneryTrait({
         cantTakeMessage: 'The cabinet is bolted to the wall.'
       }));
@@ -184,7 +185,7 @@ describe('SceneryTrait', () => {
       cabinet.add(new ContainerTrait());
       
       // Scenery that can be read
-      const plaque = world.createEntity('plaque', 'Bronze Plaque');
+      const plaque = world.createEntity('Bronze Plaque', EntityType.SCENERY);
       plaque.add(new SceneryTrait({
         cantTakeMessage: 'The plaque is firmly attached to the wall.'
       }));
@@ -340,7 +341,7 @@ describe('SceneryTrait', () => {
 
   describe('complex scenarios', () => {
     it('should handle scenery with state changes', () => {
-      const fountain = world.createEntity('fountain', 'Marble Fountain');
+      const fountain = world.createEntity('Marble Fountain', EntityType.SCENERY);
       
       const sceneryTrait = new SceneryTrait({
         cantTakeMessage: 'The fountain is a permanent fixture.',
@@ -358,14 +359,14 @@ describe('SceneryTrait', () => {
     });
 
     it('should handle scenery containers', () => {
-      const altar = world.createEntity('altar', 'Stone Altar');
+      const altar = world.createEntity('Stone Altar', EntityType.SCENERY);
       
       altar.add(new SceneryTrait({
         cantTakeMessage: 'The altar is carved from a single block of stone and weighs several tons.'
       }));
       altar.add(new ContainerTrait()); // Can place items on it
       
-      const bookcase = world.createEntity('bookcase', 'Wooden Bookcase');
+      const bookcase = world.createEntity('Wooden Bookcase', EntityType.SCENERY);
       
       bookcase.add(new SceneryTrait({
         cantTakeMessage: 'The bookcase is built into the wall.'
@@ -380,7 +381,7 @@ describe('SceneryTrait', () => {
     });
 
     it('should handle scenery with multiple states', () => {
-      const magicMirror = world.createEntity('mirror', 'Magic Mirror');
+      const magicMirror = world.createEntity('Magic Mirror', EntityType.SCENERY);
       
       const sceneryTrait = new SceneryTrait({
         cantTakeMessage: 'The mirror is embedded in the wall.',

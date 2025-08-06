@@ -3,7 +3,7 @@
  */
 
 import { Story, StoryConfig } from '../../src/story';
-import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait } from '@sharpee/world-model';
+import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait, EntityType } from '@sharpee/world-model';
 import { Action, ActionContext, ActionResult } from '@sharpee/stdlib';
 
 /**
@@ -46,7 +46,7 @@ export class ActionTestStory implements Story {
 
   initializeWorld(world: WorldModel): void {
     // Create test room
-    this._room = world.createEntity('action-test-room', 'Action Test Room');
+    this._room = world.createEntity('Action Test Room', EntityType.ROOM);
     this._room.add(new IdentityTrait({
       name: 'Action Test Room',
       description: 'A room for testing actions.',
@@ -55,7 +55,7 @@ export class ActionTestStory implements Story {
     this._room.add(new ContainerTrait({ portable: false }));
 
     // Create a test object
-    const testObject = world.createEntity('test-object', 'Test Object');
+    const testObject = world.createEntity('Test Object', EntityType.OBJECT);
     testObject.add(new IdentityTrait({
       name: 'test object',
       aliases: ['object', 'thing'],
@@ -69,7 +69,7 @@ export class ActionTestStory implements Story {
   }
 
   createPlayer(world: WorldModel): IFEntity {
-    this._player = world.createEntity('player', 'Player');
+    this._player = world.createEntity('Player', EntityType.ACTOR);
     this._player.add(new IdentityTrait({
       name: 'yourself',
       aliases: ['self', 'me', 'myself'],

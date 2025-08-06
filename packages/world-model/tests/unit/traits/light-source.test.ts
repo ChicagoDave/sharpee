@@ -6,6 +6,7 @@ import { TraitType } from '../../../src/traits/trait-types';
 import { WorldModel } from '../../../src/world/WorldModel';
 import { SwitchableTrait } from '../../../src/traits/switchable/switchableTrait';
 import { WearableTrait } from '../../../src/traits/wearable/wearableTrait';
+import { EntityType } from '../../../src/entities/entity-types';
 
 describe('LightSourceTrait', () => {
   let world: WorldModel;
@@ -193,7 +194,7 @@ describe('LightSourceTrait', () => {
 
   describe('entity integration', () => {
     it('should attach to entity correctly', () => {
-      const entity = world.createEntity('torch', 'Burning Torch');
+      const entity = world.createEntity('Burning Torch', EntityType.ITEM);
       const trait = new LightSourceTrait({ brightness: 5, isLit: true });
       
       entity.add(trait);
@@ -203,7 +204,7 @@ describe('LightSourceTrait', () => {
     });
 
     it('should create various light source entities', () => {
-      const candle = world.createEntity('candle', 'Wax Candle');
+      const candle = world.createEntity('Wax Candle', EntityType.ITEM);
       candle.add(new LightSourceTrait({
         brightness: 2,
         isLit: false,
@@ -212,7 +213,7 @@ describe('LightSourceTrait', () => {
         fuelConsumptionRate: 2
       }));
       
-      const flashlight = world.createEntity('flashlight', 'LED Flashlight');
+      const flashlight = world.createEntity('LED Flashlight', EntityType.ITEM);
       flashlight.add(new LightSourceTrait({
         brightness: 8,
         isLit: false,
@@ -221,7 +222,7 @@ describe('LightSourceTrait', () => {
         fuelConsumptionRate: 0.1
       }));
       
-      const magicOrb = world.createEntity('orb', 'Glowing Orb');
+      const magicOrb = world.createEntity('Glowing Orb', EntityType.ITEM);
       magicOrb.add(new LightSourceTrait({
         brightness: 6,
         isLit: true
@@ -234,7 +235,7 @@ describe('LightSourceTrait', () => {
     });
 
     it('should work with switchable light sources', () => {
-      const lantern = world.createEntity('lantern', 'Oil Lantern');
+      const lantern = world.createEntity('Oil Lantern', EntityType.ITEM);
       
       lantern.add(new LightSourceTrait({
         brightness: 7,
@@ -255,7 +256,7 @@ describe('LightSourceTrait', () => {
     });
 
     it('should work with wearable light sources', () => {
-      const headlamp = world.createEntity('headlamp', 'LED Headlamp');
+      const headlamp = world.createEntity('LED Headlamp', EntityType.ITEM);
       
       headlamp.add(new LightSourceTrait({
         brightness: 7,
@@ -405,7 +406,7 @@ describe('LightSourceTrait', () => {
 
   describe('complex scenarios', () => {
     it('should handle refillable light sources', () => {
-      const oilLamp = world.createEntity('oil_lamp', 'Oil Lamp');
+      const oilLamp = world.createEntity('Oil Lamp', EntityType.ITEM);
       
       const lightTrait = new LightSourceTrait({
         brightness: 6,
@@ -424,7 +425,7 @@ describe('LightSourceTrait', () => {
     });
 
     it('should handle multi-mode light sources', () => {
-      const adjustableLamp = world.createEntity('lamp', 'Adjustable Lamp');
+      const adjustableLamp = world.createEntity('Adjustable Lamp', EntityType.ITEM);
       
       const lightTrait = new LightSourceTrait({
         brightness: 5, // Medium setting
@@ -453,7 +454,7 @@ describe('LightSourceTrait', () => {
     });
 
     it('should handle degrading light sources', () => {
-      const dyingTorch = world.createEntity('torch', 'Dying Torch');
+      const dyingTorch = world.createEntity('Dying Torch', EntityType.ITEM);
       
       const lightTrait = new LightSourceTrait({
         brightness: 5,
@@ -483,7 +484,7 @@ describe('LightSourceTrait', () => {
     });
 
     it('should handle emergency light sources', () => {
-      const glowstick = world.createEntity('glowstick', 'Emergency Glowstick');
+      const glowstick = world.createEntity('Emergency Glowstick', EntityType.ITEM);
       
       const lightTrait = new LightSourceTrait({
         brightness: 3,

@@ -6,15 +6,26 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { createStandardEngine } from '../../src/game-engine';
 import { WorldModel } from '@sharpee/world-model';
 import { createQuitQueryHandler } from '@sharpee/stdlib';
+import { MinimalTestStory } from '../stories';
+import { createMockTextService } from '../../src/test-helpers/mock-text-service';
 
 describe('Query System Integration', () => {
   let engine: any;
   let world: WorldModel;
+  let story: MinimalTestStory;
 
   beforeEach(async () => {
     // Create a basic engine
     engine = createStandardEngine();
     world = engine.getWorld();
+    
+    // Set text service before setting story to avoid dynamic import issues
+    const textService = createMockTextService();
+    engine.setTextService(textService);
+    
+    // Set up a minimal test story
+    story = new MinimalTestStory();
+    await engine.setStory(story);
     
     // Set up a basic language provider
     const mockLanguageProvider = {
@@ -124,10 +135,13 @@ describe('Query System Integration', () => {
     
     // Create a query that allows interruption
     const queryManager = engine.getQueryManager();
-    await queryManager.askQuery({
+    const { QuerySource, QueryType } = await import('@sharpee/core');
+    
+    // Don't await the query - it returns a promise that resolves when answered
+    queryManager.askQuery({
       id: 'test_query',
-      source: 'system',
-      type: 'yes_no',
+      source: QuerySource.SYSTEM,
+      type: QueryType.YES_NO,
       messageId: 'test_query',
       context: {},
       allowInterruption: true,

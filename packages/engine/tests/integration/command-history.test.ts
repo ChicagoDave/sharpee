@@ -3,59 +3,25 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { GameEngine, createStandardEngine } from '../../src/game-engine';
-import { WorldModel, StandardCapabilities } from '@sharpee/world-model';
-import { 
-  registerStandardCapabilities, 
-  CommandHistoryData,
-  IFActions 
-} from '@sharpee/stdlib';
+import { GameEngine } from '../../src/game-engine';
+import { WorldModel, StandardCapabilities, EntityType } from '@sharpee/world-model';
+import { CommandHistoryData, IFActions } from '@sharpee/stdlib';
+import { setupTestEngine } from '../test-helpers/setup-test-engine';
 import { createMockTextService } from '../../src/test-helpers/mock-text-service';
-import { Story } from '../../src/story';
 
 describe('Command History Integration', () => {
   let engine: GameEngine;
   let world: WorldModel;
   
   beforeEach(async () => {
-    // Create a simple test story
-    const story: Story = {
-      config: {
-        title: 'Test Story',
-        author: 'Test Author',
-        version: '1.0.0',
-        language: 'en'
-      },
-      
-      createPlayer: (world: WorldModel) => {
-        const player = world.createEntity('player', 'You');
-        // Add basic traits
-        return player;
-      },
-      
-      initializeWorld: (world: WorldModel) => {
-        // Register standard capabilities including command history
-        registerStandardCapabilities(world);
-        
-        // Create a simple test room
-        const room = world.createEntity('test-room', 'Test Room');
-        const lamp = world.createEntity('lamp', 'brass lamp');
-        
-        // Place lamp in room
-        world.move(lamp.id, room.id);
-      }
-    };
+    // Set up test engine with pre-configured services
+    const setup = await setupTestEngine({ 
+      includeCapabilities: true,
+      includeObjects: true 
+    });
     
-    // Create engine with story
-    engine = createStandardEngine();
-    world = engine.getWorld();
-    
-    // Set up the story
-    await engine.setStory(story);
-    
-    // Set text service
-    const textService = createMockTextService();
-    engine.setTextService(textService);
+    engine = setup.engine;
+    world = setup.world;
     
     // Start the engine
     engine.start();
@@ -111,12 +77,9 @@ describe('Command History Integration', () => {
     });
     
     it('should track complex commands with objects and prepositions', async () => {
-      // Create some objects
-      const box = world.createEntity('box', 'wooden box');
+      // Box already created in setup, just get references
       const room = world.getEntity('test-room');
-      if (room) {
-        world.move(box.id, room.id);
-      }
+      const box = world.getEntity('wooden-box');
       
       // Execute a complex command
       await engine.executeTurn('put lamp in box');
@@ -194,12 +157,24 @@ describe('Command History Integration', () => {
     it('should gracefully handle missing command history capability', async () => {
       // Create an engine without registering capabilities
       const bareWorld = new WorldModel();
-      const player = bareWorld.createEntity('player', 'You');
+      const player = bareWorld.createEntity('You', EntityType.ACTOR);
+      const room = bareWorld.createEntity('Test Room', EntityType.ROOM);
+      bareWorld.moveEntity(player.id, room.id);
+      
       const bareEngine = new GameEngine(bareWorld, player);
       
-      // Set up minimal requirements
-      await bareEngine.setLanguage('en');
+      // Set up minimal requirements directly (no dynamic imports)
       bareEngine.setTextService(createMockTextService());
+      
+      // Import and set parser/language directly
+      const { EnglishLanguageProvider } = await import('@sharpee/lang-en-us');
+      const { EnglishParser } = await import('@sharpee/parser-en-us');
+      const langProvider = new EnglishLanguageProvider();
+      const parser = new EnglishParser(bareWorld, langProvider);
+      (bareEngine as any).languageProvider = langProvider;
+      (bareEngine as any).parser = parser;
+      (bareEngine as any).initialized = true;
+      
       bareEngine.start();
       
       // Execute a command - should work even without command history

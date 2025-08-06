@@ -29,7 +29,9 @@ export default defineConfig({
       '@sharpee/stdlib': resolve(__dirname, '../stdlib/src'),
       '@sharpee/event-processor': resolve(__dirname, '../event-processor/src'),
       '@sharpee/lang-en-us': resolve(__dirname, '../lang-en-us/src'),
-      '@sharpee/parser-en-us': resolve(__dirname, '../parser-en-us/src')
+      '@sharpee/parser-en-us': resolve(__dirname, '../parser-en-us/src'),
+      '@sharpee/text-services': resolve(__dirname, '../text-services/src'),
+      '@sharpee/if-services': resolve(__dirname, '../if-services/src')
     }
   }
 })

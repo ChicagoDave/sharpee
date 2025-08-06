@@ -23,12 +23,14 @@ describe('ID Generation System', () => {
       expect(actor1.id).toBe('a01');
     });
 
-    it('should use default prefix for unknown types', () => {
-      const obj1 = world.createEntity('Mystery Object', 'unknown-type');
+    it('should throw error for unknown types', () => {
+      expect(() => world.createEntity('Mystery Object', 'unknown-type')).toThrow('Unknown entity type');
+    });
+    
+    it('should use object type as default', () => {
+      const obj1 = world.createEntity('Another Object');
       expect(obj1.id).toBe('o01');
-      
-      const obj2 = world.createEntity('Another Object');
-      expect(obj2.id).toBe('o02');
+      expect(obj1.type).toBe('object');
     });
 
     it('should handle base36 conversion correctly', () => {

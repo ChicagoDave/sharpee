@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { climbingAction } from '../../../src/actions/standard/climbing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType } from '@sharpee/world-model';
 import { 
   createRealTestContext,
   expectEvent,
@@ -78,7 +78,7 @@ describe('climbingAction (Golden Pattern)', () => {
     test('should fail when already on target', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const platform = world.createEntity('wooden platform', 'supporter');
+      const platform = world.createEntity('wooden platform', EntityType.SUPPORTER);
       platform.add({
         type: TraitType.SUPPORTER,
         enterable: true
@@ -117,7 +117,7 @@ describe('climbingAction (Golden Pattern)', () => {
     test('should fail when no exit in climb direction', () => {
       const world = new WorldModel();
       
-      const room = world.createEntity('Ground Floor', 'room');
+      const room = world.createEntity('Ground Floor', EntityType.ROOM);
       room.add({
         type: TraitType.ROOM,
         exits: {
@@ -125,7 +125,7 @@ describe('climbingAction (Golden Pattern)', () => {
         }
       });
       
-      const player = world.createEntity('yourself', 'actor');
+      const player = world.createEntity('yourself', EntityType.ACTOR);
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
       world.moveEntity(player.id, room.id);
@@ -146,10 +146,10 @@ describe('climbingAction (Golden Pattern)', () => {
     test('should fail when not in a room for directional climbing', () => {
       const world = new WorldModel();
       
-      const container = world.createEntity('box', 'container');
+      const container = world.createEntity('box', EntityType.CONTAINER);
       container.add({ type: TraitType.CONTAINER });
       
-      const player = world.createEntity('yourself', 'actor');
+      const player = world.createEntity('yourself', EntityType.ACTOR);
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
       world.moveEntity(player.id, container.id);
@@ -172,7 +172,7 @@ describe('climbingAction (Golden Pattern)', () => {
     test('should climb up when exit exists', () => {
       const world = new WorldModel();
       
-      const groundFloor = world.createEntity('Ground Floor', 'room');
+      const groundFloor = world.createEntity('Ground Floor', EntityType.ROOM);
       groundFloor.add({
         type: TraitType.ROOM,
         exits: {
@@ -180,7 +180,7 @@ describe('climbingAction (Golden Pattern)', () => {
         }
       });
       
-      const attic = world.createEntity('Attic', 'room');
+      const attic = world.createEntity('Attic', EntityType.ROOM);
       attic.add({
         type: TraitType.ROOM,
         exits: {
@@ -192,7 +192,7 @@ describe('climbingAction (Golden Pattern)', () => {
       const roomTrait = groundFloor.getTrait(TraitType.ROOM) as any;
       roomTrait.exits.up.to = attic.id;
       
-      const player = world.createEntity('yourself', 'actor');
+      const player = world.createEntity('yourself', EntityType.ACTOR);
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
       world.moveEntity(player.id, groundFloor.id);
@@ -228,10 +228,10 @@ describe('climbingAction (Golden Pattern)', () => {
     test('should climb down when exit exists', () => {
       const world = new WorldModel();
       
-      const groundFloor = world.createEntity('Ground Floor', 'room');
+      const groundFloor = world.createEntity('Ground Floor', EntityType.ROOM);
       groundFloor.add({ type: TraitType.ROOM });
       
-      const attic = world.createEntity('Attic', 'room');
+      const attic = world.createEntity('Attic', EntityType.ROOM);
       attic.add({
         type: TraitType.ROOM,
         exits: {
@@ -239,7 +239,7 @@ describe('climbingAction (Golden Pattern)', () => {
         }
       });
       
-      const player = world.createEntity('yourself', 'actor');
+      const player = world.createEntity('yourself', EntityType.ACTOR);
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
       world.moveEntity(player.id, attic.id);
@@ -265,7 +265,7 @@ describe('climbingAction (Golden Pattern)', () => {
     test('should climb onto enterable supporter', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const tree = world.createEntity('oak tree', 'fixture');
+      const tree = world.createEntity('oak tree', EntityType.SCENERY);
       tree.add({
         type: TraitType.SUPPORTER,
         enterable: true
@@ -302,7 +302,7 @@ describe('climbingAction (Golden Pattern)', () => {
     test('should climb object with ENTRY trait', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const ladder = world.createEntity('wooden ladder', 'fixture');
+      const ladder = world.createEntity('wooden ladder', EntityType.OBJECT);
       ladder.add({
         type: TraitType.ENTRY,
         canEnter: true,
@@ -332,7 +332,7 @@ describe('climbingAction (Golden Pattern)', () => {
     test('should handle direction normalization', () => {
       const world = new WorldModel();
       
-      const room1 = world.createEntity('Room', 'room');
+      const room1 = world.createEntity('Room', EntityType.ROOM);
       room1.add({
         type: TraitType.ROOM,
         exits: {
@@ -340,14 +340,14 @@ describe('climbingAction (Golden Pattern)', () => {
         }
       });
       
-      const room2 = world.createEntity('Upper Room', 'room');
+      const room2 = world.createEntity('Upper Room', EntityType.ROOM);
       room2.add({ type: TraitType.ROOM });
       
       // Update exit to use actual ID
       const roomTrait = room1.getTrait(TraitType.ROOM) as any;
       roomTrait.exits.up.to = room2.id;
       
-      const player = world.createEntity('yourself', 'actor');
+      const player = world.createEntity('yourself', EntityType.ACTOR);
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
       world.moveEntity(player.id, room1.id);
@@ -369,7 +369,7 @@ describe('climbingAction (Golden Pattern)', () => {
     test('should include proper entities in all events', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const platform = world.createEntity('platform', 'supporter');
+      const platform = world.createEntity('platform', EntityType.SUPPORTER);
       platform.add({
         type: TraitType.SUPPORTER,
         enterable: true
@@ -407,7 +407,7 @@ describe('Testing Pattern Examples for Climbing', () => {
     ];
     
     const rooms = levels.map(level => {
-      const room = world.createEntity(level.name, 'room');
+      const room = world.createEntity(level.name, EntityType.ROOM);
       room.add({
         type: TraitType.ROOM,
         exits: level.exits
@@ -451,7 +451,7 @@ describe('Testing Pattern Examples for Climbing', () => {
     ];
     
     climbableObjects.forEach(({ name, traits, expectedMethod }) => {
-      const obj = world.createEntity(name, 'fixture');
+      const obj = world.createEntity(name, EntityType.SCENERY);
       for (const [traitType, traitData] of Object.entries(traits)) {
         obj.add(traitData);
       }

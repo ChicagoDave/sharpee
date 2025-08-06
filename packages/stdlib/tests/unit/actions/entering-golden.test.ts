@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { enteringAction } from '../../../src/actions/standard/entering';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType } from '@sharpee/world-model';
 import { 
   createRealTestContext,
   setupBasicWorld,
@@ -79,7 +79,7 @@ describe('enteringAction (Golden Pattern)', () => {
       // Without scope logic, world.getLocation() returns undefined for entities in non-room containers
       const { world, player, room } = setupBasicWorld();
       
-      const vehicle = world.createEntity('sports car', 'vehicle');
+      const vehicle = world.createEntity('sports car', EntityType.OBJECT);
       vehicle.add({
         type: TraitType.ENTRY,
         canEnter: true,
@@ -104,7 +104,7 @@ describe('enteringAction (Golden Pattern)', () => {
     test('should fail when entry is blocked', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const booth = world.createEntity('phone booth', 'fixture');
+      const booth = world.createEntity('phone booth', EntityType.SCENERY);
       booth.add({
         type: TraitType.ENTRY,
         canEnter: false,  // Blocked
@@ -131,7 +131,7 @@ describe('enteringAction (Golden Pattern)', () => {
     test('should fail when container is closed', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const crate = world.createEntity('wooden crate', 'container');
+      const crate = world.createEntity('wooden crate', EntityType.CONTAINER);
       crate.add({
         type: TraitType.CONTAINER,
         enterable: true
@@ -158,7 +158,7 @@ describe('enteringAction (Golden Pattern)', () => {
     test('should fail when at maximum occupancy', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const elevator = world.createEntity('small elevator', 'fixture');
+      const elevator = world.createEntity('small elevator', EntityType.SCENERY);
       elevator.add({
         type: TraitType.ENTRY,
         canEnter: true,
@@ -189,7 +189,7 @@ describe('enteringAction (Golden Pattern)', () => {
     test('should enter object with ENTRY trait', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const car = world.createEntity('luxury car', 'vehicle');
+      const car = world.createEntity('luxury car', EntityType.OBJECT);
       car.add({
         type: TraitType.ENTRY,
         canEnter: true,
@@ -324,7 +324,7 @@ describe('enteringAction (Golden Pattern)', () => {
     test('should handle custom prepositions', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const desk = world.createEntity('wooden desk', 'furniture');
+      const desk = world.createEntity('wooden desk', EntityType.SUPPORTER);
       desk.add({
         type: TraitType.ENTRY,
         canEnter: true,
@@ -350,7 +350,7 @@ describe('enteringAction (Golden Pattern)', () => {
     test('should include proper entities in all events', () => {
       const { world, player, room } = setupBasicWorld();
       
-      const chair = world.createEntity('office chair', 'supporter');
+      const chair = world.createEntity('office chair', EntityType.SUPPORTER);
       chair.add({
         type: TraitType.SUPPORTER,
         enterable: true
@@ -415,7 +415,7 @@ describe('Testing Pattern Examples for Entering', () => {
     ];
     
     enterableObjects.forEach(({ name, traits }) => {
-      const obj = world.createEntity(name, 'fixture');
+      const obj = world.createEntity(name, EntityType.SCENERY);
       for (const [traitType, traitData] of Object.entries(traits)) {
         obj.add(traitData);
       }
@@ -438,12 +438,12 @@ describe('Testing Pattern Examples for Entering', () => {
     // Shows how to test occupancy tracking
     const { world, player, room } = setupBasicWorld();
     const actors = ['Person 1', 'Person 2', 'Person 3'].map(name => {
-      const actor = world.createEntity(name, 'actor');
+      const actor = world.createEntity(name, EntityType.ACTOR);
       actor.add({ type: TraitType.ACTOR });
       return actor;
     });
     
-    const lifeboat = world.createEntity('lifeboat', 'vehicle');
+    const lifeboat = world.createEntity('lifeboat', EntityType.OBJECT);
     lifeboat.add({
       type: TraitType.ENTRY,
       canEnter: true,

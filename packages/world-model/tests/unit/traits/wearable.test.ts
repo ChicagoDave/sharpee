@@ -272,7 +272,7 @@ describe('WearableTrait', () => {
 
   describe('entity integration', () => {
     it('should attach to entity correctly', () => {
-      const entity = world.createEntity('hat', 'Wizard Hat');
+      const entity = world.createEntity('Wizard Hat', 'item');
       const trait = new WearableTrait({ slot: 'head' });
       
       entity.add(trait);
@@ -282,21 +282,21 @@ describe('WearableTrait', () => {
     });
 
     it('should create various wearable items', () => {
-      const helmet = world.createEntity('helmet', 'Steel Helmet');
+      const helmet = world.createEntity('Steel Helmet', 'item');
       helmet.add(new WearableTrait({
         slot: 'head',
         weight: 5,
         blocksSlots: ['hair']
       }));
       
-      const gloves = world.createEntity('gloves', 'Leather Gloves');
+      const gloves = world.createEntity('Leather Gloves', 'item');
       gloves.add(new WearableTrait({
         slot: 'hands',
         weight: 0.5,
         layer: 1
       }));
       
-      const cloak = world.createEntity('cloak', 'Traveling Cloak');
+      const cloak = world.createEntity('Traveling Cloak', 'item');
       cloak.add(new WearableTrait({
         slot: 'back',
         weight: 2,
@@ -310,11 +310,11 @@ describe('WearableTrait', () => {
     });
 
     it('should work with actor wearing items', () => {
-      const player = world.createEntity('player', 'Hero');
+      const player = world.createEntity('Hero', 'actor');
       player.add(new ActorTrait({ isPlayer: true }));
       player.add(new ContainerTrait()); // For inventory
       
-      const shirt = world.createEntity('shirt', 'Cotton Shirt');
+      const shirt = world.createEntity('Cotton Shirt', 'item');
       const shirtTrait = new WearableTrait({
         slot: 'torso',
         isWorn: true,

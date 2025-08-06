@@ -10,7 +10,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { closingAction } from '../../../src/actions/standard/closing/closing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType } from '@sharpee/world-model';
 import { 
   createRealTestContext,
   expectEvent,
@@ -134,7 +134,7 @@ describe('closingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       
       // Create container with items
-      const box = world.createEntity('wooden box', 'container');
+      const box = world.createEntity('wooden box', EntityType.CONTAINER);
       box.add({
         type: TraitType.OPENABLE,
         isOpen: true
@@ -144,8 +144,8 @@ describe('closingAction (Golden Pattern)', () => {
       });
       world.moveEntity(box.id, room.id);
       
-      const coin = world.createEntity('gold coin', 'thing');
-      const gem = world.createEntity('ruby', 'thing');
+      const coin = world.createEntity('gold coin', EntityType.OBJECT);
+      const gem = world.createEntity('ruby', EntityType.OBJECT);
       world.moveEntity(coin.id, box.id);
       world.moveEntity(gem.id, box.id);
       
@@ -269,7 +269,7 @@ describe('Testing Pattern Examples', () => {
     ];
     
     containers.forEach(({ name, isOpen, hasContents, isLocked }) => {
-      const container = world.createEntity(name, 'container');
+      const container = world.createEntity(name, EntityType.CONTAINER);
       container.add({
         type: TraitType.OPENABLE,
         isOpen
@@ -284,7 +284,7 @@ describe('Testing Pattern Examples', () => {
       
       if (hasContents) {
         container.add({ type: TraitType.CONTAINER });
-        const item = world.createEntity('item', 'thing');
+        const item = world.createEntity('item', EntityType.OBJECT);
         world.moveEntity(item.id, container.id);
       }
     });
@@ -316,7 +316,7 @@ describe('Testing Pattern Examples', () => {
     ];
     
     preventionScenarios.forEach(({ name, closeRequirements }) => {
-      const obj = world.createEntity(name, 'container');
+      const obj = world.createEntity(name, EntityType.CONTAINER);
       obj.add({
         type: TraitType.OPENABLE,
         isOpen: true,

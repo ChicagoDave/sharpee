@@ -19,7 +19,9 @@
     "@sharpee/if-domain": "file:../if-domain",
     "@sharpee/if-services": "file:../if-services",
     "@sharpee/lang-en-us": "file:../lang-en-us",
+    "@sharpee/parser-en-us": "file:../parser-en-us",
     "@sharpee/stdlib": "file:../stdlib",
+    "@sharpee/text-services": "file:../text-services",
     "@sharpee/world-model": "file:../world-model"
   },
   "devDependencies": {
