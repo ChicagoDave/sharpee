@@ -12,7 +12,6 @@ Locations: Scattered across multiple directories
 
 ### 2. Architectural Decision Records (ADRs)
 **Location**: `/decisions/`
-- 46 ADRs (adr-001 through adr-046)
 - Special ADRs in subdirectories:
   - `/decisions/core-systems/` - Core system ADRs
   - `/decisions/outdated/` - Deprecated/outdated documentation

@@ -913,4 +913,151 @@ export class EnglishParser implements Parser {
       };
     }
   }
+  
+  /**
+   * Add a custom verb to the parser vocabulary
+   * @param actionId The action ID this verb maps to
+   * @param verbs Array of verb forms to recognize
+   * @param pattern Optional grammar pattern for the verb (e.g., 'VERB_OBJ')
+   * @param prepositions Optional prepositions this verb can use
+   */
+  addVerb(actionId: string, verbs: string[], pattern?: string, prepositions?: string[]): void {
+    const verbDef: VerbVocabulary = {
+      actionId,
+      verbs,
+      pattern: pattern || 'VERB_ONLY',
+      prepositions
+    };
+    
+    vocabularyRegistry.registerDynamicVerbs([verbDef], 'story');
+    
+    // Also register grammar patterns for the verb
+    for (const verb of verbs) {
+      // Register patterns based on the pattern type
+      if (pattern === 'VERB_OBJ' || pattern === 'VERB_NOUN') {
+        // Register verb + object pattern
+        this.storyGrammar.define(`${verb} :object`)
+          .mapsTo(actionId)
+          .withPriority(150)
+          .build();
+      } else if (pattern === 'VERB_PREP_NOUN' && prepositions) {
+        // Register verb + preposition + object patterns
+        for (const prep of prepositions) {
+          this.storyGrammar.define(`${verb} ${prep} :object`)
+            .mapsTo(actionId)
+            .withPriority(150)
+            .build();
+        }
+      } else if (pattern === 'VERB_NOUN_PREP_NOUN' && prepositions) {
+        // Register verb + object + preposition + object patterns
+        for (const prep of prepositions) {
+          this.storyGrammar.define(`${verb} :object1 ${prep} :object2`)
+            .mapsTo(actionId)
+            .withPriority(150)
+            .build();
+        }
+      } else {
+        // Default: verb only pattern
+        this.storyGrammar.define(verb)
+          .mapsTo(actionId)
+          .withPriority(150)
+          .build();
+      }
+    }
+    
+    // Emit debug event if configured
+    if (this.onDebugEvent) {
+      this.onDebugEvent({
+        id: `parser_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: Date.now(),
+        subsystem: 'parser',
+        type: 'vocabulary.add_verb',
+        data: {
+          actionId,
+          verbs,
+          pattern,
+          prepositions
+        }
+      });
+    }
+  }
+
+  /**
+   * Add a custom noun/synonym to the parser vocabulary
+   * @param word The word to add
+   * @param canonical The canonical form it maps to
+   */
+  addNoun(word: string, canonical: string): void {
+    // For now, nouns are handled through the world model's entity names
+    // This method is provided for future extension when we add a noun registry
+    
+    // Emit debug event if configured
+    if (this.onDebugEvent) {
+      this.onDebugEvent({
+        id: `parser_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: Date.now(),
+        subsystem: 'parser',
+        type: 'vocabulary.add_noun',
+        data: {
+          word,
+          canonical
+        }
+      });
+    }
+  }
+
+  /**
+   * Add a custom adjective to the parser vocabulary
+   * @param word The adjective to add
+   */
+  addAdjective(word: string): void {
+    // Adjectives are currently recognized but not stored in a registry
+    // This method is provided for future extension
+    
+    // Emit debug event if configured
+    if (this.onDebugEvent) {
+      this.onDebugEvent({
+        id: `parser_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: Date.now(),
+        subsystem: 'parser',
+        type: 'vocabulary.add_adjective',
+        data: {
+          word
+        }
+      });
+    }
+  }
+
+  /**
+   * Add a custom preposition to the parser vocabulary
+   * @param word The preposition to add
+   */
+  addPreposition(word: string): void {
+    vocabularyRegistry.registerPrepositions([word]);
+    
+    // Also register common grammar patterns that use this preposition
+    // This allows actions like "put X <preposition> Y" to work
+    this.storyGrammar.define(`put :object ${word} :location`)
+      .mapsTo('if.action.putting')
+      .withPriority(150)
+      .build();
+      
+    this.storyGrammar.define(`place :object ${word} :location`)
+      .mapsTo('if.action.putting')
+      .withPriority(150)
+      .build();
+    
+    // Emit debug event if configured
+    if (this.onDebugEvent) {
+      this.onDebugEvent({
+        id: `parser_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: Date.now(),
+        subsystem: 'parser',
+        type: 'vocabulary.add_preposition',
+        data: {
+          word
+        }
+      });
+    }
+  }
 }

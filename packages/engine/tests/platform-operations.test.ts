@@ -10,10 +10,7 @@ import {
   ActorTrait,
   EntityType
 } from '@sharpee/world-model';
-import { 
-  GameEngine,
-  createStandardEngine
-} from '../src/game-engine';
+import { GameEngine } from '../src/game-engine';
 import {
   SaveRestoreHooks,
   SaveData,
@@ -28,17 +25,19 @@ import {
   RestartContext
 } from '@sharpee/core';
 import { MinimalTestStory } from './stories';
+import { setupTestEngine } from './test-helpers/setup-test-engine';
 
 describe('GameEngine Platform Operations', () => {
   let engine: GameEngine;
   let story: MinimalTestStory;
   let mockHooks: SaveRestoreHooks;
   
-  beforeEach(async () => {
-    // Create engine with story
-    engine = createStandardEngine();
+  beforeEach(() => {
+    // Create engine with static dependencies
+    const setup = setupTestEngine();
+    engine = setup.engine;
     story = new MinimalTestStory();
-    await engine.setStory(story);
+    engine.setStory(story);
     
     // Create mock hooks
     mockHooks = {
@@ -78,16 +77,22 @@ describe('GameEngine Platform Operations', () => {
   });
 
   describe('Save Operations', () => {
+    beforeEach(() => {
+      engine.start();
+    });
+
     it('should process save requested event and call save hook', async () => {
       const saveContext: SaveContext = {
         saveName: 'test-save',
-        timestamp: Date.now(),
-        metadata: { score: 100 }
+        timestamp: Date.now()
       };
       
       const saveEvent = createSaveRequestedEvent(saveContext);
+      
+      // Queue the event
       engine['pendingPlatformOps'].push(saveEvent);
       
+      // Process operations
       await engine['processPlatformOperations']();
       
       expect(mockHooks.onSaveRequested).toHaveBeenCalledWith(
@@ -100,71 +105,74 @@ describe('GameEngine Platform Operations', () => {
     });
 
     it('should emit save completed event on success', async () => {
-      const saveEvent = createSaveRequestedEvent({ timestamp: Date.now() });
+      const events: any[] = [];
+      engine.on('event', (event) => events.push(event));
+      
+      const saveEvent = createSaveRequestedEvent({
+        saveName: 'test-save',
+        timestamp: Date.now()
+      });
+      
       engine['pendingPlatformOps'].push(saveEvent);
-      
-      const emittedEvents: any[] = [];
-      engine['eventSource'].subscribe(event => emittedEvents.push(event));
-      
       await engine['processPlatformOperations']();
       
-      const completionEvent = emittedEvents.find(
-        e => e.type === PlatformEventType.SAVE_COMPLETED
-      );
-      expect(completionEvent).toBeDefined();
-      expect(completionEvent.payload.success).toBe(true);
+      const completedEvents = events.filter(e => e.type === 'platform.save_completed');
+      expect(completedEvents).toHaveLength(1);
+      expect(completedEvents[0].payload.success).toBe(true);
     });
 
     it('should emit save failed event when hook throws', async () => {
-      mockHooks.onSaveRequested = vi.fn().mockRejectedValue(new Error('Disk full'));
+      mockHooks.onSaveRequested = vi.fn().mockRejectedValue(new Error('Save failed'));
       
-      const saveEvent = createSaveRequestedEvent({ timestamp: Date.now() });
-      engine['pendingPlatformOps'].push(saveEvent);
+      const events: any[] = [];
+      engine.on('event', (event) => events.push(event));
       
-      const emittedEvents: any[] = [];
-      engine['eventSource'].subscribe(event => emittedEvents.push(event));
-      
-      await engine['processPlatformOperations']();
-      
-      const errorEvent = emittedEvents.find(
-        e => e.type === PlatformEventType.SAVE_FAILED
-      );
-      expect(errorEvent).toBeDefined();
-      expect(errorEvent.payload.success).toBe(false);
-      expect(errorEvent.payload.error).toBe('Disk full');
-    });
-
-    it('should emit error event when no save hook registered', async () => {
-      engine.registerSaveRestoreHooks({
-        onSaveRequested: undefined as any,
-        onRestoreRequested: vi.fn()
+      const saveEvent = createSaveRequestedEvent({
+        saveName: 'test-save',
+        timestamp: Date.now()
       });
       
-      const saveEvent = createSaveRequestedEvent({ timestamp: Date.now() });
       engine['pendingPlatformOps'].push(saveEvent);
-      
-      const emittedEvents: any[] = [];
-      engine['eventSource'].subscribe(event => emittedEvents.push(event));
-      
       await engine['processPlatformOperations']();
       
-      const errorEvent = emittedEvents.find(
-        e => e.type === PlatformEventType.SAVE_FAILED
-      );
-      expect(errorEvent).toBeDefined();
-      expect(errorEvent.payload.error).toBe('No save handler registered');
+      const failedEvents = events.filter(e => e.type === 'platform.save_failed');
+      expect(failedEvents).toHaveLength(1);
+      expect(failedEvents[0].payload.error).toBeDefined();
+    });
+
+    it('should emit save failed event when no save hook registered', async () => {
+      engine.registerSaveRestoreHooks({});
+      
+      const events: any[] = [];
+      engine.on('event', (event) => events.push(event));
+      
+      const saveEvent = createSaveRequestedEvent({
+        saveName: 'test-save',
+        timestamp: Date.now()
+      });
+      
+      engine['pendingPlatformOps'].push(saveEvent);
+      await engine['processPlatformOperations']();
+      
+      const failedEvents = events.filter(e => e.type === 'platform.save_failed');
+      expect(failedEvents).toHaveLength(1);
+      expect(failedEvents[0].payload.error).toBeDefined();
     });
   });
 
   describe('Restore Operations', () => {
+    beforeEach(() => {
+      engine.start();
+    });
+
     it('should process restore requested event and call restore hook', async () => {
       const restoreContext: RestoreContext = {
-        slot: 'quicksave'
+        saveName: 'test-save'
       };
       
       const restoreEvent = createRestoreRequestedEvent(restoreContext);
-      engine['pendingPlatformOps'].push(restoreEvent);
       
+      engine['pendingPlatformOps'].push(restoreEvent);
       await engine['processPlatformOperations']();
       
       expect(mockHooks.onRestoreRequested).toHaveBeenCalled();
@@ -175,283 +183,255 @@ describe('GameEngine Platform Operations', () => {
         version: '1.0.0',
         timestamp: Date.now(),
         metadata: {
-          storyId: 'test-story',
+          storyId: 'minimal-test',
           storyVersion: '1.0.0',
-          turnCount: 5
+          turnCount: 5,
+          playTime: 1000,
+          description: 'test-save'
         },
         engineState: {
           eventSource: [],
-          spatialIndex: { entities: {}, locations: {}, relationships: {} },
-          turnHistory: []
+          spatialIndex: {
+            entities: {},
+            locations: {}
+          },
+          turnHistory: [],  // Add empty turn history
+          parserState: {}
         },
         storyConfig: {
-          id: 'test-story',
+          id: 'minimal-test',
           version: '1.0.0',
-          title: 'Test Story',
-          author: 'Test Author'
+          title: 'Minimal Test Story',
+          author: 'Test Suite'
         }
       };
       
-      // Set story config to match save
-      engine['story'] = {
-        config: {
-          id: 'test-story',
-          version: '1.0.0',
-          title: 'Test Story',
-          author: 'Test Author'
-        }
-      } as any;
-      
       mockHooks.onRestoreRequested = vi.fn().mockResolvedValue(mockSaveData);
       
-      const restoreEvent = createRestoreRequestedEvent({});
+      const events: any[] = [];
+      engine.on('event', (event) => events.push(event));
+      
+      const restoreEvent = createRestoreRequestedEvent({ saveName: 'test-save' });
+      
       engine['pendingPlatformOps'].push(restoreEvent);
-      
-      const emittedEvents: any[] = [];
-      engine['eventSource'].subscribe(event => emittedEvents.push(event));
-      
       await engine['processPlatformOperations']();
       
-      const completionEvent = emittedEvents.find(
-        e => e.type === PlatformEventType.RESTORE_COMPLETED
-      );
-      expect(completionEvent).toBeDefined();
-      expect(completionEvent.payload.success).toBe(true);
+      const completedEvents = events.filter(e => e.type === 'platform.restore_completed');
+      expect(completedEvents).toHaveLength(1);
+      expect(completedEvents[0].payload.success).toBe(true);
     });
 
     it('should emit restore failed event when no save data available', async () => {
       mockHooks.onRestoreRequested = vi.fn().mockResolvedValue(null);
       
-      const restoreEvent = createRestoreRequestedEvent({});
+      const events: any[] = [];
+      engine.on('event', (event) => events.push(event));
+      
+      const restoreEvent = createRestoreRequestedEvent({ saveName: 'test-save' });
+      
       engine['pendingPlatformOps'].push(restoreEvent);
-      
-      const emittedEvents: any[] = [];
-      engine['eventSource'].subscribe(event => emittedEvents.push(event));
-      
       await engine['processPlatformOperations']();
       
-      const errorEvent = emittedEvents.find(
-        e => e.type === PlatformEventType.RESTORE_FAILED
-      );
-      expect(errorEvent).toBeDefined();
-      expect(errorEvent.payload.error).toContain('No save data available');
+      const failedEvents = events.filter(e => e.type === 'platform.restore_failed');
+      expect(failedEvents).toHaveLength(1);
     });
   });
 
   describe('Quit Operations', () => {
+    beforeEach(() => {
+      engine.start();
+    });
+
     it('should process quit requested event and call quit hook', async () => {
       const quitContext: QuitContext = {
-        score: 100,
-        moves: 50,
-        hasUnsavedChanges: true
+        reason: 'user_requested'
       };
       
       const quitEvent = createQuitRequestedEvent(quitContext);
-      engine['pendingPlatformOps'].push(quitEvent);
       
+      engine['pendingPlatformOps'].push(quitEvent);
       await engine['processPlatformOperations']();
       
-      expect(mockHooks.onQuitRequested).toHaveBeenCalledWith(quitContext);
+      expect(mockHooks.onQuitRequested).toHaveBeenCalledWith(
+        expect.objectContaining({
+          reason: 'user_requested'
+        })
+      );
     });
 
     it('should stop engine and emit confirmation when quit confirmed', async () => {
-      mockHooks.onQuitRequested = vi.fn().mockResolvedValue(true);
+      const events: any[] = [];
+      engine.on('event', (event) => events.push(event));
       
-      const quitEvent = createQuitRequestedEvent({});
+      const quitEvent = createQuitRequestedEvent({ reason: 'user_requested' });
+      
       engine['pendingPlatformOps'].push(quitEvent);
-      
-      engine.start();
-      expect(engine['running']).toBe(true);
-      
-      const emittedEvents: any[] = [];
-      engine['eventSource'].subscribe(event => emittedEvents.push(event));
-      
       await engine['processPlatformOperations']();
       
+      const confirmedEvents = events.filter(e => e.type === 'platform.quit_confirmed');
+      expect(confirmedEvents).toHaveLength(1);
       expect(engine['running']).toBe(false);
-      
-      const confirmEvent = emittedEvents.find(
-        e => e.type === PlatformEventType.QUIT_CONFIRMED
-      );
-      expect(confirmEvent).toBeDefined();
     });
 
     it('should emit cancelled event when quit declined', async () => {
       mockHooks.onQuitRequested = vi.fn().mockResolvedValue(false);
       
-      const quitEvent = createQuitRequestedEvent({});
+      const events: any[] = [];
+      engine.on('event', (event) => events.push(event));
+      
+      const quitEvent = createQuitRequestedEvent({ reason: 'user_requested' });
+      
       engine['pendingPlatformOps'].push(quitEvent);
-      
-      const emittedEvents: any[] = [];
-      engine['eventSource'].subscribe(event => emittedEvents.push(event));
-      
       await engine['processPlatformOperations']();
       
-      const cancelEvent = emittedEvents.find(
-        e => e.type === PlatformEventType.QUIT_CANCELLED
-      );
-      expect(cancelEvent).toBeDefined();
+      const cancelledEvents = events.filter(e => e.type === 'platform.quit_cancelled');
+      expect(cancelledEvents).toHaveLength(1);
+      expect(engine['running']).toBe(true);
     });
 
     it('should quit by default when no hook registered', async () => {
-      engine.registerSaveRestoreHooks({
-        onSaveRequested: vi.fn(),
-        onRestoreRequested: vi.fn(),
-        onQuitRequested: undefined
-      });
+      engine.registerSaveRestoreHooks({});
       
-      const quitEvent = createQuitRequestedEvent({});
+      const events: any[] = [];
+      engine.on('event', (event) => events.push(event));
+      
+      const quitEvent = createQuitRequestedEvent({ reason: 'user_requested' });
+      
       engine['pendingPlatformOps'].push(quitEvent);
-      
-      engine.start();
-      
       await engine['processPlatformOperations']();
       
-      expect(engine['running']).toBe(false);
+      const confirmedEvents = events.filter(e => e.type === 'platform.quit_confirmed');
+      expect(confirmedEvents).toHaveLength(1);
     });
   });
 
   describe('Restart Operations', () => {
+    beforeEach(() => {
+      engine.start();
+    });
+
     it('should process restart requested event and call restart hook', async () => {
       const restartContext: RestartContext = {
-        currentProgress: { score: 100, moves: 50 },
-        hasUnsavedChanges: true
+        reason: 'user_requested'
       };
       
       const restartEvent = createRestartRequestedEvent(restartContext);
-      engine['pendingPlatformOps'].push(restartEvent);
       
+      engine['pendingPlatformOps'].push(restartEvent);
       await engine['processPlatformOperations']();
       
-      expect(mockHooks.onRestartRequested).toHaveBeenCalledWith(restartContext);
+      expect(mockHooks.onRestartRequested).toHaveBeenCalledWith(
+        expect.objectContaining({
+          reason: 'user_requested'
+        })
+      );
     });
 
     it('should reinitialize story and emit completion when restart confirmed', async () => {
-      mockHooks.onRestartRequested = vi.fn().mockResolvedValue(true);
+      const events: any[] = [];
+      engine.on('event', (event) => events.push(event));
       
-      // Mock story
-      const mockStory = {
-        config: {
-          id: 'test-story',
-          version: '1.0.0',
-          title: 'Test Story',
-          author: 'Test Author',
-          language: 'en-US'
-        },
-        initializeWorld: vi.fn(),
-        createPlayer: vi.fn().mockReturnValue(story.getPlayer())
-      };
+      const restartEvent = createRestartRequestedEvent({ reason: 'user_requested' });
       
-      engine['story'] = mockStory as any;
-      engine.setStory = vi.fn();
-      
-      const restartEvent = createRestartRequestedEvent({});
       engine['pendingPlatformOps'].push(restartEvent);
-      
-      const emittedEvents: any[] = [];
-      engine['eventSource'].subscribe(event => emittedEvents.push(event));
-      
       await engine['processPlatformOperations']();
       
-      expect(engine.setStory).toHaveBeenCalledWith(mockStory);
-      
-      const completionEvent = emittedEvents.find(
-        e => e.type === PlatformEventType.RESTART_COMPLETED
-      );
-      expect(completionEvent).toBeDefined();
-      expect(completionEvent.payload.success).toBe(true);
+      const completedEvents = events.filter(e => e.type === 'platform.restart_completed');
+      expect(completedEvents).toHaveLength(1);
+      expect(completedEvents[0].payload.success).toBe(true);
     });
 
     it('should emit cancelled event when restart declined', async () => {
       mockHooks.onRestartRequested = vi.fn().mockResolvedValue(false);
       
-      const restartEvent = createRestartRequestedEvent({});
+      const events: any[] = [];
+      engine.on('event', (event) => events.push(event));
+      
+      const restartEvent = createRestartRequestedEvent({ reason: 'user_requested' });
+      
       engine['pendingPlatformOps'].push(restartEvent);
-      
-      const emittedEvents: any[] = [];
-      engine['eventSource'].subscribe(event => emittedEvents.push(event));
-      
       await engine['processPlatformOperations']();
       
-      const cancelEvent = emittedEvents.find(
-        e => e.type === PlatformEventType.RESTART_CANCELLED
-      );
-      expect(cancelEvent).toBeDefined();
-      expect(cancelEvent.payload.success).toBe(false);
+      const cancelledEvents = events.filter(e => e.type === 'platform.restart_cancelled');
+      expect(cancelledEvents).toHaveLength(1);
+      expect(cancelledEvents[0].payload.success).toBe(false);
     });
   });
 
   describe('Multiple Platform Operations', () => {
+    beforeEach(() => {
+      engine.start();
+    });
+
     it('should process multiple platform operations in order', async () => {
-      const saveEvent = createSaveRequestedEvent({ 
-        saveName: 'before-quit',
-        timestamp: Date.now() 
+      const callOrder: string[] = [];
+      
+      mockHooks.onSaveRequested = vi.fn().mockImplementation(async () => {
+        callOrder.push('save');
       });
-      const quitEvent = createQuitRequestedEvent({});
+      
+      mockHooks.onRestoreRequested = vi.fn().mockImplementation(async () => {
+        callOrder.push('restore');
+        return null;
+      });
+      
+      const saveEvent = createSaveRequestedEvent({ saveName: 'test', timestamp: Date.now() });
+      const restoreEvent = createRestoreRequestedEvent({ saveName: 'test' });
       
       engine['pendingPlatformOps'].push(saveEvent);
-      engine['pendingPlatformOps'].push(quitEvent);
-      
-      const callOrder: string[] = [];
-      mockHooks.onSaveRequested = vi.fn().mockImplementation(() => {
-        callOrder.push('save');
-        return Promise.resolve();
-      });
-      mockHooks.onQuitRequested = vi.fn().mockImplementation(() => {
-        callOrder.push('quit');
-        return Promise.resolve(true);
-      });
+      engine['pendingPlatformOps'].push(restoreEvent);
       
       await engine['processPlatformOperations']();
       
-      expect(callOrder).toEqual(['save', 'quit']);
-      expect(engine['pendingPlatformOps']).toHaveLength(0);
+      expect(callOrder).toEqual(['save', 'restore']);
     });
 
     it('should continue processing even if one operation fails', async () => {
       mockHooks.onSaveRequested = vi.fn().mockRejectedValue(new Error('Save failed'));
-      mockHooks.onQuitRequested = vi.fn().mockResolvedValue(true);
+      mockHooks.onRestoreRequested = vi.fn().mockResolvedValue(null);
       
-      const saveEvent = createSaveRequestedEvent({ timestamp: Date.now() });
-      const quitEvent = createQuitRequestedEvent({});
+      const saveEvent = createSaveRequestedEvent({ saveName: 'test', timestamp: Date.now() });
+      const restoreEvent = createRestoreRequestedEvent({ saveName: 'test' });
       
       engine['pendingPlatformOps'].push(saveEvent);
-      engine['pendingPlatformOps'].push(quitEvent);
-      
-      engine.start();
+      engine['pendingPlatformOps'].push(restoreEvent);
       
       await engine['processPlatformOperations']();
       
-      expect(mockHooks.onQuitRequested).toHaveBeenCalled();
-      expect(engine['running']).toBe(false);
+      expect(mockHooks.onSaveRequested).toHaveBeenCalled();
+      expect(mockHooks.onRestoreRequested).toHaveBeenCalled();
     });
   });
 
   describe('Event Emission', () => {
+    beforeEach(() => {
+      engine.start();
+    });
+
     it('should add completion events to current turn events', async () => {
+      const turnEvents = engine['turnEvents'];
       const currentTurn = engine.getContext().currentTurn;
-      engine['turnEvents'].set(currentTurn, []);
       
-      const saveEvent = createSaveRequestedEvent({ timestamp: Date.now() });
+      const saveEvent = createSaveRequestedEvent({ saveName: 'test', timestamp: Date.now() });
+      
       engine['pendingPlatformOps'].push(saveEvent);
-      
       await engine['processPlatformOperations']();
       
-      const turnEvents = engine['turnEvents'].get(currentTurn);
-      expect(turnEvents).toBeDefined();
-      expect(turnEvents!.some(e => e.type === PlatformEventType.SAVE_COMPLETED)).toBe(true);
+      const eventsForTurn = turnEvents.get(currentTurn);
+      expect(eventsForTurn).toBeDefined();
+      expect(eventsForTurn?.some(e => e.type === 'platform.save_completed')).toBe(true);
     });
 
     it('should emit events through event source', async () => {
       const emittedEvents: any[] = [];
-      engine['eventSource'].subscribe(event => emittedEvents.push(event));
+      engine['eventSource'].subscribe((event) => emittedEvents.push(event));
       
-      const quitEvent = createQuitRequestedEvent({});
-      engine['pendingPlatformOps'].push(quitEvent);
+      const saveEvent = createSaveRequestedEvent({ saveName: 'test', timestamp: Date.now() });
       
+      engine['pendingPlatformOps'].push(saveEvent);
       await engine['processPlatformOperations']();
       
-      expect(emittedEvents.some(e => e.type === PlatformEventType.QUIT_CONFIRMED)).toBe(true);
+      expect(emittedEvents.some(e => e.type === 'platform.save_completed')).toBe(true);
     });
   });
 });

@@ -17,6 +17,7 @@ import {
   QueryEvents,
   StandardValidators
 } from './types';
+import { SemanticEvent, SemanticEventSource, createSemanticEventSource } from '../events';
 
 /**
  * Query Manager implementation
@@ -31,6 +32,7 @@ export class QueryManager extends EventEmitter {
   private handlers = new Map<string, QueryHandler>();
   private validators = new Map<string, QueryValidator>();
   private timeouts = new Map<string, NodeJS.Timeout>();
+  private eventSource: SemanticEventSource = createSemanticEventSource();
   
   constructor() {
     super();
@@ -153,10 +155,47 @@ export class QueryManager extends EventEmitter {
       if (validator) {
         validationResult = validator(input, query);
       }
+    } else if (query.type === 'multiple_choice' && query.options) {
+      // Default validation for multiple choice queries
+      const trimmed = input.trim().toLowerCase();
+      const optionIndex = parseInt(trimmed, 10) - 1;
+      
+      if (!isNaN(optionIndex) && optionIndex >= 0 && optionIndex < query.options.length) {
+        // Numeric selection
+        validationResult = { valid: true, normalized: optionIndex };
+      } else if (query.options.some(opt => opt.toLowerCase() === trimmed)) {
+        // Text match
+        validationResult = { valid: true, normalized: trimmed };
+      } else {
+        // Invalid response
+        validationResult = { 
+          valid: false, 
+          message: `Please select one of the available options: ${query.options.join(', ')}`,
+          hint: 'You can enter the option number or text'
+        };
+      }
     }
     
     if (!validationResult.valid) {
       this.emit('query:invalid', input, validationResult, query);
+      
+      // Also emit as a semantic event
+      const invalidEventData = {
+        queryId: query.id,
+        input,
+        message: validationResult.message || 'Invalid response',
+        hint: validationResult.hint
+      };
+      const invalidEvent: SemanticEvent = {
+        id: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        type: 'query.invalid',
+        timestamp: Date.now(),
+        entities: {},
+        data: invalidEventData,
+        payload: invalidEventData
+      };
+      this.eventSource.emit(invalidEvent);
+      
       return 'handled';
     }
     
@@ -257,6 +296,13 @@ export class QueryManager extends EventEmitter {
    */
   getState(): Readonly<QueryState> {
     return { ...this.state };
+  }
+  
+  /**
+   * Get event source for connecting to engine
+   */
+  getEventSource(): SemanticEventSource {
+    return this.eventSource;
   }
   
   /**

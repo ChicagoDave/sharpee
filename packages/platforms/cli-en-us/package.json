@@ -1,0 +1,26 @@
+{
+  "name": "@sharpee/platform-cli-en-us",
+  "version": "0.1.0",
+  "description": "English CLI platform for Sharpee interactive fiction engine",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@sharpee/engine": "workspace:*",
+    "@sharpee/world-model": "workspace:*",
+    "@sharpee/parser-en-us": "workspace:*",
+    "@sharpee/lang-en-us": "workspace:*",
+    "@sharpee/text-services": "workspace:*",
+    "@sharpee/stdlib": "workspace:*",
+    "readline": "^1.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  }
+}

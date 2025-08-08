@@ -15,9 +15,10 @@ export class MinimalTestStory implements Story {
     title: 'Minimal Test Story',
     author: 'Test Suite',
     version: '1.0.0',
-    language: 'en-us',
     description: 'A minimal story for testing basic engine functionality'
   };
+  
+  forceInitError: boolean = false;
 
   private _initCalled = false;
   private _worldInitCalled = false;
@@ -26,6 +27,9 @@ export class MinimalTestStory implements Story {
   private _player: IFEntity | null = null;
 
   initializeWorld(world: WorldModel): void {
+    if (this.forceInitError) {
+      throw new Error('Forced initialization error');
+    }
     this._worldInitCalled = true;
     
     // Create a simple test room

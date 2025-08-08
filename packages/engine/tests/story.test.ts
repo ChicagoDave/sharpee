@@ -2,7 +2,7 @@
  * Tests for Story module
  */
 
-import { Story, StoryConfig, loadLanguageProvider, validateStoryConfig } from '../src/story';
+import { Story, StoryConfig, validateStoryConfig } from '../src/story';
 import { WorldModel, IFEntity, IdentityTrait, EntityType } from '@sharpee/world-model';
 import { Action } from '@sharpee/stdlib';
 
@@ -14,7 +14,6 @@ describe('Story', () => {
         title: 'Test Story',
         author: 'Test Author',
         version: '1.0.0',
-        language: 'en-us',
         description: 'A test story'
       };
       
@@ -26,8 +25,7 @@ describe('Story', () => {
         id: 'test-story',
         title: 'Test Story',
         author: ['Author 1', 'Author 2'],
-        version: '1.0.0',
-        language: 'en-us'
+        version: '1.0.0'
       };
       
       expect(() => validateStoryConfig(config)).not.toThrow();
@@ -41,8 +39,7 @@ describe('Story', () => {
           id: 'test',
           title: 'Test',
           author: 'Test',
-          version,
-          language: 'en-us'
+          version
         };
         expect(() => validateStoryConfig(config)).not.toThrow();
       });
@@ -56,23 +53,21 @@ describe('Story', () => {
           id: 'test',
           title: 'Test',
           author: 'Test',
-          version,
-          language: 'en-us'
+          version
         };
         expect(() => validateStoryConfig(config)).toThrow('Invalid version format');
       });
     });
 
     it('should require all mandatory fields', () => {
-      const requiredFields = ['id', 'title', 'author', 'version', 'language'];
+      const requiredFields = ['id', 'title', 'author', 'version'];
       
       requiredFields.forEach(field => {
         const config: any = {
           id: 'test',
           title: 'Test',
           author: 'Test',
-          version: '1.0.0',
-          language: 'en-us'
+          version: '1.0.0'
         };
         
         delete config[field];
@@ -81,32 +76,13 @@ describe('Story', () => {
     });
   });
 
-  describe('loadLanguageProvider', () => {
-    it('should load en-us language provider', async () => {
-      const provider = await loadLanguageProvider('en-us');
-      
-      expect(provider).toBeDefined();
-      expect(provider.languageCode).toBe('en-US');
-      expect(provider.languageName).toBe('English (US)');
-      expect(typeof provider.getVerbs).toBe('function');
-      expect(typeof provider.lemmatize).toBe('function');
-      expect(typeof provider.formatList).toBe('function');
-    }, 60000);
-
-    it('should throw for unsupported language', async () => {
-      await expect(loadLanguageProvider('unsupported-lang'))
-        .rejects.toThrow('Failed to load language package');
-    }, 60000);
-  });
-
   describe('Story lifecycle', () => {
     class LifecycleTestStory implements Story {
       config: StoryConfig = {
         id: 'lifecycle-test',
         title: 'Lifecycle Test',
         author: 'Test',
-        version: '1.0.0',
-        language: 'en-us'
+        version: '1.0.0'
       };
 
       private turnCount = 0;

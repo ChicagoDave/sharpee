@@ -38,7 +38,7 @@ import {
   GameState,
   SequencedEvent
 } from './types';
-import { Story, loadLanguageProvider, loadTextService } from './story';
+import { Story } from './story';
 
 import { CommandExecutor, createCommandExecutor } from './command-executor';
 import { EventSequenceUtils, eventSequencer } from './event-sequencer';
@@ -84,25 +84,27 @@ export class GameEngine {
   private queryManager: QueryManager;
   private pendingPlatformOps: PlatformEvent[] = [];
 
-  constructor(
-    world: WorldModel,
-    player: IFEntity,
-    config: EngineConfig = {},
-    languageProvider?: LanguageProvider
-  ) {
+  constructor(options: {
+    world: WorldModel;
+    player: IFEntity;
+    parser: Parser;
+    language: LanguageProvider;
+    textService: TextService;
+    config?: EngineConfig;
+  }) {
     
-    this.world = world;
+    this.world = options.world;
     this.config = {
       maxHistory: 100,
       validateEvents: true,
       collectTiming: false,
-      ...config
+      ...options.config
     };
 
     // Initialize context
     this.context = {
       currentTurn: 1,
-      player,
+      player: options.player,
       history: [],
       metadata: {
         started: new Date(),
@@ -120,13 +122,39 @@ export class GameEngine {
     this.eventProcessor = new EventProcessor(this.world);
     this.platformEvents = createSemanticEventSource();
     
-    // If we have a language provider, use it
-    if (languageProvider) {
-      this.languageProvider = languageProvider;
+    // Set provided dependencies
+    this.languageProvider = options.language;
+    this.parser = options.parser;
+    this.textService = options.textService;
+    
+    // Update action registry with language provider
+    this.actionRegistry.setLanguageProvider(this.languageProvider);
+    
+    // Wire parser with platform events if supported
+    if (this.parser && 'setPlatformEventEmitter' in this.parser) {
+      (this.parser as any).setPlatformEventEmitter((event: any) => {
+        this.platformEvents.addEvent(event);
+      });
     }
+    
+    // Create command executor with dependencies
+    this.commandExecutor = createCommandExecutor(
+      this.world,
+      this.actionRegistry,
+      this.eventProcessor,
+      this.languageProvider,
+      this.parser
+    );
     
     // Create query manager
     this.queryManager = createQueryManager();
+    
+    // Connect query manager's event source to engine's event source
+    this.queryManager.getEventSource().subscribe((evt: SemanticEvent) => {
+      this.eventSource.emit(evt);
+      // Also emit through engine's event emitter for tests
+      this.emit('event', evt as any);
+    });
     
     // Listen for client.query events
     this.setupQueryHandling();
@@ -135,16 +163,8 @@ export class GameEngine {
   /**
    * Set the story for this engine
    */
-  async setStory(story: Story): Promise<void> {
+  setStory(story: Story): void {
     this.story = story;
-    
-    // Set language from story configuration
-    await this.setLanguage(story.config.language);
-    
-    // Set text service from story configuration (skip if already set)
-    if (!this.textService) {
-      await this.setTextServiceFromConfig(story.config.textService);
-    }
     
     // Initialize story-specific world content
     story.initializeWorld(this.world);
@@ -190,94 +210,6 @@ export class GameEngine {
     }
   }
 
-  /**
-   * Set the language for this engine
-   */
-  async setLanguage(languageCode: string): Promise<void> {
-    if (!languageCode) {
-      throw new Error('Language code is required');
-    }
-
-    try {
-      // Load language provider
-      this.languageProvider = await loadLanguageProvider(languageCode);
-      
-      // Update action registry with language provider
-      this.actionRegistry.setLanguageProvider(this.languageProvider);
-      
-      // Update text service with language provider
-      if (this.textService) {
-        this.textService.setLanguageProvider(this.languageProvider);
-      }
-      
-      // Load parser dynamically
-      const parserPackageName = `@sharpee/parser-${languageCode.toLowerCase()}`;
-      try {
-        const parserModule = await import(parserPackageName);
-        
-        // Try to get the parser class from various export patterns
-        let ParserClass;
-        if (parserModule.Parser && typeof parserModule.Parser === 'function') {
-          ParserClass = parserModule.Parser;
-        } else if (parserModule.default && typeof parserModule.default === 'function') {
-          ParserClass = parserModule.default;
-        } else if (parserModule.EnglishParser && typeof parserModule.EnglishParser === 'function') {
-          ParserClass = parserModule.EnglishParser;
-        } else {
-          const exportedClasses = Object.values(parserModule).filter(
-            (exp: any) => typeof exp === 'function' && exp.name && exp.name.includes('Parser')
-          );
-          if (exportedClasses.length > 0) {
-            ParserClass = exportedClasses[0];
-          } else {
-            throw new Error(`No parser class found in ${parserPackageName}`);
-          }
-        }
-        
-        // Register the parser with the factory
-        ParserFactory.registerParser(languageCode, ParserClass as any);
-        
-        // Create parser instance
-        this.parser = ParserFactory.createParser(languageCode, this.languageProvider);
-        
-        // Wire parser with platform events
-        if (this.parser && 'setPlatformEventEmitter' in this.parser) {
-          console.log('[ENGINE] Wiring parser with platform events');
-          (this.parser as any).setPlatformEventEmitter((event: any) => {
-            this.platformEvents.addEvent(event);
-          });
-        } else {
-          console.log('[ENGINE] Parser does not support platform events');
-        }
-        
-      } catch (error: any) {
-        if (error.message?.includes('Cannot find module')) {
-          throw new Error(`Parser package not found for language: ${languageCode}. Expected package: ${parserPackageName}`);
-        }
-        throw new Error(`Failed to load parser for ${languageCode}: ${error.message}`);
-      }
-      
-      // Create or recreate command executor
-      this.commandExecutor = createCommandExecutor(
-        this.world,
-        this.actionRegistry,
-        this.eventProcessor,
-        this.languageProvider,
-        this.parser
-      );
-      
-    } catch (error: any) {
-      throw new Error(`Failed to set language: ${error.message}`);
-    }
-  }
-
-  /**
-   * Set text service from story configuration
-   */
-  private async setTextServiceFromConfig(config?: Story['config']['textService']): Promise<void> {
-    const textService = await loadTextService(config);
-    this.setTextService(textService);
-  }
 
   /**
    * Get the current parser
@@ -301,12 +233,20 @@ export class GameEngine {
       throw new Error('Engine is already running');
     }
 
-    if (!this.commandExecutor) {
-      throw new Error('Engine must have a story set before starting');
+    if (!this.parser) {
+      throw new Error('Engine must have a parser before starting');
+    }
+
+    if (!this.languageProvider) {
+      throw new Error('Engine must have a language provider before starting');
     }
 
     if (!this.textService) {
-      throw new Error('Engine must have a text service set before starting');
+      throw new Error('Engine must have a text service before starting');
+    }
+
+    if (!this.commandExecutor) {
+      throw new Error('Engine must have a command executor before starting');
     }
 
     this.running = true;
@@ -724,7 +664,8 @@ export class GameEngine {
       throw new Error(`Unsupported save version: ${saveData.version}`);
     }
 
-    if (saveData.storyConfig.id !== this.story?.config.id) {
+    if (saveData.storyConfig?.id && this.story?.config.id && 
+        saveData.storyConfig.id !== this.story.config.id) {
       throw new Error(`Save is for different story: ${saveData.storyConfig.id}`);
     }
 
@@ -999,6 +940,12 @@ export class GameEngine {
    */
   private async processPlatformOperations(turn?: number): Promise<void> {
     const currentTurn = turn ?? this.context.currentTurn;
+    
+    // Ensure there's an entry for the current turn
+    if (!this.turnEvents.has(currentTurn)) {
+      this.turnEvents.set(currentTurn, []);
+    }
+    
     // Process each pending operation
     for (const platformOp of this.pendingPlatformOps) {
       try {
@@ -1021,11 +968,15 @@ export class GameEngine {
               const completionEvent = createSaveCompletedEvent(true);
               this.eventSource.emit(completionEvent);
               this.turnEvents.get(currentTurn)?.push(completionEvent);
+              // Also emit through engine's event emitter for tests
+              this.emit('event', completionEvent as any);
             } else {
               // No save hook registered
               const errorEvent = createSaveCompletedEvent(false, 'No save handler registered');
               this.eventSource.emit(errorEvent);
               this.turnEvents.get(currentTurn)?.push(errorEvent);
+              // Also emit through engine's event emitter for tests
+              this.emit('event', errorEvent as any);
             }
             break;
           }
@@ -1041,17 +992,23 @@ export class GameEngine {
                 const completionEvent = createRestoreCompletedEvent(true);
                 this.eventSource.emit(completionEvent);
                 this.turnEvents.get(currentTurn)?.push(completionEvent);
+                // Also emit through engine's event emitter for tests
+                this.emit('event', completionEvent as any);
               } else {
                 // User cancelled or no save available
                 const errorEvent = createRestoreCompletedEvent(false, 'No save data available or restore cancelled');
                 this.eventSource.emit(errorEvent);
                 this.turnEvents.get(currentTurn)?.push(errorEvent);
+                // Also emit through engine's event emitter for tests
+                this.emit('event', errorEvent as any);
               }
             } else {
               // No restore hook registered
               const errorEvent = createRestoreCompletedEvent(false, 'No restore handler registered');
               this.eventSource.emit(errorEvent);
               this.turnEvents.get(currentTurn)?.push(errorEvent);
+              // Also emit through engine's event emitter for tests
+              this.emit('event', errorEvent as any);
             }
             break;
           }
@@ -1059,14 +1016,42 @@ export class GameEngine {
           case PlatformEventType.QUIT_REQUESTED: {
             const context = platformOp.payload.context as QuitContext;
             
-            // The quit action already emitted a client.query event
-            // For now, just auto-confirm quit (tests will need to be updated to handle actual query flow)
-            // TODO: Implement proper query handling with hooks
-            const confirmEvent = createQuitConfirmedEvent();
-            this.eventSource.emit(confirmEvent);
-            const turnEvents = this.turnEvents.get(currentTurn);
-            if (turnEvents) {
-              turnEvents.push(confirmEvent);
+            if (this.saveRestoreHooks?.onQuitRequested) {
+              const shouldQuit = await this.saveRestoreHooks.onQuitRequested(context);
+              if (shouldQuit) {
+                // Stop the engine
+                this.stop();
+                
+                // Emit confirmation event
+                const confirmEvent = createQuitConfirmedEvent();
+                this.eventSource.emit(confirmEvent);
+                const turnEvents = this.turnEvents.get(currentTurn);
+                if (turnEvents) {
+                  turnEvents.push(confirmEvent);
+                }
+                // Also emit through engine's event emitter for tests
+                this.emit('event', confirmEvent as any);
+              } else {
+                // User cancelled quit
+                const cancelEvent = createQuitCancelledEvent();
+                this.eventSource.emit(cancelEvent);
+                const turnEvents = this.turnEvents.get(currentTurn);
+                if (turnEvents) {
+                  turnEvents.push(cancelEvent);
+                }
+                // Also emit through engine's event emitter for tests
+                this.emit('event', cancelEvent as any);
+              }
+            } else {
+              // No quit hook registered, auto-confirm
+              const confirmEvent = createQuitConfirmedEvent();
+              this.eventSource.emit(confirmEvent);
+              const turnEvents = this.turnEvents.get(currentTurn);
+              if (turnEvents) {
+                turnEvents.push(confirmEvent);
+              }
+              // Also emit through engine's event emitter for tests
+              this.emit('event', confirmEvent as any);
             }
             
             break;
@@ -1081,9 +1066,15 @@ export class GameEngine {
                 const completionEvent = createRestartCompletedEvent(true);
                 this.eventSource.emit(completionEvent);
                 this.turnEvents.get(currentTurn)?.push(completionEvent);
+                // Also emit through engine's event emitter for tests
+                this.emit('event', completionEvent as any);
                 
                 // Re-initialize the story
                 if (this.story) {
+                  // Stop first if running
+                  if (this.running) {
+                    this.stop();
+                  }
                   await this.setStory(this.story);
                   this.start();
                 }
@@ -1092,15 +1083,23 @@ export class GameEngine {
                 const cancelEvent = createRestartCompletedEvent(false);
                 this.eventSource.emit(cancelEvent);
                 this.turnEvents.get(currentTurn)?.push(cancelEvent);
+                // Also emit through engine's event emitter for tests
+                this.emit('event', cancelEvent as any);
               }
             } else {
               // No restart hook registered - default behavior is to restart
               const completionEvent = createRestartCompletedEvent(true);
               this.eventSource.emit(completionEvent);
               this.turnEvents.get(currentTurn)?.push(completionEvent);
+              // Also emit through engine's event emitter for tests
+              this.emit('event', completionEvent as any);
               
               // Re-initialize the story
               if (this.story) {
+                // Stop first if running
+                if (this.running) {
+                  this.stop();
+                }
                 await this.setStory(this.story);
                 this.start();
               }
@@ -1132,6 +1131,8 @@ export class GameEngine {
         
         this.eventSource.emit(errorEvent);
         this.turnEvents.get(currentTurn)?.push(errorEvent);
+        // Also emit through engine's event emitter for tests
+        this.emit('event', errorEvent as any);
       }
     }
     
@@ -1480,84 +1481,3 @@ export class GameEngine {
   }
 }
 
-/**
- * Factory function to create a game engine
- */
-export function createGameEngine(
-  world: WorldModel,
-  player: IFEntity,
-  config?: EngineConfig,
-  languageProvider?: LanguageProvider
-): GameEngine {
-  return new GameEngine(world, player, config, languageProvider);
-}
-
-/**
- * Create a basic game engine with standard setup
- */
-export function createStandardEngine(config?: EngineConfig): GameEngine {
-  // Create world (without platform events for standard engine)
-  const world = new WorldModel();
-
-  // Create player entity
-  const player = world.createEntity('You', EntityType.ACTOR);
-  
-  // Add traits to player
-  player.add(new IdentityTrait({
-    name: 'You',
-    aliases: ['self', 'me', 'myself'],
-    description: 'As good-looking as ever.',
-    properName: true,
-    article: ''
-  }));
-  player.add(new ActorTrait({ isPlayer: true }));
-  player.add(new ContainerTrait({
-    capacity: {
-      maxItems: 10
-    }
-  }));
-
-  // Create engine
-  const engine = new GameEngine(world, player, config);
-
-  // Initial vocabulary update
-  engine.updateScopeVocabulary();
-
-  return engine;
-}
-
-/**
- * Create a game engine with a story
- */
-export async function createEngineWithStory(
-  story: Story,
-  config?: EngineConfig
-): Promise<GameEngine> {
-  // Create platform events first (using semantic event source)
-  const platformEvents = createSemanticEventSource();
-  
-  // Create world with platform events
-  const world = new WorldModel({}, platformEvents);
-  
-  // Create player from story
-  const player = story.createPlayer(world);
-  world.setPlayer(player.id);
-  
-  // Create engine
-  const engine = new GameEngine(world, player, config);
-  
-  // Replace the engine's platformEvents with the one we created
-  // (to ensure they're the same instance)
-  (engine as any).platformEvents = platformEvents;
-  
-  // Set language first (from story config)
-  await engine.setLanguage(story.config.language);
-  
-  // Then set the story (which can now register custom vocabulary)
-  await engine.setStory(story);
-  
-  // Initial vocabulary update
-  engine.updateScopeVocabulary();
-  
-  return engine;
-}

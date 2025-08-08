@@ -110,15 +110,17 @@ export class MockTextChannel {
 /**
  * Create a standard engine with a minimal test story for tests that need to start immediately
  * This helps avoid the "Engine must have a story set before starting" error
+ * 
+ * @deprecated Use setupTestEngine() from test-helpers/setup-test-engine.ts instead
  */
-export async function createTestEngine(config?: any): Promise<any> {
-  // Import dynamically to avoid circular dependencies
-  const { createStandardEngine } = await import('../../src/game-engine');
-  const { MinimalTestStory } = await import('../stories/minimal-test-story');
+export function createTestEngine(config?: any): any {
+  // Import to avoid circular dependencies
+  const { setupTestEngine } = require('../test-helpers/setup-test-engine');
+  const { MinimalTestStory } = require('../stories/minimal-test-story');
   
-  const engine = createStandardEngine(config);
+  const { engine } = setupTestEngine(config);
   const story = new MinimalTestStory();
-  await engine.setStory(story);
+  engine.setStory(story);
   
   return engine;
 }

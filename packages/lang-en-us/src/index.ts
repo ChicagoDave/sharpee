@@ -10,6 +10,7 @@
  */
 
 export { EnglishLanguageProvider, default } from './language-provider';
+export { EnglishLanguageProvider as LanguageProvider } from './language-provider'; // For convenience
 
 // Export types that might be used by consumers
 export type { VerbDefinition } from './data/verbs';

@@ -35,17 +35,7 @@ export const config: StoryConfig = {
   title: "Cloak of Darkness",
   author: "Roger Firth (Sharpee implementation)",
   version: "1.0.0",
-  language: "en-us",
-  description: "A basic IF demonstration - hang up your cloak!",
-  textService: {
-    type: "cli-events",
-    config: {
-      showTurnHeader: true,
-      showLocation: true,
-      showEventData: true,
-      showPlatformEvents: true
-    }
-  }
+  description: "A basic IF demonstration - hang up your cloak!"
 };
 
 /**

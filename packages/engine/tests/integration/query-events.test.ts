@@ -3,24 +3,24 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createStandardEngine } from '../../src/game-engine';
+import { GameEngine } from '../../src/game-engine';
 import { WorldModel, EntityType } from '@sharpee/world-model';
 import { registerStandardCapabilities } from '@sharpee/stdlib';
-import { createMockTextService } from '../../src/test-helpers/mock-text-service';
 import { Story } from '../../src/story';
+import { setupTestEngine } from '../test-helpers/setup-test-engine';
 
 describe('Query Event Emission', () => {
-  let engine: any;
+  let engine: GameEngine;
   let world: WorldModel;
   
-  beforeEach(async () => {
+  beforeEach(() => {
     // Create a minimal test story
     const story: Story = {
       config: {
+        id: 'test-story',
         title: 'Test Story',
         author: 'Test Author',
-        version: '1.0.0',
-        language: 'en-us'
+        version: '1.0.0'
       },
       
       createPlayer: (world: WorldModel) => {
@@ -40,57 +40,68 @@ describe('Query Event Emission', () => {
       }
     };
     
-    // Create engine 
-    engine = createStandardEngine();
-    world = engine.getWorld();
+    // Create engine with static dependencies
+    const setup = setupTestEngine();
+    engine = setup.engine;
+    world = setup.world;
     
-    // Set text service and language BEFORE story to avoid hanging
-    const textService = createMockTextService();
-    engine.setTextService(textService);
-    await engine.setLanguage('en-us');
-    
-    // Set up the story
-    await engine.setStory(story);
-    
-    // Start the engine
+    // Set story and start
+    engine.setStory(story);
     engine.start();
   });
-
+  
   it('should emit client.query event when quit is executed', async () => {
-    // Track events
     const events: any[] = [];
     
+    // Listen for query events
+    engine.on('event', (event: any) => {
+      if (event.type === 'client.query') {
+        events.push(event);
+      }
+    });
+    
     // Execute quit command
-    const result = await engine.executeTurn('quit');
+    await engine.executeTurn('quit');
     
-    expect(result.success).toBe(true);
+    // Check that query event was emitted
+    const queryEvents = events.filter(e => e.type === 'client.query');
+    expect(queryEvents.length).toBeGreaterThan(0);
     
-    // Check that client.query event is in the result
-    const queryEvent = result.events.find((e: any) => e.type === 'client.query');
-    expect(queryEvent).toBeDefined();
-    expect(queryEvent.data.type).toBe('quit_confirmation');
-    expect(queryEvent.data.messageId).toBe('quit_confirm_query');
+    const queryEvent = queryEvents[0];
+    expect(queryEvent.data).toBeDefined();
+    expect(queryEvent.data.queryId).toBeDefined();
+    expect(queryEvent.data.prompt).toContain('quit');
   });
-
+  
   it('should emit platform.quit_requested event', async () => {
-    // Execute quit command
-    const result = await engine.executeTurn('quit');
+    const events: any[] = [];
     
-    expect(result.success).toBe(true);
+    // Listen for platform events
+    engine.on('event', (event: any) => {
+      events.push(event);
+    });
+    
+    // Execute quit command
+    await engine.executeTurn('quit');
     
     // Check for platform.quit_requested event
-    const quitEvent = result.events.find((e: any) => e.type === 'platform.quit_requested');
-    expect(quitEvent).toBeDefined();
+    const quitEvents = events.filter(e => e.type === 'platform.quit_requested');
+    expect(quitEvents.length).toBeGreaterThan(0);
   });
-
+  
   it('should emit if.event.quit_requested event', async () => {
-    // Execute quit command
-    const result = await engine.executeTurn('quit');
+    const events: any[] = [];
     
-    expect(result.success).toBe(true);
+    // Listen for all events
+    engine.on('event', (event: any) => {
+      events.push(event);
+    });
     
-    // Check for if.event.quit_requested event
-    const ifEvent = result.events.find((e: any) => e.type === 'if.event.quit_requested');
-    expect(ifEvent).toBeDefined();
+    // Execute quit command  
+    await engine.executeTurn('quit');
+    
+    // Check for if.event.quit_requested
+    const ifEvents = events.filter(e => e.type === 'if.event.quit_requested');
+    expect(ifEvents.length).toBeGreaterThan(0);
   });
 });

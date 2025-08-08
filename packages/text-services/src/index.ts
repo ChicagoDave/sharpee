@@ -9,6 +9,7 @@ export { CLIEventsTextService } from './cli-events-text-service';
 export type { CLIEventsConfig } from './cli-events-text-service';
 
 export { TemplateTextService } from './template-text-service';
+export { TemplateTextService as TextService } from './template-text-service'; // Default text service
 
 // Import implementations for factory
 import { CLIEventsTextService as CLIEventsImpl } from './cli-events-text-service';

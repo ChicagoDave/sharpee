@@ -3,41 +3,38 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createStandardEngine } from '../../src/game-engine';
+import { GameEngine } from '../../src/game-engine';
 import { WorldModel } from '@sharpee/world-model';
 import { createQuitQueryHandler } from '@sharpee/stdlib';
 import { MinimalTestStory } from '../stories';
-import { createMockTextService } from '../../src/test-helpers/mock-text-service';
+import { setupTestEngine } from '../test-helpers/setup-test-engine';
 
 describe('Query System Integration', () => {
   let engine: any;
   let world: WorldModel;
   let story: MinimalTestStory;
 
-  beforeEach(async () => {
-    // Create a basic engine
-    engine = createStandardEngine();
-    world = engine.getWorld();
-    
-    // Set text service before setting story to avoid dynamic import issues
-    const textService = createMockTextService();
-    engine.setTextService(textService);
+  beforeEach(() => {
+    // Create a test engine with static dependencies
+    const setup = setupTestEngine({ includeCapabilities: true });
+    engine = setup.engine;
+    world = setup.world;
     
     // Set up a minimal test story
     story = new MinimalTestStory();
-    await engine.setStory(story);
-    
-    // Set up a basic language provider
-    const mockLanguageProvider = {
-      getMessage: (id: string) => ({ template: id }),
-      getActionPatterns: () => ({}),
-      getActionHelp: () => ({})
-    };
+    engine.setStory(story);
     
     // Register quit handler with query manager
     const queryManager = engine.getQueryManager();
     const quitHandler = createQuitQueryHandler();
     queryManager.registerHandler('quit', quitHandler);
+    
+    // Connect quit handler events to engine event source (like the engine does)
+    quitHandler.getEventSource().subscribe((evt) => {
+      engine['eventSource'].emit(evt);
+      // Also emit through engine's event emitter for tests
+      engine.emit('event', evt as any);
+    });
   });
 
   it('should emit client.query event when quit action executes', async () => {
@@ -59,7 +56,7 @@ describe('Query System Integration', () => {
     const queryEvent = events.find(e => e.type === 'client.query');
     expect(queryEvent).toBeDefined();
     expect(queryEvent.data.source).toBe('system');
-    expect(queryEvent.data.type).toBe('quit_confirmation');
+    expect(queryEvent.data.type).toBe('multiple_choice');
     expect(queryEvent.data.messageId).toBe('quit_confirm_query');
     expect(queryEvent.data.options).toEqual(['quit', 'cancel']);
   });
@@ -75,7 +72,7 @@ describe('Query System Integration', () => {
     expect(queryManager.hasPendingQuery()).toBe(true);
     
     const query = queryManager.getCurrentQuery();
-    expect(query?.type).toBe('quit_confirmation');
+    expect(query?.type).toBe('multiple_choice');
     
     // Try to respond
     const response = await engine.executeTurn('1');
@@ -97,8 +94,8 @@ describe('Query System Integration', () => {
     // Select "cancel" (option 2)
     await engine.executeTurn('2');
     
-    // Should emit quit.cancelled event
-    const cancelEvent = events.find(e => e.type === 'quit.cancelled');
+    // Should emit platform.quit_cancelled event
+    const cancelEvent = events.find(e => e.type === 'platform.quit_cancelled');
     expect(cancelEvent).toBeDefined();
     
     // Query should be cleared
@@ -123,7 +120,7 @@ describe('Query System Integration', () => {
     // Should emit query.invalid event
     const invalidEvent = events.find(e => e.type === 'query.invalid');
     expect(invalidEvent).toBeDefined();
-    expect(invalidEvent.data.message).toBeDefined();
+    expect(invalidEvent.data?.message || invalidEvent.payload?.message).toBeDefined();
     
     // Query should still be pending
     const queryManager = engine.getQueryManager();

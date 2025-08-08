@@ -27,10 +27,7 @@ export * from './game-engine';
 
 // Re-export commonly used items
 export {
-  GameEngine,
-  createGameEngine,
-  createStandardEngine,
-  createEngineWithStory
+  GameEngine
 } from './game-engine';
 
 export {

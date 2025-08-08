@@ -2,9 +2,10 @@
  * Verification test to ensure story-based testing approach works correctly
  */
 
-import { createStandardEngine } from '../src/game-engine';
+import { describe, it, expect } from 'vitest';
 import { MinimalTestStory } from './stories';
-import { loadLanguageProvider } from '../src/story';
+import { setupTestEngine } from './test-helpers/setup-test-engine';
+import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 
 describe('Story-Based Testing Verification', () => {
   it('should successfully initialize engine with test story and language provider', async () => {
@@ -12,10 +13,10 @@ describe('Story-Based Testing Verification', () => {
     // the language provider without the "verbDef.verbs is not iterable" error
     
     const story = new MinimalTestStory();
-    const engine = createStandardEngine();
+    const { engine } = setupTestEngine();
     
-    // This should load the language provider through the normal flow
-    await expect(engine.setStory(story)).resolves.not.toThrow();
+    // Set the story (no longer async)
+    engine.setStory(story);
     
     // Verify story was initialized
     expect(story.wasInitialized()).toBe(true);
@@ -33,9 +34,9 @@ describe('Story-Based Testing Verification', () => {
     engine.stop();
   });
 
-  it('should load language provider directly', async () => {
-    // Test that the language provider can be loaded directly
-    const provider = await loadLanguageProvider('en-us');
+  it('should load language provider directly', () => {
+    // Test that the language provider can be loaded statically
+    const provider = new EnglishLanguageProvider();
     
     expect(provider).toBeDefined();
     expect(provider.languageCode).toBe('en-US');

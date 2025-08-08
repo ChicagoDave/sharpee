@@ -61,8 +61,10 @@ export const quittingAction: Action & { metadata: ActionMetadata } = {
     // Also emit a client.query event for the quit confirmation
     // This allows the UI to show the query immediately
     events.push(context.event('client.query', {
+      queryId: `quit_${Date.now()}`,
+      prompt: 'Are you sure you want to quit?',
       source: 'system',
-      type: 'quit_confirmation',
+      type: 'multiple_choice',  // Use standard QueryType
       messageId: 'quit_confirm_query',
       options: ['quit', 'cancel'],
       context: quitContext

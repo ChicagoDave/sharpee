@@ -22,6 +22,7 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
   
   // Message storage
   private messages = new Map<string, string>();
+  private customActionPatterns = new Map<string, string[]>();
   
   constructor() {
     // Load all action messages
@@ -82,8 +83,19 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
    * @returns Array of patterns or undefined if action not found
    */
   getActionPatterns(actionId: string): string[] | undefined {
+    // First check custom patterns
+    const customPatterns = this.customActionPatterns.get(actionId);
+    
+    // Then check standard action language
     const actionLang = standardActionLanguage.find(lang => lang.actionId === actionId);
-    return actionLang?.patterns;
+    const standardPatterns = actionLang?.patterns;
+    
+    // Merge both sources if they exist
+    if (customPatterns && standardPatterns) {
+      return [...standardPatterns, ...customPatterns];
+    }
+    
+    return customPatterns || standardPatterns;
   }
   
   /**
@@ -406,6 +418,58 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
 
   isIgnoreWord(word: string): boolean {
     return englishWords.ignoreWords.includes(word.toLowerCase());
+  }
+
+  /**
+   * Add a custom message to the language provider
+   * @param messageId The message identifier (e.g., 'custom.action.message')
+   * @param template The message template with optional {param} placeholders
+   */
+  addMessage(messageId: string, template: string): void {
+    this.messages.set(messageId, template);
+  }
+
+  /**
+   * Add help information for a custom action
+   * @param actionId The action identifier (e.g., 'custom.action.foo')
+   * @param help The help information including usage, description, examples
+   */
+  addActionHelp(actionId: string, help: ActionHelp): void {
+    // Store the help information associated with the action
+    // This would require maintaining a separate help registry
+    // For now, we'll store it as messages with a special prefix
+    if (help.summary) {
+      this.messages.set(`${actionId}.help.summary`, help.summary);
+    }
+    if (help.description) {
+      this.messages.set(`${actionId}.help.description`, help.description);
+    }
+    if (help.examples) {
+      help.examples.forEach((example, index) => {
+        this.messages.set(`${actionId}.help.example.${index}`, example);
+      });
+    }
+  }
+
+  /**
+   * Add custom patterns/aliases for an action
+   * @param actionId The action identifier
+   * @param patterns Array of verb patterns/aliases
+   */
+  addActionPatterns(actionId: string, patterns: string[]): void {
+    // Get existing custom patterns
+    const existing = this.customActionPatterns.get(actionId) || [];
+    
+    // Merge with new patterns (avoiding duplicates)
+    const merged = [...existing];
+    for (const pattern of patterns) {
+      if (!merged.includes(pattern)) {
+        merged.push(pattern);
+      }
+    }
+    
+    // Store the merged patterns
+    this.customActionPatterns.set(actionId, merged);
   }
 }
 
