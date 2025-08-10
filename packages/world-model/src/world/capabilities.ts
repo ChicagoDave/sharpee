@@ -36,6 +36,7 @@ export const StandardCapabilities = {
   CONVERSATION: 'conversation',
   GAME_META: 'gameMeta',
   COMMAND_HISTORY: 'commandHistory',
+  DEBUG: 'debug',
 } as const;
 
 export type StandardCapabilityName = typeof StandardCapabilities[keyof typeof StandardCapabilities];

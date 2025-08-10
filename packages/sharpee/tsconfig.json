@@ -3,17 +3,8 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "composite": true,
     "declaration": true,
     "declarationMap": true
   },
-  "include": ["src/**/*"],
-  "references": [
-    { "path": "../core" },
-    { "path": "../world-model" },
-    { "path": "../engine" },
-    { "path": "../stdlib" },
-    { "path": "../event-processor" },
-    { "path": "../lang-en-us" }
-  ]
+  "include": ["src/**/*"]
 }

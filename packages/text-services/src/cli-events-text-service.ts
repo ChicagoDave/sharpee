@@ -60,6 +60,11 @@ export class CLIEventsTextService implements TextService {
       lines.push(`\n=== Turn ${this.context.currentTurn} ===`);
     }
 
+    // Check if debug events are enabled
+    const world = this.context.world;
+    const debugData = world.getCapability('debug') || {};
+    const showDebug = debugData.debugValidationEvents || debugData.debugSystemEvents || debugData.debugParserEvents;
+
     // Process game events
     lines.push('\nGame Events:');
     for (const event of events) {

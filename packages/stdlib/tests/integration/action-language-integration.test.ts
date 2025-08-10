@@ -28,6 +28,7 @@ class MockLanguageProvider implements Partial<LanguageProvider> {
     ['waited', 'Time passes.'],
     ['waited_patiently', 'You wait patiently.'],
     ['waited_briefly', 'You wait for a moment.'],
+    ['nothing_happens', 'Nothing happens.'],
     ['if.action.waiting.time_passes', 'You wait for a while.'],
     ['if.action.waiting.nothing_happens', 'You wait, but nothing happens.'],
     ['if.action.waiting.grows_restless', 'You grow restless from waiting.'],
@@ -166,7 +167,7 @@ describe('Action Integration Test Pattern', () => {
         );
         
         expect(message).not.toContain('[Missing:');
-        expect(message).toMatch(/Time passes|You wait|nothing happens/);
+        expect(message).toMatch(/Time passes|You wait|Nothing happens|nothing happens/);
       }
     });
   });

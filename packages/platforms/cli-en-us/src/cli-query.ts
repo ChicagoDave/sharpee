@@ -1,4 +1,4 @@
-import { GameEngine } from '@sharpee/engine';
+import type { GameEngine, SequencedEvent } from '@sharpee/sharpee';
 import * as readline from 'readline';
 
 export class CLIQuery {
@@ -8,12 +8,14 @@ export class CLIQuery {
   initialize(engine: GameEngine): void {
     this.engine = engine;
     
-    this.engine.events.on('client.query', async (data) => {
-      const response = await this.handleQuery(data);
-      this.engine.events.emit('client.queryResponse', {
-        queryId: data.queryId,
-        response
-      });
+    // Listen for query events through the event system
+    this.engine.on('event', async (event: SequencedEvent) => {
+      if (event.type === 'client.query') {
+        const response = await this.handleQuery(event.data);
+        // TODO: Need to emit response back through the engine
+        // This might need a method on the engine to handle query responses
+        console.log('Query response:', response);
+      }
     });
   }
   
@@ -36,7 +38,7 @@ export class CLIQuery {
         });
       }
       
-      this.rl.question(`\n${prompt} `, (answer) => {
+      this.rl.question(`\n${prompt} `, (answer: string) => {
         resolve(answer.trim());
       });
     });

@@ -25,11 +25,12 @@ import {
   ParserFactory,
   CommandHistoryData,
   CommandHistoryEntry,
-  IFActions
+  IFActions,
+  MetaCommandRegistry
 } from '@sharpee/stdlib';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { TextService, TextServiceContext, TextOutput } from '@sharpee/if-services';
-import { SemanticEvent, createSemanticEventSource, SaveData, SaveRestoreHooks, SaveResult, RestoreResult, SerializedEvent, SerializedEntity, SerializedLocation, SerializedRelationship, SerializedSpatialIndex, SerializedTurn, EngineState, SaveMetadata, SerializedParserState, QueryManager, createQueryManager, PendingQuery, PlatformEvent, isPlatformRequestEvent, PlatformEventType, SaveContext, RestoreContext, QuitContext, RestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, SemanticEventSource } from '@sharpee/core';
+import { SemanticEvent, createSemanticEventSource, SaveData, SaveRestoreHooks, SaveResult, RestoreResult, SerializedEvent, SerializedEntity, SerializedLocation, SerializedRelationship, SerializedSpatialIndex, SerializedTurn, EngineState, SaveMetadata, SerializedParserState, PlatformEvent, isPlatformRequestEvent, PlatformEventType, SaveContext, RestoreContext, QuitContext, RestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, SemanticEventSource } from '@sharpee/core';
 
 import {
   GameContext,
@@ -81,7 +82,7 @@ export class GameEngine {
   private eventListeners = new Map<GameEngineEventName, Set<Function>>();
   private saveRestoreHooks?: SaveRestoreHooks;
   private eventSource = createSemanticEventSource();
-  private queryManager: QueryManager;
+  private systemEventSource?: any; // GenericEventSource<SystemEvent>
   private pendingPlatformOps: PlatformEvent[] = [];
 
   constructor(options: {
@@ -146,18 +147,8 @@ export class GameEngine {
       this.parser
     );
     
-    // Create query manager
-    this.queryManager = createQueryManager();
-    
-    // Connect query manager's event source to engine's event source
-    this.queryManager.getEventSource().subscribe((evt: SemanticEvent) => {
-      this.eventSource.emit(evt);
-      // Also emit through engine's event emitter for tests
-      this.emit('event', evt as any);
-    });
-    
-    // Listen for client.query events
-    this.setupQueryHandling();
+    // Query handling is now managed by the platform layer
+    // Platform owns the QueryManager and handles all queries
   }
 
   /**
@@ -260,84 +251,6 @@ export class GameEngine {
     this.running = false;
   }
 
-  /**
-   * Setup query handling
-   */
-  private setupQueryHandling(): void {
-    // Listen for client.query events from the event source
-    this.eventSource.getEmitter().on('client.query', (event: SemanticEvent) => {
-      this.handleClientQuery(event);
-    });
-    
-    // Listen for query manager events and forward them
-    this.queryManager.on('query:pending', (query) => {
-      // Emit a semantic event for the text service
-      const queryEvent: SemanticEvent = {
-        id: `evt_query_${Date.now()}`,
-        type: 'query.pending',
-        timestamp: Date.now(),
-        entities: {},
-        data: { query },
-        payload: { query }
-      };
-      this.eventSource.emit(queryEvent);
-    });
-    
-    this.queryManager.on('query:invalid', (input, result, query) => {
-      // Emit validation error event
-      const errorEvent: SemanticEvent = {
-        id: `evt_invalid_${Date.now()}`,
-        type: 'query.invalid',
-        timestamp: Date.now(),
-        entities: {},
-        data: { 
-          input,
-          message: result.message,
-          hint: result.hint
-        },
-        payload: { input, result, query }
-      };
-      this.eventSource.emit(errorEvent);
-    });
-  }
-  
-  /**
-   * Handle a client query event
-   */
-  private async handleClientQuery(event: SemanticEvent): Promise<void> {
-    const queryData = event.data || event.payload || {};
-    
-    // Create a PendingQuery from the event data
-    const query: PendingQuery = {
-      id: String(queryData.queryId || `query_${Date.now()}`),
-      source: String(queryData.source || 'system') as any,
-      type: String(queryData.type || 'multiple_choice') as any,
-      messageId: String(queryData.messageId || ''),
-      messageParams: queryData.messageParams as Record<string, any> | undefined,
-      options: queryData.options as string[] | undefined,
-      context: (queryData.context || {}) as Record<string, any>,
-      allowInterruption: queryData.allowInterruption !== false,
-      validator: queryData.validator ? String(queryData.validator) : undefined,
-      timeout: queryData.timeout ? Number(queryData.timeout) : undefined,
-      created: Date.now(),
-      priority: queryData.priority ? Number(queryData.priority) : undefined
-    };
-    
-    // Register quit handler if needed
-    if (query.messageId === 'quit_confirmation' && !this.queryManager['handlers'].has('quit')) {
-      const { createQuitQueryHandler } = await import('@sharpee/stdlib');
-      const quitHandler = createQuitQueryHandler();
-      this.queryManager.registerHandler('quit', quitHandler);
-      
-      // Connect quit handler events to engine event source
-      quitHandler.getEventSource().subscribe((evt) => {
-        this.eventSource.emit(evt);
-      });
-    }
-    
-    // Ask the query
-    await this.queryManager.askQuery(query);
-  }
 
   /**
    * Execute a turn
@@ -349,6 +262,17 @@ export class GameEngine {
 
     if (!this.commandExecutor) {
       throw new Error('Engine must have a story set before executing turns');
+    }
+
+    // Check if system events are enabled via debug capability
+    const debugData = this.world.getCapability('debug');
+    if (debugData && (debugData.debugParserEvents || debugData.debugValidationEvents || debugData.debugSystemEvents)) {
+      // Emit system events when enabled
+      // For now, we'll add these events directly to the result
+      // In the future, we could use a proper event source system
+      
+      // Note: The actual parser/validation events would be emitted by
+      // the parser and validator components when they detect these flags
     }
 
     const turn = this.context.currentTurn;
@@ -375,30 +299,8 @@ export class GameEngine {
     this.emit('turn:start', turn, input);
 
     try {
-      // Check if query manager should handle this input
-      if (this.queryManager.hasPendingQuery()) {
-        const queryResult = this.queryManager.processInput(input);
-        
-        if (queryResult === 'handled' || queryResult === 'interrupt') {
-          // Query handled the input, return a minimal turn result
-          const queryHandledEvent = eventSequencer.sequence({
-            type: 'query.response',
-            data: {
-              input,
-              handled: true,
-              wasInterruption: queryResult === 'interrupt'
-            }
-          }, turn);
-          
-          return {
-            turn,
-            input,
-            success: true,
-            events: [queryHandledEvent]
-          };
-        }
-        // If 'pass', continue normal command processing
-      }
+      // Query handling is managed by the platform layer
+      // Platform will intercept input before it reaches here
       // Execute the command
       const result = await this.commandExecutor.execute(
         input,
@@ -427,8 +329,12 @@ export class GameEngine {
         }
       }
 
-      // Update command history if command was successful
-      if (result.success) {
+      // Check if this is a meta-command (out-of-world action)
+      // Meta-commands don't increment turns, trigger NPCs, or get recorded in history
+      const isMeta = result.actionId ? MetaCommandRegistry.isMeta(result.actionId) : false;
+
+      // Update command history if command was successful and not a meta-command
+      if (result.success && !isMeta) {
         this.updateCommandHistory(result, input, turn);
       }
 
@@ -444,8 +350,13 @@ export class GameEngine {
         this.emit('event', event);
       }
 
-      // Update context
-      this.updateContext(result);
+      // Update context (increment turn) only for non-meta commands
+      if (!isMeta) {
+        this.updateContext(result);
+      } else {
+        // For meta-commands, only update vocabulary (scope may have changed)
+        this.updateScopeVocabulary();
+      }
 
       // Process pending platform operations before text service
       if (this.pendingPlatformOps.length > 0) {
@@ -554,13 +465,6 @@ export class GameEngine {
     return this.textService;
   }
   
-  /**
-   * Get the query manager
-   */
-  getQueryManager(): QueryManager {
-    return this.queryManager;
-  }
-
   /**
    * Set a custom text service
    */

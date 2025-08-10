@@ -4,23 +4,60 @@
  * Main entry point that aggregates all packages for easy consumption
  */
 
-// Core types and infrastructure
-export * from '@sharpee/core';
+// Re-export main types and classes that platforms need
+export { 
+  GameEngine,
+  type Story,
+  type SequencedEvent,
+  type StoryConfig 
+} from '@sharpee/engine';
 
-// World model with entities and traits
-export * from '@sharpee/world-model';
+export {
+  type WorldModel,
+  type IFEntity
+} from '@sharpee/world-model';
 
-// Event processing system
-export * from '@sharpee/event-processor';
+// Query system and platform events from core
+export {
+  QueryManager,
+  createQueryManager,
+  type PendingQuery,
+  type QueryResponse,
+  type QueryHandler,
+  type QueryValidator,
+  QuerySource,
+  QueryType,
+  PlatformEventType,
+  type PlatformEvent,
+  type SaveContext,
+  type RestoreContext,
+  type QuitContext,
+  type RestartContext,
+  type SemanticEvent,
+  isPlatformRequestEvent,
+  createSaveCompletedEvent,
+  createRestoreCompletedEvent,
+  createQuitConfirmedEvent,
+  createQuitCancelledEvent,
+  createRestartCompletedEvent
+} from '@sharpee/core';
 
-// Standard library with actions and parser
-export * from '@sharpee/stdlib';
-
-// Main engine runtime
-export * from '@sharpee/engine';
+export {
+  Parser,
+  type Token,
+  type ValidatedCommand,
+  type ParseError,
+  CommandValidator
+} from '@sharpee/stdlib';
 
 // Language support
 export { EnglishLanguageProvider } from '@sharpee/lang-en-us';
+
+// Parser support
+export { EnglishParser } from '@sharpee/parser-en-us';
+
+// Text services
+export { TextService } from '@sharpee/text-services';
 
 // Note: Specific re-exports removed to avoid conflicts
 // Users should get types from the wildcard exports above

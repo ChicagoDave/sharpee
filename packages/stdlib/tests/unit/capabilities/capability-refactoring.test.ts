@@ -20,6 +20,7 @@ describe('Capability Refactoring', () => {
       expect(StandardCapabilitySchemas).toHaveProperty(StandardCapabilities.CONVERSATION);
       expect(StandardCapabilitySchemas).toHaveProperty(StandardCapabilities.GAME_META);
       expect(StandardCapabilitySchemas).toHaveProperty(StandardCapabilities.COMMAND_HISTORY);
+      expect(StandardCapabilitySchemas).toHaveProperty(StandardCapabilities.DEBUG);
     });
 
     test('should have valid schemas for each capability', () => {
@@ -61,10 +62,11 @@ describe('Capability Refactoring', () => {
 
       registerStandardCapabilities(world);
 
-      // Should register all 5 capabilities
-      expect(Object.keys(registeredCapabilities)).toHaveLength(5);
+      // Should register all 6 capabilities (including DEBUG)
+      expect(Object.keys(registeredCapabilities)).toHaveLength(6);
       expect(registeredCapabilities).toHaveProperty(StandardCapabilities.SCORING);
       expect(registeredCapabilities).toHaveProperty(StandardCapabilities.COMMAND_HISTORY);
+      expect(registeredCapabilities).toHaveProperty(StandardCapabilities.DEBUG);
     });
 
     test('should register only specified capabilities', () => {

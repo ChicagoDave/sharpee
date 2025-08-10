@@ -97,6 +97,13 @@ export class CommandExecutor {
     this.eventProcessor = eventProcessor;
     this.autoResolve = true;
   }
+  
+  /**
+   * Set the system event source for debug output
+   */
+  setSystemEventSource(eventSource: any): void {
+    this.validator.setSystemEventSource(eventSource);
+  }
 
   /**
    * Execute a command string
@@ -112,6 +119,11 @@ export class CommandExecutor {
     const turn = context.currentTurn;
 
     try {
+      // Check if system events are enabled
+      const debugData = world.getCapability('debug');
+      const emitParserEvents = debugData?.debugParserEvents === true;
+      const emitValidationEvents = debugData?.debugValidationEvents === true;
+      
       // Phase 1: Parse the input
       const parseResult = this.parser.parse(input);
       
@@ -124,18 +136,63 @@ export class CommandExecutor {
       }
 
       const parsed = parseResult.value;
+      
+      // Emit parser event if enabled
+      const systemEvents: SequencedEvent[] = [];
+      if (emitParserEvents) {
+        systemEvents.push(eventSequencer.sequence({
+          type: 'system.parser',
+          data: {
+            input,
+            parsed: {
+              action: parsed.action,
+              pattern: parsed.pattern,
+              confidence: parsed.confidence,
+              tokens: parsed.tokens?.length || 0
+            }
+          }
+        }, turn));
+      }
 
       // Phase 2: Validate against the world
       const validationResult = this.validator.validate(parsed);
       
       if (!validationResult.success) {
+        // Emit validation failure event if enabled
+        if (emitValidationEvents) {
+          systemEvents.push(eventSequencer.sequence({
+            type: 'system.validation.failed',
+            data: {
+              error: validationResult.error.message,
+              code: validationResult.error.code
+            }
+          }, turn));
+        }
         throw new Error(validationResult.error.message);
       }
 
       const validated = validationResult.value;
+      
+      // Emit validation success event if enabled
+      if (emitValidationEvents) {
+        systemEvents.push(eventSequencer.sequence({
+          type: 'system.validation.success',
+          data: {
+            actionId: validated.actionId,
+            directObject: validated.directObject?.entity?.id,
+            indirectObject: validated.indirectObject?.entity?.id
+          }
+        }, turn));
+      }
 
       // Phase 3: Execute the validated command
       const result = await this.executeCommand(validated, world, context, turn);
+      
+      // Add system events to the result
+      if (systemEvents.length > 0) {
+        // Insert system events at the beginning so they appear first
+        result.events = [...systemEvents, ...result.events];
+      }
 
       // Add timing if configured
       if (config?.collectTiming) {

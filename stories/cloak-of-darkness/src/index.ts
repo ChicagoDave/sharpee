@@ -11,6 +11,9 @@
  */
 
 import { Story, StoryConfig } from '@sharpee/engine';
+import type { Parser } from '@sharpee/parser-en-us';
+// @ts-ignore - lang-en-us types not available yet
+import type { LanguageProvider } from '@sharpee/lang-en-us';
 import { 
   WorldModel, 
   IFEntity,
@@ -504,23 +507,41 @@ export class CloakOfDarknessStory implements Story {
   }
   
   /**
-   * Get custom vocabulary for this story
+   * Extend the parser with custom vocabulary for this story
    */
-  getCustomVocabulary() {
-    return {
-      verbs: [
-        {
-          actionId: 'HANG',
-          verbs: ['hang', 'hook'],
-          pattern: 'VERB_NOUN_PREP_NOUN'
-        },
-        {
-          actionId: 'READ',
-          verbs: ['read', 'examine'],
-          pattern: 'VERB_NOUN'
-        }
-      ]
-    };
+  extendParser(parser: Parser): void {
+    // Add HANG verb with prepositions
+    parser.addVerb('HANG', ['hang', 'hook'], 'VERB NOUN PREP NOUN', ['on']);
+    
+    // READ is already a standard verb, no need to add it
+  }
+  
+  /**
+   * Extend the language provider with custom messages for this story
+   */
+  extendLanguage(language: LanguageProvider): void {
+    // Add custom messages for HANG action
+    language.addMessage('action.hang.success', 'You hang {item} on {supporter}.');
+    language.addMessage('action.hang.error.incomplete_command', 'What do you want to hang on what?');
+    language.addMessage('action.hang.error.cant_hang_that_way', 'You can\'t hang things that way.');
+    language.addMessage('action.hang.error.not_found', 'You can\'t see that here.');
+    language.addMessage('action.hang.error.not_carrying', 'You need to be carrying {item} first.');
+    language.addMessage('action.hang.error.cant_hang_that', 'You can\'t hang {item} on {supporter}.');
+    language.addMessage('action.hang.success.hung_cloak', 'You carefully hang the velvet cloak on the small brass hook.');
+    
+    // Add custom messages for READ action
+    language.addMessage('action.read.error.what_to_read', 'What do you want to read?');
+    language.addMessage('action.read.error.cant_read_message', '{reason}');
+    language.addMessage('action.read.success.read_message', '{description}\n\n{text}');
+    language.addMessage('action.read.error.nothing_to_read', 'There\'s nothing written on {item}.');
+    
+    // Add help for HANG action
+    language.addActionHelp('HANG', {
+      description: 'Hang an item on a support like a hook or peg',
+      verbs: ['hang', 'put'],
+      summary: 'Hang something on a support',
+      examples: ['hang cloak on hook', 'hang coat on peg']
+    });
   }
   
   /**
@@ -536,10 +557,12 @@ export class CloakOfDarknessStory implements Story {
         
         execute: (context: any) => {
           const events: any[] = [];
+          const { directObject, preposition, indirectObject } = context.command;
+          
           console.log('HANG action executed!');
           console.log('Command:', JSON.stringify(context.command, null, 2));
-          
-          const { directObject, preposition, indirectObject } = context.command;
+          console.log('Direct object:', directObject);
+          console.log('Indirect object:', indirectObject);
           
           // Check if we have the required parts
           if (!directObject || !preposition || !indirectObject) {

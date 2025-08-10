@@ -67,7 +67,10 @@ export const IFActions = {
   QUITTING: 'if.action.quitting',
   HELP: 'if.action.help',
   ABOUT: 'if.action.about',
-  SCORING: 'if.action.scoring'
+  SCORING: 'if.action.scoring',
+  
+  // Author/Debug actions
+  TRACE: 'author.trace'
 } as const;
 
 export interface VerbDefinition {
@@ -322,5 +325,12 @@ export const englishVerbs: VerbDefinition[] = [
     action: IFActions.SCORING,
     verbs: ['score', 'points'],
     requiresObject: false
+  },
+  
+  // Author/Debug commands
+  {
+    action: IFActions.TRACE,
+    verbs: ['trace'],
+    requiresObject: false  // "trace" or "trace [target] on/off"
   }
 ];

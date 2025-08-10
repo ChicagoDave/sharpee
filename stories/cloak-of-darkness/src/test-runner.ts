@@ -1,10 +1,16 @@
 /**
  * Test runner for Cloak of Darkness
  * 
- * This demonstrates how to run the story with the Sharpee engine
+ * This demonstrates how to run the story with the Sharpee engine using static loading
  */
 
-import { createEngineWithStory, TurnResult } from '@sharpee/engine';
+import { GameEngine, TurnResult } from '@sharpee/engine';
+import { WorldModel, IFEntity, EntityType } from '@sharpee/world-model';
+import { Parser } from '@sharpee/parser-en-us';
+// @ts-ignore - lang-en-us types not available yet
+import { LanguageProvider } from '@sharpee/lang-en-us';
+// @ts-ignore - text-services types not available yet
+import { TextService } from '@sharpee/text-services';
 import { story } from './index.js';
 
 async function runStory() {
@@ -13,10 +19,34 @@ async function runStory() {
   console.log('');
   
   try {
-    // Create engine with the story
-    const engine = await createEngineWithStory(story);
+    // Create world and player
+    const world = new WorldModel();
+    const player = world.createEntity('player', EntityType.ACTOR);
     
-    // Start the engine
+    // Create parser, language, and text service
+    const language = new LanguageProvider();
+    const parser = new Parser(language);
+    const textService = new TextService(language);
+    
+    // Extend parser and language with story-specific vocabulary/messages
+    if (story.extendParser) {
+      story.extendParser(parser);
+    }
+    if (story.extendLanguage) {
+      story.extendLanguage(language);
+    }
+    
+    // Create engine with static dependencies
+    const engine = new GameEngine({
+      world,
+      player,
+      parser,
+      language,
+      textService
+    });
+    
+    // Set the story and start the engine
+    engine.setStory(story);
     engine.start();
     console.log('Engine started, running:', (engine as any).running);
     

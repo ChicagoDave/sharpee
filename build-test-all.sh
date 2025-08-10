@@ -78,12 +78,19 @@ run_package_tests() {
   local test_cmd="pnpm test:ci"
   local log_file=""
   
-  cd packages/$package
+  # Handle platform packages that are nested
+  local package_path="packages/$package"
+  if [ ! -d "$package_path" ]; then
+    echo -e "${YELLOW}⚠ Package directory not found: $package_path, skipping tests...${NC}"
+    return 0
+  fi
+  
+  cd "$package_path"
   
   # Check if package has test scripts by looking in package.json
   if ! grep -q '"test:ci"' package.json; then
     echo -e "${YELLOW}⚠ No tests configured for $package, skipping...${NC}"
-    cd ../..
+    cd - > /dev/null
     return 0
   fi
   
@@ -93,7 +100,9 @@ run_package_tests() {
     test_cmd="pnpm test:ci ${ACTION}-golden.test.ts"
     log_file="/mnt/c/repotemp/sharpee/logs/${ACTION}-action-tests-${TIMESTAMP}.log"
   else
-    log_file="/mnt/c/repotemp/sharpee/logs/${package}-tests-${TIMESTAMP}.log"
+    # Replace slashes with dashes in package name for log file
+    local log_package=$(echo "$package" | tr '/' '-')
+    log_file="/mnt/c/repotemp/sharpee/logs/${log_package}-tests-${TIMESTAMP}.log"
   fi
   
   # Add failures-only option if enabled
@@ -137,25 +146,52 @@ run_package_tests() {
     echo -e "${RED}Last 50 lines of output:${NC}"
     tail -n 50 "$log_file"
     echo -e "  Full log saved to: $log_file"
-    cd ../..
+    cd - > /dev/null
     return 1
   fi
   
-  cd ../..
+  cd - > /dev/null
 }
 
 # Function to build a package
 build_package() {
   local package=$1
-  local log_file="/mnt/c/repotemp/sharpee/logs/${package}-build-${TIMESTAMP}.log"
+  # Replace slashes with dashes in package name for log file
+  local log_package=$(echo "$package" | tr '/' '-')
+  local log_file="/mnt/c/repotemp/sharpee/logs/${log_package}-build-${TIMESTAMP}.log"
   
   echo -e "${BLUE}Building $package...${NC}"
-  cd packages/$package
   
-  echo "Building: pnpm build" > "$log_file"
+  # Initialize log file
+  echo "Package: $package" > "$log_file"
   echo "Timestamp: $(date)" >> "$log_file"
-  echo "Package: $package" >> "$log_file"
   echo "----------------------------------------" >> "$log_file"
+  
+  # Handle platform packages that are nested
+  local package_path="packages/$package"
+  if [ ! -d "$package_path" ]; then
+    echo -e "${RED}✗ Package directory not found: $package_path${NC}"
+    return 1
+  fi
+  
+  cd "$package_path"
+  
+  # Check if node_modules exists, if not run pnpm install
+  if [ ! -d "node_modules" ]; then
+    echo -e "${YELLOW}Installing dependencies for $package...${NC}"
+    echo "Installing dependencies: pnpm install" >> "$log_file"
+    pnpm install >> "$log_file" 2>&1
+    if [ $? -ne 0 ]; then
+      echo -e "${RED}✗ Dependency installation failed${NC}"
+      cat "$log_file"
+      cd - > /dev/null
+      return 1
+    fi
+    echo "Dependencies installed successfully" >> "$log_file"
+    echo "----------------------------------------" >> "$log_file"
+  fi
+  
+  echo "Building: pnpm build" >> "$log_file"
   
   if $VERBOSE; then
     # Show output and save to log
@@ -173,11 +209,11 @@ build_package() {
     echo -e "${RED}✗ Build failed${NC}"
     cat "$log_file"
     echo -e "  Full log saved to: $log_file"
-    cd ../..
+    cd - > /dev/null
     return 1
   fi
   
-  cd ../..
+  cd - > /dev/null
 }
 
 # Package list in dependency order
@@ -191,6 +227,8 @@ PACKAGES=(
   "parser-en-us"
   "stdlib"
   "engine"
+  "sharpee"
+  "platforms/cli-en-us"
 )
 
 # Find starting point

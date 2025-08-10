@@ -1,0 +1,30 @@
+Reflections
+The story will have multiple endings, since that's the nature of IF. There are three main characters. The Thief, The Old Man, and The Young Woman. They are connected to each other by a decade’s old tragedy as well as a common blood line. 
+
+The Thief is the father of The Young Woman and The Old Man is the ex-father-in-law of The Thief and therefore the grandfather of The Young Woman. 
+
+But none of them know that, though The Young Woman suspects. She has broken and misleading information from her mother.
+
+The backstory is simple. The Thief met a woman, fell in love, married, and then tragedy struck. All these characters have powers. These powers are known as "The Blood of the ..." with the common power "The Blood of the Silver" which allows the user to connect mirrors and transport through that connection. If a mirror is in New York and they "connected" it on a visit to a small handheld mirror, they could later connect the NY mirror to another mirror anywhere else and create a portal. 
+
+Another power is "The Blood of The Moon" which allows the user to become invisible. 
+
+And the most important and rare power, that neither The Old Man or The Thief knew existed is, "The Blood of the Earth", which The Old Man's daughter had, but never knew...until it was needed. 
+
+The Thief was always a thief and the people that had these powers remained highly secretive, so it was a very closed society, but not without feuds and differences. On one robbery, The Thief and his wife were caught off guard and she was shot. She dies (seemingly) in his arms. The Thief took his wife to a known cemetery for their people and buried her himself, without a casket. The Old Man found out in time to reach the cemetery, but The Thief always had an "escape mirror" on his person. The Old Man vowed vengeance for the death of his only daughter. 
+
+But as you can surmise, The Thief's wife had The Blood of the Earth. And she was pregnant. The earth wrapped her body into a cocoon and repaired her injuries. She slept in a coma, in the earth, for months. Then she woke up and crawled out of the ground (which was not hard because the Earth power aided her ascent). She was already five months pregnant and in shock. She hardly knew who she was at first and so wandered off to live her life in private. She had glimpses of her past, but it was all shattered, like a million pieces of glass. She had the baby, raised her, and then realized her daughter possessed the same powers she instinctively knew were from her family and her people. She cautioned her daughter to use them carefully. Even as she remembered details of her past, she did not share these with her daughter, out of fear that it would only endanger her daughter.
+
+This is all backstory...the actual story starts out when The Thief is in despair. It's been twenty years since his wife was killed and he'd never forgiven himself. The Old Man had continually chased him, and they'd crossed paths many times. Those people that held the Power of The Silver could sense each other if they'd used the same mirrors. They could put “tracers” or “markers” on mirrors that would signal that someone had used that mirror.
+
+The Thief, in a depressive meltdown, puts on a reflective suit, and enters The Art Institute of Chicago through a known mirror. Immediately all the cameras and sensors go off. He cuts a painting out of a frame, rolls it up, and leaves. But because this is an interactive story, there are options for getting caught and/or getting killed. It all depends on the player's choices. If they take too long getting the paining, the guards show up. If the player doesn't surrender, they shoot him. 
+
+There are several set pieces where the Young Woman follows The Thief, where the Old Man catches The Thief (and kills him) and where The Thief allows The Old Man to catch up but kills The Old Man instead. There are set pieces where the Young Woman is exposed and gets caught in the crossfire (one of many tragic endings).
+
+The optimal ending is that the Young Woman intervenes in a confrontation between the Old Man and The Thief and tells her story. They all realize that The Thief's wife is alive, and everyone lives. 
+
+I estimate 50,000 words for length, but it could easily be less or more depending on the variations designed. It's not a big story. 
+
+One of the "game" aspects is that the player can act in different parts of the story as any of the main characters. When they type commands, they might be The Thief or The Old Man or The Young Woman. I think this is important because I want the player to feel what it's like to be each character. It also makes it more complex, but these would be directed, not dynamic (though I’m open to dynamic if it’s worthwhile to the overall story).
+
+The results of this IF story would be submission to the IF Comp (next year at this point). I have somewhat of a prideful interest in someday being apart of a top ten (or better) IF Comp story. I just don’t have the time anymore to devote to IF to manage that on my own, but with the right partner, I think it’s doable.

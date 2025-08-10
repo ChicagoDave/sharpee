@@ -120,6 +120,10 @@ import { quittingAction } from './quitting'; // Now from folder
 import { restartingAction } from './restarting'; // Now from folder
 import { againAction } from './again'; // Now from folder
 
+// Import author/debug actions
+import { TraceAction } from '../author';
+const traceAction = new TraceAction();
+
 export const standardActions = [
   takingAction,
   droppingAction,
@@ -168,5 +172,7 @@ export const standardActions = [
   restoringAction,
   quittingAction,
   restartingAction,
-  againAction
+  againAction,
+  // Author/debug actions
+  traceAction
 ];

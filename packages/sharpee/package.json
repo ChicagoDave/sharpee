@@ -15,7 +15,9 @@
     "@sharpee/engine": "workspace:*",
     "@sharpee/stdlib": "workspace:*",
     "@sharpee/event-processor": "workspace:*",
-    "@sharpee/lang-en-us": "workspace:*"
+    "@sharpee/lang-en-us": "workspace:*",
+    "@sharpee/parser-en-us": "workspace:*",
+    "@sharpee/text-services": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.3.3",

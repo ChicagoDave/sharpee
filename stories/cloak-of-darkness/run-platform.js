@@ -63,9 +63,9 @@ async function runStory() {
     // Import required modules
     const { WorldModel, EntityType } = require('@sharpee/world-model');
     const { GameEngine } = require('@sharpee/engine');
-    const { EnglishParser } = require('@sharpee/parser-en-us');
+    const { Parser } = require('@sharpee/parser-en-us');
     const { EnglishLanguageProvider } = require('@sharpee/lang-en-us');
-    const { TemplateTextService } = require('@sharpee/text-services');
+    const { TextService } = require('@sharpee/text-services');
     const { story } = require('./dist/index.js');
     
     // Create world and player
@@ -75,9 +75,23 @@ async function runStory() {
     
     // Create services
     const language = new EnglishLanguageProvider();
-    const parser = new EnglishParser(world, language);
-    const textService = new TemplateTextService();
-    textService.setLanguageProvider(language);
+    const parser = new Parser(language);
+    // Use CLI events text service for debugging
+    const { CLIEventsTextService } = require('@sharpee/text-services');
+    const textService = new CLIEventsTextService({
+      showTurnHeader: true,
+      showLocation: true,
+      showEventData: true,
+      indentEvents: true
+    });
+    
+    // Extend parser and language with story-specific vocabulary/messages
+    if (story.extendParser) {
+      story.extendParser(parser);
+    }
+    if (story.extendLanguage) {
+      story.extendLanguage(language);
+    }
     
     // Create engine with static dependencies
     const engine = new GameEngine({
@@ -105,15 +119,31 @@ async function runStory() {
       if (result.error) {
         console.log(`Error: ${result.error}`);
       }
+      
+      // Check for system events
+      const systemEvents = result.events.filter(e => 
+        e.type.startsWith('system.')
+      );
+      if (systemEvents.length > 0) {
+        console.log('\n[SYSTEM EVENTS]:');
+        systemEvents.forEach(e => {
+          console.log(`  ${e.type}: ${JSON.stringify(e.data)}`);
+        });
+      }
     });
     
     // Execute test commands
     const commands = [
       'look',
-      'examine cloak',
-      'west',
-      'look',
-      'hang cloak on hook',
+      'trace',                  // Show current trace status
+      'trace parser on',        // Turn on parser events
+      'examine cloak',          // Should show parser events
+      'trace validation on',    // Turn on validation events
+      'west',                   // Should show both events
+      'trace parser off',       // Turn off parser events
+      'look',                   // Should only show validation events
+      'trace off',              // Turn off all tracing
+      'hang cloak on hook',     // Should show no debug events
       'east',
       'south',
       'examine message',

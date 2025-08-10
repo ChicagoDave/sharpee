@@ -1,4 +1,4 @@
-import { GameEngine } from '@sharpee/engine';
+import type { GameEngine } from '@sharpee/sharpee';
 
 export class CLIOutput {
   private engine?: GameEngine;
@@ -6,13 +6,8 @@ export class CLIOutput {
   initialize(engine: GameEngine): void {
     this.engine = engine;
     
-    this.engine.events.on('output', (data) => {
-      this.write(data.text);
-    });
-    
-    this.engine.events.on('text.output', (data) => {
-      this.write(data.text);
-    });
+    // Text output is already handled in cli-platform.ts setupEventHandlers
+    // This is here for any additional output handling if needed
   }
   
   write(text: string): void {

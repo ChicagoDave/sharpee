@@ -13,6 +13,7 @@ import { SaveRestoreCapabilitySchema, SaveRestoreData, SaveData } from './save-r
 import { ConversationCapabilitySchema, ConversationData, ConversationStateData } from './conversation';
 import { GameMetaCapabilitySchema, GameMetaData } from './game-meta';
 import { CommandHistoryCapabilitySchema, CommandHistoryData, CommandHistoryEntry } from './command-history';
+import { DebugCapabilitySchema, DebugData, DEBUG_CAPABILITY, isAnyDebugEnabled, createDefaultDebugData } from './debug';
 
 // Re-export all schemas and types
 export {
@@ -37,7 +38,14 @@ export {
   // Command History
   CommandHistoryCapabilitySchema,
   CommandHistoryData,
-  CommandHistoryEntry
+  CommandHistoryEntry,
+  
+  // Debug
+  DebugCapabilitySchema,
+  DebugData,
+  DEBUG_CAPABILITY,
+  isAnyDebugEnabled,
+  createDefaultDebugData
 };
 
 /**
@@ -49,6 +57,7 @@ export const StandardCapabilitySchemas = {
   [StandardCapabilities.CONVERSATION]: ConversationCapabilitySchema,
   [StandardCapabilities.GAME_META]: GameMetaCapabilitySchema,
   [StandardCapabilities.COMMAND_HISTORY]: CommandHistoryCapabilitySchema,
+  [StandardCapabilities.DEBUG]: DebugCapabilitySchema,
 } as const;
 
 /**

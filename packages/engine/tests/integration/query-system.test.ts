@@ -9,7 +9,10 @@ import { createQuitQueryHandler } from '@sharpee/stdlib';
 import { MinimalTestStory } from '../stories';
 import { setupTestEngine } from '../test-helpers/setup-test-engine';
 
-describe('Query System Integration', () => {
+describe.skip('Query System Integration - MOVED TO PLATFORM LAYER', () => {
+  // NOTE: Query handling has been moved to the platform layer as part of Phase 6 refactoring
+  // These tests should be reimplemented in the platform package tests
+  // Skipping for now as the GameEngine no longer has a QueryManager
   let engine: any;
   let world: WorldModel;
   let story: MinimalTestStory;

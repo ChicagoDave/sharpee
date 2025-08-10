@@ -12,7 +12,7 @@ export class CLIInput {
   
   async getCommand(): Promise<string | null> {
     return new Promise((resolve) => {
-      this.rl.question('> ', (answer) => {
+      this.rl.question('> ', (answer: string) => {
         resolve(answer.trim() || null);
       });
     });

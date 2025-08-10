@@ -136,6 +136,13 @@ export const standardVerbs: VerbVocabulary[] = [
     actionId: 'QUIT',
     verbs: ['quit', 'exit', 'q'],
     pattern: 'verb_only'
+  },
+  
+  // Author/Debug Commands
+  {
+    actionId: 'author.trace',
+    verbs: ['trace'],
+    pattern: 'verb_noun'  // trace [target] on/off
   }
 ];
 

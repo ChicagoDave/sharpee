@@ -1,21 +1,24 @@
-import { GameEngine } from '@sharpee/engine';
-import { WorldModel, Entity } from '@sharpee/world-model';
-import { Parser } from '@sharpee/parser-en-us';
-import { LanguageProvider } from '@sharpee/lang-en-us';
-import { TextService } from '@sharpee/text-services';
-import { Story } from '@sharpee/engine';
+import { 
+  GameEngine, 
+  type Story,
+  type WorldModel, 
+  type IFEntity,
+  EnglishParser,
+  EnglishLanguageProvider,
+  TextService
+} from '@sharpee/sharpee';
 import { CLIPlatform } from './cli-platform';
 
 export interface CLIPlatformOptions {
   story: Story;
   world: WorldModel;
-  player: Entity;
+  player: IFEntity;
 }
 
 export function createCLIPlatform(options: CLIPlatformOptions): GameEngine {
-  const parser = new Parser();
-  const language = new LanguageProvider();
-  const textService = new TextService(language);
+  const language = new EnglishLanguageProvider();
+  const parser = new EnglishParser(language);
+  const textService = new TextService();
   
   if (options.story.extendParser) {
     options.story.extendParser(parser);

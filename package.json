@@ -13,6 +13,7 @@
     "packages/sharpee",
     "packages/lang-en-us",
     "packages/parser-en-us",
+    "packages/text-services",
     "packages/text-service",
     "packages/text-service-basic",
     "packages/forge",
@@ -23,6 +24,7 @@
     "packages/cli",
     "packages/web-client",
     "packages/dev-tools",
+    "packages/platforms/*",
     "stories/*"
   ],
   "scripts": {
@@ -30,14 +32,24 @@
     "build": "pnpm run build:clean && pnpm run build:all",
     "build:clean": "pnpm run clean",
     "build:all": "pnpm -r --workspace-concurrency=1 --stream run build",
-    "build:core": "pnpm --filter '@sharpee/core' run build",
+    "build:core": "pnpm run build:packages && pnpm run build:platforms",
+    "build:packages": "pnpm --filter './packages/**' run build",
+    "build:platforms": "pnpm --filter './packages/platforms/**' run build",
+    "build:platform:cli-en": "pnpm --filter '@sharpee/platform-cli-en-us' run build",
     "build:changed": "pnpm -r --filter '...[origin/main]' run build",
     "dev": "pnpm -r --parallel run dev",
+    "dev:cli-en": "pnpm --filter '@sharpee/platform-cli-en-us' run dev",
     "test": "vitest",
     "test:ci": "vitest run",
+    "test:platforms": "pnpm --filter './packages/platforms/**' run test",
     "test:coverage": "vitest run --coverage",
+    "test:arch": "vitest run tests/architecture",
+    "test:arch:watch": "vitest tests/architecture",
+    "test:debt": "vitest run tests/architecture/architectural-debt.test.ts",
     "typecheck": "tsc --noEmit",
-    "lint": "pnpm -r run lint"
+    "lint": "pnpm -r run lint",
+    "watch": "pnpm -r --parallel run watch",
+    "watch:cli-en": "pnpm --filter '@sharpee/platform-cli-en-us' run watch"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.2.4",

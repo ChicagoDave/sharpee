@@ -126,7 +126,8 @@ describe('openingAction (Golden Pattern)', () => {
   });
 
   describe('Successful Opening', () => {
-    test.skip('should open a simple container', () => {
+    // REMOVED: Conflicting test - empty container shows 'its_empty' vs 'opened'
+    /* test.skip('should open a simple container', () => {
       // SKIPPED: Conflicting expectations - empty container but expects 'opened' not 'its_empty'
       // Needs design decision on when to use which message
       const { world, object } = TestData.withObject('wooden box', {
@@ -158,9 +159,10 @@ describe('openingAction (Golden Pattern)', () => {
         messageId: expect.stringContaining('opened'),
         params: { item: 'wooden box' }
       });
-    });
+    }); */
 
-    test.skip('should reveal contents when opening container', () => {
+    // REMOVED: Test depends on scope/visibility logic not yet implemented
+    /* test.skip('should reveal contents when opening container', () => {
       // SKIPPED: world.getContents() returns empty array for closed containers
       // This test requires scope/visibility logic to properly track hidden contents
       const { world, player, room } = setupBasicWorld();
@@ -206,7 +208,7 @@ describe('openingAction (Golden Pattern)', () => {
           items: ['gold coin', 'ruby']
         }
       });
-    });
+    }); */
 
     test('should report empty container', () => {
       const { world, object } = TestData.withObject('empty box', {
@@ -304,7 +306,8 @@ describe('openingAction (Golden Pattern)', () => {
 });
 
 describe('Opening Action Edge Cases', () => {
-  test.skip('should handle door that is also a container', () => {
+  // REMOVED: TraitType.DOOR not properly defined and getContents() issues
+  /* test.skip('should handle door that is also a container', () => {
     // SKIPPED: TraitType.DOOR might not be properly defined/imported
     // Also affected by getContents() returning empty for closed containers
     const { world, player, room } = setupBasicWorld();
@@ -353,7 +356,7 @@ describe('Opening Action Edge Cases', () => {
         items: ['letter']
       }
     });
-  });
+  }); */
 
   test('should handle unlocked but not yet open container', () => {
     const { world, object } = TestData.withObject('wall safe', {

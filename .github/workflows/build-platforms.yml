@@ -1,0 +1,139 @@
+name: Build Platforms
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-core:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    - name: Install dependencies
+      run: pnpm install
+      
+    - name: Build core packages
+      run: pnpm run build:packages
+      
+    - name: Upload core artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: core-packages
+        path: |
+          packages/*/dist
+          !packages/platforms/*/dist
+
+  build-platform-cli-en:
+    needs: build-core
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    - name: Download core artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: core-packages
+        path: packages
+        
+    - name: Install dependencies
+      run: pnpm install
+      
+    - name: Build CLI English platform
+      run: pnpm run build:platform:cli-en
+      
+    - name: Test CLI English platform
+      run: pnpm --filter '@sharpee/platform-cli-en-us' run test
+      
+    - name: Upload platform artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: platform-cli-en-us
+        path: packages/platforms/cli-en-us/dist
+
+  test-integration:
+    needs: [build-core, build-platform-cli-en]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: packages
+        
+    - name: Install dependencies
+      run: pnpm install
+      
+    - name: Run integration tests
+      run: pnpm test:ci
+      
+  release:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: test-integration
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        registry-url: 'https://registry.npmjs.org'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: packages
+        
+    - name: Install dependencies
+      run: pnpm install
+      
+    - name: Version and publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: |
+        echo "Ready for release - add versioning and publish logic here"
+        # pnpm changeset version
+        # pnpm changeset publish
