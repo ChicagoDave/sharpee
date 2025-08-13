@@ -20,6 +20,24 @@ import {
   createCommand
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
+import { SemanticEvent } from '@sharpee/core';
+
+// Helper to execute action with validation (simulates CommandExecutor flow)
+function executeWithValidation(action: any, context: ActionContext): SemanticEvent[] {
+  if (action.validate) {
+    const validation = action.validate(context);
+    if (!validation.valid) {
+      return [context.event('action.error', {
+        actionId: context.action.id,
+        messageId: validation.error,
+        reason: validation.error,
+        params: validation.params
+      })];
+    }
+    return action.execute(context);
+  }
+  return action.execute(context);
+}
 
 describe('takingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -53,7 +71,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING)
       );
       
-      const events = takingAction.execute(context);
+      const events = executeWithValidation(takingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_target'),
@@ -70,7 +88,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: player })
       );
       
-      const events = takingAction.execute(context);
+      const events = executeWithValidation(takingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('cant_take_self'),
@@ -89,7 +107,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: ball })
       );
       
-      const events = takingAction.execute(context);
+      const events = executeWithValidation(takingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('already_have'),
@@ -108,7 +126,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: otherRoom })
       );
       
-      const events = takingAction.execute(context);
+      const events = executeWithValidation(takingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('cant_take_room'),
@@ -128,7 +146,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: scenery })
       );
       
-      const events = takingAction.execute(context);
+      const events = executeWithValidation(takingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('fixed_in_place'),
@@ -168,7 +186,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: newItem })
       );
       
-      const events = takingAction.execute(context);
+      const events = executeWithValidation(takingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('container_full')
@@ -208,7 +226,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: newItem })
       );
       
-      const events = takingAction.execute(context);
+      const events = executeWithValidation(takingAction, context);
       
       // Should succeed because worn items don't count
       expectEvent(events, 'if.event.taken', {
@@ -242,7 +260,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: heavyItem })
       );
       
-      const events = takingAction.execute(context);
+      const events = executeWithValidation(takingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('too_heavy'),
@@ -263,7 +281,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: ball })
       );
       
-      const events = takingAction.execute(context);
+      const events = executeWithValidation(takingAction, context);
       
       // Should emit TAKEN event
       // Note: When taking from a room, fromLocation is NOT set (only set for containers/supporters)
@@ -294,7 +312,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: coin })
       );
       
-      const events = takingAction.execute(context);
+      const events = executeWithValidation(takingAction, context);
       
       expectEvent(events, 'if.event.taken', {
         item: 'gold coin',
@@ -330,7 +348,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: book })
       );
       
-      const events = takingAction.execute(context);
+      const events = executeWithValidation(takingAction, context);
       
       expectEvent(events, 'if.event.taken', {
         item: 'old book',
@@ -361,7 +379,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: hat })
       );
       
-      const events = takingAction.execute(context);
+      const events = executeWithValidation(takingAction, context);
       
       // Should emit REMOVED event first
       expectEvent(events, 'if.event.removed', {
@@ -390,7 +408,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: gem })
       );
       
-      const events = takingAction.execute(context);
+      const events = executeWithValidation(takingAction, context);
       
       events.forEach(event => {
         if (event.entities) {
@@ -412,7 +430,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: pen })
       );
       
-      const events = takingAction.execute(context);
+      const events = executeWithValidation(takingAction, context);
       
       const takenEvent = events.find(e => e.type === 'if.event.taken');
       // Check the event payload data (where the typed event data lives)
@@ -444,7 +462,7 @@ describe('Taking Action Edge Cases', () => {
       createCommand(IFActions.TAKING, { entity: gem })
     );
     
-    const events = takingAction.execute(context);
+    const events = executeWithValidation(takingAction, context);
     
     // Should take from immediate container (box), not the outer container
     expectEvent(events, 'if.event.taken', {
@@ -475,7 +493,7 @@ describe('Taking Action Edge Cases', () => {
       createCommand(IFActions.TAKING, { entity: ball })
     );
     
-    const events = takingAction.execute(context);
+    const events = executeWithValidation(takingAction, context);
     
     // Should succeed - no container limits
     expectEvent(events, 'if.event.taken', {

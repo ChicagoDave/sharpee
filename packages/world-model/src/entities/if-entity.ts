@@ -3,6 +3,7 @@
 import { Entity, EntityId, EntityCreationParams } from '@sharpee/core';
 import { Trait, TraitConstructor, isTrait } from '../traits/trait';
 import { TraitType } from '../traits/trait-types';
+import { EventHandlers } from '../events/types';
 
 /**
  * Interactive Fiction Entity with trait-based composition.
@@ -14,6 +15,13 @@ export class IFEntity implements Entity {
   attributes: Record<string, unknown>;
   relationships: Record<string, EntityId[]>;
   traits: Map<TraitType, Trait>;
+  
+  /**
+   * Event handlers for this entity
+   * Key is the event type (e.g., 'if.event.pushed')
+   * Value is the handler function
+   */
+  on?: EventHandlers;
   
   constructor(id: string, type: string, params?: Partial<EntityCreationParams>) {
     this.id = id;

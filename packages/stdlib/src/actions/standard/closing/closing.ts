@@ -1,15 +1,13 @@
 /**
  * Closing action - closes containers and doors
  * 
- * This action validates conditions for closing something and returns
- * appropriate events. It NEVER mutates state directly.
- * 
- * UPDATED: Uses new simplified context.event() method (ADR-041)
+ * This action properly delegates to OpenableBehavior for validation
+ * and execution. It follows the validate/execute pattern.
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, OpenableBehavior, CloseResult } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 
 // Import our payload types
@@ -35,89 +33,155 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
   },
   group: 'container_manipulation',
   
-  execute(context: ActionContext): SemanticEvent[] {
-    const actor = context.player;
+  /**
+   * Validate whether the close action can be executed
+   * Uses behavior validation methods to check preconditions
+   */
+  validate(context: ActionContext): ValidationResult {
     const noun = context.command.directObject?.entity;
     
     // Validate we have a target
     if (!noun) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_target',
-        reason: 'no_target'
-      })];
+      return { 
+        valid: false, 
+        error: 'no_target'
+      };
     }
     
     // Check if it's openable (things that can open can also close)
     if (!noun.has(TraitType.OPENABLE)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_closable',
-        reason: 'not_closable',
+      return { 
+        valid: false, 
+        error: 'not_closable',
         params: { item: noun.name }
-      })];
+      };
     }
     
-    const openableTrait = noun.get(TraitType.OPENABLE);
-    
-    // Check if already closed
-    if (openableTrait && !(openableTrait as any).isOpen) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'already_closed',
-        reason: 'already_closed',
+    // Use behavior's canClose method for validation
+    if (!OpenableBehavior.canClose(noun)) {
+      // Check if it's because it's already closed
+      if (!OpenableBehavior.isOpen(noun)) {
+        return { 
+          valid: false, 
+          error: 'already_closed',
+          params: { item: noun.name }
+        };
+      }
+      // Otherwise it can't be closed for some other reason
+      return { 
+        valid: false, 
+        error: 'prevents_closing',
         params: { item: noun.name }
-      })];
+      };
     }
     
     // Check if closable has special requirements
+    const openableTrait = noun.get(TraitType.OPENABLE);
     if ((openableTrait as any).closeRequirements) {
       const requirement = (openableTrait as any).closeRequirements;
       if (requirement.preventedBy) {
-        // This error has additional structured data
-        const errorData: PreventsClosingErrorData = {
-          obstacle: requirement.preventedBy
-        };
-        
-        return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'prevents_closing',
-        reason: 'prevents_closing',
-        params: { 
+        return { 
+          valid: false, 
+          error: 'prevents_closing',
+          params: { 
             item: noun.name,
-            obstacle: requirement.preventedBy 
-          },
-        ...errorData // Spread the additional error data
-      })];
+            obstacle: requirement.preventedBy
+          }
+        };
       }
     }
     
-    // Gather information about what we're closing
-    const isContainer = noun.has(TraitType.CONTAINER);
-    const isDoor = noun.has(TraitType.DOOR);
-    const isSupporter = noun.has(TraitType.SUPPORTER);
-    const contents = isContainer ? context.world.getContents(noun.id) : [];
+    return { valid: true };
+  },
+  
+  /**
+   * Execute the close action
+   * Assumes validation has already passed - no validation logic here
+   * Delegates to OpenableBehavior for actual state changes
+   */
+  execute(context: ActionContext): SemanticEvent[] {
+    const noun = context.command.directObject!.entity!;
     
-    // Build the event payload
-    const closedData: ClosedEventData = {
+    // Delegate to behavior for closing
+    const result: CloseResult = OpenableBehavior.close(noun);
+    
+    // Check if the behavior reported failure (shouldn't happen after validation)
+    if (!result.success) {
+      if (result.alreadyClosed) {
+        return [context.event('action.error', {
+          actionId: context.action.id,
+          messageId: 'already_closed',
+          reason: 'already_closed',
+          params: { item: noun.name }
+        })];
+      }
+      
+      if (result.cantClose) {
+        return [context.event('action.error', {
+          actionId: context.action.id,
+          messageId: 'cant_close',
+          reason: 'cant_close',
+          params: { item: noun.name }
+        })];
+      }
+      
+      // Generic failure
+      return [context.event('action.error', {
+        actionId: context.action.id,
+        messageId: 'cannot_close',
+        reason: 'cannot_close',
+        params: { item: noun.name }
+      })];
+    }
+    
+    // Closing succeeded
+    const events: SemanticEvent[] = [];
+    
+    // Add the domain event (closed)
+    events.push(context.event('closed', {
       targetId: noun.id,
       targetName: noun.name,
-      isContainer,
-      isDoor,
-      isSupporter,
-      hasContents: contents.length > 0,
-      contentsCount: contents.length,
-      contentsIds: contents.map(e => e.id)
-    };
+      customMessage: result.closeMessage,
+      sound: result.closeSound
+    }));
     
-    // Return both the domain event and success message
-    return [
-      context.event('if.event.closed', closedData),
-      context.event('action.success', {
-        actionId: context.action.id,
-        messageId: 'closed',
-        params: { item: noun.name }
-      })
-    ];
+    // Add the action event (if.event.closed) - following same pattern as opening
+    // Check for contents if it's a container
+    let hasContents = false;
+    let contentsCount = 0;
+    let contentsIds: string[] = [];
+    
+    if (noun.has(TraitType.CONTAINER)) {
+      const contents = context.world.getContents(noun.id);
+      hasContents = contents.length > 0;
+      contentsCount = contents.length;
+      contentsIds = contents.map(item => item.id);
+    }
+    
+    const eventData: ClosedEventData = {
+      targetId: noun.id,
+      targetName: noun.name,
+      containerId: noun.id, // Same entity for compatibility
+      containerName: noun.name,
+      isContainer: noun.has(TraitType.CONTAINER),
+      isDoor: noun.has(TraitType.DOOR),
+      isSupporter: noun.has(TraitType.SUPPORTER),
+      hasContents,
+      contentsCount,
+      contentsIds,
+      // Add 'item' for backward compatibility with tests
+      item: noun.name
+    } as ClosedEventData & { item: string };
+    
+    events.push(context.event('if.event.closed', eventData));
+    
+    // Add success event
+    events.push(context.event('action.success', {
+      actionId: context.action.id,
+      messageId: 'closed',
+      params: { item: noun.name }
+    }));
+    
+    return events;
   }
 };

@@ -24,6 +24,20 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
+// Helper to execute action with validation (mimics CommandExecutor flow)
+const executeWithValidation = (action: any, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    return [context.event('action.error', {
+      actionId: action.id,
+      messageId: validation.error || 'validation_failed',
+      reason: validation.error || 'validation_failed',
+      params: validation.params || { target: context.command.directObject?.entity?.name }
+    })];
+  }
+  return action.execute(context);
+};
+
 describe('switchingOffAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
@@ -56,7 +70,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       const { world } = setupBasicWorld();
       const context = createRealTestContext(switchingOffAction, world, createCommand(IFActions.SWITCHING_OFF));
       
-      const events = switchingOffAction.execute(context);
+      const events = executeWithValidation(switchingOffAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_target')
@@ -74,7 +88,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
         entity: rock
       }));
       
-      const events = switchingOffAction.execute(context);
+      const events = executeWithValidation(switchingOffAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_switchable'),
@@ -95,7 +109,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
         entity: radio
       }));
       
-      const events = switchingOffAction.execute(context);
+      const events = executeWithValidation(switchingOffAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('already_off'),
@@ -118,7 +132,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
         entity: fan
       }));
       
-      const events = switchingOffAction.execute(context);
+      const events = executeWithValidation(switchingOffAction, context);
       
       // Should emit SWITCHED_OFF event
       expectEvent(events, 'if.event.switched_off', {
@@ -147,7 +161,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
         entity: engine
       }));
       
-      const events = switchingOffAction.execute(context);
+      const events = executeWithValidation(switchingOffAction, context);
       
       // Should include sound in event data
       expectEvent(events, 'if.event.switched_off', {
@@ -178,7 +192,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
         entity: generator
       }));
       
-      const events = switchingOffAction.execute(context);
+      const events = executeWithValidation(switchingOffAction, context);
       
       // Should note stopped sound
       expectEvent(events, 'if.event.switched_off', {
@@ -206,7 +220,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
         entity: timer
       }));
       
-      const events = switchingOffAction.execute(context);
+      const events = executeWithValidation(switchingOffAction, context);
       
       // Should include remaining time
       expectEvent(events, 'if.event.switched_off', {
@@ -245,7 +259,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
         entity: lamp
       }));
       
-      const events = switchingOffAction.execute(context);
+      const events = executeWithValidation(switchingOffAction, context);
       
       // Should detect this will darken location
       expectEvent(events, 'if.event.switched_off', {
@@ -288,7 +302,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
         entity: lamp1
       }));
       
-      const events = switchingOffAction.execute(context);
+      const events = executeWithValidation(switchingOffAction, context);
       
       // Should emit light_off_still_lit message
       expectEvent(events, 'action.success', {
@@ -325,7 +339,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
         entity: roomLamp
       }));
       
-      const events = switchingOffAction.execute(context);
+      const events = executeWithValidation(switchingOffAction, context);
       
       // Should not darken because of carried light
       expectEvent(events, 'action.success', {
@@ -349,7 +363,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
         entity: server
       }));
       
-      const events = switchingOffAction.execute(context);
+      const events = executeWithValidation(switchingOffAction, context);
       
       // Should include power freed
       expectEvent(events, 'if.event.switched_off', {
@@ -381,7 +395,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
         entity: door
       }));
       
-      const events = switchingOffAction.execute(context);
+      const events = executeWithValidation(switchingOffAction, context);
       
       // Should detect it will close
       expectEvent(events, 'if.event.switched_off', {
@@ -417,7 +431,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
         entity: gate
       }));
       
-      const events = switchingOffAction.execute(context);
+      const events = executeWithValidation(switchingOffAction, context);
       
       // Should not have willClose flag
       const switchedEvent = events.find(e => e.type === 'if.event.switched_off');
@@ -451,7 +465,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
         entity: portal
       }));
       
-      const events = switchingOffAction.execute(context);
+      const events = executeWithValidation(switchingOffAction, context);
       
       // Should not have willClose flag
       const switchedEvent = events.find(e => e.type === 'if.event.switched_off');
@@ -473,7 +487,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
         entity: device
       }));
       
-      const events = switchingOffAction.execute(context);
+      const events = executeWithValidation(switchingOffAction, context);
       
       events.forEach(event => {
         if (event.entities) {

@@ -23,6 +23,9 @@ export class RoomBehavior extends Behavior {
    */
   static getExit(room: IFEntity, direction: string): ExitInfo | null {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
+    if (!roomTrait.exits) {
+      return null;
+    }
     const exitInfo = roomTrait.exits[direction.toLowerCase()];
     return exitInfo || null;
   }
@@ -56,6 +59,11 @@ export class RoomBehavior extends Behavior {
   static setExit(room: IFEntity, direction: string, destination: string, via?: string): void {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
     const normalizedDir = direction.toLowerCase();
+    
+    // Initialize exits if needed
+    if (!roomTrait.exits) {
+      roomTrait.exits = {};
+    }
     
     roomTrait.exits[normalizedDir] = {
       destination,
@@ -133,8 +141,10 @@ export class RoomBehavior extends Behavior {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
     const normalizedDir = direction.toLowerCase();
     
-    // Remove the exit
-    delete roomTrait.exits[normalizedDir];
+    // Remove the exit if exits exist
+    if (roomTrait.exits) {
+      delete roomTrait.exits[normalizedDir];
+    }
     
     // Remove any blocked message
     if (roomTrait.blockedExits) {
@@ -182,6 +192,9 @@ export class RoomBehavior extends Behavior {
    */
   static getAllExits(room: IFEntity): Map<string, ExitInfo> {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
+    if (!roomTrait.exits) {
+      return new Map();
+    }
     return new Map(Object.entries(roomTrait.exits));
   }
   
@@ -191,6 +204,10 @@ export class RoomBehavior extends Behavior {
   static getAvailableExits(room: IFEntity): Map<string, ExitInfo> {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
     const available = new Map<string, ExitInfo>();
+    
+    if (!roomTrait.exits) {
+      return available;
+    }
     
     for (const [direction, exitInfo] of Object.entries(roomTrait.exits)) {
       if (!this.isExitBlocked(room, direction)) {

@@ -9,11 +9,16 @@
  * and the text service retrieves the actual help content.
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { HelpDisplayedEventData } from './help-events';
+
+interface HelpState {
+  topic: string | null;
+  eventData: HelpDisplayedEventData;
+}
 
 export const helpAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.HELP,
@@ -31,11 +36,8 @@ export const helpAction: Action & { metadata: ActionMetadata } = {
     'help_footer'
   ],
   
-  execute(context: ActionContext): SemanticEvent[] {
-    const actor = context.player;
-    
+  validate(context: ActionContext): ValidationResult {
     const eventData: HelpDisplayedEventData = {};
-    const params: Record<string, any> = {};
     
     // Check if the user asked for help on a specific topic
     const topic = context.command.parsed.extras?.topic || 
@@ -43,41 +45,79 @@ export const helpAction: Action & { metadata: ActionMetadata } = {
                   context.command.directObject?.parsed.text ||
                   null;
     
-    let messageId = 'general_help';
+    if (topic) {
+      eventData.specificHelp = true;
+      eventData.helpRequest = topic; // What the user asked for help about
+    } else {
+      // General help (no topic specified)
+      eventData.generalHelp = true;
+      eventData.helpType = 'general';
+      
+      // Check if this is the first time help was requested
+      const sharedData = (context.world as any).getSharedData?.() || {};
+      const helpRequested = sharedData.helpRequested || false;
+      
+      if (!helpRequested) {
+        eventData.firstTime = true;
+      }
+      
+      // Include game-specific help sections
+      const helpSections = sharedData.helpSections || [
+        'basic_commands',
+        'movement',
+        'objects',
+        'special_commands'
+      ];
+      eventData.sections = helpSections;
+      
+      // Include hints availability
+      const hintsEnabled = sharedData.hintsEnabled ?? true;
+      eventData.hintsAvailable = hintsEnabled;
+    }
+    
+    return {
+      valid: true
+    };
+  },
+  
+  execute(context: ActionContext): SemanticEvent[] {
+    const eventData: HelpDisplayedEventData = {};
+    
+    // Check if the user asked for help on a specific topic
+    const topic = context.command.parsed.extras?.topic || 
+                  context.command.indirectObject?.parsed.text ||
+                  context.command.directObject?.parsed.text ||
+                  null;
     
     if (topic) {
       eventData.specificHelp = true;
       eventData.helpRequest = topic; // What the user asked for help about
+    } else {
+      // General help (no topic specified)
+      eventData.generalHelp = true;
+      eventData.helpType = 'general';
       
-      // The text service will determine if this is an action or topic
-      // and retrieve the appropriate help content
-      return [context.event('if.event.help_displayed', eventData)];
+      // Check if this is the first time help was requested
+      const sharedData = (context.world as any).getSharedData?.() || {};
+      const helpRequested = sharedData.helpRequested || false;
+      
+      if (!helpRequested) {
+        eventData.firstTime = true;
+      }
+      
+      // Include game-specific help sections
+      const helpSections = sharedData.helpSections || [
+        'basic_commands',
+        'movement',
+        'objects',
+        'special_commands'
+      ];
+      eventData.sections = helpSections;
+      
+      // Include hints availability
+      const hintsEnabled = sharedData.hintsEnabled ?? true;
+      eventData.hintsAvailable = hintsEnabled;
     }
-    
-    // General help (no topic specified)
-    eventData.generalHelp = true;
-    eventData.helpType = 'general';
-    
-    // Check if this is the first time help was requested
-    const sharedData = (context.world as any).getSharedData?.() || {};
-    const helpRequested = sharedData.helpRequested || false;
-    
-    if (!helpRequested) {
-      eventData.firstTime = true;
-    }
-    
-    // Include game-specific help sections
-    const helpSections = sharedData.helpSections || [
-      'basic_commands',
-      'movement',
-      'objects',
-      'special_commands'
-    ];
-    eventData.sections = helpSections;
-    
-    // Include hints availability
-    const hintsEnabled = sharedData.hintsEnabled ?? true;
-    eventData.hintsAvailable = hintsEnabled;
     
     return [context.event('if.event.help_displayed', eventData)];
   },

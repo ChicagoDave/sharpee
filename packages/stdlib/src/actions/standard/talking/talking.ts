@@ -5,9 +5,9 @@
  * More specific conversation topics use ASK/TELL.
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
-import { TraitType, ActorTrait } from '@sharpee/world-model';
+import { TraitType, ActorBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { TalkedEventData } from './talking-events';
 import { ActionMetadata } from '../../../validation';
@@ -36,27 +36,24 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     'nothing_to_say'
   ],
   
-  execute(context: ActionContext): SemanticEvent[] {
+  validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     const target = context.command.directObject?.entity;
     
     // Must have someone to talk to
     if (!target) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_target',
-        reason: 'no_target'
-      })];
+      return { 
+        valid: false, 
+        error: 'no_target'
+      };
     }
     
     // Check if target is visible
     if (!context.canSee(target)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_visible',
-        reason: 'not_visible',
-        params: { target: target.name }
-      })];
+      return { 
+        valid: false, 
+        error: 'not_visible'
+      };
     }
     
     // Check if target is in same location
@@ -64,31 +61,58 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     const actorLocation = context.world.getLocation(actor.id);
     
     if (targetLocation !== actorLocation) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'too_far',
-        reason: 'too_far',
-        params: { target: target.name }
-      })];
+      return { 
+        valid: false, 
+        error: 'too_far'
+      };
     }
     
     // Check if target is an actor (can talk)
     if (!target.has(TraitType.ACTOR)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_actor',
-        reason: 'not_actor'
-      })];
+      return { 
+        valid: false, 
+        error: 'not_actor',
+        params: { target: target.name }
+      };
     }
     
     // Prevent talking to self
     if (target.id === actor.id) {
+      return { 
+        valid: false, 
+        error: 'self'
+      };
+    }
+    
+    // Check if NPC is available to talk
+    // Handle both direct trait property and customProperties
+    const targetActor = target.get(TraitType.ACTOR) as any;
+    const conversation = targetActor?.conversation || ActorBehavior.getCustomProperty(target, 'conversation');
+    if (conversation && conversation.isAvailable !== undefined && !conversation.isAvailable) {
+      return { 
+        valid: false, 
+        error: 'not_available',
+        params: { target: target.name }
+      };
+    }
+    
+    return { valid: true };
+  },
+  
+  execute(context: ActionContext): SemanticEvent[] {
+    // Call validate at the start
+    const validation = this.validate(context);
+    if (!validation.valid) {
       return [context.event('action.error', {
         actionId: context.action.id,
-        messageId: 'self',
-        reason: 'self'
+        messageId: validation.error!,
+        reason: validation.error!,
+        params: validation.params || {}
       })];
     }
+    
+    const actor = context.player;
+    const target = context.command.directObject?.entity!;
     
     // Build event data
     const eventData: TalkedEventData = {
@@ -100,22 +124,13 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
       target: target.name
     };
     
-    // Check NPC state
-    const targetActor = target.get(TraitType.ACTOR) as ActorTrait;
+    // Check NPC conversation state
+    // Handle both direct trait property and customProperties
+    const targetActor = target.get(TraitType.ACTOR) as any;
+    const conversation = targetActor?.conversation || ActorBehavior.getCustomProperty(target, 'conversation');
     let messageId = 'talked';
     
-    if (targetActor && (targetActor as any).conversation) {
-      const conversation = (targetActor as any).conversation;
-      
-      // Check if NPC is willing to talk
-      if (conversation.isAvailable !== undefined && !conversation.isAvailable) {
-        return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_available',
-        reason: 'not_available',
-        params: params
-      })];
-      }
+    if (conversation) {
       
       // Add conversation state
       eventData.conversationState = conversation.state || 'initial';

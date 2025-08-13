@@ -26,6 +26,11 @@ export class EntryBehavior {
       return false;
     }
     
+    // Initialize occupants if needed
+    if (!trait.occupants) {
+      trait.occupants = [];
+    }
+    
     // Check occupancy limit
     if (trait.maxOccupants !== undefined && trait.occupants.length >= trait.maxOccupants) {
       return false;
@@ -76,7 +81,10 @@ export class EntryBehavior {
       ];
     }
     
-    // Add actor to occupants
+    // Add actor to occupants (initialize if needed)
+    if (!trait.occupants) {
+      trait.occupants = [];
+    }
     trait.occupants.push(actor.id);
     
     const events: SemanticEvent[] = [];
@@ -171,11 +179,13 @@ export class EntryBehavior {
       return 'entry_blocked';
     }
     
-    if (trait.occupants.includes(actor.id)) {
+    const occupants = trait.occupants || [];
+    
+    if (occupants.includes(actor.id)) {
       return 'already_inside';
     }
     
-    if (trait.maxOccupants !== undefined && trait.occupants.length >= trait.maxOccupants) {
+    if (trait.maxOccupants !== undefined && occupants.length >= trait.maxOccupants) {
       return 'full';
     }
     
@@ -194,7 +204,7 @@ export class EntryBehavior {
    */
   static getOccupants(entity: IFEntity): string[] {
     const trait = entity.get(TraitType.ENTRY) as EntryTrait;
-    return trait ? [...trait.occupants] : [];
+    return trait ? [...(trait.occupants || [])] : [];
   }
   
   /**
@@ -202,7 +212,7 @@ export class EntryBehavior {
    */
   static hasOccupants(entity: IFEntity): boolean {
     const trait = entity.get(TraitType.ENTRY) as EntryTrait;
-    return trait ? trait.occupants.length > 0 : false;
+    return trait ? (trait.occupants || []).length > 0 : false;
   }
   
   /**
@@ -210,7 +220,7 @@ export class EntryBehavior {
    */
   static contains(entity: IFEntity, actorId: string): boolean {
     const trait = entity.get(TraitType.ENTRY) as EntryTrait;
-    return trait ? trait.occupants.includes(actorId) : false;
+    return trait ? (trait.occupants || []).includes(actorId) : false;
   }
   
   /**
@@ -218,7 +228,7 @@ export class EntryBehavior {
    */
   static evacuate(entity: IFEntity): SemanticEvent[] {
     const trait = entity.get(TraitType.ENTRY) as EntryTrait;
-    if (!trait || trait.occupants.length === 0) {
+    if (!trait || !trait.occupants || trait.occupants.length === 0) {
       return [];
     }
     
@@ -247,13 +257,14 @@ export class EntryBehavior {
    */
   static describeOccupants(entity: IFEntity, world: any): string | undefined {
     const trait = entity.get(TraitType.ENTRY) as EntryTrait;
-    if (!trait || !trait.occupantsVisible || trait.occupants.length === 0) {
+    const occupants = trait?.occupants || [];
+    if (!trait || !trait.occupantsVisible || occupants.length === 0) {
       return undefined;
     }
     
     // TODO: Look up entity names from world
     // For now, just return count
-    const count = trait.occupants.length;
+    const count = occupants.length;
     if (count === 1) {
       return `Someone is ${trait.preposition} it.`;
     } else {

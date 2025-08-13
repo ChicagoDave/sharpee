@@ -1,14 +1,14 @@
 /**
  * Unlocking action - unlocks containers and doors
  * 
- * This action validates conditions for unlocking something and returns
- * appropriate events. It NEVER mutates state directly.
+ * This action properly delegates to LockableBehavior for validation
+ * and execution. It follows the validate/execute pattern.
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { SemanticEvent, EntityId } from '@sharpee/core';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, LockableBehavior, UnlockResult } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { UnlockedEventData } from './unlocking-events';
@@ -29,95 +29,133 @@ export const unlockingAction: Action & { metadata: ActionMetadata } = {
   ],
   group: 'lock_manipulation',
   
-  execute(context: ActionContext): SemanticEvent[] {
-    const actor = context.player;
+  /**
+   * Validate whether the unlock action can be executed
+   * Uses behavior validation methods to check preconditions
+   */
+  validate(context: ActionContext): ValidationResult {
     const noun = context.command.directObject?.entity;
     const withKey = context.command.indirectObject?.entity;
     
     // Validate we have a target
     if (!noun) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_target',
-        reason: 'no_target'
-      })];
+      return { 
+        valid: false, 
+        error: 'no_target'
+      };
     }
     
     // Check if it's lockable
     if (!noun.has(TraitType.LOCKABLE)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_lockable',
-        reason: 'not_lockable',
+      return { 
+        valid: false, 
+        error: 'not_lockable',
         params: { item: noun.name }
-      })];
+      };
     }
     
-    const lockableTrait = noun.get(TraitType.LOCKABLE);
-    const lockableData = lockableTrait as any;
-    
-    // Scope checks handled by framework due to directObjectScope: REACHABLE
-    
-    // Check if already unlocked
-    if (!lockableData.isLocked) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'already_unlocked',
-        reason: 'already_unlocked',
+    // Use behavior's canUnlock method for validation
+    if (!LockableBehavior.canUnlock(noun)) {
+      return { 
+        valid: false, 
+        error: 'already_unlocked',
         params: { item: noun.name }
-      })];
+      };
     }
     
     // Check key requirements
-    const requiresKey = !!(lockableData.keyId || lockableData.keyIds);
-    
-    if (requiresKey) {
+    if (LockableBehavior.requiresKey(noun)) {
       // No key specified
       if (!withKey) {
-        return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_key',
-        reason: 'no_key'
-      })];
+        return { 
+          valid: false, 
+          error: 'no_key'
+        };
       }
       
       // Check if player has the key
+      const actor = context.player;
       const keyLocation = context.world.getLocation(withKey.id);
       if (keyLocation !== actor.id) {
-        return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'key_not_held',
-        reason: 'key_not_held',
-        params: { key: withKey.name }
-      })];
+        return { 
+          valid: false, 
+          error: 'key_not_held',
+          params: { key: withKey.name }
+        };
       }
       
       // Check if it's the right key
-      let isValidKey = false;
-      
-      if (lockableData.keyId && withKey.id === lockableData.keyId) {
-        isValidKey = true;
-      } else if (lockableData.keyIds && lockableData.keyIds.includes(withKey.id)) {
-        isValidKey = true;
-      }
-      
-      if (!isValidKey) {
-        return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'wrong_key',
-        reason: 'wrong_key',
-        params: { 
+      if (!LockableBehavior.canUnlockWith(noun, withKey.id)) {
+        return { 
+          valid: false, 
+          error: 'wrong_key',
+          params: { 
             key: withKey.name, 
             item: noun.name 
           }
-      })];
+        };
       }
     }
     
-    // Gather information about what we're unlocking
+    return { valid: true };
+  },
+  
+  /**
+   * Execute the unlock action
+   * Assumes validation has already passed - no validation logic here
+   * Delegates to LockableBehavior for actual state changes
+   */
+  execute(context: ActionContext): SemanticEvent[] {
+    // Assume validation has passed - no checks needed
+    const actor = context.player;
+    const noun = context.command.directObject!.entity!; // Safe because validate ensures it exists
+    const withKey = context.command.indirectObject?.entity;
+    
+    // Delegate to behavior for unlocking
+    const result: UnlockResult = LockableBehavior.unlock(noun, withKey);
+    
+    // Check if the behavior reported failure
+    if (!result.success) {
+      if (result.alreadyUnlocked) {
+        return [context.event('action.error', {
+          actionId: context.action.id,
+          messageId: 'already_unlocked',
+          reason: 'already_unlocked',
+          params: { item: noun.name }
+        })];
+      }
+      if (result.noKey) {
+        return [context.event('action.error', {
+          actionId: context.action.id,
+          messageId: 'no_key',
+          reason: 'no_key'
+        })];
+      }
+      if (result.wrongKey) {
+        return [context.event('action.error', {
+          actionId: context.action.id,
+          messageId: 'wrong_key',
+          reason: 'wrong_key',
+          params: { 
+            key: withKey?.name || 'key', 
+            item: noun.name 
+          }
+        })];
+      }
+      // Shouldn't happen if validate() was called, but handle it
+      return [context.event('action.error', {
+        actionId: context.action.id,
+        messageId: 'cannot_unlock',
+        reason: 'cannot_unlock',
+        params: { item: noun.name }
+      })];
+    }
+    
+    // Unlocking succeeded - gather information about what we're unlocking
     const isContainer = noun.has(TraitType.CONTAINER);
     const isDoor = noun.has(TraitType.DOOR);
     const contents = isContainer ? context.world.getContents(noun.id) : [];
+    const requiresKey = LockableBehavior.requiresKey(noun);
     
     // Check for auto-open behavior
     let willAutoOpen = false;
@@ -138,7 +176,7 @@ export const unlockingAction: Action & { metadata: ActionMetadata } = {
       hasContents: contents.length > 0,
       contentsCount: contents.length,
       contentsIds: contents.map(e => e.id),
-      sound: lockableData.unlockSound,
+      sound: result.unlockSound,
       willAutoOpen
     };
     

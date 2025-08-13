@@ -23,6 +23,19 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
+// Helper to execute action with validation (mimics CommandExecutor flow)
+const executeWithValidation = (action: any, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    return [context.event('action.error', {
+      actionId: context.action.id,
+      messageId: validation.error,
+      params: validation.params || {}
+    })];
+  }
+  return action.execute(context);
+};
+
 describe('searchingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
@@ -68,7 +81,7 @@ describe('searchingAction (Golden Pattern)', () => {
         entity: chest
       }));
       
-      const events = searchingAction.execute(context);
+      const events = executeWithValidation(searchingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('container_closed'),
@@ -93,7 +106,7 @@ describe('searchingAction (Golden Pattern)', () => {
         entity: box
       }));
       
-      const events = searchingAction.execute(context);
+      const events = executeWithValidation(searchingAction, context);
       
       // Should emit SEARCHED event
       expectEvent(events, 'if.event.searched', {
@@ -131,7 +144,7 @@ describe('searchingAction (Golden Pattern)', () => {
         entity: box
       }));
       
-      const events = searchingAction.execute(context);
+      const events = executeWithValidation(searchingAction, context);
       
       // Should emit container_contents message
       expectEvent(events, 'action.success', {
@@ -169,7 +182,7 @@ describe('searchingAction (Golden Pattern)', () => {
         entity: desk
       }));
       
-      const events = searchingAction.execute(context);
+      const events = executeWithValidation(searchingAction, context);
       
       // Should emit SEARCHED event with concealed items
       expectEvent(events, 'if.event.searched', {
@@ -212,7 +225,7 @@ describe('searchingAction (Golden Pattern)', () => {
         entity: table
       }));
       
-      const events = searchingAction.execute(context);
+      const events = executeWithValidation(searchingAction, context);
       
       // Should emit supporter_contents message
       expectEvent(events, 'action.success', {
@@ -250,7 +263,7 @@ describe('searchingAction (Golden Pattern)', () => {
         entity: altar
       }));
       
-      const events = searchingAction.execute(context);
+      const events = executeWithValidation(searchingAction, context);
       
       // Should emit found_concealed message
       expectEvent(events, 'action.success', {
@@ -278,7 +291,7 @@ describe('searchingAction (Golden Pattern)', () => {
         entity: pedestal
       }));
       
-      const events = searchingAction.execute(context);
+      const events = executeWithValidation(searchingAction, context);
       
       // Should emit nothing_special message
       expectEvent(events, 'action.success', {
@@ -300,7 +313,7 @@ describe('searchingAction (Golden Pattern)', () => {
         entity: statue
       }));
       
-      const events = searchingAction.execute(context);
+      const events = executeWithValidation(searchingAction, context);
       
       // Should emit SEARCHED event
       expectEvent(events, 'if.event.searched', {
@@ -337,7 +350,7 @@ describe('searchingAction (Golden Pattern)', () => {
         entity: painting
       }));
       
-      const events = searchingAction.execute(context);
+      const events = executeWithValidation(searchingAction, context);
       
       // Should emit nothing_special message (concealed items no longer auto-found)
       expectEvent(events, 'action.success', {
@@ -366,7 +379,7 @@ describe('searchingAction (Golden Pattern)', () => {
       const context = createRealTestContext(searchingAction, world, createCommand(IFActions.SEARCHING));
       // No directObject
       
-      const events = searchingAction.execute(context);
+      const events = executeWithValidation(searchingAction, context);
       
       // Should emit SEARCHED event with location flag
       expectEvent(events, 'if.event.searched', {
@@ -395,7 +408,7 @@ describe('searchingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(searchingAction, world, createCommand(IFActions.SEARCHING));
       
-      const events = searchingAction.execute(context);
+      const events = executeWithValidation(searchingAction, context);
       
       // Should emit searched_location message
       expectEvent(events, 'action.success', {
@@ -426,7 +439,7 @@ describe('searchingAction (Golden Pattern)', () => {
         entity: safe
       }));
       
-      const events = searchingAction.execute(context);
+      const events = executeWithValidation(searchingAction, context);
       
       // Should succeed and list contents
       expectEvent(events, 'action.success', {
@@ -473,7 +486,7 @@ describe('searchingAction (Golden Pattern)', () => {
         entity: bookshelf
       }));
       
-      const events = searchingAction.execute(context);
+      const events = executeWithValidation(searchingAction, context);
       
       // Should find both concealed items
       expectEvent(events, 'if.event.searched', {
@@ -503,7 +516,7 @@ describe('searchingAction (Golden Pattern)', () => {
         entity: crate
       }));
       
-      const events = searchingAction.execute(context);
+      const events = executeWithValidation(searchingAction, context);
       
       events.forEach(event => {
         if (event.entities) {
@@ -519,7 +532,7 @@ describe('searchingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(searchingAction, world, createCommand(IFActions.SEARCHING));
       
-      const events = searchingAction.execute(context);
+      const events = executeWithValidation(searchingAction, context);
       
       const searchEvent = events.find(e => e.type === 'if.event.searched');
       expect(searchEvent?.data.target).toBe(room.id);

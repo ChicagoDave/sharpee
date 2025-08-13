@@ -5,9 +5,18 @@
  * are containers/supporters marked as enterable.
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
-import { TraitType, EntryTrait, ContainerTrait, SupporterTrait } from '@sharpee/world-model';
+import { 
+  TraitType, 
+  EntryTrait, 
+  ContainerTrait, 
+  SupporterTrait,
+  EntryBehavior,
+  ContainerBehavior,
+  SupporterBehavior,
+  OpenableBehavior
+} from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { EnteredEventData } from './entering-events';
 import { ActionMetadata } from '../../../validation';
@@ -27,117 +36,173 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
   ],
   group: 'movement',
   
-  execute(context: ActionContext): SemanticEvent[] {
+  validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     const target = context.command.directObject?.entity;
     
     // Validate target
     if (!target) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_target',
-        reason: 'no_target'
-      })];
+      return { 
+        valid: false, 
+        error: 'no_target'
+      };
     }
     
     // Check if already inside the target
     const currentLocation = context.world.getLocation(actor.id);
     if (currentLocation === target.id) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'already_inside',
-        reason: 'already_inside',
+      return { 
+        valid: false, 
+        error: 'already_inside',
         params: { place: target.name }
-      })];
+      };
     }
     
-    // Determine if object is enterable and get preposition
-    let isEnterable = false;
-    let preposition: 'in' | 'on' = 'in';
-    let maxOccupants: number | undefined;
-    let currentOccupants: string[] = [];
+    // Check for ENTRY trait first (highest priority) and use behavior
+    if (target.has(TraitType.ENTRY)) {
+      if (!EntryBehavior.canEnter(target, actor)) {
+        const reason = EntryBehavior.getBlockedReason(target, actor);
+        const entryTrait = target.get(TraitType.ENTRY) as EntryTrait;
+        
+        if (reason === 'full') {
+          return { 
+            valid: false, 
+            error: 'too_full',
+            params: { 
+              place: target.name,
+              occupants: EntryBehavior.getOccupants(target).length,
+              max: entryTrait.maxOccupants
+            }
+          };
+        } else if (reason === 'closed') {
+          return { 
+            valid: false, 
+            error: 'container_closed',
+            params: { container: target.name }
+          };
+        } else if (reason === 'entry_blocked') {
+          return { 
+            valid: false, 
+            error: 'cant_enter',
+            params: { 
+              place: target.name,
+              reason: entryTrait.blockedMessage || 'blocked'
+            }
+          };
+        } else {
+          return { 
+            valid: false, 
+            error: 'cant_enter',
+            params: { 
+              place: target.name,
+              reason: reason
+            }
+          };
+        }
+      }
+      return { valid: true };
+    }
     
-    // Check for ENTRY trait first (highest priority)
+    // Check if it's an enterable container
+    if (target.has(TraitType.CONTAINER)) {
+      const containerTrait = target.get(TraitType.CONTAINER) as ContainerTrait;
+      if (!containerTrait.enterable) {
+        return { 
+          valid: false, 
+          error: 'not_enterable',
+          params: { place: target.name }
+        };
+      }
+      
+      // Check if container needs to be open
+      if (target.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(target)) {
+        return { 
+          valid: false, 
+          error: 'container_closed',
+          params: { container: target.name }
+        };
+      }
+      
+      // Check occupancy for containers
+      const currentOccupants = context.world.getContents(target.id)
+        .filter(e => e.has(TraitType.ACTOR));
+      // Containers generally don't have occupancy limits, but check capacity
+      if (!ContainerBehavior.canAccept(target, actor, context.world)) {
+        return { 
+          valid: false, 
+          error: 'too_full',
+          params: { 
+            place: target.name
+          }
+        };
+      }
+      
+      return { valid: true };
+    }
+    
+    // Check if it's an enterable supporter
+    if (target.has(TraitType.SUPPORTER)) {
+      const supporterTrait = target.get(TraitType.SUPPORTER) as SupporterTrait;
+      if (!supporterTrait.enterable) {
+        return { 
+          valid: false, 
+          error: 'not_enterable',
+          params: { place: target.name }
+        };
+      }
+      
+      // Check capacity for supporters
+      if (!SupporterBehavior.canAccept(target, actor, context.world)) {
+        return { 
+          valid: false, 
+          error: 'too_full',
+          params: { 
+            place: target.name
+          }
+        };
+      }
+      
+      return { valid: true };
+    }
+    
+    // Not enterable
+    return { 
+      valid: false, 
+      error: 'not_enterable',
+      params: { place: target.name }
+    };
+  },
+  
+  execute(context: ActionContext): SemanticEvent[] {
+    const actor = context.player;
+    const target = context.command.directObject?.entity!;
+    const currentLocation = context.world.getLocation(actor.id);
+    
+    // Determine preposition and posture based on target type
+    let preposition: 'in' | 'on' = 'in';
+    let posture: string | undefined;
+    
+    // Get details based on trait type
     if (target.has(TraitType.ENTRY)) {
       const entryTrait = target.get(TraitType.ENTRY) as EntryTrait;
-      if (entryTrait.canEnter) {
-        isEnterable = true;
-        preposition = (entryTrait.preposition || 'in') as 'in' | 'on';
-        maxOccupants = entryTrait.maxOccupants;
-        currentOccupants = entryTrait.occupants || [];
-      } else {
-        // Entry trait exists but entry is not allowed
-        return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'cant_enter',
-        params: { 
-            place: target.name,
-            reason: entryTrait.blockedMessage || 'blocked'
-          }
-      })];
+      preposition = (entryTrait.preposition || 'in') as 'in' | 'on';
+      posture = entryTrait.posture;
+      
+      // Update occupants in Entry trait using behavior
+      // Note: EntryBehavior.enter() returns events but we'll generate our own
+      // So we just update the occupants directly
+      entryTrait.occupants = entryTrait.occupants || [];
+      if (!entryTrait.occupants.includes(actor.id)) {
+        entryTrait.occupants.push(actor.id);
       }
-    }
-    // Check if it's an enterable container
-    else if (target.has(TraitType.CONTAINER)) {
-      const containerTrait = target.get(TraitType.CONTAINER) as ContainerTrait;
-      if (containerTrait.enterable) {
-        isEnterable = true;
-        preposition = 'in';
-        // For containers, check current contents as occupants
-        currentOccupants = context.world.getContents(target.id)
-          .filter(e => e.has(TraitType.ACTOR))
-          .map(e => e.id);
-      }
-    }
-    // Check if it's an enterable supporter
-    else if (target.has(TraitType.SUPPORTER)) {
-      const supporterTrait = target.get(TraitType.SUPPORTER) as SupporterTrait;
-      if (supporterTrait.enterable) {
-        isEnterable = true;
-        preposition = 'on';
-        // For supporters, check current contents as occupants
-        currentOccupants = context.world.getContents(target.id)
-          .filter(e => e.has(TraitType.ACTOR))
-          .map(e => e.id);
-      }
+    } else if (target.has(TraitType.CONTAINER)) {
+      preposition = 'in';
+    } else if (target.has(TraitType.SUPPORTER)) {
+      preposition = 'on';
     }
     
-    // If not enterable, fail
-    if (!isEnterable) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_enterable',
-        reason: 'not_enterable',
-        params: { place: target.name }
-      })];
-    }
-    
-    // Check maximum occupancy
-    if (maxOccupants !== undefined && currentOccupants.length >= maxOccupants) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'too_full',
-        reason: 'too_full',
-        params: { 
-          place: target.name,
-          occupants: currentOccupants.length,
-          max: maxOccupants
-        }
-      })];
-    }
-    
-    // Check if container needs to be open
-    if (target.has(TraitType.CONTAINER) && target.has(TraitType.OPENABLE)) {
-      const openableTrait = target.get(TraitType.OPENABLE) as { isOpen?: boolean };
-      if (!openableTrait.isOpen) {
-        return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'container_closed',
-        reason: 'container_closed',
-        params: { container: target.name }
-      })];
-      }
-    }
+    // Move the actor to the target
+    context.world.moveEntity(actor.id, target.id);
     
     // Build event data
     const params: Record<string, any> = {
@@ -145,14 +210,8 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       preposition
     };
     
-    // Add entry trait specific data if present
-    let posture: string | undefined;
-    if (target.has(TraitType.ENTRY)) {
-      const entryTrait = target.get(TraitType.ENTRY) as EntryTrait;
-      if (entryTrait.posture) {
-        posture = entryTrait.posture;
-        params.posture = posture;
-      }
+    if (posture) {
+      params.posture = posture;
     }
     
     const events: SemanticEvent[] = [];

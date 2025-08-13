@@ -118,19 +118,39 @@ export class IdentityBehavior extends Behavior {
   }
   
   /**
+   * Reveal a concealed entity (convenience method)
+   */
+  static reveal(entity: IFEntity): void {
+    IdentityBehavior.setConcealed(entity, false);
+  }
+  
+  /**
+   * Conceal an entity (convenience method)
+   */
+  static conceal(entity: IFEntity): void {
+    IdentityBehavior.setConcealed(entity, true);
+  }
+  
+  /**
    * Get the weight of the entity (not including contents)
    */
   static getWeight(entity: IFEntity): number {
-    const identity = IdentityBehavior.require<IdentityTrait>(entity, TraitType.IDENTITY);
-    return identity.weight || 0;
+    if (!entity.has(TraitType.IDENTITY)) {
+      return 0; // Default weight for items without identity trait
+    }
+    const identity = entity.get(TraitType.IDENTITY) as IdentityTrait;
+    return identity?.weight || 0;
   }
   
   /**
    * Get the volume of the entity
    */
   static getVolume(entity: IFEntity): number {
-    const identity = IdentityBehavior.require<IdentityTrait>(entity, TraitType.IDENTITY);
-    return identity.volume || 0;
+    if (!entity.has(TraitType.IDENTITY)) {
+      return 0; // Default volume for items without identity trait
+    }
+    const identity = entity.get(TraitType.IDENTITY) as IdentityTrait;
+    return identity?.volume || 0;
   }
   
   /**

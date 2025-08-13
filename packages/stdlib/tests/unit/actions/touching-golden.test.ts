@@ -23,6 +23,20 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
+// Helper to execute action with validation (mimics CommandExecutor flow)
+const executeWithValidation = (action: any, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    return [context.event('action.error', {
+      actionId: context.action.id,
+      messageId: validation.error,
+      reason: validation.error,
+      params: validation.params || {}
+    })];
+  }
+  return action.execute(context);
+};
+
 describe('touchingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
@@ -57,7 +71,7 @@ describe('touchingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.TOUCHING);
       const context = createRealTestContext(touchingAction, world, command);
       
-      const events = touchingAction.execute(context);
+      const events = executeWithValidation(touchingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_target'),
@@ -83,7 +97,7 @@ describe('touchingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = touchingAction.execute(context);
+      const events = executeWithValidation(touchingAction, context);
       
       // Should emit TOUCHED event with temperature
       expectEvent(events, 'if.event.touched', {
@@ -113,7 +127,7 @@ describe('touchingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = touchingAction.execute(context);
+      const events = executeWithValidation(touchingAction, context);
       
       // Should emit TOUCHED event with temperature
       expectEvent(events, 'if.event.touched', {
@@ -148,7 +162,7 @@ describe('touchingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = touchingAction.execute(context);
+      const events = executeWithValidation(touchingAction, context);
       
       // Should emit device_vibrating message
       expectEvent(events, 'action.success', {
@@ -173,7 +187,7 @@ describe('touchingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = touchingAction.execute(context);
+      const events = executeWithValidation(touchingAction, context);
       
       // Should emit TOUCHED event with texture
       expectEvent(events, 'if.event.touched', {
@@ -202,7 +216,7 @@ describe('touchingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = touchingAction.execute(context);
+      const events = executeWithValidation(touchingAction, context);
       
       // Should emit TOUCHED event with texture
       expectEvent(events, 'if.event.touched', {
@@ -232,7 +246,7 @@ describe('touchingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = touchingAction.execute(context);
+      const events = executeWithValidation(touchingAction, context);
       
       // Should emit TOUCHED event with texture  
       expectEvent(events, 'if.event.touched', {
@@ -240,9 +254,9 @@ describe('touchingAction (Golden Pattern)', () => {
         texture: 'solid'
       });
       
-      // Note: Current implementation emits 'touched' not 'feels_hard'
+      // Containers are detected as hard surfaces
       expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('touched'),
+        messageId: expect.stringContaining('feels_hard'),
         params: { target: 'metal box' }
       });
     });
@@ -261,7 +275,7 @@ describe('touchingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = touchingAction.execute(context);
+      const events = executeWithValidation(touchingAction, context);
       
       // Should emit TOUCHED event with texture
       expectEvent(events, 'if.event.touched', {
@@ -302,7 +316,7 @@ describe('touchingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = touchingAction.execute(context);
+      const events = executeWithValidation(touchingAction, context);
       
       // Should emit liquid_container message
       expectEvent(events, 'action.success', {
@@ -324,7 +338,7 @@ describe('touchingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = touchingAction.execute(context);
+      const events = executeWithValidation(touchingAction, context);
       
       // Should emit TOUCHED event with immovable flag
       expectEvent(events, 'if.event.touched', {
@@ -354,7 +368,7 @@ describe('touchingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = touchingAction.execute(context);
+      const events = executeWithValidation(touchingAction, context);
       
       // Should emit TOUCHED event (size no longer included in event)
       expectEvent(events, 'if.event.touched', {
@@ -373,7 +387,7 @@ describe('touchingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = touchingAction.execute(context);
+      const events = executeWithValidation(touchingAction, context);
       
       // Should emit touched message
       expectEvent(events, 'action.success', {
@@ -396,7 +410,7 @@ describe('touchingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(touchingAction, world, command);
       
-      const events = touchingAction.execute(context);
+      const events = executeWithValidation(touchingAction, context);
       
       // Should emit poked message
       expectEvent(events, 'action.success', {
@@ -419,7 +433,7 @@ describe('touchingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(touchingAction, world, command);
       
-      const events = touchingAction.execute(context);
+      const events = executeWithValidation(touchingAction, context);
       
       // Should emit prodded message
       expectEvent(events, 'action.success', {
@@ -442,7 +456,7 @@ describe('touchingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(touchingAction, world, command);
       
-      const events = touchingAction.execute(context);
+      const events = executeWithValidation(touchingAction, context);
       
       // Should emit patted message
       expectEvent(events, 'action.success', {
@@ -465,7 +479,7 @@ describe('touchingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(touchingAction, world, command);
       
-      const events = touchingAction.execute(context);
+      const events = executeWithValidation(touchingAction, context);
       
       // Should emit stroked message
       expectEvent(events, 'action.success', {
@@ -488,7 +502,7 @@ describe('touchingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(touchingAction, world, command);
       
-      const events = touchingAction.execute(context);
+      const events = executeWithValidation(touchingAction, context);
       
       // Should emit touched_gently message
       expectEvent(events, 'action.success', {
@@ -517,7 +531,7 @@ describe('touchingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = touchingAction.execute(context);
+      const events = executeWithValidation(touchingAction, context);
       
       // Should emit TOUCHED event with both properties
       expectEvent(events, 'if.event.touched', {
@@ -545,7 +559,7 @@ describe('touchingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = touchingAction.execute(context);
+      const events = executeWithValidation(touchingAction, context);
       
       events.forEach(event => {
         if (event.entities) {

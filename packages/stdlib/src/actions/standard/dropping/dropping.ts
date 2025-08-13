@@ -2,15 +2,15 @@
  * Dropping action - puts down held objects
  * 
  * This action validates conditions for dropping an object and returns
- * appropriate events. It NEVER mutates state directly.
+ * appropriate events. It delegates validation to ContainerBehavior.
  * 
  * UPDATED: Uses new simplified context.event() method (ADR-041)
  * MIGRATED: To new folder structure with typed events (ADR-042)
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, ContainerBehavior, SupporterBehavior, WearableBehavior, ActorBehavior, DropItemResult } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
@@ -34,46 +34,86 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     'dropped_carelessly'
   ],
 
-  execute(context: ActionContext): SemanticEvent[] {
+  validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     const noun = context.command.directObject?.entity;
 
-    // Validate we have a target
     if (!noun) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_target',
-        reason: 'no_target'
-      })];
+      return { valid: false, error: 'no_target' };
     }
 
-    // Check if held by actor
-    const currentLocation = context.world.getLocation(noun.id);
-    if (currentLocation !== actor.id) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_held',
-        reason: 'not_held',
-        params: { item: noun.name }
-      })];
+    // Use ActorBehavior to validate dropping
+    if (!ActorBehavior.isHolding(actor, noun.id, context.world)) {
+      return { valid: false, error: 'not_held' };
     }
 
     // Check if the item is worn
-    if (noun.has(TraitType.WEARABLE)) {
-      const wearableTrait = noun.get(TraitType.WEARABLE);
-      if (wearableTrait && (wearableTrait as any).worn) {
-        return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'still_worn',
-        reason: 'still_worn',
-        params: { item: noun.name }
-      })];
+    if (noun.has(TraitType.WEARABLE) && WearableBehavior.isWorn(noun)) {
+      return { valid: false, error: 'still_worn' };
+    }
+
+    // Get drop location
+    const playerLocation = context.world.getLocation(actor.id);
+    const dropLocation = playerLocation ? context.world.getEntity(playerLocation) : context.currentLocation;
+    
+    if (!dropLocation) {
+      return { valid: false, error: 'cant_drop_here' };
+    }
+
+    // Check if location can accept the item (for containers)
+    if (dropLocation.has(TraitType.CONTAINER) && !dropLocation.has(TraitType.ROOM)) {
+      if (!ContainerBehavior.canAccept(dropLocation, noun, context.world)) {
+        const containerTrait = dropLocation.get(TraitType.CONTAINER) as any;
+        if (containerTrait.capacity?.maxItems !== undefined) {
+          const contents = context.world.getContents(dropLocation.id);
+          if (contents.length >= containerTrait.capacity.maxItems) {
+            return { valid: false, error: 'container_full' };
+          }
+        }
+        return { valid: false, error: 'cant_drop_here' };
       }
     }
 
-    // Determine where to drop the item
-    // TODO: This should check for indirect object (destination) from command validation
-    // For now, drops in player's immediate location
+    return { valid: true };
+  },
+
+  execute(context: ActionContext): SemanticEvent[] {
+    const actor = context.player;
+    const noun = context.command.directObject?.entity!;
+
+    // Delegate to ActorBehavior for dropping logic
+    const result: DropItemResult = ActorBehavior.dropItem(actor, noun, context.world);
+    
+    // Handle failure cases
+    if (!result.success) {
+      if (result.notHeld) {
+        return [context.event('action.error', {
+          actionId: context.action.id,
+          messageId: 'not_held',
+          reason: 'not_held',
+          params: { item: noun.name }
+        })];
+      }
+      
+      if (result.stillWorn) {
+        return [context.event('action.error', {
+          actionId: context.action.id,
+          messageId: 'still_worn',
+          reason: 'still_worn',
+          params: { item: noun.name }
+        })];
+      }
+      
+      // Generic failure
+      return [context.event('action.error', {
+        actionId: context.action.id,
+        messageId: 'cant_drop',
+        reason: 'cant_drop',
+        params: { item: noun.name }
+      })];
+    }
+
+    // Determine drop location for event data
     const playerLocation = context.world.getLocation(actor.id);
     const dropLocation = playerLocation ? context.world.getEntity(playerLocation) : context.currentLocation;
     
@@ -96,30 +136,10 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
 
     let messageId = 'dropped';
 
-    // Rooms can always accept dropped items
+    // Determine message based on drop location
     if (!dropLocation.has(TraitType.ROOM)) {
-      // If we're in a container/supporter, check if it can accept items
+      // Dropping into a container or supporter
       if (dropLocation.has(TraitType.CONTAINER)) {
-        const containerTrait = dropLocation.get(TraitType.CONTAINER);
-
-        // Note: We don't check if the container is open/closed here because
-        // if the player is already inside the container, they can drop items.
-        // The open/closed state only affects movement IN/OUT from outside.
-
-        // Check capacity
-        if (containerTrait && (containerTrait as any).capacity) {
-          const contents = context.world.getContents(dropLocation.id);
-          const maxItems = (containerTrait as any).capacity.maxItems;
-          if (maxItems !== undefined && contents.length >= maxItems) {
-            return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'container_full',
-        reason: 'container_full',
-        params: { container: dropLocation.name }
-      })];
-          }
-        }
-
         droppedData.toContainer = true;
         messageId = 'dropped_in';
         params.container = dropLocation.name;

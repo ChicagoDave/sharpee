@@ -8,11 +8,36 @@ import { IdentityTrait } from '../identity/identityTrait';
 import { IdentityBehavior } from '../identity/identityBehavior';
 import { OpenableTrait } from '../openable/openableTrait';
 import { OpenableBehavior } from '../openable/openableBehavior';
+import { WearableBehavior } from '../wearable/wearableBehavior';
+
+/**
+ * Result of an add item operation
+ */
+export interface AddItemResult {
+  success: boolean;
+  alreadyContains?: boolean;
+  containerFull?: boolean;
+  wrongType?: boolean;
+  containerClosed?: boolean;
+  itemTooLarge?: boolean;
+  itemTooHeavy?: boolean;
+  stateChanged?: boolean;
+}
+
+/**
+ * Result of a remove item operation
+ */
+export interface RemoveItemResult {
+  success: boolean;
+  notContained?: boolean;
+  containerClosed?: boolean;
+  stateChanged?: boolean;
+}
 
 // Interface for world query operations needed by container behavior
 export interface IWorldQuery {
   getContents(containerId: string): IFEntity[];
-  getLocation(entityId: string): string | null;
+  getLocation(entityId: string): string | undefined;
 }
 
 /**
@@ -72,11 +97,17 @@ export class ContainerBehavior extends Behavior {
    */
   static checkCapacity(container: IFEntity, item: IFEntity, world: IWorldQuery): boolean {
     const trait = ContainerBehavior.require<ContainerTrait>(container, TraitType.CONTAINER);
-    const capacity = trait.capacity!;
+    const capacity = trait.capacity;
     
-    // Check item count limit
+    // If no capacity defined, allow any items
+    if (!capacity) {
+      return true;
+    }
+    
+    // Check item count limit (excluding worn items for actors)
     if (capacity.maxItems !== undefined) {
-      const currentCount = world.getContents(container.id).length;
+      const contents = world.getContents(container.id);
+      const currentCount = contents.filter(item => !WearableBehavior.isWorn(item)).length;
       if (currentCount >= capacity.maxItems) {
         return false;
       }
@@ -180,5 +211,115 @@ export class ContainerBehavior extends Behavior {
   static getExcludedTypes(container: IFEntity): string[] | undefined {
     const trait = ContainerBehavior.require<ContainerTrait>(container, TraitType.CONTAINER);
     return trait.excludedTypes;
+  }
+  
+  /**
+   * Add an item to a container
+   * @param container The container to add to
+   * @param item The item to add
+   * @param world World query interface for getting current state
+   * @returns Result describing what happened
+   */
+  static addItem(container: IFEntity, item: IFEntity, world: IWorldQuery): AddItemResult {
+    const trait = ContainerBehavior.require<ContainerTrait>(container, TraitType.CONTAINER);
+    
+    // Check if container is accessible (must be open if openable)
+    if (container.has(TraitType.OPENABLE)) {
+      const openable = container.get<OpenableTrait>(TraitType.OPENABLE);
+      if (openable && !openable.isOpen) {
+        return {
+          success: false,
+          containerClosed: true,
+          stateChanged: false
+        };
+      }
+    }
+    
+    // Check if item is already in this container
+    const currentLocation = world.getLocation(item.id);
+    if (currentLocation === container.id) {
+      return {
+        success: false,
+        alreadyContains: true,
+        stateChanged: false
+      };
+    }
+    
+    // Check type restrictions
+    if (trait.allowedTypes && trait.allowedTypes.length > 0) {
+      const itemType = item.type || 'object';
+      if (!trait.allowedTypes.includes(itemType)) {
+        return {
+          success: false,
+          wrongType: true,
+          stateChanged: false
+        };
+      }
+    }
+    
+    if (trait.excludedTypes && trait.excludedTypes.length > 0) {
+      const itemType = item.type || 'object';
+      if (trait.excludedTypes.includes(itemType)) {
+        return {
+          success: false,
+          wrongType: true,
+          stateChanged: false
+        };
+      }
+    }
+    
+    // Check capacity constraints
+    if (!ContainerBehavior.checkCapacity(container, item, world)) {
+      return {
+        success: false,
+        containerFull: true,
+        stateChanged: false
+      };
+    }
+    
+    // All checks passed - this would be where state mutation happens
+    // In our event-driven system, the actual mutation happens via events
+    // The behavior just validates and returns success
+    return {
+      success: true,
+      stateChanged: true
+    };
+  }
+  
+  /**
+   * Remove an item from a container
+   * @param container The container to remove from
+   * @param item The item to remove
+   * @param world World query interface for getting current state
+   * @returns Result describing what happened
+   */
+  static removeItem(container: IFEntity, item: IFEntity, world: IWorldQuery): RemoveItemResult {
+    // Check if container is accessible (must be open if openable)
+    if (container.has(TraitType.OPENABLE)) {
+      const openable = container.get<OpenableTrait>(TraitType.OPENABLE);
+      if (openable && !openable.isOpen) {
+        return {
+          success: false,
+          containerClosed: true,
+          stateChanged: false
+        };
+      }
+    }
+    
+    // Check if item is actually in this container
+    const currentLocation = world.getLocation(item.id);
+    if (currentLocation !== container.id) {
+      return {
+        success: false,
+        notContained: true,
+        stateChanged: false
+      };
+    }
+    
+    // All checks passed - removal is valid
+    return {
+      success: true,
+      stateChanged: true
+    };
   }
 }

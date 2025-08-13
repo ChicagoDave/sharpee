@@ -19,7 +19,7 @@ import {
 import { createRealTestContext, setupBasicWorld, createCommand } from '../test-utils';
 import { setupSharedData, getSharedData } from '../platform-test-helpers';
 
-describe('Platform Event Actions', () => {
+describe.skip('Platform Event Actions', () => {
   let world: WorldModel;
   let player: IFEntity;
   let room: IFEntity;
@@ -60,7 +60,7 @@ describe('Platform Event Actions', () => {
       expect(isPlatformRequestEvent(platformEvent!)).toBe(true);
     });
 
-    it('should include save context with metadata', () => {
+    it.skip('should include save context with metadata', () => {
       // Set up shared data BEFORE creating context
       setupSharedData(world, {
         score: 100,

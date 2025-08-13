@@ -4,9 +4,30 @@ import { Behavior } from '../../behaviors/behavior';
 import { IFEntity } from '../../entities/if-entity';
 import { TraitType } from '../trait-types';
 import { OpenableTrait } from './openableTrait';
-import { SemanticEvent, createEvent } from '@sharpee/core';
-import { IFEvents } from '../../constants/if-events';
-// No longer using ActionFailureReason enum
+
+/**
+ * Result of an open operation
+ */
+export interface OpenResult {
+  success: boolean;
+  alreadyOpen?: boolean;
+  stateChanged?: boolean;
+  openMessage?: string;
+  openSound?: string;
+  revealsContents?: boolean;
+}
+
+/**
+ * Result of a close operation
+ */
+export interface CloseResult {
+  success: boolean;
+  alreadyClosed?: boolean;
+  cantClose?: boolean;
+  stateChanged?: boolean;
+  closeMessage?: string;
+  closeSound?: string;
+}
 
 /**
  * Behavior for openable entities.
@@ -34,92 +55,76 @@ export class OpenableBehavior extends Behavior {
   
   /**
    * Open the entity
-   * @returns Events describing what happened
+   * @returns Result describing what happened
    */
-  static open(entity: IFEntity, actor: IFEntity): SemanticEvent[] {
+  static open(entity: IFEntity): OpenResult {
     const openable = OpenableBehavior.require<OpenableTrait>(entity, TraitType.OPENABLE);
     
     if (openable.isOpen) {
-      return [createEvent(
-        IFEvents.ACTION_FAILED,
-        {
-          action: 'open',
-          reason: 'already_open',
-          customMessage: openable.alreadyOpenMessage
-        },
-        { target: entity.id, actor: actor.id }
-      )];
+      return {
+        success: false,
+        alreadyOpen: true,
+        stateChanged: false
+      };
     }
     
     // Open it
     openable.isOpen = true;
     
-    return [createEvent(
-      IFEvents.OPENED,
-      {
-        customMessage: openable.openMessage,
-        sound: openable.openSound,
-        revealsContents: openable.revealsContents
-      },
-      { target: entity.id, actor: actor.id }
-    )];
+    return {
+      success: true,
+      stateChanged: true,
+      openMessage: openable.openMessage,
+      openSound: openable.openSound,
+      revealsContents: openable.revealsContents
+    };
   }
   
   /**
    * Close the entity
-   * @returns Events describing what happened
+   * @returns Result describing what happened
    */
-  static close(entity: IFEntity, actor: IFEntity): SemanticEvent[] {
+  static close(entity: IFEntity): CloseResult {
     const openable = OpenableBehavior.require<OpenableTrait>(entity, TraitType.OPENABLE);
     
     if (!openable.isOpen) {
-      return [createEvent(
-        IFEvents.ACTION_FAILED,
-        {
-          action: 'close',
-          reason: 'already_closed',
-          customMessage: openable.alreadyClosedMessage
-        },
-        { target: entity.id, actor: actor.id }
-      )];
+      return {
+        success: false,
+        alreadyClosed: true,
+        stateChanged: false
+      };
     }
     
     if (!openable.canClose) {
-      return [createEvent(
-        IFEvents.ACTION_FAILED,
-        {
-          action: 'close',
-          reason: 'cant_do_that',
-          customMessage: "Once opened, it can't be closed."
-        },
-        { target: entity.id, actor: actor.id }
-      )];
+      return {
+        success: false,
+        cantClose: true,
+        stateChanged: false
+      };
     }
     
     // Close it
     openable.isOpen = false;
     
-    return [createEvent(
-      IFEvents.CLOSED,
-      {
-        customMessage: openable.closeMessage,
-        sound: openable.closeSound
-      },
-      { target: entity.id, actor: actor.id }
-    )];
+    return {
+      success: true,
+      stateChanged: true,
+      closeMessage: openable.closeMessage,
+      closeSound: openable.closeSound
+    };
   }
   
   /**
    * Toggle open/closed state
-   * @returns Events from either open or close
+   * @returns Result from either open or close
    */
-  static toggle(entity: IFEntity, actor: IFEntity): SemanticEvent[] {
+  static toggle(entity: IFEntity): OpenResult | CloseResult {
     const openable = OpenableBehavior.require<OpenableTrait>(entity, TraitType.OPENABLE);
     
     if (openable.isOpen) {
-      return OpenableBehavior.close(entity, actor);
+      return OpenableBehavior.close(entity);
     } else {
-      return OpenableBehavior.open(entity, actor);
+      return OpenableBehavior.open(entity);
     }
   }
   

@@ -3,12 +3,12 @@
 # Enhanced build and test script with action-specific testing support
 set -e
 
-# Color codes
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# No color codes for clean log output
+RED=''
+GREEN=''
+YELLOW=''
+BLUE=''
+NC=''
 
 # Default values
 SKIP_UNTIL=""
@@ -16,6 +16,12 @@ ACTION=""
 VERBOSE=false
 FORCE_BUILD=false
 FAILURES_ONLY=false
+TYPECHECK=true
+LINT=true
+CLEAN_BUILD=false
+STORY_TEST=true
+QUICK_MODE=false
+MUTE_OK_TESTS=false
 
 # Create logs directory if it doesn't exist
 mkdir -p /mnt/c/repotemp/sharpee/logs
@@ -46,14 +52,48 @@ while [[ $# -gt 0 ]]; do
       FAILURES_ONLY=true
       shift
       ;;
+    --no-typecheck)
+      TYPECHECK=false
+      shift
+      ;;
+    --no-lint)
+      LINT=false
+      shift
+      ;;
+    --clean)
+      CLEAN_BUILD=true
+      shift
+      ;;
+    --no-story)
+      STORY_TEST=false
+      shift
+      ;;
+    --mute-ok-tests)
+      MUTE_OK_TESTS=true
+      shift
+      ;;
+    --quick)
+      QUICK_MODE=true
+      TYPECHECK=false
+      LINT=false
+      STORY_TEST=false
+      shift
+      ;;
     *)
       echo "Unknown option: $1"
-      echo "Usage: $0 [--skip-until package] [--action action-name] [--verbose] [--build] [--failures-only]"
-      echo "  --skip-until: Skip packages until the specified one"
-      echo "  --action: Test only the specified action (requires --skip-until stdlib)"
-      echo "  --verbose: Show detailed output"
-      echo "  --build: Force build of the package even when using --skip-until"
-      echo "  --failures-only: Run only previously failing tests (uses vitest's --changed)"
+      echo "Usage: $0 [options]"
+      echo "Options:"
+      echo "  --skip-until <pkg>  Skip packages until the specified one"
+      echo "  --action <name>     Test only the specified action (requires --skip-until stdlib)"
+      echo "  --verbose           Show detailed output"
+      echo "  --build             Force build of the package even when using --skip-until"
+      echo "  --failures-only     Run only previously failing tests"
+      echo "  --no-typecheck      Skip TypeScript type checking"
+      echo "  --no-lint           Skip linting checks"
+      echo "  --clean             Clean build (remove dist/node_modules first)"
+      echo "  --no-story          Skip story integration tests"
+      echo "  --mute-ok-tests     Only show failing tests in output"
+      echo "  --quick             Quick mode (skip typecheck, lint, and story tests)"
       exit 1
       ;;
   esac
@@ -62,15 +102,49 @@ done
 # Navigate to project root
 cd /mnt/c/repotemp/sharpee
 
-echo -e "${BLUE}=== Sharpee Build & Test Script ===${NC}"
-echo -e "${BLUE}Configuration:${NC}"
-echo -e "  Test Runner: Vitest"
-echo -e "  Skip until: ${SKIP_UNTIL:-none}"
-echo -e "  Action: ${ACTION:-all}"
-echo -e "  Verbose: $VERBOSE"
-echo -e "  Force build: $FORCE_BUILD"
-echo -e "  Failures only: $FAILURES_ONLY"
+echo "=== Sharpee Build & Test Script ==="
+echo "Configuration:"
+echo "  Test Runner: Vitest"
+echo "  Skip until: ${SKIP_UNTIL:-none}"
+echo "  Action: ${ACTION:-all}"
+echo "  Verbose: $VERBOSE"
+echo "  Force build: $FORCE_BUILD"
+echo "  Failures only: $FAILURES_ONLY"
+echo "  TypeCheck: $TYPECHECK"
+echo "  Lint: $LINT"
+echo "  Clean build: $CLEAN_BUILD"
+echo "  Story tests: $STORY_TEST"
+echo "  Quick mode: $QUICK_MODE"
+echo "  Mute OK tests: $MUTE_OK_TESTS"
 echo ""
+
+# Function to strip ANSI color codes from input
+strip_ansi() {
+  sed 's/\x1b\[[0-9;]*m//g'
+}
+
+# Function to extract failed test blocks from TAP output
+extract_failed_tests() {
+  local input_file=$1
+  local output_file=$2
+  
+  # Use awk to extract blocks starting with "not ok" and ending with "}"
+  awk '
+    /^not ok/ { 
+      capture = 1
+      block = $0 "\n"
+    }
+    capture && !/^not ok/ {
+      block = block $0 "\n"
+      if (/^}/) {
+        print block
+        print "----------------------------------------"
+        capture = 0
+        block = ""
+      }
+    }
+  ' "$input_file" > "$output_file"
+}
 
 # Function to run tests for a package
 run_package_tests() {
@@ -81,7 +155,7 @@ run_package_tests() {
   # Handle platform packages that are nested
   local package_path="packages/$package"
   if [ ! -d "$package_path" ]; then
-    echo -e "${YELLOW}⚠ Package directory not found: $package_path, skipping tests...${NC}"
+    echo "⚠ Package directory not found: $package_path, skipping tests..."
     return 0
   fi
   
@@ -89,14 +163,14 @@ run_package_tests() {
   
   # Check if package has test scripts by looking in package.json
   if ! grep -q '"test:ci"' package.json; then
-    echo -e "${YELLOW}⚠ No tests configured for $package, skipping...${NC}"
+    echo "⚠ No tests configured for $package, skipping..."
     cd - > /dev/null
     return 0
   fi
   
   # Build test command based on options
   if [[ "$package" == "stdlib" && -n "$ACTION" ]]; then
-    echo -e "${YELLOW}Testing specific action: $ACTION${NC}"
+    echo "Testing specific action: $ACTION"
     test_cmd="pnpm test:ci ${ACTION}-golden.test.ts"
     log_file="/mnt/c/repotemp/sharpee/logs/${ACTION}-action-tests-${TIMESTAMP}.log"
   else
@@ -110,17 +184,24 @@ run_package_tests() {
     # First check if we have a previous test results file
     local results_file=".vitest-results.json"
     if [ -f "$results_file" ]; then
-      echo -e "${YELLOW}Running only previously failing tests${NC}"
+      echo "Running only previously failing tests"
       test_cmd="$test_cmd --changed $results_file"
     else
-      echo -e "${YELLOW}No previous test results found, running all tests${NC}"
+      echo "No previous test results found, running all tests"
     fi
   fi
   
   # Always save test results for future --failures-only runs
-  test_cmd="$test_cmd --reporter=default --reporter=json --outputFile=.vitest-results.json"
+  # Choose reporter based on mute-ok-tests flag
+  if [ "$MUTE_OK_TESTS" = "true" ]; then
+    # Save full output with TAP but filter to show only failures
+    test_cmd="$test_cmd --reporter=tap --no-color --reporter=json --outputFile=.vitest-results.json"
+  else
+    # Use tap reporter for clean output without color codes
+    test_cmd="$test_cmd --reporter=tap --no-color --reporter=json --outputFile=.vitest-results.json"
+  fi
   
-  echo -e "${BLUE}Running tests for $package...${NC}"
+  echo "Running tests for $package..."
   
   # Always save to log file
   echo "Running: $test_cmd" > "$log_file"
@@ -128,24 +209,134 @@ run_package_tests() {
   echo "Package: $package" >> "$log_file"
   echo "----------------------------------------" >> "$log_file"
   
+  # Create failed tests log file name
+  local failed_log_file="${log_file%.log}-failed.log"
+  
   if $VERBOSE; then
-    # Show output and save to log
-    $test_cmd 2>&1 | tee -a "$log_file"
-    local exit_code=${PIPESTATUS[0]}
+    # Show output and save to log (strip ANSI codes from both)
+    if [ "$MUTE_OK_TESTS" = "true" ]; then
+      # Save full output to log, but only show failures to console
+      $test_cmd | strip_ansi | tee -a "$log_file" | grep -E "^not ok|^    not ok|^        ×|^        →|# Failure|# Error|AssertionError|Error:"
+      local exit_code=${PIPESTATUS[0]}
+    else
+      $test_cmd | strip_ansi | tee -a "$log_file"
+      local exit_code=${PIPESTATUS[0]}
+    fi
   else
-    # Just save to log
-    $test_cmd >> "$log_file" 2>&1
-    local exit_code=$?
+    # Just save to log (strip ANSI codes)
+    $test_cmd | strip_ansi >> "$log_file"
+    local exit_code=${PIPESTATUS[0]}
   fi
   
   if [ $exit_code -eq 0 ]; then
-    echo -e "${GREEN}✓ Tests passed${NC}"
-    echo -e "  Log saved to: $log_file"
+    echo "✓ Tests passed"
+    echo "  Log saved to: $log_file"
   else
-    echo -e "${RED}✗ Tests failed${NC}"
-    echo -e "${RED}Last 50 lines of output:${NC}"
-    tail -n 50 "$log_file"
-    echo -e "  Full log saved to: $log_file"
+    echo "✗ Tests failed"
+    
+    # Extract failed tests to separate log
+    extract_failed_tests "$log_file" "$failed_log_file"
+    
+    if [ "$MUTE_OK_TESTS" = "true" ]; then
+      # Show summary of failed tests
+      echo "Failed tests:"
+      grep "^not ok" "$log_file" | sed 's/^not ok [0-9]* - /  ✗ /'
+      echo ""
+      echo "  Failed tests log: $failed_log_file"
+      echo "  Full log saved to: $log_file"
+    else
+      echo "Last 50 lines of output:"
+      tail -n 50 "$log_file"
+      echo "  Failed tests log: $failed_log_file"
+      echo "  Full log saved to: $log_file"
+    fi
+    cd - > /dev/null
+    return 1
+  fi
+  
+  cd - > /dev/null
+}
+
+# Function to clean a package
+clean_package() {
+  local package=$1
+  local package_path="packages/$package"
+  
+  if [ -d "$package_path" ]; then
+    echo "Cleaning $package..."
+    rm -rf "$package_path/dist" "$package_path/node_modules" || true
+  fi
+}
+
+# Function to typecheck a package
+typecheck_package() {
+  local package=$1
+  local package_path="packages/$package"
+  
+  if [ ! -d "$package_path" ]; then
+    return 0
+  fi
+  
+  cd "$package_path"
+  
+  # Check if package has typecheck script
+  if ! grep -q '"typecheck"' package.json; then
+    cd - > /dev/null
+    return 0
+  fi
+  
+  echo "Type checking $package..."
+  
+  if $VERBOSE; then
+    pnpm typecheck
+  else
+    pnpm typecheck > /dev/null
+  fi
+  
+  local exit_code=$?
+  
+  if [ $exit_code -eq 0 ]; then
+    echo "✓ Type check passed"
+  else
+    echo "✗ Type check failed"
+    cd - > /dev/null
+    return 1
+  fi
+  
+  cd - > /dev/null
+}
+
+# Function to lint a package
+lint_package() {
+  local package=$1
+  local package_path="packages/$package"
+  
+  if [ ! -d "$package_path" ]; then
+    return 0
+  fi
+  
+  cd "$package_path"
+  
+  # Check if package has lint script
+  if ! grep -q '"lint"' package.json; then
+    cd - > /dev/null
+    return 0
+  fi
+  
+  echo "Linting $package..."
+  
+  if $VERBOSE; then
+    pnpm lint
+  else
+    pnpm lint > /dev/null
+  fi
+  
+  local exit_code=$?
+  
+  if [ $exit_code -eq 0 ]; then
+    echo "✓ Lint check passed"
+  else
+    echo "✗ Lint check failed"
     cd - > /dev/null
     return 1
   fi
@@ -160,7 +351,7 @@ build_package() {
   local log_package=$(echo "$package" | tr '/' '-')
   local log_file="/mnt/c/repotemp/sharpee/logs/${log_package}-build-${TIMESTAMP}.log"
   
-  echo -e "${BLUE}Building $package...${NC}"
+  echo "Building $package..."
   
   # Initialize log file
   echo "Package: $package" > "$log_file"
@@ -170,7 +361,7 @@ build_package() {
   # Handle platform packages that are nested
   local package_path="packages/$package"
   if [ ! -d "$package_path" ]; then
-    echo -e "${RED}✗ Package directory not found: $package_path${NC}"
+    echo "✗ Package directory not found: $package_path"
     return 1
   fi
   
@@ -178,11 +369,12 @@ build_package() {
   
   # Check if node_modules exists, if not run pnpm install
   if [ ! -d "node_modules" ]; then
-    echo -e "${YELLOW}Installing dependencies for $package...${NC}"
+    echo "Installing dependencies for $package..."
     echo "Installing dependencies: pnpm install" >> "$log_file"
-    pnpm install >> "$log_file" 2>&1
-    if [ $? -ne 0 ]; then
-      echo -e "${RED}✗ Dependency installation failed${NC}"
+    pnpm install | strip_ansi >> "$log_file"
+    local install_exit=${PIPESTATUS[0]}
+    if [ $install_exit -ne 0 ]; then
+      echo "✗ Dependency installation failed"
       cat "$log_file"
       cd - > /dev/null
       return 1
@@ -194,21 +386,33 @@ build_package() {
   echo "Building: pnpm build" >> "$log_file"
   
   if $VERBOSE; then
-    # Show output and save to log
-    pnpm build 2>&1 | tee -a "$log_file"
+    # Show output and save to log (strip ANSI codes)
+    pnpm build | strip_ansi | tee -a "$log_file"
     local exit_code=${PIPESTATUS[0]}
   else
-    # Just save to log
-    pnpm build >> "$log_file" 2>&1
-    local exit_code=$?
+    # Just save to log (strip ANSI codes)
+    pnpm build | strip_ansi >> "$log_file"
+    local exit_code=${PIPESTATUS[0]}
   fi
   
   if [ $exit_code -eq 0 ]; then
-    echo -e "${GREEN}✓ Build successful${NC}"
+    echo "✓ Build successful"
+    echo "  Log saved to: $log_file"
   else
-    echo -e "${RED}✗ Build failed${NC}"
-    cat "$log_file"
-    echo -e "  Full log saved to: $log_file"
+    echo "✗ Build failed"
+    
+    # Count TypeScript errors if any
+    local error_count=$(grep -c "error TS" "$log_file" || echo "0")
+    if [ "$error_count" -gt 0 ]; then
+      echo "  TypeScript errors: $error_count"
+      echo "  First 10 errors:"
+      grep "error TS" "$log_file" | head -10
+    else
+      # Show last 20 lines if no TypeScript errors found
+      echo "Last 20 lines of output:"
+      tail -n 20 "$log_file"
+    fi
+    echo "  Full log saved to: $log_file"
     cd - > /dev/null
     return 1
   fi
@@ -237,7 +441,7 @@ if [ -n "$SKIP_UNTIL" ]; then
   for i in "${!PACKAGES[@]}"; do
     if [ "${PACKAGES[$i]}" == "$SKIP_UNTIL" ]; then
       START_INDEX=$i
-      echo -e "${YELLOW}Skipping to package: $SKIP_UNTIL${NC}"
+      echo "Skipping to package: $SKIP_UNTIL"
       break
     fi
   done
@@ -245,8 +449,18 @@ fi
 
 # Validate action parameter
 if [ -n "$ACTION" ] && [ "$SKIP_UNTIL" != "stdlib" ]; then
-  echo -e "${RED}Error: --action requires --skip-until stdlib${NC}"
+  echo "Error: --action requires --skip-until stdlib"
   exit 1
+fi
+
+# Clean all packages if requested
+if [ "$CLEAN_BUILD" = "true" ]; then
+  echo "=== Cleaning all packages ==="
+  for package in "${PACKAGES[@]}"; do
+    clean_package "$package"
+  done
+  echo "✓ Clean complete"
+  echo ""
 fi
 
 # Process packages
@@ -254,38 +468,94 @@ for ((i=$START_INDEX; i<${#PACKAGES[@]}; i++)); do
   package="${PACKAGES[$i]}"
   
   echo ""
-  echo -e "${BLUE}=== Processing $package ===${NC}"
+  echo "=== Processing $package ==="
   
   # Determine if we should build this package
   should_build=true
   
   # Skip building if we're testing a specific action in stdlib AND --build wasn't specified
   if [[ "$package" == "stdlib" && -n "$ACTION" && "$FORCE_BUILD" != "true" ]]; then
-    echo -e "${YELLOW}Skipping build for action-specific test (use --build to force)${NC}"
+    echo "Skipping build for action-specific test (use --build to force)"
     should_build=false
   fi
   
   # Build the package if needed
   if [ "$should_build" = "true" ]; then
     if ! build_package "$package"; then
-      echo -e "${RED}Build failed for $package${NC}"
+      echo "Build failed for $package"
+      exit 1
+    fi
+  fi
+  
+  # Type check if enabled
+  if [ "$TYPECHECK" = "true" ]; then
+    if ! typecheck_package "$package"; then
+      echo "Type check failed for $package"
+      exit 1
+    fi
+  fi
+  
+  # Lint if enabled
+  if [ "$LINT" = "true" ]; then
+    if ! lint_package "$package"; then
+      echo "Lint check failed for $package"
       exit 1
     fi
   fi
   
   # Run tests
   if ! run_package_tests "$package"; then
-    echo -e "${RED}Tests failed for $package${NC}"
+    echo "Tests failed for $package"
     exit 1
   fi
   
   # If we're testing a specific action, stop after stdlib
   if [[ "$package" == "stdlib" && -n "$ACTION" ]]; then
     echo ""
-    echo -e "${GREEN}Action test completed for: $ACTION${NC}"
+    echo "Action test completed for: $ACTION"
     exit 0
   fi
 done
 
+# Run story integration tests if enabled
+if [ "$STORY_TEST" = "true" ]; then
+  echo ""
+  echo "=== Running Story Integration Tests ==="
+  
+  # Test Cloak of Darkness story
+  echo "Testing Cloak of Darkness..."
+  cd packages/stories/cloak-of-darkness
+  
+  if $VERBOSE; then
+    pnpm test
+  else
+    pnpm test > /dev/null
+  fi
+  
+  if [ $? -eq 0 ]; then
+    echo "✓ Cloak of Darkness tests passed"
+  else
+    echo "✗ Cloak of Darkness tests failed"
+    exit 1
+  fi
+  
+  cd - > /dev/null
+fi
+
+# Summary report
 echo ""
-echo -e "${GREEN}=== All builds and tests completed successfully! ===${NC}"
+echo "=== Build & Test Summary ==="
+echo "✓ All packages built successfully"
+if [ "$TYPECHECK" = "true" ]; then
+  echo "✓ All type checks passed"
+fi
+if [ "$LINT" = "true" ]; then
+  echo "✓ All lint checks passed"
+fi
+echo "✓ All unit tests passed"
+if [ "$STORY_TEST" = "true" ]; then
+  echo "✓ Story integration tests passed"
+fi
+
+echo ""
+echo "=== All builds and tests completed successfully! ==="

@@ -21,6 +21,20 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
+// Helper to execute action with validation (mimics CommandExecutor flow)
+const executeWithValidation = (action: any, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    return [context.event('action.error', {
+      actionId: context.action.id,
+      messageId: validation.error,
+      reason: validation.error,
+      params: validation.params || {}
+    })];
+  }
+  return action.execute(context);
+};
+
 describe('enteringAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
@@ -49,7 +63,7 @@ describe('enteringAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.ENTERING);
       const context = createRealTestContext(enteringAction, world, command);
       
-      const events = enteringAction.execute(context);
+      const events = executeWithValidation(enteringAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_target'),
@@ -66,7 +80,7 @@ describe('enteringAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(enteringAction, world, command);
       
-      const events = enteringAction.execute(context);
+      const events = executeWithValidation(enteringAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_enterable'),
@@ -93,7 +107,7 @@ describe('enteringAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(enteringAction, world, command);
       
-      const events = enteringAction.execute(context);
+      const events = executeWithValidation(enteringAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('already_inside'),
@@ -117,7 +131,7 @@ describe('enteringAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(enteringAction, world, command);
       
-      const events = enteringAction.execute(context);
+      const events = executeWithValidation(enteringAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('cant_enter'),
@@ -147,7 +161,7 @@ describe('enteringAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(enteringAction, world, command);
       
-      const events = enteringAction.execute(context);
+      const events = executeWithValidation(enteringAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('container_closed'),
@@ -172,7 +186,7 @@ describe('enteringAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(enteringAction, world, command);
       
-      const events = enteringAction.execute(context);
+      const events = executeWithValidation(enteringAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('too_full'),
@@ -203,7 +217,7 @@ describe('enteringAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(enteringAction, world, command);
       
-      const events = enteringAction.execute(context);
+      const events = executeWithValidation(enteringAction, context);
       
       // Should emit ENTERED event
       expectEvent(events, 'if.event.entered', {
@@ -244,7 +258,7 @@ describe('enteringAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(enteringAction, world, command);
       
-      const events = enteringAction.execute(context);
+      const events = executeWithValidation(enteringAction, context);
       
       expectEvent(events, 'if.event.entered', {
         targetId: box.id,
@@ -276,7 +290,7 @@ describe('enteringAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(enteringAction, world, command);
       
-      const events = enteringAction.execute(context);
+      const events = executeWithValidation(enteringAction, context);
       
       expectEvent(events, 'if.event.entered', {
         targetId: bed.id,
@@ -313,7 +327,7 @@ describe('enteringAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(enteringAction, world, command);
       
-      const events = enteringAction.execute(context);
+      const events = executeWithValidation(enteringAction, context);
       
       // Should succeed - no max occupancy set
       expectEvent(events, 'if.event.entered', {
@@ -337,7 +351,7 @@ describe('enteringAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(enteringAction, world, command);
       
-      const events = enteringAction.execute(context);
+      const events = executeWithValidation(enteringAction, context);
       
       expectEvent(events, 'if.event.entered', {
         targetId: desk.id,
@@ -362,7 +376,7 @@ describe('enteringAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(enteringAction, world, command);
       
-      const events = enteringAction.execute(context);
+      const events = executeWithValidation(enteringAction, context);
       
       events.forEach(event => {
         if (event.entities) {

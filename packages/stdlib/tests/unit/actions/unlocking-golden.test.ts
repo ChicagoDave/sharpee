@@ -22,6 +22,20 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
+// Helper to execute action with validation (mimics CommandExecutor flow)
+const executeWithValidation = (action: any, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    return [context.event('action.error', {
+      actionId: action.id,
+      messageId: validation.error || 'validation_failed',
+      reason: validation.error || 'validation_failed',
+      params: validation.params || {}
+    })];
+  }
+  return action.execute(context);
+};
+
 describe('unlockingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
@@ -52,7 +66,7 @@ describe('unlockingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.UNLOCKING);
       const context = createRealTestContext(unlockingAction, world, command);
       
-      const events = unlockingAction.execute(context);
+      const events = executeWithValidation(unlockingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_target'),
@@ -74,7 +88,7 @@ describe('unlockingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = unlockingAction.execute(context);
+      const events = executeWithValidation(unlockingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_lockable'),
@@ -96,7 +110,7 @@ describe('unlockingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = unlockingAction.execute(context);
+      const events = executeWithValidation(unlockingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('already_unlocked'),
@@ -123,7 +137,7 @@ describe('unlockingAction (Golden Pattern)', () => {
         // No indirect object (key)
       );
       
-      const events = unlockingAction.execute(context);
+      const events = executeWithValidation(unlockingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_key'),
@@ -152,7 +166,7 @@ describe('unlockingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = unlockingAction.execute(context);
+      const events = executeWithValidation(unlockingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('key_not_held'),
@@ -181,7 +195,7 @@ describe('unlockingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = unlockingAction.execute(context);
+      const events = executeWithValidation(unlockingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('wrong_key'),
@@ -210,7 +224,7 @@ describe('unlockingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = unlockingAction.execute(context);
+      const events = executeWithValidation(unlockingAction, context);
       
       expectEvent(events, 'if.event.unlocked', {
         targetId: latch.id
@@ -254,7 +268,7 @@ describe('unlockingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = unlockingAction.execute(context);
+      const events = executeWithValidation(unlockingAction, context);
       
       expectEvent(events, 'if.event.unlocked', {
         targetId: chest.id,
@@ -308,7 +322,7 @@ describe('unlockingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = unlockingAction.execute(context);
+      const events = executeWithValidation(unlockingAction, context);
       
       expectEvent(events, 'if.event.unlocked', {
         targetId: door.id,
@@ -356,7 +370,7 @@ describe('unlockingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = unlockingAction.execute(context);
+      const events = executeWithValidation(unlockingAction, context);
       
       expectEvent(events, 'if.event.unlocked', {
         targetId: gate.id,
@@ -395,7 +409,7 @@ describe('unlockingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = unlockingAction.execute(context);
+      const events = executeWithValidation(unlockingAction, context);
       
       expectEvent(events, 'if.event.unlocked', {
         targetId: vault.id,
@@ -432,7 +446,7 @@ describe('unlockingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = unlockingAction.execute(context);
+      const events = executeWithValidation(unlockingAction, context);
       
       expectEvent(events, 'action.success', {
         params: { 
@@ -464,7 +478,7 @@ describe('unlockingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = unlockingAction.execute(context);
+      const events = executeWithValidation(unlockingAction, context);
       
       expectEvent(events, 'if.event.unlocked', {
         targetId: cabinet.id,
@@ -498,7 +512,7 @@ describe('unlockingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = unlockingAction.execute(context);
+      const events = executeWithValidation(unlockingAction, context);
       
       const unlockedEvent = events.find(e => e.type === 'if.event.unlocked');
       expect(unlockedEvent?.data.willAutoOpen).toBeUndefined();
@@ -521,7 +535,7 @@ describe('unlockingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = unlockingAction.execute(context);
+      const events = executeWithValidation(unlockingAction, context);
       
       events.forEach(event => {
         if (event.entities) {

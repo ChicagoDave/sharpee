@@ -15,6 +15,7 @@
 
 import { ActionContext } from '../enhanced-types';
 import { MetaAction } from '../meta-action';
+import { ValidationResult } from '../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 
 export class TraceAction extends MetaAction {
@@ -26,16 +27,16 @@ export class TraceAction extends MetaAction {
     this.ensureRegistered();
   }
   
-  validate(context: ActionContext): boolean {
+  validate(context: ActionContext): ValidationResult {
     const { command } = context;
     const tokens = command.parsed?.tokens || [];
     
     // Must have at least "trace"
-    if (tokens.length === 0) return false;
+    if (tokens.length === 0) return { valid: false, error: 'no_tokens' };
     
     // Check first token is "trace"
     const verb = tokens[0]?.normalized?.toLowerCase();
-    if (verb !== 'trace') return false;
+    if (verb !== 'trace') return { valid: false, error: 'not_trace' };
     
     // Valid patterns:
     // "trace" - length 1
@@ -43,12 +44,12 @@ export class TraceAction extends MetaAction {
     // "trace [target] on/off" - length 3
     
     if (tokens.length === 1) {
-      return true; // Just "trace"
+      return { valid: true }; // Just "trace"
     }
     
     if (tokens.length === 2) {
       const second = tokens[1]?.normalized?.toLowerCase();
-      return second === 'on' || second === 'off';
+      return (second === 'on' || second === 'off') ? { valid: true } : { valid: false, error: 'invalid_state' };
     }
     
     if (tokens.length === 3) {
@@ -58,10 +59,11 @@ export class TraceAction extends MetaAction {
       const validTargets = ['parser', 'validation', 'system', 'all'];
       const validStates = ['on', 'off'];
       
-      return validTargets.includes(target) && validStates.includes(state);
+      return (validTargets.includes(target) && validStates.includes(state)) ? 
+             { valid: true } : { valid: false, error: 'invalid_target_or_state' };
     }
     
-    return false;
+    return { valid: false, error: 'invalid_pattern' };
   }
   
   execute(context: ActionContext): SemanticEvent[] {

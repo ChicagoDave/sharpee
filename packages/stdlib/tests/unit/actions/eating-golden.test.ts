@@ -22,6 +22,20 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
+// Helper to execute action with validation (mimics CommandExecutor flow)
+const executeWithValidation = (action: any, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    return [context.event('action.error', {
+      actionId: action.id,
+      messageId: validation.error || 'validation_failed',
+      reason: validation.error || 'validation_failed',
+      params: validation.params || {}
+    })];
+  }
+  return action.execute(context);
+};
+
 describe('eatingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
@@ -56,7 +70,7 @@ describe('eatingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.EATING);
       const context = createRealTestContext(eatingAction, world, command);
       
-      const events = eatingAction.execute(context);
+      const events = executeWithValidation(eatingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_item'),
@@ -74,7 +88,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(eatingAction, world, command);
       
-      const events = eatingAction.execute(context);
+      const events = executeWithValidation(eatingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_edible'),
@@ -96,7 +110,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(eatingAction, world, command);
       
-      const events = eatingAction.execute(context);
+      const events = executeWithValidation(eatingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('is_drink'),
@@ -117,7 +131,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(eatingAction, world, command);
       
-      const events = eatingAction.execute(context);
+      const events = executeWithValidation(eatingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('already_consumed'),
@@ -140,7 +154,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(eatingAction, world, command);
       
-      const events = eatingAction.execute(context);
+      const events = executeWithValidation(eatingAction, context);
       
       // Should emit EATEN event
       expectEvent(events, 'if.event.eaten', {
@@ -168,7 +182,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(eatingAction, world, command);
       
-      const events = eatingAction.execute(context);
+      const events = executeWithValidation(eatingAction, context);
       
       // Should emit implicit TAKEN event first
       expectEvent(events, 'if.event.taken', {
@@ -204,7 +218,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(eatingAction, world, command);
       
-      const events = eatingAction.execute(context);
+      const events = executeWithValidation(eatingAction, context);
       
       // Should emit EATEN event with portion info
       expectEvent(events, 'if.event.eaten', {
@@ -234,7 +248,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(eatingAction, world, command);
       
-      const events = eatingAction.execute(context);
+      const events = executeWithValidation(eatingAction, context);
       
       // Should emit EATEN event
       expectEvent(events, 'if.event.eaten', {
@@ -264,7 +278,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(eatingAction, world, command);
       
-      const events = eatingAction.execute(context);
+      const events = executeWithValidation(eatingAction, context);
       
       // Should use delicious message
       expectEvent(events, 'action.success', {
@@ -287,7 +301,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(eatingAction, world, command);
       
-      const events = eatingAction.execute(context);
+      const events = executeWithValidation(eatingAction, context);
       
       // Should use tasty message
       expectEvent(events, 'action.success', {
@@ -310,7 +324,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(eatingAction, world, command);
       
-      const events = eatingAction.execute(context);
+      const events = executeWithValidation(eatingAction, context);
       
       // Should use bland message
       expectEvent(events, 'action.success', {
@@ -333,7 +347,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(eatingAction, world, command);
       
-      const events = eatingAction.execute(context);
+      const events = executeWithValidation(eatingAction, context);
       
       // Should use awful message
       expectEvent(events, 'action.success', {
@@ -356,7 +370,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(eatingAction, world, command);
       
-      const events = eatingAction.execute(context);
+      const events = executeWithValidation(eatingAction, context);
       
       // Should emit EATEN event with effects
       expectEvent(events, 'if.event.eaten', {
@@ -385,7 +399,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(eatingAction, world, command);
       
-      const events = eatingAction.execute(context);
+      const events = executeWithValidation(eatingAction, context);
       
       // Should emit EATEN event with hunger satisfaction
       expectEvent(events, 'if.event.eaten', {
@@ -414,7 +428,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(eatingAction, world, command);
       
-      const events = eatingAction.execute(context);
+      const events = executeWithValidation(eatingAction, context);
       
       // Should emit EATEN event
       expectEvent(events, 'if.event.eaten', {
@@ -443,7 +457,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(eatingAction, world, command);
       
-      const events = eatingAction.execute(context);
+      const events = executeWithValidation(eatingAction, context);
       
       // Should emit EATEN event with nutrition
       expectEvent(events, 'if.event.eaten', {
@@ -474,7 +488,7 @@ describe('eatingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(eatingAction, world, command);
       
-      const events = eatingAction.execute(context);
+      const events = executeWithValidation(eatingAction, context);
       
       // Should use nibbled message
       expectEvent(events, 'action.success', {
@@ -502,7 +516,7 @@ describe('eatingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(eatingAction, world, command);
       
-      const events = eatingAction.execute(context);
+      const events = executeWithValidation(eatingAction, context);
       
       // Should use tasted message
       expectEvent(events, 'action.success', {
@@ -530,7 +544,7 @@ describe('eatingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(eatingAction, world, command);
       
-      const events = eatingAction.execute(context);
+      const events = executeWithValidation(eatingAction, context);
       
       // Should use devoured message
       expectEvent(events, 'action.success', {
@@ -558,7 +572,7 @@ describe('eatingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(eatingAction, world, command);
       
-      const events = eatingAction.execute(context);
+      const events = executeWithValidation(eatingAction, context);
       
       // Should use munched message
       expectEvent(events, 'action.success', {
@@ -582,7 +596,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(eatingAction, world, command);
       
-      const events = eatingAction.execute(context);
+      const events = executeWithValidation(eatingAction, context);
       
       events.forEach(event => {
         if (event.entities) {

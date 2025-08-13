@@ -6,21 +6,34 @@
  * directly for the information it needs.
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { AboutDisplayedEventData } from './about-events';
 
+interface AboutState {
+  displayMode: string;
+}
+
 export const aboutAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.ABOUT,
+  
+  validate(context: ActionContext): ValidationResult {
+    // About action always succeeds
+    const displayMode = context.command.parsed.extras?.mode || 'standard';
+    
+    return {
+      valid: true
+    };
+  },
   
   execute(context: ActionContext): SemanticEvent[] {
     // Simply emit an event signaling that about info should be displayed
     // The text service will handle querying the story config and formatting
+    const displayMode = context.command.parsed.extras?.mode || 'standard';
     const eventData: AboutDisplayedEventData = {
-      // Optional: include any command modifiers
-      displayMode: context.command.parsed.extras?.mode || 'standard'
+      displayMode
     };
     
     return [

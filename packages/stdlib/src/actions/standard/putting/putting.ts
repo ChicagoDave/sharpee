@@ -5,13 +5,12 @@
  * It determines the appropriate preposition based on the target's traits.
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { SemanticEvent } from '@sharpee/core';
-import { TraitType, ContainerTrait, SupporterTrait, OpenableTrait, IdentityTrait } from '@sharpee/world-model';
+import { TraitType, ContainerBehavior, SupporterBehavior, OpenableBehavior, AddItemResult, AddItemToSupporterResult } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
-import { PuttingEventMap } from './putting-events';
 
 export const puttingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.PUTTING,
@@ -39,7 +38,7 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
     indirectObjectScope: ScopeLevel.REACHABLE
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     const item = context.command.directObject?.entity;
     const target = context.command.indirectObject?.entity;
@@ -47,48 +46,43 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
     
     // Validate we have an item
     if (!item) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_target',
-        reason: 'no_target'
-      })];
+      return {
+        valid: false,
+        error: 'no_target'
+      };
     }
     
     // Validate we have a destination
     if (!target) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_destination',
-        reason: 'no_destination',
+      return {
+        valid: false,
+        error: 'no_destination',
         params: { item: item.name }
-      })];
+      };
     }
-    
-    // Scope checks handled by parser based on metadata
     
     // Prevent putting something inside/on itself
     if (item.id === target.id) {
       const messageId = preposition === 'on' ? 'cant_put_on_itself' : 'cant_put_in_itself';
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId,
+      return {
+        valid: false,
+        error: messageId,
         params: { item: item.name }
-      })];
+      };
     }
     
     // Check if item is already in/on target
     if (context.world.getLocation(item.id) === target.id) {
       const relation = target.has(TraitType.SUPPORTER) ? 'on' : 'in';
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'already_there',
-        reason: 'already_there',
+      return {
+        valid: false,
+        error: 'already_there',
         params: { 
           item: item.name,
           relation: relation,
           destination: target.name 
         }
-      })];
+      };
     }
     
     // Determine if target is a container or supporter
@@ -96,202 +90,190 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
     const isSupporter = target.has(TraitType.SUPPORTER);
     
     // Determine the appropriate action based on preposition and target type
-    let eventType: keyof PuttingEventMap;
     let targetPreposition: 'in' | 'on';
-    let successMessageId: string;
     
     if (preposition) {
       // User specified a preposition
       if ((preposition === 'in' || preposition === 'into' || preposition === 'inside') && isContainer) {
-        eventType = 'if.event.put_in';
         targetPreposition = 'in';
-        successMessageId = 'put_in';
       } else if ((preposition === 'on' || preposition === 'onto') && isSupporter) {
-        eventType = 'if.event.put_on';
         targetPreposition = 'on';
-        successMessageId = 'put_on';
       } else {
         // Mismatched preposition
         if (preposition === 'in' || preposition === 'into' || preposition === 'inside') {
-          return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_container',
-        reason: 'not_container',
-        params: { destination: target.name }
-      })];
+          return {
+            valid: false,
+            error: 'not_container',
+            params: { destination: target.name }
+          };
         } else {
-          return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_surface',
-        reason: 'not_surface',
-        params: { destination: target.name }
-      })];
+          return {
+            valid: false,
+            error: 'not_surface',
+            params: { destination: target.name }
+          };
         }
       }
     } else {
       // Auto-determine based on target type (prefer container over supporter)
       if (isContainer) {
-        eventType = 'if.event.put_in';
         targetPreposition = 'in';
-        successMessageId = 'put_in';
       } else if (isSupporter) {
-        eventType = 'if.event.put_on';
         targetPreposition = 'on';
-        successMessageId = 'put_on';
       } else {
-        return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_container',
-        reason: 'not_container',
-        params: { destination: target.name }
-      })];
+        return {
+          valid: false,
+          error: 'not_container',
+          params: { destination: target.name }
+        };
       }
     }
     
-    // Container-specific checks
-    if (eventType === 'if.event.put_in') {
+    // Container-specific checks using ContainerBehavior
+    if (targetPreposition === 'in') {
       // Check if container is open
-      if (target.has(TraitType.OPENABLE)) {
-        const openableTrait = target.get(TraitType.OPENABLE) as OpenableTrait;
-        if (!openableTrait.isOpen) {
-          return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'container_closed',
-        reason: 'container_closed',
-        params: { container: target.name }
-      })];
-        }
+      if (target.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(target)) {
+        return {
+          valid: false,
+          error: 'container_closed',
+          params: { container: target.name }
+        };
       }
       
-      // Check capacity
-      const containerTrait = target.get(TraitType.CONTAINER) as ContainerTrait;
-      if (containerTrait.capacity) {
-        const contents = context.world.getContents(target.id);
-        
-        // Check item count
-        if (containerTrait.capacity.maxItems !== undefined && 
-            contents.length >= containerTrait.capacity.maxItems) {
-          return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_room',
-        reason: 'no_room',
-        params: { container: target.name }
-      })];
-        }
-        
-        // Check weight/volume if item has these properties
-        if (item.has(TraitType.IDENTITY)) {
-          const itemIdentity = item.get(TraitType.IDENTITY) as IdentityTrait;
-          
-          if (containerTrait.capacity.maxWeight !== undefined && itemIdentity.weight) {
-            const currentWeight = contents.reduce((sum, e) => {
-              if (e.has(TraitType.IDENTITY)) {
-                const identity = e.get(TraitType.IDENTITY) as IdentityTrait;
-                return sum + (identity.weight || 0);
-              }
-              return sum;
-            }, 0);
-            
-            if (currentWeight + itemIdentity.weight > containerTrait.capacity.maxWeight) {
-              return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_room',
-        reason: 'no_room',
-        params: { container: target.name }
-      })];
-            }
-          }
-          
-          if (containerTrait.capacity.maxVolume !== undefined && itemIdentity.volume) {
-            const currentVolume = contents.reduce((sum, e) => {
-              if (e.has(TraitType.IDENTITY)) {
-                const identity = e.get(TraitType.IDENTITY) as IdentityTrait;
-                return sum + (identity.volume || 0);
-              }
-              return sum;
-            }, 0);
-            
-            if (currentVolume + itemIdentity.volume > containerTrait.capacity.maxVolume) {
-              return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_room',
-        reason: 'no_room',
-        params: { container: target.name }
-      })];
-            }
-          }
-        }
+      // Check capacity using ContainerBehavior
+      if (!ContainerBehavior.canAccept(target, item, context.world)) {
+        return {
+          valid: false,
+          error: 'no_room',
+          params: { container: target.name }
+        };
       }
     }
     
-    // Supporter-specific checks
-    if (eventType === 'if.event.put_on') {
-      const supporterTrait = target.get(TraitType.SUPPORTER) as SupporterTrait;
-      if (supporterTrait.capacity) {
-        const contents = context.world.getContents(target.id);
-        
-        // Check item count
-        if (supporterTrait.capacity.maxItems !== undefined && 
-            contents.length >= supporterTrait.capacity.maxItems) {
-          return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_space',
-        reason: 'no_space',
-        params: { surface: target.name }
-      })];
-        }
-        
-        // Check weight
-        if (supporterTrait.capacity.maxWeight !== undefined && item.has(TraitType.IDENTITY)) {
-          const itemIdentity = item.get(TraitType.IDENTITY) as IdentityTrait;
-          if (itemIdentity.weight) {
-            const currentWeight = contents.reduce((sum, e) => {
-              if (e.has(TraitType.IDENTITY)) {
-                const identity = e.get(TraitType.IDENTITY) as IdentityTrait;
-                return sum + (identity.weight || 0);
-              }
-              return sum;
-            }, 0);
-            
-            if (currentWeight + itemIdentity.weight > supporterTrait.capacity.maxWeight) {
-              return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_space',
-        reason: 'no_space',
-        params: { surface: target.name }
-      })];
-            }
-          }
-        }
+    // Supporter-specific checks using SupporterBehavior
+    if (targetPreposition === 'on') {
+      if (!SupporterBehavior.canAccept(target, item, context.world)) {
+        return {
+          valid: false,
+          error: 'no_space',
+          params: { surface: target.name }
+        };
       }
     }
     
-    // Build message params for success message
-    const params: Record<string, unknown> = {
-      item: item.name
-    };
+    return { valid: true };
+  },
+  
+  execute(context: ActionContext): SemanticEvent[] {
+    const actor = context.player;
+    const item = context.command.directObject!.entity!; // Safe because validate ensures it exists
+    const target = context.command.indirectObject!.entity!; // Safe because validate ensures it exists
+    const preposition = context.command.parsed.structure.preposition?.text;
     
-    if (successMessageId === 'put_in') {
-      params.container = target.name;
+    // Determine the appropriate action based on preposition and target type
+    const isContainer = target.has(TraitType.CONTAINER);
+    const isSupporter = target.has(TraitType.SUPPORTER);
+    let targetPreposition: 'in' | 'on';
+    
+    if (preposition) {
+      // User specified a preposition
+      if ((preposition === 'in' || preposition === 'into' || preposition === 'inside') && isContainer) {
+        targetPreposition = 'in';
+      } else if ((preposition === 'on' || preposition === 'onto') && isSupporter) {
+        targetPreposition = 'on';
+      } else {
+        // This should not happen due to validation, but handle gracefully
+        targetPreposition = isContainer ? 'in' : 'on';
+      }
     } else {
-      params.surface = target.name;
+      // Auto-determine based on target type (prefer container over supporter)
+      targetPreposition = isContainer ? 'in' : 'on';
     }
     
     const events: SemanticEvent[] = [];
     
-    // Create the appropriate event for world model updates
-    const eventData = eventType === 'if.event.put_in' 
-      ? { itemId: item.id, targetId: target.id, preposition: 'in' as const }
-      : { itemId: item.id, targetId: target.id, preposition: 'on' as const };
-    
-    events.push(context.event(eventType, eventData));
-    
-    // Create success message
-    events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: successMessageId,
-        params
+    // Delegate to appropriate behavior
+    if (targetPreposition === 'in') {
+      const result: AddItemResult = ContainerBehavior.addItem(target, item, context.world);
+      
+      if (!result.success) {
+        // Handle failure cases - these should not happen due to validation
+        if (result.alreadyContains) {
+          return [context.event('action.error', {
+            actionId: context.action.id,
+            messageId: 'already_there',
+            params: { item: item.name, relation: 'in', destination: target.name }
+          })];
+        }
+        if (result.containerFull) {
+          return [context.event('action.error', {
+            actionId: context.action.id,
+            messageId: 'no_room',
+            params: { container: target.name }
+          })];
+        }
+        // Generic failure
+        return [context.event('action.error', {
+          actionId: context.action.id,
+          messageId: 'cant_put',
+          params: { item: item.name }
+        })];
+      }
+      
+      // Success - create events
+      events.push(context.event('if.event.put_in', {
+        itemId: item.id,
+        targetId: target.id,
+        preposition: 'in' as const
       }));
+      
+      events.push(context.event('action.success', {
+        actionId: context.action.id,
+        messageId: 'put_in',
+        params: { item: item.name, container: target.name }
+      }));
+      
+    } else {
+      // targetPreposition === 'on'
+      const result: AddItemToSupporterResult = SupporterBehavior.addItem(target, item, context.world);
+      
+      if (!result.success) {
+        // Handle failure cases - these should not happen due to validation
+        if (result.alreadyThere) {
+          return [context.event('action.error', {
+            actionId: context.action.id,
+            messageId: 'already_there',
+            params: { item: item.name, relation: 'on', destination: target.name }
+          })];
+        }
+        if (result.noSpace) {
+          return [context.event('action.error', {
+            actionId: context.action.id,
+            messageId: 'no_space',
+            params: { surface: target.name }
+          })];
+        }
+        // Generic failure
+        return [context.event('action.error', {
+          actionId: context.action.id,
+          messageId: 'cant_put',
+          params: { item: item.name }
+        })];
+      }
+      
+      // Success - create events
+      events.push(context.event('if.event.put_on', {
+        itemId: item.id,
+        targetId: target.id,
+        preposition: 'on' as const
+      }));
+      
+      events.push(context.event('action.success', {
+        actionId: context.action.id,
+        messageId: 'put_on',
+        params: { item: item.name, surface: target.name }
+      }));
+    }
     
     return events;
   }

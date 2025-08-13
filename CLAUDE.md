@@ -1,0 +1,15 @@
+# Project Instructions for Claude
+
+## Testing Commands
+
+- **DO NOT** use `2>&1` with pnpm commands - they don't work together properly
+- Use pnpm commands without output redirection
+- Preferred test command format: `pnpm --filter '@sharpee/stdlib' test <test-name>`
+
+## Project-Specific Notes
+
+This is the Sharpee interactive fiction engine project. Key points:
+- Uses pnpm workspace with multiple packages
+- Main packages: engine, stdlib, world-model, parser-en-us
+- Actions follow validate/execute pattern (ADR-051)
+- Event handlers for custom logic (ADR-052)

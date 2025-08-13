@@ -64,3 +64,6 @@ export * from './services';
 
 // Scope system
 export * from './scope';
+
+// Event system types
+export * from './events/types';

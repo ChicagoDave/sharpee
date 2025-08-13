@@ -43,20 +43,19 @@ describe('Wearable and Clothing Integration Tests', () => {
       world.moveEntity(ring.id, player.id);
       
       // Wear ring
-      const events = WearableBehavior.wear(ring, player);
-      expect(events).toHaveLength(1);
-      expect(events[0].type).toBe('worn');
+      const result = WearableBehavior.wear(ring, player);
+      expect(result.success).toBe(true);
+      expect(result.slot).toBe('finger');
       
       const wearable = ring.getTrait(TraitType.WEARABLE) as WearableTrait;
-      expect(wearable.isWorn).toBe(true);
+      expect(wearable.worn).toBe(true);
       expect(wearable.wornBy).toBe(player.id);
       
       // Remove ring
-      const removeEvents = WearableBehavior.remove(ring, player);
-      expect(removeEvents).toHaveLength(1);
-      expect(removeEvents[0].type).toBe('removed');
+      const removeResult = WearableBehavior.remove(ring, player);
+      expect(removeResult.success).toBe(true);
       
-      expect(wearable.isWorn).toBe(false);
+      expect(wearable.worn).toBe(false);
       expect(wearable.wornBy).toBeUndefined();
     });
 
@@ -71,11 +70,9 @@ describe('Wearable and Clothing Integration Tests', () => {
       WearableBehavior.wear(hat, player);
       
       // Try to wear again
-      const events = WearableBehavior.wear(hat, player);
-      expect(events).toHaveLength(1);
-      expect(events[0].type).toBe('action_failed');
-      expect(events[0].payload).toBeDefined();
-      expect(events[0].payload?.reason).toBe('already_wearing');
+      const result = WearableBehavior.wear(hat, player);
+      expect(result.success).toBe(false);
+      expect(result.alreadyWorn).toBe(true);
     });
 
     it('should track multiple worn items', () => {

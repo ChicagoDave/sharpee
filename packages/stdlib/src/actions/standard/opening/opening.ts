@@ -1,13 +1,13 @@
 /**
  * Opening action - opens containers and doors
  * 
- * This action validates conditions for opening something and returns
- * appropriate events. It NEVER mutates state directly.
+ * This action properly delegates to OpenableBehavior and LockableBehavior
+ * for validation and execution. It follows the validate/execute pattern.
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { SemanticEvent, EntityId } from '@sharpee/core';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, OpenableBehavior, LockableBehavior, OpenResult } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { OpenedEventData } from './opening-events';
 import { ActionMetadata } from '../../../validation';
@@ -32,61 +32,90 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
   },
   group: 'container_manipulation',
   
-  execute(context: ActionContext): SemanticEvent[] {
-    const actor = context.player;
+  /**
+   * Validate whether the open action can be executed
+   * Uses behavior validation methods to check preconditions
+   */
+  validate(context: ActionContext): ValidationResult {
     const noun = context.command.directObject?.entity;
     
     // Validate we have a target
     if (!noun) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_target',
-        reason: 'no_target'
-      })];
+      return { 
+        valid: false, 
+        error: 'no_target'
+      };
     }
     
     // Check if it's openable
     if (!noun.has(TraitType.OPENABLE)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_openable',
-        reason: 'not_openable',
+      return { 
+        valid: false, 
+        error: 'not_openable',
         params: { item: noun.name }
-      })];
+      };
     }
     
-    const openableTrait = noun.get(TraitType.OPENABLE);
-    
-    // Check if already open
-    if (openableTrait && (openableTrait as any).isOpen) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'already_open',
-        reason: 'already_open',
+    // Use behavior's canOpen method for validation
+    if (!OpenableBehavior.canOpen(noun)) {
+      return { 
+        valid: false, 
+        error: 'already_open',
         params: { item: noun.name }
-      })];
+      };
     }
     
-    // Check if locked
-    if (noun.has(TraitType.LOCKABLE)) {
-      const lockableTrait = noun.get(TraitType.LOCKABLE);
-      if (lockableTrait && (lockableTrait as any).isLocked) {
+    // Check lock status using behavior
+    if (noun.has(TraitType.LOCKABLE) && LockableBehavior.isLocked(noun)) {
+      return { 
+        valid: false, 
+        error: 'locked',
+        params: { item: noun.name }
+      };
+    }
+    
+    return { valid: true };
+  },
+  
+  /**
+   * Execute the open action
+   * Assumes validation has already passed - no validation logic here
+   * Delegates to OpenableBehavior for actual state changes
+   */
+  execute(context: ActionContext): SemanticEvent[] {
+    // Assume validation has passed - no checks needed
+    const actor = context.player;
+    const noun = context.command.directObject!.entity!; // Safe because validate ensures it exists
+    
+    // Delegate to behavior for opening
+    const result: OpenResult = OpenableBehavior.open(noun);
+    
+    // Check if the behavior reported failure
+    if (!result.success) {
+      if (result.alreadyOpen) {
         return [context.event('action.error', {
+          actionId: context.action.id,
+          messageId: 'already_open',
+          reason: 'already_open',
+          params: { item: noun.name }
+        })];
+      }
+      // Shouldn't happen if validate() was called, but handle it
+      return [context.event('action.error', {
         actionId: context.action.id,
-        messageId: 'locked',
-        reason: 'locked',
+        messageId: 'cannot_open',
+        reason: 'cannot_open',
         params: { item: noun.name }
       })];
-      }
     }
     
-    // Gather information about what we're opening
+    // Opening succeeded - gather information for events
     const isContainer = noun.has(TraitType.CONTAINER);
     const isDoor = noun.has(TraitType.DOOR);
     const isSupporter = noun.has(TraitType.SUPPORTER);
     const contents = isContainer ? context.world.getContents(noun.id) : [];
     
-    // Build the event data
+    // Build the opened event data
     const eventData: OpenedEventData = {
       targetId: noun.id,
       targetName: noun.name,
@@ -110,22 +139,35 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
     };
     
     // Special handling for empty containers
-    // TODO: This is a workaround - needs proper scope logic to detect contents
-    if (isContainer && noun.name.toLowerCase().includes('empty')) {
+    if (isContainer && contents.length === 0) {
       messageId = 'its_empty';
       params = {
         container: noun.name
       };
     }
     
-    // Create the OPENED event and success message
-    return [
-      context.event('if.event.opened', eventData),
-      context.event('action.success', {
-        actionId: context.action.id,
-        messageId,
-        params: params
-      })
-    ];
+    // Build and return all events
+    const events: SemanticEvent[] = [];
+    
+    // Add the domain event (opened)
+    events.push(context.event('opened', {
+      targetId: noun.id,
+      targetName: noun.name,
+      customMessage: result.openMessage,
+      sound: result.openSound,
+      revealsContents: result.revealsContents
+    }));
+    
+    // Add the action event (if.event.opened)
+    events.push(context.event('if.event.opened', eventData));
+    
+    // Add success event
+    events.push(context.event('action.success', {
+      actionId: context.action.id,
+      messageId,
+      params: params
+    }));
+    
+    return events;
   }
 };

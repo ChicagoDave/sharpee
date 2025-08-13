@@ -22,6 +22,20 @@ setupBasicWorld,
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
+// Helper to execute action with validation (mimics CommandExecutor flow)
+const executeWithValidation = (action: any, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    return [context.event('action.error', {
+      actionId: action.id,
+      messageId: validation.error || 'validation_failed',
+      reason: validation.error || 'validation_failed',
+      params: { item: context.command.directObject?.entity?.name }
+    })];
+  }
+  return action.execute(context);
+};
+
 describe('wearingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
@@ -49,7 +63,7 @@ describe('wearingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.WEARING);
       const context = createRealTestContext(wearingAction, world, command);
       
-      const events = wearingAction.execute(context);
+      const events = executeWithValidation(wearingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_target'),
@@ -68,7 +82,7 @@ describe('wearingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = wearingAction.execute(context);
+      const events = executeWithValidation(wearingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_wearable'),
@@ -92,7 +106,7 @@ describe('wearingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = wearingAction.execute(context);
+      const events = executeWithValidation(wearingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('already_wearing'),
@@ -119,7 +133,7 @@ describe('wearingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = wearingAction.execute(context);
+      const events = executeWithValidation(wearingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_held'),
@@ -155,7 +169,7 @@ describe('wearingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = wearingAction.execute(context);
+      const events = executeWithValidation(wearingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('already_wearing'),
@@ -193,7 +207,7 @@ describe('wearingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = wearingAction.execute(context);
+      const events = executeWithValidation(wearingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('hands_full') // Used as proxy for layer conflicts
@@ -218,7 +232,7 @@ describe('wearingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = wearingAction.execute(context);
+      const events = executeWithValidation(wearingAction, context);
       
       // Should emit WORN event
       expectEvent(events, 'if.event.worn', {
@@ -252,7 +266,7 @@ describe('wearingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = wearingAction.execute(context);
+      const events = executeWithValidation(wearingAction, context);
       
       // Should emit implicit TAKEN event first
       expectEvent(events, 'if.event.taken', {
@@ -292,7 +306,7 @@ describe('wearingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = wearingAction.execute(context);
+      const events = executeWithValidation(wearingAction, context);
       
       // Should emit WORN event without bodyPart
       expectEvent(events, 'if.event.worn', {
@@ -331,7 +345,7 @@ describe('wearingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = wearingAction.execute(context);
+      const events = executeWithValidation(wearingAction, context);
       
       // Should succeed - wearing over lower layer
       expectEvent(events, 'if.event.worn', {
@@ -368,7 +382,7 @@ describe('wearingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = wearingAction.execute(context);
+      const events = executeWithValidation(wearingAction, context);
       
       // Should succeed - different body parts
       expectEvent(events, 'if.event.worn', {
@@ -395,7 +409,7 @@ describe('wearingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = wearingAction.execute(context);
+      const events = executeWithValidation(wearingAction, context);
       
       events.forEach(event => {
         if (event.entities) {

@@ -6,7 +6,7 @@
  * In many cases, this delegates to the putting action with 'in' preposition.
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { SemanticEvent } from '@sharpee/core';
@@ -14,6 +14,12 @@ import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { puttingAction } from '../putting';
 import { createActionContext } from '../../enhanced-context';
+
+interface InsertingState {
+  item: any;
+  container: any;
+  puttingValidation: ValidationResult;
+}
 
 export const insertingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.INSERTING,
@@ -37,26 +43,71 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
     indirectObjectScope: ScopeLevel.REACHABLE
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  validate(context: ActionContext): ValidationResult {
     const item = context.command.directObject?.entity;
     const container = context.command.indirectObject?.entity;
     
     // Validate we have an item
     if (!item) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_target',
-        reason: 'no_target'
-      })];
+      return {
+        valid: false,
+        error: 'no_target'
+      };
     }
     
     // Validate we have a destination
     if (!container) {
+      return {
+        valid: false,
+        error: 'no_destination',
+        params: { item: item.name }
+      };
+    }
+    
+    // Create modified command with 'in' preposition for delegation to putting
+    const modifiedCommand = {
+      ...context.command,
+      parsed: {
+        ...context.command.parsed,
+        structure: {
+          ...context.command.parsed.structure,
+          preposition: { 
+            tokens: [], 
+            text: 'in' 
+          }
+        },
+        preposition: 'in'
+      }
+    };
+    
+    // Create a new context for the putting action with the modified command
+    const modifiedContext = createActionContext(
+      context.world,
+      context.player,
+      puttingAction,
+      modifiedCommand
+    );
+    
+    // Delegate validation to putting action
+    const puttingValidation = puttingAction.validate(modifiedContext);
+    
+    if (!puttingValidation.valid) {
+      return puttingValidation as ValidationResult;
+    }
+    
+    return {
+      valid: true
+    };
+  },
+  
+  execute(context: ActionContext): SemanticEvent[] {
+    // Revalidate
+    const validation = this.validate(context);
+    if (!validation.valid) {
       return [context.event('action.error', {
         actionId: context.action.id,
-        messageId: 'no_destination',
-        reason: 'no_destination',
-        params: { item: item.name }
+        messageId: validation.error,
+        params: validation.params || {}
       })];
     }
     
@@ -85,7 +136,7 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       modifiedCommand
     );
     
-    // Execute putting action with 'in' preposition
+    // Execute putting action
     return puttingAction.execute(modifiedContext);
   }
 };

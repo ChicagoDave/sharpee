@@ -26,7 +26,11 @@ export class ReadOnlyActionContext implements ActionContext {
     scopeResolver?: ScopeResolver
   ) {
     // Temporary compatibility - action is required by interface but this class is deprecated
-    this.action = action || { id: 'unknown', execute: () => [] };
+    this.action = action || { 
+      id: 'unknown', 
+      validate: () => ({ valid: true }), 
+      execute: () => [] 
+    };
     this.scopeResolver = scopeResolver || ({} as ScopeResolver); // Temporary fix for deprecated class
   }
   

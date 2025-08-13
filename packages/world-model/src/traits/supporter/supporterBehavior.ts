@@ -8,6 +8,26 @@ import { IdentityBehavior } from '../identity/identityBehavior';
 import { IWorldQuery } from '../container/containerBehavior';
 
 /**
+ * Result of adding an item to a supporter
+ */
+export interface AddItemToSupporterResult {
+  success: boolean;
+  stateChanged: boolean;
+  alreadyThere?: boolean;
+  noSpace?: boolean;
+  wrongType?: boolean;
+}
+
+/**
+ * Result of removing an item from a supporter
+ */
+export interface RemoveItemFromSupporterResult {
+  success: boolean;
+  stateChanged: boolean;
+  notThere?: boolean;
+}
+
+/**
  * Behavior for entities that can support other entities on their surface.
  * 
  * Handles capacity checks, type restrictions, and weight calculations.
@@ -151,5 +171,91 @@ export class SupporterBehavior extends Behavior {
   static getExcludedTypes(supporter: IFEntity): string[] | undefined {
     const trait = SupporterBehavior.require<SupporterTrait>(supporter, TraitType.SUPPORTER);
     return trait.excludedTypes;
+  }
+  
+  /**
+   * Add an item to a supporter
+   * @param supporter The supporter receiving the item
+   * @param item The item being added
+   * @param world World query interface
+   * @returns Result describing what happened
+   */
+  static addItem(supporter: IFEntity, item: IFEntity, world: IWorldQuery): AddItemToSupporterResult {
+    // Check if item is already on supporter
+    const currentLocation = world.getLocation(item.id);
+    if (currentLocation === supporter.id) {
+      return {
+        success: false,
+        alreadyThere: true,
+        stateChanged: false
+      };
+    }
+    
+    // Check if supporter can accept the item
+    if (!SupporterBehavior.canAccept(supporter, item, world)) {
+      // Determine specific failure reason
+      const trait = SupporterBehavior.require<SupporterTrait>(supporter, TraitType.SUPPORTER);
+      
+      // Check type restrictions
+      if (trait.allowedTypes && trait.allowedTypes.length > 0) {
+        const itemType = item.type || 'object';
+        if (!trait.allowedTypes.includes(itemType)) {
+          return {
+            success: false,
+            wrongType: true,
+            stateChanged: false
+          };
+        }
+      }
+      
+      if (trait.excludedTypes && trait.excludedTypes.length > 0) {
+        const itemType = item.type || 'object';
+        if (trait.excludedTypes.includes(itemType)) {
+          return {
+            success: false,
+            wrongType: true,
+            stateChanged: false
+          };
+        }
+      }
+      
+      // Must be a capacity issue
+      return {
+        success: false,
+        noSpace: true,
+        stateChanged: false
+      };
+    }
+    
+    // All checks passed - adding is valid
+    return {
+      success: true,
+      stateChanged: true
+    };
+  }
+  
+  /**
+   * Remove an item from a supporter
+   * @param supporter The supporter losing the item
+   * @param item The item being removed
+   * @param world World query interface
+   * @returns Result describing what happened
+   */
+  static removeItem(supporter: IFEntity, item: IFEntity, world: IWorldQuery): RemoveItemFromSupporterResult {
+    // Check if item is actually on the supporter
+    const currentLocation = world.getLocation(item.id);
+    if (currentLocation !== supporter.id) {
+      return {
+        success: false,
+        notThere: true,
+        stateChanged: false
+      };
+    }
+    
+    // All checks passed - removal is valid
+    return {
+      success: true,
+      stateChanged: true
+    };
   }
 }

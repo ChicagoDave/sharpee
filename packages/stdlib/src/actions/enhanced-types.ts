@@ -124,10 +124,42 @@ export interface EnhancedActionContext extends ActionContext {
 }
 
 /**
+ * Result from action validation
+ * 
+ * Used to determine if an action can be executed and provide
+ * specific error information if not.
+ */
+export interface ValidationResult {
+  /**
+   * Whether the action can be executed
+   */
+  valid: boolean;
+  
+  /**
+   * Error code if validation failed
+   * Used to look up appropriate error messages
+   */
+  error?: string;
+  
+  /**
+   * Additional context for error messages
+   */
+  params?: Record<string, any>;
+  
+  /**
+   * Optional custom message ID to use instead of default
+   */
+  messageId?: string;
+}
+
+/**
  * Unified action interface
  * 
  * Actions define patterns, messages, and execution logic together.
+ * They follow a two-phase pattern: validate, then execute.
  * They return events, not direct text or mutation instructions.
+ * 
+ * Generic version supports state passing from validate to execute.
  */
 export interface Action {
   /**
@@ -143,14 +175,32 @@ export interface Action {
   requiredMessages?: string[];
   
   /**
-   * Execute the action and return events
+   * Validate whether this action can be executed in the current context
+   * 
+   * This method should check:
+   * - Entity requirements (exists, has required traits)
+   * - State preconditions (using behavior validation methods)
+   * - Any action-specific constraints
    * 
    * @param context Unified action context with helper methods
+   * @returns Validation result indicating if action can proceed
+   */
+  validate(context: ActionContext): ValidationResult;
+  
+  /**
+   * Execute the action and return events
+   * 
+   * This method is only called if validate() returned { isValid: true }.
+   * It should delegate to behaviors for actual state changes.
+   * 
+   * @param context Unified action context with helper methods
+   * @param state The validated state from validate() method
    * @returns Array of events describing what should happen
    */
   execute(context: ActionContext): SemanticEvent[];
   
   /**
+   * @deprecated Use validate() instead. This will be removed after refactoring.
    * Optional method to validate if this action can handle the command
    * By default, pattern matching is sufficient
    */

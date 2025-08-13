@@ -22,6 +22,22 @@ import {
   setupBasicWorld
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
+import { SemanticEvent } from '@sharpee/core';
+
+// Helper to execute action with validation (simulates CommandExecutor flow)
+function executeWithValidation(action: any, context: ActionContext): SemanticEvent[] {
+  if (action.validate) {
+    const validation = action.validate(context);
+    if (!validation.valid) {
+      return [context.event('action.error', {
+        actionId: context.action.id,
+        messageId: validation.error,
+        params: validation.params || {}
+      })];
+    }
+  }
+  return action.execute(context);
+}
 
 describe('turningAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -68,7 +84,7 @@ describe('turningAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.TURNING);
       const context = createRealTestContext(turningAction, world, command);
       
-      const events = turningAction.execute(context);
+      const events = executeWithValidation(turningAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_target')
@@ -94,7 +110,7 @@ describe('turningAction (Golden Pattern)', () => {
         createCommand(IFActions.TURNING)  // No entity passed - validator couldn't find it
       );
       
-      const events = turningAction.execute(context);
+      const events = executeWithValidation(turningAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_target')
@@ -131,7 +147,7 @@ describe('turningAction (Golden Pattern)', () => {
         createCommand(IFActions.TURNING)  // No entity passed
       );
       
-      const events = turningAction.execute(context);
+      const events = executeWithValidation(turningAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_target')
@@ -142,7 +158,9 @@ describe('turningAction (Golden Pattern)', () => {
       const { world, player } = setupBasicWorld();
       const bracelet = world.createEntity('twisted bracelet', 'object');
       bracelet.add({
-        type: TraitType.WEARABLE
+        type: TraitType.WEARABLE,
+        isWorn: true,
+        wornBy: player.id
       });
       // Even if turnable, can't turn worn items
       bracelet.add({
@@ -158,7 +176,7 @@ describe('turningAction (Golden Pattern)', () => {
         })
       );
       
-      const events = turningAction.execute(context);
+      const events = executeWithValidation(turningAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('wearing_it'),
@@ -181,7 +199,7 @@ describe('turningAction (Golden Pattern)', () => {
         })
       );
       
-      const events = turningAction.execute(context);
+      const events = executeWithValidation(turningAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('cant_turn_that'),
@@ -200,10 +218,11 @@ describe('turningAction (Golden Pattern)', () => {
         })
       );
       
-      const events = turningAction.execute(context);
+      const events = executeWithValidation(turningAction, context);
       
       expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('cant_turn_that')
+        messageId: expect.stringContaining('cant_turn_that'),
+        params: { target: 'old book' }
       });
     });
   });

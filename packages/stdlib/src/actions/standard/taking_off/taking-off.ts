@@ -5,10 +5,10 @@
  * It validates layering rules and provides appropriate feedback.
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { SemanticEvent } from '@sharpee/core';
-import { TraitType, WearableTrait } from '@sharpee/world-model';
+import { TraitType, WearableTrait, WearableBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { RemovedEventData } from './taking-off-events';
@@ -24,42 +24,36 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
   ],
   group: 'wearable_manipulation',
   
-  execute(context: ActionContext): SemanticEvent[] {
+  validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     const item = context.command.directObject?.entity;
     
-    // Must have an item to take off
     if (!item) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_target',
-        reason: 'no_target'
-      })];
+      return { valid: false, error: 'no_target' };
     }
     
-    // Scope checks handled by framework due to directObjectScope: CARRIED
-    
-    // Check if item is wearable
     if (!item.has(TraitType.WEARABLE)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_wearing',
-        reason: 'not_wearing',
-        params: { item: item.name }
-      })];
+      return { valid: false, error: 'not_wearing' };
     }
     
+    if (!WearableBehavior.canRemove(item, actor)) {
+      const wearable = item.get(TraitType.WEARABLE) as WearableTrait;
+      if (!wearable.worn) {
+        return { valid: false, error: 'not_wearing' };
+      }
+      if (wearable.wornBy !== actor.id) {
+        return { valid: false, error: 'not_wearing' };
+      }
+      return { valid: false, error: 'cant_remove' };
+    }
+    
+    return { valid: true };
+  },
+  
+  execute(context: ActionContext): SemanticEvent[] {
+    const actor = context.player;
+    const item = context.command.directObject?.entity!;
     const wearableTrait = item.get(TraitType.WEARABLE) as WearableTrait;
-    
-    // Check if actually worn
-    if (!wearableTrait.worn) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_wearing',
-        reason: 'not_wearing',
-        params: { item: item.name }
-      })];
-    }
     
     // Check for layering conflicts - can't remove if something is worn over it
     if (wearableTrait.layer !== undefined && wearableTrait.bodyPart) {
@@ -87,6 +81,35 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
     
     // Check if removing this would cause problems (e.g., cursed items)
     if ((wearableTrait as any).cursed) {
+      return [context.event('action.error', {
+        actionId: context.action.id,
+        messageId: 'cant_remove',
+        reason: 'cant_remove',
+        params: { item: item.name }
+      })];
+    }
+    
+    // Delegate state change to behavior
+    const result = WearableBehavior.remove(item, actor);
+    
+    // Handle failure cases (defensive checks)
+    if (!result.success) {
+      if (result.notWorn) {
+        return [context.event('action.error', {
+          actionId: context.action.id,
+          messageId: 'not_wearing',
+          reason: 'not_wearing',
+          params: { item: item.name }
+        })];
+      }
+      if (result.wornByOther) {
+        return [context.event('action.error', {
+          actionId: context.action.id,
+          messageId: 'not_wearing',
+          reason: 'worn_by_other',
+          params: { item: item.name, wornBy: result.wornByOther }
+        })];
+      }
       return [context.event('action.error', {
         actionId: context.action.id,
         messageId: 'cant_remove',

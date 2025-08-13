@@ -5,11 +5,17 @@
  * It emits a platform event that the engine will process after turn completion.
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { SemanticEvent, createRestoreRequestedEvent, RestoreContext } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { RestoreRequestedEventData } from './restoring-events';
+
+interface RestoringState {
+  saveName: string;
+  restoreContext: RestoreContext;
+  eventData: RestoreRequestedEventData;
+}
 
 export const restoringAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.RESTORING,
@@ -36,7 +42,7 @@ export const restoringAction: Action & { metadata: ActionMetadata } = {
     'save_imported'
   ],
   
-  execute(context: ActionContext): SemanticEvent[] {
+  validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     
     // Extract save slot or name if provided
@@ -53,11 +59,10 @@ export const restoringAction: Action & { metadata: ActionMetadata } = {
     const restoreRestrictions = sharedData.restoreRestrictions || {};
     
     if (restoreRestrictions.disabled) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'restore_not_allowed',
-        reason: 'restore_not_allowed'
-      })];
+      return {
+        valid: false,
+        error: 'restore_not_allowed'
+      };
     }
     
     // Build available saves info
@@ -74,11 +79,10 @@ export const restoringAction: Action & { metadata: ActionMetadata } = {
     
     // Check if any saves exist
     if (availableSaves.length === 0) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_saves',
-        reason: 'no_saves'
-      })];
+      return {
+        valid: false,
+        error: 'no_saves'
+      };
     }
     
     // Find last save info
@@ -96,14 +100,6 @@ export const restoringAction: Action & { metadata: ActionMetadata } = {
       } : undefined
     };
     
-    // Create events
-    const events: SemanticEvent[] = [];
-    
-    // Emit platform restore requested event
-    // The engine will handle this after turn completion
-    const platformEvent = createRestoreRequestedEvent(restoreContext);
-    events.push(platformEvent);
-    
     // Emit a notification that restore was requested
     // The actual restore confirmation will come from the platform completion event
     const eventData: RestoreRequestedEventData = {
@@ -112,6 +108,62 @@ export const restoringAction: Action & { metadata: ActionMetadata } = {
       availableSaves: availableSaves.length
     };
     
+    return {
+      valid: true
+    };
+  },
+  
+  execute(context: ActionContext): SemanticEvent[] {
+    const events: SemanticEvent[] = [];
+    
+    // Get save name from command - could be provided as extras or directObject
+    const extras = context.command.parsed.extras;
+    const directText = context.command.directObject?.parsed?.text;
+    const saveName = extras?.saveName || directText || 'default';
+    
+    // Get game state
+    const sharedData = context.world.getCapability('sharedData') || {};
+    const existingSaves = sharedData.saves || {};
+    
+    // Build available saves info
+    const availableSaves = Object.entries(existingSaves).map(([slot, data]: [string, any]) => ({
+      slot,
+      name: data.name || slot,
+      timestamp: data.timestamp || Date.now(),
+      metadata: {
+        score: data.score,
+        moves: data.moves,
+        version: data.version
+      }
+    }));
+    
+    // Find last save info
+    const lastSave = availableSaves.reduce((latest, save) => 
+      !latest || save.timestamp > latest.timestamp ? save : latest
+    , null as any);
+    
+    // Build restore context
+    const restoreContext: RestoreContext = {
+      slot: saveName !== 'default' ? saveName : undefined,
+      availableSaves,
+      lastSave: lastSave ? {
+        slot: lastSave.slot,
+        timestamp: lastSave.timestamp
+      } : undefined
+    };
+    
+    const eventData: RestoreRequestedEventData = {
+      saveName,
+      timestamp: Date.now(),
+      availableSaves: availableSaves.length
+    };
+    
+    // Emit platform restore requested event
+    // The engine will handle this after turn completion
+    const platformEvent = createRestoreRequestedEvent(restoreContext);
+    events.push(platformEvent);
+    
+    // Emit the restore requested event
     events.push(context.event('if.event.restore_requested', eventData));
     
     return events;

@@ -21,6 +21,20 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
+// Helper to execute action with validation (mimics CommandExecutor flow)
+const executeWithValidation = (action: any, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    return [context.event('action.error', {
+      actionId: action.id,
+      messageId: validation.error || 'validation_failed',
+      reason: validation.error || 'validation_failed',
+      params: validation.params || {}
+    })];
+  }
+  return action.execute(context);
+};
+
 describe('lockingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
@@ -51,7 +65,7 @@ describe('lockingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOCKING, {});
       const context = createRealTestContext(lockingAction, world, command);
       
-      const events = lockingAction.execute(context);
+      const events = executeWithValidation(lockingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_target'),
@@ -76,7 +90,7 @@ describe('lockingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(lockingAction, world, command);
       
-      const events = lockingAction.execute(context);
+      const events = executeWithValidation(lockingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_lockable'),
@@ -101,7 +115,7 @@ describe('lockingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(lockingAction, world, command);
       
-      const events = lockingAction.execute(context);
+      const events = executeWithValidation(lockingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('already_locked'),
@@ -129,7 +143,7 @@ describe('lockingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(lockingAction, world, command);
       
-      const events = lockingAction.execute(context);
+      const events = executeWithValidation(lockingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_closed'),
@@ -161,7 +175,7 @@ describe('lockingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(lockingAction, world, command);
       
-      const events = lockingAction.execute(context);
+      const events = executeWithValidation(lockingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_key'),
@@ -195,7 +209,7 @@ describe('lockingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(lockingAction, world, command);
       
-      const events = lockingAction.execute(context);
+      const events = executeWithValidation(lockingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('key_not_held'),
@@ -229,7 +243,7 @@ describe('lockingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(lockingAction, world, command);
       
-      const events = lockingAction.execute(context);
+      const events = executeWithValidation(lockingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('wrong_key'),
@@ -266,7 +280,7 @@ describe('lockingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(lockingAction, world, command);
       
-      const events = lockingAction.execute(context);
+      const events = executeWithValidation(lockingAction, context);
       
       expectEvent(events, 'if.event.locked', {
         targetId: box.id
@@ -309,7 +323,7 @@ describe('lockingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(lockingAction, world, command);
       
-      const events = lockingAction.execute(context);
+      const events = executeWithValidation(lockingAction, context);
       
       expectEvent(events, 'if.event.locked', {
         targetId: safe.id,
@@ -356,7 +370,7 @@ describe('lockingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(lockingAction, world, command);
       
-      const events = lockingAction.execute(context);
+      const events = executeWithValidation(lockingAction, context);
       
       expectEvent(events, 'if.event.locked', {
         targetId: door.id,
@@ -400,7 +414,7 @@ describe('lockingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(lockingAction, world, command);
       
-      const events = lockingAction.execute(context);
+      const events = executeWithValidation(lockingAction, context);
       
       expectEvent(events, 'if.event.locked', {
         targetId: chest.id,
@@ -429,7 +443,7 @@ describe('lockingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(lockingAction, world, command);
       
-      const events = lockingAction.execute(context);
+      const events = executeWithValidation(lockingAction, context);
       
       expectEvent(events, 'if.event.locked', {
         targetId: vault.id,
@@ -465,7 +479,7 @@ describe('lockingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(lockingAction, world, command);
       
-      const events = lockingAction.execute(context);
+      const events = executeWithValidation(lockingAction, context);
       
       events.forEach(event => {
         if (event.entities) {

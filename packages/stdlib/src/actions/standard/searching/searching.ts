@@ -5,9 +5,15 @@
  * to find concealed items or discover additional details.
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
-import { TraitType, IdentityTrait } from '@sharpee/world-model';
+import { 
+  TraitType, 
+  IdentityTrait,
+  IdentityBehavior,
+  ContainerBehavior,
+  OpenableBehavior
+} from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { SearchedEventData } from './searching-events';
 import { ActionMetadata } from '../../../validation';
@@ -34,6 +40,28 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
     directObjectScope: ScopeLevel.REACHABLE
   },
   
+  validate(context: ActionContext): ValidationResult {
+    const target = context.command.directObject?.entity;
+    
+    // If no target, we'll search the current location (always valid)
+    if (!target) {
+      return { valid: true };
+    }
+    
+    // Check if it's a container that needs to be open
+    if (target.has(TraitType.CONTAINER) && target.has(TraitType.OPENABLE)) {
+      if (!OpenableBehavior.isOpen(target)) {
+        return { 
+          valid: false, 
+          error: 'container_closed',
+          params: { target: target.name }
+        };
+      }
+    }
+    
+    return { valid: true };
+  },
+  
   execute(context: ActionContext): SemanticEvent[] {
     const actor = context.player;
     const target = context.command.directObject?.entity;
@@ -41,27 +69,11 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
     // If no target, search the current location
     const searchTarget = target || context.currentLocation;
     
-    // Scope validation is now handled by CommandValidator
-    
-    // Check if it's a container that needs to be open
-    if (searchTarget.has(TraitType.CONTAINER) && searchTarget.has(TraitType.OPENABLE)) {
-      const openableTrait = searchTarget.get(TraitType.OPENABLE) as { isOpen?: boolean };
-      if (!openableTrait.isOpen) {
-        return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'container_closed',
-        reason: 'container_closed',
-        params: { target: searchTarget.name }
-      })];
-      }
-    }
-    
-    // Find concealed items
+    // Find concealed items using behavior
     const contents = context.world.getContents(searchTarget.id);
     const concealedItems = contents.filter(item => {
       if (item.has(TraitType.IDENTITY)) {
-        const identity = item.get(TraitType.IDENTITY) as IdentityTrait;
-        return identity.concealed;
+        return IdentityBehavior.isConcealed(item);
       }
       return false;
     });
@@ -90,7 +102,13 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
     };
     
     if (concealedItems.length > 0) {
-      // Found concealed items
+      // Found concealed items - reveal them using behavior
+      concealedItems.forEach(item => {
+        if (item.has(TraitType.IDENTITY)) {
+          IdentityBehavior.reveal(item);
+        }
+      });
+      
       params.items = concealedItems.map(item => item.name).join(', ');
       params.where = searchTarget.has(TraitType.CONTAINER) ? 'inside' : 
                            searchTarget.has(TraitType.SUPPORTER) ? 'on' : 'here';

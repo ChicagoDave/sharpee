@@ -25,6 +25,20 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
+// Helper to execute action with validation (mimics CommandExecutor flow)
+const executeWithValidation = (action: any, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    return [context.event('action.error', {
+      actionId: action.id,
+      messageId: validation.error || 'validation_failed',
+      reason: validation.error || 'validation_failed',
+      params: validation.params || {}
+    })];
+  }
+  return action.execute(context);
+};
+
 describe('throwingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
@@ -80,7 +94,7 @@ describe('throwingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.THROWING);
       const context = createRealTestContext(throwingAction, world, command);
       
-      const events = throwingAction.execute(context);
+      const events = executeWithValidation(throwingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_item')
@@ -100,7 +114,7 @@ describe('throwingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = throwingAction.execute(context);
+      const events = executeWithValidation(throwingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('self')
@@ -118,7 +132,7 @@ describe('throwingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(throwingAction, world, command);
       
-      const events = throwingAction.execute(context);
+      const events = executeWithValidation(throwingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_exit'),
@@ -146,7 +160,7 @@ describe('throwingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = throwingAction.execute(context);
+      const events = executeWithValidation(throwingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('too_heavy'),
@@ -165,7 +179,7 @@ describe('throwingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = throwingAction.execute(context);
+      const events = executeWithValidation(throwingAction, context);
       
       // Should emit THROWN event
       expectEvent(events, 'if.event.thrown', {
@@ -203,7 +217,7 @@ describe('throwingAction (Golden Pattern)', () => {
       const originalRandom = Math.random;
       Math.random = vi.fn(() => 0.6); // Won't break (0.6 <= 0.7)
       
-      const events = throwingAction.execute(context);
+      const events = executeWithValidation(throwingAction, context);
       
       // Should emit THROWN event
       expectEvent(events, 'if.event.thrown', {
@@ -240,7 +254,7 @@ describe('throwingAction (Golden Pattern)', () => {
       const originalRandom = Math.random;
       Math.random = vi.fn(() => 0.8); // Will break (0.8 > 0.7)
       
-      const events = throwingAction.execute(context);
+      const events = executeWithValidation(throwingAction, context);
       
       // Should emit THROWN event
       expectEvent(events, 'if.event.thrown', {
@@ -284,7 +298,7 @@ describe('throwingAction (Golden Pattern)', () => {
       const originalRandom = Math.random;
       Math.random = vi.fn(() => 0.2); // Will hit
       
-      const events = throwingAction.execute(context);
+      const events = executeWithValidation(throwingAction, context);
       
       // Should emit THROWN event
       expectEvent(events, 'if.event.thrown', {
@@ -325,7 +339,7 @@ describe('throwingAction (Golden Pattern)', () => {
       const originalRandom = Math.random;
       Math.random = vi.fn(() => 0.2); // Will miss (0.2 <= 0.3)
       
-      const events = throwingAction.execute(context);
+      const events = executeWithValidation(throwingAction, context);
       
       // Should emit THROWN event
       expectEvent(events, 'if.event.thrown', {
@@ -365,7 +379,7 @@ describe('throwingAction (Golden Pattern)', () => {
         .mockReturnValueOnce(0.5)  // First call: will hit (0.5 > 0.3)
         .mockReturnValueOnce(0.8); // Second call: will catch (0.8 > 0.7)
       
-      const events = throwingAction.execute(context);
+      const events = executeWithValidation(throwingAction, context);
       
       // Should emit THROWN event
       expectEvent(events, 'if.event.thrown', {
@@ -402,7 +416,7 @@ describe('throwingAction (Golden Pattern)', () => {
       const originalRandom = Math.random;
       Math.random = vi.fn(() => 0.5); // Will hit
       
-      const events = throwingAction.execute(context);
+      const events = executeWithValidation(throwingAction, context);
       
       // Should emit THROWN event
       expectEvent(events, 'if.event.thrown', {
@@ -421,7 +435,7 @@ describe('throwingAction (Golden Pattern)', () => {
     });
 
     test('should land in open container', () => {
-      const { world, player, room, item: marble } = TestData.withInventoryItem('glass marble');
+      const { world, player, room, item: ball } = TestData.withInventoryItem('rubber ball');
       const box = world.createEntity('open box', 'object');
       box.add({
         type: TraitType.CONTAINER
@@ -434,7 +448,7 @@ describe('throwingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(throwingAction, world,
         createCommand(IFActions.THROWING, {
-          entity: marble,
+          entity: ball,
           secondEntity: box,
           preposition: 'at'
         })
@@ -444,7 +458,7 @@ describe('throwingAction (Golden Pattern)', () => {
       const originalRandom = Math.random;
       Math.random = vi.fn(() => 0.5); // Will hit
       
-      const events = throwingAction.execute(context);
+      const events = executeWithValidation(throwingAction, context);
       
       // Should emit THROWN event
       expectEvent(events, 'if.event.thrown', {
@@ -485,7 +499,7 @@ describe('throwingAction (Golden Pattern)', () => {
       const originalRandom = Math.random;
       Math.random = vi.fn(() => 0.5); // Will hit
       
-      const events = throwingAction.execute(context);
+      const events = executeWithValidation(throwingAction, context);
       
       // Should emit THROWN event
       expectEvent(events, 'if.event.thrown', {
@@ -526,7 +540,7 @@ describe('throwingAction (Golden Pattern)', () => {
         .mockReturnValueOnce(0.5) // Will hit (0.5 > 0.1)
         .mockReturnValueOnce(0.3); // Will break (0.3 > 0.2)
       
-      const events = throwingAction.execute(context);
+      const events = executeWithValidation(throwingAction, context);
       
       // Should emit THROWN event
       expectEvent(events, 'if.event.thrown', {
@@ -569,7 +583,7 @@ describe('throwingAction (Golden Pattern)', () => {
       const originalRandom = Math.random;
       Math.random = vi.fn(() => 0.5); // Will hit
       
-      const events = throwingAction.execute(context);
+      const events = executeWithValidation(throwingAction, context);
       
       // Should have two success messages - hits_target and target_angry
       const successEvents = events.filter(e => e.type === 'action.success');
@@ -608,7 +622,7 @@ describe('throwingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = throwingAction.execute(context);
+      const events = executeWithValidation(throwingAction, context);
       
       // Should succeed
       expectEvent(events, 'if.event.thrown', {
@@ -632,7 +646,7 @@ describe('throwingAction (Golden Pattern)', () => {
         })
       );
       
-      const events = throwingAction.execute(context);
+      const events = executeWithValidation(throwingAction, context);
       
       // Should succeed (general throw ignores weight)
       expectEvent(events, 'if.event.thrown', {
@@ -697,7 +711,7 @@ describe('throwingAction (Golden Pattern)', () => {
       const originalRandom = Math.random;
       Math.random = vi.fn(() => 0.5); // Will hit
       
-      const events = throwingAction.execute(context);
+      const events = executeWithValidation(throwingAction, context);
       
       events.forEach(event => {
         if (event.entities) {

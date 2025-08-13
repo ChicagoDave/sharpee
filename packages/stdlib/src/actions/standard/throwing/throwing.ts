@@ -7,10 +7,10 @@
  * - Target reacting to being hit
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { SemanticEvent } from '@sharpee/core';
-import { TraitType, IdentityTrait, ActorTrait } from '@sharpee/world-model';
+import { TraitType, IdentityBehavior, ActorBehavior, RoomBehavior, OpenableBehavior, ContainerBehavior, SupporterBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
 import { ThrowingEventMap } from './throwing-events';
@@ -51,7 +51,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     indirectObjectScope: ScopeLevel.VISIBLE
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     const item = context.command.directObject?.entity;
     const target = context.command.indirectObject?.entity;
@@ -59,102 +59,113 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     
     // Must have an item to throw
     if (!item) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_item',
-        reason: 'no_item'
-      })];
+      return { 
+        valid: false, 
+        error: 'no_item'
+      };
     }
     
-    // Scope checks handled by parser based on metadata
-    
     // Determine throw type and validate
-    let throwType: 'at_target' | 'directional' | 'general';
-    let throwTarget = target;
-    let throwDirection = direction;
-    
     if (target) {
       // Throwing at a specific target
-      throwType = 'at_target';
-      
-      // Target visibility handled by parser based on metadata
       
       // Target should be in the same room (can't throw through walls)
       const targetLocation = context.world.getLocation?.(target.id);
       const actorLocation = context.world.getLocation?.(actor.id);
       
       if (targetLocation !== actorLocation) {
-        return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'target_not_here',
-        reason: 'target_not_here',
-        params: { target: target.name }
-      })];
+        return { 
+          valid: false, 
+          error: 'target_not_here',
+          params: { target: target.name }
+        };
       }
       
       // Prevent throwing at self
       if (target.id === actor.id) {
-        return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'self',
-        reason: 'self'
-      })];
+        return { 
+          valid: false, 
+          error: 'self'
+        };
       }
     } else if (direction) {
       // Throwing in a direction
-      throwType = 'directional';
-      throwDirection = direction.toLowerCase();
+      const throwDirection = direction.toLowerCase();
       
       // Check if there's an exit in that direction
       const currentRoom = context.currentLocation;
       if (currentRoom.has(TraitType.ROOM)) {
-        const roomTrait = currentRoom.get(TraitType.ROOM) as { exits?: Record<string, any> };
-        if (!roomTrait.exits || !roomTrait.exits[throwDirection]) {
+        const exit = RoomBehavior.getExit(currentRoom, throwDirection);
+        if (!exit) {
           // Can't throw through solid walls
-          return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_exit',
-        reason: 'no_exit',
-        params: { direction: throwDirection }
-      })];
+          return { 
+            valid: false, 
+            error: 'no_exit',
+            params: { direction: throwDirection }
+          };
         }
       }
+    }
+    
+    // Check if item is too heavy to throw (except for general throwing)
+    if (target || direction) {
+      const itemWeight = IdentityBehavior.getWeight(item);
+      const isHeavy = itemWeight > 10; // kg
+      
+      if (isHeavy) {
+        return { 
+          valid: false, 
+          error: 'too_heavy',
+          params: { item: item.name, weight: itemWeight }
+        };
+      }
+    }
+    
+    return { valid: true };
+  },
+  
+  execute(context: ActionContext): SemanticEvent[] {
+    // Call validate at the start
+    const validation = this.validate(context);
+    if (!validation.valid) {
+      return [context.event('action.error', {
+        actionId: context.action.id,
+        messageId: validation.error!,
+        reason: validation.error!
+      })];
+    }
+    
+    const actor = context.player;
+    const item = context.command.directObject?.entity!;
+    const target = context.command.indirectObject?.entity;
+    const direction = context.command.parsed.extras?.direction as string;
+    
+    // Determine throw type
+    let throwType: 'at_target' | 'directional' | 'general';
+    let throwTarget = target;
+    let throwDirection = direction;
+    
+    if (target) {
+      throwType = 'at_target';
+    } else if (direction) {
+      throwType = 'directional';
+      throwDirection = direction.toLowerCase();
     } else {
-      // General throwing (drops in current location)
       throwType = 'general';
     }
     
     // Check item properties for throwing
-    let isFragile = false;
-    let isHeavy = false;
-    let itemWeight = 0;
+    const itemWeight = IdentityBehavior.getWeight(item);
     
-    if (item.has(TraitType.IDENTITY)) {
-      const identity = item.get(TraitType.IDENTITY) as IdentityTrait;
-      
-      // Check weight for throwing difficulty
-      if (identity.weight) {
-        itemWeight = identity.weight;
-        isHeavy = itemWeight > 10; // kg
-      }
-      
-      // Check if item might break
-      const name = identity.name?.toLowerCase() || '';
-      const desc = identity.description?.toLowerCase() || '';
-      isFragile = name.includes('glass') || name.includes('fragile') || 
-                  desc.includes('glass') || desc.includes('fragile') ||
-                  name.includes('bottle') || name.includes('vase');
-    }
+    // Check if item is fragile based on name or description
+    const itemName = item.name.toLowerCase();
+    const identity = item.get(TraitType.IDENTITY) as any;
+    const description = (identity?.description || '').toLowerCase();
     
-    // Heavy items are harder to throw far
-    if (isHeavy && throwType !== 'general') {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'too_heavy',
-        reason: 'too_heavy',
-        params: { item: item.name, weight: itemWeight }
-      })];
-    }
+    const fragileKeywords = ['glass', 'crystal', 'delicate', 'fragile', 'bottle', 'vase', 'china', 'porcelain'];
+    const isFragile = fragileKeywords.some(keyword => 
+      itemName.includes(keyword) || description.includes(keyword)
+    );
     
     // Build event data
     const eventData: ThrowingEventMap['if.event.thrown'] = {
@@ -185,11 +196,13 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
       // Simple hit calculation
       if (throwTarget.has(TraitType.ACTOR)) {
         hitTarget = Math.random() > 0.3; // 70% chance to hit
-        const targetActor = throwTarget.get(TraitType.ACTOR) as ActorTrait;
         
-        if (!hitTarget && (targetActor as any).agility > 5) {
+        const agility = ActorBehavior.getCustomProperty(throwTarget, 'agility');
+        const canCatch = ActorBehavior.getCustomProperty(throwTarget, 'canCatch');
+        
+        if (!hitTarget && agility > 5) {
           messageId = 'target_ducks';
-        } else if ((targetActor as any).canCatch && Math.random() > 0.7) {
+        } else if (canCatch && Math.random() > 0.7) {
           messageId = 'target_catches';
           hitTarget = false; // Caught, not hit
           finalLocation = throwTarget.id;
@@ -215,13 +228,18 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
           if (throwTarget.has(TraitType.SUPPORTER)) {
             finalLocation = throwTarget.id;
             messageId = 'lands_on';
-          } else if (throwTarget.has(TraitType.CONTAINER) && throwTarget.has(TraitType.OPENABLE)) {
-            const openable = throwTarget.get(TraitType.OPENABLE) as { isOpen?: boolean };
-            if (openable.isOpen) {
+          } else if (throwTarget.has(TraitType.CONTAINER)) {
+            if (throwTarget.has(TraitType.OPENABLE)) {
+              if (OpenableBehavior.isOpen(throwTarget)) {
+                finalLocation = throwTarget.id;
+                messageId = 'lands_in';
+              } else {
+                messageId = 'bounces_off';
+              }
+            } else {
+              // Container without openable trait is always open
               finalLocation = throwTarget.id;
               messageId = 'lands_in';
-            } else {
-              messageId = 'bounces_off';
             }
           }
         }
@@ -235,9 +253,9 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
       // Item goes through the exit to the next room
       const currentRoom = context.currentLocation;
       if (currentRoom.has(TraitType.ROOM)) {
-        const roomTrait = currentRoom.get(TraitType.ROOM) as { exits?: Record<string, any> };
-        if (roomTrait.exits && roomTrait.exits[throwDirection]) {
-          finalLocation = roomTrait.exits[throwDirection].destination;
+        const exit = RoomBehavior.getExit(currentRoom, throwDirection);
+        if (exit) {
+          finalLocation = exit.destination;
           messageId = 'sails_through';
           
           // Fragile items might break when hitting the ground

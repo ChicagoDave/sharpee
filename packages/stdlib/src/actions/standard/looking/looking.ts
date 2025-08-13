@@ -2,9 +2,15 @@
  * Looking action - Provides description of current location and visible items
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
-import { TraitType } from '@sharpee/world-model';
+import { 
+  TraitType,
+  RoomBehavior,
+  LightSourceBehavior,
+  SwitchableBehavior,
+  ContainerBehavior
+} from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { LookingEventMap } from './looking-events';
@@ -24,6 +30,11 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
     'examine_surroundings'
   ],
   
+  validate(context: ActionContext): ValidationResult {
+    // Looking is always valid - it's a basic sensory action
+    return { valid: true };
+  },
+  
   execute(context: ActionContext): SemanticEvent[] {
     const player = context.player;
     const location = context.currentLocation;
@@ -39,26 +50,44 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
     
     const params: Record<string, any> = {};
     
-    // Check if location is dark (no light sources)
+    // Check if location is dark (no light sources) using behaviors
     let isDark = false;
     const room = context.world.getContainingRoom(player.id);
     if (room && room.hasTrait(TraitType.ROOM)) {
       const roomTrait = room.getTrait(TraitType.ROOM) as any;
       if (roomTrait.requiresLight) {
-        // Check for light sources in the room
+        // Check for light sources in the room using behaviors
         const hasLight = context.world.getContents(room.id).some(item => {
-          if (item.hasTrait(TraitType.LIGHT_SOURCE) && item.hasTrait(TraitType.SWITCHABLE)) {
-            const switchable = item.getTrait(TraitType.SWITCHABLE) as any;
-            return switchable.isOn;
+          if (item.hasTrait(TraitType.LIGHT_SOURCE)) {
+            // Check if it's lit - either via isLit property or via SWITCHABLE trait
+            const lightTrait = item.getTrait(TraitType.LIGHT_SOURCE) as any;
+            if (lightTrait.isLit !== undefined) {
+              return lightTrait.isLit;
+            }
+            // If it has SWITCHABLE trait, check if it's on
+            if (item.hasTrait(TraitType.SWITCHABLE)) {
+              return SwitchableBehavior.isOn(item);
+            }
+            // Default to true for light sources without explicit state
+            return true;
           }
           return false;
         });
         
         // Also check if player is carrying a light
         const playerHasLight = context.world.getContents(player.id).some(item => {
-          if (item.hasTrait(TraitType.LIGHT_SOURCE) && item.hasTrait(TraitType.SWITCHABLE)) {
-            const switchable = item.getTrait(TraitType.SWITCHABLE) as any;
-            return switchable.isOn;
+          if (item.hasTrait(TraitType.LIGHT_SOURCE)) {
+            // Check if it's lit - either via isLit property or via SWITCHABLE trait
+            const lightTrait = item.getTrait(TraitType.LIGHT_SOURCE) as any;
+            if (lightTrait.isLit !== undefined) {
+              return lightTrait.isLit;
+            }
+            // If it has SWITCHABLE trait, check if it's on
+            if (item.hasTrait(TraitType.SWITCHABLE)) {
+              return SwitchableBehavior.isOn(item);
+            }
+            // Default to true for light sources without explicit state
+            return true;
           }
           return false;
         });
@@ -92,7 +121,7 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
     // Always include location name
     params.location = location.name;
     
-    // Check if we're in a special location
+    // Check if we're in a special location using trait checks
     if (location.hasTrait(TraitType.CONTAINER)) {
       messageId = 'in_container';
       params.container = location.name;

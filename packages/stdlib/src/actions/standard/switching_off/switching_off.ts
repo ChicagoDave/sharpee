@@ -2,13 +2,13 @@
  * Switching off action - turns off devices and lights
  * 
  * This action validates conditions for switching something off and returns
- * appropriate events. It NEVER mutates state directly.
+ * appropriate events. It delegates state changes to SwitchableBehavior.
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { SemanticEvent } from '@sharpee/core';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, SwitchableBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { SwitchedOffEventData } from './switching_off-events';
@@ -31,40 +31,54 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
     'was_temporary'
   ],
   
-  execute(context: ActionContext): SemanticEvent[] {
-    const actor = context.player;
+  validate(context: ActionContext): ValidationResult {
     const noun = context.command.directObject?.entity;
     
-    // Validate we have a target
     if (!noun) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_target',
-        reason: 'no_target'
-      })];
+      return { valid: false, error: 'no_target' };
     }
     
-    // Scope checks handled by framework due to directObjectScope: REACHABLE
-    
-    // Check if it's switchable
     if (!noun.has(TraitType.SWITCHABLE)) {
+      return { valid: false, error: 'not_switchable', params: { target: noun.name } };
+    }
+    
+    if (!SwitchableBehavior.canSwitchOff(noun)) {
+      return { valid: false, error: 'already_off', params: { target: noun.name } };
+    }
+    
+    return { valid: true };
+  },
+  
+  execute(context: ActionContext): SemanticEvent[] {
+    const actor = context.player;
+    const noun = context.command.directObject?.entity!;
+    
+    // Get the switchable data before turning off for checking state
+    const switchableTrait = noun.get(TraitType.SWITCHABLE);
+    const switchableData = switchableTrait as any;
+    const hadAutoOff = switchableData.autoOffCounter > 0;
+    const remainingTime = switchableData.autoOffCounter;
+    const hadRunningSound = switchableData.runningSound;
+    const powerConsumption = switchableData.powerConsumption;
+    
+    // Delegate state change to behavior
+    const result = SwitchableBehavior.switchOff(noun);
+    
+    // Handle failure cases (defensive checks)
+    if (!result.success) {
+      if (result.wasOff) {
+        return [context.event('action.error', {
+          actionId: context.action.id,
+          messageId: 'already_off',
+          reason: 'already_off',
+          params: { target: noun.name }
+        })];
+      }
+      // Shouldn't happen if validate worked
       return [context.event('action.error', {
         actionId: context.action.id,
         messageId: 'not_switchable',
         reason: 'not_switchable',
-        params: { target: noun.name }
-      })];
-    }
-    
-    const switchableTrait = noun.get(TraitType.SWITCHABLE);
-    const switchableData = switchableTrait as any;
-    
-    // Check if already off
-    if (!switchableData.isOn) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'already_off',
-        reason: 'already_off',
         params: { target: noun.name }
       })];
     }
@@ -120,12 +134,12 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
     }
     
     // Check for special sounds
-    if (switchableData.offSound) {
-      eventData.sound = switchableData.offSound;
-      params.sound = switchableData.offSound;
+    if (result.offSound) {
+      eventData.sound = result.offSound;
+      params.sound = result.offSound;
       messageId = 'with_sound';
-    } else if (switchableData.runningSound) {
-      eventData.stoppedSound = switchableData.runningSound;
+    } else if (hadRunningSound) {
+      eventData.stoppedSound = hadRunningSound;
       messageId = 'silence_falls';
     } else if (!eventData.isLightSource) {
       // Non-light devices might power down
@@ -133,15 +147,16 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
     }
     
     // Check if this was temporary
-    if (switchableData.autoOffCounter) {
+    if (hadAutoOff) {
       eventData.wasTemporary = true;
-      eventData.remainingTime = switchableData.autoOffCounter;
-      params.remainingTime = switchableData.autoOffCounter;
+      eventData.remainingTime = remainingTime; // Use the value we saved before turning off
+      params.remainingTime = remainingTime;
       messageId = 'was_temporary';
     }
     
-    if (switchableData.powerConsumption) {
-      eventData.powerFreed = switchableData.powerConsumption;
+    // Include power freed if device consumed power
+    if (powerConsumption) {
+      eventData.powerFreed = powerConsumption;
     }
     
     // Check for side effects

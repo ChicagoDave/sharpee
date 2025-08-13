@@ -5,11 +5,11 @@
  * NPCs may accept or refuse items based on their state.
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { SemanticEvent } from '@sharpee/core';
-import { TraitType, ActorTrait, IdentityTrait } from '@sharpee/world-model';
+import { TraitType, ActorBehavior, IdentityBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { GivingEventMap } from './giving-events';
 
@@ -40,103 +40,142 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
     indirectObjectScope: ScopeLevel.REACHABLE
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     const item = context.command.directObject?.entity;
     const recipient = context.command.indirectObject?.entity;
     
     // Validate we have both item and recipient
     if (!item) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_item',
-        reason: 'no_item'
-      })];
+      return { 
+        valid: false, 
+        error: 'no_item',
+        params: {}
+      };
     }
     
     if (!recipient) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_recipient',
-        reason: 'no_recipient'
-      })];
+      return { 
+        valid: false, 
+        error: 'no_recipient',
+        params: {}
+      };
     }
-    
-    // Scope checks handled by parser based on metadata
     
     // Check if recipient is an actor (can receive items)
     if (!recipient.has(TraitType.ACTOR)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_actor',
-        reason: 'not_actor'
-      })];
+      return { 
+        valid: false, 
+        error: 'not_actor',
+        params: { recipient: recipient.name }
+      };
     }
     
     // Prevent giving to self
     if (recipient.id === actor.id) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'self',
-        reason: 'self',
+      return { 
+        valid: false, 
+        error: 'self',
         params: { item: item.name }
-      })];
+      };
     }
     
-    // Check if the recipient is willing to accept items
-    const recipientActor = recipient.get(TraitType.ACTOR) as ActorTrait | undefined;
-    let willAccept = true;
-    let refusalReason: string | undefined;
-    let acceptanceType = 'normal';
-    
-    // Check if recipient has custom acceptance logic
-    // This is where game-specific logic would determine acceptance
-    
-    // 1. Check if recipient has inventory capacity
-    if (recipientActor && ((recipientActor as any).inventoryLimit?.maxWeight !== undefined || 
-                          (recipientActor as any).inventoryLimit?.maxItems !== undefined)) {
-      const recipientInventory = context.world.getContents(recipient.id);
+    // Check inventory capacity - handle both capacity and inventoryLimit for backwards compatibility
+    const recipientActor = recipient.get(TraitType.ACTOR) as any;
+    if (recipientActor) {
+      const limit = recipientActor.capacity || recipientActor.inventoryLimit;
       
-      // Check item count
-      if ((recipientActor as any).inventoryLimit?.maxItems !== undefined && 
-          recipientInventory.length >= (recipientActor as any).inventoryLimit.maxItems) {
-        willAccept = false;
-        refusalReason = 'inventory_full';
-      }
-      
-      // Check weight
-      if (willAccept && (recipientActor as any).inventoryLimit?.maxWeight !== undefined && 
-          item.has(TraitType.IDENTITY)) {
-        const itemIdentity = item.get(TraitType.IDENTITY) as IdentityTrait;
-        if (itemIdentity.weight) {
+      if (limit) {
+        const recipientInventory = context.world.getContents(recipient.id);
+        
+        // Check item count
+        if (limit.maxItems !== undefined && recipientInventory.length >= limit.maxItems) {
+          return { 
+            valid: false, 
+            error: 'inventory_full',
+            params: { recipient: recipient.name }
+          };
+        }
+        
+        // Check weight
+        if (limit.maxWeight !== undefined) {
           const currentWeight = recipientInventory.reduce((sum, e) => {
-            if (e.has(TraitType.IDENTITY)) {
-              const identity = e.get(TraitType.IDENTITY) as IdentityTrait;
-              return sum + (identity.weight || 0);
-            }
-            return sum;
+            return sum + IdentityBehavior.getWeight(e);
           }, 0);
+          const itemWeight = IdentityBehavior.getWeight(item);
           
-          if (currentWeight + itemIdentity.weight > (recipientActor as any).inventoryLimit.maxWeight) {
-            willAccept = false;
-            refusalReason = 'too_heavy';
+          if (currentWeight + itemWeight > limit.maxWeight) {
+            return { 
+              valid: false, 
+              error: 'too_heavy',
+              params: { item: item.name, recipient: recipient.name }
+            };
           }
         }
       }
     }
     
-    // Check if NPC has preferences about items
-    if (willAccept && (recipientActor as any).preferences) {
-      const prefs = (recipientActor as any).preferences;
+    // Check for preferences (stored directly on actor trait)
+    const preferences = (recipientActor as any)?.preferences;
+    if (preferences) {
       const itemName = item.name.toLowerCase();
       
-      if (prefs.likes && prefs.likes.some((like: string) => itemName.includes(like))) {
-        acceptanceType = 'grateful';
-      } else if (prefs.dislikes && prefs.dislikes.some((dislike: string) => itemName.includes(dislike))) {
-        acceptanceType = 'reluctant';
-      } else if (prefs.refuses && prefs.refuses.some((refuse: string) => itemName.includes(refuse))) {
-        willAccept = false;
-        refusalReason = 'not_interested';
+      if (preferences.refuses && Array.isArray(preferences.refuses)) {
+        for (const refuse of preferences.refuses) {
+          if (itemName.includes(refuse.toLowerCase())) {
+            return { 
+              valid: false, 
+              error: 'not_interested',
+              params: { item: item.name, recipient: recipient.name }
+            };
+          }
+        }
+      }
+    }
+    
+    return { valid: true };
+  },
+  
+  execute(context: ActionContext): SemanticEvent[] {
+    // Call validate at the start
+    const validation = this.validate(context);
+    if (!validation.valid) {
+      return [context.event('action.error', {
+        actionId: context.action.id,
+        messageId: validation.error,
+        reason: validation.error,
+        params: validation.params || {}
+      })];
+    }
+    
+    const actor = context.player;
+    const item = context.command.directObject?.entity!;
+    const recipient = context.command.indirectObject?.entity!;
+    
+    // Determine acceptance type based on preferences
+    let acceptanceType = 'normal';
+    const recipientActor = recipient.get(TraitType.ACTOR) as any;
+    const preferences = recipientActor?.preferences;
+    
+    if (preferences) {
+      const itemName = item.name.toLowerCase();
+      
+      if (preferences.likes && Array.isArray(preferences.likes)) {
+        for (const like of preferences.likes) {
+          if (itemName.includes(like.toLowerCase())) {
+            acceptanceType = 'grateful';
+            break;
+          }
+        }
+      }
+      
+      if (acceptanceType === 'normal' && preferences.dislikes && Array.isArray(preferences.dislikes)) {
+        for (const dislike of preferences.dislikes) {
+          if (itemName.includes(dislike.toLowerCase())) {
+            acceptanceType = 'reluctant';
+            break;
+          }
+        }
       }
     }
     
@@ -146,23 +185,13 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       itemName: item.name,
       recipient: recipient.id,
       recipientName: recipient.name,
-      accepted: willAccept
+      accepted: true
     };
     
     const params: Record<string, any> = {
       item: item.name,
       recipient: recipient.name
     };
-    
-    if (!willAccept) {
-      eventData.refusalReason = refusalReason;
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: refusalReason || 'refuses',
-        reason: refusalReason || 'refuses',
-        params
-      })];
-    }
     
     // Determine success message based on acceptance type
     let messageId: string;

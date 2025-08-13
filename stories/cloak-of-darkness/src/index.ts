@@ -29,6 +29,7 @@ import {
   LightSourceTrait,
   EntityType
 } from '@sharpee/world-model';
+import { SemanticEvent } from '@sharpee/core';
 
 /**
  * Cloak of Darkness story configuration
@@ -369,6 +370,38 @@ export class CloakOfDarknessStory implements Story {
       article: 'the'
     }));
     
+    // Add event handler for when player enters the bar
+    bar.on = {
+      'if.event.actor_moved': (event: any): SemanticEvent[] | undefined => {
+        const { actorId, toLocation } = event.data || {};
+        const player = this.world.getPlayer();
+        
+        // Check if the player entered this bar
+        if (player && actorId === player.id && toLocation === bar.id) {
+          // Check if it's dark (player carrying cloak)
+          if (this.isBarDark()) {
+            this.disturbances++;
+            this.updateMessage();
+            
+            // Return an event to show the stumbling message
+            return [{
+              id: `${Date.now()}-stumble`,
+              type: 'game.message',
+              timestamp: Date.now(),
+              data: {
+                message: 'Blundering around in the dark isn\'t a good idea!'
+              },
+              entities: {}
+            }];
+          } else {
+            // Update message visibility when entering in light
+            this.updateMessage();
+          }
+        }
+        return undefined;
+      }
+    };
+    
     return bar;
   }
   
@@ -440,6 +473,24 @@ export class CloakOfDarknessStory implements Story {
     
     hook.add(new SceneryTrait());
     
+    // Add event handler for when something is placed on the hook
+    hook.on = {
+      'if.event.object_moved': (event: any): SemanticEvent[] | undefined => {
+        // Check if the cloak was hung on this hook
+        const { objectId, toLocation } = event.data || {};
+        if (toLocation === hook.id && objectId) {
+          const item = this.world.getEntity(objectId);
+          if (item && item.attributes.name === 'cloak') {
+            // The cloak has been hung! This makes the bar visible
+            console.log('Cloak hung on hook - bar is now lit');
+            // Update the message in case we need to show it properly
+            this.updateMessage();
+          }
+        }
+        return undefined;
+      }
+    };
+    
     // Place hook in cloakroom
     this.world.moveEntity(hook.id, cloakroom.id);
     
@@ -465,6 +516,21 @@ export class CloakOfDarknessStory implements Story {
     message.add(new ReadableTrait({
       text: this.message
     }));
+    
+    // Add event handler for when the message is read
+    message.on = {
+      'action.read.success': (event: any): SemanticEvent[] | undefined => {
+        const { target } = event.data || {};
+        
+        // Check if this message was read successfully
+        if (target === message.id && this.disturbances === 0) {
+          // Mark the story as complete!
+          this.world.setStateValue('message_read_successfully', true);
+          console.log('Message read successfully - story complete!');
+        }
+        return undefined;
+      }
+    };
     
     // Place message in bar
     this.world.moveEntity(message.id, bar.id);
@@ -608,10 +674,10 @@ export class CloakOfDarknessStory implements Story {
               })];
             }
             
-            // Move the cloak to the hook
+            // Move the cloak to the hook (this is still needed for game state)
             context.world.moveEntity(item.id, supporter.id);
             
-            // Success!
+            // Emit the event - the hook's event handler will respond
             return [
               context.event('if.event.object_moved', {
                 objectId: item.id,
@@ -689,13 +755,10 @@ export class CloakOfDarknessStory implements Story {
               })];
             }
             
-            // Success! Mark as complete if undisturbed
-            if (this.disturbances === 0) {
-              this.world.setStateValue('message_read_successfully', true);
-            }
-            
-            return [context.event('action.success', {
+            // Emit success event - the message's event handler will check for victory
+            return [context.event('action.read.success', {
               actionId: context.action.id,
+              target: item.id,
               messageId: 'read_message',
               params: {
                 text: readable.text,
@@ -745,27 +808,22 @@ export class CloakOfDarknessStory implements Story {
             // Move the player
             context.world.moveEntity(context.actor.id, this.roomIds['bar']);
             
-            // Record the movement
-            events.push(context.event('actor_moved', {
-              actor: context.actor.id,
-              from: currentLoc,
-              to: 'bar',
+            // Emit the movement event - the bar's event handler will handle darkness
+            events.push(context.event('if.event.actor_moved', {
+              actorId: context.actor.id,
+              fromLocation: currentLoc,
+              toLocation: this.roomIds['bar'],
               direction: direction
             }));
             
-            // Check if it's dark (carrying cloak)
-            if (this.isBarDark()) {
-              this.disturbances++;
-              this.updateMessage();
-              
-              // Add message about stumbling
-              events.push(context.event('game_message', {
-                message: 'Blundering around in the dark isn\'t a good idea!'
-              }));
-            } else {
-              // Update message visibility
-              this.updateMessage();
-            }
+            // Standard success message
+            events.push(context.event('action.success', {
+              actionId: 'GO',
+              messageId: 'moved',
+              params: {
+                direction: direction
+              }
+            }));
             
             return events;
           }

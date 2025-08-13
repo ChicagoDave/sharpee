@@ -21,6 +21,20 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
+// Helper to execute action with validation (mimics CommandExecutor flow)
+const executeWithValidation = (action: any, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    return [context.event('action.error', {
+      actionId: action.id,
+      messageId: validation.error || 'validation_failed',
+      reason: validation.error || 'validation_failed',
+      params: { item: context.command.directObject?.entity?.name }
+    })];
+  }
+  return action.execute(context);
+};
+
 describe('takingOffAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
@@ -45,7 +59,7 @@ describe('takingOffAction (Golden Pattern)', () => {
       const { world } = setupBasicWorld();
       const context = createRealTestContext(takingOffAction, world, createCommand(IFActions.TAKING_OFF));
       
-      const events = takingOffAction.execute(context);
+      const events = executeWithValidation(takingOffAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_target'),
@@ -66,7 +80,7 @@ describe('takingOffAction (Golden Pattern)', () => {
         entity: hat
       }));
       
-      const events = takingOffAction.execute(context);
+      const events = executeWithValidation(takingOffAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_wearing'),
@@ -84,7 +98,7 @@ describe('takingOffAction (Golden Pattern)', () => {
         entity: ball
       }));
       
-      const events = takingOffAction.execute(context);
+      const events = executeWithValidation(takingOffAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_wearing'),
@@ -105,7 +119,7 @@ describe('takingOffAction (Golden Pattern)', () => {
         entity: shirt
       }));
       
-      const events = takingOffAction.execute(context);
+      const events = executeWithValidation(takingOffAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_wearing'),
@@ -121,6 +135,7 @@ describe('takingOffAction (Golden Pattern)', () => {
       shirt.add({
         type: TraitType.WEARABLE,
         worn: true,
+        wornBy: player.id,
         bodyPart: 'torso',
         layer: 1
       });
@@ -130,6 +145,7 @@ describe('takingOffAction (Golden Pattern)', () => {
       jacket.add({
         type: TraitType.WEARABLE,
         worn: true,
+        wornBy: player.id,
         bodyPart: 'torso',
         layer: 2
       });
@@ -141,7 +157,7 @@ describe('takingOffAction (Golden Pattern)', () => {
         entity: shirt  // Try to remove shirt while wearing jacket
       }));
       
-      const events = takingOffAction.execute(context);
+      const events = executeWithValidation(takingOffAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('prevents_removal'),
@@ -155,6 +171,7 @@ describe('takingOffAction (Golden Pattern)', () => {
       ring.add({
         type: TraitType.WEARABLE,
         worn: true,
+        wornBy: player.id,
         cursed: true  // Can't be removed
       });
       world.moveEntity(ring.id, player.id);
@@ -163,7 +180,7 @@ describe('takingOffAction (Golden Pattern)', () => {
         entity: ring
       }));
       
-      const events = takingOffAction.execute(context);
+      const events = executeWithValidation(takingOffAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('cant_remove'),
@@ -179,6 +196,7 @@ describe('takingOffAction (Golden Pattern)', () => {
       hat.add({
         type: TraitType.WEARABLE,
         worn: true,
+        wornBy: player.id,
         bodyPart: 'head'
       });
       world.moveEntity(hat.id, player.id);
@@ -187,7 +205,7 @@ describe('takingOffAction (Golden Pattern)', () => {
         entity: hat
       }));
       
-      const events = takingOffAction.execute(context);
+      const events = executeWithValidation(takingOffAction, context);
       
       // Should emit REMOVED event
       expectEvent(events, 'if.event.removed', {
@@ -210,7 +228,8 @@ describe('takingOffAction (Golden Pattern)', () => {
       const bracelet = world.createEntity('silver bracelet', 'object');
       bracelet.add({
         type: TraitType.WEARABLE,
-        worn: true
+        worn: true,
+        wornBy: player.id
         // No bodyPart specified
       });
       world.moveEntity(bracelet.id, player.id);
@@ -219,7 +238,7 @@ describe('takingOffAction (Golden Pattern)', () => {
         entity: bracelet
       }));
       
-      const events = takingOffAction.execute(context);
+      const events = executeWithValidation(takingOffAction, context);
       
       expectEvent(events, 'if.event.removed', {
         itemId: bracelet.id,
@@ -235,6 +254,7 @@ describe('takingOffAction (Golden Pattern)', () => {
       shirt.add({
         type: TraitType.WEARABLE,
         worn: true,
+        wornBy: player.id,
         bodyPart: 'torso',
         layer: 1
       });
@@ -243,6 +263,7 @@ describe('takingOffAction (Golden Pattern)', () => {
       vest.add({
         type: TraitType.WEARABLE,
         worn: true,
+        wornBy: player.id,
         bodyPart: 'torso',
         layer: 2
       });
@@ -251,6 +272,7 @@ describe('takingOffAction (Golden Pattern)', () => {
       jacket.add({
         type: TraitType.WEARABLE,
         worn: true,
+        wornBy: player.id,
         bodyPart: 'torso',
         layer: 3
       });
@@ -263,7 +285,7 @@ describe('takingOffAction (Golden Pattern)', () => {
         entity: jacket  // Remove outermost layer
       }));
       
-      const events = takingOffAction.execute(context);
+      const events = executeWithValidation(takingOffAction, context);
       
       // Should succeed - no items over jacket
       expectEvent(events, 'if.event.removed', {
@@ -280,6 +302,7 @@ describe('takingOffAction (Golden Pattern)', () => {
       hat.add({
         type: TraitType.WEARABLE,
         worn: true,
+        wornBy: player.id,
         bodyPart: 'head',
         layer: 1
       });
@@ -288,6 +311,7 @@ describe('takingOffAction (Golden Pattern)', () => {
       coat.add({
         type: TraitType.WEARABLE,
         worn: true,
+        wornBy: player.id,
         bodyPart: 'torso',
         layer: 2
       });
@@ -299,7 +323,7 @@ describe('takingOffAction (Golden Pattern)', () => {
         entity: hat  // Remove hat while wearing coat
       }));
       
-      const events = takingOffAction.execute(context);
+      const events = executeWithValidation(takingOffAction, context);
       
       // Should succeed - different body parts
       expectEvent(events, 'if.event.removed', {
@@ -314,6 +338,7 @@ describe('takingOffAction (Golden Pattern)', () => {
       gloves.add({
         type: TraitType.WEARABLE,
         worn: true,
+        wornBy: player.id,
         bodyPart: 'hands',
         layer: 1
       });
@@ -323,7 +348,7 @@ describe('takingOffAction (Golden Pattern)', () => {
         entity: gloves
       }));
       
-      const events = takingOffAction.execute(context);
+      const events = executeWithValidation(takingOffAction, context);
       
       expectEvent(events, 'if.event.removed', {
         itemId: gloves.id,
@@ -348,6 +373,7 @@ describe('takingOffAction (Golden Pattern)', () => {
       shoes.add({
         type: TraitType.WEARABLE,
         worn: true,
+        wornBy: player.id,
         bodyPart: 'feet'
       });
       world.moveEntity(shoes.id, player.id);
@@ -356,7 +382,7 @@ describe('takingOffAction (Golden Pattern)', () => {
         entity: shoes
       }));
       
-      const events = takingOffAction.execute(context);
+      const events = executeWithValidation(takingOffAction, context);
       
       events.forEach(event => {
         if (event.entities) {

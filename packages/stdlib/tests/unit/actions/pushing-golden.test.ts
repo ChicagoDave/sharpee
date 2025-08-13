@@ -58,11 +58,11 @@ describe('pushingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.PUSHING);
       const context = createRealTestContext(pushingAction, world, command);
       
-      const events = pushingAction.execute(context);
+      // Test validation instead of execute
+      const validation = pushingAction.validate(context);
       
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('no_target')
-      });
+      expect(validation.valid).toBe(false);
+      expect(validation.error).toBe('no_target');
     });
 
 
@@ -83,12 +83,11 @@ describe('pushingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(pushingAction, world, command);
       
-      const events = pushingAction.execute(context);
+      // Test validation instead of execute
+      const validation = pushingAction.validate(context);
       
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('wearing_it'),
-        params: { target: 'blue shirt' }
-      });
+      expect(validation.valid).toBe(false);
+      expect(validation.error).toBe('wearing_it');
     });
 
     test('should fail when object is not pushable', () => {
@@ -104,12 +103,11 @@ describe('pushingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(pushingAction, world, command);
       
-      const events = pushingAction.execute(context);
+      // Test validation instead of execute
+      const validation = pushingAction.validate(context);
       
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('pushing_does_nothing'),
-        params: { target: 'oil painting' }
-      });
+      expect(validation.valid).toBe(false);
+      expect(validation.error).toBe('pushing_does_nothing');
     });
 
     test('should fail when scenery is not pushable', () => {
@@ -128,12 +126,11 @@ describe('pushingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(pushingAction, world, command);
       
-      const events = pushingAction.execute(context);
+      // Test validation instead of execute
+      const validation = pushingAction.validate(context);
       
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('fixed_in_place'),
-        params: { target: 'marble fountain' }
-      });
+      expect(validation.valid).toBe(false);
+      expect(validation.error).toBe('fixed_in_place');
     });
   });
 
@@ -176,10 +173,10 @@ describe('pushingAction (Golden Pattern)', () => {
         sound: 'click'
       });
       
-      // Should emit button_clicks message
+      // Should emit button_toggles message (switchable button)
       expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('button_clicks'),
-        params: { target: 'red button' }
+        messageId: expect.stringContaining('button_toggles'),
+        params: { target: 'red button', newState: 'on' }
       });
     });
 
@@ -213,9 +210,9 @@ describe('pushingAction (Golden Pattern)', () => {
         newState: false
       });
       
-      // Should emit switch_toggled message
+      // Should emit button_toggles message (switchable without BUTTON trait)
       expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('switch_toggled'),
+        messageId: expect.stringContaining('button_toggles'),
         params: { target: 'light switch', newState: 'off' }
       });
     });
@@ -245,7 +242,7 @@ describe('pushingAction (Golden Pattern)', () => {
       });
       
       expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('button_pushed'),
+        messageId: expect.stringContaining('button_clicks'),
         params: { target: 'alarm button' }
       });
     });

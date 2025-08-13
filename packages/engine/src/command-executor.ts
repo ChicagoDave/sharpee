@@ -268,21 +268,132 @@ export class CommandExecutor {
     let success = true;
     let error: string | undefined;
 
+    // Phase 1: Validate the action can be executed
+    // Check if action has the new validate() method (during migration, some may not)
+    if ('validate' in action && typeof action.validate === 'function') {
+      const validationResult = action.validate(actionContext);
+      
+      if (!validationResult.valid) {
+        // Create error event from validation failure
+        const errorEvent: SemanticEvent = {
+          id: `${turn}-validation-error`,
+          type: 'action.error',
+          timestamp: Date.now(),
+          data: {
+            actionId: command.actionId,
+            messageId: validationResult.messageId || validationResult.error || 'validation_failed',
+            reason: validationResult.error || 'validation_failed',
+            params: validationResult.params || {}
+          },
+          entities: {}
+        };
+        
+        // Convert to GameEvent and return early
+        events = [{
+          type: errorEvent.type,
+          data: errorEvent.data,
+          metadata: { id: errorEvent.id, entities: errorEvent.entities }
+        }];
+        
+        const sequencedEvents = eventSequencer.sequenceAll(events, turn);
+        
+        return {
+          turn,
+          input: command.parsed.rawInput || command.parsed.action,
+          success: false,
+          events: sequencedEvents,
+          error: validationResult.error || 'validation_failed',
+          actionId: command.actionId,
+          parsedCommand: command.parsed
+        };
+      }
+    }
+    // During migration: fall back to canExecute if validate doesn't exist
+    else if ('canExecute' in action && typeof action.canExecute === 'function') {
+      const canExecute = action.canExecute(actionContext);
+      if (!canExecute) {
+        // Create generic error for old-style validation
+        const errorEvent: SemanticEvent = {
+          id: `${turn}-canexecute-error`,
+          type: 'action.error',
+          timestamp: Date.now(),
+          data: {
+            actionId: command.actionId,
+            messageId: 'cannot_execute',
+            reason: 'cannot_execute'
+          },
+          entities: {}
+        };
+        
+        events = [{
+          type: errorEvent.type,
+          data: errorEvent.data,
+          metadata: { id: errorEvent.id, entities: errorEvent.entities }
+        }];
+        
+        const sequencedEvents = eventSequencer.sequenceAll(events, turn);
+        
+        return {
+          turn,
+          input: command.parsed.rawInput || command.parsed.action,
+          success: false,
+          events: sequencedEvents,
+          error: 'cannot_execute',
+          actionId: command.actionId,
+          parsedCommand: command.parsed
+        };
+      }
+    }
+
+    // Phase 2: Execute the action (only if validation passed)
     // All actions now use the modern Action pattern - execute returns SemanticEvent[]
     const semanticEvents = await (action as Action).execute(actionContext);
     
+    // Phase 3: Check for entity-level event handlers
+    // After action execution, check if any entities involved have handlers
+    const additionalEvents: SemanticEvent[] = [];
+    for (const event of semanticEvents) {
+      // Check if this is an event that entities might handle (e.g., if.event.pushed)
+      if (event.type.startsWith('if.event.')) {
+        // Get the target entity if specified
+        const targetId = event.data?.target;
+        if (targetId && typeof targetId === 'string') {
+          const targetEntity = world.getEntity(targetId);
+          if (targetEntity && 'on' in targetEntity && targetEntity.on) {
+            // Check if entity has handler for this event type
+            const handler = targetEntity.on[event.type];
+            if (handler) {
+              // Execute entity handler
+              const handlerResult = handler(event as any);
+              if (handlerResult) {
+                additionalEvents.push(...handlerResult);
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    // Phase 4: Check for story-level event handlers
+    // Story-level handlers would need to be passed in via context or another mechanism
+    // For now, we'll skip this as GameContext doesn't have a story property
+    // This can be added later when the story is properly integrated into the context
+    
+    // Combine all events
+    const allEvents = [...semanticEvents, ...additionalEvents];
+    
     // Convert SemanticEvent[] to GameEvent[]
-    events = semanticEvents.map((se: SemanticEvent) => ({
+    events = allEvents.map((se: SemanticEvent) => ({
       type: se.type,
       data: se.data,
       metadata: { id: se.id, entities: se.entities }
     }));
     
     // Determine success based on whether we have error events
-    success = !semanticEvents.some(e => e.type === 'action.error');
+    success = !allEvents.some(e => e.type === 'action.error');
     
     // Extract error message if present
-    const errorEvent = semanticEvents.find(e => e.type === 'action.error');
+    const errorEvent = allEvents.find(e => e.type === 'action.error');
     error = errorEvent ? String(errorEvent.data?.reason || 'Action failed') : undefined;
 
     // Sequence the events

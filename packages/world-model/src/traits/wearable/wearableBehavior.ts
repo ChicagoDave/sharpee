@@ -6,6 +6,24 @@ import { WearableTrait } from './wearableTrait';
 import { SemanticEvent, createEvent } from '@sharpee/core';
 import { IFEvents } from '../../constants/if-events';
 
+export interface WearResult {
+  success: boolean;
+  alreadyWorn?: boolean;
+  wornByOther?: string;
+  slotConflict?: string;
+  slot?: string;
+  layer?: number;
+  wearMessage?: string;
+}
+
+export interface RemoveResult {
+  success: boolean;
+  notWorn?: boolean;
+  wornByOther?: string;
+  blocked?: boolean;
+  removeMessage?: string;
+}
+
 /**
  * Behavior for wearable entities.
  * 
@@ -31,31 +49,42 @@ export class WearableBehavior {
   }
   
   /**
-   * Wear an item
-   * @returns Events describing what happened
+   * Check if an item can be removed by an actor
    */
-  static wear(item: IFEntity, actor: IFEntity): SemanticEvent[] {
+  static canRemove(item: IFEntity, actor: IFEntity): boolean {
     const wearable = item.get(TraitType.WEARABLE) as WearableTrait;
-    if (!wearable) return [];
+    if (!wearable) return false;
+    
+    // Must be worn to remove
+    if (!wearable.worn) return false;
+    
+    // Must be worn by this actor
+    if (wearable.wornBy !== actor.id) return false;
+    
+    // TODO: Check if other items prevent removal
+    
+    return true;
+  }
+  
+  /**
+   * Wear an item
+   * @returns Result object describing what happened
+   */
+  static wear(item: IFEntity, actor: IFEntity): WearResult {
+    const wearable = item.get(TraitType.WEARABLE) as WearableTrait;
+    if (!wearable) return { success: false };
     
     if (wearable.worn) {
       if (wearable.wornBy === actor.id) {
-        return [createEvent(
-          IFEvents.ACTION_FAILED,
-          {
-            action: 'wear',
-            reason: 'already_wearing'
-          }
-        )];
+        return {
+          success: false,
+          alreadyWorn: true
+        };
       } else {
-        return [createEvent(
-          IFEvents.ACTION_FAILED,
-          {
-            action: 'wear',
-            reason: 'worn_by_other',
-            wornBy: wearable.wornBy
-          }
-        )];
+        return {
+          success: false,
+          wornByOther: wearable.wornBy
+        };
       }
     }
     
@@ -65,45 +94,34 @@ export class WearableBehavior {
     wearable.worn = true;
     wearable.wornBy = actor.id;
     
-    return [createEvent(
-      IFEvents.WORN,
-      {
-        item: item.id,
-        actor: actor.id,
-        slot: wearable.slot,
-        layer: wearable.layer,
-        customMessage: wearable.wearMessage
-      }
-    )];
+    return {
+      success: true,
+      slot: wearable.slot,
+      layer: wearable.layer,
+      wearMessage: wearable.wearMessage
+    };
   }
   
   /**
    * Remove (take off) a worn item
-   * @returns Events describing what happened
+   * @returns Result object describing what happened
    */
-  static remove(item: IFEntity, actor: IFEntity): SemanticEvent[] {
+  static remove(item: IFEntity, actor: IFEntity): RemoveResult {
     const wearable = item.get(TraitType.WEARABLE) as WearableTrait;
-    if (!wearable) return [];
+    if (!wearable) return { success: false };
     
     if (!wearable.worn) {
-      return [createEvent(
-        IFEvents.ACTION_FAILED,
-        {
-          action: 'remove',
-          reason: 'not_wearing'
-        }
-      )];
+      return {
+        success: false,
+        notWorn: true
+      };
     }
     
     if (wearable.wornBy !== actor.id) {
-      return [createEvent(
-        IFEvents.ACTION_FAILED,
-        {
-          action: 'remove',
-          reason: 'worn_by_other',
-          wornBy: wearable.wornBy
-        }
-      )];
+      return {
+        success: false,
+        wornByOther: wearable.wornBy
+      };
     }
     
     // TODO: Check if other items prevent removal
@@ -112,14 +130,10 @@ export class WearableBehavior {
     wearable.worn = false;
     wearable.wornBy = undefined;
     
-    return [createEvent(
-      IFEvents.REMOVED,
-      {
-        item: item.id,
-        actor: actor.id,
-        customMessage: wearable.removeMessage
-      }
-    )];
+    return {
+      success: true,
+      removeMessage: wearable.removeMessage
+    };
   }
   
   /**

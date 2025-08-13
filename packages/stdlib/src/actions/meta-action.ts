@@ -12,7 +12,7 @@
  * commands (SCORE/VERSION).
  */
 
-import { Action, ActionContext } from './enhanced-types';
+import { Action, ActionContext, ValidationResult } from './enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { MetaCommandRegistry } from './meta-registry';
 
@@ -52,12 +52,22 @@ export abstract class MetaAction implements Action {
   abstract verbs: string[];
   
   /**
-   * Optional validation method
-   * Override to provide custom validation logic
+   * Validate whether this meta-action can be executed
+   * 
+   * Meta-actions typically have minimal validation requirements.
+   * Override this method for custom validation logic.
+   * 
+   * @param context The action context
+   * @returns Validation result (defaults to always valid)
    */
-  validate?(context: ActionContext): boolean;
+  validate(context: ActionContext): ValidationResult {
+    // Meta-actions are generally always valid to execute
+    // Subclasses can override for specific validation needs
+    return { valid: true };
+  }
   
   /**
+   * @deprecated Use validate() instead. This will be removed after refactoring.
    * Optional method to check if action can execute
    * Override for complex conditions beyond verb matching
    */

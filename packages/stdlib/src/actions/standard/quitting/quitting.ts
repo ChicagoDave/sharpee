@@ -5,11 +5,18 @@
  * The engine will handle any necessary confirmations through its quit hook.
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { SemanticEvent, createQuitRequestedEvent, QuitContext } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { QuitRequestedEventData } from './quitting-events';
+
+interface QuittingState {
+  quitContext: QuitContext;
+  eventData: QuitRequestedEventData;
+  forceQuit: boolean;
+  hasUnsavedProgress: boolean;
+}
 
 export const quittingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.QUITTING,
@@ -23,9 +30,7 @@ export const quittingAction: Action & { metadata: ActionMetadata } = {
     'game_ending'
   ],
   
-  execute(context: ActionContext): SemanticEvent[] {
-    const events: SemanticEvent[] = [];
-    
+  validate(context: ActionContext): ValidationResult {
     // Get game state for context
     const sharedData = context.world.getCapability('sharedData') || {};
     const hasUnsavedProgress = (sharedData.moves || 0) > (sharedData.lastSaveMove || 0);
@@ -53,6 +58,59 @@ export const quittingAction: Action & { metadata: ActionMetadata } = {
       }
     };
     
+    // Build event data
+    const eventData: QuitRequestedEventData = {
+      timestamp: Date.now(),
+      hasUnsavedChanges: hasUnsavedProgress,
+      force: forceQuit,
+      score,
+      moves
+    };
+    
+    return {
+      valid: true
+    };
+  },
+  
+  execute(context: ActionContext): SemanticEvent[] {
+    const events: SemanticEvent[] = [];
+    
+    // Rebuild the same data from validate
+    const sharedData = context.world.getCapability('sharedData') || {};
+    const hasUnsavedProgress = (sharedData.moves || 0) > (sharedData.lastSaveMove || 0);
+    const score = sharedData.score || 0;
+    const maxScore = sharedData.maxScore || 0;
+    const moves = sharedData.moves || 0;
+    const nearComplete = maxScore > 0 && (score / maxScore) > 0.8;
+    
+    // Check if force quit
+    const forceQuit = context.command.parsed.extras?.force || 
+                     context.command.parsed.extras?.now ||
+                     context.command.parsed.action === 'exit';
+    
+    // Build quit context
+    const quitContext: QuitContext = {
+      score,
+      moves,
+      hasUnsavedChanges: hasUnsavedProgress,
+      force: forceQuit,
+      stats: {
+        maxScore,
+        nearComplete,
+        playTime: sharedData.playTime || 0,
+        achievements: sharedData.achievements || []
+      }
+    };
+    
+    // Build event data
+    const eventData: QuitRequestedEventData = {
+      timestamp: Date.now(),
+      hasUnsavedChanges: hasUnsavedProgress,
+      force: forceQuit,
+      score,
+      moves
+    };
+    
     // Emit platform quit requested event
     // The engine will handle this after turn completion
     const platformEvent = createQuitRequestedEvent(quitContext);
@@ -72,14 +130,6 @@ export const quittingAction: Action & { metadata: ActionMetadata } = {
     
     // Emit a notification that quit was requested
     // The actual quit handling will be done by the platform
-    const eventData: QuitRequestedEventData = {
-      timestamp: Date.now(),
-      hasUnsavedChanges: hasUnsavedProgress,
-      force: forceQuit,
-      score,
-      moves
-    };
-    
     events.push(context.event('if.event.quit_requested', eventData));
     
     // If not force quit and there are unsaved changes, emit a hint

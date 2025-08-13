@@ -5,11 +5,21 @@
  * It emits a platform event that the engine will process after turn completion.
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { SemanticEvent, createSaveRequestedEvent, SaveContext } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { SaveRequestedEventData } from './saving-events';
+
+interface SavingState {
+  saveName: string;
+  isQuickSave: boolean;
+  isAutoSave: boolean;
+  saveContext: SaveContext;
+  eventData: SaveRequestedEventData;
+  messageId: string;
+  messageParams: Record<string, any>;
+}
 
 export const savingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.SAVING,
@@ -34,7 +44,7 @@ export const savingAction: Action & { metadata: ActionMetadata } = {
     'save_exported'
   ],
   
-  execute(context: ActionContext): SemanticEvent[] {
+  validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     
     // Extract save slot or name if provided
@@ -54,29 +64,25 @@ export const savingAction: Action & { metadata: ActionMetadata } = {
     const saveRestrictions = sharedData.saveRestrictions || {};
     
     if (saveRestrictions.disabled) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'save_not_allowed',
-        reason: 'save_not_allowed'
-      })];
+      return {
+        valid: false,
+        error: 'save_not_allowed'
+      };
     }
     
     if (saveRestrictions.inProgress) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'save_in_progress',
-        reason: 'save_in_progress'
-      })];
+      return {
+        valid: false,
+        error: 'save_in_progress'
+      };
     }
     
     // Check if save name is valid
     if (saveName.length > 50 || /[<>:"/\\|?*]/.test(saveName)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'invalid_save_name',
-        reason: 'invalid_save_name',
-        params: { saveName }
-      })];
+      return {
+        valid: false,
+        error: 'invalid_save_name'
+      };
     }
     
     // Check if this is a quick save or auto save
@@ -95,14 +101,6 @@ export const savingAction: Action & { metadata: ActionMetadata } = {
         quickSave: isQuickSave
       }
     };
-    
-    // Create events
-    const events: SemanticEvent[] = [];
-    
-    // Emit platform save requested event
-    // The engine will handle this after turn completion
-    const platformEvent = createSaveRequestedEvent(saveContext);
-    events.push(platformEvent);
     
     // Emit a notification that save was requested
     // The actual save confirmation will come from the platform completion event
@@ -130,6 +128,59 @@ export const savingAction: Action & { metadata: ActionMetadata } = {
       }
     };
     
+    return {
+      valid: true
+    };
+  },
+  
+  execute(context: ActionContext): SemanticEvent[] {
+    const events: SemanticEvent[] = [];
+    
+    // Get save name from command - could be provided as extras or directObject
+    const extras = context.command.parsed.extras;
+    const directText = context.command.directObject?.parsed?.text;
+    const saveName = extras?.saveName || directText || 'default';
+    
+    // Get game state
+    const sharedData = context.world.getCapability('sharedData') || {};
+    const score = sharedData.score || 0;
+    const moves = sharedData.moves || 0;
+    const turnCount = sharedData.turnCount || 0;
+    
+    // Check if this is a quick save or auto save
+    const isQuickSave = saveName === 'quicksave' || context.command.parsed.extras?.quick;
+    const isAutoSave = context.command.parsed.extras?.auto;
+    
+    // Build save context
+    const saveContext: SaveContext = {
+      saveName: saveName !== 'default' ? saveName : undefined,
+      autosave: isAutoSave,
+      timestamp: Date.now(),
+      metadata: {
+        score,
+        moves,
+        turnCount,
+        quickSave: isQuickSave
+      }
+    };
+    
+    const eventData: SaveRequestedEventData = {
+      saveName,
+      timestamp: saveContext.timestamp,
+      metadata: {
+        score,
+        moves,
+        turnCount,
+        quickSave: isQuickSave
+      }
+    };
+    
+    // Emit platform save requested event
+    // The engine will handle this after turn completion
+    const platformEvent = createSaveRequestedEvent(saveContext);
+    events.push(platformEvent);
+    
+    // Emit the save requested event
     events.push(context.event('if.event.save_requested', eventData));
     
     return events;

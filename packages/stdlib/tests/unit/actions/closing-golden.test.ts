@@ -20,6 +20,20 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
+// Helper to execute action with validation (mimics CommandExecutor flow)
+const executeWithValidation = (action: any, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    return [context.event('action.error', {
+      actionId: action.id,
+      messageId: validation.error || 'validation_failed',
+      reason: validation.error || 'validation_failed',
+      params: validation.params || {}
+    })];
+  }
+  return action.execute(context);
+};
+
 describe('closingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
@@ -44,7 +58,7 @@ describe('closingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.CLOSING);
       const context = createRealTestContext(closingAction, world, command);
       
-      const events = closingAction.execute(context);
+      const events = executeWithValidation(closingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_target'),
@@ -61,7 +75,7 @@ describe('closingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(closingAction, world, command);
       
-      const events = closingAction.execute(context);
+      const events = executeWithValidation(closingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_closable'),
@@ -82,7 +96,7 @@ describe('closingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(closingAction, world, command);
       
-      const events = closingAction.execute(context);
+      const events = executeWithValidation(closingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('already_closed'),
@@ -96,7 +110,8 @@ describe('closingAction (Golden Pattern)', () => {
       const { world, player, room, object } = TestData.withObject('wooden box', {
         [TraitType.OPENABLE]: { 
           type: TraitType.OPENABLE,
-          isOpen: true  // Currently open
+          isOpen: true,  // Currently open
+          canClose: true
         },
         [TraitType.CONTAINER]: {
           type: TraitType.CONTAINER,
@@ -109,7 +124,7 @@ describe('closingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(closingAction, world, command);
       
-      const events = closingAction.execute(context);
+      const events = executeWithValidation(closingAction, context);
       
       // Should emit CLOSED event with our data
       expectEvent(events, 'if.event.closed', {
@@ -137,7 +152,8 @@ describe('closingAction (Golden Pattern)', () => {
       const box = world.createEntity('wooden box', EntityType.CONTAINER);
       box.add({
         type: TraitType.OPENABLE,
-        isOpen: true
+        isOpen: true,
+        canClose: true
       });
       box.add({
         type: TraitType.CONTAINER
@@ -154,7 +170,7 @@ describe('closingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(closingAction, world, command);
       
-      const events = closingAction.execute(context);
+      const events = executeWithValidation(closingAction, context);
       
       expectEvent(events, 'if.event.closed', {
         targetId: box.id,
@@ -172,7 +188,8 @@ describe('closingAction (Golden Pattern)', () => {
       const { world, player, room, object } = TestData.withObject('oak door', {
         [TraitType.OPENABLE]: { 
           type: TraitType.OPENABLE,
-          isOpen: true
+          isOpen: true,
+          canClose: true
         },
         [TraitType.DOOR]: {
           type: TraitType.DOOR,
@@ -185,7 +202,7 @@ describe('closingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(closingAction, world, command);
       
-      const events = closingAction.execute(context);
+      const events = executeWithValidation(closingAction, context);
       
       expectEvent(events, 'if.event.closed', {
         targetId: object.id,
@@ -206,6 +223,7 @@ describe('closingAction (Golden Pattern)', () => {
         [TraitType.OPENABLE]: { 
           type: TraitType.OPENABLE,
           isOpen: true,
+          canClose: true,
           closeRequirements: {
             preventedBy: 'sword handle sticking out'
           }
@@ -217,7 +235,7 @@ describe('closingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(closingAction, world, command);
       
-      const events = closingAction.execute(context);
+      const events = executeWithValidation(closingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('prevents_closing'),
@@ -234,7 +252,8 @@ describe('closingAction (Golden Pattern)', () => {
       const { world, player, room, object } = TestData.withObject('box', {
         [TraitType.OPENABLE]: { 
           type: TraitType.OPENABLE,
-          isOpen: true
+          isOpen: true,
+          canClose: true
         }
       });
       
@@ -243,7 +262,7 @@ describe('closingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(closingAction, world, command);
       
-      const events = closingAction.execute(context);
+      const events = executeWithValidation(closingAction, context);
       
       events.forEach(event => {
         if (event.entities) {

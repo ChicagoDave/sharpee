@@ -8,9 +8,18 @@
  * MIGRATED: To new folder structure with typed events (ADR-042)
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
-import { TraitType, RoomTrait, OpenableTrait, LockableTrait, IFEntity } from '@sharpee/world-model';
+import { 
+  TraitType, 
+  RoomTrait, 
+  IFEntity, 
+  RoomBehavior, 
+  OpenableBehavior, 
+  LockableBehavior,
+  VisibilityBehavior,
+  LightSourceBehavior
+} from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
@@ -41,7 +50,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     'need_light'
   ],
   
-  execute(context: ActionContext): SemanticEvent[] {
+  validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     
     // Get the direction from the parsed command
@@ -49,11 +58,10 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
                      context.command.directObject?.entity?.name;
     
     if (!direction) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_direction',
-        reason: 'no_direction'
-      })];
+      return { 
+        valid: false, 
+        error: 'no_direction'
+      };
     }
     
     // Normalize direction
@@ -65,89 +73,75 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     
     if (playerDirectLocation !== currentRoom.id) {
       // Player is inside something (container/supporter) - can't use room exits
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_in_room',
-        reason: 'not_in_room'
-      })];
+      return { 
+        valid: false, 
+        error: 'not_in_room'
+      };
     }
     
     if (!currentRoom.has(TraitType.ROOM)) {
       // Shouldn't happen since currentLocation should always be a room
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_in_room',
-        reason: 'not_in_room'
-      })];
+      return { 
+        valid: false, 
+        error: 'not_in_room'
+      };
     }
     
-    // Get the room trait to access exits
-    const roomTrait = currentRoom.get(TraitType.ROOM) as RoomTrait;
-    if (!roomTrait || !roomTrait.exits) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_exits',
-        reason: 'no_exits'
-      })];
-    }
-    
-    // Find the exit in the requested direction
-    const exitConfig = roomTrait.exits[normalizedDirection];
+    // Use RoomBehavior to get exit information
+    const exitConfig = RoomBehavior.getExit(currentRoom, normalizedDirection);
     if (!exitConfig) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_exit_that_way',
-        reason: 'no_exit_that_way',
+      // Check if we have exits at all
+      const allExits = RoomBehavior.getAllExits(currentRoom);
+      if (allExits.size === 0) {
+        return { 
+          valid: false, 
+          error: 'no_exits'
+        };
+      }
+      return { 
+        valid: false, 
+        error: 'no_exit_that_way',
         params: { direction: normalizedDirection }
-      })];
+      };
+    }
+    
+    // Check if exit is blocked
+    if (RoomBehavior.isExitBlocked(currentRoom, normalizedDirection)) {
+      const blockedMessage = RoomBehavior.getBlockedMessage(currentRoom, normalizedDirection);
+      return { 
+        valid: false, 
+        error: 'movement_blocked',
+        params: { direction: normalizedDirection }
+      };
     }
     
     // Check if there's a door/portal
     if (exitConfig.via) {
       const door = context.world.getEntity(exitConfig.via);
       if (door) {
-        let isClosed = false;
-        let isLocked = false;
+        // Use behaviors to check door state
+        const isLocked = door.has(TraitType.LOCKABLE) && LockableBehavior.isLocked(door);
+        const isClosed = door.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(door);
         
-        // Check if door is open
-        if (door.has(TraitType.OPENABLE)) {
-          const openableTrait = door.get(TraitType.OPENABLE) as OpenableTrait;
-          if (openableTrait && !openableTrait.isOpen) {
-            isClosed = true;
-          }
-        }
-        
-        // Check if door is locked
-        if (door.has(TraitType.LOCKABLE)) {
-          const lockableTrait = door.get(TraitType.LOCKABLE) as LockableTrait;
-          if (lockableTrait && lockableTrait.isLocked) {
-            isLocked = true;
-          }
-        }
-        
-        // Report the door state - let text service decide how to describe it
         if (isLocked) {
-          return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'door_locked',
-        reason: 'door_locked',
-        params: { 
+          return { 
+            valid: false, 
+            error: 'door_locked',
+            params: { 
+              door: door.name, 
               direction: normalizedDirection,
-              door: door.name,
-              isClosed,
-              isLocked
+              isClosed: isClosed,
+              isLocked: true
             }
-      })];
-        } else if (isClosed) {
-          return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'door_closed',
-        reason: 'door_closed',
-        params: { 
-          direction: normalizedDirection,
-          door: door.name
+          };
         }
-      })];
+        
+        if (isClosed) {
+          return { 
+            valid: false, 
+            error: 'door_closed',
+            params: { door: door.name, direction: normalizedDirection }
+          };
         }
       }
     }
@@ -158,23 +152,48 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     
     if (!destination) {
       // Destination doesn't exist
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'destination_not_found',
-        reason: 'destination_not_found',
+      return { 
+        valid: false, 
+        error: 'destination_not_found',
         params: { direction: normalizedDirection }
-      })];
+      };
     }
     
     // Check if destination is dark and player has no light
-    if (isDarkRoom(destination) && !hasLight(actor, context)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'too_dark',
-        reason: 'too_dark',
+    if (isDarkRoom(destination) && !hasLightInRoom(actor, context)) {
+      return { 
+        valid: false, 
+        error: 'too_dark',
         params: { direction: normalizedDirection }
+      };
+    }
+    
+    return { valid: true };
+  },
+  
+  execute(context: ActionContext): SemanticEvent[] {
+    // Validate first
+    const validation = this.validate(context);
+    if (!validation.valid) {
+      return [context.event('action.error', {
+        actionId: this.id,
+        messageId: validation.error!,
+        reason: validation.error!,
+        params: validation.params || {}
       })];
     }
+    
+    const actor = context.player;
+    const currentRoom = context.currentLocation;
+    
+    // Get and normalize direction
+    const direction = context.command.parsed.extras?.direction as string || 
+                     context.command.directObject?.entity?.name;
+    const normalizedDirection = normalizeDirection(direction!);
+    
+    // Get exit info and destination using behaviors
+    const exitConfig = RoomBehavior.getExit(currentRoom, normalizedDirection)!;
+    const destination = context.world.getEntity(exitConfig.destination)!
     
     // Build typed event data
     const movedData: ActorMovedEventData = {
@@ -184,9 +203,9 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       oppositeDirection: getOppositeDirection(normalizedDirection)
     };
     
-    // Check if this is the first time entering the destination
-    const destRoomTrait = destination.get(TraitType.ROOM) as RoomTrait;
-    if (destRoomTrait && !destRoomTrait.visited) {
+    // Check if this is the first time entering the destination using behavior
+    const isFirstVisit = !RoomBehavior.hasBeenVisited(destination);
+    if (isFirstVisit) {
       movedData.firstVisit = true;
     }
     
@@ -207,9 +226,9 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     // Actually move the player!
     context.world.moveEntity(actor.id, destination.id);
     
-    // Mark the destination room as visited
-    if (destRoomTrait && !destRoomTrait.visited) {
-      destRoomTrait.visited = true;
+    // Mark the destination room as visited using behavior
+    if (isFirstVisit) {
+      RoomBehavior.markVisited(destination, actor);
     }
     
     // Success message parameters
@@ -303,25 +322,19 @@ function isDarkRoom(room: IFEntity): boolean {
 }
 
 /**
- * Check if actor has a light source
+ * Check if actor has light in current room
  */
-function hasLight(actor: IFEntity, context: ActionContext): boolean {
-  // Check if actor itself provides light
-  if (actor.has(TraitType.LIGHT_SOURCE)) {
-    const lightTrait = actor.get(TraitType.LIGHT_SOURCE);
-    if (lightTrait && (lightTrait as any).isLit) {
-      return true;
-    }
+function hasLightInRoom(actor: IFEntity, context: ActionContext): boolean {
+  // Check if actor itself provides light using behavior
+  if (actor.has(TraitType.LIGHT_SOURCE) && LightSourceBehavior.isLit(actor)) {
+    return true;
   }
   
-  // Check carried items
+  // Check carried items for lit light sources
   const carried = context.world.getContents(actor.id);
   for (const item of carried) {
-    if (item.has(TraitType.LIGHT_SOURCE)) {
-      const lightTrait = item.get(TraitType.LIGHT_SOURCE);
-      if (lightTrait && (lightTrait as any).isLit) {
-        return true;
-      }
+    if (item.has(TraitType.LIGHT_SOURCE) && LightSourceBehavior.isLit(item)) {
+      return true;
     }
   }
   

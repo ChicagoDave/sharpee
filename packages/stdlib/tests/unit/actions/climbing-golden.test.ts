@@ -21,6 +21,20 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
+// Helper to execute action with validation (mimics CommandExecutor flow)
+const executeWithValidation = (action: any, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    return [context.event('action.error', {
+      actionId: action.id,
+      messageId: validation.error || 'validation_failed',
+      reason: validation.error || 'validation_failed',
+      params: validation.params || {}
+    })];
+  }
+  return action.execute(context);
+};
+
 describe('climbingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
@@ -50,7 +64,7 @@ describe('climbingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.CLIMBING);
       const context = createRealTestContext(climbingAction, world, command);
       
-      const events = climbingAction.execute(context);
+      const events = executeWithValidation(climbingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_target'),
@@ -67,7 +81,7 @@ describe('climbingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(climbingAction, world, command);
       
-      const events = climbingAction.execute(context);
+      const events = executeWithValidation(climbingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_climbable'),
@@ -91,7 +105,7 @@ describe('climbingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(climbingAction, world, command);
       
-      const events = climbingAction.execute(context);
+      const events = executeWithValidation(climbingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('already_there'),
@@ -106,7 +120,7 @@ describe('climbingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(climbingAction, world, command);
       
-      const events = climbingAction.execute(context);
+      const events = executeWithValidation(climbingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('cant_go_that_way'),
@@ -135,7 +149,7 @@ describe('climbingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(climbingAction, world, command);
       
-      const events = climbingAction.execute(context);
+      const events = executeWithValidation(climbingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('cant_go_that_way'),
@@ -159,7 +173,7 @@ describe('climbingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(climbingAction, world, command);
       
-      const events = climbingAction.execute(context);
+      const events = executeWithValidation(climbingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('cant_go_that_way'),
@@ -202,7 +216,7 @@ describe('climbingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(climbingAction, world, command);
       
-      const events = climbingAction.execute(context);
+      const events = executeWithValidation(climbingAction, context);
       
       // Should emit CLIMBED event
       expectEvent(events, 'if.event.climbed', {
@@ -249,7 +263,7 @@ describe('climbingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(climbingAction, world, command);
       
-      const events = climbingAction.execute(context);
+      const events = executeWithValidation(climbingAction, context);
       
       expectEvent(events, 'if.event.climbed', {
         direction: 'down',
@@ -277,7 +291,7 @@ describe('climbingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(climbingAction, world, command);
       
-      const events = climbingAction.execute(context);
+      const events = executeWithValidation(climbingAction, context);
       
       // Should emit CLIMBED event
       expectEvent(events, 'if.event.climbed', {
@@ -315,7 +329,7 @@ describe('climbingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(climbingAction, world, command);
       
-      const events = climbingAction.execute(context);
+      const events = executeWithValidation(climbingAction, context);
       
       expectEvent(events, 'if.event.climbed', {
         targetId: ladder.id,
@@ -357,7 +371,7 @@ describe('climbingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(climbingAction, world, command);
       
-      const events = climbingAction.execute(context);
+      const events = executeWithValidation(climbingAction, context);
       
       expectEvent(events, 'if.event.climbed', {
         direction: 'up' // Normalized to lowercase
@@ -381,7 +395,7 @@ describe('climbingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(climbingAction, world, command);
       
-      const events = climbingAction.execute(context);
+      const events = executeWithValidation(climbingAction, context);
       
       events.forEach(event => {
         if (event.entities) {

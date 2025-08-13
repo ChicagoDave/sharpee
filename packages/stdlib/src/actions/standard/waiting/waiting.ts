@@ -5,11 +5,17 @@
  * time-based events to occur.
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { WaitedEventData } from './waiting-events';
+
+interface WaitingState {
+  messageId: string;
+  params: Record<string, any>;
+  eventData: WaitedEventData;
+}
 
 export const waitingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.WAITING,
@@ -28,7 +34,14 @@ export const waitingAction: Action & { metadata: ActionMetadata } = {
     'grows_restless'
   ],
   
-  execute(context: ActionContext): SemanticEvent[] {
+  group: "meta",
+  
+  metadata: {
+    requiresDirectObject: false,
+    requiresIndirectObject: false
+  },
+  
+  validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     
     // Waiting is always successful - it's a simple time-passing action
@@ -90,7 +103,84 @@ export const waitingAction: Action & { metadata: ActionMetadata } = {
       messageId = 'nothing_happens';
     }
     
-    // Create events
+    // Waiting always succeeds - return valid state
+    return {
+      valid: true
+    };
+  },
+  
+  execute(context: ActionContext): SemanticEvent[] {
+    // Validate and get state
+    const result = this.validate(context);
+    if (!result.valid) {
+      // This should never happen for waiting
+      return [context.event('action.error', {
+        actionId: this.id,
+        messageId: result.error,
+        reason: result.error,
+        params: result.params
+      })];
+    }
+    
+    // Extract event data and other values from validation
+    const eventData: WaitedEventData = {
+      turnsPassed: 1  // Waiting typically advances one turn
+    };
+    
+    const params: Record<string, any> = {};
+    
+    // Check if we're in a special waiting situation
+    const actor = context.player;
+    const currentLocation = context.world.getLocation(actor.id);
+    let messageId = 'waited';
+    
+    if (currentLocation) {
+      const location = context.world.getEntity(currentLocation);
+      if (location) {
+        // Add any location-specific context
+        eventData.location = location.id;
+        eventData.locationName = location.name;
+        
+        // Check if in a vehicle
+        if (location.has('if.trait.vehicle')) {
+          params.vehicle = location.name;
+          messageId = 'waited_in_vehicle';
+        }
+        
+        // Check if there's a timed event pending
+        const timedEvent = (context as any).pendingTimedEvent;
+        if (timedEvent) {
+          eventData.pendingEvent = timedEvent.id;
+          
+          if (timedEvent.turnsRemaining === 1) {
+            messageId = 'something_approaches';
+          } else if (timedEvent.anxious) {
+            messageId = 'waited_anxiously';
+          } else {
+            messageId = 'waited_for_event';
+          }
+        }
+      }
+    }
+    
+    // Check wait count for variety
+    const waitCount = (context as any).consecutiveWaits || 0;
+    eventData.waitCount = waitCount;
+    
+    if (waitCount > 5) {
+      messageId = 'grows_restless';
+    } else if (waitCount > 2 && messageId === 'waited') {
+      messageId = 'time_passes';
+    } else if (waitCount === 0 && messageId === 'waited') {
+      // First wait might be more descriptive
+      const waitVariations = ['waited', 'waited_patiently', 'waited_briefly'];
+      messageId = waitVariations[Math.floor(Math.random() * waitVariations.length)];
+    }
+    
+    // Check if something happens while waiting (random chance)
+    if (Math.random() < 0.1 && messageId === 'waited') {
+      messageId = 'nothing_happens';
+    }
     const events: SemanticEvent[] = [];
     
     // Create WAITED event for world model
@@ -98,18 +188,11 @@ export const waitingAction: Action & { metadata: ActionMetadata } = {
     
     // Add success message
     events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: messageId,
-        params: params
-      }));
+      actionId: this.id,
+      messageId: messageId,
+      params: params
+    }));
     
     return events;
-  },
-  
-  group: "meta",
-  
-  metadata: {
-    requiresDirectObject: false,
-    requiresIndirectObject: false
   }
 };

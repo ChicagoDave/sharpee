@@ -21,6 +21,31 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
+// Helper to execute action with validation (mimics CommandExecutor flow)
+const executeWithValidation = (action: any, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    const params: any = { item: context.command.directObject?.entity?.name };
+    
+    // Special handling for container_full error
+    if (validation.error === 'container_full') {
+      const playerLocation = context.world.getLocation(context.player.id);
+      const dropLocation = playerLocation ? context.world.getEntity(playerLocation) : null;
+      if (dropLocation) {
+        params.container = dropLocation.name;
+      }
+    }
+    
+    return [context.event('action.error', {
+      actionId: action.id,
+      messageId: validation.error || 'validation_failed',
+      reason: validation.error || 'validation_failed',
+      params
+    })];
+  }
+  return action.execute(context);
+};
+
 describe('droppingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
@@ -52,7 +77,7 @@ describe('droppingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.DROPPING);
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = droppingAction.execute(context);
+      const events = executeWithValidation(droppingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_target'),
@@ -68,7 +93,7 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = droppingAction.execute(context);
+      const events = executeWithValidation(droppingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_held'),
@@ -92,7 +117,7 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = droppingAction.execute(context);
+      const events = executeWithValidation(droppingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('still_worn'),
@@ -141,7 +166,7 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = droppingAction.execute(context);
+      const events = executeWithValidation(droppingAction, context);
       
       // Should succeed - dropping inside a closed container is allowed
       // The closed state prevents things moving IN/OUT from outside, not inside actions
@@ -186,11 +211,14 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = droppingAction.execute(context);
+      const events = executeWithValidation(droppingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('container_full'),
-        params: { container: 'small box' }
+        params: { 
+          item: 'ball',
+          container: 'small box' 
+        }
       });
     });
   });
@@ -204,7 +232,7 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = droppingAction.execute(context);
+      const events = executeWithValidation(droppingAction, context);
       
       // Should emit DROPPED event
       const room = world.getContainingRoom(player.id);
@@ -248,7 +276,7 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = droppingAction.execute(context);
+      const events = executeWithValidation(droppingAction, context);
       
       expectEvent(events, 'if.event.dropped', {
         item: gem.id,
@@ -286,7 +314,7 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = droppingAction.execute(context);
+      const events = executeWithValidation(droppingAction, context);
       
       expectEvent(events, 'if.event.dropped', {
         item: book.id,
@@ -325,7 +353,7 @@ describe('droppingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = droppingAction.execute(context);
+      const events = executeWithValidation(droppingAction, context);
       
       expectEvent(events, 'action.success', {
         messageId: expect.stringContaining('dropped_quietly')
@@ -342,7 +370,7 @@ describe('droppingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = droppingAction.execute(context);
+      const events = executeWithValidation(droppingAction, context);
       
       expectEvent(events, 'action.success', {
         messageId: expect.stringContaining('dropped_carelessly')
@@ -359,7 +387,7 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = droppingAction.execute(context);
+      const events = executeWithValidation(droppingAction, context);
       
       events.forEach(event => {
         if (event.entities) {

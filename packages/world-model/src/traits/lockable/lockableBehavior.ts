@@ -5,18 +5,44 @@ import { IFEntity } from '../../entities/if-entity';
 import { TraitType } from '../trait-types';
 import { LockableTrait } from './lockableTrait';
 import { OpenableTrait } from '../openable/openableTrait';
-import { SemanticEvent, EntityId } from '@sharpee/core';
-import { IFEvents } from '../../constants/if-events';
+import { EntityId } from '@sharpee/core';
 // No longer using ActionFailureReason enum
+
+/**
+ * Result of a lock operation
+ */
+export interface LockResult {
+  success: boolean;
+  alreadyLocked?: boolean;
+  notClosed?: boolean;
+  noKey?: boolean;
+  wrongKey?: boolean;
+  stateChanged?: boolean;
+  lockMessage?: string;
+  lockSound?: string;
+}
+
+/**
+ * Result of an unlock operation
+ */
+export interface UnlockResult {
+  success: boolean;
+  alreadyUnlocked?: boolean;
+  noKey?: boolean;
+  wrongKey?: boolean;
+  stateChanged?: boolean;
+  unlockMessage?: string;
+  unlockSound?: string;
+}
 
 /**
  * Behavior for lockable entities.
  * 
  * Handles the logic for locking and unlocking entities.
- * Requires both LOCKABLE and OPENABLE traits.
+ * Requires LOCKABLE trait, OPENABLE is optional.
  */
 export class LockableBehavior extends Behavior {
-  static requiredTraits = [TraitType.LOCKABLE, TraitType.OPENABLE];
+  static requiredTraits = [TraitType.LOCKABLE];
   
   /**
    * Check if a key can unlock this entity
@@ -54,184 +80,132 @@ export class LockableBehavior extends Behavior {
   }
   
   /**
-   * Lock the entity
-   * @returns Events describing what happened
+   * Check if an entity can be locked
    */
-  static lock(entity: IFEntity, actor: IFEntity, keyEntity?: IFEntity): SemanticEvent[] {
+  static canLock(entity: IFEntity): boolean {
     const lockable = LockableBehavior.require<LockableTrait>(entity, TraitType.LOCKABLE);
-    const openable = LockableBehavior.require<OpenableTrait>(entity, TraitType.OPENABLE);
     
-    if (lockable.isLocked) {
-      return [{
-        id: `${Date.now()}-${Math.random()}`,
-        timestamp: Date.now(),
-        type: IFEvents.ACTION_FAILED,
-        entities: {
-          actor: actor.id,
-          target: entity.id
-        },
-        payload: {
-          action: 'lock',
-          reason: 'already_locked',
-          customMessage: lockable.alreadyLockedMessage
-        }
-      }];
+    // Check if open (only if openable)
+    if (entity.has(TraitType.OPENABLE)) {
+      const openable = entity.get(TraitType.OPENABLE) as OpenableTrait;
+      if (openable.isOpen) {
+        return false; // Can't lock something that's open
+      }
     }
     
-    // Can't lock something that's open
-    if (openable.isOpen) {
-      return [{
-        id: `${Date.now()}-${Math.random()}`,
-        timestamp: Date.now(),
-        type: IFEvents.ACTION_FAILED,
-        entities: {
-          actor: actor.id,
-          target: entity.id
-        },
-        payload: {
-          action: 'lock',
-          reason: 'cant_do_that',
-          customMessage: "You can't lock something that's open."
-        }
-      }];
+    return !lockable.isLocked;
+  }
+  
+  /**
+   * Check if an entity can be unlocked
+   */
+  static canUnlock(entity: IFEntity): boolean {
+    const lockable = LockableBehavior.require<LockableTrait>(entity, TraitType.LOCKABLE);
+    return lockable.isLocked;
+  }
+  
+  /**
+   * Lock the entity
+   * @returns Result describing what happened
+   */
+  static lock(entity: IFEntity, keyEntity?: IFEntity): LockResult {
+    const lockable = LockableBehavior.require<LockableTrait>(entity, TraitType.LOCKABLE);
+    
+    if (lockable.isLocked) {
+      return {
+        success: false,
+        alreadyLocked: true,
+        stateChanged: false
+      };
+    }
+    
+    // Can't lock something that's open (only check if openable)
+    if (entity.has(TraitType.OPENABLE)) {
+      const openable = entity.get(TraitType.OPENABLE) as OpenableTrait;
+      if (openable.isOpen) {
+        return {
+          success: false,
+          notClosed: true,
+          stateChanged: false
+        };
+      }
     }
     
     // Check if key is required
     if (LockableBehavior.requiresKey(entity)) {
       if (!keyEntity) {
-        return [{
-          id: `${Date.now()}-${Math.random()}`,
-          timestamp: Date.now(),
-          type: IFEvents.ACTION_FAILED,
-          entities: {
-            actor: actor.id,
-            target: entity.id
-          },
-          payload: {
-            action: 'lock',
-            reason: 'no_key_specified'
-          }
-        }];
+        return {
+          success: false,
+          noKey: true,
+          stateChanged: false
+        };
       }
       
       // Check if key is valid
       if (!this.canLockWith(entity, keyEntity.id)) {
-        return [{
-          id: `${Date.now()}-${Math.random()}`,
-          timestamp: Date.now(),
-          type: IFEvents.ACTION_FAILED,
-          entities: {
-            actor: actor.id,
-            target: entity.id,
-            instrument: keyEntity.id
-          },
-          payload: {
-            action: 'lock',
-            reason: 'wrong_key',
-            customMessage: lockable.wrongKeyMessage
-          }
-        }];
+        return {
+          success: false,
+          wrongKey: true,
+          stateChanged: false
+        };
       }
     }
     
     // Lock it
     lockable.isLocked = true;
     
-    return [{
-      id: `${Date.now()}-${Math.random()}`,
-      timestamp: Date.now(),
-      type: IFEvents.LOCKED,
-      entities: {
-        actor: actor.id,
-        target: entity.id,
-        instrument: keyEntity?.id
-      },
-      payload: {
-        customMessage: lockable.lockMessage,
-        sound: lockable.lockSound
-      }
-    }];
+    return {
+      success: true,
+      stateChanged: true,
+      lockMessage: lockable.lockMessage,
+      lockSound: lockable.lockSound
+    };
   }
   
   /**
    * Unlock the entity with a key
-   * @returns Events describing what happened
+   * @returns Result describing what happened
    */
-  static unlock(entity: IFEntity, actor: IFEntity, keyEntity?: IFEntity): SemanticEvent[] {
+  static unlock(entity: IFEntity, keyEntity?: IFEntity): UnlockResult {
     const lockable = LockableBehavior.require<LockableTrait>(entity, TraitType.LOCKABLE);
     
     if (!lockable.isLocked) {
-      return [{
-        id: `${Date.now()}-${Math.random()}`,
-        timestamp: Date.now(),
-        type: IFEvents.ACTION_FAILED,
-        entities: {
-          actor: actor.id,
-          target: entity.id
-        },
-        payload: {
-          action: 'unlock',
-          reason: 'already_unlocked',
-          customMessage: lockable.alreadyUnlockedMessage
-        }
-      }];
+      return {
+        success: false,
+        alreadyUnlocked: true,
+        stateChanged: false
+      };
     }
     
     // Check if key is required
     if (LockableBehavior.requiresKey(entity)) {
       if (!keyEntity) {
-        return [{
-          id: `${Date.now()}-${Math.random()}`,
-          timestamp: Date.now(),
-          type: IFEvents.ACTION_FAILED,
-          entities: {
-            actor: actor.id,
-            target: entity.id
-          },
-          payload: {
-            action: 'unlock',
-            reason: 'no_key_specified'
-          }
-        }];
+        return {
+          success: false,
+          noKey: true,
+          stateChanged: false
+        };
       }
       
       // Check if key is valid
       if (!this.canUnlockWith(entity, keyEntity.id)) {
-        return [{
-          id: `${Date.now()}-${Math.random()}`,
-          timestamp: Date.now(),
-          type: IFEvents.ACTION_FAILED,
-          entities: {
-            actor: actor.id,
-            target: entity.id,
-            instrument: keyEntity.id
-          },
-          payload: {
-            action: 'unlock',
-            reason: 'wrong_key',
-            customMessage: lockable.wrongKeyMessage
-          }
-        }];
+        return {
+          success: false,
+          wrongKey: true,
+          stateChanged: false
+        };
       }
     }
     
     // Unlock it
     lockable.isLocked = false;
     
-    return [{
-      id: `${Date.now()}-${Math.random()}`,
-      timestamp: Date.now(),
-      type: IFEvents.UNLOCKED,
-      entities: {
-        actor: actor.id,
-        target: entity.id,
-        instrument: keyEntity?.id
-      },
-      payload: {
-        customMessage: lockable.unlockMessage,
-        sound: lockable.unlockSound
-      }
-    }];
+    return {
+      success: true,
+      stateChanged: true,
+      unlockMessage: lockable.unlockMessage,
+      unlockSound: lockable.unlockSound
+    };
   }
   
   /**
@@ -253,14 +227,14 @@ export class LockableBehavior extends Behavior {
   /**
    * Handle auto-lock when closing
    */
-  static handleClose(entity: IFEntity, actor: IFEntity): SemanticEvent[] {
+  static handleClose(entity: IFEntity): LockResult | null {
     const lockable = LockableBehavior.require<LockableTrait>(entity, TraitType.LOCKABLE);
     
     if (lockable.autoLock && !lockable.isLocked) {
-      return this.lock(entity, actor);
+      return this.lock(entity);
     }
     
-    return [];
+    return null;
   }
   
   /**

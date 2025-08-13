@@ -8,6 +8,24 @@ import { SemanticEvent } from '@sharpee/core';
 import { IFEvents } from '../../constants/if-events';
 import { ActionFailureReason } from '../../constants/action-failures';
 
+export interface SwitchOnResult {
+  success: boolean;
+  wasOn?: boolean;
+  noPower?: boolean;
+  autoOffTime?: number;
+  powerConsumption?: number;
+  runningSound?: string;
+  onSound?: string;
+  onMessage?: string;
+}
+
+export interface SwitchOffResult {
+  success: boolean;
+  wasOff?: boolean;
+  offSound?: string;
+  offMessage?: string;
+}
+
 /**
  * Behavior for switchable entities.
  * 
@@ -38,43 +56,23 @@ export class SwitchableBehavior extends Behavior {
   
   /**
    * Turn the entity on
-   * @returns Events describing what happened
+   * @returns Result object describing what happened
    */
-  static switchOn(entity: IFEntity, actor: IFEntity): SemanticEvent[] {
+  static switchOn(entity: IFEntity): SwitchOnResult {
     const switchable = SwitchableBehavior.require<SwitchableTrait>(entity, TraitType.SWITCHABLE);
     
     if (switchable.isOn) {
-      return [{
-        id: `${Date.now()}-${Math.random()}`,
-        timestamp: Date.now(),
-        type: IFEvents.ACTION_FAILED,
-        entities: {
-          actor: actor.id,
-          target: entity.id
-        },
-        payload: {
-          action: 'switch_on',
-          reason: ActionFailureReason.ALREADY_ON,
-          customMessage: switchable.alreadyOnMessage
-        }
-      }];
+      return {
+        success: false,
+        wasOn: true
+      };
     }
     
     if (switchable.requiresPower && !switchable.hasPower) {
-      return [{
-        id: `${Date.now()}-${Math.random()}`,
-        timestamp: Date.now(),
-        type: IFEvents.ACTION_FAILED,
-        entities: {
-          actor: actor.id,
-          target: entity.id
-        },
-        payload: {
-          action: 'switch_on',
-          reason: ActionFailureReason.CANT_DO_THAT,
-          customMessage: switchable.noPowerMessage
-        }
-      }];
+      return {
+        success: false,
+        noPower: true
+      };
     }
     
     // Turn it on
@@ -85,77 +83,52 @@ export class SwitchableBehavior extends Behavior {
       switchable.autoOffCounter = switchable.autoOffTime;
     }
     
-    return [{
-      id: `${Date.now()}-${Math.random()}`,
-      timestamp: Date.now(),
-      type: IFEvents.DEVICE_SWITCHED_ON,
-      entities: {
-        actor: actor.id,
-        target: entity.id
-      },
-      payload: {
-        customMessage: switchable.onMessage,
-        sound: switchable.onSound,
-        runningSound: switchable.runningSound,
-        powerConsumption: switchable.powerConsumption
-      }
-    }];
+    return {
+      success: true,
+      autoOffTime: switchable.autoOffTime > 0 ? switchable.autoOffTime : undefined,
+      powerConsumption: switchable.powerConsumption,
+      runningSound: switchable.runningSound,
+      onSound: switchable.onSound,
+      onMessage: switchable.onMessage
+    };
   }
   
   /**
    * Turn the entity off
-   * @returns Events describing what happened
+   * @returns Result object describing what happened
    */
-  static switchOff(entity: IFEntity, actor: IFEntity): SemanticEvent[] {
+  static switchOff(entity: IFEntity): SwitchOffResult {
     const switchable = SwitchableBehavior.require<SwitchableTrait>(entity, TraitType.SWITCHABLE);
     
     if (!switchable.isOn) {
-      return [{
-        id: `${Date.now()}-${Math.random()}`,
-        timestamp: Date.now(),
-        type: IFEvents.ACTION_FAILED,
-        entities: {
-          actor: actor.id,
-          target: entity.id
-        },
-        payload: {
-          action: 'switch_off',
-          reason: ActionFailureReason.ALREADY_OFF,
-          customMessage: switchable.alreadyOffMessage
-        }
-      }];
+      return {
+        success: false,
+        wasOff: true
+      };
     }
     
     // Turn it off
     switchable.isOn = false;
     switchable.autoOffCounter = 0;
     
-    return [{
-      id: `${Date.now()}-${Math.random()}`,
-      timestamp: Date.now(),
-      type: IFEvents.DEVICE_SWITCHED_OFF,
-      entities: {
-        actor: actor.id,
-        target: entity.id
-      },
-      payload: {
-        customMessage: switchable.offMessage,
-        sound: switchable.offSound
-      }
-    }];
+    return {
+      success: true,
+      offSound: switchable.offSound,
+      offMessage: switchable.offMessage
+    };
   }
   
   /**
    * Toggle on/off state
-   * @returns Events from either switch on or off
+   * @returns Result from either switch on or off
    */
-  static toggle(entity: IFEntity, actor: IFEntity): SemanticEvent[] {
+  static toggle(entity: IFEntity): SwitchOnResult | SwitchOffResult {
     const switchable = SwitchableBehavior.require<SwitchableTrait>(entity, TraitType.SWITCHABLE);
     
     if (switchable.isOn) {
-      return this.switchOff(entity, actor);
+      return this.switchOff(entity);
     } else {
-      return this.switchOn(entity, actor);
+      return this.switchOn(entity);
     }
   }
   

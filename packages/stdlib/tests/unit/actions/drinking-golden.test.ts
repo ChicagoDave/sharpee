@@ -22,6 +22,20 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
+// Helper to execute action with validation (mimics CommandExecutor flow)
+const executeWithValidation = (action: any, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    return [context.event('action.error', {
+      actionId: action.id,
+      messageId: validation.error || 'validation_failed',
+      reason: validation.error || 'validation_failed',
+      params: validation.params || {}
+    })];
+  }
+  return action.execute(context);
+};
+
 describe('drinkingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
@@ -54,7 +68,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.DRINKING);
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_item'),
@@ -76,7 +90,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_drinkable'),
@@ -98,7 +112,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('already_consumed'),
@@ -124,7 +138,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('container_closed'),
@@ -148,7 +162,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       // Should emit DRUNK event
       expectEvent(events, 'if.event.drunk', {
@@ -177,7 +191,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       // Should emit implicit TAKEN event first
       expectEvent(events, 'if.event.taken', {
@@ -214,7 +228,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       // Should emit DRUNK event with portion info
       expectEvent(events, 'if.event.drunk', {
@@ -245,7 +259,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       // Should emit DRUNK event
       expectEvent(events, 'if.event.drunk', {
@@ -276,7 +290,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       // Should use refreshing message
       expectEvent(events, 'action.success', {
@@ -300,7 +314,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       // Should use bitter message
       expectEvent(events, 'action.success', {
@@ -324,7 +338,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       // Should use sweet message
       expectEvent(events, 'action.success', {
@@ -348,7 +362,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       // Should use strong message
       expectEvent(events, 'action.success', {
@@ -372,7 +386,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       // Should emit DRUNK event with effects
       expectEvent(events, 'if.event.drunk', {
@@ -402,7 +416,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       // Should use healing message
       expectEvent(events, 'action.success', {
@@ -426,7 +440,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       // Should emit DRUNK event with thirst satisfaction
       expectEvent(events, 'if.event.drunk', {
@@ -456,7 +470,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       // Should use still_thirsty message
       expectEvent(events, 'action.success', {
@@ -484,7 +498,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       // Should emit DRUNK event with container info
       expectEvent(events, 'if.event.drunk', {
@@ -520,7 +534,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       // Should emit DRUNK event
       expectEvent(events, 'if.event.drunk', {
@@ -552,7 +566,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       // Should use drunk_from message
       expectEvent(events, 'action.success', {
@@ -576,7 +590,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       // Should emit DRUNK event with nutrition
       expectEvent(events, 'if.event.drunk', {
@@ -608,7 +622,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       // Should use sipped message
       expectEvent(events, 'action.success', {
@@ -637,7 +651,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       // Should use quaffed message
       expectEvent(events, 'action.success', {
@@ -666,7 +680,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       // Should use gulped message
       expectEvent(events, 'action.success', {
@@ -691,7 +705,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(drinkingAction, world, command);
       
-      const events = drinkingAction.execute(context);
+      const events = executeWithValidation(drinkingAction, context);
       
       events.forEach(event => {
         if (event.entities) {

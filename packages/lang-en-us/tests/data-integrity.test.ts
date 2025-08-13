@@ -19,7 +19,12 @@ describe('Data Integrity', () => {
 
     it('should use valid action ID format', () => {
       englishVerbs.forEach(verbDef => {
-        expect(verbDef.action).toMatch(/^if\.action\.[a-z_]+$/);
+        // Meta actions use author.* namespace, regular actions use if.action.*
+        const isMetaAction = verbDef.action.startsWith('author.');
+        const expectedPattern = isMetaAction 
+          ? /^author\.[a-z_]+$/
+          : /^if\.action\.[a-z_]+$/;
+        expect(verbDef.action).toMatch(expectedPattern);
       });
     });
 

@@ -5,9 +5,9 @@
  * It validates that the item is edible and not a drink.
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
-import { TraitType, EdibleTrait } from '@sharpee/world-model';
+import { TraitType, EdibleTrait, EdibleBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { EatenEventData, ImplicitTakenEventData } from './eating-events';
 import { ActionMetadata } from '../../../validation';
@@ -45,56 +45,69 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
     directObjectScope: ScopeLevel.REACHABLE
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
-    const actor = context.player;
+  validate(context: ActionContext): ValidationResult {
     const item = context.command.directObject?.entity;
     
     // Must have an item to eat
     if (!item) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_item',
-        reason: 'no_item'
-      })];
+      return { 
+        valid: false, 
+        error: 'no_item'
+      };
     }
-    
-    // Scope validation is now handled by CommandValidator
-    
-    // Check if item is held
-    const itemLocation = context.world.getLocation(item.id);
-    const isHeld = itemLocation === actor.id;
     
     // Check if item is edible
     if (!item.has(TraitType.EDIBLE)) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_edible',
-        reason: 'not_edible',
+      return { 
+        valid: false, 
+        error: 'not_edible',
         params: { item: item.name }
-      })];
+      };
     }
     
     const edibleTrait = item.get(TraitType.EDIBLE) as EdibleTrait;
     
     // Check if it's a drink (should use DRINKING action instead)
     if ((edibleTrait as any).isDrink) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'is_drink',
-        reason: 'is_drink',
+      return { 
+        valid: false, 
+        error: 'is_drink',
         params: { item: item.name }
-      })];
+      };
     }
     
     // Check if already consumed
     if ((edibleTrait as any).consumed) {
+      return { 
+        valid: false, 
+        error: 'already_consumed',
+        params: { item: item.name }
+      };
+    }
+    
+    return { valid: true };
+  },
+  
+  execute(context: ActionContext): SemanticEvent[] {
+    // Call validate at the start
+    const validation = this.validate(context);
+    if (!validation.valid) {
       return [context.event('action.error', {
         actionId: context.action.id,
-        messageId: 'already_consumed',
-        reason: 'already_consumed',
-        params: { item: item.name }
+        messageId: validation.error,
+        params: validation.params
       })];
     }
+    
+    const actor = context.player;
+    const item = context.command.directObject?.entity!;
+    
+    // Check if item is held
+    const itemLocation = context.world.getLocation(item.id);
+    const isHeld = itemLocation === actor.id;
+    
+    // Get edible trait for later use
+    const edibleTrait = item.get(TraitType.EDIBLE) as EdibleTrait;
     
     // If not held, pick it up first (implicit take)
     const events: SemanticEvent[] = [];
