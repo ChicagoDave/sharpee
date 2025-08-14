@@ -430,6 +430,7 @@ PACKAGES=(
   "lang-en-us"
   "parser-en-us"
   "stdlib"
+  "event-processor"
   "engine"
   "sharpee"
   "platforms/cli-en-us"

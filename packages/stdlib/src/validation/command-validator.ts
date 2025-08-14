@@ -106,7 +106,7 @@ export class CommandValidator implements CommandValidator {
     // 1. Validate action exists
     // First try direct lookup by action ID
     let actionHandler = this.actionRegistry.get(command.action);
-    
+
     // If not found, try to find by pattern (verb)
     if (!actionHandler) {
       const verb = command.structure?.verb?.text || command.action;
@@ -115,7 +115,7 @@ export class CommandValidator implements CommandValidator {
         actionHandler = matches[0]; // Take the highest priority match
       }
     }
-    
+
     if (!actionHandler) {
       return {
         success: false,
@@ -155,7 +155,7 @@ export class CommandValidator implements CommandValidator {
 
     // 4. Check scope constraints based on action metadata
     const metadata = this.getActionMetadata(actionHandler);
-    
+
     // Check direct object scope
     if (directObject && metadata.directObjectScope) {
       const scopeCheck = this.checkEntityScope(
@@ -204,7 +204,7 @@ export class CommandValidator implements CommandValidator {
       directObject?.entity as IFEntity | undefined,
       indirectObject?.entity as IFEntity | undefined
     );
-    
+
     if (!preconditionCheck.success) {
       return {
         success: false,
@@ -220,32 +220,32 @@ export class CommandValidator implements CommandValidator {
 
     // Success - build validated command with scope info
     const validationTime = Date.now() - startTime;
-    
+
     // Build scope info for resolved entities
     const scopeInfo: ValidatedCommand['scopeInfo'] = {};
-    
+
     if (directObject) {
       const player = this.world.getPlayer()!;
       const entityScope = this.scopeResolver.getScope(player, directObject.entity as IFEntity);
       const perceivedBy = this.getPerceivedSenses(player, directObject.entity as IFEntity);
-      
+
       scopeInfo.directObject = {
         level: entityScope,
         perceivedBy
       };
     }
-    
+
     if (indirectObject) {
       const player = this.world.getPlayer()!;
       const entityScope = this.scopeResolver.getScope(player, indirectObject.entity as IFEntity);
       const perceivedBy = this.getPerceivedSenses(player, indirectObject.entity as IFEntity);
-      
+
       scopeInfo.indirectObject = {
         level: entityScope,
         perceivedBy
       };
     }
-    
+
     const validatedCommand: ValidatedCommand = {
       parsed: command,
       actionId: actionHandler.id,
@@ -257,7 +257,7 @@ export class CommandValidator implements CommandValidator {
       },
       ...(Object.keys(scopeInfo).length > 0 && { scopeInfo })
     };
-    
+
     return {
       success: true,
       value: validatedCommand
@@ -308,26 +308,26 @@ export class CommandValidator implements CommandValidator {
     // The head noun is the main identifier, modifiers are used for disambiguation
     const searchTerm = ref.head || ref.text;
     let candidates: IFEntity[] = [];
-    
+
     // For AUDIBLE and DETECTABLE scopes, we need to search more broadly
     // because entities might be in other rooms
-    const needsBroadSearch = requiredScope === ScopeLevel.AUDIBLE || 
-                           requiredScope === ScopeLevel.DETECTABLE;
-    
+    const needsBroadSearch = requiredScope === ScopeLevel.AUDIBLE ||
+      requiredScope === ScopeLevel.DETECTABLE;
+
     if (needsBroadSearch) {
       // For audible/detectable, search all entities (except rooms/player)
       // and let scope filtering handle visibility
-      candidates = this.world.getAllEntities().filter(e => 
+      candidates = this.world.getAllEntities().filter(e =>
         e.type !== 'room' && e.id !== this.world.getPlayer()?.id
       );
-      
+
       // Filter candidates by name/type/synonym match with head noun
       candidates = candidates.filter(entity => {
         const name = this.getEntityName(entity).toLowerCase();
         const type = entity.type?.toLowerCase() || '';
         const synonyms = this.getEntitySynonyms(entity).map(s => s.toLowerCase());
         const searchLower = searchTerm.toLowerCase();
-        
+
         return name === searchLower || type === searchLower || synonyms.includes(searchLower);
       });
     } else {
@@ -335,15 +335,15 @@ export class CommandValidator implements CommandValidator {
       // Look for entities by name, type, or synonym
       const byName = this.getEntitiesByName(searchTerm);
       candidates = byName;
-      
+
       // Also check type matches
       const byType = this.getEntitiesByType(searchTerm);
       candidates.push(...byType);
-      
+
       // And synonym matches
       const bySynonym = this.getEntitiesBySynonym(searchTerm);
       candidates.push(...bySynonym);
-      
+
       this.emitDebugEvent('entity_search', command, {
         searchTerm,
         byName: byName.length,
@@ -351,17 +351,17 @@ export class CommandValidator implements CommandValidator {
         bySynonym: bySynonym.length,
         totalBeforeDedupe: candidates.length
       });
-      
+
       // Remove duplicates
       const uniqueIds = new Set(candidates.map(e => e.id));
-      candidates = candidates.filter((e, i, arr) => 
+      candidates = candidates.filter((e, i, arr) =>
         arr.findIndex(x => x.id === e.id) === i
       );
     }
-    
+
     // Now filter by scope
     const entitiesInScope = this.filterByScope(candidates, requiredScope);
-    
+
     // Get detailed scope information for all candidates
     const candidateScopes: any[] = [];
     const player = this.world.getPlayer();
@@ -381,7 +381,7 @@ export class CommandValidator implements CommandValidator {
         });
       }
     }
-    
+
     this.emitDebugEvent('scope_check', command, {
       objectType,
       requiredScope,
@@ -399,7 +399,7 @@ export class CommandValidator implements CommandValidator {
 
     // Score only the entities that are in scope
     const scoredMatches = this.scoreEntities(entitiesInScope, ref);
-    
+
     // Filter out zero-score matches
     const viableMatches = scoredMatches.filter(m => m.score > 0);
 
@@ -418,7 +418,7 @@ export class CommandValidator implements CommandValidator {
           code: 'ENTITY_NOT_FOUND',
           message: this.getMessage('entity_not_found', { text: ref.text }),
           parsed: command,
-          details: { 
+          details: {
             searchText: ref.text,
             candidates: ref.candidates,
             scope: requiredScope
@@ -451,9 +451,9 @@ export class CommandValidator implements CommandValidator {
         error: {
           type: 'VALIDATION_ERROR',
           code: 'ENTITY_NOT_FOUND',
-          message: this.getMessage('ambiguous_reference', { 
+          message: this.getMessage('ambiguous_reference', {
             text: ref.text,
-            count: viableMatches.length 
+            count: viableMatches.length
           }),
           parsed: command,
           details: {
@@ -493,7 +493,7 @@ export class CommandValidator implements CommandValidator {
       if (entity.type === 'room' || entity.id === this.world.getPlayer()?.id) {
         return false;
       }
-      
+
       // Check exact name match
       const entityName = this.getEntityName(entity).toLowerCase();
       return entityName === normalizedName;
@@ -518,7 +518,7 @@ export class CommandValidator implements CommandValidator {
       if (entity.type === 'room' || entity.id === this.world.getPlayer()?.id) {
         return false;
       }
-      
+
       const synonyms = this.getEntitySynonyms(entity).map(s => s.toLowerCase());
       return synonyms.includes(normalizedSynonym);
     });
@@ -530,10 +530,10 @@ export class CommandValidator implements CommandValidator {
   private filterByScope(entities: IFEntity[], scope: ScopeLevel): IFEntity[] {
     const player = this.world.getPlayer();
     if (!player) return [];
-    
+
     return entities.filter(entity => {
       const entityScope = this.scopeResolver.getScope(player, entity);
-      
+
       // Check if entity meets the required scope level
       switch (scope) {
         case ScopeLevel.CARRIED:
@@ -541,9 +541,9 @@ export class CommandValidator implements CommandValidator {
         case ScopeLevel.REACHABLE:
           return entityScope === ScopeLevel.CARRIED || entityScope === ScopeLevel.REACHABLE;
         case ScopeLevel.VISIBLE:
-          return entityScope === ScopeLevel.CARRIED || 
-                 entityScope === ScopeLevel.REACHABLE || 
-                 entityScope === ScopeLevel.VISIBLE;
+          return entityScope === ScopeLevel.CARRIED ||
+            entityScope === ScopeLevel.REACHABLE ||
+            entityScope === ScopeLevel.VISIBLE;
         case ScopeLevel.AUDIBLE:
           // For audible, check if we can actually hear it
           return this.scopeResolver.canHear && this.scopeResolver.canHear(player, entity);
@@ -596,7 +596,7 @@ export class CommandValidator implements CommandValidator {
           matchReasons.push(`modifier_match_${modifier}`);
         }
       }
-      
+
       // Penalty if entity has adjectives that weren't specified
       // This helps "red ball" not match when user just says "ball" if there's also a plain ball
       if (modifiers.length === 0 && adjectives.length > 0) {
@@ -662,7 +662,7 @@ export class CommandValidator implements CommandValidator {
     if (matches.length >= 2) {
       const topScore = matches[0].score;
       const secondScore = matches[1].score;
-      
+
       if (topScore >= secondScore * 1.5) {
         this.emitDebugEvent('ambiguity_resolution', command, {
           resolved: true,
@@ -692,7 +692,7 @@ export class CommandValidator implements CommandValidator {
     }
 
     // If only one is visible and reachable, use it
-    const reachableMatches = matches.filter(m => 
+    const reachableMatches = matches.filter(m =>
       this.isEntityVisible(m.entity) && this.isEntityReachable(m.entity)
     );
 
@@ -728,7 +728,7 @@ export class CommandValidator implements CommandValidator {
    */
   private resolvePronoun(pronoun: string): IFEntity | undefined {
     const normalized = pronoun.toLowerCase();
-    
+
     // Simple pronoun resolution using recent entities
     if (normalized === 'it' || normalized === 'that') {
       return this.resolutionContext.recentEntities.get('it');
@@ -796,16 +796,16 @@ export class CommandValidator implements CommandValidator {
    * Check if entity meets required scope level
    */
   private checkEntityScope(
-    entity: IFEntity, 
-    requiredScope: ScopeLevel, 
+    entity: IFEntity,
+    requiredScope: ScopeLevel,
     entityName: string
   ): { success: boolean; code?: string; message?: string } {
     const player = this.world.getPlayer();
     if (!player) {
-      return { 
-        success: false, 
-        code: 'NO_PLAYER', 
-        message: 'No player entity found' 
+      return {
+        success: false,
+        code: 'NO_PLAYER',
+        message: 'No player entity found'
       };
     }
 
@@ -834,9 +834,9 @@ export class CommandValidator implements CommandValidator {
         break;
 
       case ScopeLevel.VISIBLE:
-        if (entityScope === ScopeLevel.AUDIBLE || 
-            entityScope === ScopeLevel.DETECTABLE || 
-            entityScope === ScopeLevel.OUT_OF_SCOPE) {
+        if (entityScope === ScopeLevel.AUDIBLE ||
+          entityScope === ScopeLevel.DETECTABLE ||
+          entityScope === ScopeLevel.OUT_OF_SCOPE) {
           return {
             success: false,
             code: 'NOT_VISIBLE',
@@ -874,28 +874,28 @@ export class CommandValidator implements CommandValidator {
    */
   private getPerceivedSenses(perceiver: IFEntity, entity: IFEntity): SenseType[] {
     const senses: SenseType[] = [];
-    
+
     if (this.scopeResolver.canSee(perceiver, entity)) {
       senses.push('sight' as SenseType);
     }
-    
+
     if (this.scopeResolver.canHear) {
       if (this.scopeResolver.canHear(perceiver, entity)) {
         senses.push('hearing' as SenseType);
       }
     }
-    
+
     if (this.scopeResolver.canSmell) {
       if (this.scopeResolver.canSmell(perceiver, entity)) {
         senses.push('smell' as SenseType);
       }
     }
-    
+
     // Touch is available if entity is reachable
     if (this.scopeResolver.canReach(perceiver, entity)) {
       senses.push('touch' as SenseType);
     }
-    
+
     return senses;
   }
 
@@ -969,9 +969,9 @@ export class CommandValidator implements CommandValidator {
    */
   private getActionMetadata(action: any): ActionMetadata {
     // Check if action has metadata property with required fields
-    if (action.metadata && 
-        'requiresDirectObject' in action.metadata &&
-        'requiresIndirectObject' in action.metadata) {
+    if (action.metadata &&
+      'requiresDirectObject' in action.metadata &&
+      'requiresIndirectObject' in action.metadata) {
       return action.metadata as ActionMetadata;
     }
 

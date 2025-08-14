@@ -5,7 +5,6 @@ export {
   WorldModel,
   WorldState, 
   WorldConfig, 
-  FindOptions, 
   ContentsOptions,
   WorldChange,
   EventHandler,

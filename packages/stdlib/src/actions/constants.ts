@@ -91,6 +91,7 @@ export const IFActions = {
   // Using actions
   // USING: 'if.action.using', // Removed - USE is not idiomatic IF
   CONSULTING: 'if.action.consulting',
+  READING: 'if.action.reading',
   
   // Meta actions
   INVENTORY: 'if.action.inventory',

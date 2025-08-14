@@ -23,7 +23,6 @@ import {
 import {
   WorldState,
   WorldConfig,
-  FindOptions,
   ContentsOptions,
   WorldChange
 } from '@sharpee/if-domain';
@@ -40,7 +39,6 @@ export type EventPreviewer = (event: SemanticEvent, world: WorldModel) => WorldC
 export {
   WorldState,
   WorldConfig,
-  FindOptions,
   ContentsOptions,
   WorldChange
 } from '@sharpee/if-domain';
@@ -49,13 +47,13 @@ export {
 export interface WorldModel {
   // Get the data store for sharing with AuthorModel
   getDataStore(): DataStore;
-  
+
   // Capability Management
   registerCapability(name: string, registration: Partial<CapabilityRegistration>): void;
   updateCapability(name: string, data: Partial<CapabilityData>): void;
   getCapability(name: string): CapabilityData | undefined;
   hasCapability(name: string): boolean;
-  
+
   // Entity Management
   createEntity(displayName: string, type?: string): IFEntity;
   createEntityWithTraits(type: EntityType): IFEntity;
@@ -80,9 +78,9 @@ export interface WorldModel {
   setStateValue(key: string, value: any): void;
 
   // Query Operations
-  findByTrait(traitType: TraitType, options?: FindOptions): IFEntity[];
-  findByType(entityType: string, options?: FindOptions): IFEntity[];
-  findWhere(predicate: (entity: IFEntity) => boolean, options?: FindOptions): IFEntity[];
+  findByTrait(traitType: TraitType): IFEntity[];
+  findByType(entityType: string): IFEntity[];
+  findWhere(predicate: (entity: IFEntity) => boolean): IFEntity[];
   getVisible(observerId: string): IFEntity[];
   getInScope(observerId: string): IFEntity[];
   canSee(observerId: string, targetId: string): boolean;
@@ -110,16 +108,16 @@ export interface WorldModel {
   unregisterEventHandler(eventType: string): void;
   registerEventValidator(eventType: string, validator: EventValidator): void;
   registerEventPreviewer(eventType: string, previewer: EventPreviewer): void;
-  
+
   applyEvent(event: SemanticEvent): void;
   canApplyEvent(event: SemanticEvent): boolean;
   previewEvent(event: SemanticEvent): WorldChange[];
-  
+
   // Event History (optional)
   getAppliedEvents(): SemanticEvent[];
   getEventsSince(timestamp: number): SemanticEvent[];
   clearEventHistory(): void;
-  
+
   // Scope Management
   getScopeRegistry(): ScopeRegistry;
   addScopeRule(rule: ScopeRule): void;
@@ -147,10 +145,10 @@ export class WorldModel implements WorldModel {
   private spatialIndex: SpatialIndex;
   private config: WorldConfig;
   private capabilities: CapabilityStore = {};
-  
+
   // ID generation
   private idCounters: Map<string, number> = new Map();
-  
+
   // Event sourcing support
   private eventHandlers = new Map<string, EventHandler>();
   private eventValidators = new Map<string, EventValidator>();
@@ -159,7 +157,7 @@ export class WorldModel implements WorldModel {
   private maxEventHistory = 1000; // Configurable limit
 
   private platformEvents?: SemanticEventSource;
-  
+
   // Scope system
   private scopeRegistry: ScopeRegistry;
   private scopeEvaluator: ScopeEvaluator;
@@ -173,11 +171,11 @@ export class WorldModel implements WorldModel {
     };
     this.spatialIndex = new SpatialIndex();
     this.platformEvents = platformEvents;
-    
+
     // Initialize scope system
     this.scopeRegistry = new ScopeRegistry();
     this.scopeEvaluator = new ScopeEvaluator(this.scopeRegistry);
-    
+
     // Register default scope rules
     this.registerDefaultScopeRules();
   }
@@ -190,9 +188,9 @@ export class WorldModel implements WorldModel {
         timestamp: Date.now(),
         type: `platform.world.${type}`,
         entities: {},
-        payload: { 
+        payload: {
           subsystem: 'world',
-          ...data 
+          ...data
         },
         tags: ['platform', 'world', 'debug'],
         priority: 0,
@@ -212,7 +210,7 @@ export class WorldModel implements WorldModel {
 
     // Initialize capability with schema and initial data
     const initialData: CapabilityData = {};
-    
+
     // Apply schema defaults
     if (registration.schema) {
       for (const [field, fieldDef] of Object.entries(registration.schema)) {
@@ -221,12 +219,12 @@ export class WorldModel implements WorldModel {
         }
       }
     }
-    
+
     // Override with provided initial data
     if (registration.initialData) {
       Object.assign(initialData, registration.initialData);
     }
-    
+
     this.capabilities[name] = {
       data: initialData,
       schema: registration.schema
@@ -274,17 +272,17 @@ export class WorldModel implements WorldModel {
   private generateId(type: string): string {
     const prefix = TYPE_PREFIXES[type] || TYPE_PREFIXES['object'];
     const counter = this.idCounters.get(prefix) || 0;
-    
+
     // Increment counter
     const nextCounter = counter + 1;
-    
+
     // Check for overflow (base36 with 2 chars = 1296 max)
     if (nextCounter > 1295) {
       throw new Error(`ID overflow for type '${type}' (prefix '${prefix}'). Maximum 1296 entities per type.`);
     }
-    
+
     this.idCounters.set(prefix, nextCounter);
-    
+
     // Convert to base36 and pad to 2 characters
     const base36 = nextCounter.toString(36).padStart(2, '0');
     return `${prefix}${base36}`;
@@ -296,7 +294,7 @@ export class WorldModel implements WorldModel {
     if (!isEntityType(type)) {
       throw new Error(`Unknown entity type: '${type}'. Valid types are: ${Object.values(EntityType).join(', ')}`);
     }
-    
+
     // Generate ID based on type
     const id = this.generateId(type);
 
@@ -307,10 +305,10 @@ export class WorldModel implements WorldModel {
         entityType: type
       }
     });
-    
+
     // Add to entity map
     this.entities.set(id, entity);
-    
+
     return entity;
   }
 
@@ -322,7 +320,7 @@ export class WorldModel implements WorldModel {
   createEntityWithTraits(type: EntityType): IFEntity {
     const id = this.generateId(type);
     const entity = new IFEntity(id, type);
-    
+
     // Auto-add appropriate default trait based on type
     switch (type) {
       case EntityType.ROOM:
@@ -346,10 +344,10 @@ export class WorldModel implements WorldModel {
         break;
       // ITEM, OBJECT, and EXIT don't need special traits by default
     }
-    
+
     // Add to entity map
     this.entities.set(id, entity);
-    
+
     return entity;
   }
 
@@ -390,10 +388,10 @@ export class WorldModel implements WorldModel {
       }
       return;
     }
-    
+
     // Call the updater - entity is mutable so changes happen in place
     updater(entity);
-    
+
     // Future: Could emit change events here for reactive systems
     // this.emitChange({ type: 'entity-updated', entityId });
   }
@@ -451,7 +449,7 @@ export class WorldModel implements WorldModel {
     if (targetId) {
       this.spatialIndex.addChild(targetId, entityId);
     }
-    
+
     // Emit platform event
     this.emitPlatformEvent('entity_moved', {
       entityId,
@@ -530,7 +528,7 @@ export class WorldModel implements WorldModel {
         visibleOnly: options.visibleOnly,
         includeWorn: true  // Always include worn items when recursing
       };
-      
+
       const contents = this.getContents(id, contentsOptions);
       result.push(...contents);
 
@@ -561,35 +559,16 @@ export class WorldModel implements WorldModel {
   }
 
   // Query Operations
-  findByTrait(traitType: TraitType, options: FindOptions = {}): IFEntity[] {
-    return this.findWhere(e => e.hasTrait(traitType), options);
+  findByTrait(traitType: TraitType): IFEntity[] {
+    return this.findWhere(e => e.hasTrait(traitType));
   }
 
-  findByType(entityType: string, options: FindOptions = {}): IFEntity[] {
-    return this.findWhere(e => e.type === entityType, options);
+  findByType(entityType: string): IFEntity[] {
+    return this.findWhere(e => e.type === entityType);
   }
 
-  findWhere(predicate: (entity: IFEntity) => boolean, options: FindOptions = {}): IFEntity[] {
-    let entities = Array.from(this.entities.values()).filter(predicate);
-
-    if (!options.includeScenery) {
-      entities = entities.filter(e => !e.hasTrait(TraitType.SCENERY));
-    }
-
-    // Only filter out invisible items if includeInvisible is explicitly false
-    // When includeInvisible is undefined or true, include all items
-    if (options.includeInvisible === false) {
-      entities = entities.filter(e => {
-        const scenery = e.getTrait(TraitType.SCENERY);
-        // If entity has scenery trait and visible is false, filter it out
-        if (scenery && (scenery as any).visible === false) {
-          return false;
-        }
-        return true;
-      });
-    }
-
-    return entities;
+  findWhere(predicate: (entity: IFEntity) => boolean): IFEntity[] {
+    return Array.from(this.entities.values()).filter(predicate);
   }
 
   // Scope methods moved to end of class to use new scope system
@@ -624,7 +603,7 @@ export class WorldModel implements WorldModel {
       this.relationships.set(entity1Id, new Map());
     }
     const entityRels = this.relationships.get(entity1Id)!;
-    
+
     if (!entityRels.has(relationshipType)) {
       entityRels.set(relationshipType, new Set());
     }
@@ -673,7 +652,7 @@ export class WorldModel implements WorldModel {
     while (current) {
       if (visited.has(current)) return false; // Already checked this path
       if (current === entityId) return true; // Found a loop
-      
+
       visited.add(current);
       current = this.getLocation(current) || '';
     }
@@ -697,7 +676,7 @@ export class WorldModel implements WorldModel {
 
     while (queue.length > 0) {
       const { roomId, path } = queue.shift()!;
-      
+
       if (visited.has(roomId)) continue;
       visited.add(roomId);
 
@@ -706,11 +685,11 @@ export class WorldModel implements WorldModel {
       if (!room) continue;
 
       const exits = (room.getTrait(TraitType.ROOM) as any)?.exits || {};
-      
+
       for (const [direction, exitInfo] of Object.entries(exits)) {
         let targetRoom: string | undefined;
         let pathElement: string | undefined;
-        
+
         if (typeof exitInfo === 'string') {
           // Simple string - treat as direct room connection
           targetRoom = exitInfo;
@@ -721,9 +700,9 @@ export class WorldModel implements WorldModel {
             // Has a door/exit entity
             const exitEntity = this.getEntity((exitInfo as any).via);
             if (!exitEntity) continue;
-            
+
             pathElement = (exitInfo as any).via;
-            
+
             // Get destination based on entity type
             if (exitEntity.hasTrait(TraitType.DOOR)) {
               const door = exitEntity.getTrait(TraitType.DOOR) as any;
@@ -740,7 +719,7 @@ export class WorldModel implements WorldModel {
             pathElement = targetRoom; // Use room ID as path element
           }
         }
-        
+
         if (!targetRoom || !pathElement) continue;
 
         if (targetRoom === toRoomId) {
@@ -805,7 +784,7 @@ export class WorldModel implements WorldModel {
 
   loadJSON(json: string): void {
     const data = JSON.parse(json);
-    
+
     // Clear current state
     this.clear();
 
@@ -900,7 +879,7 @@ export class WorldModel implements WorldModel {
 
     // Record the event in history
     this.appliedEvents.push(event);
-    
+
     // Trim history if it exceeds the limit
     if (this.appliedEvents.length > this.maxEventHistory) {
       this.appliedEvents = this.appliedEvents.slice(-this.maxEventHistory);
@@ -910,7 +889,7 @@ export class WorldModel implements WorldModel {
   canApplyEvent(event: SemanticEvent): boolean {
     // Check if there's a validator for this event type
     const validator = this.eventValidators.get(event.type);
-    
+
     // If no validator registered, assume event is valid
     if (!validator) {
       return true;
@@ -923,7 +902,7 @@ export class WorldModel implements WorldModel {
   previewEvent(event: SemanticEvent): WorldChange[] {
     // Check if there's a previewer for this event type
     const previewer = this.eventPreviewers.get(event.type);
-    
+
     // If no previewer registered, return empty array
     if (!previewer) {
       return [];
@@ -949,14 +928,14 @@ export class WorldModel implements WorldModel {
   private rebuildIdCounters(): void {
     // Clear counters
     this.idCounters.clear();
-    
+
     // Find the highest ID for each prefix
     for (const entity of this.entities.values()) {
       const id = entity.id;
       if (id.length >= 3) {
         const prefix = id[0];
         const numPart = id.substring(1);
-        
+
         // Parse the numeric part (base36)
         const num = parseInt(numPart, 36);
         if (!isNaN(num)) {
@@ -991,7 +970,7 @@ export class WorldModel implements WorldModel {
 
   addScopeRule(rule: ScopeRule): void {
     this.scopeRegistry.addRule(rule);
-    this.emitPlatformEvent('scope_rule_added', { 
+    this.emitPlatformEvent('scope_rule_added', {
       ruleId: rule.id,
       fromLocations: rule.fromLocations,
       forActions: rule.forActions
@@ -1044,20 +1023,20 @@ export class WorldModel implements WorldModel {
           console.warn('No room found for location:', context.currentLocation);
           return [];
         }
-        
+
         // Get all entities in the room
         const contents = this.getContents(context.currentLocation);
         const entityIds = contents.map(e => e.id);
-        
+
         // Add the room itself
         entityIds.push(context.currentLocation);
-        
+
         // Add nested contents (in containers, on supporters)
         for (const entity of contents) {
           const nested = this.getAllContents(entity.id);
           entityIds.push(...nested.map(e => e.id));
         }
-        
+
         return entityIds;
       },
       priority: 50,
@@ -1071,13 +1050,13 @@ export class WorldModel implements WorldModel {
       includeEntities: (context) => {
         const carried = this.getContents(context.actorId);
         const entityIds = carried.map(e => e.id);
-        
+
         // Add nested contents of carried items
         for (const entity of carried) {
           const nested = this.getAllContents(entity.id);
           entityIds.push(...nested.map(e => e.id));
         }
-        
+
         return entityIds;
       },
       priority: 100,

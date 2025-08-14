@@ -177,15 +177,19 @@ describe('Trait Combinations Integration Tests', () => {
       expect(deskContents).toContain(paper);
     });
 
-    it('should exclude invisible scenery', () => {
+    it('should include all scenery regardless of visibility', () => {
       // Make drawer invisible
       (drawer.getTrait(TraitType.SCENERY) as any).visible = false;
 
-      const visible = world.findByTrait(TraitType.CONTAINER, { includeInvisible: false });
-      expect(visible).not.toContain(drawer);
-
-      const allContainers = world.findByTrait(TraitType.CONTAINER, { includeScenery: true, includeInvisible: true });
+      // findByTrait now returns all matching entities, including invisible scenery
+      const allContainers = world.findByTrait(TraitType.CONTAINER);
       expect(allContainers).toContain(drawer);
+      
+      // Desk is a supporter, not a container, so it shouldn't be in allContainers
+      // Only drawer should be there as it's the only entity with ContainerTrait
+      const allScenery = world.findByTrait(TraitType.SCENERY);
+      expect(allScenery).toContain(desk); // desk has SceneryTrait
+      expect(allScenery).toContain(drawer); // drawer has SceneryTrait
     });
   });
 

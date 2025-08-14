@@ -34,6 +34,7 @@ export * from './smelling';
 export * from './touching';
 export * from './putting';
 export * from './inserting';
+export * from './reading';
 
 // Removing exports its own events but reuses TakenEventData
 export { removingAction } from './removing';
@@ -97,6 +98,7 @@ import { smellingAction } from './smelling';
 import { touchingAction } from './touching';
 import { puttingAction } from './putting'; // Now from folder
 import { insertingAction } from './inserting'; // Now from folder
+import { reading as readingAction } from './reading'; // Now from folder
 import { removingAction } from './removing'; // Now from folder
 import { givingAction } from './giving'; // Now from folder
 import { showingAction } from './showing'; // Now from folder
@@ -151,6 +153,7 @@ export const standardActions = [
   touchingAction,
   puttingAction,
   insertingAction,
+  readingAction,
   removingAction,
   givingAction,
   showingAction,

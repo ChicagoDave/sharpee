@@ -134,6 +134,28 @@ export function defineCoreGrammar(grammar: GrammarBuilder): void {
     .withPriority(110)
     .build(); // Higher priority than generic put
 
+  // Reading
+  grammar
+    .define('read :target')
+    .where('target', (scope: ScopeBuilder) => scope.visible())
+    .mapsTo('if.action.reading')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('peruse :target')
+    .where('target', (scope: ScopeBuilder) => scope.visible())
+    .mapsTo('if.action.reading')
+    .withPriority(95)
+    .build();
+
+  grammar
+    .define('study :target')
+    .where('target', (scope: ScopeBuilder) => scope.visible())
+    .mapsTo('if.action.reading')
+    .withPriority(95)
+    .build();
+
   // Inventory
   grammar
     .define('inventory')

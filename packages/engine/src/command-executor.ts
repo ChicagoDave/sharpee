@@ -409,6 +409,29 @@ export class CommandExecutor {
         timestamp: e.timestamp instanceof Date ? e.timestamp.getTime() : e.timestamp,
         entities: e.data?.entities || {}
       }));
+      
+      // Process entity event handlers BEFORE updating the world
+      const entityHandlerEvents = this.processEntityHandlers(semanticEvents);
+      if (entityHandlerEvents.length > 0) {
+        // Convert SemanticEvent[] to GameEvent[] for sequencer
+        const gameEvents = entityHandlerEvents.map(e => ({
+          ...e,
+          data: e.data || {}
+        }));
+        const sequencedHandlerEvents = eventSequencer.sequenceAll(gameEvents, turn);
+        sequencedEvents.push(...sequencedHandlerEvents);
+        
+        // Convert entity handler events to match semanticEvents format
+        const formattedHandlerEvents = sequencedHandlerEvents.map(e => ({
+          id: e.sequence.toString(),
+          type: e.type,
+          data: e.data,
+          timestamp: e.timestamp instanceof Date ? e.timestamp.getTime() : e.timestamp,
+          entities: e.data?.entities || {}
+        }));
+        semanticEvents.push(...formattedHandlerEvents);
+      }
+      
       this.eventProcessor.processEvents(semanticEvents);
     }
 
@@ -427,6 +450,48 @@ export class CommandExecutor {
    * Scope resolver instance
    */
   private scopeResolver?: ScopeResolver;
+
+  /**
+   * Process entity event handlers
+   */
+  private processEntityHandlers(events: SemanticEvent[]): SemanticEvent[] {
+    const handlerEvents: SemanticEvent[] = [];
+    const world = this.eventProcessor.getWorld();
+    
+    for (const event of events) {
+      // Check all entities in the world for handlers
+      const entities = world.getAllEntities();
+      
+      for (const entity of entities) {
+        // Check if entity has event handlers
+        if (entity.on && typeof entity.on === 'object') {
+          const handler = entity.on[event.type];
+          
+          if (typeof handler === 'function') {
+            try {
+              // Convert SemanticEvent to GameEvent (ensure data property exists)
+              const gameEvent = {
+                ...event,
+                data: event.data || {}
+              };
+              
+              // Call the handler with the event
+              const result = handler(gameEvent);
+              
+              // If handler returns events, add them
+              if (result && Array.isArray(result)) {
+                handlerEvents.push(...result);
+              }
+            } catch (error) {
+              console.error(`Error in entity ${entity.id} handler for ${event.type}:`, error);
+            }
+          }
+        }
+      }
+    }
+    
+    return handlerEvents;
+  }
 
   /**
    * Create action context from game context

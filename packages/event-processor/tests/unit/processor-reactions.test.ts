@@ -2,6 +2,7 @@
  * Tests for the reaction system in EventProcessor
  */
 
+import { describe, it, beforeEach, expect, vi } from 'vitest';
 import { EventProcessor } from '../../src/processor';
 import { createMockWorld, MockWorldModel } from '../fixtures/mock-world';
 import { createTestEvent } from '../fixtures/test-events';
@@ -23,7 +24,7 @@ describe('EventProcessor - Reaction System', () => {
       
       // Mock the processor to return reactions
       const originalProcessSingle = (processor as any).processSingleEvent;
-      (processor as any).processSingleEvent = jest.fn().mockImplementation((event: SemanticEvent) => {
+      (processor as any).processSingleEvent = vi.fn().mockImplementation((event: SemanticEvent) => {
         if (event.type === 'trigger') {
           return {
             success: true,
@@ -48,7 +49,7 @@ describe('EventProcessor - Reaction System', () => {
       
       // Set up chain: event1 -> event2 -> event3
       const originalProcessSingle = (processor as any).processSingleEvent;
-      (processor as any).processSingleEvent = jest.fn().mockImplementation((event: SemanticEvent) => {
+      (processor as any).processSingleEvent = vi.fn().mockImplementation((event: SemanticEvent) => {
         if (event.type === 'action1') {
           return { success: true, changes: [], reactions: [event2] };
         } else if (event.type === 'action2') {
@@ -77,7 +78,7 @@ describe('EventProcessor - Reaction System', () => {
       
       // Mock to create infinite reaction chain
       const originalProcessSingle = (depthProcessor as any).processSingleEvent;
-      (depthProcessor as any).processSingleEvent = jest.fn().mockImplementation((event: SemanticEvent) => {
+      (depthProcessor as any).processSingleEvent = vi.fn().mockImplementation((event: SemanticEvent) => {
         const match = event.type.match(/action(\d+)/);
         if (match) {
           const level = parseInt(match[1]);
@@ -93,7 +94,7 @@ describe('EventProcessor - Reaction System', () => {
       });
       
       // Spy on console.warn
-      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       
       const result = depthProcessor.processEvents([events[0]]);
       
@@ -114,7 +115,7 @@ describe('EventProcessor - Reaction System', () => {
       
       // Mock reactions
       const originalProcessSingle = (processor as any).processSingleEvent;
-      (processor as any).processSingleEvent = jest.fn().mockImplementation((event: SemanticEvent) => {
+      (processor as any).processSingleEvent = vi.fn().mockImplementation((event: SemanticEvent) => {
         if (event.type === 'trigger') {
           return {
             success: true,

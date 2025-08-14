@@ -399,17 +399,21 @@ describe('WorldModel', () => {
       expect(boxesInRoom).toHaveLength(2);
     });
 
-    it('should handle find options', () => {
+    it('should find all entities without filtering', () => {
       // Add scenery
       const painting = world.createEntity('Painting', 'scenery');
       painting.add(new SceneryTrait());
       world.moveEntity(painting.id, room.id);
 
-      const all = world.findByType('scenery', { includeScenery: true });
-      const filtered = world.findByType('scenery', { includeScenery: false });
-
+      // findByType now returns all matching entities without filtering
+      const all = world.findByType('scenery');
+      
       expect(all).toHaveLength(1);
-      expect(filtered).toHaveLength(0);
+      expect(all).toContain(painting);
+      
+      // Filtering by traits should be done by the caller if needed
+      const sceneryItems = world.findWhere(e => e.type === 'scenery' && e.has(TraitType.SCENERY));
+      expect(sceneryItems).toHaveLength(1);
     });
   });
 

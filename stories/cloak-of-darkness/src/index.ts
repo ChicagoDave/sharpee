@@ -475,16 +475,21 @@ export class CloakOfDarknessStory implements Story {
     
     // Add event handler for when something is placed on the hook
     hook.on = {
-      'if.event.object_moved': (event: any): SemanticEvent[] | undefined => {
+      'if.event.put_on': (event: any): SemanticEvent[] | undefined => {
         // Check if the cloak was hung on this hook
-        const { objectId, toLocation } = event.data || {};
-        if (toLocation === hook.id && objectId) {
-          const item = this.world.getEntity(objectId);
-          if (item && item.attributes.name === 'cloak') {
-            // The cloak has been hung! This makes the bar visible
-            console.log('Cloak hung on hook - bar is now lit');
-            // Update the message in case we need to show it properly
-            this.updateMessage();
+        const { itemId, targetId } = event.data || {};
+        // Check if this is the hook being targeted and the cloak being hung
+        if (targetId === hook.id && itemId === 'i01') {
+          // The cloak has been hung! This makes the bar visible
+          const bar = this.world.getEntity(this.roomIds['bar']);
+          if (bar) {
+            const roomTrait = bar.get(RoomTrait);
+            if (roomTrait) {
+              roomTrait.isDark = false; // Turn on the lights!
+              console.log('Cloak hung on hook - bar is now lit');
+              // Update the message in case we need to show it properly
+              this.updateMessage();
+            }
           }
         }
         return undefined;
@@ -542,20 +547,11 @@ export class CloakOfDarknessStory implements Story {
    * Check if the bar is dark (player can't see)
    */
   private isBarDark(): boolean {
-    const player = this.world.getPlayer();
-    if (!player) return true;
+    const bar = this.world.getEntity(this.roomIds['bar']);
+    if (!bar) return true;
     
-    // Check if player is in the bar
-    const playerRoom = this.world.getContainingRoom(player.id);
-    if (!playerRoom || playerRoom.id !== this.roomIds['bar']) {
-      return false; // Not in bar, doesn't matter
-    }
-    
-    // Check visibility using scope system
-    const visible = this.world.getVisible(player.id);
-    
-    // If we can only see the room itself, it's dark
-    return visible.length === 1 && visible[0].id === this.roomIds['bar'];
+    const roomTrait = bar.get(RoomTrait);
+    return roomTrait?.isDark === true;
   }
   
   /**

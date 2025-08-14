@@ -48,6 +48,16 @@ export const englishTemplates = {
     'examining.report.container_contents': '{item:cap} contains {contents}.',
     'examining.report.supporter_contents': 'On {item} you see {contents}.',
     
+    // Reading action
+    'reading.check.what_to_read': 'What do you want to read?',
+    'reading.check.not_readable': "There's nothing written on {item}.",
+    'reading.check.cannot_read_now': '{reason}',
+    'reading.perform.read_text': '{text}',
+    'reading.perform.read_book': 'The book reads:\n{text}',
+    'reading.perform.read_book_page': 'Page {currentPage} of {totalPages}:\n{text}',
+    'reading.perform.read_sign': 'The sign says:\n{text}',
+    'reading.perform.read_inscription': 'The inscription reads:\n{text}',
+    
     // Looking action
     'looking.report.room_name': '{name}',
     'looking.report.room_description': '{description}',

@@ -17,6 +17,7 @@ export const IFActions = {
   // Observation actions
   LOOKING: 'if.action.looking',
   EXAMINING: 'if.action.examining',
+  READING: 'if.action.reading',
   SEARCHING: 'if.action.searching',
   LISTENING: 'if.action.listening',
   SMELLING: 'if.action.smelling',
@@ -114,7 +115,12 @@ export const englishVerbs: VerbDefinition[] = [
   },
   {
     action: IFActions.EXAMINING,
-    verbs: ['examine', 'x', 'inspect', 'check', 'view', 'read', 'observe', 'look at'],
+    verbs: ['examine', 'x', 'inspect', 'check', 'view', 'observe', 'look at'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.READING,
+    verbs: ['read', 'peruse', 'study'],
     requiresObject: true
   },
   {

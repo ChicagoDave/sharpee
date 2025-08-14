@@ -2,6 +2,7 @@
  * Unit tests for EventProcessor class
  */
 
+import { describe, it, beforeEach, expect, vi } from 'vitest';
 import { EventProcessor } from '../../src/processor';
 import { createMockWorld, MockWorldModel } from '../fixtures/mock-world';
 import {
@@ -120,7 +121,7 @@ describe('EventProcessor', () => {
       const errorEvent = createTestEvent('error_event', 'player', {});
       
       // Make applyEvent throw an error
-      mockWorld.applyEvent = jest.fn().mockImplementation((event) => {
+      mockWorld.applyEvent = vi.fn().mockImplementation((event) => {
         if (event.type === 'error_event') {
           throw new Error('Test error');
         }
