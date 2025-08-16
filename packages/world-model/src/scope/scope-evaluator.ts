@@ -3,13 +3,13 @@
  * @description Evaluates scope rules to determine visible entities
  */
 
-import { Entity } from '@sharpee/core';
+import { IEntity } from '@sharpee/core';
 import { 
-  ScopeRule, 
-  ScopeContext, 
-  ScopeEvaluationOptions, 
-  ScopeEvaluationResult,
-  ScopeRuleResult 
+  IScopeRule, 
+  IScopeContext, 
+  IScopeEvaluationOptions, 
+  IScopeEvaluationResult,
+  IScopeRuleResult 
 } from './scope-rule';
 import { ScopeRegistry } from './scope-registry';
 
@@ -18,7 +18,7 @@ import { ScopeRegistry } from './scope-registry';
  */
 export class ScopeEvaluator {
   private registry: ScopeRegistry;
-  private cache: Map<string, ScopeEvaluationResult> = new Map();
+  private cache: Map<string, IScopeEvaluationResult> = new Map();
 
   constructor(registry: ScopeRegistry) {
     this.registry = registry;
@@ -28,9 +28,9 @@ export class ScopeEvaluator {
    * Evaluate scope for a given context
    */
   evaluate(
-    context: ScopeContext, 
-    options: ScopeEvaluationOptions = {}
-  ): ScopeEvaluationResult {
+    context: IScopeContext, 
+    options: IScopeEvaluationOptions = {}
+  ): IScopeEvaluationResult {
     const startTime = Date.now();
     
     // Check cache if enabled
@@ -58,8 +58,8 @@ export class ScopeEvaluator {
 
     // Evaluate rules
     const entityIds = new Set<string>();
-    const appliedRules: ScopeRuleResult[] = [];
-    const skippedRules: ScopeRule[] = [];
+    const appliedRules: IScopeRuleResult[] = [];
+    const skippedRules: IScopeRule[] = [];
 
     for (const rule of rules) {
       const result = this.evaluateRule(rule, context);
@@ -76,7 +76,7 @@ export class ScopeEvaluator {
     }
 
     // Build result
-    const result: ScopeEvaluationResult = {
+    const result: IScopeEvaluationResult = {
       entityIds,
       appliedRules,
       metrics: {
@@ -101,7 +101,7 @@ export class ScopeEvaluator {
   /**
    * Evaluate a single rule
    */
-  private evaluateRule(rule: ScopeRule, context: ScopeContext): ScopeRuleResult {
+  private evaluateRule(rule: IScopeRule, context: IScopeContext): IScopeRuleResult {
     // Check condition
     const conditionMet = !rule.condition || rule.condition(context);
     
@@ -185,7 +185,7 @@ export class ScopeEvaluator {
   /**
    * Generate cache key for a context
    */
-  private getCacheKey(context: ScopeContext): string {
+  private getCacheKey(context: IScopeContext): string {
     return `${context.actorId}:${context.currentLocation}:${context.actionId || 'any'}`;
   }
 
@@ -199,7 +199,7 @@ export class ScopeEvaluator {
   /**
    * Get standard scope (visible entities) for backward compatibility
    */
-  getVisibleEntities(context: ScopeContext): string[] {
+  getVisibleEntities(context: IScopeContext): string[] {
     // Evaluate with looking/examining action
     const evalContext = {
       ...context,
@@ -213,7 +213,7 @@ export class ScopeEvaluator {
   /**
    * Get touchable entities for backward compatibility
    */
-  getTouchableEntities(context: ScopeContext): string[] {
+  getTouchableEntities(context: IScopeContext): string[] {
     // For now, touchable = visible
     // Can be extended with distance-based rules later
     return this.getVisibleEntities(context);
@@ -222,7 +222,7 @@ export class ScopeEvaluator {
   /**
    * Check if a specific entity is in scope
    */
-  isEntityInScope(entityId: string, context: ScopeContext): boolean {
+  isEntityInScope(entityId: string, context: IScopeContext): boolean {
     const result = this.evaluate(context);
     return result.entityIds.has(entityId);
   }
@@ -230,10 +230,10 @@ export class ScopeEvaluator {
   /**
    * Get scope with detailed rule information
    */
-  getScopeWithDetails(context: ScopeContext): {
+  getScopeWithDetails(context: IScopeContext): {
     entities: string[];
     ruleDetails: Map<string, {
-      rule: ScopeRule;
+      rule: IScopeRule;
       entities: string[];
       message?: string;
     }>;

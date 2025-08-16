@@ -2,10 +2,10 @@
  * Valve trait implementation
  */
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
-export interface ValveData {
+export interface IValveData {
   /**
    * Type of valve
    */
@@ -53,7 +53,7 @@ export interface ValveData {
  * Valves should also have the TURNABLE trait for turn behavior.
  * This trait adds valve-specific descriptive properties.
  */
-export class ValveTrait implements Trait, ValveData {
+export class ValveTrait implements ITrait, IValveData {
   static readonly type = TraitType.VALVE;
   readonly type = TraitType.VALVE;
   
@@ -67,7 +67,7 @@ export class ValveTrait implements Trait, ValveData {
   pressure?: 'low' | 'medium' | 'high';
   hasGauge: boolean;
   
-  constructor(data: ValveData = {}) {
+  constructor(data: IValveData = {}) {
     this.valveType = data.valveType;
     this.state = data.state ?? 'closed';
     this.openPercentage = data.openPercentage ?? (data.state === 'open' ? 100 : data.state === 'closed' ? 0 : 50);

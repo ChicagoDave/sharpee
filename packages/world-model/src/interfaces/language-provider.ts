@@ -13,7 +13,7 @@
 /**
  * Language provider interface
  */
-export interface LanguageProvider {
+export interface ILanguageProvider {
   /**
    * The language code this provider supports (e.g., 'en-us', 'es-es')
    */
@@ -58,26 +58,26 @@ export interface LanguageProvider {
 /**
  * Language provider registry interface
  */
-export interface LanguageProviderRegistry {
+export interface ILanguageProviderRegistry {
   /**
    * Register a language provider
    * @param provider The language provider to register
    */
-  register(provider: LanguageProvider): void;
+  register(provider: ILanguageProvider): void;
   
   /**
    * Get a language provider by code
    * @param languageCode The language code (e.g., 'en-us')
    * @returns The provider or undefined if not found
    */
-  get(languageCode: string): LanguageProvider | undefined;
+  get(languageCode: string): ILanguageProvider | undefined;
   
   /**
    * Get the default language provider
    * @returns The default provider
    * @throws Error if no default provider is set
    */
-  getDefault(): LanguageProvider;
+  getDefault(): ILanguageProvider;
   
   /**
    * Set the default language provider

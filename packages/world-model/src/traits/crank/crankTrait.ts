@@ -2,10 +2,10 @@
  * Crank trait implementation
  */
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
-export interface CrankData {
+export interface ICrankData {
   /**
    * Length of the crank handle
    */
@@ -43,7 +43,7 @@ export interface CrankData {
  * Cranks should also have the TURNABLE trait for turn behavior.
  * This trait adds crank-specific descriptive properties.
  */
-export class CrankTrait implements Trait, CrankData {
+export class CrankTrait implements ITrait, ICrankData {
   static readonly type = TraitType.CRANK;
   readonly type = TraitType.CRANK;
   
@@ -55,7 +55,7 @@ export class CrankTrait implements Trait, CrankData {
   crankSpeed?: 'slow' | 'moderate' | 'fast';
   effort?: 'easy' | 'moderate' | 'hard';
   
-  constructor(data: CrankData = {}) {
+  constructor(data: ICrankData = {}) {
     this.handleLength = data.handleLength;
     this.foldable = data.foldable ?? false;
     this.folded = data.folded ?? false;

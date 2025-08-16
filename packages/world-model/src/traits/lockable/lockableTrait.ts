@@ -1,10 +1,10 @@
 // packages/world-model/src/traits/lockable/lockableTrait.ts
 
 import { EntityId } from '@sharpee/core';
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
-export interface LockableData {
+export interface ILockableData {
   /** Whether the entity is currently locked */
   isLocked?: boolean;
   
@@ -55,7 +55,7 @@ export interface LockableData {
  * This trait contains only data - all locking/unlocking logic
  * is in LockableBehavior.
  */
-export class LockableTrait implements Trait, LockableData {
+export class LockableTrait implements ITrait, ILockableData {
   static readonly type = TraitType.LOCKABLE;
   readonly type = TraitType.LOCKABLE;
   
@@ -75,7 +75,7 @@ export class LockableTrait implements Trait, LockableData {
   lockSound?: string;
   unlockSound?: string;
   
-  constructor(data: LockableData = {}) {
+  constructor(data: ILockableData = {}) {
     // Set defaults and merge with provided data
     this.startsLocked = data.startsLocked ?? false;
     this.isLocked = data.isLocked ?? this.startsLocked;

@@ -4,35 +4,35 @@
  * with entities and action IDs identified
  */
 
-import type { ParsedObjectReference, ParsedCommand } from './parsed-command';
+import type { IParsedObjectReference, IParsedCommand } from './parsed-command';
 import type { IFEntity } from '../entities/if-entity';
 
 /**
  * Resolved entity reference after validation
  */
-export interface ValidatedObjectReference {
+export interface IValidatedObjectReference {
   /** The resolved entity */
   entity: IFEntity;
   
   /** Original parsed reference */
-  parsed: ParsedObjectReference;
+  parsed: IParsedObjectReference;
 }
 
 /**
  * Result of validation phase - fully resolved and checked
  */
-export interface ValidatedCommand {
+export interface IValidatedCommand {
   /** Original parsed command */
-  parsed: ParsedCommand;
+  parsed: IParsedCommand;
   
   /** ID of the action that will handle this command */
   actionId: string;
   
   /** Resolved direct object if present */
-  directObject?: ValidatedObjectReference;
+  directObject?: IValidatedObjectReference;
   
   /** Resolved indirect object if present */
-  indirectObject?: ValidatedObjectReference;
+  indirectObject?: IValidatedObjectReference;
   
   /** Validation metadata */
   metadata?: {
@@ -47,10 +47,10 @@ export interface ValidatedCommand {
 /**
  * Errors that can occur during validation
  */
-export interface ValidationError {
+export interface IValidationError {
   type: 'VALIDATION_ERROR';
   code: 'ENTITY_NOT_FOUND' | 'ENTITY_NOT_VISIBLE' | 'ACTION_NOT_AVAILABLE' | 'PRECONDITION_FAILED';
   message: string;
-  parsed: ParsedCommand;
+  parsed: IParsedCommand;
   details?: Record<string, any>;
 }

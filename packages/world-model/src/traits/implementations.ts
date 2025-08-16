@@ -5,7 +5,7 @@
  */
 
 import { TraitType } from './trait-types';
-import { TraitConstructor } from './trait';
+import { ITraitConstructor } from './trait';
 
 // Import all trait implementations from their new locations
 import { IdentityTrait } from './identity/identityTrait';
@@ -56,7 +56,7 @@ import { BreakableTrait } from './breakable/breakableTrait';
 /**
  * Map of trait types to their constructors
  */
-export const TRAIT_IMPLEMENTATIONS: Record<TraitType, TraitConstructor> = {
+export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
   // Core traits (organized in their own folders)
   [TraitType.IDENTITY]: IdentityTrait,
   [TraitType.CONTAINER]: ContainerTrait,
@@ -113,14 +113,14 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, TraitConstructor> = {
 /**
  * Get trait implementation by type
  */
-export function getTraitImplementation(type: TraitType): TraitConstructor | undefined {
+export function getTraitImplementation(type: TraitType): ITraitConstructor | undefined {
   return TRAIT_IMPLEMENTATIONS[type];
 }
 
 /**
  * Create trait instance by type
  */
-export function createTrait(type: TraitType, data?: any): InstanceType<TraitConstructor> {
+export function createTrait(type: TraitType, data?: any): InstanceType<ITraitConstructor> {
   const TraitClass = TRAIT_IMPLEMENTATIONS[type];
   if (!TraitClass) {
     throw new Error(`Unknown trait type: ${type}`);

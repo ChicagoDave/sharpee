@@ -3,29 +3,29 @@
 import { IFEntity } from '../entities/if-entity';
 import { TraitType } from '../traits/trait-types';
 import { SpatialIndex } from './SpatialIndex';
-import { Trait } from '../traits/trait';
+import { ITrait } from '../traits/trait';
 import { OpenableTrait } from '../traits/openable/openableTrait';
 import { LockableTrait } from '../traits/lockable/lockableTrait';
-import { CapabilityStore } from './capabilities';
-import type { WorldModel } from './WorldModel';
+import { ICapabilityStore } from './capabilities';
+import type { IWorldModel } from './WorldModel';
 
 /**
  * Data store shared between WorldModel and AuthorModel
  */
-export interface DataStore {
+export interface IDataStore {
   entities: Map<string, IFEntity>;
   spatialIndex: SpatialIndex;
   state: Record<string, any>;
   playerId?: string;
   relationships: Map<string, Map<string, Set<string>>>;
   idCounters: Map<string, number>;
-  capabilities: CapabilityStore;
+  capabilities: ICapabilityStore;
 }
 
 /**
  * Item specification for bulk creation
  */
-export interface ItemSpec {
+export interface IItemSpec {
   name: string;
   type?: string;
   attributes?: Record<string, any>;
@@ -56,11 +56,11 @@ export interface ItemSpec {
  * ```
  */
 export class AuthorModel {
-  private dataStore: DataStore;
-  private worldModel?: WorldModel;
+  private dataStore: IDataStore;
+  private worldModel?: IWorldModel;
   private eventHandlers = new Map<string, (event: any) => void>();
 
-  constructor(dataStore: DataStore, worldModel?: WorldModel) {
+  constructor(dataStore: IDataStore, worldModel?: IWorldModel) {
     this.dataStore = dataStore;
     this.worldModel = worldModel;
   }
@@ -69,7 +69,7 @@ export class AuthorModel {
    * Get the shared data store. This allows creating a WorldModel
    * that shares the same state.
    */
-  getDataStore(): DataStore {
+  getDataStore(): IDataStore {
     return this.dataStore;
   }
 
@@ -193,7 +193,7 @@ export class AuthorModel {
   /**
    * Add a trait to an entity without validation
    */
-  addTrait(entityId: string, trait: Trait, recordEvent = false): void {
+  addTrait(entityId: string, trait: ITrait, recordEvent = false): void {
     const entity = this.dataStore.entities.get(entityId);
     if (!entity) return;
     
@@ -285,7 +285,7 @@ export class AuthorModel {
   /**
    * Fill a container with items based on specifications
    */
-  fillContainer(containerId: string, itemSpecs: ItemSpec[], recordEvent = false): void {
+  fillContainer(containerId: string, itemSpecs: IItemSpec[], recordEvent = false): void {
     for (const spec of itemSpecs) {
       const item = this.createEntity(spec.name, spec.type || 'item', recordEvent);
       

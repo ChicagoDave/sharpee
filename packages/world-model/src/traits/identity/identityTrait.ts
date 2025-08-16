@@ -1,6 +1,6 @@
 // packages/world-model/src/traits/identity/identityTrait.ts
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
 /**
@@ -10,7 +10,7 @@ import { TraitType } from '../trait-types';
  * This is a pure data structure - all validation and logic
  * should be handled by IdentityBehavior.
  */
-export class IdentityTrait implements Trait {
+export class IdentityTrait implements ITrait {
   static readonly type = TraitType.IDENTITY;
   readonly type = TraitType.IDENTITY;
   

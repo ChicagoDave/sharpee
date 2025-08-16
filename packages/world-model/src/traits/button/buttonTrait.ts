@@ -2,10 +2,10 @@
  * Button trait implementation
  */
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
-export interface ButtonData {
+export interface IButtonData {
   /**
    * Whether the button stays pressed or pops back
    */
@@ -48,7 +48,7 @@ export interface ButtonData {
  * Buttons should also have the PUSHABLE trait for push behavior.
  * This trait adds button-specific descriptive properties.
  */
-export class ButtonTrait implements Trait, ButtonData {
+export class ButtonTrait implements ITrait, IButtonData {
   static readonly type = TraitType.BUTTON;
   readonly type = TraitType.BUTTON;
   
@@ -61,7 +61,7 @@ export class ButtonTrait implements Trait, ButtonData {
   label?: string;
   pressed: boolean;
   
-  constructor(data: ButtonData = {}) {
+  constructor(data: IButtonData = {}) {
     this.latching = data.latching ?? false;
     this.color = data.color;
     this.size = data.size;

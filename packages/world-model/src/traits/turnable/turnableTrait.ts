@@ -2,10 +2,10 @@
  * Turnable trait implementation
  */
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
-export interface TurnableData {
+export interface ITurnableData {
   /**
    * Type of turnable object - determines behavior
    */
@@ -92,7 +92,7 @@ export interface TurnableData {
  * This trait contains only data - all logic for turning
  * is handled by the turning action.
  */
-export class TurnableTrait implements Trait, TurnableData {
+export class TurnableTrait implements ITrait, ITurnableData {
   static readonly type = TraitType.TURNABLE;
   readonly type = TraitType.TURNABLE;
   
@@ -117,7 +117,7 @@ export class TurnableTrait implements Trait, TurnableData {
     onSettingChange?: string;
   };
   
-  constructor(data: TurnableData = {}) {
+  constructor(data: ITurnableData = {}) {
     this.turnType = data.turnType ?? 'knob';
     this.settings = data.settings;
     this.currentSetting = data.currentSetting ?? (data.settings ? data.settings[0] : 0);

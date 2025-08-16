@@ -2,10 +2,10 @@
  * Cord trait implementation
  */
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
-export interface CordData {
+export interface ICordData {
   /**
    * What type of cord this is (affects messages)
    */
@@ -58,7 +58,7 @@ export interface CordData {
  * This trait contains only data - all logic for cord operation
  * is handled by the pulling action when combined with PULLABLE trait.
  */
-export class CordTrait implements Trait, CordData {
+export class CordTrait implements ITrait, ICordData {
   static readonly type = TraitType.CORD;
   readonly type = TraitType.CORD;
   
@@ -73,7 +73,7 @@ export class CordTrait implements Trait, CordData {
   pullSound?: string;
   breakSound?: string;
   
-  constructor(data: CordData = {}) {
+  constructor(data: ICordData = {}) {
     this.cordType = data.cordType ?? 'cord';
     this.activates = data.activates;
     this.tension = data.tension ?? 'slack';

@@ -4,7 +4,7 @@ import { IFEntity } from '../../entities/if-entity';
 import { TraitType } from '../trait-types';
 import { OpenableTrait } from '../openable/openableTrait';
 import { EntryTrait } from './entryTrait';
-import { SemanticEvent, createEvent } from '@sharpee/core';
+import { ISemanticEvent, createEvent } from '@sharpee/core';
 import { IFEvents } from '../../constants/if-events';
 
 /**
@@ -55,7 +55,7 @@ export class EntryBehavior {
   /**
    * Enter an entity
    */
-  static enter(entity: IFEntity, actor: IFEntity): SemanticEvent[] {
+  static enter(entity: IFEntity, actor: IFEntity): ISemanticEvent[] {
     const trait = entity.get(TraitType.ENTRY) as EntryTrait;
     if (!trait) {
       return [
@@ -87,7 +87,7 @@ export class EntryBehavior {
     }
     trait.occupants.push(actor.id);
     
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Custom enter message
     if (trait.enterMessage) {
@@ -115,7 +115,7 @@ export class EntryBehavior {
   /**
    * Exit an entity
    */
-  static exit(entity: IFEntity, actor: IFEntity): SemanticEvent[] {
+  static exit(entity: IFEntity, actor: IFEntity): ISemanticEvent[] {
     const trait = entity.get(TraitType.ENTRY) as EntryTrait;
     if (!trait) {
       return [
@@ -144,7 +144,7 @@ export class EntryBehavior {
     // Remove actor from occupants
     trait.occupants.splice(index, 1);
     
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Custom exit message
     if (trait.exitMessage) {
@@ -226,13 +226,13 @@ export class EntryBehavior {
   /**
    * Remove all occupants (used when entity is destroyed, etc.)
    */
-  static evacuate(entity: IFEntity): SemanticEvent[] {
+  static evacuate(entity: IFEntity): ISemanticEvent[] {
     const trait = entity.get(TraitType.ENTRY) as EntryTrait;
     if (!trait || !trait.occupants || trait.occupants.length === 0) {
       return [];
     }
     
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     const evacuees = [...trait.occupants];
     
     // Clear occupants

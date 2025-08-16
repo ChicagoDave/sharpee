@@ -1,6 +1,6 @@
 // packages/world-model/src/traits/actor/actorTrait.ts
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 import { EntityId } from '@sharpee/core';
 
@@ -54,7 +54,7 @@ export interface IActorTrait {
  * Like rooms, actors have built-in container functionality for their inventory.
  * The actual containment relationships are stored in the SpatialIndex.
  */
-export class ActorTrait implements Trait, IActorTrait {
+export class ActorTrait implements ITrait, IActorTrait {
   static readonly type = TraitType.ACTOR;
   readonly type = TraitType.ACTOR;
   

@@ -4,7 +4,7 @@
 import { WorldModel, EventHandler } from '../world';
 import { IFEvents } from '../constants';
 import { TraitType } from '../traits/trait-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 
 /**
  * Register standard IF event handlers with the world model

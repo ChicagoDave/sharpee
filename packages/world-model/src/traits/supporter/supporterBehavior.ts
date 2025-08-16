@@ -10,7 +10,7 @@ import { IWorldQuery } from '../container/containerBehavior';
 /**
  * Result of adding an item to a supporter
  */
-export interface AddItemToSupporterResult {
+export interface IAddItemToSupporterResult {
   success: boolean;
   stateChanged: boolean;
   alreadyThere?: boolean;
@@ -21,7 +21,7 @@ export interface AddItemToSupporterResult {
 /**
  * Result of removing an item from a supporter
  */
-export interface RemoveItemFromSupporterResult {
+export interface IRemoveItemFromSupporterResult {
   success: boolean;
   stateChanged: boolean;
   notThere?: boolean;
@@ -180,7 +180,7 @@ export class SupporterBehavior extends Behavior {
    * @param world World query interface
    * @returns Result describing what happened
    */
-  static addItem(supporter: IFEntity, item: IFEntity, world: IWorldQuery): AddItemToSupporterResult {
+  static addItem(supporter: IFEntity, item: IFEntity, world: IWorldQuery): IAddItemToSupporterResult {
     // Check if item is already on supporter
     const currentLocation = world.getLocation(item.id);
     if (currentLocation === supporter.id) {
@@ -241,7 +241,7 @@ export class SupporterBehavior extends Behavior {
    * @param world World query interface
    * @returns Result describing what happened
    */
-  static removeItem(supporter: IFEntity, item: IFEntity, world: IWorldQuery): RemoveItemFromSupporterResult {
+  static removeItem(supporter: IFEntity, item: IFEntity, world: IWorldQuery): IRemoveItemFromSupporterResult {
     // Check if item is actually on the supporter
     const currentLocation = world.getLocation(item.id);
     if (currentLocation !== supporter.id) {

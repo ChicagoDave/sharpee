@@ -3,7 +3,7 @@
 import { IFEntity } from '../../entities/if-entity';
 import { TraitType } from '../trait-types';
 import { ReadableTrait } from './readableTrait';
-import { SemanticEvent, createEvent } from '@sharpee/core';
+import { ISemanticEvent, createEvent } from '@sharpee/core';
 
 /**
  * Behavior for readable entities.
@@ -28,7 +28,7 @@ export class ReadableBehavior {
   /**
    * Mark entity as read
    */
-  static markAsRead(entity: IFEntity): SemanticEvent[] {
+  static markAsRead(entity: IFEntity): ISemanticEvent[] {
     const trait = entity.get(TraitType.READABLE) as ReadableTrait;
     if (!trait || trait.hasBeenRead) return [];
     
@@ -64,7 +64,7 @@ export class ReadableBehavior {
   /**
    * Turn to a specific page
    */
-  static turnToPage(entity: IFEntity, page: number): SemanticEvent[] {
+  static turnToPage(entity: IFEntity, page: number): ISemanticEvent[] {
     const trait = entity.get(TraitType.READABLE) as ReadableTrait;
     if (!trait || !trait.pageContent || !trait.pages) {
       return [];
@@ -96,7 +96,7 @@ export class ReadableBehavior {
   /**
    * Turn to next page
    */
-  static nextPage(entity: IFEntity): SemanticEvent[] {
+  static nextPage(entity: IFEntity): ISemanticEvent[] {
     const trait = entity.get(TraitType.READABLE) as ReadableTrait;
     if (!trait || !trait.currentPage || !trait.pages) {
       return [];
@@ -108,7 +108,7 @@ export class ReadableBehavior {
   /**
    * Turn to previous page
    */
-  static previousPage(entity: IFEntity): SemanticEvent[] {
+  static previousPage(entity: IFEntity): ISemanticEvent[] {
     const trait = entity.get(TraitType.READABLE) as ReadableTrait;
     if (!trait || !trait.currentPage || !trait.pages) {
       return [];
@@ -148,7 +148,7 @@ export class ReadableBehavior {
   /**
    * Read the entity
    */
-  static read(reader: IFEntity, readable: IFEntity): SemanticEvent[] {
+  static read(reader: IFEntity, readable: IFEntity): ISemanticEvent[] {
     const trait = readable.get(TraitType.READABLE) as ReadableTrait;
     if (!trait) {
       return [
@@ -175,7 +175,7 @@ export class ReadableBehavior {
       ];
     }
     
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Mark as read if first time
     if (!trait.hasBeenRead) {

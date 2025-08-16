@@ -2,10 +2,10 @@
  * Breakable trait implementation
  */
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
-export interface BreakableData {
+export interface IBreakableData {
   /**
    * How it can be broken
    */
@@ -66,7 +66,7 @@ export interface BreakableData {
  * This is more general than FRAGILE - these objects require
  * deliberate effort or tools to break.
  */
-export class BreakableTrait implements Trait, BreakableData {
+export class BreakableTrait implements ITrait, IBreakableData {
   static readonly type = TraitType.BREAKABLE;
   readonly type = TraitType.BREAKABLE;
   
@@ -85,7 +85,7 @@ export class BreakableTrait implements Trait, BreakableData {
     onPartialBreak?: string;
   };
   
-  constructor(data: BreakableData = {}) {
+  constructor(data: IBreakableData = {}) {
     this.breakMethod = data.breakMethod ?? 'force';
     this.requiresTool = data.requiresTool;
     this.strengthRequired = data.strengthRequired;

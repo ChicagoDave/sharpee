@@ -5,7 +5,7 @@ import { TraitType } from '../trait-types';
 import { ExitTrait } from './exitTrait';
 import { OpenableTrait } from '../openable/openableTrait';
 import { LockableTrait } from '../lockable/lockableTrait';
-import { SemanticEvent, createEvent } from '@sharpee/core';
+import { ISemanticEvent, createEvent } from '@sharpee/core';
 import { IFEvents } from '../../constants/if-events';
 import { ActionFailureReason } from '../../constants/action-failures';
 
@@ -81,7 +81,7 @@ export class ExitBehavior {
   /**
    * Use an exit to move between locations
    */
-  static use(exit: IFEntity, actor: IFEntity, world?: any): SemanticEvent[] {
+  static use(exit: IFEntity, actor: IFEntity, world?: any): ISemanticEvent[] {
     const trait = exit.get(TraitType.EXIT) as ExitTrait;
     if (!trait) {
       return [
@@ -113,7 +113,7 @@ export class ExitBehavior {
     }
     
     // Move the actor
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Custom use message event
     if (trait.useMessage) {

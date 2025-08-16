@@ -4,7 +4,7 @@ import { Behavior } from '../../behaviors/behavior';
 import { IFEntity } from '../../entities/if-entity';
 import { TraitType } from '../trait-types';
 import { EdibleTrait } from './edibleTrait';
-import { SemanticEvent, createEvent } from '@sharpee/core';
+import { ISemanticEvent, createEvent } from '@sharpee/core';
 import { IFEvents } from '../../constants/if-events';
 import { ActionFailureReason } from '../../constants/action-failures';
 
@@ -28,7 +28,7 @@ export class EdibleBehavior extends Behavior {
    * Consume the item
    * @returns Events describing what happened
    */
-  static consume(item: IFEntity, actor: IFEntity): SemanticEvent[] {
+  static consume(item: IFEntity, actor: IFEntity): ISemanticEvent[] {
     const edible = EdibleBehavior.require<EdibleTrait>(item, TraitType.EDIBLE);
     
     if (edible.servings <= 0) {
@@ -48,7 +48,7 @@ export class EdibleBehavior extends Behavior {
     // Consume one serving
     edible.servings--;
     
-    const events: SemanticEvent[] = [
+    const events: ISemanticEvent[] = [
       createEvent(
         edible.liquid ? IFEvents.ITEM_DRUNK : IFEvents.ITEM_EATEN,
         {

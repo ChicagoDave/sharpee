@@ -13,7 +13,7 @@ import { WearableBehavior } from '../wearable/wearableBehavior';
 /**
  * Result of an add item operation
  */
-export interface AddItemResult {
+export interface IAddItemResult {
   success: boolean;
   alreadyContains?: boolean;
   containerFull?: boolean;
@@ -27,7 +27,7 @@ export interface AddItemResult {
 /**
  * Result of a remove item operation
  */
-export interface RemoveItemResult {
+export interface IRemoveItemResult {
   success: boolean;
   notContained?: boolean;
   containerClosed?: boolean;
@@ -220,7 +220,7 @@ export class ContainerBehavior extends Behavior {
    * @param world World query interface for getting current state
    * @returns Result describing what happened
    */
-  static addItem(container: IFEntity, item: IFEntity, world: IWorldQuery): AddItemResult {
+  static addItem(container: IFEntity, item: IFEntity, world: IWorldQuery): IAddItemResult {
     const trait = ContainerBehavior.require<ContainerTrait>(container, TraitType.CONTAINER);
     
     // Check if container is accessible (must be open if openable)
@@ -293,7 +293,7 @@ export class ContainerBehavior extends Behavior {
    * @param world World query interface for getting current state
    * @returns Result describing what happened
    */
-  static removeItem(container: IFEntity, item: IFEntity, world: IWorldQuery): RemoveItemResult {
+  static removeItem(container: IFEntity, item: IFEntity, world: IWorldQuery): IRemoveItemResult {
     // Check if container is accessible (must be open if openable)
     if (container.has(TraitType.OPENABLE)) {
       const openable = container.get<OpenableTrait>(TraitType.OPENABLE);

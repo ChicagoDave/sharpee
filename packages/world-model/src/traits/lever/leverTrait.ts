@@ -2,10 +2,10 @@
  * Lever trait implementation
  */
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
-export interface LeverData {
+export interface ILeverData {
   /**
    * Current position of the lever
    */
@@ -47,7 +47,7 @@ export interface LeverData {
  * This trait contains only data - all logic for lever operation
  * is handled by the pulling action when combined with PULLABLE trait.
  */
-export class LeverTrait implements Trait, LeverData {
+export class LeverTrait implements ITrait, ILeverData {
   static readonly type = TraitType.LEVER;
   readonly type = TraitType.LEVER;
   
@@ -63,7 +63,7 @@ export class LeverTrait implements Trait, LeverData {
     neutral?: string;
   };
   
-  constructor(data: LeverData = {}) {
+  constructor(data: ILeverData = {}) {
     this.position = data.position ?? 'neutral';
     this.controls = data.controls;
     this.springLoaded = data.springLoaded ?? false;

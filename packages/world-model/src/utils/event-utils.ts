@@ -4,7 +4,7 @@
  * Provides helpers for creating properly-formed SemanticEvents
  */
 
-import { SemanticEvent, createEvent as coreCreateEvent } from '@sharpee/core';
+import { ISemanticEvent, createEvent as coreCreateEvent } from '@sharpee/core';
 import { EntityId } from '@sharpee/core';
 
 /**
@@ -23,7 +23,7 @@ export function createWorldEvent(
     location?: EntityId;
     others?: EntityId[];
   }
-): SemanticEvent {
+): ISemanticEvent {
   return coreCreateEvent(type, payload, entities);
 }
 
@@ -40,7 +40,7 @@ export function createActionFailedEvent(
     location?: EntityId;
   },
   customMessage?: string
-): SemanticEvent {
+): ISemanticEvent {
   const payload: Record<string, unknown> = {
     action,
     reason

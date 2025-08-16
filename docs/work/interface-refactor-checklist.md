@@ -2,130 +2,164 @@
 
 Complete checklist for adding I-prefix to all interfaces across the Sharpee codebase.
 
-## Phase 1: Core Package Interfaces
+## Phase 1: Core Package Interfaces ✅ COMPLETED
 
 ### core/src/types/
-- [ ] `Entity` → `IEntity`
-- [ ] `EntityCreationParams` → `IEntityCreationParams`
-- [ ] `EntityOperationOptions` → `IEntityOperationOptions`
-- [ ] `AttributeObject` → `IAttributeObject`
-- [ ] `AttributeConfig` → `IAttributeConfig`
-- [ ] `Relationship` → `IRelationship`
-- [ ] `RelationshipConfig` → `IRelationshipConfig`
-- [ ] `CommandResult` → `ICommandResult`
-- [ ] `SaveData` → `ISaveData`
-- [ ] `SaveMetadata` → `ISaveMetadata`
-- [ ] `EngineState` → `IEngineState`
-- [ ] `SerializedEvent` → `ISerializedEvent`
-- [ ] `SerializedSpatialIndex` → `ISerializedSpatialIndex`
-- [ ] `SerializedEntity` → `ISerializedEntity`
-- [ ] `SerializedLocation` → `ISerializedLocation`
-- [ ] `SerializedRelationship` → `ISerializedRelationship`
-- [ ] `SerializedTurn` → `ISerializedTurn`
-- [ ] `SerializedParserState` → `ISerializedParserState`
-- [ ] `StoryConfig` → `IStoryConfig`
-- [ ] `SaveRestoreHooks` → `ISaveRestoreHooks`
-- [ ] `QuitContext` → `IQuitContext`
-- [ ] `RestartContext` → `IRestartContext`
-- [ ] `SaveResult` → `ISaveResult`
-- [ ] `RestoreResult` → `IRestoreResult`
+- [x] `Entity` → `IEntity`
+- [x] `EntityCreationParams` → `IEntityCreationParams`
+- [x] `EntityOperationOptions` → `IEntityOperationOptions`
+- [x] `AttributeObject` → `IAttributeObject`
+- [x] `AttributeConfig` → `IAttributeConfig`
+- [x] `Relationship` → `IRelationship`
+- [x] `RelationshipConfig` → `IRelationshipConfig`
+- [x] `CommandResult` → `ICommandResult`
+- [x] `SaveData` → `ISaveData`
+- [x] `SaveMetadata` → `ISaveMetadata`
+- [x] `EngineState` → `IEngineState`
+- [x] `SerializedEvent` → `ISerializedEvent`
+- [x] `SerializedSpatialIndex` → `ISerializedSpatialIndex`
+- [x] `SerializedEntity` → `ISerializedEntity`
+- [x] `SerializedLocation` → `ISerializedLocation`
+- [x] `SerializedRelationship` → `ISerializedRelationship`
+- [x] `SerializedTurn` → `ISerializedTurn`
+- [x] `SerializedParserState` → `ISerializedParserState`
+- [x] `StoryConfig` → `IStoryConfig`
+- [x] `SaveRestoreHooks` → `ISaveRestoreHooks`
+- [x] `QuitContext` → `IQuitContext`
+- [x] `RestartContext` → `IRestartContext`
+- [x] `SaveResult` → `ISaveResult`
+- [x] `RestoreResult` → `IRestoreResult`
 
 ### core/src/events/
-- [ ] `SemanticEvent` → `ISemanticEvent`
-- [ ] `EventEmitter` → `IEventEmitter`
-- [ ] `EventSystemOptions` → `IEventSystemOptions`
-- [ ] `SemanticEventSource` → `ISemanticEventSource`
-- [ ] `GenericEventSource` → `IGenericEventSource`
-- [ ] `SystemEvent` → `ISystemEvent`
-- [ ] `GameEvent` → `IGameEvent`
-- [ ] `PlatformEvent` → `IPlatformEvent`
-- [ ] `SaveContext` → `ISaveContext`
-- [ ] `RestoreContext` → `IRestoreContext`
+- [x] `SemanticEvent` → `ISemanticEvent`
+- [x] `EventEmitter` → `IEventEmitter`
+- [x] `EventSystemOptions` → `IEventSystemOptions`
+- [x] `SemanticEventSource` → `ISemanticEventSource`
+- [x] `GenericEventSource` → `IGenericEventSource`
+- [x] `SystemEvent` → `ISystemEvent`
+- [x] `GameEvent` → `IGameEvent`
+- [x] `PlatformEvent` → `IPlatformEvent`
+- [x] `SaveContext` → `ISaveContext`
+- [x] `RestoreContext` → `IRestoreContext`
 
 ### core/src/query/
-- [ ] `PendingQuery` → `IPendingQuery`
-- [ ] `QueryContext` → `IQueryContext`
-- [ ] `QueryResponse` → `IQueryResponse`
-- [ ] `ValidationResult` → `IValidationResult`
-- [ ] `QueryHandler` → `IQueryHandler`
-- [ ] `QueryState` → `IQueryState`
-- [ ] `QueryEvents` → `IQueryEvents`
+- [x] `PendingQuery` → `IPendingQuery`
+- [x] `QueryContext` → `IQueryContext`
+- [x] `QueryResponse` → `IQueryResponse`
+- [x] `ValidationResult` → `IValidationResult`
+- [x] `QueryHandler` → `IQueryHandler`
+- [x] `QueryState` → `IQueryState`
+- [x] `QueryEvents` → `IQueryEvents`
 
 ### core/src/rules/
-- [ ] `RuleWorld` → `IRuleWorld`
-- [ ] `RuleResult` → `IRuleResult`
-- [ ] `EntityChange` → `IEntityChange`
-- [ ] `Rule` → `IRule`
-- [ ] `SimpleRuleSystem` → `ISimpleRuleSystem`
-- [ ] `RuleSystem` → `IRuleSystem`
+- [x] `RuleWorld` → `IRuleWorld`
+- [x] `RuleResult` → `IRuleResult`
+- [x] `EntityChange` → `IEntityChange`
+- [x] `Rule` → `IRule`
+- [x] `SimpleRuleSystem` → `ISimpleRuleSystem`
+- [x] `RuleSystem` → `IRuleSystem`
 
 ### core/src/execution/
-- [ ] `ExecutionContext` → `IExecutionContext`
-- [ ] `CommandHandler` → `ICommandHandler`
-- [ ] `Action` → `IAction` (conflicts with stdlib Action!)
-- [ ] `CommandRouter` → `ICommandRouter`
-- [ ] `CommandHandlerFactory` → `ICommandHandlerFactory`
-- [ ] `CommandExecutionOptions` → `ICommandExecutionOptions`
+- [x] `ExecutionContext` → `IExecutionContext`
+- [x] `CommandHandler` → `ICommandHandler`
+- [x] `Action` → `IAction` (conflicts with stdlib Action!)
+- [x] `CommandRouter` → `ICommandRouter`
+- [x] `CommandHandlerFactory` → `ICommandHandlerFactory`
+- [x] `CommandExecutionOptions` → `ICommandExecutionOptions`
 
 ### core/src/extensions/
-- [ ] `Extension` → `IExtension`
-- [ ] `CommandExtension` → `ICommandExtension`
-- [ ] `AbilityExtension` → `IAbilityExtension`
-- [ ] `EventExtension` → `IEventExtension`
-- [ ] `ParserExtension` → `IParserExtension`
+- [x] `Extension` → `IExtension`
+- [x] `CommandExtension` → `ICommandExtension`
+- [x] `AbilityExtension` → `IAbilityExtension`
+- [x] `EventExtension` → `IEventExtension`
+- [x] `ParserExtension` → `IParserExtension`
 
 ### core/src/debug/
-- [ ] `DebugEvent` → `IDebugEvent`
-- [ ] `DebugContext` → `IDebugContext`
+- [x] `DebugEvent` → `IDebugEvent`
+- [x] `DebugContext` → `IDebugContext`
 
 ### core/src/constants/
-- [ ] `CoreRelationshipConfig` → `ICoreRelationshipConfig`
+- [x] `CoreRelationshipConfig` → `ICoreRelationshipConfig`
 
-## Phase 2: World Model Package Interfaces
+## Phase 2: World Model Package Interfaces ✅ COMPLETED
 
 ### world-model/src/world/
-- [ ] `WorldModel` → `IWorldModel`
-- [ ] `CapabilityData` → `ICapabilityData`
-- [ ] `CapabilitySchema` → `ICapabilitySchema`
-- [ ] `CapabilityStore` → `ICapabilityStore`
-- [ ] `CapabilityRegistration` → `ICapabilityRegistration`
+- [x] `WorldModel` → `IWorldModel` ✅
+- [x] `CapabilityData` → `ICapabilityData` ✅
+- [x] `CapabilitySchema` → `ICapabilitySchema` ✅
+- [x] `CapabilityStore` → `ICapabilityStore` ✅
+- [x] `CapabilityRegistration` → `ICapabilityRegistration` ✅
+- [x] `DataStore` → `IDataStore` ✅
+- [x] `ItemSpec` → `IItemSpec` ✅
 
 ### world-model/src/commands/
-- [ ] `ParsedObjectReference` → `IParsedObjectReference`
-- [ ] `ParsedCommandV1` → `IParsedCommandV1`
-- [ ] `ValidatedObjectReference` → `IValidatedObjectReference`
-- [ ] `ValidatedCommand` → `IValidatedCommand`
-- [ ] `ValidationError` → `IValidationError`
+- [x] `ParsedObjectReference` → `IParsedObjectReference` ✅
+- [x] `ParsedCommandV1` → `IParsedCommandV1` ✅
+- [x] `TokenCandidate` → `ITokenCandidate` ✅
+- [x] `Token` → `IToken` ✅
+- [x] `VerbPhrase` → `IVerbPhrase` ✅
+- [x] `NounPhrase` → `INounPhrase` ✅
+- [x] `PrepPhrase` → `IPrepPhrase` ✅
+- [x] `ParsedCommand` → `IParsedCommand` ✅
+- [x] `ParseError` → `IParseError` ✅
+- [x] `ValidatedObjectReference` → `IValidatedObjectReference` ✅
+- [x] `ValidatedCommand` → `IValidatedCommand` ✅
+- [x] `ValidationError` → `IValidationError` ✅
+- [x] `ExecutionError` → `IExecutionError` ✅
+- [x] `CommandValidator` → `ICommandValidator` ✅
+- [x] `CommandExecutor` → `ICommandExecutor` ✅
+- [x] `CommandProcessor` → `ICommandProcessor` ✅
 
 ### world-model/src/interfaces/
-- [ ] `Parser` → `IParser`
+- [x] `Parser` → `IParser` ✅
+- [x] `LanguageProvider` → `ILanguageProvider` ✅
 
 ### world-model/src/events/
-- [ ] `GameEvent` → `IGameEvent` (duplicate of core!)
-- [ ] `EventHandlers` → `IEventHandlers`
-- [ ] `EventCapableEntity` → `IEventCapableEntity`
+- [x] `GameEvent` → `IGameEvent` ✅
+- [x] `EventHandlers` → `IEventHandlers` ✅
+- [x] `EventCapableEntity` → `IEventCapableEntity` ✅
 
 ### world-model/src/scope/
-- [ ] `ScopeContext` → `IScopeContext`
-- [ ] `ScopeRule` → `IScopeRule`
-- [ ] `ScopeRuleResult` → `IScopeRuleResult`
-- [ ] `ScopeEvaluationOptions` → `IScopeEvaluationOptions`
-- [ ] `ScopeEvaluationResult` → `IScopeEvaluationResult`
+- [x] `ScopeContext` → `IScopeContext` ✅
+- [x] `ScopeRule` → `IScopeRule` ✅
+- [x] `ScopeRuleResult` → `IScopeRuleResult` ✅
+- [x] `ScopeEvaluationOptions` → `IScopeEvaluationOptions` ✅
+- [x] `ScopeEvaluationResult` → `IScopeEvaluationResult` ✅
 
 ### world-model/src/behaviors/
-- [ ] `WorldAwareBehavior` → `IWorldAwareBehavior`
+- [x] `WorldAwareBehavior` → `IWorldAwareBehavior` ✅
+
+### world-model/src/traits/
+- [x] `Trait` → `ITrait` ✅
+- [x] `TraitConstructor` → `ITraitConstructor` ✅
+
+### world-model/src/traits/ (Data Interfaces - 30+ interfaces)
+- [x] All trait data interfaces renamed (e.g., `WearableData` → `IWearableData`) ✅
+- [x] All behavior result interfaces renamed (e.g., `TakeItemResult` → `ITakeItemResult`) ✅
+- [x] Special interfaces like `ContainerCapable` → `IContainerCapable` ✅
+- [x] Room interfaces like `ExitInfo` → `IExitInfo` ✅
 
 ### world-model/src/extensions/
-- [ ] `ExtensionMetadata` → `IExtensionMetadata`
-- [ ] `ExtensionDependency` → `IExtensionDependency`
-- [ ] `ExtensionTraitDefinition` → `IExtensionTraitDefinition`
-- [ ] `ExtensionEventDefinition` → `IExtensionEventDefinition`
-- [ ] `ExtensionActionDefinition` → `IExtensionActionDefinition`
-- [ ] `ExtensionCommandDefinition` → `IExtensionCommandDefinition`
-- [ ] `ITraitExtension` (already has I!)
-- [ ] `ExtensionLanguageData` → `IExtensionLanguageData`
-- [ ] `IExtensionLoader` (already has I!)
-- [ ] `IExtensionRegistry` (already has I!)
+- [x] `ExtensionMetadata` → `IExtensionMetadata` ✅
+- [x] `ExtensionDependency` → `IExtensionDependency` ✅
+- [x] `ExtensionTraitDefinition` → `IExtensionTraitDefinition` ✅
+- [x] `ExtensionEventDefinition` → `IExtensionEventDefinition` ✅
+- [x] `ExtensionActionDefinition` → `IExtensionActionDefinition` ✅
+- [x] `ExtensionCommandDefinition` → `IExtensionCommandDefinition` ✅
+- [x] `ITraitExtension` (already has I!) ✅
+- [x] `ExtensionLanguageData` → `IExtensionLanguageData` ✅
+- [x] `IExtensionLoader` (already has I!) ✅
+- [x] `IExtensionRegistry` (already has I!) ✅
+- [x] `IExtensionManager` (added during refactoring) ✅
+
+### Phase 2 Completion Summary:
+- [x] All trait class implementations updated ✅
+- [x] All scope-evaluator and scope-registry references fixed ✅
+- [x] All extension manager and registry references fixed ✅
+- [x] All SemanticEvent imports updated to ISemanticEvent ✅
+- [x] All interfaces/language-provider.ts references updated ✅
+- [x] Build successful with 0 errors ✅
+- [x] All tests passing (1124 tests) ✅
 
 ## Phase 3: IF Domain Package Interfaces (New)
 

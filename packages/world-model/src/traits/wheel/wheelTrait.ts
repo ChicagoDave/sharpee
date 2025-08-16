@@ -2,10 +2,10 @@
  * Wheel trait implementation
  */
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
-export interface WheelData {
+export interface IWheelData {
   /**
    * Diameter of the wheel
    */
@@ -43,7 +43,7 @@ export interface WheelData {
  * Wheels should also have the TURNABLE trait for turn behavior.
  * This trait adds wheel-specific descriptive properties.
  */
-export class WheelTrait implements Trait, WheelData {
+export class WheelTrait implements ITrait, IWheelData {
   static readonly type = TraitType.WHEEL;
   readonly type = TraitType.WHEEL;
   
@@ -55,7 +55,7 @@ export class WheelTrait implements Trait, WheelData {
   hasHandles: boolean;
   orientation?: 'horizontal' | 'vertical';
   
-  constructor(data: WheelData = {}) {
+  constructor(data: IWheelData = {}) {
     this.diameter = data.diameter;
     this.spokeCount = data.spokeCount;
     this.wheelType = data.wheelType;

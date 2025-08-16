@@ -1,9 +1,9 @@
 // packages/world-model/src/traits/switchable/switchableTrait.ts
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
-export interface SwitchableData {
+export interface ISwitchableData {
   /** Whether the entity is currently on */
   isOn?: boolean;
   
@@ -57,7 +57,7 @@ export interface SwitchableData {
  * This trait contains only data - all switching logic
  * is in SwitchableBehavior.
  */
-export class SwitchableTrait implements Trait, SwitchableData {
+export class SwitchableTrait implements ITrait, ISwitchableData {
   static readonly type = TraitType.SWITCHABLE;
   readonly type = TraitType.SWITCHABLE;
   
@@ -78,7 +78,7 @@ export class SwitchableTrait implements Trait, SwitchableData {
   autoOffTime: number;
   autoOffCounter: number;
   
-  constructor(data: SwitchableData = {}) {
+  constructor(data: ISwitchableData = {}) {
     // Set defaults and merge with provided data
     this.startsOn = data.startsOn ?? false;
     this.requiresPower = data.requiresPower ?? false;

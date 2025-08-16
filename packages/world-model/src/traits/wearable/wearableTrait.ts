@@ -1,9 +1,9 @@
 // packages/world-model/src/traits/wearable/wearableTrait.ts
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
-export interface WearableData {
+export interface IWearableData {
   /** Whether the item is currently being worn */
   isWorn?: boolean;
 
@@ -48,7 +48,7 @@ export interface WearableData {
  * This trait contains only data - all logic for wearing/removing
  * is in WearableBehavior.
  */
-export class WearableTrait implements Trait, WearableData {
+export class WearableTrait implements ITrait, IWearableData {
   static readonly type = TraitType.WEARABLE;
   readonly type = TraitType.WEARABLE;
 
@@ -75,7 +75,7 @@ export class WearableTrait implements Trait, WearableData {
     this.worn = value;
   }
 
-  constructor(data: WearableData = {}) {
+  constructor(data: IWearableData = {}) {
     // Set defaults and merge with provided data
     this.worn = data.isWorn ?? false;
     this.wornBy = data.wornBy;

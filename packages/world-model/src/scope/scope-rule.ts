@@ -3,12 +3,12 @@
  * @description Defines rules for entity visibility and interaction scope
  */
 
-import { Entity } from '@sharpee/core';
+import { IEntity } from '@sharpee/core';
 
 /**
  * Context provided to scope rules for evaluation
  */
-export interface ScopeContext {
+export interface IScopeContext {
   /** The world model instance */
   world: any; // Will be WorldModel when circular dependency is resolved
   /** ID of the actor performing the action */
@@ -22,7 +22,7 @@ export interface ScopeContext {
 /**
  * A rule that defines scope (what entities are available) in specific contexts
  */
-export interface ScopeRule {
+export interface IScopeRule {
   /** Unique identifier for this rule */
   id: string;
   
@@ -30,7 +30,7 @@ export interface ScopeRule {
   fromLocations: string[] | '*';
   
   /** Entity IDs to include, or function to compute them */
-  includeEntities: string[] | ((context: ScopeContext) => string[]);
+  includeEntities: string[] | ((context: IScopeContext) => string[]);
   
   /** Location IDs whose contents become visible (optional) */
   includeLocations?: string[];
@@ -39,7 +39,7 @@ export interface ScopeRule {
   forActions?: string[] | '*';
   
   /** Condition that must be true for rule to apply (optional) */
-  condition?: (context: ScopeContext) => boolean;
+  condition?: (context: IScopeContext) => boolean;
   
   /** Message to display when this rule grants visibility (optional) */
   message?: string | ((entityId: string, actionId: string) => string);
@@ -57,9 +57,9 @@ export interface ScopeRule {
 /**
  * Result of evaluating a scope rule
  */
-export interface ScopeRuleResult {
+export interface IScopeRuleResult {
   /** The rule that was evaluated */
-  rule: ScopeRule;
+  rule: IScopeRule;
   
   /** Entity IDs included by this rule */
   includedEntities: string[];
@@ -74,7 +74,7 @@ export interface ScopeRuleResult {
 /**
  * Options for scope evaluation
  */
-export interface ScopeEvaluationOptions {
+export interface IScopeEvaluationOptions {
   /** Whether to include debug information */
   debug?: boolean;
   
@@ -85,21 +85,21 @@ export interface ScopeEvaluationOptions {
   cache?: boolean;
   
   /** Custom rule filter */
-  ruleFilter?: (rule: ScopeRule) => boolean;
+  ruleFilter?: (rule: IScopeRule) => boolean;
 }
 
 /**
  * Result of scope evaluation
  */
-export interface ScopeEvaluationResult {
+export interface IScopeEvaluationResult {
   /** All entity IDs in scope */
   entityIds: Set<string>;
   
   /** Rules that contributed entities */
-  appliedRules: ScopeRuleResult[];
+  appliedRules: IScopeRuleResult[];
   
   /** Rules that were skipped due to conditions */
-  skippedRules?: ScopeRule[];
+  skippedRules?: IScopeRule[];
   
   /** Performance metrics */
   metrics?: {

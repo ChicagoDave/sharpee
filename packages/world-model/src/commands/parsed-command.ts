@@ -5,7 +5,7 @@
  */
 
 // Keep old interface temporarily for migration
-export interface ParsedObjectReference {
+export interface IParsedObjectReference {
   /** Original text from input */
   text: string;
   
@@ -16,7 +16,7 @@ export interface ParsedObjectReference {
   modifiers?: string[];
 }
 
-export interface ParsedCommandV1 {
+export interface IParsedCommandV1 {
   /** Raw input text */
   rawInput: string;
   
@@ -24,10 +24,10 @@ export interface ParsedCommandV1 {
   action: string;
   
   /** Direct object if present */
-  directObject?: ParsedObjectReference;
+  directObject?: IParsedObjectReference;
   
   /** Indirect object if present */
-  indirectObject?: ParsedObjectReference;
+  indirectObject?: IParsedObjectReference;
   
   /** Preposition if present */
   preposition?: string;
@@ -56,7 +56,7 @@ export enum PartOfSpeech {
 /**
  * Token candidate from vocabulary
  */
-export interface TokenCandidate {
+export interface ITokenCandidate {
   /** Vocabulary ID */
   id: string;
   /** Type in vocabulary (verb, noun, etc.) */
@@ -68,7 +68,7 @@ export interface TokenCandidate {
 /**
  * Individual token with full information
  */
-export interface Token {
+export interface IToken {
   /** Original word as typed */
   word: string;
   /** Normalized form (lowercase, etc.) */
@@ -80,13 +80,13 @@ export interface Token {
   /** Possible parts of speech */
   partOfSpeech: PartOfSpeech[];
   /** Vocabulary candidates for this token */
-  candidates: TokenCandidate[];
+  candidates: ITokenCandidate[];
 }
 
 /**
  * Verb phrase structure
  */
-export interface VerbPhrase {
+export interface IVerbPhrase {
   /** Indices into token array */
   tokens: number[];
   /** Original text (e.g., "look at") */
@@ -100,7 +100,7 @@ export interface VerbPhrase {
 /**
  * Noun phrase structure with all information preserved
  */
-export interface NounPhrase {
+export interface INounPhrase {
   /** Indices into token array */
   tokens: number[];
   /** Original complete text (e.g., "the small red ball") */
@@ -120,7 +120,7 @@ export interface NounPhrase {
 /**
  * Preposition phrase structure
  */
-export interface PrepPhrase {
+export interface IPrepPhrase {
   /** Indices into token array */
   tokens: number[];
   /** Preposition text */
@@ -130,23 +130,23 @@ export interface PrepPhrase {
 /**
  * Result of parsing phase - rich structure with all information preserved
  */
-export interface ParsedCommand {
+export interface IParsedCommand {
   /** Raw input text exactly as typed */
   rawInput: string;
   
   /** All tokens with position and classification */
-  tokens: Token[];
+  tokens: IToken[];
   
   /** Structured command components */
   structure: {
     /** Verb phrase */
-    verb: VerbPhrase;
+    verb: IVerbPhrase;
     /** Direct object noun phrase */
-    directObject?: NounPhrase;
+    directObject?: INounPhrase;
     /** Preposition phrase */
-    preposition?: PrepPhrase;
+    preposition?: IPrepPhrase;
     /** Indirect object noun phrase */
-    indirectObject?: NounPhrase;
+    indirectObject?: INounPhrase;
   };
   
   /** Which grammar pattern matched (e.g., "VERB_NOUN_PREP_NOUN") */
@@ -165,7 +165,7 @@ export interface ParsedCommand {
 /**
  * Errors that can occur during parsing
  */
-export interface ParseError {
+export interface IParseError {
   type: 'PARSE_ERROR';
   code: 'UNKNOWN_COMMAND' | 'INVALID_SYNTAX' | 'AMBIGUOUS_INPUT';
   message: string;

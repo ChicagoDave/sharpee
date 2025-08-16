@@ -2,10 +2,10 @@
  * Moveable scenery trait implementation
  */
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
-export interface MoveableSceneryData {
+export interface IMoveableSceneryData {
   /**
    * Weight class of the object
    */
@@ -64,7 +64,7 @@ export interface MoveableSceneryData {
  * traits to define how they can be moved. This trait adds properties
  * specific to large moveable scenery objects.
  */
-export class MoveableSceneryTrait implements Trait, MoveableSceneryData {
+export class MoveableSceneryTrait implements ITrait, IMoveableSceneryData {
   static readonly type = TraitType.MOVEABLE_SCENERY;
   readonly type = TraitType.MOVEABLE_SCENERY;
   
@@ -80,7 +80,7 @@ export class MoveableSceneryTrait implements Trait, MoveableSceneryData {
   requiresMultiplePeople: boolean;
   peopleRequired?: number;
   
-  constructor(data: MoveableSceneryData = {}) {
+  constructor(data: IMoveableSceneryData = {}) {
     this.weightClass = data.weightClass ?? 'heavy';
     this.revealsWhenMoved = data.revealsWhenMoved ?? false;
     this.reveals = data.reveals;

@@ -4,11 +4,11 @@
  * Capabilities store game state that doesn't naturally fit in the entity-relationship model
  */
 
-export interface CapabilityData {
+export interface ICapabilityData {
   [key: string]: any;
 }
 
-export interface CapabilitySchema {
+export interface ICapabilitySchema {
   [field: string]: {
     type: 'string' | 'number' | 'boolean' | 'array' | 'object';
     default?: any;
@@ -16,17 +16,17 @@ export interface CapabilitySchema {
   };
 }
 
-export interface CapabilityStore {
+export interface ICapabilityStore {
   [capabilityName: string]: {
-    data: CapabilityData;
-    schema?: CapabilitySchema;
+    data: ICapabilityData;
+    schema?: ICapabilitySchema;
   };
 }
 
-export interface CapabilityRegistration {
+export interface ICapabilityRegistration {
   name: string;
-  schema: CapabilitySchema;
-  initialData?: CapabilityData;
+  schema: ICapabilitySchema;
+  initialData?: ICapabilityData;
 }
 
 // Standard capability names

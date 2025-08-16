@@ -3,8 +3,8 @@
 import { Behavior } from '../../behaviors/behavior';
 import { IFEntity } from '../../entities/if-entity';
 import { TraitType } from '../trait-types';
-import { RoomTrait, ExitInfo } from './roomTrait';
-import { SemanticEvent, EntityId } from '@sharpee/core';
+import { RoomTrait, IExitInfo } from './roomTrait';
+import { ISemanticEvent, EntityId } from '@sharpee/core';
 import { IFEvents } from '../../constants/if-events';
 import { Direction, getOppositeDirection } from '../../constants/directions';
 import { IWorldQuery } from '../container/containerBehavior';
@@ -21,7 +21,7 @@ export class RoomBehavior extends Behavior {
   /**
    * Get the exit in a given direction
    */
-  static getExit(room: IFEntity, direction: string): ExitInfo | null {
+  static getExit(room: IFEntity, direction: string): IExitInfo | null {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
     if (!roomTrait.exits) {
       return null;
@@ -79,7 +79,7 @@ export class RoomBehavior extends Behavior {
   /**
    * Block an exit with a message
    */
-  static blockExit(room: IFEntity, direction: string, message: string): SemanticEvent[] {
+  static blockExit(room: IFEntity, direction: string, message: string): ISemanticEvent[] {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
     
     if (!roomTrait.blockedExits) {
@@ -106,7 +106,7 @@ export class RoomBehavior extends Behavior {
   /**
    * Unblock an exit
    */
-  static unblockExit(room: IFEntity, direction: string): SemanticEvent[] {
+  static unblockExit(room: IFEntity, direction: string): ISemanticEvent[] {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
     
     if (!roomTrait.blockedExits) {
@@ -155,7 +155,7 @@ export class RoomBehavior extends Behavior {
   /**
    * Mark room as visited
    */
-  static markVisited(room: IFEntity, actor: IFEntity): SemanticEvent[] {
+  static markVisited(room: IFEntity, actor: IFEntity): ISemanticEvent[] {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
     
     if (roomTrait.visited) {
@@ -190,7 +190,7 @@ export class RoomBehavior extends Behavior {
   /**
    * Get all exits from the room
    */
-  static getAllExits(room: IFEntity): Map<string, ExitInfo> {
+  static getAllExits(room: IFEntity): Map<string, IExitInfo> {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
     if (!roomTrait.exits) {
       return new Map();
@@ -201,9 +201,9 @@ export class RoomBehavior extends Behavior {
   /**
    * Get available (non-blocked) exits
    */
-  static getAvailableExits(room: IFEntity): Map<string, ExitInfo> {
+  static getAvailableExits(room: IFEntity): Map<string, IExitInfo> {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
-    const available = new Map<string, ExitInfo>();
+    const available = new Map<string, IExitInfo>();
     
     if (!roomTrait.exits) {
       return available;

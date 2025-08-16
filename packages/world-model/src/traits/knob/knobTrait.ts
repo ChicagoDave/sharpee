@@ -2,10 +2,10 @@
  * Knob trait implementation
  */
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
-export interface KnobData {
+export interface IKnobData {
   /**
    * Shape of the knob
    */
@@ -43,7 +43,7 @@ export interface KnobData {
  * Knobs should also have the TURNABLE trait for turn behavior.
  * This trait adds knob-specific descriptive properties.
  */
-export class KnobTrait implements Trait, KnobData {
+export class KnobTrait implements ITrait, IKnobData {
   static readonly type = TraitType.KNOB;
   readonly type = TraitType.KNOB;
   
@@ -55,7 +55,7 @@ export class KnobTrait implements Trait, KnobData {
   color?: string;
   recessed: boolean;
   
-  constructor(data: KnobData = {}) {
+  constructor(data: IKnobData = {}) {
     this.shape = data.shape;
     this.material = data.material;
     this.size = data.size;
