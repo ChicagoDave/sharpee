@@ -3,9 +3,9 @@
  * This allows existing code to work with the new simple rule system
  */
 
-import { SemanticEvent } from '../events/types';
+import { ISemanticEvent } from '../events/types';
 import { SimpleRuleSystemImpl } from './simple-rule-system';
-import { RuleWorld } from './types';
+import { IRuleWorld } from './types';
 
 /**
  * Game context interface that the old system expects
@@ -25,24 +25,24 @@ interface GameContext {
 interface OldRuleResult {
   prevented: boolean;
   preventMessage?: string;
-  events: SemanticEvent[];
+  events: ISemanticEvent[];
   context: GameContext;
 }
 
 /**
  * Old RuleSystem interface for compatibility
  */
-export interface RuleSystem {
-  processEvent(event: SemanticEvent, context: GameContext): OldRuleResult;
+export interface IRuleSystem {
+  processEvent(event: ISemanticEvent, context: GameContext): OldRuleResult;
 }
 
 /**
  * Adapter that makes the new SimpleRuleSystem compatible with old interfaces
  */
-export class RuleSystemAdapter implements RuleSystem {
+export class RuleSystemAdapter implements IRuleSystem {
   constructor(private simpleRuleSystem: SimpleRuleSystemImpl) {}
 
-  processEvent(event: SemanticEvent, context: GameContext): OldRuleResult {
+  processEvent(event: ISemanticEvent, context: GameContext): OldRuleResult {
     // Create a RuleWorld adapter from the GameContext
     const world = createRuleWorldFromGameContext(context);
     
@@ -62,7 +62,7 @@ export class RuleSystemAdapter implements RuleSystem {
 /**
  * Create a RuleWorld from a GameContext
  */
-function createRuleWorldFromGameContext(context: GameContext): RuleWorld {
+function createRuleWorldFromGameContext(context: GameContext): IRuleWorld {
   return {
     getEntity: (id: string) => context.getEntity(id),
     updateEntity: (id: string, changes: Record<string, any>) => {
@@ -84,7 +84,7 @@ function createRuleWorldFromGameContext(context: GameContext): RuleWorld {
 /**
  * Create a compatible rule system
  */
-export function createRuleSystem(): RuleSystem {
+export function createRuleSystem(): IRuleSystem {
   const simpleRuleSystem = new SimpleRuleSystemImpl();
   return new RuleSystemAdapter(simpleRuleSystem);
 }

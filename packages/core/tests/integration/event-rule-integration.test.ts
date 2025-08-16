@@ -4,13 +4,13 @@ import {
   createEvent,
   StandardEventTypes
 } from '../../src';
-import { Rule, RuleWorld } from '../../src/rules';
+import { IRule, IRuleWorld } from '../../src/rules';
 import { vi } from 'vitest';
 
 describe('Event and Rule Integration', () => {
   let eventSource: ReturnType<typeof createSemanticEventSource>;
   let ruleSystem: ReturnType<typeof createSimpleRuleSystem>;
-  let mockWorld: RuleWorld;
+  let mockWorld: IRuleWorld;
 
   beforeEach(() => {
     eventSource = createSemanticEventSource();
@@ -71,7 +71,7 @@ describe('Event and Rule Integration', () => {
   describe('Event Flow Through Rules', () => {
     it('should process events through rules and generate new events', () => {
       // Add a rule that reacts to taking items
-      const takeRule: Rule = {
+      const takeRule: IRule = {
         id: 'item-take-rule',
         eventType: 'item:taking',
         action: (event, world) => {

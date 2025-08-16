@@ -2,21 +2,21 @@
  * Simple Rule System Implementation
  */
 
-import { SemanticEvent } from '../events/types';
+import { ISemanticEvent } from '../events/types';
 import { createEvent } from '../events/event-system';
 import { StandardEventTypes } from '../events/standard-events';
-import { Rule, RuleResult, RuleWorld, SimpleRuleSystem, EntityChange } from './types';
+import { IRule, IRuleResult, IRuleWorld, ISimpleRuleSystem, IEntityChange } from './types';
 
 /**
  * Simple rule system implementation
  */
-export class SimpleRuleSystemImpl implements SimpleRuleSystem {
-  private rules: Map<string, Rule> = new Map();
+export class SimpleRuleSystemImpl implements ISimpleRuleSystem {
+  private rules: Map<string, IRule> = new Map();
 
   /**
    * Add a rule to the system
    */
-  addRule(rule: Rule): void {
+  addRule(rule: IRule): void {
     this.rules.set(rule.id, rule);
   }
 
@@ -30,14 +30,14 @@ export class SimpleRuleSystemImpl implements SimpleRuleSystem {
   /**
    * Get all rules
    */
-  getRules(): Rule[] {
+  getRules(): IRule[] {
     return Array.from(this.rules.values());
   }
 
   /**
    * Process an event through all matching rules
    */
-  processEvent(event: SemanticEvent, world: RuleWorld): RuleResult {
+  processEvent(event: ISemanticEvent, world: IRuleWorld): IRuleResult {
     // Find matching rules
     const matchingRules = this.getMatchingRules(event);
     
@@ -46,8 +46,8 @@ export class SimpleRuleSystemImpl implements SimpleRuleSystem {
 
     let prevented = false;
     let message: string | undefined;
-    const allEvents: SemanticEvent[] = [];
-    const allChanges: EntityChange[] = [];
+    const allEvents: ISemanticEvent[] = [];
+    const allChanges: IEntityChange[] = [];
 
     // Process each matching rule
     for (const rule of matchingRules) {
@@ -57,7 +57,7 @@ export class SimpleRuleSystemImpl implements SimpleRuleSystem {
       }
 
       // Execute the rule
-      let result: RuleResult;
+      let result: IRuleResult;
       try {
         result = rule.action(event, world);
       } catch (error) {
@@ -134,7 +134,7 @@ export class SimpleRuleSystemImpl implements SimpleRuleSystem {
   /**
    * Find rules that match the given event
    */
-  private getMatchingRules(event: SemanticEvent): Rule[] {
+  private getMatchingRules(event: ISemanticEvent): IRule[] {
     return Array.from(this.rules.values()).filter(rule => {
       // Handle wildcards
       if (rule.eventType === '*') return true;
@@ -154,6 +154,6 @@ export class SimpleRuleSystemImpl implements SimpleRuleSystem {
 /**
  * Create a new simple rule system
  */
-export function createSimpleRuleSystem(): SimpleRuleSystem {
+export function createSimpleRuleSystem(): ISimpleRuleSystem {
   return new SimpleRuleSystemImpl();
 }

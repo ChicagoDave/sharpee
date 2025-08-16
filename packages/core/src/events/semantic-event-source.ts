@@ -3,39 +3,39 @@
  * Builds on the generic event source infrastructure
  */
 
-import { GenericEventSource, SimpleEventSource } from './event-source';
-import { SemanticEvent, EventEmitter, EventListener } from './types';
+import { IGenericEventSource, SimpleEventSource } from './event-source';
+import { ISemanticEvent, IEventEmitter, EventListener } from './types';
 import { EntityId } from '../types/entity';
 
 /**
  * Specialized event source for semantic (story) events
  * Provides additional filtering and query capabilities
  */
-export interface SemanticEventSource extends GenericEventSource<SemanticEvent> {
+export interface ISemanticEventSource extends IGenericEventSource<ISemanticEvent> {
   /**
    * Add an event to the source
    */
-  addEvent(event: SemanticEvent): void;
+  addEvent(event: ISemanticEvent): void;
   
   /**
    * Get all events in the source
    */
-  getAllEvents(): SemanticEvent[];
+  getAllEvents(): ISemanticEvent[];
   
   /**
    * Get events of a specific type
    */
-  getEventsByType(type: string): SemanticEvent[];
+  getEventsByType(type: string): ISemanticEvent[];
   
   /**
    * Get events involving a specific entity
    */
-  getEventsByEntity(entityId: EntityId): SemanticEvent[];
+  getEventsByEntity(entityId: EntityId): ISemanticEvent[];
   
   /**
    * Get events with a specific tag
    */
-  getEventsByTag(tag: string): SemanticEvent[];
+  getEventsByTag(tag: string): ISemanticEvent[];
   
   /**
    * Clear all events
@@ -45,19 +45,19 @@ export interface SemanticEventSource extends GenericEventSource<SemanticEvent> {
   /**
    * Apply a filter to the events
    */
-  filter(predicate: (event: SemanticEvent) => boolean): SemanticEvent[];
+  filter(predicate: (event: ISemanticEvent) => boolean): ISemanticEvent[];
   
   /**
    * Get the event emitter associated with this source
    */
-  getEmitter(): EventEmitter;
+  getEmitter(): IEventEmitter;
 }
 
 /**
  * Implementation of semantic event source
  */
-export class SemanticEventSourceImpl extends SimpleEventSource<SemanticEvent> implements SemanticEventSource {
-  private events: SemanticEvent[] = [];
+export class SemanticEventSourceImpl extends SimpleEventSource<ISemanticEvent> implements ISemanticEventSource {
+  private events: ISemanticEvent[] = [];
   private eventEmitter: EventEmitterImpl;
   private lastProcessedIndex: number = 0;
 
@@ -71,20 +71,20 @@ export class SemanticEventSourceImpl extends SimpleEventSource<SemanticEvent> im
     });
   }
 
-  addEvent(event: SemanticEvent): void {
+  addEvent(event: ISemanticEvent): void {
     this.events.push(event);
     this.emit(event);
   }
 
-  getAllEvents(): SemanticEvent[] {
+  getAllEvents(): ISemanticEvent[] {
     return [...this.events];
   }
 
-  getEventsByType(type: string): SemanticEvent[] {
+  getEventsByType(type: string): ISemanticEvent[] {
     return this.events.filter(event => event.type === type);
   }
 
-  getEventsByEntity(entityId: EntityId): SemanticEvent[] {
+  getEventsByEntity(entityId: EntityId): ISemanticEvent[] {
     return this.events.filter(event => {
       const entities = event.entities;
       return (
@@ -97,11 +97,11 @@ export class SemanticEventSourceImpl extends SimpleEventSource<SemanticEvent> im
     });
   }
 
-  getEventsByTag(tag: string): SemanticEvent[] {
+  getEventsByTag(tag: string): ISemanticEvent[] {
     return this.events.filter(event => event.tags && event.tags.includes(tag));
   }
 
-  filter(predicate: (event: SemanticEvent) => boolean): SemanticEvent[] {
+  filter(predicate: (event: ISemanticEvent) => boolean): ISemanticEvent[] {
     return this.events.filter(predicate);
   }
 
@@ -109,14 +109,14 @@ export class SemanticEventSourceImpl extends SimpleEventSource<SemanticEvent> im
     this.events = [];
   }
 
-  getEmitter(): EventEmitter {
+  getEmitter(): IEventEmitter {
     return this.eventEmitter;
   }
 
   /**
    * Get events since a specific event ID
    */
-  getEventsSince(eventId?: string): SemanticEvent[] {
+  getEventsSince(eventId?: string): ISemanticEvent[] {
     if (!eventId) {
       return this.getAllEvents();
     }
@@ -132,7 +132,7 @@ export class SemanticEventSourceImpl extends SimpleEventSource<SemanticEvent> im
   /**
    * Get unprocessed events and mark them as processed
    */
-  getUnprocessedEvents(): SemanticEvent[] {
+  getUnprocessedEvents(): ISemanticEvent[] {
     const unprocessed = this.events.slice(this.lastProcessedIndex);
     this.lastProcessedIndex = this.events.length;
     return unprocessed;
@@ -142,7 +142,7 @@ export class SemanticEventSourceImpl extends SimpleEventSource<SemanticEvent> im
 /**
  * Implementation of the EventEmitter interface
  */
-class EventEmitterImpl implements EventEmitter {
+class EventEmitterImpl implements IEventEmitter {
   private listeners: Map<string, Set<EventListener>> = new Map();
   private globalListeners: Set<EventListener> = new Set();
 
@@ -173,7 +173,7 @@ class EventEmitterImpl implements EventEmitter {
     }
   }
 
-  emit(event: SemanticEvent): void {
+  emit(event: ISemanticEvent): void {
     // Emit to specific type listeners
     const typeListeners = this.listeners.get(event.type);
     if (typeListeners) {
@@ -200,7 +200,7 @@ class EventEmitterImpl implements EventEmitter {
 /**
  * Create a new semantic event source
  */
-export function createSemanticEventSource(): SemanticEventSource {
+export function createSemanticEventSource(): ISemanticEventSource {
   return new SemanticEventSourceImpl();
 }
 
@@ -208,7 +208,7 @@ export function createSemanticEventSource(): SemanticEventSource {
  * Type alias for backwards compatibility
  * @deprecated Use SemanticEventSource instead
  */
-export type EventSource = SemanticEventSource;
+export type EventSource = ISemanticEventSource;
 
 /**
  * Create event source for backwards compatibility

@@ -5,7 +5,7 @@
 /**
  * Complete save game data structure
  */
-export interface SaveData {
+export interface ISaveData {
   /** Engine version for compatibility checking */
   version: string;
   
@@ -13,19 +13,19 @@ export interface SaveData {
   timestamp: number;
   
   /** Game metadata for save management */
-  metadata: SaveMetadata;
+  metadata: ISaveMetadata;
   
   /** Complete engine state */
-  engineState: EngineState;
+  engineState: IEngineState;
   
   /** Story configuration for validation */
-  storyConfig: StoryConfig;
+  storyConfig: IStoryConfig;
 }
 
 /**
  * Save game metadata
  */
-export interface SaveMetadata {
+export interface ISaveMetadata {
   /** Unique story identifier */
   storyId: string;
   
@@ -45,24 +45,24 @@ export interface SaveMetadata {
 /**
  * Complete engine state for serialization
  */
-export interface EngineState {
+export interface IEngineState {
   /** Complete event history */
-  eventSource: SerializedEvent[];
+  eventSource: ISerializedEvent[];
   
   /** Current world state */
-  spatialIndex: SerializedSpatialIndex;
+  spatialIndex: ISerializedSpatialIndex;
   
   /** Turn history for undo/redo */
-  turnHistory: SerializedTurn[];
+  turnHistory: ISerializedTurn[];
   
   /** Optional: Parser state if needed */
-  parserState?: SerializedParserState;
+  parserState?: ISerializedParserState;
 }
 
 /**
  * Serialized event representation
  */
-export interface SerializedEvent {
+export interface ISerializedEvent {
   /** Unique event ID */
   id: string;
   
@@ -82,21 +82,21 @@ export interface SerializedEvent {
 /**
  * Serialized spatial index state
  */
-export interface SerializedSpatialIndex {
+export interface ISerializedSpatialIndex {
   /** All entities indexed by ID */
-  entities: Record<string, SerializedEntity>;
+  entities: Record<string, ISerializedEntity>;
   
   /** All locations indexed by ID */
-  locations: Record<string, SerializedLocation>;
+  locations: Record<string, ISerializedLocation>;
   
   /** Spatial relationships */
-  relationships: Record<string, SerializedRelationship[]>;
+  relationships: Record<string, ISerializedRelationship[]>;
 }
 
 /**
  * Serialized entity representation
  */
-export interface SerializedEntity {
+export interface ISerializedEntity {
   /** Unique entity ID */
   id: string;
   
@@ -110,7 +110,7 @@ export interface SerializedEntity {
 /**
  * Serialized location representation
  */
-export interface SerializedLocation {
+export interface ISerializedLocation {
   /** Unique location ID */
   id: string;
   
@@ -127,7 +127,7 @@ export interface SerializedLocation {
 /**
  * Serialized spatial relationship
  */
-export interface SerializedRelationship {
+export interface ISerializedRelationship {
   /** Relationship type (e.g., "contains", "supports") */
   type: string;
   
@@ -144,7 +144,7 @@ export interface SerializedRelationship {
 /**
  * Serialized turn data
  */
-export interface SerializedTurn {
+export interface ISerializedTurn {
   /** Turn number */
   turnNumber: number;
   
@@ -161,7 +161,7 @@ export interface SerializedTurn {
 /**
  * Serialized parser state (if needed)
  */
-export interface SerializedParserState {
+export interface ISerializedParserState {
   /** Current context stack */
   contextStack?: unknown[];
   
@@ -175,7 +175,7 @@ export interface SerializedParserState {
 /**
  * Story configuration for validation
  */
-export interface StoryConfig {
+export interface IStoryConfig {
   /** Unique story identifier */
   id: string;
   
@@ -195,39 +195,39 @@ export interface StoryConfig {
 /**
  * Client-provided hooks for save/restore functionality
  */
-export interface SaveRestoreHooks {
+export interface ISaveRestoreHooks {
   /**
    * Called when save is requested
    * @param data Complete save data to persist
    * @throws Error if save fails
    */
-  onSaveRequested: (data: SaveData) => Promise<void>;
+  onSaveRequested: (data: ISaveData) => Promise<void>;
   
   /**
    * Called when restore is requested
    * @returns Save data to restore, or null if cancelled/unavailable
    */
-  onRestoreRequested: () => Promise<SaveData | null>;
+  onRestoreRequested: () => Promise<ISaveData | null>;
   
   /**
    * Called when quit is requested
    * @param context Quit context with game state info
    * @returns true if game should quit, false if cancelled
    */
-  onQuitRequested?: (context: QuitContext) => Promise<boolean>;
+  onQuitRequested?: (context: IQuitContext) => Promise<boolean>;
   
   /**
    * Called when restart is requested
    * @param context Restart context with game state info
    * @returns true if game should restart, false if cancelled
    */
-  onRestartRequested?: (context: RestartContext) => Promise<boolean>;
+  onRestartRequested?: (context: IRestartContext) => Promise<boolean>;
 }
 
 /**
  * Context provided when quit is requested
  */
-export interface QuitContext {
+export interface IQuitContext {
   /** Current game score */
   score?: number;
   
@@ -247,7 +247,7 @@ export interface QuitContext {
 /**
  * Context provided when restart is requested
  */
-export interface RestartContext {
+export interface IRestartContext {
   /** Current progress information */
   currentProgress?: {
     score?: number;
@@ -268,7 +268,7 @@ export interface RestartContext {
 /**
  * Result of a save operation
  */
-export interface SaveResult {
+export interface ISaveResult {
   success: boolean;
   error?: string;
 }
@@ -276,7 +276,7 @@ export interface SaveResult {
 /**
  * Result of a restore operation
  */
-export interface RestoreResult {
+export interface IRestoreResult {
   success: boolean;
   error?: string;
   /** If true, UI should perform full refresh */

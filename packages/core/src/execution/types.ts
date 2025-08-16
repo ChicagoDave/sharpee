@@ -4,7 +4,7 @@
  * Generic context interface for execution
  * Domain-specific contexts should extend this interface
  */
-export interface ExecutionContext {
+export interface IExecutionContext {
   /**
    * Additional context data
    */
@@ -16,7 +16,7 @@ export interface ExecutionContext {
  * This is kept generic - specific implementations (IF, visual novel, etc)
  * should define their own command and result types
  */
-export interface CommandHandler<TCommand = any, TResult = any> {
+export interface ICommandHandler<TCommand = any, TResult = any> {
   /**
    * The verb or verbs that this handler can process
    */
@@ -25,24 +25,24 @@ export interface CommandHandler<TCommand = any, TResult = any> {
   /**
    * Check if this handler can handle the given command
    */
-  canHandle: (command: TCommand, context: ExecutionContext) => boolean;
+  canHandle: (command: TCommand, context: IExecutionContext) => boolean;
 
   /**
    * Execute the command
    */
-  execute: (command: TCommand, context: ExecutionContext) => Promise<TResult> | TResult;
+  execute: (command: TCommand, context: IExecutionContext) => Promise<TResult> | TResult;
 
   /**
    * Validate the command before execution
    */
-  validate?: (command: TCommand, context: ExecutionContext) => { valid: boolean; error?: string };
+  validate?: (command: TCommand, context: IExecutionContext) => { valid: boolean; error?: string };
 }
 
 /**
  * Generic action interface
  * Actions are handlers with unique identifiers
  */
-export interface Action<TCommand = any, TResult = any> extends CommandHandler<TCommand, TResult> {
+export interface IAction<TCommand = any, TResult = any> extends ICommandHandler<TCommand, TResult> {
   /**
    * Unique identifier for the action
    */
@@ -57,26 +57,26 @@ export interface Action<TCommand = any, TResult = any> extends CommandHandler<TC
 /**
  * Generic router interface for command-like systems
  */
-export interface CommandRouter<TCommand = any, TResult = any> {
+export interface ICommandRouter<TCommand = any, TResult = any> {
   /**
    * Register a command handler
    */
-  registerHandler: (handler: CommandHandler<TCommand, TResult>) => void;
+  registerHandler: (handler: ICommandHandler<TCommand, TResult>) => void;
 
   /**
    * Unregister a command handler
    */
-  unregisterHandler: (handler: CommandHandler<TCommand, TResult>) => void;
+  unregisterHandler: (handler: ICommandHandler<TCommand, TResult>) => void;
 
   /**
    * Get a handler for the command
    */
-  getHandler: (command: TCommand, context: ExecutionContext) => CommandHandler<TCommand, TResult> | undefined;
+  getHandler: (command: TCommand, context: IExecutionContext) => ICommandHandler<TCommand, TResult> | undefined;
 
   /**
    * Route and execute a command
    */
-  execute: (command: TCommand, context: ExecutionContext, options?: CommandExecutionOptions<TCommand>) => Promise<TResult>;
+  execute: (command: TCommand, context: IExecutionContext, options?: ICommandExecutionOptions<TCommand>) => Promise<TResult>;
 
   /**
    * Process the result of command execution and return text output
@@ -87,22 +87,22 @@ export interface CommandRouter<TCommand = any, TResult = any> {
 /**
  * Generic factory interface for creating handlers
  */
-export interface CommandHandlerFactory<TCommand = any, TResult = any> {
+export interface ICommandHandlerFactory<TCommand = any, TResult = any> {
   /**
    * Create a standard command handler
    */
   createHandler: (config: {
     verbs: string[];
-    canHandle?: (command: TCommand, context: ExecutionContext) => boolean;
-    execute: (command: TCommand, context: ExecutionContext) => Promise<TResult> | TResult;
-    validate?: (command: TCommand, context: ExecutionContext) => { valid: boolean; error?: string };
-  }) => CommandHandler<TCommand, TResult>;
+    canHandle?: (command: TCommand, context: IExecutionContext) => boolean;
+    execute: (command: TCommand, context: IExecutionContext) => Promise<TResult> | TResult;
+    validate?: (command: TCommand, context: IExecutionContext) => { valid: boolean; error?: string };
+  }) => ICommandHandler<TCommand, TResult>;
 }
 
 /**
  * Options for command execution
  */
-export interface CommandExecutionOptions<TCommand = any, TResult = any> {
+export interface ICommandExecutionOptions<TCommand = any, TResult = any> {
   /**
    * Whether to skip validation
    */
@@ -111,15 +111,15 @@ export interface CommandExecutionOptions<TCommand = any, TResult = any> {
   /**
    * Custom validation callback
    */
-  customValidation?: (command: TCommand, context: ExecutionContext) => { valid: boolean; error?: string };
+  customValidation?: (command: TCommand, context: IExecutionContext) => { valid: boolean; error?: string };
 
   /**
    * Pre-execution hooks
    */
-  preExecute?: ((command: TCommand, context: ExecutionContext) => Promise<void> | void)[];
+  preExecute?: ((command: TCommand, context: IExecutionContext) => Promise<void> | void)[];
 
   /**
    * Post-execution hooks
    */
-  postExecute?: ((result: TResult, command: TCommand, context: ExecutionContext) => Promise<TResult> | TResult)[];
+  postExecute?: ((result: TResult, command: TCommand, context: IExecutionContext) => Promise<TResult> | TResult)[];
 }

@@ -3,12 +3,12 @@
  */
 
 import { EntityId } from '../types/entity';
-import { RuleWorld } from './types';
+import { IRuleWorld } from './types';
 
 /**
  * Simple adapter for any object-based world state
  */
-export class SimpleRuleWorldAdapter implements RuleWorld {
+export class SimpleRuleWorldAdapter implements IRuleWorld {
   constructor(
     private worldState: any,
     private playerId: EntityId = 'player',
@@ -74,6 +74,6 @@ export function createSimpleRuleWorld(
   worldState: any, 
   playerId: EntityId = 'player',
   currentLocationId?: EntityId
-): RuleWorld {
+): IRuleWorld {
   return new SimpleRuleWorldAdapter(worldState, playerId, currentLocationId);
 }

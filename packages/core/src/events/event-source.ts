@@ -6,7 +6,7 @@
 /**
  * Generic event source interface for pub/sub pattern
  */
-export interface GenericEventSource<T> {
+export interface IGenericEventSource<T> {
   /**
    * Emit an event to all subscribers
    */
@@ -22,7 +22,7 @@ export interface GenericEventSource<T> {
 /**
  * Simple synchronous implementation of EventSource
  */
-export class SimpleEventSource<T> implements GenericEventSource<T> {
+export class SimpleEventSource<T> implements IGenericEventSource<T> {
   private handlers: ((event: T) => void)[] = [];
 
   emit(event: T): void {
@@ -68,6 +68,6 @@ export class SimpleEventSource<T> implements GenericEventSource<T> {
 /**
  * Create a new event source for a specific event type
  */
-export function createEventSource<T>(): GenericEventSource<T> {
+export function createEventSource<T>(): IGenericEventSource<T> {
   return new SimpleEventSource<T>();
 }

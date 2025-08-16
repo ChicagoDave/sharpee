@@ -13,4 +13,4 @@ export { createSimpleRuleSystem } from './simple-rule-system';
 export { createSimpleRuleWorld } from './rule-world-adapter';
 
 // Compatibility exports for old code
-export { RuleSystem, createRuleSystem } from './compatibility';
+export { IRuleSystem, createRuleSystem } from './compatibility';

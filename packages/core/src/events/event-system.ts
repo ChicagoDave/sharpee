@@ -1,8 +1,8 @@
 // packages/core/src/events/event-system.ts
 
-import { SemanticEvent } from './types';
+import { ISemanticEvent } from './types';
 import { EntityId } from '../types/entity';
-import { SemanticEventSource, createSemanticEventSource } from './semantic-event-source';
+import { ISemanticEventSource, createSemanticEventSource } from './semantic-event-source';
 
 /**
  * Create a new semantic event
@@ -25,7 +25,7 @@ export function createEvent(
     sessionId?: string;
     [key: string]: unknown;
   }
-): SemanticEvent {
+): ISemanticEvent {
   // Extract values from metadata
   const tags = metadata?.tags || [];
   const priority = metadata?.priority ?? 0;
@@ -39,7 +39,7 @@ export function createEvent(
     delete cleanMetadata.narrate;
   }
   
-  const event: SemanticEvent = {
+  const event: ISemanticEvent = {
     id: generateEventId(),
     type,
     timestamp: Date.now(),
@@ -89,6 +89,6 @@ function generateEventId(): string {
  * Create a new event source
  * @deprecated Use createSemanticEventSource from './semantic-event-source'
  */
-export function createEventSource(): SemanticEventSource {
+export function createEventSource(): ISemanticEventSource {
   return createSemanticEventSource();
 }

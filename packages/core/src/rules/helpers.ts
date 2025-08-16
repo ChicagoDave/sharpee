@@ -3,13 +3,13 @@
  */
 
 import { EntityId } from '../types/entity';
-import { SemanticEvent } from '../events/types';
-import { RuleWorld, EntityChange } from './types';
+import { ISemanticEvent } from '../events/types';
+import { IRuleWorld, IEntityChange } from './types';
 
 /**
  * Helper to get the target item from an event
  */
-export function getTargetItem(event: SemanticEvent, world: RuleWorld) {
+export function getTargetItem(event: ISemanticEvent, world: IRuleWorld) {
   const targetId = event.entities.target || event.payload?.itemId;
   // Ensure targetId is a string before passing to getEntity
   if (typeof targetId === 'string') {
@@ -21,7 +21,7 @@ export function getTargetItem(event: SemanticEvent, world: RuleWorld) {
 /**
  * Helper to get the actor from an event
  */
-export function getActor(event: SemanticEvent, world: RuleWorld) {
+export function getActor(event: ISemanticEvent, world: IRuleWorld) {
   const actorId = event.entities.actor;
   return actorId ? world.getEntity(actorId) : undefined;
 }
@@ -50,7 +50,7 @@ export function hasAbility(entity: any, ability: string): boolean {
 /**
  * Helper to create an entity change that gives an ability
  */
-export function giveAbility(entityId: EntityId, ability: string): EntityChange {
+export function giveAbility(entityId: EntityId, ability: string): IEntityChange {
   return {
     entityId,
     attribute: `ability_${ability}`,
@@ -61,7 +61,7 @@ export function giveAbility(entityId: EntityId, ability: string): EntityChange {
 /**
  * Helper to create an entity change that removes an ability
  */
-export function removeAbility(entityId: EntityId, ability: string): EntityChange {
+export function removeAbility(entityId: EntityId, ability: string): IEntityChange {
   return {
     entityId,
     attribute: `ability_${ability}`,
@@ -72,7 +72,7 @@ export function removeAbility(entityId: EntityId, ability: string): EntityChange
 /**
  * Helper to create an entity change that sets an attribute
  */
-export function setAttribute(entityId: EntityId, attribute: string, value: any): EntityChange {
+export function setAttribute(entityId: EntityId, attribute: string, value: any): IEntityChange {
   return {
     entityId,
     attribute,
@@ -83,7 +83,7 @@ export function setAttribute(entityId: EntityId, attribute: string, value: any):
 /**
  * Common condition: item weight vs player strength
  */
-export function itemTooHeavy(event: SemanticEvent, world: RuleWorld): boolean {
+export function itemTooHeavy(event: ISemanticEvent, world: IRuleWorld): boolean {
   const item = getTargetItem(event, world);
   const player = world.getPlayer();
   
@@ -97,7 +97,7 @@ export function itemTooHeavy(event: SemanticEvent, world: RuleWorld): boolean {
  * Common condition: check if taking a specific item
  */
 export function isTaking(itemNameOrId: string) {
-  return (event: SemanticEvent, world: RuleWorld): boolean => {
+  return (event: ISemanticEvent, world: IRuleWorld): boolean => {
     const item = getTargetItem(event, world);
     return entityIs(item, itemNameOrId);
   };
@@ -107,7 +107,7 @@ export function isTaking(itemNameOrId: string) {
  * Common condition: player has specific ability
  */
 export function playerHasAbility(ability: string) {
-  return (event: SemanticEvent, world: RuleWorld): boolean => {
+  return (event: ISemanticEvent, world: IRuleWorld): boolean => {
     const player = world.getPlayer();
     return hasAbility(player, ability);
   };

@@ -6,7 +6,7 @@
 /**
  * System event for debugging and monitoring
  */
-export interface SystemEvent {
+export interface ISystemEvent {
   /**
    * Unique identifier for this event instance
    */
@@ -66,10 +66,10 @@ export function createSystemEvent(
   type: string,
   data: unknown,
   options?: {
-    severity?: SystemEvent['severity'];
+    severity?: ISystemEvent['severity'];
     correlationId?: string;
   }
-): SystemEvent {
+): ISystemEvent {
   return {
     id: generateEventId(),
     timestamp: Date.now(),
@@ -92,7 +92,7 @@ function generateEventId(): string {
 /**
  * Type guard to check if an object is a SystemEvent
  */
-export function isSystemEvent(obj: unknown): obj is SystemEvent {
+export function isSystemEvent(obj: unknown): obj is ISystemEvent {
   return (
     typeof obj === 'object' &&
     obj !== null &&

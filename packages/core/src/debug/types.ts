@@ -7,7 +7,7 @@
  * Debug event emitted by various subsystems for diagnostic purposes.
  * These events are NOT part of the game's semantic event system.
  */
-export interface DebugEvent {
+export interface IDebugEvent {
   /** Unique identifier for this debug event */
   id: string;
   
@@ -27,12 +27,12 @@ export interface DebugEvent {
 /**
  * Callback function for receiving debug events
  */
-export type DebugEventCallback = (event: DebugEvent) => void;
+export type DebugEventCallback = (event: IDebugEvent) => void;
 
 /**
  * Context for debug event emission, passed to subsystems
  */
-export interface DebugContext {
+export interface IDebugContext {
   /** Optional callback to emit debug events */
   emit?: DebugEventCallback;
   

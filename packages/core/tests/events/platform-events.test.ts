@@ -4,11 +4,11 @@
 
 import {
   PlatformEventType,
-  PlatformEvent,
-  SaveContext,
-  RestoreContext,
-  QuitContext,
-  RestartContext,
+  IPlatformEvent,
+  ISaveContext,
+  IRestoreContext,
+  IQuitContext,
+  IRestartContext,
   isPlatformEvent,
   isPlatformRequestEvent,
   isPlatformCompletionEvent,
@@ -79,7 +79,7 @@ describe('Platform Events', () => {
 
   describe('Save Events', () => {
     it('should create save requested event with context', () => {
-      const context: SaveContext = {
+      const context: ISaveContext = {
         saveName: 'test-save',
         slot: 1,
         autosave: false,
@@ -116,7 +116,7 @@ describe('Platform Events', () => {
 
   describe('Restore Events', () => {
     it('should create restore requested event with context', () => {
-      const context: RestoreContext = {
+      const context: IRestoreContext = {
         slot: 'quicksave',
         availableSaves: [
           { slot: 'quicksave', name: 'Quick Save', timestamp: Date.now() },
@@ -150,7 +150,7 @@ describe('Platform Events', () => {
 
   describe('Quit Events', () => {
     it('should create quit requested event with context', () => {
-      const context: QuitContext = {
+      const context: IQuitContext = {
         score: 250,
         moves: 100,
         hasUnsavedChanges: true,
@@ -185,7 +185,7 @@ describe('Platform Events', () => {
 
   describe('Restart Events', () => {
     it('should create restart requested event with context', () => {
-      const context: RestartContext = {
+      const context: IRestartContext = {
         currentProgress: {
           score: 150,
           moves: 75,

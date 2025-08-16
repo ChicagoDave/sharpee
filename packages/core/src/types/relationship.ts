@@ -5,7 +5,7 @@ import { EntityId } from './entity';
 /**
  * A generic relationship between two entities
  */
-export interface Relationship {
+export interface IRelationship {
   /**
    * The source entity of the relationship
    */
@@ -30,7 +30,7 @@ export interface Relationship {
 /**
  * Configuration for creating a relationship
  */
-export interface RelationshipConfig {
+export interface IRelationshipConfig {
   /**
    * Whether this relationship creates an inverse relationship automatically
    */
@@ -50,4 +50,4 @@ export interface RelationshipConfig {
 /**
  * Map of relationship type configurations
  */
-export type RelationshipConfigMap = Record<string, RelationshipConfig>;
+export type RelationshipConfigMap = Record<string, IRelationshipConfig>;

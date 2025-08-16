@@ -40,7 +40,7 @@ export enum QueryType {
 /**
  * A query waiting for player response
  */
-export interface PendingQuery {
+export interface IPendingQuery {
   /** Unique identifier for this query */
   id: string;
   
@@ -60,7 +60,7 @@ export interface PendingQuery {
   options?: string[];
   
   /** Additional context for the query handler */
-  context: QueryContext;
+  context: IQueryContext;
   
   /** Whether the player can interrupt this query */
   allowInterruption: boolean;
@@ -81,7 +81,7 @@ export interface PendingQuery {
 /**
  * Context data passed with queries
  */
-export interface QueryContext {
+export interface IQueryContext {
   /** Query-specific data */
   [key: string]: any;
   
@@ -117,7 +117,7 @@ export interface QueryContext {
 /**
  * Player's response to a query
  */
-export interface QueryResponse {
+export interface IQueryResponse {
   /** ID of the query being responded to */
   queryId: string;
   
@@ -140,12 +140,12 @@ export interface QueryResponse {
 /**
  * Function to validate a response
  */
-export type QueryValidator = (response: string, query: PendingQuery) => ValidationResult;
+export type QueryValidator = (response: string, query: IPendingQuery) => IValidationResult;
 
 /**
  * Result of validating a response
  */
-export interface ValidationResult {
+export interface IValidationResult {
   /** Whether the response is valid */
   valid: boolean;
   
@@ -162,34 +162,34 @@ export interface ValidationResult {
 /**
  * Handler for processing query responses
  */
-export interface QueryHandler {
+export interface IQueryHandler {
   /** Query types this handler can process */
-  canHandle: (query: PendingQuery) => boolean;
+  canHandle: (query: IPendingQuery) => boolean;
   
   /** Process a validated response */
-  handleResponse: (response: QueryResponse, query: PendingQuery) => void;
+  handleResponse: (response: IQueryResponse, query: IPendingQuery) => void;
   
   /** Handle query timeout */
-  handleTimeout?: (query: PendingQuery) => void;
+  handleTimeout?: (query: IPendingQuery) => void;
   
   /** Handle query cancellation */
-  handleCancel?: (query: PendingQuery) => void;
+  handleCancel?: (query: IPendingQuery) => void;
 }
 
 /**
  * Query manager state
  */
-export interface QueryState {
+export interface IQueryState {
   /** Currently active query */
-  pendingQuery?: PendingQuery;
+  pendingQuery?: IPendingQuery;
   
   /** Stack of queries waiting to be presented */
-  queryStack: PendingQuery[];
+  queryStack: IPendingQuery[];
   
   /** History of recent queries and responses */
   history: Array<{
-    query: PendingQuery;
-    response?: QueryResponse;
+    query: IPendingQuery;
+    response?: IQueryResponse;
     result: 'answered' | 'timeout' | 'cancelled';
   }>;
   
@@ -200,24 +200,24 @@ export interface QueryState {
 /**
  * Events emitted by the query system
  */
-export interface QueryEvents {
+export interface IQueryEvents {
   /** A new query needs to be presented to the player */
-  'query:pending': (query: PendingQuery) => void;
+  'query:pending': (query: IPendingQuery) => void;
   
   /** A query was answered */
-  'query:answered': (response: QueryResponse, query: PendingQuery) => void;
+  'query:answered': (response: IQueryResponse, query: IPendingQuery) => void;
   
   /** A query timed out */
-  'query:timeout': (query: PendingQuery) => void;
+  'query:timeout': (query: IPendingQuery) => void;
   
   /** A query was cancelled */
-  'query:cancelled': (query: PendingQuery) => void;
+  'query:cancelled': (query: IPendingQuery) => void;
   
   /** A query was interrupted by a command */
-  'query:interrupted': (query: PendingQuery, command: string) => void;
+  'query:interrupted': (query: IPendingQuery, command: string) => void;
   
   /** Validation failed for a response */
-  'query:invalid': (response: string, result: ValidationResult, query: PendingQuery) => void;
+  'query:invalid': (response: string, result: IValidationResult, query: IPendingQuery) => void;
 }
 
 /**
@@ -225,7 +225,7 @@ export interface QueryEvents {
  */
 export const StandardValidators = {
   /** Validate yes/no responses */
-  yesNo: (response: string): ValidationResult => {
+  yesNo: (response: string): IValidationResult => {
     const normalized = response.toLowerCase().trim();
     const yesVariants = ['yes', 'y', 'yeah', 'yep', 'sure', 'ok', 'okay'];
     const noVariants = ['no', 'n', 'nope', 'nah', 'cancel'];
@@ -245,7 +245,7 @@ export const StandardValidators = {
   },
   
   /** Validate numeric responses */
-  numeric: (response: string, min?: number, max?: number): ValidationResult => {
+  numeric: (response: string, min?: number, max?: number): IValidationResult => {
     const num = parseInt(response.trim(), 10);
     
     if (isNaN(num)) {
@@ -273,7 +273,7 @@ export const StandardValidators = {
   },
   
   /** Validate multiple choice responses */
-  multipleChoice: (response: string, options: string[]): ValidationResult => {
+  multipleChoice: (response: string, options: string[]): IValidationResult => {
     const trimmed = response.trim();
     
     // Check if it's a number

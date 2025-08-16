@@ -16,13 +16,13 @@ export * from './game-events';
 
 // Export event sources with specific names to avoid conflicts
 export {
-  GenericEventSource,
+  IGenericEventSource,
   SimpleEventSource,
   createEventSource as createGenericEventSource
 } from './event-source';
 
 export {
-  SemanticEventSource,
+  ISemanticEventSource,
   SemanticEventSourceImpl,
   createSemanticEventSource
 } from './semantic-event-source';
