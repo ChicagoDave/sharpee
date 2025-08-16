@@ -22,14 +22,14 @@ const originalResolveFilename = Module._resolveFilename;
 Module._resolveFilename = function (request, parent, isMain) {
   if (request.startsWith('@sharpee/')) {
     const packageName = request.replace('@sharpee/', '');
-    
+
     // Try different paths in order
     const attempts = [
       path.join(packagesDir, packageName, 'dist', 'index.js'),
       path.join(packagesDir, packageName, 'src', 'index.js'),
       path.join(packagesDir, packageName, 'index.js')
     ];
-    
+
     for (const attemptPath of attempts) {
       try {
         return originalResolveFilename.call(this, attemptPath, parent, isMain);
@@ -37,7 +37,7 @@ Module._resolveFilename = function (request, parent, isMain) {
         // Try next path
       }
     }
-    
+
     // Check package.json main field
     try {
       const packageJsonPath = path.join(packagesDir, packageName, 'package.json');
@@ -50,7 +50,7 @@ Module._resolveFilename = function (request, parent, isMain) {
       // Fall through
     }
   }
-  
+
   return originalResolveFilename.call(this, request, parent, isMain);
 };
 
@@ -58,7 +58,7 @@ async function runStory() {
   console.log('=== Cloak of Darkness (Static Platform) ===');
   console.log('A Sharpee IF demonstration');
   console.log('');
-  
+
   try {
     // Import required modules
     const { WorldModel, EntityType } = require('@sharpee/world-model');
@@ -67,12 +67,12 @@ async function runStory() {
     const { EnglishLanguageProvider } = require('@sharpee/lang-en-us');
     const { TextService } = require('@sharpee/text-services');
     const { story } = require('./dist/index.js');
-    
+
     // Create world and player
     const world = new WorldModel();
     const player = world.createEntity('You', EntityType.ACTOR);
     world.setPlayer(player.id);
-    
+
     // Create services
     const language = new EnglishLanguageProvider();
     const parser = new Parser(language);
@@ -84,7 +84,7 @@ async function runStory() {
       showEventData: true,
       indentEvents: true
     });
-    
+
     // Extend parser and language with story-specific vocabulary/messages
     if (story.extendParser) {
       story.extendParser(parser);
@@ -92,7 +92,7 @@ async function runStory() {
     if (story.extendLanguage) {
       story.extendLanguage(language);
     }
-    
+
     // Create engine with static dependencies
     const engine = new GameEngine({
       world,
@@ -101,27 +101,36 @@ async function runStory() {
       language,
       textService
     });
-    
-    // Set the story
-    engine.setStory(story);
-    
-    // Start the engine
-    engine.start();
-    console.log('Engine started successfully');
-    
+
+    // Set up event listeners BEFORE starting the engine
     // Listen for text output
     engine.on('text:output', (text, turn) => {
       console.log(text);
     });
-    
+
+    // Listen for all events
+    engine.on('event', (event) => {
+      // Display game lifecycle events
+      if (event.type && event.type.startsWith('game.')) {
+        console.log(`\n[GAME EVENT]: ${event.type} - ${JSON.stringify(event.data || {})}`);
+      }
+    });
+
+    // Set the story
+    engine.setStory(story);
+
+    // Start the engine
+    engine.start();
+    console.log('Engine started successfully');
+
     // Listen for turn completion
     engine.on('turn:complete', (result) => {
       if (result.error) {
         console.log(`Error: ${result.error}`);
       }
-      
+
       // Check for system events
-      const systemEvents = result.events.filter(e => 
+      const systemEvents = result.events.filter(e =>
         e.type.startsWith('system.')
       );
       if (systemEvents.length > 0) {
@@ -130,26 +139,33 @@ async function runStory() {
           console.log(`  ${e.type}: ${JSON.stringify(e.data)}`);
         });
       }
+
+      // Check for game events in turn
+      const gameEvents = result.events.filter(e =>
+        e.type.startsWith('game.')
+      );
+      if (gameEvents.length > 0) {
+        console.log('\n[GAME LIFECYCLE EVENTS]:');
+        gameEvents.forEach(e => {
+          console.log(`  ${e.type}: ${JSON.stringify(e.data)}`);
+        });
+      }
     });
-    
+
     // Execute test commands
     const commands = [
+      'trace on',        // Turn on parser events
       'look',
-      'trace',                  // Show current trace status
-      'trace parser on',        // Turn on parser events
       'examine cloak',          // Should show parser events
-      'trace validation on',    // Turn on validation events
       'west',                   // Should show both events
-      'trace parser off',       // Turn off parser events
       'look',                   // Should only show validation events
-      'trace off',              // Turn off all tracing
       'hang cloak on hook',     // Should show no debug events
       'east',
       'south',
       'examine message',
-      'read message'
+      'read message'                    // Test game end events
     ];
-    
+
     for (const command of commands) {
       console.log(`\n> ${command}`);
       try {
@@ -158,10 +174,10 @@ async function runStory() {
         console.error(`Error executing command '${command}':`, error.message);
       }
     }
-    
+
     console.log('\n=== Story Complete ===');
     process.exit(0);
-    
+
   } catch (error) {
     console.error('Error running story:', error);
     process.exit(1);

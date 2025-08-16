@@ -30,14 +30,15 @@ import {
 } from '@sharpee/stdlib';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { TextService, TextServiceContext, TextOutput } from '@sharpee/if-services';
-import { SemanticEvent, createSemanticEventSource, SaveData, SaveRestoreHooks, SaveResult, RestoreResult, SerializedEvent, SerializedEntity, SerializedLocation, SerializedRelationship, SerializedSpatialIndex, SerializedTurn, EngineState, SaveMetadata, SerializedParserState, PlatformEvent, isPlatformRequestEvent, PlatformEventType, SaveContext, RestoreContext, QuitContext, RestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, SemanticEventSource } from '@sharpee/core';
+import { SemanticEvent, createSemanticEventSource, SaveData, SaveRestoreHooks, SaveResult, RestoreResult, SerializedEvent, SerializedEntity, SerializedLocation, SerializedRelationship, SerializedSpatialIndex, SerializedTurn, EngineState, SaveMetadata, SerializedParserState, PlatformEvent, isPlatformRequestEvent, PlatformEventType, SaveContext, RestoreContext, QuitContext, RestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, SemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent } from '@sharpee/core';
 
 import {
   GameContext,
   TurnResult,
   EngineConfig,
   GameState,
-  SequencedEvent
+  SequencedEvent,
+  GameEvent
 } from './types';
 import { Story } from './story';
 
@@ -67,6 +68,9 @@ type GameEngineEventListener<K extends GameEngineEventName> = GameEngineEvents[K
  */
 export class GameEngine {
   private world: WorldModel;
+  private sessionStartTime?: number;
+  private sessionTurns: number = 0;
+  private sessionMoves: number = 0;
   private context: GameContext;
   private config: EngineConfig;
   private commandExecutor!: CommandExecutor;
@@ -93,7 +97,6 @@ export class GameEngine {
     textService: TextService;
     config?: EngineConfig;
   }) {
-    
     this.world = options.world;
     this.config = {
       maxHistory: 100,
@@ -104,7 +107,7 @@ export class GameEngine {
 
     // Initialize context
     this.context = {
-      currentTurn: 1,
+      currentTurn: 1,  // Start at 1 per test expectations
       player: options.player,
       history: [],
       metadata: {
@@ -149,12 +152,23 @@ export class GameEngine {
     
     // Query handling is now managed by the platform layer
     // Platform owns the QueryManager and handles all queries
+    
+    // Emit initialized event now that engine is set up
+    // We'll defer this slightly to ensure all listeners are attached
+    setTimeout(() => {
+      const initializedEvent = createGameInitializedEvent();
+      this.emitGameEvent(initializedEvent);
+    }, 0);
   }
 
   /**
    * Set the story for this engine
    */
   setStory(story: Story): void {
+    // Emit story loading event
+    const loadingEvent = createStoryLoadingEvent(story.config.id);
+    this.emitGameEvent(loadingEvent);
+    
     this.story = story;
     
     // Initialize story-specific world content
@@ -184,6 +198,15 @@ export class GameEngine {
     if (story.initialize) {
       story.initialize();
     }
+    
+    // Emit story loaded event
+    const loadedEvent = createStoryLoadedEvent({
+      id: story.config.id,
+      title: story.config.title,
+      author: this.context.metadata.author,
+      version: story.config.version
+    });
+    this.emitGameEvent(loadedEvent);
     
     // Register custom vocabulary if parser is available
     if (story.getCustomVocabulary && this.parser && this.parser.registerVerbs) {
@@ -240,15 +263,80 @@ export class GameEngine {
       throw new Error('Engine must have a command executor before starting');
     }
 
+    // Emit game starting event
+    const startingEvent = createGameStartingEvent({
+      id: this.story?.config.id,
+      title: this.context.metadata.title,
+      author: this.context.metadata.author,
+      version: this.context.metadata.version
+    });
+    this.emitGameEvent(startingEvent);
+
     this.running = true;
+    this.sessionStartTime = Date.now();
+    this.sessionTurns = 0;
+    this.sessionMoves = 0;
+    // Keep currentTurn as is (already 1 from constructor)
+    
+    // Emit game started event
+    const startedEvent = createGameStartedEvent({
+      id: this.story?.config.id,
+      title: this.context.metadata.title,
+      author: this.context.metadata.author,
+      version: this.context.metadata.version
+    }, this.sessionStartTime);
+    this.emitGameEvent(startedEvent);
+    
     this.emit('state:changed', this.context);
   }
 
   /**
    * Stop the game engine
    */
-  stop(): void {
+  stop(reason?: 'quit' | 'victory' | 'defeat' | 'abort', details?: any): void {
+    if (!this.running) {
+      return;
+    }
+    
+    // Emit game ending event
+    const endingEvent = createGameEndingEvent(reason || 'quit', {
+      startTime: this.sessionStartTime,
+      endTime: Date.now(),
+      turns: this.sessionTurns,
+      moves: this.sessionMoves
+    });
+    this.emitGameEvent(endingEvent);
+    
     this.running = false;
+    
+    // Emit specific end event based on reason
+    const session = {
+      startTime: this.sessionStartTime,
+      endTime: Date.now(),
+      turns: this.sessionTurns,
+      moves: this.sessionMoves
+    };
+    
+    if (reason === 'victory') {
+      const wonEvent = createGameWonEvent(session, details);
+      this.emitGameEvent(wonEvent);
+    } else if (reason === 'defeat') {
+      const lostEvent = createGameLostEvent(details?.reason || 'Game over', session);
+      this.emitGameEvent(lostEvent);
+    } else if (reason === 'quit') {
+      const quitEvent = createGameQuitEvent(session);
+      this.emitGameEvent(quitEvent);
+    } else if (reason === 'abort') {
+      const abortedEvent = createGameAbortedEvent(details?.error || 'Game aborted', session);
+      this.emitGameEvent(abortedEvent);
+    }
+    
+    // Final game ended event
+    const endedEvent = createGameEndedEvent(reason || 'quit', session, details);
+    this.emitGameEvent(endedEvent);
+    
+    // Emit game:over for any ending
+    this.emit('game:over', this.context);
   }
 
 
@@ -346,13 +434,31 @@ export class GameEngine {
       }
       
       // Always emit events through the engine's event system
+      let victoryDetected = false;
+      let victoryDetails: any = null;
+      
       for (const event of result.events) {
         this.emit('event', event);
+        
+        // Check for story victory event but don't stop immediately
+        // (we're still processing the turn)
+        if (event.type === 'story.victory') {
+          victoryDetected = true;
+          victoryDetails = {
+            reason: event.data?.reason || 'Story completed',
+            score: event.data?.score || 0
+          };
+        }
       }
 
-      // Update context (increment turn) only for non-meta commands
+      // Update context only for non-meta commands
       if (!isMeta) {
         this.updateContext(result);
+        // Update session statistics
+        this.sessionTurns++;
+        if (result.success) {
+          this.sessionMoves++;
+        }
       } else {
         // For meta-commands, only update vocabulary (scope may have changed)
         this.updateScopeVocabulary();
@@ -430,10 +536,21 @@ export class GameEngine {
       // Emit completion
       this.emit('turn:complete', result);
 
-      // Check for game over
+      // Check for victory from events
+      if (victoryDetected) {
+        this.stop('victory', victoryDetails);
+        return result;
+      }
+
+      // Check for game over via story.isComplete()
       if (this.isGameOver()) {
-        this.emit('game:over', this.context);
-        this.stop();
+        // Check if it's a victory (story completed successfully)
+        // For now, assume completion means victory
+        // Stories could provide more detail about the type of ending
+        this.stop('victory', {
+          reason: 'Story completed',
+          score: 0  // TODO: Get score from story or scoring capability
+        });
       }
 
       return result;
@@ -923,8 +1040,8 @@ export class GameEngine {
             if (this.saveRestoreHooks?.onQuitRequested) {
               const shouldQuit = await this.saveRestoreHooks.onQuitRequested(context);
               if (shouldQuit) {
-                // Stop the engine
-                this.stop();
+                // Stop the engine with quit reason
+                this.stop('quit');
                 
                 // Emit confirmation event
                 const confirmEvent = createQuitConfirmedEvent();
@@ -1042,6 +1159,61 @@ export class GameEngine {
     
     // Clear pending operations
     this.pendingPlatformOps = [];
+  }
+
+  /**
+   * Emit a game lifecycle event
+   */
+  private emitGameEvent(event: any): void {
+    // Create a GameEvent that's compatible with the engine's type system
+    const gameEvent: GameEvent = {
+      type: event.type,
+      data: event.payload || event.data || {},
+      metadata: {
+        id: event.id || `event-${Date.now()}`,
+        timestamp: event.timestamp || Date.now(),
+        entities: event.entities || {}
+      }
+    };
+    
+    // Convert to sequenced event for consistency
+    const sequencedEvent = eventSequencer.sequence(gameEvent, this.context.currentTurn);
+    
+    // Emit through event emitter
+    this.emit('event', sequencedEvent);
+    
+    // Store in turn events if we're in a turn (as SemanticEvent for compatibility)
+    if (this.context.currentTurn > 0) {
+      const semanticEvent: SemanticEvent = {
+        id: event.id || gameEvent.metadata?.id as string,
+        type: event.type,
+        timestamp: event.timestamp || Date.now(),
+        entities: event.entities || {},
+        data: event.payload || event.data || {}
+      };
+      const turnEvents = this.turnEvents.get(this.context.currentTurn) || [];
+      turnEvents.push(semanticEvent);
+      this.turnEvents.set(this.context.currentTurn, turnEvents);
+    }
+  }
+  
+  /**
+   * Emit an event to listeners
+   */
+  private emit<K extends GameEngineEventName>(
+    event: K,
+    ...args: Parameters<GameEngineEventListener<K>>
+  ): void {
+    const listeners = this.eventListeners.get(event);
+    if (listeners) {
+      for (const listener of listeners) {
+        try {
+          (listener as any)(...args);
+        } catch (error) {
+          console.error(`Error in event listener for ${event}:`, error);
+        }
+      }
+    }
   }
 
   /**
@@ -1363,25 +1535,5 @@ export class GameEngine {
     return this;
   }
 
-  /**
-   * Emit event
-   */
-  private emit<K extends GameEngineEventName>(
-    event: K,
-    ...args: Parameters<GameEngineEventListener<K>>
-  ): boolean {
-    const listeners = this.eventListeners.get(event);
-    if (listeners) {
-      listeners.forEach(listener => {
-        try {
-          (listener as Function)(...args);
-        } catch (error) {
-          console.error(`Error in event listener for ${event}:`, error);
-        }
-      });
-      return true;
-    }
-    return false;
-  }
 }
 

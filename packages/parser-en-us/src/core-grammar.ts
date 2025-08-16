@@ -438,6 +438,74 @@ export function defineCoreGrammar(grammar: GrammarBuilder): void {
     .withPriority(90)
     .build();
 
+  // Author/debug commands
+  // Trace command - enables/disables tracing
+  grammar
+    .define('trace')
+    .mapsTo('author.trace')
+    .withPriority(100)
+    .build();
+  
+  grammar
+    .define('trace on')
+    .mapsTo('author.trace')
+    .withPriority(100)
+    .build();
+  
+  grammar
+    .define('trace off')
+    .mapsTo('author.trace')
+    .withPriority(100)
+    .build();
+  
+  grammar
+    .define('trace parser on')
+    .mapsTo('author.trace')
+    .withPriority(100)
+    .build();
+  
+  grammar
+    .define('trace parser off')
+    .mapsTo('author.trace')
+    .withPriority(100)
+    .build();
+  
+  grammar
+    .define('trace validation on')
+    .mapsTo('author.trace')
+    .withPriority(100)
+    .build();
+  
+  grammar
+    .define('trace validation off')
+    .mapsTo('author.trace')
+    .withPriority(100)
+    .build();
+  
+  grammar
+    .define('trace system on')
+    .mapsTo('author.trace')
+    .withPriority(100)
+    .build();
+  
+  grammar
+    .define('trace system off')
+    .mapsTo('author.trace')
+    .withPriority(100)
+    .build();
+  
+  grammar
+    .define('trace all on')
+    .mapsTo('author.trace')
+    .withPriority(100)
+    .build();
+  
+  grammar
+    .define('trace all off')
+    .mapsTo('author.trace')
+    .withPriority(100)
+    .build();
+
   // VERB_NOUN_NOUN patterns (Phase 2)
   // Giving
   grammar

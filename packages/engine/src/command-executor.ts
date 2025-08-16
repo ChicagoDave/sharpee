@@ -137,9 +137,10 @@ export class CommandExecutor {
 
       const parsed = parseResult.value;
       
-      // Emit parser event if enabled
+      // Emit parser events if enabled
       const systemEvents: SequencedEvent[] = [];
       if (emitParserEvents) {
+        // Emit main parser event
         systemEvents.push(eventSequencer.sequence({
           type: 'system.parser',
           data: {
@@ -152,9 +153,73 @@ export class CommandExecutor {
             }
           }
         }, turn));
+        
+        // Emit detailed tokenization event
+        if (parsed.tokens && parsed.tokens.length > 0) {
+          systemEvents.push(eventSequencer.sequence({
+            type: 'system.parser.tokens',
+            data: {
+              count: parsed.tokens.length,
+              tokens: parsed.tokens.map(t => ({
+                word: t.word,
+                normalized: t.normalized,
+                partOfSpeech: t.partOfSpeech,
+                position: t.position,
+                length: t.length,
+                candidates: t.candidates?.map(c => ({
+                  id: c.id,
+                  type: c.type,
+                  confidence: c.confidence
+                }))
+              }))
+            }
+          }, turn));
+        }
+        
+        // Emit structure breakdown event if structure exists
+        if (parsed.structure) {
+          systemEvents.push(eventSequencer.sequence({
+            type: 'system.parser.structure',
+            data: {
+              verb: {
+                text: parsed.structure.verb?.text,
+                head: parsed.structure.verb?.head,
+                particles: parsed.structure.verb?.particles
+              },
+              directObject: parsed.structure.directObject ? {
+                text: parsed.structure.directObject.text,
+                head: parsed.structure.directObject.head,
+                modifiers: parsed.structure.directObject.modifiers,
+                articles: parsed.structure.directObject.articles,
+                determiners: parsed.structure.directObject.determiners
+              } : undefined,
+              preposition: parsed.structure.preposition?.text,
+              indirectObject: parsed.structure.indirectObject ? {
+                text: parsed.structure.indirectObject.text,
+                head: parsed.structure.indirectObject.head,
+                modifiers: parsed.structure.indirectObject.modifiers,
+                articles: parsed.structure.indirectObject.articles,
+                determiners: parsed.structure.indirectObject.determiners
+              } : undefined
+            }
+          }, turn));
+        }
       }
 
       // Phase 2: Validate against the world
+      if (emitValidationEvents) {
+        // Emit validation start event
+        systemEvents.push(eventSequencer.sequence({
+          type: 'system.validation.start',
+          data: {
+            action: parsed.action,
+            hasDirectObject: !!parsed.structure?.directObject,
+            hasIndirectObject: !!parsed.structure?.indirectObject,
+            preposition: parsed.structure?.preposition?.text
+          }
+        }, turn));
+      }
+      
       const validationResult = this.validator.validate(parsed);
       
       if (!validationResult.success) {
@@ -164,7 +229,8 @@ export class CommandExecutor {
             type: 'system.validation.failed',
             data: {
               error: validationResult.error.message,
-              code: validationResult.error.code
+              code: validationResult.error.code,
+              details: validationResult.error.details
             }
           }, turn));
         }
@@ -175,6 +241,7 @@ export class CommandExecutor {
       
       // Emit validation success event if enabled
       if (emitValidationEvents) {
+        // Main success event
         systemEvents.push(eventSequencer.sequence({
           type: 'system.validation.success',
           data: {
@@ -183,6 +250,70 @@ export class CommandExecutor {
             indirectObject: validated.indirectObject?.entity?.id
           }
         }, turn));
+        
+        // Emit detailed scope information
+        if (validated.scopeInfo) {
+          const scopeData: any = {};
+          
+          if (validated.scopeInfo.directObject) {
+            const identity = validated.directObject?.entity?.get?.('identity') as any;
+            scopeData.directObject = {
+              entityId: validated.directObject?.entity?.id,
+              entityName: identity?.name,
+              scopeLevel: validated.scopeInfo.directObject.level,
+              perceivedBy: validated.scopeInfo.directObject.perceivedBy
+            };
+          }
+          
+          if (validated.scopeInfo.indirectObject) {
+            const identity = validated.indirectObject?.entity?.get?.('identity') as any;
+            scopeData.indirectObject = {
+              entityId: validated.indirectObject?.entity?.id,
+              entityName: identity?.name,
+              scopeLevel: validated.scopeInfo.indirectObject.level,
+              perceivedBy: validated.scopeInfo.indirectObject.perceivedBy
+            };
+          }
+          
+          if (Object.keys(scopeData).length > 0) {
+            systemEvents.push(eventSequencer.sequence({
+              type: 'system.validation.scope',
+              data: scopeData
+            }, turn));
+          }
+        }
+        
+        // Emit entity resolution details
+        if (validated.directObject || validated.indirectObject) {
+          const resolutionData: any = {};
+          
+          if (validated.directObject) {
+            const directEntity = validated.directObject.entity;
+            const directIdentity = directEntity?.get?.('identity') as any;
+            resolutionData.directObject = {
+              parsed: validated.directObject.parsed.text,
+              resolved: directEntity?.id,
+              name: directIdentity?.name,
+              location: world.getLocation(directEntity?.id || '')
+            };
+          }
+          
+          if (validated.indirectObject) {
+            const indirectEntity = validated.indirectObject.entity;
+            const indirectIdentity = indirectEntity?.get?.('identity') as any;
+            resolutionData.indirectObject = {
+              parsed: validated.indirectObject.parsed.text,
+              resolved: indirectEntity?.id,
+              name: indirectIdentity?.name,
+              location: world.getLocation(indirectEntity?.id || '')
+            };
+          }
+          
+          systemEvents.push(eventSequencer.sequence({
+            type: 'system.validation.resolution',
+            data: resolutionData
+          }, turn));
+        }
       }
 
       // Phase 3: Execute the validated command

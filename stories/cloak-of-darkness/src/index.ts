@@ -91,6 +91,15 @@ export class CloakOfDarknessStory implements Story {
   initializeWorld(world: WorldModel): void {
     this.world = world;
     
+    // Register the debug capability for trace commands
+    world.registerCapability('debug', {
+      schema: {
+        debugParserEvents: { type: 'boolean', default: false },
+        debugValidationEvents: { type: 'boolean', default: false },
+        debugSystemEvents: { type: 'boolean', default: false }
+      }
+    });
+    
     // Remove default visibility rules so we can control darkness properly
     world.removeScopeRule('default_room_visibility');
     world.removeScopeRule('default_inventory_visibility');
@@ -524,14 +533,29 @@ export class CloakOfDarknessStory implements Story {
     
     // Add event handler for when the message is read
     message.on = {
-      'action.read.success': (event: any): SemanticEvent[] | undefined => {
-        const { target } = event.data || {};
+      'if.event.read': (event: any): SemanticEvent[] | undefined => {
+        const { targetId } = event.data || {};
         
         // Check if this message was read successfully
-        if (target === message.id && this.disturbances === 0) {
+        if (targetId === message.id && this.disturbances === 0) {
           // Mark the story as complete!
           this.world.setStateValue('message_read_successfully', true);
-          console.log('Message read successfully - story complete!');
+          
+          // Emit a victory event that can be picked up by the engine
+          return [{
+            id: `victory-${Date.now()}`,
+            type: 'story.victory',
+            timestamp: Date.now(),
+            entities: {
+              actor: this.world.getPlayer()?.id,
+              target: message.id
+            },
+            data: {
+              message: 'Congratulations! You have won!',
+              reason: 'Message read without disturbing the sawdust',
+              disturbances: this.disturbances
+            }
+          }];
         }
         return undefined;
       }
