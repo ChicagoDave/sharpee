@@ -1,142 +1,72 @@
-# Refactoring Plan: Move Core Interfaces to if-domain
+# Refactoring Plan: Complete Interface Naming Convention Migration
 
 ## Overview
-Move core interactive fiction interfaces from `@sharpee/stdlib` to `@sharpee/if-domain` to enable extensions and alternative implementations to share the same contract without depending on stdlib's implementation.
+This plan covers two major refactoring efforts:
+1. **Add I-prefix to ALL interfaces** across the entire Sharpee codebase for consistency and clarity
+2. **Move IF domain interfaces** from `@sharpee/stdlib` to `@sharpee/if-domain` to improve architecture
 
 ## Motivation
-- Extensions (like blood-magic) currently must depend on stdlib just for type definitions
+
+### Why I-Prefix
+- **Naming Conflicts**: Interfaces and classes with same name (e.g., `CommandValidator`) can only coexist in same file
+- **Code Clarity**: Instantly distinguish contracts from implementations
+- **Consistency**: Currently inconsistent - some interfaces have prefix, most don't
+- **Industry Standard**: Common in C# and enterprise TypeScript
+
+### Why Move to if-domain
+- Extensions currently must depend on stdlib just for type definitions
 - This creates unnecessary coupling and pulls in ~30+ action implementations
 - Conceptually, stdlib and extensions are peers - both implement the domain model
 - Moving interfaces to if-domain allows multiple implementations of the same contracts
 
-## Interfaces to Move
+## Naming Convention
 
-### From `stdlib/src/actions/enhanced-types.ts`:
-- [ ] `Action` interface
-- [ ] `ValidationResult` interface  
-- [ ] `ActionContext` interface
-- [ ] `ActionRegistry` interface
+**Decision**: Use `I` prefix for all interfaces to clearly distinguish from implementations.
+- Rationale: Prevents naming conflicts, improves code clarity, common in C# and enterprise TypeScript
+- Example: `IAction` (interface) vs `BaseAction` or `StandardAction` (class)
 
-### From `stdlib/src/validation/types.ts`:
-- [ ] `ValidatedCommand` interface
-- [ ] `CommandObject` interface
-- [ ] `ParsedIntent` interface
+See ADR-053 for detailed rationale and `/docs/work/interface-refactor-checklist.md` for the complete list of interfaces to rename.
 
-### From `stdlib/src/validation/command-validator.ts`:
-- [ ] `ActionMetadata` interface
+## Migration Strategy
 
-### From `stdlib/src/scope/types.ts`:
-- [ ] `ScopeLevel` enum
-- [ ] `ScopeResolver` interface
-- [ ] `ScopeContext` interface
+### Phase 1: Core Package (Foundation)
+Update all interfaces in @sharpee/core with I-prefix since everything depends on core.
 
-### From `stdlib/src/actions/constants.ts`:
-- [ ] `IFActions` enum (standard action identifiers)
-- [ ] Action group constants
+### Phase 2: World Model Package  
+Update all interfaces in @sharpee/world-model with I-prefix.
 
-### From message system (various files):
-- [ ] `MessageKey` type
-- [ ] `MessageTemplate` interface
-- [ ] `MessageContext` interface
+### Phase 3: Create IF Domain Package
+Create new interfaces in @sharpee/if-domain with I-prefix from the start.
 
-## New Structure in if-domain
+### Phase 4: Update Stdlib Package
+- Update to use I-prefixed interfaces from core, world-model, and if-domain
+- Remove local interface definitions
+- Update all action implementations
 
-```
-packages/if-domain/src/
-├── actions/
-│   ├── types.ts         # Action, ValidationResult, ActionContext
-│   ├── metadata.ts      # ActionMetadata
-│   ├── registry.ts      # ActionRegistry
-│   └── constants.ts     # IFActions enum, groups
-├── commands/
-│   └── types.ts         # ValidatedCommand, CommandObject, ParsedIntent
-├── scope/
-│   └── types.ts         # ScopeLevel, ScopeResolver, ScopeContext
-├── messages/
-│   └── types.ts         # MessageKey, MessageTemplate, MessageContext
-└── index.ts             # Re-exports all
-```
+### Phase 5: Update Remaining Packages
+- Engine, parser, language packages, etc.
+- Update all imports to use I-prefixed interfaces
 
-## Migration Checklist
-
-### Phase 1: Create New Interfaces in if-domain
-- [ ] Create directory structure in if-domain
-- [ ] Copy interfaces to if-domain (keep originals for now)
-- [ ] Ensure if-domain exports all new interfaces
-- [ ] Build if-domain successfully
-- [ ] Create unit tests for type exports
-
-### Phase 2: Update stdlib to Use if-domain
-- [ ] Update stdlib imports to use if-domain interfaces
-- [ ] Remove duplicate interface definitions from stdlib
-- [ ] Update stdlib's index.ts to re-export from if-domain (compatibility)
-- [ ] Run stdlib build
-- [ ] Run stdlib tests
-
-### Phase 3: Update All Action Files (~30+ files)
-- [ ] actions/standard/opening/opening.ts
-- [ ] actions/standard/taking/taking.ts
-- [ ] actions/standard/dropping/dropping.ts
-- [ ] actions/standard/examining/examining.ts
-- [ ] actions/standard/going/going.ts
-- [ ] actions/standard/entering/entering.ts
-- [ ] actions/standard/exiting/exiting.ts
-- [ ] actions/standard/looking/looking.ts
-- [ ] actions/standard/inventory/inventory.ts
-- [ ] actions/standard/putting/putting.ts
-- [ ] actions/standard/inserting/inserting.ts
-- [ ] actions/standard/removing/removing.ts
-- [ ] actions/standard/giving/giving.ts
-- [ ] actions/standard/showing/showing.ts
-- [ ] actions/standard/telling/telling.ts
-- [ ] actions/standard/asking/asking.ts
-- [ ] actions/standard/attacking/attacking.ts
-- [ ] actions/standard/climbing/climbing.ts
-- [ ] actions/standard/closing/closing.ts
-- [ ] actions/standard/drinking/drinking.ts
-- [ ] actions/standard/eating/eating.ts
-- [ ] actions/standard/listening/listening.ts
-- [ ] actions/standard/pulling/pulling.ts
-- [ ] actions/standard/pushing/pushing.ts
-- [ ] actions/standard/reading/reading.ts
-- [ ] actions/standard/searching/searching.ts
-- [ ] actions/standard/switching/switching.ts
-- [ ] actions/standard/talking/talking.ts
-- [ ] actions/standard/throwing/throwing.ts
-- [ ] actions/standard/touching/touching.ts
-- [ ] actions/standard/waiting/waiting.ts
-- [ ] actions/standard/wearing/wearing.ts
-- [ ] (any others found during migration)
-
-### Phase 4: Update Stories
-- [ ] stories/cloak-of-darkness
-- [ ] Any other stories using these types
-
-### Phase 5: Update Extensions
-- [ ] Update blood-magic extension to import from if-domain
-- [ ] Update conversation extension (if it uses these types)
-
-### Phase 6: Update Tests
-- [ ] Update all action test files
-- [ ] Update integration tests
-- [ ] Update any test utilities that use these types
-
-### Phase 7: Documentation
-- [ ] Update API documentation
-- [ ] Update architecture docs (ADRs if needed)
-- [ ] Update README files
-- [ ] Add migration guide for external users
+### Phase 6: Update Stories and Extensions
+- Update all story code
+- Update extensions (conversation, blood-magic)
 
 ## Impact Analysis
 
-### Files Affected
-- **Minimum**: ~50 files (30+ actions, tests, stories)
-- **Maximum**: ~100+ files (including all tests)
+### Scope
+- **Interfaces to Rename**: 100+ across all packages
+- **Files Affected**: 200+ files (virtually every TypeScript file)
+- **Packages Affected**: All 15+ packages in the monorepo
+
+### Breaking Changes
+- All interface names change (add `I` prefix)
+- Import paths change for IF domain interfaces (stdlib → if-domain)
+- Every TypeScript file that references an interface needs updating
 
 ### Risk Assessment
-- **High Risk**: Breaking changes to public API
-- **Medium Risk**: Test failures due to import changes
-- **Low Risk**: Runtime behavior (only moving types, not logic)
+- **High Risk**: Massive breaking change to public API
+- **Medium Risk**: Potential for missed references causing build failures
+- **Low Risk**: Runtime behavior (only renaming types, no logic changes)
 
 ### Mitigation Strategies
 1. **Compatibility Layer**: Keep re-exports in stdlib for backward compatibility
@@ -165,11 +95,23 @@ If issues arise:
 3. Document lessons learned
 
 ## Estimated Timeline
-- Setup and Phase 1: 1 hour
-- Phase 2-3 (stdlib updates): 2-3 hours  
-- Phase 4-6 (stories/tests): 1-2 hours
-- Phase 7 (documentation): 1 hour
-- **Total**: 5-7 hours of focused work
+- Phase 1 (Core Package): 2-3 hours
+- Phase 2 (World Model): 2-3 hours
+- Phase 3 (IF Domain Creation): 1-2 hours
+- Phase 4 (Stdlib Updates): 2-3 hours
+- Phase 5 (Other Packages): 2-3 hours
+- Phase 6 (Stories/Extensions): 1-2 hours
+- Testing and Verification: 2-3 hours
+- Documentation: 1 hour
+- **Total**: 13-20 hours of focused work
+
+## Automation Potential
+Much of this can be automated with careful regex replacements:
+- Interface declarations: `s/export interface ([A-Z])/export interface I$1/g`
+- Type references: Need more careful pattern matching
+- Implements clauses: `s/implements ([A-Z])/implements I$1/g`
+
+Estimate with automation: 6-10 hours
 
 ## Notes
 - This is a breaking change for any external packages depending on stdlib's types
