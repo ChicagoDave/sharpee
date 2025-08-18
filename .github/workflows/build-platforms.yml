@@ -31,6 +31,8 @@ jobs:
         pnpm --filter '@sharpee/core' build
         pnpm --filter '@sharpee/if-domain' build
         pnpm --filter '@sharpee/world-model' build
+        pnpm --filter '@sharpee/text-service' build
+        pnpm --filter '@sharpee/text-service-basic' build
         pnpm --filter '@sharpee/text-services' build
         pnpm --filter '@sharpee/lang-en-us' build
         pnpm --filter '@sharpee/parser-en-us' build
