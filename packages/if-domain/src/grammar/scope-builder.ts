@@ -9,7 +9,7 @@ import {
   PropertyConstraint, 
   FunctionConstraint 
 } from './grammar-builder';
-import { Entity } from '@sharpee/core';
+import { IEntity } from '@sharpee/core';
 
 /**
  * Concrete scope builder implementation
