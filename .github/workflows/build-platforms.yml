@@ -29,16 +29,32 @@ jobs:
         ls -la packages/core/
         ls -la packages/if-domain/node_modules/@sharpee/ || true
       
-    - name: Build core first
+    - name: Build packages in correct order
       run: |
+        echo "Building core..."
         pnpm --filter @sharpee/core run build
-        ls -la packages/core/dist/
-      
-    - name: Re-install to update symlinks
-      run: pnpm install --ignore-scripts
-      
-    - name: Build remaining packages
-      run: pnpm -r --workspace-concurrency=1 run build
+        echo "Building if-domain..."
+        pnpm --filter @sharpee/if-domain run build
+        echo "Building world-model..."
+        pnpm --filter @sharpee/world-model run build
+        echo "Building text-service..."
+        pnpm --filter @sharpee/text-service run build || true
+        echo "Building text-service-basic..."
+        pnpm --filter @sharpee/text-service-basic run build || true
+        echo "Building text-services..."
+        pnpm --filter @sharpee/text-services run build
+        echo "Building lang-en-us..."
+        pnpm --filter @sharpee/lang-en-us run build
+        echo "Building parser-en-us..."
+        pnpm --filter @sharpee/parser-en-us run build
+        echo "Building stdlib..."
+        pnpm --filter @sharpee/stdlib run build
+        echo "Building event-processor..."
+        pnpm --filter @sharpee/event-processor run build
+        echo "Building engine..."
+        pnpm --filter @sharpee/engine run build
+        echo "Building sharpee..."
+        pnpm --filter @sharpee/sharpee run build
       
     - name: Upload core artifacts
       uses: actions/upload-artifact@v4
