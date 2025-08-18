@@ -16,7 +16,7 @@ jobs:
     - name: Setup pnpm
       uses: pnpm/action-setup@v3
       with:
-        version: 8
+        version: 10.13.1
         
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -28,7 +28,7 @@ jobs:
       run: pnpm install --ignore-scripts
       
     - name: Build packages
-      run: pnpm turbo run build --filter='!@sharpee-stories/*' --filter='!@sharpee/story-*' --filter='!@sharpee/text-service-template'
+      run: pnpm run build:all
       
     - name: Upload core artifacts
       uses: actions/upload-artifact@v4
@@ -53,7 +53,7 @@ jobs:
     - name: Setup pnpm
       uses: pnpm/action-setup@v3
       with:
-        version: 8
+        version: 10.13.1
         
     - name: Download core artifacts
       uses: actions/download-artifact@v4
@@ -91,7 +91,7 @@ jobs:
     - name: Setup pnpm
       uses: pnpm/action-setup@v3
       with:
-        version: 8
+        version: 10.13.1
         
     - name: Download all artifacts
       uses: actions/download-artifact@v4
@@ -121,7 +121,7 @@ jobs:
     - name: Setup pnpm
       uses: pnpm/action-setup@v3
       with:
-        version: 8
+        version: 10.13.1
         
     - name: Download all artifacts
       uses: actions/download-artifact@v4
