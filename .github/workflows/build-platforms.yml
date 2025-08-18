@@ -27,7 +27,7 @@ jobs:
       run: pnpm install --ignore-scripts
       
     - name: Build all packages with Turbo (excluding stories and templates)
-      run: pnpm turbo run build --filter='!@sharpee-stories/*' --filter='!@sharpee/text-service-template'
+      run: pnpm turbo run build --filter='!@sharpee-stories/*' --filter='!@sharpee/story-*' --filter='!@sharpee/text-service-template'
       
     - name: Upload core artifacts
       uses: actions/upload-artifact@v4
