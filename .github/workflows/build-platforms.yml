@@ -24,9 +24,20 @@ jobs:
         version: 8
         
     - name: Install dependencies
+      run: |
+        pnpm install --ignore-scripts
+        ls -la packages/core/
+        ls -la packages/if-domain/node_modules/@sharpee/ || true
+      
+    - name: Build core first
+      run: |
+        pnpm --filter @sharpee/core run build
+        ls -la packages/core/dist/
+      
+    - name: Re-install to update symlinks
       run: pnpm install --ignore-scripts
       
-    - name: Build all packages
+    - name: Build remaining packages
       run: pnpm -r --workspace-concurrency=1 run build
       
     - name: Upload core artifacts
