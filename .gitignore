@@ -93,4 +93,4 @@ packages/**/src/**/*.js.map
 !**/*.config.ts
 
 # Local development configuration
-.local/
+.local/.turbo/
