@@ -24,7 +24,7 @@ jobs:
         version: 8
         
     - name: Install dependencies
-      run: pnpm install
+      run: pnpm install --ignore-scripts
       
     - name: Build packages in dependency order
       run: |
@@ -71,7 +71,7 @@ jobs:
         path: packages
         
     - name: Install dependencies
-      run: pnpm install
+      run: pnpm install --ignore-scripts
       
     - name: Build CLI English platform
       run: pnpm --filter '@sharpee/platform-cli-en-us' build
@@ -108,7 +108,7 @@ jobs:
         path: packages
         
     - name: Install dependencies
-      run: pnpm install
+      run: pnpm install --ignore-scripts
       
     - name: Run integration tests
       run: pnpm test:ci
@@ -138,7 +138,7 @@ jobs:
         path: packages
         
     - name: Install dependencies
-      run: pnpm install
+      run: pnpm install --ignore-scripts
       
     - name: Version and publish
       env:
