@@ -26,8 +26,18 @@ jobs:
     - name: Install dependencies
       run: pnpm install
       
-    - name: Build core packages
-      run: pnpm run build:packages
+    - name: Build packages in dependency order
+      run: |
+        pnpm --filter '@sharpee/core' build
+        pnpm --filter '@sharpee/if-domain' build
+        pnpm --filter '@sharpee/world-model' build
+        pnpm --filter '@sharpee/text-services' build
+        pnpm --filter '@sharpee/lang-en-us' build
+        pnpm --filter '@sharpee/parser-en-us' build
+        pnpm --filter '@sharpee/stdlib' build
+        pnpm --filter '@sharpee/event-processor' build
+        pnpm --filter '@sharpee/engine' build
+        pnpm --filter '@sharpee/sharpee' build
       
     - name: Upload core artifacts
       uses: actions/upload-artifact@v4
@@ -64,7 +74,7 @@ jobs:
       run: pnpm install
       
     - name: Build CLI English platform
-      run: pnpm run build:platform:cli-en
+      run: pnpm --filter '@sharpee/platform-cli-en-us' build
       
     - name: Test CLI English platform
       run: pnpm --filter '@sharpee/platform-cli-en-us' run test
