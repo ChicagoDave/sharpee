@@ -30,7 +30,7 @@ jobs:
       run: pnpm run build:packages
       
     - name: Upload core artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: core-packages
         path: |
@@ -55,7 +55,7 @@ jobs:
         version: 8
         
     - name: Download core artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: core-packages
         path: packages
@@ -70,7 +70,7 @@ jobs:
       run: pnpm --filter '@sharpee/platform-cli-en-us' run test
       
     - name: Upload platform artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: platform-cli-en-us
         path: packages/platforms/cli-en-us/dist
@@ -93,7 +93,7 @@ jobs:
         version: 8
         
     - name: Download all artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         path: packages
         
@@ -123,7 +123,7 @@ jobs:
         version: 8
         
     - name: Download all artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         path: packages
         
