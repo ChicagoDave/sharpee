@@ -32,7 +32,7 @@
     "clean": "turbo run clean",
     "build": "turbo run build",
     "build:clean": "pnpm run clean",
-    "build:all": "turbo run build",
+    "build:all": "turbo run build --filter='!@sharpee-stories/*' --filter='!@sharpee/story-*' --filter='!@sharpee/text-service-template'",
     "build:core": "turbo run build --filter='...@sharpee/platform-cli-en-us'",
     "build:packages": "turbo run build --filter='./packages/**'",
     "build:platforms": "turbo run build --filter='./packages/platforms/**'",
