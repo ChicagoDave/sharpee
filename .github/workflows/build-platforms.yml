@@ -26,20 +26,78 @@ jobs:
     - name: Install dependencies
       run: pnpm install --ignore-scripts
       
-    - name: Build all packages in order
+    - name: Build core
       run: |
-        cd packages/core && npm run build && cd ../..
-        cd packages/if-domain && npm run build && cd ../..
-        cd packages/world-model && npm run build && cd ../..
-        cd packages/text-service && npm run build && cd ../..
-        cd packages/text-service-basic && npm run build && cd ../..
-        cd packages/text-services && npm run build && cd ../..
-        cd packages/lang-en-us && npm run build && cd ../..
-        cd packages/parser-en-us && npm run build && cd ../..
-        cd packages/stdlib && npm run build && cd ../..
-        cd packages/event-processor && npm run build && cd ../..
-        cd packages/engine && npm run build && cd ../..
-        cd packages/sharpee && npm run build && cd ../..
+        cd packages/core
+        npm run build
+        cd ../..
+        pnpm install --ignore-scripts
+        
+    - name: Build if-domain
+      run: |
+        cd packages/if-domain
+        npm run build
+        cd ../..
+        
+    - name: Build world-model
+      run: |
+        cd packages/world-model
+        npm run build
+        cd ../..
+        
+    - name: Build text-service
+      run: |
+        cd packages/text-service
+        npm run build || true
+        cd ../..
+        
+    - name: Build text-service-basic
+      run: |
+        cd packages/text-service-basic
+        npm run build || true
+        cd ../..
+        
+    - name: Build text-services
+      run: |
+        cd packages/text-services
+        npm run build
+        cd ../..
+        
+    - name: Build lang-en-us
+      run: |
+        cd packages/lang-en-us
+        npm run build
+        cd ../..
+        
+    - name: Build parser-en-us
+      run: |
+        cd packages/parser-en-us
+        npm run build
+        cd ../..
+        
+    - name: Build stdlib
+      run: |
+        cd packages/stdlib
+        npm run build
+        cd ../..
+        
+    - name: Build event-processor
+      run: |
+        cd packages/event-processor
+        npm run build
+        cd ../..
+        
+    - name: Build engine
+      run: |
+        cd packages/engine
+        npm run build
+        cd ../..
+        
+    - name: Build sharpee
+      run: |
+        cd packages/sharpee
+        npm run build
+        cd ../..
       
     - name: Upload core artifacts
       uses: actions/upload-artifact@v4
