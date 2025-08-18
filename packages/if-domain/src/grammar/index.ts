@@ -8,3 +8,4 @@ export * from './pattern-compiler';
 export * from './grammar-engine';
 export * from './scope-builder';
 export * from './story-grammar';
+export * from './semantic-grammar';
