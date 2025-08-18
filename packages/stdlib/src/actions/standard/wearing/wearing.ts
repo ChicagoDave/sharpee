@@ -7,7 +7,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, WearableTrait, WearableBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
@@ -49,7 +49,7 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
     return { valid: true };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     const actor = context.player;
     const item = context.command.directObject?.entity!;
     const wearableTrait = item.get(TraitType.WEARABLE) as WearableTrait;
@@ -58,7 +58,7 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
     
     // Check if actor is holding the item
     const itemLocation = context.world.getLocation?.(item.id);
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     if (itemLocation !== actor.id) {
       // Add implicit TAKEN event since item is reachable

@@ -7,7 +7,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { StandardCapabilities } from '@sharpee/world-model';
@@ -94,7 +94,7 @@ export const againAction: Action & { metadata: ActionMetadata } = {
     };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     // Reconstruct state from context
     const historyData = context.world.getCapability(StandardCapabilities.COMMAND_HISTORY) as CommandHistoryData | null;
     if (!historyData || !historyData.entries || historyData.entries.length === 0) {
@@ -144,7 +144,7 @@ export const againAction: Action & { metadata: ActionMetadata } = {
       originalText: lastEntry.originalText,
       isRepeat: true
     };
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Emit a notification about what we're repeating
     events.push(context.event('if.event.repeating_command', repeatingData));

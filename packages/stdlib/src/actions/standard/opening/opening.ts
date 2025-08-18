@@ -6,8 +6,8 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent, EntityId } from '@sharpee/core';
-import { TraitType, OpenableBehavior, LockableBehavior, OpenResult } from '@sharpee/world-model';
+import { ISemanticEvent, EntityId } from '@sharpee/core';
+import { TraitType, OpenableBehavior, LockableBehavior, IOpenResult } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { OpenedEventData } from './opening-events';
 import { ActionMetadata } from '../../../validation';
@@ -82,13 +82,13 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
    * Assumes validation has already passed - no validation logic here
    * Delegates to OpenableBehavior for actual state changes
    */
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     // Assume validation has passed - no checks needed
     const actor = context.player;
     const noun = context.command.directObject!.entity!; // Safe because validate ensures it exists
     
     // Delegate to behavior for opening
-    const result: OpenResult = OpenableBehavior.open(noun);
+    const result: IOpenResult = OpenableBehavior.open(noun);
     
     // Check if the behavior reported failure
     if (!result.success) {
@@ -147,7 +147,7 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
     }
     
     // Build and return all events
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Add the domain event (opened)
     events.push(context.event('opened', {

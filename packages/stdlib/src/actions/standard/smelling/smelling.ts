@@ -6,7 +6,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, EdibleTrait, IFEntity } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { SmelledEventData } from './smelling-events';
@@ -167,7 +167,7 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
     };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     // Revalidate and rebuild all data
     const validation = this.validate(context);
     if (!validation.valid) {
@@ -272,7 +272,7 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
       eventData.roomId = location.id;
     }
     
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Create SMELLED event for world model
     events.push(context.event('if.event.smelled', eventData));

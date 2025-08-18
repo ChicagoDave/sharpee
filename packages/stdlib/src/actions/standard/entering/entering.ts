@@ -6,7 +6,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { 
   TraitType, 
   EntryTrait, 
@@ -173,7 +173,7 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
     };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     const actor = context.player;
     const target = context.command.directObject?.entity!;
     const currentLocation = context.world.getLocation(actor.id);
@@ -214,7 +214,7 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       params.posture = posture;
     }
     
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Create the ENTERED event for world model updates
     const enteredData: EnteredEventData = {

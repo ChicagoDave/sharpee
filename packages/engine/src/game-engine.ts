@@ -11,7 +11,7 @@ import {
   ActorTrait,
   ContainerTrait,
   StandardCapabilities,
-  Trait,
+  ITrait,
   TraitType,
   EntityType
 } from '@sharpee/world-model';
@@ -30,7 +30,7 @@ import {
 } from '@sharpee/stdlib';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { TextService, TextServiceContext, TextOutput } from '@sharpee/if-services';
-import { SemanticEvent, createSemanticEventSource, SaveData, SaveRestoreHooks, SaveResult, RestoreResult, SerializedEvent, SerializedEntity, SerializedLocation, SerializedRelationship, SerializedSpatialIndex, SerializedTurn, EngineState, SaveMetadata, SerializedParserState, PlatformEvent, isPlatformRequestEvent, PlatformEventType, SaveContext, RestoreContext, QuitContext, RestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, SemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent } from '@sharpee/core';
+import { ISemanticEvent, createSemanticEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent } from '@sharpee/core';
 
 import {
   GameContext,
@@ -75,19 +75,19 @@ export class GameEngine {
   private config: EngineConfig;
   private commandExecutor!: CommandExecutor;
   private eventProcessor: EventProcessor;
-  private platformEvents: SemanticEventSource;
+  private platformEvents: ISemanticEventSource;
   private actionRegistry: StandardActionRegistry;
   private textService?: TextService;
-  private turnEvents = new Map<number, SemanticEvent[]>();
+  private turnEvents = new Map<number, ISemanticEvent[]>();
   private running = false;
   private story?: Story;
   private languageProvider?: LanguageProvider;
   private parser?: Parser;
   private eventListeners = new Map<GameEngineEventName, Set<Function>>();
-  private saveRestoreHooks?: SaveRestoreHooks;
+  private saveRestoreHooks?: ISaveRestoreHooks;
   private eventSource = createSemanticEventSource();
   private systemEventSource?: any; // GenericEventSource<SystemEvent>
-  private pendingPlatformOps: PlatformEvent[] = [];
+  private pendingPlatformOps: IPlatformEvent[] = [];
 
   constructor(options: {
     world: WorldModel;
@@ -413,7 +413,7 @@ export class GameEngine {
         
         // Check if this is a platform request event
         if (isPlatformRequestEvent(semanticEvent)) {
-          this.pendingPlatformOps.push(semanticEvent as PlatformEvent);
+          this.pendingPlatformOps.push(semanticEvent as IPlatformEvent);
         }
       }
 
@@ -480,7 +480,7 @@ export class GameEngine {
             return events.filter(e => e.type === type);
           },
           getAllEvents: () => {
-            const allEvents: SemanticEvent[] = [];
+            const allEvents: ISemanticEvent[] = [];
             for (const [, events] of this.turnEvents) {
               allEvents.push(...events);
             }
@@ -499,7 +499,7 @@ export class GameEngine {
             // Filter by turn number in the event data
             const currentTurn = turn;
             return this.platformEvents.getAllEvents()
-              .filter(e => {
+              .filter((e: any) => {
                 if (!e.tags?.includes('platform')) return false;
                 // Check if event has turn data
                 const eventTurn = e.data?.turn || e.metadata?.turn;
@@ -597,7 +597,7 @@ export class GameEngine {
   /**
    * Register save/restore hooks
    */
-  registerSaveRestoreHooks(hooks: SaveRestoreHooks): void {
+  registerSaveRestoreHooks(hooks: ISaveRestoreHooks): void {
     this.saveRestoreHooks = hooks;
   }
 
@@ -644,8 +644,8 @@ export class GameEngine {
   /**
    * Create save data from current engine state
    */
-  private createSaveData(): SaveData {
-    const metadata: SaveMetadata = {
+  private createSaveData(): ISaveData {
+    const metadata: ISaveMetadata = {
       storyId: this.story?.config.id || 'unknown',
       storyVersion: this.story?.config.version || '0.0.0',
       turnCount: this.context.currentTurn - 1,
@@ -653,7 +653,7 @@ export class GameEngine {
       description: `Turn ${this.context.currentTurn - 1}`
     };
 
-    const engineState: EngineState = {
+    const engineState: IEngineState = {
       eventSource: this.serializeEventSource(),
       spatialIndex: this.serializeSpatialIndex(),
       turnHistory: this.serializeTurnHistory(),
@@ -679,7 +679,7 @@ export class GameEngine {
   /**
    * Load save data into engine
    */
-  private loadSaveData(saveData: SaveData): void {
+  private loadSaveData(saveData: ISaveData): void {
     // Validate save compatibility
     if (saveData.version !== '1.0.0') {
       throw new Error(`Unsupported save version: ${saveData.version}`);
@@ -814,8 +814,8 @@ export class GameEngine {
   /**
    * Emit a platform event with turn metadata
    */
-  emitPlatformEvent(event: Omit<SemanticEvent, 'id' | 'timestamp'>): void {
-    const fullEvent: SemanticEvent = {
+  emitPlatformEvent(event: Omit<ISemanticEvent, 'id' | 'timestamp'>): void {
+    const fullEvent: ISemanticEvent = {
       ...event,
       id: `platform_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       timestamp: Date.now(),
@@ -972,7 +972,7 @@ export class GameEngine {
       try {
         switch (platformOp.type) {
           case PlatformEventType.SAVE_REQUESTED: {
-            const context = platformOp.payload.context as SaveContext;
+            const context = platformOp.payload.context as ISaveContext;
             if (this.saveRestoreHooks?.onSaveRequested) {
               const saveData = this.createSaveData();
               // Add any additional context from the platform event
@@ -1003,7 +1003,7 @@ export class GameEngine {
           }
           
           case PlatformEventType.RESTORE_REQUESTED: {
-            const context = platformOp.payload.context as RestoreContext;
+            const context = platformOp.payload.context as IRestoreContext;
             if (this.saveRestoreHooks?.onRestoreRequested) {
               const saveData = await this.saveRestoreHooks.onRestoreRequested();
               if (saveData) {
@@ -1035,7 +1035,7 @@ export class GameEngine {
           }
           
           case PlatformEventType.QUIT_REQUESTED: {
-            const context = platformOp.payload.context as QuitContext;
+            const context = platformOp.payload.context as IQuitContext;
             
             if (this.saveRestoreHooks?.onQuitRequested) {
               const shouldQuit = await this.saveRestoreHooks.onQuitRequested(context);
@@ -1079,7 +1079,7 @@ export class GameEngine {
           }
           
           case PlatformEventType.RESTART_REQUESTED: {
-            const context = platformOp.payload.context as RestartContext;
+            const context = platformOp.payload.context as IRestartContext;
             if (this.saveRestoreHooks?.onRestartRequested) {
               const shouldRestart = await this.saveRestoreHooks.onRestartRequested(context);
               if (shouldRestart) {
@@ -1132,7 +1132,7 @@ export class GameEngine {
         console.error(`Error processing platform operation ${platformOp.type}:`, error);
         
         // Emit appropriate error event based on operation type
-        let errorEvent: PlatformEvent;
+        let errorEvent: IPlatformEvent;
         switch (platformOp.type) {
           case PlatformEventType.SAVE_REQUESTED:
             errorEvent = createSaveCompletedEvent(false, error instanceof Error ? error.message : 'Unknown error');
@@ -1184,7 +1184,7 @@ export class GameEngine {
     
     // Store in turn events if we're in a turn (as SemanticEvent for compatibility)
     if (this.context.currentTurn > 0) {
-      const semanticEvent: SemanticEvent = {
+      const semanticEvent: ISemanticEvent = {
         id: event.id || gameEvent.metadata?.id as string,
         type: event.type,
         timestamp: event.timestamp || Date.now(),
@@ -1253,8 +1253,8 @@ export class GameEngine {
   /**
    * Serialize event source
    */
-  private serializeEventSource(): SerializedEvent[] {
-    const events: SerializedEvent[] = [];
+  private serializeEventSource(): ISerializedEvent[] {
+    const events: ISerializedEvent[] = [];
     
     // Get all events from the event source
     for (const event of this.eventSource.getAllEvents()) {
@@ -1273,7 +1273,7 @@ export class GameEngine {
   /**
    * Deserialize event source
    */
-  private deserializeEventSource(events: SerializedEvent[]): void {
+  private deserializeEventSource(events: ISerializedEvent[]): void {
     // Clear existing event source
     this.eventSource = createSemanticEventSource();
     
@@ -1293,10 +1293,10 @@ export class GameEngine {
   /**
    * Serialize spatial index (world state)
    */
-  private serializeSpatialIndex(): SerializedSpatialIndex {
-    const entities: Record<string, SerializedEntity> = {};
-    const locations: Record<string, SerializedLocation> = {};
-    const relationships: Record<string, SerializedRelationship[]> = {};
+  private serializeSpatialIndex(): ISerializedSpatialIndex {
+    const entities: Record<string, ISerializedEntity> = {};
+    const locations: Record<string, ISerializedLocation> = {};
+    const relationships: Record<string, ISerializedRelationship[]> = {};
     
     // Serialize all entities
     for (const entity of this.world.getAllEntities()) {
@@ -1339,7 +1339,7 @@ export class GameEngine {
   /**
    * Deserialize spatial index
    */
-  private deserializeSpatialIndex(index: SerializedSpatialIndex): void {
+  private deserializeSpatialIndex(index: ISerializedSpatialIndex): void {
     // Clear existing world
     this.world = new WorldModel();
     
@@ -1348,7 +1348,7 @@ export class GameEngine {
       const entity = this.world.createEntity(id);
       
       // Restore traits
-      for (const [name, traitData] of Object.entries(data.traits)) {
+      for (const [name, traitData] of Object.entries(data.traits as any)) {
         const trait = this.deserializeTrait(name, traitData);
         if (trait) {
           entity.add(trait);
@@ -1359,7 +1359,7 @@ export class GameEngine {
     // Restore locations and contents
     for (const [locationId, data] of Object.entries(index.locations)) {
       // Place entities in their locations
-      for (const entityId of data.contents) {
+      for (const entityId of (data as any).contents) {
         const entity = this.world.getEntity(entityId);
         if (entity) {
           this.world.moveEntity(entity.id, locationId);
@@ -1379,8 +1379,8 @@ export class GameEngine {
   /**
    * Serialize turn history
    */
-  private serializeTurnHistory(): SerializedTurn[] {
-    const turns: SerializedTurn[] = [];
+  private serializeTurnHistory(): ISerializedTurn[] {
+    const turns: ISerializedTurn[] = [];
     
     for (const [turnNumber, result] of this.context.history.entries()) {
       turns.push({
@@ -1397,7 +1397,7 @@ export class GameEngine {
   /**
    * Deserialize turn history
    */
-  private deserializeTurnHistory(turns: SerializedTurn[]): void {
+  private deserializeTurnHistory(turns: ISerializedTurn[]): void {
     // Clear existing history
     this.context.history = [];
     
@@ -1426,7 +1426,7 @@ export class GameEngine {
   /**
    * Serialize parser state
    */
-  private serializeParserState(): SerializedParserState | undefined {
+  private serializeParserState(): ISerializedParserState | undefined {
     if (!this.parser) {
       return undefined;
     }
@@ -1439,7 +1439,7 @@ export class GameEngine {
   /**
    * Deserialize parser state
    */
-  private deserializeParserState(state: SerializedParserState): void {
+  private deserializeParserState(state: ISerializedParserState): void {
     // Parser state restoration is parser-specific
     // For now, do nothing
   }
@@ -1459,12 +1459,12 @@ export class GameEngine {
   /**
    * Deserialize a trait
    */
-  private deserializeTrait(name: string, data: unknown): Trait | null {
+  private deserializeTrait(name: string, data: unknown): ITrait | null {
     // This would need to reconstruct the proper trait classes
     // For now, return the data as-is with the type field
     // In a full implementation, you'd use a trait factory
     if (data && typeof data === 'object') {
-      return { type: name, ...data } as Trait;
+      return { type: name, ...data } as ITrait;
     }
     return null;
   }

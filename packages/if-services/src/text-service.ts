@@ -6,7 +6,7 @@
  * and spatial relationships to build appropriate output.
  */
 
-import type { SemanticEvent } from '@sharpee/core';
+import type { ISemanticEvent } from '@sharpee/core';
 import type { LanguageProvider } from '@sharpee/if-domain';
 import type { WorldModel, IFEntity } from '@sharpee/world-model';
 
@@ -22,17 +22,17 @@ export interface TextServiceContext {
   /**
    * Get events for the current turn
    */
-  getCurrentTurnEvents(): SemanticEvent[];
+  getCurrentTurnEvents(): ISemanticEvent[];
   
   /**
    * Get events by type for the current turn
    */
-  getEventsByType(type: string): SemanticEvent[];
+  getEventsByType(type: string): ISemanticEvent[];
   
   /**
    * Get all events (full history)
    */
-  getAllEvents(): SemanticEvent[];
+  getAllEvents(): ISemanticEvent[];
   
   /**
    * Access to world model for entity queries
@@ -58,7 +58,7 @@ export interface TextServiceContext {
    * Get platform events for the current turn (optional)
    * These are debug/system events from parser, world model, etc.
    */
-  getPlatformEvents?(): SemanticEvent[];
+  getPlatformEvents?(): ISemanticEvent[];
 }
 
 /**
@@ -152,7 +152,7 @@ export interface TextServiceConfig {
   /**
    * Custom event processors by event type
    */
-  processors?: Record<string, (event: SemanticEvent, context: TextServiceContext) => string | null>;
+  processors?: Record<string, (event: ISemanticEvent, context: TextServiceContext) => string | null>;
   
   /**
    * Channels to use for channeled output

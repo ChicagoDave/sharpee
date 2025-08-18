@@ -6,8 +6,8 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
-import { TraitType, OpenableBehavior, CloseResult } from '@sharpee/world-model';
+import { ISemanticEvent } from '@sharpee/core';
+import { TraitType, OpenableBehavior, ICloseResult } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 
 // Import our payload types
@@ -99,11 +99,11 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
    * Assumes validation has already passed - no validation logic here
    * Delegates to OpenableBehavior for actual state changes
    */
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     const noun = context.command.directObject!.entity!;
     
     // Delegate to behavior for closing
-    const result: CloseResult = OpenableBehavior.close(noun);
+    const result: ICloseResult = OpenableBehavior.close(noun);
     
     // Check if the behavior reported failure (shouldn't happen after validation)
     if (!result.success) {
@@ -135,7 +135,7 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
     }
     
     // Closing succeeded
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Add the domain event (closed)
     events.push(context.event('closed', {

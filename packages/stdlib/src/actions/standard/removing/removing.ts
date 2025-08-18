@@ -7,16 +7,16 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { 
   TraitType,
   OpenableBehavior,
   ContainerBehavior,
   SupporterBehavior,
   ActorBehavior,
-  RemoveItemResult,
-  RemoveItemFromSupporterResult,
-  TakeItemResult
+  IRemoveItemResult,
+  IRemoveItemFromSupporterResult,
+  ITakeItemResult
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
@@ -126,16 +126,16 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
     return { valid: true };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     const actor = context.player;
     const item = context.command.directObject?.entity!;
     const source = context.command.indirectObject?.entity!;
     
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // First remove from source using appropriate behavior
     if (source.has(TraitType.CONTAINER)) {
-      const removeResult: RemoveItemResult = ContainerBehavior.removeItem(source, item, context.world);
+      const removeResult: IRemoveItemResult = ContainerBehavior.removeItem(source, item, context.world);
       if (!removeResult.success) {
         if (removeResult.notContained) {
           return [context.event('action.error', {
@@ -152,7 +152,7 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
         })];
       }
     } else if (source.has(TraitType.SUPPORTER)) {
-      const removeResult: RemoveItemFromSupporterResult = SupporterBehavior.removeItem(source, item, context.world);
+      const removeResult: IRemoveItemFromSupporterResult = SupporterBehavior.removeItem(source, item, context.world);
       if (!removeResult.success) {
         if (removeResult.notThere) {
           return [context.event('action.error', {
@@ -171,7 +171,7 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
     }
     
     // Then take the item using ActorBehavior
-    const takeResult: TakeItemResult = ActorBehavior.takeItem(actor, item, context.world);
+    const takeResult: ITakeItemResult = ActorBehavior.takeItem(actor, item, context.world);
     
     if (!takeResult.success) {
       if (takeResult.tooHeavy) {

@@ -6,28 +6,28 @@
  */
 
 import {
-  QueryHandler,
-  PendingQuery,
-  QueryResponse,
+  IQueryHandler,
+  IPendingQuery,
+  IQueryResponse,
   QuerySource,
   QueryType,
-  SemanticEvent,
+  ISemanticEvent,
   createSemanticEventSource,
   createRestartRequestedEvent,
   createRestartCompletedEvent,
-  RestartContext
+  IRestartContext
 } from '@sharpee/core';
 
 /**
  * Handler for restart confirmation queries
  */
-export class RestartQueryHandler implements QueryHandler {
+export class RestartQueryHandler implements IQueryHandler {
   private eventSource = createSemanticEventSource();
   
   /**
    * Check if this handler can process the query
    */
-  canHandle(query: PendingQuery): boolean {
+  canHandle(query: IPendingQuery): boolean {
     return query.source === QuerySource.SYSTEM && 
            (query.type === QueryType.YES_NO || query.type === QueryType.MULTIPLE_CHOICE) && 
            (query.messageId === 'restart_confirmation' || 
@@ -39,8 +39,8 @@ export class RestartQueryHandler implements QueryHandler {
   /**
    * Process the player's response
    */
-  handleResponse(response: QueryResponse, query: PendingQuery): void {
-    const events: SemanticEvent[] = [];
+  handleResponse(response: IQueryResponse, query: IPendingQuery): void {
+    const events: ISemanticEvent[] = [];
     const context = query.context;
     
     // Get the selected option
@@ -51,7 +51,7 @@ export class RestartQueryHandler implements QueryHandler {
     if (typeof selectedOption === 'boolean') {
       if (selectedOption === true) {
         // Yes response - proceed with restart
-        const restartContext: RestartContext = {
+        const restartContext: IRestartContext = {
           currentProgress: {
             score: context.score,
             moves: context.moves,
@@ -90,7 +90,7 @@ export class RestartQueryHandler implements QueryHandler {
       case 'restart_without_saving':
       case 'yes':
         // Build restart context from query context
-        const restartContext: RestartContext = {
+        const restartContext: IRestartContext = {
           currentProgress: {
             score: context.score,
             moves: context.moves,
@@ -128,7 +128,7 @@ export class RestartQueryHandler implements QueryHandler {
         }));
         
         // Then emit restart requested event
-        const saveAndRestartContext: RestartContext = {
+        const saveAndRestartContext: IRestartContext = {
           currentProgress: {
             score: context.score,
             moves: context.moves,
@@ -175,7 +175,7 @@ export class RestartQueryHandler implements QueryHandler {
   /**
    * Handle query timeout
    */
-  handleTimeout(query: PendingQuery): void {
+  handleTimeout(query: IPendingQuery): void {
     // On timeout, treat as cancelled
     const cancelEvent = createRestartCompletedEvent(false);
     this.eventSource.emit(cancelEvent);
@@ -190,7 +190,7 @@ export class RestartQueryHandler implements QueryHandler {
   /**
    * Handle query cancellation
    */
-  handleCancel(query: PendingQuery): void {
+  handleCancel(query: IPendingQuery): void {
     const cancelEvent = createRestartCompletedEvent(false);
     this.eventSource.emit(cancelEvent);
     
@@ -211,7 +211,7 @@ export class RestartQueryHandler implements QueryHandler {
   /**
    * Create a semantic event
    */
-  private createEvent(type: string, data: Record<string, any>): SemanticEvent {
+  private createEvent(type: string, data: Record<string, any>): ISemanticEvent {
     return {
       id: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type,

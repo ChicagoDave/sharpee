@@ -7,7 +7,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { AboutDisplayedEventData } from './about-events';
@@ -28,7 +28,7 @@ export const aboutAction: Action & { metadata: ActionMetadata } = {
     };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     // Simply emit an event signaling that about info should be displayed
     // The text service will handle querying the story config and formatting
     const displayMode = context.command.parsed.extras?.mode || 'standard';

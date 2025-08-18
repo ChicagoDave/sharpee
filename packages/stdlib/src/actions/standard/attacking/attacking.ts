@@ -6,7 +6,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, FragileTrait, BreakableTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { AttackedEventData, ItemDestroyedEventData } from './attacking-events';
@@ -322,7 +322,7 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
     return { valid: true };
   },
 
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     // Validate first and get state
     const result = this.validate(context);
     if (!result.valid) {
@@ -433,7 +433,7 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
       }
     }
     
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
 
     // Create ATTACKED event for world model
     events.push(context.event('if.event.attacked', eventData));

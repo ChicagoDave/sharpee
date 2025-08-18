@@ -4,7 +4,7 @@
  * Handles events for meta-game actions like waiting, scoring, help, etc.
  */
 
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 
 /**
@@ -18,7 +18,7 @@ import { WorldModel } from '@sharpee/world-model';
  * - Update atmospheric descriptions (e.g., sun setting)
  * - Advance story-specific timers
  */
-export function handleWaited(event: SemanticEvent, world: WorldModel): void {
+export function handleWaited(event: ISemanticEvent, world: any): void {
   const data = event.data as {
     turnsPassed: number;
     location?: string;
@@ -48,7 +48,7 @@ export function handleWaited(event: SemanticEvent, world: WorldModel): void {
  * - Trigger achievements based on score milestones
  * - Update NPC reactions based on player progress
  */
-export function handleScoreDisplayed(event: SemanticEvent, world: WorldModel): void {
+export function handleScoreDisplayed(event: ISemanticEvent, world: any): void {
   const data = event.data as {
     score: number;
     maxScore: number;
@@ -82,7 +82,7 @@ export function handleScoreDisplayed(event: SemanticEvent, world: WorldModel): v
  * - Adjust difficulty based on help usage
  * - Provide context-sensitive help
  */
-export function handleHelpDisplayed(event: SemanticEvent, world: WorldModel): void {
+export function handleHelpDisplayed(event: ISemanticEvent, world: any): void {
   const data = event.data as {
     topic?: string;
     specificHelp?: boolean;
@@ -127,7 +127,7 @@ export function handleHelpDisplayed(event: SemanticEvent, world: WorldModel): vo
  * - Unlock easter eggs for viewing credits
  * - Track completion statistics
  */
-export function handleAboutDisplayed(event: SemanticEvent, world: WorldModel): void {
+export function handleAboutDisplayed(event: ISemanticEvent, world: any): void {
   const data = event.data as {
     title: string;
     author: string;

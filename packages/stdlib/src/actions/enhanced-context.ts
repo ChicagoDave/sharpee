@@ -5,7 +5,7 @@
  * formatted events while maintaining the event-driven architecture.
  */
 
-import { createEvent as coreCreateEvent, SemanticEvent } from '@sharpee/core';
+import { createEvent as coreCreateEvent, ISemanticEvent } from '@sharpee/core';
 import { IFEntity, WorldModel, TraitType } from '@sharpee/world-model';
 import { 
   ActionContext, 
@@ -80,7 +80,7 @@ class InternalActionContext implements ActionContext {
    * 
    * This is the single unified method for creating events (ADR-041)
    */
-  event(type: string, data: any): SemanticEvent {
+  event(type: string, data: any): ISemanticEvent {
     return this.createEventInternal(type, data);
   }
   
@@ -91,7 +91,7 @@ class InternalActionContext implements ActionContext {
   private createEventInternal(
     type: string, 
     eventData: any
-  ): SemanticEvent {
+  ): ISemanticEvent {
     // Special handling for action.error and action.success events
     // These should NOT be double-wrapped
     if (type === 'action.error' || type === 'action.success') {

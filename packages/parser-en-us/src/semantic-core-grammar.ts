@@ -334,7 +334,7 @@ export function defineSemanticCoreGrammar(grammar: GrammarBuilder): void {
     .mapsTo('if.action.exiting')
     .withDefaultSemantics({
       manner: 'normal',
-      spatialRelation: 'out'
+      direction: 'out'
     })
     .withPriority(100)
     .build();

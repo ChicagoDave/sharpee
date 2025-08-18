@@ -10,8 +10,8 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
-import { SemanticEvent } from '@sharpee/core';
-import { TraitType, SceneryBehavior, ActorBehavior, ContainerBehavior, WearableBehavior, TakeItemResult } from '@sharpee/world-model';
+import { ISemanticEvent } from '@sharpee/core';
+import { TraitType, SceneryBehavior, ActorBehavior, ContainerBehavior, WearableBehavior, ITakeItemResult } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
 
@@ -108,12 +108,12 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     return { valid: true };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     const actor = context.player;
     const noun = context.command.directObject!.entity!; // Safe because validate ensures it exists
     
     // Delegate to ActorBehavior for taking logic
-    const result: TakeItemResult = ActorBehavior.takeItem(actor, noun, context.world);
+    const result: ITakeItemResult = ActorBehavior.takeItem(actor, noun, context.world);
     
     // Handle failure cases
     if (!result.success) {
@@ -153,7 +153,7 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     }
     
     // Taking succeeded - build events
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // If the item needs removal from a container first
     if (result.needsRemoval) {

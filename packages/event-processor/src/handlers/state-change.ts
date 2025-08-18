@@ -4,14 +4,14 @@
  * These handlers apply state-changing events to the world model
  */
 
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel, IFEntity, TraitType, OpenableTrait, DoorTrait, LockableTrait, SwitchableTrait, WearableTrait, LightSourceTrait, EventHandler } from '@sharpee/world-model';
 import { IFEvents } from '@sharpee/if-domain';
 
 /**
  * Handle OPENED event - set openable trait to open
  */
-export const handleOpened: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleOpened: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target } = event.entities;
   if (target) {
     world.updateEntity(target, (entity: IFEntity) => {
@@ -29,7 +29,7 @@ export const handleOpened: EventHandler = (event: SemanticEvent, world: WorldMod
 /**
  * Handle CLOSED event - set openable trait to closed
  */
-export const handleClosed: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleClosed: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target } = event.entities;
   if (target) {
     world.updateEntity(target, (entity: IFEntity) => {
@@ -46,7 +46,7 @@ export const handleClosed: EventHandler = (event: SemanticEvent, world: WorldMod
 /**
  * Handle LOCKED event - set lockable trait to locked
  */
-export const handleLocked: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleLocked: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target } = event.entities;
   if (target) {
     world.updateEntity(target, (entity: IFEntity) => {
@@ -63,7 +63,7 @@ export const handleLocked: EventHandler = (event: SemanticEvent, world: WorldMod
 /**
  * Handle UNLOCKED event - set lockable trait to unlocked
  */
-export const handleUnlocked: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleUnlocked: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target } = event.entities;
   if (target) {
     world.updateEntity(target, (entity: IFEntity) => {
@@ -80,7 +80,7 @@ export const handleUnlocked: EventHandler = (event: SemanticEvent, world: WorldM
 /**
  * Handle SWITCHED_ON event - set switchable trait to on
  */
-export const handleSwitchedOn: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleSwitchedOn: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target } = event.entities;
   if (target) {
     world.updateEntity(target, (entity: IFEntity) => {
@@ -101,7 +101,7 @@ export const handleSwitchedOn: EventHandler = (event: SemanticEvent, world: Worl
 /**
  * Handle SWITCHED_OFF event - set switchable trait to off
  */
-export const handleSwitchedOff: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleSwitchedOff: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target } = event.entities;
   if (target) {
     world.updateEntity(target, (entity: IFEntity) => {
@@ -122,7 +122,7 @@ export const handleSwitchedOff: EventHandler = (event: SemanticEvent, world: Wor
 /**
  * Handle WORN event - set wearable trait to worn
  */
-export const handleWorn: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleWorn: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target } = event.entities;
   if (target) {
     world.updateEntity(target, (entity: IFEntity) => {
@@ -137,7 +137,7 @@ export const handleWorn: EventHandler = (event: SemanticEvent, world: WorldModel
 /**
  * Handle EATEN event - remove the eaten item
  */
-export const handleEaten: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleEaten: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target } = event.entities;
   if (target) {
     world.removeEntity(target);
@@ -147,7 +147,7 @@ export const handleEaten: EventHandler = (event: SemanticEvent, world: WorldMode
 /**
  * Handle DRUNK event - remove the drunk item
  */
-export const handleDrunk: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleDrunk: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target } = event.entities;
   if (target) {
     world.removeEntity(target);

@@ -6,13 +6,13 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent, createQuitRequestedEvent, QuitContext } from '@sharpee/core';
+import { ISemanticEvent, createQuitRequestedEvent, IQuitContext } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { QuitRequestedEventData } from './quitting-events';
 
 interface QuittingState {
-  quitContext: QuitContext;
+  quitContext: IQuitContext;
   eventData: QuitRequestedEventData;
   forceQuit: boolean;
   hasUnsavedProgress: boolean;
@@ -45,7 +45,7 @@ export const quittingAction: Action & { metadata: ActionMetadata } = {
                      context.command.parsed.action === 'exit';
     
     // Build quit context
-    const quitContext: QuitContext = {
+    const quitContext: IQuitContext = {
       score,
       moves,
       hasUnsavedChanges: hasUnsavedProgress,
@@ -72,8 +72,8 @@ export const quittingAction: Action & { metadata: ActionMetadata } = {
     };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
-    const events: SemanticEvent[] = [];
+  execute(context: ActionContext): ISemanticEvent[] {
+    const events: ISemanticEvent[] = [];
     
     // Rebuild the same data from validate
     const sharedData = context.world.getCapability('sharedData') || {};
@@ -89,7 +89,7 @@ export const quittingAction: Action & { metadata: ActionMetadata } = {
                      context.command.parsed.action === 'exit';
     
     // Build quit context
-    const quitContext: QuitContext = {
+    const quitContext: IQuitContext = {
       score,
       moves,
       hasUnsavedChanges: hasUnsavedProgress,

@@ -10,7 +10,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, PushableTrait, SwitchableTrait, IFEntity } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
@@ -245,8 +245,8 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
     };
   },
 
-  execute(context: ActionContext): SemanticEvent[] {
-    const events: SemanticEvent[] = [];
+  execute(context: ActionContext): ISemanticEvent[] {
+    const events: ISemanticEvent[] = [];
     const actor = context.player;
     const target = context.command.directObject?.entity;
     const direction = context.command.parsed.extras?.direction as string;

@@ -10,7 +10,7 @@
  * - Track how often the player checks inventory
  * - Reveal pickpocket attempts when player notices missing items
  */
-export function handlePlayerCheckedInventory(event: SemanticEvent, world: WorldModel): void {
+export function handlePlayerCheckedInventory(event: ISemanticEvent, world: any): void {
   const data = event.data as {
     actorId: string;
     locationId: string;
@@ -44,7 +44,7 @@ export function handlePlayerCheckedInventory(event: SemanticEvent, world: WorldM
  * - Reveal hidden items in desperate situations
  * - Track story progress (player has given away everything)
  */
-export function handlePlayerInventoryEmpty(event: SemanticEvent, world: WorldModel): void {
+export function handlePlayerInventoryEmpty(event: ISemanticEvent, world: any): void {
   const data = event.data as {
     actorId: string;
     locationId: string;
@@ -64,7 +64,7 @@ export function handlePlayerInventoryEmpty(event: SemanticEvent, world: WorldMod
  * - Track which items the player knows they have
  * - Update item descriptions based on inventory context
  */
-export function handleTextInventoryList(event: SemanticEvent, world: WorldModel): void {
+export function handleTextInventoryList(event: ISemanticEvent, world: any): void {
   const data = event.data as {
     actorId: string;
     carried: string[];
@@ -83,7 +83,7 @@ export function handleTextInventoryList(event: SemanticEvent, world: WorldModel)
  * Handles events related to looking, examining, and other observation actions
  */
 
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 
 /**
@@ -97,7 +97,7 @@ import { WorldModel, IFEntity } from '@sharpee/world-model';
  * - Update room states (e.g., reveal hidden items after first look)
  * - Track player behavior for adaptive storytelling
  */
-export function handlePlayerLooked(event: SemanticEvent, world: WorldModel): void {
+export function handlePlayerLooked(event: ISemanticEvent, world: any): void {
   const data = event.data as {
     actorId: string;
     locationId: string;
@@ -136,7 +136,7 @@ export function handlePlayerLooked(event: SemanticEvent, world: WorldModel): voi
  * - Reveal hidden properties after examination
  * - Update player knowledge/memory
  */
-export function handlePlayerExamined(event: SemanticEvent, world: WorldModel): void {
+export function handlePlayerExamined(event: ISemanticEvent, world: any): void {
   const data = event.data as {
     actorId: string;
     entityId: string;
@@ -158,7 +158,7 @@ export function handlePlayerExamined(event: SemanticEvent, world: WorldModel): v
  * - Update room state after description (e.g., mark as visited)
  * - Trigger timed events after entering a room
  */
-export function handleTextRoomDescription(event: SemanticEvent, world: WorldModel): void {
+export function handleTextRoomDescription(event: ISemanticEvent, world: any): void {
   const data = event.data as {
     roomId: string;
     includeContents: boolean;
@@ -179,7 +179,7 @@ export function handleTextRoomDescription(event: SemanticEvent, world: WorldMode
  * - Track what items the player has noticed
  * - Update item states when listed
  */
-export function handleTextListContents(event: SemanticEvent, world: WorldModel): void {
+export function handleTextListContents(event: ISemanticEvent, world: any): void {
   const data = event.data as {
     items: string[];
     context: string;

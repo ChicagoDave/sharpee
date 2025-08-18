@@ -13,7 +13,7 @@ import {
   TextOutputChanneled
 } from '@sharpee/if-services';
 import { LanguageProvider } from '@sharpee/if-domain';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 
 export class TemplateTextService implements TextService {
   private context?: TextServiceContext;
@@ -63,7 +63,7 @@ export class TemplateTextService implements TextService {
     this.outputFormat = format;
   }
   
-  private processEvent(event: SemanticEvent): string | null {
+  private processEvent(event: ISemanticEvent): string | null {
     // Type guard for query data
     interface QueryData {
       query?: {
@@ -118,7 +118,7 @@ export class TemplateTextService implements TextService {
     return null;
   }
   
-  private processQueryEvent(event: SemanticEvent): string | null {
+  private processQueryEvent(event: ISemanticEvent): string | null {
     const data = event.data as any;
     const query = data?.query || event.payload?.query;
     if (!query) return null;
@@ -158,7 +158,7 @@ export class TemplateTextService implements TextService {
     return text;
   }
   
-  private processQueryInvalidEvent(event: SemanticEvent): string | null {
+  private processQueryInvalidEvent(event: ISemanticEvent): string | null {
     const data = event.data as any;
     const message = data?.message || 'Invalid response.';
     const hint = data?.hint;
@@ -166,7 +166,7 @@ export class TemplateTextService implements TextService {
     return hint ? `${message} ${hint}` : message;
   }
   
-  private processMessageEvent(event: SemanticEvent): string | null {
+  private processMessageEvent(event: ISemanticEvent): string | null {
     const data = event.data as any;
     const messageId = data?.messageId || event.payload?.messageId;
     if (!messageId || !this.languageProvider) return null;
@@ -176,7 +176,7 @@ export class TemplateTextService implements TextService {
     return message || null;
   }
   
-  private processQuitConfirmedEvent(event: SemanticEvent): string | null {
+  private processQuitConfirmedEvent(event: ISemanticEvent): string | null {
     const data = event.data as any;
     const messageId = data?.messageId || 'quit_confirmed';
     
@@ -194,7 +194,7 @@ export class TemplateTextService implements TextService {
     return message || 'Thanks for playing!';
   }
   
-  private processPlatformEvent(event: SemanticEvent): string | null {
+  private processPlatformEvent(event: ISemanticEvent): string | null {
     // Map platform event types to message IDs
     const platformEventMessages: Record<string, string> = {
       'platform.save_requested': 'saving_game',

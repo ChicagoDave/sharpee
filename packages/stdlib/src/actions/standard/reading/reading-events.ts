@@ -3,7 +3,7 @@
  * @module
  */
 
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 
 /**
  * Data for reading events
@@ -28,7 +28,7 @@ export interface ReadingEventData {
 /**
  * Create a reading event
  */
-export function createReadingEvent(data: ReadingEventData): SemanticEvent {
+export function createReadingEvent(data: ReadingEventData): ISemanticEvent {
   return {
     id: `${Date.now()}-read`,
     type: 'if.event.read',

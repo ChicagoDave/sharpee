@@ -4,14 +4,14 @@
  * These handlers apply movement-related events to the world model
  */
 
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel, IFEntity, TraitType, WearableTrait, RoomTrait, EventHandler } from '@sharpee/world-model';
 import { IFEvents } from '@sharpee/if-domain';
 
 /**
  * Handle TAKEN event - move item to actor
  */
-export const handleTaken: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleTaken: EventHandler = (event: ISemanticEvent, world: any) => {
   const { actor, target } = event.entities;
   if (actor && target) {
     // Remove worn status if applicable
@@ -34,7 +34,7 @@ export const handleTaken: EventHandler = (event: SemanticEvent, world: WorldMode
 /**
  * Handle DROPPED event - move item to location
  */
-export const handleDropped: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleDropped: EventHandler = (event: ISemanticEvent, world: any) => {
   const { actor, target, location } = event.entities;
   const dropLocation = location || (actor ? world.getLocation(actor) : undefined);
   
@@ -46,7 +46,7 @@ export const handleDropped: EventHandler = (event: SemanticEvent, world: WorldMo
 /**
  * Handle REMOVED event - remove worn status
  */
-export const handleRemoved: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleRemoved: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target } = event.entities;
   if (target) {
     const entity = world.getEntity(target);
@@ -65,7 +65,7 @@ export const handleRemoved: EventHandler = (event: SemanticEvent, world: WorldMo
 /**
  * Handle ACTOR_MOVED event - move actor to new location
  */
-export const handleActorMoved: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleActorMoved: EventHandler = (event: ISemanticEvent, world: any) => {
   const { actor, location } = event.entities;
   if (actor && location) {
     // Mark previous location as visited if it's a room
@@ -103,7 +103,7 @@ export const handleActorMoved: EventHandler = (event: SemanticEvent, world: Worl
 /**
  * Handle PUT_IN event - move item into container
  */
-export const handlePutIn: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handlePutIn: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target, location } = event.entities;
   if (target && location) {
     world.moveEntity(target, location);
@@ -113,7 +113,7 @@ export const handlePutIn: EventHandler = (event: SemanticEvent, world: WorldMode
 /**
  * Handle PUT_ON event - move item onto supporter
  */
-export const handlePutOn: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handlePutOn: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target, location } = event.entities;
   if (target && location) {
     world.moveEntity(target, location);
@@ -123,7 +123,7 @@ export const handlePutOn: EventHandler = (event: SemanticEvent, world: WorldMode
 /**
  * Handle REMOVED_FROM event - move item from container to actor
  */
-export const handleRemovedFrom: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleRemovedFrom: EventHandler = (event: ISemanticEvent, world: any) => {
   const { actor, target } = event.entities;
   if (actor && target) {
     world.moveEntity(target, actor);
@@ -133,7 +133,7 @@ export const handleRemovedFrom: EventHandler = (event: SemanticEvent, world: Wor
 /**
  * Handle ENTERED event - actor enters an object or vehicle
  */
-export const handleEntered: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleEntered: EventHandler = (event: ISemanticEvent, world: any) => {
   const { actor, target, location } = event.entities;
   if (actor && location) {
     // Update the entry trait occupants if present
@@ -157,7 +157,7 @@ export const handleEntered: EventHandler = (event: SemanticEvent, world: WorldMo
 /**
  * Handle EXITED event - actor exits an object or vehicle
  */
-export const handleExited: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleExited: EventHandler = (event: ISemanticEvent, world: any) => {
   const { actor, location } = event.entities;
   const fromLocation = event.data?.fromLocation as string;
   
@@ -183,7 +183,7 @@ export const handleExited: EventHandler = (event: SemanticEvent, world: WorldMod
 /**
  * Handle CLIMBED event - record climbing action (movement handled separately)
  */
-export const handleClimbed: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleClimbed: EventHandler = (event: ISemanticEvent, world: any) => {
   // This event is mainly for tracking/logging purposes
   // The actual movement is handled by ENTERED or ACTOR_MOVED events
   // Could be used for achievements, scoring, or special effects

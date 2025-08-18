@@ -4,7 +4,7 @@
  * Applies semantic events to the world model through registered handlers
  */
 
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 import { WorldChange, ProcessedEvents, ProcessorOptions } from '@sharpee/if-domain';
 import { registerStandardHandlers } from './handlers';
@@ -28,7 +28,7 @@ export class EventProcessor {
   /**
    * Process a batch of events
    */
-  processEvents(events: SemanticEvent[]): ProcessedEvents {
+  processEvents(events: ISemanticEvent[]): ProcessedEvents {
     const results: ProcessedEvents = {
       applied: [],
       failed: [],
@@ -69,11 +69,11 @@ export class EventProcessor {
   /**
    * Process a single event
    */
-  private processSingleEvent(event: SemanticEvent): {
+  private processSingleEvent(event: ISemanticEvent): {
     success: boolean;
     reason?: string;
     changes: WorldChange[];
-    reactions?: SemanticEvent[];
+    reactions?: ISemanticEvent[];
   } {
     // Validate if required
     if (this.options.validate) {
@@ -114,7 +114,7 @@ export class EventProcessor {
    * Process reaction events with depth limiting
    */
   private processReactions(
-    reactions: SemanticEvent[], 
+    reactions: ISemanticEvent[], 
     depth: number
   ): ProcessedEvents {
     const results: ProcessedEvents = {

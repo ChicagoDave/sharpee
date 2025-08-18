@@ -6,17 +6,17 @@
  */
 
 import type {
-  SystemEvent,
-  GenericEventSource,
+  ISystemEvent,
+  IGenericEventSource,
   Result
 } from '@sharpee/core';
 
 import type {
-  ParsedCommand,
-  NounPhrase,
-  ValidatedCommand as CoreValidatedCommand,
-  ValidatedObjectReference,
-  ValidationError,
+  IParsedCommand,
+  INounPhrase,
+  IValidatedCommand as CoreValidatedCommand,
+  IValidatedObjectReference,
+  IValidationError,
   WorldModel,
   IFEntity
 } from '@sharpee/world-model';
@@ -67,7 +67,7 @@ export interface CommandValidator {
    * @param command Parsed command to validate
    * @returns Validated command or validation error
    */
-  validate(command: ParsedCommand): Result<ValidatedCommand, ValidationError>;
+  validate(command: IParsedCommand): Result<ValidatedCommand, IValidationError>;
 }
 
 /**
@@ -78,7 +78,7 @@ export class CommandValidator implements CommandValidator {
   private actionRegistry: ActionRegistry;
   private scopeResolver: ScopeResolver;
   private resolutionContext: ResolutionContext;
-  private systemEvents?: GenericEventSource<SystemEvent>;
+  private systemEvents?: IGenericEventSource<ISystemEvent>;
 
   constructor(world: WorldModel, actionRegistry: ActionRegistry, scopeResolver?: ScopeResolver) {
     this.world = world;
@@ -92,14 +92,14 @@ export class CommandValidator implements CommandValidator {
   /**
    * Set system event source for debug events
    */
-  setSystemEventSource(eventSource: GenericEventSource<SystemEvent> | undefined): void {
+  setSystemEventSource(eventSource: IGenericEventSource<ISystemEvent> | undefined): void {
     this.systemEvents = eventSource;
   }
 
   /**
    * Validate parsed command against world state
    */
-  validate(command: ParsedCommand): Result<ValidatedCommand, ValidationError> {
+  validate(command: IParsedCommand): Result<ValidatedCommand, IValidationError> {
     const startTime = Date.now();
     const warnings: string[] = [];
 
@@ -129,7 +129,7 @@ export class CommandValidator implements CommandValidator {
     }
 
     // 2. Resolve direct object if present in parsed command
-    let directObject: ValidatedObjectReference | undefined;
+    let directObject: IValidatedObjectReference | undefined;
     if (command.structure?.directObject) {
       const metadata = this.getActionMetadata(actionHandler);
       const scope = metadata.directObjectScope || ScopeLevel.VISIBLE;
@@ -142,7 +142,7 @@ export class CommandValidator implements CommandValidator {
     // If no direct object in parsed command, that's fine - let the action decide if it needs one
 
     // 3. Resolve indirect object if present in parsed command
-    let indirectObject: ValidatedObjectReference | undefined;
+    let indirectObject: IValidatedObjectReference | undefined;
     if (command.structure?.indirectObject) {
       const metadata = this.getActionMetadata(actionHandler);
       const scope = metadata.indirectObjectScope || ScopeLevel.VISIBLE;
@@ -268,11 +268,11 @@ export class CommandValidator implements CommandValidator {
    * Resolve an entity reference with full matching logic
    */
   private resolveEntity(
-    ref: NounPhrase,
+    ref: INounPhrase,
     objectType: 'direct' | 'indirect',
     requiredScope: ScopeLevel,
-    command: ParsedCommand
-  ): Result<ValidatedObjectReference, ValidationError> {
+    command: IParsedCommand
+  ): Result<IValidatedObjectReference, IValidationError> {
     if (!ref) {
       throw new Error('Cannot resolve undefined reference');
     }
@@ -559,7 +559,7 @@ export class CommandValidator implements CommandValidator {
   /**
    * Score entities against a reference
    */
-  private scoreEntities(entities: IFEntity[], ref: NounPhrase): ScoredEntityMatch[] {
+  private scoreEntities(entities: IFEntity[], ref: INounPhrase): ScoredEntityMatch[] {
     if (!ref) return [];
 
     const scored: ScoredEntityMatch[] = [];
@@ -644,8 +644,8 @@ export class CommandValidator implements CommandValidator {
    */
   private resolveAmbiguity(
     matches: ScoredEntityMatch[],
-    ref: NounPhrase,
-    command: ParsedCommand
+    ref: INounPhrase,
+    command: IParsedCommand
   ): ScoredEntityMatch | null {
     this.emitDebugEvent('ambiguity_resolution', command, {
       reference: ref,
@@ -1034,7 +1034,7 @@ export class CommandValidator implements CommandValidator {
    */
   private emitDebugEvent(
     debugType: 'entity_resolution' | 'entity_search' | 'scope_check' | 'ambiguity_resolution' | 'validation_error',
-    command: ParsedCommand,
+    command: IParsedCommand,
     data: any
   ): void {
     if (!this.systemEvents) return;

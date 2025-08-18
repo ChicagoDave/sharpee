@@ -6,7 +6,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { StandardCapabilities } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
@@ -127,8 +127,8 @@ export const scoringAction: Action & { metadata: ActionMetadata } = {
     };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
-    const events: SemanticEvent[] = [];
+  execute(context: ActionContext): ISemanticEvent[] {
+    const events: ISemanticEvent[] = [];
     
     // Get scoring capability
     const scoringData = context.world.getCapability(StandardCapabilities.SCORING);

@@ -9,7 +9,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, WearableTrait, IFEntity } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
@@ -169,8 +169,8 @@ export const inventoryAction: Action & { metadata: ActionMetadata } = {
     };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
-    const events: SemanticEvent[] = [];
+  execute(context: ActionContext): ISemanticEvent[] {
+    const events: ISemanticEvent[] = [];
     const player = context.player;
     const location = context.currentLocation;
     

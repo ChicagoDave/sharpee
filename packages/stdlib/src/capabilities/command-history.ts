@@ -3,13 +3,13 @@
  * Supports the AGAIN/G action functionality
  */
 
-import { CapabilitySchema } from '@sharpee/world-model';
+import { ICapabilitySchema } from '@sharpee/world-model';
 
 /**
  * Command history capability schema
  * Tracks executed commands for replay functionality
  */
-export const CommandHistoryCapabilitySchema: CapabilitySchema = {
+export const CommandHistoryCapabilitySchema: ICapabilitySchema = {
   entries: {
     type: 'array',
     default: [],

@@ -3,13 +3,13 @@
  * These were previously in @sharpee/if-domain but are now local to the parser
  */
 
-import type { ParsedCommand, ParseError as CoreParseError } from '@sharpee/world-model';
+import type { IParsedCommand, IParseError as CoreParseError } from '@sharpee/world-model';
 
 /**
  * Parser interface
  */
 export interface Parser {
-  parse(input: string): CommandResult<ParsedCommand, CoreParseError>;
+  parse(input: string): CommandResult<IParsedCommand, CoreParseError>;
   setDebugCallback?(callback: ((event: any) => void) | undefined): void;
 }
 

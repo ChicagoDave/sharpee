@@ -9,7 +9,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { 
   TraitType, 
   RoomTrait, 
@@ -171,7 +171,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     return { valid: true };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     // Validate first
     const validation = this.validate(context);
     if (!validation.valid) {

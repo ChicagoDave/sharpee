@@ -5,7 +5,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { 
   TraitType, 
   EntryTrait,
@@ -95,7 +95,7 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
     return { valid: true };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     // Validate first
     const validation = this.validate(context);
     if (!validation.valid) {
@@ -148,7 +148,7 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
       preposition
     };
     
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Create the EXITED event for world model updates
     const exitedData: ExitedEventData = {

@@ -6,7 +6,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { WaitedEventData } from './waiting-events';
@@ -109,7 +109,7 @@ export const waitingAction: Action & { metadata: ActionMetadata } = {
     };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     // Validate and get state
     const result = this.validate(context);
     if (!result.valid) {
@@ -181,7 +181,7 @@ export const waitingAction: Action & { metadata: ActionMetadata } = {
     if (Math.random() < 0.1 && messageId === 'waited') {
       messageId = 'nothing_happens';
     }
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Create WAITED event for world model
     events.push(context.event('if.event.waited', eventData));

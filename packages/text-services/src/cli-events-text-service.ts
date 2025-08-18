@@ -11,7 +11,7 @@ import {
   TextOutput 
 } from '@sharpee/if-services';
 import { LanguageProvider } from '@sharpee/if-domain';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 
 export interface CLIEventsConfig {
   showTurnHeader?: boolean;
@@ -109,7 +109,7 @@ export class CLIEventsTextService implements TextService {
     return lines.join('\n');
   }
 
-  private formatEvent(event: SemanticEvent): string {
+  private formatEvent(event: ISemanticEvent): string {
     const parts: string[] = [];
     
     // Event type
@@ -150,7 +150,7 @@ export class CLIEventsTextService implements TextService {
     return parts.join(' ');
   }
 
-  private formatPlatformEvent(event: SemanticEvent): string {
+  private formatPlatformEvent(event: ISemanticEvent): string {
     const parts: string[] = [];
     
     // Event type (remove platform prefix for readability)

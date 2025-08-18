@@ -3,7 +3,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { 
   TraitType,
   RoomBehavior,
@@ -35,7 +35,7 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
     return { valid: true };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     const player = context.player;
     const location = context.currentLocation;
     
@@ -98,7 +98,7 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
     
     eventData.isDark = isDark;
     
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Create player looked event for world model
     events.push(context.event('if.event.looked', eventData));

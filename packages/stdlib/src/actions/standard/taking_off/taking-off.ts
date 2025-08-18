@@ -7,7 +7,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, WearableTrait, WearableBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
@@ -50,7 +50,7 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
     return { valid: true };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     const actor = context.player;
     const item = context.command.directObject?.entity!;
     const wearableTrait = item.get(TraitType.WEARABLE) as WearableTrait;
@@ -131,7 +131,7 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
       eventData.layer = wearableTrait.layer;
     }
     
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Create REMOVED event for world model updates
     const removedData: RemovedEventData = {

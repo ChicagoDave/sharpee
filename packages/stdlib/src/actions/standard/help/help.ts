@@ -10,7 +10,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { HelpDisplayedEventData } from './help-events';
@@ -80,7 +80,7 @@ export const helpAction: Action & { metadata: ActionMetadata } = {
     };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     const eventData: HelpDisplayedEventData = {};
     
     // Check if the user asked for help on a specific topic

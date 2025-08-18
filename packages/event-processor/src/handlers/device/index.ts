@@ -5,14 +5,14 @@
  * pushing, pulling, turning, and using objects.
  */
 
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel, TraitType, EventHandler } from '@sharpee/world-model';
 import { IFEvents } from '@sharpee/if-domain';
 
 /**
  * Handle PUSHED event - process pushing objects/buttons
  */
-export const handlePushed: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handlePushed: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target, location } = event.entities;
   const pushType = event.data?.pushType as string;
   
@@ -58,7 +58,7 @@ export const handlePushed: EventHandler = (event: SemanticEvent, world: WorldMod
 /**
  * Handle PULLED event - process pulling objects
  */
-export const handlePulled: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handlePulled: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target } = event.entities;
   const pullType = event.data?.pullType as string;
   
@@ -97,7 +97,7 @@ export const handlePulled: EventHandler = (event: SemanticEvent, world: WorldMod
 /**
  * Handle TURNED event - process turning dials/knobs
  */
-export const handleTurned: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleTurned: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target } = event.entities;
   const turnType = event.data?.turnType as string;
   const newSetting = event.data?.newSetting;
@@ -132,7 +132,7 @@ export const handleTurned: EventHandler = (event: SemanticEvent, world: WorldMod
 /**
  * Handle USED event - generic device usage
  */
-export const handleUsed: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleUsed: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target } = event.entities;
   const useType = event.data?.useType as string;
   

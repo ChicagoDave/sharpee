@@ -7,7 +7,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, SwitchableBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
@@ -49,7 +49,7 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
     return { valid: true };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     const actor = context.player;
     const noun = context.command.directObject?.entity!;
     
@@ -170,7 +170,7 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
     }
     
     // Create events
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Create the SWITCHED_OFF event for world model
     events.push(context.event('if.event.switched_off', eventData));

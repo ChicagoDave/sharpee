@@ -51,7 +51,7 @@ export const insertingActionSemantic: IAction = {
       return {
         valid: false,
         error: 'no_destination',
-        params: { item: item.name }
+        params: { item: item.attributes.name || item.id }
       };
     }
     
@@ -60,17 +60,18 @@ export const insertingActionSemantic: IAction = {
       return {
         valid: false,
         error: 'not_held',
-        params: { item: item.name }
+        params: { item: item.attributes.name || item.id }
       };
     }
     
     // Check if container is actually a container
-    const containerData = container.getCapability('container');
+    // Note: IEntity doesn't have getCapability - need to check attributes
+    const containerData = container.attributes?.['container'] || (container as any).capabilities?.['container'];
     if (!containerData) {
       return {
         valid: false,
         error: 'not_container',
-        params: { container: container.name }
+        params: { container: container.attributes.name || container.id }
       };
     }
     
@@ -79,7 +80,7 @@ export const insertingActionSemantic: IAction = {
       return {
         valid: false,
         error: 'container_closed',
-        params: { container: container.name }
+        params: { container: container.attributes.name || container.id }
       };
     }
     
@@ -89,8 +90,8 @@ export const insertingActionSemantic: IAction = {
         valid: false,
         error: 'already_there',
         params: { 
-          item: item.name,
-          container: container.name 
+          item: item.attributes.name || item.id,
+          container: container.attributes.name || container.id 
         }
       };
     }
@@ -103,21 +104,21 @@ export const insertingActionSemantic: IAction = {
           valid: false,
           error: 'wont_fit',
           params: {
-            item: item.name,
-            container: container.name
+            item: item.attributes.name || item.id,
+            container: container.attributes.name || container.id
           }
         };
       }
     }
     
     // Semantic validation: forceful insertion might damage fragile containers
-    if (semantics.manner === 'forceful' && container.hasAttribute('fragile')) {
+    if (semantics.manner === 'forceful' && container.attributes?.['fragile']) {
       return {
         valid: false,
         error: 'would_damage',
         params: {
-          item: item.name,
-          container: container.name
+          item: item.attributes.name || item.id,
+          container: container.attributes.name || container.id
         }
       };
     }
@@ -148,8 +149,8 @@ export const insertingActionSemantic: IAction = {
         actionId: this.id,
         messageId: 'insertion_failed',
         params: {
-          item: item.name,
-          container: container.name
+          item: item.attributes.name || item.id,
+          container: container.attributes.name || container.id
         }
       })];
     }
@@ -176,8 +177,8 @@ export const insertingActionSemantic: IAction = {
         actionId: this.id,
         messageId: messageId,
         params: {
-          item: item.name,
-          container: container.name,
+          item: item.attributes.name || item.id,
+          container: container.attributes.name || container.id,
           manner: semantics.manner || 'normal'
         }
       }),

@@ -10,5 +10,5 @@ export * from './processor';
 export * from './handlers';
 
 // Re-export commonly used types
-export { SemanticEvent } from '@sharpee/core';
+export { ISemanticEvent } from '@sharpee/core';
 export { WorldModel, WorldChange } from '@sharpee/world-model';

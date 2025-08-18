@@ -2,11 +2,11 @@
  * Helper utilities for common event handler patterns
  */
 
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { EntityEventHandler, IFEntity } from '@sharpee/world-model';
 
 // GameEvent type - matches what's in world-model/src/events/types.ts
-interface GameEvent extends SemanticEvent {
+interface GameEvent extends ISemanticEvent {
   type: string;
   data: Record<string, any>;
 }
@@ -99,7 +99,7 @@ export function createMessageHandler(message: string, params?: Record<string, an
  */
 export function composeHandlers(...handlers: EntityEventHandler[]): EntityEventHandler {
   return (event: GameEvent) => {
-    const results: SemanticEvent[] = [];
+    const results: ISemanticEvent[] = [];
     for (const handler of handlers) {
       const result = handler(event);
       if (result && Array.isArray(result)) {

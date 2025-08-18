@@ -4,9 +4,9 @@
  * Provides query methods for actions without allowing state mutations
  */
 
-import { IFEntity, WorldModel, CapabilityData, ValidatedCommand } from '@sharpee/world-model';
+import { IFEntity, WorldModel, ICapabilityData, IValidatedCommand } from '@sharpee/world-model';
 import { ActionContext, Action } from './enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { ScopeResolver } from '../scope/types';
 
 /**
@@ -21,7 +21,7 @@ export class ReadOnlyActionContext implements ActionContext {
     public readonly world: WorldModel,
     public readonly player: IFEntity,
     public readonly currentLocation: IFEntity,
-    public readonly command: ValidatedCommand,
+    public readonly command: IValidatedCommand,
     action?: Action,
     scopeResolver?: ScopeResolver
   ) {
@@ -166,7 +166,7 @@ export class ReadOnlyActionContext implements ActionContext {
   /**
    * Get capability data (convenience method)
    */
-  getCapability(name: string): CapabilityData | undefined {
+  getCapability(name: string): ICapabilityData | undefined {
     return this.world.getCapability(name);
   }
   
@@ -174,7 +174,7 @@ export class ReadOnlyActionContext implements ActionContext {
    * Event creation method (required by ActionContext interface)
    * @deprecated This implementation throws an error - use createActionContext instead
    */
-  event(type: string, data: any): SemanticEvent {
+  event(type: string, data: any): ISemanticEvent {
     throw new Error('ReadOnlyActionContext does not support event creation. Use createActionContext from enhanced-context.ts instead.');
   }
 }

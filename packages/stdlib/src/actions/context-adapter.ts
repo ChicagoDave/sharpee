@@ -25,7 +25,7 @@ import { ScopeResolver } from '../scope/types';
 export function toCommandInput(validated: ValidatedCommand): CommandInput {
   const input: CommandInput = {
     actionId: validated.actionId,
-    inputText: validated.parsed.rawText
+    inputText: validated.parsed.rawInput
   };
   
   // Convert direct object if present
@@ -33,7 +33,7 @@ export function toCommandInput(validated: ValidatedCommand): CommandInput {
     input.directObject = {
       entity: validated.directObject.entity,
       matchedText: validated.directObject.parsed.text,
-      referenceType: validated.directObject.parsed.determiner as any
+      referenceType: 'definite' // TODO: extract from parsed tokens
     };
   }
   
@@ -42,7 +42,7 @@ export function toCommandInput(validated: ValidatedCommand): CommandInput {
     input.indirectObject = {
       entity: validated.indirectObject.entity,
       matchedText: validated.indirectObject.parsed.text,
-      referenceType: validated.indirectObject.parsed.determiner as any
+      referenceType: 'definite' // TODO: extract from parsed tokens
     };
   }
   

@@ -8,7 +8,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, ActorTrait, IdentityTrait, IFEntity } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ShowingEventMap, ShownEventData } from './showing-events';
@@ -162,7 +162,7 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
     };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     // Revalidate and rebuild all data
     const validation = this.validate(context);
     if (!validation.valid) {
@@ -231,7 +231,7 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
       messageId = 'wearing_shown';
     }
     
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Create SHOWN event for world model
     events.push(context.event('if.event.shown', eventData));
