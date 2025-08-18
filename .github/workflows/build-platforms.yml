@@ -11,31 +11,24 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-        
     - name: Setup pnpm
-      uses: pnpm/action-setup@v2
+      uses: pnpm/action-setup@v3
       with:
         version: 8
         
-    - name: Install dependencies
-      run: pnpm install --ignore-scripts
-      
-    - name: Check symlinks
-      run: |
-        echo "Checking if symlinks are created..."
-        ls -la packages/if-domain/node_modules/@sharpee/ || echo "No @sharpee in if-domain node_modules"
-        ls -la packages/core/ || echo "Core directory"
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
         
-    - name: Build all packages
-      env:
-        TURBO_TELEMETRY_DISABLED: 1
-      run: pnpm run build:all --no-cache --no-daemon
+    - name: Install dependencies
+      run: pnpm install
+      
+    - name: Build packages
+      run: pnpm turbo run build --filter='!@sharpee-stories/*' --filter='!@sharpee/story-*' --filter='!@sharpee/text-service-template'
       
     - name: Upload core artifacts
       uses: actions/upload-artifact@v4
@@ -50,15 +43,15 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
         
     - name: Setup pnpm
-      uses: pnpm/action-setup@v2
+      uses: pnpm/action-setup@v3
       with:
         version: 8
         
@@ -69,7 +62,7 @@ jobs:
         path: packages
         
     - name: Install dependencies
-      run: pnpm install --ignore-scripts
+      run: pnpm install
       
     - name: Build CLI English platform
       run: pnpm turbo run build --filter='@sharpee/platform-cli-en-us'
@@ -88,15 +81,15 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
         
     - name: Setup pnpm
-      uses: pnpm/action-setup@v2
+      uses: pnpm/action-setup@v3
       with:
         version: 8
         
@@ -106,7 +99,7 @@ jobs:
         path: packages
         
     - name: Install dependencies
-      run: pnpm install --ignore-scripts
+      run: pnpm install
       
     - name: Run integration tests
       run: pnpm test:ci
@@ -117,16 +110,16 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
         registry-url: 'https://registry.npmjs.org'
         
     - name: Setup pnpm
-      uses: pnpm/action-setup@v2
+      uses: pnpm/action-setup@v3
       with:
         version: 8
         
@@ -136,7 +129,7 @@ jobs:
         path: packages
         
     - name: Install dependencies
-      run: pnpm install --ignore-scripts
+      run: pnpm install
       
     - name: Version and publish
       env:
