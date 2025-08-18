@@ -26,20 +26,16 @@ jobs:
     - name: Install dependencies
       run: pnpm install --ignore-scripts
       
-    - name: Build all packages (excluding stories and templates)
+    - name: Check symlinks
       run: |
-        pnpm --filter '@sharpee/core' run build
-        pnpm --filter '@sharpee/if-domain' run build
-        pnpm --filter '@sharpee/world-model' run build
-        pnpm --filter '@sharpee/text-services' run build
-        pnpm --filter '@sharpee/lang-en-us' run build
-        pnpm --filter '@sharpee/parser-en-us' run build
-        pnpm --filter '@sharpee/stdlib' run build
-        pnpm --filter '@sharpee/event-processor' run build
-        pnpm --filter '@sharpee/if-services' run build
-        pnpm --filter '@sharpee/engine' run build
-        pnpm --filter '@sharpee/sharpee' run build
-        pnpm --filter '@sharpee/platform-cli-en-us' run build
+        echo "Checking if symlinks are created..."
+        ls -la packages/if-domain/node_modules/@sharpee/ || echo "No @sharpee in if-domain node_modules"
+        ls -la packages/core/ || echo "Core directory"
+        
+    - name: Build all packages
+      env:
+        TURBO_TELEMETRY_DISABLED: 1
+      run: pnpm run build:all --no-cache --no-daemon
       
     - name: Upload core artifacts
       uses: actions/upload-artifact@v4
