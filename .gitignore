@@ -94,3 +94,6 @@ packages/**/src/**/*.js.map
 
 # Local development configuration
 .local/.turbo/
+
+# Unreleased story extensions (keep private)
+packages/extensions/blood-magic/

@@ -16,7 +16,6 @@ First alpha release of the Sharpee Interactive Fiction Platform. This release ma
 - **Standard Library**: 40+ standard actions (take, drop, examine, go, etc.)
 - **Parser**: Natural language understanding with semantic grammar
 - **Extension System**: Plugin architecture for adding game mechanics
-- **Blood Magic Extension**: Demonstration extension with mirror portals and invisibility
 - **Platform Support**: CLI platform for English language
 - **Type Safety**: Full TypeScript implementation with I-prefix interfaces
 - **Testing**: 2,700+ tests ensuring reliability
@@ -37,7 +36,6 @@ All packages released at version 1.0.0-alpha.1:
 - `@sharpee/parser-en-us` - English language parser
 - `@sharpee/if-domain` - Interactive fiction contracts
 - `@sharpee/event-processor` - Event processing system
-- `@sharpee/extension-blood-magic` - Blood magic mechanics
 
 ### Known Issues
 - Forge authoring API is planned but not yet implemented
