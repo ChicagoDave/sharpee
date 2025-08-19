@@ -1,7 +1,7 @@
 {
-  "timestamp": "2025-08-11T00:59:27.181Z",
-  "behaviorUsageRate": 34.090909090909086,
-  "directTraitManipulation": 8,
-  "validationInExecute": 7,
-  "duplicatedLogic": 40
+  "timestamp": "2025-08-19T02:26:39.282Z",
+  "behaviorUsageRate": 33.33333333333333,
+  "directTraitManipulation": 16,
+  "validationInExecute": 0,
+  "duplicatedLogic": 30
 }

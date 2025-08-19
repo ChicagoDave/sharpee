@@ -276,18 +276,6 @@ describe('Parser Grammar Engine Integration', () => {
     it('should parse "throw item at target" commands', () => {
       const result = parser.parse('throw ball at window');
       
-      if (!result.success) {
-        console.log('Debug events:', JSON.stringify(debugEvents, null, 2));
-      } else if (result.value.pattern !== 'VERB_NOUN_PREP_NOUN') {
-        const patternEvent = debugEvents.find(e => e.type === 'pattern_match');
-        const candidateEvent = debugEvents.find(e => e.type === 'candidate_selection');
-        console.log('Pattern match event:', JSON.stringify(patternEvent, null, 2));
-        console.log('Candidate selection:', JSON.stringify(candidateEvent, null, 2));
-        
-        // Let's see what the grammar engine has
-        console.log('Grammar rules:', parser.grammarEngine.getRules().filter(r => r.pattern.includes('throw')));
-      }
-      
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.throwing');

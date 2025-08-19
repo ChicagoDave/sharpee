@@ -32,8 +32,10 @@ export class SemanticParserEngine extends EnglishGrammarEngine {
     const matches = super.findMatches(tokens, context, options);
     
     // Apply semantic mappings to each match
+    // Note: EnglishGrammarEngine already builds semantics, so we only need to apply
+    // additional semantics if they weren't already built
     for (const match of matches) {
-      if (match.rule.semantics || match.rule.defaultSemantics) {
+      if (!match.semantics && (match.rule.semantics || match.rule.defaultSemantics)) {
         match.semantics = this.applySemantics(match, tokens);
       }
     }

@@ -20,21 +20,10 @@ describe('Debug XYZZY Test', () => {
     });
     
     // Execute xyzzy command (which should fail)
-    console.log('Executing xyzzy...');
     const result = await engine.executeTurn('xyzzy');
-    console.log('Result:', {
-      success: result.success,
-      error: result.error,
-      actionId: result.actionId,
-      events: result.events.map(e => ({ type: e.type, data: e.data }))
-    });
     
     // Check command history - should be empty for failed commands
     const historyData = world.getCapability(StandardCapabilities.COMMAND_HISTORY) as CommandHistoryData;
-    console.log('History entries:', historyData?.entries || []);
-    
-    // Check that events were emitted even though command failed
-    console.log('Emitted events:', emittedEvents.map(e => ({ type: e.type, data: e.data })));
     
     // The test expectations
     expect(result.success).toBe(false);

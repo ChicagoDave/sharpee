@@ -33,7 +33,7 @@ export function defineSemanticInsertingRules(grammar: GrammarBuilder): void {
       spatialRelation: 'in',
       implicitPreposition: false
     })
-    .withPriority(100)
+    .withPriority(110)  // Higher priority than direction
     .build();
   
   // Rule 2: Implicit "insert X Y" (means "insert X into Y")
@@ -52,7 +52,7 @@ export function defineSemanticInsertingRules(grammar: GrammarBuilder): void {
       spatialRelation: 'in',      // Grammar knows this implicitly means "in"
       implicitPreposition: true   // Flag that preposition was implicit
     })
-    .withPriority(95) // Slightly lower priority than explicit form
+    .withPriority(105) // Higher priority than direction
     .build();
   
   // Rule 3: Forceful insertion variants
@@ -130,16 +130,17 @@ export function defineSemanticGoingRules(grammar: GrammarBuilder): void {
     .withPriority(90)
     .build();
   
-  // Go with direction
+  // Go with direction (with verb alternatives)
   grammar
-    .define('go :direction')
+    .define('go|walk|run|sneak|rush|creep :direction')
     .mapsTo('if.action.going')
     .withSemanticVerbs({
       'go': { manner: 'normal' },
       'walk': { manner: 'normal' },
       'run': { manner: 'quick' },
       'sneak': { manner: 'stealthy' },
-      'rush': { manner: 'quick' }
+      'rush': { manner: 'quick' },
+      'creep': { manner: 'stealthy' }
     })
     .withSemanticDirections({
       'n': 'north',
@@ -175,8 +176,9 @@ export function defineSemanticGoingRules(grammar: GrammarBuilder): void {
  * Define semantic grammar rules for DROPPING (manner variations)
  */
 export function defineSemanticDroppingRules(grammar: GrammarBuilder): void {
+  // Main dropping rule with verb alternatives
   grammar
-    .define('drop :item')
+    .define('drop|discard|throw|place|chuck|toss :item')
     .where('item', (scope: ScopeBuilder) => scope.carried())
     .mapsTo('if.action.dropping')
     .withSemanticVerbs({
