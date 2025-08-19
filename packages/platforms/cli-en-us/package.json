@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/platform-cli-en-us",
-  "version": "0.1.0",
+  "version": "1.0.0-alpha.1",
   "description": "English CLI platform for Sharpee interactive fiction engine",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

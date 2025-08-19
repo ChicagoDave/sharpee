@@ -6,7 +6,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { MirrorTrait, MirrorBehavior, BloodSilverTrait, BloodSilverBehavior } from '../../traits';
 import { BloodActions } from '../constants';
 import { TouchedMirrorEventData } from './touchingMirror-events';
@@ -52,7 +52,7 @@ export const touchingMirrorAction: Action & { metadata: ActionMetadata } = {
     }
     
     // Check if mirror is broken
-    if (mirrorTrait.state === 'broken') {
+    if (mirrorTrait.isBroken) {
       return { 
         valid: false, 
         error: 'mirror_broken'
@@ -65,30 +65,33 @@ export const touchingMirrorAction: Action & { metadata: ActionMetadata } = {
   /**
    * Execute the touch mirror action
    */
-  execute(context: ActionContext): SemanticEvent[] {
-    const events: SemanticEvent[] = [];
-    const actor = context.actor;
+  execute(context: ActionContext): ISemanticEvent[] {
+    const events: ISemanticEvent[] = [];
+    const actor = context.world.getPlayer();
+    if (!actor) return [];
     const mirror = context.command.directObject!.entity;
     const mirrorTrait = mirror.getTrait<MirrorTrait>('mirror')!;
     
     // Record the touch
-    MirrorBehavior.recordUsage(mirror, actor, 'touch');
+    MirrorBehavior.recordUsage(mirror, actor, 'touched');
     
     // Check if actor is a Silver carrier
     const silverTrait = actor.getTrait<BloodSilverTrait>('bloodSilver');
-    if (silverTrait?.active) {
+    if (silverTrait) {
       // Silver carrier can sense connections
       BloodSilverBehavior.recordMirrorUse(actor, mirror);
       
       let message = 'touched_mirror';
       const extraData: any = {};
       
-      if (mirrorTrait.connectedTo) {
+      const connectedTo = mirrorTrait.connections.size > 0 ? 
+        Array.from(mirrorTrait.connections.keys())[0] : null;
+      if (connectedTo) {
         message = 'silver_senses_connection';
-        extraData.connectedTo = mirrorTrait.connectedTo;
+        extraData.connectedTo = connectedTo;
         
         // Check for recent signatures
-        const recentSignatures = mirrorTrait.signatures.filter(sig => 
+        const recentSignatures = mirrorTrait.signatures.filter((sig: any) => 
           !MirrorBehavior.hasSignatureFaded(sig, Date.now())
         );
         if (recentSignatures.length > 0) {
@@ -99,9 +102,10 @@ export const touchingMirrorAction: Action & { metadata: ActionMetadata } = {
       }
       
       events.push({
-        id: 'blood.event.touched_mirror',
+        id: `blood.touched_mirror.${Date.now()}`,
         type: 'blood.event.touched_mirror',
         timestamp: Date.now(),
+        entities: { actor: actor.id, target: mirror.id },
         data: {
           actorId: actor.id,
           mirrorId: mirror.id,
@@ -112,9 +116,10 @@ export const touchingMirrorAction: Action & { metadata: ActionMetadata } = {
     } else {
       // Non-Silver carrier just touches the mirror
       events.push({
-        id: 'blood.event.touched_mirror',
+        id: `blood.touched_mirror.${Date.now()}`,
         type: 'blood.event.touched_mirror',
         timestamp: Date.now(),
+        entities: { actor: actor.id, target: mirror.id },
         data: {
           actorId: actor.id,
           mirrorId: mirror.id,

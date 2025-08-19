@@ -2,9 +2,9 @@
  * BloodMoonTrait - Grants ability to become invisible
  */
 
-import { Trait } from '@sharpee/world-model';
+import { ITrait } from '@sharpee/world-model';
 
-export interface BloodMoonTrait extends Trait {
+export interface BloodMoonTrait extends ITrait {
   type: 'blood_moon';
   
   // Current state
@@ -54,9 +54,11 @@ export function deactivateInvisibility(
   carrier: BloodMoonTrait,
   storyTime: number
 ): void {
-  if (carrier.isInvisible && carrier.lastActivationTime) {
-    const duration = storyTime - carrier.lastActivationTime;
-    carrier.totalInvisibleTime += duration;
+  if (carrier.isInvisible) {
+    if (carrier.lastActivationTime) {
+      const duration = storyTime - carrier.lastActivationTime;
+      carrier.totalInvisibleTime += duration;
+    }
     carrier.isInvisible = false;
   }
 }

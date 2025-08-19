@@ -3,7 +3,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { MirrorTrait, MirrorBehavior, BloodSilverBehavior } from '../../traits';
 import { BloodActions } from '../constants';
 import { EnteredMirrorEventData } from './enteringMirror-events';
@@ -46,13 +46,13 @@ export const enteringMirrorAction: Action & { metadata: ActionMetadata } = {
     if (!MirrorBehavior.canEnter(mirror)) {
       const trait = mirror.getTrait<MirrorTrait>('mirror');
       
-      if (trait?.state === 'broken') {
+      if (trait?.isBroken) {
         return { valid: false, error: 'mirror_broken' };
       }
-      if (trait?.state === 'face-down') {
+      if (trait?.isFaceDown) {
         return { valid: false, error: 'mirror_face_down' };
       }
-      if (!trait?.connectedTo) {
+      if (!trait || trait.connections.size === 0) {
         return { valid: false, error: 'mirror_not_connected' };
       }
     }
@@ -63,20 +63,23 @@ export const enteringMirrorAction: Action & { metadata: ActionMetadata } = {
   /**
    * Execute the enter mirror action
    */
-  execute(context: ActionContext): SemanticEvent[] {
-    const events: SemanticEvent[] = [];
-    const actor = context.actor;
+  execute(context: ActionContext): ISemanticEvent[] {
+    const events: ISemanticEvent[] = [];
+    const actor = context.world.getPlayer();
     const mirror = context.command.directObject!.entity;
     const mirrorTrait = mirror.getTrait<MirrorTrait>('mirror')!;
     const world = context.world;
     
     // Get the destination mirror
-    const destinationMirror = world.getEntity(mirrorTrait.connectedTo!);
+    if (!actor) return [];
+    const destinationMirrorId = Array.from(mirrorTrait.connections.keys())[0];
+    const destinationMirror = destinationMirrorId ? world.getEntity(destinationMirrorId) : undefined;
     if (!destinationMirror) {
       return [{
-        id: 'blood.event.mirror_error',
+        id: `blood.mirror_error.${Date.now()}`,
         type: 'blood.event.mirror_error',
         timestamp: Date.now(),
+        entities: { actor: actor.id, target: mirror.id },
         data: {
           actorId: actor.id,
           mirrorId: mirror.id,
@@ -86,13 +89,15 @@ export const enteringMirrorAction: Action & { metadata: ActionMetadata } = {
     }
     
     const destTrait = destinationMirror.getTrait<MirrorTrait>('mirror');
-    const destinationRoom = destinationMirror.getContainer();
+    // Get the room that contains the destination mirror
+    const destinationRoom = world.getLocation(destinationMirror.id);
     
     if (!destinationRoom) {
       return [{
-        id: 'blood.event.mirror_error',
+        id: `blood.mirror_error.${Date.now()}.2`,
         type: 'blood.event.mirror_error',
         timestamp: Date.now(),
+        entities: { actor: actor.id, target: mirror.id },
         data: {
           actorId: actor.id,
           mirrorId: mirror.id,
@@ -102,8 +107,8 @@ export const enteringMirrorAction: Action & { metadata: ActionMetadata } = {
     }
     
     // Record usage
-    MirrorBehavior.recordUsage(mirror, actor, 'enter');
-    MirrorBehavior.recordUsage(destinationMirror, actor, 'enter');
+    MirrorBehavior.recordUsage(mirror, actor, 'entered');
+    MirrorBehavior.recordUsage(destinationMirror, actor, 'entered');
     
     // If actor is Silver carrier, record mirror use
     const silverTrait = actor.getTrait('bloodSilver');
@@ -114,9 +119,10 @@ export const enteringMirrorAction: Action & { metadata: ActionMetadata } = {
     
     // Create departure event
     events.push({
-      id: 'blood.event.entered_mirror',
+      id: `blood.entered_mirror.${Date.now()}`,
       type: 'blood.event.entered_mirror',
       timestamp: Date.now(),
+      entities: { actor: actor.id, target: mirror.id, instrument: destinationMirror.id },
       data: {
         actorId: actor.id,
         mirrorId: mirror.id,
@@ -126,7 +132,9 @@ export const enteringMirrorAction: Action & { metadata: ActionMetadata } = {
     });
     
     // Move the actor
-    actor.moveTo(destinationRoom);
+    if (destinationRoom) {
+      world.moveEntity(actor.id, destinationRoom);
+    }
     
     // Handle different orientations for arrival
     let arrivalMessage = 'arrived_through_mirror';
@@ -138,9 +146,10 @@ export const enteringMirrorAction: Action & { metadata: ActionMetadata } = {
     
     // Create arrival event
     events.push({
-      id: 'blood.event.arrived_through_mirror',
+      id: `blood.arrived_mirror.${Date.now()}`,
       type: 'blood.event.arrived_through_mirror',
       timestamp: Date.now(),
+      entities: { actor: actor.id, target: destinationMirror.id, instrument: mirror.id },
       data: {
         actorId: actor.id,
         mirrorId: destinationMirror.id,
@@ -151,9 +160,10 @@ export const enteringMirrorAction: Action & { metadata: ActionMetadata } = {
     
     // Trigger ripple detection for any Silver carriers
     events.push({
-      id: 'blood.event.mirror_ripple',
+      id: `blood.mirror_ripple.${Date.now()}`,
       type: 'blood.event.mirror_ripple',
       timestamp: Date.now(),
+      entities: { actor: actor.id, target: mirror.id, instrument: destinationMirror.id },
       data: {
         mirrorId: mirror.id,
         connectedMirrorId: destinationMirror.id,

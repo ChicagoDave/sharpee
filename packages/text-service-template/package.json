@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/text-service-template",
-  "version": "0.1.0",
+  "version": "1.0.0-alpha.1",
   "description": "Template-based text service for Sharpee IF",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

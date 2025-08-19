@@ -4,7 +4,7 @@
 
 import { EntityId } from '@sharpee/core';
 
-export interface TouchedMirrorEventData {
+export interface TouchedMirrorEventData extends Record<string, unknown> {
   actorId: EntityId;
   mirrorId: EntityId;
   message: string;

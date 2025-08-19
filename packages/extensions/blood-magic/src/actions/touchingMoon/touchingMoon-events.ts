@@ -4,7 +4,7 @@
 
 import { EntityId } from '@sharpee/core';
 
-export interface TouchedMoonEventData {
+export interface TouchedMoonEventData extends Record<string, unknown> {
   actorId: EntityId;
   message: string;
 }

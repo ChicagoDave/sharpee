@@ -2,10 +2,10 @@
  * Blood Magic event definitions
  */
 
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 
 // Mirror events
-export interface MirrorTouchedEvent extends SemanticEvent {
+export interface MirrorTouchedEvent extends ISemanticEvent {
   type: 'blood.mirror.touched';
   data: {
     mirrorId: string;
@@ -14,7 +14,7 @@ export interface MirrorTouchedEvent extends SemanticEvent {
   };
 }
 
-export interface MirrorConnectedEvent extends SemanticEvent {
+export interface MirrorConnectedEvent extends ISemanticEvent {
   type: 'blood.mirror.connected';
   data: {
     fromMirrorId: string;
@@ -23,7 +23,7 @@ export interface MirrorConnectedEvent extends SemanticEvent {
   };
 }
 
-export interface MirrorEnteredEvent extends SemanticEvent {
+export interface MirrorEnteredEvent extends ISemanticEvent {
   type: 'blood.mirror.entered';
   data: {
     mirrorId: string;
@@ -32,7 +32,7 @@ export interface MirrorEnteredEvent extends SemanticEvent {
   };
 }
 
-export interface MirrorExitedEvent extends SemanticEvent {
+export interface MirrorExitedEvent extends ISemanticEvent {
   type: 'blood.mirror.exited';
   data: {
     mirrorId: string;
@@ -41,7 +41,7 @@ export interface MirrorExitedEvent extends SemanticEvent {
   };
 }
 
-export interface MirrorBrokenEvent extends SemanticEvent {
+export interface MirrorBrokenEvent extends ISemanticEvent {
   type: 'blood.mirror.broken';
   data: {
     mirrorId: string;
@@ -50,7 +50,7 @@ export interface MirrorBrokenEvent extends SemanticEvent {
   };
 }
 
-export interface MirrorRippleEvent extends SemanticEvent {
+export interface MirrorRippleEvent extends ISemanticEvent {
   type: 'blood.mirror.ripple';
   data: {
     mirrorId: string;
@@ -60,7 +60,7 @@ export interface MirrorRippleEvent extends SemanticEvent {
 }
 
 // Moon blood events
-export interface MoonInvisibleEvent extends SemanticEvent {
+export interface MoonInvisibleEvent extends ISemanticEvent {
   type: 'blood.moon.invisible';
   data: {
     entityId: string;
@@ -68,7 +68,7 @@ export interface MoonInvisibleEvent extends SemanticEvent {
   };
 }
 
-export interface MoonVisibleEvent extends SemanticEvent {
+export interface MoonVisibleEvent extends ISemanticEvent {
   type: 'blood.moon.visible';
   data: {
     entityId: string;
@@ -77,11 +77,11 @@ export interface MoonVisibleEvent extends SemanticEvent {
 }
 
 // Type guard functions
-export function isMirrorEvent(event: SemanticEvent): boolean {
+export function isMirrorEvent(event: ISemanticEvent): boolean {
   return event.type.startsWith('blood.mirror.');
 }
 
-export function isMoonEvent(event: SemanticEvent): boolean {
+export function isMoonEvent(event: ISemanticEvent): boolean {
   return event.type.startsWith('blood.moon.');
 }
 
@@ -92,9 +92,10 @@ export function createMirrorTouchedEvent(
   hasBloodSilver: boolean
 ): MirrorTouchedEvent {
   return {
-    id: `mirror-touched-${Date.now()}`,
+    id: `blood.mirror.touched.${Date.now()}`,
     type: 'blood.mirror.touched',
     timestamp: Date.now(),
+    entities: { actor: entityId, target: mirrorId },
     data: {
       mirrorId,
       entityId,
@@ -109,9 +110,10 @@ export function createMirrorConnectedEvent(
   connectedBy: string
 ): MirrorConnectedEvent {
   return {
-    id: `mirror-connected-${Date.now()}`,
+    id: `blood.mirror.connected.${Date.now()}`,
     type: 'blood.mirror.connected',
     timestamp: Date.now(),
+    entities: { actor: connectedBy, target: fromMirrorId, instrument: toMirrorId },
     data: {
       fromMirrorId,
       toMirrorId,
@@ -126,9 +128,10 @@ export function createMirrorEnteredEvent(
   destinationMirrorId?: string
 ): MirrorEnteredEvent {
   return {
-    id: `mirror-entered-${Date.now()}`,
+    id: `blood.mirror.entered.${Date.now()}`,
     type: 'blood.mirror.entered',
     timestamp: Date.now(),
+    entities: { actor: entityId, target: mirrorId, instrument: destinationMirrorId },
     data: {
       mirrorId,
       entityId,
@@ -143,9 +146,10 @@ export function createMirrorRippleEvent(
   sensedBy: string[]
 ): MirrorRippleEvent {
   return {
-    id: `mirror-ripple-${Date.now()}`,
+    id: `blood.mirror.ripple.${Date.now()}`,
     type: 'blood.mirror.ripple',
     timestamp: Date.now(),
+    entities: { actor: causedBy, target: mirrorId, others: sensedBy },
     data: {
       mirrorId,
       causedBy,
@@ -159,9 +163,10 @@ export function createMoonInvisibleEvent(
   focusObject?: string
 ): MoonInvisibleEvent {
   return {
-    id: `moon-invisible-${Date.now()}`,
+    id: `blood.moon.invisible.${Date.now()}`,
     type: 'blood.moon.invisible',
     timestamp: Date.now(),
+    entities: { actor: entityId, instrument: focusObject },
     data: {
       entityId,
       focusObject
@@ -174,9 +179,10 @@ export function createMoonVisibleEvent(
   duration: number
 ): MoonVisibleEvent {
   return {
-    id: `moon-visible-${Date.now()}`,
+    id: `blood.moon.visible.${Date.now()}`,
     type: 'blood.moon.visible',
     timestamp: Date.now(),
+    entities: { actor: entityId },
     data: {
       entityId,
       duration

@@ -4,7 +4,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { MirrorTrait, MirrorBehavior, BloodSilverTrait, BloodSilverBehavior } from '../../traits';
 import { BloodActions } from '../constants';
 import { ConnectedMirrorsEventData } from './connectingMirrors-events';
@@ -36,12 +36,12 @@ export const connectingMirrorsAction: Action & { metadata: ActionMetadata } = {
    * Validate whether the connect mirrors action can be executed
    */
   validate(context: ActionContext): ValidationResult {
-    const actor = context.actor;
+    const actor = context.world.getPlayer();
     const mirror1 = context.command.directObject?.entity;
     const mirror2 = context.command.indirectObject?.entity;
     
     // Check for Silver blood
-    const silverTrait = actor.getTrait<BloodSilverTrait>('bloodSilver');
+    const silverTrait = actor?.getTrait<BloodSilverTrait>('bloodSilver');
     if (!silverTrait) {
       return { 
         valid: false, 
@@ -49,12 +49,7 @@ export const connectingMirrorsAction: Action & { metadata: ActionMetadata } = {
       };
     }
     
-    if (!silverTrait.active) {
-      return { 
-        valid: false, 
-        error: 'silver_blood_inactive'
-      };
-    }
+    // Silver trait doesn't have active property - just having it is enough
     
     // Check mirrors exist
     if (!mirror1) {
@@ -82,7 +77,7 @@ export const connectingMirrorsAction: Action & { metadata: ActionMetadata } = {
     }
     
     // Check neither is broken
-    if (trait1.state === 'broken' || trait2.state === 'broken') {
+    if (trait1.isBroken || trait2.isBroken) {
       return { 
         valid: false, 
         error: 'mirror_broken'
@@ -95,9 +90,9 @@ export const connectingMirrorsAction: Action & { metadata: ActionMetadata } = {
   /**
    * Execute the connect mirrors action
    */
-  execute(context: ActionContext): SemanticEvent[] {
-    const events: SemanticEvent[] = [];
-    const actor = context.actor;
+  execute(context: ActionContext): ISemanticEvent[] {
+    const events: ISemanticEvent[] = [];
+    const actor = context.world.getPlayer();
     const mirror1 = context.command.directObject!.entity;
     const mirror2 = context.command.indirectObject!.entity;
     
@@ -105,12 +100,13 @@ export const connectingMirrorsAction: Action & { metadata: ActionMetadata } = {
     const trait2 = mirror2.getTrait<MirrorTrait>('mirror')!;
     
     // Check if replacing existing connections
-    const hadConnection1 = trait1.connectedTo !== null;
-    const hadConnection2 = trait2.connectedTo !== null;
-    const oldConnection1 = trait1.connectedTo;
-    const oldConnection2 = trait2.connectedTo;
+    const hadConnection1 = trait1.connections.size > 0;
+    const hadConnection2 = trait2.connections.size > 0;
+    const oldConnection1 = Array.from(trait1.connections.keys())[0] || null;
+    const oldConnection2 = Array.from(trait2.connections.keys())[0] || null;
     
     // Create the connection
+    if (!actor) return [];
     MirrorBehavior.connectMirrors(mirror1, mirror2, actor);
     
     // Record mirror use by Silver carrier
@@ -121,9 +117,10 @@ export const connectingMirrorsAction: Action & { metadata: ActionMetadata } = {
     const message = (hadConnection1 || hadConnection2) ? 'connection_replaced' : 'mirrors_connected';
     
     events.push({
-      id: 'blood.event.mirrors_connected',
+      id: `blood.mirrors_connected.${Date.now()}`,
       type: 'blood.event.mirrors_connected',
       timestamp: Date.now(),
+      entities: { actor: actor.id, target: mirror1.id, instrument: mirror2.id },
       data: {
         actorId: actor.id,
         mirror1Id: mirror1.id,
@@ -139,9 +136,10 @@ export const connectingMirrorsAction: Action & { metadata: ActionMetadata } = {
     // If connections were broken, emit events for those
     if (oldConnection1 && oldConnection1 !== mirror2.id) {
       events.push({
-        id: 'blood.event.connection_broken',
+        id: `blood.connection_broken.${Date.now()}.1`,
         type: 'blood.event.connection_broken',
         timestamp: Date.now(),
+        entities: { target: mirror1.id },
         data: {
           mirrorId: mirror1.id,
           disconnectedFrom: oldConnection1
@@ -151,9 +149,10 @@ export const connectingMirrorsAction: Action & { metadata: ActionMetadata } = {
     
     if (oldConnection2 && oldConnection2 !== mirror1.id) {
       events.push({
-        id: 'blood.event.connection_broken',
+        id: `blood.connection_broken.${Date.now()}.2`,
         type: 'blood.event.connection_broken',
         timestamp: Date.now(),
+        entities: { target: mirror2.id },
         data: {
           mirrorId: mirror2.id,
           disconnectedFrom: oldConnection2

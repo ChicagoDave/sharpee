@@ -2,7 +2,7 @@
  * MirrorTrait - Defines a reflective surface that can act as a portal
  */
 
-import { Trait } from '@sharpee/world-model';
+import { ITrait } from '@sharpee/world-model';
 
 export interface MirrorConnection {
   targetMirrorId: string;
@@ -19,7 +19,7 @@ export interface MirrorSignature {
 
 export type MirrorOrientation = 'wall' | 'floor' | 'ceiling' | 'handheld' | 'facedown';
 
-export interface MirrorTrait extends Trait {
+export interface MirrorTrait extends ITrait {
   type: 'mirror';
   
   // Physical properties

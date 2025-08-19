@@ -4,7 +4,7 @@
 
 import { EntityId } from '@sharpee/core';
 
-export interface ConnectedMirrorsEventData {
+export interface ConnectedMirrorsEventData extends Record<string, unknown> {
   actorId: EntityId;
   mirror1Id: EntityId;
   mirror2Id: EntityId;

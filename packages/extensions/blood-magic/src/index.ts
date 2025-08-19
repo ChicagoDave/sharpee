@@ -7,7 +7,7 @@
  * - Related traits, actions, and events
  */
 
-import { Extension, ExtensionType } from '@sharpee/core';
+import { IExtension } from '@sharpee/core';
 
 // Export all traits and behaviors
 export * from './traits';
@@ -30,7 +30,7 @@ export * from './grammar';
 /**
  * Blood Magic Extension definition
  */
-export const BloodMagicExtension: Extension = {
+export const BloodMagicExtension: IExtension = {
   id: 'blood-magic',
   name: 'Blood Magic System',
   version: '0.1.0',

@@ -20,29 +20,8 @@ describe('World Model Debug', () => {
     // Set player as the active player
     world.setPlayer(player.id);
     
-    console.log('Before move:');
-    console.log('Player location:', world.getLocation(player.id));
-    console.log('Room location:', world.getLocation(room.id));
-    
     // Move player to room
-    const moveResult = world.moveEntity(player.id, room.id);
-    console.log('Move result:', moveResult);
-    
-    console.log('\nAfter move:');
-    console.log('Player location:', world.getLocation(player.id));
-    console.log('Room location:', world.getLocation(room.id));
-    
-    // Check contents
-    const roomContents = world.getContents(room.id);
-    console.log('Room contents:', roomContents.map(e => e.id));
-    
-    // Check if player can be found
-    const allEntities = world.getAllEntities();
-    console.log('All entities:', allEntities.map(e => ({
-      id: e.id,
-      type: e.type,
-      location: world.getLocation(e.id)
-    })));
+    world.moveEntity(player.id, room.id);
     
     expect(world.getLocation(player.id)).toBe(room.id);
   });
@@ -62,10 +41,6 @@ describe('World Model Debug', () => {
     world.moveEntity(box.id, room.id);
     // Move coin to box
     world.moveEntity(coin.id, box.id);
-    
-    console.log('Box location:', world.getLocation(box.id));
-    console.log('Coin location:', world.getLocation(coin.id));
-    console.log('Box contents:', world.getContents(box.id).map(e => e.id));
     
     expect(world.getLocation(box.id)).toBe(room.id);
     expect(world.getLocation(coin.id)).toBe(box.id);

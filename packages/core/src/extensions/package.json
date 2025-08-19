@@ -1,6 +1,6 @@
 {
     "name": "@sharpee/core-extensions",
-    "version": "0.1.0",
+    "version": "1.0.0-alpha.1",
     "description": "Extension system for Sharpee core package",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",

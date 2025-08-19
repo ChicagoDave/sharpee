@@ -3,7 +3,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { BloodMoonTrait, BloodMoonBehavior } from '../../traits';
 import { BloodActions } from '../constants';
 import { TouchedMoonEventData } from './touchingMoon-events';
@@ -27,8 +27,8 @@ export const touchingMoonAction: Action & { metadata: ActionMetadata } = {
    * Validate whether the touch moon action can be executed
    */
   validate(context: ActionContext): ValidationResult {
-    const actor = context.actor;
-    const moonTrait = actor.getTrait<BloodMoonTrait>('bloodMoon');
+    const actor = context.world.getPlayer();
+    const moonTrait = actor?.getTrait<BloodMoonTrait>('bloodMoon');
     
     if (!moonTrait) {
       return { 
@@ -37,14 +37,9 @@ export const touchingMoonAction: Action & { metadata: ActionMetadata } = {
       };
     }
     
-    if (!moonTrait.active) {
-      return { 
-        valid: false, 
-        error: 'moon_blood_inactive'
-      };
-    }
+    // Moon trait doesn't have active property - just having it is enough
     
-    if (moonTrait.invisible) {
+    if (moonTrait.isInvisible) {
       return { 
         valid: false, 
         error: 'already_invisible'
@@ -57,18 +52,20 @@ export const touchingMoonAction: Action & { metadata: ActionMetadata } = {
   /**
    * Execute the touch moon action
    */
-  execute(context: ActionContext): SemanticEvent[] {
-    const events: SemanticEvent[] = [];
-    const actor = context.actor;
+  execute(context: ActionContext): ISemanticEvent[] {
+    const events: ISemanticEvent[] = [];
+    const actor = context.world.getPlayer();
+    if (!actor) return [];
     
     // Activate invisibility
     BloodMoonBehavior.becomeInvisible(actor);
     
     // Create invisibility event
     events.push({
-      id: 'blood.event.became_invisible',
+      id: `blood.became_invisible.${Date.now()}`,
       type: 'blood.event.became_invisible',
       timestamp: Date.now(),
+      entities: { actor: actor.id },
       data: {
         actorId: actor.id,
         message: 'became_invisible'
@@ -77,9 +74,10 @@ export const touchingMoonAction: Action & { metadata: ActionMetadata } = {
     
     // Notify scope system of invisibility change
     events.push({
-      id: 'blood.event.invisibility_changed',
+      id: `blood.invisibility_changed.${Date.now()}`,
       type: 'blood.event.invisibility_changed',
       timestamp: Date.now(),
+      entities: { actor: actor.id },
       data: {
         entityId: actor.id,
         invisible: true

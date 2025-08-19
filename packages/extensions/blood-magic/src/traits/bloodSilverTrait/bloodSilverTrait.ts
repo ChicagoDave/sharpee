@@ -2,9 +2,9 @@
  * BloodSilverTrait - Grants ability to use mirror portals
  */
 
-import { Trait } from '@sharpee/world-model';
+import { ITrait } from '@sharpee/world-model';
 
-export interface BloodSilverTrait extends Trait {
+export interface BloodSilverTrait extends ITrait {
   type: 'blood_silver';
   
   // Active connections this carrier maintains

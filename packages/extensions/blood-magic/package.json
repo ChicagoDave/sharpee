@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/extension-blood-magic",
-  "version": "0.1.0",
+  "version": "1.0.0-alpha.1",
   "description": "Blood magic system extension for Sharpee - provides mirror portals and invisibility mechanics",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

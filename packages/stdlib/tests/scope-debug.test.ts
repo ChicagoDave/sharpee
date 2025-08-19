@@ -32,14 +32,6 @@ describe('Scope Debug', () => {
     const coin = author.createEntity('coin', EntityType.OBJECT);
     author.moveEntity(coin.id, box.id);
     
-    // Debug output
-    console.log('Box traits:', box.traits);
-    console.log('Box container trait:', box.get(TraitType.CONTAINER));
-    console.log('Coin location:', world.getLocation(coin.id));
-    console.log('Can see coin?', scopeResolver.canSee(player, coin));
-    console.log('Can reach coin?', scopeResolver.canReach(player, coin));
-    console.log('Coin scope level:', scopeResolver.getScope(player, coin));
-    
     // Test expectations
     expect(world.getLocation(coin.id)).toBe(box.id);
     expect(scopeResolver.canSee(player, coin)).toBe(false); // Can't see inside closed box
