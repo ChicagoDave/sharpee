@@ -1,0 +1,86 @@
+
+To use Turborepo with a TypeScript monorepo in GitHub to build packages in an exact order without parallel processing and ensure dependencies are correctly handled, follow these steps:
+1. Project Structure and pnpm-workspace.yaml:
+
+    Organize your monorepo with a clear structure, typically with apps/ for applications and packages/ for shared libraries.
+    Use pnpm as your package manager. Configure your pnpm-workspace.yaml at the monorepo root to define your workspaces (e.g., apps/*, packages/*).
+
+2. turbo.json Configuration:
+
+    Create a turbo.json file at the monorepo root.
+    Define Tasks: Specify build tasks for each package in the pipeline section.
+    dependsOn for Order: Use the dependsOn property within each task definition to enforce build order.
+        To ensure a package builds after its dependencies, use ^build (or your chosen task name) in dependsOn. This tells Turborepo to build the dependencies first.
+        To ensure tasks within the same package run in a specific order, list the preceding task as a plain string (e.g., "build": { "dependsOn": ["clean"] }). 
+    Disable Parallelism: Set concurrency to 1 in your turbo.json (or for specific tasks) to prevent parallel execution. This ensures sequential builds.
+
+Code
+
+    {
+      "$schema": "https://turbo.build/schema.json",
+      "pipeline": {
+        "build": {
+          "dependsOn": ["^build"],
+          "outputs": ["dist/**"]
+        },
+        "test": {
+          "dependsOn": ["build"]
+        },
+        "lint": {}
+      },
+      "globalDependencies": ["**/.env"],
+      "globalDotEnv": [".env"],
+      "tasks": {
+        "build": {
+          "concurrency": 1
+        }
+      }
+    }
+
+3. TypeScript Configuration:
+
+    Configure tsconfig.json files within each package and a root tsconfig.json that references these.
+    Use references in your tsconfig.json files to define inter-package dependencies, ensuring TypeScript understands the relationships and can correctly resolve modules.
+
+4. GitHub Actions Workflow:
+
+    Create a GitHub Actions workflow (e.g., .github/workflows/ci.yml) to automate the build process.
+    In your workflow, use pnpm install to install dependencies and then pnpm turbo run build (or your specific task) to trigger the builds. Turborepo will respect the dependsOn configuration and build packages in the correct sequence.
+
+Code
+
+    name: CI
+
+    on:
+      push:
+        branches:
+          - main
+      pull_request:
+        branches:
+          - main
+
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - name: Checkout repository
+            uses: actions/checkout@v4
+
+          - name: Setup pnpm
+            uses: pnpm/action-setup@v3
+            with:
+              version: 8
+
+          - name: Setup Node.js
+            uses: actions/setup-node@v4
+            with:
+              node-version: '20'
+              cache: 'pnpm'
+
+          - name: Install dependencies
+            run: pnpm install
+
+          - name: Build packages
+            run: pnpm turbo run build
+
+This setup ensures that Turborepo builds packages in the exact order defined by your dependsOn configurations, preventing parallel execution and correctly handling dependencies, both locally and within your GitHub Actions CI pipeline.

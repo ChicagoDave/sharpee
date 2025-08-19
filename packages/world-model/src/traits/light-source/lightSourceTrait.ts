@@ -1,6 +1,6 @@
 // packages/world-model/src/traits/light-source/lightSourceTrait.ts
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
 /**
@@ -9,7 +9,7 @@ import { TraitType } from '../trait-types';
  * This is a pure data structure - all validation and logic
  * should be handled by LightSourceBehavior.
  */
-export class LightSourceTrait implements Trait {
+export class LightSourceTrait implements ITrait {
   static readonly type = TraitType.LIGHT_SOURCE;
   readonly type = TraitType.LIGHT_SOURCE;
   

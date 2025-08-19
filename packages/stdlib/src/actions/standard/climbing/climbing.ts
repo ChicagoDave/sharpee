@@ -8,7 +8,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, EntryTrait, EntryBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ClimbedEventData } from './climbing-events';
@@ -62,7 +62,7 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
     return { valid: false, error: 'no_target' };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     const result = this.validate(context);
     if (!result.valid) {
       return [context.event('action.error', {
@@ -76,7 +76,7 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
     // Rebuild state from context
     const target = context.command.directObject?.entity;
     const direction = context.command.parsed.extras?.direction as string;
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Determine mode and rebuild relevant data
     let mode: 'directional' | 'object';

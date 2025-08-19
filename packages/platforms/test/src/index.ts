@@ -1,5 +1,5 @@
 import { GameEngine } from '@sharpee/engine';
-import { WorldModel, Entity } from '@sharpee/world-model';
+import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { LanguageProvider } from '@sharpee/lang-en-us';
 import { TextService } from '@sharpee/text-services';
@@ -8,16 +8,16 @@ import { Story } from '@sharpee/engine';
 export interface TestPlatformOptions {
   story?: Story;
   world: WorldModel;
-  player: Entity;
+  player: IFEntity;
   parser?: Parser;
   language?: LanguageProvider;
   textService?: TextService;
 }
 
 export function createTestEngine(options: TestPlatformOptions): GameEngine {
-  const parser = options.parser || new Parser();
   const language = options.language || new LanguageProvider();
-  const textService = options.textService || new TextService(language);
+  const parser = options.parser || new Parser(language);
+  const textService = options.textService || new TextService();
   
   if (options.story?.extendParser) {
     options.story.extendParser(parser);
@@ -48,39 +48,39 @@ export class TestPlatform {
   }
   
   private initialize(): void {
-    this.engine.events.on('output', (data) => {
+    (this.engine as any).events.on('output', (data: any) => {
       this.output.push(data.text);
     });
     
-    this.engine.events.on('text.output', (data) => {
+    (this.engine as any).events.on('text.output', (data: any) => {
       this.output.push(data.text);
     });
     
-    this.engine.events.on('client.query', (data) => {
+    (this.engine as any).events.on('client.query', (data: any) => {
       const query = { prompt: data.prompt };
       this.queries.push(query);
       
       if (data.autoResponse) {
-        this.engine.events.emit('client.queryResponse', {
+        (this.engine as any).events.emit('client.queryResponse', {
           queryId: data.queryId,
           response: data.autoResponse
         });
       }
     });
     
-    this.engine.events.on('platform.quit', () => {
+    (this.engine as any).events.on('platform.quit', () => {
       this.events.push({ event: 'platform.quit', data: {} });
     });
     
-    this.engine.events.on('platform.save', (data) => {
+    (this.engine as any).events.on('platform.save', (data: any) => {
       this.events.push({ event: 'platform.save', data });
     });
     
-    this.engine.events.on('platform.restore', (data) => {
+    (this.engine as any).events.on('platform.restore', (data: any) => {
       this.events.push({ event: 'platform.restore', data });
     });
     
-    this.engine.events.on('platform.restart', () => {
+    (this.engine as any).events.on('platform.restart', () => {
       this.events.push({ event: 'platform.restart', data: {} });
     });
   }
@@ -90,7 +90,7 @@ export class TestPlatform {
     const query = this.queries[index];
     if (query) {
       query.response = response;
-      this.engine.events.emit('client.queryResponse', {
+      (this.engine as any).events.emit('client.queryResponse', {
         queryId: `test-query-${index}`,
         response
       });

@@ -4,7 +4,7 @@
 
 import { ActionContext, Action, ScopeResolver, ValidatedCommand, ScopeLevel } from '@sharpee/stdlib';
 import { WorldModel, IFEntity } from '@sharpee/world-model';
-import { SemanticEvent, createSemanticEventSource } from '@sharpee/core';
+import { ISemanticEvent, createSemanticEventSource } from '@sharpee/core';
 import { GameContext } from './types';
 
 /**
@@ -26,7 +26,7 @@ export function createActionContext(
   const eventSource = createSemanticEventSource();
 
   // Create the event method
-  const event = (type: string, data: Record<string, any>): SemanticEvent => {
+  const event = (type: string, data: Record<string, any>): ISemanticEvent => {
     // Add standard entities
     const entities: Record<string, string> = {
       actor: player.id,

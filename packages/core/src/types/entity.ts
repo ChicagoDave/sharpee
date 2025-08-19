@@ -8,7 +8,7 @@ export type EntityId = string;
 /**
  * The base Entity interface representing any object in a narrative system
  */
-export interface Entity {
+export interface IEntity {
   /**
    * Unique identifier for this entity
    */
@@ -35,7 +35,7 @@ export interface Entity {
 /**
  * Minimal information needed to create a new entity
  */
-export interface EntityCreationParams {
+export interface IEntityCreationParams {
   type: string;
   attributes?: Record<string, unknown>;
   relationships?: Record<string, EntityId[]>;
@@ -44,7 +44,7 @@ export interface EntityCreationParams {
 /**
  * Configuration for how entity operations should be performed
  */
-export interface EntityOperationOptions {
+export interface IEntityOperationOptions {
   /**
    * Whether to merge arrays in relationships instead of replacing them
    */

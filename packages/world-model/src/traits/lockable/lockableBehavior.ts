@@ -11,7 +11,7 @@ import { EntityId } from '@sharpee/core';
 /**
  * Result of a lock operation
  */
-export interface LockResult {
+export interface ILockResult {
   success: boolean;
   alreadyLocked?: boolean;
   notClosed?: boolean;
@@ -25,7 +25,7 @@ export interface LockResult {
 /**
  * Result of an unlock operation
  */
-export interface UnlockResult {
+export interface IUnlockResult {
   success: boolean;
   alreadyUnlocked?: boolean;
   noKey?: boolean;
@@ -108,7 +108,7 @@ export class LockableBehavior extends Behavior {
    * Lock the entity
    * @returns Result describing what happened
    */
-  static lock(entity: IFEntity, keyEntity?: IFEntity): LockResult {
+  static lock(entity: IFEntity, keyEntity?: IFEntity): ILockResult {
     const lockable = LockableBehavior.require<LockableTrait>(entity, TraitType.LOCKABLE);
     
     if (lockable.isLocked) {
@@ -166,7 +166,7 @@ export class LockableBehavior extends Behavior {
    * Unlock the entity with a key
    * @returns Result describing what happened
    */
-  static unlock(entity: IFEntity, keyEntity?: IFEntity): UnlockResult {
+  static unlock(entity: IFEntity, keyEntity?: IFEntity): IUnlockResult {
     const lockable = LockableBehavior.require<LockableTrait>(entity, TraitType.LOCKABLE);
     
     if (!lockable.isLocked) {
@@ -227,7 +227,7 @@ export class LockableBehavior extends Behavior {
   /**
    * Handle auto-lock when closing
    */
-  static handleClose(entity: IFEntity): LockResult | null {
+  static handleClose(entity: IFEntity): ILockResult | null {
     const lockable = LockableBehavior.require<LockableTrait>(entity, TraitType.LOCKABLE);
     
     if (lockable.autoLock && !lockable.isLocked) {

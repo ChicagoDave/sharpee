@@ -10,7 +10,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { 
   TraitType, 
   PullableTrait, 
@@ -384,7 +384,7 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
     };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     // Revalidate and rebuild all data
     const validation = this.validate(context);
     if (!validation.valid) {
@@ -592,7 +592,7 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
       });
     }
     
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Create the PULLED event for world model
     events.push(context.event('if.event.pulled', eventData));

@@ -6,7 +6,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent, createRestartRequestedEvent, RestartContext } from '@sharpee/core';
+import { ISemanticEvent, createRestartRequestedEvent, IRestartContext } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { RestartRequestedEventData } from './restarting-events';
@@ -14,7 +14,7 @@ import { RestartRequestedEventData } from './restarting-events';
 interface RestartingState {
   forceRestart: boolean;
   hasUnsavedProgress: boolean;
-  restartContext: RestartContext;
+  restartContext: IRestartContext;
   eventData: RestartRequestedEventData;
 }
 
@@ -45,7 +45,7 @@ export const restartingAction: Action & { metadata: ActionMetadata } = {
                         context.command.parsed.action === 'reset';
     
     // Build restart context
-    const restartContext: RestartContext = {
+    const restartContext: IRestartContext = {
       currentProgress: {
         score,
         moves,
@@ -74,8 +74,8 @@ export const restartingAction: Action & { metadata: ActionMetadata } = {
     };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
-    const events: SemanticEvent[] = [];
+  execute(context: ActionContext): ISemanticEvent[] {
+    const events: ISemanticEvent[] = [];
     
     // Rebuild the same data from validate
     const sharedData = context.world.getCapability('sharedData') || {};
@@ -90,7 +90,7 @@ export const restartingAction: Action & { metadata: ActionMetadata } = {
                         context.command.parsed.action === 'reset';
     
     // Build restart context
-    const restartContext: RestartContext = {
+    const restartContext: IRestartContext = {
       currentProgress: {
         score,
         moves,

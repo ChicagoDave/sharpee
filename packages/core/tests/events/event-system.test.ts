@@ -1,5 +1,5 @@
 import { createEvent } from '../../src/events/event-system';
-import { SemanticEvent } from '../../src/events/types';
+import { ISemanticEvent } from '../../src/events/types';
 
 describe('Event System Helpers', () => {
   describe('createEvent', () => {
@@ -154,7 +154,7 @@ describe('Event System Helpers', () => {
       );
 
       // Verify it matches SemanticEvent interface
-      const semanticEvent: SemanticEvent = event;
+      const semanticEvent: ISemanticEvent = event;
       
       expect(semanticEvent.type).toBe('item.taken');
       expect(semanticEvent.entities.actor).toBe('player');

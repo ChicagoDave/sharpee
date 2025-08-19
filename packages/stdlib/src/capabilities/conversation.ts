@@ -2,13 +2,13 @@
  * Conversation capability for tracking NPC conversation states and history
  */
 
-import { CapabilitySchema } from '@sharpee/world-model';
+import { ICapabilitySchema } from '@sharpee/world-model';
 
 /**
  * Conversation capability schema  
  * Tracks NPC conversation states and history
  */
-export const ConversationCapabilitySchema: CapabilitySchema = {
+export const ConversationCapabilitySchema: ICapabilitySchema = {
   states: {
     type: 'object',
     default: {},

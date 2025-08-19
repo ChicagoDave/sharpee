@@ -21,7 +21,7 @@ export enum CoreRelationshipType {
 /**
  * Configuration for core relationships
  */
-export interface CoreRelationshipConfig {
+export interface ICoreRelationshipConfig {
   bidirectional?: boolean;
   inverse?: CoreRelationshipType;
   exclusive?: boolean;
@@ -30,7 +30,7 @@ export interface CoreRelationshipConfig {
 /**
  * Standard configurations for core relationships
  */
-export const CORE_RELATIONSHIP_CONFIGS: Record<CoreRelationshipType, CoreRelationshipConfig> = {
+export const CORE_RELATIONSHIP_CONFIGS: Record<CoreRelationshipType, ICoreRelationshipConfig> = {
   [CoreRelationshipType.PARENT]: {
     bidirectional: true,
     inverse: CoreRelationshipType.CHILD,

@@ -3,7 +3,7 @@
  * These events mark important milestones in a game session
  */
 
-import { SemanticEvent } from './types';
+import { ISemanticEvent } from './types';
 
 /**
  * Game event types for lifecycle transitions
@@ -42,7 +42,7 @@ export type GameEventTypeValue = typeof GameEventType[keyof typeof GameEventType
 /**
  * Game event with lifecycle-specific data
  */
-export interface GameEvent extends SemanticEvent {
+export interface IGameEvent extends ISemanticEvent {
   type: GameEventTypeValue;
   
   /**
@@ -106,11 +106,11 @@ export interface GameEvent extends SemanticEvent {
 /**
  * Type guards for game events
  */
-export function isGameEvent(event: SemanticEvent): event is GameEvent {
+export function isGameEvent(event: ISemanticEvent): event is IGameEvent {
   return Object.values(GameEventType).includes(event.type as GameEventTypeValue);
 }
 
-export function isGameStartEvent(event: SemanticEvent): boolean {
+export function isGameStartEvent(event: ISemanticEvent): boolean {
   return isGameEvent(event) && (
     event.type === GameEventType.GAME_INITIALIZING ||
     event.type === GameEventType.GAME_INITIALIZED ||
@@ -121,7 +121,7 @@ export function isGameStartEvent(event: SemanticEvent): boolean {
   );
 }
 
-export function isGameEndEvent(event: SemanticEvent): boolean {
+export function isGameEndEvent(event: ISemanticEvent): boolean {
   return isGameEvent(event) && (
     event.type === GameEventType.GAME_ENDING ||
     event.type === GameEventType.GAME_ENDED ||
@@ -137,8 +137,8 @@ export function isGameEndEvent(event: SemanticEvent): boolean {
  */
 export function createGameEvent(
   type: GameEventTypeValue,
-  payload?: GameEvent['payload']
-): GameEvent {
+  payload?: IGameEvent['payload']
+): IGameEvent {
   return {
     id: `game-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     type,
@@ -149,19 +149,19 @@ export function createGameEvent(
 }
 
 // Specific event creators
-export function createGameInitializingEvent(): GameEvent {
+export function createGameInitializingEvent(): IGameEvent {
   return createGameEvent(GameEventType.GAME_INITIALIZING, {
     gameState: 'initializing'
   });
 }
 
-export function createGameInitializedEvent(): GameEvent {
+export function createGameInitializedEvent(): IGameEvent {
   return createGameEvent(GameEventType.GAME_INITIALIZED, {
     gameState: 'ready'
   });
 }
 
-export function createStoryLoadingEvent(storyId?: string): GameEvent {
+export function createStoryLoadingEvent(storyId?: string): IGameEvent {
   return createGameEvent(GameEventType.STORY_LOADING, {
     story: { id: storyId }
   });
@@ -172,14 +172,14 @@ export function createStoryLoadedEvent(story: {
   title?: string;
   author?: string;
   version?: string;
-}): GameEvent {
+}): IGameEvent {
   return createGameEvent(GameEventType.STORY_LOADED, {
     story,
     gameState: 'ready'
   });
 }
 
-export function createGameStartingEvent(story?: GameEvent['payload']['story']): GameEvent {
+export function createGameStartingEvent(story?: IGameEvent['payload']['story']): IGameEvent {
   return createGameEvent(GameEventType.GAME_STARTING, {
     story,
     gameState: 'ready'
@@ -187,9 +187,9 @@ export function createGameStartingEvent(story?: GameEvent['payload']['story']): 
 }
 
 export function createGameStartedEvent(
-  story?: GameEvent['payload']['story'],
+  story?: IGameEvent['payload']['story'],
   startTime?: number
-): GameEvent {
+): IGameEvent {
   return createGameEvent(GameEventType.GAME_STARTED, {
     story,
     gameState: 'running',
@@ -203,8 +203,8 @@ export function createGameStartedEvent(
 
 export function createGameEndingEvent(
   reason?: string,
-  session?: GameEvent['payload']['session']
-): GameEvent {
+  session?: IGameEvent['payload']['session']
+): IGameEvent {
   return createGameEvent(GameEventType.GAME_ENDING, {
     gameState: 'ending',
     session,
@@ -214,9 +214,9 @@ export function createGameEndingEvent(
 
 export function createGameEndedEvent(
   endingType: 'victory' | 'defeat' | 'quit' | 'abort',
-  session?: GameEvent['payload']['session'],
-  ending?: GameEvent['payload']['ending']
-): GameEvent {
+  session?: IGameEvent['payload']['session'],
+  ending?: IGameEvent['payload']['ending']
+): IGameEvent {
   return createGameEvent(GameEventType.GAME_ENDED, {
     gameState: 'ended',
     session: {
@@ -231,9 +231,9 @@ export function createGameEndedEvent(
 }
 
 export function createGameWonEvent(
-  session?: GameEvent['payload']['session'],
-  ending?: GameEvent['payload']['ending']
-): GameEvent {
+  session?: IGameEvent['payload']['session'],
+  ending?: IGameEvent['payload']['ending']
+): IGameEvent {
   return createGameEvent(GameEventType.GAME_WON, {
     gameState: 'ended',
     session: {
@@ -249,8 +249,8 @@ export function createGameWonEvent(
 
 export function createGameLostEvent(
   reason: string,
-  session?: GameEvent['payload']['session']
-): GameEvent {
+  session?: IGameEvent['payload']['session']
+): IGameEvent {
   return createGameEvent(GameEventType.GAME_LOST, {
     gameState: 'ended',
     session: {
@@ -265,8 +265,8 @@ export function createGameLostEvent(
 }
 
 export function createGameQuitEvent(
-  session?: GameEvent['payload']['session']
-): GameEvent {
+  session?: IGameEvent['payload']['session']
+): IGameEvent {
   return createGameEvent(GameEventType.GAME_QUIT, {
     gameState: 'ended',
     session: {
@@ -282,8 +282,8 @@ export function createGameQuitEvent(
 
 export function createGameAbortedEvent(
   error: string,
-  session?: GameEvent['payload']['session']
-): GameEvent {
+  session?: IGameEvent['payload']['session']
+): IGameEvent {
   return createGameEvent(GameEventType.GAME_ABORTED, {
     gameState: 'ended',
     session: {

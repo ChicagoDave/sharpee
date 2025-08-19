@@ -5,14 +5,14 @@
  * that can add new functionality to the world model.
  */
 
-import { TraitConstructor } from '../traits/trait';
+import { ITraitConstructor } from '../traits/trait';
 import { Behavior } from '../behaviors/behavior';
 import { IFEntity } from '../entities/if-entity';
 
 /**
  * Extension metadata
  */
-export interface ExtensionMetadata {
+export interface IExtensionMetadata {
   /** Unique identifier for the extension (e.g., 'com.example.dialogue') */
   id: string;
   
@@ -33,7 +33,7 @@ export interface ExtensionMetadata {
   };
   
   /** Dependencies on other extensions */
-  dependencies?: ExtensionDependency[];
+  dependencies?: IExtensionDependency[];
   
   /** Namespace for all traits/events/actions in this extension */
   namespace: string;
@@ -42,7 +42,7 @@ export interface ExtensionMetadata {
 /**
  * Extension dependency specification
  */
-export interface ExtensionDependency {
+export interface IExtensionDependency {
   /** Extension ID */
   id: string;
   
@@ -56,12 +56,12 @@ export interface ExtensionDependency {
 /**
  * Trait definition for extensions
  */
-export interface ExtensionTraitDefinition {
+export interface IExtensionTraitDefinition {
   /** Trait type (will be prefixed with namespace) */
   type: string;
   
   /** Trait constructor */
-  implementation: TraitConstructor;
+  implementation: ITraitConstructor;
   
   /** Associated behavior (optional) */
   behavior?: typeof Behavior;
@@ -73,7 +73,7 @@ export interface ExtensionTraitDefinition {
 /**
  * Event type definition for extensions
  */
-export interface ExtensionEventDefinition {
+export interface IExtensionEventDefinition {
   /** Event type (will be prefixed with namespace) */
   type: string;
   
@@ -87,7 +87,7 @@ export interface ExtensionEventDefinition {
 /**
  * Action definition for extensions
  */
-export interface ExtensionActionDefinition {
+export interface IExtensionActionDefinition {
   /** Action ID (will be prefixed with namespace) */
   id: string;
   
@@ -95,13 +95,13 @@ export interface ExtensionActionDefinition {
   execute: (command: any, context: any) => any[];
   
   /** Associated command definitions */
-  commands?: ExtensionCommandDefinition[];
+  commands?: IExtensionCommandDefinition[];
 }
 
 /**
  * Command definition for extensions
  */
-export interface ExtensionCommandDefinition {
+export interface IExtensionCommandDefinition {
   /** Verb that triggers this command */
   verb: string;
   
@@ -126,19 +126,19 @@ export interface ExtensionCommandDefinition {
  */
 export interface ITraitExtension {
   /** Extension metadata */
-  readonly metadata: ExtensionMetadata;
+  readonly metadata: IExtensionMetadata;
   
   /** Traits provided by this extension */
-  readonly traits?: ExtensionTraitDefinition[];
+  readonly traits?: IExtensionTraitDefinition[];
   
   /** Event types defined by this extension */
-  readonly events?: ExtensionEventDefinition[];
+  readonly events?: IExtensionEventDefinition[];
   
   /** Actions provided by this extension */
-  readonly actions?: ExtensionActionDefinition[];
+  readonly actions?: IExtensionActionDefinition[];
   
   /** Commands that map to actions */
-  readonly commands?: ExtensionCommandDefinition[];
+  readonly commands?: IExtensionCommandDefinition[];
   
   /**
    * Initialize the extension
@@ -165,13 +165,13 @@ export interface ITraitExtension {
   /**
    * Get language data for a specific locale
    */
-  getLanguageData?(locale: string): ExtensionLanguageData | undefined;
+  getLanguageData?(locale: string): IExtensionLanguageData | undefined;
 }
 
 /**
  * Language data provided by extensions
  */
-export interface ExtensionLanguageData {
+export interface IExtensionLanguageData {
   /** Locale identifier (e.g., 'en-US') */
   locale: string;
   
@@ -227,17 +227,17 @@ export interface IExtensionRegistry {
   /**
    * Register a trait from an extension
    */
-  registerTrait(namespace: string, definition: ExtensionTraitDefinition): void;
+  registerTrait(namespace: string, definition: IExtensionTraitDefinition): void;
   
   /**
    * Register an event type from an extension
    */
-  registerEvent(namespace: string, definition: ExtensionEventDefinition): void;
+  registerEvent(namespace: string, definition: IExtensionEventDefinition): void;
   
   /**
    * Register an action from an extension
    */
-  registerAction(namespace: string, definition: ExtensionActionDefinition): void;
+  registerAction(namespace: string, definition: IExtensionActionDefinition): void;
   
   /**
    * Get a namespaced trait type

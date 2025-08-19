@@ -2,7 +2,7 @@
 
 import { IFEntity } from '../entities/if-entity';
 import { TraitType } from '../traits/trait-types';
-import { Trait } from '../traits/trait';
+import { ITrait } from '../traits/trait';
 
 /**
  * Base class for all behaviors in the IF system.
@@ -33,7 +33,7 @@ export abstract class Behavior {
    * @returns The trait instance
    * @throws Error if the trait is not present on the entity
    */
-  protected static require<T extends Trait>(
+  protected static require<T extends ITrait>(
     entity: IFEntity,
     traitType: TraitType | string
   ): T {
@@ -53,7 +53,7 @@ export abstract class Behavior {
    * @param traitType - The type of trait to retrieve
    * @returns The trait instance or undefined
    */
-  protected static optional<T extends Trait>(
+  protected static optional<T extends ITrait>(
     entity: IFEntity,
     traitType: TraitType | string
   ): T | undefined {
@@ -87,7 +87,7 @@ export abstract class Behavior {
 /**
  * Interface for behaviors that need access to the world context
  */
-export interface WorldAwareBehavior {
+export interface IWorldAwareBehavior {
   setWorldContext(context: any): void;
 }
 
@@ -96,6 +96,6 @@ export interface WorldAwareBehavior {
  */
 export function isWorldAwareBehavior(
   behavior: any
-): behavior is WorldAwareBehavior {
+): behavior is IWorldAwareBehavior {
   return 'setWorldContext' in behavior;
 }

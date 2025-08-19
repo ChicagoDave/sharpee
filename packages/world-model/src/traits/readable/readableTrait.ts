@@ -1,6 +1,6 @@
 // packages/world-model/src/traits/readable/readableTrait.ts
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
 /**
@@ -9,7 +9,7 @@ import { TraitType } from '../trait-types';
  * 
  * This trait contains only data - all behavior is in ReadableBehavior.
  */
-export class ReadableTrait implements Trait {
+export class ReadableTrait implements ITrait {
   static readonly type = TraitType.READABLE;
   readonly type = TraitType.READABLE;
   

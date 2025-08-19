@@ -7,8 +7,8 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
-import { SemanticEvent } from '@sharpee/core';
-import { TraitType, LockableBehavior, OpenableBehavior, LockResult } from '@sharpee/world-model';
+import { ISemanticEvent } from '@sharpee/core';
+import { TraitType, LockableBehavior, OpenableBehavior, ILockResult } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { LockedEventData } from './locking-events';
@@ -115,14 +115,14 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
    * Assumes validation has already passed - no validation logic here
    * Delegates to LockableBehavior for actual state changes
    */
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     // Assume validation has passed - no checks needed
     const actor = context.player;
     const noun = context.command.directObject!.entity!; // Safe because validate ensures it exists
     const withKey = context.command.indirectObject?.entity;
     
     // Delegate to behavior for locking
-    const result: LockResult = LockableBehavior.lock(noun, withKey);
+    const result: ILockResult = LockableBehavior.lock(noun, withKey);
     
     // Check if the behavior reported failure
     if (!result.success) {

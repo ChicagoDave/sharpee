@@ -8,31 +8,31 @@
 
 import { EventEmitter } from 'events';
 import {
-  PendingQuery,
-  QueryResponse,
-  QueryState,
-  QueryHandler,
+  IPendingQuery,
+  IQueryResponse,
+  IQueryState,
+  IQueryHandler,
   QueryValidator,
-  ValidationResult,
-  QueryEvents,
+  IValidationResult,
+  IQueryEvents,
   StandardValidators
 } from './types';
-import { SemanticEvent, SemanticEventSource, createSemanticEventSource } from '../events';
+import { ISemanticEvent, ISemanticEventSource, createSemanticEventSource } from '../events';
 
 /**
  * Query Manager implementation
  */
 export class QueryManager extends EventEmitter {
-  private state: QueryState = {
+  private state: IQueryState = {
     queryStack: [],
     history: [],
     interceptingInput: false
   };
   
-  private handlers = new Map<string, QueryHandler>();
+  private handlers = new Map<string, IQueryHandler>();
   private validators = new Map<string, QueryValidator>();
   private timeouts = new Map<string, NodeJS.Timeout>();
-  private eventSource: SemanticEventSource = createSemanticEventSource();
+  private eventSource: ISemanticEventSource = createSemanticEventSource();
   
   constructor() {
     super();
@@ -52,7 +52,7 @@ export class QueryManager extends EventEmitter {
   /**
    * Register a query handler
    */
-  registerHandler(id: string, handler: QueryHandler): void {
+  registerHandler(id: string, handler: IQueryHandler): void {
     this.handlers.set(id, handler);
   }
   
@@ -66,7 +66,7 @@ export class QueryManager extends EventEmitter {
   /**
    * Present a query to the player
    */
-  async askQuery(query: PendingQuery): Promise<QueryResponse | null> {
+  async askQuery(query: IPendingQuery): Promise<IQueryResponse | null> {
     // If there's already a pending query, stack this one
     if (this.state.pendingQuery) {
       if (query.priority && query.priority > (this.state.pendingQuery.priority || 0)) {
@@ -98,7 +98,7 @@ export class QueryManager extends EventEmitter {
     
     // Return a promise that resolves when answered
     return new Promise((resolve) => {
-      const answerHandler = (response: QueryResponse, answeredQuery: PendingQuery) => {
+      const answerHandler = (response: IQueryResponse, answeredQuery: IPendingQuery) => {
         if (answeredQuery.id === query.id) {
           this.off('query:answered', answerHandler);
           this.off('query:timeout', timeoutHandler);
@@ -107,7 +107,7 @@ export class QueryManager extends EventEmitter {
         }
       };
       
-      const timeoutHandler = (timedOutQuery: PendingQuery) => {
+      const timeoutHandler = (timedOutQuery: IPendingQuery) => {
         if (timedOutQuery.id === query.id) {
           this.off('query:answered', answerHandler);
           this.off('query:timeout', timeoutHandler);
@@ -116,7 +116,7 @@ export class QueryManager extends EventEmitter {
         }
       };
       
-      const cancelHandler = (cancelledQuery: PendingQuery) => {
+      const cancelHandler = (cancelledQuery: IPendingQuery) => {
         if (cancelledQuery.id === query.id) {
           this.off('query:answered', answerHandler);
           this.off('query:timeout', timeoutHandler);
@@ -148,7 +148,7 @@ export class QueryManager extends EventEmitter {
     }
     
     // Validate the response
-    let validationResult: ValidationResult = { valid: true, normalized: input };
+    let validationResult: IValidationResult = { valid: true, normalized: input };
     
     if (query.validator) {
       const validator = this.validators.get(query.validator);
@@ -186,7 +186,7 @@ export class QueryManager extends EventEmitter {
         message: validationResult.message || 'Invalid response',
         hint: validationResult.hint
       };
-      const invalidEvent: SemanticEvent = {
+      const invalidEvent: ISemanticEvent = {
         id: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         type: 'query.invalid',
         timestamp: Date.now(),
@@ -200,7 +200,7 @@ export class QueryManager extends EventEmitter {
     }
     
     // Create response object
-    const response: QueryResponse = {
+    const response: IQueryResponse = {
       queryId: query.id,
       rawInput: input,
       response: validationResult.normalized || input,
@@ -294,14 +294,14 @@ export class QueryManager extends EventEmitter {
   /**
    * Get current state
    */
-  getState(): Readonly<QueryState> {
+  getState(): Readonly<IQueryState> {
     return { ...this.state };
   }
   
   /**
    * Get event source for connecting to engine
    */
-  getEventSource(): SemanticEventSource {
+  getEventSource(): ISemanticEventSource {
     return this.eventSource;
   }
   
@@ -315,7 +315,7 @@ export class QueryManager extends EventEmitter {
   /**
    * Get the current pending query
    */
-  getCurrentQuery(): PendingQuery | undefined {
+  getCurrentQuery(): IPendingQuery | undefined {
     return this.state.pendingQuery;
   }
   
@@ -342,7 +342,7 @@ export class QueryManager extends EventEmitter {
   /**
    * Handle query timeout
    */
-  private handleTimeout(query: PendingQuery): void {
+  private handleTimeout(query: IPendingQuery): void {
     if (this.state.pendingQuery?.id !== query.id) return;
     
     // Record in history
@@ -377,7 +377,7 @@ export class QueryManager extends EventEmitter {
   /**
    * Interrupt a query with a command
    */
-  private interruptQuery(query: PendingQuery, command: string): void {
+  private interruptQuery(query: IPendingQuery, command: string): void {
     // Clear timeout
     const timeoutId = this.timeouts.get(query.id);
     if (timeoutId) {
@@ -404,7 +404,7 @@ export class QueryManager extends EventEmitter {
   /**
    * Find handler for a query
    */
-  private findHandler(query: PendingQuery): QueryHandler | undefined {
+  private findHandler(query: IPendingQuery): IQueryHandler | undefined {
     for (const [, handler] of this.handlers) {
       if (handler.canHandle(query)) {
         return handler;
@@ -439,7 +439,7 @@ export function createQueryManager(): QueryManager {
 /**
  * Type guard for query events
  */
-export function isQueryEvent<K extends keyof QueryEvents>(
+export function isQueryEvent<K extends keyof IQueryEvents>(
   event: string | symbol,
   key: K
 ): event is K {

@@ -6,28 +6,28 @@
  */
 
 import {
-  QueryHandler,
-  PendingQuery,
-  QueryResponse,
+  IQueryHandler,
+  IPendingQuery,
+  IQueryResponse,
   QuerySource,
   QueryType,
-  SemanticEvent,
+  ISemanticEvent,
   createSemanticEventSource,
   createQuitRequestedEvent,
   createQuitCancelledEvent,
-  QuitContext
+  IQuitContext
 } from '@sharpee/core';
 
 /**
  * Handler for quit confirmation queries
  */
-export class QuitQueryHandler implements QueryHandler {
+export class QuitQueryHandler implements IQueryHandler {
   private eventSource = createSemanticEventSource();
   
   /**
    * Check if this handler can process the query
    */
-  canHandle(query: PendingQuery): boolean {
+  canHandle(query: IPendingQuery): boolean {
     return query.source === QuerySource.SYSTEM && 
            (query.type === QueryType.YES_NO || query.type === QueryType.MULTIPLE_CHOICE) && 
            (query.messageId === 'quit_confirmation' || 
@@ -39,8 +39,8 @@ export class QuitQueryHandler implements QueryHandler {
   /**
    * Process the player's response
    */
-  handleResponse(response: QueryResponse, query: PendingQuery): void {
-    const events: SemanticEvent[] = [];
+  handleResponse(response: IQueryResponse, query: IPendingQuery): void {
+    const events: ISemanticEvent[] = [];
     const context = query.context;
     
     // Get the selected option
@@ -51,7 +51,7 @@ export class QuitQueryHandler implements QueryHandler {
     if (typeof selectedOption === 'boolean') {
       if (selectedOption === true) {
         // Yes response - proceed with quit
-        const quitContext: QuitContext = {
+        const quitContext: IQuitContext = {
           score: context.score,
           moves: context.moves,
           hasUnsavedChanges: context.hasUnsavedProgress || false,
@@ -90,7 +90,7 @@ export class QuitQueryHandler implements QueryHandler {
       case 'quit_without_saving':
       case 'yes':
         // Build quit context from query context
-        const quitContext: QuitContext = {
+        const quitContext: IQuitContext = {
           score: context.score,
           moves: context.moves,
           hasUnsavedChanges: context.hasUnsavedProgress || false,
@@ -127,7 +127,7 @@ export class QuitQueryHandler implements QueryHandler {
         }));
         
         // Then emit quit requested event
-        const saveAndQuitContext: QuitContext = {
+        const saveAndQuitContext: IQuitContext = {
           score: context.score,
           moves: context.moves,
           hasUnsavedChanges: false, // Will be saved first
@@ -174,7 +174,7 @@ export class QuitQueryHandler implements QueryHandler {
   /**
    * Handle query timeout
    */
-  handleTimeout(query: PendingQuery): void {
+  handleTimeout(query: IPendingQuery): void {
     // On timeout, treat as cancelled
     const cancelEvent = createQuitCancelledEvent();
     this.eventSource.emit(cancelEvent);
@@ -189,7 +189,7 @@ export class QuitQueryHandler implements QueryHandler {
   /**
    * Handle query cancellation
    */
-  handleCancel(query: PendingQuery): void {
+  handleCancel(query: IPendingQuery): void {
     const cancelEvent = createQuitCancelledEvent();
     this.eventSource.emit(cancelEvent);
     
@@ -210,7 +210,7 @@ export class QuitQueryHandler implements QueryHandler {
   /**
    * Create a semantic event
    */
-  private createEvent(type: string, data: Record<string, any>): SemanticEvent {
+  private createEvent(type: string, data: Record<string, any>): ISemanticEvent {
     return {
       id: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type,

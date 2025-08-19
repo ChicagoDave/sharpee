@@ -10,7 +10,8 @@ import {
   GrammarContext,
   CompiledPattern,
   GrammarBuilder,
-  PatternBuilder
+  PatternBuilder,
+  SemanticProperties
 } from './grammar-builder';
 import { PatternCompiler } from './pattern-compiler';
 
@@ -151,6 +152,29 @@ export abstract class GrammarEngine {
           
           withPriority(priority: number) {
             rule.priority = priority;
+            return builder;
+          },
+          
+          withSemanticVerbs(verbs: Record<string, Partial<SemanticProperties>>) {
+            if (!rule.semantics) rule.semantics = {};
+            rule.semantics.verbs = verbs;
+            return builder;
+          },
+          
+          withSemanticPrepositions(prepositions: Record<string, string>) {
+            if (!rule.semantics) rule.semantics = {};
+            rule.semantics.prepositions = prepositions;
+            return builder;
+          },
+          
+          withSemanticDirections(directions: Record<string, string>) {
+            if (!rule.semantics) rule.semantics = {};
+            rule.semantics.directions = directions;
+            return builder;
+          },
+          
+          withDefaultSemantics(defaults: Partial<SemanticProperties>) {
+            rule.defaultSemantics = defaults;
             return builder;
           },
           

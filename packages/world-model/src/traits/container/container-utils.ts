@@ -1,6 +1,6 @@
 // packages/world-model/src/traits/container/container-utils.ts
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 import { IFEntity } from '../../entities/if-entity';
 
@@ -8,7 +8,7 @@ import { IFEntity } from '../../entities/if-entity';
  * Interface for traits that provide container functionality.
  * This includes ContainerTrait, RoomTrait, and ActorTrait.
  */
-export interface ContainerCapable extends Trait {
+export interface IContainerCapable extends ITrait {
   /** Capacity constraints */
   capacity?: {
     maxWeight?: number;
@@ -32,7 +32,7 @@ export interface ContainerCapable extends Trait {
 /**
  * Check if a trait provides container functionality
  */
-export function isContainerCapable(trait: Trait): trait is ContainerCapable {
+export function isContainerCapable(trait: ITrait): trait is IContainerCapable {
   return (
     trait.type === TraitType.CONTAINER ||
     trait.type === TraitType.ROOM ||
@@ -61,7 +61,7 @@ export function canContain(entity: IFEntity): boolean {
 /**
  * Get the container trait from an entity, regardless of which trait provides it
  */
-export function getContainerTrait(entity: IFEntity): ContainerCapable | undefined {
+export function getContainerTrait(entity: IFEntity): IContainerCapable | undefined {
   // Check for explicit container trait first
   const container = entity.getTrait(TraitType.CONTAINER);
   if (container && isContainerCapable(container)) {
@@ -88,7 +88,7 @@ export function getContainerTrait(entity: IFEntity): ContainerCapable | undefine
       isTransparent: entity.type === 'room', // Rooms are transparent by default
       enterable: entity.type === 'room', // Only rooms are enterable
       capacity: undefined // No capacity limits by default
-    } as ContainerCapable;
+    } as IContainerCapable;
   }
   
   return undefined;
@@ -97,7 +97,7 @@ export function getContainerTrait(entity: IFEntity): ContainerCapable | undefine
 /**
  * Type guard to check if a trait has container properties
  */
-export function hasContainerProperties(trait: any): trait is ContainerCapable {
+export function hasContainerProperties(trait: any): trait is IContainerCapable {
   return (
     typeof trait === 'object' &&
     trait !== null &&

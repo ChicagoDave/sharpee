@@ -6,7 +6,7 @@
  * but the enhanced context makes it easy to create those events.
  */
 
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { ScopeResolver } from '../scope/types';
 import { ValidatedCommand } from '../validation/types';
@@ -87,7 +87,7 @@ export interface ActionContext {
    * 
    * @param type Event type (e.g., 'if.event.taken', 'action.success', 'action.error')
    * @param data Event data - will be enriched with entities and metadata
-   * @returns A properly formatted SemanticEvent
+   * @returns A properly formatted ISemanticEvent
    * 
    * @example
    * // Simple error
@@ -108,7 +108,7 @@ export interface ActionContext {
    *   })
    * ]
    */
-  event(type: string, data: any): SemanticEvent;
+  event(type: string, data: any): ISemanticEvent;
 }
 
 /**
@@ -197,7 +197,7 @@ export interface Action {
    * @param state The validated state from validate() method
    * @returns Array of events describing what should happen
    */
-  execute(context: ActionContext): SemanticEvent[];
+  execute(context: ActionContext): ISemanticEvent[];
   
   /**
    * @deprecated Use validate() instead. This will be removed after refactoring.
@@ -235,7 +235,7 @@ export interface Action {
  * 
  * Standard structure for events that produce text output
  */
-export interface TextEvent extends SemanticEvent {
+export interface TextEvent extends ISemanticEvent {
   type: 'text' | 'action.success' | 'action.error' | 'game.message';
   data: {
     /**
@@ -344,7 +344,7 @@ export interface MessageRegistry {
  * Helper type for action definitions
  */
 export type ActionDefinition = Omit<Action, 'execute'> & {
-  execute: (context: ActionContext) => SemanticEvent[];
+  execute: (context: ActionContext) => ISemanticEvent[];
 };
 
 /**

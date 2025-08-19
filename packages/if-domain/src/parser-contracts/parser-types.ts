@@ -6,7 +6,7 @@
  */
 
 import { PartOfSpeech, VerbVocabulary, VocabularyEntry } from '../vocabulary-contracts/vocabulary-types';
-import type { SystemEvent } from '@sharpee/core';
+import type { ISystemEvent } from '@sharpee/core';
 
 /**
  * Base parser interface that can be extended
@@ -114,7 +114,7 @@ export interface Parser extends BaseParser {
    * Set debug event callback for emitting parser debug events
    * @deprecated Use setPlatformEventEmitter instead
    */
-  setDebugCallback?(callback: (event: SystemEvent) => void): void;
+  setDebugCallback?(callback: (event: ISystemEvent) => void): void;
 
   /**
    * Set platform event emitter for parser debugging

@@ -3,8 +3,8 @@
  * These events are processed after turn completion but before text service
  */
 
-import { SemanticEvent } from './types';
-import { QuitContext, RestartContext } from '../types/save-data';
+import { ISemanticEvent } from './types';
+import { IQuitContext, IRestartContext } from '../types/save-data';
 
 /**
  * Platform event types for save, restore, quit, and restart operations
@@ -34,7 +34,7 @@ export type PlatformEventTypeValue = typeof PlatformEventType[keyof typeof Platf
 /**
  * Base interface for all platform events
  */
-export interface PlatformEvent extends SemanticEvent {
+export interface IPlatformEvent extends ISemanticEvent {
   type: PlatformEventTypeValue;
   
   /**
@@ -72,7 +72,7 @@ export interface PlatformEvent extends SemanticEvent {
 /**
  * Context for save operations
  */
-export interface SaveContext {
+export interface ISaveContext {
   /**
    * Optional name for the save
    */
@@ -102,7 +102,7 @@ export interface SaveContext {
 /**
  * Context for restore operations
  */
-export interface RestoreContext {
+export interface IRestoreContext {
   /**
    * Specific save slot to restore
    */
@@ -128,16 +128,16 @@ export interface RestoreContext {
 }
 
 // Re-export QuitContext and RestartContext for convenience
-export { QuitContext, RestartContext };
+export { IQuitContext, IRestartContext };
 
 /**
  * Type guards for platform events
  */
-export function isPlatformEvent(event: SemanticEvent): event is PlatformEvent {
+export function isPlatformEvent(event: ISemanticEvent): event is IPlatformEvent {
   return 'requiresClientAction' in event && event.requiresClientAction === true;
 }
 
-export function isPlatformRequestEvent(event: SemanticEvent): boolean {
+export function isPlatformRequestEvent(event: ISemanticEvent): boolean {
   return isPlatformEvent(event) && (
     event.type === PlatformEventType.SAVE_REQUESTED ||
     event.type === PlatformEventType.RESTORE_REQUESTED ||
@@ -146,7 +146,7 @@ export function isPlatformRequestEvent(event: SemanticEvent): boolean {
   );
 }
 
-export function isPlatformCompletionEvent(event: SemanticEvent): boolean {
+export function isPlatformCompletionEvent(event: ISemanticEvent): boolean {
   return isPlatformEvent(event) && (
     event.type === PlatformEventType.SAVE_COMPLETED ||
     event.type === PlatformEventType.RESTORE_COMPLETED ||
@@ -166,7 +166,7 @@ export function createPlatformEvent(
   type: PlatformEventTypeValue,
   context?: unknown,
   additionalPayload?: Record<string, unknown>
-): PlatformEvent {
+): IPlatformEvent {
   return {
     id: `platform-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     type,
@@ -180,26 +180,26 @@ export function createPlatformEvent(
   };
 }
 
-export function createSaveRequestedEvent(context: SaveContext): PlatformEvent {
+export function createSaveRequestedEvent(context: ISaveContext): IPlatformEvent {
   return createPlatformEvent(PlatformEventType.SAVE_REQUESTED, context);
 }
 
-export function createRestoreRequestedEvent(context: RestoreContext): PlatformEvent {
+export function createRestoreRequestedEvent(context: IRestoreContext): IPlatformEvent {
   return createPlatformEvent(PlatformEventType.RESTORE_REQUESTED, context);
 }
 
-export function createQuitRequestedEvent(context: QuitContext): PlatformEvent {
+export function createQuitRequestedEvent(context: IQuitContext): IPlatformEvent {
   return createPlatformEvent(PlatformEventType.QUIT_REQUESTED, context);
 }
 
-export function createRestartRequestedEvent(context: RestartContext): PlatformEvent {
+export function createRestartRequestedEvent(context: IRestartContext): IPlatformEvent {
   return createPlatformEvent(PlatformEventType.RESTART_REQUESTED, context);
 }
 
 /**
  * Helper functions for completion events
  */
-export function createSaveCompletedEvent(success: boolean, error?: string): PlatformEvent {
+export function createSaveCompletedEvent(success: boolean, error?: string): IPlatformEvent {
   return createPlatformEvent(
     success ? PlatformEventType.SAVE_COMPLETED : PlatformEventType.SAVE_FAILED,
     undefined,
@@ -207,7 +207,7 @@ export function createSaveCompletedEvent(success: boolean, error?: string): Plat
   );
 }
 
-export function createRestoreCompletedEvent(success: boolean, error?: string): PlatformEvent {
+export function createRestoreCompletedEvent(success: boolean, error?: string): IPlatformEvent {
   return createPlatformEvent(
     success ? PlatformEventType.RESTORE_COMPLETED : PlatformEventType.RESTORE_FAILED,
     undefined,
@@ -215,15 +215,15 @@ export function createRestoreCompletedEvent(success: boolean, error?: string): P
   );
 }
 
-export function createQuitConfirmedEvent(): PlatformEvent {
+export function createQuitConfirmedEvent(): IPlatformEvent {
   return createPlatformEvent(PlatformEventType.QUIT_CONFIRMED, undefined, { success: true });
 }
 
-export function createQuitCancelledEvent(): PlatformEvent {
+export function createQuitCancelledEvent(): IPlatformEvent {
   return createPlatformEvent(PlatformEventType.QUIT_CANCELLED, undefined, { success: false });
 }
 
-export function createRestartCompletedEvent(success: boolean): PlatformEvent {
+export function createRestartCompletedEvent(success: boolean): IPlatformEvent {
   return createPlatformEvent(
     success ? PlatformEventType.RESTART_COMPLETED : PlatformEventType.RESTART_CANCELLED,
     undefined,

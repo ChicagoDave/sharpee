@@ -5,12 +5,12 @@
  * events, actions, and other components.
  */
 
-import { TraitConstructor } from '../traits/trait';
+import { ITraitConstructor } from '../traits/trait';
 import { 
   IExtensionRegistry, 
-  ExtensionTraitDefinition,
-  ExtensionEventDefinition,
-  ExtensionActionDefinition,
+  IExtensionTraitDefinition,
+  IExtensionEventDefinition,
+  IExtensionActionDefinition,
   createNamespacedId
 } from './types';
 
@@ -18,15 +18,15 @@ import {
  * Default implementation of the extension registry
  */
 export class ExtensionRegistry implements IExtensionRegistry {
-  private traits = new Map<string, TraitConstructor>();
-  private events = new Map<string, ExtensionEventDefinition>();
-  private actions = new Map<string, ExtensionActionDefinition>();
+  private traits = new Map<string, ITraitConstructor>();
+  private events = new Map<string, IExtensionEventDefinition>();
+  private actions = new Map<string, IExtensionActionDefinition>();
   private namespaces = new Set<string>();
   
   /**
    * Register a trait from an extension
    */
-  registerTrait(namespace: string, definition: ExtensionTraitDefinition): void {
+  registerTrait(namespace: string, definition: IExtensionTraitDefinition): void {
     const fullType = this.getTraitType(namespace, definition.type);
     
     if (this.traits.has(fullType)) {
@@ -43,7 +43,7 @@ export class ExtensionRegistry implements IExtensionRegistry {
   /**
    * Register an event type from an extension
    */
-  registerEvent(namespace: string, definition: ExtensionEventDefinition): void {
+  registerEvent(namespace: string, definition: IExtensionEventDefinition): void {
     const fullType = this.getEventType(namespace, definition.type);
     
     if (this.events.has(fullType)) {
@@ -57,7 +57,7 @@ export class ExtensionRegistry implements IExtensionRegistry {
   /**
    * Register an action from an extension
    */
-  registerAction(namespace: string, definition: ExtensionActionDefinition): void {
+  registerAction(namespace: string, definition: IExtensionActionDefinition): void {
     const fullId = this.getActionId(namespace, definition.id);
     
     if (this.actions.has(fullId)) {
@@ -92,21 +92,21 @@ export class ExtensionRegistry implements IExtensionRegistry {
   /**
    * Get a trait constructor by its full type
    */
-  getTrait(fullType: string): TraitConstructor | undefined {
+  getTrait(fullType: string): ITraitConstructor | undefined {
     return this.traits.get(fullType);
   }
   
   /**
    * Get an event definition by its full type
    */
-  getEvent(fullType: string): ExtensionEventDefinition | undefined {
+  getEvent(fullType: string): IExtensionEventDefinition | undefined {
     return this.events.get(fullType);
   }
   
   /**
    * Get an action definition by its full ID
    */
-  getAction(fullId: string): ExtensionActionDefinition | undefined {
+  getAction(fullId: string): IExtensionActionDefinition | undefined {
     return this.actions.get(fullId);
   }
   
@@ -194,21 +194,21 @@ export class ExtensionRegistry implements IExtensionRegistry {
   /**
    * Get all traits (for compatibility)
    */
-  getTraits(): Map<string, TraitConstructor> {
+  getTraits(): Map<string, ITraitConstructor> {
     return new Map(this.traits);
   }
   
   /**
    * Get all events (for compatibility)
    */
-  getEvents(): Map<string, ExtensionEventDefinition> {
+  getEvents(): Map<string, IExtensionEventDefinition> {
     return new Map(this.events);
   }
   
   /**
    * Get all actions (for compatibility)
    */
-  getActions(): Map<string, ExtensionActionDefinition> {
+  getActions(): Map<string, IExtensionActionDefinition> {
     return new Map(this.actions);
   }
   

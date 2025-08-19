@@ -3,10 +3,10 @@
 import { IFEntity } from '../../entities/if-entity';
 import { TraitType } from '../trait-types';
 import { WearableTrait } from './wearableTrait';
-import { SemanticEvent, createEvent } from '@sharpee/core';
+import { ISemanticEvent, createEvent } from '@sharpee/core';
 import { IFEvents } from '../../constants/if-events';
 
-export interface WearResult {
+export interface IWearResult {
   success: boolean;
   alreadyWorn?: boolean;
   wornByOther?: string;
@@ -16,7 +16,7 @@ export interface WearResult {
   wearMessage?: string;
 }
 
-export interface RemoveResult {
+export interface IRemoveResult {
   success: boolean;
   notWorn?: boolean;
   wornByOther?: string;
@@ -70,7 +70,7 @@ export class WearableBehavior {
    * Wear an item
    * @returns Result object describing what happened
    */
-  static wear(item: IFEntity, actor: IFEntity): WearResult {
+  static wear(item: IFEntity, actor: IFEntity): IWearResult {
     const wearable = item.get(TraitType.WEARABLE) as WearableTrait;
     if (!wearable) return { success: false };
     
@@ -106,7 +106,7 @@ export class WearableBehavior {
    * Remove (take off) a worn item
    * @returns Result object describing what happened
    */
-  static remove(item: IFEntity, actor: IFEntity): RemoveResult {
+  static remove(item: IFEntity, actor: IFEntity): IRemoveResult {
     const wearable = item.get(TraitType.WEARABLE) as WearableTrait;
     if (!wearable) return { success: false };
     

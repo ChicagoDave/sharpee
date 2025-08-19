@@ -8,8 +8,8 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
-import { SemanticEvent } from '@sharpee/core';
-import { TraitType, ContainerBehavior, SupporterBehavior, OpenableBehavior, AddItemResult, AddItemToSupporterResult } from '@sharpee/world-model';
+import { ISemanticEvent } from '@sharpee/core';
+import { TraitType, ContainerBehavior, SupporterBehavior, OpenableBehavior, IAddItemResult, IAddItemToSupporterResult } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 
 export const puttingAction: Action & { metadata: ActionMetadata } = {
@@ -164,7 +164,7 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
     return { valid: true };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     const actor = context.player;
     const item = context.command.directObject!.entity!; // Safe because validate ensures it exists
     const target = context.command.indirectObject!.entity!; // Safe because validate ensures it exists
@@ -190,11 +190,11 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       targetPreposition = isContainer ? 'in' : 'on';
     }
     
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Delegate to appropriate behavior
     if (targetPreposition === 'in') {
-      const result: AddItemResult = ContainerBehavior.addItem(target, item, context.world);
+      const result: IAddItemResult = ContainerBehavior.addItem(target, item, context.world);
       
       if (!result.success) {
         // Handle failure cases - these should not happen due to validation
@@ -235,7 +235,7 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       
     } else {
       // targetPreposition === 'on'
-      const result: AddItemToSupporterResult = SupporterBehavior.addItem(target, item, context.world);
+      const result: IAddItemToSupporterResult = SupporterBehavior.addItem(target, item, context.world);
       
       if (!result.success) {
         // Handle failure cases - these should not happen due to validation

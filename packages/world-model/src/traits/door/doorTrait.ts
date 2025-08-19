@@ -1,6 +1,6 @@
 // packages/world-model/src/traits/door/doorTrait.ts
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
 /**
@@ -9,7 +9,7 @@ import { TraitType } from '../trait-types';
  * This is a pure data structure - all validation and logic
  * should be handled by DoorBehavior.
  */
-export class DoorTrait implements Trait {
+export class DoorTrait implements ITrait {
   static readonly type = TraitType.DOOR;
   readonly type = TraitType.DOOR;
   

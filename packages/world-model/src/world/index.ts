@@ -3,6 +3,7 @@
 // Export all types and the WorldModel interface/class from the same file
 export { 
   WorldModel,
+  IWorldModel,
   WorldState, 
   WorldConfig, 
   ContentsOptions,
@@ -15,14 +16,14 @@ export {
 // Export other classes
 export { SpatialIndex } from './SpatialIndex';
 export { VisibilityBehavior } from './VisibilityBehavior';
-export { AuthorModel, DataStore, ItemSpec } from './AuthorModel';
+export { AuthorModel, IDataStore, IItemSpec } from './AuthorModel';
 
 // Export capability types
 export {
-  CapabilityData,
-  CapabilitySchema,
-  CapabilityStore,
-  CapabilityRegistration,
+  ICapabilityData,
+  ICapabilitySchema,
+  ICapabilityStore,
+  ICapabilityRegistration,
   StandardCapabilities,
   StandardCapabilityName
 } from './capabilities';

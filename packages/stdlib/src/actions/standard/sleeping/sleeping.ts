@@ -7,7 +7,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { SleptEventData } from './sleeping-events';
@@ -136,7 +136,7 @@ export const sleepingAction: Action & { metadata: ActionMetadata } = {
     };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     // Revalidate and rebuild all data
     const validation = this.validate(context);
     if (!validation.valid) {
@@ -204,7 +204,7 @@ export const sleepingAction: Action & { metadata: ActionMetadata } = {
     
     const wakeRefreshed = eventData.comfortable || eventData.peaceful;
     
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Create SLEPT event for world model
     events.push(context.event('if.event.slept', eventData));

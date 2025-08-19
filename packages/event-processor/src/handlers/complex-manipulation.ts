@@ -5,14 +5,14 @@
  * like giving, showing, and throwing.
  */
 
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel, TraitType, EventHandler } from '@sharpee/world-model';
 import { IFEvents } from '@sharpee/if-domain';
 
 /**
  * Handle GIVEN event - transfer item to recipient or refuse
  */
-export const handleGiven: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleGiven: EventHandler = (event: ISemanticEvent, world: any) => {
   const { actor, target, instrument, location } = event.entities;
   const accepted = event.data?.accepted as boolean;
   
@@ -29,7 +29,7 @@ export const handleGiven: EventHandler = (event: SemanticEvent, world: WorldMode
  * This event doesn't change item ownership but could trigger
  * NPC reactions or update their knowledge/memory.
  */
-export const handleShown: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleShown: EventHandler = (event: ISemanticEvent, world: any) => {
   const { actor, target, instrument } = event.entities;
   // target is the item being shown, instrument is the viewer
   
@@ -47,7 +47,7 @@ export const handleShown: EventHandler = (event: SemanticEvent, world: WorldMode
 /**
  * Handle THROWN event - move item and possibly destroy it
  */
-export const handleThrown: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleThrown: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target, location } = event.entities;
   const willBreak = event.data?.willBreak as boolean;
   const finalLocation = event.data?.finalLocation as string;
@@ -67,7 +67,7 @@ export const handleThrown: EventHandler = (event: SemanticEvent, world: WorldMod
 /**
  * Handle ITEM_DESTROYED event - remove item from world
  */
-export const handleItemDestroyed: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleItemDestroyed: EventHandler = (event: ISemanticEvent, world: any) => {
   const itemId = event.data?.item as string;
   
   if (itemId) {

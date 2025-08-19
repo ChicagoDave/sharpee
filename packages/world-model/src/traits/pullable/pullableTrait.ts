@@ -2,10 +2,10 @@
  * Pullable trait implementation
  */
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
-export interface PullableData {
+export interface IPullableData {
   /**
    * Type of pullable object - determines behavior
    */
@@ -72,7 +72,7 @@ export interface PullableData {
  * This trait contains only data - all logic for pulling
  * is handled by the pulling action.
  */
-export class PullableTrait implements Trait, PullableData {
+export class PullableTrait implements ITrait, IPullableData {
   static readonly type = TraitType.PULLABLE;
   readonly type = TraitType.PULLABLE;
   
@@ -93,7 +93,7 @@ export class PullableTrait implements Trait, PullableData {
     onDetach?: string;
   };
   
-  constructor(data: PullableData = {}) {
+  constructor(data: IPullableData = {}) {
     this.pullType = data.pullType ?? 'lever';
     this.activates = data.activates;
     this.linkedTo = data.linkedTo;

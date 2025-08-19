@@ -8,7 +8,7 @@ import { OpenableTrait } from './openableTrait';
 /**
  * Result of an open operation
  */
-export interface OpenResult {
+export interface IOpenResult {
   success: boolean;
   alreadyOpen?: boolean;
   stateChanged?: boolean;
@@ -20,7 +20,7 @@ export interface OpenResult {
 /**
  * Result of a close operation
  */
-export interface CloseResult {
+export interface ICloseResult {
   success: boolean;
   alreadyClosed?: boolean;
   cantClose?: boolean;
@@ -57,7 +57,7 @@ export class OpenableBehavior extends Behavior {
    * Open the entity
    * @returns Result describing what happened
    */
-  static open(entity: IFEntity): OpenResult {
+  static open(entity: IFEntity): IOpenResult {
     const openable = OpenableBehavior.require<OpenableTrait>(entity, TraitType.OPENABLE);
     
     if (openable.isOpen) {
@@ -84,7 +84,7 @@ export class OpenableBehavior extends Behavior {
    * Close the entity
    * @returns Result describing what happened
    */
-  static close(entity: IFEntity): CloseResult {
+  static close(entity: IFEntity): ICloseResult {
     const openable = OpenableBehavior.require<OpenableTrait>(entity, TraitType.OPENABLE);
     
     if (!openable.isOpen) {
@@ -118,7 +118,7 @@ export class OpenableBehavior extends Behavior {
    * Toggle open/closed state
    * @returns Result from either open or close
    */
-  static toggle(entity: IFEntity): OpenResult | CloseResult {
+  static toggle(entity: IFEntity): IOpenResult | ICloseResult {
     const openable = OpenableBehavior.require<OpenableTrait>(entity, TraitType.OPENABLE);
     
     if (openable.isOpen) {

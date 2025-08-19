@@ -6,14 +6,14 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent, createRestoreRequestedEvent, RestoreContext } from '@sharpee/core';
+import { ISemanticEvent, createRestoreRequestedEvent, IRestoreContext } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { RestoreRequestedEventData } from './restoring-events';
 
 interface RestoringState {
   saveName: string;
-  restoreContext: RestoreContext;
+  restoreContext: IRestoreContext;
   eventData: RestoreRequestedEventData;
 }
 
@@ -91,7 +91,7 @@ export const restoringAction: Action & { metadata: ActionMetadata } = {
     , null as any);
     
     // Build restore context
-    const restoreContext: RestoreContext = {
+    const restoreContext: IRestoreContext = {
       slot: saveName !== 'default' ? saveName : undefined,
       availableSaves,
       lastSave: lastSave ? {
@@ -113,8 +113,8 @@ export const restoringAction: Action & { metadata: ActionMetadata } = {
     };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
-    const events: SemanticEvent[] = [];
+  execute(context: ActionContext): ISemanticEvent[] {
+    const events: ISemanticEvent[] = [];
     
     // Get save name from command - could be provided as extras or directObject
     const extras = context.command.parsed.extras;
@@ -143,7 +143,7 @@ export const restoringAction: Action & { metadata: ActionMetadata } = {
     , null as any);
     
     // Build restore context
-    const restoreContext: RestoreContext = {
+    const restoreContext: IRestoreContext = {
       slot: saveName !== 'default' ? saveName : undefined,
       availableSaves,
       lastSave: lastSave ? {

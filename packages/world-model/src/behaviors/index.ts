@@ -1,6 +1,6 @@
 // packages/world-model/src/behaviors/index.ts
 
-export { Behavior, WorldAwareBehavior, isWorldAwareBehavior } from './behavior';
+export { Behavior, IWorldAwareBehavior, isWorldAwareBehavior } from './behavior';
 
 // Re-export all behavior classes as they are added
 // These will come from the trait folders

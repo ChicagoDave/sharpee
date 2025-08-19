@@ -9,16 +9,16 @@ import { SupporterTrait } from '../traits/supporter';
 import { ActorTrait } from '../traits/actor';
 import { DoorTrait } from '../traits/door';
 import { SceneryTrait } from '../traits/scenery';
-import { SemanticEvent, SemanticEventSource } from '@sharpee/core';
+import { ISemanticEvent, ISemanticEventSource } from '@sharpee/core';
 import { SpatialIndex } from './SpatialIndex';
 import { VisibilityBehavior } from './VisibilityBehavior';
-import { DataStore } from './AuthorModel';
+import { IDataStore } from './AuthorModel';
 import { canContain } from '../traits/container/container-utils';
 import {
-  CapabilityStore,
-  CapabilityData,
-  CapabilitySchema,
-  CapabilityRegistration
+  ICapabilityStore,
+  ICapabilityData,
+  ICapabilitySchema,
+  ICapabilityRegistration
 } from './capabilities';
 import {
   WorldState,
@@ -28,12 +28,12 @@ import {
 } from '@sharpee/if-domain';
 import { ScopeRegistry } from '../scope/scope-registry';
 import { ScopeEvaluator } from '../scope/scope-evaluator';
-import { ScopeRule, ScopeContext } from '../scope/scope-rule';
+import { IScopeRule, IScopeContext } from '../scope/scope-rule';
 
 // Event handler types - these are tightly coupled to WorldModel
-export type EventHandler = (event: SemanticEvent, world: WorldModel) => void;
-export type EventValidator = (event: SemanticEvent, world: WorldModel) => boolean;
-export type EventPreviewer = (event: SemanticEvent, world: WorldModel) => WorldChange[];
+export type EventHandler = (event: ISemanticEvent, world: IWorldModel) => void;
+export type EventValidator = (event: ISemanticEvent, world: IWorldModel) => boolean;
+export type EventPreviewer = (event: ISemanticEvent, world: IWorldModel) => WorldChange[];
 
 // Re-export domain types for backward compatibility
 export {
@@ -44,14 +44,14 @@ export {
 } from '@sharpee/if-domain';
 
 // Interface and class with same name in same file - TypeScript standard pattern
-export interface WorldModel {
+export interface IWorldModel {
   // Get the data store for sharing with AuthorModel
-  getDataStore(): DataStore;
+  getDataStore(): IDataStore;
 
   // Capability Management
-  registerCapability(name: string, registration: Partial<CapabilityRegistration>): void;
-  updateCapability(name: string, data: Partial<CapabilityData>): void;
-  getCapability(name: string): CapabilityData | undefined;
+  registerCapability(name: string, registration: Partial<ICapabilityRegistration>): void;
+  updateCapability(name: string, data: Partial<ICapabilityData>): void;
+  getCapability(name: string): ICapabilityData | undefined;
   hasCapability(name: string): boolean;
 
   // Entity Management
@@ -109,18 +109,18 @@ export interface WorldModel {
   registerEventValidator(eventType: string, validator: EventValidator): void;
   registerEventPreviewer(eventType: string, previewer: EventPreviewer): void;
 
-  applyEvent(event: SemanticEvent): void;
-  canApplyEvent(event: SemanticEvent): boolean;
-  previewEvent(event: SemanticEvent): WorldChange[];
+  applyEvent(event: ISemanticEvent): void;
+  canApplyEvent(event: ISemanticEvent): boolean;
+  previewEvent(event: ISemanticEvent): WorldChange[];
 
   // Event History (optional)
-  getAppliedEvents(): SemanticEvent[];
-  getEventsSince(timestamp: number): SemanticEvent[];
+  getAppliedEvents(): ISemanticEvent[];
+  getEventsSince(timestamp: number): ISemanticEvent[];
   clearEventHistory(): void;
 
   // Scope Management
   getScopeRegistry(): ScopeRegistry;
-  addScopeRule(rule: ScopeRule): void;
+  addScopeRule(rule: IScopeRule): void;
   removeScopeRule(ruleId: string): boolean;
   evaluateScope(actorId: string, actionId?: string): string[];
 }
@@ -138,13 +138,13 @@ const TYPE_PREFIXES: Record<string, string> = {
   'object': 'o'  // default
 };
 
-export class WorldModel implements WorldModel {
+export class WorldModel implements IWorldModel {
   private entities: Map<string, IFEntity> = new Map();
   private state: WorldState = {};
   private playerId: string | undefined;
   private spatialIndex: SpatialIndex;
   private config: WorldConfig;
-  private capabilities: CapabilityStore = {};
+  private capabilities: ICapabilityStore = {};
 
   // ID generation
   private idCounters: Map<string, number> = new Map();
@@ -153,16 +153,16 @@ export class WorldModel implements WorldModel {
   private eventHandlers = new Map<string, EventHandler>();
   private eventValidators = new Map<string, EventValidator>();
   private eventPreviewers = new Map<string, EventPreviewer>();
-  private appliedEvents: SemanticEvent[] = [];
+  private appliedEvents: ISemanticEvent[] = [];
   private maxEventHistory = 1000; // Configurable limit
 
-  private platformEvents?: SemanticEventSource;
+  private platformEvents?: ISemanticEventSource;
 
   // Scope system
   private scopeRegistry: ScopeRegistry;
   private scopeEvaluator: ScopeEvaluator;
 
-  constructor(config: WorldConfig = {}, platformEvents?: SemanticEventSource) {
+  constructor(config: WorldConfig = {}, platformEvents?: ISemanticEventSource) {
     this.config = {
       enableSpatialIndex: true,
       maxDepth: 10,
@@ -200,7 +200,7 @@ export class WorldModel implements WorldModel {
   }
 
   // Capability Management
-  registerCapability(name: string, registration: Partial<CapabilityRegistration> = {}): void {
+  registerCapability(name: string, registration: Partial<ICapabilityRegistration> = {}): void {
     if (this.capabilities[name]) {
       if (this.config.strictMode) {
         throw new Error(`Capability '${name}' is already registered`);
@@ -209,7 +209,7 @@ export class WorldModel implements WorldModel {
     }
 
     // Initialize capability with schema and initial data
-    const initialData: CapabilityData = {};
+    const initialData: ICapabilityData = {};
 
     // Apply schema defaults
     if (registration.schema) {
@@ -231,7 +231,7 @@ export class WorldModel implements WorldModel {
     };
   }
 
-  updateCapability(name: string, updates: Partial<CapabilityData>): void {
+  updateCapability(name: string, updates: Partial<ICapabilityData>): void {
     const capability = this.capabilities[name];
     if (!capability) {
       if (this.config.strictMode) {
@@ -260,7 +260,7 @@ export class WorldModel implements WorldModel {
     Object.assign(capability.data, updates);
   }
 
-  getCapability(name: string): CapabilityData | undefined {
+  getCapability(name: string): ICapabilityData | undefined {
     return this.capabilities[name]?.data;
   }
 
@@ -861,7 +861,7 @@ export class WorldModel implements WorldModel {
     this.eventPreviewers.set(eventType, previewer);
   }
 
-  applyEvent(event: SemanticEvent): void {
+  applyEvent(event: ISemanticEvent): void {
     // First validate if we can apply this event
     if (!this.canApplyEvent(event)) {
       throw new Error(`Cannot apply event of type '${event.type}': validation failed`);
@@ -886,7 +886,7 @@ export class WorldModel implements WorldModel {
     }
   }
 
-  canApplyEvent(event: SemanticEvent): boolean {
+  canApplyEvent(event: ISemanticEvent): boolean {
     // Check if there's a validator for this event type
     const validator = this.eventValidators.get(event.type);
 
@@ -899,7 +899,7 @@ export class WorldModel implements WorldModel {
     return validator(event, this);
   }
 
-  previewEvent(event: SemanticEvent): WorldChange[] {
+  previewEvent(event: ISemanticEvent): WorldChange[] {
     // Check if there's a previewer for this event type
     const previewer = this.eventPreviewers.get(event.type);
 
@@ -912,11 +912,11 @@ export class WorldModel implements WorldModel {
     return previewer(event, this);
   }
 
-  getAppliedEvents(): SemanticEvent[] {
+  getAppliedEvents(): ISemanticEvent[] {
     return [...this.appliedEvents];
   }
 
-  getEventsSince(timestamp: number): SemanticEvent[] {
+  getEventsSince(timestamp: number): ISemanticEvent[] {
     return this.appliedEvents.filter(event => event.timestamp > timestamp);
   }
 
@@ -949,7 +949,7 @@ export class WorldModel implements WorldModel {
   }
 
   // Get the data store for sharing with AuthorModel
-  getDataStore(): DataStore {
+  getDataStore(): IDataStore {
     // Return a reference to the WorldModel's internal state
     // AuthorModel will share these same objects
     return {
@@ -968,7 +968,7 @@ export class WorldModel implements WorldModel {
     return this.scopeRegistry;
   }
 
-  addScopeRule(rule: ScopeRule): void {
+  addScopeRule(rule: IScopeRule): void {
     this.scopeRegistry.addRule(rule);
     this.emitPlatformEvent('scope_rule_added', {
       ruleId: rule.id,
@@ -998,7 +998,7 @@ export class WorldModel implements WorldModel {
       return [];
     }
 
-    const context: ScopeContext = {
+    const context: IScopeContext = {
       world: this,
       actorId,
       actionId,

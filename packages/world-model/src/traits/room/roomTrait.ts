@@ -1,22 +1,22 @@
 // packages/world-model/src/traits/room/roomTrait.ts
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 import { EntityId } from '@sharpee/core';
 
-export interface ExitInfo {
+export interface IExitInfo {
   /** The destination room ID (must be an entity ID, not a name) */
   destination: string;
   /** Optional door/portal entity ID that must be traversed (must be an entity ID, not a name) */
   via?: string;
 }
 
-export interface RoomData {
+export interface IRoomData {
   /** Whether this room has been visited by the player */
   visited?: boolean;
   
   /** Exits from this room */
-  exits?: Record<string, ExitInfo>;
+  exits?: Record<string, IExitInfo>;
   
   /** Custom messages for blocked exits */
   blockedExits?: Record<string, string>;
@@ -75,13 +75,13 @@ export interface RoomData {
  * Rooms inherently have container functionality - they can hold items, actors, and other entities.
  * The actual containment relationships are stored in the SpatialIndex, not in the trait itself.
  */
-export class RoomTrait implements Trait, RoomData {
+export class RoomTrait implements ITrait, IRoomData {
   static readonly type = TraitType.ROOM;
   readonly type = TraitType.ROOM;
   
   // RoomData properties
   visited: boolean;
-  exits: Record<string, ExitInfo>;
+  exits: Record<string, IExitInfo>;
   blockedExits?: Record<string, string>;
   outdoor: boolean;
   isDark: boolean;
@@ -106,7 +106,7 @@ export class RoomTrait implements Trait, RoomData {
   readonly isTransparent: boolean = true;
   readonly enterable: boolean = true;
   
-  constructor(data: RoomData = {}) {
+  constructor(data: IRoomData = {}) {
     // Set defaults and merge with provided data
     this.visited = data.visited ?? false;
     this.exits = data.exits ?? {};

@@ -12,7 +12,7 @@ import { WearableBehavior } from '../wearable/wearableBehavior';
 /**
  * Result of a take item operation
  */
-export interface TakeItemResult {
+export interface ITakeItemResult {
   success: boolean;
   alreadyHeld?: boolean;
   tooHeavy?: boolean;
@@ -26,7 +26,7 @@ export interface TakeItemResult {
 /**
  * Result of a drop item operation
  */
-export interface DropItemResult {
+export interface IDropItemResult {
   success: boolean;
   notHeld?: boolean;
   stillWorn?: boolean;
@@ -264,7 +264,7 @@ export class ActorBehavior extends Behavior {
    * @param world World query interface
    * @returns Result describing what happened
    */
-  static takeItem(actor: IFEntity, item: IFEntity, world: IWorldQuery): TakeItemResult {
+  static takeItem(actor: IFEntity, item: IFEntity, world: IWorldQuery): ITakeItemResult {
     // Check if actor already has the item
     const currentLocation = world.getLocation(item.id);
     if (currentLocation === actor.id) {
@@ -329,7 +329,7 @@ export class ActorBehavior extends Behavior {
    * @param world World query interface
    * @returns Result describing what happened
    */
-  static dropItem(actor: IFEntity, item: IFEntity, world: IWorldQuery): DropItemResult {
+  static dropItem(actor: IFEntity, item: IFEntity, world: IWorldQuery): IDropItemResult {
     // Check if actor actually has the item
     const currentLocation = world.getLocation(item.id);
     if (currentLocation !== actor.id) {

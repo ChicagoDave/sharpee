@@ -52,8 +52,14 @@ export class EnglishGrammarEngine extends GrammarEngine {
       }
     }
     
-    // Sort by confidence descending
-    matches.sort((a, b) => b.confidence - a.confidence);
+    // Sort by confidence descending, then by priority descending
+    matches.sort((a, b) => {
+      if (b.confidence !== a.confidence) {
+        return b.confidence - a.confidence;
+      }
+      // If confidence is equal, sort by rule priority
+      return b.rule.priority - a.rule.priority;
+    });
     
     return matches;
   }
@@ -67,7 +73,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
     context: GrammarContext
   ): PatternMatch | null {
     const pattern = rule.compiledPattern!;
-    const DEBUG = false; // Disable debug logging
+    const DEBUG = process.env.PARSER_DEBUG === 'true'; // Enable debug logging with env var
     
     if (DEBUG) {
       console.log(`\nTrying to match rule: ${rule.pattern}`);
@@ -83,6 +89,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
     let tokenIndex = 0;
     let confidence = 1.0;
     let skippedOptionals = 0;
+    const matchedTokens: any = {}; // Track which tokens matched which parts
     
     // Try to match each pattern token
     for (const patternToken of pattern.tokens) {
@@ -102,6 +109,10 @@ export class EnglishGrammarEngine extends GrammarEngine {
         case 'literal':
           // Check if it matches
           if (token.normalized === patternToken.value) {
+            // Track if this is a verb in the first position (for semantic mapping)
+            if (tokenIndex === 0) {
+              matchedTokens.verb = token.normalized;
+            }
             tokenIndex++;
           } else if (patternToken.optional) {
             // Optional literal doesn't match, skip it
@@ -119,17 +130,25 @@ export class EnglishGrammarEngine extends GrammarEngine {
         case 'alternates':
           // Check if it matches one of the alternates
           if (patternToken.alternates!.includes(token.normalized)) {
-            tokenIndex++;
-            // Slightly lower confidence for alternate matches
-            if (token.normalized !== patternToken.value) {
-              confidence *= 0.95;
+            // Track if this is a verb in the first position (for semantic mapping)
+            // We track it regardless of token type since patterns may have verb alternates
+            if (tokenIndex === 0) {
+              matchedTokens.verb = token.normalized;
             }
+            if (DEBUG) {
+              console.log(`Alternates match: token '${token.normalized}' matches alternates [${patternToken.alternates!.join(', ')}]`);
+            }
+            tokenIndex++;
+            // Don't reduce confidence for alternate matches - they're equally valid
           } else if (patternToken.optional) {
             // Optional alternates don't match, skip
             skippedOptionals++;
             continue;
           } else {
             // Required alternates don't match
+            if (DEBUG) {
+              console.log(`Alternates mismatch: token '${token.normalized}' not in alternates [${patternToken.alternates!.join(', ')}]`);
+            }
             return null;
           }
           break;
@@ -166,6 +185,14 @@ export class EnglishGrammarEngine extends GrammarEngine {
             console.log(`Consumed slot '${patternToken.value}': "${slotResult.text}"`);
           }
           slots.set(patternToken.value, slotResult);
+          
+          // Track matched slot values for semantic mapping
+          if (patternToken.value === 'direction') {
+            matchedTokens.direction = slotResult.text;
+          } else if (patternToken.value === 'preposition') {
+            matchedTokens.preposition = slotResult.text;
+          }
+          
           tokenIndex = slotResult.tokens[slotResult.tokens.length - 1] + 1;
           confidence *= slotResult.confidence || 0.9;
           break;
@@ -194,12 +221,76 @@ export class EnglishGrammarEngine extends GrammarEngine {
       console.log(`Pattern matched successfully! Skipped ${skippedOptionals} optional elements`);
     }
     
+    // Build semantics from the rule and matched tokens
+    const semantics = this.buildSemantics(rule, matchedTokens);
+    
     return {
       rule,
       confidence,
       slots,
-      consumed: tokenIndex
+      consumed: tokenIndex,
+      semantics,
+      matchedTokens
     };
+  }
+  
+  /**
+   * Build semantic properties from rule and matched tokens
+   */
+  private buildSemantics(
+    rule: any, // GrammarRule
+    matchedTokens: any
+  ): any { // SemanticProperties | undefined
+    const DEBUG = process.env.PARSER_DEBUG === 'true';
+    let semantics: any = {};
+    
+    if (DEBUG) {
+      console.log(`Building semantics for rule: ${rule.pattern}`);
+      console.log(`Matched tokens:`, matchedTokens);
+      console.log(`Rule semantics:`, rule.semantics);
+      console.log(`Rule default semantics:`, rule.defaultSemantics);
+    }
+    
+    // Start with default semantics if available
+    if (rule.defaultSemantics) {
+      semantics = { ...rule.defaultSemantics };
+    }
+    
+    // Apply semantic mappings if available
+    if (rule.semantics) {
+      // Apply verb semantics
+      if (rule.semantics.verbs && matchedTokens.verb) {
+        const verbSemantics = rule.semantics.verbs[matchedTokens.verb];
+        if (verbSemantics) {
+          semantics = { ...semantics, ...verbSemantics };
+          if (DEBUG) {
+            console.log(`Applied verb semantics for '${matchedTokens.verb}':`, verbSemantics);
+          }
+        }
+      }
+      
+      // Apply direction semantics
+      if (rule.semantics.directions && matchedTokens.direction) {
+        const normalizedDirection = rule.semantics.directions[matchedTokens.direction];
+        if (normalizedDirection) {
+          semantics.direction = normalizedDirection;
+        }
+      }
+      
+      // Apply preposition semantics
+      if (rule.semantics.prepositions && matchedTokens.preposition) {
+        const spatialRelation = rule.semantics.prepositions[matchedTokens.preposition];
+        if (spatialRelation) {
+          semantics.spatialRelation = spatialRelation;
+        }
+      }
+    }
+    
+    if (DEBUG) {
+      console.log(`Final semantics:`, semantics);
+    }
+    
+    return Object.keys(semantics).length > 0 ? semantics : undefined;
   }
   
   /**
@@ -283,6 +374,9 @@ export class EnglishGrammarEngine extends GrammarEngine {
       
       // If constraints completely fail, return null
       if (confidence === 0) {
+        if (process.env.PARSER_DEBUG === 'true') {
+          console.log(`Failed to consume slot '${slotName}'`);
+        }
         return null;
       }
     }
@@ -305,6 +399,10 @@ export class EnglishGrammarEngine extends GrammarEngine {
     // For each constraint, check if any entities match
     let hasMatchingEntity = false;
     
+    if (process.env.PARSER_DEBUG === 'true') {
+      console.log(`Evaluating constraints for slot text: "${slotText}"`);
+    }
+    
     for (const constraint of slotConstraints.constraints) {
       if (typeof constraint === 'function') {
         // Check if it's a ScopeConstraintBuilder (1 arg) vs FunctionConstraint (2 args)
@@ -320,6 +418,10 @@ export class EnglishGrammarEngine extends GrammarEngine {
             scopeConstraint,
             context
           );
+          
+          if (process.env.PARSER_DEBUG === 'true') {
+            console.log(`Found ${matchingEntities.length} matching entities`);
+          }
           
           if (matchingEntities.length > 0) {
             hasMatchingEntity = true;

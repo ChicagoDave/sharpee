@@ -6,7 +6,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent, createSaveRequestedEvent, SaveContext } from '@sharpee/core';
+import { ISemanticEvent, createSaveRequestedEvent, ISaveContext } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { SaveRequestedEventData } from './saving-events';
@@ -15,7 +15,7 @@ interface SavingState {
   saveName: string;
   isQuickSave: boolean;
   isAutoSave: boolean;
-  saveContext: SaveContext;
+  saveContext: ISaveContext;
   eventData: SaveRequestedEventData;
   messageId: string;
   messageParams: Record<string, any>;
@@ -90,7 +90,7 @@ export const savingAction: Action & { metadata: ActionMetadata } = {
     const isAutoSave = context.command.parsed.extras?.auto;
     
     // Build save context
-    const saveContext: SaveContext = {
+    const saveContext: ISaveContext = {
       saveName: saveName !== 'default' ? saveName : undefined,
       autosave: isAutoSave,
       timestamp: Date.now(),
@@ -133,8 +133,8 @@ export const savingAction: Action & { metadata: ActionMetadata } = {
     };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
-    const events: SemanticEvent[] = [];
+  execute(context: ActionContext): ISemanticEvent[] {
+    const events: ISemanticEvent[] = [];
     
     // Get save name from command - could be provided as extras or directObject
     const extras = context.command.parsed.extras;
@@ -152,7 +152,7 @@ export const savingAction: Action & { metadata: ActionMetadata } = {
     const isAutoSave = context.command.parsed.extras?.auto;
     
     // Build save context
-    const saveContext: SaveContext = {
+    const saveContext: ISaveContext = {
       saveName: saveName !== 'default' ? saveName : undefined,
       autosave: isAutoSave,
       timestamp: Date.now(),

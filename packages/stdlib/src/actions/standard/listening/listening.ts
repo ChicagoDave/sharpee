@@ -7,7 +7,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
@@ -132,7 +132,7 @@ export const listeningAction: Action & { metadata: ActionMetadata } = {
     };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     // Validate and get state
     const result = this.validate(context);
     if (!result.valid) {
@@ -220,7 +220,7 @@ export const listeningAction: Action & { metadata: ActionMetadata } = {
       eventData.roomId = location.id;
     }
     
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Create LISTENED event for world model
     events.push(context.event('if.event.listened', eventData));

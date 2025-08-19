@@ -4,7 +4,7 @@
  * Extends the core validation types with scope information
  */
 
-import type { ValidatedCommand as CoreValidatedCommand } from '@sharpee/world-model';
+import type { IValidatedCommand as CoreValidatedCommand } from '@sharpee/world-model';
 import type { ScopeLevel, SenseType } from '../scope/types';
 
 /**

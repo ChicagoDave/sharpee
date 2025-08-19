@@ -5,13 +5,13 @@
  * toggled via meta-commands (author commands) without affecting game state.
  */
 
-import { CapabilitySchema } from '@sharpee/world-model';
+import { ICapabilitySchema } from '@sharpee/world-model';
 
 /**
  * Debug capability schema
  * Tracks which debug events should be emitted
  */
-export const DebugCapabilitySchema: CapabilitySchema = {
+export const DebugCapabilitySchema: ICapabilitySchema = {
   debugParserEvents: {
     type: 'boolean',
     default: false,

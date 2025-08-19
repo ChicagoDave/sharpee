@@ -2,32 +2,12 @@
  * Domain types for event sequencing and turn management
  */
 
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 
 /**
  * Turn phases for event organization
  */
-export enum TurnPhase {
-  /**
-   * Pre-turn setup (before action)
-   */
-  PRE = 'pre',
-  
-  /**
-   * Main action execution
-   */
-  MAIN = 'main',
-  
-  /**
-   * Post-action consequences
-   */
-  POST = 'post',
-  
-  /**
-   * Cleanup and maintenance
-   */
-  CLEANUP = 'cleanup'
-}
+export type TurnPhase = 'pre' | 'main' | 'post' | 'reactions' | 'cleanup';
 
 /**
  * Sequence information for an event
@@ -57,7 +37,7 @@ export interface EventSequence {
 /**
  * Event with sequencing information
  */
-export interface SequencedEvent extends SemanticEvent {
+export interface SequencedEvent extends ISemanticEvent {
   sequence: EventSequence;
 }
 
@@ -68,7 +48,7 @@ export interface EventSequencer {
   /**
    * Sequence events for a turn
    */
-  sequence(events: SemanticEvent[], turn: number, startOrder?: number): SequencedEvent[];
+  sequence(events: ISemanticEvent[], turn: number, startOrder?: number): SequencedEvent[];
   
   /**
    * Get next order number

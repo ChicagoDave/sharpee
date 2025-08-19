@@ -5,7 +5,7 @@
  * Action interfaces have been moved to enhanced-types.ts.
  */
 
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 
 /**
  * Result of processing events
@@ -14,12 +14,12 @@ export interface ProcessedEvents {
   /**
    * Events that were successfully applied
    */
-  applied: SemanticEvent[];
+  applied: ISemanticEvent[];
   
   /**
    * Events that failed validation
    */
-  failed: SemanticEvent[];
+  failed: ISemanticEvent[];
   
   /**
    * World changes that occurred

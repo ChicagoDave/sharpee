@@ -4,14 +4,14 @@
  * These handlers process sensory observation events (search, listen, smell, touch)
  */
 
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel, IFEntity, TraitType, IdentityTrait, EventHandler } from '@sharpee/world-model';
 import { IFEvents } from '@sharpee/if-domain';
 
 /**
  * Handle SEARCHED event - reveal concealed items
  */
-export const handleSearched: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleSearched: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target } = event.entities;
   const foundItems = event.data?.foundItems as string[];
   
@@ -32,7 +32,7 @@ export const handleSearched: EventHandler = (event: SemanticEvent, world: WorldM
  * Handle LISTENED event - no world model changes needed
  * This is primarily for message generation
  */
-export const handleListened: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleListened: EventHandler = (event: ISemanticEvent, world: any) => {
   // No world model changes needed for listening
   // The event data contains information about what was heard
   // which will be used by the message system
@@ -42,7 +42,7 @@ export const handleListened: EventHandler = (event: SemanticEvent, world: WorldM
  * Handle SMELLED event - no world model changes needed
  * This is primarily for message generation
  */
-export const handleSmelled: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleSmelled: EventHandler = (event: ISemanticEvent, world: any) => {
   // No world model changes needed for smelling
   // The event data contains information about scents detected
   // which will be used by the message system
@@ -51,7 +51,7 @@ export const handleSmelled: EventHandler = (event: SemanticEvent, world: WorldMo
 /**
  * Handle TOUCHED event - could trigger state changes
  */
-export const handleTouched: EventHandler = (event: SemanticEvent, world: WorldModel) => {
+export const handleTouched: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target } = event.entities;
   
   // In some games, touching might trigger state changes

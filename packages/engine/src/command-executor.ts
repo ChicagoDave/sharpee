@@ -4,13 +4,13 @@
  * Ties together parsing, resolution, action execution, and event processing
  */
 
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { 
-  ParsedCommand, 
-  ValidatedCommand,
-  Parser,
-  ValidationError
+  IParsedCommand, 
+  IValidatedCommand,
+  IParser,
+  IValidationError
 } from '@sharpee/world-model';
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
@@ -60,7 +60,7 @@ export interface CommandExecutorOptions {
   /**
    * Parser to use
    */
-  parser: Parser;
+  parser: IParser;
   
   /**
    * Whether to auto-resolve ambiguities
@@ -72,7 +72,7 @@ export interface CommandExecutorOptions {
  * Command executor implementation
  */
 export class CommandExecutor {
-  private parser: Parser;
+  private parser: IParser;
   private validator: CommandValidator;
   private actionRegistry: ActionRegistry;
   private eventProcessor: EventProcessor;
@@ -83,7 +83,7 @@ export class CommandExecutor {
     actionRegistry: ActionRegistry,
     eventProcessor: EventProcessor,
     languageProvider: LanguageProvider,
-    parser: Parser
+    parser: IParser
   ) {
     if (!world) throw new Error('World model is required');
     if (!actionRegistry) throw new Error('Action registry is required');
@@ -160,13 +160,13 @@ export class CommandExecutor {
             type: 'system.parser.tokens',
             data: {
               count: parsed.tokens.length,
-              tokens: parsed.tokens.map(t => ({
+              tokens: parsed.tokens.map((t: any) => ({
                 word: t.word,
                 normalized: t.normalized,
                 partOfSpeech: t.partOfSpeech,
                 position: t.position,
                 length: t.length,
-                candidates: t.candidates?.map(c => ({
+                candidates: t.candidates?.map((c: any) => ({
                   id: c.id,
                   type: c.type,
                   confidence: c.confidence
@@ -378,7 +378,7 @@ export class CommandExecutor {
    * Execute a validated command
    */
   async executeCommand(
-    command: ValidatedCommand,
+    command: IValidatedCommand,
     world: WorldModel,
     context: GameContext,
     turn: number
@@ -406,7 +406,7 @@ export class CommandExecutor {
       
       if (!validationResult.valid) {
         // Create error event from validation failure
-        const errorEvent: SemanticEvent = {
+        const errorEvent: ISemanticEvent = {
           id: `${turn}-validation-error`,
           type: 'action.error',
           timestamp: Date.now(),
@@ -444,7 +444,7 @@ export class CommandExecutor {
       const canExecute = action.canExecute(actionContext);
       if (!canExecute) {
         // Create generic error for old-style validation
-        const errorEvent: SemanticEvent = {
+        const errorEvent: ISemanticEvent = {
           id: `${turn}-canexecute-error`,
           type: 'action.error',
           timestamp: Date.now(),
@@ -482,7 +482,7 @@ export class CommandExecutor {
     
     // Phase 3: Check for entity-level event handlers
     // After action execution, check if any entities involved have handlers
-    const additionalEvents: SemanticEvent[] = [];
+    const additionalEvents: ISemanticEvent[] = [];
     for (const event of semanticEvents) {
       // Check if this is an event that entities might handle (e.g., if.event.pushed)
       if (event.type.startsWith('if.event.')) {
@@ -514,7 +514,7 @@ export class CommandExecutor {
     const allEvents = [...semanticEvents, ...additionalEvents];
     
     // Convert SemanticEvent[] to GameEvent[]
-    events = allEvents.map((se: SemanticEvent) => ({
+    events = allEvents.map((se: ISemanticEvent) => ({
       type: se.type,
       data: se.data,
       metadata: { id: se.id, entities: se.entities }
@@ -585,8 +585,8 @@ export class CommandExecutor {
   /**
    * Process entity event handlers
    */
-  private processEntityHandlers(events: SemanticEvent[]): SemanticEvent[] {
-    const handlerEvents: SemanticEvent[] = [];
+  private processEntityHandlers(events: ISemanticEvent[]): ISemanticEvent[] {
+    const handlerEvents: ISemanticEvent[] = [];
     const world = this.eventProcessor.getWorld();
     
     for (const event of events) {
@@ -630,7 +630,7 @@ export class CommandExecutor {
   private createActionContext(
     world: WorldModel, 
     context: GameContext,
-    command: ValidatedCommand,
+    command: IValidatedCommand,
     action: Action
   ): ActionContext {
     // Create scope resolver if not exists
@@ -658,7 +658,7 @@ export class CommandExecutor {
   /**
    * Create an error command for failed parsing
    */
-  private createErrorCommand(input: string): ParsedCommand {
+  private createErrorCommand(input: string): IParsedCommand {
     return {
       action: 'UNKNOWN',
       rawInput: input,
@@ -684,7 +684,7 @@ export function createCommandExecutor(
   actionRegistry: ActionRegistry,
   eventProcessor: EventProcessor,
   languageProvider: LanguageProvider,
-  parser: Parser
+  parser: IParser
 ): CommandExecutor {
   return new CommandExecutor(
     world,

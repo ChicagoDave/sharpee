@@ -4,19 +4,19 @@
  * Provides a convenient base class for creating extensions
  */
 
-import { IExtension, IExtensionRegistry, ExtensionMetadata } from './types';
+import { ITraitExtension, IExtensionRegistry, IExtensionMetadata } from './types';
 import { Behavior } from '../behaviors/behavior';
-import { TraitConstructor } from '../traits/trait';
+import { ITraitConstructor } from '../traits/trait';
 
 /**
  * Options for defining a trait in an extension
  */
-export interface ExtensionTraitDefinition {
+export interface IExtensionTraitDefinition {
   /** Local trait name (will be namespaced) */
   name: string;
   
   /** Trait constructor */
-  trait: TraitConstructor;
+  trait: ITraitConstructor;
   
   /** Associated behavior class */
   behavior?: typeof Behavior;
@@ -28,7 +28,7 @@ export interface ExtensionTraitDefinition {
 /**
  * Options for defining an event in an extension
  */
-export interface ExtensionEventDefinition {
+export interface IExtensionEventDefinition {
   /** Local event name (will be namespaced) */
   name: string;
   
@@ -44,8 +44,8 @@ export interface ExtensionEventDefinition {
  * 
  * Provides helper methods for common extension tasks
  */
-export abstract class BaseExtension implements IExtension {
-  abstract readonly metadata: ExtensionMetadata;
+export abstract class BaseExtension implements ITraitExtension {
+  abstract readonly metadata: IExtensionMetadata;
   
   protected registry!: IExtensionRegistry;
   
@@ -84,7 +84,7 @@ export abstract class BaseExtension implements IExtension {
    * Define traits provided by this extension
    * Override in subclasses
    */
-  protected defineTraits(): ExtensionTraitDefinition[] {
+  protected defineTraits(): IExtensionTraitDefinition[] {
     return [];
   }
   
@@ -92,7 +92,7 @@ export abstract class BaseExtension implements IExtension {
    * Define events provided by this extension
    * Override in subclasses
    */
-  protected defineEvents(): ExtensionEventDefinition[] {
+  protected defineEvents(): IExtensionEventDefinition[] {
     return [];
   }
   

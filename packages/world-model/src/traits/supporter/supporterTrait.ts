@@ -1,6 +1,6 @@
 // packages/world-model/src/traits/supporter/supporterTrait.ts
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
 /**
@@ -9,7 +9,7 @@ import { TraitType } from '../trait-types';
  * This is a pure data structure - all validation and logic
  * should be handled by SupporterBehavior.
  */
-export class SupporterTrait implements Trait {
+export class SupporterTrait implements ITrait {
   static readonly type = TraitType.SUPPORTER;
   readonly type = TraitType.SUPPORTER;
   

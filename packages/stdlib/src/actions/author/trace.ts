@@ -16,7 +16,7 @@
 import { ActionContext } from '../enhanced-types';
 import { MetaAction } from '../meta-action';
 import { ValidationResult } from '../enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 
 export class TraceAction extends MetaAction {
   id = 'author.trace';
@@ -66,10 +66,10 @@ export class TraceAction extends MetaAction {
     return { valid: false, error: 'invalid_pattern' };
   }
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     const { command, world } = context;
     const tokens = command.parsed?.tokens || [];
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Get or create debug capability data
     let debugData = world.getCapability('debug') || {

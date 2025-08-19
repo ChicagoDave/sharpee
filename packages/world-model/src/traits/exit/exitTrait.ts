@@ -1,6 +1,6 @@
 // packages/world-model/src/traits/exit/exitTrait.ts
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
 /**
@@ -9,7 +9,7 @@ import { TraitType } from '../trait-types';
  * 
  * This trait contains only data - all behavior is in ExitBehavior.
  */
-export class ExitTrait implements Trait {
+export class ExitTrait implements ITrait {
   static readonly type = TraitType.EXIT;
   readonly type = TraitType.EXIT;
   

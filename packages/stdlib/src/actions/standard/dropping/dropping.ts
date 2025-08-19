@@ -9,8 +9,8 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
-import { TraitType, ContainerBehavior, SupporterBehavior, WearableBehavior, ActorBehavior, DropItemResult } from '@sharpee/world-model';
+import { ISemanticEvent } from '@sharpee/core';
+import { TraitType, ContainerBehavior, SupporterBehavior, WearableBehavior, ActorBehavior, IDropItemResult } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
@@ -77,12 +77,12 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     return { valid: true };
   },
 
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     const actor = context.player;
     const noun = context.command.directObject?.entity!;
 
     // Delegate to ActorBehavior for dropping logic
-    const result: DropItemResult = ActorBehavior.dropItem(actor, noun, context.world);
+    const result: IDropItemResult = ActorBehavior.dropItem(actor, noun, context.world);
     
     // Handle failure cases
     if (!result.success) {

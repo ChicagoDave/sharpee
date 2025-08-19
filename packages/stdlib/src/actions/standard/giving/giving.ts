@@ -8,7 +8,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, ActorBehavior, IdentityBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { GivingEventMap } from './giving-events';
@@ -136,7 +136,7 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
     return { valid: true };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     // Call validate at the start
     const validation = this.validate(context);
     if (!validation.valid) {
@@ -207,7 +207,7 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
     }
     
     // Create events
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Create GIVEN event for world model
     events.push(context.event('if.event.given', eventData));

@@ -28,18 +28,18 @@ import {
 } from '@sharpee/if-domain';
 
 import type { 
-  ParsedCommand,
-  ParseError as CoreParseError,
-  Token,
-  TokenCandidate,
-  VerbPhrase,
-  NounPhrase,
-  PrepPhrase
+  IParsedCommand,
+  IParseError as CoreParseError,
+  IToken,
+  ITokenCandidate,
+  IVerbPhrase,
+  INounPhrase,
+  IPrepPhrase
 } from '@sharpee/world-model';
 
 import { PartOfSpeech } from '@sharpee/world-model';
 
-import type { SystemEvent, Result } from '@sharpee/core';
+import type { ISystemEvent, Result } from '@sharpee/core';
 import { EnglishGrammarEngine } from './english-grammar-engine';
 import { defineCoreGrammar } from './core-grammar';
 import { scope, StoryGrammar } from '@sharpee/if-domain';
@@ -88,11 +88,11 @@ function mapPartOfSpeech(vocabPos: VocabPartOfSpeech): PartOfSpeech {
  * Rich structure candidate - internal representation
  */
 interface RichCandidate {
-  tokens: Token[];
-  verb: VerbPhrase;
-  directObject?: NounPhrase;
-  preposition?: PrepPhrase;
-  indirectObject?: NounPhrase;
+  tokens: IToken[];
+  verb: IVerbPhrase;
+  directObject?: INounPhrase;
+  preposition?: IPrepPhrase;
+  indirectObject?: INounPhrase;
   pattern: string;
   confidence: number;
   action: string;
@@ -104,7 +104,7 @@ interface RichCandidate {
 export class EnglishParser implements Parser {
   private options: ParserOptions;
   private language: ParserLanguageProvider;
-  private onDebugEvent?: (event: SystemEvent) => void;
+  private onDebugEvent?: (event: ISystemEvent) => void;
   private platformEventEmitter?: (event: any) => void;
   private grammarEngine: EnglishGrammarEngine;
   private storyGrammar: StoryGrammarImpl;
@@ -168,7 +168,7 @@ export class EnglishParser implements Parser {
   /**
    * Set debug event callback
    */
-  setDebugCallback(callback: ((event: SystemEvent) => void) | undefined): void {
+  setDebugCallback(callback: ((event: ISystemEvent) => void) | undefined): void {
     this.onDebugEvent = callback;
   }
 
@@ -250,7 +250,7 @@ export class EnglishParser implements Parser {
   /**
    * Parse input text into structured command with rich information
    */
-  parse(input: string): CommandResult<ParsedCommand, CoreParseError> {
+  parse(input: string): CommandResult<IParsedCommand, CoreParseError> {
     // Emit parse start event
     this.emitPlatformEvent('parse_start', { input });
     
@@ -392,7 +392,7 @@ export class EnglishParser implements Parser {
     }
     
     // Build the ParsedCommand
-    const parsed: ParsedCommand = {
+    const parsed: IParsedCommand = {
       rawInput: input,
       tokens: best.tokens,
       structure: {
@@ -438,8 +438,8 @@ export class EnglishParser implements Parser {
   /**
    * Tokenize input with rich information preservation
    */
-  private tokenizeRich(input: string): Token[] {
-    const tokens: Token[] = [];
+  private tokenizeRich(input: string): IToken[] {
+    const tokens: IToken[] = [];
     let position = 0;
     
     // First extract quoted strings and replace them with placeholders
@@ -495,7 +495,7 @@ export class EnglishParser implements Parser {
       const vocabCandidates = this.getTokenCandidates(normalized);
       
       // Convert to rich token candidates
-      const candidates: TokenCandidate[] = vocabCandidates.map(vc => ({
+      const candidates: ITokenCandidate[] = vocabCandidates.map(vc => ({
         id: vc.mapsTo,
         type: vc.partOfSpeech,
         confidence: vc.priority || 1.0
@@ -529,7 +529,7 @@ export class EnglishParser implements Parser {
   /**
    * Find possible command structures in the tokens
    */
-  private findCommandStructures(tokens: Token[], input: string): RichCandidate[] {
+  private findCommandStructures(tokens: IToken[], input: string): RichCandidate[] {
     // Create grammar context with world model if available
     const context = {
       world: this.worldContext?.world || null,
@@ -543,7 +543,7 @@ export class EnglishParser implements Parser {
       word: t.word,
       normalized: t.normalized,
       position: t.position,
-      candidates: t.candidates.map(c => ({
+      candidates: t.candidates.map((c: any) => ({
         partOfSpeech: c.type as VocabPartOfSpeech,
         mapsTo: c.id,
         priority: c.confidence || 0
@@ -571,7 +571,7 @@ export class EnglishParser implements Parser {
   /**
    * Convert a grammar match to a RichCandidate
    */
-  private convertGrammarMatch(match: PatternMatch, tokens: Token[]): RichCandidate | null {
+  private convertGrammarMatch(match: PatternMatch, tokens: IToken[]): RichCandidate | null {
     const rule = match.rule;
     
     // Extract verb tokens from the beginning of the match
@@ -589,7 +589,7 @@ export class EnglishParser implements Parser {
     }
     
     // Build verb phrase
-    const verbPhrase: VerbPhrase = {
+    const verbPhrase: IVerbPhrase = {
       tokens: verbTokenIndices,
       text: verbTokenIndices.map(i => tokens[i].word).join(' '),
       head: verbTokenIndices.length > 0 ? tokens[verbTokenIndices[0]].normalized : ''
@@ -603,9 +603,9 @@ export class EnglishParser implements Parser {
     slotEntries.sort((a, b) => (a[1].tokens[0] || 0) - (b[1].tokens[0] || 0));
     
     // Extract structure based on pattern and position
-    let directObject: NounPhrase | undefined;
-    let preposition: PrepPhrase | undefined;
-    let indirectObject: NounPhrase | undefined;
+    let directObject: INounPhrase | undefined;
+    let preposition: IPrepPhrase | undefined;
+    let indirectObject: INounPhrase | undefined;
     let extras: any = {};
     
     // Analyze the pattern to understand the expected structure
@@ -625,7 +625,7 @@ export class EnglishParser implements Parser {
     for (const [slotName, slotData] of slotEntries) {
       const slotTokens = slotData.tokens.map((idx: number) => tokens[idx]);
       
-      const phrase: NounPhrase = {
+      const phrase: INounPhrase = {
         tokens: slotData.tokens,
         text: slotData.text,
         head: slotTokens[slotTokens.length - 1]?.normalized || slotData.text,
@@ -710,7 +710,7 @@ export class EnglishParser implements Parser {
     if (rule.action === 'if.action.going' && !directObject) {
       // Extract direction from pattern
       const directionToken = tokens.find(t => 
-        t.candidates.some(c => c.type === VocabPartOfSpeech.DIRECTION) ||
+        t.candidates.some((c: any) => c.type === VocabPartOfSpeech.DIRECTION) ||
         ['north', 'south', 'east', 'west', 'up', 'down', 'in', 'out', 'n', 's', 'e', 'w', 'u', 'd'].includes(t.normalized)
       );
       

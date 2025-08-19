@@ -13,7 +13,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from './enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { MetaCommandRegistry } from './meta-registry';
 
 /**
@@ -29,7 +29,7 @@ import { MetaCommandRegistry } from './meta-registry';
  *   id = 'score';
  *   verbs = ['score'];
  *   
- *   execute(context: ActionContext): SemanticEvent[] {
+ *   execute(context: ActionContext): ISemanticEvent[] {
  *     // Display score without incrementing turn
  *     return [
  *       context.event('game.score', { 
@@ -107,7 +107,7 @@ export abstract class MetaAction implements Action {
    * @param context The action context
    * @returns Array of semantic events
    */
-  abstract execute(context: ActionContext): SemanticEvent[];
+  abstract execute(context: ActionContext): ISemanticEvent[];
   
   /**
    * Register this action as a meta-command

@@ -8,13 +8,13 @@ export type AttributeValue =
   | number 
   | boolean 
   | null 
-  | AttributeObject 
+  | IAttributeObject 
   | AttributeArray;
 
 /**
  * An object containing attribute values
  */
-export interface AttributeObject {
+export interface IAttributeObject {
   [key: string]: AttributeValue;
 }
 
@@ -26,7 +26,7 @@ export type AttributeArray = AttributeValue[];
 /**
  * Configuration for an attribute
  */
-export interface AttributeConfig {
+export interface IAttributeConfig {
   /**
    * Type validation for this attribute
    */
@@ -51,4 +51,4 @@ export interface AttributeConfig {
 /**
  * A map of attribute configurations
  */
-export type AttributeConfigMap = Record<string, AttributeConfig>;
+export type AttributeConfigMap = Record<string, IAttributeConfig>;

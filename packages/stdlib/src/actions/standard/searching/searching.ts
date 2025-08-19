@@ -6,7 +6,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { 
   TraitType, 
   IdentityTrait,
@@ -62,7 +62,7 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
     return { valid: true };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     const actor = context.player;
     const target = context.command.directObject?.entity;
     
@@ -92,7 +92,7 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
     }
     
     // Create SEARCHED event for world model
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     events.push(context.event('if.event.searched', eventData));
     
     // Determine appropriate message

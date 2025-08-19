@@ -5,7 +5,7 @@ import { EntityId } from '../types/entity';
 /**
  * Represents a semantic event in the system
  */
-export interface SemanticEvent {
+export interface ISemanticEvent {
   /**
    * Unique identifier for this event
    */
@@ -84,17 +84,17 @@ export interface SemanticEvent {
 
 // EventSource interface moved to semantic-event-source.ts
 // Re-export for backwards compatibility
-export { SemanticEventSource as EventSource } from './semantic-event-source';
+export { ISemanticEventSource as EventSource } from './semantic-event-source';
 
 /**
  * Event listener for semantic events
  */
-export type EventListener = (event: SemanticEvent) => void;
+export type EventListener = (event: ISemanticEvent) => void;
 
 /**
  * Event emitter for semantic events
  */
-export interface EventEmitter {
+export interface IEventEmitter {
   /**
    * Add an event listener for a specific event type
    * Use '*' to listen to all events
@@ -109,7 +109,7 @@ export interface EventEmitter {
   /**
    * Emit an event
    */
-  emit: (event: SemanticEvent) => void;
+  emit: (event: ISemanticEvent) => void;
 }
 
 
@@ -117,7 +117,7 @@ export interface EventEmitter {
 /**
  * Configuration options for the event system
  */
-export interface EventSystemOptions {
+export interface IEventSystemOptions {
   /**
    * Maximum number of events to store in memory
    */
@@ -131,10 +131,10 @@ export interface EventSystemOptions {
   /**
    * Custom filter for events that should be emitted
    */
-  emitFilter?: (event: SemanticEvent) => boolean;
+  emitFilter?: (event: ISemanticEvent) => boolean;
 }
 
 /**
  * Type alias for backwards compatibility
  */
-export type Event = SemanticEvent;
+export type Event = ISemanticEvent;

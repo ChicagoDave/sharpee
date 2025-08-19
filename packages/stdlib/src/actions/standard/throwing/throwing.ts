@@ -9,7 +9,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, IdentityBehavior, ActorBehavior, RoomBehavior, OpenableBehavior, ContainerBehavior, SupporterBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
@@ -124,7 +124,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     return { valid: true };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     // Call validate at the start
     const validation = this.validate(context);
     if (!validation.valid) {
@@ -287,7 +287,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     eventData.finalLocation = willBreak ? null : finalLocation;
     
     // Create events
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Create THROWN event for world model
     events.push(context.event('if.event.thrown', eventData));

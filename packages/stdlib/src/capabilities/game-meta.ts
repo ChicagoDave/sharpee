@@ -2,13 +2,13 @@
  * Game meta capability for tracking game preferences and meta information
  */
 
-import { CapabilitySchema } from '@sharpee/world-model';
+import { ICapabilitySchema } from '@sharpee/world-model';
 
 /**
  * Game meta capability schema
  * Tracks game preferences and meta information
  */
-export const GameMetaCapabilitySchema: CapabilitySchema = {
+export const GameMetaCapabilitySchema: ICapabilitySchema = {
   turnCount: {
     type: 'number',
     default: 0,

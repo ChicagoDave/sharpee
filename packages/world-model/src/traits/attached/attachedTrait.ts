@@ -2,10 +2,10 @@
  * Attached trait implementation
  */
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
-export interface AttachedData {
+export interface IAttachedData {
   /**
    * What this is attached to (entity ID)
    */
@@ -52,7 +52,7 @@ export interface AttachedData {
  * This trait contains only data - all logic for detachment
  * is handled by the pulling action.
  */
-export class AttachedTrait implements Trait, AttachedData {
+export class AttachedTrait implements ITrait, IAttachedData {
   static readonly type = TraitType.ATTACHED;
   readonly type = TraitType.ATTACHED;
   
@@ -69,7 +69,7 @@ export class AttachedTrait implements Trait, AttachedData {
     leavesResidue?: boolean;
   };
   
-  constructor(data: AttachedData = {}) {
+  constructor(data: IAttachedData = {}) {
     this.attachedTo = data.attachedTo;
     this.attachmentType = data.attachmentType ?? 'stuck';
     this.detachable = data.detachable ?? false;

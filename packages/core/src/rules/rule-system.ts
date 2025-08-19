@@ -3,4 +3,4 @@
  * This is a re-export from compatibility for backward compatibility
  */
 
-export { RuleSystem, createRuleSystem } from './compatibility';
+export { IRuleSystem, createRuleSystem } from './compatibility';

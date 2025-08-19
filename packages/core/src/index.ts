@@ -11,12 +11,12 @@ export * from './extensions/types';
 
 // Execution system - export specific items to avoid conflicts
 export {
-  CommandHandler,
-  Action,
-  ExecutionContext,
-  CommandRouter,
-  CommandHandlerFactory,
-  CommandExecutionOptions
+  ICommandHandler,
+  IAction,
+  IExecutionContext,
+  ICommandRouter,
+  ICommandHandlerFactory,
+  ICommandExecutionOptions
 } from './execution/types';
 
 // Rules system

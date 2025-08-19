@@ -1,6 +1,6 @@
 // packages/world-model/src/traits/scenery/sceneryTrait.ts
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
 /**
@@ -11,7 +11,7 @@ import { TraitType } from '../trait-types';
  * 
  * This trait contains only data - all behavior is in SceneryBehavior.
  */
-export class SceneryTrait implements Trait {
+export class SceneryTrait implements ITrait {
   static readonly type = TraitType.SCENERY;
   readonly type = TraitType.SCENERY;
   

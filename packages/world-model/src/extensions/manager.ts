@@ -5,12 +5,27 @@
  */
 
 import { 
-  IExtension, 
-  IExtensionManager, 
-  ExtensionDependency,
+  ITraitExtension, 
+  IExtensionLoader, 
+  IExtensionDependency,
   VersionString 
 } from './types';
+
+// Type alias for clarity
+type IExtension = ITraitExtension;
 import { ExtensionRegistry, getExtensionRegistry } from './registry';
+
+/**
+ * Interface for the extension manager
+ */
+export interface IExtensionManager {
+  loadExtension(extension: IExtension): Promise<void>;
+  unloadExtension(extensionId: string): Promise<void>;
+  getExtension(extensionId: string): IExtension | undefined;
+  getLoadedExtensions(): IExtension[];
+  isLoaded(extensionId: string): boolean;
+  getExtensionAPI(extensionId: string): Record<string, unknown> | undefined;
+}
 
 /**
  * Manages extension lifecycle
@@ -133,7 +148,7 @@ export class ExtensionManager implements IExtensionManager {
   /**
    * Validate extension dependencies
    */
-  private async validateDependencies(dependencies: ExtensionDependency[]): Promise<void> {
+  private async validateDependencies(dependencies: IExtensionDependency[]): Promise<void> {
     for (const dep of dependencies) {
       if (!dep.optional && !this.isLoaded(dep.id)) {
         throw new Error(`Required dependency '${dep.id}' is not loaded`);

@@ -1,6 +1,6 @@
 // packages/world-model/src/traits/container/containerTrait.ts
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
 /**
@@ -9,7 +9,7 @@ import { TraitType } from '../trait-types';
  * This is a pure data structure - all validation and logic
  * should be handled by ContainerBehavior.
  */
-export class ContainerTrait implements Trait {
+export class ContainerTrait implements ITrait {
   static readonly type = TraitType.CONTAINER;
   readonly type = TraitType.CONTAINER;
   

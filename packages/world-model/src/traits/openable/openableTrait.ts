@@ -1,9 +1,9 @@
 // packages/world-model/src/traits/openable/openableTrait.ts
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
-export interface OpenableData {
+export interface IOpenableData {
   /** Whether the entity is currently open */
   isOpen?: boolean;
   
@@ -42,7 +42,7 @@ export interface OpenableData {
  * This trait contains only data - all logic for opening/closing
  * is in OpenableBehavior.
  */
-export class OpenableTrait implements Trait, OpenableData {
+export class OpenableTrait implements ITrait, IOpenableData {
   static readonly type = TraitType.OPENABLE;
   readonly type = TraitType.OPENABLE;
   
@@ -58,7 +58,7 @@ export class OpenableTrait implements Trait, OpenableData {
   openSound?: string;
   closeSound?: string;
   
-  constructor(data: OpenableData = {}) {
+  constructor(data: IOpenableData = {}) {
     // Set defaults and merge with provided data
     this.startsOpen = data.startsOpen ?? false;
     this.isOpen = data.isOpen ?? this.startsOpen;

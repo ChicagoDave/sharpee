@@ -95,7 +95,7 @@ export const Result = {
  * Generic command result type for operations that produce events
  * Domain-specific implementations can extend this
  */
-export interface CommandResult<TEvent = any> {
+export interface ICommandResult<TEvent = any> {
   /**
    * Whether the command was successful
    */

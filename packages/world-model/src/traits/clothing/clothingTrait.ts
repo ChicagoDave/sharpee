@@ -1,10 +1,10 @@
 // packages/world-model/src/traits/clothing/clothingTrait.ts
 
-import { Trait } from '../trait';
-import { WearableData } from '../wearable/wearableTrait';
+import { ITrait } from '../trait';
+import { IWearableData } from '../wearable/wearableTrait';
 import { TraitType } from '../trait-types';
 
-export interface ClothingData extends WearableData {
+export interface IClothingData extends IWearableData {
   /** Material the clothing is made from */
   material?: string;
   
@@ -40,7 +40,7 @@ export interface ClothingData extends WearableData {
  * world.moveEntity(pocket.id, coat.id);
  * ```
  */
-export class ClothingTrait implements Trait, ClothingData {
+export class ClothingTrait implements ITrait, IClothingData {
   static readonly type = TraitType.CLOTHING;
   readonly type = TraitType.CLOTHING;
   
@@ -73,7 +73,7 @@ export class ClothingTrait implements Trait, ClothingData {
     this.worn = value;
   }
   
-  constructor(data: ClothingData = {}) {
+  constructor(data: IClothingData = {}) {
     // Set wearable defaults and merge with provided data
     this.worn = data.isWorn ?? false;
     this.wornBy = data.wornBy;

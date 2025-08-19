@@ -23,11 +23,6 @@ describe('Parser Extension Methods', () => {
       // Try to parse with the custom verb
       const result = parser.parse('foo the bar');
       
-      // Debug output
-      if (!result.success) {
-        console.log('Parse failed:', result.error);
-      }
-      
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('custom.action.foo');

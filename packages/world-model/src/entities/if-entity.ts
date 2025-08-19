@@ -1,29 +1,29 @@
 // packages/world-model/src/entities/if-entity.ts
 
-import { Entity, EntityId, EntityCreationParams } from '@sharpee/core';
-import { Trait, TraitConstructor, isTrait } from '../traits/trait';
+import { IEntity, EntityId, IEntityCreationParams } from '@sharpee/core';
+import { ITrait, ITraitConstructor, isTrait } from '../traits/trait';
 import { TraitType } from '../traits/trait-types';
-import { EventHandlers } from '../events/types';
+import { IEventHandlers } from '../events/types';
 
 /**
  * Interactive Fiction Entity with trait-based composition.
  * Implements the core Entity interface and adds trait management capabilities.
  */
-export class IFEntity implements Entity {
+export class IFEntity implements IEntity {
   readonly id: EntityId;
   readonly type: string;
   attributes: Record<string, unknown>;
   relationships: Record<string, EntityId[]>;
-  traits: Map<TraitType, Trait>;
+  traits: Map<TraitType, ITrait>;
   
   /**
    * Event handlers for this entity
    * Key is the event type (e.g., 'if.event.pushed')
    * Value is the handler function
    */
-  on?: EventHandlers;
+  on?: IEventHandlers;
   
-  constructor(id: string, type: string, params?: Partial<EntityCreationParams>) {
+  constructor(id: string, type: string, params?: Partial<IEntityCreationParams>) {
     this.id = id;
     this.type = type;
     this.attributes = params?.attributes ? { ...params.attributes } : {};
@@ -44,7 +44,7 @@ export class IFEntity implements Entity {
   /**
    * Get a typed trait from the entity
    */
-  get<T extends Trait>(type: TraitType | string | TraitConstructor<T>): T | undefined {
+  get<T extends ITrait>(type: TraitType | string | ITraitConstructor<T>): T | undefined {
     const traitType = typeof type === 'string' ? type as TraitType : 
                      typeof type === 'function' ? (type as any).type : type;
     return this.traits.get(traitType) as T | undefined;
@@ -53,14 +53,14 @@ export class IFEntity implements Entity {
   /**
    * Alias for get() method - for backwards compatibility
    */
-  getTrait<T extends Trait>(type: TraitType | string | TraitConstructor<T>): T | undefined {
+  getTrait<T extends ITrait>(type: TraitType | string | ITraitConstructor<T>): T | undefined {
     return this.get<T>(type);
   }
   
   /**
    * Add a trait to the entity
    */
-  add(trait: Trait): this {
+  add(trait: ITrait): this {
     if (!isTrait(trait)) {
       throw new Error('Invalid trait: must have a type property');
     }
@@ -98,7 +98,7 @@ export class IFEntity implements Entity {
   /**
    * Get all traits on this entity
    */
-  getTraits(): Trait[] {
+  getTraits(): ITrait[] {
     return Array.from(this.traits.values());
   }
   

@@ -1,12 +1,12 @@
 import { 
-  SemanticEventSource, 
+  ISemanticEventSource, 
   createSemanticEventSource,
-  SemanticEvent 
+  ISemanticEvent 
 } from '../../src/events';
 import { vi } from 'vitest';
 
-describe('SemanticEventSource', () => {
-  let eventSource: SemanticEventSource;
+describe('ISemanticEventSource', () => {
+  let eventSource: ISemanticEventSource;
   
   beforeEach(() => {
     eventSource = createSemanticEventSource();
@@ -14,14 +14,14 @@ describe('SemanticEventSource', () => {
 
   describe('Event Storage', () => {
     it('should store and retrieve events', () => {
-      const event1: SemanticEvent = {
+      const event1: ISemanticEvent = {
         id: 'evt1',
         type: 'action.take',
         timestamp: Date.now(),
         entities: { actor: 'player', target: 'item1' }
       };
       
-      const event2: SemanticEvent = {
+      const event2: ISemanticEvent = {
         id: 'evt2',
         type: 'action.move',
         timestamp: Date.now(),
@@ -54,7 +54,7 @@ describe('SemanticEventSource', () => {
   });
 
   describe('Event Queries', () => {
-    const testEvents: SemanticEvent[] = [
+    const testEvents: ISemanticEvent[] = [
       {
         id: 'evt1',
         type: 'action.take',
@@ -134,11 +134,11 @@ describe('SemanticEventSource', () => {
 
   describe('Event Emission', () => {
     it('should emit events to subscribers', () => {
-      const receivedEvents: SemanticEvent[] = [];
+      const receivedEvents: ISemanticEvent[] = [];
       
       eventSource.subscribe(event => receivedEvents.push(event));
       
-      const event: SemanticEvent = {
+      const event: ISemanticEvent = {
         id: 'test1',
         type: 'test.event',
         timestamp: Date.now(),
@@ -153,8 +153,8 @@ describe('SemanticEventSource', () => {
 
     it('should support EventEmitter interface', () => {
       const emitter = eventSource.getEmitter();
-      const takeEvents: SemanticEvent[] = [];
-      const allEvents: SemanticEvent[] = [];
+      const takeEvents: ISemanticEvent[] = [];
+      const allEvents: ISemanticEvent[] = [];
       
       // Listen for specific event type
       emitter.on('action.take', event => takeEvents.push(event));
@@ -184,8 +184,8 @@ describe('SemanticEventSource', () => {
 
     it('should handle emitter unsubscribe', () => {
       const emitter = eventSource.getEmitter();
-      const events: SemanticEvent[] = [];
-      const listener = (event: SemanticEvent) => events.push(event);
+      const events: ISemanticEvent[] = [];
+      const listener = (event: ISemanticEvent) => events.push(event);
       
       emitter.on('test', listener);
       
@@ -243,7 +243,7 @@ describe('SemanticEventSource', () => {
     });
 
     it('should get events since a specific event', () => {
-      const events: SemanticEvent[] = [
+      const events: ISemanticEvent[] = [
         { id: 'evt1', type: 'test', timestamp: 1, entities: {} },
         { id: 'evt2', type: 'test', timestamp: 2, entities: {} },
         { id: 'evt3', type: 'test', timestamp: 3, entities: {} },
@@ -269,7 +269,7 @@ describe('SemanticEventSource', () => {
 
   describe('Entity Relationships', () => {
     it('should find events by any entity role', () => {
-      const complexEvent: SemanticEvent = {
+      const complexEvent: ISemanticEvent = {
         id: 'complex1',
         type: 'action.give',
         timestamp: Date.now(),

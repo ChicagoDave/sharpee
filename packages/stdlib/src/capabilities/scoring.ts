@@ -2,13 +2,13 @@
  * Scoring capability for tracking player score, achievements, and progress
  */
 
-import { CapabilitySchema } from '@sharpee/world-model';
+import { ICapabilitySchema } from '@sharpee/world-model';
 
 /**
  * Scoring capability schema
  * Tracks player score, achievements, and progress
  */
-export const ScoringCapabilitySchema: CapabilitySchema = {
+export const ScoringCapabilitySchema: ICapabilitySchema = {
   scoreValue: {
     type: 'number',
     default: 0,

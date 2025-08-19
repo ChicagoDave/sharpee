@@ -9,7 +9,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { puttingAction } from '../putting';
@@ -100,7 +100,7 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
     };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     // Revalidate
     const validation = this.validate(context);
     if (!validation.valid) {

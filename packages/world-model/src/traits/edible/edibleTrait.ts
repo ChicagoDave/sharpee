@@ -1,9 +1,9 @@
 // packages/world-model/src/traits/edible/edibleTrait.ts
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
-export interface EdibleData {
+export interface IEdibleData {
   /** Nutrition value (arbitrary units) */
   nutrition?: number;
   
@@ -38,7 +38,7 @@ export interface EdibleData {
  * This trait contains only data - all consumption logic
  * is in EdibleBehavior.
  */
-export class EdibleTrait implements Trait, EdibleData {
+export class EdibleTrait implements ITrait, IEdibleData {
   static readonly type = TraitType.EDIBLE;
   readonly type = TraitType.EDIBLE;
   
@@ -53,7 +53,7 @@ export class EdibleTrait implements Trait, EdibleData {
   weight: number;
   bulk: number;
   
-  constructor(data: EdibleData = {}) {
+  constructor(data: IEdibleData = {}) {
     // Set defaults and merge with provided data
     this.nutrition = data.nutrition ?? 1;
     this.servings = data.servings ?? 1;

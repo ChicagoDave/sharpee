@@ -2,10 +2,10 @@
  * Fragile trait implementation
  */
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
-export interface FragileData {
+export interface IFragileData {
   /**
    * Sound made when breaking
    */
@@ -58,7 +58,7 @@ export interface FragileData {
  * This trait contains only data - all logic for breaking
  * is handled by the attacking/dropping actions.
  */
-export class FragileTrait implements Trait, FragileData {
+export class FragileTrait implements ITrait, IFragileData {
   static readonly type = TraitType.FRAGILE;
   readonly type = TraitType.FRAGILE;
   
@@ -73,7 +73,7 @@ export class FragileTrait implements Trait, FragileData {
   sharpFragments: boolean;
   valueWhenBroken?: number;
   
-  constructor(data: FragileData = {}) {
+  constructor(data: IFragileData = {}) {
     this.breakSound = data.breakSound;
     this.breaksInto = data.breaksInto;
     this.breakThreshold = data.breakThreshold ?? 2; // Very fragile by default

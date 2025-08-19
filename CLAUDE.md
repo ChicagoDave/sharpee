@@ -13,3 +13,4 @@ This is the Sharpee interactive fiction engine project. Key points:
 - Main packages: engine, stdlib, world-model, parser-en-us
 - Actions follow validate/execute pattern (ADR-051)
 - Event handlers for custom logic (ADR-052)
+- never use scripts. modify one file/problem at a time

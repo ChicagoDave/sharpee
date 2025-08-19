@@ -2,10 +2,10 @@
  * Pushable trait implementation
  */
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
-export interface PushableData {
+export interface IPushableData {
   /**
    * Type of pushable object - determines behavior
    */
@@ -72,7 +72,7 @@ export interface PushableData {
  * This trait contains only data - all logic for pushing
  * is handled by the pushing action.
  */
-export class PushableTrait implements Trait, PushableData {
+export class PushableTrait implements ITrait, IPushableData {
   static readonly type = TraitType.PUSHABLE;
   readonly type = TraitType.PUSHABLE;
   
@@ -93,7 +93,7 @@ export class PushableTrait implements Trait, PushableData {
     onMove?: string;
   };
   
-  constructor(data: PushableData = {}) {
+  constructor(data: IPushableData = {}) {
     this.pushType = data.pushType ?? 'button';
     this.revealsPassage = data.revealsPassage;
     this.pushSound = data.pushSound;

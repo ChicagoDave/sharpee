@@ -4,8 +4,8 @@
  * The engine manages game state, turn execution, and event sequencing
  */
 
-import { SemanticEvent } from '@sharpee/core';
-import { ParsedCommand, IFEntity } from '@sharpee/world-model';
+import { ISemanticEvent } from '@sharpee/core';
+import { IParsedCommand, IFEntity } from '@sharpee/world-model';
 
 /**
  * Basic game event (before sequencing)

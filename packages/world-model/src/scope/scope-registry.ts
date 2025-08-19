@@ -4,18 +4,18 @@
  */
 
 import { 
-  ScopeRule, 
-  ScopeContext, 
-  ScopeEvaluationOptions, 
-  ScopeEvaluationResult,
-  ScopeRuleResult 
+  IScopeRule, 
+  IScopeContext, 
+  IScopeEvaluationOptions, 
+  IScopeEvaluationResult,
+  IScopeRuleResult 
 } from './scope-rule';
 
 /**
  * Registry for managing scope rules
  */
 export class ScopeRegistry {
-  private rules: Map<string, ScopeRule> = new Map();
+  private rules: Map<string, IScopeRule> = new Map();
   private rulesByLocation: Map<string, Set<string>> = new Map();
   private rulesByAction: Map<string, Set<string>> = new Map();
   private globalRules: Set<string> = new Set();
@@ -23,7 +23,7 @@ export class ScopeRegistry {
   /**
    * Add a scope rule to the registry
    */
-  addRule(rule: ScopeRule): void {
+  addRule(rule: IScopeRule): void {
     // Validate rule
     if (!rule.id) {
       throw new Error('Scope rule must have an id');
@@ -92,21 +92,21 @@ export class ScopeRegistry {
   /**
    * Get a rule by ID
    */
-  getRule(ruleId: string): ScopeRule | undefined {
+  getRule(ruleId: string): IScopeRule | undefined {
     return this.rules.get(ruleId);
   }
 
   /**
    * Get all rules
    */
-  getAllRules(): ScopeRule[] {
+  getAllRules(): IScopeRule[] {
     return Array.from(this.rules.values());
   }
 
   /**
    * Get rules applicable to a context
    */
-  getApplicableRules(context: ScopeContext): ScopeRule[] {
+  getApplicableRules(context: IScopeContext): IScopeRule[] {
     const applicableRuleIds = new Set<string>();
 
     // Add global rules
@@ -123,7 +123,7 @@ export class ScopeRegistry {
     }
 
     // Filter by action if specified
-    const rules: ScopeRule[] = [];
+    const rules: IScopeRule[] = [];
     for (const ruleId of applicableRuleIds) {
       const rule = this.rules.get(ruleId);
       if (!rule || !rule.enabled) continue;
@@ -166,7 +166,7 @@ export class ScopeRegistry {
   /**
    * Get rules by source
    */
-  getRulesBySource(source: string): ScopeRule[] {
+  getRulesBySource(source: string): IScopeRule[] {
     return Array.from(this.rules.values())
       .filter(rule => rule.source === source);
   }

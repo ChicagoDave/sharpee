@@ -6,7 +6,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, EdibleTrait, EdibleBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { EatenEventData, ImplicitTakenEventData } from './eating-events';
@@ -88,7 +88,7 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
     return { valid: true };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     // Call validate at the start
     const validation = this.validate(context);
     if (!validation.valid) {
@@ -110,7 +110,7 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
     const edibleTrait = item.get(TraitType.EDIBLE) as EdibleTrait;
     
     // If not held, pick it up first (implicit take)
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     if (!isHeld) {
       const implicitTakenData: ImplicitTakenEventData = {

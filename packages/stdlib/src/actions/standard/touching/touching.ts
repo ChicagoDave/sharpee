@@ -6,7 +6,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, IdentityTrait, SwitchableTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { TouchedEventData } from './touching-events';
@@ -211,9 +211,9 @@ export const touchingAction: Action & { metadata: ActionMetadata } = {
     };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     const target = context.command.directObject?.entity!;
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Build event data with tactile properties
     const eventData: TouchedEventData = {

@@ -2,10 +2,10 @@
  * Dial trait implementation
  */
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
-export interface DialData {
+export interface IDialData {
   /**
    * Whether the dial has numbered markings
    */
@@ -48,7 +48,7 @@ export interface DialData {
  * Dials should also have the TURNABLE trait for turn behavior.
  * This trait adds dial-specific descriptive properties.
  */
-export class DialTrait implements Trait, DialData {
+export class DialTrait implements ITrait, IDialData {
   static readonly type = TraitType.DIAL;
   readonly type = TraitType.DIAL;
   
@@ -61,7 +61,7 @@ export class DialTrait implements Trait, DialData {
   displayType?: 'analog' | 'digital' | 'both';
   units?: string;
   
-  constructor(data: DialData = {}) {
+  constructor(data: IDialData = {}) {
     this.numbered = data.numbered ?? true;
     this.hasTickMarks = data.hasTickMarks ?? true;
     this.tickCount = data.tickCount;

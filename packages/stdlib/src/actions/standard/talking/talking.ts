@@ -6,7 +6,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, ActorBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { TalkedEventData } from './talking-events';
@@ -99,7 +99,7 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     return { valid: true };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     // Call validate at the start
     const validation = this.validate(context);
     if (!validation.valid) {
@@ -179,7 +179,7 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     }
     
     // Create events
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Create TALKED event for world model
     events.push(context.event('if.event.talked', eventData));

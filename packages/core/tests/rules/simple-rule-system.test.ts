@@ -1,15 +1,15 @@
 import { 
-  SimpleRuleSystem, 
+  ISimpleRuleSystem, 
   createSimpleRuleSystem,
-  Rule,
-  RuleWorld,
-  RuleResult
+  IRule,
+  IRuleWorld,
+  IRuleResult
 } from '../../src/rules';
-import { SemanticEvent } from '../../src/events';
+import { ISemanticEvent } from '../../src/events';
 
-describe('SimpleRuleSystem', () => {
-  let ruleSystem: SimpleRuleSystem;
-  let mockWorld: RuleWorld;
+describe('ISimpleRuleSystem', () => {
+  let ruleSystem: ISimpleRuleSystem;
+  let mockWorld: IRuleWorld;
 
   beforeEach(() => {
     ruleSystem = createSimpleRuleSystem();
@@ -47,7 +47,7 @@ describe('SimpleRuleSystem', () => {
 
   describe('Rule Management', () => {
     it('should add and retrieve rules', () => {
-      const rule: Rule = {
+      const rule: IRule = {
         id: 'test-rule',
         eventType: 'item:taking',
         action: () => ({ prevent: false })
@@ -61,12 +61,12 @@ describe('SimpleRuleSystem', () => {
     });
 
     it('should remove rules', () => {
-      const rule1: Rule = {
+      const rule1: IRule = {
         id: 'rule1',
         eventType: 'test',
         action: () => ({ prevent: false })
       };
-      const rule2: Rule = {
+      const rule2: IRule = {
         id: 'rule2',
         eventType: 'test',
         action: () => ({ prevent: false })

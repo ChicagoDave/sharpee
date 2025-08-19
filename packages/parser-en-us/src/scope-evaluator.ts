@@ -9,7 +9,7 @@ import {
   FunctionConstraint,
   GrammarContext 
 } from '@sharpee/if-domain';
-import { Entity } from '@sharpee/core';
+import { IEntity } from '@sharpee/core';
 
 /**
  * Evaluates scope constraints to find matching entities
@@ -21,14 +21,14 @@ export class ScopeEvaluator {
   static getEntitiesInScope(
     constraint: ScopeConstraint,
     context: GrammarContext
-  ): Entity[] {
+  ): IEntity[] {
     // If no world model, return empty array
     if (!context.world) {
       return [];
     }
 
     // Start with base scope
-    let entities: Entity[] = [];
+    let entities: IEntity[] = [];
     
     switch (constraint.base) {
       case 'all':
@@ -74,7 +74,7 @@ export class ScopeEvaluator {
    * Check if a single entity matches a scope constraint
    */
   static entityMatchesScope(
-    entity: Entity,
+    entity: IEntity,
     constraint: ScopeConstraint,
     context: GrammarContext
   ): boolean {
@@ -85,7 +85,7 @@ export class ScopeEvaluator {
   /**
    * Get all entities in the world
    */
-  private static getAllEntities(context: GrammarContext): Entity[] {
+  private static getAllEntities(context: GrammarContext): IEntity[] {
     if (!context.world?.getAllEntities) {
       return [];
     }
@@ -95,7 +95,7 @@ export class ScopeEvaluator {
   /**
    * Get visible entities from current location
    */
-  private static getVisibleEntities(context: GrammarContext): Entity[] {
+  private static getVisibleEntities(context: GrammarContext): IEntity[] {
     if (!context.world?.getVisibleEntities) {
       return [];
     }
@@ -105,7 +105,7 @@ export class ScopeEvaluator {
   /**
    * Get touchable entities from current location
    */
-  private static getTouchableEntities(context: GrammarContext): Entity[] {
+  private static getTouchableEntities(context: GrammarContext): IEntity[] {
     if (!context.world?.getTouchableEntities) {
       return [];
     }
@@ -115,7 +115,7 @@ export class ScopeEvaluator {
   /**
    * Get entities carried by the actor
    */
-  private static getCarriedEntities(context: GrammarContext): Entity[] {
+  private static getCarriedEntities(context: GrammarContext): IEntity[] {
     if (!context.world?.getCarriedEntities) {
       return [];
     }
@@ -125,7 +125,7 @@ export class ScopeEvaluator {
   /**
    * Get nearby entities (visible + adjacent locations)
    */
-  private static getNearbyEntities(context: GrammarContext): Entity[] {
+  private static getNearbyEntities(context: GrammarContext): IEntity[] {
     if (!context.world?.getNearbyEntities) {
       // Fallback to visible if nearby not implemented
       return this.getVisibleEntities(context);
@@ -137,7 +137,7 @@ export class ScopeEvaluator {
    * Check if entity matches a filter
    */
   private static matchesFilter(
-    entity: Entity,
+    entity: IEntity,
     filter: PropertyConstraint | FunctionConstraint,
     context: GrammarContext
   ): boolean {
@@ -163,7 +163,7 @@ export class ScopeEvaluator {
     name: string,
     constraint: ScopeConstraint,
     context: GrammarContext
-  ): Entity[] {
+  ): IEntity[] {
     const entitiesInScope = this.getEntitiesInScope(constraint, context);
     
     // Try exact match first

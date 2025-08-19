@@ -4,7 +4,7 @@
  */
 
 import { Action, ActionContext } from '../../enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { TraitType } from '@sharpee/world-model';
 import {
   ReadingEventData,
@@ -68,7 +68,7 @@ export const reading: Action = {
     return { valid: true };
   },
 
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     const { directObject } = context.command;
     const target = directObject!.entity;
     const readable = target.get(TraitType.READABLE) as any;

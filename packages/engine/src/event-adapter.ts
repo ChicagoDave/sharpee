@@ -2,14 +2,14 @@
  * Event Adapter - Converts between SemanticEvent and SequencedEvent
  */
 
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { SequencedEvent } from './types';
 
 /**
  * Convert a SemanticEvent to a SequencedEvent
  */
 export function toSequencedEvent(
-  event: SemanticEvent, 
+  event: ISemanticEvent, 
   turn: number, 
   sequence: number
 ): SequencedEvent {
@@ -28,7 +28,7 @@ export function toSequencedEvent(
 /**
  * Determine the scope of an event
  */
-function determineScope(event: SemanticEvent): 'turn' | 'global' | 'system' {
+function determineScope(event: ISemanticEvent): 'turn' | 'global' | 'system' {
   // Platform events are system scope
   if (event.type.startsWith('platform.')) {
     return 'system';
@@ -46,7 +46,7 @@ function determineScope(event: SemanticEvent): 'turn' | 'global' | 'system' {
 /**
  * Convert a SequencedEvent back to a SemanticEvent (for processing)
  */
-export function toSemanticEvent(event: SequencedEvent): SemanticEvent {
+export function toSemanticEvent(event: SequencedEvent): ISemanticEvent {
   return {
     id: event.source || `${event.turn}-${event.sequence}`,
     type: event.type,

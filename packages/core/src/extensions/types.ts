@@ -1,11 +1,11 @@
 // packages/core/src/extensions/types.ts
 
-import { SemanticEvent } from '../events/types';
+import { ISemanticEvent } from '../events/types';
 
 /**
  * Base interface for all extensions
  */
-export interface Extension {
+export interface IExtension {
   /**
    * Unique identifier for this extension
    */
@@ -31,7 +31,7 @@ export interface Extension {
  * Extension for command handling (generic)
  * The IF-specific version with ParsedCommand and GameContext is in stdlib
  */
-export interface CommandExtension extends Extension {
+export interface ICommandExtension extends IExtension {
   /**
    * Verbs that this extension can handle
    */
@@ -42,7 +42,7 @@ export interface CommandExtension extends Extension {
  * Extension for abilities (generic)
  * The IF-specific version with GameContext is in stdlib
  */
-export interface AbilityExtension extends Extension {
+export interface IAbilityExtension extends IExtension {
   /**
    * Name of the ability
    */
@@ -53,7 +53,7 @@ export interface AbilityExtension extends Extension {
  * Extension for event processing (generic)
  * The IF-specific version with GameContext is in stdlib
  */
-export interface EventExtension extends Extension {
+export interface IEventExtension extends IExtension {
   /**
    * Event types that this extension handles
    */
@@ -62,14 +62,14 @@ export interface EventExtension extends Extension {
   /**
    * Process an event
    */
-  processEvent: (event: SemanticEvent) => SemanticEvent[];
+  processEvent: (event: ISemanticEvent) => ISemanticEvent[];
 }
 
 /**
  * Extension for parser enhancements (generic)
  * The IF-specific version with ParsedCommand is in stdlib
  */
-export interface ParserExtension extends Extension {
+export interface IParserExtension extends IExtension {
   /**
    * Grammar rules, dictionaries, etc.
    */
@@ -95,7 +95,7 @@ export enum ExtensionType {
  * Union type for all extension types
  */
 export type AnyExtension = 
-  | CommandExtension
-  | AbilityExtension
-  | EventExtension
-  | ParserExtension;
+  | ICommandExtension
+  | IAbilityExtension
+  | IEventExtension
+  | IParserExtension;

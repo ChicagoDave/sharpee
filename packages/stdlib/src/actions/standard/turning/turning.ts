@@ -9,7 +9,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { 
   TraitType, 
   TurnableTrait,
@@ -342,12 +342,12 @@ export const turningAction: Action & { metadata: ActionMetadata } = {
     };
   },
   
-  execute(context: ActionContext): SemanticEvent[] {
+  execute(context: ActionContext): ISemanticEvent[] {
     const actor = context.player;
     const target = context.command.directObject?.entity!;
     const direction = context.command.parsed.extras?.direction as string;
     const setting = context.command.parsed.extras?.setting as string;
-    const events: SemanticEvent[] = [];
+    const events: ISemanticEvent[] = [];
     
     // Get the turnable trait
     const turnable = target.get(TraitType.TURNABLE) as TurnableTrait;

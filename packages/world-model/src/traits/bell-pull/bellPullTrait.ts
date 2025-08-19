@@ -2,10 +2,10 @@
  * Bell pull trait implementation
  */
 
-import { Trait } from '../trait';
+import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 
-export interface BellPullData {
+export interface IBellPullData {
   /**
    * Entity ID of the bell that rings
    */
@@ -43,7 +43,7 @@ export interface BellPullData {
  * This trait contains only data - all logic for bell operation
  * is handled by the pulling action when combined with PULLABLE trait.
  */
-export class BellPullTrait implements Trait, BellPullData {
+export class BellPullTrait implements ITrait, IBellPullData {
   static readonly type = TraitType.BELL_PULL;
   readonly type = TraitType.BELL_PULL;
   
@@ -55,7 +55,7 @@ export class BellPullTrait implements Trait, BellPullData {
   broken: boolean;
   ringPattern: 'single' | 'double' | 'triple' | 'continuous';
   
-  constructor(data: BellPullData = {}) {
+  constructor(data: IBellPullData = {}) {
     this.ringsBellId = data.ringsBellId;
     this.bellSound = data.bellSound ?? 'ding';
     this.ringCount = data.ringCount ?? 1;

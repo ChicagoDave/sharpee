@@ -1,6 +1,6 @@
 import { 
-  DebugEvent, 
-  DebugContext, 
+  IDebugEvent, 
+  IDebugContext, 
   DebugEventTypes,
   DebugEventCallback 
 } from '../../src/debug/types';
@@ -9,7 +9,7 @@ import { vi } from 'vitest';
 describe('Debug Types', () => {
   describe('DebugEvent Structure', () => {
     it('should define correct debug event structure', () => {
-      const debugEvent: DebugEvent = {
+      const debugEvent: IDebugEvent = {
         id: 'debug_123',
         timestamp: Date.now(),
         subsystem: 'parser',
@@ -24,7 +24,7 @@ describe('Debug Types', () => {
     });
 
     it('should support all subsystem types', () => {
-      const subsystems: DebugEvent['subsystem'][] = [
+      const subsystems: IDebugEvent['subsystem'][] = [
         'parser',
         'validator', 
         'executor',
@@ -33,7 +33,7 @@ describe('Debug Types', () => {
       ];
 
       subsystems.forEach(subsystem => {
-        const event: DebugEvent = {
+        const event: IDebugEvent = {
           id: `test_${subsystem}`,
           timestamp: Date.now(),
           subsystem,
@@ -48,7 +48,7 @@ describe('Debug Types', () => {
 
   describe('DebugContext', () => {
     it('should define debug context with optional emit', () => {
-      const contextWithoutEmit: DebugContext = {
+      const contextWithoutEmit: IDebugContext = {
         enabled: true
       };
 
@@ -57,18 +57,18 @@ describe('Debug Types', () => {
     });
 
     it('should support debug callback', () => {
-      const events: DebugEvent[] = [];
+      const events: IDebugEvent[] = [];
       const callback: DebugEventCallback = (event) => {
         events.push(event);
       };
 
-      const context: DebugContext = {
+      const context: IDebugContext = {
         enabled: true,
         emit: callback
       };
 
       // Simulate emitting a debug event
-      const testEvent: DebugEvent = {
+      const testEvent: IDebugEvent = {
         id: 'test_001',
         timestamp: Date.now(),
         subsystem: 'parser',
@@ -83,14 +83,14 @@ describe('Debug Types', () => {
     });
 
     it('should handle disabled context', () => {
-      const context: DebugContext = {
+      const context: IDebugContext = {
         enabled: false,
         emit: vi.fn()
       };
 
       // Component would check enabled flag before emitting
       if (context.enabled && context.emit) {
-        context.emit({} as DebugEvent);
+        context.emit({} as IDebugEvent);
       }
 
       expect(context.emit).not.toHaveBeenCalled();
@@ -142,8 +142,8 @@ describe('Debug Types', () => {
 
   describe('Debug Event Usage Patterns', () => {
     it('should support parser debug flow', () => {
-      const debugEvents: DebugEvent[] = [];
-      const context: DebugContext = {
+      const debugEvents: IDebugEvent[] = [];
+      const context: IDebugContext = {
         enabled: true,
         emit: (event) => debugEvents.push(event)
       };
@@ -196,8 +196,8 @@ describe('Debug Types', () => {
     });
 
     it('should support collecting debug events from multiple subsystems', () => {
-      const allEvents: DebugEvent[] = [];
-      const context: DebugContext = {
+      const allEvents: IDebugEvent[] = [];
+      const context: IDebugContext = {
         enabled: true,
         emit: (event) => allEvents.push(event)
       };
@@ -255,7 +255,7 @@ describe('Debug Types', () => {
 
   describe('Type Safety', () => {
     it('should enforce subsystem types', () => {
-      const validEvent: DebugEvent = {
+      const validEvent: IDebugEvent = {
         id: 'test',
         timestamp: Date.now(),
         subsystem: 'parser',
@@ -265,7 +265,7 @@ describe('Debug Types', () => {
 
       // TypeScript would catch invalid subsystem at compile time
       // This test verifies the valid values work
-      const subsystems: DebugEvent['subsystem'][] = [
+      const subsystems: IDebugEvent['subsystem'][] = [
         'parser',
         'validator',
         'executor', 
@@ -274,13 +274,13 @@ describe('Debug Types', () => {
       ];
 
       subsystems.forEach(subsystem => {
-        const event: DebugEvent = { ...validEvent, subsystem };
+        const event: IDebugEvent = { ...validEvent, subsystem };
         expect(event.subsystem).toBe(subsystem);
       });
     });
 
     it('should allow any data type', () => {
-      const stringData: DebugEvent = {
+      const stringData: IDebugEvent = {
         id: '1',
         timestamp: 1,
         subsystem: 'parser',
@@ -288,7 +288,7 @@ describe('Debug Types', () => {
         data: 'simple string'
       };
 
-      const objectData: DebugEvent = {
+      const objectData: IDebugEvent = {
         id: '2',
         timestamp: 2,
         subsystem: 'parser',
@@ -296,7 +296,7 @@ describe('Debug Types', () => {
         data: { complex: { nested: true } }
       };
 
-      const arrayData: DebugEvent = {
+      const arrayData: IDebugEvent = {
         id: '3',
         timestamp: 3,
         subsystem: 'parser',
