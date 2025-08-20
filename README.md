@@ -167,7 +167,6 @@ sharpee/
 │   ├── lang-en-us/           # English language data
 │   ├── if-domain/            # IF contracts
 │   └── extensions/           # Extension packages
-│       └── blood-magic/      # Example extension
 ├── stories/                  # Example stories
 ├── docs/                     # Documentation
 │   ├── getting-started/      # Quick start guides
