@@ -53,7 +53,7 @@ export const reading: Action = {
         error: 'cannot_read_now',
         params: {
           item: String(target.attributes.name || 'that'),
-          reason: (readable as any).cannotReadMessage || "You can't read that right now."
+          reason: (readable as any).cannotReadMessage || 'cannot_read_now'
         }
       };
     }

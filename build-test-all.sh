@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Enhanced build and test script with action-specific testing support
+# Enhanced build and test script with parallel testing support
 set -e
 
 # No color codes for clean log output
@@ -22,6 +22,8 @@ CLEAN_BUILD=false
 STORY_TEST=true
 QUICK_MODE=false
 MUTE_OK_TESTS=false
+PARALLEL_TESTS=true
+MAX_PARALLEL_JOBS=4
 
 # Create logs directory if it doesn't exist
 mkdir -p /mnt/c/repotemp/sharpee/logs
@@ -72,6 +74,14 @@ while [[ $# -gt 0 ]]; do
       MUTE_OK_TESTS=true
       shift
       ;;
+    --no-parallel)
+      PARALLEL_TESTS=false
+      shift
+      ;;
+    --max-parallel)
+      MAX_PARALLEL_JOBS="$2"
+      shift 2
+      ;;
     --quick)
       QUICK_MODE=true
       TYPECHECK=false
@@ -93,6 +103,8 @@ while [[ $# -gt 0 ]]; do
       echo "  --clean             Clean build (remove dist/node_modules first)"
       echo "  --no-story          Skip story integration tests"
       echo "  --mute-ok-tests     Only show failing tests in output"
+      echo "  --no-parallel       Run tests sequentially instead of in parallel"
+      echo "  --max-parallel <n>  Maximum number of parallel test jobs (default: 4)"
       echo "  --quick             Quick mode (skip typecheck, lint, and story tests)"
       exit 1
       ;;
@@ -116,6 +128,8 @@ echo "  Clean build: $CLEAN_BUILD"
 echo "  Story tests: $STORY_TEST"
 echo "  Quick mode: $QUICK_MODE"
 echo "  Mute OK tests: $MUTE_OK_TESTS"
+echo "  Parallel tests: $PARALLEL_TESTS"
+echo "  Max parallel jobs: $MAX_PARALLEL_JOBS"
 echo ""
 
 # Function to strip ANSI color codes from input
@@ -464,59 +478,178 @@ if [ "$CLEAN_BUILD" = "true" ]; then
   echo ""
 fi
 
-# Process packages
+# PHASE 1: Build all packages first
+echo "=== PHASE 1: Building all packages ==="
+echo ""
+
+BUILD_FAILED=false
 for ((i=$START_INDEX; i<${#PACKAGES[@]}; i++)); do
   package="${PACKAGES[$i]}"
   
-  echo ""
-  echo "=== Processing $package ==="
+  echo "[$((i+1))/${#PACKAGES[@]}] Processing $package"
   
   # Determine if we should build this package
   should_build=true
   
   # Skip building if we're testing a specific action in stdlib AND --build wasn't specified
   if [[ "$package" == "stdlib" && -n "$ACTION" && "$FORCE_BUILD" != "true" ]]; then
-    echo "Skipping build for action-specific test (use --build to force)"
+    echo "  Skipping build for action-specific test (use --build to force)"
     should_build=false
   fi
   
   # Build the package if needed
   if [ "$should_build" = "true" ]; then
     if ! build_package "$package"; then
-      echo "Build failed for $package"
-      exit 1
+      echo "  Build failed for $package"
+      BUILD_FAILED=true
+      break
     fi
   fi
   
   # Type check if enabled
   if [ "$TYPECHECK" = "true" ]; then
     if ! typecheck_package "$package"; then
-      echo "Type check failed for $package"
-      exit 1
+      echo "  Type check failed for $package"
+      BUILD_FAILED=true
+      break
     fi
   fi
   
   # Lint if enabled
   if [ "$LINT" = "true" ]; then
     if ! lint_package "$package"; then
-      echo "Lint check failed for $package"
-      exit 1
+      echo "  Lint check failed for $package"
+      BUILD_FAILED=true
+      break
     fi
   fi
+done
+
+# Exit if build phase failed
+if [ "$BUILD_FAILED" = "true" ]; then
+  echo ""
+  echo "=== Build phase failed. Stopping before tests. ==="
+  exit 1
+fi
+
+echo ""
+echo "✓ All packages built successfully"
+echo ""
+
+# PHASE 2: Run tests (parallel or sequential)
+echo "=== PHASE 2: Running tests ==="
+echo ""
+
+# Function to run tests in parallel
+run_tests_parallel() {
+  local pids=()
+  local failed_packages=()
+  local package_names=()
   
-  # Run tests
-  if ! run_package_tests "$package"; then
-    echo "Tests failed for $package"
+  # Start test jobs for each package
+  for ((i=$START_INDEX; i<${#PACKAGES[@]}; i++)); do
+    package="${PACKAGES[$i]}"
+    
+    # Run tests in background
+    (
+      run_package_tests "$package"
+      echo $? > "/tmp/test_result_${package//\//_}"
+    ) &
+    
+    pids+=($!)
+    package_names+=("$package")
+    
+    # Wait if we've reached max parallel jobs
+    if [ ${#pids[@]} -ge $MAX_PARALLEL_JOBS ]; then
+      # Wait for any job to finish
+      wait -n
+      
+      # Check results of finished jobs
+      for j in "${!pids[@]}"; do
+        if ! kill -0 ${pids[$j]} 2>/dev/null; then
+          # Job finished, check result
+          local pkg_name="${package_names[$j]}"
+          local result_file="/tmp/test_result_${pkg_name//\//_}"
+          if [ -f "$result_file" ]; then
+            local result=$(cat "$result_file")
+            rm -f "$result_file"
+            if [ "$result" != "0" ]; then
+              failed_packages+=("$pkg_name")
+            fi
+          fi
+          # Remove from arrays
+          unset pids[$j]
+          unset package_names[$j]
+        fi
+      done
+      
+      # Rebuild arrays without gaps
+      pids=("${pids[@]}")
+      package_names=("${package_names[@]}")
+    fi
+    
+    # If we're testing a specific action, stop after stdlib
+    if [[ "$package" == "stdlib" && -n "$ACTION" ]]; then
+      break
+    fi
+  done
+  
+  # Wait for remaining jobs
+  for j in "${!pids[@]}"; do
+    wait ${pids[$j]}
+    local pkg_name="${package_names[$j]}"
+    local result_file="/tmp/test_result_${pkg_name//\//_}"
+    if [ -f "$result_file" ]; then
+      local result=$(cat "$result_file")
+      rm -f "$result_file"
+      if [ "$result" != "0" ]; then
+        failed_packages+=("$pkg_name")
+      fi
+    fi
+  done
+  
+  # Report results
+  if [ ${#failed_packages[@]} -gt 0 ]; then
+    echo ""
+    echo "✗ Tests failed for the following packages:"
+    for pkg in "${failed_packages[@]}"; do
+      echo "  - $pkg"
+    done
+    return 1
+  fi
+  
+  return 0
+}
+
+# Run tests either in parallel or sequential
+if [ "$PARALLEL_TESTS" = "true" ]; then
+  echo "Running tests in parallel (max $MAX_PARALLEL_JOBS jobs)..."
+  if ! run_tests_parallel; then
+    echo ""
+    echo "=== Some tests failed. Check logs for details. ==="
     exit 1
   fi
-  
-  # If we're testing a specific action, stop after stdlib
-  if [[ "$package" == "stdlib" && -n "$ACTION" ]]; then
-    echo ""
-    echo "Action test completed for: $ACTION"
-    exit 0
-  fi
-done
+else
+  # Sequential test execution
+  for ((i=$START_INDEX; i<${#PACKAGES[@]}; i++)); do
+    package="${PACKAGES[$i]}"
+    
+    echo "[$((i+1))/${#PACKAGES[@]}] Testing $package"
+    
+    # Run tests
+    if ! run_package_tests "$package"; then
+      echo "Tests failed for $package"
+      exit 1
+    fi
+    
+    # If we're testing a specific action, stop after stdlib
+    if [[ "$package" == "stdlib" && -n "$ACTION" ]]; then
+      echo ""
+      echo "Action test completed for: $ACTION"
+      exit 0
+    fi
+  done
+fi
 
 # Run story integration tests if enabled
 if [ "$STORY_TEST" = "true" ]; then
@@ -554,6 +687,9 @@ if [ "$LINT" = "true" ]; then
   echo "✓ All lint checks passed"
 fi
 echo "✓ All unit tests passed"
+if [ "$PARALLEL_TESTS" = "true" ]; then
+  echo "  (Tests run in parallel with max $MAX_PARALLEL_JOBS jobs)"
+fi
 if [ "$STORY_TEST" = "true" ]; then
   echo "✓ Story integration tests passed"
 fi

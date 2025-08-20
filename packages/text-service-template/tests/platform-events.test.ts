@@ -2,6 +2,7 @@
  * Tests for text service platform event handling
  */
 
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TemplateTextService } from '../src';
 import { 
   TextServiceContext,
@@ -38,7 +39,7 @@ describe('TemplateTextService Platform Events', () => {
     };
     
     mockLanguageProvider = {
-      getMessage: jest.fn((id: string): Message | null => {
+      getMessage: vi.fn((id: string): Message | null => {
         const messages: Record<string, Message> = {
           'game_saved': { id: 'game_saved', template: 'Game saved successfully.' },
           'save_failed': { id: 'save_failed', template: 'Save failed: {error}' },
@@ -214,7 +215,7 @@ describe('TemplateTextService Platform Events', () => {
       // Platform event
       currentTurnEvents.push(createSaveCompletedEvent(true));
       
-      mockLanguageProvider.getMessage = jest.fn((id: string) => {
+      mockLanguageProvider.getMessage = vi.fn((id: string) => {
         if (id === 'test_message') return { id, template: 'Test message.' };
         if (id === 'game_saved') return { id, template: 'Game saved successfully.' };
         return null;
@@ -244,7 +245,7 @@ describe('TemplateTextService Platform Events', () => {
         }
       } as any;
       
-      mockLanguageProvider.getMessage = jest.fn((id: string) => {
+      mockLanguageProvider.getMessage = vi.fn((id: string) => {
         if (id === 'game_saved') {
           return { id, template: 'Game saved as "{saveName}".' };
         }
@@ -273,7 +274,7 @@ describe('TemplateTextService Platform Events', () => {
         }
       } as any;
       
-      mockLanguageProvider.getMessage = jest.fn((id: string) => {
+      mockLanguageProvider.getMessage = vi.fn((id: string) => {
         if (id === 'game_saved') {
           return { id, template: 'Game saved at {timestamp}.' };
         }

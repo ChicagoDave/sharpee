@@ -132,7 +132,10 @@ export class CommandExecutor {
       }
       
       if (!parseResult.success) {
-        throw new Error(parseResult.error.message);
+        // Parser errors still have messages since they're not validation errors
+        const errorMessage = (parseResult.error as any).message || 
+                           `Parse error: ${(parseResult.error as any).code || 'unknown'}`;
+        throw new Error(errorMessage);
       }
 
       const parsed = parseResult.value;
@@ -228,13 +231,21 @@ export class CommandExecutor {
           systemEvents.push(eventSequencer.sequence({
             type: 'system.validation.failed',
             data: {
-              error: validationResult.error.message,
               code: validationResult.error.code,
               details: validationResult.error.details
             }
           }, turn));
         }
-        throw new Error(validationResult.error.message);
+        // Create error message from code and details
+        const errorCode = validationResult.error.code;
+        const details = validationResult.error.details;
+        let errorMessage = `Validation error: ${errorCode}`;
+        if (details?.searchText) {
+          errorMessage = `Cannot find: ${details.searchText}`;
+        } else if (details?.action) {
+          errorMessage = `Unknown action: ${details.action}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const validated = validationResult.value;

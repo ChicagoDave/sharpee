@@ -122,8 +122,8 @@ export class CommandValidator implements CommandValidator {
         error: {
           type: 'VALIDATION_ERROR',
           code: 'ACTION_NOT_AVAILABLE',
-          message: `Unknown action: ${command.action}`,
-          parsed: command
+          parsed: command,
+          details: { action: command.action }
         }
       };
     }
@@ -169,9 +169,12 @@ export class CommandValidator implements CommandValidator {
           error: {
             type: 'VALIDATION_ERROR',
             code: 'ENTITY_NOT_VISIBLE',
-            message: scopeCheck.message || 'Entity is not in required scope',
             parsed: command,
-            details: { entity: directObject.entity.id }
+            details: { 
+              entity: directObject.entity.id,
+              entityName: directObject.parsed.text,
+              scopeCode: scopeCheck.code
+            }
           }
         };
       }
@@ -190,9 +193,12 @@ export class CommandValidator implements CommandValidator {
           error: {
             type: 'VALIDATION_ERROR',
             code: 'ENTITY_NOT_VISIBLE',
-            message: scopeCheck.message || 'Entity is not in required scope',
             parsed: command,
-            details: { entity: indirectObject.entity.id }
+            details: { 
+              entity: indirectObject.entity.id,
+              entityName: indirectObject.parsed.text,
+              scopeCode: scopeCheck.code
+            }
           }
         };
       }
@@ -211,7 +217,6 @@ export class CommandValidator implements CommandValidator {
         error: {
           type: 'VALIDATION_ERROR',
           code: 'PRECONDITION_FAILED',
-          message: preconditionCheck.message,
           parsed: command,
           details: preconditionCheck.details
         }
@@ -416,7 +421,6 @@ export class CommandValidator implements CommandValidator {
         error: {
           type: 'VALIDATION_ERROR',
           code: 'ENTITY_NOT_FOUND',
-          message: this.getMessage('entity_not_found', { text: ref.text }),
           parsed: command,
           details: {
             searchText: ref.text,
@@ -451,13 +455,11 @@ export class CommandValidator implements CommandValidator {
         error: {
           type: 'VALIDATION_ERROR',
           code: 'ENTITY_NOT_FOUND',
-          message: this.getMessage('ambiguous_reference', {
-            text: ref.text,
-            count: viableMatches.length
-          }),
           parsed: command,
           details: {
-            ambiguousEntities: choices
+            ambiguousEntities: choices,
+            searchText: ref.text,
+            matchCount: viableMatches.length
           }
         }
       };
@@ -799,13 +801,12 @@ export class CommandValidator implements CommandValidator {
     entity: IFEntity,
     requiredScope: ScopeLevel,
     entityName: string
-  ): { success: boolean; code?: string; message?: string } {
+  ): { success: boolean; code?: string } {
     const player = this.world.getPlayer();
     if (!player) {
       return {
         success: false,
-        code: 'NO_PLAYER',
-        message: 'No player entity found'
+        code: 'NO_PLAYER'
       };
     }
 
@@ -817,8 +818,7 @@ export class CommandValidator implements CommandValidator {
         if (entityScope !== ScopeLevel.CARRIED) {
           return {
             success: false,
-            code: 'NOT_CARRIED',
-            message: `You're not carrying the ${entityName}.`
+            code: 'NOT_CARRIED'
           };
         }
         break;
@@ -827,8 +827,7 @@ export class CommandValidator implements CommandValidator {
         if (entityScope !== ScopeLevel.CARRIED && entityScope !== ScopeLevel.REACHABLE) {
           return {
             success: false,
-            code: 'NOT_REACHABLE',
-            message: `You can't reach the ${entityName}.`
+            code: 'NOT_REACHABLE'
           };
         }
         break;
@@ -839,8 +838,7 @@ export class CommandValidator implements CommandValidator {
           entityScope === ScopeLevel.OUT_OF_SCOPE) {
           return {
             success: false,
-            code: 'NOT_VISIBLE',
-            message: `You can't see the ${entityName}.`
+            code: 'NOT_VISIBLE'
           };
         }
         break;
@@ -849,8 +847,7 @@ export class CommandValidator implements CommandValidator {
         if (entityScope === ScopeLevel.OUT_OF_SCOPE) {
           return {
             success: false,
-            code: 'NOT_AUDIBLE',
-            message: `You can't hear the ${entityName}.`
+            code: 'NOT_AUDIBLE'
           };
         }
         break;
@@ -859,8 +856,7 @@ export class CommandValidator implements CommandValidator {
         if (entityScope === ScopeLevel.OUT_OF_SCOPE) {
           return {
             success: false,
-            code: 'NOT_DETECTABLE',
-            message: `You can't sense the ${entityName}.`
+            code: 'NOT_DETECTABLE'
           };
         }
         break;
@@ -1001,33 +997,6 @@ export class CommandValidator implements CommandValidator {
     return { success: true, message: 'OK' };
   }
 
-  /**
-   * Get localized message
-   */
-  private getMessage(key: string, params?: Record<string, any>): string {
-    // Message templates
-    const messages: Record<string, string> = {
-      unknown_action: "I don't understand the word '{action}'.",
-      action_requires_object: "What do you want to {action}?",
-      action_requires_indirect_object: "What do you want to {action} it with?",
-      invalid_preposition: "You can't {action} something {preposition} that.",
-      entity_not_found: "You can't see any {text} here.",
-      entity_not_visible: "You can't see the {text}.",
-      entity_not_reachable: "You can't reach the {text}.",
-      ambiguous_reference: "Which {text} do you mean? (I can see {count} of them)"
-    };
-
-    let message = messages[key] || key;
-
-    // Replace parameters
-    if (params) {
-      for (const [param, value] of Object.entries(params)) {
-        message = message.replace(`{${param}}`, String(value));
-      }
-    }
-
-    return message;
-  }
 
   /**
    * Emit a debug event
