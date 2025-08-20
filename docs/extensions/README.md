@@ -1,5 +1,7 @@
 # Extension Development Guide
 
+> ⚠️ **ALPHA DOCUMENTATION**: The extension system is under development. APIs and patterns shown here may change as the platform evolves.
+
 Create reusable packages that extend Sharpee's functionality with new actions, capabilities, and behaviors.
 
 ## Overview
@@ -375,14 +377,11 @@ combat.initialize(extensionContext);
 
 ## Resources
 
-- [Extension API Reference](../api/extensions.md)
 - [Platform Development Guide](../platform/README.md)
-- [Example Extensions](https://github.com/sharpee/extensions)
-- [Extension Template](https://github.com/sharpee/extension-template)
+- [API Documentation](../api/)
 
 ## Getting Help
 
-- Check the [Extension FAQ](./faq.md)
 - Browse [existing extensions](https://www.npmjs.com/search?q=sharpee-ext)
 - Ask in Discord (coming soon)
 - Open an issue for bugs

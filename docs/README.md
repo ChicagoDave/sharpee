@@ -1,5 +1,7 @@
 # Sharpee Documentation
 
+> ⚠️ **ALPHA SOFTWARE DOCUMENTATION**: Sharpee is in alpha. Documentation may be incomplete, contain errors, or reference features that are planned but not yet implemented. We're actively improving the documentation.
+
 Welcome to the Sharpee Interactive Fiction Framework documentation. This guide will help you navigate the various documentation resources available.
 
 ## Quick Links

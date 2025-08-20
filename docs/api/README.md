@@ -1,5 +1,7 @@
 # API Reference Documentation
 
+> ⚠️ **ALPHA DOCUMENTATION**: This API documentation is for alpha software. APIs may change without notice, and documentation may be incomplete or contain errors.
+
 This directory contains comprehensive API reference documentation for all Sharpee packages.
 
 ## Package APIs

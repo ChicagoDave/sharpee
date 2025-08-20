@@ -1,5 +1,7 @@
 # Platform Development Guide
 
+> ⚠️ **ALPHA SOFTWARE**: The platform is under active development. APIs are subject to change, and this documentation may not reflect the latest implementation.
+
 Welcome to Sharpee platform development! This guide covers contributing to the core engine, world model, and standard library.
 
 ## Overview
@@ -289,10 +291,9 @@ it('should update inventory after taking item', () => {
 
 ## Resources
 
-- [Architecture Decision Records](../../decisions/README.md)
+- [Architecture Decision Records](../architecture/adrs/)
 - [API Documentation](../api/README.md)
 - [Contributing Guide](../../CONTRIBUTING.md)
-- [Code of Conduct](../../CODE_OF_CONDUCT.md)
 
 ## Getting Help
 

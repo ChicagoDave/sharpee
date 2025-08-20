@@ -1,5 +1,7 @@
 # @sharpee/actions
 
+> ⚠️ **ALPHA DOCUMENTATION**: The action system architecture is evolving. This documentation may not reflect the current implementation.
+
 Event-driven action system for the Sharpee IF Platform.
 
 ## Overview

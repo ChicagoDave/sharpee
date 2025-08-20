@@ -1,5 +1,7 @@
 # Getting Started with Sharpee for Authors
 
+> ⚠️ **ALPHA SOFTWARE**: Sharpee is currently in alpha. Features may change, and this documentation may contain outdated information or examples that need updating.
+
 Welcome to Sharpee! This guide will help you create your first interactive fiction story.
 
 ## What is Sharpee?

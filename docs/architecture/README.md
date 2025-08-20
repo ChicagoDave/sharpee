@@ -1,12 +1,13 @@
 # Architecture Documentation
 
+> ⚠️ **ALPHA DOCUMENTATION**: This documentation is for alpha software and may contain errors, outdated information, or broken links. We're actively improving the documentation.
+
 This directory contains all architectural documentation for the Sharpee Interactive Fiction Framework.
 
 ## Structure
 
 - **[ADRs (Architecture Decision Records)](./adrs/)** - Documented architectural decisions
 - **[Design Documents](./design/)** - Design specifications and diagrams
-- **[Patterns](./patterns/)** - Architectural patterns and conventions
 
 ## Key Architectural Components
 
@@ -68,14 +69,13 @@ Available in [./design/diagrams/](./design/diagrams/):
 ## Migration and Refactoring
 
 - [Trait Action Update Checklist](./design/trait-action-update-checklist.md)
-- [Refactor List](./design/refactor list.md)
-- [Check List](./design/check list.md)
+- [Refactor List](./design/refactor%20list.md)
+- [Check List](./design/check%20list.md)
 
 ## Related Documentation
 
 - [Development Standards](../development/standards/)
 - [API Documentation](../api/)
-- [Package Documentation](../packages/)
 
 ## Contributing
 

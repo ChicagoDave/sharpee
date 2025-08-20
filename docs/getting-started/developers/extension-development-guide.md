@@ -1,5 +1,7 @@
 # Extension Development Guide
 
+> ⚠️ **ALPHA DOCUMENTATION**: The extension API is still evolving. This guide may contain outdated examples or reference features that are not yet implemented.
+
 This guide covers creating extensions for the Sharpee platform, from basic concepts to publishing your extension.
 
 ## Understanding Extensions

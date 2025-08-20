@@ -1,9 +1,11 @@
 # Sharpee Interactive Fiction Platform
 
-[![Version](https://img.shields.io/badge/version-1.0.0--alpha.1-blue.svg)](https://github.com/ChicagoDave/sharpee/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0--alpha.1-orange.svg)](https://github.com/ChicagoDave/sharpee/releases)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.2+-blue.svg)](https://www.typescriptlang.org/)
 [![Tests](https://img.shields.io/badge/tests-2700%2B%20passing-brightgreen.svg)](./packages)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
+
+> ⚠️ **ALPHA SOFTWARE**: This is alpha software under active development. Features may change, documentation may contain errors or outdated information, and breaking changes may occur. Use in production at your own risk.
 
 A modern, TypeScript-based platform for creating interactive fiction with a powerful event-driven architecture and extensible design.
 
@@ -236,7 +238,9 @@ export class MagicExtension implements IExtension {
 
 ## 📊 Project Status
 
-### Current Version: 0.1.0 (Alpha)
+### Current Version: 1.0.0-alpha.1
+
+> **Note**: This is alpha software. APIs may change, features are being actively developed, and documentation is being improved. We welcome feedback and contributions!
 
 | Component | Status | Tests | Coverage |
 |-----------|--------|-------|----------|
