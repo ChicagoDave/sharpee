@@ -84,17 +84,14 @@ const story = forge.story('cloak-of-darkness')
       if (actor.has('cloak')) {
         story.state.disturbances++;
         
-        // Disturb the message if stumbling in the dark
-        if (story.state.disturbances === 1) {
-          story.print(`Blundering around in the dark isn't a good idea!`);
-        } else if (story.state.disturbances === 2) {
-          story.print(`In the dark? You could easily disturb something!`);
-        } else if (story.state.disturbances >= 3) {
-          story.print(`You stumble around in the dark, trampling everything.`);
-        }
-        
-        // Update the message state
+        // Update the message state - the Text Service will handle
+        // generating appropriate messages based on this state change
         story.find('message').disturb();
+        
+        // Emit semantic event that Text Service will interpret
+        return story.event('stumbling_in_dark', {
+          disturbances: story.state.disturbances
+        });
       }
     })
     .done()
@@ -110,7 +107,8 @@ const story = forge.story('cloak-of-darkness')
     )
     // Prevent leaving (ends the game)
     .onEnter((actor, room) => {
-      story.print(`That's not the way to win this game!`);
+      // Emit event that signals wrong direction
+      story.event('wrong_exit_attempted');
       story.end(false);  // End game unsuccessfully
     })
     .done()
@@ -133,9 +131,9 @@ const story = forge.story('cloak-of-darkness')
     // Custom behavior when dropped
     .onDrop((object, location) => {
       if (location.is('bar') && story.state.disturbances > 0) {
-        story.print(`You drop the cloak, which falls to the floor, 
-          further disturbing the sawdust.`);
         story.state.disturbances++;
+        // Text Service will generate appropriate message based on event
+        return story.event('cloak_dropped_on_disturbed_message');
       }
     })
     .done()
@@ -153,10 +151,12 @@ const story = forge.story('cloak-of-darkness')
       if (object.is('cloak')) {
         story.state.cloakHung = true;
         story.score(1);  // Award a point
-        story.print(`You hang the velvet cloak on the small brass hook.`);
         
         // Now the bar is lit (no cloak to absorb light)
         story.room('bar').nowLit();
+        
+        // Text Service will generate the success message
+        return story.event('cloak_hung_on_hook');
       }
     })
     .done()
@@ -222,32 +222,24 @@ const story = forge.story('cloak-of-darkness')
   .command('score')
     .pattern('score', 'points')
     .execute(() => {
-      const current = story.getScore();
-      const max = story.getMaxScore();
-      story.print(`You have scored ${current} out of ${max} points.`);
-      
-      if (story.state.messageRead) {
-        story.print(`You successfully read the message!`);
-      } else if (story.state.cloakHung) {
-        story.print(`You've hung up your cloak. Now explore!`);
-      } else {
-        story.print(`You haven't accomplished anything yet.`);
-      }
+      // Emit event with score data - Text Service generates the message
+      return story.event('score_requested', {
+        current: story.getScore(),
+        maximum: story.getMaxScore(),
+        messageRead: story.state.messageRead,
+        cloakHung: story.state.cloakHung
+      });
     })
     .done()
   
   .command('hint')
     .pattern('hint', 'help', 'hints')
     .execute(() => {
-      if (!story.state.cloakHung) {
-        story.print(`This velvet cloak is very heavy and absorbs light. 
-          Perhaps you should hang it up somewhere?`);
-      } else if (!story.state.messageRead) {
-        story.print(`Now that your cloak is hung up, you can explore 
-          the bar without disturbing anything.`);
-      } else {
-        story.print(`You've completed the game!`);
-      }
+      // Text Service will generate appropriate hint based on game state
+      return story.event('hint_requested', {
+        cloakHung: story.state.cloakHung,
+        messageRead: story.state.messageRead
+      });
     })
     .done()
   
@@ -264,8 +256,8 @@ const story = forge.story('cloak-of-darkness')
     .then((world) => {
       // Make the room pitch dark
       world.room('bar').makeDark();
-      // Prevent examining objects in the dark
-      world.blockAction('examine', `It's too dark to see anything!`);
+      // Block examine action - Text Service handles the message
+      world.blockAction('examine', 'darkness_blocks_examine');
     })
     .done()
   
@@ -305,6 +297,35 @@ const story = forge.story('cloak-of-darkness')
 
 // Export for use with Sharpee runtime
 export default story;
+```
+
+## Text Service Integration
+
+**Important Architecture Note**: In Sharpee, actions and event handlers don't generate text directly. Instead, they emit semantic events that the Text Service interprets to generate appropriate messages. This separation allows for:
+
+- **Localization**: Different languages can interpret the same events
+- **Customization**: Authors can override default messages
+- **Consistency**: All text generation follows the same patterns
+- **Testing**: Events can be tested without text generation
+
+### Example: Event-Driven Text Generation
+
+```typescript
+// Instead of this (direct text):
+.onEnter(() => {
+  story.print("You enter the dark room.");  // ❌ Don't do this
+})
+
+// Do this (semantic event):
+.onEnter(() => {
+  return story.event('entered_dark_room');  // ✅ Text Service handles it
+})
+```
+
+The Text Service would have templates like:
+```typescript
+textService.template('entered_dark_room', 
+  "You stumble into the darkness, unable to see anything.");
 ```
 
 ## Key Features of the Forge API
