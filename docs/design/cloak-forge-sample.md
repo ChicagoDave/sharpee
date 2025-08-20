@@ -84,14 +84,11 @@ const story = forge.story('cloak-of-darkness')
       if (actor.has('cloak')) {
         story.state.disturbances++;
         
-        // Update the message state - the Text Service will handle
-        // generating appropriate messages based on this state change
+        // Update the message state
         story.find('message').disturb();
         
-        // Emit semantic event that Text Service will interpret
-        return story.event('stumbling_in_dark', {
-          disturbances: story.state.disturbances
-        });
+        // That's it! The Text Service will observe the state change
+        // and generate appropriate messages based on the disturbance count
       }
     })
     .done()
@@ -107,9 +104,8 @@ const story = forge.story('cloak-of-darkness')
     )
     // Prevent leaving (ends the game)
     .onEnter((actor, room) => {
-      // Emit event that signals wrong direction
-      story.event('wrong_exit_attempted');
       story.end(false);  // End game unsuccessfully
+      // Text Service sees the game ended unsuccessfully from this location
     })
     .done()
   
@@ -132,8 +128,7 @@ const story = forge.story('cloak-of-darkness')
     .onDrop((object, location) => {
       if (location.is('bar') && story.state.disturbances > 0) {
         story.state.disturbances++;
-        // Text Service will generate appropriate message based on event
-        return story.event('cloak_dropped_on_disturbed_message');
+        // State change is enough - Text Service observes and responds
       }
     })
     .done()
@@ -154,9 +149,7 @@ const story = forge.story('cloak-of-darkness')
         
         // Now the bar is lit (no cloak to absorb light)
         story.room('bar').nowLit();
-        
-        // Text Service will generate the success message
-        return story.event('cloak_hung_on_hook');
+        // Text Service observes the state changes and responds
       }
     })
     .done()
@@ -192,10 +185,6 @@ const story = forge.story('cloak-of-darkness')
         story.state.messageRead = true;
         story.score(1);  // Award final point
         return `*** You have won ***`;
-      } else if (disturbed === 1) {
-        return `** You have w*n **`;
-      } else if (disturbed === 2) {
-        return `* You hav w*n *`;
       } else {
         return `The message is too trampled to read.`;
       }
@@ -218,31 +207,7 @@ const story = forge.story('cloak-of-darkness')
   
   // ===== CUSTOM COMMANDS =====
   // Add story-specific commands beyond the standard library
-  
-  .command('score')
-    .pattern('score', 'points')
-    .execute(() => {
-      // Emit event with score data - Text Service generates the message
-      return story.event('score_requested', {
-        current: story.getScore(),
-        maximum: story.getMaxScore(),
-        messageRead: story.state.messageRead,
-        cloakHung: story.state.cloakHung
-      });
-    })
-    .done()
-  
-  .command('hint')
-    .pattern('hint', 'help', 'hints')
-    .execute(() => {
-      // Text Service will generate appropriate hint based on game state
-      return story.event('hint_requested', {
-        cloakHung: story.state.cloakHung,
-        messageRead: story.state.messageRead
-      });
-    })
-    .done()
-  
+    
   // ===== CUSTOM RULES =====
   // Define special game mechanics
   
@@ -256,8 +221,7 @@ const story = forge.story('cloak-of-darkness')
     .then((world) => {
       // Make the room pitch dark
       world.room('bar').makeDark();
-      // Block examine action - Text Service handles the message
-      world.blockAction('examine', 'darkness_blocks_examine');
+      // Scope system already handles visibility in darkness
     })
     .done()
   
@@ -299,34 +263,46 @@ const story = forge.story('cloak-of-darkness')
 export default story;
 ```
 
-## Text Service Integration
+## Text Service Architecture
 
-**Important Architecture Note**: In Sharpee, actions and event handlers don't generate text directly. Instead, they emit semantic events that the Text Service interprets to generate appropriate messages. This separation allows for:
+**Critical Design Point**: In Sharpee, the story definition NEVER generates text directly. The Text Service observes all state changes and events, then generates appropriate messages. This is a fundamental architectural principle.
 
-- **Localization**: Different languages can interpret the same events
-- **Customization**: Authors can override default messages
-- **Consistency**: All text generation follows the same patterns
-- **Testing**: Events can be tested without text generation
+### How It Works
 
-### Example: Event-Driven Text Generation
+1. **Story defines behavior**: State changes, rules, object properties
+2. **Actions execute**: They modify state, move objects, etc.
+3. **Text Service observes**: Watches for state changes and events
+4. **Messages generated**: Based on context, state, and language
+
+### Example: The Dark Bar
+
+When the player enters the dark bar carrying the cloak:
 
 ```typescript
-// Instead of this (direct text):
-.onEnter(() => {
-  story.print("You enter the dark room.");  // ❌ Don't do this
-})
-
-// Do this (semantic event):
-.onEnter(() => {
-  return story.event('entered_dark_room');  // ✅ Text Service handles it
+// Story just updates state:
+.onEnter((actor, room) => {
+  if (actor.has('cloak')) {
+    story.state.disturbances++;
+    story.find('message').disturb();
+  }
 })
 ```
 
-The Text Service would have templates like:
-```typescript
-textService.template('entered_dark_room', 
-  "You stumble into the darkness, unable to see anything.");
-```
+The Text Service observes:
+- Player entered 'bar' room
+- Room is dark
+- Player has 'cloak' 
+- Disturbances increased from 0 to 1
+
+And generates: "Blundering around in the dark isn't a good idea!"
+
+### Why This Matters
+
+- **No text in story logic**: Complete separation of concerns
+- **Localization**: Same story works in any language
+- **Customization**: Players can mod text without touching logic
+- **Consistency**: All text follows the same patterns
+- **Testing**: Test logic without text generation
 
 ## Key Features of the Forge API
 
