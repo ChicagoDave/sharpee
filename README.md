@@ -76,17 +76,15 @@ pnpm test
 Sharpee uses a clean, layered architecture:
 
 ```
-┌─────────────────────────────────────┐
-│         Stories & Games             │  <- Your creations
-├─────────────────────────────────────┤
-│         Extensions                  │  <- Community plugins
-├─────────────────────────────────────┤
-│      Standard Library               │  <- Common actions & traits
-├─────────────────────────────────────┤
-│   World Model │ IF Domain │ Parser  │  <- Game systems
-├─────────────────────────────────────┤
-│          Core Engine                │  <- Event system
-└─────────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│           Stories & Games                   │  <- Your creations
+├─────────────────────────────────────────────┤
+│   Standard Library │ Extensions             │  <- Common actions & Community plugins
+├─────────────────────────────────────────────┤
+│   World Model │ IF Domain │ Parser          │  <- Game systems
+├─────────────────────────────────────────────┤
+│             Core Engine                     │  <- Event system
+└─────────────────────────────────────────────┘
 ```
 
 ### Core Packages
