@@ -163,9 +163,9 @@ export class CLIEventsTextService implements TextService {
       parts.push(`(${time.toTimeString().split(' ')[0]})`);
     }
 
-    // Format payload data
-    if (this.config.showEventData && event.payload) {
-      const payload = event.payload;
+    // Format data
+    if (this.config.showEventData && (event as any).payload) {
+      const payload = (event as any).payload;
       
       // Special formatting for common platform event types
       if (type.startsWith('parser.')) {

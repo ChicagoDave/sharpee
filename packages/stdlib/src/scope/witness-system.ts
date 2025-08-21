@@ -384,7 +384,7 @@ export class StandardWitnessSystem implements WitnessSystem {
       if (change.entityId) entityObj.target = change.entityId;
       if (change.target) entityObj.target = change.target;
       
-      createEvent(event.type, event.payload, entityObj);
+      createEvent(event.type, event.data as Record<string, unknown>, entityObj);
     }
   }
 

@@ -439,7 +439,7 @@ describe('ISimpleRuleSystem', () => {
       
       expect(result.events).toHaveLength(1);
       expect(result.events![0].type).toBe('narrative');
-      expect(result.events![0].payload).toEqual({ 
+      expect(result.events![0].data).toEqual({ 
         message: 'Something interesting happened!' 
       });
       expect(result.events![0].entities.actor).toBe('player');

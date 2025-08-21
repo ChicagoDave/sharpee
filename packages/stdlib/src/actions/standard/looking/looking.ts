@@ -202,8 +202,8 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
       // "examine" without object means examine surroundings
       // Replace the previous success event with examine_surroundings
       const lastEvent = events[events.length - 1];
-      if (lastEvent.type === 'action.success' && lastEvent.payload) {
-        lastEvent.payload.messageId = 'examine_surroundings';
+      if (lastEvent.type === 'action.success' && lastEvent.data) {
+        (lastEvent.data as any).messageId = 'examine_surroundings';
       }
     }
     

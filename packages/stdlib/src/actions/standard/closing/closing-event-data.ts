@@ -1,7 +1,7 @@
 /**
- * Payload for the 'if.event.closed' event
+ * Data for the 'if.event.closed' event
  * 
- * This is what goes in SemanticEvent.payload
+ * This is what goes in SemanticEvent.data
  */
 
 import { EntityId } from '@sharpee/core';

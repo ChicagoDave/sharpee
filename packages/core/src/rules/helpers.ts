@@ -10,7 +10,7 @@ import { IRuleWorld, IEntityChange } from './types';
  * Helper to get the target item from an event
  */
 export function getTargetItem(event: ISemanticEvent, world: IRuleWorld) {
-  const targetId = event.entities.target || event.payload?.itemId;
+  const targetId = event.entities.target || (event.data as any)?.itemId;
   // Ensure targetId is a string before passing to getEntity
   if (typeof targetId === 'string') {
     return world.getEntity(targetId);

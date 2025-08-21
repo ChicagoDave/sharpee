@@ -433,11 +433,12 @@ describe('takingAction (Golden Pattern)', () => {
       const events = executeWithValidation(takingAction, context);
       
       const takenEvent = events.find(e => e.type === 'if.event.taken');
-      // Check the event payload data (where the typed event data lives)
-      expect(takenEvent?.payload?.data?.container).toBeUndefined();
-      expect(takenEvent?.payload?.data?.fromContainer).toBeUndefined();
-      expect(takenEvent?.payload?.data?.fromSupporter).toBeUndefined();
-      expect(takenEvent?.payload?.data?.fromLocation).toBeUndefined();
+      // Check the event data
+      const eventData = takenEvent?.data as any;
+      expect(eventData?.data?.container).toBeUndefined();
+      expect(eventData?.data?.fromContainer).toBeUndefined();
+      expect(eventData?.data?.fromSupporter).toBeUndefined();
+      expect(eventData?.data?.fromLocation).toBeUndefined();
     });
   });
 });

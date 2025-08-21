@@ -52,9 +52,10 @@ export interface ISemanticEvent {
   };
   
   /**
-   * Additional data related to the event
+   * Event data - can contain any shape of data needed for the event
+   * Use type assertions to access typed data: event.data as MyEventData
    */
-  payload?: Record<string, unknown>;
+  data?: unknown;
   
   /**
    * Tags for categorizing and filtering events
@@ -70,16 +71,6 @@ export interface ISemanticEvent {
    * Whether this event should be narrated
    */
   narrate?: boolean;
-  
-  /**
-   * Legacy support for data property (same as payload)
-   */
-  data?: Record<string, unknown>;
-  
-  /**
-   * Legacy support for metadata property
-   */
-  metadata?: Record<string, unknown>;
 }
 
 // EventSource interface moved to semantic-event-source.ts

@@ -1168,7 +1168,7 @@ export class GameEngine {
     // Create a GameEvent that's compatible with the engine's type system
     const gameEvent: GameEvent = {
       type: event.type,
-      data: event.payload || event.data || {},
+      data: event.data || {},
       metadata: {
         id: event.id || `event-${Date.now()}`,
         timestamp: event.timestamp || Date.now(),
@@ -1189,7 +1189,7 @@ export class GameEngine {
         type: event.type,
         timestamp: event.timestamp || Date.now(),
         entities: event.entities || {},
-        data: event.payload || event.data || {}
+        data: event.data || {}
       };
       const turnEvents = this.turnEvents.get(this.context.currentTurn) || [];
       turnEvents.push(semanticEvent);
