@@ -9,11 +9,13 @@ export { CLIEventsTextService } from './cli-events-text-service';
 export type { CLIEventsConfig } from './cli-events-text-service';
 
 export { TemplateTextService } from './template-text-service';
-export { TemplateTextService as TextService } from './template-text-service'; // Default text service
+export { StandardTextService } from './standard-text-service';
+export { StandardTextService as TextService } from './standard-text-service'; // Default text service
 
 // Import implementations for factory
 import { CLIEventsTextService as CLIEventsImpl } from './cli-events-text-service';
 import { TemplateTextService as TemplateImpl } from './template-text-service';
+import { StandardTextService as StandardImpl } from './standard-text-service';
 
 // Factory function for creating text services
 export function createTextService(type: string, config?: any) {
@@ -23,6 +25,9 @@ export function createTextService(type: string, config?: any) {
     
     case 'template':
       return new TemplateImpl();
+    
+    case 'standard':
+      return new StandardImpl();
     
     default:
       throw new Error(`Unknown text service type: ${type}`);
