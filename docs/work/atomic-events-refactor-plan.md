@@ -7,7 +7,7 @@ Refactor the Sharpee event system from reference-based events (containing entity
 ## Goals
 
 1. **Historical Accuracy**: Events capture the exact state when they occurred
-2. **Type Safety**: Fix the `data: Record<string, unknown>` vs `any` issue
+2. **Type Safety**: Fix the `data: Record<string, unknown>` forcing double-casting issue
 3. **Simplified Text Service**: Pure transformation without world model queries
 4. **True Event Sourcing**: Events become complete, replayable records
 
@@ -29,8 +29,9 @@ Action → Captures State → Event with Data → Text Service → Formats Outpu
 
 #### 1.1 Update ISemanticEvent Interface
 - Location: `packages/core/src/events/types.ts`
-- Change `data?: Record<string, unknown>` to `data?: any`
-- Deprecate `payload` and `metadata` properties
+- Change `data?: Record<string, unknown>` to `data?: unknown`
+- Remove `payload` and `metadata` properties completely
+- Update all code that references these properties to use `data`
 - Add migration comments
 
 #### 1.2 Create Event Builder Utilities

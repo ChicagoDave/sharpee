@@ -2,9 +2,16 @@
 
 ## Phase 1: Core Interface Updates
 - [ ] Update `packages/core/src/events/types.ts`
-  - [ ] Change `data?: Record<string, unknown>` to `data?: any`
-  - [ ] Add deprecation comments for `payload` and `metadata`
+  - [ ] Change `data?: Record<string, unknown>` to `data?: unknown`
+  - [ ] Remove `payload` property
+  - [ ] Remove `metadata` property
   - [ ] Update interface documentation
+- [ ] Update code that uses `payload` (61 occurrences in 28 files)
+  - [ ] Search and replace `.payload` with `.data`
+  - [ ] Update event creation code
+- [ ] Update code that uses `metadata` for events (~10 actual uses)
+  - [ ] Distinguish between event.metadata and context.metadata
+  - [ ] Update only event.metadata references
 - [ ] Create `packages/core/src/events/builders/` directory
   - [ ] Create `EventBuilder.ts` base class
   - [ ] Create `RoomDescriptionEventBuilder.ts`

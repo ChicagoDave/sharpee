@@ -129,20 +129,13 @@ export interface ISemanticEvent {
   // ... other properties
   
   /**
-   * Event data payload - typed as 'any' to allow flexible event data
-   * Consumers should type-check/validate at point of use
+   * Event data payload - typed as 'unknown' to allow flexible event data
+   * Consumers must type-check/assert at point of use
    */
-  data?: any;
+  data?: unknown;
   
-  /**
-   * @deprecated Use 'data' instead
-   */
-  payload?: any;
-  
-  /**
-   * @deprecated Use 'data' instead  
-   */
-  metadata?: any;
+  // Remove payload and metadata properties completely
+  // All event data now flows through 'data' property
 }
 ```
 
@@ -173,7 +166,7 @@ function normalizeEvent(event: any): ISemanticEvent {
 
 ### Immediate Actions
 
-1. **Change data to `any` type** to fix TypeScript issues
+1. **Change data to `unknown` type** to fix TypeScript issues
 2. **Add backward compatibility** layer in event processing
 3. **Update text service** to use simple type assertions
 
@@ -217,16 +210,17 @@ interface RoomDescriptionEventData {
 
 The conflicting properties in ISemanticEvent are causing immediate issues with the text service implementation. The `.data` property is the clear winner with 530 uses vs 61 for payload and minimal for metadata.
 
-**The root issue**: `data` is typed as `Record<string, unknown>` when it should be `any` to allow flexible event payloads that are type-checked at consumption.
+**The root issue**: `data` is typed as `Record<string, unknown>` which forces double-casting. It should be `unknown` to allow flexible event payloads with single type assertions at consumption.
 
 **Recommended approach**: 
-1. Change `.data` to type `any` immediately (fixes TypeScript errors)
-2. Add compatibility layer for payload/metadata
-3. Migrate all code to use `.data`
-4. Deprecate and eventually remove redundant properties
+1. Change `.data` to type `unknown` immediately (fixes TypeScript errors)
+2. Remove `payload` and `metadata` properties completely
+3. Update all existing references to use `.data` instead
+4. Single source of truth from the start
 
 This will provide:
 - Immediate fix for TypeScript double-casting issues
+- Type-safe single assertions (better than `any`)
 - Backward compatibility during migration
 - Clear path forward with single source of truth
-- Pragmatic type checking at point of use (not at event creation)
+- Safer type checking at point of use
