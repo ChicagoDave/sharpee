@@ -1,246 +1,310 @@
-# ADR-057: Before/After Rules System for Story Logic
+# ADR-057: Rulebook System for Story Logic
 
 ## Status
-Proposed
+On Hold
 
 ## Context
-Interactive fiction authors need to inject custom logic around action execution to implement puzzles, story progression, and special behaviors. Currently, this is done through entity event handlers, but we need a more structured approach that allows story-level logic to run before and after actions.
+Interactive fiction authors need to inject custom logic around action execution to implement puzzles, story progression, and special behaviors. We need a structured approach that allows story-level logic to run before, after, and during turn sequences.
 
 Key requirements:
-- Authors need to modify world state before actions (e.g., auto-equip gloves)
-- Authors need to react to actions after execution (e.g., increment counters)
-- Rules must have predictable execution order
-- Rules should be able to prevent actions from executing
-- The system must integrate cleanly with the validate/execute/report action phases
+- Authors can create before rules that run before validation and execution
+- Before rules can cancel or redirect actions
+- After rules run after execution but before report
+- Every turn rules run at the end of each turn
+- Rules have id, order, when condition, and run logic
+- Rules are standalone and injected into command executor via rulebooks
 
 ## Decision
 
 ### Rule Structure
-Rules are first-class objects with explicit ordering:
+Rules are simple objects with a consistent interface:
 
 ```typescript
 interface Rule {
   id: string;                                    // Unique identifier for debugging
-  order: number;                                 // Execution order (lower runs first)
+  order?: number;                                // Execution order (lower runs first, default 100)
   when: (context: RuleContext) => boolean;      // Condition to check
   run: (context: RuleContext) => RuleResult | void;  // Effect to apply
-  enabled?: boolean | (() => boolean);          // Optional enable/disable
 }
 
 interface RuleContext {
-  action: string;                   // Action being executed
-  phase: 'before' | 'after';       // When the rule is running
+  action: string;                   // Action being executed (e.g., 'taking')
   world: WorldModel;                // Access to world state
   player: Entity;                   // The player entity
   command: ValidatedCommand;        // The parsed command
-  result?: ActionResult;            // For 'after' phase only
+  result?: ActionResult;            // For 'after' rules only
 }
 
 interface RuleResult {
-  prevent?: boolean;                // Stop action execution (before phase only)
+  prevent?: boolean;                // Stop action execution (before rules only)
+  redirect?: string;                // Redirect to different action (before rules only)
   message?: string;                 // Message to display
   events?: ISemanticEvent[];       // Events to emit
 }
 ```
 
-### Execution Flow
-The command executor will follow this sequence:
-
-1. **Before Rules** - Run all matching before rules in order
-   - Can mutate world state
-   - Can prevent action execution
-   - Can emit events
-
-2. **Action.validate()** - Validate action with current world state
-   - Sees mutations from before rules
-   - Standard action validation logic
-
-3. **Action.execute()** - Perform the action
-   - Mutates world state
-   - Core action logic only
-
-4. **After Rules** - Run all matching after rules in order
-   - Can mutate world state
-   - Can emit events
-   - Cannot prevent (action already happened)
-
-5. **Action.report()** - Generate events from final state
-   - Captures complete state after all mutations
-   - Creates atomic events with embedded data
-
-### Story Integration
-Rules are defined as part of the story:
+### Rulebook Structure
+Rulebooks organize rules by execution phase:
 
 ```typescript
-interface Story {
-  rules: Rule[];
-  // ... other story properties
+interface Rulebook {
+  before: Rule[];      // Rules that run before action validation
+  after: Rule[];       // Rules that run after action execution
+  everyTurn: Rule[];   // Rules that run at end of each turn
+}
+
+class RulebookManager {
+  private rulebook: Rulebook = {
+    before: [],
+    after: [],
+    everyTurn: []
+  };
+
+  addBeforeRule(rule: Rule): void {
+    this.rulebook.before.push(rule);
+    this.sortRules(this.rulebook.before);
+  }
+
+  addAfterRule(rule: Rule): void {
+    this.rulebook.after.push(rule);
+    this.sortRules(this.rulebook.after);
+  }
+
+  addEveryTurnRule(rule: Rule): void {
+    this.rulebook.everyTurn.push(rule);
+    this.sortRules(this.rulebook.everyTurn);
+  }
+
+  private sortRules(rules: Rule[]): void {
+    rules.sort((a, b) => (a.order ?? 100) - (b.order ?? 100));
+  }
+
+  getBeforeRules(): Rule[] { return this.rulebook.before; }
+  getAfterRules(): Rule[] { return this.rulebook.after; }
+  getEveryTurnRules(): Rule[] { return this.rulebook.everyTurn; }
 }
 ```
 
-### Example Rules
+### Execution Flow
+The command executor integrates with rulebooks:
 
 ```typescript
-const story: Story = {
-  rules: [
-    {
-      id: 'auto-wear-gloves',
-      order: 10,
-      when: (ctx) => 
-        ctx.phase === 'before' && 
-        ctx.action === 'taking' &&
-        ctx.command.directObject?.entity?.id === 'fragile-vase',
-      run: (ctx) => {
-        if (!ctx.player.isWearing('gloves') && ctx.player.has('gloves')) {
-          // Automatically wear the gloves
-          ctx.world.wearItem(ctx.player.id, 'gloves');
-          return {
-            events: [ctx.createEvent('story.message', {
-              text: 'You carefully put on your gloves first.'
-            })]
-          };
+class CommandExecutor {
+  constructor(private rulebook: RulebookManager) {}
+
+  async execute(command: ValidatedCommand): Promise<ISemanticEvent[]> {
+    const events: ISemanticEvent[] = [];
+    const context: RuleContext = {
+      action: command.action,
+      world: this.world,
+      player: this.player,
+      command: command
+    };
+
+    // 1. Run BEFORE rules
+    for (const rule of this.rulebook.getBeforeRules()) {
+      if (rule.when(context)) {
+        const result = rule.run(context);
+        if (result?.prevent) {
+          // Action prevented, emit message and stop
+          if (result.message) {
+            events.push(createTextEvent(result.message));
+          }
+          if (result.events) {
+            events.push(...result.events);
+          }
+          return events;
         }
-        if (!ctx.player.has('gloves')) {
-          return {
-            prevent: true,
-            message: 'The vase looks too delicate to handle without gloves.'
-          };
+        if (result?.redirect) {
+          // Redirect to different action
+          command.action = result.redirect;
+          context.action = result.redirect;
         }
-      }
-    },
-    
-    {
-      id: 'increment-button-counter',
-      order: 20,
-      when: (ctx) =>
-        ctx.phase === 'after' &&
-        ctx.action === 'pushing' &&
-        ctx.command.directObject?.entity?.id === 'red-button',
-      run: (ctx) => {
-        const count = (ctx.world.getFlag('button-presses') || 0) + 1;
-        ctx.world.setFlag('button-presses', count);
-        
-        if (count === 3) {
-          return {
-            events: [ctx.createEvent('story.progress', {
-              milestone: 'puzzle-solved',
-              message: 'A secret door slides open!'
-            })]
-          };
+        if (result?.events) {
+          events.push(...result.events);
         }
       }
     }
-  ]
-};
+
+    // 2. Run action validate
+    const validation = action.validate(context);
+    if (!validation.valid) {
+      return validation.events || [];
+    }
+
+    // 3. Run action execute
+    const executeEvents = action.execute(context);
+    events.push(...executeEvents);
+
+    // 4. Run AFTER rules
+    context.result = { success: true, events: executeEvents };
+    for (const rule of this.rulebook.getAfterRules()) {
+      if (rule.when(context)) {
+        const result = rule.run(context);
+        if (result?.events) {
+          events.push(...result.events);
+        }
+      }
+    }
+
+    // 5. Run action report
+    const reportEvents = action.report(context);
+    events.push(...reportEvents);
+
+    // 6. Run EVERY TURN rules
+    for (const rule of this.rulebook.getEveryTurnRules()) {
+      if (rule.when(context)) {
+        const result = rule.run(context);
+        if (result?.events) {
+          events.push(...result.events);
+        }
+      }
+    }
+
+    return events;
+  }
+}
+```
+
+### Story Integration
+Authors define rules in their story files and add them to the rulebook:
+
+```typescript
+// In story.ts
+export function configureRules(rulebook: RulebookManager) {
+  // Before rule - require gloves for fragile vase
+  rulebook.addBeforeRule({
+    id: 'require-gloves-for-vase',
+    order: 10,
+    when: (ctx) => 
+      ctx.action === 'taking' &&
+      ctx.command.directObject?.entity?.id === 'fragile-vase',
+    run: (ctx) => {
+      if (!ctx.player.has('gloves')) {
+        return {
+          prevent: true,
+          message: 'The vase looks too delicate to handle without gloves.'
+        };
+      }
+      if (!ctx.player.isWearing('gloves')) {
+        // Auto-wear the gloves
+        ctx.world.wearItem(ctx.player.id, 'gloves');
+        return {
+          message: 'You carefully put on your gloves first.'
+        };
+      }
+    }
+  });
+
+  // After rule - track button presses
+  rulebook.addAfterRule({
+    id: 'track-button-presses',
+    order: 20,
+    when: (ctx) =>
+      ctx.action === 'pushing' &&
+      ctx.command.directObject?.entity?.id === 'red-button',
+    run: (ctx) => {
+      const count = (ctx.world.getFlag('button-presses') || 0) + 1;
+      ctx.world.setFlag('button-presses', count);
+      
+      if (count === 3) {
+        return {
+          events: [createEvent('story.progress', {
+            milestone: 'puzzle-solved',
+            message: 'A secret door slides open!'
+          })]
+        };
+      }
+    }
+  });
+
+  // Every turn rule - time passage
+  rulebook.addEveryTurnRule({
+    id: 'time-passage',
+    when: (ctx) => ctx.world.getFlag('clock-started'),
+    run: (ctx) => {
+      const time = ctx.world.getFlag('time') || 0;
+      ctx.world.setFlag('time', time + 1);
+      
+      if (time === 12) {
+        return {
+          events: [createEvent('story.event', {
+            type: 'noon',
+            message: 'The clock strikes twelve.'
+          })]
+        };
+      }
+    }
+  });
+}
+```
+
+### Advanced Example: Action Redirection
+
+```typescript
+// Redirect 'attack' to 'push' for non-violent game
+rulebook.addBeforeRule({
+  id: 'pacifist-mode',
+  order: 5,
+  when: (ctx) => ctx.action === 'attacking',
+  run: (ctx) => {
+    return {
+      redirect: 'pushing',
+      message: 'Violence isn\'t the answer here. You give it a gentle push instead.'
+    };
+  }
+});
+
+// Conditional rule enabling
+rulebook.addBeforeRule({
+  id: 'tutorial-restrictions',
+  order: 1,
+  when: (ctx) => 
+    !ctx.world.getFlag('tutorial-complete') &&
+    ctx.action !== 'examining' && 
+    ctx.action !== 'looking',
+  run: (ctx) => {
+    return {
+      prevent: true,
+      message: 'Try examining things first to learn about your surroundings.'
+    };
+  }
+});
 ```
 
 ## Consequences
 
 ### Positive
-- **Clear execution order** - Rules run in predictable sequence
-- **Separation of concerns** - Story logic separate from action logic
-- **State mutations allowed** - Rules can prepare world state
-- **Testable** - Each rule can be tested independently
-- **Debuggable** - Can log which rules fire and why
-- **Author-friendly** - Familiar pattern for adding game logic
+- **Simple structure** - Just objects with id, order, when, and run
+- **Clear separation** - Rulebooks organize rules by phase (before/after/everyTurn)
+- **Predictable execution** - Rules sorted by order, execute sequentially
+- **Action control** - Before rules can prevent or redirect actions
+- **Standalone rules** - Not tied to entities, easier to manage
+- **Testable** - Each rule and rulebook can be tested independently
+- **Author-friendly** - Simple functions, no complex class hierarchies
 
 ### Negative
-- **Complexity** - Another layer in the execution flow
-- **Debugging challenges** - Rules can interfere with each other
-- **Performance** - Each action evaluates all rules
-- **State consistency** - Rules mutating state could cause unexpected interactions
+- **Another abstraction** - Adds rulebook layer to execution flow
+- **Debugging complexity** - Rules can interfere with each other
+- **State mutations** - Rules directly mutate world state (may need careful management)
 
 ### Neutral
-- Rules run on every action (filtered by `when` condition)
-- Order matters significantly - authors must understand execution sequence
-- Before rules can prevent actions, after rules cannot
+- Rules are global to the story, not attached to entities
+- Order property is critical for predictable behavior
+- Before rules can prevent/redirect, after rules cannot
 
 ## Alternatives Considered
 
-1. **Middleware chain** - More flexible but harder to reason about
-2. **Event-only hooks** - Simpler but can't mutate state before validation
-3. **Entity-only handlers** - Already exists but insufficient for story-level logic
+1. **Entity-attached rules** - More complex, harder to manage lifecycle
+2. **Class-based rules** - Unnecessary complexity for simple functions
+3. **Event-only hooks** - Can't prevent or redirect actions
 4. **Inline hooks in actions** - Would require modifying every action
 
 ## Implementation Notes
 
-- Rules should be loaded from story definition
-- Consider rule groups for organization (tutorial rules, endgame rules)
-- Add debugging support to trace rule execution
-- Consider caching rule evaluation for performance
-- Document clear examples for common patterns
-
-## Advanced Features
-
-### Rule Groups
-For better organization and management, rules can be organized into named groups (similar to Inform's rulebooks):
-
-```typescript
-interface RuleGroup {
-  id: string;                                    // Group identifier
-  enabled?: boolean | (() => boolean);          // Enable/disable entire group
-  rules: Rule[];                                 // Rules in this group
-}
-
-interface Story {
-  ruleGroups?: RuleGroup[];  // Optional rule groups
-  rules?: Rule[];            // Standalone rules
-}
-```
-
-Example usage:
-
-```typescript
-const story: Story = {
-  ruleGroups: [
-    {
-      id: 'tutorial',
-      enabled: () => !world.getFlag('tutorial-complete'),
-      rules: [
-        {
-          id: 'tutorial-hint-examine',
-          order: 10,
-          when: (ctx) => ctx.phase === 'before' && ctx.action === 'examining',
-          run: (ctx) => ({
-            events: [ctx.createEvent('story.hint', {
-              text: 'Good! Examining objects reveals important details.'
-            })]
-          })
-        },
-        // More tutorial rules...
-      ]
-    },
-    {
-      id: 'endgame',
-      enabled: () => world.getFlag('act-3-started'),
-      rules: [
-        {
-          id: 'endgame-time-pressure',
-          order: 5,
-          when: (ctx) => ctx.phase === 'after',
-          run: (ctx) => {
-            const turnsLeft = world.getFlag('turns-until-collapse') - 1;
-            world.setFlag('turns-until-collapse', turnsLeft);
-            if (turnsLeft <= 0) {
-              return {
-                events: [ctx.createEvent('story.ending', {
-                  type: 'time-limit',
-                  message: 'The tower collapses around you!'
-                })]
-              };
-            }
-          }
-        },
-        // More endgame rules...
-      ]
-    }
-  ]
-};
-```
-
-Benefits of rule groups:
-- **Conditional activation** - Enable/disable groups based on story state
-- **Better organization** - Group related rules together
-- **Named references** - Can refer to groups by ID for debugging
-- **Phase separation** - Keep different story modes/phases separate
-- **Performance** - Skip entire groups when disabled
+- Rulebook is injected into CommandExecutor at initialization
+- Rules are sorted by order when added to ensure predictable execution
+- Consider adding debug logging to trace which rules fire
+- Every turn rules run after report phase
+- Rule IDs should be unique for debugging purposes
+- Default order is 100 to allow both early (< 100) and late (> 100) rules

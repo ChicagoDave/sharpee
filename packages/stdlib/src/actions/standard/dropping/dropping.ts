@@ -6,11 +6,13 @@
  * 
  * UPDATED: Uses new simplified context.event() method (ADR-041)
  * MIGRATED: To new folder structure with typed events (ADR-042)
+ * MIGRATED: To three-phase pattern (validate/execute/report) for atomic events
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { ISemanticEvent } from '@sharpee/core';
+import { ISemanticEvent, IEntity } from '@sharpee/core';
 import { TraitType, ContainerBehavior, SupporterBehavior, WearableBehavior, ActorBehavior, IDropItemResult } from '@sharpee/world-model';
+import { captureEntitySnapshot } from '../../base/snapshot-utils';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
@@ -77,12 +79,21 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     return { valid: true };
   },
 
-  execute(context: ActionContext): ISemanticEvent[] {
+  execute(context: ActionContext): void {
     const actor = context.player;
     const noun = context.command.directObject?.entity!;
 
     // Delegate to ActorBehavior for dropping logic
     const result: IDropItemResult = ActorBehavior.dropItem(actor, noun, context.world);
+    
+    // Store result for report phase
+    (context as any)._dropResult = result;
+  },
+
+  report(context: ActionContext): ISemanticEvent[] {
+    const actor = context.player;
+    const noun = context.command.directObject?.entity!;
+    const result = (context as any)._dropResult as IDropItemResult;
     
     // Handle failure cases
     if (!result.success) {
@@ -121,12 +132,16 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
       throw new Error('No valid drop location found');
     }
 
-    // Build typed event data
+    // Build typed event data with atomic snapshots
     const droppedData: DroppedEventData = {
       item: noun.id,
       itemName: noun.name,
       toLocation: dropLocation.id,
-      toLocationName: dropLocation.name
+      toLocationName: dropLocation.name,
+      // Add atomic event snapshots
+      itemSnapshot: captureEntitySnapshot(noun, context.world, true),
+      actorSnapshot: captureEntitySnapshot(actor, context.world, false),
+      locationSnapshot: captureEntitySnapshot(dropLocation, context.world, dropLocation.has(TraitType.ROOM))
     };
 
     const params: Record<string, any> = {

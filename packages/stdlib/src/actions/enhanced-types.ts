@@ -156,10 +156,16 @@ export interface ValidationResult {
  * Unified action interface
  * 
  * Actions define patterns, messages, and execution logic together.
- * They follow a two-phase pattern: validate, then execute.
- * They return events, not direct text or mutation instructions.
+ * They follow a three-phase pattern: validate, execute, then report.
  * 
- * Generic version supports state passing from validate to execute.
+ * Phase 2 Update (Atomic Events):
+ * - validate(): Check if action can proceed
+ * - execute(): Perform mutations only (returns void or ISemanticEvent[] for compatibility)
+ * - report(): Generate events with captured state (new method)
+ * 
+ * During migration, actions can implement either pattern:
+ * - Old: validate + execute (returns events)
+ * - New: validate + execute (void) + report
  */
 export interface Action {
   /**
@@ -188,16 +194,28 @@ export interface Action {
   validate(context: ActionContext): ValidationResult;
   
   /**
-   * Execute the action and return events
+   * Execute the action (mutations only in new pattern)
    * 
-   * This method is only called if validate() returned { isValid: true }.
-   * It should delegate to behaviors for actual state changes.
+   * This method is only called if validate() returned { valid: true }.
+   * 
+   * Old pattern: Returns events describing what happened
+   * New pattern: Returns void, only performs mutations
    * 
    * @param context Unified action context with helper methods
-   * @param state The validated state from validate() method
-   * @returns Array of events describing what should happen
+   * @returns Array of events (old pattern) or void (new pattern)
    */
-  execute(context: ActionContext): ISemanticEvent[];
+  execute(context: ActionContext): ISemanticEvent[] | void;
+  
+  /**
+   * Generate events after execution (new three-phase pattern)
+   * 
+   * This method captures the current state and generates events.
+   * Only called if the action implements the new pattern (execute returns void).
+   * 
+   * @param context Unified action context with helper methods
+   * @returns Array of events with captured state data
+   */
+  report?(context: ActionContext): ISemanticEvent[];
   
   /**
    * @deprecated Use validate() instead. This will be removed after refactoring.

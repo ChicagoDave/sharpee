@@ -345,7 +345,7 @@ export class StandardWitnessSystem implements WitnessSystem {
       case 'action':
         event = {
           type: 'if.witness.action',
-          payload: {
+          data: {
             witnessId: actorId,
             sense: detail.sense,
             level: detail.level,
@@ -362,7 +362,7 @@ export class StandardWitnessSystem implements WitnessSystem {
       case 'move':
         event = {
           type: 'if.witness.movement',
-          payload: {
+          data: {
             witnessId: actorId,
             sense: detail.sense,
             level: detail.level,

@@ -3,11 +3,14 @@
  * 
  * This action properly delegates to OpenableBehavior for validation
  * and execution. It follows the validate/execute pattern.
+ * 
+ * MIGRATED: To three-phase pattern (validate/execute/report) for atomic events
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, OpenableBehavior, ICloseResult } from '@sharpee/world-model';
+import { captureEntitySnapshot } from '../../base/snapshot-utils';
 import { IFActions } from '../../constants';
 
 // Import our payload types
@@ -99,11 +102,23 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
    * Assumes validation has already passed - no validation logic here
    * Delegates to OpenableBehavior for actual state changes
    */
-  execute(context: ActionContext): ISemanticEvent[] {
+  execute(context: ActionContext): void {
     const noun = context.command.directObject!.entity!;
     
     // Delegate to behavior for closing
     const result: ICloseResult = OpenableBehavior.close(noun);
+    
+    // Store result for report phase
+    (context as any)._closeResult = result;
+  },
+
+  /**
+   * Report events after closing
+   * Generates events with complete state snapshots
+   */
+  report(context: ActionContext): ISemanticEvent[] {
+    const noun = context.command.directObject!.entity!;
+    const result = (context as any)._closeResult as ICloseResult;
     
     // Check if the behavior reported failure (shouldn't happen after validation)
     if (!result.success) {
@@ -150,12 +165,14 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
     let hasContents = false;
     let contentsCount = 0;
     let contentsIds: string[] = [];
+    let contentsSnapshots: any[] = [];
     
     if (noun.has(TraitType.CONTAINER)) {
       const contents = context.world.getContents(noun.id);
       hasContents = contents.length > 0;
       contentsCount = contents.length;
       contentsIds = contents.map(item => item.id);
+      contentsSnapshots = contents.map(e => captureEntitySnapshot(e, context.world, true));
     }
     
     const eventData: ClosedEventData = {
@@ -169,9 +186,12 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
       hasContents,
       contentsCount,
       contentsIds,
+      // Add atomic event snapshots
+      targetSnapshot: captureEntitySnapshot(noun, context.world, true),
+      contentsSnapshots,
       // Add 'item' for backward compatibility with tests
       item: noun.name
-    } as ClosedEventData & { item: string };
+    } as ClosedEventData & { item: string; targetSnapshot?: any; contentsSnapshots?: any[] };
     
     events.push(context.event('if.event.closed', eventData));
     

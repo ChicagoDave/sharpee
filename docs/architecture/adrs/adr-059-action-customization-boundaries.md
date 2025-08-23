@@ -16,91 +16,42 @@ These decisions affect the balance between flexibility and system integrity.
 
 ### 1. Report Configuration: Action-Level Data Definitions
 
-Each action in stdlib will have a data configuration file that defines what data to capture for its events. This configuration is declarative and can be extended by stories:
+Each action in stdlib will have a simple function that builds the data for its events. Stories can extend this data:
 
 ```typescript
 // packages/stdlib/src/actions/standard/taking/taking-data.ts
-export const takingDataConfig: ActionDataConfig = {
-  actionId: 'taking',
-  availableData: {
-    // What data this action makes available
-    item: 'Entity being taken',
-    previousLocation: 'Where item was before',
-    previousContainer: 'Container item was in (if any)',
-    player: 'Player taking the item',
-    success: 'Whether action succeeded'
-  },
-  properties: [
-    { 
-      name: 'actionId', 
-      source: DataSource.STATIC, 
-      value: 'taking',
-      description: 'Action identifier'
-    },
-    { 
-      name: 'success',
-      source: DataSource.CONTEXT,
-      path: 'result.success',
-      description: 'Whether the action succeeded'
-    },
-    { 
-      name: 'item',
-      source: DataSource.POST_STATE,
-      path: 'directObject.entity',
-      transform: DataTransform.ENTITY_SNAPSHOT,
-      description: 'Complete snapshot of item taken'
-    },
-    { 
-      name: 'itemId',
-      source: DataSource.CONTEXT,
-      path: 'directObject.entity.id',
-      description: 'ID of item taken'
-    },
-    { 
-      name: 'previousLocation',
-      source: DataSource.PRE_STATE,
-      path: 'directObject.entity.location',
-      transform: DataTransform.ENTITY_NAME,
-      description: 'Where item was before taking'
-    }
-  ]
-};
-
-interface ActionDataConfig {
-  actionId: string;
-  availableData: Record<string, string>;  // Documents what's available
-  properties: DataProperty[];
+export function buildTakingData(
+  context: ActionContext,
+  preState: WorldState,
+  postState: WorldState
+): Record<string, unknown> {
+  const item = context.directObject?.entity;
+  const previousLocation = preState.entities[item.id]?.location;
+  
+  return {
+    // Core data (always included)
+    actionId: 'taking',
+    success: context.result?.success ?? false,
+    actor: context.player.id,
+    
+    // Standard data
+    itemId: item?.id,
+    itemName: item?.name,
+    item: captureEntitySnapshot(item),
+    previousLocation: previousLocation ? entities[previousLocation]?.name : null,
+    previousContainer: item?.container?.name
+  };
 }
 
-interface DataProperty {
-  name: string;                    // Property name in event data
-  source: DataSource;              // Where to get the data
-  path?: string;                   // Path within source
-  transform?: DataTransform;       // Optional transformation
-  required?: boolean;              // If missing, skip or error?
-  description: string;             // What this data represents
-}
-
-enum DataSource {
-  CONTEXT = 'context',             // From action context
-  PRE_STATE = 'preState',          // World state before execute
-  POST_STATE = 'postState',        // World state after execute
-  COMPUTED = 'computed',           // Derived from other data
-  STATIC = 'static',              // Hardcoded value
-}
-
-enum DataTransform {
-  ENTITY_SNAPSHOT = 'entitySnapshot',     // Full entity data
-  ENTITY_NAME = 'entityName',             // Just the name
-  ENTITY_DESCRIPTION = 'entityDescription', // Just the description
-  ROOM_SNAPSHOT = 'roomSnapshot',         // Full room data
-  ROOM_CONTENTS = 'roomContents',         // List of entities in room
-  COUNT = 'count',                        // Count of items
-  // etc...
-}
+// Simple type for action data builders
+export type ActionDataBuilder = (
+  context: ActionContext,
+  preState: WorldState,
+  postState: WorldState
+) => Record<string, unknown>;
 ```
 
-This provides a single, accessible point for configuring each action's report data.
+This provides a simple, testable function for building action data.
 
 ### 2. Action Registration: Full Replacement Allowed
 
@@ -174,17 +125,39 @@ class TakingAction implements Action {
   }
 }
 
-// Story can extend the data configuration
+// Story configuration with rules
 const story: Story = {
   // Level 1: Rules for state modification
   rules: [
-    {
-      id: 'auto-light-lamp',
-      when: (ctx) => ctx.phase === 'before' && ctx.action === 'taking' && ctx.target?.id === 'lamp',
+    new BeforeRule({
+      id: 'auto-wear-gloves-before-taking-glass',
+      order: 10,
+      when: (ctx) => 
+        ctx.action === 'taking' && 
+        ctx.command.directObject?.entity?.id === 'glass-shard',
       run: (ctx) => {
-        ctx.world.setProperty('lamp', 'lit', true);
+        // Before taking sharp glass, auto-wear gloves if player has them
+        if (!ctx.player.isWearing('gloves') && ctx.player.has('gloves')) {
+          ctx.world.wearItem(ctx.player.id, 'gloves');
+          return { 
+            message: 'You put on the gloves first to protect your hands.' 
+          };
+        }
       }
-    }
+    }),
+    
+    new AfterRule({
+      id: 'increment-disturbance-after-dropping',
+      order: 20,
+      when: (ctx) => 
+        ctx.action === 'dropping' && 
+        ctx.player.location === 'bar',
+      run: (ctx) => {
+        // After dropping something in the bar, increment disturbance counter
+        const disturbances = ctx.world.getFlag('bar-disturbances') || 0;
+        ctx.world.setFlag('bar-disturbances', disturbances + 1);
+      }
+    })
   ],
 
   // Level 2: Complete action replacement (rare)
@@ -193,76 +166,95 @@ const story: Story = {
       'singing': CustomSingingAction,  // Completely custom action
     },
     
-    // Level 3: Data configuration extensions (common)
+    // Level 3: Data extensions (common)
     dataExtensions: {
-      'taking': {
-        // Add to the existing taking data config
-        additionalProperties: [
-          {
-            name: 'weight',
-            source: DataSource.POST_STATE,
-            path: 'directObject.entity.properties.weight',
-            description: 'Weight of item taken',
-            required: false
-          },
-          {
-            name: 'cursed',
-            source: DataSource.POST_STATE,
-            path: 'directObject.entity.properties.cursed',
-            description: 'Whether item is cursed',
-            required: false
-          }
-        ],
-        // Can also override existing properties
-        overrideProperties: {
-          'item': {
-            // Change to just capture name instead of full snapshot
-            transform: DataTransform.ENTITY_NAME
+      'taking': (baseData, context, preState, postState) => {
+        // Start with base data
+        const data = { ...baseData };
+        
+        // Add story-specific data
+        const item = postState.entities[context.directObject?.entity?.id];
+        if (item) {
+          data.weight = item.properties?.weight;
+          data.cursed = item.properties?.cursed ?? false;
+          
+          // Story-specific computation
+          if (story.questItems.includes(item.id)) {
+            data.isQuestItem = true;
+            data.questMessage = `You have found the ${item.name}!`;
           }
         }
+        
+        return data;
       }
     }
   }
 };
 ```
 
-### Data Availability Validation
+### How Data Extension Works
 
-Stories can only access data that the action makes available. This is enforced at configuration time:
+The action's report method combines base data with story extensions:
 
 ```typescript
-// packages/stdlib/src/actions/standard/taking/taking-data.ts
-export const takingDataConfig: ActionDataConfig = {
-  actionId: 'taking',
-  availableData: {
-    // These define what's accessible
-    'context.directObject': 'The object being taken',
-    'context.player': 'The player performing the action',
-    'context.result': 'The validation result',
-    'preState.directObject.location': 'Where object was before',
-    'postState.directObject.location': 'Where object is after',
-    'postState.player.inventory': 'Player inventory after taking'
-  },
-  // ... properties
-};
-
-// Story extension is validated
-const storyExtension = {
-  'taking': {
-    additionalProperties: [
-      {
-        name: 'customField',
-        source: DataSource.POST_STATE,
-        path: 'directObject.entity.foo',  // ❌ Not in availableData
-        description: 'This will fail validation'
-      }
-    ]
+class TakingAction implements Action {
+  report(context: ActionContext): ISemanticEvent[] {
+    // Capture states for data building
+    const preState = this.capturedPreState;
+    const postState = captureWorldState(context.world);
+    
+    // Build base data
+    let eventData = buildTakingData(context, preState, postState);
+    
+    // Apply story extension if present
+    const extension = context.story?.actions?.dataExtensions?.['taking'];
+    if (extension) {
+      eventData = extension(eventData, context, preState, postState);
+    }
+    
+    // Create the event
+    return [{
+      type: 'if.action.taking',
+      timestamp: Date.now(),
+      actor: context.player.id,
+      data: eventData
+    }];
   }
+}
+```
+
+### Protected Core Data
+
+To prevent stories from breaking essential data:
+
+```typescript
+// In the data extension function
+const storyDataExtension = (baseData, context, preState, postState) => {
+  const data = { ...baseData };
+  
+  // Core fields are protected
+  const protectedFields = ['actionId', 'success', 'actor', 'type'];
+  
+  // Add custom data
+  data.customField = 'custom value';
+  
+  // Try to override core field
+  data.actionId = 'different';  // This could be prevented or warned
+  
+  return data;
 };
 
-// Validation at story load time
-validateDataExtensions(takingDataConfig, storyExtension);
-// Error: Path 'directObject.entity.foo' not available for action 'taking'
+// The system could validate or enforce protection
+function applyDataExtension(baseData, extension, context, preState, postState) {
+  const extended = extension(baseData, context, preState, postState);
+  
+  // Restore protected fields
+  for (const field of protectedFields) {
+    extended[field] = baseData[field];
+  }
+  
+  return extended;
+}
 ```
 
 ### File Structure
@@ -283,72 +275,24 @@ packages/stdlib/src/actions/standard/
     └── going.test.ts
 ```
 
-### Report Processing
-
-The action's report method would process its data configuration:
-
-```typescript
-// packages/stdlib/src/actions/base/report-builder.ts
-export function buildEventData(
-  config: ActionDataConfig,
-  context: ActionContext,
-  extensions?: DataExtensions
-): unknown {
-  // Merge base config with story extensions
-  const finalConfig = mergeDataConfig(config, extensions);
-  
-  // Capture states
-  const preState = context.preState;   // Saved before execute()
-  const postState = context.postState; // Saved after execute()
-  
-  // Build event data from configuration
-  const eventData: any = {};
-  
-  for (const prop of finalConfig.properties) {
-    const value = extractDataProperty(prop, {
-      context,
-      preState,
-      postState
-    });
-    
-    if (value !== undefined || prop.required) {
-      eventData[prop.name] = value;
-    }
-  }
-  
-  return eventData;
-}
-
-function extractDataProperty(prop: DataProperty, sources: DataSources): any {
-  // Get base value from source
-  let value = getValueFromSource(prop.source, prop.path, sources);
-  
-  // Apply transformation if specified
-  if (prop.transform) {
-    value = applyTransform(value, prop.transform, sources);
-  }
-  
-  return value;
-}
-```
 
 ## Consequences
 
 ### Positive
-- **Declarative** - No code needed for report customization
+- **Simple** - Just functions that build and extend data
 - **Clear boundaries** - Authors know exactly what can be customized
+- **Protected core data** - Essential fields can be protected from corruption
+- **Flexible** - Stories can add any custom data they need
+- **Testable** - Data builders are pure functions
 - **Maintains integrity** - Actions remain coherent units
-- **Multiple options** - Rules, report config, and full replacement
-- **Gradual customization** - Start with rules, escalate only if needed
-- **Type safety** - All configurations are strongly typed
-- **Debuggable** - Can log what data is being captured and from where
+- **Gradual customization** - Start with rules, add data extensions as needed
+- **Debuggable** - Can log what data is being built
 
 ### Negative
-- **No partial replacement** - Less granular control over phases
-- **Configuration complexity** - Need to understand data sources and transforms
-- **Learning curve** - Authors must understand customization hierarchy
-- **Potential conflicts** - Rules and replacements could interact unexpectedly
-- **Limited computed fields** - Complex computations may need custom actions
+- **No partial phase replacement** - Cannot replace just validate or execute
+- **Code required** - Data extensions require writing functions
+- **Learning curve** - Authors must understand the data flow
+- **Potential conflicts** - Rules and data extensions could interact unexpectedly
 
 ### Neutral
 - Most customization via rules (90% of cases)

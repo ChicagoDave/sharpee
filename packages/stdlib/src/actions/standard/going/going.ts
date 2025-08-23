@@ -4,8 +4,10 @@
  * This action handles movement in cardinal directions and through named exits.
  * It validates all conditions and returns appropriate events.
  * 
- * UPDATED: Uses new simplified context.event() method (ADR-041)
- * MIGRATED: To new folder structure with typed events (ADR-042)
+ * Uses three-phase pattern:
+ * 1. validate: Check exit exists, door state, destination availability
+ * 2. execute: Move the actor and mark room visited
+ * 3. report: Generate events with before/after room snapshots
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -23,6 +25,7 @@ import {
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
+import { captureRoomSnapshot, captureEntitySnapshot } from '../../base/snapshot-utils';
 
 // Import our typed event data
 import { 
@@ -171,18 +174,8 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     return { valid: true };
   },
   
-  execute(context: ActionContext): ISemanticEvent[] {
-    // Validate first
-    const validation = this.validate(context);
-    if (!validation.valid) {
-      return [context.event('action.error', {
-        actionId: this.id,
-        messageId: validation.error!,
-        reason: validation.error!,
-        params: validation.params || {}
-      })];
-    }
-    
+  execute(context: ActionContext): void {
+    // Only perform the movement mutation
     const actor = context.player;
     const currentRoom = context.currentLocation;
     
@@ -195,17 +188,72 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     const exitConfig = RoomBehavior.getExit(currentRoom, normalizedDirection)!;
     const destination = context.world.getEntity(exitConfig.destination)!
     
-    // Build typed event data
+    // Check if this is the first time entering the destination
+    const isFirstVisit = !RoomBehavior.hasBeenVisited(destination);
+    
+    // Actually move the player!
+    context.world.moveEntity(actor.id, destination.id);
+    
+    // Mark the destination room as visited
+    if (isFirstVisit) {
+      RoomBehavior.markVisited(destination, actor);
+    }
+  },
+  
+  report(context: ActionContext): ISemanticEvent[] {
+    const actor = context.player;
+    
+    // Get and normalize direction
+    const direction = context.command.parsed.extras?.direction as string || 
+                     context.command.directObject?.entity?.name;
+    const normalizedDirection = normalizeDirection(direction!);
+    
+    // Get the source room (where we came from)
+    // We need to get this from the exit config since we've already moved
+    const currentRoom = context.currentLocation; // This is now the destination
+    const allEntities = context.world.getAllEntities();
+    const allRooms = allEntities.filter(e => e.has(TraitType.ROOM));
+    
+    // Find the room that has an exit leading to our current location
+    let sourceRoom: IFEntity | null = null;
+    const oppositeDir = getOppositeDirection(normalizedDirection);
+    
+    for (const room of allRooms) {
+      const exitConfig = RoomBehavior.getExit(room, normalizedDirection);
+      if (exitConfig && exitConfig.destination === currentRoom.id) {
+        sourceRoom = room;
+        break;
+      }
+    }
+    
+    // If we can't find source room, use the current room as a fallback
+    if (!sourceRoom) {
+      sourceRoom = currentRoom;
+    }
+    
+    // Capture room snapshots for atomic events
+    const sourceSnapshot = captureRoomSnapshot(sourceRoom, context.world, false);
+    const destinationSnapshot = captureRoomSnapshot(currentRoom, context.world, false);
+    const actorSnapshot = captureEntitySnapshot(actor, context.world, false);
+    
+    // Build typed event data with both new and backward-compatible fields
     const movedData: ActorMovedEventData = {
+      // New atomic structure
+      actor: actorSnapshot,
+      sourceRoom: sourceSnapshot,
+      destinationRoom: destinationSnapshot,
+      // Backward compatibility
       direction: normalizedDirection,
-      fromRoom: currentRoom.id,
-      toRoom: destination.id,
-      oppositeDirection: getOppositeDirection(normalizedDirection)
+      fromRoom: sourceRoom.id,
+      toRoom: currentRoom.id,
+      oppositeDirection: oppositeDir
     };
     
-    // Check if this is the first time entering the destination using behavior
-    const isFirstVisit = !RoomBehavior.hasBeenVisited(destination);
-    if (isFirstVisit) {
+    // Check if this was the first visit
+    const roomTrait = currentRoom.get(TraitType.ROOM) as any;
+    if (roomTrait?.visited) {
+      movedData.firstVisit = false;
+    } else {
       movedData.firstVisit = true;
     }
     
@@ -213,28 +261,20 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     const exitedData: ActorExitedEventData = {
       actorId: actor.id,
       direction: normalizedDirection,
-      toRoom: destination.id
+      toRoom: currentRoom.id
     };
     
     // Create typed entrance event
     const enteredData: ActorEnteredEventData = {
       actorId: actor.id,
-      direction: getOppositeDirection(normalizedDirection),
-      fromRoom: currentRoom.id
+      direction: oppositeDir,
+      fromRoom: sourceRoom.id
     };
-    
-    // Actually move the player!
-    context.world.moveEntity(actor.id, destination.id);
-    
-    // Mark the destination room as visited using behavior
-    if (isFirstVisit) {
-      RoomBehavior.markVisited(destination, actor);
-    }
     
     // Success message parameters
     const messageParams = {
       direction: normalizedDirection,
-      destination: destination.name
+      destination: currentRoom.name
     };
     
     let messageId = 'moved_to';

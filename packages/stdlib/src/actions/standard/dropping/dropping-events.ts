@@ -4,7 +4,7 @@
  * These interfaces define the structure of data emitted by the dropping action
  */
 
-import { EntityId } from '@sharpee/core';
+import { EntityId, EntitySnapshot } from '@sharpee/core';
 
 /**
  * Data for the 'if.event.dropped' event
@@ -32,6 +32,16 @@ export interface DroppedEventData {
   
   /** True if dropped on a supporter */
   toSupporter?: boolean;
+
+  // Atomic event snapshots
+  /** Complete snapshot of the item after dropping */
+  itemSnapshot?: EntitySnapshot;
+  
+  /** Complete snapshot of the actor after dropping */
+  actorSnapshot?: EntitySnapshot;
+  
+  /** Complete snapshot of the location where item was dropped */
+  locationSnapshot?: EntitySnapshot;
 }
 
 /**

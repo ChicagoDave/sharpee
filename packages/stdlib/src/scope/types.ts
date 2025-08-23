@@ -223,7 +223,7 @@ export interface MovementRecord {
  */
 export interface WitnessActionEvent {
   type: 'if.witness.action';
-  payload: {
+  data: {
     witnessId: string;
     sense: SenseType;
     level: WitnessLevel;
@@ -238,7 +238,7 @@ export interface WitnessActionEvent {
 
 export interface WitnessMovementEvent {
   type: 'if.witness.movement';
-  payload: {
+  data: {
     witnessId: string;
     sense: SenseType;
     level: WitnessLevel;
@@ -252,7 +252,7 @@ export interface WitnessMovementEvent {
 
 export interface WitnessSoundEvent {
   type: 'if.witness.sound';
-  payload: {
+  data: {
     witnessId: string;
     sense: SenseType;
     soundType: string;
@@ -265,7 +265,7 @@ export interface WitnessSoundEvent {
 
 export interface WitnessScentEvent {
   type: 'if.witness.scent';
-  payload: {
+  data: {
     witnessId: string;
     sense: SenseType;
     scentType: string;

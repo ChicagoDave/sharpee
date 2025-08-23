@@ -22,6 +22,25 @@ import {
 } from '../../test-utils';
 import { WorldModel } from '@sharpee/world-model';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
+import type { ISemanticEvent } from '@sharpee/core';
+
+// Helper to execute action using either old or new pattern
+function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
+  const result = action.execute(context);
+  
+  // Check if it's using the new three-phase pattern
+  if (result === undefined || result === null) {
+    // New pattern: execute returned void, call report()
+    if ('report' in action && typeof action.report === 'function') {
+      return action.report(context);
+    }
+    // No report method - return empty array
+    return [];
+  }
+  
+  // Old pattern: execute returned events directly
+  return result;
+}
 
 describe('lookingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -54,7 +73,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // Should emit LOOKED event
       expectEvent(events, 'if.event.looked', {
@@ -98,7 +117,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // Should emit list contents event
       expectEvent(events, 'if.event.list_contents', {
@@ -127,7 +146,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // Should not emit list contents event for empty room
       const listEvent = events.find(e => e.type === 'if.event.list_contents');
@@ -160,7 +179,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // Should emit LOOKED event with isDark true
       expectEvent(events, 'if.event.looked', {
@@ -203,7 +222,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // Should emit LOOKED event with isDark false
       expectEvent(events, 'if.event.looked', {
@@ -241,7 +260,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       expectEvent(events, 'if.event.looked', {
         isDark: false
@@ -270,7 +289,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // Should use in_container message
       expectEvent(events, 'action.success', {
@@ -302,7 +321,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // Should use on_supporter message
       expectEvent(events, 'action.success', {
@@ -326,7 +345,7 @@ describe('lookingAction (Golden Pattern)', () => {
       // would be tracked by the game state. This test demonstrates the expected
       // behavior when those features are implemented.
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // For now, should use regular description
       expectEvent(events, 'action.success', {
@@ -340,7 +359,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // Should use full description
       expectEvent(events, 'action.success', {
@@ -368,7 +387,7 @@ describe('lookingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // Should work normally
       expectEvent(events, 'if.event.looked', {
@@ -395,7 +414,7 @@ describe('lookingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // Should add examine_surroundings message
       expectEvent(events, 'action.success', {
@@ -412,7 +431,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // Check LOOKED event has timestamp
       const lookedEvent = events.find(e => e.type === 'if.event.looked');

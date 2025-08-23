@@ -1,5 +1,10 @@
 /**
  * Looking action - Provides description of current location and visible items
+ * 
+ * Uses three-phase pattern:
+ * 1. validate: Always valid (basic sensory action)
+ * 2. execute: Mark room as visited (only mutation)
+ * 3. report: Generate events with complete state snapshots
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -14,6 +19,7 @@ import {
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { LookingEventMap } from './looking-events';
+import { captureRoomSnapshot, captureEntitySnapshots, createEntityReferences } from '../../base/snapshot-utils';
 
 export const lookingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.LOOKING,
@@ -35,20 +41,24 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
     return { valid: true };
   },
   
-  execute(context: ActionContext): ISemanticEvent[] {
+  execute(context: ActionContext): void {
+    // Only mutation: mark room as visited
+    const location = context.currentLocation;
+    const room = context.world.getContainingRoom(context.player.id);
+    
+    if (room && room.hasTrait(TraitType.ROOM)) {
+      const roomTrait = room.getTrait(TraitType.ROOM) as any;
+      if (roomTrait && !roomTrait.visited) {
+        roomTrait.visited = true;
+      }
+    }
+    
+    // No events returned - they're generated in report()
+  },
+  
+  report(context: ActionContext): ISemanticEvent[] {
     const player = context.player;
     const location = context.currentLocation;
-    
-    // Build event data
-    const eventData: LookingEventMap['if.event.looked'] = {
-      actorId: player.id,
-      locationId: location.id,
-      locationName: location.name,
-      isDark: false, // Will be determined below
-      timestamp: Date.now()
-    };
-    
-    const params: Record<string, any> = {};
     
     // Check if location is dark (no light sources) using behaviors
     let isDark = false;
@@ -96,20 +106,45 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
       }
     }
     
-    eventData.isDark = isDark;
-    
     const events: ISemanticEvent[] = [];
     
-    // Create player looked event for world model
-    events.push(context.event('if.event.looked', eventData));
+    // Get visible items (excluding the room itself and the player)
+    const visible = context.getVisible().filter(
+      e => e.id !== location.id && e.id !== player.id
+    );
+    
+    // Create atomic looked event with complete room snapshot
+    const roomSnapshot = captureRoomSnapshot(location, context.world, false);
+    const visibleSnapshots = captureEntitySnapshots(visible, context.world);
+    
+    const lookedEventData = {
+      actorId: player.id,
+      // New atomic structure
+      room: roomSnapshot,
+      visibleItems: visibleSnapshots,
+      // Backward compatibility fields
+      locationId: location.id,
+      locationName: location.name,
+      locationDescription: location.description,
+      isDark: isDark,
+      contents: visible.map(entity => ({
+        id: entity.id,
+        name: entity.name,
+        description: entity.description
+      })),
+      timestamp: Date.now()
+    };
+    
+    events.push(context.event('if.event.looked', lookedEventData));
     
     if (isDark) {
-      // Can't see in the dark
-      params.location = location.name;
+      // Can't see in the dark - embed location name in event
       events.push(context.event('action.success', {
         actionId: context.action.id,
         messageId: 'room_dark',
-        params
+        params: {
+          location: location.name
+        }
       }));
       return events;
     }
@@ -117,6 +152,7 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
     // Determine location type and appropriate message
     let messageId = 'room_description';
     let isSpecialLocation = false;
+    const params: Record<string, any> = {};
     
     // Always include location name
     params.location = location.name;
@@ -140,19 +176,25 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
       }
     }
     
-    // Create room description event
-    const roomDescData: LookingEventMap['if.event.room_description'] = {
+    // Create atomic room description event with complete snapshot
+    const roomDescData = {
+      // New atomic structure
+      room: roomSnapshot,
+      visibleItems: visibleSnapshots,
+      // Backward compatibility fields
       roomId: location.id,
+      roomName: location.name,
+      roomDescription: location.description,
       includeContents: true,
       verbose: messageId === 'room_description',
+      contents: visible.map(entity => ({
+        id: entity.id,
+        name: entity.name,
+        description: entity.description
+      })),
       timestamp: Date.now()
     };
     events.push(context.event('if.event.room_description', roomDescData));
-    
-    // Get visible items (excluding the room itself and the player)
-    const visible = context.getVisible().filter(
-      e => e.id !== location.id && e.id !== player.id
-    );
     
     // Group visible items by type for better listing
     const npcs = visible.filter(e => e.hasTrait(TraitType.ACTOR));
@@ -164,22 +206,36 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
       !e.hasTrait(TraitType.SUPPORTER)
     );
     
-    // If there are visible items, create an event to list them
+    // Check command verb for variations BEFORE modifying messageId
+    const verb = context.command.parsed.structure.verb?.text.toLowerCase() || 'look';
+    // Check both the resolved directObject and the parsed structure
+    const hasDirectObject = (context.command.directObject !== undefined && context.command.directObject !== null) ||
+                          (context.command.parsed.structure.directObject !== undefined && context.command.parsed.structure.directObject !== null);
+    
+    // Special handling for examine without object - check this early
+    const isExamineSurroundings = verb === 'examine' && !hasDirectObject;
+    
+    // If there are visible items, create an atomic event to list them with full snapshots
     if (visible.length > 0) {
-      const listData: LookingEventMap['if.event.list_contents'] = {
+      const listData = {
+        // New atomic structure (full snapshots)
+        allItems: visibleSnapshots,
+        location: roomSnapshot,
+        // Backward compatibility fields (just IDs as before)
         items: visible.map(e => e.id),
-        itemNames: visible.map(e => e.name),
         npcs: npcs.map(e => e.id),
         containers: containers.map(e => e.id),
         supporters: supporters.map(e => e.id),
         other: otherItems.map(e => e.id),
         context: 'room',
+        locationName: location.name,
         timestamp: Date.now()
       };
       events.push(context.event('if.event.list_contents', listData));
       
       // When there are contents and we're not in a special location, use contents_list message
-      if (!isSpecialLocation) {
+      // BUT don't override if this is "examine" without object
+      if (!isSpecialLocation && !isExamineSurroundings) {
         const itemList = visible.map(e => e.name).join(', ');
         messageId = 'contents_list';
         // Remove location from params when listing contents
@@ -189,23 +245,17 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
       }
     }
     
+    // Apply examine surroundings override if needed
+    if (isExamineSurroundings) {
+      messageId = 'examine_surroundings';
+    }
+    
     // Add the room description message
     events.push(context.event('action.success', {
         actionId: context.action.id,
         messageId,
         params
       }));
-    
-    // Check command verb for variations
-    const verb = context.command.parsed.structure.verb?.text.toLowerCase() || 'look';
-    if (verb === 'examine' && !context.command.directObject) {
-      // "examine" without object means examine surroundings
-      // Replace the previous success event with examine_surroundings
-      const lastEvent = events[events.length - 1];
-      if (lastEvent.type === 'action.success' && lastEvent.data) {
-        (lastEvent.data as any).messageId = 'examine_surroundings';
-      }
-    }
     
     return events;
   },

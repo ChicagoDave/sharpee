@@ -4,7 +4,7 @@
  * These interfaces define the structure of data emitted by the opening action
  */
 
-import { EntityId } from '@sharpee/core';
+import { EntityId, EntitySnapshot } from '@sharpee/core';
 
 /**
  * Data for the 'if.event.opened' event
@@ -37,6 +37,13 @@ export interface OpenedEventData {
   
   /** Number of items revealed (for backward compatibility) */
   revealedItems?: number;
+  
+  // Atomic event snapshots
+  /** Complete snapshot of the target after opening */
+  targetSnapshot?: EntitySnapshot;
+  
+  /** Complete snapshots of revealed contents */
+  contentsSnapshots?: EntitySnapshot[];
 }
 
 /**

@@ -12,7 +12,13 @@ import { EntityId } from '@sharpee/core';
  * Emitted when an item is successfully taken
  */
 export interface TakenEventData {
-  /** The name of the item that was taken */
+  /** Full item snapshot after taking (new atomic pattern) */
+  itemSnapshot?: any; // EntitySnapshot from snapshot-utils
+  
+  /** Full actor snapshot after taking (new atomic pattern) */
+  actorSnapshot?: any; // EntitySnapshot from snapshot-utils
+  
+  /** The name of the item that was taken (backward compatibility) */
   item: string;
   
   /** Where the item was taken from (entity ID) */

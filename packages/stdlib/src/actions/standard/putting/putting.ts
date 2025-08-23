@@ -3,6 +3,8 @@
  * 
  * This action handles putting objects into containers or onto supporters.
  * It determines the appropriate preposition based on the target's traits.
+ * 
+ * MIGRATED: To three-phase pattern (validate/execute/report) for atomic events
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -10,6 +12,7 @@ import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, ContainerBehavior, SupporterBehavior, OpenableBehavior, IAddItemResult, IAddItemToSupporterResult } from '@sharpee/world-model';
+import { captureEntitySnapshot } from '../../base/snapshot-utils';
 import { IFActions } from '../../constants';
 
 export const puttingAction: Action & { metadata: ActionMetadata } = {
@@ -164,7 +167,7 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
     return { valid: true };
   },
   
-  execute(context: ActionContext): ISemanticEvent[] {
+  execute(context: ActionContext): void {
     const actor = context.player;
     const item = context.command.directObject!.entity!; // Safe because validate ensures it exists
     const target = context.command.indirectObject!.entity!; // Safe because validate ensures it exists
@@ -190,22 +193,46 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       targetPreposition = isContainer ? 'in' : 'on';
     }
     
-    const events: ISemanticEvent[] = [];
+    // Store preposition for report phase
+    (context as any)._targetPreposition = targetPreposition;
     
     // Delegate to appropriate behavior
     if (targetPreposition === 'in') {
       const result: IAddItemResult = ContainerBehavior.addItem(target, item, context.world);
+      (context as any)._putResult = result;
+    } else {
+      // targetPreposition === 'on'
+      const result: IAddItemToSupporterResult = SupporterBehavior.addItem(target, item, context.world);
+      (context as any)._putResult = result;
+    }
+  },
+
+  /**
+   * Report events after putting
+   * Generates events with complete state snapshots
+   */
+  report(context: ActionContext): ISemanticEvent[] {
+    const actor = context.player;
+    const item = context.command.directObject!.entity!;
+    const target = context.command.indirectObject!.entity!;
+    const targetPreposition = (context as any)._targetPreposition as 'in' | 'on';
+    const result = (context as any)._putResult as IAddItemResult | IAddItemToSupporterResult;
+    
+    const events: ISemanticEvent[] = [];
+    
+    if (targetPreposition === 'in') {
+      const containerResult = result as IAddItemResult;
       
-      if (!result.success) {
+      if (!containerResult.success) {
         // Handle failure cases - these should not happen due to validation
-        if (result.alreadyContains) {
+        if (containerResult.alreadyContains) {
           return [context.event('action.error', {
             actionId: context.action.id,
             messageId: 'already_there',
             params: { item: item.name, relation: 'in', destination: target.name }
           })];
         }
-        if (result.containerFull) {
+        if (containerResult.containerFull) {
           return [context.event('action.error', {
             actionId: context.action.id,
             messageId: 'no_room',
@@ -220,11 +247,14 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
         })];
       }
       
-      // Success - create events
+      // Success - create events with snapshots
       events.push(context.event('if.event.put_in', {
         itemId: item.id,
         targetId: target.id,
-        preposition: 'in' as const
+        preposition: 'in' as const,
+        // Add atomic event snapshots
+        itemSnapshot: captureEntitySnapshot(item, context.world, true),
+        targetSnapshot: captureEntitySnapshot(target, context.world, true)
       }));
       
       events.push(context.event('action.success', {
@@ -235,18 +265,18 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       
     } else {
       // targetPreposition === 'on'
-      const result: IAddItemToSupporterResult = SupporterBehavior.addItem(target, item, context.world);
+      const supporterResult = result as IAddItemToSupporterResult;
       
-      if (!result.success) {
+      if (!supporterResult.success) {
         // Handle failure cases - these should not happen due to validation
-        if (result.alreadyThere) {
+        if (supporterResult.alreadyThere) {
           return [context.event('action.error', {
             actionId: context.action.id,
             messageId: 'already_there',
             params: { item: item.name, relation: 'on', destination: target.name }
           })];
         }
-        if (result.noSpace) {
+        if (supporterResult.noSpace) {
           return [context.event('action.error', {
             actionId: context.action.id,
             messageId: 'no_space',
@@ -261,11 +291,14 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
         })];
       }
       
-      // Success - create events
+      // Success - create events with snapshots
       events.push(context.event('if.event.put_on', {
         itemId: item.id,
         targetId: target.id,
-        preposition: 'on' as const
+        preposition: 'on' as const,
+        // Add atomic event snapshots
+        itemSnapshot: captureEntitySnapshot(item, context.world, true),
+        targetSnapshot: captureEntitySnapshot(target, context.world, true)
       }));
       
       events.push(context.event('action.success', {

@@ -488,8 +488,24 @@ export class CommandExecutor {
     }
 
     // Phase 2: Execute the action (only if validation passed)
-    // All actions now use the modern Action pattern - execute returns SemanticEvent[]
-    const semanticEvents = await (action as Action).execute(actionContext);
+    // Support both old pattern (execute returns events) and new pattern (execute + report)
+    let semanticEvents: ISemanticEvent[];
+    
+    const executeResult = await (action as Action).execute(actionContext);
+    
+    // Check if this is the new three-phase pattern
+    if (executeResult === undefined || executeResult === null) {
+      // New pattern: execute returned void, now call report()
+      if ('report' in action && typeof action.report === 'function') {
+        semanticEvents = action.report(actionContext);
+      } else {
+        // Action didn't implement report() but returned void - this is an error
+        throw new Error(`Action ${action.id} returned void from execute() but doesn't implement report()`);
+      }
+    } else {
+      // Old pattern: execute returned events directly
+      semanticEvents = executeResult as ISemanticEvent[];
+    }
     
     // Phase 3: Check for entity-level event handlers
     // After action execution, check if any entities involved have handlers
@@ -498,7 +514,7 @@ export class CommandExecutor {
       // Check if this is an event that entities might handle (e.g., if.event.pushed)
       if (event.type.startsWith('if.event.')) {
         // Get the target entity if specified
-        const targetId = event.data?.target;
+        const targetId = (event.data as any)?.target;
         if (targetId && typeof targetId === 'string') {
           const targetEntity = world.getEntity(targetId);
           if (targetEntity && 'on' in targetEntity && targetEntity.on) {
@@ -536,7 +552,7 @@ export class CommandExecutor {
     
     // Extract error message if present
     const errorEvent = allEvents.find(e => e.type === 'action.error');
-    error = errorEvent ? String(errorEvent.data?.reason || 'Action failed') : undefined;
+    error = errorEvent ? String((errorEvent.data as any)?.reason || 'Action failed') : undefined;
 
     // Sequence the events
     const sequencedEvents = eventSequencer.sequenceAll(events, turn);

@@ -12,13 +12,22 @@ import { EntityId } from '@sharpee/core';
  * Emitted when an actor moves from one room to another
  */
 export interface ActorMovedEventData {
-  /** The direction of movement */
+  /** Full actor snapshot (new atomic pattern) */
+  actor?: any; // EntitySnapshot from snapshot-utils
+  
+  /** Full source room snapshot (new atomic pattern) */
+  sourceRoom?: any; // RoomSnapshot from snapshot-utils
+  
+  /** Full destination room snapshot (new atomic pattern) */
+  destinationRoom?: any; // RoomSnapshot from snapshot-utils
+  
+  /** The direction of movement (backward compatibility) */
   direction: string;
   
-  /** The room the actor is leaving */
+  /** The room the actor is leaving (backward compatibility) */
   fromRoom: EntityId;
   
-  /** The room the actor is entering */
+  /** The room the actor is entering (backward compatibility) */
   toRoom: EntityId;
   
   /** The opposite direction (for arrival descriptions) */

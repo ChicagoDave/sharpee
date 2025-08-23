@@ -43,7 +43,12 @@ const executeWithValidation = (action: any, context: ActionContext) => {
       params
     })];
   }
-  return action.execute(context);
+  const result = action.execute(context);
+  // Handle new three-phase pattern
+  if (result === undefined && action.report) {
+    return action.report(context);
+  }
+  return result;
 };
 
 describe('droppingAction (Golden Pattern)', () => {

@@ -3,11 +3,14 @@
  * 
  * This action properly delegates to OpenableBehavior and LockableBehavior
  * for validation and execution. It follows the validate/execute pattern.
+ * 
+ * MIGRATED: To three-phase pattern (validate/execute/report) for atomic events
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent, EntityId } from '@sharpee/core';
 import { TraitType, OpenableBehavior, LockableBehavior, IOpenResult } from '@sharpee/world-model';
+import { captureEntitySnapshot } from '../../base/snapshot-utils';
 import { IFActions } from '../../constants';
 import { OpenedEventData } from './opening-events';
 import { ActionMetadata } from '../../../validation';
@@ -82,13 +85,25 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
    * Assumes validation has already passed - no validation logic here
    * Delegates to OpenableBehavior for actual state changes
    */
-  execute(context: ActionContext): ISemanticEvent[] {
+  execute(context: ActionContext): void {
     // Assume validation has passed - no checks needed
-    const actor = context.player;
     const noun = context.command.directObject!.entity!; // Safe because validate ensures it exists
     
     // Delegate to behavior for opening
     const result: IOpenResult = OpenableBehavior.open(noun);
+    
+    // Store result for report phase
+    (context as any)._openResult = result;
+  },
+
+  /**
+   * Report events after opening
+   * Generates events with complete state snapshots
+   */
+  report(context: ActionContext): ISemanticEvent[] {
+    const actor = context.player;
+    const noun = context.command.directObject!.entity!;
+    const result = (context as any)._openResult as IOpenResult;
     
     // Check if the behavior reported failure
     if (!result.success) {
@@ -115,7 +130,7 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
     const isSupporter = noun.has(TraitType.SUPPORTER);
     const contents = isContainer ? context.world.getContents(noun.id) : [];
     
-    // Build the opened event data
+    // Build the opened event data with atomic snapshots
     const eventData: OpenedEventData = {
       targetId: noun.id,
       targetName: noun.name,
@@ -128,9 +143,12 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       contentsCount: contents.length,
       contentsIds: contents.map(e => e.id),
       revealedItems: contents.length,
+      // Add atomic event snapshots
+      targetSnapshot: captureEntitySnapshot(noun, context.world, true),
+      contentsSnapshots: contents.map(e => captureEntitySnapshot(e, context.world, true)),
       // Add 'item' for backward compatibility with tests
       item: noun.name
-    } as OpenedEventData & { item: string };
+    } as OpenedEventData & { item: string; targetSnapshot?: any; contentsSnapshots?: any[] };
     
     // Determine success message based on what was revealed
     let messageId = 'opened';

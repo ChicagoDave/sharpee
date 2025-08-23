@@ -4,6 +4,8 @@
  * This action is container-specific, unlike putting which handles both
  * containers and supporters. It's more explicit about the container relationship.
  * In many cases, this delegates to the putting action with 'in' preposition.
+ * 
+ * MIGRATED: To three-phase pattern (validate/execute/report) for atomic events
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -100,17 +102,7 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
     };
   },
   
-  execute(context: ActionContext): ISemanticEvent[] {
-    // Revalidate
-    const validation = this.validate(context);
-    if (!validation.valid) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: validation.error,
-        params: validation.params || {}
-      })];
-    }
-    
+  execute(context: ActionContext): void {
     // For most cases, delegate to putting with 'in' preposition
     // This ensures consistent behavior between "insert X in Y" and "put X in Y"
     const modifiedCommand = {
@@ -136,7 +128,35 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       modifiedCommand
     );
     
+    // Store modified context for report phase
+    (context as any)._modifiedContext = modifiedContext;
+    
     // Execute putting action
-    return puttingAction.execute(modifiedContext);
+    puttingAction.execute(modifiedContext);
+  },
+
+  /**
+   * Report events after inserting
+   * Delegates to putting action's report
+   */
+  report(context: ActionContext): ISemanticEvent[] {
+    const modifiedContext = (context as any)._modifiedContext;
+    
+    if (!modifiedContext) {
+      // Shouldn't happen, but handle gracefully
+      return [context.event('action.error', {
+        actionId: context.action.id,
+        messageId: 'cant_insert',
+        params: {}
+      })];
+    }
+    
+    // Delegate to putting action's report
+    if ('report' in puttingAction && typeof puttingAction.report === 'function') {
+      return puttingAction.report(modifiedContext);
+    }
+    
+    // Shouldn't happen since putting is migrated
+    return [];
   }
 };

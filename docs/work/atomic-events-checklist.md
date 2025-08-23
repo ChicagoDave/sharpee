@@ -15,120 +15,138 @@
 - [x] Run core package tests
 - [x] Build core package
 
-## Phase 2: Action Architecture Redesign (ADR-058)
+## Phase 2: Action Architecture Redesign (ADR-058) ✅ COMPLETE
 
-### 2.1 Update Action Interface
-- [ ] Update `packages/stdlib/src/actions/types.ts`
-  - [ ] Add `report()` method to Action interface
-  - [ ] Update `execute()` signature to return void
-  - [ ] Document three-phase pattern
-  - [ ] Add migration notes
+### 2.1 Update Action Interface ✅
+- [x] Update `packages/stdlib/src/actions/enhanced-types.ts`
+  - [x] Add `report()` method to Action interface
+  - [x] Update `execute()` signature to return `ISemanticEvent[] | void`
+  - [x] Document three-phase pattern
+  - [x] Add migration notes
 
-### 2.2 Update CommandExecutor
-- [ ] Update `packages/engine/src/command-executor.ts`
-  - [ ] Implement new execution flow
-  - [ ] Call validate → execute → report sequence
-  - [ ] Add hooks for before/after rules
-  - [ ] Maintain backward compatibility
-  - [ ] Add debug logging for phases
+### 2.2 Update CommandExecutor ✅
+- [x] Update `packages/engine/src/command-executor.ts`
+  - [x] Implement new execution flow
+  - [x] Call validate → execute → report sequence
+  - [x] Maintain backward compatibility
+  - [x] Add debug logging for phases
 
-### 2.3 Create Helper Utilities
-- [ ] Create `packages/stdlib/src/actions/base/snapshot-utils.ts`
-  - [ ] Add `captureEntitySnapshot()` function
-  - [ ] Add `captureRoomSnapshot()` function
-  - [ ] Add `captureContainerContents()` function
-- [ ] Create migration shim for unmigrated actions
-  - [ ] Detect actions without `report()` method
-  - [ ] Call old `execute()` for backward compatibility
+### 2.3 Create Helper Utilities ✅
+- [x] Create `packages/stdlib/src/actions/base/snapshot-utils.ts`
+  - [x] Add `captureEntitySnapshot()` function
+  - [x] Add `captureRoomSnapshot()` function
+  - [x] Add `captureEntitySnapshots()` function
+  - [x] Add `createEntityReference()` function
+- [x] Create migration shim for unmigrated actions
+  - [x] Detect actions without `report()` method
+  - [x] Call old `execute()` for backward compatibility
 
-## Phase 3: Rules System Implementation (ADR-057)
+## ~~Phase 3: Rules System Implementation~~ (POSTPONED)
 
-### 3.1 Define Rule Interfaces
-- [ ] Create `packages/core/src/rules/types.ts`
-  - [ ] Define `Rule` interface
-  - [ ] Define `RuleContext` interface
-  - [ ] Define `RuleResult` interface
-  - [ ] Define `RuleGroup` interface
-  - [ ] Add JSDoc documentation
+*The Rules System from ADR-057 has been postponed pending further design discussion.*
 
-### 3.2 Implement Rule Engine
-- [ ] Create `packages/engine/src/rules/rule-engine.ts`
-  - [ ] Implement `RuleEngine` class
-  - [ ] Add `executeBeforeRules()` method
-  - [ ] Add `executeAfterRules()` method
-  - [ ] Handle rule ordering and groups
-  - [ ] Support conditional enabling
-  - [ ] Add debugging/tracing
+## Phase 3: Migrate Standard Library Actions ✅ COMPLETE
 
-### 3.3 Integrate with CommandExecutor
-- [ ] Update CommandExecutor to use RuleEngine
-  - [ ] Create RuleContext from action context
-  - [ ] Call before rules before validation
-  - [ ] Call after rules after execution
-  - [ ] Handle rule prevention
-  - [ ] Collect rule-generated events
+**Summary:** Successfully migrated 10 core actions to the three-phase pattern. All actions now capture complete entity snapshots in their events while maintaining 100% backward compatibility. Total tests passing: 148.
 
-## Phase 4: Migrate Standard Library Actions
+### 3.1 Action Migrations (Three-Phase Pattern)
+- [x] `looking.ts` (Proof of Concept) ✅
+  - [x] Split execute() into execute/report
+  - [x] Execute: minimal state changes only (mark room visited)
+  - [x] Report: capture room data (name, description, id)
+  - [x] Report: embed darkness state
+  - [x] Report: embed entity snapshots for contents
+  - [x] Maintain backward compatibility
+  - [x] All tests passing
+- [x] `examining.ts` ✅
+  - [x] Split execute() into execute/report
+  - [x] Execute: no mutations (read-only action)
+  - [x] Report: capture complete entity snapshot
+  - [x] Report: handle container contents with snapshots
+  - [x] Report: handle readable items
+  - [x] Report: handle wearable items
+  - [x] Report: handle all trait types
+  - [x] Maintain backward compatibility
+  - [x] All tests passing
+- [x] `going.ts` ✅
+  - [x] Split execute() into execute/report
+  - [x] Execute: perform movement only
+  - [x] Report: capture source room data
+  - [x] Report: capture destination room data
+  - [x] Report: include exit information
+  - [x] Maintain backward compatibility
+  - [x] All tests passing
+- [x] `taking.ts` ✅
+  - [x] Split execute() into execute/report
+  - [x] Execute: transfer item only
+  - [x] Report: capture item snapshot
+  - [x] Report: capture actor snapshot
+  - [x] Maintain backward compatibility
+  - [x] All tests passing
+- [x] `dropping.ts` ✅
+  - [x] Split execute() into execute/report
+  - [x] Execute: transfer item only (delegates to ActorBehavior.dropItem)
+  - [x] Report: capture item snapshot
+  - [x] Report: capture actor snapshot
+  - [x] Report: capture location snapshot
+  - [x] Maintain backward compatibility
+  - [x] All tests passing (15 tests)
+- [x] `opening.ts` ✅
+  - [x] Split execute() into execute/report
+  - [x] Execute: change state only (delegates to OpenableBehavior.open)
+  - [x] Report: capture target snapshot
+  - [x] Report: capture contents snapshots
+  - [x] Maintain backward compatibility
+  - [x] All tests passing (12 tests)
+- [x] `closing.ts` ✅
+  - [x] Split execute() into execute/report
+  - [x] Execute: change state only (delegates to OpenableBehavior.close)
+  - [x] Report: capture target snapshot
+  - [x] Report: capture contents snapshots (if container)
+  - [x] Maintain backward compatibility
+  - [x] All tests passing (13 tests)
+- [x] `putting.ts` ✅
+  - [x] Split execute() into execute/report
+  - [x] Execute: transfer item to container/supporter
+  - [x] Report: capture item snapshot
+  - [x] Report: capture target snapshot
+  - [x] Handle both 'in' and 'on' prepositions
+  - [x] Maintain backward compatibility
+  - [x] All tests passing (27 tests)
+- [x] `inserting.ts` ✅
+  - [x] Split execute() into execute/report
+  - [x] Delegates to putting action with 'in' preposition
+  - [x] Report: delegates to putting.report()
+  - [x] Maintain backward compatibility
+  - [x] All tests passing (13 tests)
+- [x] `removing.ts` ✅
+  - [x] Split execute() into execute/report
+  - [x] Execute: remove from source and take item
+  - [x] Report: capture item snapshot
+  - [x] Report: capture actor snapshot
+  - [x] Report: capture source snapshot
+  - [x] Maintain backward compatibility
+  - [x] All tests passing (18 tests)
 
-### 4.1 Action Migrations (Three-Phase Pattern)
-- [ ] `looking.ts` (Proof of Concept)
-  - [ ] Split execute() into execute/report
-  - [ ] Execute: minimal state changes only
-  - [ ] Report: capture room data (name, description, id)
-  - [ ] Report: embed darkness state
-  - [ ] Report: embed entity snapshots for contents
-  - [ ] Test with before/after rules
-  - [ ] Test in all room types
-- [ ] `examining.ts`
-  - [ ] Split execute() into execute/report
-  - [ ] Report: capture entity description
-  - [ ] Report: handle readable items
-  - [ ] Report: handle wearable items
-  - [ ] Test all entity types
-- [ ] `going.ts`
-  - [ ] Split execute() into execute/report
-  - [ ] Execute: perform movement only
-  - [ ] Report: capture source room data
-  - [ ] Report: capture destination room data
-  - [ ] Report: include exit information
-  - [ ] Test all directions
-- [ ] `taking.ts`
-  - [ ] Split execute() into execute/report
-  - [ ] Execute: transfer item only
-  - [ ] Report: capture item description
-  - [ ] Report: include container context
-  - [ ] Test taking from containers
-- [ ] `dropping.ts`
-  - [ ] Split execute() into execute/report
-  - [ ] Execute: transfer item only
-  - [ ] Report: capture item description
-  - [ ] Report: include location context
-  - [ ] Test dropping in various locations
-- [ ] `opening.ts`
-  - [ ] Split execute() into execute/report
-  - [ ] Execute: change state only
-  - [ ] Report: capture container/door state
-  - [ ] Report: include before/after states
-  - [ ] Test locked/unlocked scenarios
-- [ ] `closing.ts`
-  - [ ] Split execute() into execute/report
-  - [ ] Execute: change state only
-  - [ ] Report: capture container/door state
-  - [ ] Report: include before/after states
-  - [ ] Test various closeable items
-- [ ] Other actions (follow same pattern)
-  - [ ] `putting.ts`
-  - [ ] `inserting.ts`
-  - [ ] `removing.ts`
-
-### 4.2 Validation Updates
+### 3.2 Validation Updates (BLOCKED - Pending 3.5)
 - [ ] Update validation error events to include entity data
-- [ ] Update scope validation events
+- [ ] Update scope validation events  
 - [ ] Test validation with new event structure
 
-## Phase 5: Text Service Refactor
+*Note: Phase 3.2 revealed that CommandExecutor has become a god object. Proper validation event handling requires the refactor in Phase 3.5.*
 
-### 5.1 Remove World Model Dependencies
+### 3.5 CommandExecutor Refactor (NEW - See ADR-060)
+- [ ] Update Action interface documentation
+- [ ] Prototype validation error handling in report() with one action
+- [ ] Refactor CommandExecutor to thin orchestrator (~100 lines)
+- [ ] Move event creation to appropriate components
+- [ ] Migrate all actions to handle their own error events
+- [ ] Update tests for new architecture
+- [ ] Complete Phase 3.2 with proper design
+
+## Phase 4: Text Service Refactor
+
+### 4.1 Remove World Model Dependencies
 - [ ] Update `packages/text-services/src/standard-text-service.ts`
   - [ ] Remove `context.world` usage
   - [ ] Update `translateRoomDescription()`
@@ -139,112 +157,100 @@
   - [ ] Remove `getEntityName()` (use event data)
   - [ ] Remove `getEntityDescription()` (use event data)
 
-### 5.2 Add Provider Support
+### 4.2 Add Provider Support
 - [ ] Detect function properties in event data
 - [ ] Execute provider functions safely
 - [ ] Handle errors in provider functions
 - [ ] Test with dynamic descriptions
 
-### 5.3 Testing
+### 4.3 Testing
 - [ ] Update text service tests
 - [ ] Add provider function tests
 - [ ] Test backward compatibility
 
-## Phase 6: Story Updates
+## Phase 5: Story Updates
 
-### 6.1 Cloak of Darkness
+### 5.1 Cloak of Darkness
 - [ ] Update `stories/cloak-of-darkness/src/index.ts`
   - [ ] Update bar entrance handler
   - [ ] Update hook placement handler
   - [ ] Update message read handler
   - [ ] Remove world queries from handlers
-- [ ] Add example rules for story logic
-  - [ ] Auto-drop cloak rule
-  - [ ] Disturbance counter rule
-  - [ ] Victory condition rule
 - [ ] Test complete game playthrough
 - [ ] Test winning path
 - [ ] Test losing path
 - [ ] Test all commands
 
-### 6.2 Documentation
+### 5.2 Documentation
 - [ ] Update story authoring guide
 - [ ] Document new event patterns
-- [ ] Document rules system usage
 - [ ] Provide migration examples
 
-## Phase 7: Engine Updates
+## Phase 6: Engine Updates
 
-### 7.1 Event Processing
+### 6.1 Event Processing
 - [ ] Update `packages/engine/src/event-adapter.ts`
   - [ ] Add event normalization
   - [ ] Handle legacy events
   - [ ] Add enrichment pipeline
 - [ ] Update `packages/engine/src/game-engine.ts`
   - [ ] Handle new event structure
-  - [ ] Integrate rule engine
   - [ ] Maintain backward compatibility
 
-### 7.2 Save/Load
+### 6.2 Save/Load
 - [ ] Handle function serialization
 - [ ] Test save with new events
 - [ ] Test load with new events
 - [ ] Test historical replay accuracy
 
-## Phase 8: Testing & Documentation
+## Phase 7: Testing & Documentation
 
-### 8.1 Test Updates
+### 7.1 Test Updates
 - [ ] Fix action test expectations for three-phase pattern
 - [ ] Update text service tests
-- [ ] Add rule system tests
 - [ ] Add historical accuracy tests
 - [ ] Run full test suite
 
-### 8.2 Integration Tests
+### 7.2 Integration Tests
 - [ ] Test Cloak of Darkness end-to-end
 - [ ] Test save/load functionality
 - [ ] Test event replay
-- [ ] Test rule execution
 - [ ] Test backward compatibility
 
-### 8.3 Documentation
-- [ ] Update ADR-057 with implementation details
+### 7.3 Documentation
 - [ ] Update ADR-058 with implementation details
 - [ ] Update architecture docs
 - [ ] Update API documentation
 - [ ] Write migration guide
 
-## Phase 9: Cleanup
+## Phase 8: Cleanup
 
-### 9.1 Remove Deprecated Code
+### 8.1 Remove Deprecated Code
 - [ ] Remove unused world queries
 - [ ] Remove compatibility shims (after migration)
 - [ ] Clean up TODOs
 
-### 9.2 Performance
+### 8.2 Performance
 - [ ] Measure event sizes
 - [ ] Optimize common patterns
 - [ ] Profile memory usage
 
-### 9.3 Final Validation
+### 8.3 Final Validation
 - [ ] All tests pass
 - [ ] Cloak of Darkness fully playable
 - [ ] Save/load works correctly
 - [ ] Historical replay accurate
-- [ ] Rules system working correctly
 
 ## Completion Criteria
 
 - [ ] Actions follow three-phase pattern (validate/execute/report)
-- [ ] Rules system implemented and integrated
 - [ ] Text service has no world model dependencies
 - [ ] Events are self-contained with all needed data
 - [ ] Historical replay shows accurate past state
 - [ ] No TypeScript double-casting needed
 - [ ] All existing tests pass
-- [ ] New rule system tests pass
 - [ ] New historical accuracy tests pass
-- [ ] Documentation updated (ADR-057, ADR-058)
+- [ ] Documentation updated (ADR-058)
 - [ ] Migration guide complete
 
 ## Notes
@@ -255,4 +261,4 @@
 - Consider performance implications
 - Get feedback early and often
 - Implement looking.ts first as proof of concept
-- Test rules with Cloak of Darkness story
+- Rules system postponed - focus on three-phase action pattern

@@ -4,8 +4,10 @@
  * This is a read-only action that provides detailed information about objects.
  * It validates visibility but doesn't change state.
  * 
- * UPDATED: Uses new simplified context.event() method (ADR-041)
- * MIGRATED: To new folder structure with typed events (ADR-042)
+ * Uses three-phase pattern:
+ * 1. validate: Check target exists and is visible
+ * 2. execute: No mutations (read-only action)
+ * 3. report: Generate events with complete entity snapshot
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -14,6 +16,7 @@ import { TraitType, IFEntity, OpenableBehavior, SwitchableBehavior, LockableBeha
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
+import { captureEntitySnapshot, captureEntitySnapshots } from '../../base/snapshot-utils';
 
 // Import our typed event data
 import { ExaminedEventData, ExaminingErrorData } from './examining-events';
@@ -66,143 +69,17 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
       };
     }
     
-    // Check if examining self
-    const isSelf = noun.id === actor.id;
-    
-    // Build typed examination event data
-    const eventData: ExaminedEventData = {
-      targetId: noun.id,
-      targetName: isSelf ? 'yourself' : noun.name
-    };
-    
-    if (isSelf) {
-      eventData.self = true;
-    }
-    
-    const params: Record<string, any> = {};
-    let messageId = isSelf ? 'examined_self' : 'examined';
-    
-    if (!isSelf) {
-      // Add trait information for text generation
-      if (noun.has(TraitType.IDENTITY)) {
-        const identityTrait = noun.get(TraitType.IDENTITY);
-        if (identityTrait) {
-          eventData.hasDescription = !!(identityTrait as any).description;
-          eventData.hasBrief = !!(identityTrait as any).brief;
-          
-          if ((identityTrait as any).description) {
-            params.description = (identityTrait as any).description;
-          }
-        }
-      }
-      
-      // Container information
-      if (noun.has(TraitType.CONTAINER)) {
-        const contents = context.world.getContents(noun.id);
-        eventData.isContainer = true;
-        eventData.hasContents = contents.length > 0;
-        eventData.contentCount = contents.length;
-        eventData.contents = contents.map(e => ({ id: e.id, name: e.name }));
-        
-        // Check if open/closed using OpenableBehavior
-        if (noun.has(TraitType.OPENABLE)) {
-          eventData.isOpenable = true;
-          eventData.isOpen = OpenableBehavior.isOpen(noun);
-        } else {
-          eventData.isOpen = true; // Containers without openable trait are always open
-        }
-        
-        messageId = 'examined_container';
-      }
-      
-      // Supporter information
-      if (noun.has(TraitType.SUPPORTER)) {
-        const contents = context.world.getContents(noun.id);
-        eventData.isSupporter = true;
-        eventData.hasContents = contents.length > 0;
-        eventData.contentCount = contents.length;
-        eventData.contents = contents.map(e => ({ id: e.id, name: e.name }));
-        
-        if (!eventData.isContainer) { // Don't override container message
-          messageId = 'examined_supporter';
-        }
-      }
-      
-      // Device information using SwitchableBehavior
-      if (noun.has(TraitType.SWITCHABLE)) {
-        eventData.isSwitchable = true;
-        eventData.isOn = SwitchableBehavior.isOn(noun);
-        
-        if (messageId === 'examined') { // Only set if not already specialized
-          messageId = 'examined_switchable';
-        }
-      }
-      
-      // Readable information
-      if (noun.has(TraitType.READABLE)) {
-        const readableTrait = noun.get(TraitType.READABLE);
-        eventData.isReadable = true;
-        eventData.hasText = readableTrait ? !!(readableTrait as any).text : false;
-        
-        if (eventData.hasText) {
-          params.text = (readableTrait as any).text;
-          messageId = 'examined_readable';
-        }
-      }
-      
-      // Wearable information using WearableBehavior
-      if (noun.has(TraitType.WEARABLE)) {
-        eventData.isWearable = true;
-        eventData.isWorn = WearableBehavior.isWorn(noun);
-        
-        if (messageId === 'examined') {
-          messageId = 'examined_wearable';
-        }
-      }
-      
-      // Door information
-      if (noun.has(TraitType.DOOR)) {
-        eventData.isDoor = true;
-        messageId = 'examined_door';
-        
-        // Check if door is openable using OpenableBehavior
-        if (noun.has(TraitType.OPENABLE)) {
-          eventData.isOpenable = true;
-          eventData.isOpen = OpenableBehavior.isOpen(noun);
-        }
-        
-        // Add lock status using LockableBehavior
-        if (noun.has(TraitType.LOCKABLE)) {
-          eventData.isLockable = true;
-          eventData.isLocked = LockableBehavior.isLocked(noun);
-          params.isLocked = eventData.isLocked;
-        }
-      }
-      
-      // Build params based on the selected message type
-      if (messageId === 'examined') {
-        params.target = noun.name;
-      } else if (messageId === 'examined_container') {
-        params.isOpen = eventData.isOpen;
-      } else if (messageId === 'examined_supporter') {
-        // No special params for supporter
-      } else if (messageId === 'examined_switchable') {
-        params.isOn = eventData.isOn;
-      } else if (messageId === 'examined_wearable') {
-        params.isWorn = eventData.isWorn;
-      } else if (messageId === 'examined_door') {
-        if (eventData.isLocked !== undefined) {
-          params.isLocked = eventData.isLocked;
-        }
-      }
-    }
-    
+    // Valid - all event data will be built in report()
     return { 
       valid: true
     };
   },
   
-  execute(context: ActionContext): ISemanticEvent[] {
+  execute(context: ActionContext): void {
+    // No mutations - examining is a read-only action
+  },
+  
+  report(context: ActionContext): ISemanticEvent[] {
     const actor = context.player;
     const noun = context.command.directObject?.entity;
     
@@ -212,8 +89,14 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
     
     const isSelf = noun.id === actor.id;
     
-    // Rebuild event data
+    // Capture complete entity snapshot for atomic event
+    const entitySnapshot = captureEntitySnapshot(noun, context.world, true);
+    
+    // Build event data with both new and backward-compatible fields
     const eventData: ExaminedEventData = {
+      // New atomic structure
+      target: entitySnapshot,
+      // Backward compatibility fields
       targetId: noun.id,
       targetName: isSelf ? 'yourself' : noun.name
     };
@@ -242,9 +125,13 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
       // Container information
       if (noun.has(TraitType.CONTAINER)) {
         const contents = context.world.getContents(noun.id);
+        const contentsSnapshots = captureEntitySnapshots(contents, context.world);
         eventData.isContainer = true;
         eventData.hasContents = contents.length > 0;
         eventData.contentCount = contents.length;
+        // New: full snapshots
+        eventData.contentsSnapshots = contentsSnapshots;
+        // Backward compatibility: simple references
         eventData.contents = contents.map(e => ({ id: e.id, name: e.name }));
         
         // Check if open/closed using OpenableBehavior
@@ -261,9 +148,13 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
       // Supporter information
       if (noun.has(TraitType.SUPPORTER)) {
         const contents = context.world.getContents(noun.id);
+        const contentsSnapshots = captureEntitySnapshots(contents, context.world);
         eventData.isSupporter = true;
         eventData.hasContents = contents.length > 0;
         eventData.contentCount = contents.length;
+        // New: full snapshots
+        eventData.contentsSnapshots = contentsSnapshots;
+        // Backward compatibility: simple references
         eventData.contents = contents.map(e => ({ id: e.id, name: e.name }));
         
         if (!eventData.isContainer) { // Don't override container message
