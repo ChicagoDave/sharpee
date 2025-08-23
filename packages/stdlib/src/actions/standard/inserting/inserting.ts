@@ -139,7 +139,33 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
    * Report events after inserting
    * Delegates to putting action's report
    */
-  report(context: ActionContext): ISemanticEvent[] {
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    // Handle validation errors
+    if (validationResult && !validationResult.valid) {
+      return [
+        context.event('action.error', {
+          actionId: context.action.id,
+          error: validationResult.error || 'validation_failed',
+          messageId: validationResult.messageId || validationResult.error || 'action_failed',
+          params: validationResult.params || {}
+        })
+      ];
+    }
+    
+    // Handle execution errors
+    if (executionError) {
+      return [
+        context.event('action.error', {
+          actionId: context.action.id,
+          error: 'execution_failed',
+          messageId: 'action_failed',
+          params: {
+            error: executionError.message
+          }
+        })
+      ];
+    }
+    
     const modifiedContext = (context as any)._modifiedContext;
     
     if (!modifiedContext) {

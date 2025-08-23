@@ -158,14 +158,19 @@ export interface ValidationResult {
  * Actions define patterns, messages, and execution logic together.
  * They follow a three-phase pattern: validate, execute, then report.
  * 
- * Phase 2 Update (Atomic Events):
- * - validate(): Check if action can proceed
+ * Phase 3.5 Update (Complete Event Ownership):
+ * - validate(): Check if action can proceed (returns ValidationResult)
  * - execute(): Perform mutations only (returns void or ISemanticEvent[] for compatibility)
- * - report(): Generate events with captured state (new method)
+ * - report(): Generate ALL events including errors (owns complete event lifecycle)
+ * 
+ * The report() method is ALWAYS called and is responsible for:
+ * - Creating success events with captured entity snapshots
+ * - Creating error events based on validation or execution results
+ * - Ensuring all events have complete context and data
  * 
  * During migration, actions can implement either pattern:
- * - Old: validate + execute (returns events)
- * - New: validate + execute (void) + report
+ * - Old: validate + execute (returns events) - CommandExecutor creates error events
+ * - New: validate + execute (void) + report - Action creates ALL events
  */
 export interface Action {
   /**
@@ -207,15 +212,22 @@ export interface Action {
   execute(context: ActionContext): ISemanticEvent[] | void;
   
   /**
-   * Generate events after execution (new three-phase pattern)
+   * Generate ALL events including errors (new three-phase pattern)
    * 
-   * This method captures the current state and generates events.
-   * Only called if the action implements the new pattern (execute returns void).
+   * This method is ALWAYS called and is responsible for creating ALL events:
+   * - Success events with captured entity snapshots when action succeeds
+   * - Error events when validation fails or execution encounters issues
+   * - Scope error events when entities are not accessible
    * 
-   * @param context Unified action context with helper methods
+   * The method receives the validation result and any execution errors through
+   * the context, allowing it to create appropriate events with full context.
+   * 
+   * @param context Unified action context with validation/execution results
+   * @param validationResult Result from validate() phase
+   * @param executionError Optional error from execute() phase
    * @returns Array of events with captured state data
    */
-  report?(context: ActionContext): ISemanticEvent[];
+  report?(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[];
   
   /**
    * @deprecated Use validate() instead. This will be removed after refactoring.

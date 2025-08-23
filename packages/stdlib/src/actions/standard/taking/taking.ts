@@ -116,7 +116,33 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     ActorBehavior.takeItem(actor, noun, context.world);
   },
   
-  report(context: ActionContext): ISemanticEvent[] {
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    // Handle validation errors
+    if (validationResult && !validationResult.valid) {
+      return [
+        context.event('action.error', {
+          actionId: context.action.id,
+          error: validationResult.error || 'validation_failed',
+          messageId: validationResult.messageId || validationResult.error || 'action_failed',
+          params: validationResult.params || {}
+        })
+      ];
+    }
+    
+    // Handle execution errors
+    if (executionError) {
+      return [
+        context.event('action.error', {
+          actionId: context.action.id,
+          error: 'execution_failed',
+          messageId: 'action_failed',
+          params: {
+            error: executionError.message
+          }
+        })
+      ];
+    }
+    
     const actor = context.player;
     const noun = context.command.directObject!.entity!; // Safe because validate ensures it exists
     
