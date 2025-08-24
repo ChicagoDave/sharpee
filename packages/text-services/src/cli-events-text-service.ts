@@ -65,15 +65,30 @@ export class CLIEventsTextService implements TextService {
     const debugData = world.getCapability('debug') || {};
     const showDebug = debugData.debugValidationEvents || debugData.debugSystemEvents || debugData.debugParserEvents;
 
+    // Separate events into system and game events
+    const systemEvents = events.filter(e => e.type.startsWith('system.'));
+    const gameEvents = events.filter(e => !e.type.startsWith('system.'));
+
+    // Show system events if debug is enabled
+    if (showDebug && systemEvents.length > 0) {
+      lines.push('\nSystem Events:');
+      for (const event of systemEvents) {
+        const line = this.formatEvent(event);
+        if (line) {
+          lines.push(this.config.indentEvents ? `  ${line}` : line);
+        }
+      }
+    }
+
     // Process game events
     lines.push('\nGame Events:');
-    for (const event of events) {
+    for (const event of gameEvents) {
       const line = this.formatEvent(event);
       if (line) {
         lines.push(this.config.indentEvents ? `  ${line}` : line);
       }
     }
-    if (events.length === 0) {
+    if (gameEvents.length === 0) {
       lines.push('  (No game events)');
     }
 
@@ -134,14 +149,44 @@ export class CLIEventsTextService implements TextService {
     // Add data if present and requested
     if (this.config.showEventData && event.data) {
       if (typeof event.data === 'object') {
-        // Special handling for common data fields
-        const data = event.data as any;
-        if (data.message) {
-          parts.push(`"${data.message}"`);
-        } else if (data.text) {
-          parts.push(`"${data.text}"`);
+        // Special handling for action.error events to show translated message
+        if (event.type === 'action.error' && this.languageProvider) {
+          const data = event.data as any;
+          const messageId = data.messageId || data.error || data.reason;
+          const params = data.params || {};
+          
+          // Try to get translated message from language provider
+          let message = '';
+          if (messageId) {
+            // Try with action-specific message ID first
+            if (data.actionId) {
+              message = this.languageProvider.getMessage(`${data.actionId}.${messageId}`, params);
+            }
+            
+            // If that didn't work or returned the ID itself, try the generic message
+            if (!message || message === `${data.actionId}.${messageId}`) {
+              message = this.languageProvider.getMessage(messageId, params);
+            }
+            
+            // If we got a meaningful message, show it
+            if (message && message !== messageId) {
+              parts.push(`"${message}"`);
+            } else {
+              // Fall back to showing the raw data
+              parts.push(JSON.stringify(event.data));
+            }
+          } else {
+            parts.push(JSON.stringify(event.data));
+          }
         } else {
-          parts.push(JSON.stringify(event.data));
+          const data = event.data as any;
+          if (data.message) {
+            parts.push(`"${data.message}"`);
+          } else if (data.text) {
+            parts.push(`"${data.text}"`);
+          } else {
+            parts.push(JSON.stringify(event.data));
+          }
         }
       } else {
         parts.push(String(event.data));
