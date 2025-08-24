@@ -1,1 +1,0 @@
-{"version":3,"file":"command-validator.d.ts","sourceRoot":"","sources":["command-validator.ts"],"names":[],"mappings":"AAAA;;GAEG;AAEH,OAAO,KAAK,EAAE,cAAc,EAAE,iBAAiB,EAAE,gBAAgB,EAAE,MAAM,aAAa,CAAC;AACvF,OAAO,KAAK,EAAE,MAAM,EAAE,MAAM,eAAe,CAAC;AAE5C;;GAEG;AACH,MAAM,WAAW,iBAAiB;IAChC;;;;OAIG;IACH,QAAQ,CAAC,OAAO,EAAE,cAAc,GAAG,MAAM,CAAC,iBAAiB,EAAE,gBAAgB,CAAC,CAAC;CAChF"}

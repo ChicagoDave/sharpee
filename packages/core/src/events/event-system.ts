@@ -9,7 +9,7 @@ import { ISemanticEventSource, createSemanticEventSource } from './semantic-even
  */
 export function createEvent(
   type: string,
-  payload?: Record<string, unknown>,
+  data?: Record<string, unknown>,
   entities?: {
     actor?: EntityId;
     target?: EntityId;
@@ -44,7 +44,7 @@ export function createEvent(
     type,
     timestamp: Date.now(),
     entities: entities || {},
-    payload: payload || {},
+    data: data || {},
     tags,
     priority,
     narrate
@@ -53,11 +53,6 @@ export function createEvent(
   // Add metadata if provided (excluding extracted properties)
   if (cleanMetadata && Object.keys(cleanMetadata).length > 0) {
     (event as any).metadata = cleanMetadata;
-  }
-  
-  // Add legacy data property for backwards compatibility
-  if (payload) {
-    (event as any).data = payload;
   }
   
   return event;

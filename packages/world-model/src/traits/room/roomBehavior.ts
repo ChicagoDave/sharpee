@@ -6,7 +6,7 @@ import { TraitType } from '../trait-types';
 import { RoomTrait, IExitInfo } from './roomTrait';
 import { ISemanticEvent, EntityId } from '@sharpee/core';
 import { IFEvents } from '../../constants/if-events';
-import { Direction, getOppositeDirection } from '../../constants/directions';
+import { Direction, DirectionType, getOppositeDirection } from '../../constants/directions';
 import { IWorldQuery } from '../container/containerBehavior';
 
 /**
@@ -21,73 +21,71 @@ export class RoomBehavior extends Behavior {
   /**
    * Get the exit in a given direction
    */
-  static getExit(room: IFEntity, direction: string): IExitInfo | null {
+  static getExit(room: IFEntity, direction: DirectionType): IExitInfo | null {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
     if (!roomTrait.exits) {
       return null;
     }
-    const exitInfo = roomTrait.exits[direction.toLowerCase()];
+    const exitInfo = roomTrait.exits[direction];
     return exitInfo || null;
   }
   
   /**
    * Check if an exit exists in a direction
    */
-  static hasExit(room: IFEntity, direction: string): boolean {
+  static hasExit(room: IFEntity, direction: DirectionType): boolean {
     return this.getExit(room, direction) !== undefined;
   }
   
   /**
    * Check if an exit is blocked
    */
-  static isExitBlocked(room: IFEntity, direction: string): boolean {
+  static isExitBlocked(room: IFEntity, direction: DirectionType): boolean {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
-    return roomTrait.blockedExits?.hasOwnProperty(direction.toLowerCase()) ?? false;
+    return roomTrait.blockedExits?.hasOwnProperty(direction) ?? false;
   }
   
   /**
    * Get blocked exit message
    */
-  static getBlockedMessage(room: IFEntity, direction: string): string | undefined {
+  static getBlockedMessage(room: IFEntity, direction: DirectionType): string | undefined {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
-    return roomTrait.blockedExits?.[direction.toLowerCase()];
+    return roomTrait.blockedExits?.[direction];
   }
   
   /**
    * Add or update an exit in this room
    */
-  static setExit(room: IFEntity, direction: string, destination: string, via?: string): void {
+  static setExit(room: IFEntity, direction: DirectionType, destination: string, via?: string): void {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
-    const normalizedDir = direction.toLowerCase();
     
     // Initialize exits if needed
     if (!roomTrait.exits) {
-      roomTrait.exits = {};
+      roomTrait.exits = {} as Partial<Record<DirectionType, IExitInfo>>;
     }
     
-    roomTrait.exits[normalizedDir] = {
+    roomTrait.exits[direction] = {
       destination,
       via
     };
     
     // Remove any blocked message for this direction
     if (roomTrait.blockedExits) {
-      delete roomTrait.blockedExits[normalizedDir];
+      delete roomTrait.blockedExits[direction];
     }
   }
   
   /**
    * Block an exit with a message
    */
-  static blockExit(room: IFEntity, direction: string, message: string): ISemanticEvent[] {
+  static blockExit(room: IFEntity, direction: DirectionType, message: string): ISemanticEvent[] {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
     
     if (!roomTrait.blockedExits) {
-      roomTrait.blockedExits = {};
+      roomTrait.blockedExits = {} as Partial<Record<DirectionType, string>>;
     }
     
-    const normalizedDir = direction.toLowerCase();
-    roomTrait.blockedExits[normalizedDir] = message;
+    roomTrait.blockedExits[direction] = message;
     
     return [{
       id: `${Date.now()}-${Math.random()}`,
@@ -96,8 +94,8 @@ export class RoomBehavior extends Behavior {
       entities: {
         location: room.id
       },
-      payload: {
-        direction: normalizedDir,
+      data: {
+        direction: direction,
         message
       }
     }];
@@ -106,19 +104,18 @@ export class RoomBehavior extends Behavior {
   /**
    * Unblock an exit
    */
-  static unblockExit(room: IFEntity, direction: string): ISemanticEvent[] {
+  static unblockExit(room: IFEntity, direction: DirectionType): ISemanticEvent[] {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
     
     if (!roomTrait.blockedExits) {
       return [];
     }
     
-    const normalizedDir = direction.toLowerCase();
-    if (!roomTrait.blockedExits[normalizedDir]) {
+    if (!roomTrait.blockedExits[direction]) {
       return [];
     }
     
-    delete roomTrait.blockedExits[normalizedDir];
+    delete roomTrait.blockedExits[direction];
     
     return [{
       id: `${Date.now()}-${Math.random()}`,
@@ -127,8 +124,8 @@ export class RoomBehavior extends Behavior {
       entities: {
         location: room.id
       },
-      payload: {
-        direction: normalizedDir,
+      data: {
+        direction: direction,
         unblocked: true
       }
     }];
@@ -137,18 +134,17 @@ export class RoomBehavior extends Behavior {
   /**
    * Remove an exit from this room
    */
-  static removeExit(room: IFEntity, direction: string): void {
+  static removeExit(room: IFEntity, direction: DirectionType): void {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
-    const normalizedDir = direction.toLowerCase();
     
     // Remove the exit if exits exist
     if (roomTrait.exits) {
-      delete roomTrait.exits[normalizedDir];
+      delete roomTrait.exits[direction];
     }
     
     // Remove any blocked message
     if (roomTrait.blockedExits) {
-      delete roomTrait.blockedExits[normalizedDir];
+      delete roomTrait.blockedExits[direction];
     }
   }
   
@@ -172,7 +168,7 @@ export class RoomBehavior extends Behavior {
         location: room.id,
         actor: actor.id
       },
-      payload: {
+      data: {
         hasInitialDescription: !!roomTrait.initialDescription
       }
     }];
@@ -190,26 +186,26 @@ export class RoomBehavior extends Behavior {
   /**
    * Get all exits from the room
    */
-  static getAllExits(room: IFEntity): Map<string, IExitInfo> {
+  static getAllExits(room: IFEntity): Map<DirectionType, IExitInfo> {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
     if (!roomTrait.exits) {
       return new Map();
     }
-    return new Map(Object.entries(roomTrait.exits));
+    return new Map(Object.entries(roomTrait.exits) as [DirectionType, IExitInfo][]);
   }
   
   /**
    * Get available (non-blocked) exits
    */
-  static getAvailableExits(room: IFEntity): Map<string, IExitInfo> {
+  static getAvailableExits(room: IFEntity): Map<DirectionType, IExitInfo> {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
-    const available = new Map<string, IExitInfo>();
+    const available = new Map<DirectionType, IExitInfo>();
     
     if (!roomTrait.exits) {
       return available;
     }
     
-    for (const [direction, exitInfo] of Object.entries(roomTrait.exits)) {
+    for (const [direction, exitInfo] of Object.entries(roomTrait.exits) as [DirectionType, IExitInfo][]) {
       if (!this.isExitBlocked(room, direction)) {
         available.set(direction, exitInfo);
       }

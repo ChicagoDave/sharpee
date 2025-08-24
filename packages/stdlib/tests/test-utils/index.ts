@@ -250,7 +250,7 @@ export const createTestContext = createRealTestContext;
  * Asserts that an event exists in the event list with the expected properties
  * 
  * Updated to handle our new standardized event structure where the actual
- * event data is nested in event.data.data or event.payload.data
+ * event data is nested in event.data.data
  */
 export function expectEvent(
   events: SemanticEvent[],
@@ -264,14 +264,14 @@ export function expectEvent(
   }
   
   if (expectedData) {
-    // Handle our new structure where event data is in payload.data
-    const eventData = event.payload?.data || event.data?.data || event.data || {};
+    // Handle our new structure where event data is in data.data (for platform events with payload, use payload.data)
+    const eventData = (event as any).payload?.data || (event.data as any)?.data || event.data || {};
     
     Object.entries(expectedData).forEach(([key, value]) => {
       // Special handling for old test format
       if (key === 'messageId' || key === 'params' || key === 'reason') {
-        // These are at the payload/data level, not nested
-        const topLevelData = event.payload || event.data || {};
+        // These are at the data level (or payload for platform events), not nested
+        const topLevelData = (event as any).payload || event.data || {};
         if (typeof value === 'object' && value && value.asymmetricMatch) {
           expect(topLevelData[key]).toEqual(value);
         } else {
@@ -400,5 +400,6 @@ export function updateCapability(world: WorldModel, capabilityName: string, data
   });
 }
 
-// Export parser helpers
-export * from './parser-helpers';
+// Parser helpers are available separately if needed
+// but not exported by default to avoid circular dependencies
+// import { createParserWithLanguage } from './parser-helpers';

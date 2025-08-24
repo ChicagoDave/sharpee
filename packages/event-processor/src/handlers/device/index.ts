@@ -14,7 +14,8 @@ import { IFEvents } from '@sharpee/if-domain';
  */
 export const handlePushed: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target, location } = event.entities;
-  const pushType = event.data?.pushType as string;
+  const data = event.data as any;
+  const pushType = data?.pushType as string;
   
   if (!target) return;
   
@@ -25,9 +26,9 @@ export const handlePushed: EventHandler = (event: ISemanticEvent, world: any) =>
   switch (pushType) {
     case 'button':
       // If it's a switchable button, toggle its state
-      if (targetEntity.has(TraitType.SWITCHABLE) && event.data?.willToggle) {
+      if (targetEntity.has(TraitType.SWITCHABLE) && data?.willToggle) {
         const switchable = targetEntity.get(TraitType.SWITCHABLE) as { isOn?: boolean };
-        switchable.isOn = event.data?.newState as boolean;
+        switchable.isOn = data?.newState as boolean;
         
         // This might trigger other device activations
         // Future: Add support for linked devices
@@ -37,12 +38,12 @@ export const handlePushed: EventHandler = (event: ISemanticEvent, world: any) =>
     case 'moveable':
     case 'heavy':
       // If the object moved in a direction
-      if (event.data?.moved && event.data?.moveDirection && location) {
+      if (data?.moved && data?.moveDirection && location) {
         // Future: Actually move the object to adjacent location
         // For now, we just record that it moved
         
         // If it reveals a passage
-        if (event.data?.revealsPassage) {
+        if (data?.revealsPassage) {
           // Future: Add new exit to room or reveal hidden object
           // This would require modifying room exits or revealing concealed items
         }
@@ -60,7 +61,8 @@ export const handlePushed: EventHandler = (event: ISemanticEvent, world: any) =>
  */
 export const handlePulled: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target } = event.entities;
-  const pullType = event.data?.pullType as string;
+  const data = event.data as any;
+  const pullType = data?.pullType as string;
   
   if (!target) return;
   
@@ -72,22 +74,22 @@ export const handlePulled: EventHandler = (event: ISemanticEvent, world: any) =>
     case 'lever':
     case 'cord':
       // Toggle switchable state if applicable
-      if (targetEntity.has(TraitType.SWITCHABLE) && event.data?.willToggle) {
+      if (targetEntity.has(TraitType.SWITCHABLE) && data?.willToggle) {
         const switchable = targetEntity.get(TraitType.SWITCHABLE) as { isOn?: boolean };
-        switchable.isOn = event.data?.newState as boolean;
+        switchable.isOn = data?.newState as boolean;
       }
       break;
       
     case 'attached':
       // Object is attached to something else
-      if (event.data?.willDetach) {
+      if (data?.willDetach) {
         // Future: Handle detachment logic
       }
       break;
       
     case 'moveable':
       // Similar to pushing but in opposite direction
-      if (event.data?.moved && event.data?.moveDirection) {
+      if (data?.moved && data?.moveDirection) {
         // Future: Move object logic
       }
       break;
@@ -99,8 +101,9 @@ export const handlePulled: EventHandler = (event: ISemanticEvent, world: any) =>
  */
 export const handleTurned: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target } = event.entities;
-  const turnType = event.data?.turnType as string;
-  const newSetting = event.data?.newSetting;
+  const data = event.data as any;
+  const turnType = data?.turnType as string;
+  const newSetting = data?.newSetting;
   
   if (!target) return;
   
@@ -113,16 +116,16 @@ export const handleTurned: EventHandler = (event: ISemanticEvent, world: any) =>
     case 'knob':
       // Future: Add a TURNABLE trait with setting property
       // For now, just handle basic switchable devices
-      if (targetEntity.has(TraitType.SWITCHABLE) && event.data?.willToggle) {
+      if (targetEntity.has(TraitType.SWITCHABLE) && data?.willToggle) {
         const switchable = targetEntity.get(TraitType.SWITCHABLE) as { isOn?: boolean };
-        switchable.isOn = event.data?.newState as boolean;
+        switchable.isOn = data?.newState as boolean;
       }
       break;
       
     case 'wheel':
     case 'crank':
       // These might open/close things or activate mechanisms
-      if (event.data?.activatesMechanism) {
+      if (data?.activatesMechanism) {
         // Future: Trigger mechanism activation
       }
       break;
@@ -134,7 +137,8 @@ export const handleTurned: EventHandler = (event: ISemanticEvent, world: any) =>
  */
 export const handleUsed: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target } = event.entities;
-  const useType = event.data?.useType as string;
+  const data = event.data as any;
+  const useType = data?.useType as string;
   
   if (!target) return;
   
@@ -161,7 +165,7 @@ export const handleUsed: EventHandler = (event: ISemanticEvent, world: any) => {
       
     case 'consumable':
       // Some items are consumed when used
-      if (event.data?.consumed) {
+      if (data?.consumed) {
         world.removeEntity(target);
       }
       break;

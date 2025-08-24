@@ -20,33 +20,53 @@ import {
   createCommand
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
+import type { ISemanticEvent } from '@sharpee/core';
 
-// Helper to execute action with validation (mimics CommandExecutor flow)
-const executeWithValidation = (action: any, context: ActionContext) => {
-  const validation = action.validate(context);
-  if (!validation.valid) {
-    const params: any = { item: context.command.directObject?.entity?.name };
-    
-    // Special handling for container_full error
-    if (validation.error === 'container_full') {
-      const playerLocation = context.world.getLocation(context.player.id);
-      const dropLocation = playerLocation ? context.world.getEntity(playerLocation) : null;
-      if (dropLocation) {
-        params.container = dropLocation.name;
-      }
-    }
-    
-    return [context.event('action.error', {
-      actionId: action.id,
-      messageId: validation.error || 'validation_failed',
-      reason: validation.error || 'validation_failed',
-      params
-    })];
+// Helper to execute action using the new three-phase pattern
+function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
+  // New three-phase pattern: validate -> execute -> report
+  const validationResult = action.validate(context);
+  
+  if (!validationResult.valid) {
+    // Action creates its own error events in report()
+    return action.report(context, validationResult);
   }
-  return action.execute(context);
-};
+  
+  // Execute mutations (returns void in new pattern)
+  action.execute(context);
+  
+  // Report generates all events
+  return action.report(context, validationResult);
+}
 
 describe('droppingAction (Golden Pattern)', () => {
+  describe('Three-Phase Pattern Compliance', () => {
+    test('should have required methods for three-phase pattern', () => {
+      expect(droppingAction.validate).toBeDefined();
+      expect(droppingAction.execute).toBeDefined();
+      expect(droppingAction.report).toBeDefined();
+    });
+
+    test('should use report() for ALL event generation', () => {
+      const { world, player, room } = setupBasicWorld();
+      const item = world.createEntity('test item', 'object');
+      world.moveEntity(item.id, player.id);
+      
+      const command = createCommand(IFActions.DROPPING, {
+        entity: item,
+        text: 'test item'
+      });
+      const context = createRealTestContext(droppingAction, world, command);
+      
+      // The executeAction helper properly tests the three-phase pattern
+      const events = executeAction(droppingAction, context);
+      
+      // All events should be generated via report()
+      expect(events).toBeDefined();
+      expect(Array.isArray(events)).toBe(true);
+    });
+  });
+
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
       expect(droppingAction.id).toBe(IFActions.DROPPING);
@@ -77,7 +97,7 @@ describe('droppingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.DROPPING);
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = executeWithValidation(droppingAction, context);
+      const events = executeAction(droppingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_target'),
@@ -93,7 +113,7 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = executeWithValidation(droppingAction, context);
+      const events = executeAction(droppingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_held'),
@@ -117,7 +137,7 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = executeWithValidation(droppingAction, context);
+      const events = executeAction(droppingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('still_worn'),
@@ -166,7 +186,7 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = executeWithValidation(droppingAction, context);
+      const events = executeAction(droppingAction, context);
       
       // Should succeed - dropping inside a closed container is allowed
       // The closed state prevents things moving IN/OUT from outside, not inside actions
@@ -211,7 +231,7 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = executeWithValidation(droppingAction, context);
+      const events = executeAction(droppingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('container_full'),
@@ -232,7 +252,7 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = executeWithValidation(droppingAction, context);
+      const events = executeAction(droppingAction, context);
       
       // Should emit DROPPED event
       const room = world.getContainingRoom(player.id);
@@ -276,7 +296,7 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = executeWithValidation(droppingAction, context);
+      const events = executeAction(droppingAction, context);
       
       expectEvent(events, 'if.event.dropped', {
         item: gem.id,
@@ -314,7 +334,7 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = executeWithValidation(droppingAction, context);
+      const events = executeAction(droppingAction, context);
       
       expectEvent(events, 'if.event.dropped', {
         item: book.id,
@@ -353,7 +373,7 @@ describe('droppingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = executeWithValidation(droppingAction, context);
+      const events = executeAction(droppingAction, context);
       
       expectEvent(events, 'action.success', {
         messageId: expect.stringContaining('dropped_quietly')
@@ -370,7 +390,7 @@ describe('droppingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = executeWithValidation(droppingAction, context);
+      const events = executeAction(droppingAction, context);
       
       expectEvent(events, 'action.success', {
         messageId: expect.stringContaining('dropped_carelessly')
@@ -387,7 +407,7 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = executeWithValidation(droppingAction, context);
+      const events = executeAction(droppingAction, context);
       
       events.forEach(event => {
         if (event.entities) {

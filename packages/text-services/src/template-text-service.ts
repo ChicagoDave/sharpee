@@ -120,7 +120,7 @@ export class TemplateTextService implements TextService {
   
   private processQueryEvent(event: ISemanticEvent): string | null {
     const data = event.data as any;
-    const query = data?.query || event.payload?.query;
+    const query = data?.query || (event as any).payload?.query;
     if (!query) return null;
     
     if (!this.languageProvider) {
@@ -168,10 +168,10 @@ export class TemplateTextService implements TextService {
   
   private processMessageEvent(event: ISemanticEvent): string | null {
     const data = event.data as any;
-    const messageId = data?.messageId || event.payload?.messageId;
+    const messageId = data?.messageId || (event as any).payload?.messageId;
     if (!messageId || !this.languageProvider) return null;
     
-    const params = event.data?.params || event.payload?.params || {};
+    const params = (event.data as any)?.params || (event as any).payload?.params || {};
     const message = this.languageProvider.getMessage(messageId, params);
     return message || null;
   }
@@ -239,7 +239,7 @@ export class TemplateTextService implements TextService {
     
     // Add specific parameters based on event type
     if (event.type === 'platform.save_completed' || event.type === 'platform.save_failed') {
-      const context = event.payload?.context as any;
+      const context = (event as any).payload?.context;
       if (context) {
         params.saveName = context.saveName || 'default';
         params.timestamp = new Date(context.timestamp).toLocaleString();
@@ -247,7 +247,7 @@ export class TemplateTextService implements TextService {
     }
     
     if (event.type === 'platform.save_failed' || event.type === 'platform.restore_failed') {
-      params.error = event.payload?.error || 'Unknown error';
+      params.error = (event as any).payload?.error || 'Unknown error';
     }
     
     const message = this.languageProvider.getMessage(messageId, params);

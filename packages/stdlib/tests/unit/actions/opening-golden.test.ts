@@ -21,21 +21,51 @@ import {
 } from '../../test-utils';
 import type { WorldModel } from '@sharpee/world-model';
 
-// Helper to execute action with validation (mimics CommandExecutor flow)
-const executeWithValidation = (action: any, context: ActionContext) => {
-  const validation = action.validate(context);
-  if (!validation.valid) {
-    return [context.event('action.error', {
-      actionId: action.id,
-      messageId: validation.error || 'validation_failed',
-      reason: validation.error || 'validation_failed',
-      params: validation.params || {}
-    })];
+// Helper to execute action using the new three-phase pattern
+function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
+  // New three-phase pattern: validate -> execute -> report
+  const validationResult = action.validate(context);
+  
+  if (!validationResult.valid) {
+    // Action creates its own error events in report()
+    return action.report(context, validationResult);
   }
-  return action.execute(context);
-};
+  
+  // Execute mutations (returns void in new pattern)
+  action.execute(context);
+  
+  // Report generates all events
+  return action.report(context, validationResult);
+}
 
 describe('openingAction (Golden Pattern)', () => {
+  describe('Three-Phase Pattern Compliance', () => {
+    test('should have required methods for three-phase pattern', () => {
+      expect(openingAction.validate).toBeDefined();
+      expect(openingAction.execute).toBeDefined();
+      expect(openingAction.report).toBeDefined();
+    });
+
+    test('should use report() for ALL event generation', () => {
+      const { world, player, room } = setupBasicWorld();
+      const item = world.createEntity('test item', 'object');
+      world.moveEntity(item.id, room.id);
+      
+      const command = createCommand(IFActions.OPENING, {
+        entity: item,
+        text: 'test item'
+      });
+      const context = createRealTestContext(openingAction, world, command);
+      
+      // The executeAction helper properly tests the three-phase pattern
+      const events = executeAction(openingAction, context);
+      
+      // All events should be generated via report()
+      expect(events).toBeDefined();
+      expect(Array.isArray(events)).toBe(true);
+    });
+  });
+
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
       expect(openingAction.id).toBe(IFActions.OPENING);
@@ -63,7 +93,7 @@ describe('openingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.OPENING);
       const context = createRealTestContext(openingAction, world, command);
       
-      const events = executeWithValidation(openingAction, context);
+      const events = executeAction(openingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_target'),
@@ -81,7 +111,7 @@ describe('openingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(openingAction, world, command);
       
-      const events = executeWithValidation(openingAction, context);
+      const events = executeAction(openingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_openable'),
@@ -103,7 +133,7 @@ describe('openingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(openingAction, world, command);
       
-      const events = executeWithValidation(openingAction, context);
+      const events = executeAction(openingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('already_open'),
@@ -130,7 +160,7 @@ describe('openingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(openingAction, world, command);
       
-      const events = executeWithValidation(openingAction, context);
+      const events = executeAction(openingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('locked'),
@@ -160,7 +190,7 @@ describe('openingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(openingAction, world, command);
       
-      const events = executeWithValidation(openingAction, context);
+      const events = executeAction(openingAction, context);
       
       // Should emit OPENED event
       expectEvent(events, 'if.event.opened', {
@@ -205,7 +235,7 @@ describe('openingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(openingAction, world, command);
       
-      const events = executeWithValidation(openingAction, context);
+      const events = executeAction(openingAction, context);
       
       expectEvent(events, 'if.event.opened', {
         item: 'wooden box',
@@ -243,7 +273,7 @@ describe('openingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(openingAction, world, command);
       
-      const events = executeWithValidation(openingAction, context);
+      const events = executeAction(openingAction, context);
       
       expectEvent(events, 'if.event.opened', {
         item: 'empty box',
@@ -277,7 +307,7 @@ describe('openingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(openingAction, world, command);
       
-      const events = executeWithValidation(openingAction, context);
+      const events = executeAction(openingAction, context);
       
       expectEvent(events, 'if.event.opened', {
         item: 'oak door',
@@ -306,7 +336,7 @@ describe('openingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(openingAction, world, command);
       
-      const events = executeWithValidation(openingAction, context);
+      const events = executeAction(openingAction, context);
       
       events.forEach(event => {
         if (event.entities) {
@@ -353,7 +383,7 @@ describe('Opening Action Edge Cases', () => {
     );
     const context = createRealTestContext(openingAction, world, command);
     
-    const events = executeWithValidation(openingAction, context);
+    const events = executeAction(openingAction, context);
     
     expectEvent(events, 'if.event.opened', {
       item: 'front door',
@@ -394,7 +424,7 @@ describe('Opening Action Edge Cases', () => {
     );
     const context = createRealTestContext(openingAction, world, command);
     
-    const events = executeWithValidation(openingAction, context);
+    const events = executeAction(openingAction, context);
     
     // Should succeed - it's unlocked
     expectEvent(events, 'if.event.opened', {
@@ -418,7 +448,7 @@ describe('Opening Action Edge Cases', () => {
     );
     const context = createRealTestContext(openingAction, world, command);
     
-    const events = executeWithValidation(openingAction, context);
+    const events = executeAction(openingAction, context);
     
     expectEvent(events, 'if.event.opened', {
       item: 'thick book'

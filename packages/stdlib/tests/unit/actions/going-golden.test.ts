@@ -12,7 +12,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { goingAction } from '../../../src/actions/standard/going'; // Now from folder
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
+import { TraitType, WorldModel, Direction, DirectionType } from '@sharpee/world-model';
 import { 
   createRealTestContext,
   setupBasicWorld,
@@ -21,14 +21,64 @@ import {
   createCommand
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
+import type { ISemanticEvent } from '@sharpee/core';
 
-// Helper to execute action with validation (mimics CommandExecutor flow)
-// Note: goingAction already calls validate internally, so we just call execute
-const executeWithValidation = (action: any, context: ActionContext) => {
-  return action.execute(context);
-};
+// Helper to execute action using the new three-phase pattern
+function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
+  // New three-phase pattern: validate -> execute -> report
+  const validationResult = action.validate(context);
+  
+  if (!validationResult.valid) {
+    // Action creates its own error events in report()
+    return action.report(context, validationResult);
+  }
+  
+  // Execute mutations (returns void in new pattern)
+  action.execute(context);
+  
+  // Report generates all events
+  return action.report(context, validationResult);
+}
 
 describe('goingAction (Golden Pattern)', () => {
+  describe('Three-Phase Pattern Compliance', () => {
+    test('should have required methods for three-phase pattern', () => {
+      expect(goingAction.validate).toBeDefined();
+      expect(goingAction.execute).toBeDefined();
+      expect(goingAction.report).toBeDefined();
+    });
+
+    test('should use report() for ALL event generation', () => {
+      const { world, player, room } = setupBasicWorld();
+      const room2 = world.createEntity('Room 2', 'object');
+      room2.add({ type: TraitType.ROOM });
+      
+      const roomTrait = room.getTrait(TraitType.ROOM) as any;
+      roomTrait.exits = {
+        [Direction.NORTH]: { destination: room2.id }
+      };
+      
+      const command = createCommand(IFActions.GOING);
+      command.parsed.extras = { direction: Direction.NORTH };
+      
+      const context = createRealTestContext(goingAction, world, command);
+      
+      // The executeAction helper properly tests the three-phase pattern
+      const events = executeAction(goingAction, context);
+      
+      // All events should be generated via report()
+      expect(events).toBeDefined();
+      expect(events.length).toBeGreaterThan(0);
+      
+      // Verify we get the expected movement events
+      expectEvent(events, 'if.event.actor_moved', {
+        direction: Direction.NORTH,
+        fromRoom: room.id,
+        toRoom: room2.id
+      });
+    });
+  });
+
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
       expect(goingAction.id).toBe(IFActions.GOING);
@@ -61,7 +111,7 @@ describe('goingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.GOING);
       const context = createRealTestContext(goingAction, world, command);
       
-      const events = executeWithValidation(goingAction, context);
+      const events = executeAction(goingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_direction'),
@@ -77,11 +127,11 @@ describe('goingAction (Golden Pattern)', () => {
       world.moveEntity(player.id, container.id);
       
       const command = createCommand(IFActions.GOING);
-      command.parsed.extras = { direction: 'north' };
+      command.parsed.extras = { direction: Direction.NORTH };
       
       const context = createRealTestContext(goingAction, world, command);
       
-      const events = executeWithValidation(goingAction, context);
+      const events = executeAction(goingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_in_room'),
@@ -103,11 +153,11 @@ describe('goingAction (Golden Pattern)', () => {
       world.moveEntity(player.id, room.id);
       
       const command = createCommand(IFActions.GOING);
-      command.parsed.extras = { direction: 'north' };
+      command.parsed.extras = { direction: Direction.NORTH };
       
       const context = createRealTestContext(goingAction, world, command);
       
-      const events = executeWithValidation(goingAction, context);
+      const events = executeAction(goingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_exits'),
@@ -128,21 +178,21 @@ describe('goingAction (Golden Pattern)', () => {
       room.add({
         type: TraitType.ROOM,
         exits: {
-          south: { destination: room2.id }
+          [Direction.SOUTH]: { destination: room2.id }
         }
       });
       world.moveEntity(player.id, room.id);
       
       const command = createCommand(IFActions.GOING);
-      command.parsed.extras = { direction: 'north' }; // Trying to go north
+      command.parsed.extras = { direction: Direction.NORTH }; // Trying to go north
       
       const context = createRealTestContext(goingAction, world, command);
       
-      const events = executeWithValidation(goingAction, context);
+      const events = executeAction(goingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_exit_that_way'),
-        params: { direction: 'north' }
+        params: { direction: Direction.NORTH }
       });
     });
 
@@ -165,23 +215,23 @@ describe('goingAction (Golden Pattern)', () => {
       room1.add({
         type: TraitType.ROOM,
         exits: {
-          north: { destination: room2.id, via: door.id }
+          [Direction.NORTH]: { destination: room2.id, via: door.id }
         }
       });
       
       world.moveEntity(player.id, room1.id);
       
       const command = createCommand(IFActions.GOING);
-      command.parsed.extras = { direction: 'north' };
+      command.parsed.extras = { direction: Direction.NORTH };
       
       const context = createRealTestContext(goingAction, world, command);
       
-      const events = executeWithValidation(goingAction, context);
+      const events = executeAction(goingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('door_closed'),
         params: { 
-          direction: 'north',
+          direction: Direction.NORTH,
           door: 'wooden door'
         }
       });
@@ -211,24 +261,24 @@ describe('goingAction (Golden Pattern)', () => {
       room1.add({
         type: TraitType.ROOM,
         exits: {
-          east: { destination: room2.id, via: door.id }
+          [Direction.EAST]: { destination: room2.id, via: door.id }
         }
       });
       
       world.moveEntity(player.id, room1.id);
       
       const command = createCommand(IFActions.GOING);
-      command.parsed.extras = { direction: 'east' };
+      command.parsed.extras = { direction: Direction.EAST };
       
       const context = createRealTestContext(goingAction, world, command);
       
-      const events = executeWithValidation(goingAction, context);
+      const events = executeAction(goingAction, context);
       
       // The door is both closed and locked, so it should report as locked
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('door_locked'),
         params: { 
-          direction: 'east',
+          direction: Direction.EAST,
           door: 'iron door',
           isClosed: true,
           isLocked: true
@@ -246,21 +296,21 @@ describe('goingAction (Golden Pattern)', () => {
       room.add({
         type: TraitType.ROOM,
         exits: {
-          west: { destination: 'nonexistent_room' }
+          [Direction.WEST]: { destination: 'nonexistent_room' }
         }
       });
       world.moveEntity(player.id, room.id);
       
       const command = createCommand(IFActions.GOING);
-      command.parsed.extras = { direction: 'west' };
+      command.parsed.extras = { direction: Direction.WEST };
       
       const context = createRealTestContext(goingAction, world, command);
       
-      const events = executeWithValidation(goingAction, context);
+      const events = executeAction(goingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('destination_not_found'),
-        params: { direction: 'west' }
+        params: { direction: Direction.WEST }
       });
     });
 
@@ -276,7 +326,7 @@ describe('goingAction (Golden Pattern)', () => {
       room1.add({
         type: TraitType.ROOM,
         exits: {
-          down: { destination: room2.id }
+          [Direction.DOWN]: { destination: room2.id }
         }
       });
       
@@ -288,16 +338,16 @@ describe('goingAction (Golden Pattern)', () => {
       world.moveEntity(player.id, room1.id);
       
       const command = createCommand(IFActions.GOING);
-      command.parsed.extras = { direction: 'down' };
+      command.parsed.extras = { direction: Direction.DOWN };
       
       const context = createRealTestContext(goingAction, world, command);
       
-      const events = executeWithValidation(goingAction, context);
+      const events = executeAction(goingAction, context);
       
       // Should fail because the room is dark and player has no light
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('too_dark'),
-        params: { direction: 'down' }
+        params: { direction: Direction.DOWN }
       });
     });
   });
@@ -315,14 +365,14 @@ describe('goingAction (Golden Pattern)', () => {
       room1.add({
         type: TraitType.ROOM,
         exits: {
-          north: { destination: room2.id }
+          [Direction.NORTH]: { destination: room2.id }
         }
       });
       
       room2.add({
         type: TraitType.ROOM,
         exits: {
-          south: { destination: room1.id }
+          [Direction.SOUTH]: { destination: room1.id }
         },
         visited: true  // Mark as already visited so we get 'moved_to' not 'first_visit'
       });
@@ -330,31 +380,31 @@ describe('goingAction (Golden Pattern)', () => {
       world.moveEntity(player.id, room1.id);
       
       const command = createCommand(IFActions.GOING);
-      command.parsed.extras = { direction: 'north' };
+      command.parsed.extras = { direction: Direction.NORTH };
       
       const context = createRealTestContext(goingAction, world, command);
       
-      const events = executeWithValidation(goingAction, context);
+      const events = executeAction(goingAction, context);
       
       // Should emit exit event
       expectEvent(events, 'if.event.actor_exited', {
         actorId: player.id,
-        direction: 'north',
+        direction: Direction.NORTH,
         toRoom: room2.id
       });
       
       // Should emit movement event
       expectEvent(events, 'if.event.actor_moved', {
-        direction: 'north',
+        direction: Direction.NORTH,
         fromRoom: room1.id,
         toRoom: room2.id,
-        oppositeDirection: 'south'
+        oppositeDirection: Direction.SOUTH
       });
       
       // Should emit enter event
       expectEvent(events, 'if.event.actor_entered', {
         actorId: player.id,
-        direction: 'south',  // Opposite direction
+        direction: Direction.SOUTH,  // Opposite direction
         fromRoom: room1.id
       });
       
@@ -362,7 +412,7 @@ describe('goingAction (Golden Pattern)', () => {
       expectEvent(events, 'action.success', {
         messageId: expect.stringContaining('moved_to'),
         params: { 
-          direction: 'north',
+          direction: Direction.NORTH,
           destination: 'Library'
         }
       });
@@ -380,7 +430,7 @@ describe('goingAction (Golden Pattern)', () => {
       room1.add({
         type: TraitType.ROOM,
         exits: {
-          northeast: { destination: room2.id }
+          [Direction.NORTHEAST]: { destination: room2.id }
         }
       });
       
@@ -389,14 +439,14 @@ describe('goingAction (Golden Pattern)', () => {
       world.moveEntity(player.id, room1.id);
       
       const command = createCommand(IFActions.GOING);
-      command.parsed.extras = { direction: 'ne' };  // Abbreviation
+      command.parsed.extras = { direction: Direction.NORTHEAST };  // Testing northeast direction
       
       const context = createRealTestContext(goingAction, world, command);
       
-      const events = executeWithValidation(goingAction, context);
+      const events = executeAction(goingAction, context);
       
       expectEvent(events, 'if.event.actor_moved', {
-        direction: 'northeast',  // Normalized
+        direction: Direction.NORTHEAST,  // Normalized
         fromRoom: room1.id,
         toRoom: room2.id
       });
@@ -415,7 +465,7 @@ describe('goingAction (Golden Pattern)', () => {
         type: TraitType.ROOM,
         visited: true,
         exits: {
-          up: { destination: room2.id }
+          [Direction.UP]: { destination: room2.id }
         }
       });
       
@@ -427,15 +477,15 @@ describe('goingAction (Golden Pattern)', () => {
       world.moveEntity(player.id, room1.id);
       
       const command = createCommand(IFActions.GOING);
-      command.parsed.extras = { direction: 'up' };
+      command.parsed.extras = { direction: Direction.UP };
       
       const context = createRealTestContext(goingAction, world, command);
       
-      const events = executeWithValidation(goingAction, context);
+      const events = executeAction(goingAction, context);
       
       // Movement event should include firstVisit flag
       expectEvent(events, 'if.event.actor_moved', {
-        direction: 'up',
+        direction: Direction.UP,
         firstVisit: true
       });
       
@@ -443,7 +493,7 @@ describe('goingAction (Golden Pattern)', () => {
       expectEvent(events, 'action.success', {
         messageId: expect.stringContaining('first_visit'),
         params: { 
-          direction: 'up',
+          direction: Direction.UP,
           destination: 'Attic'
         }
       });
@@ -467,7 +517,7 @@ describe('goingAction (Golden Pattern)', () => {
       room1.add({
         type: TraitType.ROOM,
         exits: {
-          west: { destination: room2.id, via: door.id }
+          [Direction.WEST]: { destination: room2.id, via: door.id }
         }
       });
       
@@ -476,14 +526,14 @@ describe('goingAction (Golden Pattern)', () => {
       world.moveEntity(player.id, room1.id);
       
       const command = createCommand(IFActions.GOING);
-      command.parsed.extras = { direction: 'west' };
+      command.parsed.extras = { direction: Direction.WEST };
       
       const context = createRealTestContext(goingAction, world, command);
       
-      const events = executeWithValidation(goingAction, context);
+      const events = executeAction(goingAction, context);
       
       expectEvent(events, 'if.event.actor_moved', {
-        direction: 'west',
+        direction: Direction.WEST,
         fromRoom: room1.id,
         toRoom: room2.id
       });
@@ -524,7 +574,7 @@ describe('goingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(goingAction, world, command);
       
-      const events = executeWithValidation(goingAction, context);
+      const events = executeAction(goingAction, context);
       
       // Should succeed since player has light
       expectEvent(events, 'if.event.actor_moved', {
@@ -562,7 +612,7 @@ describe('goingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(goingAction, world, command);
       
-      const events = executeWithValidation(goingAction, context);
+      const events = executeAction(goingAction, context);
       
       expectEvent(events, 'if.event.actor_moved', {
         direction: 'outside',
@@ -586,18 +636,18 @@ describe('goingAction (Golden Pattern)', () => {
       room1.add({
         type: TraitType.ROOM,
         exits: {
-          south: { destination: room2.id }
+          [Direction.SOUTH]: { destination: room2.id }
         }
       });
       
       world.moveEntity(player.id, room1.id);
       
       const command = createCommand(IFActions.GOING);
-      command.parsed.extras = { direction: 'south' };
+      command.parsed.extras = { direction: Direction.SOUTH };
       
       const context = createRealTestContext(goingAction, world, command);
       
-      const events = executeWithValidation(goingAction, context);
+      const events = executeAction(goingAction, context);
       
       events.forEach(event => {
         if (event.entities) {
@@ -648,7 +698,7 @@ describe('goingAction (Golden Pattern)', () => {
         
         const context = createRealTestContext(goingAction, world, command);
         
-        const events = executeWithValidation(goingAction, context);
+        const events = executeAction(goingAction, context);
         
         expectEvent(events, 'if.event.actor_moved', {
           oppositeDirection: opposite
@@ -695,18 +745,18 @@ describe('Testing Pattern Examples for Going', () => {
     lobby.add({
       type: TraitType.ROOM,
       exits: {
-        north: { destination: hallway.id },
-        up: { destination: stairs.id, via: stairwellDoor.id },
-        outside: { destination: street.id }
+        [Direction.NORTH]: { destination: hallway.id },
+        [Direction.UP]: { destination: stairs.id, via: stairwellDoor.id },
+        [Direction.OUT]: { destination: street.id }
       }
     });
     
     hallway.add({
       type: TraitType.ROOM,
       exits: {
-        south: { destination: lobby.id },
-        east: { destination: room101.id, via: room101Door.id },
-        west: { destination: room102.id, via: room102Door.id }
+        [Direction.SOUTH]: { destination: lobby.id },
+        [Direction.EAST]: { destination: room101.id, via: room101Door.id },
+        [Direction.WEST]: { destination: room102.id, via: room102Door.id }
       }
     });
     
@@ -715,8 +765,8 @@ describe('Testing Pattern Examples for Going', () => {
     // Navigate through multiple rooms
     const lobbyTrait = lobby.getTrait(TraitType.ROOM) as any;
     const hallwayTrait = hallway.getTrait(TraitType.ROOM) as any;
-    expect(lobbyTrait.exits).toHaveProperty('north');
-    expect(hallwayTrait.exits).toHaveProperty('south');
+    expect(lobbyTrait.exits).toHaveProperty(Direction.NORTH);
+    expect(hallwayTrait.exits).toHaveProperty(Direction.SOUTH);
   });
 
   test('pattern: testing door states during movement', () => {
@@ -753,7 +803,7 @@ describe('Testing Pattern Examples for Going', () => {
       room1.add({
         type: TraitType.ROOM,
         exits: {
-          north: { destination: room2.id, via: door.id }
+          [Direction.NORTH]: { destination: room2.id, via: door.id }
         }
       });
       

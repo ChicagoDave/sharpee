@@ -14,7 +14,8 @@ import { IFEvents } from '@sharpee/if-domain';
  */
 export const handleGiven: EventHandler = (event: ISemanticEvent, world: any) => {
   const { actor, target, instrument, location } = event.entities;
-  const accepted = event.data?.accepted as boolean;
+  const data = event.data as any;
+  const accepted = data?.accepted as boolean;
   
   if (target && location && accepted) {
     // Transfer the item to the recipient
@@ -49,8 +50,9 @@ export const handleShown: EventHandler = (event: ISemanticEvent, world: any) => 
  */
 export const handleThrown: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target, location } = event.entities;
-  const willBreak = event.data?.willBreak as boolean;
-  const finalLocation = event.data?.finalLocation as string;
+  const data = event.data as any;
+  const willBreak = data?.willBreak as boolean;
+  const finalLocation = data?.finalLocation as string;
   
   if (target) {
     if (willBreak) {
@@ -68,7 +70,8 @@ export const handleThrown: EventHandler = (event: ISemanticEvent, world: any) =>
  * Handle ITEM_DESTROYED event - remove item from world
  */
 export const handleItemDestroyed: EventHandler = (event: ISemanticEvent, world: any) => {
-  const itemId = event.data?.item as string;
+  const data = event.data as any;
+  const itemId = data?.item as string;
   
   if (itemId) {
     // Remove the item from the world

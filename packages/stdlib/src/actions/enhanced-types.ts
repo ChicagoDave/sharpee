@@ -156,10 +156,21 @@ export interface ValidationResult {
  * Unified action interface
  * 
  * Actions define patterns, messages, and execution logic together.
- * They follow a two-phase pattern: validate, then execute.
- * They return events, not direct text or mutation instructions.
+ * They follow a three-phase pattern: validate, execute, then report.
  * 
- * Generic version supports state passing from validate to execute.
+ * Phase 3.5 Update (Complete Event Ownership):
+ * - validate(): Check if action can proceed (returns ValidationResult)
+ * - execute(): Perform mutations only (returns void or ISemanticEvent[] for compatibility)
+ * - report(): Generate ALL events including errors (owns complete event lifecycle)
+ * 
+ * The report() method is ALWAYS called and is responsible for:
+ * - Creating success events with captured entity snapshots
+ * - Creating error events based on validation or execution results
+ * - Ensuring all events have complete context and data
+ * 
+ * During migration, actions can implement either pattern:
+ * - Old: validate + execute (returns events) - CommandExecutor creates error events
+ * - New: validate + execute (void) + report - Action creates ALL events
  */
 export interface Action {
   /**
@@ -188,16 +199,38 @@ export interface Action {
   validate(context: ActionContext): ValidationResult;
   
   /**
-   * Execute the action and return events
+   * Execute the action (mutations only in new pattern)
    * 
-   * This method is only called if validate() returned { isValid: true }.
-   * It should delegate to behaviors for actual state changes.
+   * This method is only called if validate() returned { valid: true }.
+   * 
+   * Old pattern: Returns events describing what happened
+   * New pattern: Returns void, only performs mutations
    * 
    * @param context Unified action context with helper methods
-   * @param state The validated state from validate() method
-   * @returns Array of events describing what should happen
+   * @returns Array of events (old pattern) or void (new pattern)
    */
-  execute(context: ActionContext): ISemanticEvent[];
+  execute(context: ActionContext): ISemanticEvent[] | void;
+  
+  /**
+   * Generate ALL events including errors (new three-phase pattern)
+   * 
+   * This method is ALWAYS called and is responsible for creating ALL events:
+   * - Success events with captured entity snapshots when action succeeds
+   * - Error events when validation fails or execution encounters issues
+   * - Scope error events when entities are not accessible
+   * 
+   * The method receives the validation result and any execution errors through
+   * the context, allowing it to create appropriate events with full context.
+   * 
+   * NOTE: This will become required once all actions are migrated to the new pattern.
+   * For now it's optional to maintain backward compatibility with unmigrated actions.
+   * 
+   * @param context Unified action context with validation/execution results
+   * @param validationResult Result from validate() phase
+   * @param executionError Optional error from execute() phase
+   * @returns Array of events with captured state data
+   */
+  report?(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[];
   
   /**
    * @deprecated Use validate() instead. This will be removed after refactoring.

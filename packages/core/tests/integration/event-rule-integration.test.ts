@@ -134,7 +134,7 @@ describe('Event and Rule Integration', () => {
         eventType: 'combat:damage',
         action: (event, world) => {
           const target = world.getEntity(event.entities.target!);
-          const damage = event.payload?.damage || 0;
+          const damage = (event.data as any)?.damage || 0;
           
           // Apply damage
           const newHealth = Math.max(0, target.attributes.health - damage);
@@ -164,7 +164,7 @@ describe('Event and Rule Integration', () => {
       ruleSystem.addRule({
         id: 'death-check-rule',
         eventType: 'actor:health-changed',
-        condition: (event) => event.payload?.newHealth <= 0,
+        condition: (event) => (event.data as any)?.newHealth <= 0,
         action: (event, world) => {
           const entity = world.getEntity(event.entities.target!);
           events.push(`death-check-rule: ${entity.id} dies`);
@@ -355,7 +355,7 @@ describe('Event and Rule Integration', () => {
 
       // Subscribe to narrative events
       eventSource.getEmitter().on(StandardEventTypes.NARRATIVE, (event) => {
-        narrativeEvents.push(event.payload?.message || '');
+        narrativeEvents.push((event.data as any)?.message || '');
       });
 
       // Combat sequence rules
@@ -388,7 +388,7 @@ describe('Event and Rule Integration', () => {
         eventType: 'combat:damage',
         action: (event, world) => {
           const target = world.getEntity(event.entities.target!);
-          const damage = event.payload?.damage || 0;
+          const damage = (event.data as any)?.damage || 0;
           
           return {
             prevent: false,

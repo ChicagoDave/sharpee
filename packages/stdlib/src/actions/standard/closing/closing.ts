@@ -3,12 +3,17 @@
  * 
  * This action properly delegates to OpenableBehavior for validation
  * and execution. It follows the validate/execute pattern.
+ * 
+ * MIGRATED: To three-phase pattern (validate/execute/report) for atomic events
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, OpenableBehavior, ICloseResult } from '@sharpee/world-model';
+import { captureEntitySnapshot } from '../../base/snapshot-utils';
+import { buildEventData } from '../../data-builder-types';
 import { IFActions } from '../../constants';
+import { closedDataConfig } from './closing-data';
 
 // Import our payload types
 import { ClosedEventData } from './closing-event-data';
@@ -99,11 +104,68 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
    * Assumes validation has already passed - no validation logic here
    * Delegates to OpenableBehavior for actual state changes
    */
-  execute(context: ActionContext): ISemanticEvent[] {
+  execute(context: ActionContext): void {
     const noun = context.command.directObject!.entity!;
     
     // Delegate to behavior for closing
     const result: ICloseResult = OpenableBehavior.close(noun);
+    
+    // Store result for report phase
+    (context as any)._closeResult = result;
+  },
+
+  /**
+   * Report events after closing
+   * Generates events with complete state snapshots
+   */
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    // Handle validation errors
+    if (validationResult && !validationResult.valid) {
+      // Capture entity data for validation errors
+      const errorParams = { ...(validationResult.params || {}) };
+      
+      // Add entity snapshots if entities are available
+      if (context.command.directObject?.entity) {
+        errorParams.targetSnapshot = captureEntitySnapshot(
+          context.command.directObject.entity,
+          context.world,
+          false
+        );
+      }
+      if (context.command.indirectObject?.entity) {
+        errorParams.indirectTargetSnapshot = captureEntitySnapshot(
+          context.command.indirectObject.entity,
+          context.world,
+          false
+        );
+      }
+
+      return [
+        context.event('action.error', {
+          actionId: context.action.id,
+          error: validationResult.error || 'validation_failed',
+          messageId: validationResult.messageId || validationResult.error || 'action_failed',
+          params: errorParams
+        })
+      ];
+    }
+    
+    // Handle execution errors
+    if (executionError) {
+      return [
+        context.event('action.error', {
+          actionId: context.action.id,
+          error: 'execution_failed',
+          messageId: 'action_failed',
+          params: {
+            error: executionError.message
+          }
+        })
+      ];
+    }
+    
+    const noun = context.command.directObject!.entity!;
+    const result = (context as any)._closeResult as ICloseResult;
     
     // Check if the behavior reported failure (shouldn't happen after validation)
     if (!result.success) {
@@ -145,35 +207,39 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
       sound: result.closeSound
     }));
     
-    // Add the action event (if.event.closed) - following same pattern as opening
-    // Check for contents if it's a container
+    // Add the action event (if.event.closed) - using data builder
+    const eventData = buildEventData(closedDataConfig, context);
+    
+    // Add additional fields for backward compatibility
+    const isContainer = noun.has(TraitType.CONTAINER);
+    const isDoor = noun.has(TraitType.DOOR);
+    const isSupporter = noun.has(TraitType.SUPPORTER);
+    
     let hasContents = false;
     let contentsCount = 0;
     let contentsIds: string[] = [];
     
-    if (noun.has(TraitType.CONTAINER)) {
+    if (isContainer) {
       const contents = context.world.getContents(noun.id);
       hasContents = contents.length > 0;
       contentsCount = contents.length;
       contentsIds = contents.map(item => item.id);
     }
     
-    const eventData: ClosedEventData = {
-      targetId: noun.id,
-      targetName: noun.name,
-      containerId: noun.id, // Same entity for compatibility
+    const fullEventData = {
+      ...eventData,
+      containerId: noun.id,
       containerName: noun.name,
-      isContainer: noun.has(TraitType.CONTAINER),
-      isDoor: noun.has(TraitType.DOOR),
-      isSupporter: noun.has(TraitType.SUPPORTER),
+      isContainer,
+      isDoor,
+      isSupporter,
       hasContents,
       contentsCount,
       contentsIds,
-      // Add 'item' for backward compatibility with tests
       item: noun.name
-    } as ClosedEventData & { item: string };
+    };
     
-    events.push(context.event('if.event.closed', eventData));
+    events.push(context.event('if.event.closed', fullEventData));
     
     // Add success event
     events.push(context.event('action.success', {

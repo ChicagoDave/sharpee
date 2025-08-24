@@ -1,1 +1,0 @@
-{"version":3,"file":"inserting-events.d.ts","sourceRoot":"","sources":["inserting-events.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAGH,OAAO,EAAE,cAAc,IAAI,iBAAiB,EAAE,MAAM,2BAA2B,CAAC;AAEhF,MAAM,WAAW,iBAAiB;IAChC,iBAAiB,EAAE,OAAO,2BAA2B,EAAE,cAAc,CAAC;CACvE"}

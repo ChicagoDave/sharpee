@@ -135,10 +135,11 @@ export class CLIEventsTextService implements TextService {
     if (this.config.showEventData && event.data) {
       if (typeof event.data === 'object') {
         // Special handling for common data fields
-        if (event.data.message) {
-          parts.push(`"${event.data.message}"`);
-        } else if (event.data.text) {
-          parts.push(`"${event.data.text}"`);
+        const data = event.data as any;
+        if (data.message) {
+          parts.push(`"${data.message}"`);
+        } else if (data.text) {
+          parts.push(`"${data.text}"`);
         } else {
           parts.push(JSON.stringify(event.data));
         }
@@ -163,9 +164,9 @@ export class CLIEventsTextService implements TextService {
       parts.push(`(${time.toTimeString().split(' ')[0]})`);
     }
 
-    // Format payload data
-    if (this.config.showEventData && event.payload) {
-      const payload = event.payload;
+    // Format data
+    if (this.config.showEventData && (event as any).payload) {
+      const payload = (event as any).payload;
       
       // Special formatting for common platform event types
       if (type.startsWith('parser.')) {

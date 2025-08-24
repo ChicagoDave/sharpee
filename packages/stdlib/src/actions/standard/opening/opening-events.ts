@@ -5,6 +5,7 @@
  */
 
 import { EntityId } from '@sharpee/core';
+import { EntitySnapshot } from '../../base/snapshot-utils';
 
 /**
  * Data for the 'if.event.opened' event
@@ -37,6 +38,13 @@ export interface OpenedEventData {
   
   /** Number of items revealed (for backward compatibility) */
   revealedItems?: number;
+  
+  // Atomic event snapshots
+  /** Complete snapshot of the target after opening */
+  targetSnapshot?: EntitySnapshot;
+  
+  /** Complete snapshots of revealed contents */
+  contentsSnapshots?: EntitySnapshot[];
 }
 
 /**

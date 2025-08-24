@@ -216,8 +216,7 @@ export class QuitQueryHandler implements IQueryHandler {
       type,
       timestamp: Date.now(),
       entities: {},
-      data,
-      payload: data
+      data
     };
   }
 }

@@ -6,17 +6,20 @@
  * 
  * UPDATED: Uses new simplified context.event() method (ADR-041)
  * MIGRATED: To new folder structure with typed events (ADR-042)
+ * MIGRATED: To three-phase pattern (validate/execute/report) for atomic events
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { ISemanticEvent } from '@sharpee/core';
+import { ISemanticEvent, IEntity } from '@sharpee/core';
 import { TraitType, ContainerBehavior, SupporterBehavior, WearableBehavior, ActorBehavior, IDropItemResult } from '@sharpee/world-model';
+import { captureEntitySnapshot } from '../../base/snapshot-utils';
+import { buildEventData } from '../../data-builder-types';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 
-// Import our typed event data
-import { DroppedEventData, DroppingErrorData } from './dropping-events';
+// Import our data builder
+import { droppedDataConfig, determineDroppingMessage } from './dropping-data';
 
 export const droppingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.DROPPING,
@@ -77,12 +80,66 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     return { valid: true };
   },
 
-  execute(context: ActionContext): ISemanticEvent[] {
+  execute(context: ActionContext): void {
     const actor = context.player;
     const noun = context.command.directObject?.entity!;
 
     // Delegate to ActorBehavior for dropping logic
     const result: IDropItemResult = ActorBehavior.dropItem(actor, noun, context.world);
+    
+    // Store result for report phase
+    (context as any)._dropResult = result;
+  },
+
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    // Handle validation errors
+    if (validationResult && !validationResult.valid) {
+      // Capture entity data for validation errors
+      const errorParams = { ...(validationResult.params || {}) };
+      
+      // Add entity snapshots if entities are available
+      if (context.command.directObject?.entity) {
+        errorParams.targetSnapshot = captureEntitySnapshot(
+          context.command.directObject.entity,
+          context.world,
+          false
+        );
+      }
+      if (context.command.indirectObject?.entity) {
+        errorParams.indirectTargetSnapshot = captureEntitySnapshot(
+          context.command.indirectObject.entity,
+          context.world,
+          false
+        );
+      }
+
+      return [
+        context.event('action.error', {
+          actionId: context.action.id,
+          error: validationResult.error || 'validation_failed',
+          messageId: validationResult.messageId || validationResult.error || 'action_failed',
+          params: errorParams
+        })
+      ];
+    }
+    
+    // Handle execution errors
+    if (executionError) {
+      return [
+        context.event('action.error', {
+          actionId: context.action.id,
+          error: 'execution_failed',
+          messageId: 'action_failed',
+          params: {
+            error: executionError.message
+          }
+        })
+      ];
+    }
+    
+    const actor = context.player;
+    const noun = context.command.directObject?.entity!;
+    const result = (context as any)._dropResult as IDropItemResult;
     
     // Handle failure cases
     if (!result.success) {
@@ -113,56 +170,11 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
       })];
     }
 
-    // Determine drop location for event data
-    const playerLocation = context.world.getLocation(actor.id);
-    const dropLocation = playerLocation ? context.world.getEntity(playerLocation) : context.currentLocation;
+    // Build event data using data builder
+    const droppedData = buildEventData(droppedDataConfig, context);
     
-    if (!dropLocation) {
-      throw new Error('No valid drop location found');
-    }
-
-    // Build typed event data
-    const droppedData: DroppedEventData = {
-      item: noun.id,
-      itemName: noun.name,
-      toLocation: dropLocation.id,
-      toLocationName: dropLocation.name
-    };
-
-    const params: Record<string, any> = {
-      item: noun.name,
-      location: dropLocation.name
-    };
-
-    let messageId = 'dropped';
-
-    // Determine message based on drop location
-    if (!dropLocation.has(TraitType.ROOM)) {
-      // Dropping into a container or supporter
-      if (dropLocation.has(TraitType.CONTAINER)) {
-        droppedData.toContainer = true;
-        messageId = 'dropped_in';
-        params.container = dropLocation.name;
-      } else if (dropLocation.has(TraitType.SUPPORTER)) {
-        droppedData.toSupporter = true;
-        messageId = 'dropped_on';
-        params.supporter = dropLocation.name;
-      }
-    } else {
-      droppedData.toRoom = true;
-
-      // Vary the message based on how the item is dropped
-      const verb = context.command.parsed.structure.verb?.text.toLowerCase() || 'drop';
-      if (verb === 'discard') {
-        messageId = 'dropped_carelessly';
-      } else if (noun.has(TraitType.IDENTITY)) {
-        // Check if item name suggests it's fragile
-        const identity = noun.get(TraitType.IDENTITY);
-        if (identity && (identity as any).name?.toLowerCase().includes('glass')) {
-          messageId = 'dropped_quietly';
-        }
-      }
-    }
+    // Determine success message
+    const { messageId, params } = determineDroppingMessage(droppedData, context);
 
     // Return both the domain event and success message
     return [

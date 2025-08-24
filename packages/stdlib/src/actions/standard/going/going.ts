@@ -4,8 +4,10 @@
  * This action handles movement in cardinal directions and through named exits.
  * It validates all conditions and returns appropriate events.
  * 
- * UPDATED: Uses new simplified context.event() method (ADR-041)
- * MIGRATED: To new folder structure with typed events (ADR-042)
+ * Uses three-phase pattern:
+ * 1. validate: Check exit exists, door state, destination availability
+ * 2. execute: Move the actor and mark room visited
+ * 3. report: Generate events with before/after room snapshots
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -18,19 +20,23 @@ import {
   OpenableBehavior, 
   LockableBehavior,
   VisibilityBehavior,
-  LightSourceBehavior
+  LightSourceBehavior,
+  Direction,
+  DirectionType
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
+import { captureEntitySnapshot } from '../../base/snapshot-utils';
+import { buildEventData } from '../../data-builder-types';
 
-// Import our typed event data
-import { 
-  ActorMovedEventData, 
-  ActorExitedEventData, 
-  ActorEnteredEventData,
-  GoingErrorData 
-} from './going-events';
+// Import our data builders
+import {
+  actorMovedDataConfig,
+  actorExitedDataConfig,
+  actorEnteredDataConfig,
+  determineGoingMessage
+} from './going-data';
 
 export const goingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.GOING,
@@ -53,9 +59,8 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
   validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     
-    // Get the direction from the parsed command
-    const direction = context.command.parsed.extras?.direction as string || 
-                     context.command.directObject?.entity?.name;
+    // Get the direction from the parsed command (should already be a Direction constant)
+    const direction = context.command.parsed.extras?.direction as DirectionType;
     
     if (!direction) {
       return { 
@@ -63,9 +68,6 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
         error: 'no_direction'
       };
     }
-    
-    // Normalize direction
-    const normalizedDirection = normalizeDirection(direction);
     
     // Check if player is contained (can't move through exits while contained)
     const playerDirectLocation = context.world.getLocation(actor.id);
@@ -88,7 +90,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     }
     
     // Use RoomBehavior to get exit information
-    const exitConfig = RoomBehavior.getExit(currentRoom, normalizedDirection);
+    const exitConfig = RoomBehavior.getExit(currentRoom, direction);
     if (!exitConfig) {
       // Check if we have exits at all
       const allExits = RoomBehavior.getAllExits(currentRoom);
@@ -101,17 +103,17 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       return { 
         valid: false, 
         error: 'no_exit_that_way',
-        params: { direction: normalizedDirection }
+        params: { direction: direction }
       };
     }
     
     // Check if exit is blocked
-    if (RoomBehavior.isExitBlocked(currentRoom, normalizedDirection)) {
-      const blockedMessage = RoomBehavior.getBlockedMessage(currentRoom, normalizedDirection);
+    if (RoomBehavior.isExitBlocked(currentRoom, direction)) {
+      const blockedMessage = RoomBehavior.getBlockedMessage(currentRoom, direction);
       return { 
         valid: false, 
         error: 'movement_blocked',
-        params: { direction: normalizedDirection }
+        params: { direction: direction }
       };
     }
     
@@ -129,7 +131,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
             error: 'door_locked',
             params: { 
               door: door.name, 
-              direction: normalizedDirection,
+              direction: direction,
               isClosed: isClosed,
               isLocked: true
             }
@@ -140,7 +142,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
           return { 
             valid: false, 
             error: 'door_closed',
-            params: { door: door.name, direction: normalizedDirection }
+            params: { door: door.name, direction: direction }
           };
         }
       }
@@ -155,7 +157,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       return { 
         valid: false, 
         error: 'destination_not_found',
-        params: { direction: normalizedDirection }
+        params: { direction: direction }
       };
     }
     
@@ -164,83 +166,90 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       return { 
         valid: false, 
         error: 'too_dark',
-        params: { direction: normalizedDirection }
+        params: { direction: direction }
       };
     }
     
     return { valid: true };
   },
   
-  execute(context: ActionContext): ISemanticEvent[] {
-    // Validate first
-    const validation = this.validate(context);
-    if (!validation.valid) {
-      return [context.event('action.error', {
-        actionId: this.id,
-        messageId: validation.error!,
-        reason: validation.error!,
-        params: validation.params || {}
-      })];
-    }
-    
+  execute(context: ActionContext): void {
+    // Only perform the movement mutation
     const actor = context.player;
     const currentRoom = context.currentLocation;
     
-    // Get and normalize direction
-    const direction = context.command.parsed.extras?.direction as string || 
-                     context.command.directObject?.entity?.name;
-    const normalizedDirection = normalizeDirection(direction!);
+    // Get direction from parsed command (should already be a Direction constant)
+    const direction = context.command.parsed.extras?.direction as DirectionType;
     
     // Get exit info and destination using behaviors
-    const exitConfig = RoomBehavior.getExit(currentRoom, normalizedDirection)!;
+    const exitConfig = RoomBehavior.getExit(currentRoom, direction)!;
     const destination = context.world.getEntity(exitConfig.destination)!
     
-    // Build typed event data
-    const movedData: ActorMovedEventData = {
-      direction: normalizedDirection,
-      fromRoom: currentRoom.id,
-      toRoom: destination.id,
-      oppositeDirection: getOppositeDirection(normalizedDirection)
-    };
-    
-    // Check if this is the first time entering the destination using behavior
+    // Check if this is the first time entering the destination
     const isFirstVisit = !RoomBehavior.hasBeenVisited(destination);
-    if (isFirstVisit) {
-      movedData.firstVisit = true;
-    }
-    
-    // Create typed exit event
-    const exitedData: ActorExitedEventData = {
-      actorId: actor.id,
-      direction: normalizedDirection,
-      toRoom: destination.id
-    };
-    
-    // Create typed entrance event
-    const enteredData: ActorEnteredEventData = {
-      actorId: actor.id,
-      direction: getOppositeDirection(normalizedDirection),
-      fromRoom: currentRoom.id
-    };
     
     // Actually move the player!
     context.world.moveEntity(actor.id, destination.id);
     
-    // Mark the destination room as visited using behavior
+    // Mark the destination room as visited
     if (isFirstVisit) {
       RoomBehavior.markVisited(destination, actor);
     }
-    
-    // Success message parameters
-    const messageParams = {
-      direction: normalizedDirection,
-      destination: destination.name
-    };
-    
-    let messageId = 'moved_to';
-    if (movedData.firstVisit) {
-      messageId = 'first_visit';
+  },
+  
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    // Handle validation errors
+    if (validationResult && !validationResult.valid) {
+      // Capture entity data for validation errors
+      const errorParams = { ...(validationResult.params || {}) };
+      
+      // Add entity snapshots if entities are available
+      if (context.command.directObject?.entity) {
+        errorParams.targetSnapshot = captureEntitySnapshot(
+          context.command.directObject.entity,
+          context.world,
+          false
+        );
+      }
+      if (context.command.indirectObject?.entity) {
+        errorParams.indirectTargetSnapshot = captureEntitySnapshot(
+          context.command.indirectObject.entity,
+          context.world,
+          false
+        );
+      }
+
+      return [
+        context.event('action.error', {
+          actionId: context.action.id,
+          error: validationResult.error || 'validation_failed',
+          messageId: validationResult.messageId || validationResult.error || 'action_failed',
+          params: errorParams
+        })
+      ];
     }
+    
+    // Handle execution errors
+    if (executionError) {
+      return [
+        context.event('action.error', {
+          actionId: context.action.id,
+          error: 'execution_failed',
+          messageId: 'action_failed',
+          params: {
+            error: executionError.message
+          }
+        })
+      ];
+    }
+    
+    // Build event data using data builders
+    const exitedData = buildEventData(actorExitedDataConfig, context);
+    const movedData = buildEventData(actorMovedDataConfig, context);
+    const enteredData = buildEventData(actorEnteredDataConfig, context);
+    
+    // Determine success message
+    const { messageId, params } = determineGoingMessage(movedData);
     
     // Return all movement events
     return [
@@ -250,7 +259,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       context.event('action.success', {
         actionId: context.action.id,
         messageId,
-        params: messageParams
+        params
       })
     ];
   },
@@ -263,53 +272,6 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     directObjectScope: ScopeLevel.VISIBLE
   }
 };
-
-/**
- * Normalize direction input to standard form
- */
-function normalizeDirection(direction: string): string {
-  const normalized = direction.toLowerCase().trim();
-  
-  // Handle abbreviations
-  const abbreviations: Record<string, string> = {
-    'n': 'north',
-    's': 'south',
-    'e': 'east',
-    'w': 'west',
-    'ne': 'northeast',
-    'nw': 'northwest',
-    'se': 'southeast',
-    'sw': 'southwest',
-    'u': 'up',
-    'd': 'down',
-    'in': 'inside',
-    'out': 'outside'
-  };
-  
-  return abbreviations[normalized] || normalized;
-}
-
-/**
- * Get the opposite direction for arrival messages
- */
-function getOppositeDirection(direction: string): string {
-  const opposites: Record<string, string> = {
-    'north': 'south',
-    'south': 'north',
-    'east': 'west',
-    'west': 'east',
-    'northeast': 'southwest',
-    'northwest': 'southeast',
-    'southeast': 'northwest',
-    'southwest': 'northeast',
-    'up': 'down',
-    'down': 'up',
-    'inside': 'outside',
-    'outside': 'inside'
-  };
-  
-  return opposites[direction] || direction;
-}
 
 /**
  * Check if a room is dark

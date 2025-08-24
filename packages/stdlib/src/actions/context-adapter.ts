@@ -151,7 +151,18 @@ class ActionAdapter implements IAction {
   
   execute(context: IActionContext): ISemanticEvent[] {
     // Similar conversion for execute
-    return this.action.execute(context as any);
+    const result = this.action.execute(context as any);
+    // Handle both old pattern (returns events) and new pattern (returns void)
+    if (result === undefined || result === null) {
+      // New pattern: execute returned void, call report if available
+      if ('report' in this.action && typeof this.action.report === 'function') {
+        return this.action.report(context as any);
+      }
+      // If no report method, return empty array
+      return [];
+    }
+    // Old pattern: execute returned events
+    return result;
   }
   
   get requiredMessages(): string[] | undefined {

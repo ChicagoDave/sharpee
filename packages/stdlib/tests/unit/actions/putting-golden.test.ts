@@ -22,24 +22,53 @@ import {
 import type { WorldModel } from '@sharpee/world-model';
 import { SemanticEvent } from '@sharpee/core';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
+import type { ISemanticEvent } from '@sharpee/core';
 
-// Helper to execute action with validation (simulates CommandExecutor flow)
-function executeWithValidation(action: any, context: ActionContext): SemanticEvent[] {
-  if (action.validate) {
-    const validation = action.validate(context);
-    if (!validation.valid) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: validation.error,
-        params: validation.params || {},
-        reason: validation.error  // For backward compatibility with tests
-      })];
-    }
+// Helper to execute action using the new three-phase pattern
+function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
+  // New three-phase pattern: validate -> execute -> report
+  const validationResult = action.validate(context);
+  
+  if (!validationResult.valid) {
+    // Action creates its own error events in report()
+    return action.report(context, validationResult);
   }
-  return action.execute(context);
+  
+  // Execute mutations (returns void in new pattern)
+  action.execute(context);
+  
+  // Report generates all events
+  return action.report(context, validationResult);
 }
 
 describe('puttingAction (Golden Pattern)', () => {
+  describe('Three-Phase Pattern Compliance', () => {
+    test('should have required methods for three-phase pattern', () => {
+      expect(puttingAction.validate).toBeDefined();
+      expect(puttingAction.execute).toBeDefined();
+      expect(puttingAction.report).toBeDefined();
+    });
+
+    test('should use report() for ALL event generation', () => {
+      const { world, player, room } = setupBasicWorld();
+      const item = world.createEntity('test item', 'object');
+      world.moveEntity(item.id, room.id);
+      
+      const command = createCommand(IFActions.PUTTING, {
+        entity: item,
+        text: 'test item'
+      });
+      const context = createRealTestContext(puttingAction, world, command);
+      
+      // The executeAction helper properly tests the three-phase pattern
+      const events = executeAction(puttingAction, context);
+      
+      // All events should be generated via report()
+      expect(events).toBeDefined();
+      expect(Array.isArray(events)).toBe(true);
+    });
+  });
+
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
       expect(puttingAction.id).toBe(IFActions.PUTTING);
@@ -72,7 +101,7 @@ describe('puttingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.PUTTING);
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeWithValidation(puttingAction, context);
+      const events = executeAction(puttingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_target'),
@@ -91,7 +120,7 @@ describe('puttingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeWithValidation(puttingAction, context);
+      const events = executeAction(puttingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_destination'),
@@ -118,7 +147,7 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeWithValidation(puttingAction, context);
+      const events = executeAction(puttingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('cant_put_in_itself'),
@@ -141,7 +170,7 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeWithValidation(puttingAction, context);
+      const events = executeAction(puttingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('cant_put_on_itself'),
@@ -175,7 +204,7 @@ describe('puttingAction (Golden Pattern)', () => {
         // For now, let's just run the action and see what happens
       }
       
-      const events = executeWithValidation(puttingAction, context);
+      const events = executeAction(puttingAction, context);
       
       // The action should check if item is already in destination
       // and fail appropriately
@@ -206,7 +235,7 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeWithValidation(puttingAction, context);
+      const events = executeAction(puttingAction, context);
       
       expectEvent(events, 'if.event.put_in', {
         itemId: gem.id,
@@ -239,7 +268,7 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeWithValidation(puttingAction, context);
+      const events = executeAction(puttingAction, context);
       
       // Should auto-detect "in" for container
       expectEvent(events, 'if.event.put_in', {
@@ -270,7 +299,7 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeWithValidation(puttingAction, context);
+      const events = executeAction(puttingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('container_closed'),
@@ -295,7 +324,7 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeWithValidation(puttingAction, context);
+      const events = executeAction(puttingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_surface'),
@@ -322,7 +351,7 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeWithValidation(puttingAction, context);
+      const events = executeAction(puttingAction, context);
       
       expectEvent(events, 'if.event.put_on', {
         itemId: book.id,
@@ -355,7 +384,7 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeWithValidation(puttingAction, context);
+      const events = executeAction(puttingAction, context);
       
       // Should auto-detect "on" for supporter
       expectEvent(events, 'if.event.put_on', {
@@ -382,7 +411,7 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeWithValidation(puttingAction, context);
+      const events = executeAction(puttingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_container'),
@@ -420,7 +449,7 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeWithValidation(puttingAction, context);
+      const events = executeAction(puttingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_room'),
@@ -461,7 +490,7 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeWithValidation(puttingAction, context);
+      const events = executeAction(puttingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_room'),
@@ -497,7 +526,7 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeWithValidation(puttingAction, context);
+      const events = executeAction(puttingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_space'),
@@ -524,7 +553,7 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeWithValidation(puttingAction, context);
+      const events = executeAction(puttingAction, context);
       
       // Should prefer container (in) over supporter (on)
       expectEvent(events, 'if.event.put_in', {
@@ -550,7 +579,7 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeWithValidation(puttingAction, context);
+      const events = executeAction(puttingAction, context);
       
       // Should use supporter behavior with "on"
       expectEvent(events, 'if.event.put_on', {
@@ -587,7 +616,7 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeWithValidation(puttingAction, context);
+      const events = executeAction(puttingAction, context);
       
       events.forEach(event => {
         if (event.entities) {
@@ -634,7 +663,7 @@ describe('Putting Action Edge Cases', () => {
     });
     const context = createRealTestContext(puttingAction, world, command);
     
-    const events = executeWithValidation(puttingAction, context);
+    const events = executeAction(puttingAction, context);
     
     // 3 + 8 = 11, exceeds maxVolume of 10
     expectEvent(events, 'action.error', {
@@ -665,7 +694,7 @@ describe('Putting Action Edge Cases', () => {
     });
     const context = createRealTestContext(puttingAction, world, command);
     
-    const events = executeWithValidation(puttingAction, context);
+    const events = executeAction(puttingAction, context);
     
     // Should succeed - item without weight doesn't count against weight limit
     expectEvent(events, 'if.event.put_in', {
@@ -689,7 +718,7 @@ describe('Putting Action Edge Cases', () => {
     });
     const context = createRealTestContext(puttingAction, world, command);
     
-    const events = executeWithValidation(puttingAction, context);
+    const events = executeAction(puttingAction, context);
     
     expectEvent(events, 'action.error', {
       messageId: expect.stringContaining('not_container'),
@@ -714,7 +743,7 @@ describe('Putting Action Edge Cases', () => {
     });
     const context = createRealTestContext(puttingAction, world, command);
     
-    const events = executeWithValidation(puttingAction, context);
+    const events = executeAction(puttingAction, context);
     
     // Should accept 'onto' as equivalent to 'on'
     expectEvent(events, 'if.event.put_on', {
@@ -742,7 +771,7 @@ describe('Putting Action Edge Cases', () => {
     });
     const context = createRealTestContext(puttingAction, world, command);
     
-    const events = executeWithValidation(puttingAction, context);
+    const events = executeAction(puttingAction, context);
     
     // Should succeed - no capacity limits
     expectEvent(events, 'if.event.put_in', {
@@ -792,7 +821,7 @@ describe('Putting Action Edge Cases', () => {
     });
     const context = createRealTestContext(puttingAction, world, command);
     
-    const events = executeWithValidation(puttingAction, context);
+    const events = executeAction(puttingAction, context);
     
     // Current weight: 5 books * 2 = 10
     // New book weight: 3

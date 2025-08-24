@@ -25,7 +25,7 @@ Action → Captures State → Event with Data → Text Service → Formats Outpu
 
 ## Implementation Phases
 
-### Phase 1: Core Interface Updates
+### Phase 1: Core Interface Updates ✅ COMPLETE
 
 #### 1.1 Update ISemanticEvent Interface
 - Location: `packages/core/src/events/types.ts`
@@ -34,103 +34,126 @@ Action → Captures State → Event with Data → Text Service → Formats Outpu
 - Update all code that references these properties to use `data`
 - Add migration comments
 
-#### 1.2 Create Event Builder Utilities
-- Location: `packages/core/src/events/builders/`
-- Create base `EventBuilder` class
-- Add specific builders: `RoomDescriptionEventBuilder`, `ActionEventBuilder`, etc.
-- Include snapshot helpers for common patterns
+### Phase 2: Action Architecture Redesign (ADR-058)
 
-### Phase 2: Standard Library Actions
+#### 2.1 Update Action Interface
+- Location: `packages/stdlib/src/actions/types.ts`
+- Split current `execute()` into three phases:
+  ```typescript
+  interface Action {
+    validate(context: ActionContext): ValidationResult;
+    execute(context: ActionContext): void;  // Mutations only
+    report(context: ActionContext): ISemanticEvent[];  // Event generation
+  }
+  ```
 
-#### 2.1 Create Action Base Class Updates
+#### 2.2 Update CommandExecutor
+- Location: `packages/engine/src/command-executor.ts`
+- Implement new execution flow:
+  1. Call action.validate()
+  2. Call action.execute()
+  3. Call action.report()
+- Maintain backward compatibility for unmigrated actions
+
+#### 2.3 Create Helper Utilities
 - Location: `packages/stdlib/src/actions/base/`
-- Add `enrichEvent()` helper method
 - Add `captureEntitySnapshot()` utility
-- Provide migration utilities for gradual adoption
+- Add `captureRoomSnapshot()` utility
+- Add migration shim for gradual adoption
 
-#### 2.2 Migrate Core Actions
+### ~~Phase 3: Rules System Implementation~~ (POSTPONED)
+
+*Note: The Rules System from ADR-057 has been postponed pending further design discussion and feedback. The atomic events refactor will proceed without the rules engine for now.*
+
+### Phase 3: Migrate Standard Library Actions
+
+#### 3.1 Migrate Core Actions (Three-Phase Pattern)
 Priority order (based on impact):
 
 1. **looking.ts** - Most complex, sets the pattern
-   - Capture room name, description at event time
+   - Split execute() into execute/report
+   - Capture room data in report phase
    - Include darkness state
-   - Add provider functions for conditional descriptions
 
 2. **examining.ts** - Similar pattern to looking
-   - Capture entity description
+   - Separate mutations from event generation
+   - Capture entity description in report
    - Handle readable/wearable variations
 
 3. **going.ts** - Movement events
-   - Capture both source and destination room data
+   - Execute: perform movement
+   - Report: capture both rooms' data
    - Include exit information
 
 4. **taking.ts / dropping.ts** - Inventory actions
-   - Capture item descriptions
+   - Execute: transfer item
+   - Report: capture item descriptions
    - Include container/location context
 
 5. **opening.ts / closing.ts** - State changes
-   - Capture before/after states
+   - Execute: change state
+   - Report: capture before/after states
    - Include success/failure context
 
-#### 2.3 Update Validation System
+#### 3.2 Update Validation System
 - Location: `packages/stdlib/src/validation/`
 - Ensure validation events include entity data
 - Update error events with full context
 
-### Phase 3: Text Service Refactor
+### Phase 4: Text Service Refactor
 
-#### 3.1 Remove World Model Dependency
+#### 4.1 Remove World Model Dependency
 - Location: `packages/text-services/src/standard-text-service.ts`
 - Remove `TextServiceContext.world` usage
 - Update all `translateX()` methods to use event data
 - Simplify to pure data transformation
 
-#### 3.2 Update Event Handlers
+#### 4.2 Update Event Handlers
 - Modify each event type handler:
   - `translateRoomDescription()` - Use provided description
   - `translateActionSuccess()` - Use embedded message data
   - `translateActionFailure()` - Use embedded error context
   - etc.
 
-#### 3.3 Add Provider Function Support
+#### 4.3 Add Provider Function Support
 - Detect and execute provider functions in event data
 - Handle both static and dynamic descriptions
 - Maintain backward compatibility during migration
 
-### Phase 4: Story Updates
+### Phase 5: Story Updates
 
-#### 4.1 Cloak of Darkness
+#### 5.1 Cloak of Darkness
 - Location: `stories/cloak-of-darkness/src/index.ts`
 - Update event handlers to expect full data
 - Remove world model queries from handlers
 - Test all game paths
 
-#### 4.2 Story Event Patterns
+#### 5.2 Story Event Patterns
 - Document new event structure for story authors
 - Provide migration examples
 - Update story template
 
-### Phase 5: Engine Updates
+### Phase 6: Engine Updates
 
-#### 5.1 Event Processing
+#### 6.1 Event Processing
 - Location: `packages/engine/src/`
 - Update event adapter for normalization
 - Ensure backward compatibility during migration
 - Add event enrichment pipeline
 
-#### 5.2 Save/Load System
+#### 6.2 Save/Load System
 - Handle serialization of events with functions
 - Ensure historical replay accuracy
 - Test save/load with new event structure
 
-### Phase 6: Testing & Migration
+### Phase 7: Testing & Migration
 
-#### 6.1 Update Tests
-- Fix all action tests to expect atomic events
+#### 7.1 Update Tests
+- Fix all action tests to expect three-phase pattern
 - Update text service tests (much simpler now!)
 - Add historical accuracy tests
 
-#### 6.2 Migration Utilities
+#### 7.2 Migration Utilities
 - Create compatibility layer for gradual migration
 - Add warnings for deprecated patterns
 - Provide migration scripts for existing code
@@ -215,19 +238,23 @@ Priority order (based on impact):
 
 ## Timeline Estimate
 
-- Phase 1 (Core): 2-3 hours
-- Phase 2 (Actions): 4-6 hours  
-- Phase 3 (Text Service): 2-3 hours
-- Phase 4 (Stories): 2-3 hours
-- Phase 5 (Engine): 2-3 hours
-- Phase 6 (Testing): 3-4 hours
+- Phase 1 (Core): ✅ COMPLETE
+- Phase 2 (Action Architecture): 3-4 hours
+- Phase 3 (Action Migration): 4-6 hours
+- Phase 4 (Text Service): 2-3 hours
+- Phase 5 (Stories): 2-3 hours
+- Phase 6 (Engine): 2-3 hours
+- Phase 7 (Testing): 3-4 hours
 
-**Total: 15-22 hours of focused work**
+**Total: 18-23 hours of focused work**
 
 ## Next Steps
 
-1. Commit current work
-2. Create new branch: `refactor/atomic-events`
-3. Start with Phase 1.1: Update ISemanticEvent interface
-4. Implement incrementally, test continuously
+1. ~~Phase 1 Complete~~ ✅
+2. Implement Phase 2: Action Architecture Redesign
+   - Update Action interface with three-phase pattern
+   - Update CommandExecutor for new flow
+   - Create migration utilities
+3. Begin Phase 3: Migrate looking.ts as proof of concept
+4. Test with Cloak of Darkness story
 5. Document patterns as they emerge

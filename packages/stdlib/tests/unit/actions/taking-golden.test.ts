@@ -20,26 +20,53 @@ import {
   createCommand
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
+import type { ISemanticEvent } from '@sharpee/core';
 
-// Helper to execute action with validation (simulates CommandExecutor flow)
-function executeWithValidation(action: any, context: ActionContext): SemanticEvent[] {
-  if (action.validate) {
-    const validation = action.validate(context);
-    if (!validation.valid) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: validation.error,
-        reason: validation.error,
-        params: validation.params
-      })];
-    }
-    return action.execute(context);
+// Helper to execute action using the new three-phase pattern
+function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
+  // New three-phase pattern: validate -> execute -> report
+  const validationResult = action.validate(context);
+  
+  if (!validationResult.valid) {
+    // Action creates its own error events in report()
+    return action.report(context, validationResult);
   }
-  return action.execute(context);
+  
+  // Execute mutations (returns void in new pattern)
+  action.execute(context);
+  
+  // Report generates all events
+  return action.report(context, validationResult);
 }
 
 describe('takingAction (Golden Pattern)', () => {
+  describe('Three-Phase Pattern Compliance', () => {
+    test('should have required methods for three-phase pattern', () => {
+      expect(takingAction.validate).toBeDefined();
+      expect(takingAction.execute).toBeDefined();
+      expect(takingAction.report).toBeDefined();
+    });
+
+    test('should use report() for ALL event generation', () => {
+      const { world, player, room } = setupBasicWorld();
+      const item = world.createEntity('test item', 'object');
+      world.moveEntity(item.id, room.id);
+      
+      const command = createCommand(IFActions.TAKING, {
+        entity: item,
+        text: 'test item'
+      });
+      const context = createRealTestContext(takingAction, world, command);
+      
+      // The executeAction helper properly tests the three-phase pattern
+      const events = executeAction(takingAction, context);
+      
+      // All events should be generated via report()
+      expect(events).toBeDefined();
+      expect(Array.isArray(events)).toBe(true);
+    });
+  });
+
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
       expect(takingAction.id).toBe(IFActions.TAKING);
@@ -71,7 +98,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING)
       );
       
-      const events = executeWithValidation(takingAction, context);
+      const events = executeAction(takingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_target'),
@@ -88,7 +115,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: player })
       );
       
-      const events = executeWithValidation(takingAction, context);
+      const events = executeAction(takingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('cant_take_self'),
@@ -107,7 +134,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: ball })
       );
       
-      const events = executeWithValidation(takingAction, context);
+      const events = executeAction(takingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('already_have'),
@@ -126,7 +153,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: otherRoom })
       );
       
-      const events = executeWithValidation(takingAction, context);
+      const events = executeAction(takingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('cant_take_room'),
@@ -146,7 +173,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: scenery })
       );
       
-      const events = executeWithValidation(takingAction, context);
+      const events = executeAction(takingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('fixed_in_place'),
@@ -186,7 +213,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: newItem })
       );
       
-      const events = executeWithValidation(takingAction, context);
+      const events = executeAction(takingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('container_full')
@@ -226,7 +253,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: newItem })
       );
       
-      const events = executeWithValidation(takingAction, context);
+      const events = executeAction(takingAction, context);
       
       // Should succeed because worn items don't count
       expectEvent(events, 'if.event.taken', {
@@ -260,7 +287,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: heavyItem })
       );
       
-      const events = executeWithValidation(takingAction, context);
+      const events = executeAction(takingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('too_heavy'),
@@ -281,7 +308,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: ball })
       );
       
-      const events = executeWithValidation(takingAction, context);
+      const events = executeAction(takingAction, context);
       
       // Should emit TAKEN event
       // Note: When taking from a room, fromLocation is NOT set (only set for containers/supporters)
@@ -312,7 +339,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: coin })
       );
       
-      const events = executeWithValidation(takingAction, context);
+      const events = executeAction(takingAction, context);
       
       expectEvent(events, 'if.event.taken', {
         item: 'gold coin',
@@ -348,7 +375,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: book })
       );
       
-      const events = executeWithValidation(takingAction, context);
+      const events = executeAction(takingAction, context);
       
       expectEvent(events, 'if.event.taken', {
         item: 'old book',
@@ -379,7 +406,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: hat })
       );
       
-      const events = executeWithValidation(takingAction, context);
+      const events = executeAction(takingAction, context);
       
       // Should emit REMOVED event first
       expectEvent(events, 'if.event.removed', {
@@ -408,7 +435,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: gem })
       );
       
-      const events = executeWithValidation(takingAction, context);
+      const events = executeAction(takingAction, context);
       
       events.forEach(event => {
         if (event.entities) {
@@ -430,14 +457,15 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: pen })
       );
       
-      const events = executeWithValidation(takingAction, context);
+      const events = executeAction(takingAction, context);
       
       const takenEvent = events.find(e => e.type === 'if.event.taken');
-      // Check the event payload data (where the typed event data lives)
-      expect(takenEvent?.payload?.data?.container).toBeUndefined();
-      expect(takenEvent?.payload?.data?.fromContainer).toBeUndefined();
-      expect(takenEvent?.payload?.data?.fromSupporter).toBeUndefined();
-      expect(takenEvent?.payload?.data?.fromLocation).toBeUndefined();
+      // Check the event data
+      const eventData = takenEvent?.data as any;
+      expect(eventData?.data?.container).toBeUndefined();
+      expect(eventData?.data?.fromContainer).toBeUndefined();
+      expect(eventData?.data?.fromSupporter).toBeUndefined();
+      expect(eventData?.data?.fromLocation).toBeUndefined();
     });
   });
 });
@@ -462,7 +490,7 @@ describe('Taking Action Edge Cases', () => {
       createCommand(IFActions.TAKING, { entity: gem })
     );
     
-    const events = executeWithValidation(takingAction, context);
+    const events = executeAction(takingAction, context);
     
     // Should take from immediate container (box), not the outer container
     expectEvent(events, 'if.event.taken', {
@@ -493,7 +521,7 @@ describe('Taking Action Edge Cases', () => {
       createCommand(IFActions.TAKING, { entity: ball })
     );
     
-    const events = executeWithValidation(takingAction, context);
+    const events = executeAction(takingAction, context);
     
     // Should succeed - no container limits
     expectEvent(events, 'if.event.taken', {

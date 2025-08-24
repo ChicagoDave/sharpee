@@ -2,12 +2,14 @@
 
 Runtime engine for the Sharpee IF Platform. This package provides the core game loop, command execution, and turn management.
 
+> **Architecture Update (Phase 3.5)**: The CommandExecutor has been refactored from a 723-line god object to a 177-line thin orchestrator. Actions now own their complete event lifecycle through the three-phase pattern (validate/execute/report).
+
 ## Overview
 
 The engine package brings together all the Sharpee components into a running game:
 
 - **GameEngine**: Main runtime that manages game state and turn execution
-- **CommandExecutor**: Orchestrates the flow from input → parser → actions → events → world changes
+- **CommandExecutor**: Thin orchestrator (177 lines) that coordinates the action pipeline
 - **EventSequencer**: Ensures events are properly ordered within turns (1.1, 1.2, 1.3...)
 
 ## Architecture
@@ -17,20 +19,28 @@ User Input
     ↓
 [GameEngine]
     ↓
-[CommandExecutor]
-    ├─→ [Parser] → ParsedCommand (syntax only)
-    ├─→ [Validator] → ValidatedCommand (with resolved entities)
-    ├─→ [Actions] → Events
-    └─→ [EventProcessor] → World Changes
+[CommandExecutor] (Thin Orchestrator)
+    ├─→ [Parser] → ParsedCommand
+    ├─→ [Validator] → ValidatedCommand
+    └─→ [Action] (Three-Phase Pattern)
+         ├─→ validate() → ValidationResult
+         ├─→ execute() → Mutations only
+         └─→ report() → ISemanticEvent[]
+    ↓
+[EventProcessor] → World Changes
     ↓
 Turn Result
 ```
 
-### Three-Phase Command Processing
+### Action Three-Phase Pattern
 
-1. **Parse Phase**: Converts raw text to structured command using grammar only (no world knowledge)
-2. **Validate Phase**: Resolves entities, checks visibility/scope, finds action handlers
-3. **Execute Phase**: Runs business logic to generate semantic events
+Actions follow a strict three-phase pattern for clean separation of concerns:
+
+1. **Validate Phase**: Check if the action can be performed (no mutations)
+2. **Execute Phase**: Perform state mutations only (no events)
+3. **Report Phase**: Generate events based on final state (no mutations)
+
+The CommandExecutor simply orchestrates these phases, delegating all responsibility to the appropriate components. Actions own their complete event lifecycle, including error events.
 
 ## Basic Usage
 
@@ -106,21 +116,49 @@ engine.on('game:over', (context) => {
 });
 ```
 
+## Atomic Events Architecture
+
+Events are self-contained with all necessary data embedded at creation time:
+
+```typescript
+// Example event from taking action
+{
+  type: 'if.event.taken',
+  timestamp: 1692345678,
+  data: {
+    itemSnapshot: {         // Complete entity state
+      id: 'sword',
+      name: 'silver sword',
+      description: 'A gleaming blade',
+      location: 'player',
+      traits: { /* ... */ }
+    },
+    actorSnapshot: { /* ... */ }
+  }
+}
+```
+
+This enables:
+- **Historical Replay**: Events contain complete state at that moment
+- **No World Queries**: Text services use embedded data, not world lookups
+- **Consistency**: Entity state is captured after all mutations complete
+
 ## Event Sequencing
 
 Events are automatically sequenced within turns:
 
 ```typescript
 // Turn 1
-1.1 - TAKING action initiated
-1.2 - TAKEN event (main action)
-1.3 - INVENTORY_CHANGED event (consequence)
+1.1 - action.started
+1.2 - if.event.taken (main action)
+1.3 - action.success
 
 // Turn 2
-2.1 - GOING action initiated
-2.2 - EXITED event (leaving current room)
-2.3 - ENTERED event (entering new room)
-2.4 - LOOK event (auto-look in new room)
+2.1 - action.started
+2.2 - if.event.exited (leaving room)
+2.3 - if.event.entered (entering room)
+2.4 - if.event.looked (auto-look)
+2.5 - action.success
 ```
 
 ## Language Management
@@ -219,12 +257,26 @@ Each turn returns:
 ```typescript
 interface TurnResult {
   turn: number;
-  command: ParsedCommand;
+  input: string;
   events: SequencedEvent[];
-  worldChanges: WorldChange[];
   success: boolean;
-  error?: Error;
-  timing?: TimingInfo;
+  error?: string;
+  actionId?: string;
+  parsedCommand?: IParsedCommand;
+  timing?: TimingData;
+}
+```
+
+Where SequencedEvent includes:
+```typescript
+interface SequencedEvent {
+  type: string;
+  data: any;
+  sequence: number;
+  timestamp: Date;
+  turn: number;
+  scope: 'turn' | 'global' | 'system';
+  source?: string;
 }
 ```
 

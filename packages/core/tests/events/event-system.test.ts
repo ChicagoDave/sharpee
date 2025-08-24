@@ -8,7 +8,7 @@ describe('Event System Helpers', () => {
 
       expect(event).toMatchObject({
         type: 'test.event',
-        payload: { value: 42 }
+        data: { value: 42 }
       });
       expect(event.id).toBeDefined();
       expect(typeof event.id).toBe('string');
@@ -56,7 +56,7 @@ describe('Event System Helpers', () => {
 
     it('should handle empty payload', () => {
       const event = createEvent('heartbeat', {});
-      expect(event.payload).toEqual({});
+      expect(event.data).toEqual({});
     });
 
     it('should generate unique IDs', () => {
@@ -97,7 +97,7 @@ describe('Event System Helpers', () => {
       };
 
       const event = createEvent('complex.event', complexPayload);
-      expect(event.payload).toEqual(complexPayload);
+      expect(event.data).toEqual(complexPayload);
     });
 
     it('should set narrate flag from metadata', () => {
@@ -140,8 +140,7 @@ describe('Event System Helpers', () => {
     it('should support legacy data property', () => {
       const event = createEvent('legacy.event', { old: 'data' });
       
-      // Both payload and data should be set
-      expect(event.payload).toEqual({ old: 'data' });
+      // Data should be set
       expect(event.data).toEqual({ old: 'data' });
     });
 
@@ -191,7 +190,7 @@ describe('Event System Helpers', () => {
       );
 
       expect(event.type).toBe('narrative');
-      expect(event.payload?.message).toBe('The door creaks open.');
+      expect((event.data as any)?.message).toBe('The door creaks open.');
     });
 
     it('should create standard error events', async () => {
@@ -207,7 +206,7 @@ describe('Event System Helpers', () => {
       );
 
       expect(event.type).toBe('error');
-      expect(event.payload?.code).toBe('INVALID_TARGET');
+      expect((event.data as any)?.code).toBe('INVALID_TARGET');
     });
   });
 });

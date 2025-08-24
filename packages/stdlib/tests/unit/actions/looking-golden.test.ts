@@ -9,7 +9,7 @@
  * - Handle special locations (containers, supporters)
  */
 
-import { describe, test, expect, beforeEach } from 'vitest';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { lookingAction } from '../../../src/actions/standard/looking';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType } from '@sharpee/world-model';
@@ -22,6 +22,24 @@ import {
 } from '../../test-utils';
 import { WorldModel } from '@sharpee/world-model';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
+import type { ISemanticEvent } from '@sharpee/core';
+
+// Helper to execute action using the new three-phase pattern
+function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
+  // New three-phase pattern: validate -> execute -> report
+  const validationResult = action.validate(context);
+  
+  if (!validationResult.valid) {
+    // Action creates its own error events in report()
+    return action.report(context, validationResult);
+  }
+  
+  // Execute mutations (returns void in new pattern)
+  action.execute(context);
+  
+  // Report generates all events
+  return action.report(context, validationResult);
+}
 
 describe('lookingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -54,7 +72,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // Should emit LOOKED event
       expectEvent(events, 'if.event.looked', {
@@ -98,7 +116,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // Should emit list contents event
       expectEvent(events, 'if.event.list_contents', {
@@ -127,7 +145,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // Should not emit list contents event for empty room
       const listEvent = events.find(e => e.type === 'if.event.list_contents');
@@ -160,7 +178,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // Should emit LOOKED event with isDark true
       expectEvent(events, 'if.event.looked', {
@@ -203,7 +221,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // Should emit LOOKED event with isDark false
       expectEvent(events, 'if.event.looked', {
@@ -241,7 +259,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       expectEvent(events, 'if.event.looked', {
         isDark: false
@@ -270,7 +288,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // Should use in_container message
       expectEvent(events, 'action.success', {
@@ -302,7 +320,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // Should use on_supporter message
       expectEvent(events, 'action.success', {
@@ -326,7 +344,7 @@ describe('lookingAction (Golden Pattern)', () => {
       // would be tracked by the game state. This test demonstrates the expected
       // behavior when those features are implemented.
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // For now, should use regular description
       expectEvent(events, 'action.success', {
@@ -340,7 +358,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // Should use full description
       expectEvent(events, 'action.success', {
@@ -368,7 +386,7 @@ describe('lookingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // Should work normally
       expectEvent(events, 'if.event.looked', {
@@ -395,7 +413,7 @@ describe('lookingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // Should add examine_surroundings message
       expectEvent(events, 'action.success', {
@@ -412,7 +430,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = lookingAction.execute(context);
+      const events = executeAction(lookingAction, context);
       
       // Check LOOKED event has timestamp
       const lookedEvent = events.find(e => e.type === 'if.event.looked');
@@ -428,6 +446,91 @@ describe('lookingAction (Golden Pattern)', () => {
         if (event.entities) {
           expect(event.entities.actor).toBe(player.id);
           expect(event.entities.location).toBe(room.id);
+        }
+      });
+    });
+  });
+
+  describe('Three-Phase Pattern Compliance', () => {
+    test('should use report() to create all events', () => {
+      const { world, player, room } = setupBasicWorld();
+      
+      const command = createCommand(IFActions.LOOKING);
+      const context = createRealTestContext(lookingAction, world, command);
+      
+      // Spy on the action methods to ensure correct pattern
+      const validateSpy = vi.spyOn(lookingAction, 'validate');
+      const executeSpy = vi.spyOn(lookingAction, 'execute');
+      const reportSpy = vi.spyOn(lookingAction, 'report');
+      
+      const events = executeAction(lookingAction, context);
+      
+      // Verify three-phase pattern was followed
+      expect(validateSpy).toHaveBeenCalledWith(context);
+      expect(executeSpy).toHaveBeenCalledWith(context);
+      expect(reportSpy).toHaveBeenCalledWith(context, { valid: true });
+      
+      // Verify execute returns void (no events)
+      const executeResult = lookingAction.execute(context);
+      expect(executeResult).toBeUndefined();
+      
+      // Verify report creates events
+      expect(events.length).toBeGreaterThan(0);
+      expect(events.every(e => e.type && e.data)).toBe(true);
+    });
+
+    test('should handle validation errors in report()', () => {
+      // Even though looking is always valid, test the pattern
+      const { world, player, room } = setupBasicWorld();
+      
+      const command = createCommand(IFActions.LOOKING);
+      const context = createRealTestContext(lookingAction, world, command);
+      
+      // Mock validation failure
+      const mockValidationResult = {
+        valid: false,
+        error: 'test_error',
+        messageId: 'test_message',
+        params: { test: 'value' }
+      };
+      
+      // Call report with validation error
+      const events = lookingAction.report(context, mockValidationResult);
+      
+      // Should create error event with room snapshot
+      expect(events).toHaveLength(1);
+      expect(events[0].type).toBe('action.error');
+      expect(events[0].data).toMatchObject({
+        actionId: IFActions.LOOKING,
+        error: 'test_error',
+        messageId: 'test_message',
+        params: {
+          test: 'value',
+          roomSnapshot: expect.objectContaining({
+            id: room.id,
+            name: expect.any(String)
+          })
+        }
+      });
+    });
+
+    test('should handle execution errors in report()', () => {
+      const { world, player, room } = setupBasicWorld();
+      
+      const command = createCommand(IFActions.LOOKING);
+      const context = createRealTestContext(lookingAction, world, command);
+      
+      // Call report with execution error
+      const executionError = new Error('Test execution error');
+      const events = lookingAction.report(context, { valid: true }, executionError);
+      
+      // Should create error event
+      expectEvent(events, 'action.error', {
+        actionId: IFActions.LOOKING,
+        error: 'execution_failed',
+        messageId: 'action_failed',
+        params: {
+          error: 'Test execution error'
         }
       });
     });

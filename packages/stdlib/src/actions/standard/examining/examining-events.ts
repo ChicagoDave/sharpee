@@ -13,10 +13,16 @@ import { EntityId } from '@sharpee/core';
  * about the examined entity's traits and state.
  */
 export interface ExaminedEventData {
-  /** ID of the examined entity */
+  /** Full entity snapshot (new atomic pattern) */
+  target?: any; // EntitySnapshot type from snapshot-utils
+  
+  /** Full snapshots of contents (new atomic pattern) */
+  contentsSnapshots?: any[]; // EntitySnapshot[] type from snapshot-utils
+  
+  /** ID of the examined entity (backward compatibility) */
   targetId: EntityId;
   
-  /** Name of the examined entity */
+  /** Name of the examined entity (backward compatibility) */
   targetName: string;
   
   /** True if examining yourself */

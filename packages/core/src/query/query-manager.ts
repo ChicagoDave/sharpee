@@ -191,8 +191,7 @@ export class QueryManager extends EventEmitter {
         type: 'query.invalid',
         timestamp: Date.now(),
         entities: {},
-        data: invalidEventData,
-        payload: invalidEventData
+        data: invalidEventData
       };
       this.eventSource.emit(invalidEvent);
       

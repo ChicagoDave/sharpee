@@ -44,6 +44,7 @@ import { EnglishGrammarEngine } from './english-grammar-engine';
 import { defineCoreGrammar } from './core-grammar';
 import { scope, StoryGrammar } from '@sharpee/if-domain';
 import { StoryGrammarImpl } from './story-grammar-impl';
+import { parseDirection } from './direction-mappings';
 
 // Type alias for clarity
 type CommandResult<T, E> = Result<T, E>;
@@ -408,11 +409,21 @@ export class EnglishParser implements Parser {
     
     // Add extras if present
     if ((best as any).direction) {
+      // Convert direction string to Direction constant
+      const directionConstant = parseDirection((best as any).direction);
       parsed.extras = {
-        direction: (best as any).direction
+        direction: directionConstant || (best as any).direction
       };
     } else if ((best as any).extras) {
-      parsed.extras = (best as any).extras;
+      // Check if extras contains a direction and convert it
+      const extras = { ...(best as any).extras };
+      if (extras.direction && typeof extras.direction === 'string') {
+        const directionConstant = parseDirection(extras.direction);
+        if (directionConstant) {
+          extras.direction = directionConstant;
+        }
+      }
+      parsed.extras = extras;
     }
     
     // Emit parse success platform event

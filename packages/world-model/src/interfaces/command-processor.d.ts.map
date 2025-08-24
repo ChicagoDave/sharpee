@@ -1,1 +1,0 @@
-{"version":3,"file":"command-processor.d.ts","sourceRoot":"","sources":["command-processor.ts"],"names":[],"mappings":"AAAA;;GAEG;AAEH,OAAO,KAAK,EAAE,cAAc,EAAE,MAAM,eAAe,CAAC;AACpD,OAAO,KAAK,EAAE,YAAY,EAAE,aAAa,EAAE,MAAM,aAAa,CAAC;AAE/D;;GAEG;AACH,MAAM,WAAW,iBAAiB;IAChC;;;;OAIG;IACH,OAAO,CAAC,KAAK,EAAE,MAAM,GAAG,OAAO,CAAC,aAAa,CAAC,cAAc,EAAE,EAAE,YAAY,CAAC,CAAC,CAAC;CAChF"}

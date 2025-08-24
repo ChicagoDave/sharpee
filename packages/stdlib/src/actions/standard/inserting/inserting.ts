@@ -4,6 +4,8 @@
  * This action is container-specific, unlike putting which handles both
  * containers and supporters. It's more explicit about the container relationship.
  * In many cases, this delegates to the putting action with 'in' preposition.
+ * 
+ * MIGRATED: To three-phase pattern (validate/execute/report) for atomic events
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -12,8 +14,11 @@ import { ScopeLevel } from '../../../scope/types';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { buildEventData } from '../../data-builder-types';
+import { insertedDataConfig } from './inserting-data';
 import { puttingAction } from '../putting';
 import { createActionContext } from '../../enhanced-context';
+import { captureEntitySnapshot } from '../../base/snapshot-utils';
 
 interface InsertingState {
   item: any;
@@ -100,17 +105,7 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
     };
   },
   
-  execute(context: ActionContext): ISemanticEvent[] {
-    // Revalidate
-    const validation = this.validate(context);
-    if (!validation.valid) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: validation.error,
-        params: validation.params || {}
-      })];
-    }
-    
+  execute(context: ActionContext): void {
     // For most cases, delegate to putting with 'in' preposition
     // This ensures consistent behavior between "insert X in Y" and "put X in Y"
     const modifiedCommand = {
@@ -136,7 +131,80 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       modifiedCommand
     );
     
+    // Store modified context for report phase
+    (context as any)._modifiedContext = modifiedContext;
+    
     // Execute putting action
-    return puttingAction.execute(modifiedContext);
+    puttingAction.execute(modifiedContext);
+  },
+
+  /**
+   * Report events after inserting
+   * Delegates to putting action's report
+   */
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    // Handle validation errors
+    if (validationResult && !validationResult.valid) {
+      // Capture entity data for validation errors
+      const errorParams = { ...(validationResult.params || {}) };
+      
+      // Add entity snapshots if entities are available
+      if (context.command.directObject?.entity) {
+        errorParams.targetSnapshot = captureEntitySnapshot(
+          context.command.directObject.entity,
+          context.world,
+          false
+        );
+      }
+      if (context.command.indirectObject?.entity) {
+        errorParams.indirectTargetSnapshot = captureEntitySnapshot(
+          context.command.indirectObject.entity,
+          context.world,
+          false
+        );
+      }
+
+      return [
+        context.event('action.error', {
+          actionId: context.action.id,
+          error: validationResult.error || 'validation_failed',
+          messageId: validationResult.messageId || validationResult.error || 'action_failed',
+          params: errorParams
+        })
+      ];
+    }
+    
+    // Handle execution errors
+    if (executionError) {
+      return [
+        context.event('action.error', {
+          actionId: context.action.id,
+          error: 'execution_failed',
+          messageId: 'action_failed',
+          params: {
+            error: executionError.message
+          }
+        })
+      ];
+    }
+    
+    const modifiedContext = (context as any)._modifiedContext;
+    
+    if (!modifiedContext) {
+      // Shouldn't happen, but handle gracefully
+      return [context.event('action.error', {
+        actionId: context.action.id,
+        messageId: 'cant_insert',
+        params: {}
+      })];
+    }
+    
+    // Delegate to putting action's report
+    if ('report' in puttingAction && typeof puttingAction.report === 'function') {
+      return puttingAction.report(modifiedContext);
+    }
+    
+    // Shouldn't happen since putting is migrated
+    return [];
   }
 };

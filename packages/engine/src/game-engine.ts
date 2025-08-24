@@ -44,7 +44,7 @@ import { Story } from './story';
 
 import { CommandExecutor, createCommandExecutor } from './command-executor';
 import { EventSequenceUtils, eventSequencer } from './event-sequencer';
-import { toSequencedEvent, toSemanticEvent } from './event-adapter';
+import { toSequencedEvent, toSemanticEvent, processEvent } from './event-adapter';
 
 /**
  * Game engine events
@@ -146,7 +146,6 @@ export class GameEngine {
       this.world,
       this.actionRegistry,
       this.eventProcessor,
-      this.languageProvider,
       this.parser
     );
     
@@ -397,13 +396,23 @@ export class GameEngine {
         this.config
       );
 
-      // Store events for this turn (convert to SemanticEvent)
-      const semanticEvents = result.events.map(e => toSemanticEvent(e));
+      // Get context for event enrichment
+      const playerLocation = this.world.getLocation(this.context.player.id);
+      const enrichmentContext = {
+        turn,
+        playerId: this.context.player.id,
+        locationId: playerLocation
+      };
+      
+      // Store events for this turn (convert to SemanticEvent and process through pipeline)
+      const semanticEvents = result.events.map(e => {
+        const semantic = toSemanticEvent(e);
+        return processEvent(semantic, enrichmentContext);
+      });
       this.turnEvents.set(turn, semanticEvents);
       
       // Also track in event source for save/restore
-      for (const sequencedEvent of result.events) {
-        const semanticEvent = toSemanticEvent(sequencedEvent);
+      for (const semanticEvent of semanticEvents) {
         this.eventSource.emit(semanticEvent);
         
         // Check if this is a client.query event
@@ -502,7 +511,7 @@ export class GameEngine {
               .filter((e: any) => {
                 if (!e.tags?.includes('platform')) return false;
                 // Check if event has turn data
-                const eventTurn = e.data?.turn || e.metadata?.turn;
+                const eventTurn = (e.data as any)?.turn;
                 // If no turn data, assume it's from initialization (turn 0)
                 return eventTurn === undefined ? currentTurn === 1 : eventTurn === currentTurn;
               });
@@ -819,8 +828,8 @@ export class GameEngine {
       ...event,
       id: `platform_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       timestamp: Date.now(),
-      metadata: {
-        ...event.metadata,
+      data: {
+        ...(event.data as any || {}),
         turn: this.context.currentTurn
       }
     };
@@ -1168,8 +1177,8 @@ export class GameEngine {
     // Create a GameEvent that's compatible with the engine's type system
     const gameEvent: GameEvent = {
       type: event.type,
-      data: event.payload || event.data || {},
-      metadata: {
+      data: {
+        ...(event.data as any || {}),
         id: event.id || `event-${Date.now()}`,
         timestamp: event.timestamp || Date.now(),
         entities: event.entities || {}
@@ -1185,11 +1194,11 @@ export class GameEngine {
     // Store in turn events if we're in a turn (as SemanticEvent for compatibility)
     if (this.context.currentTurn > 0) {
       const semanticEvent: ISemanticEvent = {
-        id: event.id || gameEvent.metadata?.id as string,
+        id: event.id || gameEvent.data?.id as string,
         type: event.type,
         timestamp: event.timestamp || Date.now(),
         entities: event.entities || {},
-        data: event.payload || event.data || {}
+        data: event.data || {}
       };
       const turnEvents = this.turnEvents.get(this.context.currentTurn) || [];
       turnEvents.push(semanticEvent);
@@ -1262,12 +1271,44 @@ export class GameEngine {
         id: event.id,
         type: event.type,
         timestamp: event.timestamp || Date.now(),
-        data: event.data || {},
-        metadata: event.metadata
+        data: this.serializeEventData(event.data)
       });
     }
     
     return events;
+  }
+
+  /**
+   * Serialize event data, handling functions and special types
+   */
+  private serializeEventData(data: unknown): Record<string, unknown> {
+    if (!data || typeof data !== 'object') {
+      return (data || {}) as Record<string, unknown>;
+    }
+    
+    const serialized: Record<string, unknown> = {};
+    
+    for (const [key, value] of Object.entries(data)) {
+      if (typeof value === 'function') {
+        // Mark functions for special handling during deserialization
+        // Store function marker instead of the actual function
+        serialized[key] = { __type: 'function', __marker: '[Function]' };
+      } else if (value && typeof value === 'object') {
+        // Recursively serialize nested objects
+        if (Array.isArray(value)) {
+          serialized[key] = value.map(item => 
+            typeof item === 'object' ? this.serializeEventData(item) : item
+          );
+        } else {
+          serialized[key] = this.serializeEventData(value);
+        }
+      } else {
+        // Primitive values can be stored directly
+        serialized[key] = value;
+      }
+    }
+    
+    return serialized;
   }
 
   /**
@@ -1283,11 +1324,38 @@ export class GameEngine {
         id: event.id,
         type: event.type,
         timestamp: event.timestamp,
-        data: event.data,
-        metadata: event.metadata,
+        data: this.deserializeEventData(event.data),
         entities: {}
       });
     }
+  }
+
+  /**
+   * Deserialize event data, handling function markers
+   */
+  private deserializeEventData(data: unknown): unknown {
+    if (!data || typeof data !== 'object') {
+      return data;
+    }
+    
+    // Check if this is a function marker
+    if ((data as any).__type === 'function') {
+      // Return a placeholder function that indicates it was serialized
+      // This maintains the shape of the data but won't execute
+      return () => '[Serialized Function]';
+    }
+    
+    if (Array.isArray(data)) {
+      return data.map(item => this.deserializeEventData(item));
+    }
+    
+    const deserialized: Record<string, unknown> = {};
+    
+    for (const [key, value] of Object.entries(data)) {
+      deserialized[key] = this.deserializeEventData(value);
+    }
+    
+    return deserialized;
   }
 
   /**

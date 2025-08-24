@@ -33,6 +33,7 @@ export {
   EventSourceImpl,
   createEventSource
 } from './event-system';
+
 // message-resolver moved to stdlib (uses GameContext)
 // enhanced-text-processor moved to stdlib (uses GameContext) 
 // message-builder moved to stdlib (uses GameContext)

@@ -188,7 +188,7 @@ export class WorldModel implements IWorldModel {
         timestamp: Date.now(),
         type: `platform.world.${type}`,
         entities: {},
-        payload: {
+        data: {
           subsystem: 'world',
           ...data
         },
@@ -324,7 +324,7 @@ export class WorldModel implements IWorldModel {
     // Auto-add appropriate default trait based on type
     switch (type) {
       case EntityType.ROOM:
-        entity.add(new RoomTrait({ exits: {} }));
+        entity.add(new RoomTrait({}));
         break;
       case EntityType.CONTAINER:
         entity.add(new ContainerTrait());

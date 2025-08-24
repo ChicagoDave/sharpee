@@ -1,10 +1,11 @@
 /**
- * Payload for the 'if.event.closed' event
+ * Data for the 'if.event.closed' event
  * 
- * This is what goes in SemanticEvent.payload
+ * This is what goes in SemanticEvent.data
  */
 
 import { EntityId } from '@sharpee/core';
+import { EntitySnapshot } from '../../base/snapshot-utils';
 
 export interface ClosedEventData {
   // What was closed
@@ -20,4 +21,15 @@ export interface ClosedEventData {
   hasContents: boolean;
   contentsCount: number;
   contentsIds: EntityId[];
+  
+  // Backward compatibility
+  containerId?: EntityId;
+  containerName?: string;
+  
+  // Atomic event snapshots
+  /** Complete snapshot of the target after closing */
+  targetSnapshot?: EntitySnapshot;
+  
+  /** Complete snapshots of contents (if container) */
+  contentsSnapshots?: EntitySnapshot[];
 }

@@ -154,7 +154,7 @@ export class SwitchableBehavior extends Behavior {
         entities: {
           target: entity.id
         },
-        payload: {
+        data: {
           reason: 'power_loss',
           customMessage: "The device powers down as it loses power."
         }
@@ -170,7 +170,7 @@ export class SwitchableBehavior extends Behavior {
         entities: {
           target: entity.id
         },
-        payload: {
+        data: {
           reason: 'power_restored',
           customMessage: "Power is restored to the device."
         }
@@ -200,7 +200,7 @@ export class SwitchableBehavior extends Behavior {
           entities: {
             target: entity.id
           },
-          payload: {
+          data: {
             reason: 'auto_off',
             customMessage: "The device automatically switches off."
           }
