@@ -159,7 +159,8 @@ export const handleEntered: EventHandler = (event: ISemanticEvent, world: any) =
  */
 export const handleExited: EventHandler = (event: ISemanticEvent, world: any) => {
   const { actor, location } = event.entities;
-  const fromLocation = event.data?.fromLocation as string;
+  const data = event.data as any;
+  const fromLocation = data?.fromLocation as string;
   
   if (actor && location) {
     // Update the entry trait occupants if present

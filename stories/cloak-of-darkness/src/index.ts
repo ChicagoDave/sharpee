@@ -25,11 +25,12 @@ import {
   SupporterTrait,
   SceneryTrait,
   ReadableTrait,
-  ScopeRule,
+  IScopeRule,
   LightSourceTrait,
-  EntityType
+  EntityType,
+  Direction
 } from '@sharpee/world-model';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 
 /**
  * Cloak of Darkness story configuration
@@ -146,10 +147,10 @@ export class CloakOfDarknessStory implements Story {
    */
   private setupDarknessRules(): void {
     // Basic visibility rule - handles both lit and dark rooms
-    const basicVisibilityRule: ScopeRule = {
+    const basicVisibilityRule: IScopeRule = {
       id: 'cloak_basic_visibility',
       fromLocations: '*',
-      includeEntities: (context) => {
+      includeEntities: (context: any) => {
         const results: string[] = [];
         const location = context.world.getEntity(context.currentLocation);
         const roomTrait = location?.get('room') as RoomTrait | undefined;
@@ -184,10 +185,10 @@ export class CloakOfDarknessStory implements Story {
     };
     
     // Inventory is visible unless in pitch darkness
-    const inventoryRule: ScopeRule = {
+    const inventoryRule: IScopeRule = {
       id: 'cloak_inventory_visibility',
       fromLocations: '*',
-      includeEntities: (context) => {
+      includeEntities: (context: any) => {
         const location = context.world.getEntity(context.currentLocation);
         const roomTrait = location?.get('room') as RoomTrait | undefined;
         const isDark = roomTrait?.isDark === true;
@@ -285,9 +286,9 @@ export class CloakOfDarknessStory implements Story {
     const foyerTrait = foyer.get(RoomTrait) as RoomTrait;
     if (foyerTrait) {
       foyerTrait.exits = {
-        north: { destination: outside.id },
-        south: { destination: bar.id },
-        west: { destination: cloakroom.id }
+        [Direction.NORTH]: { destination: outside.id },
+        [Direction.SOUTH]: { destination: bar.id },
+        [Direction.WEST]: { destination: cloakroom.id }
       };
     }
     
@@ -295,7 +296,7 @@ export class CloakOfDarknessStory implements Story {
     const cloakroomTrait = cloakroom.get(RoomTrait) as RoomTrait;
     if (cloakroomTrait) {
       cloakroomTrait.exits = {
-        east: { destination: foyer.id }
+        [Direction.EAST]: { destination: foyer.id }
       };
     }
     
@@ -303,7 +304,7 @@ export class CloakOfDarknessStory implements Story {
     const barTrait = bar.get(RoomTrait) as RoomTrait;
     if (barTrait) {
       barTrait.exits = {
-        north: { destination: foyer.id }
+        [Direction.NORTH]: { destination: foyer.id }
       };
     }
     
@@ -311,7 +312,7 @@ export class CloakOfDarknessStory implements Story {
     const outsideTrait = outside.get(RoomTrait) as RoomTrait;
     if (outsideTrait) {
       outsideTrait.exits = {
-        south: { destination: foyer.id }
+        [Direction.SOUTH]: { destination: foyer.id }
       };
     }
   }
@@ -381,14 +382,29 @@ export class CloakOfDarknessStory implements Story {
     
     // Add event handler for when player enters the bar
     bar.on = {
-      'if.event.actor_moved': (event: any): SemanticEvent[] | undefined => {
-        const { actorId, toLocation } = event.data || {};
-        const player = this.world.getPlayer();
+      'if.event.actor_moved': (event: any): ISemanticEvent[] | undefined => {
+        const eventData = event.data || {};
         
-        // Check if the player entered this bar
-        if (player && actorId === player.id && toLocation === bar.id) {
-          // Check if it's dark (player carrying cloak)
-          if (this.isBarDark()) {
+        // Use the new atomic event structure with snapshots
+        const actorSnapshot = eventData.actor;
+        const destinationSnapshot = eventData.destinationRoom;
+        
+        // Check if this is the player entering this bar
+        // Use snapshot data instead of world queries
+        const isPlayer = actorSnapshot?.id === 'player' || actorSnapshot?.name === 'yourself';
+        const isThisBar = destinationSnapshot?.id === bar.id || eventData.toRoom === bar.id;
+        
+        if (isPlayer && isThisBar) {
+          // Check if player is carrying the cloak (look in actor's contents)
+          const hasCloak = actorSnapshot?.contents?.some((item: any) => 
+            item.name === 'velvet cloak' || item.name === 'cloak'
+          ) || false;
+          
+          // Check if the bar is dark (from room snapshot)
+          const isDark = destinationSnapshot?.isDark === true;
+          
+          // If dark AND player has cloak, it's pitch dark
+          if (isDark && hasCloak) {
             this.disturbances++;
             this.updateMessage();
             
@@ -484,11 +500,20 @@ export class CloakOfDarknessStory implements Story {
     
     // Add event handler for when something is placed on the hook
     hook.on = {
-      'if.event.put_on': (event: any): SemanticEvent[] | undefined => {
-        // Check if the cloak was hung on this hook
-        const { itemId, targetId } = event.data || {};
+      'if.event.put_on': (event: any): ISemanticEvent[] | undefined => {
+        const eventData = event.data || {};
+        
+        // Use the new atomic event structure with snapshots
+        const itemSnapshot = eventData.itemSnapshot;
+        const targetSnapshot = eventData.targetSnapshot;
+        
         // Check if this is the hook being targeted and the cloak being hung
-        if (targetId === hook.id && itemId === 'i01') {
+        const isThisHook = targetSnapshot?.id === hook.id || eventData.targetId === hook.id;
+        const isCloak = itemSnapshot?.name === 'velvet cloak' || 
+                       itemSnapshot?.name === 'cloak' ||
+                       eventData.itemId === 'i01'; // fallback for old ID
+        
+        if (isThisHook && isCloak) {
           // The cloak has been hung! This makes the bar visible
           const bar = this.world.getEntity(this.roomIds['bar']);
           if (bar) {
@@ -533,13 +558,20 @@ export class CloakOfDarknessStory implements Story {
     
     // Add event handler for when the message is read
     message.on = {
-      'if.event.read': (event: any): SemanticEvent[] | undefined => {
-        const { targetId } = event.data || {};
+      'if.event.read': (event: any): ISemanticEvent[] | undefined => {
+        const eventData = event.data || {};
         
-        // Check if this message was read successfully
-        if (targetId === message.id && this.disturbances === 0) {
+        // Check if this message was read (using event data)
+        const isThisMessage = eventData.targetId === message.id || 
+                            eventData.target === message.id;
+        
+        // Check if message was read successfully
+        if (isThisMessage && this.disturbances === 0) {
           // Mark the story as complete!
           this.world.setStateValue('message_read_successfully', true);
+          
+          // Get player ID from event data if available
+          const playerId = eventData.actorId || eventData.actor?.id || 'player';
           
           // Emit a victory event that can be picked up by the engine
           return [{
@@ -547,7 +579,7 @@ export class CloakOfDarknessStory implements Story {
             type: 'story.victory',
             timestamp: Date.now(),
             entities: {
-              actor: this.world.getPlayer()?.id,
+              actor: playerId,
               target: message.id
             },
             data: {
@@ -697,12 +729,26 @@ export class CloakOfDarknessStory implements Story {
             // Move the cloak to the hook (this is still needed for game state)
             context.world.moveEntity(item.id, supporter.id);
             
-            // Emit the event - the hook's event handler will respond
+            // Create entity snapshots for atomic events
+            const itemSnapshot = {
+              id: item.id,
+              name: item.name,
+              description: item.description
+            };
+            
+            const supporterSnapshot = {
+              id: supporter.id,
+              name: supporter.name,
+              description: supporter.description
+            };
+            
+            // Emit the events with snapshots - the hook's event handler will respond
             return [
-              context.event('if.event.object_moved', {
-                objectId: item.id,
-                fromLocation: cloakLocation,
-                toLocation: supporter.id,
+              context.event('if.event.put_on', {
+                itemId: item.id,
+                targetId: supporter.id,
+                itemSnapshot: itemSnapshot,
+                targetSnapshot: supporterSnapshot,
                 actorId: context.player.id
               }),
               context.event('action.success', {
@@ -710,7 +756,9 @@ export class CloakOfDarknessStory implements Story {
                 messageId: 'hung_cloak',
                 params: {
                   item: item.name,
-                  supporter: supporter.name
+                  supporter: supporter.name,
+                  itemSnapshot: itemSnapshot,
+                  targetSnapshot: supporterSnapshot
                 }
               })
             ];
@@ -775,16 +823,32 @@ export class CloakOfDarknessStory implements Story {
               })];
             }
             
-            // Emit success event - the message's event handler will check for victory
-            return [context.event('action.read.success', {
-              actionId: context.action.id,
-              target: item.id,
-              messageId: 'read_message',
-              params: {
-                text: readable.text,
-                description: item.get(IdentityTrait)?.description
-              }
-            })];
+            // Emit success event with entity snapshots - the message's event handler will check for victory
+            const itemSnapshot = {
+              id: item.id,
+              name: item.name,
+              description: item.get(IdentityTrait)?.description,
+              text: readable.text
+            };
+            
+            return [
+              context.event('if.event.read', {
+                targetId: item.id,
+                target: item.id,
+                actorId: context.player.id,
+                actor: { id: context.player.id, name: context.player.name },
+                targetSnapshot: itemSnapshot
+              }),
+              context.event('action.success', {
+                actionId: context.action.id,
+                messageId: 'read_message',
+                params: {
+                  text: readable.text,
+                  description: item.get(IdentityTrait)?.description,
+                  target: itemSnapshot
+                }
+              })
+            ];
           }
           
           // Not the message

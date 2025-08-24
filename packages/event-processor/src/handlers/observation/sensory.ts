@@ -13,7 +13,8 @@ import { IFEvents } from '@sharpee/if-domain';
  */
 export const handleSearched: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target } = event.entities;
-  const foundItems = event.data?.foundItems as string[];
+  const data = event.data as any;
+  const foundItems = data?.foundItems as string[];
   
   if (target && foundItems && foundItems.length > 0) {
     // Reveal concealed items

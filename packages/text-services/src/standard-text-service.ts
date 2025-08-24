@@ -18,9 +18,24 @@ import { ISemanticEvent } from '@sharpee/core';
 
 // Event data type definitions
 interface RoomDescriptionData {
-    roomId: string;
+    // Legacy fields (backward compatibility)
+    roomId?: string;
     verbose?: boolean;
     includeContents?: boolean;
+    
+    // New atomic event fields
+    room?: {
+        id: string;
+        name: string;
+        description?: string;
+        isDark?: boolean;
+        isVisited?: boolean;
+        exits?: Record<string, string>;
+        contents?: any[];
+        traits?: Record<string, unknown>;
+    };
+    roomName?: string;
+    roomDescription?: string;
 }
 
 interface ListContentsData {
@@ -58,13 +73,6 @@ interface GameOverData {
     won?: boolean;
     score?: number;
     turns?: number;
-}
-
-// Interface for IdentityTrait data
-interface IdentityData {
-    name?: string;
-    description?: string;
-    aliases?: string[];
 }
 
 export class StandardTextService implements TextService {
@@ -137,28 +145,38 @@ export class StandardTextService implements TextService {
         const data = event.data as unknown as RoomDescriptionData;
         const output: string[] = [];
         
-        if (!data.roomId || !this.context) {
-            return '';
-        }
-        
-        // Query the room entity from world model
-        const room = this.context.world.getEntity(data.roomId);
-        if (!room) {
-            return '';
-        }
-        
-        // Get room name if verbose mode
-        if (data.verbose) {
-            const name = this.getEntityName(room);
-            if (name) {
-                output.push(name);
+        // Use new atomic event data if available
+        if (data.room) {
+            // Get room name if verbose mode
+            if (data.verbose) {
+                const name = this.extractProviderValue(data.room.name);
+                if (name) {
+                    output.push(name);
+                } else if (typeof data.room.name === 'string') {
+                    output.push(data.room.name);
+                }
             }
+            
+            // Get room description
+            const description = this.extractProviderValue(data.room.description);
+            if (description) {
+                output.push(description);
+            } else if (typeof data.room.description === 'string') {
+                output.push(data.room.description);
+            }
+            
+            return output.join('\n\n');
         }
         
-        // Get room description
-        const description = this.getEntityDescription(room);
-        if (description) {
-            output.push(description);
+        // Fallback to simple fields for backward compatibility
+        if (data.verbose && data.roomName) {
+            const name = this.extractProviderValue(data.roomName);
+            output.push(name || data.roomName);
+        }
+        
+        if (data.roomDescription) {
+            const desc = this.extractProviderValue(data.roomDescription);
+            output.push(desc || data.roomDescription);
         }
         
         return output.join('\n\n');
@@ -239,83 +257,77 @@ export class StandardTextService implements TextService {
     }
     
     /**
-     * Get entity name from entity or its IdentityTrait
+     * Extract value from a provider function or return the value directly
+     * 
+     * Provider functions allow dynamic descriptions that can change based on state.
+     * If the value is a function, execute it safely to get the actual value.
+     * 
+     * @param value The value or provider function
+     * @returns The extracted value or null if execution fails
      */
-    private getEntityName(entity: any): string | null {
-        // Try direct name property first
-        if (entity.name) {
-            return entity.name;
-        }
-        
-        // Try getting from identity trait
-        const identity = entity.get?.('identity');
-        if (identity) {
-            const identityData = identity as IdentityData;
-            if (identityData.name) {
-                return identityData.name;
+    private extractProviderValue(value: any): string | null {
+        if (typeof value === 'function') {
+            try {
+                const result = value();
+                return result ? String(result) : null;
+            } catch (error) {
+                console.error('Provider function error:', error);
+                return null;
             }
         }
         
-        return null;
+        return value ? String(value) : null;
     }
     
-    /**
-     * Get entity description from entity or its IdentityTrait
-     */
-    private getEntityDescription(entity: any): string | null {
-        // Try direct description property first
-        if (entity.description) {
-            return entity.description;
-        }
-        
-        // Try getting from identity trait (Cloak of Darkness pattern)
-        const identity = entity.get?.('identity');
-        if (identity) {
-            const identityData = identity as IdentityData;
-            if (identityData.description) {
-                return identityData.description;
-            }
-        }
-        
-        return null;
-    }
     
     private generateFallback(data: ActionSuccessData): string {
         // Generate fallback text for common actions
         // This should rarely be needed if language provider is complete
         
         if (data.params) {
+            // Extract names from entity snapshots if they exist
+            const extractName = (value: any): string => {
+                if (typeof value === 'object' && value?.name) {
+                    return this.extractProviderValue(value.name) || value.name;
+                }
+                return this.extractProviderValue(value) || value;
+            };
+            
             const { items, item, direction, destination, surface } = data.params;
             
             switch (data.messageId) {
                 case 'contents_list':
                     if (items && data.params.count > 0) {
-                        return `You can see ${items} here.`;
+                        return `You can see ${extractName(items)} here.`;
                     }
                     return '';
                     
                 case 'first_visit':
                     if (destination) {
-                        return destination;
+                        return extractName(destination);
                     }
                     return '';
                     
                 case 'put_on':
                     if (item && surface) {
-                        return `You put the ${item} on the ${surface}.`;
+                        return `You put the ${extractName(item)} on the ${extractName(surface)}.`;
                     }
                     return 'Done.';
                     
                 case 'examined_wearable':
                 case 'examined_readable':
                     if (data.params.description) {
-                        return data.params.description;
+                        return this.extractProviderValue(data.params.description) || data.params.description;
+                    }
+                    // Check for entity snapshot with description
+                    if (data.params.target?.description) {
+                        return this.extractProviderValue(data.params.target.description) || data.params.target.description;
                     }
                     return '';
                     
                 case 'read_text':
                     if (data.params.text) {
-                        return data.params.text;
+                        return this.extractProviderValue(data.params.text) || data.params.text;
                     }
                     return '';
             }
