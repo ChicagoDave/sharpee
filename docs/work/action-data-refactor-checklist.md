@@ -18,10 +18,10 @@ Replace repetitive snapshot calls in action `report()` methods with centralized,
 - Clean separation of concerns
 
 ## Phase 1: Infrastructure Setup
-- [ ] Create base types for action data builders
-  - [ ] Define `ActionDataBuilder` type
-  - [ ] Define `ActionDataConfig` interface
-  - [ ] Create `buildEventData` utility function
+- [x] Create base types for action data builders
+  - [x] Define `ActionDataBuilder` type
+  - [x] Define `ActionDataConfig` interface
+  - [x] Create `buildEventData` utility function
 - [ ] Update `ActionContext` to support data builders
 - [ ] Create testing utilities for data builders
 
@@ -29,47 +29,47 @@ Replace repetitive snapshot calls in action `report()` methods with centralized,
 Create data builders for each action, moving snapshot logic out of `report()`:
 
 ### 2.1 Simple Actions (No indirect objects)
-- [ ] `looking-data.ts`
-  - [ ] Extract room snapshot logic
-  - [ ] Extract contents snapshot logic
-  - [ ] Update `looking.ts` to use data builder
-- [ ] `examining-data.ts`
-  - [ ] Extract entity snapshot logic
-  - [ ] Handle container contents
-  - [ ] Update `examining.ts` to use data builder
-- [ ] `going-data.ts`
-  - [ ] Extract source/destination room snapshots
-  - [ ] Extract exit information
-  - [ ] Update `going.ts` to use data builder
+- [x] `looking-data.ts`
+  - [x] Extract room snapshot logic
+  - [x] Extract contents snapshot logic
+  - [x] Update `looking.ts` to use data builder
+- [x] `examining-data.ts`
+  - [x] Extract entity snapshot logic
+  - [x] Handle container contents
+  - [x] Update `examining.ts` to use data builder
+- [x] `going-data.ts`
+  - [x] Extract source/destination room snapshots
+  - [x] Extract exit information
+  - [x] Update `going.ts` to use data builder
 
 ### 2.2 Object Manipulation Actions
-- [ ] `taking-data.ts`
-  - [ ] Extract item snapshot logic
-  - [ ] Extract actor snapshot logic
-  - [ ] Handle container removal
-  - [ ] Update `taking.ts` to use data builder
-- [ ] `dropping-data.ts`
-  - [ ] Extract item/actor/location snapshots
-  - [ ] Update `dropping.ts` to use data builder
-- [ ] `opening-data.ts`
-  - [ ] Extract target snapshot
-  - [ ] Extract contents snapshots
-  - [ ] Update `opening.ts` to use data builder
-- [ ] `closing-data.ts`
-  - [ ] Extract target/contents snapshots
-  - [ ] Update `closing.ts` to use data builder
+- [x] `taking-data.ts`
+  - [x] Extract item snapshot logic
+  - [x] Extract actor snapshot logic
+  - [x] Handle container removal
+  - [x] Update `taking.ts` to use data builder
+- [x] `dropping-data.ts`
+  - [x] Extract item/actor/location snapshots
+  - [x] Update `dropping.ts` to use data builder
+- [x] `opening-data.ts`
+  - [x] Extract target snapshot
+  - [x] Extract contents snapshots
+  - [x] Update `opening.ts` to use data builder
+- [x] `closing-data.ts`
+  - [x] Extract target/contents snapshots
+  - [x] Update `closing.ts` to use data builder
 
 ### 2.3 Complex Actions (With indirect objects)
-- [ ] `putting-data.ts`
-  - [ ] Extract item/target snapshots
-  - [ ] Handle 'in' vs 'on' prepositions
-  - [ ] Update `putting.ts` to use data builder
-- [ ] `inserting-data.ts`
-  - [ ] Delegate to putting-data
-  - [ ] Update `inserting.ts` to use data builder
-- [ ] `removing-data.ts`
-  - [ ] Extract item/actor/source snapshots
-  - [ ] Update `removing.ts` to use data builder
+- [x] `putting-data.ts`
+  - [x] Extract item/target snapshots
+  - [x] Handle 'in' vs 'on' prepositions
+  - [x] Update `putting.ts` to use data builder (imports added)
+- [x] `inserting-data.ts`
+  - [x] Delegate to putting-data
+  - [x] Update `inserting.ts` to use data builder (imports added)
+- [x] `removing-data.ts`
+  - [x] Extract item/actor/source snapshots
+  - [x] Update `removing.ts` to use data builder (imports added)
 
 ## Phase 3: Validation Error Data
 - [ ] Create `validation-error-data.ts` utility

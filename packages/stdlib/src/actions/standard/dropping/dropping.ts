@@ -13,12 +13,13 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent, IEntity } from '@sharpee/core';
 import { TraitType, ContainerBehavior, SupporterBehavior, WearableBehavior, ActorBehavior, IDropItemResult } from '@sharpee/world-model';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
+import { buildEventData } from '../../data-builder-types';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 
-// Import our typed event data
-import { DroppedEventData, DroppingErrorData } from './dropping-events';
+// Import our data builder
+import { droppedDataConfig, determineDroppingMessage } from './dropping-data';
 
 export const droppingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.DROPPING,
@@ -169,60 +170,11 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
       })];
     }
 
-    // Determine drop location for event data
-    const playerLocation = context.world.getLocation(actor.id);
-    const dropLocation = playerLocation ? context.world.getEntity(playerLocation) : context.currentLocation;
+    // Build event data using data builder
+    const droppedData = buildEventData(droppedDataConfig, context);
     
-    if (!dropLocation) {
-      throw new Error('No valid drop location found');
-    }
-
-    // Build typed event data with atomic snapshots
-    const droppedData: DroppedEventData = {
-      item: noun.id,
-      itemName: noun.name,
-      toLocation: dropLocation.id,
-      toLocationName: dropLocation.name,
-      // Add atomic event snapshots
-      itemSnapshot: captureEntitySnapshot(noun, context.world, true),
-      actorSnapshot: captureEntitySnapshot(actor, context.world, false),
-      locationSnapshot: captureEntitySnapshot(dropLocation, context.world, dropLocation.has(TraitType.ROOM))
-    };
-
-    const params: Record<string, any> = {
-      item: noun.name,
-      location: dropLocation.name
-    };
-
-    let messageId = 'dropped';
-
-    // Determine message based on drop location
-    if (!dropLocation.has(TraitType.ROOM)) {
-      // Dropping into a container or supporter
-      if (dropLocation.has(TraitType.CONTAINER)) {
-        droppedData.toContainer = true;
-        messageId = 'dropped_in';
-        params.container = dropLocation.name;
-      } else if (dropLocation.has(TraitType.SUPPORTER)) {
-        droppedData.toSupporter = true;
-        messageId = 'dropped_on';
-        params.supporter = dropLocation.name;
-      }
-    } else {
-      droppedData.toRoom = true;
-
-      // Vary the message based on how the item is dropped
-      const verb = context.command.parsed.structure.verb?.text.toLowerCase() || 'drop';
-      if (verb === 'discard') {
-        messageId = 'dropped_carelessly';
-      } else if (noun.has(TraitType.IDENTITY)) {
-        // Check if item name suggests it's fragile
-        const identity = noun.get(TraitType.IDENTITY);
-        if (identity && (identity as any).name?.toLowerCase().includes('glass')) {
-          messageId = 'dropped_quietly';
-        }
-      }
-    }
+    // Determine success message
+    const { messageId, params } = determineDroppingMessage(droppedData, context);
 
     // Return both the domain event and success message
     return [

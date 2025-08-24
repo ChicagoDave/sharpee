@@ -22,6 +22,8 @@ import {
   ITakeItemResult
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { buildEventData } from '../../data-builder-types';
+import { removedDataConfig } from './removing-data';
 import { ScopeLevel } from '../../../scope';
 import { RemovingEventMap } from './removing-events';
 

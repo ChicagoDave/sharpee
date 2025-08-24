@@ -11,7 +11,9 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, OpenableBehavior, ICloseResult } from '@sharpee/world-model';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
+import { buildEventData } from '../../data-builder-types';
 import { IFActions } from '../../constants';
+import { closedDataConfig } from './closing-data';
 
 // Import our payload types
 import { ClosedEventData } from './closing-event-data';
@@ -205,40 +207,39 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
       sound: result.closeSound
     }));
     
-    // Add the action event (if.event.closed) - following same pattern as opening
-    // Check for contents if it's a container
+    // Add the action event (if.event.closed) - using data builder
+    const eventData = buildEventData(closedDataConfig, context);
+    
+    // Add additional fields for backward compatibility
+    const isContainer = noun.has(TraitType.CONTAINER);
+    const isDoor = noun.has(TraitType.DOOR);
+    const isSupporter = noun.has(TraitType.SUPPORTER);
+    
     let hasContents = false;
     let contentsCount = 0;
     let contentsIds: string[] = [];
-    let contentsSnapshots: any[] = [];
     
-    if (noun.has(TraitType.CONTAINER)) {
+    if (isContainer) {
       const contents = context.world.getContents(noun.id);
       hasContents = contents.length > 0;
       contentsCount = contents.length;
       contentsIds = contents.map(item => item.id);
-      contentsSnapshots = contents.map(e => captureEntitySnapshot(e, context.world, true));
     }
     
-    const eventData: ClosedEventData = {
-      targetId: noun.id,
-      targetName: noun.name,
-      containerId: noun.id, // Same entity for compatibility
+    const fullEventData = {
+      ...eventData,
+      containerId: noun.id,
       containerName: noun.name,
-      isContainer: noun.has(TraitType.CONTAINER),
-      isDoor: noun.has(TraitType.DOOR),
-      isSupporter: noun.has(TraitType.SUPPORTER),
+      isContainer,
+      isDoor,
+      isSupporter,
       hasContents,
       contentsCount,
       contentsIds,
-      // Add atomic event snapshots
-      targetSnapshot: captureEntitySnapshot(noun, context.world, true),
-      contentsSnapshots,
-      // Add 'item' for backward compatibility with tests
       item: noun.name
-    } as ClosedEventData & { item: string; targetSnapshot?: any; contentsSnapshots?: any[] };
+    };
     
-    events.push(context.event('if.event.closed', eventData));
+    events.push(context.event('if.event.closed', fullEventData));
     
     // Add success event
     events.push(context.event('action.success', {

@@ -25,15 +25,17 @@ import {
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
-import { captureRoomSnapshot, captureEntitySnapshot } from '../../base/snapshot-utils';
+import { captureEntitySnapshot } from '../../base/snapshot-utils';
+import { buildEventData } from '../../data-builder-types';
 
-// Import our typed event data
-import { 
-  ActorMovedEventData, 
-  ActorExitedEventData, 
-  ActorEnteredEventData,
-  GoingErrorData 
-} from './going-events';
+// Import our data builders
+import {
+  normalizeDirection,
+  actorMovedDataConfig,
+  actorExitedDataConfig,
+  actorEnteredDataConfig,
+  determineGoingMessage
+} from './going-data';
 
 export const goingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.GOING,
@@ -246,86 +248,13 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       ];
     }
     
-    const actor = context.player;
+    // Build event data using data builders
+    const exitedData = buildEventData(actorExitedDataConfig, context);
+    const movedData = buildEventData(actorMovedDataConfig, context);
+    const enteredData = buildEventData(actorEnteredDataConfig, context);
     
-    // Get and normalize direction
-    const direction = context.command.parsed.extras?.direction as string || 
-                     context.command.directObject?.entity?.name;
-    const normalizedDirection = normalizeDirection(direction!);
-    
-    // Get the source room (where we came from)
-    // We need to get this from the exit config since we've already moved
-    const currentRoom = context.currentLocation; // This is now the destination
-    const allEntities = context.world.getAllEntities();
-    const allRooms = allEntities.filter(e => e.has(TraitType.ROOM));
-    
-    // Find the room that has an exit leading to our current location
-    let sourceRoom: IFEntity | null = null;
-    const oppositeDir = getOppositeDirection(normalizedDirection);
-    
-    for (const room of allRooms) {
-      const exitConfig = RoomBehavior.getExit(room, normalizedDirection);
-      if (exitConfig && exitConfig.destination === currentRoom.id) {
-        sourceRoom = room;
-        break;
-      }
-    }
-    
-    // If we can't find source room, use the current room as a fallback
-    if (!sourceRoom) {
-      sourceRoom = currentRoom;
-    }
-    
-    // Capture room snapshots for atomic events
-    const sourceSnapshot = captureRoomSnapshot(sourceRoom, context.world, false);
-    const destinationSnapshot = captureRoomSnapshot(currentRoom, context.world, false);
-    const actorSnapshot = captureEntitySnapshot(actor, context.world, false);
-    
-    // Build typed event data with both new and backward-compatible fields
-    const movedData: ActorMovedEventData = {
-      // New atomic structure
-      actor: actorSnapshot,
-      sourceRoom: sourceSnapshot,
-      destinationRoom: destinationSnapshot,
-      // Backward compatibility
-      direction: normalizedDirection,
-      fromRoom: sourceRoom.id,
-      toRoom: currentRoom.id,
-      oppositeDirection: oppositeDir
-    };
-    
-    // Check if this was the first visit
-    const roomTrait = currentRoom.get(TraitType.ROOM) as any;
-    if (roomTrait?.visited) {
-      movedData.firstVisit = false;
-    } else {
-      movedData.firstVisit = true;
-    }
-    
-    // Create typed exit event
-    const exitedData: ActorExitedEventData = {
-      actorId: actor.id,
-      direction: normalizedDirection,
-      toRoom: currentRoom.id
-    };
-    
-    // Create typed entrance event
-    const enteredData: ActorEnteredEventData = {
-      actorId: actor.id,
-      direction: oppositeDir,
-      fromRoom: sourceRoom.id
-    };
-    
-    // Success message parameters
-    const messageParams = {
-      direction: normalizedDirection,
-      destination: currentRoom.name
-    };
-    
-    let messageId = 'moved_to';
-    if (movedData.firstVisit) {
-      messageId = 'first_visit';
-    }
+    // Determine success message
+    const { messageId, params } = determineGoingMessage(movedData);
     
     // Return all movement events
     return [
@@ -335,7 +264,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       context.event('action.success', {
         actionId: context.action.id,
         messageId,
-        params: messageParams
+        params
       })
     ];
   },
@@ -348,53 +277,6 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     directObjectScope: ScopeLevel.VISIBLE
   }
 };
-
-/**
- * Normalize direction input to standard form
- */
-function normalizeDirection(direction: string): string {
-  const normalized = direction.toLowerCase().trim();
-  
-  // Handle abbreviations
-  const abbreviations: Record<string, string> = {
-    'n': 'north',
-    's': 'south',
-    'e': 'east',
-    'w': 'west',
-    'ne': 'northeast',
-    'nw': 'northwest',
-    'se': 'southeast',
-    'sw': 'southwest',
-    'u': 'up',
-    'd': 'down',
-    'in': 'inside',
-    'out': 'outside'
-  };
-  
-  return abbreviations[normalized] || normalized;
-}
-
-/**
- * Get the opposite direction for arrival messages
- */
-function getOppositeDirection(direction: string): string {
-  const opposites: Record<string, string> = {
-    'north': 'south',
-    'south': 'north',
-    'east': 'west',
-    'west': 'east',
-    'northeast': 'southwest',
-    'northwest': 'southeast',
-    'southeast': 'northwest',
-    'southwest': 'northeast',
-    'up': 'down',
-    'down': 'up',
-    'inside': 'outside',
-    'outside': 'inside'
-  };
-  
-  return opposites[direction] || direction;
-}
 
 /**
  * Check if a room is dark

@@ -14,9 +14,10 @@ import { TraitType, SceneryBehavior, ActorBehavior, ContainerBehavior, WearableB
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
+import { buildEventData } from '../../data-builder-types';
 
-// Import our typed event data
-import { TakenEventData, TakingErrorData, RemovedEventData } from './taking-events';
+// Import our data builder
+import { takenDataConfig } from './taking-data';
 
 export const takingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.TAKING,
@@ -165,10 +166,6 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     const actor = context.player;
     const noun = context.command.directObject!.entity!; // Safe because validate ensures it exists
     
-    // Capture snapshots after the mutation
-    const itemSnapshot = captureEntitySnapshot(noun, context.world, true);
-    const actorSnapshot = captureEntitySnapshot(actor, context.world, false);
-    
     // Check current state after mutation
     const currentLocation = context.world.getLocation(noun.id);
     const isNowHeld = currentLocation === actor.id;
@@ -186,29 +183,8 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     // Taking succeeded - build events
     const events: ISemanticEvent[] = [];
     
-    // Build the taken event data with both new and backward-compatible fields
-    const takenData: TakenEventData = {
-      // New atomic structure
-      itemSnapshot: itemSnapshot,
-      actorSnapshot: actorSnapshot,
-      // Backward compatibility
-      item: noun.name
-    };
-    
-    // Try to determine where item was taken from
-    // Look through all entities to find previous container
-    const allEntities = context.world.getAllEntities();
-    let fromContainer: string | undefined;
-    
-    // Check if item was in a container/supporter before
-    for (const entity of allEntities) {
-      if (entity.id === actor.id) continue; // Skip the actor
-      if (entity.has(TraitType.CONTAINER) || entity.has(TraitType.SUPPORTER)) {
-        // This is a potential previous container
-        // We can't know for sure since the item has already moved
-        // In a real implementation, we'd track this in execute()
-      }
-    }
+    // Build the taken event data using data builder
+    const takenData = buildEventData(takenDataConfig, context);
     
     // Add the taken event
     events.push(context.event('if.event.taken', takenData));

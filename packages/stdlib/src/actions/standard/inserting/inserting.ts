@@ -14,6 +14,8 @@ import { ScopeLevel } from '../../../scope/types';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { buildEventData } from '../../data-builder-types';
+import { insertedDataConfig } from './inserting-data';
 import { puttingAction } from '../putting';
 import { createActionContext } from '../../enhanced-context';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';

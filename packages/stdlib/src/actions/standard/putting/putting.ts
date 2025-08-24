@@ -14,6 +14,8 @@ import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, ContainerBehavior, SupporterBehavior, OpenableBehavior, IAddItemResult, IAddItemToSupporterResult } from '@sharpee/world-model';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
 import { IFActions } from '../../constants';
+import { buildEventData } from '../../data-builder-types';
+import { putDataConfig } from './putting-data';
 
 export const puttingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.PUTTING,

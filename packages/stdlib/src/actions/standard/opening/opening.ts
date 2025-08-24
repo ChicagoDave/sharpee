@@ -11,10 +11,14 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent, EntityId } from '@sharpee/core';
 import { TraitType, OpenableBehavior, LockableBehavior, IOpenResult } from '@sharpee/world-model';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
+import { buildEventData } from '../../data-builder-types';
 import { IFActions } from '../../constants';
 import { OpenedEventData } from './opening-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
+
+// Import our data builder
+import { openedDataConfig } from './opening-data';
 
 export const openingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.OPENING,
@@ -169,16 +173,18 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       })];
     }
     
-    // Opening succeeded - gather information for events
+    // Opening succeeded - build event data using data builder
+    const eventData = buildEventData(openedDataConfig, context);
+    
+    // Add additional fields for backward compatibility
     const isContainer = noun.has(TraitType.CONTAINER);
     const isDoor = noun.has(TraitType.DOOR);
     const isSupporter = noun.has(TraitType.SUPPORTER);
     const contents = isContainer ? context.world.getContents(noun.id) : [];
     
-    // Build the opened event data with atomic snapshots
-    const eventData: OpenedEventData = {
-      targetId: noun.id,
-      targetName: noun.name,
+    // Extend event data with additional fields
+    const fullEventData = {
+      ...eventData,
       containerId: noun.id,
       containerName: noun.name,
       isContainer,
@@ -188,12 +194,8 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       contentsCount: contents.length,
       contentsIds: contents.map(e => e.id),
       revealedItems: contents.length,
-      // Add atomic event snapshots
-      targetSnapshot: captureEntitySnapshot(noun, context.world, true),
-      contentsSnapshots: contents.map(e => captureEntitySnapshot(e, context.world, true)),
-      // Add 'item' for backward compatibility with tests
       item: noun.name
-    } as OpenedEventData & { item: string; targetSnapshot?: any; contentsSnapshots?: any[] };
+    };
     
     // Determine success message based on what was revealed
     let messageId = 'opened';
@@ -222,7 +224,7 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
     }));
     
     // Add the action event (if.event.opened)
-    events.push(context.event('if.event.opened', eventData));
+    events.push(context.event('if.event.opened', fullEventData));
     
     // Add success event
     events.push(context.event('action.success', {
