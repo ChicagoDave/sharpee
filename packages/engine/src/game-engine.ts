@@ -44,7 +44,7 @@ import { Story } from './story';
 
 import { CommandExecutor, createCommandExecutor } from './command-executor';
 import { EventSequenceUtils, eventSequencer } from './event-sequencer';
-import { toSequencedEvent, toSemanticEvent } from './event-adapter';
+import { toSequencedEvent, toSemanticEvent, processEvent } from './event-adapter';
 
 /**
  * Game engine events
@@ -396,13 +396,23 @@ export class GameEngine {
         this.config
       );
 
-      // Store events for this turn (convert to SemanticEvent)
-      const semanticEvents = result.events.map(e => toSemanticEvent(e));
+      // Get context for event enrichment
+      const playerLocation = this.world.getLocation(this.context.player.id);
+      const enrichmentContext = {
+        turn,
+        playerId: this.context.player.id,
+        locationId: playerLocation
+      };
+      
+      // Store events for this turn (convert to SemanticEvent and process through pipeline)
+      const semanticEvents = result.events.map(e => {
+        const semantic = toSemanticEvent(e);
+        return processEvent(semantic, enrichmentContext);
+      });
       this.turnEvents.set(turn, semanticEvents);
       
       // Also track in event source for save/restore
-      for (const sequencedEvent of result.events) {
-        const semanticEvent = toSemanticEvent(sequencedEvent);
+      for (const semanticEvent of semanticEvents) {
         this.eventSource.emit(semanticEvent);
         
         // Check if this is a client.query event
@@ -1261,11 +1271,44 @@ export class GameEngine {
         id: event.id,
         type: event.type,
         timestamp: event.timestamp || Date.now(),
-        data: (event.data || {}) as Record<string, unknown>
+        data: this.serializeEventData(event.data)
       });
     }
     
     return events;
+  }
+
+  /**
+   * Serialize event data, handling functions and special types
+   */
+  private serializeEventData(data: unknown): Record<string, unknown> {
+    if (!data || typeof data !== 'object') {
+      return (data || {}) as Record<string, unknown>;
+    }
+    
+    const serialized: Record<string, unknown> = {};
+    
+    for (const [key, value] of Object.entries(data)) {
+      if (typeof value === 'function') {
+        // Mark functions for special handling during deserialization
+        // Store function marker instead of the actual function
+        serialized[key] = { __type: 'function', __marker: '[Function]' };
+      } else if (value && typeof value === 'object') {
+        // Recursively serialize nested objects
+        if (Array.isArray(value)) {
+          serialized[key] = value.map(item => 
+            typeof item === 'object' ? this.serializeEventData(item) : item
+          );
+        } else {
+          serialized[key] = this.serializeEventData(value);
+        }
+      } else {
+        // Primitive values can be stored directly
+        serialized[key] = value;
+      }
+    }
+    
+    return serialized;
   }
 
   /**
@@ -1281,10 +1324,38 @@ export class GameEngine {
         id: event.id,
         type: event.type,
         timestamp: event.timestamp,
-        data: event.data,
+        data: this.deserializeEventData(event.data),
         entities: {}
       });
     }
+  }
+
+  /**
+   * Deserialize event data, handling function markers
+   */
+  private deserializeEventData(data: unknown): unknown {
+    if (!data || typeof data !== 'object') {
+      return data;
+    }
+    
+    // Check if this is a function marker
+    if ((data as any).__type === 'function') {
+      // Return a placeholder function that indicates it was serialized
+      // This maintains the shape of the data but won't execute
+      return () => '[Serialized Function]';
+    }
+    
+    if (Array.isArray(data)) {
+      return data.map(item => this.deserializeEventData(item));
+    }
+    
+    const deserialized: Record<string, unknown> = {};
+    
+    for (const [key, value] of Object.entries(data)) {
+      deserialized[key] = this.deserializeEventData(value);
+    }
+    
+    return deserialized;
   }
 
   /**

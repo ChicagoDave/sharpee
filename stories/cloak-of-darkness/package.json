@@ -10,7 +10,7 @@
     "build:deps": "tsc --build tsconfig.dev.json",
     "dev": "tsc -p tsconfig.dev.json --watch",
     "clean": "rimraf dist",
-    "test": "jest",
+    "test": "vitest",
     "play": "node dist/test-runner.js"
   },
   "dependencies": {
