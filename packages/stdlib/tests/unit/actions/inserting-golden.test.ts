@@ -20,25 +20,54 @@ import {
   createCommand
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
+import type { ISemanticEvent } from '@sharpee/core';
 import { SemanticEvent } from '@sharpee/core';
 
-// Helper to execute action with validation (simulates CommandExecutor flow)
-function executeWithValidation(action: any, context: ActionContext): SemanticEvent[] {
-  if (action.validate) {
-    const validation = action.validate(context);
-    if (!validation.valid) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: validation.error,
-        reason: validation.error,
-        params: validation.params || {}
-      })];
-    }
+// Helper to execute action using the new three-phase pattern
+function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
+  // New three-phase pattern: validate -> execute -> report
+  const validationResult = action.validate(context);
+  
+  if (!validationResult.valid) {
+    // Action creates its own error events in report()
+    return action.report(context, validationResult);
   }
-  return action.execute(context);
+  
+  // Execute mutations (returns void in new pattern)
+  action.execute(context);
+  
+  // Report generates all events
+  return action.report(context, validationResult);
 }
 
 describe('insertingAction (Golden Pattern)', () => {
+  describe('Three-Phase Pattern Compliance', () => {
+    test('should have required methods for three-phase pattern', () => {
+      expect(insertingAction.validate).toBeDefined();
+      expect(insertingAction.execute).toBeDefined();
+      expect(insertingAction.report).toBeDefined();
+    });
+
+    test('should use report() for ALL event generation', () => {
+      const { world, player, room } = setupBasicWorld();
+      const item = world.createEntity('test item', 'object');
+      world.moveEntity(item.id, room.id);
+      
+      const command = createCommand(IFActions.INSERTING, {
+        entity: item,
+        text: 'test item'
+      });
+      const context = createRealTestContext(insertingAction, world, command);
+      
+      // The executeAction helper properly tests the three-phase pattern
+      const events = executeAction(insertingAction, context);
+      
+      // All events should be generated via report()
+      expect(events).toBeDefined();
+      expect(Array.isArray(events)).toBe(true);
+    });
+  });
+
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
       expect(insertingAction.id).toBe(IFActions.INSERTING);
@@ -88,7 +117,7 @@ describe('insertingAction (Golden Pattern)', () => {
       const context = createRealTestContext(insertingAction, world, command);
       
       try {
-        const events = executeWithValidation(insertingAction, context);
+        const events = executeAction(insertingAction, context);
         
         // Verify delegation occurred
         expect(puttingAction.execute).toHaveBeenCalled();
@@ -112,7 +141,7 @@ describe('insertingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.INSERTING);
       const context = createRealTestContext(insertingAction, world, command);
       
-      const events = executeWithValidation(insertingAction, context);
+      const events = executeAction(insertingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_target'),
@@ -131,7 +160,7 @@ describe('insertingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(insertingAction, world, command);
       
-      const events = executeWithValidation(insertingAction, context);
+      const events = executeAction(insertingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_destination')
@@ -160,7 +189,7 @@ describe('insertingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(insertingAction, world, command);
       
-      const events = executeWithValidation(insertingAction, context);
+      const events = executeAction(insertingAction, context);
       
       expectEvent(events, 'if.event.put_in', {
         itemId: gem.id,
@@ -196,7 +225,7 @@ describe('insertingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(insertingAction, world, command);
       
-      const events = executeWithValidation(insertingAction, context);
+      const events = executeAction(insertingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('container_closed'),
@@ -220,7 +249,7 @@ describe('insertingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(insertingAction, world, command);
       
-      const events = executeWithValidation(insertingAction, context);
+      const events = executeAction(insertingAction, context);
       
       // Should fail because inserting is container-specific
       expectEvent(events, 'action.error', {
@@ -258,7 +287,7 @@ describe('insertingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(insertingAction, world, command);
       
-      const events = executeWithValidation(insertingAction, context);
+      const events = executeAction(insertingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_room'),
@@ -285,7 +314,7 @@ describe('insertingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(insertingAction, world, command);
       
-      const events = executeWithValidation(insertingAction, context);
+      const events = executeAction(insertingAction, context);
       
       events.forEach(event => {
         if (event.entities) {

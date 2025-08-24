@@ -8,7 +8,7 @@
  * - Check visibility requirements
  */
 
-import { describe, test, expect, beforeEach } from 'vitest';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { examiningAction } from '../../../src/actions/standard/examining'; // Now from folder
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType } from '@sharpee/world-model';
@@ -22,20 +22,21 @@ import {
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 
-// Helper to execute action with validation (simulates CommandExecutor flow)
-function executeWithValidation(action: any, context: ActionContext): SemanticEvent[] {
-  if (action.validate) {
-    const validation = action.validate(context);
-    if (!validation.valid) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: validation.error,
-        reason: validation.error,
-        params: validation.params || {}
-      })];
-    }
+// Helper to execute action using the new three-phase pattern
+function executeAction(action: any, context: ActionContext): SemanticEvent[] {
+  // New three-phase pattern: validate -> execute -> report
+  const validationResult = action.validate(context);
+  
+  if (!validationResult.valid) {
+    // Action creates its own error events in report()
+    return action.report(context, validationResult);
   }
-  return action.execute(context);
+  
+  // Execute mutations (returns void in new pattern)
+  action.execute(context);
+  
+  // Report generates all events
+  return action.report(context, validationResult);
 }
 
 describe('examiningAction (Golden Pattern)', () => {
@@ -71,11 +72,11 @@ describe('examiningAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.EXAMINING);
       const context = createRealTestContext(examiningAction, world, command);
       
-      const events = executeWithValidation(examiningAction, context);
+      const events = executeAction(examiningAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_target'),
-        reason: 'no_target'
+        error: 'no_target'
       });
     });
 
@@ -92,11 +93,15 @@ describe('examiningAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(examiningAction, world, command);
       
-      const events = executeWithValidation(examiningAction, context);
+      const events = executeAction(examiningAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_visible'),
-        params: { target: 'red ball' }
+        error: 'not_visible',
+        params: expect.objectContaining({
+          target: 'red ball',
+          targetSnapshot: expect.any(Object)
+        })
       });
     });
 
@@ -108,7 +113,7 @@ describe('examiningAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(examiningAction, world, command);
       
-      const events = executeWithValidation(examiningAction, context);
+      const events = executeAction(examiningAction, context);
       
       expectEvent(events, 'if.event.examined', {
         targetId: player.id,
@@ -132,7 +137,7 @@ describe('examiningAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(examiningAction, world, command);
       
-      const events = executeWithValidation(examiningAction, context);
+      const events = executeAction(examiningAction, context);
       
       expectEvent(events, 'if.event.examined', {
         targetId: object.id,
@@ -159,7 +164,7 @@ describe('examiningAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(examiningAction, world, command);
       
-      const events = executeWithValidation(examiningAction, context);
+      const events = executeAction(examiningAction, context);
       
       expectEvent(events, 'if.event.examined', {
         hasDescription: true,
@@ -198,7 +203,7 @@ describe('examiningAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(examiningAction, world, command);
       
-      const events = executeWithValidation(examiningAction, context);
+      const events = executeAction(examiningAction, context);
       
       expectEvent(events, 'if.event.examined', {
         isContainer: true,
@@ -234,7 +239,7 @@ describe('examiningAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(examiningAction, world, command);
       
-      const events = executeWithValidation(examiningAction, context);
+      const events = executeAction(examiningAction, context);
       
       expectEvent(events, 'if.event.examined', {
         targetId: object.id,
@@ -265,7 +270,7 @@ describe('examiningAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(examiningAction, world, command);
       
-      const events = executeWithValidation(examiningAction, context);
+      const events = executeAction(examiningAction, context);
       
       expectEvent(events, 'if.event.examined', {
         targetId: object.id,
@@ -304,7 +309,7 @@ describe('examiningAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(examiningAction, world, command);
       
-      const events = executeWithValidation(examiningAction, context);
+      const events = executeAction(examiningAction, context);
       
       expectEvent(events, 'if.event.examined', {
         isSupporter: true,
@@ -333,7 +338,7 @@ describe('examiningAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(examiningAction, world, command);
       
-      const events = executeWithValidation(examiningAction, context);
+      const events = executeAction(examiningAction, context);
       
       expectEvent(events, 'if.event.examined', {
         isSwitchable: true,
@@ -361,7 +366,7 @@ describe('examiningAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(examiningAction, world, command);
       
-      const events = executeWithValidation(examiningAction, context);
+      const events = executeAction(examiningAction, context);
       
       expectEvent(events, 'if.event.examined', {
         isReadable: true,
@@ -390,7 +395,7 @@ describe('examiningAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(examiningAction, world, command);
       
-      const events = executeWithValidation(examiningAction, context);
+      const events = executeAction(examiningAction, context);
       
       expectEvent(events, 'if.event.examined', {
         isWearable: true,
@@ -427,7 +432,7 @@ describe('examiningAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(examiningAction, world, command);
       
-      const events = executeWithValidation(examiningAction, context);
+      const events = executeAction(examiningAction, context);
       
       expectEvent(events, 'if.event.examined', {
         isDoor: true,
@@ -472,7 +477,7 @@ describe('examiningAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(examiningAction, world, command);
       
-      const events = executeWithValidation(examiningAction, context);
+      const events = executeAction(examiningAction, context);
       
       expectEvent(events, 'if.event.examined', {
         isContainer: true,
@@ -503,13 +508,90 @@ describe('examiningAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(examiningAction, world, command);
       
-      const events = executeWithValidation(examiningAction, context);
+      const events = executeAction(examiningAction, context);
       
       events.forEach(event => {
         if (event.entities) {
           expect(event.entities.actor).toBe(player.id);
           expect(event.entities.target).toBe(object.id);
           expect(event.entities.location).toBe(room.id);
+        }
+      });
+    });
+  });
+
+  describe('Three-Phase Pattern Compliance', () => {
+    test('should use report() to create all events', () => {
+      const { world, player, room, object } = TestData.withObject('test object');
+      
+      const command = createCommand(IFActions.EXAMINING, {
+        entity: object
+      });
+      const context = createRealTestContext(examiningAction, world, command);
+      
+      // Verify the action has the report method (required for migrated actions)
+      expect(examiningAction.report).toBeDefined();
+      expect(typeof examiningAction.report).toBe('function');
+      
+      // Spy on the action methods to ensure correct pattern
+      const validateSpy = vi.spyOn(examiningAction, 'validate');
+      const executeSpy = vi.spyOn(examiningAction, 'execute');
+      // Cast to any since report is optional in the type but required for migrated actions
+      const reportSpy = vi.spyOn(examiningAction as any, 'report');
+      
+      const events = executeAction(examiningAction, context);
+      
+      // Verify three-phase pattern was followed
+      expect(validateSpy).toHaveBeenCalledWith(context);
+      expect(executeSpy).toHaveBeenCalledWith(context);
+      expect(reportSpy).toHaveBeenCalledWith(context, { valid: true });
+      
+      // Verify execute returns void (no events)
+      const executeResult = examiningAction.execute(context);
+      expect(executeResult).toBeUndefined();
+      
+      // Verify report creates events
+      expect(events.length).toBeGreaterThan(0);
+      expect(events.every(e => e.type && e.data)).toBe(true);
+    });
+
+    test('should handle validation errors in report()', () => {
+      const { world, player, room } = setupBasicWorld();
+      
+      const command = createCommand(IFActions.EXAMINING);
+      // No entity provided - should fail validation
+      const context = createRealTestContext(examiningAction, world, command);
+      
+      const events = executeAction(examiningAction, context);
+      
+      // Should create error event
+      expect(events).toHaveLength(1);
+      expect(events[0].type).toBe('action.error');
+      expect(events[0].data).toMatchObject({
+        actionId: IFActions.EXAMINING,
+        error: expect.any(String)
+      });
+    });
+
+    test('should handle execution errors in report()', () => {
+      const { world, player, room, object } = TestData.withObject('test object');
+      
+      const command = createCommand(IFActions.EXAMINING, {
+        entity: object
+      });
+      const context = createRealTestContext(examiningAction, world, command);
+      
+      // Call report with execution error
+      const executionError = new Error('Test execution error');
+      const events = examiningAction.report(context, { valid: true }, executionError);
+      
+      // Should create error event
+      expectEvent(events, 'action.error', {
+        actionId: IFActions.EXAMINING,
+        error: 'execution_failed',
+        messageId: 'action_failed',
+        params: {
+          error: 'Test execution error'
         }
       });
     });
@@ -530,7 +612,7 @@ describe('Examining Action Edge Cases', () => {
     });
     const context = createRealTestContext(examiningAction, world, command);
     
-    const events = examiningAction.execute(context);
+    const events = executeAction(examiningAction, context);
     
     expectEvent(events, 'if.event.examined', {
       isReadable: true,
@@ -557,7 +639,7 @@ describe('Examining Action Edge Cases', () => {
     });
     const context = createRealTestContext(examiningAction, world, command);
     
-    const events = examiningAction.execute(context);
+    const events = executeAction(examiningAction, context);
     
     expectEvent(events, 'if.event.examined', {
       isContainer: true,

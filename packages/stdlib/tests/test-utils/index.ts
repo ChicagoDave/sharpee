@@ -400,5 +400,6 @@ export function updateCapability(world: WorldModel, capabilityName: string, data
   });
 }
 
-// Export parser helpers
-export * from './parser-helpers';
+// Parser helpers are available separately if needed
+// but not exported by default to avoid circular dependencies
+// import { createParserWithLanguage } from './parser-helpers';

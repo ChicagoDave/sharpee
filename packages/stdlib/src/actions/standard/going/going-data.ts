@@ -7,7 +7,7 @@
 
 import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
 import { ActionContext } from '../../enhanced-types';
-import { WorldModel, TraitType, IFEntity, RoomBehavior, Direction, getOppositeDirection as getOpposite } from '@sharpee/world-model';
+import { WorldModel, TraitType, IFEntity, RoomBehavior, Direction, DirectionType, getOppositeDirection as getOpposite } from '@sharpee/world-model';
 import { captureRoomSnapshot, captureEntitySnapshot } from '../../base/snapshot-utils';
 
 /**
@@ -16,7 +16,7 @@ import { captureRoomSnapshot, captureEntitySnapshot } from '../../base/snapshot-
  */
 function findSourceRoom(
   currentRoom: IFEntity,
-  direction: Direction,
+  direction: DirectionType,
   world: WorldModel
 ): IFEntity {
   const allEntities = world.getAllEntities();
@@ -45,7 +45,7 @@ export const buildActorMovedData: ActionDataBuilder<Record<string, unknown>> = (
   const actor = context.player;
   
   // Get direction from context (should already be a Direction constant)
-  const direction = context.command.parsed.extras?.direction as Direction;
+  const direction = context.command.parsed.extras?.direction as DirectionType;
   const oppositeDir = getOpposite(direction);
   
   // Get current location (destination, since we've already moved)
@@ -88,7 +88,7 @@ export const buildActorExitedData: ActionDataBuilder<Record<string, unknown>> = 
   const actor = context.player;
   
   // Get direction from context (should already be a Direction constant)
-  const direction = context.command.parsed.extras?.direction as Direction;
+  const direction = context.command.parsed.extras?.direction as DirectionType;
   
   // Get current location (destination)
   const currentRoom = context.currentLocation;
@@ -111,7 +111,7 @@ export const buildActorEnteredData: ActionDataBuilder<Record<string, unknown>> =
   const actor = context.player;
   
   // Get direction from context (should already be a Direction constant)
-  const direction = context.command.parsed.extras?.direction as Direction;
+  const direction = context.command.parsed.extras?.direction as DirectionType;
   const oppositeDir = getOpposite(direction);
   
   // Get current location (destination)
@@ -138,7 +138,7 @@ export function determineGoingMessage(
   return {
     messageId,
     params: {
-      direction: movedData.direction as Direction,
+      direction: movedData.direction as DirectionType,
       destination: (movedData.destinationRoom as any)?.name || 'unknown'
     }
   };

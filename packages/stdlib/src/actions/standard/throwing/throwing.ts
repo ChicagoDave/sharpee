@@ -10,7 +10,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, IdentityBehavior, ActorBehavior, RoomBehavior, OpenableBehavior, ContainerBehavior, SupporterBehavior, Direction } from '@sharpee/world-model';
+import { TraitType, IdentityBehavior, ActorBehavior, RoomBehavior, OpenableBehavior, ContainerBehavior, SupporterBehavior, Direction, DirectionType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
 import { ThrowingEventMap } from './throwing-events';
@@ -19,11 +19,11 @@ import { ThrowingEventMap } from './throwing-events';
  * Helper to convert a string direction to Direction constant
  * Returns null if not a valid direction
  */
-function parseDirectionString(dir: string | undefined): Direction | null {
+function parseDirectionString(dir: string | undefined): DirectionType | null {
   if (!dir) return null;
   
   // Map string directions to Direction constants
-  const directionMap: Record<string, Direction> = {
+  const directionMap: Record<string, DirectionType> = {
     'north': Direction.NORTH,
     'south': Direction.SOUTH,
     'east': Direction.EAST,

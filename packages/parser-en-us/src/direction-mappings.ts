@@ -3,12 +3,12 @@
  * Maps English words and abbreviations to language-agnostic Direction constants
  */
 
-import { Direction } from '@sharpee/world-model';
+import { Direction, DirectionType } from '@sharpee/world-model';
 
 /**
  * Map English direction words to Direction constants
  */
-export const DirectionWords: Record<string, Direction> = {
+export const DirectionWords: Record<string, DirectionType> = {
   'north': Direction.NORTH,
   'south': Direction.SOUTH,
   'east': Direction.EAST,
@@ -28,7 +28,7 @@ export const DirectionWords: Record<string, Direction> = {
 /**
  * Map English abbreviations to Direction constants
  */
-export const DirectionAbbreviations: Record<string, Direction> = {
+export const DirectionAbbreviations: Record<string, DirectionType> = {
   'n': Direction.NORTH,
   's': Direction.SOUTH,
   'e': Direction.EAST,
@@ -45,7 +45,7 @@ export const DirectionAbbreviations: Record<string, Direction> = {
  * Parse an English direction string to a Direction constant
  * Returns null if the string is not a recognized direction
  */
-export function parseDirection(input: string): Direction | null {
+export function parseDirection(input: string): DirectionType | null {
   if (!input) return null;
   
   const normalized = input.toLowerCase().trim();
@@ -67,7 +67,7 @@ export function parseDirection(input: string): Direction | null {
  * Get the English word for a Direction constant
  * Used for display/output
  */
-export function getDirectionWord(direction: Direction): string {
+export function getDirectionWord(direction: DirectionType): string {
   // Find the first matching English word for this direction
   for (const [word, dir] of Object.entries(DirectionWords)) {
     if (dir === direction) {

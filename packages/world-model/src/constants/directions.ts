@@ -18,12 +18,12 @@ export const Direction = {
   OUT: 'OUT'
 } as const;
 
-export type Direction = typeof Direction[keyof typeof Direction];
+export type DirectionType = typeof Direction[keyof typeof Direction];
 
 /**
  * Map of opposite directions using constants
  */
-export const DirectionOpposites: Record<Direction, Direction> = {
+export const DirectionOpposites: Record<DirectionType, DirectionType> = {
   [Direction.NORTH]: Direction.SOUTH,
   [Direction.SOUTH]: Direction.NORTH,
   [Direction.EAST]: Direction.WEST,
@@ -41,13 +41,13 @@ export const DirectionOpposites: Record<Direction, Direction> = {
 /**
  * Get the opposite direction
  */
-export function getOppositeDirection(direction: Direction): Direction {
+export function getOppositeDirection(direction: DirectionType): DirectionType {
   return DirectionOpposites[direction];
 }
 
 /**
  * Check if a value is a valid Direction constant
  */
-export function isDirection(value: unknown): value is Direction {
-  return typeof value === 'string' && Object.values(Direction).includes(value as Direction);
+export function isDirection(value: unknown): value is DirectionType {
+  return typeof value === 'string' && Object.values(Direction).includes(value as DirectionType);
 }

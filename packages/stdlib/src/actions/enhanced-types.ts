@@ -222,6 +222,9 @@ export interface Action {
    * The method receives the validation result and any execution errors through
    * the context, allowing it to create appropriate events with full context.
    * 
+   * NOTE: This will become required once all actions are migrated to the new pattern.
+   * For now it's optional to maintain backward compatibility with unmigrated actions.
+   * 
    * @param context Unified action context with validation/execution results
    * @param validationResult Result from validate() phase
    * @param executionError Optional error from execute() phase

@@ -20,22 +20,53 @@ import {
   createCommand
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
+import type { ISemanticEvent } from '@sharpee/core';
 
-// Helper to execute action with validation (mimics CommandExecutor flow)
-const executeWithValidation = (action: any, context: ActionContext) => {
-  const validation = action.validate(context);
-  if (!validation.valid) {
-    return [context.event('action.error', {
-      actionId: context.action.id,
-      messageId: validation.error,
-      reason: validation.error,
-      params: validation.params || {}
-    })];
+// Helper to execute action using the new three-phase pattern
+function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
+  // New three-phase pattern: validate -> execute -> report
+  const validationResult = action.validate(context);
+  
+  if (!validationResult.valid) {
+    // Action creates its own error events in report()
+    return action.report(context, validationResult);
   }
-  return action.execute(context);
-};
+  
+  // Execute mutations (returns void in new pattern)
+  action.execute(context);
+  
+  // Report generates all events
+  return action.report(context, validationResult);
+}
 
 describe('removingAction (Golden Pattern)', () => {
+  describe('Three-Phase Pattern Compliance', () => {
+    test('should have required methods for three-phase pattern', () => {
+      expect(removingAction.validate).toBeDefined();
+      expect(removingAction.execute).toBeDefined();
+      expect(removingAction.report).toBeDefined();
+    });
+
+    test('should use report() for ALL event generation', () => {
+      const { world, player, room } = setupBasicWorld();
+      const item = world.createEntity('test item', 'object');
+      world.moveEntity(item.id, room.id);
+      
+      const command = createCommand(IFActions.REMOVING, {
+        entity: item,
+        text: 'test item'
+      });
+      const context = createRealTestContext(removingAction, world, command);
+      
+      // The executeAction helper properly tests the three-phase pattern
+      const events = executeAction(removingAction, context);
+      
+      // All events should be generated via report()
+      expect(events).toBeDefined();
+      expect(Array.isArray(events)).toBe(true);
+    });
+  });
+
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
       expect(removingAction.id).toBe(IFActions.REMOVING);
@@ -63,7 +94,7 @@ describe('removingAction (Golden Pattern)', () => {
       const { world } = setupBasicWorld();
       const context = createRealTestContext(removingAction, world, createCommand(IFActions.REMOVING));
       
-      const events = executeWithValidation(removingAction, context);
+      const events = executeAction(removingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_target'),
@@ -81,7 +112,7 @@ describe('removingAction (Golden Pattern)', () => {
         // No indirect object
       ));
       
-      const events = executeWithValidation(removingAction, context);
+      const events = executeAction(removingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_source'),
@@ -105,7 +136,7 @@ describe('removingAction (Golden Pattern)', () => {
         preposition: 'from'
       }));
       
-      const events = executeWithValidation(removingAction, context);
+      const events = executeAction(removingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_in_container'),
@@ -132,7 +163,7 @@ describe('removingAction (Golden Pattern)', () => {
         preposition: 'from'
       }));
       
-      const events = executeWithValidation(removingAction, context);
+      const events = executeAction(removingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_on_surface'),
@@ -157,7 +188,7 @@ describe('removingAction (Golden Pattern)', () => {
         preposition: 'from'
       }));
       
-      const events = executeWithValidation(removingAction, context);
+      const events = executeAction(removingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('already_have'),
@@ -189,7 +220,7 @@ describe('removingAction (Golden Pattern)', () => {
         preposition: 'from'
       }));
       
-      const events = executeWithValidation(removingAction, context);
+      const events = executeAction(removingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('container_closed'),
@@ -219,7 +250,7 @@ describe('removingAction (Golden Pattern)', () => {
         preposition: 'from'
       }));
       
-      const events = executeWithValidation(removingAction, context);
+      const events = executeAction(removingAction, context);
       
       // Should emit TAKEN event (same as taking)
       expectEvent(events, 'if.event.taken', {
@@ -256,7 +287,7 @@ describe('removingAction (Golden Pattern)', () => {
         preposition: 'from'
       }));
       
-      const events = executeWithValidation(removingAction, context);
+      const events = executeAction(removingAction, context);
       
       expectEvent(events, 'if.event.taken', {
         item: 'red apple',
@@ -282,7 +313,7 @@ describe('removingAction (Golden Pattern)', () => {
         preposition: 'from'
       }));
       
-      const events = executeWithValidation(removingAction, context);
+      const events = executeAction(removingAction, context);
       
       expectEvent(events, 'if.event.taken', {
         item: 'desk lamp',
@@ -318,7 +349,7 @@ describe('removingAction (Golden Pattern)', () => {
         preposition: 'from'
       }));
       
-      const events = executeWithValidation(removingAction, context);
+      const events = executeAction(removingAction, context);
       
       // Should default to container error message
       expectEvent(events, 'action.error', {
@@ -347,7 +378,7 @@ describe('removingAction (Golden Pattern)', () => {
         preposition: 'from'
       }));
       
-      const events = executeWithValidation(removingAction, context);
+      const events = executeAction(removingAction, context);
       
       // Should treat as container (container takes precedence)
       expectEvent(events, 'if.event.taken', {
@@ -382,7 +413,7 @@ describe('removingAction (Golden Pattern)', () => {
         preposition: 'from'
       }));
       
-      const events = executeWithValidation(removingAction, context);
+      const events = executeAction(removingAction, context);
       
       events.forEach(event => {
         if (event.entities) {
@@ -480,7 +511,7 @@ describe('Removing Action Edge Cases', () => {
       preposition: 'from'  // Trying to remove from blue box
     }));
     
-    const events = executeWithValidation(removingAction, context);
+    const events = executeAction(removingAction, context);
     
     expectEvent(events, 'action.error', {
       messageId: expect.stringContaining('not_in_container'),

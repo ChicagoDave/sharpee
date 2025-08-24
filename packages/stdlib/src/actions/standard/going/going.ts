@@ -21,7 +21,8 @@ import {
   LockableBehavior,
   VisibilityBehavior,
   LightSourceBehavior,
-  Direction
+  Direction,
+  DirectionType
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
@@ -59,7 +60,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     const actor = context.player;
     
     // Get the direction from the parsed command (should already be a Direction constant)
-    const direction = context.command.parsed.extras?.direction as Direction;
+    const direction = context.command.parsed.extras?.direction as DirectionType;
     
     if (!direction) {
       return { 
@@ -178,7 +179,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     const currentRoom = context.currentLocation;
     
     // Get direction from parsed command (should already be a Direction constant)
-    const direction = context.command.parsed.extras?.direction as Direction;
+    const direction = context.command.parsed.extras?.direction as DirectionType;
     
     // Get exit info and destination using behaviors
     const exitConfig = RoomBehavior.getExit(currentRoom, direction)!;

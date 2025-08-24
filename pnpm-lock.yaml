@@ -219,6 +219,19 @@ importers:
         specifier: ^5.2.2
         version: 5.8.3
 
+  packages/platforms/browser-en-us:
+    dependencies:
+      '@sharpee/sharpee':
+        specifier: workspace:*
+        version: link:../../sharpee
+      '@sharpee/text-service-browser':
+        specifier: workspace:*
+        version: link:../../text-service-browser
+    devDependencies:
+      typescript:
+        specifier: ^5.0.0
+        version: 5.8.3
+
   packages/platforms/cli-en-us:
     dependencies:
       '@sharpee/sharpee':
@@ -339,6 +352,22 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@20.19.4)(@vitest/ui@3.2.4)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.0)
+
+  packages/text-service-browser:
+    dependencies:
+      '@sharpee/core':
+        specifier: workspace:*
+        version: link:../core
+      '@sharpee/if-domain':
+        specifier: workspace:*
+        version: link:../if-domain
+      '@sharpee/if-services':
+        specifier: workspace:*
+        version: link:../if-services
+    devDependencies:
+      typescript:
+        specifier: ^5.0.0
+        version: 5.8.3
 
   packages/text-service-template:
     dependencies:
