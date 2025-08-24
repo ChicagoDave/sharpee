@@ -4,7 +4,8 @@
  * These interfaces define the structure of data emitted by the dropping action
  */
 
-import { EntityId, EntitySnapshot } from '@sharpee/core';
+import { EntityId } from '@sharpee/core';
+import { EntitySnapshot } from '../../base/snapshot-utils';
 
 /**
  * Data for the 'if.event.dropped' event

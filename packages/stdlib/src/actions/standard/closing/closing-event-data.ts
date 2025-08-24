@@ -4,7 +4,8 @@
  * This is what goes in SemanticEvent.data
  */
 
-import { EntityId, EntitySnapshot } from '@sharpee/core';
+import { EntityId } from '@sharpee/core';
+import { EntitySnapshot } from '../../base/snapshot-utils';
 
 export interface ClosedEventData {
   // What was closed
