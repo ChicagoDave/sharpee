@@ -82,12 +82,24 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
   report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
     // Handle validation errors
     if (validationResult && !validationResult.valid) {
+      // Capture entity data for validation errors
+      const errorParams = { ...(validationResult.params || {}) };
+      
+      // Add entity snapshots if entities are available
+      if (context.command.directObject?.entity) {
+        errorParams.targetSnapshot = captureEntitySnapshot(
+          context.command.directObject.entity,
+          context.world,
+          false
+        );
+      }
+      
       return [
         context.event('action.error', {
           actionId: context.action.id,
           error: validationResult.error || 'validation_failed',
           messageId: validationResult.messageId || validationResult.error || 'action_failed',
-          params: validationResult.params || {}
+          params: errorParams
         })
       ];
     }

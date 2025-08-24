@@ -5,7 +5,7 @@
 - **Phase 2**: ✅ COMPLETE - Action architecture redesigned  
 - **Phase 3.1**: ✅ COMPLETE - 10 actions migrated to three-phase pattern
 - **Phase 3.5**: ✅ COMPLETE - CommandExecutor refactored to thin orchestrator
-- **Phase 3.2**: Ready to proceed (unblocked by 3.5)
+- **Phase 3.2**: ✅ COMPLETE - Validation events include entity snapshots
 - **Tests**: Need updating for new architecture but code is stable
 
 **Ready to Commit:** All code changes are stable and building successfully.
@@ -138,12 +138,12 @@
   - [x] Maintain backward compatibility
   - [x] All tests passing (18 tests)
 
-### 3.2 Validation Updates (UNBLOCKED - Ready after 3.5)
-- [ ] Update validation error events to include entity data
-- [ ] Update scope validation events  
-- [ ] Test validation with new event structure
+### 3.2 Validation Updates ✅ COMPLETE
+- [x] Update validation error events to include entity data
+- [x] Update scope validation events  
+- [x] Test validation with new event structure
 
-*Note: Now that Phase 3.5 is complete and actions own their error events, Phase 3.2 can proceed with proper architecture.*
+*Summary: All 10 actions now capture entity snapshots in their validation error events. When validation fails, the error events include complete entity data for any entities involved, maintaining consistency with the atomic events pattern.*
 
 ### 3.5 CommandExecutor Refactor ✅ COMPLETE (See ADR-060)
 

@@ -59,12 +59,21 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
   report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
     // Handle validation errors (though looking should never fail validation)
     if (validationResult && !validationResult.valid) {
+      // Capture entity data for validation errors
+      const errorParams = { ...(validationResult.params || {}) };
+      
+      // Add room snapshot if available (looking is usually about the current room)
+      const location = context.currentLocation;
+      if (location) {
+        errorParams.roomSnapshot = captureRoomSnapshot(location, context.world);
+      }
+      
       return [
         context.event('action.error', {
           actionId: context.action.id,
           error: validationResult.error || 'validation_failed',
           messageId: validationResult.messageId || validationResult.error || 'action_failed',
-          params: validationResult.params || {}
+          params: errorParams
         })
       ];
     }
