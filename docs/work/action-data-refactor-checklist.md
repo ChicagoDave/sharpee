@@ -25,7 +25,7 @@ Replace repetitive snapshot calls in action `report()` methods with centralized,
 - [ ] Update `ActionContext` to support data builders
 - [ ] Create testing utilities for data builders
 
-## Phase 2: Migrate Core Actions
+## Phase 2: Migrate Core Actions ✅ COMPLETE
 Create data builders for each action, moving snapshot logic out of `report()`:
 
 ### 2.1 Simple Actions (No indirect objects)
@@ -41,6 +41,7 @@ Create data builders for each action, moving snapshot logic out of `report()`:
   - [x] Extract source/destination room snapshots
   - [x] Extract exit information
   - [x] Update `going.ts` to use data builder
+  - [x] Remove direction language coupling (ADR-062)
 
 ### 2.2 Object Manipulation Actions
 - [x] `taking-data.ts`
@@ -70,6 +71,17 @@ Create data builders for each action, moving snapshot logic out of `report()`:
 - [x] `removing-data.ts`
   - [x] Extract item/actor/source snapshots
   - [x] Update `removing.ts` to use data builder (imports added)
+
+## Phase 2.5: Remove Language Coupling ✅ COMPLETE
+- [x] Implement ADR-062: Direction Language Coupling
+  - [x] Create Direction constants in world-model
+  - [x] Move language mappings to parser-en-us
+  - [x] Update going action to use Direction constants
+  - [x] Update throwing action to handle Direction constants
+  - [x] Update Room trait to use Direction for exits
+  - [x] Update RoomBehavior methods to use Direction type
+  - [x] Update all tests to use Direction constants
+  - [x] Parser automatically converts strings to Direction constants
 
 ## Phase 3: Validation Error Data
 - [ ] Create `validation-error-data.ts` utility
@@ -117,6 +129,19 @@ Create data builders for each action, moving snapshot logic out of `report()`:
 - ADR-058: Action Report Function (three-phase pattern)
 - ADR-059: Action Customization Boundaries (data configuration)
 - ADR-061: Entity Snapshot Code Smell (problem statement)
+- ADR-062: Direction Language Coupling (implemented)
+
+## Progress Summary
+- **Phase 1**: Infrastructure partially complete (base types done)
+- **Phase 2**: ✅ COMPLETE - All 10 core actions migrated to data builders
+- **Phase 2.5**: ✅ COMPLETE - Direction language coupling removed (ADR-062)
+- **Phase 3**: Not started - Validation error data utility
+- **Phase 4**: Not started - Story extension support
+- **Phase 5**: Not started - Cleanup and documentation
 
 ## Notes
-This refactor addresses technical debt from the initial atomic events implementation. It should be done after core atomic events work is stable but before Phase 4 (Text Service refactor) of the main checklist.
+- Phase 2 completed on August 23, 2025
+- ADR-062 implemented on August 23, 2025
+- Significant code reduction achieved (~700 lines removed in Phase 2)
+- Direction handling now fully language-agnostic
+- Next priority: Phase 3 validation error utility to complete the pattern

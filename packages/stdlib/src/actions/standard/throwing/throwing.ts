@@ -10,10 +10,47 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, IdentityBehavior, ActorBehavior, RoomBehavior, OpenableBehavior, ContainerBehavior, SupporterBehavior } from '@sharpee/world-model';
+import { TraitType, IdentityBehavior, ActorBehavior, RoomBehavior, OpenableBehavior, ContainerBehavior, SupporterBehavior, Direction } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
 import { ThrowingEventMap } from './throwing-events';
+
+/**
+ * Helper to convert a string direction to Direction constant
+ * Returns null if not a valid direction
+ */
+function parseDirectionString(dir: string | undefined): Direction | null {
+  if (!dir) return null;
+  
+  // Map string directions to Direction constants
+  const directionMap: Record<string, Direction> = {
+    'north': Direction.NORTH,
+    'south': Direction.SOUTH,
+    'east': Direction.EAST,
+    'west': Direction.WEST,
+    'northeast': Direction.NORTHEAST,
+    'northwest': Direction.NORTHWEST,
+    'southeast': Direction.SOUTHEAST,
+    'southwest': Direction.SOUTHWEST,
+    'up': Direction.UP,
+    'down': Direction.DOWN,
+    'in': Direction.IN,
+    'out': Direction.OUT,
+    // Common abbreviations
+    'n': Direction.NORTH,
+    's': Direction.SOUTH,
+    'e': Direction.EAST,
+    'w': Direction.WEST,
+    'ne': Direction.NORTHEAST,
+    'nw': Direction.NORTHWEST,
+    'se': Direction.SOUTHEAST,
+    'sw': Direction.SOUTHWEST,
+    'u': Direction.UP,
+    'd': Direction.DOWN
+  };
+  
+  return directionMap[dir.toLowerCase()] || null;
+}
 
 export const throwingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.THROWING,
@@ -90,7 +127,14 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
       }
     } else if (direction) {
       // Throwing in a direction
-      const throwDirection = direction.toLowerCase();
+      const throwDirection = parseDirectionString(direction);
+      
+      if (!throwDirection) {
+        return {
+          valid: false,
+          error: 'no_exit'
+        };
+      }
       
       // Check if there's an exit in that direction
       const currentRoom = context.currentLocation;
@@ -143,13 +187,12 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     // Determine throw type
     let throwType: 'at_target' | 'directional' | 'general';
     let throwTarget = target;
-    let throwDirection = direction;
+    let throwDirection = parseDirectionString(direction);
     
     if (target) {
       throwType = 'at_target';
-    } else if (direction) {
+    } else if (throwDirection) {
       throwType = 'directional';
-      throwDirection = direction.toLowerCase();
     } else {
       throwType = 'general';
     }

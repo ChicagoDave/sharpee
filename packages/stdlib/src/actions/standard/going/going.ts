@@ -20,7 +20,8 @@ import {
   OpenableBehavior, 
   LockableBehavior,
   VisibilityBehavior,
-  LightSourceBehavior
+  LightSourceBehavior,
+  Direction
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
@@ -30,7 +31,6 @@ import { buildEventData } from '../../data-builder-types';
 
 // Import our data builders
 import {
-  normalizeDirection,
   actorMovedDataConfig,
   actorExitedDataConfig,
   actorEnteredDataConfig,
@@ -58,9 +58,8 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
   validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     
-    // Get the direction from the parsed command
-    const direction = context.command.parsed.extras?.direction as string || 
-                     context.command.directObject?.entity?.name;
+    // Get the direction from the parsed command (should already be a Direction constant)
+    const direction = context.command.parsed.extras?.direction as Direction;
     
     if (!direction) {
       return { 
@@ -68,9 +67,6 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
         error: 'no_direction'
       };
     }
-    
-    // Normalize direction
-    const normalizedDirection = normalizeDirection(direction);
     
     // Check if player is contained (can't move through exits while contained)
     const playerDirectLocation = context.world.getLocation(actor.id);
@@ -93,7 +89,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     }
     
     // Use RoomBehavior to get exit information
-    const exitConfig = RoomBehavior.getExit(currentRoom, normalizedDirection);
+    const exitConfig = RoomBehavior.getExit(currentRoom, direction);
     if (!exitConfig) {
       // Check if we have exits at all
       const allExits = RoomBehavior.getAllExits(currentRoom);
@@ -106,17 +102,17 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       return { 
         valid: false, 
         error: 'no_exit_that_way',
-        params: { direction: normalizedDirection }
+        params: { direction: direction }
       };
     }
     
     // Check if exit is blocked
-    if (RoomBehavior.isExitBlocked(currentRoom, normalizedDirection)) {
-      const blockedMessage = RoomBehavior.getBlockedMessage(currentRoom, normalizedDirection);
+    if (RoomBehavior.isExitBlocked(currentRoom, direction)) {
+      const blockedMessage = RoomBehavior.getBlockedMessage(currentRoom, direction);
       return { 
         valid: false, 
         error: 'movement_blocked',
-        params: { direction: normalizedDirection }
+        params: { direction: direction }
       };
     }
     
@@ -134,7 +130,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
             error: 'door_locked',
             params: { 
               door: door.name, 
-              direction: normalizedDirection,
+              direction: direction,
               isClosed: isClosed,
               isLocked: true
             }
@@ -145,7 +141,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
           return { 
             valid: false, 
             error: 'door_closed',
-            params: { door: door.name, direction: normalizedDirection }
+            params: { door: door.name, direction: direction }
           };
         }
       }
@@ -160,7 +156,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       return { 
         valid: false, 
         error: 'destination_not_found',
-        params: { direction: normalizedDirection }
+        params: { direction: direction }
       };
     }
     
@@ -169,7 +165,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       return { 
         valid: false, 
         error: 'too_dark',
-        params: { direction: normalizedDirection }
+        params: { direction: direction }
       };
     }
     
@@ -181,13 +177,11 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     const actor = context.player;
     const currentRoom = context.currentLocation;
     
-    // Get and normalize direction
-    const direction = context.command.parsed.extras?.direction as string || 
-                     context.command.directObject?.entity?.name;
-    const normalizedDirection = normalizeDirection(direction!);
+    // Get direction from parsed command (should already be a Direction constant)
+    const direction = context.command.parsed.extras?.direction as Direction;
     
     // Get exit info and destination using behaviors
-    const exitConfig = RoomBehavior.getExit(currentRoom, normalizedDirection)!;
+    const exitConfig = RoomBehavior.getExit(currentRoom, direction)!;
     const destination = context.world.getEntity(exitConfig.destination)!
     
     // Check if this is the first time entering the destination

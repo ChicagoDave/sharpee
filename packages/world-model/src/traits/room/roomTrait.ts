@@ -3,6 +3,7 @@
 import { ITrait } from '../trait';
 import { TraitType } from '../trait-types';
 import { EntityId } from '@sharpee/core';
+import { Direction } from '../../constants/directions';
 
 export interface IExitInfo {
   /** The destination room ID (must be an entity ID, not a name) */
@@ -16,10 +17,10 @@ export interface IRoomData {
   visited?: boolean;
   
   /** Exits from this room */
-  exits?: Record<string, IExitInfo>;
+  exits?: Partial<Record<Direction, IExitInfo>>;
   
   /** Custom messages for blocked exits */
-  blockedExits?: Record<string, string>;
+  blockedExits?: Partial<Record<Direction, string>>;
   
   /** Whether this is an outdoor location */
   outdoor?: boolean;
@@ -81,8 +82,8 @@ export class RoomTrait implements ITrait, IRoomData {
   
   // RoomData properties
   visited: boolean;
-  exits: Record<string, IExitInfo>;
-  blockedExits?: Record<string, string>;
+  exits: Partial<Record<Direction, IExitInfo>>;
+  blockedExits?: Partial<Record<Direction, string>>;
   outdoor: boolean;
   isDark: boolean;
   isOutdoors: boolean;
@@ -109,7 +110,7 @@ export class RoomTrait implements ITrait, IRoomData {
   constructor(data: IRoomData = {}) {
     // Set defaults and merge with provided data
     this.visited = data.visited ?? false;
-    this.exits = data.exits ?? {};
+    this.exits = data.exits ?? {} as Partial<Record<Direction, IExitInfo>>;
     this.blockedExits = data.blockedExits;
     this.outdoor = data.outdoor ?? false;
     this.isDark = data.isDark ?? false;  // Default to lit

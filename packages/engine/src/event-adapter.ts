@@ -16,7 +16,6 @@ export function toSequencedEvent(
   return {
     type: event.type,
     data: event.data,
-    metadata: event.metadata,
     sequence,
     timestamp: new Date(event.timestamp),
     turn,
@@ -52,7 +51,6 @@ export function toSemanticEvent(event: SequencedEvent): ISemanticEvent {
     type: event.type,
     timestamp: event.timestamp.getTime(),
     data: event.data,
-    metadata: event.metadata,
     entities: {} // Engine should populate this based on context
   };
 }

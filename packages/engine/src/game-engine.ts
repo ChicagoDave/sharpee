@@ -146,7 +146,6 @@ export class GameEngine {
       this.world,
       this.actionRegistry,
       this.eventProcessor,
-      this.languageProvider,
       this.parser
     );
     
@@ -502,7 +501,7 @@ export class GameEngine {
               .filter((e: any) => {
                 if (!e.tags?.includes('platform')) return false;
                 // Check if event has turn data
-                const eventTurn = e.data?.turn || e.metadata?.turn;
+                const eventTurn = (e.data as any)?.turn;
                 // If no turn data, assume it's from initialization (turn 0)
                 return eventTurn === undefined ? currentTurn === 1 : eventTurn === currentTurn;
               });
@@ -819,8 +818,8 @@ export class GameEngine {
       ...event,
       id: `platform_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       timestamp: Date.now(),
-      metadata: {
-        ...event.metadata,
+      data: {
+        ...(event.data as any || {}),
         turn: this.context.currentTurn
       }
     };
@@ -1168,8 +1167,8 @@ export class GameEngine {
     // Create a GameEvent that's compatible with the engine's type system
     const gameEvent: GameEvent = {
       type: event.type,
-      data: event.data || {},
-      metadata: {
+      data: {
+        ...(event.data as any || {}),
         id: event.id || `event-${Date.now()}`,
         timestamp: event.timestamp || Date.now(),
         entities: event.entities || {}
@@ -1185,7 +1184,7 @@ export class GameEngine {
     // Store in turn events if we're in a turn (as SemanticEvent for compatibility)
     if (this.context.currentTurn > 0) {
       const semanticEvent: ISemanticEvent = {
-        id: event.id || gameEvent.metadata?.id as string,
+        id: event.id || gameEvent.data?.id as string,
         type: event.type,
         timestamp: event.timestamp || Date.now(),
         entities: event.entities || {},
@@ -1262,8 +1261,7 @@ export class GameEngine {
         id: event.id,
         type: event.type,
         timestamp: event.timestamp || Date.now(),
-        data: event.data || {},
-        metadata: event.metadata
+        data: (event.data || {}) as Record<string, unknown>
       });
     }
     
@@ -1284,7 +1282,6 @@ export class GameEngine {
         type: event.type,
         timestamp: event.timestamp,
         data: event.data,
-        metadata: event.metadata,
         entities: {}
       });
     }

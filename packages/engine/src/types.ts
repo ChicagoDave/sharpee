@@ -13,7 +13,6 @@ import { IParsedCommand, IFEntity } from '@sharpee/world-model';
 export interface GameEvent {
   type: string;
   data: any;
-  metadata?: Record<string, any>;
 }
 
 /**

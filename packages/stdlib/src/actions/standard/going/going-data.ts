@@ -7,55 +7,8 @@
 
 import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
 import { ActionContext } from '../../enhanced-types';
-import { WorldModel, TraitType, IFEntity, RoomBehavior } from '@sharpee/world-model';
+import { WorldModel, TraitType, IFEntity, RoomBehavior, Direction, getOppositeDirection as getOpposite } from '@sharpee/world-model';
 import { captureRoomSnapshot, captureEntitySnapshot } from '../../base/snapshot-utils';
-
-/**
- * Normalize direction input to standard form
- */
-export function normalizeDirection(direction: string): string {
-  const normalized = direction.toLowerCase().trim();
-  
-  // Handle abbreviations
-  const abbreviations: Record<string, string> = {
-    'n': 'north',
-    's': 'south',
-    'e': 'east',
-    'w': 'west',
-    'ne': 'northeast',
-    'nw': 'northwest',
-    'se': 'southeast',
-    'sw': 'southwest',
-    'u': 'up',
-    'd': 'down',
-    'in': 'inside',
-    'out': 'outside'
-  };
-  
-  return abbreviations[normalized] || normalized;
-}
-
-/**
- * Get the opposite direction for arrival messages
- */
-export function getOppositeDirection(direction: string): string {
-  const opposites: Record<string, string> = {
-    'north': 'south',
-    'south': 'north',
-    'east': 'west',
-    'west': 'east',
-    'northeast': 'southwest',
-    'northwest': 'southeast',
-    'southeast': 'northwest',
-    'southwest': 'northeast',
-    'up': 'down',
-    'down': 'up',
-    'inside': 'outside',
-    'outside': 'inside'
-  };
-  
-  return opposites[direction] || direction;
-}
 
 /**
  * Find the source room (where we came from)
@@ -63,7 +16,7 @@ export function getOppositeDirection(direction: string): string {
  */
 function findSourceRoom(
   currentRoom: IFEntity,
-  normalizedDirection: string,
+  direction: Direction,
   world: WorldModel
 ): IFEntity {
   const allEntities = world.getAllEntities();
@@ -71,7 +24,7 @@ function findSourceRoom(
   
   // Find the room that has an exit leading to our current location
   for (const room of allRooms) {
-    const exitConfig = RoomBehavior.getExit(room, normalizedDirection);
+    const exitConfig = RoomBehavior.getExit(room, direction);
     if (exitConfig && exitConfig.destination === currentRoom.id) {
       return room;
     }
@@ -91,17 +44,15 @@ export const buildActorMovedData: ActionDataBuilder<Record<string, unknown>> = (
 ): Record<string, unknown> => {
   const actor = context.player;
   
-  // Get and normalize direction
-  const direction = context.command.parsed.extras?.direction as string || 
-                   context.command.directObject?.entity?.name || '';
-  const normalizedDirection = normalizeDirection(direction);
-  const oppositeDir = getOppositeDirection(normalizedDirection);
+  // Get direction from context (should already be a Direction constant)
+  const direction = context.command.parsed.extras?.direction as Direction;
+  const oppositeDir = getOpposite(direction);
   
   // Get current location (destination, since we've already moved)
   const currentRoom = context.currentLocation;
   
   // Find source room
-  const sourceRoom = findSourceRoom(currentRoom, normalizedDirection, context.world);
+  const sourceRoom = findSourceRoom(currentRoom, direction, context.world);
   
   // Capture room snapshots for atomic events
   const sourceSnapshot = captureRoomSnapshot(sourceRoom, context.world, false);
@@ -117,8 +68,8 @@ export const buildActorMovedData: ActionDataBuilder<Record<string, unknown>> = (
     actor: actorSnapshot,
     sourceRoom: sourceSnapshot,
     destinationRoom: destinationSnapshot,
-    // Backward compatibility
-    direction: normalizedDirection,
+    // Direction as constant
+    direction: direction,
     fromRoom: sourceRoom.id,
     toRoom: currentRoom.id,
     oppositeDirection: oppositeDir,
@@ -136,17 +87,15 @@ export const buildActorExitedData: ActionDataBuilder<Record<string, unknown>> = 
 ): Record<string, unknown> => {
   const actor = context.player;
   
-  // Get and normalize direction
-  const direction = context.command.parsed.extras?.direction as string || 
-                   context.command.directObject?.entity?.name || '';
-  const normalizedDirection = normalizeDirection(direction);
+  // Get direction from context (should already be a Direction constant)
+  const direction = context.command.parsed.extras?.direction as Direction;
   
   // Get current location (destination)
   const currentRoom = context.currentLocation;
   
   return {
     actorId: actor.id,
-    direction: normalizedDirection,
+    direction: direction,
     toRoom: currentRoom.id
   };
 };
@@ -161,17 +110,15 @@ export const buildActorEnteredData: ActionDataBuilder<Record<string, unknown>> =
 ): Record<string, unknown> => {
   const actor = context.player;
   
-  // Get and normalize direction
-  const direction = context.command.parsed.extras?.direction as string || 
-                   context.command.directObject?.entity?.name || '';
-  const normalizedDirection = normalizeDirection(direction);
-  const oppositeDir = getOppositeDirection(normalizedDirection);
+  // Get direction from context (should already be a Direction constant)
+  const direction = context.command.parsed.extras?.direction as Direction;
+  const oppositeDir = getOpposite(direction);
   
   // Get current location (destination)
   const currentRoom = context.currentLocation;
   
   // Find source room
-  const sourceRoom = findSourceRoom(currentRoom, normalizedDirection, context.world);
+  const sourceRoom = findSourceRoom(currentRoom, direction, context.world);
   
   return {
     actorId: actor.id,
@@ -191,7 +138,7 @@ export function determineGoingMessage(
   return {
     messageId,
     params: {
-      direction: movedData.direction as string,
+      direction: movedData.direction as Direction,
       destination: (movedData.destinationRoom as any)?.name || 'unknown'
     }
   };

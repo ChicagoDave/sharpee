@@ -34,12 +34,13 @@ export class MockTextService implements TextService {
     
     // Process events
     for (const event of events) {
+      const data = event.data as Record<string, any>;
       if (event.type === 'action.error') {
-        messages.push(String(event.data?.message || 'Error occurred'));
+        messages.push(String(data?.message || 'Error occurred'));
       } else if (event.type === 'action.success') {
-        messages.push(`Action completed: ${String(event.data?.action || 'unknown')}`);
+        messages.push(`Action completed: ${String(data?.action || 'unknown')}`);
       } else if (event.type === 'room.described') {
-        messages.push(String(event.data?.description || 'You are in a room.'));
+        messages.push(String(data?.description || 'You are in a room.'));
       }
     }
 

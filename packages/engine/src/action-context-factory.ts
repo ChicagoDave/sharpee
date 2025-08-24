@@ -46,12 +46,13 @@ export function createActionContext(
       id: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type,
       timestamp: Date.now(),
-      data,
-      entities,
-      metadata: {
+      data: {
+        ...data,
+        // Include action context in data instead of metadata
         actionId: action.id,
         turn: gameContext.currentTurn
-      }
+      },
+      entities
     };
   };
 

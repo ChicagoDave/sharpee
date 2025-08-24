@@ -1,7 +1,7 @@
 # ADR-062: Direction Language Coupling in Going Action
 
 ## Status
-Proposed
+Implemented
 
 ## Context
 
