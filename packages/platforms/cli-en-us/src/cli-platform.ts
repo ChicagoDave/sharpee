@@ -80,8 +80,7 @@ export class CLIPlatform {
         type: event.type,
         timestamp: event.timestamp.getTime(),
         entities: {},
-        data: event.data,
-        payload: event.data
+        data: event.data
       };
       
       // Check if this is a platform request event that we need to handle
@@ -202,7 +201,7 @@ export class CLIPlatform {
       try {
         switch (platformOp.type) {
           case PlatformEventType.SAVE_REQUESTED: {
-            const context = platformOp.payload.context as SaveContext;
+            const context = (platformOp.data as any).context as SaveContext;
             // For now, just emit completion event
             // In a real implementation, would handle actual save
             const event = createSaveCompletedEvent(false, 'Save not yet implemented');
@@ -211,7 +210,7 @@ export class CLIPlatform {
           }
           
           case PlatformEventType.RESTORE_REQUESTED: {
-            const context = platformOp.payload.context as RestoreContext;
+            const context = (platformOp.data as any).context as RestoreContext;
             // For now, just emit completion event
             const event = createRestoreCompletedEvent(false, 'Restore not yet implemented');
             this.engine.emitPlatformEvent(event);
@@ -219,7 +218,7 @@ export class CLIPlatform {
           }
           
           case PlatformEventType.QUIT_REQUESTED: {
-            const context = platformOp.payload.context as QuitContext;
+            const context = (platformOp.data as any).context as QuitContext;
             
             // Always ask for confirmation unless explicitly disabled
             const shouldConfirm = context.hasUnsavedChanges !== false;
@@ -245,7 +244,7 @@ export class CLIPlatform {
           }
           
           case PlatformEventType.RESTART_REQUESTED: {
-            const context = platformOp.payload.context as RestartContext;
+            const context = (platformOp.data as any).context as RestartContext;
             // For now, just emit completion event
             const event = createRestartCompletedEvent(false);
             this.engine.emitPlatformEvent(event);
