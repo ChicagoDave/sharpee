@@ -41,6 +41,11 @@ export class CommandExecutor {
     eventProcessor: EventProcessor,
     parser: IParser
   ) {
+    if (!world) throw new Error('World model is required');
+    if (!actionRegistry) throw new Error('Action registry is required');
+    if (!eventProcessor) throw new Error('Event processor is required');
+    if (!parser) throw new Error('Parser is required');
+    
     this.parser = parser;
     this.validator = new CommandValidator(world, actionRegistry);
     this.actionRegistry = actionRegistry;
@@ -56,9 +61,19 @@ export class CommandExecutor {
     const turn = context.currentTurn;
     eventSequencer.resetTurn(turn);
 
+    // Timing tracking
+    const startTime = config?.collectTiming ? Date.now() : 0;
+    let parseTime = 0;
+    let executionTime = 0;
+
     try {
       // Phase 1: Parse
+      const parseStart = config?.collectTiming ? Date.now() : 0;
       const parseResult = this.parser.parse(input);
+      if (config?.collectTiming) {
+        parseTime = Date.now() - parseStart;
+      }
+      
       if (!parseResult.success) {
         throw new Error(`Parse failed: ${(parseResult.error as any).code}`);
       }
@@ -70,6 +85,7 @@ export class CommandExecutor {
       }
 
       // Phase 3: Execute action's three-phase pattern
+      const executionStart = config?.collectTiming ? Date.now() : 0;
       const command = validationResult.value;
       const action = this.actionRegistry.get(command.actionId);
       if (!action) {
@@ -133,6 +149,10 @@ export class CommandExecutor {
         }
       }
 
+      if (config?.collectTiming) {
+        executionTime = Date.now() - executionStart;
+      }
+
       // Process events
       const sequenced = eventSequencer.sequenceAll(
         events.map(e => ({ type: e.type, data: e.data })), 
@@ -143,7 +163,7 @@ export class CommandExecutor {
         this.eventProcessor.processEvents(events);
       }
 
-      return {
+      const result: TurnResult = {
         turn,
         input,
         success: !events.some(e => e.type === 'action.error'),
@@ -152,9 +172,20 @@ export class CommandExecutor {
         parsedCommand: command.parsed
       };
 
+      // Add timing data if requested
+      if (config?.collectTiming) {
+        result.timing = {
+          parsing: parseTime,
+          execution: executionTime,
+          total: Date.now() - startTime
+        };
+      }
+
+      return result;
+
     } catch (error) {
       // Minimal error handling - just return failure
-      return {
+      const result: TurnResult = {
         turn,
         input,
         success: false,
@@ -164,6 +195,17 @@ export class CommandExecutor {
         }, turn)],
         error: (error as Error).message
       };
+
+      // Add timing data even for errors if requested
+      if (config?.collectTiming) {
+        result.timing = {
+          parsing: parseTime,
+          execution: executionTime,
+          total: Date.now() - startTime
+        };
+      }
+
+      return result;
     }
   }
 }

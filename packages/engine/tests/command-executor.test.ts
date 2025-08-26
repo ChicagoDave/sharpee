@@ -52,7 +52,6 @@ describe('CommandExecutor', () => {
       world,
       actionRegistry,
       eventProcessor,
-      languageProvider,
       parser
     );
 
@@ -257,7 +256,6 @@ describe('CommandExecutor', () => {
         world,
         null as any,
         eventProcessor,
-        languageProvider,
         parser
       )).toThrow();
     });
@@ -267,19 +265,13 @@ describe('CommandExecutor', () => {
         world,
         actionRegistry,
         eventProcessor,
-        languageProvider,
         null as any
       )).toThrow();
     });
 
-    it('should handle missing language provider', () => {
-      expect(() => new CommandExecutor(
-        world,
-        actionRegistry,
-        eventProcessor,
-        null as any,
-        parser
-      )).toThrow();
+    // This test is no longer relevant as CommandExecutor doesn't take a language provider
+    it.skip('should handle missing language provider', () => {
+      // Language provider is now part of the parser
     });
 
     it('should create error event for failed commands', async () => {

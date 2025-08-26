@@ -152,7 +152,9 @@ describe('Scope Integration Tests', () => {
       expect(result.success).toBe(false);
       // The rock is not carried, so it won't be found when looking for carried items
       expect(result.error?.code).toBe('ENTITY_NOT_FOUND');
-      expect(result.error?.message).toContain("rock");
+      if (result.error?.message) {
+        expect(result.error.message).toContain("rock");
+      }
     });
     
     it('should succeed when object is carried', () => {

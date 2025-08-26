@@ -189,18 +189,31 @@ describe('ContainerTrait', () => {
       expect(retrievedTrait.capacity?.maxItems).toBe(10);
     });
 
-    it('should replace existing container trait', () => {
+    it('should warn and keep original container trait', () => {
       const entity = createTestContainer(world, 'box');
+      // Entity already has a container trait from createTestContainer
+      const originalTrait = entity.get(TraitType.CONTAINER) as ContainerTrait;
+      
       const newTrait = new ContainerTrait({
         capacity: { maxWeight: 100 },
         isTransparent: true
       });
       
+      // Spy on console.warn
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      
       entity.add(newTrait);
       
       const trait = entity.get(TraitType.CONTAINER) as ContainerTrait;
-      expect(trait.capacity?.maxWeight).toBe(100);
-      expect(trait.isTransparent).toBe(true);
+      // Should keep original trait, not the new one
+      expect(trait).toBe(originalTrait);
+      
+      // Should have warned about duplicate
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('already has trait: container')
+      );
+      
+      warnSpy.mockRestore();
     });
   });
 

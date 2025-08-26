@@ -45,11 +45,22 @@ export const buildActorMovedData: ActionDataBuilder<Record<string, unknown>> = (
   const actor = context.player;
   
   // Get direction from context (should already be a Direction constant)
-  const direction = context.command.parsed.extras?.direction as DirectionType;
+  // Direction can come from extras or from directObject name
+  let direction = context.command.parsed.extras?.direction as DirectionType;
+  
+  // If no direction in extras, check if directObject has a name that could be a direction
+  if (!direction && context.command.directObject?.entity) {
+    const entityName = context.command.directObject.entity.name || 
+                      context.command.directObject.entity.attributes?.name;
+    if (entityName) {
+      direction = entityName as DirectionType;
+    }
+  }
   const oppositeDir = getOpposite(direction);
   
-  // Get current location (destination, since we've already moved)
-  const currentRoom = context.currentLocation;
+  // Get actual current location after movement (not the cached one from context)
+  const currentLocationId = context.world.getLocation(actor.id);
+  const currentRoom = context.world.getEntity(currentLocationId!)!;
   
   // Find source room
   const sourceRoom = findSourceRoom(currentRoom, direction, context.world);
@@ -59,9 +70,8 @@ export const buildActorMovedData: ActionDataBuilder<Record<string, unknown>> = (
   const destinationSnapshot = captureRoomSnapshot(currentRoom, context.world, false);
   const actorSnapshot = captureEntitySnapshot(actor, context.world, false);
   
-  // Check if this was the first visit
-  const roomTrait = currentRoom.get(TraitType.ROOM) as any;
-  const firstVisit = roomTrait?.visited ? false : true;
+  // Check if this was the first visit (stored during execute phase)
+  const firstVisit = (context as any)._isFirstVisit === true;
   
   return {
     // New atomic structure
@@ -88,10 +98,21 @@ export const buildActorExitedData: ActionDataBuilder<Record<string, unknown>> = 
   const actor = context.player;
   
   // Get direction from context (should already be a Direction constant)
-  const direction = context.command.parsed.extras?.direction as DirectionType;
+  // Direction can come from extras or from directObject name
+  let direction = context.command.parsed.extras?.direction as DirectionType;
   
-  // Get current location (destination)
-  const currentRoom = context.currentLocation;
+  // If no direction in extras, check if directObject has a name that could be a direction
+  if (!direction && context.command.directObject?.entity) {
+    const entityName = context.command.directObject.entity.name || 
+                      context.command.directObject.entity.attributes?.name;
+    if (entityName) {
+      direction = entityName as DirectionType;
+    }
+  }
+  
+  // Get actual current location after movement (not the cached one from context)
+  const currentLocationId = context.world.getLocation(actor.id);
+  const currentRoom = context.world.getEntity(currentLocationId!)!;
   
   return {
     actorId: actor.id,
@@ -111,11 +132,22 @@ export const buildActorEnteredData: ActionDataBuilder<Record<string, unknown>> =
   const actor = context.player;
   
   // Get direction from context (should already be a Direction constant)
-  const direction = context.command.parsed.extras?.direction as DirectionType;
+  // Direction can come from extras or from directObject name
+  let direction = context.command.parsed.extras?.direction as DirectionType;
+  
+  // If no direction in extras, check if directObject has a name that could be a direction
+  if (!direction && context.command.directObject?.entity) {
+    const entityName = context.command.directObject.entity.name || 
+                      context.command.directObject.entity.attributes?.name;
+    if (entityName) {
+      direction = entityName as DirectionType;
+    }
+  }
   const oppositeDir = getOpposite(direction);
   
-  // Get current location (destination)
-  const currentRoom = context.currentLocation;
+  // Get actual current location after movement (not the cached one from context)
+  const currentLocationId = context.world.getLocation(actor.id);
+  const currentRoom = context.world.getEntity(currentLocationId!)!;
   
   // Find source room
   const sourceRoom = findSourceRoom(currentRoom, direction, context.world);
@@ -135,11 +167,17 @@ export function determineGoingMessage(
 ): { messageId: string; params: Record<string, any> } {
   const messageId = movedData.firstVisit ? 'first_visit' : 'moved_to';
   
+  const destinationRoom = movedData.destinationRoom as any;
+  const destinationName = destinationRoom?.name || 
+                          destinationRoom?.attributes?.name || 
+                          destinationRoom?.id || 
+                          'unknown';
+  
   return {
     messageId,
     params: {
       direction: movedData.direction as DirectionType,
-      destination: (movedData.destinationRoom as any)?.name || 'unknown'
+      destination: destinationName
     }
   };
 }

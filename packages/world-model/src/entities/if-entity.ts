@@ -65,9 +65,10 @@ export class IFEntity implements IEntity {
       throw new Error('Invalid trait: must have a type property');
     }
     
-    // Remove existing trait of same type if present
+    // Warn and ignore if trait already exists
     if (this.traits.has(trait.type as TraitType)) {
-      this.remove(trait.type);
+      console.warn(`Entity "${this.id}" already has trait: ${trait.type} - ignoring duplicate add`);
+      return this;
     }
     
     this.traits.set(trait.type as TraitType, trait);

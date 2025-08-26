@@ -440,7 +440,7 @@ describe('Dropping Action Edge Cases', () => {
     });
     const context = createRealTestContext(droppingAction, world, command);
     
-    const events = droppingAction.execute(context);
+    const events = executeAction(droppingAction, context);
     
     // Should succeed - no capacity limits
     expectEvent(events, 'if.event.dropped', {
@@ -469,7 +469,7 @@ describe('Dropping Action Edge Cases', () => {
     });
     const context = createRealTestContext(droppingAction, world, command);
     
-    const events = droppingAction.execute(context);
+    const events = executeAction(droppingAction, context);
     
     // Should succeed - item is not worn
     expectEvent(events, 'if.event.dropped', {
@@ -499,7 +499,7 @@ describe('Dropping Action Edge Cases', () => {
     });
     const context = createRealTestContext(droppingAction, world, command);
     
-    const events = droppingAction.execute(context);
+    const events = executeAction(droppingAction, context);
     
     // Should succeed with basic dropped message
     expectEvent(events, 'if.event.dropped', {

@@ -380,7 +380,7 @@ describe('EntryTrait', () => {
       expect(retrievedTrait.posture).toBe('sitting');
     });
 
-    it('should replace existing entry trait', () => {
+    it('should warn and keep original entry trait', () => {
       const entity = createTestEntity('vehicle');
       
       const trait1 = new EntryTrait({
@@ -394,12 +394,25 @@ describe('EntryTrait', () => {
         maxOccupants: 2,
         mobile: true
       });
+      
+      // Spy on console.warn
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      
       entity.add(trait2);
       
       const retrievedTrait = entity.get(TraitType.ENTRY) as EntryTrait;
-      expect(retrievedTrait.preposition).toBe('on');
-      expect(retrievedTrait.maxOccupants).toBe(2);
-      expect(retrievedTrait.mobile).toBe(true);
+      // Should keep original trait, not the new one
+      expect(retrievedTrait).toBe(trait1);
+      expect(retrievedTrait.preposition).toBe('in');
+      expect(retrievedTrait.maxOccupants).toBe(4);
+      expect(retrievedTrait.mobile).toBe(false);
+      
+      // Should have warned about duplicate
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('already has trait: entry')
+      );
+      
+      warnSpy.mockRestore();
     });
   });
 

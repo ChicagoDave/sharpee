@@ -174,8 +174,8 @@ export function captureRoomSnapshot(
   
   const snapshot: RoomSnapshot = {
     id: room.id,
-    name: identity?.name || room.id,
-    description: identity?.description
+    name: identity?.name || room.attributes?.name || room.id,
+    description: identity?.description || room.attributes?.description
   };
   
   // Add darkness state

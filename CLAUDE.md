@@ -14,3 +14,8 @@ This is the Sharpee interactive fiction engine project. Key points:
 - Actions follow validate/execute pattern (ADR-051)
 - Event handlers for custom logic (ADR-052)
 - never use scripts. modify one file/problem at a time
+- we never care about backward compatibility, but if there are code smells or design flaws, we discuss options first
+
+Sharpee logic:
+- Traits are in packages/world-model/src/traits - read the list
+- Actions are in packages/stdlib/src/actions/standard where each action is in a subdirectory with three files: action.ts, action-events.ts, and action-data.ts

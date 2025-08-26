@@ -4,7 +4,7 @@
 
 import { EnglishParser } from '../../src/english-parser';
 import { ParserLanguageProvider, vocabularyRegistry, ParserFactory, PartOfSpeech } from '@sharpee/if-domain';
-import { ParsedCommand, CommandResult, ParseError } from '@sharpee/world-model';
+import { ParsedCommand, CommandResult, ParseError, Direction } from '@sharpee/world-model';
 import { SystemEvent } from '@sharpee/core';
 
 // Mock Language Provider
@@ -258,7 +258,7 @@ describe('EnglishParser', () => {
       if (result.success) {
         expect(result.value.action).toBe('if.action.going');
         expect(result.value.pattern).toBe('DIRECTION_ONLY');
-        expect(result.value.extras?.direction).toBe('north');
+        expect(result.value.extras?.direction).toBe(Direction.NORTH);
       }
     });
 
@@ -318,7 +318,7 @@ describe('EnglishParser', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.going');
-        expect(result.value.extras?.direction).toBe('n');
+        expect(result.value.extras?.direction).toBe(Direction.NORTH);
       }
     });
   });

@@ -274,6 +274,9 @@ export function expectEvent(
         const topLevelData = (event as any).payload || event.data || {};
         if (typeof value === 'object' && value && value.asymmetricMatch) {
           expect(topLevelData[key]).toEqual(value);
+        } else if (key === 'params' && typeof value === 'object' && value !== null) {
+          // For params objects, use toMatchObject for partial matching
+          expect(topLevelData[key]).toMatchObject(value);
         } else {
           expect(topLevelData[key]).toEqual(value);
         }
@@ -281,6 +284,10 @@ export function expectEvent(
         // Regular event data is in the nested data field
         if (typeof value === 'object' && value && value.asymmetricMatch) {
           expect(eventData[key]).toEqual(value);
+        } else if (typeof value === 'object' && value !== null) {
+          // For objects, use toMatchObject for partial matching
+          // This handles cases where the actual data has extra fields like snapshots
+          expect(eventData[key]).toMatchObject(value);
         } else {
           expect(eventData[key]).toEqual(value);
         }
@@ -403,3 +410,6 @@ export function updateCapability(world: WorldModel, capabilityName: string, data
 // Parser helpers are available separately if needed
 // but not exported by default to avoid circular dependencies
 // import { createParserWithLanguage } from './parser-helpers';
+
+// Re-export parser helpers for tests that need them
+export { parseCommand, createParserWithWorld } from './parser-helpers';

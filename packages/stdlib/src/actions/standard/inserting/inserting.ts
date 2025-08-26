@@ -168,6 +168,7 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
         context.event('action.error', {
           actionId: context.action.id,
           error: validationResult.error || 'validation_failed',
+          reason: validationResult.error || 'validation_failed',
           messageId: validationResult.messageId || validationResult.error || 'action_failed',
           params: errorParams
         })
@@ -195,6 +196,7 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       return [context.event('action.error', {
         actionId: context.action.id,
         messageId: 'cant_insert',
+        reason: 'cant_insert',
         params: {}
       })];
     }

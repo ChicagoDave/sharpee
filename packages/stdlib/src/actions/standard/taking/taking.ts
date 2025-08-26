@@ -59,6 +59,16 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
       };
     }
     
+    // Check if already holding the item
+    const currentLocation = context.world.getLocation(noun.id);
+    if (currentLocation === actor.id) {
+      return {
+        valid: false,
+        error: 'already_have',
+        params: { item: noun.name }
+      };
+    }
+    
     // Can't take rooms (business rule)
     if (noun.has(TraitType.ROOM)) {
       return {
@@ -113,8 +123,28 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     const actor = context.player;
     const noun = context.command.directObject!.entity!; // Safe because validate ensures it exists
     
-    // Just perform the transfer - ActorBehavior.takeItem handles the mutation
-    ActorBehavior.takeItem(actor, noun, context.world);
+    // Store the previous location before moving
+    const previousLocation = context.world.getLocation(noun.id);
+    (context as any)._previousLocation = previousLocation;
+    
+    // Check if item is worn and needs to be removed first
+    if (noun.has(TraitType.WEARABLE)) {
+      const wearableTrait = noun.get(TraitType.WEARABLE) as any;
+      if (wearableTrait?.worn) {
+        // Mark that we implicitly removed it
+        (context as any)._implicitlyRemoved = true;
+        // Get the wearer (the one who has the item currently)
+        const wearer = previousLocation ? context.world.getEntity(previousLocation) : null;
+        // Remove the worn status
+        if (wearer) {
+          WearableBehavior.remove(noun, wearer);
+        }
+      }
+    }
+    
+    // ActorBehavior.takeItem only validates, doesn't actually move
+    // We need to perform the actual move
+    context.world.moveEntity(noun.id, actor.id);
   },
   
   report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
@@ -143,6 +173,7 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
         context.event('action.error', {
           actionId: context.action.id,
           error: validationResult.error || 'validation_failed',
+          reason: validationResult.error || 'validation_failed',
           messageId: validationResult.messageId || validationResult.error || 'action_failed',
           params: errorParams
         })
@@ -183,14 +214,29 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     // Taking succeeded - build events
     const events: ISemanticEvent[] = [];
     
+    // Check if we implicitly removed a worn item
+    if ((context as any)._implicitlyRemoved) {
+      const previousLocation = (context as any)._previousLocation;
+      const container = previousLocation ? context.world.getEntity(previousLocation) : null;
+      
+      events.push(context.event('if.event.removed', {
+        implicit: true,
+        item: noun.name,
+        container: container?.name
+      }));
+    }
+    
     // Build the taken event data using data builder
     const takenData = buildEventData(takenDataConfig, context);
     
     // Add the taken event
     events.push(context.event('if.event.taken', takenData));
     
-    // Determine success message
-    const messageId = 'taken';
+    // Determine success message based on where it was taken from
+    const previousLocation = (context as any)._previousLocation;
+    const isFromContainerOrSupporter = previousLocation && 
+      previousLocation !== context.world.getLocation(actor.id);
+    const messageId = isFromContainerOrSupporter ? 'taken_from' : 'taken';
     
     // Add success event
     events.push(context.event('action.success', {

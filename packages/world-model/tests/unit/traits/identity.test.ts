@@ -212,18 +212,33 @@ describe('IdentityTrait', () => {
       expect(retrievedTrait.name).toBe('mysterious artifact');
     });
 
-    it('should replace existing identity trait', () => {
+    it('should warn and keep original identity trait', () => {
       const entity = createTestEntity('original name');
+      // Entity already has an identity trait from createTestEntity
+      const originalTrait = entity.get(TraitType.IDENTITY) as IdentityTrait;
+      
       const newTrait = new IdentityTrait({
         name: 'new name',
         description: 'new description'
       });
       
+      // Spy on console.warn
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      
       entity.add(newTrait);
       
       const trait = entity.get(TraitType.IDENTITY) as IdentityTrait;
-      expect(trait.name).toBe('new name');
-      expect(trait.description).toBe('new description');
+      // Should keep original trait, not the new one
+      expect(trait).toBe(originalTrait);
+      expect(trait.name).toBe('original name');
+      expect(trait.description).toBe('');
+      
+      // Should have warned about duplicate
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('already has trait: identity')
+      );
+      
+      warnSpy.mockRestore();
     });
   });
 

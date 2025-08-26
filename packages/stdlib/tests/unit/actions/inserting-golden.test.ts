@@ -345,7 +345,7 @@ describe('Inserting Action Integration', () => {
     });
     const insertContext = createRealTestContext(insertingAction, world, insertCommand);
     
-    const insertEvents = insertingAction.execute(insertContext);
+    const insertEvents = executeAction(insertingAction, insertContext);
     
     // Reset for putting test
     world.moveEntity(item.id, player.id);
@@ -358,7 +358,7 @@ describe('Inserting Action Integration', () => {
     });
     const putContext = createRealTestContext(puttingAction, world, putCommand);
     
-    const putEvents = puttingAction.execute(putContext);
+    const putEvents = executeAction(puttingAction, putContext);
     
     // Both should produce same event types
     expect(insertEvents.map(e => e.type).sort()).toEqual(
@@ -387,7 +387,7 @@ describe('Inserting Action Integration', () => {
     });
     const context = createRealTestContext(insertingAction, world, command);
     
-    const events = insertingAction.execute(context);
+    const events = executeAction(insertingAction, context);
     
     expectEvent(events, 'if.event.put_in', {
       itemId: smallBox.id,

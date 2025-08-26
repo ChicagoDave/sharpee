@@ -659,18 +659,18 @@ describe('goingAction (Golden Pattern)', () => {
 
     test('should handle all opposite directions correctly', () => {
       const opposites = {
-        'north': 'south',
-        'south': 'north',
-        'east': 'west',
-        'west': 'east',
-        'northeast': 'southwest',
-        'northwest': 'southeast',
-        'southeast': 'northwest',
-        'southwest': 'northeast',
-        'up': 'down',
-        'down': 'up',
-        'inside': 'outside',
-        'outside': 'inside'
+        [Direction.NORTH]: Direction.SOUTH,
+        [Direction.SOUTH]: Direction.NORTH,
+        [Direction.EAST]: Direction.WEST,
+        [Direction.WEST]: Direction.EAST,
+        [Direction.NORTHEAST]: Direction.SOUTHWEST,
+        [Direction.NORTHWEST]: Direction.SOUTHEAST,
+        [Direction.SOUTHEAST]: Direction.NORTHWEST,
+        [Direction.SOUTHWEST]: Direction.NORTHEAST,
+        [Direction.UP]: Direction.DOWN,
+        [Direction.DOWN]: Direction.UP,
+        [Direction.IN]: Direction.OUT,
+        [Direction.OUT]: Direction.IN
       };
       
       Object.entries(opposites).forEach(([dir, opposite]) => {
@@ -727,8 +727,7 @@ describe('Testing Pattern Examples for Going', () => {
     const room101 = world.createEntity('Room 101', 'object');
     const room102 = world.createEntity('Room 102', 'object');
     
-    // Add room traits
-    hallway.add({ type: TraitType.ROOM });
+    // Add room traits (lobby and hallway will be added with exits below)
     stairs.add({ type: TraitType.ROOM });
     street.add({ type: TraitType.ROOM });
     room101.add({ type: TraitType.ROOM });
@@ -763,8 +762,8 @@ describe('Testing Pattern Examples for Going', () => {
     world.moveEntity(player.id, lobby.id);
     
     // Navigate through multiple rooms
-    const lobbyTrait = lobby.getTrait(TraitType.ROOM) as any;
-    const hallwayTrait = hallway.getTrait(TraitType.ROOM) as any;
+    const lobbyTrait = lobby.get(TraitType.ROOM) as any;
+    const hallwayTrait = hallway.get(TraitType.ROOM) as any;
     expect(lobbyTrait.exits).toHaveProperty(Direction.NORTH);
     expect(hallwayTrait.exits).toHaveProperty(Direction.SOUTH);
   });

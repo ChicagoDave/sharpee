@@ -7,6 +7,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { vocabularyRegistry } from '@sharpee/if-domain';
+import { Direction } from '@sharpee/world-model';
 
 describe('Parser Grammar Engine Integration', () => {
   let parser: EnglishParser;
@@ -78,14 +79,21 @@ describe('Parser Grammar Engine Integration', () => {
   
   describe('Direction Commands', () => {
     it('should parse bare direction commands', () => {
-      const directions = ['north', 'south', 'east', 'west', 'up', 'down'];
+      const directions = [
+        { input: 'north', expected: Direction.NORTH },
+        { input: 'south', expected: Direction.SOUTH },
+        { input: 'east', expected: Direction.EAST },
+        { input: 'west', expected: Direction.WEST },
+        { input: 'up', expected: Direction.UP },
+        { input: 'down', expected: Direction.DOWN }
+      ];
       
-      for (const dir of directions) {
-        const result = parser.parse(dir);
+      for (const { input, expected } of directions) {
+        const result = parser.parse(input);
         expect(result.success).toBe(true);
         if (result.success) {
           expect(result.value.action).toBe('if.action.going');
-          expect(result.value.extras?.direction).toBe(dir);
+          expect(result.value.extras?.direction).toBe(expected);
         }
       }
     });

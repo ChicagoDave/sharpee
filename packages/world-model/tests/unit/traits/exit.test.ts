@@ -314,7 +314,7 @@ describe('ExitTrait', () => {
       expect(retrievedTrait.to).toBe('pantry');
     });
 
-    it('should replace existing exit trait', () => {
+    it('should warn and keep original exit trait', () => {
       const entity = new IFEntity('portal', 'exit');
       
       const trait1 = new ExitTrait({
@@ -329,12 +329,25 @@ describe('ExitTrait', () => {
         to: 'room4',
         command: 'use portal'
       });
+      
+      // Spy on console.warn
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      
       entity.add(trait2);
       
       const retrievedTrait = entity.get(TraitType.EXIT) as ExitTrait;
-      expect(retrievedTrait.from).toBe('room3');
-      expect(retrievedTrait.to).toBe('room4');
-      expect(retrievedTrait.command).toBe('use portal');
+      // Should keep original trait, not the new one
+      expect(retrievedTrait).toBe(trait1);
+      expect(retrievedTrait.from).toBe('room1');
+      expect(retrievedTrait.to).toBe('room2');
+      expect(retrievedTrait.command).toBe('enter portal');
+      
+      // Should have warned about duplicate
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('already has trait: exit')
+      );
+      
+      warnSpy.mockRestore();
     });
   });
 

@@ -48,6 +48,6 @@ export interface ListContentsEventData {
 
 export interface LookingEventMap {
   'if.event.looked': LookedEventData;
-  'if.event.room_description': RoomDescriptionEventData;
-  'if.event.list_contents': ListContentsEventData;
+  'if.event.room.description': RoomDescriptionEventData;
+  'if.event.list.contents': ListContentsEventData;
 }

@@ -114,12 +114,12 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
     
     // Build and emit room description event
     const roomDescData = buildEventData(roomDescriptionDataConfig, context);
-    events.push(context.event('if.event.room_description', roomDescData));
+    events.push(context.event('if.event.room.description', roomDescData));
     
     // Build and emit list contents event if there are visible items
     const listData = buildEventData(listContentsDataConfig, context);
     if (listData && Object.keys(listData).length > 0) {
-      events.push(context.event('if.event.list_contents', listData));
+      events.push(context.event('if.event.list.contents', listData));
     }
     
     // Add the room description message

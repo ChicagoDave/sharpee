@@ -83,7 +83,7 @@ describe('lookingAction (Golden Pattern)', () => {
       });
       
       // Should emit room description event
-      expectEvent(events, 'if.event.room_description', {
+      expectEvent(events, 'if.event.room.description', {
         roomId: room.id,
         includeContents: true,
         verbose: true
@@ -119,7 +119,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const events = executeAction(lookingAction, context);
       
       // Should emit list contents event
-      expectEvent(events, 'if.event.list_contents', {
+      expectEvent(events, 'if.event.list.contents', {
         items: [ball.id, box.id, table.id, npc.id],
         npcs: [npc.id],
         containers: [box.id],
@@ -148,7 +148,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const events = executeAction(lookingAction, context);
       
       // Should not emit list contents event for empty room
-      const listEvent = events.find(e => e.type === 'if.event.list_contents');
+      const listEvent = events.find(e => e.type === 'if.event.list.contents');
       expect(listEvent).toBeUndefined();
       
       // Should not emit contents list message
@@ -192,7 +192,7 @@ describe('lookingAction (Golden Pattern)', () => {
       });
       
       // Should not emit room description or contents
-      const descEvent = events.find(e => e.type === 'if.event.room_description');
+      const descEvent = events.find(e => e.type === 'if.event.room.description');
       expect(descEvent).toBeUndefined();
     });
 
@@ -229,7 +229,7 @@ describe('lookingAction (Golden Pattern)', () => {
       });
       
       // Should emit normal room description
-      expectEvent(events, 'if.event.room_description', {
+      expectEvent(events, 'if.event.room.description', {
         roomId: darkRoom.id
       });
     });
@@ -438,7 +438,7 @@ describe('lookingAction (Golden Pattern)', () => {
       expect(typeof lookedEvent?.data?.timestamp).toBe('number');
       
       // Check room description event has timestamp
-      const roomDescEvent = events.find(e => e.type === 'if.event.room_description');
+      const roomDescEvent = events.find(e => e.type === 'if.event.room.description');
       expect(roomDescEvent?.data?.timestamp).toBeDefined();
       
       // Check entities

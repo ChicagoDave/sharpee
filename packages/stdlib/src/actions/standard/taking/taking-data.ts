@@ -31,17 +31,42 @@ export const buildTakenData: ActionDataBuilder<Record<string, unknown>> = (
     };
   }
   
+  // Get the previous location from context (stored during execute)
+  const previousLocation = (context as any)._previousLocation;
+  
   // Capture snapshots after the mutation
   const itemSnapshot = captureEntitySnapshot(noun, context.world, true);
   const actorSnapshot = captureEntitySnapshot(actor, context.world, false);
   
-  return {
+  const data: Record<string, unknown> = {
     // New atomic structure
     itemSnapshot: itemSnapshot,
     actorSnapshot: actorSnapshot,
     // Backward compatibility
     item: noun.name
   };
+  
+  // Add container/supporter info if item was taken from one
+  if (previousLocation && previousLocation !== context.world.getLocation(actor.id)) {
+    const container = context.world.getEntity(previousLocation);
+    if (container) {
+      data.fromLocation = previousLocation;
+      
+      if (container.has && container.has('container')) {
+        data.fromContainer = true;
+        data.container = container.name;
+      } else if (container.has && container.has('supporter')) {
+        data.fromSupporter = true;
+        data.container = container.name; // Use container field for backward compatibility
+        data.supporter = container.name;
+      } else if (container.has && container.has('actor')) {
+        // When taking from another actor (e.g., worn items)
+        data.container = container.name;
+      }
+    }
+  }
+  
+  return data;
 };
 
 /**

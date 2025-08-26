@@ -60,7 +60,17 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     const actor = context.player;
     
     // Get the direction from the parsed command (should already be a Direction constant)
-    const direction = context.command.parsed.extras?.direction as DirectionType;
+    // Direction can come from extras or from directObject name
+    let direction = context.command.parsed.extras?.direction as DirectionType;
+    
+    // If no direction in extras, check if directObject has a name that could be a direction
+    if (!direction && context.command.directObject?.entity) {
+      const entityName = context.command.directObject.entity.name || 
+                        context.command.directObject.entity.attributes?.name;
+      if (entityName) {
+        direction = entityName as DirectionType;
+      }
+    }
     
     if (!direction) {
       return { 
@@ -179,7 +189,17 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     const currentRoom = context.currentLocation;
     
     // Get direction from parsed command (should already be a Direction constant)
-    const direction = context.command.parsed.extras?.direction as DirectionType;
+    // Direction can come from extras or from directObject name
+    let direction = context.command.parsed.extras?.direction as DirectionType;
+    
+    // If no direction in extras, check if directObject has a name that could be a direction
+    if (!direction && context.command.directObject?.entity) {
+      const entityName = context.command.directObject.entity.name || 
+                        context.command.directObject.entity.attributes?.name;
+      if (entityName) {
+        direction = entityName as DirectionType;
+      }
+    }
     
     // Get exit info and destination using behaviors
     const exitConfig = RoomBehavior.getExit(currentRoom, direction)!;
@@ -187,6 +207,9 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     
     // Check if this is the first time entering the destination
     const isFirstVisit = !RoomBehavior.hasBeenVisited(destination);
+    
+    // Store first visit status for report phase
+    (context as any)._isFirstVisit = isFirstVisit;
     
     // Actually move the player!
     context.world.moveEntity(actor.id, destination.id);
@@ -223,6 +246,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
         context.event('action.error', {
           actionId: context.action.id,
           error: validationResult.error || 'validation_failed',
+          reason: validationResult.error || 'validation_failed',
           messageId: validationResult.messageId || validationResult.error || 'action_failed',
           params: errorParams
         })

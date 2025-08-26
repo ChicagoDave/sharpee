@@ -14,7 +14,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { throwingAction } from '../../../src/actions/standard/throwing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
+import { TraitType, WorldModel, Direction } from '@sharpee/world-model';
 import { 
   createRealTestContext, 
   expectEvent,
@@ -128,7 +128,7 @@ describe('throwingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.THROWING, {
         entity: coin
       });
-      command.parsed.extras = { direction: 'north' };
+      command.parsed.extras = { direction: Direction.NORTH };
       
       const context = createRealTestContext(throwingAction, world, command);
       
@@ -136,7 +136,7 @@ describe('throwingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_exit'),
-        params: { direction: 'north' }
+        params: { direction: Direction.NORTH }
       });
     });
 

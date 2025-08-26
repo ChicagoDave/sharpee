@@ -445,7 +445,7 @@ describe('Removing Action Edge Cases', () => {
       preposition: 'from'
     }));
     
-    const events = removingAction.execute(context);
+    const events = executeAction(removingAction, context);
     
     expectEvent(events, 'if.event.taken', {
       item: 'glass marble',
@@ -474,7 +474,7 @@ describe('Removing Action Edge Cases', () => {
       preposition: 'from'
     }));
     
-    const events = removingAction.execute(context);
+    const events = executeAction(removingAction, context);
     
     // Should remove from immediate container (pouch)
     expectEvent(events, 'if.event.taken', {

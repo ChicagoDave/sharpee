@@ -59,15 +59,26 @@ describe('IFEntity', () => {
       expect(entity.has(TraitType.IDENTITY)).toBe(false);
     });
 
-    it('should replace existing trait of same type', () => {
+    it('should warn and ignore when adding duplicate trait', () => {
       const trait1 = new IdentityTrait();
       const trait2 = new IdentityTrait();
+      
+      // Spy on console.warn
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       
       entity.add(trait1);
       entity.add(trait2);
       
-      expect(entity.get(TraitType.IDENTITY)).toBe(trait2);
+      // Should keep the first trait, not replace with second
+      expect(entity.get(TraitType.IDENTITY)).toBe(trait1);
       expect(entity.getTraits()).toHaveLength(1);
+      
+      // Should have warned about duplicate
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('already has trait: identity')
+      );
+      
+      warnSpy.mockRestore();
     });
 
     it('should check multiple traits with hasAll', () => {
