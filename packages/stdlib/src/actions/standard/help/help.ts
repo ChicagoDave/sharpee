@@ -20,8 +20,63 @@ interface HelpState {
   eventData: HelpDisplayedEventData;
 }
 
+/**
+ * Analyzes the help request and builds the event data
+ */
+function analyzeHelpRequest(context: ActionContext): HelpState {
+  const eventData: HelpDisplayedEventData = {};
+  
+  // Check if the user asked for help on a specific topic
+  const topic = context.command.parsed.extras?.topic || 
+                context.command.indirectObject?.parsed.text ||
+                context.command.directObject?.parsed.text ||
+                null;
+  
+  if (topic) {
+    eventData.specificHelp = true;
+    eventData.helpRequest = topic; // What the user asked for help about
+  } else {
+    // General help (no topic specified)
+    eventData.generalHelp = true;
+    eventData.helpType = 'general';
+    
+    // Check if this is the first time help was requested
+    const sharedData = (context.world as any).getSharedData?.() || {};
+    const helpRequested = sharedData.helpRequested || false;
+    
+    if (!helpRequested) {
+      eventData.firstTime = true;
+    }
+    
+    // Include game-specific help sections
+    const helpSections = sharedData.helpSections || [
+      'basic_commands',
+      'movement',
+      'objects',
+      'special_commands'
+    ];
+    eventData.sections = helpSections;
+    
+    // Include hints availability
+    const hintsEnabled = sharedData.hintsEnabled ?? true;
+    eventData.hintsAvailable = hintsEnabled;
+  }
+  
+  return {
+    topic,
+    eventData
+  };
+}
+
 export const helpAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.HELP,
+  group: "meta",
+  
+  metadata: {
+    requiresDirectObject: false,
+    requiresIndirectObject: false
+  },
+  
   requiredMessages: [
     'general_help',
     'help_topic',
@@ -37,95 +92,14 @@ export const helpAction: Action & { metadata: ActionMetadata } = {
   ],
   
   validate(context: ActionContext): ValidationResult {
-    const eventData: HelpDisplayedEventData = {};
-    
-    // Check if the user asked for help on a specific topic
-    const topic = context.command.parsed.extras?.topic || 
-                  context.command.indirectObject?.parsed.text ||
-                  context.command.directObject?.parsed.text ||
-                  null;
-    
-    if (topic) {
-      eventData.specificHelp = true;
-      eventData.helpRequest = topic; // What the user asked for help about
-    } else {
-      // General help (no topic specified)
-      eventData.generalHelp = true;
-      eventData.helpType = 'general';
-      
-      // Check if this is the first time help was requested
-      const sharedData = (context.world as any).getSharedData?.() || {};
-      const helpRequested = sharedData.helpRequested || false;
-      
-      if (!helpRequested) {
-        eventData.firstTime = true;
-      }
-      
-      // Include game-specific help sections
-      const helpSections = sharedData.helpSections || [
-        'basic_commands',
-        'movement',
-        'objects',
-        'special_commands'
-      ];
-      eventData.sections = helpSections;
-      
-      // Include hints availability
-      const hintsEnabled = sharedData.hintsEnabled ?? true;
-      eventData.hintsAvailable = hintsEnabled;
-    }
-    
-    return {
-      valid: true
-    };
+    // Help is always valid - no preconditions to check
+    return { valid: true };
   },
   
   execute(context: ActionContext): ISemanticEvent[] {
-    const eventData: HelpDisplayedEventData = {};
+    const state = analyzeHelpRequest(context);
     
-    // Check if the user asked for help on a specific topic
-    const topic = context.command.parsed.extras?.topic || 
-                  context.command.indirectObject?.parsed.text ||
-                  context.command.directObject?.parsed.text ||
-                  null;
-    
-    if (topic) {
-      eventData.specificHelp = true;
-      eventData.helpRequest = topic; // What the user asked for help about
-    } else {
-      // General help (no topic specified)
-      eventData.generalHelp = true;
-      eventData.helpType = 'general';
-      
-      // Check if this is the first time help was requested
-      const sharedData = (context.world as any).getSharedData?.() || {};
-      const helpRequested = sharedData.helpRequested || false;
-      
-      if (!helpRequested) {
-        eventData.firstTime = true;
-      }
-      
-      // Include game-specific help sections
-      const helpSections = sharedData.helpSections || [
-        'basic_commands',
-        'movement',
-        'objects',
-        'special_commands'
-      ];
-      eventData.sections = helpSections;
-      
-      // Include hints availability
-      const hintsEnabled = sharedData.hintsEnabled ?? true;
-      eventData.hintsAvailable = hintsEnabled;
-    }
-    
-    return [context.event('if.event.help_displayed', eventData)];
-  },
-  
-  group: "meta",
-  
-  metadata: {
-    requiresDirectObject: false,
-    requiresIndirectObject: false
+    // Emit the help event with the prepared data
+    return [context.event('if.event.help_displayed', state.eventData)];
   }
 };

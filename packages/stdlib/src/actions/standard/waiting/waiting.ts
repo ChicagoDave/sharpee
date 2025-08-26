@@ -11,10 +11,39 @@ import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { WaitedEventData } from './waiting-events';
 
-interface WaitingState {
+interface WaitAnalysis {
   messageId: string;
   params: Record<string, any>;
   eventData: WaitedEventData;
+}
+
+function analyzeWaitAction(context: ActionContext): WaitAnalysis {
+  const actor = context.player;
+  const eventData: WaitedEventData = {
+    turnsPassed: 1  // Waiting typically advances one turn
+  };
+  const params: Record<string, any> = {};
+  let messageId = 'waited';
+  
+  // Check if we're in a special waiting situation
+  const currentLocation = context.world.getLocation(actor.id);
+  if (currentLocation) {
+    const location = context.world.getEntity(currentLocation);
+    if (location) {
+      // Add any location-specific context
+      eventData.location = location.id;
+      eventData.locationName = location.name;
+      
+      // Note: vehicle trait doesn't exist in current system
+      // Games can implement via event handlers
+    }
+  }
+  
+  // Simple deterministic wait message
+  // Games can enhance via event handlers
+  messageId = 'time_passes';
+  
+  return { messageId, params, eventData };
 }
 
 export const waitingAction: Action & { metadata: ActionMetadata } = {
@@ -42,155 +71,27 @@ export const waitingAction: Action & { metadata: ActionMetadata } = {
   },
   
   validate(context: ActionContext): ValidationResult {
-    const actor = context.player;
-    
     // Waiting is always successful - it's a simple time-passing action
-    const eventData: WaitedEventData = {
-      turnsPassed: 1  // Waiting typically advances one turn
-    };
+    analyzeWaitAction(context);
     
-    const params: Record<string, any> = {};
-    
-    // Check if we're in a special waiting situation
-    const currentLocation = context.world.getLocation(actor.id);
-    let messageId = 'waited';
-    
-    if (currentLocation) {
-      const location = context.world.getEntity(currentLocation);
-      if (location) {
-        // Add any location-specific context
-        eventData.location = location.id;
-        eventData.locationName = location.name;
-        
-        // Check if in a vehicle
-        if (location.has('if.trait.vehicle')) {
-          params.vehicle = location.name;
-          messageId = 'waited_in_vehicle';
-        }
-        
-        // Check if there's a timed event pending
-        const timedEvent = (context as any).pendingTimedEvent;
-        if (timedEvent) {
-          eventData.pendingEvent = timedEvent.id;
-          
-          if (timedEvent.turnsRemaining === 1) {
-            messageId = 'something_approaches';
-          } else if (timedEvent.anxious) {
-            messageId = 'waited_anxiously';
-          } else {
-            messageId = 'waited_for_event';
-          }
-        }
-      }
-    }
-    
-    // Check wait count for variety
-    const waitCount = (context as any).consecutiveWaits || 0;
-    eventData.waitCount = waitCount;
-    
-    if (waitCount > 5) {
-      messageId = 'grows_restless';
-    } else if (waitCount > 2 && messageId === 'waited') {
-      messageId = 'time_passes';
-    } else if (waitCount === 0 && messageId === 'waited') {
-      // First wait might be more descriptive
-      const waitVariations = ['waited', 'waited_patiently', 'waited_briefly'];
-      messageId = waitVariations[Math.floor(Math.random() * waitVariations.length)];
-    }
-    
-    // Check if something happens while waiting (random chance)
-    if (Math.random() < 0.1 && messageId === 'waited') {
-      messageId = 'nothing_happens';
-    }
-    
-    // Waiting always succeeds - return valid state
     return {
       valid: true
     };
   },
   
   execute(context: ActionContext): ISemanticEvent[] {
-    // Validate and get state
-    const result = this.validate(context);
-    if (!result.valid) {
-      // This should never happen for waiting
-      return [context.event('action.error', {
-        actionId: this.id,
-        messageId: result.error,
-        reason: result.error,
-        params: result.params
-      })];
-    }
+    const analysis = analyzeWaitAction(context);
     
-    // Extract event data and other values from validation
-    const eventData: WaitedEventData = {
-      turnsPassed: 1  // Waiting typically advances one turn
-    };
-    
-    const params: Record<string, any> = {};
-    
-    // Check if we're in a special waiting situation
-    const actor = context.player;
-    const currentLocation = context.world.getLocation(actor.id);
-    let messageId = 'waited';
-    
-    if (currentLocation) {
-      const location = context.world.getEntity(currentLocation);
-      if (location) {
-        // Add any location-specific context
-        eventData.location = location.id;
-        eventData.locationName = location.name;
-        
-        // Check if in a vehicle
-        if (location.has('if.trait.vehicle')) {
-          params.vehicle = location.name;
-          messageId = 'waited_in_vehicle';
-        }
-        
-        // Check if there's a timed event pending
-        const timedEvent = (context as any).pendingTimedEvent;
-        if (timedEvent) {
-          eventData.pendingEvent = timedEvent.id;
-          
-          if (timedEvent.turnsRemaining === 1) {
-            messageId = 'something_approaches';
-          } else if (timedEvent.anxious) {
-            messageId = 'waited_anxiously';
-          } else {
-            messageId = 'waited_for_event';
-          }
-        }
-      }
-    }
-    
-    // Check wait count for variety
-    const waitCount = (context as any).consecutiveWaits || 0;
-    eventData.waitCount = waitCount;
-    
-    if (waitCount > 5) {
-      messageId = 'grows_restless';
-    } else if (waitCount > 2 && messageId === 'waited') {
-      messageId = 'time_passes';
-    } else if (waitCount === 0 && messageId === 'waited') {
-      // First wait might be more descriptive
-      const waitVariations = ['waited', 'waited_patiently', 'waited_briefly'];
-      messageId = waitVariations[Math.floor(Math.random() * waitVariations.length)];
-    }
-    
-    // Check if something happens while waiting (random chance)
-    if (Math.random() < 0.1 && messageId === 'waited') {
-      messageId = 'nothing_happens';
-    }
     const events: ISemanticEvent[] = [];
     
     // Create WAITED event for world model
-    events.push(context.event('if.event.waited', eventData));
+    events.push(context.event('if.event.waited', analysis.eventData));
     
     // Add success message
     events.push(context.event('action.success', {
       actionId: this.id,
-      messageId: messageId,
-      params: params
+      messageId: analysis.messageId,
+      params: analysis.params
     }));
     
     return events;

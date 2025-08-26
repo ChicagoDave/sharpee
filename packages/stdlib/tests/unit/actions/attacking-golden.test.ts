@@ -14,7 +14,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { attackingAction } from '../../../src/actions/standard/attacking';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, FragileTrait, BreakableTrait, EntityType } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType } from '@sharpee/world-model';
 import { 
   createRealTestContext,
   expectEvent,
@@ -37,7 +37,8 @@ describe('attackingAction (Golden Pattern)', () => {
       expect(attackingAction.requiredMessages).toContain('not_reachable');
       expect(attackingAction.requiredMessages).toContain('self');
       expect(attackingAction.requiredMessages).toContain('not_holding_weapon');
-      expect(attackingAction.requiredMessages).toContain('indestructible');
+      // 'indestructible' message removed with FRAGILE trait
+      // expect(attackingAction.requiredMessages).toContain('indestructible');
       expect(attackingAction.requiredMessages).toContain('attacked');
       expect(attackingAction.requiredMessages).toContain('attacked_with');
       expect(attackingAction.requiredMessages).toContain('hit');
@@ -47,7 +48,8 @@ describe('attackingAction (Golden Pattern)', () => {
       expect(attackingAction.requiredMessages).toContain('punched');
       expect(attackingAction.requiredMessages).toContain('kicked');
       expect(attackingAction.requiredMessages).toContain('unarmed_attack');
-      expect(attackingAction.requiredMessages).toContain('broke');
+      // 'broke' message removed with FRAGILE trait
+      // expect(attackingAction.requiredMessages).toContain('broke');
       expect(attackingAction.requiredMessages).toContain('smashed');
       expect(attackingAction.requiredMessages).toContain('destroyed');
       expect(attackingAction.requiredMessages).toContain('shattered');
@@ -56,10 +58,13 @@ describe('attackingAction (Golden Pattern)', () => {
       expect(attackingAction.requiredMessages).toContain('retaliates');
       expect(attackingAction.requiredMessages).toContain('flees');
       expect(attackingAction.requiredMessages).toContain('peaceful_solution');
-      expect(attackingAction.requiredMessages).toContain('no_fighting');
+      // 'no_fighting' message removed in simplification
+      // expect(attackingAction.requiredMessages).toContain('no_fighting');
       expect(attackingAction.requiredMessages).toContain('unnecessary_violence');
-      expect(attackingAction.requiredMessages).toContain('needs_tool');
-      expect(attackingAction.requiredMessages).toContain('not_strong_enough');
+      // 'needs_tool' message removed with BREAKABLE trait
+      // expect(attackingAction.requiredMessages).toContain('needs_tool');
+      // 'not_strong_enough' message removed with BREAKABLE trait
+      // expect(attackingAction.requiredMessages).toContain('not_strong_enough');
       expect(attackingAction.requiredMessages).toContain('already_damaged');
       expect(attackingAction.requiredMessages).toContain('partial_break');
     });
@@ -819,9 +824,10 @@ describe('Testing Pattern Examples for Attacking', () => {
     });
   });
 
-  test('pattern: fragile materials', () => {
+  test.skip('pattern: fragile materials', () => {
+    // SKIPPED: FragileTrait removed from system
     // Test different fragile materials
-    const materials: Array<FragileTrait['fragileMaterial']> = [
+    const materials = [
       'glass',
       'crystal', 
       'porcelain',
@@ -836,8 +842,8 @@ describe('Testing Pattern Examples for Attacking', () => {
       const expectedSharp = sharpMaterials.includes(material);
       
       // Test default sharp fragments behavior
-      const trait = new FragileTrait({ fragileMaterial: material });
-      expect(trait.sharpFragments).toBe(expectedSharp);
+      // const trait = new FragileTrait({ fragileMaterial: material });
+      // expect(trait.sharpFragments).toBe(expectedSharp);
     });
   });
 
@@ -882,7 +888,8 @@ describe('Testing Pattern Examples for Attacking', () => {
     });
   });
 
-  test('pattern: breakable properties', () => {
+  test.skip('pattern: breakable properties', () => {
+    // SKIPPED: BreakableTrait removed from system
     // Test breakable trait configurations
     const breakableConfigs = [
       { method: 'force', description: 'physical impact' },
@@ -892,8 +899,8 @@ describe('Testing Pattern Examples for Attacking', () => {
     ];
     
     breakableConfigs.forEach(({ method }) => {
-      const trait = new BreakableTrait({ breakMethod: method as any });
-      expect(trait.breakMethod).toBe(method);
+      // const trait = new BreakableTrait({ breakMethod: method as any });
+      // expect(trait.breakMethod).toBe(method);
     });
   });
 });

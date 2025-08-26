@@ -49,7 +49,7 @@ export type { ThrownEventData, ItemDestroyedEventData } from './throwing/throwin
 
 export * from './pushing';
 export * from './pulling';
-export * from './turning';
+// export * from './turning'; // Removed - TURNABLE trait doesn't exist
 // export * from './using'; // Removed - USE is not idiomatic IF
 
 // Wearing and taking_off share some event types
@@ -105,7 +105,7 @@ import { showingAction } from './showing'; // Now from folder
 import { throwingAction } from './throwing'; // Now from folder
 import { pushingAction } from './pushing';
 import { pullingAction } from './pulling';
-import { turningAction } from './turning';
+// import { turningAction } from './turning'; // Removed - TURNABLE trait doesn't exist
 // import { usingAction } from './using'; // Removed - USE is not idiomatic IF
 import { wearingAction } from './wearing';
 import { takingOffAction } from './taking_off';
@@ -160,7 +160,7 @@ export const standardActions = [
   throwingAction,
   pushingAction,
   pullingAction,
-  turningAction,
+  // turningAction, // Removed - TURNABLE trait doesn't exist
   // usingAction, // Removed - USE is not idiomatic IF
   wearingAction,
   takingOffAction,
