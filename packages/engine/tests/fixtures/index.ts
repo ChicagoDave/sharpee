@@ -54,12 +54,30 @@ export function createTestWorld(): { world: WorldModel; player: IFEntity; room: 
 export function createMockAction(
   id: string,
   patterns: string[],
-  execute: (context: ActionContext) => ActionResult | Promise<ActionResult>
+  executeCallback: (context: ActionContext) => ActionResult | Promise<ActionResult>
 ): Action {
   return {
     id,
     patterns,
-    execute,
+    // Add validate method - always returns valid
+    validate: () => ({ valid: true }),
+    // Execute delegates to the callback but doesn't return anything
+    execute: async (context: ActionContext) => {
+      try {
+        await executeCallback(context);
+      } catch (error) {
+        // Store error for report phase
+        (context as any)._executionError = error;
+      }
+    },
+    // Report generates events based on the execution
+    report: (context: ActionContext) => {
+      const error = (context as any)._executionError;
+      if (error) {
+        throw error;
+      }
+      return [];
+    },
     description: `Mock action ${id}`,
     examples: []
   };

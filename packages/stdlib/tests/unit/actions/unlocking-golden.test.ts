@@ -354,11 +354,9 @@ describe('unlockingAction (Golden Pattern)', () => {
       const key3 = world.createEntity('guard key', 'object');
       
       // Update the gate's lockable trait to use actual key IDs
-      gate.add({
-        type: TraitType.LOCKABLE,
-        isLocked: true,
-        keyIds: [key1.id, key2.id, key3.id]  // Use actual entity IDs
-      });
+      // Get the existing trait and modify it
+      const lockableTrait = gate.get(TraitType.LOCKABLE) as any;
+      lockableTrait.keyIds = [key1.id, key2.id, key3.id];  // Use actual entity IDs
       
       world.moveEntity(key2.id, player.id);  // Player has master key
       

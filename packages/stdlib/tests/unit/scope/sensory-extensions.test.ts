@@ -232,11 +232,9 @@ describe('Sensory Extensions', () => {
   describe('Darkness', () => {
     test('should not see in dark rooms without light', () => {
       // Make room dark using custom properties
-      room.add({
-        type: TraitType.IDENTITY,
-        name: 'Living Room',
-        customProperties: { isDark: true }
-      });
+      // Get the existing identity trait and add customProperties
+      const identity = room.get(TraitType.IDENTITY) as any;
+      identity.customProperties = { isDark: true };
       
       const ball = author.createEntity('ball', EntityType.OBJECT);
       ball.add({ type: TraitType.IDENTITY, name: 'ball' });
@@ -249,11 +247,8 @@ describe('Sensory Extensions', () => {
 
     test('should see in dark rooms with carried light source', () => {
       // Make room dark
-      room.add({
-        type: TraitType.IDENTITY,
-        name: 'Living Room',
-        customProperties: { isDark: true }
-      });
+      const identity = room.get(TraitType.IDENTITY) as any;
+      identity.customProperties = { isDark: true };
       
       // Give player a lit torch
       const torch = author.createEntity('torch', EntityType.OBJECT);
@@ -281,11 +276,8 @@ describe('Sensory Extensions', () => {
       });
       
       // Make player glow
-      player.add({
-        type: TraitType.IDENTITY,
-        name: 'Player',
-        customProperties: { providesLight: true }
-      });
+      const playerIdentity = player.get(TraitType.IDENTITY) as any;
+      playerIdentity.customProperties = { providesLight: true };
 
       const ball = author.createEntity('ball', EntityType.OBJECT);
       ball.add({ type: TraitType.IDENTITY, name: 'ball' });

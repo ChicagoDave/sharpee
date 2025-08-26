@@ -47,12 +47,20 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
 
     // Use ActorBehavior to validate dropping
     if (!ActorBehavior.isHolding(actor, noun.id, context.world)) {
-      return { valid: false, error: 'not_held' };
+      return { 
+        valid: false, 
+        error: 'not_held',
+        params: { item: (noun.get(TraitType.IDENTITY) as any)?.name || noun.attributes?.name || noun.id }
+      };
     }
 
     // Check if the item is worn
     if (noun.has(TraitType.WEARABLE) && WearableBehavior.isWorn(noun)) {
-      return { valid: false, error: 'still_worn' };
+      return { 
+        valid: false, 
+        error: 'still_worn',
+        params: { item: (noun.get(TraitType.IDENTITY) as any)?.name || noun.attributes?.name || noun.id }
+      };
     }
 
     // Get drop location
@@ -70,7 +78,14 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
         if (containerTrait.capacity?.maxItems !== undefined) {
           const contents = context.world.getContents(dropLocation.id);
           if (contents.length >= containerTrait.capacity.maxItems) {
-            return { valid: false, error: 'container_full' };
+            return { 
+              valid: false, 
+              error: 'container_full',
+              params: { 
+                item: (noun.get(TraitType.IDENTITY) as any)?.name || noun.attributes?.name || noun.id,
+                container: (dropLocation.get(TraitType.IDENTITY) as any)?.name || dropLocation.attributes?.name || dropLocation.id
+              }
+            };
           }
         }
         return { valid: false, error: 'cant_drop_here' };
@@ -117,6 +132,7 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
         context.event('action.error', {
           actionId: context.action.id,
           error: validationResult.error || 'validation_failed',
+          reason: validationResult.error || 'validation_failed',
           messageId: validationResult.messageId || validationResult.error || 'action_failed',
           params: errorParams
         })
