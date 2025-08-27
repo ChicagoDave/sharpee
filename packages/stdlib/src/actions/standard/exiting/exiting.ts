@@ -96,76 +96,57 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
   },
   
   execute(context: ActionContext): ISemanticEvent[] {
-    // Validate first
-    const validation = this.validate(context);
-    if (!validation.valid) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: validation.error,
-        reason: validation.error,
-        params: validation.params || {}
-      })];
-    }
-    
     const actor = context.player;
-    const currentLocation = context.world.getLocation(actor.id)!;
-    const currentContainer = context.world.getEntity(currentLocation)!;
-    const parentLocation = context.world.getLocation(currentLocation)!;
+    const currentLocation = context.world.getLocation(actor.id);
     
-    let preposition = 'from';
-    
-    // Determine preposition based on container type
-    if (currentContainer.has(TraitType.CONTAINER)) {
-      preposition = 'out of';
-    } else if (currentContainer.has(TraitType.SUPPORTER)) {
-      preposition = 'off';
+    if (!currentLocation) {
+      return [];
     }
     
-    if (currentContainer.has(TraitType.ENTRY)) {
-      const entryTrait = currentContainer.get(TraitType.ENTRY) as EntryTrait;
-      // Update occupants list using behavior if tracked
-      if (EntryBehavior.contains(currentContainer, actor.id)) {
-        // Note: EntryBehavior.exit() returns events but we generate our own
-        // So we manually update the occupants
-        const index = entryTrait.occupants?.indexOf(actor.id);
-        if (index !== undefined && index >= 0) {
-          entryTrait.occupants!.splice(index, 1);
-        }
-      }
-      
-      // Entry trait can override preposition
-      const entryPrep = entryTrait.preposition || 'in';
-      // Convert preposition for exiting
-      if (entryPrep === 'in') preposition = 'out of';
-      else if (entryPrep === 'on') preposition = 'off';
-      else if (entryPrep === 'under') preposition = 'from under';
-      else if (entryPrep === 'behind') preposition = 'from behind';
-    }
+    const currentContainer = context.world.getEntity(currentLocation);
+    const parentLocation = context.world.getLocation(currentLocation);
     
-    // Build event data
-    const params: Record<string, any> = {
-      place: currentContainer.name,
-      preposition
-    };
+    if (!currentContainer || !parentLocation) {
+      return [];
+    }
     
     const events: ISemanticEvent[] = [];
     
-    // Create the EXITED event for world model updates
-    const exitedData: ExitedEventData = {
-      fromLocation: currentLocation,
-      toLocation: parentLocation,
-      preposition
-    };
-    
-    events.push(context.event('if.event.exited', exitedData));
-    
-    // Create success message
-    const messageId = preposition === 'off' ? 'exited_from' : 'exited';
-    events.push(context.event('action.success', {
+    // Use EntryBehavior to properly exit
+    if (currentContainer.has(TraitType.ENTRY)) {
+      // EntryBehavior.exit handles occupants list properly
+      const exitEvents = EntryBehavior.exit(currentContainer, actor);
+      events.push(...exitEvents);
+    } else {
+      // For non-ENTRY containers/supporters, emit simple exit event
+      let preposition = 'from';
+      
+      // Determine preposition based on container type
+      if (currentContainer.has(TraitType.CONTAINER)) {
+        preposition = 'out of';
+      } else if (currentContainer.has(TraitType.SUPPORTER)) {
+        preposition = 'off';
+      }
+      
+      // Create the EXITED event
+      const exitedData: ExitedEventData = {
+        fromLocation: currentLocation,
+        toLocation: parentLocation,
+        preposition
+      };
+      
+      events.push(context.event('if.event.exited', exitedData));
+      
+      // Add success message
+      events.push(context.event('action.success', {
         actionId: context.action.id,
-        messageId: messageId,
-        params: params
+        messageId: 'exited',
+        params: { 
+          place: currentContainer.name,
+          preposition
+        }
       }));
+    }
     
     return events;
   },

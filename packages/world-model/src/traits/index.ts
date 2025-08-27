@@ -27,10 +27,10 @@ export * from './actor';
 
 // Manipulation traits
 export * from './pullable';
-export * from './lever';
-export * from './cord';
-export * from './bell-pull';
 export * from './attached';
+export * from './pushable';
+export * from './button';
+export * from './moveable-scenery';
 
 // Register function
 export * from './register-all';

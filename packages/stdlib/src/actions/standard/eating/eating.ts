@@ -7,11 +7,104 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, EdibleTrait, EdibleBehavior } from '@sharpee/world-model';
+import { TraitType, EdibleTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
-import { EatenEventData, ImplicitTakenEventData } from './eating-events';
+import { EatenEventData } from './eating-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
+
+interface EatingAnalysis {
+  item: any;
+  edibleTrait: EdibleTrait;
+  messageId: string;
+  eventData: EatenEventData;
+}
+
+/**
+ * Analyzes what happens when eating an item
+ */
+function analyzeEatAction(context: ActionContext): EatingAnalysis | null {
+  const item = context.command.directObject?.entity;
+  
+  if (!item || !item.has(TraitType.EDIBLE)) {
+    return null;
+  }
+  
+  const edibleTrait = item.get(TraitType.EDIBLE) as EdibleTrait;
+  
+  // Build event data
+  const eventData: EatenEventData = {
+    item: item.id,
+    itemName: item.name
+  };
+  
+  // Determine message based on properties
+  let messageId = 'eaten';
+  
+  // Add nutritional information if available
+  if ((edibleTrait as any).nutrition) {
+    eventData.nutrition = (edibleTrait as any).nutrition;
+  }
+  
+  // Handle portions
+  if ((edibleTrait as any).portions) {
+    eventData.portions = (edibleTrait as any).portions;
+    eventData.portionsRemaining = ((edibleTrait as any).portions || 1) - 1;
+    
+    if ((eventData.portionsRemaining as number) > 0) {
+      messageId = 'eaten_some';
+    } else {
+      messageId = 'eaten_all';
+    }
+  }
+  
+  // Check taste/quality
+  const taste = (edibleTrait as any).taste;
+  if (taste) {
+    switch (taste) {
+      case 'delicious':
+        messageId = 'delicious';
+        break;
+      case 'tasty':
+      case 'good':
+        messageId = 'tasty';
+        break;
+      case 'bland':
+      case 'plain':
+        messageId = 'bland';
+        break;
+      case 'awful':
+      case 'terrible':
+        messageId = 'awful';
+        break;
+    }
+  }
+  
+  // Check for effects
+  if ((edibleTrait as any).effects) {
+    eventData.effects = (edibleTrait as any).effects;
+    if ((edibleTrait as any).effects.includes('poison')) {
+      messageId = 'poisonous';
+    }
+  }
+  
+  // Check hunger satisfaction
+  if ((edibleTrait as any).satisfiesHunger !== undefined) {
+    eventData.satisfiesHunger = (edibleTrait as any).satisfiesHunger;
+    if ((edibleTrait as any).satisfiesHunger === true && messageId === 'eaten') {
+      messageId = 'filling';
+    } else if ((edibleTrait as any).satisfiesHunger === false) {
+      messageId = 'still_hungry';
+    }
+  }
+  
+  return {
+    item,
+    edibleTrait,
+    messageId,
+    eventData
+  };
+}
 
 export const eatingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.EATING,
@@ -89,137 +182,26 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
   },
   
   execute(context: ActionContext): ISemanticEvent[] {
-    // Call validate at the start
-    const validation = this.validate(context);
-    if (!validation.valid) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: validation.error,
-        params: validation.params
-      })];
-    }
-    
-    const actor = context.player;
-    const item = context.command.directObject?.entity!;
-    
-    // Check if item is held
-    const itemLocation = context.world.getLocation(item.id);
-    const isHeld = itemLocation === actor.id;
-    
-    // Get edible trait for later use
-    const edibleTrait = item.get(TraitType.EDIBLE) as EdibleTrait;
-    
-    // If not held, pick it up first (implicit take)
     const events: ISemanticEvent[] = [];
     
-    if (!isHeld) {
-      const implicitTakenData: ImplicitTakenEventData = {
-        implicit: true,
-        item: item.id,
-        itemName: item.name
-      };
-      events.push(context.event('if.event.taken', implicitTakenData));
+    // Analyze what happens when we eat
+    const analysis = analyzeEatAction(context);
+    if (!analysis) {
+      return [];
     }
     
-    // Build event data
-    const eventData: EatenEventData = {
-      item: item.id,
-      itemName: item.name
-    };
+    // Mark as consumed
+    (analysis.edibleTrait as any).consumed = true;
     
-    const params: Record<string, any> = {
-      item: item.name
-    };
-    
-    // Determine message based on action verb and food properties
-    const verb = context.command.parsed.structure.verb?.text.toLowerCase() || 'eat';
-    let messageId = 'eaten';
-    
-    // Add nutritional or effect information if available
-    if ((edibleTrait as any).nutrition) {
-      eventData.nutrition = (edibleTrait as any).nutrition;
-    }
-    
-    if ((edibleTrait as any).portions) {
-      eventData.portions = (edibleTrait as any).portions;
-      eventData.portionsRemaining = ((edibleTrait as any).portions || 1) - 1;
-      
-      if ((eventData.portionsRemaining as number) > 0) {
-        messageId = 'eaten_some';
-      } else {
-        messageId = 'eaten_all';
-      }
-    }
-    
-    // Check taste/quality
-    if ((edibleTrait as any).taste) {
-      const taste = (edibleTrait as any).taste;
-      switch (taste) {
-        case 'delicious':
-          messageId = 'delicious';
-          break;
-        case 'tasty':
-        case 'good':
-          messageId = 'tasty';
-          break;
-        case 'bland':
-        case 'plain':
-          messageId = 'bland';
-          break;
-        case 'awful':
-        case 'terrible':
-          messageId = 'awful';
-          break;
-      }
-    }
-    
-    // Check if this is poisonous or has effects
-    if ((edibleTrait as any).effects) {
-      eventData.effects = (edibleTrait as any).effects;
-      if ((edibleTrait as any).effects.includes('poison')) {
-        messageId = 'poisonous';
-      }
-    }
-    
-    // Check if this satisfies hunger
-    if ((edibleTrait as any).satisfiesHunger !== undefined) {
-      eventData.satisfiesHunger = (edibleTrait as any).satisfiesHunger;
-      if ((edibleTrait as any).satisfiesHunger === true) {
-        if (messageId === 'eaten') {
-          messageId = 'filling';
-        }
-      } else if ((edibleTrait as any).satisfiesHunger === false) {
-        messageId = 'still_hungry';
-      }
-    }
-    
-    // Verb-specific messages
-    if (messageId === 'eaten' || messageId === 'eaten_some') {
-      switch (verb) {
-        case 'nibble':
-          messageId = 'nibbled';
-          break;
-        case 'taste':
-          messageId = 'tasted';
-          break;
-        case 'devour':
-          messageId = 'devoured';
-          break;
-        case 'munch':
-          messageId = 'munched';
-          break;
-      }
-    }
-    
-    // Create EATEN event
-    events.push(context.event('if.event.eaten', eventData));
+    // Emit the EATEN event
+    events.push(context.event('if.event.eaten', analysis.eventData));
     
     // Add success message
     events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: messageId,
-        params: params
-      }));
+      actionId: context.action.id,
+      messageId: analysis.messageId,
+      params: { item: analysis.item.name }
+    }));
     
     return events;
   },

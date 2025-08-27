@@ -152,6 +152,9 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
     const item = context.command.directObject?.entity!;
     const recipient = context.command.indirectObject?.entity!;
     
+    // Actually transfer the item from actor to recipient
+    context.world.moveEntity(item.id, recipient.id);
+    
     // Determine acceptance type based on preferences
     let acceptanceType = 'normal';
     const recipientActor = recipient.get(TraitType.ACTOR) as any;

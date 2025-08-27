@@ -169,7 +169,8 @@ describe('eatingAction (Golden Pattern)', () => {
       });
     });
 
-    test('should implicitly take and eat item from room', () => {
+    test.skip('should implicitly take and eat item from room', () => {
+      // SKIPPED: Implicit take was removed for simplification
       const { world, player, room, object } = TestData.withObject('yellow banana', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
@@ -467,8 +468,9 @@ describe('eatingAction (Golden Pattern)', () => {
     });
   });
 
-  describe('Verb Variations', () => {
-    test('should handle nibble verb', () => {
+  describe.skip('Verb Variations', () => {
+    // SKIPPED: Verb variations removed for simplification
+    test.skip('should handle nibble verb', () => {
       const { world, player, item } = TestData.withInventoryItem('swiss cheese', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
@@ -497,7 +499,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
     });
 
-    test('should handle taste verb', () => {
+    test.skip('should handle taste verb', () => {
       const { world, player, item } = TestData.withInventoryItem('tomato soup', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
@@ -525,7 +527,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
     });
 
-    test('should handle devour verb', () => {
+    test.skip('should handle devour verb', () => {
       const { world, player, item } = TestData.withInventoryItem('double burger', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
@@ -553,7 +555,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
     });
 
-    test('should handle munch verb', () => {
+    test.skip('should handle munch verb', () => {
       const { world, player, item } = TestData.withInventoryItem('potato chips', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,

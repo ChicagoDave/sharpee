@@ -17,40 +17,29 @@ export const TraitType = {
   CLOTHING: 'clothing',
   EDIBLE: 'edible',
   SCENERY: 'scenery',
-  
+
   // Interactive traits
   OPENABLE: 'openable',
   LOCKABLE: 'lockable',
   SWITCHABLE: 'switchable',
   READABLE: 'readable',
   LIGHT_SOURCE: 'lightSource',
-  
+
   // Manipulation traits
   PULLABLE: 'pullable',
-  LEVER: 'lever',
-  CORD: 'cord',
-  BELL_PULL: 'bellPull',
   ATTACHED: 'attached',
   PUSHABLE: 'pushable',
   BUTTON: 'button',
   MOVEABLE_SCENERY: 'moveableScenery',
-  TURNABLE: 'turnable',
-  DIAL: 'dial',
-  KNOB: 'knob',
-  WHEEL: 'wheel',
-  CRANK: 'crank',
-  VALVE: 'valve',
-  
+
   // Spatial traits
   DOOR: 'door',
-  
+
   // Object property traits
-  FRAGILE: 'fragile',
-  BREAKABLE: 'breakable',
-  
+
   // Basic traits
   ACTOR: 'actor',
-  
+
   // New traits
   EXIT: 'exit',
   ENTRY: 'entry'
@@ -88,41 +77,30 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   [TraitType.CLOTHING]: TraitCategory.STANDARD,
   [TraitType.EDIBLE]: TraitCategory.STANDARD,
   [TraitType.SCENERY]: TraitCategory.STANDARD,
-  
+
   // Interactive
   [TraitType.OPENABLE]: TraitCategory.INTERACTIVE,
   [TraitType.LOCKABLE]: TraitCategory.INTERACTIVE,
   [TraitType.SWITCHABLE]: TraitCategory.INTERACTIVE,
   [TraitType.READABLE]: TraitCategory.INTERACTIVE,
   [TraitType.LIGHT_SOURCE]: TraitCategory.INTERACTIVE,
-  
+
   // Manipulation
   [TraitType.PULLABLE]: TraitCategory.INTERACTIVE,
-  [TraitType.LEVER]: TraitCategory.INTERACTIVE,
-  [TraitType.CORD]: TraitCategory.INTERACTIVE,
-  [TraitType.BELL_PULL]: TraitCategory.INTERACTIVE,
   [TraitType.ATTACHED]: TraitCategory.INTERACTIVE,
   [TraitType.PUSHABLE]: TraitCategory.INTERACTIVE,
   [TraitType.BUTTON]: TraitCategory.INTERACTIVE,
   [TraitType.MOVEABLE_SCENERY]: TraitCategory.INTERACTIVE,
-  [TraitType.TURNABLE]: TraitCategory.INTERACTIVE,
-  [TraitType.DIAL]: TraitCategory.INTERACTIVE,
-  [TraitType.KNOB]: TraitCategory.INTERACTIVE,
-  [TraitType.WHEEL]: TraitCategory.INTERACTIVE,
-  [TraitType.CRANK]: TraitCategory.INTERACTIVE,
-  [TraitType.VALVE]: TraitCategory.INTERACTIVE,
-  
+
   // Spatial
   [TraitType.DOOR]: TraitCategory.STANDARD,
   [TraitType.EXIT]: TraitCategory.STANDARD,
-  
+
   // Object property
-  [TraitType.FRAGILE]: TraitCategory.STANDARD,
-  [TraitType.BREAKABLE]: TraitCategory.STANDARD,
-  
+
   // Basic
   [TraitType.ACTOR]: TraitCategory.STANDARD,
-  
+
   // New traits
   [TraitType.ENTRY]: TraitCategory.INTERACTIVE
 };
@@ -163,7 +141,7 @@ export function getAllTraitTypes(): TraitType[] {
 export function registerTraitType(name: string, value: string, category: TraitCategory = TraitCategory.STANDARD): void {
   // Add to TraitType object (note: this modifies the const object)
   (TraitType as any)[name] = value;
-  
+
   // Add to categories
   TRAIT_CATEGORIES[value as TraitType] = category;
 }

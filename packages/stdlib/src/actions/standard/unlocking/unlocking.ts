@@ -7,11 +7,12 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
-import { ISemanticEvent, EntityId } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, LockableBehavior, IUnlockResult } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { UnlockedEventData } from './unlocking-events';
+import { analyzeLockContext, validateKeyRequirements, createLockErrorEvent, determineLockMessage } from '../lock-shared';
 
 export const unlockingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.UNLOCKING,
@@ -63,38 +64,10 @@ export const unlockingAction: Action & { metadata: ActionMetadata } = {
       };
     }
     
-    // Check key requirements
-    if (LockableBehavior.requiresKey(noun)) {
-      // No key specified
-      if (!withKey) {
-        return { 
-          valid: false, 
-          error: 'no_key'
-        };
-      }
-      
-      // Check if player has the key
-      const actor = context.player;
-      const keyLocation = context.world.getLocation(withKey.id);
-      if (keyLocation !== actor.id) {
-        return { 
-          valid: false, 
-          error: 'key_not_held',
-          params: { key: withKey.name }
-        };
-      }
-      
-      // Check if it's the right key
-      if (!LockableBehavior.canUnlockWith(noun, withKey.id)) {
-        return { 
-          valid: false, 
-          error: 'wrong_key',
-          params: { 
-            key: withKey.name, 
-            item: noun.name 
-          }
-        };
-      }
+    // Validate key requirements using shared helper
+    const keyValidation = validateKeyRequirements(context, noun, withKey, false);
+    if (keyValidation) {
+      return keyValidation;
     }
     
     return { valid: true };
@@ -107,55 +80,23 @@ export const unlockingAction: Action & { metadata: ActionMetadata } = {
    */
   execute(context: ActionContext): ISemanticEvent[] {
     // Assume validation has passed - no checks needed
-    const actor = context.player;
     const noun = context.command.directObject!.entity!; // Safe because validate ensures it exists
     const withKey = context.command.indirectObject?.entity;
+    
+    // Analyze the unlocking context
+    const analysis = analyzeLockContext(context, noun, withKey);
     
     // Delegate to behavior for unlocking
     const result: IUnlockResult = LockableBehavior.unlock(noun, withKey);
     
     // Check if the behavior reported failure
     if (!result.success) {
-      if (result.alreadyUnlocked) {
-        return [context.event('action.error', {
-          actionId: context.action.id,
-          messageId: 'already_unlocked',
-          reason: 'already_unlocked',
-          params: { item: noun.name }
-        })];
-      }
-      if (result.noKey) {
-        return [context.event('action.error', {
-          actionId: context.action.id,
-          messageId: 'no_key',
-          reason: 'no_key'
-        })];
-      }
-      if (result.wrongKey) {
-        return [context.event('action.error', {
-          actionId: context.action.id,
-          messageId: 'wrong_key',
-          reason: 'wrong_key',
-          params: { 
-            key: withKey?.name || 'key', 
-            item: noun.name 
-          }
-        })];
-      }
-      // Shouldn't happen if validate() was called, but handle it
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'cannot_unlock',
-        reason: 'cannot_unlock',
-        params: { item: noun.name }
-      })];
+      const errorEvent = createLockErrorEvent(context, result, noun, withKey, false);
+      return errorEvent ? [errorEvent] : [];
     }
     
-    // Unlocking succeeded - gather information about what we're unlocking
-    const isContainer = noun.has(TraitType.CONTAINER);
-    const isDoor = noun.has(TraitType.DOOR);
-    const contents = isContainer ? context.world.getContents(noun.id) : [];
-    const requiresKey = LockableBehavior.requiresKey(noun);
+    // Unlocking succeeded - gather additional information
+    const contents = analysis.isContainer ? context.world.getContents(noun.id) : [];
     
     // Check for auto-open behavior
     let willAutoOpen = false;
@@ -170,9 +111,9 @@ export const unlockingAction: Action & { metadata: ActionMetadata } = {
       targetName: noun.name,
       containerId: noun.id,
       containerName: noun.name,
-      isContainer,
-      isDoor,
-      requiresKey,
+      isContainer: analysis.isContainer,
+      isDoor: analysis.isDoor,
+      requiresKey: analysis.requiresKey,
       hasContents: contents.length > 0,
       contentsCount: contents.length,
       contentsIds: contents.map(e => e.id),
@@ -187,7 +128,7 @@ export const unlockingAction: Action & { metadata: ActionMetadata } = {
     }
     
     // Determine message
-    const messageId = withKey ? 'unlocked_with' : 'unlocked';
+    const messageId = determineLockMessage(false, !!withKey);
     const params: Record<string, any> = {
       item: noun.name
     };

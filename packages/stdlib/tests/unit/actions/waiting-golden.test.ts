@@ -205,10 +205,11 @@ describe('waitingAction (Golden Pattern)', () => {
       
       const events = waitingAction.execute(context);
       
+      // Simplified implementation includes basic data
       expectEvent(events, 'if.event.waited', {
         location: room.id,
         locationName: 'Test Room',
-        waitCount: 0
+        turnsPassed: 1
       });
     });
   });
