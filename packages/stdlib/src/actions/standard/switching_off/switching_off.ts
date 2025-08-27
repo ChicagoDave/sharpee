@@ -12,6 +12,7 @@ import { TraitType, SwitchableBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { SwitchedOffEventData } from './switching_off-events';
+import { analyzeSwitchingContext, determineSwitchingMessage } from '../switching-shared';
 
 export const switchingOffAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.SWITCHING_OFF,
@@ -50,7 +51,6 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
   },
   
   execute(context: ActionContext): ISemanticEvent[] {
-    const actor = context.player;
     const noun = context.command.directObject?.entity!;
     
     // Get the switchable data before turning off for checking state
@@ -83,6 +83,9 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
       })];
     }
     
+    // Analyze the switching context
+    const analysis = analyzeSwitchingContext(context, noun);
+    
     // Build event data
     const eventData: SwitchedOffEventData = {
       target: noun.id,
@@ -93,81 +96,52 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
       target: noun.name
     };
     
-    // Determine appropriate message based on device type and effects
-    let messageId = 'switched_off';
-    
-    // Add information about what type of device was switched off
-    if (noun.has(TraitType.LIGHT_SOURCE)) {
+    // Add light source data if applicable
+    if (analysis.isLightSource) {
       eventData.isLightSource = true;
       
-      // Check if this will darken the room
-      const actorRoom = context.world.getContainingRoom(actor.id);
-      const deviceRoom = context.world.getContainingRoom(noun.id);
-      const deviceLocation = context.world.getLocation?.(noun.id);
-      
-      if (actorRoom && deviceRoom && actorRoom.id === deviceRoom.id) {
-        // Need to check if there are other light sources in the room
-        const roomContents = context.world.getContents(actorRoom.id);
-        const otherLights = roomContents.filter(item => 
-          item.id !== noun.id && 
-          item.has(TraitType.LIGHT_SOURCE) && 
-          item.has(TraitType.SWITCHABLE) &&
-          (item.get(TraitType.SWITCHABLE) as any).isOn
-        );
-        
-        // Also check if player is carrying other lights
-        const carriedItems = context.world.getContents(actor.id);
-        const carriedLights = carriedItems.filter(item =>
-          item.id !== noun.id &&
-          item.has(TraitType.LIGHT_SOURCE) &&
-          item.has(TraitType.SWITCHABLE) &&
-          (item.get(TraitType.SWITCHABLE) as any).isOn
-        );
-        
-        if (otherLights.length === 0 && carriedLights.length === 0) {
-          eventData.willDarkenLocation = true;
-          messageId = 'light_off';
-        } else {
-          messageId = 'light_off_still_lit';
-        }
+      if (analysis.isInSameRoom && analysis.willAffectDarkness) {
+        eventData.willDarkenLocation = true;
       }
     }
     
-    // Check for special sounds
-    if (result.offSound) {
-      eventData.sound = result.offSound;
-      params.sound = result.offSound;
-      messageId = 'with_sound';
-    } else if (hadRunningSound) {
-      eventData.stoppedSound = hadRunningSound;
-      messageId = 'silence_falls';
-    } else if (!eventData.isLightSource) {
-      // Non-light devices might power down
-      messageId = 'device_stops';
-    }
-    
-    // Check if this was temporary
+    // Add temporary and power data
     if (hadAutoOff) {
       eventData.wasTemporary = true;
-      eventData.remainingTime = remainingTime; // Use the value we saved before turning off
+      eventData.remainingTime = remainingTime;
       params.remainingTime = remainingTime;
-      messageId = 'was_temporary';
     }
     
-    // Include power freed if device consumed power
     if (powerConsumption) {
       eventData.powerFreed = powerConsumption;
     }
     
+    if (result.offSound) {
+      eventData.sound = result.offSound;
+      params.sound = result.offSound;
+    } else if (hadRunningSound) {
+      eventData.stoppedSound = hadRunningSound;
+    }
+    
     // Check for side effects
+    let willClose = false;
     if (noun.has(TraitType.CONTAINER) && noun.has(TraitType.OPENABLE)) {
-      // Some devices might close when turned off (e.g., automatic doors)
       const openableTrait = noun.get(TraitType.OPENABLE) as any;
       if (openableTrait.isOpen && openableTrait.autoCloseOnOff) {
         eventData.willClose = true;
-        messageId = 'door_closes';
+        willClose = true;
       }
     }
+    
+    // Determine appropriate message
+    const messageId = determineSwitchingMessage(
+      false, // isOn = false
+      analysis,
+      result.offSound,
+      hadAutoOff,
+      hadRunningSound,
+      willClose
+    );
     
     // Create events
     const events: ISemanticEvent[] = [];
@@ -177,10 +151,10 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
     
     // Add success message
     events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: messageId,
-        params: params
-      }));
+      actionId: context.action.id,
+      messageId: messageId,
+      params: params
+    }));
     
     return events;
   },

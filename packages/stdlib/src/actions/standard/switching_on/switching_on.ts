@@ -12,6 +12,7 @@ import { TraitType, SwitchableBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { SwitchedOnEventData } from './switching_on-events';
+import { analyzeSwitchingContext, determineSwitchingMessage } from '../switching-shared';
 
 export const switchingOnAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.SWITCHING_ON,
@@ -56,7 +57,6 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
   },
   
   execute(context: ActionContext): ISemanticEvent[] {
-    const actor = context.player;
     const noun = context.command.directObject?.entity!;
     
     // Delegate state change to behavior
@@ -89,6 +89,9 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       })];
     }
     
+    // Analyze the switching context
+    const analysis = analyzeSwitchingContext(context, noun);
+    
     // Build event data
     const eventData: SwitchedOnEventData = {
       target: noun.id,
@@ -99,54 +102,24 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       target: noun.name
     };
     
-    // Determine appropriate message based on device type and effects
-    let messageId = 'switched_on';
-    
-    // Add information about what type of device was switched on
-    if (noun.has(TraitType.LIGHT_SOURCE)) {
+    // Add light source data if applicable
+    if (analysis.isLightSource) {
       eventData.isLightSource = true;
-      const lightTrait = noun.get(TraitType.LIGHT_SOURCE) as any;
-      eventData.lightRadius = lightTrait.radius || 1;
-      eventData.lightIntensity = lightTrait.intensity || 'normal';
+      eventData.lightRadius = analysis.lightRadius;
+      eventData.lightIntensity = analysis.lightIntensity;
       
-      // Check if this will illuminate the room
-      const actorRoom = context.world.getContainingRoom(actor.id);
-      const deviceRoom = context.world.getContainingRoom(noun.id);
-      const deviceLocation = context.world.getLocation?.(noun.id);
-      
-      if (actorRoom && deviceRoom && actorRoom.id === deviceRoom.id) {
+      if (analysis.isInSameRoom && analysis.willAffectDarkness) {
         eventData.willIlluminateLocation = true;
-        
-        // Check if the room was dark
-        const roomContents = context.world.getContents(actorRoom.id);
-        const otherLights = roomContents.filter(item => 
-          item.id !== noun.id && 
-          item.has(TraitType.LIGHT_SOURCE) && 
-          item.has(TraitType.SWITCHABLE) &&
-          (item.get(TraitType.SWITCHABLE) as any).isOn
-        );
-        
-        if (otherLights.length === 0) {
-          messageId = 'illuminates_darkness';
-        } else {
-          messageId = 'light_on';
-        }
       }
-    }
-    
-    // Check for special sounds
-    if (!eventData.isLightSource) {
-      // Non-light devices might hum
-      messageId = 'device_humming';
     }
     
     // Check for temporary activation
     if (result.autoOffTime && result.autoOffTime > 0) {
       eventData.autoOffTime = result.autoOffTime;
       eventData.temporary = true;
-      messageId = 'temporary_activation';
     }
     
+    // Add power and sound data
     if (result.powerConsumption) {
       eventData.powerConsumption = result.powerConsumption;
     }
@@ -155,24 +128,30 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       eventData.continuousSound = result.runningSound;
     }
     
-    // Add any custom sounds
     if (result.onSound) {
       eventData.sound = result.onSound;
       params.sound = result.onSound;
-      if (!eventData.isLightSource) {
-        messageId = 'with_sound';
-      }
     }
     
     // Check for side effects
+    let willOpen = false;
     if (noun.has(TraitType.CONTAINER) && noun.has(TraitType.OPENABLE)) {
-      // Some devices might open when turned on (e.g., automatic doors)
       const openableTrait = noun.get(TraitType.OPENABLE) as any;
       if (!openableTrait.isOpen) {
         eventData.willOpen = true;
-        messageId = 'door_opens';
+        willOpen = true;
       }
     }
+    
+    // Determine appropriate message
+    const messageId = determineSwitchingMessage(
+      true, // isOn
+      analysis,
+      result.onSound,
+      !!(result.autoOffTime && result.autoOffTime > 0),
+      undefined, // no running sound when turning on
+      willOpen
+    );
     
     // Create events
     const events: ISemanticEvent[] = [];
@@ -182,10 +161,10 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
     
     // Add success message
     events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: messageId,
-        params: params
-      }));
+      actionId: context.action.id,
+      messageId: messageId,
+      params: params
+    }));
     
     return events;
   },

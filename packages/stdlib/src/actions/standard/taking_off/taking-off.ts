@@ -12,6 +12,14 @@ import { TraitType, WearableTrait, WearableBehavior } from '@sharpee/world-model
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { RemovedEventData } from './taking-off-events';
+import {
+  analyzeWearableContext,
+  checkRemovalBlockers,
+  buildWearableEventParams,
+  createWearableErrorEvent,
+  createWearableSuccessEvent,
+  hasRemovalRestrictions
+} from '../wearable-shared';
 
 export const takingOffAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.TAKING_OFF,
@@ -53,39 +61,23 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
   execute(context: ActionContext): ISemanticEvent[] {
     const actor = context.player;
     const item = context.command.directObject?.entity!;
-    const wearableTrait = item.get(TraitType.WEARABLE) as WearableTrait;
     
-    // Check for layering conflicts - can't remove if something is worn over it
-    if (wearableTrait.layer !== undefined && wearableTrait.bodyPart) {
-      const inventory = context.world.getContents(actor.id);
-      const blockingItem = inventory.find(invItem => {
-        if (invItem.id === item.id) return false;
-        if (!invItem.has(TraitType.WEARABLE)) return false;
-        
-        const otherWearable = invItem.get(TraitType.WEARABLE) as WearableTrait;
-        return otherWearable.worn && 
-               otherWearable.layer !== undefined &&
-               otherWearable.layer > wearableTrait.layer &&
-               otherWearable.bodyPart === wearableTrait.bodyPart;
-      });
-      
-      if (blockingItem) {
-        return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'prevents_removal',
-        reason: 'prevents_removal',
-        params: { blocking: blockingItem.name }
+    // Analyze the wearable context
+    const wearableContext = analyzeWearableContext(context, item, actor);
+    const { wearableTrait } = wearableContext;
+    
+    // Check for layering conflicts using shared helper
+    const blockingItem = checkRemovalBlockers(wearableContext);
+    if (blockingItem) {
+      return [createWearableErrorEvent(context, 'prevents_removal', 'prevents_removal', { 
+        blocking: blockingItem.name 
       })];
-      }
     }
     
     // Check if removing this would cause problems (e.g., cursed items)
-    if ((wearableTrait as any).cursed) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'cant_remove',
-        reason: 'cant_remove',
-        params: { item: item.name }
+    if (hasRemovalRestrictions(wearableTrait)) {
+      return [createWearableErrorEvent(context, 'cant_remove', 'cant_remove', { 
+        item: item.name 
       })];
     }
     
@@ -95,41 +87,23 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
     // Handle failure cases (defensive checks)
     if (!result.success) {
       if (result.notWorn) {
-        return [context.event('action.error', {
-          actionId: context.action.id,
-          messageId: 'not_wearing',
-          reason: 'not_wearing',
-          params: { item: item.name }
+        return [createWearableErrorEvent(context, 'not_wearing', 'not_wearing', { 
+          item: item.name 
         })];
       }
       if (result.wornByOther) {
-        return [context.event('action.error', {
-          actionId: context.action.id,
-          messageId: 'not_wearing',
-          reason: 'worn_by_other',
-          params: { item: item.name, wornBy: result.wornByOther }
+        return [createWearableErrorEvent(context, 'not_wearing', 'worn_by_other', { 
+          item: item.name, 
+          wornBy: result.wornByOther 
         })];
       }
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'cant_remove',
-        reason: 'cant_remove',
-        params: { item: item.name }
+      return [createWearableErrorEvent(context, 'cant_remove', 'cant_remove', { 
+        item: item.name 
       })];
     }
     
-    // Build event data
-    const eventData: Record<string, unknown> = {
-      item: item.name
-    };
-    
-    if (wearableTrait.bodyPart) {
-      eventData.bodyPart = wearableTrait.bodyPart;
-    }
-    
-    if (wearableTrait.layer !== undefined) {
-      eventData.layer = wearableTrait.layer;
-    }
+    // Build event data using shared helper
+    const eventData = buildWearableEventParams(item, wearableTrait);
     
     const events: ISemanticEvent[] = [];
     
@@ -141,12 +115,8 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
     };
     events.push(context.event('if.event.removed', removedData));
     
-    // Create success message
-    events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: 'removed',
-        params: eventData
-      }));
+    // Create success message using shared helper
+    events.push(createWearableSuccessEvent(context, 'removed', eventData));
     
     return events;
   },

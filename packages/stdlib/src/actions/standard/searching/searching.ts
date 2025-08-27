@@ -8,16 +8,19 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
 import { 
-  TraitType, 
-  IdentityTrait,
-  IdentityBehavior,
-  ContainerBehavior,
+  TraitType,
   OpenableBehavior
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { SearchedEventData } from './searching-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
+import {
+  analyzeSearchTarget,
+  revealConcealedItems,
+  determineSearchMessage,
+  buildSearchEventData
+} from '../searching-helpers';
 
 export const searchingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.SEARCHING,
@@ -63,92 +66,30 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
   },
   
   execute(context: ActionContext): ISemanticEvent[] {
-    const actor = context.player;
     const target = context.command.directObject?.entity;
     
-    // If no target, search the current location
-    const searchTarget = target || context.currentLocation;
+    // Analyze what we're searching
+    const searchContext = analyzeSearchTarget(context, target);
     
-    // Find concealed items using behavior
-    const contents = context.world.getContents(searchTarget.id);
-    const concealedItems = contents.filter(item => {
-      if (item.has(TraitType.IDENTITY)) {
-        return IdentityBehavior.isConcealed(item);
-      }
-      return false;
-    });
+    // Reveal any concealed items found
+    if (searchContext.concealedItems.length > 0) {
+      revealConcealedItems(searchContext.concealedItems);
+    }
     
     // Build event data
-    const eventData: SearchedEventData = {
-      target: searchTarget.id,
-      targetName: searchTarget.name,
-      foundItems: concealedItems.map(item => item.id),
-      foundItemNames: concealedItems.map(item => item.name)
-    };
-    
-    // Add location context if searching current location
-    if (!target) {
-      eventData.searchingLocation = true;
-    }
+    const eventData = buildSearchEventData(searchContext) as SearchedEventData;
     
     // Create SEARCHED event for world model
     const events: ISemanticEvent[] = [];
     events.push(context.event('if.event.searched', eventData));
     
-    // Determine appropriate message
-    let messageId: string;
-    const params: Record<string, any> = {
-      target: searchTarget.name
-    };
-    
-    if (concealedItems.length > 0) {
-      // Found concealed items - reveal them using behavior
-      concealedItems.forEach(item => {
-        if (item.has(TraitType.IDENTITY)) {
-          IdentityBehavior.reveal(item);
-        }
-      });
-      
-      params.items = concealedItems.map(item => item.name).join(', ');
-      params.where = searchTarget.has(TraitType.CONTAINER) ? 'inside' : 
-                           searchTarget.has(TraitType.SUPPORTER) ? 'on' : 'here';
-      messageId = 'found_concealed';
-    } else if (searchTarget.has(TraitType.CONTAINER)) {
-      // Container specific messages
-      if (contents.length === 0) {
-        messageId = 'empty_container';
-      } else {
-        params.items = contents.map(item => item.name).join(', ');
-        messageId = 'container_contents';
-      }
-    } else if (searchTarget.has(TraitType.SUPPORTER)) {
-      // Supporter specific messages
-      if (contents.length > 0) {
-        params.items = contents.map(item => item.name).join(', ');
-        messageId = 'supporter_contents';
-      } else {
-        messageId = 'nothing_special';
-      }
-    } else if (!target) {
-      // Searching the location
-      messageId = 'searched_location';
-    } else {
-      // Searching a regular object
-      if (concealedItems.length > 0) {
-        // Found concealed items in regular object
-        params.items = concealedItems.map(item => item.name).join(', ');
-        params.where = 'here';
-        messageId = 'found_concealed';
-      } else {
-        messageId = contents.length > 0 ? 'searched_object' : 'nothing_special';
-      }
-    }
-    
+    // Determine and add success message
+    const { messageId, params } = determineSearchMessage(searchContext);
     events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: messageId,
-        params: params
-      }));
+      actionId: context.action.id,
+      messageId,
+      params
+    }));
     
     return events;
   },

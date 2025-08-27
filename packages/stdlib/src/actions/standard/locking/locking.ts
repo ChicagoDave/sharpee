@@ -12,6 +12,7 @@ import { TraitType, LockableBehavior, OpenableBehavior, ILockResult } from '@sha
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { LockedEventData } from './locking-events';
+import { analyzeLockContext, validateKeyRequirements, createLockErrorEvent, determineLockMessage } from '../lock-shared';
 
 export const lockingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.LOCKING,
@@ -73,38 +74,10 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
       }
     }
     
-    // Check key requirements
-    if (LockableBehavior.requiresKey(noun)) {
-      // No key specified
-      if (!withKey) {
-        return { 
-          valid: false, 
-          error: 'no_key'
-        };
-      }
-      
-      // Check if player has the key
-      const actor = context.player;
-      const keyLocation = context.world.getLocation(withKey.id);
-      if (keyLocation !== actor.id) {
-        return { 
-          valid: false, 
-          error: 'key_not_held',
-          params: { key: withKey.name }
-        };
-      }
-      
-      // Check if it's the right key
-      if (!LockableBehavior.canLockWith(noun, withKey.id)) {
-        return { 
-          valid: false, 
-          error: 'wrong_key',
-          params: { 
-            key: withKey.name, 
-            item: noun.name 
-          }
-        };
-      }
+    // Validate key requirements using shared helper
+    const keyValidation = validateKeyRequirements(context, noun, withKey, true);
+    if (keyValidation) {
+      return keyValidation;
     }
     
     return { valid: true };
@@ -117,56 +90,19 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
    */
   execute(context: ActionContext): ISemanticEvent[] {
     // Assume validation has passed - no checks needed
-    const actor = context.player;
     const noun = context.command.directObject!.entity!; // Safe because validate ensures it exists
     const withKey = context.command.indirectObject?.entity;
+    
+    // Analyze the locking context
+    const analysis = analyzeLockContext(context, noun, withKey);
     
     // Delegate to behavior for locking
     const result: ILockResult = LockableBehavior.lock(noun, withKey);
     
     // Check if the behavior reported failure
     if (!result.success) {
-      if (result.alreadyLocked) {
-        return [context.event('action.error', {
-          actionId: context.action.id,
-          messageId: 'already_locked',
-          reason: 'already_locked',
-          params: { item: noun.name }
-        })];
-      }
-      if (result.notClosed) {
-        return [context.event('action.error', {
-          actionId: context.action.id,
-          messageId: 'not_closed',
-          reason: 'not_closed',
-          params: { item: noun.name }
-        })];
-      }
-      if (result.noKey) {
-        return [context.event('action.error', {
-          actionId: context.action.id,
-          messageId: 'no_key',
-          reason: 'no_key'
-        })];
-      }
-      if (result.wrongKey) {
-        return [context.event('action.error', {
-          actionId: context.action.id,
-          messageId: 'wrong_key',
-          reason: 'wrong_key',
-          params: { 
-            key: withKey?.name || 'key', 
-            item: noun.name 
-          }
-        })];
-      }
-      // Shouldn't happen if validate() was called, but handle it
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'cannot_lock',
-        reason: 'cannot_lock',
-        params: { item: noun.name }
-      })];
+      const errorEvent = createLockErrorEvent(context, result, noun, withKey, true);
+      return errorEvent ? [errorEvent] : [];
     }
     
     // Locking succeeded - build the event data
@@ -175,12 +111,12 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
       targetName: noun.name
     };
     
-    // Add type information
-    if (noun.has(TraitType.CONTAINER)) {
+    // Add type information from analysis
+    if (analysis.isContainer) {
       eventData.isContainer = true;
     }
     
-    if (noun.has(TraitType.DOOR)) {
+    if (analysis.isDoor) {
       eventData.isDoor = true;
     }
     
@@ -196,21 +132,20 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
     }
     
     // Determine success message
-    let messageId = 'locked';
+    const messageId = determineLockMessage(true, !!withKey);
     const params: Record<string, any> = {
       item: noun.name
     };
     
     // Add container/door info
-    if (noun.has(TraitType.CONTAINER)) {
+    if (analysis.isContainer) {
       params.isContainer = true;
     }
-    if (noun.has(TraitType.DOOR)) {
+    if (analysis.isDoor) {
       params.isDoor = true;
     }
     
     if (withKey) {
-      messageId = 'locked_with';
       params.key = withKey.name;
     }
     

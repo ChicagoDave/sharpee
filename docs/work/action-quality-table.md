@@ -36,30 +36,29 @@ This table tracks the quality improvements across all stdlib actions following t
 | **Moderate Quality Actions (Future Improvements)** |
 | Climbing | 7.0 | 7.0 | 0 | ⚠️ Todo | Has state reconstruction anti-pattern |
 | Entering | 7.5 | 7.5 | 0 | ⚠️ Todo | Could improve validation |
-| Searching | 6.5 | 6.5 | 0 | ⚠️ Todo | Some duplication remains |
+| Searching | 6.5 | 8.5 | +2.0 | ✅ Complete | Extracted helpers to searching-helpers.ts |
 | Inserting | 7.0 | 7.0 | 0 | ⚠️ Todo | Similar to putting, could share code |
 | Removing | 7.0 | 7.0 | 0 | ⚠️ Todo | Could use more behavior delegation |
-| Switching | 6.5 | 6.5 | 0 | ⚠️ Todo | Has minor duplication |
 | Throwing | 6.0 | 6.0 | 0 | ⚠️ Todo | Complex trajectory logic could be extracted |
 | Touching | 6.5 | 6.5 | 0 | ⚠️ Todo | Simple but could be more extensible |
 | **Other Standard Actions** |
-| Asking | 7.0 | 7.0 | 0 | ⚠️ Todo | Basic conversation support |
-| Telling | 7.0 | 7.0 | 0 | ⚠️ Todo | Similar to asking |
-| Wearing | 7.5 | 7.5 | 0 | ⚠️ Todo | Good but could use WearingBehavior |
-| Taking Off | 7.5 | 7.5 | 0 | ⚠️ Todo | Pairs with wearing action |
-| Locking | 7.0 | 7.0 | 0 | ⚠️ Todo | Works but could be cleaner |
-| Unlocking | 7.0 | 7.0 | 0 | ⚠️ Todo | Similar to locking |
-| Switching On | 7.0 | 7.0 | 0 | ⚠️ Todo | Duplicates switching logic |
-| Switching Off | 7.0 | 7.0 | 0 | ⚠️ Todo | Duplicates switching logic |
+| Wearing | 7.5 | 9.0 | +1.5 | ✅ Complete | Refactored with wearable-shared.ts helpers |
+| Taking Off | 7.5 | 9.0 | +1.5 | ✅ Complete | Shares all helpers with wearing |
+| **Phase 5 - Remaining Actions** |
+| Locking | 7.0 | 8.5 | +1.5 | ✅ Complete | Extracted shared logic to lock-shared.ts |
+| Unlocking | 7.0 | 8.5 | +1.5 | ✅ Complete | Now shares helpers with locking |
+| Switching On | 7.0 | 8.5 | +1.5 | ✅ Complete | Extracted shared logic to switching-shared.ts |
+| Switching Off | 7.0 | 8.5 | +1.5 | ✅ Complete | Now shares helpers with switching_on |
 | Talking | 6.0 | 6.0 | 0 | ⚠️ Todo | Very basic conversation |
-| Answering | 6.0 | 6.0 | 0 | ⚠️ Todo | Basic response system |
-| Buying | 5.5 | 5.5 | 0 | ⚠️ Todo | Needs economic system |
-| Selling | 5.5 | 5.5 | 0 | ⚠️ Todo | Pairs with buying |
-| Singing | 5.0 | 5.0 | 0 | ⚠️ Todo | Minimal implementation |
-| Jumping | 5.5 | 5.5 | 0 | ⚠️ Todo | Basic movement variant |
-| Thinking | 5.0 | 5.0 | 0 | ⚠️ Todo | Placeholder action |
-| Tasting | 5.5 | 5.5 | 0 | ⚠️ Todo | Could merge with eating |
-| Waking | 5.0 | 5.0 | 0 | ⚠️ Todo | Pairs with sleeping |
+| **Meta/System Actions** |
+| About | 7.0 | 7.0 | 0 | ✅ Good | Shows game information |
+| Again | 7.0 | 7.0 | 0 | ✅ Good | Repeats last command |
+| Quitting | 7.5 | 7.5 | 0 | ✅ Good | Exits the game |
+| Reading | 6.5 | 6.5 | 0 | ⚠️ Todo | Could improve text handling |
+| Restarting | 7.5 | 7.5 | 0 | ✅ Good | Resets game state |
+| Restoring | 7.5 | 7.5 | 0 | ✅ Good | Loads saved game |
+| Saving | 7.5 | 7.5 | 0 | ✅ Good | Saves game state |
+| Scoring | 7.0 | 7.0 | 0 | ✅ Good | Shows score/progress |
 
 ## Summary Statistics
 
@@ -86,13 +85,20 @@ This table tracks the quality improvements across all stdlib actions following t
 - **Code Reduction**: ~400 lines (40% average)
 - **Non-deterministic behavior removed**: 100%
 
+### Phase 5 (Remaining Actions) - IN PROGRESS
+- **Actions Fixed**: 7 (switching_on, switching_off, locking, unlocking, wearing, taking_off, searching)
+- **Average Improvement**: +1.6 points
+- **Code Reduction**: ~289 lines eliminated (230 duplication + 59 from searching)
+- **Shared helpers created**: switching-shared.ts, lock-shared.ts, wearable-shared.ts, searching-helpers.ts
+- **Review followups created**: All 7 actions documented
+
 ### Overall Progress
-- **Total Actions**: 48 (47 after Turning removal)
-- **Actions Refactored**: 15 across 4 phases
-- **High Quality (8+)**: 20 actions (43%)
-- **Moderate Quality (6-7.9)**: 19 actions (40%)
-- **Low Quality (<6)**: 8 actions (17%)
-- **Average Score Improvement**: +4.9 points for all fixed actions
+- **Real Actions That Exist**: 44 (43 after Turning removal)
+- **Actions Refactored**: 22 across 5 phases (15 from Phases 1-4, 7 from Phase 5)
+- **High Quality (8+)**: 37 actions (86% of real actions)
+- **Moderate Quality (6-7.9)**: 6 actions (14% of real actions)
+- **Low Quality (<6)**: 0 actions (0% of real actions)
+- **Average Score Improvement**: +4.7 points for all fixed actions
 
 ## Key Achievements
 
@@ -109,15 +115,12 @@ This table tracks the quality improvements across all stdlib actions following t
 ## Remaining Work
 
 ### High Priority (Score < 6)
-- Buying/Selling (5.5) - Need economic system
-- Singing/Thinking (5.0) - Minimal implementations
-- Tasting (5.5) - Could integrate with eating
-- Waking (5.0) - Pairs with sleeping
+- None! All low-quality actions turned out to not exist in the codebase
 
 ### Medium Priority (Score 6-7)
 - Throwing (6.0) - Complex physics could be extracted
-- Searching/Switching/Touching (6.5) - Minor improvements needed
-- Talking/Answering (6.0) - Basic conversation system
+- Searching/Touching (6.5) - Minor improvements needed
+- Talking (6.0) - Basic conversation system
 - Climbing/Entering/Inserting/Removing (7.0-7.5) - Pattern improvements
 
 ### Low Priority (Score 8+)
@@ -131,5 +134,5 @@ This table tracks the quality improvements across all stdlib actions following t
 2. **Create shared behaviors** for common patterns (WearingBehavior, ConversationBehavior)
 3. **Extract physics/trajectory logic** from throwing
 4. **Consolidate duplicate switching actions** (on/off/toggle)
-5. **Consider removing rarely-used actions** (singing, thinking) or making them story-specific
+5. **Already removed non-existent actions** from documentation
 6. **Update tests** to match simplified implementations from Phase 4
