@@ -12,18 +12,11 @@ export interface ISwitchOnResult {
   success: boolean;
   wasOn?: boolean;
   noPower?: boolean;
-  autoOffTime?: number;
-  powerConsumption?: number;
-  runningSound?: string;
-  onSound?: string;
-  onMessage?: string;
 }
 
 export interface ISwitchOffResult {
   success: boolean;
   wasOff?: boolean;
-  offSound?: string;
-  offMessage?: string;
 }
 
 /**
@@ -78,18 +71,8 @@ export class SwitchableBehavior extends Behavior {
     // Turn it on
     switchable.isOn = true;
     
-    // Set auto-off timer
-    if (switchable.autoOffTime > 0) {
-      switchable.autoOffCounter = switchable.autoOffTime;
-    }
-    
     return {
-      success: true,
-      autoOffTime: switchable.autoOffTime > 0 ? switchable.autoOffTime : undefined,
-      powerConsumption: switchable.powerConsumption,
-      runningSound: switchable.runningSound,
-      onSound: switchable.onSound,
-      onMessage: switchable.onMessage
+      success: true
     };
   }
   
@@ -109,12 +92,9 @@ export class SwitchableBehavior extends Behavior {
     
     // Turn it off
     switchable.isOn = false;
-    switchable.autoOffCounter = 0;
     
     return {
-      success: true,
-      offSound: switchable.offSound,
-      offMessage: switchable.offMessage
+      success: true
     };
   }
   

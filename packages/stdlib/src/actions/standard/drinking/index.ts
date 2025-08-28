@@ -3,4 +3,8 @@
  */
 
 export { drinkingAction } from './drinking';
-export * from './drinking-events';
+export type { 
+  DrunkEventData,
+  DrinkingErrorData,
+  DrinkingEventMap
+} from './drinking-events';

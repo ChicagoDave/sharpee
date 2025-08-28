@@ -3,4 +3,8 @@
  */
 
 export { eatingAction } from './eating';
-export * from './eating-events';
+export type { 
+  EatenEventData,
+  EatingErrorData,
+  EatingEventMap
+} from './eating-events';

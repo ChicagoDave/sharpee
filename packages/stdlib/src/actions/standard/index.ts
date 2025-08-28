@@ -22,9 +22,7 @@ export * from './scoring';
 export * from './help';
 export * from './about';
 export * from './locking';
-export * from './unlocking';
-export * from './switching_on';
-export * from './switching_off';
+export * from './switching';
 export * from './entering';
 export * from './exiting';
 export * from './climbing';
@@ -52,11 +50,7 @@ export * from './pulling';
 // export * from './turning'; // Removed - TURNABLE trait doesn't exist
 // export * from './using'; // Removed - USE is not idiomatic IF
 
-// Wearing and taking_off share some event types
-export { wearingAction } from './wearing';
-export { takingOffAction } from './taking_off';
-export type { WornEventData, ImplicitTakenEventData } from './wearing/wearing-events';
-export type { RemovedEventData as TakenOffEventData } from './taking_off/taking-off-events';
+export * from './wearable';
 
 export * from './eating';
 export * from './drinking';
@@ -85,10 +79,10 @@ import { sleepingAction } from './sleeping'; // Now from folder
 import { scoringAction } from './scoring'; // Now from folder
 import { helpAction } from './help'; // Now from folder
 import { aboutAction } from './about'; // Now from folder
-import { lockingAction } from './locking'; // Now from folder
-import { unlockingAction } from './unlocking'; // Now from folder
-import { switchingOnAction } from './switching_on'; // Now from folder
-import { switchingOffAction } from './switching_off'; // Now from folder
+// Locking actions use sub-actions pattern
+import { lockingAction, unlockingAction } from './locking';
+// Switching actions use sub-actions pattern
+import { switchingOnAction, switchingOffAction } from './switching';
 import { enteringAction } from './entering'; // Now from folder
 import { exitingAction } from './exiting'; // Now from folder
 import { climbingAction } from './climbing'; // Now from folder
@@ -107,8 +101,8 @@ import { pushingAction } from './pushing';
 import { pullingAction } from './pulling';
 // import { turningAction } from './turning'; // Removed - TURNABLE trait doesn't exist
 // import { usingAction } from './using'; // Removed - USE is not idiomatic IF
-import { wearingAction } from './wearing';
-import { takingOffAction } from './taking_off';
+// Wearable actions use sub-actions pattern
+import { wearingAction, takingOffAction } from './wearable';
 import { eatingAction } from './eating';
 import { drinkingAction } from './drinking';
 import { talkingAction } from './talking'; // Now from folder
