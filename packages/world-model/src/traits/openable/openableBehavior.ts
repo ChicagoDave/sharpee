@@ -10,11 +10,8 @@ import { OpenableTrait } from './openableTrait';
  */
 export interface IOpenResult {
   success: boolean;
-  alreadyOpen?: boolean;
-  stateChanged?: boolean;
-  openMessage?: string;
-  openSound?: string;
-  revealsContents?: boolean;
+  wasOpen?: boolean;
+  wasClosed?: boolean;
 }
 
 /**
@@ -22,11 +19,9 @@ export interface IOpenResult {
  */
 export interface ICloseResult {
   success: boolean;
-  alreadyClosed?: boolean;
+  wasClosed?: boolean;
+  wasOpen?: boolean;
   cantClose?: boolean;
-  stateChanged?: boolean;
-  closeMessage?: string;
-  closeSound?: string;
 }
 
 /**
@@ -63,8 +58,7 @@ export class OpenableBehavior extends Behavior {
     if (openable.isOpen) {
       return {
         success: false,
-        alreadyOpen: true,
-        stateChanged: false
+        wasOpen: true
       };
     }
     
@@ -73,10 +67,7 @@ export class OpenableBehavior extends Behavior {
     
     return {
       success: true,
-      stateChanged: true,
-      openMessage: openable.openMessage,
-      openSound: openable.openSound,
-      revealsContents: openable.revealsContents
+      wasClosed: true
     };
   }
   
@@ -90,8 +81,7 @@ export class OpenableBehavior extends Behavior {
     if (!openable.isOpen) {
       return {
         success: false,
-        alreadyClosed: true,
-        stateChanged: false
+        wasClosed: true
       };
     }
     
@@ -99,7 +89,7 @@ export class OpenableBehavior extends Behavior {
       return {
         success: false,
         cantClose: true,
-        stateChanged: false
+        wasOpen: true
       };
     }
     
@@ -108,9 +98,7 @@ export class OpenableBehavior extends Behavior {
     
     return {
       success: true,
-      stateChanged: true,
-      closeMessage: openable.closeMessage,
-      closeSound: openable.closeSound
+      wasOpen: true
     };
   }
   
@@ -136,11 +124,4 @@ export class OpenableBehavior extends Behavior {
     return openable.isOpen;
   }
   
-  /**
-   * Check if opening reveals contents
-   */
-  static revealsContents(entity: IFEntity): boolean {
-    const openable = OpenableBehavior.require<OpenableTrait>(entity, TraitType.OPENABLE);
-    return openable.revealsContents;
-  }
 }

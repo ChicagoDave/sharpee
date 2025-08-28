@@ -21,6 +21,7 @@ import { IFActions } from '../../constants';
 import { EnteredEventData } from './entering-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
+import { enter } from './sub-actions/enter';
 
 export const enteringAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.ENTERING,
@@ -176,42 +177,22 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
   execute(context: ActionContext): ISemanticEvent[] {
     const actor = context.player;
     const target = context.command.directObject?.entity!;
-    const currentLocation = context.world.getLocation(actor.id);
     
-    // Determine preposition and posture based on target type
-    let preposition: 'in' | 'on' = 'in';
-    let posture: string | undefined;
+    // Use sub-action for core logic
+    const result = enter(actor, target, context.world);
     
-    // Get details based on trait type
-    if (target.has(TraitType.ENTRY)) {
-      const entryTrait = target.get(TraitType.ENTRY) as EntryTrait;
-      preposition = (entryTrait.preposition || 'in') as 'in' | 'on';
-      posture = entryTrait.posture;
-      
-      // Update occupants in Entry trait using behavior
-      // Note: EntryBehavior.enter() returns events but we'll generate our own
-      // So we just update the occupants directly
-      entryTrait.occupants = entryTrait.occupants || [];
-      if (!entryTrait.occupants.includes(actor.id)) {
-        entryTrait.occupants.push(actor.id);
-      }
-    } else if (target.has(TraitType.CONTAINER)) {
-      preposition = 'in';
-    } else if (target.has(TraitType.SUPPORTER)) {
-      preposition = 'on';
+    if (!result.success) {
+      return [];
     }
-    
-    // Move the actor to the target
-    context.world.moveEntity(actor.id, target.id);
     
     // Build event data
     const params: Record<string, any> = {
       place: target.name,
-      preposition
+      preposition: result.preposition
     };
     
-    if (posture) {
-      params.posture = posture;
+    if (result.posture) {
+      params.posture = result.posture;
     }
     
     const events: ISemanticEvent[] = [];
@@ -219,15 +200,15 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
     // Create the ENTERED event for world model updates
     const enteredData: EnteredEventData = {
       targetId: target.id,
-      fromLocation: currentLocation,
-      preposition,
-      posture
+      fromLocation: result.previousLocation,
+      preposition: result.preposition,
+      posture: result.posture
     };
     
     events.push(context.event('if.event.entered', enteredData));
     
     // Create success message
-    const messageId = preposition === 'on' ? 'entered_on' : 'entered';
+    const messageId = result.preposition === 'on' ? 'entered_on' : 'entered';
     events.push(context.event('action.success', {
         actionId: context.action.id,
         messageId: messageId,

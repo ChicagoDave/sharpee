@@ -9,9 +9,9 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, PullableTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
-import { PulledEventData } from './pulling-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
+import { pullSubAction } from './sub-actions/pull';
 
 export const pullingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.PULLING,
@@ -57,41 +57,19 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
     
     // Check state of pullable
     const pullable = target.get(TraitType.PULLABLE) as PullableTrait;
-    if (pullable.state === 'pulled') {
+    if (pullable.state === 'pulled' && !pullable.repeatable) {
       return { valid: false, error: 'already_pulled', params: { target: target.name } };
     }
     
-    return { valid: true };
+    // Delegate additional validation to sub-action
+    return pullSubAction.validate(context);
   },
   
-  execute(context: ActionContext): ISemanticEvent[] {
-    const target = context.command.directObject!.entity!;
-    const pullable = target.get(TraitType.PULLABLE) as PullableTrait;
-    
-    // Build event data
-    const eventData: PulledEventData = {
-      target: target.id,
-      targetName: target.name,
-      pullCount: pullable.pullCount || 0,
-      pullType: pullable.pullType
-    };
-    
-    const events: ISemanticEvent[] = [];
-    
-    // Update the state
-    pullable.state = 'pulled';
-    pullable.pullCount = (pullable.pullCount || 0) + 1;
-    
-    // Emit the pulled event for story handlers
-    events.push(context.event('if.event.pulled', eventData));
-    
-    // Simple success message
-    events.push(context.event('action.success', {
-      actionId: this.id,
-      messageId: 'pulled',
-      params: { target: target.name }
-    }));
-    
-    return events;
+  execute(context: ActionContext): void {
+    pullSubAction.execute(context);
+  },
+  
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    return pullSubAction.report!(context, validationResult, executionError);
   }
 };

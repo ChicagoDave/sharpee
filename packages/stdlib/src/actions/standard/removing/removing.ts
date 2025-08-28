@@ -26,6 +26,7 @@ import { buildEventData } from '../../data-builder-types';
 import { removedDataConfig } from './removing-data';
 import { ScopeLevel } from '../../../scope';
 import { RemovingEventMap } from './removing-events';
+import { remove, IRemoveResult } from './sub-actions/remove';
 
 export const removingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.REMOVING,
@@ -136,6 +137,11 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
     const item = context.command.directObject?.entity!;
     const source = context.command.indirectObject?.entity!;
     
+    // Use sub-action to perform the actual state mutation
+    const removeSubResult: IRemoveResult = remove(item, source, actor, context.world);
+    (context as any)._removeSubResult = removeSubResult;
+    
+    // Also use behaviors for compatibility with existing event system
     // First remove from source using appropriate behavior
     let removeResult: IRemoveItemResult | IRemoveItemFromSupporterResult | null = null;
     

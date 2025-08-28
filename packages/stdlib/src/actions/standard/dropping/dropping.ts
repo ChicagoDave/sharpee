@@ -20,6 +20,8 @@ import { ScopeLevel } from '../../../scope/types';
 
 // Import our data builder
 import { droppedDataConfig, determineDroppingMessage } from './dropping-data';
+// Import sub-action
+import { drop } from './sub-actions/drop';
 
 export const droppingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.DROPPING,
@@ -99,8 +101,8 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     const actor = context.player;
     const noun = context.command.directObject?.entity!;
 
-    // Delegate to ActorBehavior for dropping logic
-    const result: IDropItemResult = ActorBehavior.dropItem(actor, noun, context.world);
+    // Use the drop sub-action for the core logic
+    const result = drop(actor, noun, context.world);
     
     // Store result for report phase
     (context as any)._dropResult = result;
@@ -155,29 +157,11 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     
     const actor = context.player;
     const noun = context.command.directObject?.entity!;
-    const result = (context as any)._dropResult as IDropItemResult;
+    const result = (context as any)._dropResult;
     
     // Handle failure cases
-    if (!result.success) {
-      if (result.notHeld) {
-        return [context.event('action.error', {
-          actionId: context.action.id,
-          messageId: 'not_held',
-          reason: 'not_held',
-          params: { item: noun.name }
-        })];
-      }
-      
-      if (result.stillWorn) {
-        return [context.event('action.error', {
-          actionId: context.action.id,
-          messageId: 'still_worn',
-          reason: 'still_worn',
-          params: { item: noun.name }
-        })];
-      }
-      
-      // Generic failure
+    if (!result || !result.success) {
+      // Generic failure (shouldn't happen since validation passed)
       return [context.event('action.error', {
         actionId: context.action.id,
         messageId: 'cant_drop',

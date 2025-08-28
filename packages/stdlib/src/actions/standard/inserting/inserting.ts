@@ -19,6 +19,7 @@ import { insertedDataConfig } from './inserting-data';
 import { puttingAction } from '../putting';
 import { createActionContext } from '../../enhanced-context';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
+import { insert, IInsertResult } from './sub-actions/insert';
 
 interface InsertingState {
   item: any;
@@ -106,8 +107,14 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
   },
   
   execute(context: ActionContext): void {
-    // For most cases, delegate to putting with 'in' preposition
-    // This ensures consistent behavior between "insert X in Y" and "put X in Y"
+    const item = context.command.directObject!.entity!;
+    const container = context.command.indirectObject!.entity!;
+    
+    // Use sub-action to perform the actual state mutation
+    const insertResult: IInsertResult = insert(item, container, context.world);
+    (context as any)._insertResult = insertResult;
+    
+    // Also execute putting action for compatibility with existing event system
     const modifiedCommand = {
       ...context.command,
       parsed: {
@@ -134,7 +141,7 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
     // Store modified context for report phase
     (context as any)._modifiedContext = modifiedContext;
     
-    // Execute putting action
+    // Execute putting action for event generation
     puttingAction.execute(modifiedContext);
   },
 

@@ -16,6 +16,7 @@ import { captureEntitySnapshot } from '../../base/snapshot-utils';
 import { IFActions } from '../../constants';
 import { buildEventData } from '../../data-builder-types';
 import { putDataConfig } from './putting-data';
+import { put, IPutResult } from './sub-actions/put';
 
 export const puttingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.PUTTING,
@@ -198,14 +199,18 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
     // Store preposition for report phase
     (context as any)._targetPreposition = targetPreposition;
     
-    // Delegate to appropriate behavior
+    // Use sub-action to perform the actual state mutation
+    const putResult: IPutResult = put(item, target, context.world);
+    (context as any)._putResult = putResult;
+    
+    // Also use behaviors for validation results (for report phase compatibility)
     if (targetPreposition === 'in') {
       const result: IAddItemResult = ContainerBehavior.addItem(target, item, context.world);
-      (context as any)._putResult = result;
+      (context as any)._behaviorResult = result;
     } else {
       // targetPreposition === 'on'
       const result: IAddItemToSupporterResult = SupporterBehavior.addItem(target, item, context.world);
-      (context as any)._putResult = result;
+      (context as any)._behaviorResult = result;
     }
   },
 
@@ -264,7 +269,8 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
     const item = context.command.directObject!.entity!;
     const target = context.command.indirectObject!.entity!;
     const targetPreposition = (context as any)._targetPreposition as 'in' | 'on';
-    const result = (context as any)._putResult as IAddItemResult | IAddItemToSupporterResult;
+    const putResult = (context as any)._putResult as IPutResult;
+    const result = (context as any)._behaviorResult as IAddItemResult | IAddItemToSupporterResult;
     
     const events: ISemanticEvent[] = [];
     

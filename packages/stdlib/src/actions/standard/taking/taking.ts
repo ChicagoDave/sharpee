@@ -18,6 +18,8 @@ import { buildEventData } from '../../data-builder-types';
 
 // Import our data builder
 import { takenDataConfig } from './taking-data';
+// Import sub-action
+import { take } from './sub-actions/take';
 
 export const takingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.TAKING,
@@ -142,9 +144,9 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
       }
     }
     
-    // ActorBehavior.takeItem only validates, doesn't actually move
-    // We need to perform the actual move
-    context.world.moveEntity(noun.id, actor.id);
+    // Use the take sub-action for the core logic
+    const result = take(actor, noun, context.world);
+    (context as any)._takeResult = result;
   },
   
   report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
