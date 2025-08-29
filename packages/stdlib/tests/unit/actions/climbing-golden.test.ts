@@ -313,14 +313,14 @@ describe('climbingAction (Golden Pattern)', () => {
       });
     });
 
-    test('should climb object with ENTRY trait', () => {
+    test('should climb object with CLIMBABLE trait', () => {
       const { world, player, room } = setupBasicWorld();
       
       const ladder = world.createEntity('wooden ladder', EntityType.OBJECT);
       ladder.add({
-        type: TraitType.ENTRY,
-        canEnter: true,
-        preposition: 'on'
+        type: TraitType.CLIMBABLE,
+        canClimb: true,
+        direction: 'up'
       });
       world.moveEntity(ladder.id, room.id);
       
@@ -443,11 +443,10 @@ describe('Testing Pattern Examples for Climbing', () => {
       {
         name: 'rope',
         traits: {
-          [TraitType.ENTRY]: {
-            type: TraitType.ENTRY,
-            canEnter: true,
-            preposition: 'on',
-            posture: 'hanging'
+          [TraitType.CLIMBABLE]: {
+            type: TraitType.CLIMBABLE,
+            canClimb: true,
+            direction: 'up'
           }
         },
         expectedMethod: 'onto'
@@ -471,7 +470,7 @@ describe('Testing Pattern Examples for Climbing', () => {
       }
       
       // Verify climbable
-      const isClimbable = obj.hasTrait(TraitType.ENTRY) || 
+      const isClimbable = obj.hasTrait(TraitType.CLIMBABLE) || 
                          (obj.hasTrait(TraitType.SUPPORTER) && (obj.getTrait(TraitType.SUPPORTER) as any).enterable);
       expect(isClimbable).toBe(true);
     });

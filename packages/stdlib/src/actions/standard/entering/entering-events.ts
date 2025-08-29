@@ -16,9 +16,6 @@ export interface EnteredEventData {
   
   /** Preposition used ('in' or 'on') */
   preposition: 'in' | 'on';
-  
-  /** Posture to adopt when entering (sitting, lying, etc.) */
-  posture?: string;
 }
 
 /**

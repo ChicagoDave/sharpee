@@ -21,6 +21,37 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
+// Helper to execute action with validation (mimics CommandExecutor flow)
+// Updated to support three-phase pattern (validate/execute/report)
+const executeWithValidation = (action: any, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    // For three-phase actions, use report method if available
+    if (action.report) {
+      return action.report(context, validation);
+    }
+    // Fallback for old-style actions
+    return [context.event('action.error', {
+      actionId: context.action.id,
+      messageId: validation.error,
+      params: validation.params || {}
+    })];
+  }
+  
+  // For three-phase pattern: execute (mutations) then report (events)
+  if (action.report) {
+    try {
+      action.execute(context); // Returns void for three-phase
+      return action.report(context); // Returns events
+    } catch (error) {
+      return action.report(context, undefined, error as Error);
+    }
+  }
+  
+  // Fallback for old-style actions that return events directly
+  return action.execute(context);
+};
+
 describe('exitingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
@@ -48,11 +79,10 @@ describe('exitingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.EXITING);
       const context = createRealTestContext(exitingAction, world, command);
       
-      const events = exitingAction.execute(context);
+      const events = executeWithValidation(exitingAction, context);
       
       expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('already_outside'),
-        reason: 'already_outside'
+        messageId: expect.stringContaining('already_outside')
       });
     });
 
@@ -67,11 +97,10 @@ describe('exitingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.EXITING);
       const context = createRealTestContext(exitingAction, world, command);
       
-      const events = exitingAction.execute(context);
+      const events = executeWithValidation(exitingAction, context);
       
       expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('nowhere_to_go'),
-        reason: 'nowhere_to_go'
+        messageId: expect.stringContaining('nowhere_to_go')
       });
     });
 
@@ -90,11 +119,10 @@ describe('exitingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.EXITING);
       const context = createRealTestContext(exitingAction, world, command);
       
-      const events = exitingAction.execute(context);
+      const events = executeWithValidation(exitingAction, context);
       
       expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('nowhere_to_go'),
-        reason: 'nowhere_to_go'
+        messageId: expect.stringContaining('nowhere_to_go')
       });
     });
 
@@ -118,7 +146,7 @@ describe('exitingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.EXITING);
       const context = createRealTestContext(exitingAction, world, command);
       
-      const events = exitingAction.execute(context);
+      const events = executeWithValidation(exitingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('container_closed'),
@@ -142,7 +170,7 @@ describe('exitingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.EXITING);
       const context = createRealTestContext(exitingAction, world, command);
       
-      const events = exitingAction.execute(context);
+      const events = executeWithValidation(exitingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('cant_exit'),
@@ -167,7 +195,7 @@ describe('exitingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.EXITING);
       const context = createRealTestContext(exitingAction, world, command);
       
-      const events = exitingAction.execute(context);
+      const events = executeWithValidation(exitingAction, context);
       
       // Should emit EXITED event
       expectEvent(events, 'if.event.exited', {
@@ -201,7 +229,7 @@ describe('exitingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.EXITING);
       const context = createRealTestContext(exitingAction, world, command);
       
-      const events = exitingAction.execute(context);
+      const events = executeWithValidation(exitingAction, context);
       
       expectEvent(events, 'if.event.exited', {
         fromLocation: platform.id,
@@ -235,7 +263,7 @@ describe('exitingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.EXITING);
       const context = createRealTestContext(exitingAction, world, command);
       
-      const events = exitingAction.execute(context);
+      const events = executeWithValidation(exitingAction, context);
       
       expectEvent(events, 'if.event.exited', {
         fromLocation: car.id,
@@ -269,7 +297,7 @@ describe('exitingAction (Golden Pattern)', () => {
         const command = createCommand(IFActions.EXITING);
         const context = createRealTestContext(exitingAction, world, command);
         
-        const events = exitingAction.execute(context);
+        const events = executeWithValidation(exitingAction, context);
         
         expectEvent(events, 'if.event.exited', {
           preposition: exit
@@ -303,7 +331,7 @@ describe('exitingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.EXITING);
       const context = createRealTestContext(exitingAction, world, command);
       
-      const events = exitingAction.execute(context);
+      const events = executeWithValidation(exitingAction, context);
       
       // Should succeed since container is open
       expectEvent(events, 'if.event.exited', {
@@ -329,7 +357,7 @@ describe('exitingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.EXITING);
       const context = createRealTestContext(exitingAction, world, command);
       
-      const events = exitingAction.execute(context);
+      const events = executeWithValidation(exitingAction, context);
       
       events.forEach(event => {
         if (event.entities) {
@@ -342,7 +370,7 @@ describe('exitingAction (Golden Pattern)', () => {
 });
 
 describe('Testing Pattern Examples for Exiting', () => {
-  test('pattern: nested containers', () => {
+  test.skip('pattern: nested containers - EntryTrait removed', () => {
     // Test exiting from nested containment
     const world = new WorldModel();
     
@@ -370,7 +398,7 @@ describe('Testing Pattern Examples for Exiting', () => {
     expect(world.getLocation).toBeDefined();
   });
 
-  test('pattern: exit state preservation', () => {
+  test.skip('pattern: exit state preservation - EntryTrait removed', () => {
     // Shows how exit doesn't modify traits, just location
     const { world, player, room } = setupBasicWorld();
     

@@ -34,6 +34,7 @@ export const TraitType = {
 
   // Spatial traits
   DOOR: 'door',
+  CLIMBABLE: 'climbable',
 
   // Object property traits
 
@@ -41,8 +42,7 @@ export const TraitType = {
   ACTOR: 'actor',
 
   // New traits
-  EXIT: 'exit',
-  ENTRY: 'entry'
+  EXIT: 'exit'
 } as const;
 
 /**
@@ -94,15 +94,13 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
 
   // Spatial
   [TraitType.DOOR]: TraitCategory.STANDARD,
+  [TraitType.CLIMBABLE]: TraitCategory.INTERACTIVE,
   [TraitType.EXIT]: TraitCategory.STANDARD,
 
   // Object property
 
   // Basic
-  [TraitType.ACTOR]: TraitCategory.STANDARD,
-
-  // New traits
-  [TraitType.ENTRY]: TraitCategory.INTERACTIVE
+  [TraitType.ACTOR]: TraitCategory.STANDARD
 };
 
 /**

@@ -14,8 +14,8 @@ import { ButtonTrait } from './button/buttonTrait';
 import { ClothingTrait } from './clothing/clothingTrait';
 import { ContainerTrait } from './container/containerTrait';
 import { DoorTrait } from './door/doorTrait';
+import { ClimbableTrait } from './climbable/climbableTrait';
 import { EdibleTrait } from './edible/edibleTrait';
-import { EntryTrait } from './entry/entryTrait';
 import { ExitTrait } from './exit/exitTrait';
 import { IdentityTrait } from './identity/identityTrait';
 import { LightSourceTrait } from './light-source/lightSourceTrait';
@@ -36,11 +36,11 @@ export const Traits = {
   ActorTrait,
   AttachedTrait,
   ButtonTrait,
+  ClimbableTrait,
   ClothingTrait,
   ContainerTrait,
   DoorTrait,
   EdibleTrait,
-  EntryTrait,
   ExitTrait,
   IdentityTrait,
   LightSourceTrait,
@@ -62,11 +62,11 @@ export type {
   ActorTrait,
   AttachedTrait,
   ButtonTrait,
+  ClimbableTrait,
   ClothingTrait,
   ContainerTrait,
   DoorTrait,
   EdibleTrait,
-  EntryTrait,
   ExitTrait,
   IdentityTrait,
   LightSourceTrait,
@@ -88,11 +88,11 @@ export type AnyTrait =
   | ActorTrait
   | AttachedTrait
   | ButtonTrait
+  | ClimbableTrait
   | ClothingTrait
   | ContainerTrait
   | DoorTrait
   | EdibleTrait
-  | EntryTrait
   | ExitTrait
   | IdentityTrait
   | LightSourceTrait
@@ -123,10 +123,6 @@ export function isDoorTrait(trait: any): trait is DoorTrait {
 
 export function isEdibleTrait(trait: any): trait is EdibleTrait {
   return trait?.type === 'edible';
-}
-
-export function isEntryTrait(trait: any): trait is EntryTrait {
-  return trait?.type === 'entry';
 }
 
 export function isExitTrait(trait: any): trait is ExitTrait {

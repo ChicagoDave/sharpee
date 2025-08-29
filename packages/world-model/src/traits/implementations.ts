@@ -25,13 +25,13 @@ import { LightSourceTrait } from './light-source/lightSourceTrait';
 
 // Spatial traits
 import { DoorTrait } from './door/doorTrait';
+import { ClimbableTrait } from './climbable/climbableTrait';
 
 // Basic traits
 import { ActorTrait } from './actor/actorTrait';
 
 // New traits
 import { ExitTrait } from './exit/exitTrait';
-import { EntryTrait } from './entry/entryTrait';
 
 // Manipulation traits
 import { PullableTrait } from './pullable/pullableTrait';
@@ -63,13 +63,13 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
 
   // Spatial traits
   [TraitType.DOOR]: DoorTrait,
+  [TraitType.CLIMBABLE]: ClimbableTrait,
 
   // Basic traits
   [TraitType.ACTOR]: ActorTrait,
 
   // New traits
   [TraitType.EXIT]: ExitTrait,
-  [TraitType.ENTRY]: EntryTrait,
 
   // Manipulation traits
   [TraitType.PULLABLE]: PullableTrait,
@@ -131,7 +131,7 @@ export {
 
   // New traits
   ExitTrait,
-  EntryTrait,
+  ClimbableTrait,
 
   // Manipulation traits
   PullableTrait,

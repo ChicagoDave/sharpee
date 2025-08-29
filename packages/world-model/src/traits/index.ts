@@ -15,7 +15,7 @@ export * from './lockable';
 export * from './readable';
 export * from './light-source';
 export * from './exit';
-export * from './entry';
+export * from './climbable';
 export * from './scenery';
 export * from './supporter';
 export * from './switchable';

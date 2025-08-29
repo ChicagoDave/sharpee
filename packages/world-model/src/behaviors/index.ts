@@ -10,4 +10,4 @@ export { WearableBehavior } from '../traits/wearable/wearableBehavior';
 export { ReadableBehavior } from '../traits/readable/readableBehavior';
 export { LightSourceBehavior } from '../traits/light-source/lightSourceBehavior';
 export { ExitBehavior } from '../traits/exit/exitBehavior';
-export { EntryBehavior } from '../traits/entry/entryBehavior';
+export { ClimbableBehavior } from '../traits/climbable/climbableBehavior';

@@ -9,7 +9,7 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, EntryTrait, EntryBehavior } from '@sharpee/world-model';
+import { TraitType, ClimbableBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ClimbedEventData } from './climbing-events';
 
@@ -204,13 +204,15 @@ function validateObjectClimbing(
   let isClimbable = false;
   let destination: string | undefined;
   
-  // Check if it's an enterable object (climb onto) - use behavior if available
-  if (target.hasTrait(TraitType.ENTRY)) {
-    if (EntryBehavior.canEnter(target, context.player)) {
+  // Check if it has the CLIMBABLE trait
+  if (target.hasTrait(TraitType.CLIMBABLE)) {
+    const result = ClimbableBehavior.climb(target);
+    if (result.success) {
       isClimbable = true;
-      destination = target.id;
+      destination = result.destination || target.id;
     }
   } else if (target.hasTrait(TraitType.SUPPORTER)) {
+    // Also allow climbing onto enterable supporters
     const supporterTrait = target.getTrait(TraitType.SUPPORTER) as { enterable?: boolean };
     if (supporterTrait.enterable) {
       isClimbable = true;

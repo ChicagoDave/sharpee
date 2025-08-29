@@ -9,16 +9,21 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
 import { 
   TraitType, 
-  EntryTrait, 
   ContainerTrait, 
   SupporterTrait,
-  EntryBehavior,
   ContainerBehavior,
   SupporterBehavior,
   OpenableBehavior
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { EnteredEventData } from './entering-events';
+
+interface EnteringExecutionState {
+  targetId: string;
+  targetName: string;
+  fromLocation?: string;
+  preposition: 'in' | 'on';
+}
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 
@@ -58,51 +63,6 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       };
     }
     
-    // Check for ENTRY trait first (highest priority) and use behavior
-    if (target.has(TraitType.ENTRY)) {
-      if (!EntryBehavior.canEnter(target, actor)) {
-        const reason = EntryBehavior.getBlockedReason(target, actor);
-        const entryTrait = target.get(TraitType.ENTRY) as EntryTrait;
-        
-        if (reason === 'full') {
-          return { 
-            valid: false, 
-            error: 'too_full',
-            params: { 
-              place: target.name,
-              occupants: EntryBehavior.getOccupants(target).length,
-              max: entryTrait.maxOccupants
-            }
-          };
-        } else if (reason === 'closed') {
-          return { 
-            valid: false, 
-            error: 'container_closed',
-            params: { container: target.name }
-          };
-        } else if (reason === 'entry_blocked') {
-          return { 
-            valid: false, 
-            error: 'cant_enter',
-            params: { 
-              place: target.name,
-              reason: entryTrait.blockedMessage || 'blocked'
-            }
-          };
-        } else {
-          return { 
-            valid: false, 
-            error: 'cant_enter',
-            params: { 
-              place: target.name,
-              reason: reason
-            }
-          };
-        }
-      }
-      return { valid: true };
-    }
-    
     // Check if it's an enterable container
     if (target.has(TraitType.CONTAINER)) {
       const containerTrait = target.get(TraitType.CONTAINER) as ContainerTrait;
@@ -123,10 +83,7 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
         };
       }
       
-      // Check occupancy for containers
-      const currentOccupants = context.world.getContents(target.id)
-        .filter(e => e.has(TraitType.ACTOR));
-      // Containers generally don't have occupancy limits, but check capacity
+      // Check capacity for containers
       if (!ContainerBehavior.canAccept(target, actor, context.world)) {
         return { 
           valid: false, 
@@ -165,7 +122,7 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       return { valid: true };
     }
     
-    // Not enterable
+    // Not enterable (not a container or supporter)
     return { 
       valid: false, 
       error: 'not_enterable',
@@ -173,66 +130,103 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
     };
   },
   
-  execute(context: ActionContext): ISemanticEvent[] {
+  /**
+   * Execute the enter action - performs mutations only
+   * Assumes validation has already passed
+   */
+  execute(context: ActionContext): void {
     const actor = context.player;
-    const target = context.command.directObject?.entity!;
+    const target = context.command.directObject!.entity!; // Safe because validate ensures it exists
     const currentLocation = context.world.getLocation(actor.id);
     
-    // Determine preposition and posture based on target type
+    // Determine preposition based on target type
     let preposition: 'in' | 'on' = 'in';
-    let posture: string | undefined;
     
-    // Get details based on trait type
-    if (target.has(TraitType.ENTRY)) {
-      const entryTrait = target.get(TraitType.ENTRY) as EntryTrait;
-      preposition = (entryTrait.preposition || 'in') as 'in' | 'on';
-      posture = entryTrait.posture;
-      
-      // Update occupants in Entry trait using behavior
-      // Note: EntryBehavior.enter() returns events but we'll generate our own
-      // So we just update the occupants directly
-      entryTrait.occupants = entryTrait.occupants || [];
-      if (!entryTrait.occupants.includes(actor.id)) {
-        entryTrait.occupants.push(actor.id);
-      }
-    } else if (target.has(TraitType.CONTAINER)) {
-      preposition = 'in';
-    } else if (target.has(TraitType.SUPPORTER)) {
+    if (target.has(TraitType.SUPPORTER)) {
       preposition = 'on';
     }
     
-    // Move the actor to the target
+    // Simply move the actor to the target - that's all!
     context.world.moveEntity(actor.id, target.id);
     
-    // Build event data
-    const params: Record<string, any> = {
-      place: target.name,
+    // Store state for report phase
+    const state: EnteringExecutionState = {
+      targetId: target.id,
+      targetName: target.name,
+      fromLocation: currentLocation,
       preposition
     };
+    (context as any)._enteringState = state;
+  },
+  
+  /**
+   * Report phase - generates all events after successful execution
+   * Handles validation errors, execution errors, and success events
+   */
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    // Handle validation errors
+    if (validationResult && !validationResult.valid) {
+      return [
+        context.event('action.error', {
+          actionId: context.action.id,
+          messageId: validationResult.error || 'action_failed',
+          params: validationResult.params || {}
+        })
+      ];
+    }
     
-    if (posture) {
-      params.posture = posture;
+    // Handle execution errors
+    if (executionError) {
+      return [
+        context.event('action.error', {
+          actionId: context.action.id,
+          messageId: 'action_failed',
+          params: {
+            error: executionError.message
+          }
+        })
+      ];
+    }
+    
+    // Get stored state from execute phase
+    const state = (context as any)._enteringState as EnteringExecutionState | undefined;
+    if (!state) {
+      // This shouldn't happen, but handle gracefully
+      return [
+        context.event('action.error', {
+          actionId: context.action.id,
+          messageId: 'action_failed',
+          params: {
+            error: 'Missing state from execute phase'
+          }
+        })
+      ];
     }
     
     const events: ISemanticEvent[] = [];
     
     // Create the ENTERED event for world model updates
     const enteredData: EnteredEventData = {
-      targetId: target.id,
-      fromLocation: currentLocation,
-      preposition,
-      posture
+      targetId: state.targetId,
+      fromLocation: state.fromLocation,
+      preposition: state.preposition
     };
     
     events.push(context.event('if.event.entered', enteredData));
     
+    // Build params for success message
+    const params: Record<string, any> = {
+      place: state.targetName,
+      preposition: state.preposition
+    };
+    
     // Create success message
-    const messageId = preposition === 'on' ? 'entered_on' : 'entered';
+    const messageId = state.preposition === 'on' ? 'entered_on' : 'entered';
     events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: messageId,
-        params: params
-      }));
+      actionId: context.action.id,
+      messageId: messageId,
+      params: params
+    }));
     
     return events;
   },
