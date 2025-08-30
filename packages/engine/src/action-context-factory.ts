@@ -64,6 +64,9 @@ export function createActionContext(
     command,
     scopeResolver,
     action,
+    
+    // Shared data for passing information between phases
+    sharedData: {},
 
     // Scope checking methods (delegate to scopeResolver)
     canSee: (entity: IFEntity) => {

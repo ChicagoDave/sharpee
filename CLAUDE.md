@@ -1,5 +1,15 @@
 # Project Instructions for Claude
 
+## Core Concepts Reference
+Please read `/docs/reference/core-concepts.md` at the start of each session for essential context about:
+- Entity system and creation
+- Trait system and usage
+- Three-phase action pattern
+- ActionContext and sharedData
+- World model operations
+- Event system and handlers
+- Command processing flow
+
 ## Testing Commands
 
 - **DO NOT** use `2>&1` with pnpm commands - they don't work together properly

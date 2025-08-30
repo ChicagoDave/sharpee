@@ -31,8 +31,8 @@ export const buildTakenData: ActionDataBuilder<Record<string, unknown>> = (
     };
   }
   
-  // Get the previous location from context (stored during execute)
-  const previousLocation = (context as any)._previousLocation;
+  // Get the previous location from sharedData (stored during execute)
+  const previousLocation = context.sharedData.previousLocation;
   
   // Capture snapshots after the mutation
   const itemSnapshot = captureEntitySnapshot(noun, context.world, true);

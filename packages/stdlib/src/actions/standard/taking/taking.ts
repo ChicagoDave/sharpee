@@ -123,27 +123,30 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     const actor = context.player;
     const noun = context.command.directObject!.entity!; // Safe because validate ensures it exists
     
-    // Store the previous location before moving
+    // Capture context BEFORE any mutations
     const previousLocation = context.world.getLocation(noun.id);
-    (context as any)._previousLocation = previousLocation;
+    context.sharedData.previousLocation = previousLocation;
     
     // Check if item is worn and needs to be removed first
     if (noun.has(TraitType.WEARABLE)) {
       const wearableTrait = noun.get(TraitType.WEARABLE) as any;
       if (wearableTrait?.worn) {
-        // Mark that we implicitly removed it
-        (context as any)._implicitlyRemoved = true;
+        // Mark that we implicitly removed a worn item
+        context.sharedData.implicitlyRemoved = true;
+        context.sharedData.wasWorn = true;
+        
         // Get the wearer (the one who has the item currently)
         const wearer = previousLocation ? context.world.getEntity(previousLocation) : null;
         // Remove the worn status
         if (wearer) {
           WearableBehavior.remove(noun, wearer);
+          // The witness system will track this implicit removal
         }
       }
     }
     
-    // ActorBehavior.takeItem only validates, doesn't actually move
-    // We need to perform the actual move
+    // Perform the actual move
+    // The witness system will track where it moved from
     context.world.moveEntity(noun.id, actor.id);
   },
   
@@ -215,8 +218,8 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     const events: ISemanticEvent[] = [];
     
     // Check if we implicitly removed a worn item
-    if ((context as any)._implicitlyRemoved) {
-      const previousLocation = (context as any)._previousLocation;
+    if (context.sharedData.implicitlyRemoved) {
+      const previousLocation = context.sharedData.previousLocation;
       const container = previousLocation ? context.world.getEntity(previousLocation) : null;
       
       events.push(context.event('if.event.removed', {
@@ -233,7 +236,7 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     events.push(context.event('if.event.taken', takenData));
     
     // Determine success message based on where it was taken from
-    const previousLocation = (context as any)._previousLocation;
+    const previousLocation = context.sharedData.previousLocation;
     const isFromContainerOrSupporter = previousLocation && 
       previousLocation !== context.world.getLocation(actor.id);
     const messageId = isFromContainerOrSupporter ? 'taken_from' : 'taken';
