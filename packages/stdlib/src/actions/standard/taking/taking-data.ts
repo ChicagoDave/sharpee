@@ -9,6 +9,7 @@ import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
 import { ActionContext } from '../../enhanced-types';
 import { WorldModel } from '@sharpee/world-model';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
+import { getTakingSharedData } from './taking-types';
 
 /**
  * Build taken event data
@@ -31,8 +32,9 @@ export const buildTakenData: ActionDataBuilder<Record<string, unknown>> = (
     };
   }
   
-  // Get the previous location from sharedData (stored during execute)
-  const previousLocation = context.sharedData.previousLocation;
+  // Get the previous location from typed sharedData
+  const sharedData = getTakingSharedData(context);
+  const previousLocation = sharedData.previousLocation;
   
   // Capture snapshots after the mutation
   const itemSnapshot = captureEntitySnapshot(noun, context.world, true);

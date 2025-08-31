@@ -4,8 +4,10 @@
  * This shows patterns for testing actions that:
  * - Open containers and doors
  * - Check lock status
- * - Reveal contents
+ * - Reveal contents with atomic events
  * - Handle different openable types
+ * 
+ * Updated to test ATOMIC EVENT STRUCTURE
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
@@ -102,8 +104,7 @@ describe('openingAction (Golden Pattern)', () => {
     });
 
     test('should fail when target is not openable', () => {
-      const { world, object } = TestData.withObject('red ball');
-      // Ball has no openable trait
+      const { world, object } = TestData.withObject('rock');
       
       const command = createCommand(
         IFActions.OPENING,
@@ -115,12 +116,13 @@ describe('openingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_openable'),
-        params: { item: 'red ball' }
+        reason: 'not_openable',
+        params: { item: 'rock' }
       });
     });
 
     test('should fail when already open', () => {
-      const { world, object } = TestData.withObject('wooden box', {
+      const { world, object } = TestData.withObject('box', {
         [TraitType.OPENABLE]: { 
           type: TraitType.OPENABLE,
           isOpen: true  // Already open
@@ -137,7 +139,8 @@ describe('openingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('already_open'),
-        params: { item: 'wooden box' }
+        reason: 'already_open',
+        params: { item: 'box' }
       });
     });
 
@@ -164,23 +167,18 @@ describe('openingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('locked'),
+        reason: 'locked',
         params: { item: 'treasure chest' }
       });
     });
   });
 
-  describe('Successful Opening', () => {
-    // REMOVED: Conflicting test - empty container shows 'its_empty' vs 'opened'
-    /* test.skip('should open a simple container', () => {
-      // SKIPPED: Conflicting expectations - empty container but expects 'opened' not 'its_empty'
-      // Needs design decision on when to use which message
-      const { world, object } = TestData.withObject('wooden box', {
+  describe('Successful Opening - Atomic Events', () => {
+    test('should emit atomic opened event with minimal data', () => {
+      const { world, object } = TestData.withObject('simple box', {
         [TraitType.OPENABLE]: { 
           type: TraitType.OPENABLE,
           isOpen: false
-        },
-        [TraitType.CONTAINER]: {
-          type: TraitType.CONTAINER
         }
       });
       
@@ -192,42 +190,43 @@ describe('openingAction (Golden Pattern)', () => {
       
       const events = executeAction(openingAction, context);
       
-      // Should emit OPENED event
+      // The atomic opened event should only have targetId and targetName
       expectEvent(events, 'if.event.opened', {
-        item: 'wooden box',
-        isContainer: true
+        targetId: object.id,
+        targetName: 'simple box'
       });
       
-      // Should emit success message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('opened'),
-        params: { item: 'wooden box' }
-      });
-    }); */
+      // Should NOT have these old fields
+      const openedEvent = events.find(e => e.type === 'if.event.opened');
+      expect(openedEvent?.data).not.toHaveProperty('item');
+      expect(openedEvent?.data).not.toHaveProperty('containerName');
+      expect(openedEvent?.data).not.toHaveProperty('hasContents');
+      expect(openedEvent?.data).not.toHaveProperty('contentsCount');
+      expect(openedEvent?.data).not.toHaveProperty('revealedItems');
+    });
 
-    // REMOVED: Test depends on scope/visibility logic not yet implemented
-    /* test.skip('should reveal contents when opening container', () => {
-      // SKIPPED: world.getContents() returns empty array for closed containers
-      // This test requires scope/visibility logic to properly track hidden contents
+    test('should emit separate revealed events for container contents', () => {
       const { world, player, room } = setupBasicWorld();
+      const { AuthorModel, EntityType } = require('@sharpee/world-model');
+      const author = new AuthorModel(world.getDataStore());
       
-      // Create container with items
-      const box = world.createEntity('wooden box', 'object');
-      box.add({
+      // Create a proper container using AuthorModel
+      const box = author.createEntity('wooden box', EntityType.CONTAINER);
+      box.add({ 
+        type: TraitType.CONTAINER  // Need to explicitly add container trait
+      });
+      box.add({ 
         type: TraitType.OPENABLE,
-        isOpen: false
+        isOpen: false  // Container is closed
       });
-      box.add({
-        type: TraitType.CONTAINER
-      });
+      author.moveEntity(box.id, room.id);
       
-      const coin = world.createEntity('gold coin', 'object');
-      const gem = world.createEntity('ruby', 'object');
+      // Add items to the container - AuthorModel can add to closed containers!
+      const coin = author.createEntity('gold coin', EntityType.ITEM);
+      const ruby = author.createEntity('ruby', EntityType.ITEM);
+      author.moveEntity(coin.id, box.id);
+      author.moveEntity(ruby.id, box.id);
       
-      // Place box in room and items in box
-      world.moveEntity(box.id, room.id);
-      world.moveEntity(coin.id, box.id);
-      world.moveEntity(gem.id, box.id);
       
       const command = createCommand(
         IFActions.OPENING,
@@ -237,31 +236,46 @@ describe('openingAction (Golden Pattern)', () => {
       
       const events = executeAction(openingAction, context);
       
+      // Should have one opened event
       expectEvent(events, 'if.event.opened', {
-        item: 'wooden box',
-        isContainer: true,
-        hasContents: true,
-        revealedItems: 2
+        targetId: box.id,
+        targetName: 'wooden box'
       });
       
-      // Should use revealing message when contents found
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('revealing'),
-        params: {
-          container: 'wooden box',
-          items: ['gold coin', 'ruby']
-        }
+      // Should have exactly 2 revealed events
+      const revealedEvents = events.filter(e => e.type === 'if.event.revealed');
+      expect(revealedEvents).toHaveLength(2);
+      
+      // Check that we have a revealed event for each item
+      const revealedItemIds = revealedEvents.map(e => (e.data as any).itemId);
+      expect(revealedItemIds).toContain(coin.id);
+      expect(revealedItemIds).toContain(ruby.id);
+      
+      // Check the structure of revealed events
+      revealedEvents.forEach(event => {
+        const data = event.data as any;
+        expect(data).toHaveProperty('itemId');
+        expect(data).toHaveProperty('itemName');
+        expect(data).toHaveProperty('containerId', box.id);
+        expect(data).toHaveProperty('containerName', 'wooden box');
       });
-    }); */
+      
+      expectEvent(events, 'action.success', {
+        messageId: expect.stringContaining('opened'),
+        params: { item: 'wooden box' }
+      });
+    });
 
-    test('should report empty container', () => {
+    test('should report empty container with special message', () => {
       const { world, object } = TestData.withObject('empty box', {
         [TraitType.OPENABLE]: { 
           type: TraitType.OPENABLE,
           isOpen: false
         },
         [TraitType.CONTAINER]: {
-          type: TraitType.CONTAINER
+          type: TraitType.CONTAINER,
+          isTransparent: false,
+          enterable: false
         }
       });
       
@@ -275,12 +289,15 @@ describe('openingAction (Golden Pattern)', () => {
       
       const events = executeAction(openingAction, context);
       
+      // Should have minimal opened event
       expectEvent(events, 'if.event.opened', {
-        item: 'empty box',
-        isContainer: true,
-        hasContents: false,
-        revealedItems: 0
+        targetId: object.id,
+        targetName: 'empty box'
       });
+      
+      // Should NOT have any revealed events (empty container)
+      const revealedEvents = events.filter(e => e.type === 'if.event.revealed');
+      expect(revealedEvents).toHaveLength(0);
       
       // Should use empty message
       expectEvent(events, 'action.success', {
@@ -309,10 +326,14 @@ describe('openingAction (Golden Pattern)', () => {
       
       const events = executeAction(openingAction, context);
       
+      // Should have minimal opened event
       expectEvent(events, 'if.event.opened', {
-        item: 'oak door',
-        isDoor: true
+        targetId: object.id,
+        targetName: 'oak door'
       });
+      
+      // Note: exit_revealed events would be emitted but require 
+      // proper room setup with exits, which is complex to test here
       
       expectEvent(events, 'action.success', {
         messageId: expect.stringContaining('opened'),
@@ -322,13 +343,24 @@ describe('openingAction (Golden Pattern)', () => {
   });
 
   describe('Event Structure Validation', () => {
-    test('should include proper entities in all events', () => {
+    test('should include proper atomic events', () => {
       const { world, player, room, object } = TestData.withObject('cabinet', {
         [TraitType.OPENABLE]: { 
           type: TraitType.OPENABLE,
           isOpen: false
+        },
+        [TraitType.CONTAINER]: {
+          type: TraitType.CONTAINER,
+          isTransparent: false,
+          enterable: false
         }
       });
+      
+      // Add an item using AuthorModel (can add to closed containers)
+      const { AuthorModel } = require('@sharpee/world-model');
+      const author = new AuthorModel(world.getDataStore());
+      const pen = author.createEntity('pen', 'object');
+      author.moveEntity(pen.id, object.id);
       
       const command = createCommand(
         IFActions.OPENING,
@@ -338,70 +370,30 @@ describe('openingAction (Golden Pattern)', () => {
       
       const events = executeAction(openingAction, context);
       
-      events.forEach(event => {
-        if (event.entities) {
-          expect(event.entities.actor).toBe(player.id);
-          expect(event.entities.target).toBe(object.id);
-          expect(event.entities.location).toBe(room.id);
-        }
-      });
+      // Check we have the right event types
+      const eventTypes = events.map(e => e.type);
+      expect(eventTypes).toContain('if.event.opened');
+      expect(eventTypes).toContain('if.event.revealed');
+      expect(eventTypes).toContain('opened'); // backward compat domain event
+      expect(eventTypes).toContain('action.success');
+      
+      // Verify opened event structure
+      const openedEvent = events.find(e => e.type === 'if.event.opened');
+      expect(openedEvent?.data).toHaveProperty('targetId');
+      expect(openedEvent?.data).toHaveProperty('targetName');
+      expect(Object.keys(openedEvent?.data || {})).toHaveLength(2); // Only these two fields
+      
+      // Verify revealed event structure
+      const revealedEvent = events.find(e => e.type === 'if.event.revealed');
+      expect(revealedEvent?.data).toHaveProperty('itemId');
+      expect(revealedEvent?.data).toHaveProperty('itemName');
+      expect(revealedEvent?.data).toHaveProperty('containerId');
+      expect(revealedEvent?.data).toHaveProperty('containerName');
     });
   });
 });
 
 describe('Opening Action Edge Cases', () => {
-  // REMOVED: TraitType.DOOR not properly defined and getContents() issues
-  /* test.skip('should handle door that is also a container', () => {
-    // SKIPPED: TraitType.DOOR might not be properly defined/imported
-    // Also affected by getContents() returning empty for closed containers
-    const { world, player, room } = setupBasicWorld();
-    
-    // A door with a mail slot that can contain items
-    const door = world.createEntity('front door', 'object');
-    door.add({
-      type: TraitType.OPENABLE,
-      isOpen: false
-    });
-    door.add({
-      type: TraitType.DOOR,
-      connectsTo: 'outside'
-    });
-    door.add({
-      type: TraitType.CONTAINER,
-      capacity: { maxItems: 2 }
-    });
-    
-    const letter = world.createEntity('letter', 'object');
-    
-    // Place door in room and letter in door
-    world.moveEntity(door.id, room.id);
-    world.moveEntity(letter.id, door.id);
-    
-    const command = createCommand(
-      IFActions.OPENING,
-      { entity: door }
-    );
-    const context = createRealTestContext(openingAction, world, command);
-    
-    const events = executeAction(openingAction, context);
-    
-    expectEvent(events, 'if.event.opened', {
-      item: 'front door',
-      isDoor: true,
-      isContainer: true,
-      hasContents: true,
-      revealedItems: 1
-    });
-    
-    // Should use revealing message even for doors with contents
-    expectEvent(events, 'action.success', {
-      messageId: expect.stringContaining('revealing'),
-      params: {
-        items: ['letter']
-      }
-    });
-  }); */
-
   test('should handle unlocked but not yet open container', () => {
     const { world, object } = TestData.withObject('wall safe', {
       [TraitType.OPENABLE]: { 
@@ -428,8 +420,8 @@ describe('Opening Action Edge Cases', () => {
     
     // Should succeed - it's unlocked
     expectEvent(events, 'if.event.opened', {
-      item: 'wall safe',
-      isContainer: true
+      targetId: object.id,
+      targetName: 'wall safe'
     });
   });
 
@@ -451,13 +443,70 @@ describe('Opening Action Edge Cases', () => {
     const events = executeAction(openingAction, context);
     
     expectEvent(events, 'if.event.opened', {
-      item: 'thick book'
-      // No isContainer or isDoor
+      targetId: object.id,
+      targetName: 'thick book'
     });
     
     expectEvent(events, 'action.success', {
       messageId: expect.stringContaining('opened'),
       params: { item: 'thick book' }
+    });
+  });
+
+  test('should emit multiple revealed events for multiple items', () => {
+    const { world, player, room } = setupBasicWorld();
+    const { AuthorModel, EntityType } = require('@sharpee/world-model');
+    const author = new AuthorModel(world.getDataStore());
+    
+    // Create a proper container using AuthorModel
+    const chest = author.createEntity('treasure chest', EntityType.CONTAINER);
+    chest.add({ 
+      type: TraitType.CONTAINER  // Need to explicitly add container trait
+    });
+    chest.add({ 
+      type: TraitType.OPENABLE,
+      isOpen: false  // Container is closed
+    });
+    author.moveEntity(chest.id, room.id);
+    
+    // Add multiple items - AuthorModel can add to closed containers!
+    const items = [
+      author.createEntity('gold bar', EntityType.ITEM),
+      author.createEntity('silver coin', EntityType.ITEM),
+      author.createEntity('bronze medal', EntityType.ITEM),
+      author.createEntity('ancient scroll', EntityType.ITEM)
+    ];
+    
+    items.forEach(item => author.moveEntity(item.id, chest.id));
+    
+    const command = createCommand(
+      IFActions.OPENING,
+      { entity: chest }
+    );
+    const context = createRealTestContext(openingAction, world, command);
+    
+    const events = executeAction(openingAction, context);
+    
+    // Should have one opened event
+    const openedEvents = events.filter(e => e.type === 'if.event.opened');
+    expect(openedEvents).toHaveLength(1);
+    
+    // Should have one revealed event per item
+    const revealedEvents = events.filter(e => e.type === 'if.event.revealed');
+    expect(revealedEvents).toHaveLength(4);
+    
+    // Each revealed event should have the correct structure
+    revealedEvents.forEach(event => {
+      expect(event.data).toHaveProperty('itemId');
+      expect(event.data).toHaveProperty('itemName');
+      expect(event.data.containerId).toBe(chest.id);
+      expect(event.data.containerName).toBe('treasure chest');
+    });
+    
+    // Verify each item has a revealed event by checking IDs are present
+    const revealedItemIds = revealedEvents.map(e => (e.data as any).itemId);
+    items.forEach(item => {
+      expect(revealedItemIds).toContain(item.id);
     });
   });
 });

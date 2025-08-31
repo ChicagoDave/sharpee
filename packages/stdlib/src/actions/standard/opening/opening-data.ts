@@ -1,31 +1,31 @@
 /**
  * Data builder for opening action
+ * 
+ * Following atomic event principles - minimal data per event
  */
 
 import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
 import { ActionContext } from '../../enhanced-types';
-import { WorldModel, TraitType } from '@sharpee/world-model';
-import { captureEntitySnapshot, captureEntitySnapshots } from '../../base/snapshot-utils';
+import { OpenedEventData } from './opening-events';
 
-export const buildOpenedData: ActionDataBuilder<Record<string, unknown>> = (
+export const buildOpenedData: ActionDataBuilder<OpenedEventData> = (
   context: ActionContext
-): Record<string, unknown> => {
+): OpenedEventData => {
   const noun = context.command.directObject?.entity;
-  if (!noun) return { target: 'nothing' };
-  
-  const targetSnapshot = captureEntitySnapshot(noun, context.world, false);
-  const contents = context.world.getContents(noun.id);
-  const contentsSnapshots = captureEntitySnapshots(contents, context.world);
+  if (!noun) {
+    return { 
+      targetId: '', 
+      targetName: 'nothing' 
+    };
+  }
   
   return {
-    target: noun.name,
-    targetSnapshot,
-    contentsSnapshots,
-    targetId: noun.id
+    targetId: noun.id,
+    targetName: noun.name
   };
 };
 
-export const openedDataConfig: ActionDataConfig<Record<string, unknown>> = {
+export const openedDataConfig: ActionDataConfig<OpenedEventData> = {
   builder: buildOpenedData,
-  protectedFields: ['target', 'targetId']
+  protectedFields: ['targetId', 'targetName']
 };
