@@ -12,29 +12,24 @@ import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { AboutDisplayedEventData } from './about-events';
 
-interface AboutState {
-  displayMode: string;
-}
-
 export const aboutAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.ABOUT,
   
   validate(context: ActionContext): ValidationResult {
     // About action always succeeds
-    const displayMode = context.command.parsed.extras?.mode || 'standard';
-    
     return {
       valid: true
     };
   },
   
-  execute(context: ActionContext): ISemanticEvent[] {
+  execute(context: ActionContext): void {
+    // No state mutations needed for this meta action
+    // The text service will construct output from story config
+  },
+  
+  report(context: ActionContext): ISemanticEvent[] {
     // Simply emit an event signaling that about info should be displayed
-    // The text service will handle querying the story config and formatting
-    const displayMode = context.command.parsed.extras?.mode || 'standard';
-    const eventData: AboutDisplayedEventData = {
-      displayMode
-    };
+    const eventData: AboutDisplayedEventData = {};
     
     return [
       context.event('if.action.about', eventData)

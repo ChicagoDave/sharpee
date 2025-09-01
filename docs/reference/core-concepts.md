@@ -115,20 +115,39 @@ Each action lives in `/packages/stdlib/src/actions/standard/[action-name]/` with
 - `[action-name]-events.ts` - Event type definitions
 - `[action-name]-data.ts` - Data builder configuration
 
-### Standard Actions
-- **taking** - Pick up objects
-- **dropping** - Put down objects
+### Action Categories
+
+#### World-Mutating Actions
+Actions that change game state:
+- **taking/dropping** - Pick up/put down objects
 - **opening/closing** - Open/close containers and doors
-- **examining** - Look at objects
 - **going** - Move between rooms
 - **entering/exiting** - Enter/exit containers
-- **putting** - Put objects in/on containers
+- **putting/inserting** - Put objects in/on containers
 - **giving** - Give objects to actors
 - **wearing/removing** - Wear/remove clothing
 - **eating/drinking** - Consume edibles
 - **pushing/pulling** - Manipulate pushable/pullable objects
 - **switching** - Turn devices on/off
 - **locking/unlocking** - Lock/unlock lockable objects
+
+#### Query Actions
+Actions that only read state:
+- **examining** - Look at objects
+- **looking** - Examine current location
+- **inventory** - List carried items
+
+#### Meta-Actions (Signal Actions)
+Actions that emit signals without world interaction:
+- **about** - Display game information
+- **help** - Show available commands
+- **save/restore** - Game state management
+- **quit** - Exit the game
+
+Meta-actions typically have:
+- `validate()` that always succeeds
+- Empty `execute()` phase
+- `report()` that emits a simple signal event
 
 ## ActionContext
 
@@ -141,7 +160,32 @@ The context object passed to all action phases, providing access to world state 
 - `command`: Parsed and validated command
 - `scopeResolver`: Determines what's perceivable
 - `action`: The action being executed
-- `sharedData`: Record<string, any> for passing data between phases
+- `sharedData`: Type-safe data storage for passing data between phases
+
+### Using sharedData (Type-Safe Pattern)
+```typescript
+// Define typed interface for your action's shared data
+interface OpeningSharedData {
+  previousState?: boolean
+  revealedItems?: Entity[]
+}
+
+// In execute phase
+execute(context: ActionContext): void {
+  const sharedData = context.sharedData as OpeningSharedData
+  sharedData.previousState = container.open
+  sharedData.revealedItems = contents
+  // Perform mutations...
+}
+
+// In report phase
+report(context: ActionContext): ISemanticEvent[] {
+  const { previousState, revealedItems } = context.sharedData as OpeningSharedData
+  // Generate events based on shared data...
+}
+```
+
+**Important**: Never use `(context as any)._*` patterns for sharing data - this is context pollution and breaks type safety.
 
 ### Helper Methods
 - `canSee(entity)`: Check visibility
@@ -372,6 +416,43 @@ interface Action {
 }
 ```
 
+## Extensibility Patterns
+
+### Event Handler Override Pattern
+Stories can override default behavior by handling events:
+
+```typescript
+// Default behavior in text service
+textService.on('if.action.about', (event) => {
+  // Standard about display from story config
+})
+
+// Story can override
+story.on('if.action.about', (event) => {
+  // Custom about display (ASCII art, menu, etc.)
+  event.preventDefault() // Stop default handler
+})
+```
+
+### Signal Action Pattern
+For meta-actions that don't mutate world state:
+
+```typescript
+export const metaAction: Action = {
+  validate(): ValidationResult {
+    return { valid: true } // Usually always succeeds
+  },
+  execute(): void {
+    // Empty - no world mutations
+  },
+  report(): ISemanticEvent[] {
+    return [{ type: 'if.action.meta', data: {} }]
+  }
+}
+```
+
+This pattern enables maximum flexibility - the action just signals intent, allowing stories to handle it however they want.
+
 ## Development Workflow
 
 1. **Adding a new trait**: Create in `/packages/world-model/src/traits/`
@@ -388,3 +469,5 @@ interface Action {
 - Never use `(context as any)._*` patterns (context pollution)
 - Traits are data + behaviors, not just flags
 - Events drive both output and game logic
+- Not all actions need data builders - signal actions don't transform state
+- Keep actions simple - complexity belongs in behaviors or event handlers

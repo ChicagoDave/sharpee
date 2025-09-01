@@ -4,10 +4,10 @@
 
 /**
  * Event data for when about information is displayed
+ * Empty object since the text service constructs everything from story config
  */
 export interface AboutDisplayedEventData {
-  /** Display mode for the about information */
-  displayMode: 'standard' | 'brief' | 'verbose' | string;
+  // No data needed - text service reads from story config
 }
 
 /**
