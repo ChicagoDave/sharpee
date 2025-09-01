@@ -93,19 +93,31 @@ validate(context: ActionContext): ValidationResult {
 Perform the actual world mutations.
 ```typescript
 execute(context: ActionContext): void {
-  // Mutate world state
+  // IMPORTANT: Execute should be minimal - delegate to behaviors
   // Store data in context.sharedData for report phase
-  context.sharedData.previousLocation = entity.location
+  // NO event emission here - that's for report phase
+  
+  const result = SomeBehavior.doThing(entity, world);
+  context.sharedData.result = result;
 }
 ```
+
+**Key Principle**: The execute phase should be minimal. Complex logic belongs in behaviors (see Behaviors vs Actions section). Execute only coordinates behaviors and stores results.
 
 ### Phase 3: Report
 Generate events for output and game logic.
 ```typescript
 report(context: ActionContext): ISemanticEvent[] {
-  // Access data from execute phase
-  const { previousLocation } = context.sharedData
-  // Return events describing what happened
+  const events: ISemanticEvent[] = [];
+  
+  // Always emit world event first
+  events.push(context.event('if.event.something_happened', { ... }));
+  
+  // Then add success/error messages
+  events.push(context.event('action.success', { ... }));
+  
+  // Return all events together - no early returns
+  return events;
 }
 ```
 
@@ -165,27 +177,41 @@ The context object passed to all action phases, providing access to world state 
 ### Using sharedData (Type-Safe Pattern)
 ```typescript
 // Define typed interface for your action's shared data
-interface OpeningSharedData {
-  previousState?: boolean
-  revealedItems?: Entity[]
+interface AttackingSharedData {
+  targetId?: string;
+  weaponId?: string;
+  wasBlindAttack?: boolean;
+  attackResult?: AttackResult;  // Result from behavior
 }
 
-// In execute phase
+// In execute phase - minimal!
 execute(context: ActionContext): void {
-  const sharedData = context.sharedData as OpeningSharedData
-  sharedData.previousState = container.open
-  sharedData.revealedItems = contents
-  // Perform mutations...
+  const sharedData = context.sharedData as AttackingSharedData;
+  const target = context.command.directObject!.entity!;
+  
+  // Just call behavior and store result
+  const result = AttackBehavior.attack(player, target, weapon, world);
+  sharedData.attackResult = result;
+  sharedData.targetId = target.id;
 }
 
-// In report phase
+// In report phase - all events
 report(context: ActionContext): ISemanticEvent[] {
-  const { previousState, revealedItems } = context.sharedData as OpeningSharedData
-  // Generate events based on shared data...
+  const sharedData = context.sharedData as AttackingSharedData;
+  const events: ISemanticEvent[] = [];
+  
+  // Generate events based on shared data
+  events.push(context.event('if.event.attacked', { ... }));
+  events.push(context.event('action.success', { ... }));
+  
+  return events;
 }
 ```
 
-**Important**: Never use `(context as any)._*` patterns for sharing data - this is context pollution and breaks type safety.
+**Important**: 
+- Never use `(context as any)._*` patterns - this is context pollution
+- Execute stores behavior results, report generates all events
+- sharedData is the ONLY way to pass data between phases
 
 ### Helper Methods
 - `canSee(entity)`: Check visibility
@@ -281,12 +307,18 @@ story.on('if.event.pushed', (event) => {
 
 - **Behaviors** (`/packages/world-model/src/behaviors/`): 
   - Pure game logic for manipulating traits and state
-  - Example: `OpenableBehavior.open(entity)`
+  - **Handle ALL world mutations** - behaviors own the state changes
+  - Can call other behaviors (composition)
+  - Return minimal data for reporting
+  - Example: `BreakableBehavior.break(entity, world)`
   
 - **Actions** (`/packages/stdlib/src/actions/`):
   - Handle player commands
-  - Use behaviors to manipulate state
-  - Generate events for output
+  - **Coordinate behaviors** - actions don't mutate directly
+  - Store results in sharedData between phases
+  - Generate events for output in report phase
+
+**Key Insight**: If your execute phase is complex, you're doing it wrong. Move the logic to a behavior.
 
 ## Scope System
 
@@ -299,6 +331,25 @@ Determines what entities are perceivable to the player.
 - `CARRIED`: In player's inventory
 - `WORN`: Being worn by player
 - `IN_ROOM`: In current room
+
+### Parser Scope vs Action Validation
+```typescript
+// In parser grammar - be permissive
+grammar
+  .define('attack :target')
+  .where('target', scope => scope.touchable())  // NOT visible()
+  .mapsTo('if.action.attacking')
+  
+// In action validation - check specifics
+validate(context: ActionContext): ValidationResult {
+  if (!context.canReach(target)) {
+    return { valid: false, error: 'not_reachable' };
+  }
+  // Allow blind attacks - don't check canSee()
+}
+```
+
+**Key Principle**: Parser scope should be permissive (touchable, not visible) to allow actions like attacking in darkness. Let the action decide if visibility is truly required.
 
 ### Scope Resolution
 The scope resolver determines which entities are available for commands based on the action's requirements and the player's current context.
