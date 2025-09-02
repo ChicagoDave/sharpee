@@ -32,6 +32,13 @@ export * from './pushable';
 export * from './button';
 export * from './moveable-scenery';
 
+// Combat traits
+export * from './weapon';
+export * from './breakable';
+export * from './destructible';
+export * from './combatant';
+export * from './equipped';
+
 // Register function
 export * from './register-all';
 

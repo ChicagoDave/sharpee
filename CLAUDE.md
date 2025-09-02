@@ -1,5 +1,9 @@
 # Project Instructions for Claude
 
+## MAJOR DIRECTIONS
+
+- Never delete files without confirmation. You just deleted three unit test files without asking and we're redoing that work now. Never do that again, not even "to get a build working" or "to get the other tests working".
+
 ## Core Concepts Reference
 Please read `/docs/reference/core-concepts.md` at the start of each session for essential context about:
 - Entity system and creation

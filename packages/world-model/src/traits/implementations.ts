@@ -40,6 +40,13 @@ import { PushableTrait } from './pushable/pushableTrait';
 import { ButtonTrait } from './button/buttonTrait';
 import { MoveableSceneryTrait } from './moveable-scenery/moveableSceneryTrait';
 
+// Combat traits
+import { WeaponTrait } from './weapon/weaponTrait';
+import { BreakableTrait } from './breakable/breakableTrait';
+import { DestructibleTrait } from './destructible/destructibleTrait';
+import { CombatantTrait } from './combatant/combatantTrait';
+import { EquippedTrait } from './equipped/equippedTrait';
+
 /**
  * Map of trait types to their constructors
  */
@@ -77,6 +84,13 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
   [TraitType.PUSHABLE]: PushableTrait,
   [TraitType.BUTTON]: ButtonTrait,
   [TraitType.MOVEABLE_SCENERY]: MoveableSceneryTrait,
+
+  // Combat traits
+  [TraitType.WEAPON]: WeaponTrait,
+  [TraitType.BREAKABLE]: BreakableTrait,
+  [TraitType.DESTRUCTIBLE]: DestructibleTrait,
+  [TraitType.COMBATANT]: CombatantTrait,
+  [TraitType.EQUIPPED]: EquippedTrait,
 
   // Object property traits
 
@@ -138,7 +152,14 @@ export {
   AttachedTrait,
   PushableTrait,
   ButtonTrait,
-  MoveableSceneryTrait
+  MoveableSceneryTrait,
+
+  // Combat traits
+  WeaponTrait,
+  BreakableTrait,
+  DestructibleTrait,
+  CombatantTrait,
+  EquippedTrait
 
   // Object property traits
 };

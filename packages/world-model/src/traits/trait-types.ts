@@ -42,7 +42,14 @@ export const TraitType = {
   ACTOR: 'actor',
 
   // New traits
-  EXIT: 'exit'
+  EXIT: 'exit',
+  
+  // Combat traits
+  WEAPON: 'weapon',
+  BREAKABLE: 'breakable',
+  DESTRUCTIBLE: 'destructible',
+  COMBATANT: 'combatant',
+  EQUIPPED: 'equipped'
 } as const;
 
 /**
@@ -100,7 +107,14 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   // Object property
 
   // Basic
-  [TraitType.ACTOR]: TraitCategory.STANDARD
+  [TraitType.ACTOR]: TraitCategory.STANDARD,
+  
+  // Combat
+  [TraitType.WEAPON]: TraitCategory.INTERACTIVE,
+  [TraitType.BREAKABLE]: TraitCategory.INTERACTIVE,
+  [TraitType.DESTRUCTIBLE]: TraitCategory.INTERACTIVE,
+  [TraitType.COMBATANT]: TraitCategory.INTERACTIVE,
+  [TraitType.EQUIPPED]: TraitCategory.INTERACTIVE
 };
 
 /**

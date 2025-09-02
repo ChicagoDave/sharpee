@@ -15,6 +15,7 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { attackingAction } from '../../../src/actions/standard/attacking';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel, EntityType } from '@sharpee/world-model';
+import { ISemanticEvent } from '@sharpee/core';
 import { 
   createRealTestContext,
   expectEvent,
@@ -24,6 +25,23 @@ import {
   findEntityByName
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
+
+// Helper to execute action using the new three-phase pattern
+function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
+  // New three-phase pattern: validate -> execute -> report
+  const validationResult = action.validate(context);
+  
+  if (!validationResult.valid) {
+    // Action creates its own error events in report()
+    return action.report(context, validationResult);
+  }
+  
+  // Execute mutations (returns void in new pattern)
+  action.execute(context);
+  
+  // Report generates all events
+  return action.report(context, validationResult);
+}
 
 describe('attackingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -80,7 +98,7 @@ describe('attackingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.ATTACKING);
       const context = createRealTestContext(attackingAction, world, command);
       
-      const events = attackingAction.execute(context);
+      const events = executeAction(attackingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_target')
@@ -155,7 +173,7 @@ describe('attackingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(attackingAction, world, command);
       
-      const events = attackingAction.execute(context);
+      const events = executeAction(attackingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('self')
@@ -205,7 +223,7 @@ describe('attackingAction (Golden Pattern)', () => {
       // Mark world as peaceful
       (world as any).isPeaceful = true;
       
-      const events = attackingAction.execute(context);
+      const events = executeAction(attackingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('peaceful_solution')
@@ -613,7 +631,7 @@ describe('attackingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(attackingAction, world, command);
       
-      const events = attackingAction.execute(context);
+      const events = executeAction(attackingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_strong_enough')
@@ -759,7 +777,7 @@ describe('attackingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(attackingAction, world, command);
       
-      const events = attackingAction.execute(context);
+      const events = executeAction(attackingAction, context);
       
       // Should have attack event
       expectEvent(events, 'if.event.attacked', {

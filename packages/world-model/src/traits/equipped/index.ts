@@ -1,0 +1,1 @@
+export { EquippedTrait, IEquippedData } from './equippedTrait';

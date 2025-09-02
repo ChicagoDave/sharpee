@@ -287,6 +287,47 @@ export function defineSemanticCoreGrammar(grammar: GrammarBuilder): void {
     .build();
 
   // ============================================================================
+  // ATTACKING
+  // ============================================================================
+  
+  // Attack with specified weapon
+  grammar
+    .define('attack :target with :weapon')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .where('weapon', (scope: ScopeBuilder) => scope.carried())
+    .mapsTo('if.action.attacking')
+    .withSemanticVerbs({
+      'attack': { manner: 'normal', intent: 'harm' },
+      'hit': { manner: 'normal', intent: 'harm' },
+      'strike': { manner: 'forceful', intent: 'harm' },
+      'kill': { manner: 'forceful', intent: 'kill' },
+      'punch': { manner: 'forceful', intent: 'harm', unarmed: true },
+      'kick': { manner: 'forceful', intent: 'harm', unarmed: true },
+      'slap': { manner: 'normal', intent: 'humiliate' },
+      'stab': { manner: 'forceful', intent: 'kill', requiresWeapon: true }
+    })
+    .withPriority(100)
+    .build();
+  
+  // Attack without weapon (unarmed or inferred)
+  grammar
+    .define('attack :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.attacking')
+    .withSemanticVerbs({
+      'attack': { manner: 'normal', intent: 'harm' },
+      'hit': { manner: 'normal', intent: 'harm' },
+      'strike': { manner: 'forceful', intent: 'harm' },
+      'kill': { manner: 'forceful', intent: 'kill' },
+      'punch': { manner: 'forceful', intent: 'harm', unarmed: true },
+      'kick': { manner: 'forceful', intent: 'harm', unarmed: true },
+      'slap': { manner: 'normal', intent: 'humiliate' },
+      'stab': { manner: 'forceful', intent: 'kill', requiresWeapon: true }
+    })
+    .withPriority(100)
+    .build();
+
+  // ============================================================================
   // REMOVING
   // ============================================================================
   

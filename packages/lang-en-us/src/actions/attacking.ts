@@ -27,11 +27,15 @@ export const attackingLanguage = {
     'self': "Violence against yourself isn't the answer.",
     'not_holding_weapon': "You aren't holding {weapon}.",
     'indestructible': "{target} is far too solid to damage.",
+    'need_weapon_to_damage': "{target} requires a weapon to damage.",
+    'wrong_weapon_type': "{target} can't be damaged with that type of weapon.",
+    'attack_ineffective': "Your attack has no effect on {target}.",
     
     // Success messages - combat
     'attacked': "You attack {target}.",
     'attacked_with': "You attack {target} with {weapon}.",
-    'hit': "You hit {target}.",
+    'hit_target': "You hit {target}.",
+    'hit_blindly': "You swing wildly, hitting nothing.",
     'hit_with': "You hit {target} with {weapon}.",
     'struck': "You strike {target}!",
     'struck_with': "You strike {target} with {weapon}!",
@@ -41,11 +45,24 @@ export const attackingLanguage = {
     'kicked': "You kick {target}.",
     'unarmed_attack': "You attack {target} with your bare hands.",
     
-    // Success messages - breaking
+    // Success messages - breaking/destroying
+    'target_broke': "{target} breaks!",
+    'target_shattered': "{target} shatters into pieces!",
     'broke': "You break {target}!",
     'smashed': "You smash {target} to pieces!",
+    'target_destroyed': "{target} is utterly destroyed!",
     'destroyed': "You destroy {target}!",
     'shattered': "{target} shatters!",
+    'target_damaged': "{target} shows signs of damage. ({damage} damage dealt)",
+    
+    // Success messages - killing
+    'killed_target': "You have defeated {target}!",
+    'killed_blindly': "Something dies in the darkness.",
+    
+    // Environmental results
+    'items_spilled': "{target}'s possessions spill onto the ground.",
+    'passage_revealed': "A hidden passage is revealed!",
+    'debris_created': "Debris from {target} litters the area.",
     
     // Target reactions - actors
     'defends': "{target} defends against your attack.",
