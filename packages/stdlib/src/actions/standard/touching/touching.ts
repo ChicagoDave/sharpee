@@ -4,15 +4,15 @@
  * This action allows players to touch objects to discover their
  * texture, temperature, or other tactile properties.
  *
- * Uses three-phase pattern:
+ * Uses four-phase pattern:
  * 1. validate: Check target exists
  * 2. execute: Compute tactile properties (no world mutations)
- * 3. report: Emit touched event and success message
+ * 3. blocked: Generate events when validation fails
+ * 4. report: Generate success events
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
-import { handleReportErrors } from '../../base/report-helpers';
 import { TraitType, IdentityTrait, SwitchableTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { TouchedEventData } from './touching-events';
@@ -208,10 +208,19 @@ export const touchingAction: Action & { metadata: ActionMetadata } = {
     sharedData.eventData = eventData;
   },
 
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
+  /**
+   * Generate events when validation fails
+   */
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    return [context.event('action.blocked', {
+      actionId: this.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
+  },
 
+  report(context: ActionContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
     const sharedData = getTouchingSharedData(context);
 
