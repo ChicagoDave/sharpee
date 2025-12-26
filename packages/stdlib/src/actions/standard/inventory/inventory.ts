@@ -1,11 +1,16 @@
 /**
  * Inventory action - Player checks what they're carrying
- * 
+ *
  * This is treated as an observable action where the player
  * physically checks their pockets/bag, which NPCs can notice.
- * 
+ *
  * Unlike scoring which uses capability data, inventory queries
  * the world model directly since items are core entities.
+ *
+ * Uses three-phase pattern:
+ * 1. validate: Always succeeds (no preconditions)
+ * 2. execute: Analyze inventory (no world mutations)
+ * 3. report: Emit inventory events and success messages
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -13,7 +18,19 @@ import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, WearableTrait, IFEntity } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
-import { InventoryEventMap, InventoryItem } from './inventory-events';
+import { InventoryEventMap } from './inventory-events';
+import { handleReportErrors } from '../../base/report-helpers';
+
+/**
+ * Shared data passed between execute and report phases
+ */
+interface InventorySharedData {
+  analysis?: InventoryAnalysis;
+}
+
+function getInventorySharedData(context: ActionContext): InventorySharedData {
+  return context.sharedData as InventorySharedData;
+}
 
 interface InventoryAnalysis {
   holding: IFEntity[];
@@ -185,27 +202,40 @@ export const inventoryAction: Action & { metadata: ActionMetadata } = {
   
   validate(context: ActionContext): ValidationResult {
     // Inventory check is always valid - no preconditions
-    return {
-      valid: true
-    };
+    return { valid: true };
   },
-  
-  execute(context: ActionContext): ISemanticEvent[] {
-    const events: ISemanticEvent[] = [];
-    
-    // Use shared analysis function
+
+  execute(context: ActionContext): void {
+    // Inventory has NO world mutations
+    // Analyze inventory and store in sharedData for report phase
     const analysis = analyzeInventory(context);
-    
+    const sharedData = getInventorySharedData(context);
+
+    sharedData.analysis = analysis;
+  },
+
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
+    const events: ISemanticEvent[] = [];
+    const sharedData = getInventorySharedData(context);
+    const analysis = sharedData.analysis;
+
+    if (!analysis) {
+      return events;
+    }
+
     // Create the observable action event - NPCs can see this
     events.push(context.event('if.action.inventory', analysis.eventData));
-    
+
     // Add the main inventory message
     events.push(context.event('action.success', {
       actionId: context.action.id,
       messageId: analysis.messageId,
       params: analysis.params
     }));
-    
+
     // Add item lists if not empty
     if (analysis.holdingList) {
       events.push(context.event('action.success', {
@@ -214,7 +244,7 @@ export const inventoryAction: Action & { metadata: ActionMetadata } = {
         params: { items: analysis.holdingList }
       }));
     }
-    
+
     if (analysis.wornList) {
       events.push(context.event('action.success', {
         actionId: context.action.id,
@@ -222,7 +252,7 @@ export const inventoryAction: Action & { metadata: ActionMetadata } = {
         params: { items: analysis.wornList }
       }));
     }
-    
+
     // Add burden status if relevant
     if (analysis.burdenMessage) {
       events.push(context.event('action.success', {
@@ -234,12 +264,12 @@ export const inventoryAction: Action & { metadata: ActionMetadata } = {
         }
       }));
     }
-    
+
     return events;
   },
-  
+
   group: "meta",
-  
+
   metadata: {
     requiresDirectObject: false,
     requiresIndirectObject: false

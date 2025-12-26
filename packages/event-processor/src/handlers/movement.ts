@@ -134,21 +134,8 @@ export const handleRemovedFrom: EventHandler = (event: ISemanticEvent, world: an
  * Handle ENTERED event - actor enters an object or vehicle
  */
 export const handleEntered: EventHandler = (event: ISemanticEvent, world: any) => {
-  const { actor, target, location } = event.entities;
+  const { actor, location } = event.entities;
   if (actor && location) {
-    // Update the entry trait occupants if present
-    const targetEntity = world.getEntity(target || location);
-    if (targetEntity && targetEntity.has(TraitType.ENTRY)) {
-      world.updateEntity(targetEntity.id, (entity: IFEntity) => {
-        const entryTrait = entity.get(TraitType.ENTRY) as any;
-        if (entryTrait && entryTrait.occupants) {
-          if (!entryTrait.occupants.includes(actor)) {
-            entryTrait.occupants.push(actor);
-          }
-        }
-      });
-    }
-    
     // Move the actor to the new location
     world.moveEntity(actor, location);
   }
@@ -159,23 +146,8 @@ export const handleEntered: EventHandler = (event: ISemanticEvent, world: any) =
  */
 export const handleExited: EventHandler = (event: ISemanticEvent, world: any) => {
   const { actor, location } = event.entities;
-  const data = event.data as any;
-  const fromLocation = data?.fromLocation as string;
   
   if (actor && location) {
-    // Update the entry trait occupants if present
-    if (fromLocation) {
-      const previousContainer = world.getEntity(fromLocation);
-      if (previousContainer && previousContainer.has(TraitType.ENTRY)) {
-        world.updateEntity(fromLocation, (entity: IFEntity) => {
-          const entryTrait = entity.get(TraitType.ENTRY) as any;
-          if (entryTrait && entryTrait.occupants) {
-            entryTrait.occupants = entryTrait.occupants.filter((id: string) => id !== actor);
-          }
-        });
-      }
-    }
-    
     // Move the actor to the new location
     world.moveEntity(actor, location);
   }

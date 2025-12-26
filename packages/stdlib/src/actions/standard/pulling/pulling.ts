@@ -1,8 +1,13 @@
 /**
  * Pulling action - pull objects that have the PULLABLE trait
- * 
+ *
  * This is a minimal action that validates pulling is possible
  * and emits an event. Story authors handle specific pulling logic.
+ *
+ * Uses three-phase pattern:
+ * 1. validate: Check if target is pullable and not already pulled
+ * 2. execute: Update pullable state, store data in sharedData
+ * 3. report: Generate events for story handlers
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -12,17 +17,32 @@ import { IFActions } from '../../constants';
 import { PulledEventData } from './pulling-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
+import { handleReportErrors } from '../../base/report-helpers';
+
+/**
+ * Shared data passed between execute and report phases
+ */
+interface PullingSharedData {
+  targetId: string;
+  targetName: string;
+  pullCount: number;
+  pullType?: 'lever' | 'cord' | 'attached' | 'heavy';
+}
+
+function getPullingSharedData(context: ActionContext): PullingSharedData {
+  return context.sharedData as PullingSharedData;
+}
 
 export const pullingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.PULLING,
   group: "interaction",
-  
+
   metadata: {
     requiresDirectObject: true,
     requiresIndirectObject: false,
     directObjectScope: ScopeLevel.REACHABLE
   },
-  
+
   requiredMessages: [
     'no_target',
     'not_visible',
@@ -33,20 +53,20 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
     'nothing_happens',
     'already_pulled'
   ],
-  
+
   validate(context: ActionContext): ValidationResult {
     const target = context.command.directObject?.entity;
-    
+
     // Must have something to pull
     if (!target) {
       return { valid: false, error: 'no_target' };
     }
-    
+
     // Check if object is pullable
     if (!target.has(TraitType.PULLABLE)) {
       return { valid: false, error: 'cant_pull_that', params: { target: target.name } };
     }
-    
+
     // Can't pull worn items
     if (target.has(TraitType.WEARABLE)) {
       const wearable = target.get(TraitType.WEARABLE) as any;
@@ -54,44 +74,64 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
         return { valid: false, error: 'worn', params: { target: target.name } };
       }
     }
-    
+
     // Check state of pullable
     const pullable = target.get(TraitType.PULLABLE) as PullableTrait;
     if (pullable.state === 'pulled') {
       return { valid: false, error: 'already_pulled', params: { target: target.name } };
     }
-    
+
     return { valid: true };
   },
-  
-  execute(context: ActionContext): ISemanticEvent[] {
+
+  /**
+   * Execute the pull action - performs mutations only
+   * Assumes validation has already passed
+   */
+  execute(context: ActionContext): void {
     const target = context.command.directObject!.entity!;
     const pullable = target.get(TraitType.PULLABLE) as PullableTrait;
-    
-    // Build event data
-    const eventData: PulledEventData = {
-      target: target.id,
-      targetName: target.name,
-      pullCount: pullable.pullCount || 0,
-      pullType: pullable.pullType
-    };
-    
-    const events: ISemanticEvent[] = [];
-    
-    // Update the state
+    const sharedData = getPullingSharedData(context);
+
+    // Store data for report phase (before mutation)
+    sharedData.targetId = target.id;
+    sharedData.targetName = target.name;
+    sharedData.pullCount = pullable.pullCount || 0;
+    sharedData.pullType = pullable.pullType;
+
+    // Perform the mutation
     pullable.state = 'pulled';
     pullable.pullCount = (pullable.pullCount || 0) + 1;
-    
+  },
+
+  /**
+   * Report phase - generates all events after successful execution
+   */
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
+    const events: ISemanticEvent[] = [];
+    const sharedData = getPullingSharedData(context);
+
+    // Build event data
+    const eventData: PulledEventData = {
+      target: sharedData.targetId,
+      targetName: sharedData.targetName,
+      pullCount: sharedData.pullCount,
+      pullType: sharedData.pullType
+    };
+
     // Emit the pulled event for story handlers
     events.push(context.event('if.event.pulled', eventData));
-    
+
     // Simple success message
     events.push(context.event('action.success', {
       actionId: this.id,
       messageId: 'pulled',
-      params: { target: target.name }
+      params: { target: sharedData.targetName }
     }));
-    
+
     return events;
   }
 };

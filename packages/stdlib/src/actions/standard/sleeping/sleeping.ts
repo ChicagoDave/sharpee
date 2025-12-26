@@ -1,9 +1,14 @@
 /**
  * Sleeping action - passes time without doing anything
- * 
+ *
  * This is a meta action that advances time like waiting but represents
  * the player character sleeping or dozing off. NPCs and daemons can
  * still act during this time.
+ *
+ * Uses three-phase pattern:
+ * 1. validate: Check if sleeping is allowed
+ * 2. execute: Compute sleep state (no world mutations)
+ * 3. report: Emit slept event and success message
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -11,7 +16,21 @@ import { ISemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { SleptEventData } from './sleeping-events';
-import { IFEntity } from '@sharpee/world-model';
+import { handleReportErrors } from '../../base/report-helpers';
+
+/**
+ * Shared data passed between execute and report phases
+ */
+interface SleepingSharedData {
+  messageId?: string;
+  eventData?: SleptEventData;
+  params?: Record<string, any>;
+  wakeRefreshed?: boolean;
+}
+
+function getSleepingSharedData(context: ActionContext): SleepingSharedData {
+  return context.sharedData as SleepingSharedData;
+}
 
 interface SleepAnalysis {
   canSleep: boolean;
@@ -91,35 +110,51 @@ export const sleepingAction: Action & { metadata: ActionMetadata } = {
     };
   },
   
-  execute(context: ActionContext): ISemanticEvent[] {
+  execute(context: ActionContext): void {
+    // Sleeping has NO world mutations
+    // Analyze sleep state and store in sharedData for report phase
     const analysis = analyzeSleepAction(context);
-    
+    const sharedData = getSleepingSharedData(context);
+
+    sharedData.messageId = analysis.messageId;
+    sharedData.eventData = analysis.eventData;
+    sharedData.params = analysis.params;
+    sharedData.wakeRefreshed = analysis.wakeRefreshed;
+  },
+
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const events: ISemanticEvent[] = [];
-    
-    // Create SLEPT event for world model
-    events.push(context.event('if.event.slept', analysis.eventData));
-    
-    // Add success message
+    const sharedData = getSleepingSharedData(context);
+
+    // Emit slept event for world model
+    if (sharedData.eventData) {
+      events.push(context.event('if.event.slept', sharedData.eventData));
+    }
+
+    // Emit success message
     events.push(context.event('action.success', {
       actionId: context.action.id,
-      messageId: analysis.messageId,
-      params: analysis.params
+      messageId: sharedData.messageId || 'slept',
+      params: sharedData.params || {}
     }));
-    
+
     // Add wake refreshed message if applicable
-    if (analysis.wakeRefreshed) {
+    if (sharedData.wakeRefreshed) {
       events.push(context.event('action.success', {
         actionId: context.action.id,
         messageId: 'woke_refreshed',
         params: {}
       }));
     }
-    
+
     return events;
   },
-  
+
   group: "meta",
-  
+
   metadata: {
     requiresDirectObject: false,
     requiresIndirectObject: false

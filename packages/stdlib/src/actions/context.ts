@@ -16,6 +16,7 @@ import { ScopeResolver } from '../scope/types';
 export class ReadOnlyActionContext implements ActionContext {
   public readonly action: Action;
   public readonly scopeResolver: ScopeResolver;
+  public sharedData: Record<string, any> = {};
   
   constructor(
     public readonly world: WorldModel,

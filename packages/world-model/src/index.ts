@@ -27,7 +27,7 @@ export * from './traits/lockable';
 export * from './traits/readable';
 export * from './traits/light-source';
 export * from './traits/exit';
-export * from './traits/entry';
+export * from './traits/climbable';
 export * from './traits/scenery';
 export * from './traits/supporter';
 export * from './traits/switchable';

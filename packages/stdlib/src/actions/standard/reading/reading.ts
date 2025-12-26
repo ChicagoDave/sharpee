@@ -1,19 +1,39 @@
 /**
  * Reading action - handles reading text from readable entities
+ *
+ * Uses three-phase pattern:
+ * 1. validate: Check target exists and is readable
+ * 2. execute: Mark as read, compute text (mutation)
+ * 3. report: Emit read event and success message
+ *
  * @module
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType } from '@sharpee/world-model';
 import {
   ReadingEventData,
   createReadingEvent
 } from './reading-events';
+import { handleReportErrors } from '../../base/report-helpers';
+
+/**
+ * Shared data passed between execute and report phases
+ */
+interface ReadingSharedData {
+  readEvent?: ISemanticEvent;
+  messageId?: string;
+  params?: Record<string, any>;
+}
+
+function getReadingSharedData(context: ActionContext): ReadingSharedData {
+  return context.sharedData as ReadingSharedData;
+}
 
 /**
  * Reading action implementation
- * 
+ *
  * Handles:
  * - Reading books, notes, signs, inscriptions
  * - Multi-page books
@@ -68,12 +88,13 @@ export const reading: Action = {
     return { valid: true };
   },
 
-  execute(context: ActionContext): ISemanticEvent[] {
+  execute(context: ActionContext): void {
     const { directObject } = context.command;
     const target = directObject!.entity;
     const readable = target.get(TraitType.READABLE) as any;
+    const sharedData = getReadingSharedData(context);
 
-    // Mark as read
+    // Mark as read (world mutation)
     readable.hasBeenRead = true;
 
     // Build event data
@@ -115,13 +136,31 @@ export const reading: Action = {
       params.totalPages = eventData.totalPages;
     }
 
-    return [
-      readEvent,
-      context.event('action.success', {
-        actionId: this.id,
-        messageId,
-        params
-      })
-    ];
+    // Store in sharedData for report phase
+    sharedData.readEvent = readEvent;
+    sharedData.messageId = messageId;
+    sharedData.params = params;
+  },
+
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
+    const sharedData = getReadingSharedData(context);
+    const events: ISemanticEvent[] = [];
+
+    // Emit read event
+    if (sharedData.readEvent) {
+      events.push(sharedData.readEvent);
+    }
+
+    // Emit success message
+    events.push(context.event('action.success', {
+      actionId: context.action.id,
+      messageId: sharedData.messageId || 'read_text',
+      params: sharedData.params || {}
+    }));
+
+    return events;
   }
 };

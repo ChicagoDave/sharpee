@@ -108,7 +108,6 @@ export const IFActions = {
   HELP: 'if.action.help',
   HINTS: 'if.action.hints',
   ABOUT: 'if.action.about',
-  AGAIN: 'if.action.again',
 } as const;
 
 export type IFActionType = typeof IFActions[keyof typeof IFActions];

@@ -28,6 +28,7 @@ import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
+import { handleReportErrors } from '../../base/report-helpers';
 import { buildEventData } from '../../data-builder-types';
 
 // Import our data builders
@@ -37,6 +38,20 @@ import {
   actorEnteredDataConfig,
   determineGoingMessage
 } from './going-data';
+
+/**
+ * Shared data passed between execute and report phases
+ */
+export interface GoingSharedData {
+  isFirstVisit?: boolean;
+  fromRoomId?: string;
+  toRoomId?: string;
+  direction?: DirectionType;
+}
+
+export function getGoingSharedData(context: ActionContext): GoingSharedData {
+  return context.sharedData as GoingSharedData;
+}
 
 export const goingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.GOING,
@@ -207,10 +222,11 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     
     // Check if this is the first time entering the destination
     const isFirstVisit = !RoomBehavior.hasBeenVisited(destination);
-    
-    // Store first visit status for report phase
-    (context as any)._isFirstVisit = isFirstVisit;
-    
+
+    // Store first visit status for report phase using sharedData
+    const sharedData = getGoingSharedData(context);
+    sharedData.isFirstVisit = isFirstVisit;
+
     // Actually move the player!
     context.world.moveEntity(actor.id, destination.id);
     
@@ -221,52 +237,10 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
   },
   
   report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    // Handle validation errors
-    if (validationResult && !validationResult.valid) {
-      // Capture entity data for validation errors
-      const errorParams = { ...(validationResult.params || {}) };
-      
-      // Add entity snapshots if entities are available
-      if (context.command.directObject?.entity) {
-        errorParams.targetSnapshot = captureEntitySnapshot(
-          context.command.directObject.entity,
-          context.world,
-          false
-        );
-      }
-      if (context.command.indirectObject?.entity) {
-        errorParams.indirectTargetSnapshot = captureEntitySnapshot(
-          context.command.indirectObject.entity,
-          context.world,
-          false
-        );
-      }
+    // Handle validation and execution errors using shared helper
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
 
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          error: validationResult.error || 'validation_failed',
-          reason: validationResult.error || 'validation_failed',
-          messageId: validationResult.messageId || validationResult.error || 'action_failed',
-          params: errorParams
-        })
-      ];
-    }
-    
-    // Handle execution errors
-    if (executionError) {
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          error: 'execution_failed',
-          messageId: 'action_failed',
-          params: {
-            error: executionError.message
-          }
-        })
-      ];
-    }
-    
     // Build event data using data builders
     const exitedData = buildEventData(actorExitedDataConfig, context);
     const movedData = buildEventData(actorMovedDataConfig, context);

@@ -24,7 +24,7 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
-// Helper to execute action with validation (mimics CommandExecutor flow)
+// Helper to execute action with three-phase pattern (mimics CommandExecutor flow)
 const executeWithValidation = (action: any, context: ActionContext) => {
   const validation = action.validate(context);
   if (!validation.valid) {
@@ -35,7 +35,10 @@ const executeWithValidation = (action: any, context: ActionContext) => {
       params: validation.params || { target: context.command.directObject?.entity?.name }
     })];
   }
-  return action.execute(context);
+  // Execute mutations (returns void)
+  action.execute(context);
+  // Report generates events
+  return action.report(context);
 };
 
 describe('switchingOnAction (Golden Pattern)', () => {

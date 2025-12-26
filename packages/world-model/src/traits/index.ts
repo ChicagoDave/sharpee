@@ -15,7 +15,7 @@ export * from './lockable';
 export * from './readable';
 export * from './light-source';
 export * from './exit';
-export * from './entry';
+export * from './climbable';
 export * from './scenery';
 export * from './supporter';
 export * from './switchable';
@@ -31,6 +31,13 @@ export * from './attached';
 export * from './pushable';
 export * from './button';
 export * from './moveable-scenery';
+
+// Combat traits
+export * from './weapon';
+export * from './breakable';
+export * from './destructible';
+export * from './combatant';
+export * from './equipped';
 
 // Register function
 export * from './register-all';

@@ -76,6 +76,28 @@ export interface ActionContext {
    */
   getInScope(): IFEntity[];
   
+  /**
+   * Shared data store for passing information between action phases.
+   * 
+   * This property enables clean data passing from the execute phase to the report phase,
+   * eliminating the need for context pollution patterns like `(context as any)._previousLocation`.
+   * 
+   * Data stored here during execute() is available in report() for creating rich events
+   * with full context about what changed during the action.
+   * 
+   * @example
+   * // In execute() phase - capture context before mutations
+   * context.sharedData.previousLocation = context.world.getLocation(item.id);
+   * context.sharedData.wasWorn = item.has(TraitType.WEARABLE) && item.wearable.worn;
+   * 
+   * // In report() phase - access captured data
+   * const { previousLocation, wasWorn } = context.sharedData;
+   * if (wasWorn) {
+   *   events.push(context.event('if.event.removed', { item: item.name }));
+   * }
+   */
+  sharedData: Record<string, any>;
+  
   // Event creation capabilities
   /**
    * The action being executed (for message resolution)

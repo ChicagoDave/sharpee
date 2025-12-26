@@ -1,13 +1,19 @@
 /**
  * Wearing action - put on clothing or wearable items
- * 
+ *
  * This action handles wearing items that have the WEARABLE trait.
  * It validates that the item can be worn and isn't already worn.
+ *
+ * Uses three-phase pattern:
+ * 1. validate: Check if item is wearable and can be worn
+ * 2. execute: Call WearableBehavior.wear(), store result in sharedData
+ * 3. report: Generate events from sharedData
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
+import { handleReportErrors } from '../../base/report-helpers';
 import { TraitType, WearableTrait, WearableBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
@@ -15,10 +21,30 @@ import { WornEventData, ImplicitTakenEventData } from './wearing-events';
 import {
   analyzeWearableContext,
   checkWearingConflicts,
-  buildWearableEventParams,
-  createWearableErrorEvent,
-  createWearableSuccessEvent
+  buildWearableEventParams
 } from '../wearable-shared';
+
+/**
+ * Shared data passed between execute and report phases
+ */
+interface WearingSharedData {
+  itemId: string;
+  itemName: string;
+  bodyPart?: string;
+  layer?: number;
+  implicitTake?: boolean;
+  params: Record<string, any>;
+  messageId: string;
+  // In case of failure
+  failed?: boolean;
+  errorMessageId?: string;
+  errorReason?: string;
+  errorParams?: Record<string, any>;
+}
+
+function getWearingSharedData(context: ActionContext): WearingSharedData {
+  return context.sharedData as WearingSharedData;
+}
 
 export const wearingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.WEARING,
@@ -32,19 +58,19 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
     'hands_full'
   ],
   group: 'wearable_manipulation',
-  
+
   validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     const item = context.command.directObject?.entity;
-    
+
     if (!item) {
       return { valid: false, error: 'no_target' };
     }
-    
+
     if (!item.has(TraitType.WEARABLE)) {
       return { valid: false, error: 'not_wearable' };
     }
-    
+
     if (!WearableBehavior.canWear(item, actor)) {
       const wearable = item.get(TraitType.WEARABLE) as WearableTrait;
       if (wearable.worn) {
@@ -52,80 +78,115 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
       }
       return { valid: false, error: 'cant_wear_that' };
     }
-    
+
     return { valid: true };
   },
-  
-  execute(context: ActionContext): ISemanticEvent[] {
+
+  execute(context: ActionContext): void {
     const actor = context.player;
-    const item = context.command.directObject?.entity!;
-    
+    const item = context.command.directObject!.entity!;
+    const sharedData = getWearingSharedData(context);
+
+    // Store basic info
+    sharedData.itemId = item.id;
+    sharedData.itemName = item.name;
+
     // Analyze the wearable context
     const wearableContext = analyzeWearableContext(context, item, actor);
     const { wearableTrait } = wearableContext;
-    
-    // Scope checks handled by framework due to directObjectScope: REACHABLE
-    
+
+    // Store body part and layer
+    sharedData.bodyPart = wearableTrait.bodyPart;
+    sharedData.layer = wearableTrait.layer;
+
     // Check if actor is holding the item
     const itemLocation = context.world.getLocation?.(item.id);
-    const events: ISemanticEvent[] = [];
-    
     if (itemLocation !== actor.id) {
-      // Add implicit TAKEN event since item is reachable
-      const implicitTakenData: ImplicitTakenEventData = {
-        implicit: true,
-        item: item.name
-      };
-      events.push(context.event('if.event.taken', implicitTakenData));
+      sharedData.implicitTake = true;
     }
-    
+
     // Check for wearing conflicts using shared helper
     const conflictingItem = checkWearingConflicts(wearableContext);
     if (conflictingItem) {
-      const messageId = wearableTrait.layer !== undefined ? 'hands_full' : 'already_wearing';
-      return [createWearableErrorEvent(context, messageId, messageId, { 
-        item: conflictingItem.name 
-      })];
+      sharedData.failed = true;
+      sharedData.errorMessageId = wearableTrait.layer !== undefined ? 'hands_full' : 'already_wearing';
+      sharedData.errorReason = sharedData.errorMessageId;
+      sharedData.errorParams = { item: conflictingItem.name };
+      return;
     }
-    
+
     // Delegate state change to behavior
     const result = WearableBehavior.wear(item, actor);
-    
+
     // Handle failure cases (defensive checks)
     if (!result.success) {
+      sharedData.failed = true;
       if (result.alreadyWorn) {
-        return [createWearableErrorEvent(context, 'already_wearing', 'already_wearing', { 
-          item: item.name 
-        })];
+        sharedData.errorMessageId = 'already_wearing';
+        sharedData.errorReason = 'already_wearing';
+        sharedData.errorParams = { item: item.name };
+      } else if (result.wornByOther) {
+        sharedData.errorMessageId = 'already_wearing';
+        sharedData.errorReason = 'worn_by_other';
+        sharedData.errorParams = { item: item.name, wornBy: result.wornByOther };
+      } else {
+        sharedData.errorMessageId = 'cant_wear_that';
+        sharedData.errorReason = 'cant_wear_that';
+        sharedData.errorParams = { item: item.name };
       }
-      if (result.wornByOther) {
-        return [createWearableErrorEvent(context, 'already_wearing', 'worn_by_other', { 
-          item: item.name, 
-          wornBy: result.wornByOther 
-        })];
-      }
-      return [createWearableErrorEvent(context, 'cant_wear_that', 'cant_wear_that', { 
-        item: item.name 
+      return;
+    }
+
+    // Success
+    sharedData.failed = false;
+    sharedData.params = buildWearableEventParams(item, wearableTrait);
+    sharedData.messageId = 'worn';
+  },
+
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
+    const sharedData = getWearingSharedData(context);
+    const events: ISemanticEvent[] = [];
+
+    // Handle failure
+    if (sharedData.failed) {
+      return [context.event('action.error', {
+        actionId: this.id,
+        messageId: sharedData.errorMessageId,
+        reason: sharedData.errorReason,
+        params: sharedData.errorParams
       })];
     }
-    
-    // Build message params using shared helper
-    const params = buildWearableEventParams(item, wearableTrait);
-    
+
+    // Add implicit TAKEN event if needed
+    if (sharedData.implicitTake) {
+      const implicitTakenData: ImplicitTakenEventData = {
+        implicit: true,
+        item: sharedData.itemName
+      };
+      events.push(context.event('if.event.taken', implicitTakenData));
+    }
+
     // Create WORN event for world model updates
     const wornData: WornEventData = {
-      itemId: item.id,
-      bodyPart: wearableTrait.bodyPart,
-      layer: wearableTrait.layer
+      itemId: sharedData.itemId,
+      bodyPart: sharedData.bodyPart,
+      layer: sharedData.layer
     };
     events.push(context.event('if.event.worn', wornData));
-    
-    // Create success message using shared helper
-    events.push(createWearableSuccessEvent(context, 'worn', params));
-    
+
+    // Create success message
+    events.push(context.event('action.success', {
+      actionId: this.id,
+      messageId: sharedData.messageId,
+      params: sharedData.params
+    }));
+
     return events;
   },
-  
+
   metadata: {
     requiresDirectObject: true,
     requiresIndirectObject: false,

@@ -14,7 +14,7 @@ import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { smellingAction } from '../../../src/actions/standard/smelling';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel } from '@sharpee/world-model';
-import { 
+import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
@@ -22,6 +22,29 @@ import {
   createCommand
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
+
+// Helper to execute action with validation (mimics CommandExecutor flow)
+// Supports both old two-phase and new three-phase actions
+const executeWithValidation = (action: any, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    return [context.event('action.error', {
+      actionId: context.action.id,
+      messageId: validation.error,
+      reason: validation.error,
+      params: validation.params || {}
+    })];
+  }
+
+  // Three-phase pattern: execute returns void, report returns events
+  if (action.report) {
+    action.execute(context);
+    return action.report(context);
+  }
+
+  // Old two-phase pattern: execute returns events
+  return action.execute(context);
+};
 
 describe('smellingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -64,7 +87,7 @@ describe('smellingAction (Golden Pattern)', () => {
         entity: bread
       }));
       
-      const events = smellingAction.execute(context);
+      const events = executeWithValidation(smellingAction, context);
       
       // Should emit SMELLED event with scent info
       expectEvent(events, 'if.event.smelled', {
@@ -94,7 +117,7 @@ describe('smellingAction (Golden Pattern)', () => {
         entity: coffee
       }));
       
-      const events = smellingAction.execute(context);
+      const events = executeWithValidation(smellingAction, context);
       
       // Should emit SMELLED event with scent info
       expectEvent(events, 'if.event.smelled', {
@@ -123,7 +146,7 @@ describe('smellingAction (Golden Pattern)', () => {
         entity: torch
       }));
       
-      const events = smellingAction.execute(context);
+      const events = executeWithValidation(smellingAction, context);
       
       // Should emit SMELLED event with burning scent
       expectEvent(events, 'if.event.smelled', {
@@ -152,7 +175,7 @@ describe('smellingAction (Golden Pattern)', () => {
         entity: candle
       }));
       
-      const events = smellingAction.execute(context);
+      const events = executeWithValidation(smellingAction, context);
       
       // Should emit no_particular_scent message
       expectEvent(events, 'action.success', {
@@ -187,7 +210,7 @@ describe('smellingAction (Golden Pattern)', () => {
         entity: basket
       }));
       
-      const events = smellingAction.execute(context);
+      const events = executeWithValidation(smellingAction, context);
       
       // Should emit SMELLED event with container contents
       expectEvent(events, 'if.event.smelled', {
@@ -230,7 +253,7 @@ describe('smellingAction (Golden Pattern)', () => {
         entity: box
       }));
       
-      const events = smellingAction.execute(context);
+      const events = executeWithValidation(smellingAction, context);
       
       // Should emit no_particular_scent message (container is closed)
       expectEvent(events, 'action.success', {
@@ -248,7 +271,7 @@ describe('smellingAction (Golden Pattern)', () => {
         entity: rock
       }));
       
-      const events = smellingAction.execute(context);
+      const events = executeWithValidation(smellingAction, context);
       
       // Should emit SMELLED event without scent
       expectEvent(events, 'if.event.smelled', {
@@ -271,7 +294,7 @@ describe('smellingAction (Golden Pattern)', () => {
       const context = createRealTestContext(smellingAction, world, createCommand(IFActions.SMELLING));
       // No command.directObject - smelling environment
       
-      const events = smellingAction.execute(context);
+      const events = executeWithValidation(smellingAction, context);
       
       // Should emit SMELLED event for environment
       expectEvent(events, 'if.event.smelled', {
@@ -298,7 +321,7 @@ describe('smellingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(smellingAction, world, createCommand(IFActions.SMELLING));
       
-      const events = smellingAction.execute(context);
+      const events = executeWithValidation(smellingAction, context);
       
       // Should emit SMELLED event with food sources
       expectEvent(events, 'if.event.smelled', {
@@ -326,7 +349,7 @@ describe('smellingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(smellingAction, world, createCommand(IFActions.SMELLING));
       
-      const events = smellingAction.execute(context);
+      const events = executeWithValidation(smellingAction, context);
       
       // Should emit SMELLED event with smoke source
       expectEvent(events, 'if.event.smelled', {
@@ -361,7 +384,7 @@ describe('smellingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(smellingAction, world, createCommand(IFActions.SMELLING));
       
-      const events = smellingAction.execute(context);
+      const events = executeWithValidation(smellingAction, context);
       
       // Should emit SMELLED event with both sources
       expectEvent(events, 'if.event.smelled', {
@@ -386,7 +409,7 @@ describe('smellingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(smellingAction, world, createCommand(IFActions.SMELLING));
       
-      const events = smellingAction.execute(context);
+      const events = executeWithValidation(smellingAction, context);
       
       // Should emit no_scent message (flowers don't have EDIBLE or lit LIGHT_SOURCE)
       expectEvent(events, 'action.success', {
@@ -410,7 +433,7 @@ describe('smellingAction (Golden Pattern)', () => {
         entity: perfume
       }));
       
-      const events = smellingAction.execute(context);
+      const events = executeWithValidation(smellingAction, context);
       
       // Should succeed - item is carried
       expectEvent(events, 'if.event.smelled', {
@@ -433,7 +456,7 @@ describe('smellingAction (Golden Pattern)', () => {
         entity: cake
       }));
       
-      const events = smellingAction.execute(context);
+      const events = executeWithValidation(smellingAction, context);
       
       // Should succeed - item is in same room
       expectEvent(events, 'if.event.smelled', {
@@ -458,7 +481,7 @@ describe('smellingAction (Golden Pattern)', () => {
         entity: soup
       }));
       
-      const events = smellingAction.execute(context);
+      const events = executeWithValidation(smellingAction, context);
       
       events.forEach(event => {
         if (event.entities) {

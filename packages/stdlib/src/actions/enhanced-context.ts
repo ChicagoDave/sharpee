@@ -25,6 +25,7 @@ import { ValidatedCommand } from '../validation/types';
 class InternalActionContext implements ActionContext {
   private sequenceCounter = 0;
   public readonly scopeResolver: ScopeResolver;
+  public sharedData: Record<string, any> = {};
   
   constructor(
     public readonly world: WorldModel,
@@ -174,7 +175,10 @@ class InternalActionContext implements ActionContext {
    * Helper to create context for another action (used in composite actions)
    */
   createSubContext(action: Action): ActionContext {
-    return new InternalActionContext(this.world, this.player, this.currentLocation, action, this.command, this.scopeResolver);
+    const subContext = new InternalActionContext(this.world, this.player, this.currentLocation, action, this.command, this.scopeResolver);
+    // Share the same data store with sub-context
+    subContext.sharedData = this.sharedData;
+    return subContext;
   }
 }
 

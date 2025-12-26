@@ -69,7 +69,6 @@ export * from './saving';
 export * from './restoring';
 export * from './quitting';
 export * from './restarting';
-export * from './again';
 
 // Import all actions for easy registration
 import { takingAction } from './taking'; // Now from folder
@@ -120,7 +119,6 @@ import { savingAction } from './saving'; // Now from folder
 import { restoringAction } from './restoring'; // Now from folder
 import { quittingAction } from './quitting'; // Now from folder
 import { restartingAction } from './restarting'; // Now from folder
-import { againAction } from './again'; // Now from folder
 
 // Import author/debug actions
 import { TraceAction } from '../author';
@@ -175,7 +173,6 @@ export const standardActions = [
   restoringAction,
   quittingAction,
   restartingAction,
-  againAction,
   // Author/debug actions
   traceAction
 ];

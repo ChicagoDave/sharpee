@@ -10,12 +10,13 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent, EntityId } from '@sharpee/core';
 import { TraitType, OpenableBehavior, LockableBehavior, IOpenResult } from '@sharpee/world-model';
-import { captureEntitySnapshot } from '../../base/snapshot-utils';
 import { buildEventData } from '../../data-builder-types';
+import { handleReportErrors } from '../../base/report-helpers';
 import { IFActions } from '../../constants';
-import { OpenedEventData } from './opening-events';
+import { OpenedEventData, RevealedEventData, ExitRevealedEventData } from './opening-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
+import { OpeningSharedData } from './opening-types';
 
 // Import our data builder
 import { openedDataConfig } from './opening-data';
@@ -96,64 +97,24 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
     // Delegate to behavior for opening
     const result: IOpenResult = OpenableBehavior.open(noun);
     
-    // Store result for report phase
-    (context as any)._openResult = result;
+    // Store result for report phase using typed shared data
+    const sharedData: OpeningSharedData = {
+      openResult: result
+    };
+    context.sharedData.openResult = result;
   },
 
   /**
    * Report events after opening
-   * Generates events with complete state snapshots
+   * Generates atomic events - one discrete fact per event
    */
   report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    // Handle validation errors
-    if (validationResult && !validationResult.valid) {
-      // Capture entity data for validation errors
-      const errorParams = { ...(validationResult.params || {}) };
-      
-      // Add entity snapshots if entities are available
-      if (context.command.directObject?.entity) {
-        errorParams.targetSnapshot = captureEntitySnapshot(
-          context.command.directObject.entity,
-          context.world,
-          false
-        );
-      }
-      if (context.command.indirectObject?.entity) {
-        errorParams.indirectTargetSnapshot = captureEntitySnapshot(
-          context.command.indirectObject.entity,
-          context.world,
-          false
-        );
-      }
+    // Handle validation and execution errors using shared helper
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
 
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          error: validationResult.error || 'validation_failed',
-          reason: validationResult.error || 'validation_failed',
-          messageId: validationResult.messageId || validationResult.error || 'action_failed',
-          params: errorParams
-        })
-      ];
-    }
-    
-    // Handle execution errors
-    if (executionError) {
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          error: 'execution_failed',
-          messageId: 'action_failed',
-          params: {
-            error: executionError.message
-          }
-        })
-      ];
-    }
-    
-    const actor = context.player;
     const noun = context.command.directObject!.entity!;
-    const result = (context as any)._openResult as IOpenResult;
+    const result = context.sharedData.openResult as IOpenResult;
     
     // Check if the behavior reported failure
     if (!result.success) {
@@ -174,37 +135,53 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       })];
     }
     
-    // Opening succeeded - build event data using data builder
-    const eventData = buildEventData(openedDataConfig, context);
+    // Build atomic events
+    const events: ISemanticEvent[] = [];
     
-    // Add additional fields for backward compatibility
+    // 1. The atomic opened event - just the fact of opening
+    const openedData: OpenedEventData = {
+      targetId: noun.id,
+      targetName: noun.name
+    };
+    events.push(context.event('if.event.opened', openedData));
+    
+    // 2. Domain event for backward compatibility (simplified)
+    events.push(context.event('opened', {
+      targetId: noun.id,
+      targetName: noun.name
+    }));
+    
+    // 3. Revealed events - one per item if this is a container
+    if (noun.has(TraitType.CONTAINER)) {
+      const contents = context.world.getContents(noun.id);
+      for (const item of contents) {
+        const revealedData: RevealedEventData = {
+          itemId: item.id,
+          itemName: item.name,
+          containerId: noun.id,
+          containerName: noun.name
+        };
+        events.push(context.event('if.event.revealed', revealedData));
+      }
+    }
+    
+    // 4. Exit revealed event if this is a door
+    // Note: This is simplified for now. A full implementation would need to:
+    // - Access the room's trait to get exit information
+    // - Check which exits use this door
+    // - Emit exit_revealed for each direction unblocked
+    // For now, we'll let story handlers deal with door-specific logic
+    
+    // 5. Success event with appropriate message
     const isContainer = noun.has(TraitType.CONTAINER);
-    const isDoor = noun.has(TraitType.DOOR);
-    const isSupporter = noun.has(TraitType.SUPPORTER);
     const contents = isContainer ? context.world.getContents(noun.id) : [];
     
-    // Extend event data with additional fields
-    const fullEventData = {
-      ...eventData,
-      containerId: noun.id,
-      containerName: noun.name,
-      isContainer,
-      isDoor,
-      isSupporter,
-      hasContents: contents.length > 0,
-      contentsCount: contents.length,
-      contentsIds: contents.map(e => e.id),
-      revealedItems: contents.length,
-      item: noun.name
-    };
-    
-    // Determine success message based on what was revealed
     let messageId = 'opened';
     let params: Record<string, any> = {
       item: noun.name
     };
     
-    // Special handling for empty containers
+    // Special message for empty containers
     if (isContainer && contents.length === 0) {
       messageId = 'its_empty';
       params = {
@@ -212,26 +189,10 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       };
     }
     
-    // Build and return all events
-    const events: ISemanticEvent[] = [];
-    
-    // Add the domain event (opened)
-    events.push(context.event('opened', {
-      targetId: noun.id,
-      targetName: noun.name,
-      customMessage: result.openMessage,
-      sound: result.openSound,
-      revealsContents: result.revealsContents
-    }));
-    
-    // Add the action event (if.event.opened)
-    events.push(context.event('if.event.opened', fullEventData));
-    
-    // Add success event
     events.push(context.event('action.success', {
       actionId: context.action.id,
       messageId,
-      params: params
+      params
     }));
     
     return events;

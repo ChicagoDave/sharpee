@@ -13,9 +13,22 @@ import { ScopeLevel } from '../../../scope/types';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, ContainerBehavior, SupporterBehavior, OpenableBehavior, IAddItemResult, IAddItemToSupporterResult } from '@sharpee/world-model';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
+import { handleReportErrors } from '../../base/report-helpers';
 import { IFActions } from '../../constants';
 import { buildEventData } from '../../data-builder-types';
 import { putDataConfig } from './putting-data';
+
+/**
+ * Shared data passed between execute and report phases
+ */
+interface PuttingSharedData {
+  targetPreposition?: 'in' | 'on';
+  putResult?: IAddItemResult | IAddItemToSupporterResult;
+}
+
+function getPuttingSharedData(context: ActionContext): PuttingSharedData {
+  return context.sharedData as PuttingSharedData;
+}
 
 export const puttingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.PUTTING,
@@ -195,17 +208,18 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       targetPreposition = isContainer ? 'in' : 'on';
     }
     
-    // Store preposition for report phase
-    (context as any)._targetPreposition = targetPreposition;
-    
+    // Store data for report phase using sharedData
+    const sharedData = getPuttingSharedData(context);
+    sharedData.targetPreposition = targetPreposition;
+
     // Delegate to appropriate behavior
     if (targetPreposition === 'in') {
       const result: IAddItemResult = ContainerBehavior.addItem(target, item, context.world);
-      (context as any)._putResult = result;
+      sharedData.putResult = result;
     } else {
       // targetPreposition === 'on'
       const result: IAddItemToSupporterResult = SupporterBehavior.addItem(target, item, context.world);
-      (context as any)._putResult = result;
+      sharedData.putResult = result;
     }
   },
 
@@ -214,57 +228,16 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
    * Generates events with complete state snapshots
    */
   report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    // Handle validation errors
-    if (validationResult && !validationResult.valid) {
-      // Capture entity data for validation errors
-      const errorParams = { ...(validationResult.params || {}) };
-      
-      // Add entity snapshots if entities are available
-      if (context.command.directObject?.entity) {
-        errorParams.targetSnapshot = captureEntitySnapshot(
-          context.command.directObject.entity,
-          context.world,
-          false
-        );
-      }
-      if (context.command.indirectObject?.entity) {
-        errorParams.indirectTargetSnapshot = captureEntitySnapshot(
-          context.command.indirectObject.entity,
-          context.world,
-          false
-        );
-      }
+    // Handle validation and execution errors using shared helper
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
 
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          error: validationResult.error || 'validation_failed',
-          reason: validationResult.error || 'validation_failed',
-          messageId: validationResult.messageId || validationResult.error || 'action_failed',
-          params: errorParams
-        })
-      ];
-    }
-    
-    // Handle execution errors
-    if (executionError) {
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          error: 'execution_failed',
-          messageId: 'action_failed',
-          params: {
-            error: executionError.message
-          }
-        })
-      ];
-    }
-    
     const actor = context.player;
     const item = context.command.directObject!.entity!;
     const target = context.command.indirectObject!.entity!;
-    const targetPreposition = (context as any)._targetPreposition as 'in' | 'on';
-    const result = (context as any)._putResult as IAddItemResult | IAddItemToSupporterResult;
+    const sharedData = getPuttingSharedData(context);
+    const targetPreposition = sharedData.targetPreposition as 'in' | 'on';
+    const result = sharedData.putResult as IAddItemResult | IAddItemToSupporterResult;
     
     const events: ISemanticEvent[] = [];
     

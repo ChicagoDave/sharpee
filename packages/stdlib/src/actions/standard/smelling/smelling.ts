@@ -1,17 +1,36 @@
 /**
  * Smelling action - smell objects or the environment
- * 
+ *
  * This action allows players to smell specific objects or detect
  * scents in their current location.
+ *
+ * Uses three-phase pattern:
+ * 1. validate: Check target is reachable (if specified)
+ * 2. execute: Analyze scents (no world mutations)
+ * 3. report: Emit smelled event and success message
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, EdibleTrait, IFEntity } from '@sharpee/world-model';
+import { TraitType, EdibleTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { SmelledEventData } from './smelling-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
+import { handleReportErrors } from '../../base/report-helpers';
+
+/**
+ * Shared data passed between execute and report phases
+ */
+interface SmellingSharedData {
+  messageId?: string;
+  eventData?: SmelledEventData;
+  params?: Record<string, any>;
+}
+
+function getSmellingSharedData(context: ActionContext): SmellingSharedData {
+  return context.sharedData as SmellingSharedData;
+}
 
 interface SmellAnalysis {
   messageId: string;
@@ -142,13 +161,13 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
   validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     const target = context.command.directObject?.entity;
-    
+
     // If target specified, check distance
     if (target) {
       // Check if in different rooms first (too far to smell)
       const targetRoom = context.world.getContainingRoom(target.id);
       const actorRoom = context.world.getContainingRoom(actor.id);
-      
+
       if (targetRoom && actorRoom && targetRoom.id !== actorRoom.id) {
         return {
           valid: false,
@@ -157,33 +176,43 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
         };
       }
     }
-    
-    // Analyze smell to verify action is valid
-    analyzeSmellAction(context);
-    
-    return {
-      valid: true
-    };
+
+    // Scent analysis happens in execute phase
+    return { valid: true };
   },
-  
-  execute(context: ActionContext): ISemanticEvent[] {
-    // Analyze smell action
+
+  execute(context: ActionContext): void {
+    // Smelling has NO world mutations - it's a sensory action
+    // Analyze scents and store in sharedData for report phase
     const analysis = analyzeSmellAction(context);
-    
+    const sharedData = getSmellingSharedData(context);
+
+    sharedData.messageId = analysis.messageId;
+    sharedData.eventData = analysis.eventData;
+    sharedData.params = analysis.params;
+  },
+
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const events: ISemanticEvent[] = [];
-    
-    // Create SMELLED event for world model
-    events.push(context.event('if.event.smelled', analysis.eventData));
-    
-    // Add success message
+    const sharedData = getSmellingSharedData(context);
+
+    // Emit smelled event for world model
+    if (sharedData.eventData) {
+      events.push(context.event('if.event.smelled', sharedData.eventData));
+    }
+
+    // Emit success message
     events.push(context.event('action.success', {
       actionId: context.action.id,
-      messageId: analysis.messageId,
-      params: analysis.params
+      messageId: sharedData.messageId || 'no_scent',
+      params: sharedData.params || {}
     }));
-    
+
     return events;
   },
-  
+
   group: "sensory"
 };

@@ -14,7 +14,18 @@ import { TraitType, SceneryBehavior, ActorBehavior, ContainerBehavior, WearableB
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
+import { handleReportErrors } from '../../base/report-helpers';
 import { buildEventData } from '../../data-builder-types';
+
+// Import type guards and typed interfaces
+import { 
+  isWearableTrait, 
+  isContainerTrait, 
+  hasCapacityLimit,
+  getTakingSharedData, 
+  setTakingSharedData,
+  TakingSharedData 
+} from './taking-types';
 
 // Import our data builder
 import { takenDataConfig } from './taking-data';
@@ -92,12 +103,15 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     if (!ActorBehavior.canTakeItem(actor, noun, context.world)) {
       // Check if it's a container capacity issue
       if (actor.has(TraitType.CONTAINER)) {
-        const containerTrait = actor.get(TraitType.CONTAINER) as any;
-        if (containerTrait?.capacity?.maxItems !== undefined) {
+        const containerTrait = actor.get(TraitType.CONTAINER);
+        if (hasCapacityLimit(containerTrait) && containerTrait.capacity.maxItems !== undefined) {
           const contents = context.world.getContents(actor.id);
           const currentCount = contents.filter((item: any) => {
-            return !item.has || !item.has(TraitType.WEARABLE) || 
-                   !(item.get(TraitType.WEARABLE) as any)?.worn;
+            if (!item.has || !item.has(TraitType.WEARABLE)) {
+              return true;
+            }
+            const wearableTrait = item.get(TraitType.WEARABLE);
+            return !isWearableTrait(wearableTrait) || (!wearableTrait.isWorn && !(wearableTrait as any).worn);
           }).length;
           if (currentCount >= containerTrait.capacity.maxItems) {
             return {
@@ -123,77 +137,43 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     const actor = context.player;
     const noun = context.command.directObject!.entity!; // Safe because validate ensures it exists
     
-    // Store the previous location before moving
+    // Get typed shared data
+    const sharedData = getTakingSharedData(context);
+    
+    // Capture context BEFORE any mutations
     const previousLocation = context.world.getLocation(noun.id);
-    (context as any)._previousLocation = previousLocation;
+    setTakingSharedData(context, { previousLocation });
     
     // Check if item is worn and needs to be removed first
     if (noun.has(TraitType.WEARABLE)) {
-      const wearableTrait = noun.get(TraitType.WEARABLE) as any;
-      if (wearableTrait?.worn) {
-        // Mark that we implicitly removed it
-        (context as any)._implicitlyRemoved = true;
+      const wearableTrait = noun.get(TraitType.WEARABLE);
+      if (isWearableTrait(wearableTrait) && (wearableTrait.isWorn || (wearableTrait as any).worn)) {
+        // Mark that we implicitly removed a worn item
+        setTakingSharedData(context, {
+          implicitlyRemoved: true,
+          wasWorn: true
+        });
+        
         // Get the wearer (the one who has the item currently)
         const wearer = previousLocation ? context.world.getEntity(previousLocation) : null;
         // Remove the worn status
         if (wearer) {
           WearableBehavior.remove(noun, wearer);
+          // The witness system will track this implicit removal
         }
       }
     }
     
-    // ActorBehavior.takeItem only validates, doesn't actually move
-    // We need to perform the actual move
+    // Perform the actual move
+    // The witness system will track where it moved from
     context.world.moveEntity(noun.id, actor.id);
   },
   
   report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    // Handle validation errors
-    if (validationResult && !validationResult.valid) {
-      // Capture entity data for validation errors
-      const errorParams = { ...(validationResult.params || {}) };
-      
-      // Add entity snapshots if entities are available
-      if (context.command.directObject?.entity) {
-        errorParams.targetSnapshot = captureEntitySnapshot(
-          context.command.directObject.entity,
-          context.world,
-          false
-        );
-      }
-      if (context.command.indirectObject?.entity) {
-        errorParams.indirectTargetSnapshot = captureEntitySnapshot(
-          context.command.indirectObject.entity,
-          context.world,
-          false
-        );
-      }
+    // Handle validation and execution errors using shared helper
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
 
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          error: validationResult.error || 'validation_failed',
-          reason: validationResult.error || 'validation_failed',
-          messageId: validationResult.messageId || validationResult.error || 'action_failed',
-          params: errorParams
-        })
-      ];
-    }
-    
-    // Handle execution errors
-    if (executionError) {
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          error: 'execution_failed',
-          messageId: 'action_failed',
-          params: {
-            error: executionError.message
-          }
-        })
-      ];
-    }
-    
     const actor = context.player;
     const noun = context.command.directObject!.entity!; // Safe because validate ensures it exists
     
@@ -214,9 +194,12 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     // Taking succeeded - build events
     const events: ISemanticEvent[] = [];
     
+    // Get typed shared data
+    const sharedData = getTakingSharedData(context);
+    
     // Check if we implicitly removed a worn item
-    if ((context as any)._implicitlyRemoved) {
-      const previousLocation = (context as any)._previousLocation;
+    if (sharedData.implicitlyRemoved) {
+      const previousLocation = sharedData.previousLocation;
       const container = previousLocation ? context.world.getEntity(previousLocation) : null;
       
       events.push(context.event('if.event.removed', {
@@ -233,7 +216,7 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     events.push(context.event('if.event.taken', takenData));
     
     // Determine success message based on where it was taken from
-    const previousLocation = (context as any)._previousLocation;
+    const previousLocation = sharedData.previousLocation;
     const isFromContainerOrSupporter = previousLocation && 
       previousLocation !== context.world.getLocation(actor.id);
     const messageId = isFromContainerOrSupporter ? 'taken_from' : 'taken';

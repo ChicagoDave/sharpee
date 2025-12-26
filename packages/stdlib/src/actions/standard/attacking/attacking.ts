@@ -3,13 +3,17 @@
  * 
  * This action handles combat or destructive actions.
  * It's deliberately simple - games can extend with combat systems.
+ * 
+ * MIGRATED: To three-phase pattern (validate/execute/report) for atomic events
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, AttackBehavior, IAttackResult } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { handleReportErrors } from '../../base/report-helpers';
 import { AttackedEventData } from './attacking-events';
+import { AttackingSharedData, AttackResult } from './attacking-types';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 
@@ -38,14 +42,25 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
     'punched',
     'kicked',
     'unarmed_attack',
+    'broke',
+    'smashed',
+    'destroyed',
+    'shattered',
+    'already_damaged',
+    'partial_break',
     'defends',
     'dodges',
     'retaliates',
     'flees',
     'peaceful_solution',
+    'no_fighting',
     'unnecessary_violence'
   ],
 
+  /**
+   * Validate whether the attack action can be executed
+   * Checks preconditions only - no state changes
+   */
   validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     const target = context.command.directObject?.entity;
@@ -81,19 +96,85 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
     }
     
     // Peaceful games might discourage violence
-    if ((context as any).world.isPeaceful) {
-      return { valid: false, error: 'peaceful_solution' };
-    }
+    // This check is left for game-specific implementations via event handlers
     
     return { valid: true };
   },
   
-  execute(context: ActionContext): ISemanticEvent[] {
+  /**
+   * Execute the attack action
+   * Assumes validation has already passed - no validation logic here
+   * Delegates to AttackBehavior for actual attack logic
+   */
+  execute(context: ActionContext): void {
+    // Assume validation has passed - no checks needed
+    const target = context.command.directObject!.entity!; // Safe because validate ensures it exists
+    let weapon = context.command.indirectObject?.entity;
+    let weaponInferred = false;
+    
+    // If no weapon specified, try to infer one from inventory for certain verbs
+    const verb = context.command.parsed.action || context.command.parsed.structure.verb?.text || 'attack';
+    if (!weapon && (verb === 'stab' || verb === 'slash' || verb === 'cut')) {
+      const inventory = context.world.getContents(context.player.id);
+      weapon = AttackBehavior.inferWeapon(inventory);
+      weaponInferred = !!weapon;
+    }
+    
+    // Perform the attack using AttackBehavior
+    const result: IAttackResult = AttackBehavior.attack(target, weapon, context.world);
+    
+    // Convert to our AttackResult type for consistency
+    const attackResult: AttackResult = {
+      success: result.success,
+      type: result.type,
+      damage: result.damage,
+      remainingHitPoints: result.remainingHitPoints,
+      targetDestroyed: result.targetDestroyed,
+      targetKilled: result.targetKilled,
+      itemsDropped: result.itemsDropped,
+      debrisCreated: result.debrisCreated,
+      exitRevealed: result.exitRevealed,
+      transformedTo: result.transformedTo
+    };
+    
+    // Store result for report phase using typed shared data
+    const sharedData: AttackingSharedData = {
+      attackResult: attackResult,
+      weaponUsed: weapon?.id,
+      weaponInferred: weaponInferred,
+      customMessage: result.message
+    };
+    Object.assign(context.sharedData, sharedData);
+  },
+
+  /**
+   * Report events after attacking
+   * Generates atomic events - one discrete fact per event
+   */
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    // Handle validation and execution errors using shared helper
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const target = context.command.directObject!.entity!;
-    const weapon = context.command.indirectObject?.entity;
+    const weaponId = context.sharedData.weaponUsed as string | undefined;
+    const weapon = weaponId ? context.world.getEntity(weaponId) : undefined;
     const verb = context.command.parsed.action || 'attack';
+    const result = context.sharedData.attackResult as AttackResult;
+    const customMessage = context.sharedData.customMessage as string | undefined;
     
     const events: ISemanticEvent[] = [];
+    
+    // Check if attack failed
+    if (!result.success) {
+      return [
+        context.event('action.error', {
+          actionId: this.id,
+          messageId: customMessage || 'attack_ineffective',
+          params: { target: target.name }
+        })
+      ];
+    }
     
     // Build event data
     const eventData: AttackedEventData = {
@@ -109,70 +190,73 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
       weapon: weapon?.name
     };
     
-    // Determine message based on verb and weapon
-    let messageId = 'attacked';
-    if (target.has(TraitType.ACTOR)) {
-      eventData.targetType = 'actor';
-      eventData.hostile = true;
-      
-      if (!weapon) {
-        switch (verb) {
-          case 'punch':
-            messageId = 'punched';
-            break;
-          case 'kick':
-            messageId = 'kicked';
-            break;
-          case 'hit':
-            messageId = 'hit';
-            break;
-          case 'strike':
-            messageId = 'struck';
-            break;
-          default:
-            messageId = 'unarmed_attack';
-        }
-      } else {
-        switch (verb) {
-          case 'hit':
-            messageId = 'hit_with';
-            break;
-          case 'strike':
-            messageId = 'struck_with';
-            break;
-          default:
-            messageId = 'attacked_with';
-        }
-      }
-    } else {
-      eventData.targetType = 'object';
-      messageId = weapon ? 'attacked_with' : 'attacked';
-    }
-    
     // Create ATTACKED event for world model
     events.push(context.event('if.event.attacked', eventData));
     
-    // Add success message
+    // Determine message based on result type
+    let messageId: string;
+    switch (result.type) {
+      case 'broke':
+        messageId = 'target_broke';
+        if (result.debrisCreated?.length) {
+          params.debris = result.debrisCreated.length;
+        }
+        break;
+      case 'damaged':
+        messageId = 'target_damaged';
+        params.damage = result.damage;
+        params.remaining = result.remainingHitPoints;
+        break;
+      case 'destroyed':
+        messageId = 'target_destroyed';
+        if (result.transformedTo) {
+          const transformed = context.world.getEntity(result.transformedTo);
+          params.transformedTo = transformed?.name;
+        }
+        if (result.exitRevealed) {
+          params.exitRevealed = result.exitRevealed;
+        }
+        break;
+      case 'killed':
+        messageId = 'killed_target';
+        if (result.itemsDropped?.length) {
+          params.itemsDropped = result.itemsDropped.length;
+        }
+        break;
+      case 'hit':
+        messageId = weapon ? 'hit_with' : 'hit_target';
+        params.damage = result.damage;
+        break;
+      default:
+        messageId = 'attacked';
+    }
+    
+    // Add success message (or use custom message if available)
     events.push(context.event('action.success', {
       actionId: this.id,
-      messageId: messageId,
+      messageId: customMessage || messageId,
       params: params
     }));
     
-    // Add target reaction for actors (deterministic based on ID)
-    if (target.has(TraitType.ACTOR)) {
-      const reactions = ['defends', 'dodges', 'retaliates', 'flees'];
-      const hashCode = target.id.split('').reduce((a: number, b: string) => {
-        a = ((a << 5) - a) + b.charCodeAt(0);
-        return a & a;
-      }, 0);
-      const reactionIndex = Math.abs(hashCode) % reactions.length;
-      const reaction = reactions[reactionIndex];
-      
-      events.push(context.event('action.success', {
-        actionId: this.id,
-        messageId: reaction,
-        params: params
+    // Additional events based on result
+    if (result.itemsDropped?.length) {
+      for (const itemId of result.itemsDropped) {
+        const item = context.world.getEntity(itemId);
+        if (item) {
+          events.push(context.event('if.event.dropped', {
+            item: itemId,
+            itemName: item.name,
+            dropper: target.id,
+            dropperName: target.name
+          }));
+        }
+      }
+    }
+    
+    if (result.exitRevealed) {
+      events.push(context.event('if.event.exit_revealed', {
+        direction: result.exitRevealed,
+        room: context.world.getLocation(context.player.id)
       }));
     }
     

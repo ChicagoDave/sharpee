@@ -7,13 +7,31 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
 import { 
-  TraitType, 
-  EntryTrait,
-  OpenableBehavior,
-  EntryBehavior
+  TraitType,
+  OpenableBehavior
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { handleReportErrors } from '../../base/report-helpers';
 import { ExitedEventData } from './exiting-events';
+
+interface ExitingExecutionState {
+  fromLocation: string;
+  fromLocationName: string;
+  toLocation: string;
+  preposition: string;
+}
+
+/**
+ * Shared data passed between execute and report phases
+ */
+interface ExitingSharedData {
+  exitingState?: ExitingExecutionState;
+}
+
+function getExitingSharedData(context: ActionContext): ExitingSharedData {
+  return context.sharedData as ExitingSharedData;
+}
+
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 
@@ -49,11 +67,10 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
     }
     
     // Check if we're in something we can exit from
-    const isExitable = currentContainer.has(TraitType.CONTAINER) || 
-                      currentContainer.has(TraitType.SUPPORTER) ||
-                      currentContainer.has(TraitType.ENTRY);
+    // Rooms cannot be exited (use GO to move between rooms)
+    const isRoom = currentContainer.has(TraitType.ROOM);
     
-    if (!isExitable) {
+    if (isRoom) {
       return { 
         valid: false, 
         error: 'already_outside'
@@ -67,18 +84,6 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
         valid: false, 
         error: 'nowhere_to_go'
       };
-    }
-    
-    // Check if the current location allows exiting
-    if (currentContainer.has(TraitType.ENTRY)) {
-      const entryTrait = currentContainer.get(TraitType.ENTRY) as EntryTrait;
-      if (!entryTrait.canEnter) { // If you can't enter, you can't exit
-        return { 
-          valid: false, 
-          error: 'cant_exit',
-          params: { place: currentContainer.name }
-        };
-      }
     }
     
     // Check if container needs to be open to exit using behavior
@@ -95,58 +100,83 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
     return { valid: true };
   },
   
-  execute(context: ActionContext): ISemanticEvent[] {
+  /**
+   * Execute the exit action - performs mutations only
+   * Assumes validation has already passed
+   */
+  execute(context: ActionContext): void {
     const actor = context.player;
-    const currentLocation = context.world.getLocation(actor.id);
+    const currentLocation = context.world.getLocation(actor.id)!; // Safe because validate ensures it exists
+    const currentContainer = context.world.getEntity(currentLocation)!; // Safe because validate ensures it exists
+    const parentLocation = context.world.getLocation(currentLocation)!; // Safe because validate ensures it exists
     
-    if (!currentLocation) {
-      return [];
+    // Determine preposition based on what we're exiting from
+    let preposition = 'from';
+    if (currentContainer.has(TraitType.CONTAINER)) {
+      preposition = 'out of';
+    } else if (currentContainer.has(TraitType.SUPPORTER)) {
+      preposition = 'off';
     }
     
-    const currentContainer = context.world.getEntity(currentLocation);
-    const parentLocation = context.world.getLocation(currentLocation);
+    // Simply move the actor to the parent location - that's all!
+    context.world.moveEntity(actor.id, parentLocation);
     
-    if (!currentContainer || !parentLocation) {
-      return [];
+    // Store state for report phase using sharedData
+    const state: ExitingExecutionState = {
+      fromLocation: currentLocation,
+      fromLocationName: currentContainer.name,
+      toLocation: parentLocation,
+      preposition
+    };
+    const sharedData = getExitingSharedData(context);
+    sharedData.exitingState = state;
+  },
+  
+  /**
+   * Report phase - generates all events after successful execution
+   * Handles validation errors, execution errors, and success events
+   */
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    // Handle validation and execution errors using shared helper
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
+    // Get stored state from execute phase
+    const sharedData = getExitingSharedData(context);
+    const state = sharedData.exitingState as ExitingExecutionState | undefined;
+    if (!state) {
+      // This shouldn't happen, but handle gracefully
+      return [
+        context.event('action.error', {
+          actionId: context.action.id,
+          messageId: 'action_failed',
+          params: {
+            error: 'Missing state from execute phase'
+          }
+        })
+      ];
     }
     
     const events: ISemanticEvent[] = [];
     
-    // Use EntryBehavior to properly exit
-    if (currentContainer.has(TraitType.ENTRY)) {
-      // EntryBehavior.exit handles occupants list properly
-      const exitEvents = EntryBehavior.exit(currentContainer, actor);
-      events.push(...exitEvents);
-    } else {
-      // For non-ENTRY containers/supporters, emit simple exit event
-      let preposition = 'from';
-      
-      // Determine preposition based on container type
-      if (currentContainer.has(TraitType.CONTAINER)) {
-        preposition = 'out of';
-      } else if (currentContainer.has(TraitType.SUPPORTER)) {
-        preposition = 'off';
+    // Create the EXITED event for world model updates
+    const exitedData: ExitedEventData = {
+      fromLocation: state.fromLocation,
+      toLocation: state.toLocation,
+      preposition: state.preposition
+    };
+    
+    events.push(context.event('if.event.exited', exitedData));
+    
+    // Create success message
+    events.push(context.event('action.success', {
+      actionId: context.action.id,
+      messageId: 'exited',
+      params: { 
+        place: state.fromLocationName,
+        preposition: state.preposition
       }
-      
-      // Create the EXITED event
-      const exitedData: ExitedEventData = {
-        fromLocation: currentLocation,
-        toLocation: parentLocation,
-        preposition
-      };
-      
-      events.push(context.event('if.event.exited', exitedData));
-      
-      // Add success message
-      events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: 'exited',
-        params: { 
-          place: currentContainer.name,
-          preposition
-        }
-      }));
-    }
+    }));
     
     return events;
   },

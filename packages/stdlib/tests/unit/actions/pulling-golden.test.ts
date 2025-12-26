@@ -10,13 +10,31 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { pullingAction } from '../../../src/actions/standard/pulling';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType } from '@sharpee/world-model';
-import { 
+import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
   TestData,
   createCommand
 } from '../../test-utils';
+import type { ActionContext } from '../../../src/actions/enhanced-types';
+
+// Helper to execute action with three-phase pattern (mimics CommandExecutor flow)
+const executeWithValidation = (action: any, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    return [context.event('action.error', {
+      actionId: action.id,
+      messageId: validation.error || 'validation_failed',
+      reason: validation.error || 'validation_failed',
+      params: validation.params || {}
+    })];
+  }
+  // Execute mutations (returns void)
+  action.execute(context);
+  // Report generates events
+  return action.report(context);
+};
 
 describe('pullingAction (Golden Pattern - Simplified)', () => {
   describe('Action Metadata', () => {
@@ -41,17 +59,20 @@ describe('pullingAction (Golden Pattern - Simplified)', () => {
   });
 
   describe('Basic Validation', () => {
-    let world: TestData;
-    let context: any;
+    let world: any;
+    let player: any;
+    let room: any;
 
     beforeEach(() => {
-      world = setupBasicWorld();
-      context = createRealTestContext(world);
+      const setup = setupBasicWorld();
+      world = setup.world;
+      player = setup.player;
+      room = setup.room;
     });
 
     test('should fail when no target specified', () => {
       const command = createCommand(IFActions.PULLING);
-      context.command = command;
+      const context = createRealTestContext(pullingAction, world, command);
       
       const result = pullingAction.validate(context);
       expect(result.valid).toBe(false);
@@ -59,14 +80,17 @@ describe('pullingAction (Golden Pattern - Simplified)', () => {
     });
 
     test('should fail when target is not pullable', () => {
+      const box = world.createEntity('box', 'object');
+      world.moveEntity(box.id, room.id);
+      
       const command = createCommand(IFActions.PULLING, {
-        directObject: { entity: world.box }
+        entity: box
       });
-      context.command = command;
+      const context = createRealTestContext(pullingAction, world, command);
       
       // Remove PULLABLE trait if present
-      if (world.box.has(TraitType.PULLABLE)) {
-        world.box.remove(TraitType.PULLABLE);
+      if (box.has(TraitType.PULLABLE)) {
+        box.remove(TraitType.PULLABLE);
       }
       
       const result = pullingAction.validate(context);
@@ -76,14 +100,15 @@ describe('pullingAction (Golden Pattern - Simplified)', () => {
 
     test('should fail when pulling worn items', () => {
       // Create a wearable item
-      const shirt = world.model.createEntity('shirt');
-      shirt.add(TraitType.WEARABLE, { isWorn: true });
-      shirt.add(TraitType.PULLABLE, { state: 'ready' });
+      const shirt = world.createEntity('shirt', 'object');
+      shirt.add({ type: TraitType.WEARABLE, isWorn: true });
+      shirt.add({ type: TraitType.PULLABLE, state: 'ready' });
+      world.moveEntity(shirt.id, player.id);
       
       const command = createCommand(IFActions.PULLING, {
-        directObject: { entity: shirt }
+        entity: shirt
       });
-      context.command = command;
+      const context = createRealTestContext(pullingAction, world, command);
       
       const result = pullingAction.validate(context);
       expect(result.valid).toBe(false);
@@ -91,13 +116,14 @@ describe('pullingAction (Golden Pattern - Simplified)', () => {
     });
 
     test('should fail when already pulled', () => {
-      const lever = world.model.createEntity('lever');
-      lever.add(TraitType.PULLABLE, { state: 'pulled' });
+      const lever = world.createEntity('lever', 'object');
+      lever.add({ type: TraitType.PULLABLE, state: 'pulled' });
+      world.moveEntity(lever.id, room.id);
       
       const command = createCommand(IFActions.PULLING, {
-        directObject: { entity: lever }
+        entity: lever
       });
-      context.command = command;
+      const context = createRealTestContext(pullingAction, world, command);
       
       const result = pullingAction.validate(context);
       expect(result.valid).toBe(false);
@@ -106,42 +132,46 @@ describe('pullingAction (Golden Pattern - Simplified)', () => {
   });
 
   describe('Basic Execution', () => {
-    let world: TestData;
-    let context: any;
+    let world: any;
+    let player: any;
+    let room: any;
 
     beforeEach(() => {
-      world = setupBasicWorld();
-      context = createRealTestContext(world);
+      const setup = setupBasicWorld();
+      world = setup.world;
+      player = setup.player;
+      room = setup.room;
     });
 
     test('should execute pull successfully', () => {
-      const rope = world.model.createEntity('rope');
-      rope.add(TraitType.PULLABLE, { state: 'ready', pullCount: 0 });
+      const rope = world.createEntity('rope', 'object');
+      rope.add({ type: TraitType.PULLABLE, state: 'ready', pullCount: 0 });
+      world.moveEntity(rope.id, room.id);
       
       const command = createCommand(IFActions.PULLING, {
-        directObject: { entity: rope }
+        entity: rope
       });
-      context.command = command;
+      const context = createRealTestContext(pullingAction, world, command);
       
       const result = pullingAction.validate(context);
       expect(result.valid).toBe(true);
-      
-      const events = pullingAction.execute(context);
+
+      const events = executeWithValidation(pullingAction, context);
       expect(events).toHaveLength(2);
-      
+
       // Check pulled event
-      expectEvent(events[0], 'if.event.pulled', {
+      expectEvent(events, 'if.event.pulled', {
         target: rope.id,
         targetName: 'rope',
         pullCount: 0
       });
-      
+
       // Check success message
-      expectEvent(events[1], 'action.success', {
+      expectEvent(events, 'action.success', {
         messageId: 'pulled',
         params: { target: 'rope' }
       });
-      
+
       // Verify state was updated
       const pullable = rope.get(TraitType.PULLABLE) as any;
       expect(pullable.state).toBe('pulled');
@@ -149,28 +179,31 @@ describe('pullingAction (Golden Pattern - Simplified)', () => {
     });
 
     test('should track pull count', () => {
-      const cord = world.model.createEntity('cord');
-      cord.add(TraitType.PULLABLE, { 
+      const cord = world.createEntity('cord', 'object');
+      cord.add({ 
+        type: TraitType.PULLABLE,
         state: 'ready', 
         pullCount: 5,
         pullType: 'cord'
       });
+      world.moveEntity(cord.id, room.id);
       
       const command = createCommand(IFActions.PULLING, {
-        directObject: { entity: cord }
+        entity: cord
       });
-      context.command = command;
+      const context = createRealTestContext(pullingAction, world, command);
       
-      const events = pullingAction.execute(context);
-      
+      const result = pullingAction.validate(context);
+      const events = executeWithValidation(pullingAction, context);
+
       // Check event has correct pull count
-      expectEvent(events[0], 'if.event.pulled', {
+      expectEvent(events, 'if.event.pulled', {
         target: cord.id,
         targetName: 'cord',
         pullCount: 5,
         pullType: 'cord'
       });
-      
+
       // Verify count incremented
       const pullable = cord.get(TraitType.PULLABLE) as any;
       expect(pullable.pullCount).toBe(6);
@@ -182,24 +215,28 @@ describe('pullingAction (Golden Pattern - Simplified)', () => {
       // This test documents how story authors should handle complex pulling
       // The action just emits events; story handlers do the actual mechanics
       
-      const world = setupBasicWorld();
-      const context = createRealTestContext(world);
+      const setup = setupBasicWorld();
+      const world = setup.world;
+      const room = setup.room;
       
-      const lever = world.model.createEntity('lever');
-      lever.add(TraitType.PULLABLE, { 
+      const lever = world.createEntity('lever', 'object');
+      lever.add({ 
+        type: TraitType.PULLABLE,
         state: 'ready',
         pullType: 'lever'
       });
+      world.moveEntity(lever.id, room.id);
       
       const command = createCommand(IFActions.PULLING, {
-        directObject: { entity: lever }
+        entity: lever
       });
-      context.command = command;
+      const context = createRealTestContext(pullingAction, world, command);
       
-      const events = pullingAction.execute(context);
-      
+      const result = pullingAction.validate(context);
+      const events = executeWithValidation(pullingAction, context);
+
       // The action emits a simple pulled event
-      expectEvent(events[0], 'if.event.pulled', {
+      expectEvent(events, 'if.event.pulled', {
         pullType: 'lever'
       });
       

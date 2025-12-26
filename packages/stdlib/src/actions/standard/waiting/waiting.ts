@@ -1,99 +1,86 @@
 /**
  * Waiting action - passes time without doing anything
- * 
- * This is a meta action that doesn't change world state but allows
- * time-based events to occur.
+ *
+ * This is a signal action that emits an event to indicate the player
+ * chose to wait. The engine handles turn advancement and daemon processing.
+ *
+ * Uses three-phase pattern:
+ * 1. validate: Always succeeds (no preconditions for waiting)
+ * 2. execute: No world mutations (stores location in sharedData)
+ * 3. report: Emits if.event.waited signal for engine/daemons
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
+import { handleReportErrors } from '../../base/report-helpers';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { WaitedEventData } from './waiting-events';
 
-interface WaitAnalysis {
-  messageId: string;
-  params: Record<string, any>;
-  eventData: WaitedEventData;
+/**
+ * Shared data passed between execute and report phases
+ */
+interface WaitingSharedData {
+  locationId?: string;
+  locationName?: string;
 }
 
-function analyzeWaitAction(context: ActionContext): WaitAnalysis {
-  const actor = context.player;
-  const eventData: WaitedEventData = {
-    turnsPassed: 1  // Waiting typically advances one turn
-  };
-  const params: Record<string, any> = {};
-  let messageId = 'waited';
-  
-  // Check if we're in a special waiting situation
-  const currentLocation = context.world.getLocation(actor.id);
-  if (currentLocation) {
-    const location = context.world.getEntity(currentLocation);
-    if (location) {
-      // Add any location-specific context
-      eventData.location = location.id;
-      eventData.locationName = location.name;
-      
-      // Note: vehicle trait doesn't exist in current system
-      // Games can implement via event handlers
-    }
-  }
-  
-  // Simple deterministic wait message
-  // Games can enhance via event handlers
-  messageId = 'time_passes';
-  
-  return { messageId, params, eventData };
+function getWaitingSharedData(context: ActionContext): WaitingSharedData {
+  return context.sharedData as WaitingSharedData;
 }
 
 export const waitingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.WAITING,
+
   requiredMessages: [
-    'waited',
-    'waited_patiently',
-    'time_passes',
-    'nothing_happens',
-    'waited_in_vehicle',
-    'waited_for_event',
-    'waited_anxiously',
-    'waited_briefly',
-    'something_approaches',
-    'time_runs_out',
-    'patience_rewarded',
-    'grows_restless'
+    'time_passes'
   ],
-  
+
   group: "meta",
-  
+
   metadata: {
     requiresDirectObject: false,
     requiresIndirectObject: false
   },
-  
+
   validate(context: ActionContext): ValidationResult {
-    // Waiting is always successful - it's a simple time-passing action
-    analyzeWaitAction(context);
-    
-    return {
-      valid: true
-    };
+    // Waiting always succeeds - no preconditions
+    return { valid: true };
   },
-  
-  execute(context: ActionContext): ISemanticEvent[] {
-    const analysis = analyzeWaitAction(context);
-    
+
+  execute(context: ActionContext): void {
+    // Waiting has NO world mutations
+    // Just store location info in sharedData for report phase
+    const location = context.currentLocation;
+    const sharedData = getWaitingSharedData(context);
+    sharedData.locationId = location?.id;
+    sharedData.locationName = location?.name;
+  },
+
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const events: ISemanticEvent[] = [];
-    
-    // Create WAITED event for world model
-    events.push(context.event('if.event.waited', analysis.eventData));
-    
-    // Add success message
+    const sharedData = getWaitingSharedData(context);
+
+    // Build event data
+    const eventData: WaitedEventData = {
+      turnsPassed: 1,
+      location: sharedData.locationId,
+      locationName: sharedData.locationName
+    };
+
+    // Emit world event - signals time passage
+    // Engine/daemons listen to this to advance turn counter and process scheduled events
+    events.push(context.event('if.event.waited', eventData));
+
+    // Emit success message
     events.push(context.event('action.success', {
-      actionId: this.id,
-      messageId: analysis.messageId,
-      params: analysis.params
+      actionId: IFActions.WAITING,
+      messageId: 'time_passes'
     }));
-    
+
     return events;
   }
 };

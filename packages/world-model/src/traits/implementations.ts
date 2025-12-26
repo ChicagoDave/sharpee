@@ -25,13 +25,13 @@ import { LightSourceTrait } from './light-source/lightSourceTrait';
 
 // Spatial traits
 import { DoorTrait } from './door/doorTrait';
+import { ClimbableTrait } from './climbable/climbableTrait';
 
 // Basic traits
 import { ActorTrait } from './actor/actorTrait';
 
 // New traits
 import { ExitTrait } from './exit/exitTrait';
-import { EntryTrait } from './entry/entryTrait';
 
 // Manipulation traits
 import { PullableTrait } from './pullable/pullableTrait';
@@ -39,6 +39,13 @@ import { AttachedTrait } from './attached/attachedTrait';
 import { PushableTrait } from './pushable/pushableTrait';
 import { ButtonTrait } from './button/buttonTrait';
 import { MoveableSceneryTrait } from './moveable-scenery/moveableSceneryTrait';
+
+// Combat traits
+import { WeaponTrait } from './weapon/weaponTrait';
+import { BreakableTrait } from './breakable/breakableTrait';
+import { DestructibleTrait } from './destructible/destructibleTrait';
+import { CombatantTrait } from './combatant/combatantTrait';
+import { EquippedTrait } from './equipped/equippedTrait';
 
 /**
  * Map of trait types to their constructors
@@ -63,13 +70,13 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
 
   // Spatial traits
   [TraitType.DOOR]: DoorTrait,
+  [TraitType.CLIMBABLE]: ClimbableTrait,
 
   // Basic traits
   [TraitType.ACTOR]: ActorTrait,
 
   // New traits
   [TraitType.EXIT]: ExitTrait,
-  [TraitType.ENTRY]: EntryTrait,
 
   // Manipulation traits
   [TraitType.PULLABLE]: PullableTrait,
@@ -77,6 +84,13 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
   [TraitType.PUSHABLE]: PushableTrait,
   [TraitType.BUTTON]: ButtonTrait,
   [TraitType.MOVEABLE_SCENERY]: MoveableSceneryTrait,
+
+  // Combat traits
+  [TraitType.WEAPON]: WeaponTrait,
+  [TraitType.BREAKABLE]: BreakableTrait,
+  [TraitType.DESTRUCTIBLE]: DestructibleTrait,
+  [TraitType.COMBATANT]: CombatantTrait,
+  [TraitType.EQUIPPED]: EquippedTrait,
 
   // Object property traits
 
@@ -131,14 +145,21 @@ export {
 
   // New traits
   ExitTrait,
-  EntryTrait,
+  ClimbableTrait,
 
   // Manipulation traits
   PullableTrait,
   AttachedTrait,
   PushableTrait,
   ButtonTrait,
-  MoveableSceneryTrait
+  MoveableSceneryTrait,
+
+  // Combat traits
+  WeaponTrait,
+  BreakableTrait,
+  DestructibleTrait,
+  CombatantTrait,
+  EquippedTrait
 
   // Object property traits
 };

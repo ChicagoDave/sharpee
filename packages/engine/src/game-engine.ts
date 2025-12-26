@@ -351,6 +351,37 @@ export class GameEngine {
       throw new Error('Engine must have a story set before executing turns');
     }
 
+    // Handle 'again' / 'g' command substitution
+    const normalized = input.trim().toLowerCase();
+    if (normalized === 'g' || normalized === 'again') {
+      // Get command history to find last command
+      const historyData = this.world.getCapability(StandardCapabilities.COMMAND_HISTORY) as CommandHistoryData | null;
+      
+      if (!historyData || !historyData.entries || historyData.entries.length === 0) {
+        // No command to repeat - return error event
+        const turn = this.context.currentTurn;
+        const errorEvent = eventSequencer.sequence({
+          type: 'if.error',
+          data: {
+            message: 'no_command_to_repeat',
+            command: input
+          }
+        }, turn);
+        
+        return {
+          turn,
+          input: input,
+          success: false,
+          events: [errorEvent],
+          error: 'There is nothing to repeat.'
+        };
+      }
+      
+      // Get the last command and substitute
+      const lastEntry = historyData.entries[historyData.entries.length - 1];
+      input = lastEntry.originalText;
+    }
+
     // Check if system events are enabled via debug capability
     const debugData = this.world.getCapability('debug');
     if (debugData && (debugData.debugParserEvents || debugData.debugValidationEvents || debugData.debugSystemEvents)) {
@@ -872,23 +903,10 @@ export class GameEngine {
       return;
     }
 
-    // Check if this was an AGAIN command execution
-    const executeCommandEvent = result.events.find(e => e.type === 'if.event.execute_command');
-    if (executeCommandEvent && executeCommandEvent.data?.isRepeat) {
-      // This is the AGAIN action itself - execute the repeated command
-      const repeatedCommand = executeCommandEvent.data.command;
-      const originalText = executeCommandEvent.data.originalText;
-      
-      // Execute the repeated command
-      // Note: This is a simplified approach. In a full implementation, you might want to
-      // re-parse and re-execute through the normal flow
-      this.executeTurn(originalText).then(repeatedResult => {
-        // The repeated command will update its own history
-      }).catch(error => {
-        console.error('Failed to repeat command:', error);
-      });
-      
-      // Don't record the AGAIN command itself
+    // Don't record 'again' or 'g' commands (they should never get here, but just in case)
+    const normalized = input.trim().toLowerCase();
+    const excluded = ['again', 'g', 'oops', 'undo'];
+    if (excluded.includes(normalized)) {
       return;
     }
 
@@ -896,21 +914,6 @@ export class GameEngine {
     const actionId = result.actionId;
     if (!actionId) {
       // No action was executed (parse error, etc.)
-      return;
-    }
-
-    // Don't record non-repeatable actions
-    const nonRepeatable = [
-      IFActions.AGAIN,
-      IFActions.SAVING,
-      IFActions.RESTORING,
-      IFActions.QUITTING,
-      IFActions.RESTARTING,
-      IFActions.VERSION,
-      IFActions.VERIFYING
-    ];
-    
-    if (nonRepeatable.includes(actionId as any)) {
       return;
     }
 

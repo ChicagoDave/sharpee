@@ -1,21 +1,84 @@
 # Project Instructions for Claude
 
+## Overview
+
+Sharpee is a parser-based Interactive Fiction authoring tool built in Typescript.
+
+## MAJOR DIRECTIONS
+
+- Never delete files without confirmation. Not even "to get a build working" or "to get the other tests working".
+- Never use batch scripts (sed/awk/grep) to modify multiple files. One file at a time.
+- We never care about backward compatibility, but discuss code smells or design flaws before changing.
+
+## Current Work: Action Refactoring (as of Sept 2025)
+
+We are systematically refactoring each stdlib action to the three-phase pattern (validate/execute/report).
+
+**Process**: See `/docs/work/phases/action-refactoring-master-plan.md` - one action at a time under a magnifying glass with full analysis, design spec, implementation, review, signoff.
+
+### Actions with Three-Phase Pattern (43 complete - ALL DONE):
+about, attacking, climbing, drinking, eating, opening, closing, pulling, pushing, taking, dropping, putting, inserting, removing, entering, exiting, going, looking, examining, waiting, locking, unlocking, switching_on, switching_off, wearing, taking_off, giving, throwing, touching, smelling, listening, talking, searching, reading, showing, sleeping, help, inventory, quitting, scoring, restarting, restoring, saving
+
+### Key Issues Fixed:
+1. **Context pollution**: Actions now use `context.sharedData` instead of polluting context directly
+2. **Direct mutations**: Actions use behaviors, not direct world calls
+3. **Consistent patterns**: All actions follow three-phase (validate/execute/report)
+
+## Core Concepts Reference
+
+Read `/docs/reference/core-concepts.md` at the start of each session for:
+- Entity system and creation
+- Trait system and usage
+- Three-phase action pattern (validate/execute/report)
+- ActionContext and sharedData (NOT context pollution!)
+- Behaviors vs Actions (behaviors own mutations, actions coordinate)
+- Event system and handlers
+- Reporting is done after a turn completes by a customized report service
+
 ## Testing Commands
 
 - **DO NOT** use `2>&1` with pnpm commands - they don't work together properly
-- Use pnpm commands without output redirection
-- Preferred test command format: `pnpm --filter '@sharpee/stdlib' test <test-name>`
+- Preferred format: `pnpm --filter '@sharpee/stdlib' test <test-name>`
 
-## Project-Specific Notes
+## Project Structure
 
-This is the Sharpee interactive fiction engine project. Key points:
 - Uses pnpm workspace with multiple packages
 - Main packages: engine, stdlib, world-model, parser-en-us
-- Actions follow validate/execute pattern (ADR-051)
+- Actions follow validate/execute/report pattern (ADR-051)
 - Event handlers for custom logic (ADR-052)
-- never use scripts. modify one file/problem at a time
-- we never care about backward compatibility, but if there are code smells or design flaws, we discuss options first
 
-Sharpee logic:
-- Traits are in packages/world-model/src/traits - read the list
-- Actions are in packages/stdlib/src/actions/standard where each action is in a subdirectory with three files: action.ts, action-events.ts, and action-data.ts
+## Work Patterns
+
+- Planning docs: `docs/work/{target}/`
+- Work summaries: `docs/work/{target}/context/`
+- **Plans**: Write plans to the current work target (NOT to ~/.claude/plans/)
+- Logs: `logs/`
+- Current branch `refactor/three-phase-complete` → work in `docs/work/phases/`
+
+## Autonomous Work Flow
+
+### Context Management
+When context usage reaches ~15% remaining:
+1. Write work summary to `docs/work/{target}/context/`
+2. Commit and push all changes
+3. Send ntfy: "Context low - work saved, need /compact to continue"
+4. STOP and wait for user to run `/compact`
+5. After compact, read the work summary back and continue
+
+### Async Communication (when user is away)
+If stuck or have questions during autonomous work:
+1. Create GitHub issue with question: `gh issue create --title "Claude Question: [topic]" --body "[details]"`
+2. Send ntfy notification with issue link:
+   ```bash
+   curl -d "Question: [brief desc] - reply on GitHub: [issue-url]" ntfy.sh/sharpee-chicagodave
+   ```
+3. Poll for response: `gh api repos/ChicagoDave/sharpee/issues/[N]/comments --jq '.[].body'`
+4. Continue work based on response
+
+## Key Locations
+
+- Traits: `packages/world-model/src/traits/`
+- Behaviors: `packages/world-model/src/behaviors/`
+- Actions: `packages/stdlib/src/actions/standard/` (each action has action.ts, action-events.ts, action-data.ts)
+- ADRs: `docs/architecture/adrs/`
+- Work tracking: `docs/work/`

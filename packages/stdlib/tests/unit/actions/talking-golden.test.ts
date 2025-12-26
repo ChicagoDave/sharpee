@@ -13,7 +13,7 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { talkingAction } from '../../../src/actions/standard/talking';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel } from '@sharpee/world-model';
-import { 
+import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
@@ -21,6 +21,29 @@ import {
   createCommand
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
+
+// Helper to execute action with validation (mimics CommandExecutor flow)
+// Supports both old two-phase and new three-phase actions
+const executeWithValidation = (action: any, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    return [context.event('action.error', {
+      actionId: context.action.id,
+      messageId: validation.error,
+      reason: validation.error,
+      params: validation.params || {}
+    })];
+  }
+
+  // Three-phase pattern: execute returns void, report returns events
+  if (action.report) {
+    action.execute(context);
+    return action.report(context);
+  }
+
+  // Old two-phase pattern: execute returns events
+  return action.execute(context);
+};
 
 describe('talkingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -52,7 +75,7 @@ describe('talkingAction (Golden Pattern)', () => {
       const { world } = setupBasicWorld();
       const context = createRealTestContext(talkingAction, world, createCommand(IFActions.TALKING));
       
-      const events = talkingAction.execute(context);
+      const events = executeWithValidation(talkingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_target'),
@@ -71,7 +94,7 @@ describe('talkingAction (Golden Pattern)', () => {
         entity: statue
       }));
       
-      const events = talkingAction.execute(context);
+      const events = executeWithValidation(talkingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_actor'),
@@ -91,7 +114,7 @@ describe('talkingAction (Golden Pattern)', () => {
         entity: player // Talking to self
       }));
       
-      const events = talkingAction.execute(context);
+      const events = executeWithValidation(talkingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('self'),
@@ -115,7 +138,7 @@ describe('talkingAction (Golden Pattern)', () => {
         entity: busyNpc
       }));
       
-      const events = talkingAction.execute(context);
+      const events = executeWithValidation(talkingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_available'),
@@ -139,7 +162,7 @@ describe('talkingAction (Golden Pattern)', () => {
         entity: simpleNpc
       }));
       
-      const events = talkingAction.execute(context);
+      const events = executeWithValidation(talkingAction, context);
       
       // Should emit TALKED event
       expectEvent(events, 'if.event.talked', {
@@ -173,7 +196,7 @@ describe('talkingAction (Golden Pattern)', () => {
         entity: newNpc
       }));
       
-      const events = talkingAction.execute(context);
+      const events = executeWithValidation(talkingAction, context);
       
       // Should emit TALKED event with first meeting flag
       expectEvent(events, 'if.event.talked', {
@@ -206,7 +229,7 @@ describe('talkingAction (Golden Pattern)', () => {
         entity: formalNpc
       }));
       
-      const events = talkingAction.execute(context);
+      const events = executeWithValidation(talkingAction, context);
       
       // Should emit formal_greeting message
       expectEvent(events, 'action.success', {
@@ -232,7 +255,7 @@ describe('talkingAction (Golden Pattern)', () => {
         entity: casualNpc
       }));
       
-      const events = talkingAction.execute(context);
+      const events = executeWithValidation(talkingAction, context);
       
       // Should emit casual_greeting message
       expectEvent(events, 'action.success', {
@@ -260,7 +283,7 @@ describe('talkingAction (Golden Pattern)', () => {
         entity: friendlyNpc
       }));
       
-      const events = talkingAction.execute(context);
+      const events = executeWithValidation(talkingAction, context);
       
       // Should emit friendly_greeting message
       expectEvent(events, 'action.success', {
@@ -286,7 +309,7 @@ describe('talkingAction (Golden Pattern)', () => {
         entity: memoryNpc
       }));
       
-      const events = talkingAction.execute(context);
+      const events = executeWithValidation(talkingAction, context);
       
       // Should emit remembers_you message
       expectEvent(events, 'action.success', {
@@ -312,7 +335,7 @@ describe('talkingAction (Golden Pattern)', () => {
         entity: regularNpc
       }));
       
-      const events = talkingAction.execute(context);
+      const events = executeWithValidation(talkingAction, context);
       
       // Should emit greets_again message
       expectEvent(events, 'action.success', {
@@ -344,7 +367,7 @@ describe('talkingAction (Golden Pattern)', () => {
         entity: informativeNpc
       }));
       
-      const events = talkingAction.execute(context);
+      const events = executeWithValidation(talkingAction, context);
       
       // Should emit TALKED event with hasTopics flag
       expectEvent(events, 'if.event.talked', {
@@ -376,7 +399,7 @@ describe('talkingAction (Golden Pattern)', () => {
         entity: quietNpc
       }));
       
-      const events = talkingAction.execute(context);
+      const events = executeWithValidation(talkingAction, context);
       
       // Should emit nothing_to_say message
       expectEvent(events, 'action.success', {
@@ -403,7 +426,7 @@ describe('talkingAction (Golden Pattern)', () => {
         entity: npc
       }));
       
-      const events = talkingAction.execute(context);
+      const events = executeWithValidation(talkingAction, context);
       
       events.forEach(event => {
         if (event.entities) {

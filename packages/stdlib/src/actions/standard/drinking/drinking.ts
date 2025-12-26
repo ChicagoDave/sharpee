@@ -1,8 +1,13 @@
 /**
  * Drinking action - consume drinkable items
- * 
+ *
  * This action handles drinking items that have the EDIBLE trait
  * with the isDrink property set to true.
+ *
+ * Uses three-phase pattern:
+ * 1. validate: Check if item is drinkable and can be consumed
+ * 2. execute: Perform implicit take if needed, store data in sharedData
+ * 3. report: Generate events for output
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -12,86 +17,22 @@ import { IFActions } from '../../constants';
 import { DrunkEventData, ImplicitTakenEventData } from './drinking-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
+import { handleReportErrors } from '../../base/report-helpers';
 
-interface DrinkingState {
-  item: any;
+/**
+ * Shared data passed between execute and report phases
+ */
+interface DrinkingSharedData {
+  itemId: string;
+  itemName: string;
   isHeld: boolean;
-  edibleTrait?: EdibleTrait;
-  containerTrait?: ContainerTrait;
   messageId: string;
   params: Record<string, any>;
   eventData: DrunkEventData;
 }
 
-/**
- * Analyzes the drinking action and determines the outcome
- */
-function analyzeDrinkAction(context: ActionContext): DrinkingState | ValidationResult {
-  const actor = context.player;
-  const item = context.command.directObject?.entity;
-  
-  // Must have an item to drink
-  if (!item) {
-    return { valid: false, error: 'no_item' };
-  }
-  
-  // Check if item is drinkable
-  let isDrinkable = false;
-  let edibleTrait: EdibleTrait | undefined;
-  let containerTrait: ContainerTrait | undefined;
-  
-  if (item.has(TraitType.EDIBLE)) {
-    edibleTrait = item.get(TraitType.EDIBLE) as EdibleTrait;
-    isDrinkable = (edibleTrait as any).isDrink === true;
-  }
-  
-  if (item.has(TraitType.CONTAINER)) {
-    containerTrait = item.get(TraitType.CONTAINER) as ContainerTrait;
-    if (!isDrinkable && (containerTrait as any).containsLiquid) {
-      isDrinkable = true;
-    }
-  }
-  
-  if (!isDrinkable) {
-    return { valid: false, error: 'not_drinkable', params: { item: item.name } };
-  }
-  
-  // Check if already consumed
-  if (edibleTrait && (edibleTrait as any).consumed) {
-    return { valid: false, error: 'already_consumed', params: { item: item.name } };
-  }
-  
-  // Check if container needs to be open
-  if (containerTrait && item.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(item)) {
-    return { valid: false, error: 'container_closed', params: { item: item.name } };
-  }
-  
-  // Check if item is held
-  const itemLocation = context.world.getLocation(item.id);
-  const isHeld = itemLocation === actor.id;
-  
-  // Build event data and determine message
-  const eventData: DrunkEventData = {
-    item: item.id,
-    itemName: item.name
-  };
-  
-  const params: Record<string, any> = {
-    item: item.name
-  };
-  
-  const verb = context.command.parsed.structure.verb?.text.toLowerCase() || 'drink';
-  let messageId = determineMessage(verb, edibleTrait, containerTrait, eventData, params);
-  
-  return {
-    item,
-    isHeld,
-    edibleTrait,
-    containerTrait,
-    messageId,
-    params,
-    eventData
-  };
+function getDrinkingSharedData(context: ActionContext): DrinkingSharedData {
+  return context.sharedData as DrinkingSharedData;
 }
 
 /**
@@ -105,20 +46,20 @@ function determineMessage(
   params: Record<string, any>
 ): string {
   let messageId = 'drunk';
-  
+
   // Add drink-specific information
   if (edibleTrait) {
     // Add nutritional or effect information
     if ((edibleTrait as any).nutrition) {
       eventData.nutrition = (edibleTrait as any).nutrition;
     }
-    
+
     if ((edibleTrait as any).portions) {
       eventData.portions = (edibleTrait as any).portions;
       eventData.portionsRemaining = ((edibleTrait as any).portions || 1) - 1;
       messageId = eventData.portionsRemaining > 0 ? 'drunk_some' : 'drunk_all';
     }
-    
+
     // Check taste/quality
     const taste = (edibleTrait as any).taste;
     if (taste) {
@@ -134,7 +75,7 @@ function determineMessage(
         messageId = tasteMessages[taste];
       }
     }
-    
+
     // Check for effects
     if ((edibleTrait as any).effects) {
       eventData.effects = (edibleTrait as any).effects;
@@ -145,7 +86,7 @@ function determineMessage(
         messageId = 'healing';
       }
     }
-    
+
     // Check thirst satisfaction
     const satisfiesThirst = (edibleTrait as any).satisfiesThirst;
     if (satisfiesThirst !== undefined) {
@@ -157,20 +98,20 @@ function determineMessage(
       }
     }
   }
-  
+
   // If drinking from a container
   if (containerTrait && (containerTrait as any).containsLiquid) {
     eventData.fromContainer = true;
-    
+
     if ((containerTrait as any).liquidType) {
       eventData.liquidType = (containerTrait as any).liquidType;
     }
-    
+
     const liquidAmount = (containerTrait as any).liquidAmount;
     if (liquidAmount !== undefined) {
       eventData.liquidAmount = liquidAmount;
       eventData.liquidRemaining = Math.max(0, liquidAmount - 1);
-      
+
       if (eventData.liquidRemaining === 0) {
         messageId = 'empty_now';
       } else if (messageId === 'drunk') {
@@ -183,7 +124,7 @@ function determineMessage(
       messageId = 'drunk_from';
     }
   }
-  
+
   // Verb-specific messages
   if (messageId === 'drunk' || messageId === 'drunk_some') {
     const verbMessages: Record<string, string> = {
@@ -195,20 +136,20 @@ function determineMessage(
       messageId = verbMessages[verb];
     }
   }
-  
+
   return messageId;
 }
 
 export const drinkingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.DRINKING,
   group: "interaction",
-  
+
   metadata: {
     requiresDirectObject: true,
     requiresIndirectObject: false,
     directObjectScope: ScopeLevel.REACHABLE
   },
-  
+
   requiredMessages: [
     'no_item',
     'not_visible',
@@ -236,56 +177,123 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
     'quaffed',
     'gulped'
   ],
-  
+
   validate(context: ActionContext): ValidationResult {
-    const result = analyzeDrinkAction(context);
-    
-    // If result has a 'valid' property, it's a ValidationResult
-    if ('valid' in result) {
-      return result;
+    const item = context.command.directObject?.entity;
+
+    // Must have an item to drink
+    if (!item) {
+      return { valid: false, error: 'no_item' };
     }
-    
-    // Otherwise, it's a valid state
+
+    // Check if item is drinkable
+    let isDrinkable = false;
+    let edibleTrait: EdibleTrait | undefined;
+    let containerTrait: ContainerTrait | undefined;
+
+    if (item.has(TraitType.EDIBLE)) {
+      edibleTrait = item.get(TraitType.EDIBLE) as EdibleTrait;
+      isDrinkable = (edibleTrait as any).isDrink === true;
+    }
+
+    if (item.has(TraitType.CONTAINER)) {
+      containerTrait = item.get(TraitType.CONTAINER) as ContainerTrait;
+      if (!isDrinkable && (containerTrait as any).containsLiquid) {
+        isDrinkable = true;
+      }
+    }
+
+    if (!isDrinkable) {
+      return { valid: false, error: 'not_drinkable', params: { item: item.name } };
+    }
+
+    // Check if already consumed
+    if (edibleTrait && (edibleTrait as any).consumed) {
+      return { valid: false, error: 'already_consumed', params: { item: item.name } };
+    }
+
+    // Check if container needs to be open
+    if (containerTrait && item.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(item)) {
+      return { valid: false, error: 'container_closed', params: { item: item.name } };
+    }
+
     return { valid: true };
   },
-  
-  execute(context: ActionContext): ISemanticEvent[] {
-    const result = analyzeDrinkAction(context);
-    
-    // If result has a 'valid' property and it's false, return error
-    if ('valid' in result && !result.valid) {
-      return [context.event('action.error', {
-        actionId: this.id,
-        messageId: result.error,
-        reason: result.error,
-        params: result.params
-      })];
-    }
-    
-    // Cast to state since we know it's valid
-    const state = result as DrinkingState;
+
+  /**
+   * Execute the drink action - performs mutations only
+   * Assumes validation has already passed
+   */
+  execute(context: ActionContext): void {
+    const actor = context.player;
+    const item = context.command.directObject!.entity!;
+    const sharedData = getDrinkingSharedData(context);
+
+    // Get traits
+    const edibleTrait = item.has(TraitType.EDIBLE)
+      ? item.get(TraitType.EDIBLE) as EdibleTrait
+      : undefined;
+    const containerTrait = item.has(TraitType.CONTAINER)
+      ? item.get(TraitType.CONTAINER) as ContainerTrait
+      : undefined;
+
+    // Check if item is held
+    const itemLocation = context.world.getLocation(item.id);
+    const isHeld = itemLocation === actor.id;
+
+    // Build event data
+    const eventData: DrunkEventData = {
+      item: item.id,
+      itemName: item.name
+    };
+
+    const params: Record<string, any> = {
+      item: item.name
+    };
+
+    // Determine message based on properties
+    const verb = context.command.parsed.structure.verb?.text.toLowerCase() || 'drink';
+    const messageId = determineMessage(verb, edibleTrait, containerTrait, eventData, params);
+
+    // Store in sharedData
+    sharedData.itemId = item.id;
+    sharedData.itemName = item.name;
+    sharedData.isHeld = isHeld;
+    sharedData.messageId = messageId;
+    sharedData.params = params;
+    sharedData.eventData = eventData;
+  },
+
+  /**
+   * Report phase - generates all events after successful execution
+   */
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const events: ISemanticEvent[] = [];
-    
-    // If not held, pick it up first (implicit take)
-    if (!state.isHeld) {
+    const sharedData = getDrinkingSharedData(context);
+
+    // If not held, emit implicit take event
+    if (!sharedData.isHeld) {
       const implicitTakenData: ImplicitTakenEventData = {
         implicit: true,
-        item: state.item.id,
-        itemName: state.item.name
+        item: sharedData.itemId,
+        itemName: sharedData.itemName
       };
       events.push(context.event('if.event.taken', implicitTakenData));
     }
-    
-    // Create DRUNK event
-    events.push(context.event('if.event.drunk', state.eventData));
-    
+
+    // Emit DRUNK event
+    events.push(context.event('if.event.drunk', sharedData.eventData));
+
     // Add success message
     events.push(context.event('action.success', {
       actionId: this.id,
-      messageId: state.messageId,
-      params: state.params
+      messageId: sharedData.messageId,
+      params: sharedData.params
     }));
-    
+
     return events;
   }
 };

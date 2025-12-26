@@ -11,6 +11,7 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, OpenableBehavior, ICloseResult } from '@sharpee/world-model';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
+import { handleReportErrors } from '../../base/report-helpers';
 import { buildEventData } from '../../data-builder-types';
 import { IFActions } from '../../constants';
 import { closedDataConfig } from './closing-data';
@@ -20,6 +21,17 @@ import { ClosedEventData } from './closing-event-data';
 import { PreventsClosingErrorData } from './closing-error-prevents-closing';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
+
+/**
+ * Shared data passed between execute and report phases
+ */
+interface ClosingSharedData {
+  closeResult?: ICloseResult;
+}
+
+function getClosingSharedData(context: ActionContext): ClosingSharedData {
+  return context.sharedData as ClosingSharedData;
+}
 
 export const closingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.CLOSING,
@@ -109,9 +121,10 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
     
     // Delegate to behavior for closing
     const result: ICloseResult = OpenableBehavior.close(noun);
-    
-    // Store result for report phase
-    (context as any)._closeResult = result;
+
+    // Store result for report phase using sharedData
+    const sharedData = getClosingSharedData(context);
+    sharedData.closeResult = result;
   },
 
   /**
@@ -119,54 +132,13 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
    * Generates events with complete state snapshots
    */
   report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    // Handle validation errors
-    if (validationResult && !validationResult.valid) {
-      // Capture entity data for validation errors
-      const errorParams = { ...(validationResult.params || {}) };
-      
-      // Add entity snapshots if entities are available
-      if (context.command.directObject?.entity) {
-        errorParams.targetSnapshot = captureEntitySnapshot(
-          context.command.directObject.entity,
-          context.world,
-          false
-        );
-      }
-      if (context.command.indirectObject?.entity) {
-        errorParams.indirectTargetSnapshot = captureEntitySnapshot(
-          context.command.indirectObject.entity,
-          context.world,
-          false
-        );
-      }
+    // Handle validation and execution errors using shared helper
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
 
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          error: validationResult.error || 'validation_failed',
-          reason: validationResult.error || 'validation_failed',
-          messageId: validationResult.messageId || validationResult.error || 'action_failed',
-          params: errorParams
-        })
-      ];
-    }
-    
-    // Handle execution errors
-    if (executionError) {
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          error: 'execution_failed',
-          messageId: 'action_failed',
-          params: {
-            error: executionError.message
-          }
-        })
-      ];
-    }
-    
     const noun = context.command.directObject!.entity!;
-    const result = (context as any)._closeResult as ICloseResult;
+    const sharedData = getClosingSharedData(context);
+    const result = sharedData.closeResult as ICloseResult;
     
     // Check if the behavior reported failure (shouldn't happen after validation)
     if (!result.success) {

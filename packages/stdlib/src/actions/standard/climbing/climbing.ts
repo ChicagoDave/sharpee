@@ -1,25 +1,38 @@
 /**
  * Climbing action - climb objects or in directions
- * 
+ *
  * This action handles climbing objects (trees, ladders, etc.) or climbing
  * in directions (up, down). It can result in movement or just changing position.
+ *
+ * Uses three-phase pattern:
+ * 1. validate: Check if climbing is possible (valid direction/climbable object)
+ * 2. execute: Perform world mutation (move player to destination/onto object)
+ * 3. report: Generate events for output
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, EntryTrait, EntryBehavior } from '@sharpee/world-model';
+import { TraitType, ClimbableBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ClimbedEventData } from './climbing-events';
+import { handleReportErrors } from '../../base/report-helpers';
 
-interface ClimbingState {
+/**
+ * Shared data passed between execute and report phases
+ */
+interface ClimbingSharedData {
   mode: 'directional' | 'object';
-  direction?: string;
-  target?: any;
-  destinationId?: string;
-  messageId: string;
-  params: Record<string, any>;
+  direction?: string;         // 'up' or 'down' for directional climbing
+  targetId?: string;          // target entity ID for object climbing
+  targetName?: string;        // target name for messages
+  destinationId?: string;     // destination room ID for directional climbing
+  fromLocationId?: string;    // current location before climbing
+}
+
+function getClimbingSharedData(context: ActionContext): ClimbingSharedData {
+  return context.sharedData as ClimbingSharedData;
 }
 
 export const climbingAction: Action & { metadata: ActionMetadata } = {
@@ -36,120 +49,134 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
     'too_dangerous'
   ],
   group: 'movement',
-  
+
   metadata: {
     requiresDirectObject: false,
     requiresIndirectObject: false,
     directObjectScope: ScopeLevel.REACHABLE
   },
-  
+
   validate(context: ActionContext): ValidationResult {
-    const actor = context.player;
     const target = context.command.directObject?.entity;
     const direction = context.command.parsed.extras?.direction as string;
-    
+
     // Handle directional climbing (climb up, climb down)
     if (direction && !target) {
       return validateDirectionalClimbing(direction, context);
     }
-    
+
     // Handle object climbing
     if (target) {
       return validateObjectClimbing(target, context);
     }
-    
+
     // No target or direction specified
     return { valid: false, error: 'no_target' };
   },
-  
-  execute(context: ActionContext): ISemanticEvent[] {
-    const result = this.validate(context);
-    if (!result.valid) {
-      return [context.event('action.error', {
-        actionId: this.id,
-        messageId: result.error,
-        reason: result.error,
-        params: result.params
-      })];
-    }
-    
-    // Rebuild state from context
+
+  /**
+   * Execute the climbing action - performs mutations only
+   * Assumes validation has already passed
+   */
+  execute(context: ActionContext): void {
     const target = context.command.directObject?.entity;
     const direction = context.command.parsed.extras?.direction as string;
-    const events: ISemanticEvent[] = [];
-    
-    // Determine mode and rebuild relevant data
-    let mode: 'directional' | 'object';
-    let messageId: string;
-    let params: Record<string, any> = {};
-    let destinationId: string | undefined;
-    
+    const sharedData = getClimbingSharedData(context);
+
+    // Store current location for all modes
+    sharedData.fromLocationId = context.currentLocation.id;
+
     if (direction && !target) {
-      mode = 'directional';
+      // Directional climbing
       const normalizedDirection = direction.toLowerCase();
-      
-      // For directional climbing, we need to check if movement is possible
-      // This duplicates some logic from validateDirectionalClimbing
+      sharedData.mode = 'directional';
+      sharedData.direction = normalizedDirection;
+
+      // Get destination from room exits
       const room = context.currentLocation;
-      const exits = room.has(TraitType.ROOM) ? 
-                   (room.get(TraitType.ROOM) as any).exits || {} : {};
-      
+      const roomTrait = room.get(TraitType.ROOM) as { exits?: Record<string, any> } | undefined;
+      const exits = roomTrait?.exits || {};
+
       if (normalizedDirection === 'up' && exits.up) {
-        destinationId = exits.up.to || exits.up.destination;
+        sharedData.destinationId = exits.up.to || exits.up.destination;
       } else if (normalizedDirection === 'down' && exits.down) {
-        destinationId = exits.down.to || exits.down.destination;
+        sharedData.destinationId = exits.down.to || exits.down.destination;
       }
-      
-      messageId = normalizedDirection === 'up' ? 'climbed_up' : 'climbed_down';
-      params.direction = normalizedDirection;
-      
-      // Create the CLIMBED event for world model updates
+
+      // Perform the move if there's a destination
+      if (sharedData.destinationId) {
+        context.world.moveEntity(context.player.id, sharedData.destinationId);
+      }
+    } else if (target) {
+      // Object climbing
+      sharedData.mode = 'object';
+      sharedData.targetId = target.id;
+      sharedData.targetName = target.name;
+
+      // Move player onto the target
+      context.world.moveEntity(context.player.id, target.id);
+    }
+  },
+
+  /**
+   * Report phase - generates all events after successful execution
+   */
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
+    const events: ISemanticEvent[] = [];
+    const sharedData = getClimbingSharedData(context);
+
+    if (sharedData.mode === 'directional') {
+      // Directional climbing events
       const climbedData: ClimbedEventData = {
-        direction: normalizedDirection,
+        direction: sharedData.direction,
         method: 'directional',
-        destinationId: destinationId
+        destinationId: sharedData.destinationId
       };
       events.push(context.event('if.event.climbed', climbedData));
-      
-      // Create movement events if there's a destination
-      if (destinationId) {
+
+      // Movement event if there's a destination
+      if (sharedData.destinationId) {
         events.push(context.event('if.event.moved', {
-          direction: normalizedDirection,
-          fromRoom: context.currentLocation.id,
-          toRoom: destinationId,
+          direction: sharedData.direction,
+          fromRoom: sharedData.fromLocationId,
+          toRoom: sharedData.destinationId,
           method: 'climbing'
         }));
       }
+
+      // Success message
+      const messageId = sharedData.direction === 'up' ? 'climbed_up' : 'climbed_down';
+      events.push(context.event('action.success', {
+        actionId: this.id,
+        messageId: messageId,
+        params: { direction: sharedData.direction }
+      }));
     } else {
-      // Climbing onto an object
-      mode = 'object';
-      messageId = 'climbed_onto';
-      params.object = target!.name;
-      
-      // Create CLIMBED event for world model updates
+      // Object climbing events
       const climbedData: ClimbedEventData = {
-        targetId: target!.id,
+        targetId: sharedData.targetId,
         method: 'onto'
       };
       events.push(context.event('if.event.climbed', climbedData));
-      
-      // If climbing onto something, also generate ENTERED event
-      if (target) {
-        events.push(context.event('if.event.entered', {
-          targetId: target.id,
-          method: 'climbing',
-          preposition: 'onto'
-        }));
-      }
+
+      // Entered event for climbing onto
+      events.push(context.event('if.event.entered', {
+        targetId: sharedData.targetId,
+        method: 'climbing',
+        preposition: 'onto'
+      }));
+
+      // Success message
+      events.push(context.event('action.success', {
+        actionId: this.id,
+        messageId: 'climbed_onto',
+        params: { object: sharedData.targetName }
+      }));
     }
-    
-    // Create success message
-    events.push(context.event('action.success', {
-      actionId: this.id,
-      messageId: messageId,
-      params: params
-    }));
-    
+
     return events;
   }
 };
@@ -158,39 +185,30 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
  * Validate climbing in a direction (up/down)
  */
 function validateDirectionalClimbing(
-  direction: string, 
+  direction: string,
   context: ActionContext
 ): ValidationResult {
   // Normalize direction
   const normalizedDirection = direction.toLowerCase();
-  
+
   // Only handle up/down for climbing
   if (normalizedDirection !== 'up' && normalizedDirection !== 'down') {
     return { valid: false, error: 'cant_go_that_way', params: { direction } };
   }
-  
+
   // Get current location
   const currentLocation = context.currentLocation;
-  if (!currentLocation.hasTrait(TraitType.ROOM)) {
+  if (!currentLocation.has(TraitType.ROOM)) {
     return { valid: false, error: 'cant_go_that_way', params: { direction: normalizedDirection } };
   }
-  
+
   // Check if there's an exit in that direction
-  const roomTrait = currentLocation.getTrait(TraitType.ROOM) as { exits?: Record<string, any> };
+  const roomTrait = currentLocation.get(TraitType.ROOM) as { exits?: Record<string, any> };
   if (!roomTrait.exits || !roomTrait.exits[normalizedDirection]) {
     return { valid: false, error: 'cant_go_that_way', params: { direction: normalizedDirection } };
   }
-  
-  // Get destination
-  const exitConfig = roomTrait.exits[normalizedDirection];
-  const destinationId = exitConfig.to;
-  
-  // Determine message
-  const messageId = normalizedDirection === 'up' ? 'climbed_up' : 'climbed_down';
-  
-  return {
-    valid: true
-  };
+
+  return { valid: true };
 }
 
 /**
@@ -202,33 +220,30 @@ function validateObjectClimbing(
 ): ValidationResult {
   // Check if object is climbable
   let isClimbable = false;
-  let destination: string | undefined;
-  
-  // Check if it's an enterable object (climb onto) - use behavior if available
-  if (target.hasTrait(TraitType.ENTRY)) {
-    if (EntryBehavior.canEnter(target, context.player)) {
+
+  // Check if it has the CLIMBABLE trait
+  if (target.has(TraitType.CLIMBABLE)) {
+    const result = ClimbableBehavior.climb(target);
+    if (result.success) {
       isClimbable = true;
-      destination = target.id;
     }
-  } else if (target.hasTrait(TraitType.SUPPORTER)) {
-    const supporterTrait = target.getTrait(TraitType.SUPPORTER) as { enterable?: boolean };
+  } else if (target.has(TraitType.SUPPORTER)) {
+    // Also allow climbing onto enterable supporters
+    const supporterTrait = target.get(TraitType.SUPPORTER) as { enterable?: boolean };
     if (supporterTrait.enterable) {
       isClimbable = true;
-      destination = target.id;
     }
   }
-  
+
   if (!isClimbable) {
     return { valid: false, error: 'not_climbable', params: { object: target.name } };
   }
-  
+
   // Check if already on/in the target
   const currentLocation = context.world.getLocation(context.player.id);
   if (currentLocation === target.id) {
     return { valid: false, error: 'already_there', params: { place: target.name } };
   }
-  
-  return {
-    valid: true
-  };
+
+  return { valid: true };
 }

@@ -34,6 +34,7 @@ export const TraitType = {
 
   // Spatial traits
   DOOR: 'door',
+  CLIMBABLE: 'climbable',
 
   // Object property traits
 
@@ -42,7 +43,13 @@ export const TraitType = {
 
   // New traits
   EXIT: 'exit',
-  ENTRY: 'entry'
+  
+  // Combat traits
+  WEAPON: 'weapon',
+  BREAKABLE: 'breakable',
+  DESTRUCTIBLE: 'destructible',
+  COMBATANT: 'combatant',
+  EQUIPPED: 'equipped'
 } as const;
 
 /**
@@ -94,15 +101,20 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
 
   // Spatial
   [TraitType.DOOR]: TraitCategory.STANDARD,
+  [TraitType.CLIMBABLE]: TraitCategory.INTERACTIVE,
   [TraitType.EXIT]: TraitCategory.STANDARD,
 
   // Object property
 
   // Basic
   [TraitType.ACTOR]: TraitCategory.STANDARD,
-
-  // New traits
-  [TraitType.ENTRY]: TraitCategory.INTERACTIVE
+  
+  // Combat
+  [TraitType.WEAPON]: TraitCategory.INTERACTIVE,
+  [TraitType.BREAKABLE]: TraitCategory.INTERACTIVE,
+  [TraitType.DESTRUCTIBLE]: TraitCategory.INTERACTIVE,
+  [TraitType.COMBATANT]: TraitCategory.INTERACTIVE,
+  [TraitType.EQUIPPED]: TraitCategory.INTERACTIVE
 };
 
 /**

@@ -14,8 +14,8 @@ import { ButtonTrait } from './button/buttonTrait';
 import { ClothingTrait } from './clothing/clothingTrait';
 import { ContainerTrait } from './container/containerTrait';
 import { DoorTrait } from './door/doorTrait';
+import { ClimbableTrait } from './climbable/climbableTrait';
 import { EdibleTrait } from './edible/edibleTrait';
-import { EntryTrait } from './entry/entryTrait';
 import { ExitTrait } from './exit/exitTrait';
 import { IdentityTrait } from './identity/identityTrait';
 import { LightSourceTrait } from './light-source/lightSourceTrait';
@@ -30,17 +30,22 @@ import { SceneryTrait } from './scenery/sceneryTrait';
 import { SupporterTrait } from './supporter/supporterTrait';
 import { SwitchableTrait } from './switchable/switchableTrait';
 import { WearableTrait } from './wearable/wearableTrait';
+import { WeaponTrait } from './weapon/weaponTrait';
+import { BreakableTrait } from './breakable/breakableTrait';
+import { DestructibleTrait } from './destructible/destructibleTrait';
+import { CombatantTrait } from './combatant/combatantTrait';
+import { EquippedTrait } from './equipped/equippedTrait';
 
 // Export as namespace for easy access
 export const Traits = {
   ActorTrait,
   AttachedTrait,
   ButtonTrait,
+  ClimbableTrait,
   ClothingTrait,
   ContainerTrait,
   DoorTrait,
   EdibleTrait,
-  EntryTrait,
   ExitTrait,
   IdentityTrait,
   LightSourceTrait,
@@ -55,6 +60,11 @@ export const Traits = {
   SupporterTrait,
   SwitchableTrait,
   WearableTrait,
+  WeaponTrait,
+  BreakableTrait,
+  DestructibleTrait,
+  CombatantTrait,
+  EquippedTrait,
 } as const;
 
 // Also export types for convenience
@@ -62,11 +72,11 @@ export type {
   ActorTrait,
   AttachedTrait,
   ButtonTrait,
+  ClimbableTrait,
   ClothingTrait,
   ContainerTrait,
   DoorTrait,
   EdibleTrait,
-  EntryTrait,
   ExitTrait,
   IdentityTrait,
   LightSourceTrait,
@@ -81,6 +91,11 @@ export type {
   SupporterTrait,
   SwitchableTrait,
   WearableTrait,
+  WeaponTrait,
+  BreakableTrait,
+  DestructibleTrait,
+  CombatantTrait,
+  EquippedTrait,
 };
 
 // Export a union type of all traits
@@ -88,11 +103,11 @@ export type AnyTrait =
   | ActorTrait
   | AttachedTrait
   | ButtonTrait
+  | ClimbableTrait
   | ClothingTrait
   | ContainerTrait
   | DoorTrait
   | EdibleTrait
-  | EntryTrait
   | ExitTrait
   | IdentityTrait
   | LightSourceTrait
@@ -106,7 +121,12 @@ export type AnyTrait =
   | SceneryTrait
   | SupporterTrait
   | SwitchableTrait
-  | WearableTrait;
+  | WearableTrait
+  | WeaponTrait
+  | BreakableTrait
+  | DestructibleTrait
+  | CombatantTrait
+  | EquippedTrait;
 
 // Type guards for each trait
 export function isActorTrait(trait: any): trait is ActorTrait {
@@ -123,10 +143,6 @@ export function isDoorTrait(trait: any): trait is DoorTrait {
 
 export function isEdibleTrait(trait: any): trait is EdibleTrait {
   return trait?.type === 'edible';
-}
-
-export function isEntryTrait(trait: any): trait is EntryTrait {
-  return trait?.type === 'entry';
 }
 
 export function isExitTrait(trait: any): trait is ExitTrait {
@@ -195,4 +211,24 @@ export function isButtonTrait(trait: any): trait is ButtonTrait {
 
 export function isMoveableSceneryTrait(trait: any): trait is MoveableSceneryTrait {
   return trait?.type === 'moveableScenery';
+}
+
+export function isWeaponTrait(trait: any): trait is WeaponTrait {
+  return trait?.type === 'weapon';
+}
+
+export function isBreakableTrait(trait: any): trait is BreakableTrait {
+  return trait?.type === 'breakable';
+}
+
+export function isDestructibleTrait(trait: any): trait is DestructibleTrait {
+  return trait?.type === 'destructible';
+}
+
+export function isCombatantTrait(trait: any): trait is CombatantTrait {
+  return trait?.type === 'combatant';
+}
+
+export function isEquippedTrait(trait: any): trait is EquippedTrait {
+  return trait?.type === 'equipped';
 }

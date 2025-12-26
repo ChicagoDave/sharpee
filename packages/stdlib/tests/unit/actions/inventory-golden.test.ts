@@ -14,14 +14,37 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { inventoryAction } from '../../../src/actions/standard/inventory';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel } from '@sharpee/world-model';
-import { 
+import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
   TestData,
   createCommand
 } from '../../test-utils';
-import type { ActionContext } from '../../../src/actions/enhanced-types';
+import type { ActionContext, Action } from '../../../src/actions/enhanced-types';
+
+/**
+ * Helper to execute action with proper three-phase pattern support
+ */
+const executeWithValidation = (action: Action, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    return [context.event('action.error', {
+      actionId: action.id,
+      error: validation.error,
+      messageId: validation.error
+    })];
+  }
+
+  // Three-phase pattern: execute returns void, report returns events
+  if (action.report) {
+    action.execute(context);
+    return action.report(context);
+  }
+
+  // Old two-phase pattern: execute returns events
+  return action.execute(context);
+};
 
 describe('inventoryAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -48,7 +71,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.INVENTORY);
       const context = createRealTestContext(inventoryAction, world, command);
       
-      const events = inventoryAction.execute(context);
+      const events = executeWithValidation(inventoryAction, context);
       
       // Should emit inventory event
       expectEvent(events, 'if.action.inventory', {
@@ -74,7 +97,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.INVENTORY);
       const context = createRealTestContext(inventoryAction, world, command);
       
-      const events = inventoryAction.execute(context);
+      const events = executeWithValidation(inventoryAction, context);
       
       // Should emit inventory event with items
       expectEvent(events, 'if.action.inventory', {
@@ -119,7 +142,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.INVENTORY);
       const context = createRealTestContext(inventoryAction, world, command);
       
-      const events = inventoryAction.execute(context);
+      const events = executeWithValidation(inventoryAction, context);
       
       // Should emit inventory event
       const invEvent = events.find(e => e.type === 'if.action.inventory');
@@ -175,7 +198,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.INVENTORY);
       const context = createRealTestContext(inventoryAction, world, command);
       
-      const events = inventoryAction.execute(context);
+      const events = executeWithValidation(inventoryAction, context);
       
       // Should emit inventory event with all items
       const invEvent = events.find(e => e.type === 'if.action.inventory');
@@ -211,7 +234,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.INVENTORY);
       const context = createRealTestContext(inventoryAction, world, command);
       
-      const events = inventoryAction.execute(context);
+      const events = executeWithValidation(inventoryAction, context);
       
       // Should include weight data in event
       const invEvent = events.find(e => e.type === 'if.action.inventory');
@@ -229,7 +252,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.INVENTORY);
       const context = createRealTestContext(inventoryAction, world, command);
       
-      const events = inventoryAction.execute(context);
+      const events = executeWithValidation(inventoryAction, context);
       
       // Should not include weight data
       const invEvent = events.find(e => e.type === 'if.action.inventory');
@@ -254,7 +277,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(inventoryAction, world, command);
       
-      const events = inventoryAction.execute(context);
+      const events = executeWithValidation(inventoryAction, context);
       
       // Should mark as brief in event
       const invEvent = events.find(e => e.type === 'if.action.inventory');
@@ -273,7 +296,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(inventoryAction, world, command);
       
-      const events = inventoryAction.execute(context);
+      const events = executeWithValidation(inventoryAction, context);
       
       // Should mark as brief
       const invEvent = events.find(e => e.type === 'if.action.inventory');
@@ -292,7 +315,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(inventoryAction, world, command);
       
-      const events = inventoryAction.execute(context);
+      const events = executeWithValidation(inventoryAction, context);
       
       // Should not mark as brief
       const invEvent = events.find(e => e.type === 'if.action.inventory');
@@ -311,7 +334,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.INVENTORY);
       const context = createRealTestContext(inventoryAction, world, command);
       
-      const events = inventoryAction.execute(context);
+      const events = executeWithValidation(inventoryAction, context);
       
       // Should emit observable event
       const invEvent = events.find(e => e.type === 'if.action.inventory');
@@ -327,7 +350,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.INVENTORY);
       const context = createRealTestContext(inventoryAction, world, command);
       
-      const events = inventoryAction.execute(context);
+      const events = executeWithValidation(inventoryAction, context);
       
       events.forEach(event => {
         if (event.entities) {
@@ -356,7 +379,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.INVENTORY);
       const context = createRealTestContext(inventoryAction, world, command);
       
-      const events = inventoryAction.execute(context);
+      const events = executeWithValidation(inventoryAction, context);
       
       const invEvent = events.find(e => e.type === 'if.action.inventory');
       expect(invEvent?.data).toMatchObject({
@@ -396,7 +419,7 @@ describe('Testing Pattern Examples for Inventory', () => {
     
     const command = createCommand(IFActions.INVENTORY);
     const context = createRealTestContext(inventoryAction, world, command);
-    const events = inventoryAction.execute(context);
+    const events = executeWithValidation(inventoryAction, context);
     
     const invEvent = events.find(e => e.type === 'if.action.inventory');
     expect(invEvent?.data.items).toHaveLength(4);
@@ -427,7 +450,7 @@ describe('Testing Pattern Examples for Inventory', () => {
     
     const command = createCommand(IFActions.INVENTORY);
     const context = createRealTestContext(inventoryAction, world, command);
-    const events = inventoryAction.execute(context);
+    const events = executeWithValidation(inventoryAction, context);
     
     const invEvent = events.find(e => e.type === 'if.action.inventory');
     // Total weight should be 41 (1 + 10 + 30)
@@ -440,7 +463,7 @@ describe('Testing Pattern Examples for Inventory', () => {
     
     const command = createCommand(IFActions.INVENTORY);
     const context = createRealTestContext(inventoryAction, world, command);
-    const events = inventoryAction.execute(context);
+    const events = executeWithValidation(inventoryAction, context);
     
     const invEvent = events.find(e => e.type === 'if.action.inventory');
     expect(invEvent?.data.isEmpty).toBe(true);

@@ -13,6 +13,7 @@ import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { captureRoomSnapshot } from '../../base/snapshot-utils';
+import { handleReportErrors } from '../../base/report-helpers';
 import { buildEventData } from '../../data-builder-types';
 import { 
   lookingEventDataConfig, 
@@ -57,41 +58,14 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
   },
   
   report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    // Handle validation errors (though looking should never fail validation)
-    if (validationResult && !validationResult.valid) {
-      // Capture entity data for validation errors
-      const errorParams = { ...(validationResult.params || {}) };
-      
-      // Add room snapshot if available (looking is usually about the current room)
-      const location = context.currentLocation;
-      if (location) {
-        errorParams.roomSnapshot = captureRoomSnapshot(location, context.world);
-      }
-      
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          error: validationResult.error || 'validation_failed',
-          messageId: validationResult.messageId || validationResult.error || 'action_failed',
-          params: errorParams
-        })
-      ];
-    }
-    
-    // Handle execution errors
-    if (executionError) {
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          error: 'execution_failed',
-          messageId: 'action_failed',
-          params: {
-            error: executionError.message
-          }
-        })
-      ];
-    }
-    
+    // Handle validation and execution errors using shared helper
+    // (though looking should never fail validation)
+    const errorEvents = handleReportErrors(context, validationResult, executionError, {
+      includeTargetSnapshot: false,  // Looking is about rooms, not objects
+      includeIndirectSnapshot: false
+    });
+    if (errorEvents) return errorEvents;
+
     const events: ISemanticEvent[] = [];
     
     // Build and emit looked event

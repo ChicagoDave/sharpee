@@ -12,7 +12,7 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { showingAction } from '../../../src/actions/standard/showing';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType } from '@sharpee/world-model';
-import { 
+import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
@@ -21,6 +21,29 @@ import {
   findEntityByName
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
+
+// Helper to execute action with validation (mimics CommandExecutor flow)
+// Supports both old two-phase and new three-phase actions
+const executeWithValidation = (action: any, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    return [context.event('action.error', {
+      actionId: context.action.id,
+      messageId: validation.error,
+      reason: validation.error,
+      params: validation.params || {}
+    })];
+  }
+
+  // Three-phase pattern: execute returns void, report returns events
+  if (action.report) {
+    action.execute(context);
+    return action.report(context);
+  }
+
+  // Old two-phase pattern: execute returns events
+  return action.execute(context);
+};
 
 describe('showingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -55,7 +78,7 @@ describe('showingAction (Golden Pattern)', () => {
       const { world } = setupBasicWorld();
       const context = createRealTestContext(showingAction, world, createCommand(IFActions.SHOWING));
       
-      const events = showingAction.execute(context);
+      const events = executeWithValidation(showingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_item'),
@@ -74,7 +97,7 @@ describe('showingAction (Golden Pattern)', () => {
         // No indirect object
       ));
       
-      const events = showingAction.execute(context);
+      const events = executeWithValidation(showingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_viewer'),
@@ -96,7 +119,7 @@ describe('showingAction (Golden Pattern)', () => {
         { entity: detective, preposition: 'to' }
       ));
       
-      const events = showingAction.execute(context);
+      const events = executeWithValidation(showingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_carrying'),
@@ -124,7 +147,7 @@ describe('showingAction (Golden Pattern)', () => {
         { entity: deputy, preposition: 'to' }
       ));
       
-      const events = showingAction.execute(context);
+      const events = executeWithValidation(showingAction, context);
       
       // Should succeed - worn items can be shown
       expectEvent(events, 'if.event.shown', {
@@ -156,7 +179,7 @@ describe('showingAction (Golden Pattern)', () => {
         { entity: pirate, preposition: 'to' }
       ));
       
-      const events = showingAction.execute(context);
+      const events = executeWithValidation(showingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('viewer_not_visible'),
@@ -182,7 +205,7 @@ describe('showingAction (Golden Pattern)', () => {
         { entity: scholar, preposition: 'to' }
       ));
       
-      const events = showingAction.execute(context);
+      const events = executeWithValidation(showingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('viewer_too_far'),
@@ -204,7 +227,7 @@ describe('showingAction (Golden Pattern)', () => {
         { entity: mirror, preposition: 'to' }
       ));
       
-      const events = showingAction.execute(context);
+      const events = executeWithValidation(showingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_actor'),
@@ -228,7 +251,7 @@ describe('showingAction (Golden Pattern)', () => {
         { entity: player, preposition: 'to' }
       ));
       
-      const events = showingAction.execute(context);
+      const events = executeWithValidation(showingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('self'),
@@ -259,7 +282,7 @@ describe('showingAction (Golden Pattern)', () => {
         { entity: noble, preposition: 'to' }
       ));
       
-      const events = showingAction.execute(context);
+      const events = executeWithValidation(showingAction, context);
       
       expectEvent(events, 'if.event.shown', {
         recognized: true
@@ -291,7 +314,7 @@ describe('showingAction (Golden Pattern)', () => {
         { entity: merchant, preposition: 'to' }
       ));
       
-      const events = showingAction.execute(context);
+      const events = executeWithValidation(showingAction, context);
       
       expectEvent(events, 'if.event.shown', {
         impressed: true
@@ -323,7 +346,7 @@ describe('showingAction (Golden Pattern)', () => {
         { entity: king, preposition: 'to' }
       ));
       
-      const events = showingAction.execute(context);
+      const events = executeWithValidation(showingAction, context);
       
       expectEvent(events, 'action.success', {
         messageId: expect.stringContaining('viewer_unimpressed')
@@ -351,7 +374,7 @@ describe('showingAction (Golden Pattern)', () => {
         { entity: clerk, preposition: 'to' }
       ));
       
-      const events = showingAction.execute(context);
+      const events = executeWithValidation(showingAction, context);
       
       expectEvent(events, 'action.success', {
         messageId: expect.stringContaining('viewer_examines')
@@ -381,7 +404,7 @@ describe('showingAction (Golden Pattern)', () => {
         { entity: farmer, preposition: 'to' }
       ));
       
-      const events = showingAction.execute(context);
+      const events = executeWithValidation(showingAction, context);
       
       expectEvent(events, 'action.success', {
         messageId: expect.stringContaining('viewer_nods')
@@ -406,7 +429,7 @@ describe('showingAction (Golden Pattern)', () => {
         { entity: secretary, preposition: 'to' }
       ));
       
-      const events = showingAction.execute(context);
+      const events = executeWithValidation(showingAction, context);
       
       // Should emit SHOWN event
       expectEvent(events, 'if.event.shown', {
@@ -444,7 +467,7 @@ describe('showingAction (Golden Pattern)', () => {
         { entity: stranger, preposition: 'to' }
       ));
       
-      const events = showingAction.execute(context);
+      const events = executeWithValidation(showingAction, context);
       
       // Should default to 'shown' message
       expectEvent(events, 'action.success', {
@@ -470,7 +493,7 @@ describe('showingAction (Golden Pattern)', () => {
         { entity: appraiser, preposition: 'to' }
       ));
       
-      const events = showingAction.execute(context);
+      const events = executeWithValidation(showingAction, context);
       
       events.forEach(event => {
         if (event.entities) {
@@ -511,7 +534,7 @@ describe('Showing Action Edge Cases', () => {
       { entity: general, preposition: 'to' }
     ));
     
-    const events = showingAction.execute(context);
+    const events = executeWithValidation(showingAction, context);
     
     // Should recognize uniform
     expectEvent(events, 'if.event.shown', {
@@ -550,7 +573,7 @@ describe('Showing Action Edge Cases', () => {
       { entity: detective1, preposition: 'to' }
     ));
     
-    const events1 = showingAction.execute(context1);
+    const events1 = executeWithValidation(showingAction, context1);
     
     expectEvent(events1, 'action.success', {
       messageId: expect.stringContaining('shown')
@@ -563,7 +586,7 @@ describe('Showing Action Edge Cases', () => {
       { entity: detective2, preposition: 'to' }
     ));
     
-    const events2 = showingAction.execute(context2);
+    const events2 = executeWithValidation(showingAction, context2);
     
     expectEvent(events2, 'action.success', {
       messageId: expect.stringContaining('viewer_examines')
@@ -586,7 +609,7 @@ describe('Showing Action Edge Cases', () => {
       { entity: pirate, preposition: 'to' }
     ));
     
-    const events = showingAction.execute(context);
+    const events = executeWithValidation(showingAction, context);
     
     // Should succeed - both in same room
     expectEvent(events, 'if.event.shown', {
@@ -619,7 +642,7 @@ describe('Testing Pattern Examples for Showing', () => {
       { entity: expert, preposition: 'to' }
     ));
     
-    const events = showingAction.execute(context);
+    const events = executeWithValidation(showingAction, context);
     
     // Should include proper name in event data
     expectEvent(events, 'if.event.shown', {
@@ -652,7 +675,7 @@ describe('Testing Pattern Examples for Showing', () => {
       { entity: curator, preposition: 'to' }
     ));
     
-    const events = showingAction.execute(context);
+    const events = executeWithValidation(showingAction, context);
     
     // Should use recognizes (highest priority)
     expectEvent(events, 'action.success', {

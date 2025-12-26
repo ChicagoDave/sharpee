@@ -9,6 +9,7 @@ import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
 import { ActionContext } from '../../enhanced-types';
 import { WorldModel, TraitType, IFEntity, RoomBehavior, Direction, DirectionType, getOppositeDirection as getOpposite } from '@sharpee/world-model';
 import { captureRoomSnapshot, captureEntitySnapshot } from '../../base/snapshot-utils';
+import { GoingSharedData, getGoingSharedData } from './going';
 
 /**
  * Find the source room (where we came from)
@@ -70,8 +71,9 @@ export const buildActorMovedData: ActionDataBuilder<Record<string, unknown>> = (
   const destinationSnapshot = captureRoomSnapshot(currentRoom, context.world, false);
   const actorSnapshot = captureEntitySnapshot(actor, context.world, false);
   
-  // Check if this was the first visit (stored during execute phase)
-  const firstVisit = (context as any)._isFirstVisit === true;
+  // Check if this was the first visit (stored during execute phase via sharedData)
+  const sharedData = getGoingSharedData(context);
+  const firstVisit = sharedData.isFirstVisit === true;
   
   return {
     // New atomic structure

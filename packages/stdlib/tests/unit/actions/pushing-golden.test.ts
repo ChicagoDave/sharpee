@@ -14,7 +14,7 @@ import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { pushingAction } from '../../../src/actions/standard/pushing';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType } from '@sharpee/world-model';
-import { 
+import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
@@ -22,6 +22,24 @@ import {
   createCommand
 } from '../../test-utils';
 import type { WorldModel } from '@sharpee/world-model';
+import type { ActionContext } from '../../../src/actions/enhanced-types';
+
+// Helper to execute action with three-phase pattern (mimics CommandExecutor flow)
+const executeWithValidation = (action: any, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    return [context.event('action.error', {
+      actionId: action.id,
+      messageId: validation.error || 'validation_failed',
+      reason: validation.error || 'validation_failed',
+      params: validation.params || {}
+    })];
+  }
+  // Execute mutations (returns void)
+  action.execute(context);
+  // Report generates events
+  return action.report(context);
+};
 
 describe('pushingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -159,8 +177,8 @@ describe('pushingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(pushingAction, world, command);
       
-      const events = pushingAction.execute(context);
-      
+      const events = executeWithValidation(pushingAction, context);
+
       // Should emit PUSHED event
       expectEvent(events, 'if.event.pushed', {
         target: button.id,
@@ -172,10 +190,10 @@ describe('pushingAction (Golden Pattern)', () => {
         activated: true,
         sound: 'click'
       });
-      
-      // Should emit button_toggles message (switchable button)
+
+      // Should emit button_clicks message (switchable button with BUTTON trait)
       expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('button_toggles'),
+        messageId: 'button_clicks',
         params: { target: 'red button', newState: 'on' }
       });
     });
@@ -200,8 +218,8 @@ describe('pushingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(pushingAction, world, command);
       
-      const events = pushingAction.execute(context);
-      
+      const events = executeWithValidation(pushingAction, context);
+
       // Should emit PUSHED event
       expectEvent(events, 'if.event.pushed', {
         pushType: 'button',
@@ -209,10 +227,10 @@ describe('pushingAction (Golden Pattern)', () => {
         currentState: true,
         newState: false
       });
-      
-      // Should emit button_toggles message (switchable without BUTTON trait)
+
+      // Should emit switch_toggled message (switchable without BUTTON trait)
       expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('button_toggles'),
+        messageId: 'switch_toggled',
         params: { target: 'light switch', newState: 'off' }
       });
     });
@@ -234,15 +252,15 @@ describe('pushingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(pushingAction, world, command);
       
-      const events = pushingAction.execute(context);
-      
+      const events = executeWithValidation(pushingAction, context);
+
       expectEvent(events, 'if.event.pushed', {
         pushType: 'button',
         activated: true
       });
-      
+
       expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('button_clicks'),
+        messageId: 'button_pushed',
         params: { target: 'alarm button' }
       });
     });
@@ -271,8 +289,8 @@ describe('pushingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(pushingAction, world, command);
       
-      const events = pushingAction.execute(context);
-      
+      const events = executeWithValidation(pushingAction, context);
+
       // Should emit PUSHED event
       expectEvent(events, 'if.event.pushed', {
         target: crate.id,
@@ -281,10 +299,10 @@ describe('pushingAction (Golden Pattern)', () => {
         moved: true,
         moveDirection: 'north'
       });
-      
+
       // Should emit pushed_with_effort message
       expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('pushed_with_effort'),
+        messageId: 'pushed_with_effort',
         params: { target: 'wooden crate', direction: 'north' }
       });
     });
@@ -309,18 +327,18 @@ describe('pushingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(pushingAction, world, command);
       
-      const events = pushingAction.execute(context);
-      
+      const events = executeWithValidation(pushingAction, context);
+
       // Should emit PUSHED event
       expectEvent(events, 'if.event.pushed', {
         pushType: 'heavy',
         moved: false,
         nudged: true
       });
-      
+
       // Should emit wont_budge message
       expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('wont_budge'),
+        messageId: 'wont_budge',
         params: { target: 'massive boulder' }
       });
     });
@@ -347,8 +365,8 @@ describe('pushingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(pushingAction, world, command);
       
-      const events = pushingAction.execute(context);
-      
+      const events = executeWithValidation(pushingAction, context);
+
       // Should emit PUSHED event
       expectEvent(events, 'if.event.pushed', {
         pushType: 'moveable',
@@ -357,10 +375,10 @@ describe('pushingAction (Golden Pattern)', () => {
         moveDirection: 'east',
         sound: 'stone-scrape'
       });
-      
+
       // Should emit pushed_direction message
       expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('pushed_direction'),
+        messageId: 'pushed_direction',
         params: { target: 'ancient statue', direction: 'east' }
       });
     });
@@ -384,18 +402,18 @@ describe('pushingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(pushingAction, world, command);
       
-      const events = pushingAction.execute(context);
-      
+      const events = executeWithValidation(pushingAction, context);
+
       // Should emit PUSHED event
       expectEvent(events, 'if.event.pushed', {
         pushType: 'moveable',
         nudged: true,
         moved: false
       });
-      
+
       // Should emit pushed_nudged message
       expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('pushed_nudged'),
+        messageId: 'pushed_nudged',
         params: { target: 'round boulder' }
       });
     });
@@ -422,8 +440,8 @@ describe('pushingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(pushingAction, world, command);
       
-      const events = pushingAction.execute(context);
-      
+      const events = executeWithValidation(pushingAction, context);
+
       // Should emit PUSHED event
       expectEvent(events, 'if.event.pushed', {
         pushType: 'moveable',
@@ -431,10 +449,10 @@ describe('pushingAction (Golden Pattern)', () => {
         moved: true,
         moveDirection: 'west'
       });
-      
+
       // Should emit reveals_passage message
       expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('reveals_passage'),
+        messageId: 'reveals_passage',
         params: { target: 'stone block', direction: 'west' }
       });
     });
@@ -457,18 +475,18 @@ describe('pushingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(pushingAction, world, command);
       
-      const events = pushingAction.execute(context);
-      
+      const events = executeWithValidation(pushingAction, context);
+
       // Should emit PUSHED event
       expectEvent(events, 'if.event.pushed', {
         pushType: 'moveable',
         nudged: true,
         moved: false
       });
-      
+
       // Should emit pushed_nudged message
       expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('pushed_nudged'),
+        messageId: 'pushed_nudged',
         params: { target: 'cardboard box' }
       });
     });
@@ -491,8 +509,8 @@ describe('pushingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(pushingAction, world, command);
       
-      const events = pushingAction.execute(context);
-      
+      const events = executeWithValidation(pushingAction, context);
+
       // Should emit PUSHED event
       expectEvent(events, 'if.event.pushed', {
         pushType: 'moveable',
@@ -500,10 +518,10 @@ describe('pushingAction (Golden Pattern)', () => {
         moved: true,
         moveDirection: 'north'
       });
-      
+
       // Should emit pushed_direction message
       expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('pushed_direction'),
+        messageId: 'pushed_direction',
         params: { target: 'wooden chair', direction: 'north' }
       });
     });
@@ -530,8 +548,8 @@ describe('pushingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(pushingAction, world, command);
       
-      const events = pushingAction.execute(context);
-      
+      const events = executeWithValidation(pushingAction, context);
+
       events.forEach(event => {
         if (event.entities) {
           expect(event.entities.actor).toBe(player.id);
