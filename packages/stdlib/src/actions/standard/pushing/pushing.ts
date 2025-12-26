@@ -1,158 +1,53 @@
 /**
  * Pushing action - push objects, buttons, or move heavy items
- * 
+ *
  * This action handles pushing objects, which can result in:
  * - Moving heavy scenery objects
  * - Activating buttons or switches
  * - Revealing hidden passages
  * - General pushing feedback
+ *
+ * Uses three-phase pattern:
+ * 1. validate: Check if target exists and is pushable
+ * 2. execute: Toggle switchable state if applicable, store data
+ * 3. report: Generate events for output
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, PushableTrait, SwitchableTrait, IFEntity } from '@sharpee/world-model';
+import { TraitType, PushableTrait, SwitchableTrait, SwitchableBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
 import { PushedEventData } from './pushing-events';
 
-interface PushAnalysis {
-  target: IFEntity;
-  pushableTrait: PushableTrait;
+/**
+ * Shared data passed between execute and report phases
+ */
+interface PushingSharedData {
+  targetId: string;
+  targetName: string;
   direction?: string;
+  pushType?: 'button' | 'heavy' | 'moveable';
+  // For button types
+  activated?: boolean;
+  willToggle?: boolean;
+  currentState?: boolean;
+  newState?: boolean;
+  sound?: string;
+  // For heavy/moveable
+  moved?: boolean;
+  moveDirection?: string;
+  nudged?: boolean;
+  revealsPassage?: boolean;
+  requiresStrength?: number;
+  // Message data
   messageId: string;
-  eventData: PushedEventData;
   messageParams: Record<string, any>;
 }
 
-/**
- * Analyzes the push action to determine what happens
- */
-function analyzePushAction(context: ActionContext): PushAnalysis | null {
-  const target = context.command.directObject?.entity;
-  const direction = context.command.parsed.extras?.direction as string;
-  
-  if (!target || !target.has(TraitType.PUSHABLE)) {
-    return null;
-  }
-  
-  const pushableTrait = target.get(TraitType.PUSHABLE) as PushableTrait;
-  
-  // Initialize event data
-  const eventData: PushedEventData = {
-    target: target.id,
-    targetName: target.name,
-    direction: direction,
-    pushType: pushableTrait.pushType
-  };
-  
-  let messageId: string;
-  const messageParams: Record<string, any> = {};
-  
-  // Handle based on push type
-  switch (pushableTrait.pushType) {
-    case 'button':
-      // Buttons activate when pushed
-      eventData.activated = true;
-      
-      // Check if it's also switchable
-      if (target.has(TraitType.SWITCHABLE)) {
-        const switchableData = target.get(TraitType.SWITCHABLE);
-        if (switchableData) {
-          const switchable = switchableData as SwitchableTrait;
-          eventData.willToggle = true;
-          eventData.currentState = switchable.isOn;
-          eventData.newState = !switchable.isOn;
-          
-          // Choose message based on whether it has BUTTON trait
-          if (target.has(TraitType.BUTTON)) {
-            messageId = 'button_clicks';
-          } else {
-            messageId = 'switch_toggled';
-          }
-          
-          messageParams.target = target.name;
-          messageParams.newState = switchable.isOn ? 'off' : 'on';
-        } else {
-          messageId = 'button_pushed';
-          messageParams.target = target.name;
-        }
-      } else {
-        // Non-switchable button
-        messageId = 'button_pushed';
-        messageParams.target = target.name;
-      }
-      
-      // Add push sound if specified
-      if (pushableTrait.pushSound) {
-        eventData.sound = pushableTrait.pushSound;
-      }
-      break;
-      
-    case 'heavy':
-      // Heavy objects might require strength
-      if (pushableTrait.requiresStrength) {
-        eventData.requiresStrength = pushableTrait.requiresStrength;
-      }
-      
-      if (direction) {
-        eventData.moved = true;
-        eventData.moveDirection = direction;
-        messageId = 'pushed_with_effort';
-        messageParams.target = target.name;
-        messageParams.direction = direction;
-      } else {
-        eventData.moved = false;
-        eventData.nudged = true;
-        messageId = 'wont_budge';
-        messageParams.target = target.name;
-      }
-      break;
-      
-    case 'moveable':
-      // Moveable objects can be pushed around
-      if (direction) {
-        eventData.moved = true;
-        eventData.moveDirection = direction;
-        
-        // Check if pushing reveals a passage
-        if (pushableTrait.revealsPassage) {
-          eventData.revealsPassage = true;
-          messageId = 'reveals_passage';
-        } else {
-          messageId = 'pushed_direction';
-        }
-        
-        messageParams.target = target.name;
-        messageParams.direction = direction;
-      } else {
-        eventData.moved = false;
-        eventData.nudged = true;
-        messageId = 'pushed_nudged';
-        messageParams.target = target.name;
-      }
-      
-      // Add push sound if specified
-      if (pushableTrait.pushSound) {
-        eventData.sound = pushableTrait.pushSound;
-      }
-      break;
-      
-    default:
-      // Fallback for unknown push types
-      messageId = 'pushing_does_nothing';
-      messageParams.target = target.name;
-      break;
-  }
-  
-  return {
-    target,
-    pushableTrait,
-    direction,
-    messageId,
-    eventData,
-    messageParams
-  };
+function getPushingSharedData(context: ActionContext): PushingSharedData {
+  return context.sharedData as PushingSharedData;
 }
 
 export const pushingAction: Action & { metadata: ActionMetadata } = {
@@ -174,7 +69,7 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
     'pushing_does_nothing',
     'fixed_in_place'
   ],
-  
+
   metadata: {
     requiresDirectObject: true,
     requiresIndirectObject: false,
@@ -220,29 +115,155 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Analysis will check the rest
     return { valid: true };
   },
 
-  execute(context: ActionContext): ISemanticEvent[] {
-    const events: ISemanticEvent[] = [];
-    
-    // Analyze what happens when we push
-    const analysis = analyzePushAction(context);
-    if (!analysis) {
-      return [];
+  /**
+   * Execute the push action - performs mutations only
+   * Assumes validation has already passed
+   */
+  execute(context: ActionContext): void {
+    const target = context.command.directObject!.entity!;
+    const direction = context.command.parsed.extras?.direction as string;
+    const sharedData = getPushingSharedData(context);
+
+    // Store basic info
+    sharedData.targetId = target.id;
+    sharedData.targetName = target.name;
+    sharedData.direction = direction;
+    sharedData.messageParams = {};
+
+    const pushableTrait = target.get(TraitType.PUSHABLE) as PushableTrait;
+    sharedData.pushType = pushableTrait.pushType;
+
+    // Handle based on push type
+    switch (pushableTrait.pushType) {
+      case 'button':
+        sharedData.activated = true;
+
+        // Check if it's also switchable - perform world mutation
+        if (target.has(TraitType.SWITCHABLE)) {
+          const switchable = target.get(TraitType.SWITCHABLE) as SwitchableTrait;
+          sharedData.willToggle = true;
+          sharedData.currentState = switchable.isOn;
+          sharedData.newState = !switchable.isOn;
+
+          // Perform the toggle (world mutation)
+          SwitchableBehavior.toggle(target);
+
+          // Choose message based on whether it has BUTTON trait
+          if (target.has(TraitType.BUTTON)) {
+            sharedData.messageId = 'button_clicks';
+          } else {
+            sharedData.messageId = 'switch_toggled';
+          }
+
+          sharedData.messageParams.target = target.name;
+          sharedData.messageParams.newState = sharedData.newState ? 'on' : 'off';
+        } else {
+          // Non-switchable button
+          sharedData.messageId = 'button_pushed';
+          sharedData.messageParams.target = target.name;
+        }
+
+        // Add push sound if specified
+        if (pushableTrait.pushSound) {
+          sharedData.sound = pushableTrait.pushSound;
+        }
+        break;
+
+      case 'heavy':
+        // Heavy objects might require strength
+        if (pushableTrait.requiresStrength) {
+          sharedData.requiresStrength = pushableTrait.requiresStrength;
+        }
+
+        if (direction) {
+          sharedData.moved = true;
+          sharedData.moveDirection = direction;
+          sharedData.messageId = 'pushed_with_effort';
+          sharedData.messageParams.target = target.name;
+          sharedData.messageParams.direction = direction;
+        } else {
+          sharedData.moved = false;
+          sharedData.nudged = true;
+          sharedData.messageId = 'wont_budge';
+          sharedData.messageParams.target = target.name;
+        }
+        break;
+
+      case 'moveable':
+        // Moveable objects can be pushed around
+        if (direction) {
+          sharedData.moved = true;
+          sharedData.moveDirection = direction;
+
+          // Check if pushing reveals a passage
+          if (pushableTrait.revealsPassage) {
+            sharedData.revealsPassage = true;
+            sharedData.messageId = 'reveals_passage';
+          } else {
+            sharedData.messageId = 'pushed_direction';
+          }
+
+          sharedData.messageParams.target = target.name;
+          sharedData.messageParams.direction = direction;
+        } else {
+          sharedData.moved = false;
+          sharedData.nudged = true;
+          sharedData.messageId = 'pushed_nudged';
+          sharedData.messageParams.target = target.name;
+        }
+
+        // Add push sound if specified
+        if (pushableTrait.pushSound) {
+          sharedData.sound = pushableTrait.pushSound;
+        }
+        break;
+
+      default:
+        // Fallback for unknown push types
+        sharedData.messageId = 'pushing_does_nothing';
+        sharedData.messageParams.target = target.name;
+        break;
     }
-    
+  },
+
+  /**
+   * Report phase - generates all events after successful execution
+   */
+  report(context: ActionContext): ISemanticEvent[] {
+    const events: ISemanticEvent[] = [];
+    const sharedData = getPushingSharedData(context);
+
+    // Build event data from sharedData
+    const eventData: PushedEventData = {
+      target: sharedData.targetId,
+      targetName: sharedData.targetName,
+      direction: sharedData.direction,
+      pushType: sharedData.pushType,
+      activated: sharedData.activated,
+      willToggle: sharedData.willToggle,
+      currentState: sharedData.currentState,
+      newState: sharedData.newState,
+      sound: sharedData.sound,
+      moved: sharedData.moved,
+      moveDirection: sharedData.moveDirection,
+      nudged: sharedData.nudged,
+      revealsPassage: sharedData.revealsPassage,
+      requiresStrength: sharedData.requiresStrength
+    };
+
     // Emit the PUSHED event for world model
-    events.push(context.event('if.event.pushed', analysis.eventData));
-    
+    events.push(context.event('if.event.pushed', eventData));
+
     // Add success message
     events.push(context.event('action.success', {
-      actionId: context.action.id,
-      messageId: analysis.messageId,
-      params: analysis.messageParams
+      actionId: this.id,
+      messageId: sharedData.messageId,
+      params: sharedData.messageParams
     }));
-    
+
     return events;
   },
 

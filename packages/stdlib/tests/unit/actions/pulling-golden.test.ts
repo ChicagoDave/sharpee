@@ -10,13 +10,31 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { pullingAction } from '../../../src/actions/standard/pulling';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType } from '@sharpee/world-model';
-import { 
+import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
   TestData,
   createCommand
 } from '../../test-utils';
+import type { ActionContext } from '../../../src/actions/enhanced-types';
+
+// Helper to execute action with three-phase pattern (mimics CommandExecutor flow)
+const executeWithValidation = (action: any, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    return [context.event('action.error', {
+      actionId: action.id,
+      messageId: validation.error || 'validation_failed',
+      reason: validation.error || 'validation_failed',
+      params: validation.params || {}
+    })];
+  }
+  // Execute mutations (returns void)
+  action.execute(context);
+  // Report generates events
+  return action.report(context);
+};
 
 describe('pullingAction (Golden Pattern - Simplified)', () => {
   describe('Action Metadata', () => {
@@ -137,23 +155,23 @@ describe('pullingAction (Golden Pattern - Simplified)', () => {
       
       const result = pullingAction.validate(context);
       expect(result.valid).toBe(true);
-      
-      const events = pullingAction.execute(context);
+
+      const events = executeWithValidation(pullingAction, context);
       expect(events).toHaveLength(2);
-      
+
       // Check pulled event
       expectEvent(events, 'if.event.pulled', {
         target: rope.id,
         targetName: 'rope',
         pullCount: 0
       });
-      
+
       // Check success message
       expectEvent(events, 'action.success', {
         messageId: 'pulled',
         params: { target: 'rope' }
       });
-      
+
       // Verify state was updated
       const pullable = rope.get(TraitType.PULLABLE) as any;
       expect(pullable.state).toBe('pulled');
@@ -176,8 +194,8 @@ describe('pullingAction (Golden Pattern - Simplified)', () => {
       const context = createRealTestContext(pullingAction, world, command);
       
       const result = pullingAction.validate(context);
-      const events = pullingAction.execute(context);
-      
+      const events = executeWithValidation(pullingAction, context);
+
       // Check event has correct pull count
       expectEvent(events, 'if.event.pulled', {
         target: cord.id,
@@ -185,7 +203,7 @@ describe('pullingAction (Golden Pattern - Simplified)', () => {
         pullCount: 5,
         pullType: 'cord'
       });
-      
+
       // Verify count incremented
       const pullable = cord.get(TraitType.PULLABLE) as any;
       expect(pullable.pullCount).toBe(6);
@@ -215,8 +233,8 @@ describe('pullingAction (Golden Pattern - Simplified)', () => {
       const context = createRealTestContext(pullingAction, world, command);
       
       const result = pullingAction.validate(context);
-      const events = pullingAction.execute(context);
-      
+      const events = executeWithValidation(pullingAction, context);
+
       // The action emits a simple pulled event
       expectEvent(events, 'if.event.pulled', {
         pullType: 'lever'
