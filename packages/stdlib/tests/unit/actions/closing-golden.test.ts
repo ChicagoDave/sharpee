@@ -21,21 +21,21 @@ import {
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 import type { ISemanticEvent } from '@sharpee/core';
 
-// Helper to execute action using the new three-phase pattern
+// Helper to execute action using the four-phase pattern
 function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
-  // New three-phase pattern: validate -> execute -> report
+  // Four-phase pattern: validate -> execute/blocked -> report
   const validationResult = action.validate(context);
-  
+
   if (!validationResult.valid) {
-    // Action creates its own error events in report()
-    return action.report(context, validationResult);
+    // Use blocked() for validation failures
+    return action.blocked(context, validationResult);
   }
-  
-  // Execute mutations (returns void in new pattern)
+
+  // Execute mutations (returns void)
   action.execute(context);
-  
-  // Report generates all events
-  return action.report(context, validationResult);
+
+  // Report generates success events
+  return action.report(context);
 }
 
 describe('closingAction (Golden Pattern)', () => {
@@ -91,9 +91,8 @@ describe('closingAction (Golden Pattern)', () => {
       
       const events = executeAction(closingAction, context);
       
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('no_target'),
-        reason: 'no_target'
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('no_target')
       });
     });
 
@@ -108,7 +107,7 @@ describe('closingAction (Golden Pattern)', () => {
       
       const events = executeAction(closingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('not_closable'),
         params: { item: 'red ball' }
       });
@@ -129,7 +128,7 @@ describe('closingAction (Golden Pattern)', () => {
       
       const events = executeAction(closingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('already_closed'),
         params: { item: 'wooden box' }
       });
@@ -268,9 +267,9 @@ describe('closingAction (Golden Pattern)', () => {
       
       const events = executeAction(closingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('prevents_closing'),
-        params: { 
+        params: {
           item: 'treasure chest',
           obstacle: 'sword handle sticking out'
         }

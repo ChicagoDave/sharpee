@@ -12,12 +12,12 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
-import { 
-  TraitType, 
-  RoomTrait, 
-  IFEntity, 
-  RoomBehavior, 
-  OpenableBehavior, 
+import {
+  TraitType,
+  RoomTrait,
+  IFEntity,
+  RoomBehavior,
+  OpenableBehavior,
   LockableBehavior,
   VisibilityBehavior,
   LightSourceBehavior,
@@ -28,8 +28,8 @@ import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
-import { handleReportErrors } from '../../base/report-helpers';
 import { buildEventData } from '../../data-builder-types';
+import { MESSAGES } from './going-messages';
 
 // Import our data builders
 import {
@@ -73,75 +73,75 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
   
   validate(context: ActionContext): ValidationResult {
     const actor = context.player;
-    
+
     // Get the direction from the parsed command (should already be a Direction constant)
     // Direction can come from extras or from directObject name
     let direction = context.command.parsed.extras?.direction as DirectionType;
-    
+
     // If no direction in extras, check if directObject has a name that could be a direction
     if (!direction && context.command.directObject?.entity) {
-      const entityName = context.command.directObject.entity.name || 
+      const entityName = context.command.directObject.entity.name ||
                         context.command.directObject.entity.attributes?.name;
       if (entityName) {
         direction = entityName as DirectionType;
       }
     }
-    
+
     if (!direction) {
-      return { 
-        valid: false, 
-        error: 'no_direction'
+      return {
+        valid: false,
+        error: MESSAGES.NO_DIRECTION
       };
     }
-    
+
     // Check if player is contained (can't move through exits while contained)
     const playerDirectLocation = context.world.getLocation(actor.id);
     const currentRoom = context.currentLocation; // This is always the containing room
-    
+
     if (playerDirectLocation !== currentRoom.id) {
       // Player is inside something (container/supporter) - can't use room exits
-      return { 
-        valid: false, 
-        error: 'not_in_room'
+      return {
+        valid: false,
+        error: MESSAGES.NOT_IN_ROOM
       };
     }
-    
+
     if (!currentRoom.has(TraitType.ROOM)) {
       // Shouldn't happen since currentLocation should always be a room
-      return { 
-        valid: false, 
-        error: 'not_in_room'
+      return {
+        valid: false,
+        error: MESSAGES.NOT_IN_ROOM
       };
     }
-    
+
     // Use RoomBehavior to get exit information
     const exitConfig = RoomBehavior.getExit(currentRoom, direction);
     if (!exitConfig) {
       // Check if we have exits at all
       const allExits = RoomBehavior.getAllExits(currentRoom);
       if (allExits.size === 0) {
-        return { 
-          valid: false, 
-          error: 'no_exits'
+        return {
+          valid: false,
+          error: MESSAGES.NO_EXITS
         };
       }
-      return { 
-        valid: false, 
-        error: 'no_exit_that_way',
+      return {
+        valid: false,
+        error: MESSAGES.NO_EXIT_THAT_WAY,
         params: { direction: direction }
       };
     }
-    
+
     // Check if exit is blocked
     if (RoomBehavior.isExitBlocked(currentRoom, direction)) {
       const blockedMessage = RoomBehavior.getBlockedMessage(currentRoom, direction);
-      return { 
-        valid: false, 
-        error: 'movement_blocked',
+      return {
+        valid: false,
+        error: MESSAGES.MOVEMENT_BLOCKED,
         params: { direction: direction }
       };
     }
-    
+
     // Check if there's a door/portal
     if (exitConfig.via) {
       const door = context.world.getEntity(exitConfig.via);
@@ -149,52 +149,52 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
         // Use behaviors to check door state
         const isLocked = door.has(TraitType.LOCKABLE) && LockableBehavior.isLocked(door);
         const isClosed = door.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(door);
-        
+
         if (isLocked) {
-          return { 
-            valid: false, 
-            error: 'door_locked',
-            params: { 
-              door: door.name, 
+          return {
+            valid: false,
+            error: MESSAGES.DOOR_LOCKED,
+            params: {
+              door: door.name,
               direction: direction,
               isClosed: isClosed,
               isLocked: true
             }
           };
         }
-        
+
         if (isClosed) {
-          return { 
-            valid: false, 
-            error: 'door_closed',
+          return {
+            valid: false,
+            error: MESSAGES.DOOR_CLOSED,
             params: { door: door.name, direction: direction }
           };
         }
       }
     }
-    
+
     // Get destination
     const destinationId = exitConfig.destination;
     const destination = context.world.getEntity(destinationId);
-    
+
     if (!destination) {
       // Destination doesn't exist
-      return { 
-        valid: false, 
-        error: 'destination_not_found',
+      return {
+        valid: false,
+        error: MESSAGES.DESTINATION_NOT_FOUND,
         params: { direction: direction }
       };
     }
-    
+
     // Check if destination is dark and player has no light
     if (isDarkRoom(destination) && !hasLightInRoom(actor, context)) {
-      return { 
-        valid: false, 
-        error: 'too_dark',
+      return {
+        valid: false,
+        error: MESSAGES.TOO_DARK,
         params: { direction: direction }
       };
     }
-    
+
     return { valid: true };
   },
   
@@ -236,19 +236,19 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     }
   },
   
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    // Handle validation and execution errors using shared helper
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
-
+  /**
+   * Report events after successful movement
+   * Only called on success path - validation has already passed
+   */
+  report(context: ActionContext): ISemanticEvent[] {
     // Build event data using data builders
     const exitedData = buildEventData(actorExitedDataConfig, context);
     const movedData = buildEventData(actorMovedDataConfig, context);
     const enteredData = buildEventData(actorEnteredDataConfig, context);
-    
+
     // Determine success message
     const { messageId, params } = determineGoingMessage(movedData);
-    
+
     // Return all movement events
     return [
       context.event('if.event.actor_exited', exitedData),
@@ -260,6 +260,19 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
         params
       })
     ];
+  },
+
+  /**
+   * Generate events when validation fails
+   * Called instead of execute/report when validate returns invalid
+   */
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    return [context.event('action.blocked', {
+      actionId: context.action.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
   },
   
   group: "movement",

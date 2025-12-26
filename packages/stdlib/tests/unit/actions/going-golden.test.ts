@@ -23,28 +23,37 @@ import {
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 import type { ISemanticEvent } from '@sharpee/core';
 
-// Helper to execute action using the new three-phase pattern
+// Helper to execute action using the four-phase pattern
 function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
-  // New three-phase pattern: validate -> execute -> report
+  // Four-phase pattern: validate -> execute/blocked -> report
   const validationResult = action.validate(context);
-  
+
   if (!validationResult.valid) {
-    // Action creates its own error events in report()
-    return action.report(context, validationResult);
+    // Use blocked() for validation failures
+    if (action.blocked) {
+      return action.blocked(context, validationResult);
+    }
+    // Fallback for old-style actions
+    return [context.event('action.error', {
+      actionId: context.action.id,
+      messageId: validationResult.error,
+      params: validationResult.params || {}
+    })];
   }
-  
-  // Execute mutations (returns void in new pattern)
+
+  // Execute mutations (returns void)
   action.execute(context);
-  
-  // Report generates all events
-  return action.report(context, validationResult);
+
+  // Report generates all success events
+  return action.report(context);
 }
 
 describe('goingAction (Golden Pattern)', () => {
-  describe('Three-Phase Pattern Compliance', () => {
-    test('should have required methods for three-phase pattern', () => {
+  describe('Four-Phase Pattern Compliance', () => {
+    test('should have required methods for four-phase pattern', () => {
       expect(goingAction.validate).toBeDefined();
       expect(goingAction.execute).toBeDefined();
+      expect(goingAction.blocked).toBeDefined();
       expect(goingAction.report).toBeDefined();
     });
 
@@ -110,12 +119,11 @@ describe('goingAction (Golden Pattern)', () => {
       const { world, player } = setupBasicWorld();
       const command = createCommand(IFActions.GOING);
       const context = createRealTestContext(goingAction, world, command);
-      
+
       const events = executeAction(goingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('no_direction'),
-        reason: 'no_direction'
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('way do you want to go')
       });
     });
 
@@ -125,17 +133,16 @@ describe('goingAction (Golden Pattern)', () => {
       container.add({ type: TraitType.CONTAINER });
       world.moveEntity(container.id, world.getLocation(player.id)!);
       world.moveEntity(player.id, container.id);
-      
+
       const command = createCommand(IFActions.GOING);
       command.parsed.extras = { direction: Direction.NORTH };
-      
+
       const context = createRealTestContext(goingAction, world, command);
-      
+
       const events = executeAction(goingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_in_room'),
-        reason: 'not_in_room'
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('leave your current location')
       });
     });
 
@@ -144,24 +151,23 @@ describe('goingAction (Golden Pattern)', () => {
       const player = world.createEntity('yourself', 'object');
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
-      
+
       const room = world.createEntity('Empty Room', 'object');
       room.add({
         type: TraitType.ROOM
         // No exits defined
       });
       world.moveEntity(player.id, room.id);
-      
+
       const command = createCommand(IFActions.GOING);
       command.parsed.extras = { direction: Direction.NORTH };
-      
+
       const context = createRealTestContext(goingAction, world, command);
-      
+
       const events = executeAction(goingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('no_exits'),
-        reason: 'no_exits'
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('no obvious exits')
       });
     });
 
@@ -170,11 +176,11 @@ describe('goingAction (Golden Pattern)', () => {
       const player = world.createEntity('yourself', 'object');
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
-      
+
       const room = world.createEntity('Room with South Exit', 'object');
       const room2 = world.createEntity('South Room', 'object');
       room2.add({ type: TraitType.ROOM });
-      
+
       room.add({
         type: TraitType.ROOM,
         exits: {
@@ -182,16 +188,16 @@ describe('goingAction (Golden Pattern)', () => {
         }
       });
       world.moveEntity(player.id, room.id);
-      
+
       const command = createCommand(IFActions.GOING);
       command.parsed.extras = { direction: Direction.NORTH }; // Trying to go north
-      
+
       const context = createRealTestContext(goingAction, world, command);
-      
+
       const events = executeAction(goingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('no_exit_that_way'),
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining("can't go"),
         params: { direction: Direction.NORTH }
       });
     });
@@ -201,36 +207,36 @@ describe('goingAction (Golden Pattern)', () => {
       const player = world.createEntity('yourself', 'object');
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
-      
+
       const door = world.createEntity('wooden door', 'object');
       door.add({
         type: TraitType.OPENABLE,
         isOpen: false  // Closed
       });
-      
+
       const room1 = world.createEntity('First Room', 'object');
       const room2 = world.createEntity('Second Room', 'object');
       room2.add({ type: TraitType.ROOM });
-      
+
       room1.add({
         type: TraitType.ROOM,
         exits: {
           [Direction.NORTH]: { destination: room2.id, via: door.id }
         }
       });
-      
+
       world.moveEntity(player.id, room1.id);
-      
+
       const command = createCommand(IFActions.GOING);
       command.parsed.extras = { direction: Direction.NORTH };
-      
+
       const context = createRealTestContext(goingAction, world, command);
-      
+
       const events = executeAction(goingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('door_closed'),
-        params: { 
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('closed'),
+        params: {
           direction: Direction.NORTH,
           door: 'wooden door'
         }
@@ -242,7 +248,7 @@ describe('goingAction (Golden Pattern)', () => {
       const player = world.createEntity('yourself', 'object');
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
-      
+
       const door = world.createEntity('iron door', 'object');
       door.add({
         type: TraitType.OPENABLE,
@@ -253,31 +259,31 @@ describe('goingAction (Golden Pattern)', () => {
         isLocked: true,  // Locked
         keyId: 'iron_key'
       });
-      
+
       const room1 = world.createEntity('First Room', 'object');
       const room2 = world.createEntity('Second Room', 'object');
       room2.add({ type: TraitType.ROOM });
-      
+
       room1.add({
         type: TraitType.ROOM,
         exits: {
           [Direction.EAST]: { destination: room2.id, via: door.id }
         }
       });
-      
+
       world.moveEntity(player.id, room1.id);
-      
+
       const command = createCommand(IFActions.GOING);
       command.parsed.extras = { direction: Direction.EAST };
-      
+
       const context = createRealTestContext(goingAction, world, command);
-      
+
       const events = executeAction(goingAction, context);
-      
+
       // The door is both closed and locked, so it should report as locked
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('door_locked'),
-        params: { 
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('locked'),
+        params: {
           direction: Direction.EAST,
           door: 'iron door',
           isClosed: true,
@@ -291,7 +297,7 @@ describe('goingAction (Golden Pattern)', () => {
       const player = world.createEntity('yourself', 'object');
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
-      
+
       const room = world.createEntity('Room with Bad Exit', 'object');
       room.add({
         type: TraitType.ROOM,
@@ -300,16 +306,16 @@ describe('goingAction (Golden Pattern)', () => {
         }
       });
       world.moveEntity(player.id, room.id);
-      
+
       const command = createCommand(IFActions.GOING);
       command.parsed.extras = { direction: Direction.WEST };
-      
+
       const context = createRealTestContext(goingAction, world, command);
-      
+
       const events = executeAction(goingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('destination_not_found'),
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('leads nowhere'),
         params: { direction: Direction.WEST }
       });
     });
@@ -319,34 +325,34 @@ describe('goingAction (Golden Pattern)', () => {
       const player = world.createEntity('yourself', 'object');
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
-      
+
       const room1 = world.createEntity('Lit Room', 'object');
       const room2 = world.createEntity('Dark Cave', 'object');
-      
+
       room1.add({
         type: TraitType.ROOM,
         exits: {
           [Direction.DOWN]: { destination: room2.id }
         }
       });
-      
+
       room2.add({
         type: TraitType.ROOM,
         isDark: true  // Dark room
       });
-      
+
       world.moveEntity(player.id, room1.id);
-      
+
       const command = createCommand(IFActions.GOING);
       command.parsed.extras = { direction: Direction.DOWN };
-      
+
       const context = createRealTestContext(goingAction, world, command);
-      
+
       const events = executeAction(goingAction, context);
-      
+
       // Should fail because the room is dark and player has no light
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('too_dark'),
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('too dark'),
         params: { direction: Direction.DOWN }
       });
     });
