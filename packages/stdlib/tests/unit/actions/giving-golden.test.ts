@@ -21,6 +21,23 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
+// Helper to execute action with three-phase pattern (mimics CommandExecutor flow)
+const executeWithValidation = (action: any, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    return [context.event('action.error', {
+      actionId: action.id,
+      messageId: validation.error || 'validation_failed',
+      reason: validation.error || 'validation_failed',
+      params: validation.params || {}
+    })];
+  }
+  // Execute mutations (returns void)
+  action.execute(context);
+  // Report generates events
+  return action.report(context);
+};
+
 describe('givingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
     test('should have correct ID', () => {
@@ -56,7 +73,7 @@ describe('givingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.GIVING);
       const context = createRealTestContext(givingAction, world, command);
       
-      const events = givingAction.execute(context);
+      const events = executeWithValidation(givingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_item'),
@@ -76,7 +93,7 @@ describe('givingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(givingAction, world, command);
       
-      const events = givingAction.execute(context);
+      const events = executeWithValidation(givingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('no_recipient'),
@@ -100,7 +117,7 @@ describe('givingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(givingAction, world, command);
       
-      const events = givingAction.execute(context);
+      const events = executeWithValidation(givingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_actor'),
@@ -118,7 +135,7 @@ describe('givingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(givingAction, world, command);
       
-      const events = givingAction.execute(context);
+      const events = executeWithValidation(givingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('self'),
@@ -152,7 +169,7 @@ describe('givingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(givingAction, world, command);
       
-      const events = givingAction.execute(context);
+      const events = executeWithValidation(givingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('inventory_full'),
@@ -185,7 +202,7 @@ describe('givingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(givingAction, world, command);
       
-      const events = givingAction.execute(context);
+      const events = executeWithValidation(givingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('too_heavy'),
@@ -218,7 +235,7 @@ describe('givingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(givingAction, world, command);
       
-      const events = givingAction.execute(context);
+      const events = executeWithValidation(givingAction, context);
       
       expectEvent(events, 'action.error', {
         messageId: expect.stringContaining('not_interested'),
@@ -249,7 +266,7 @@ describe('givingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(givingAction, world, command);
       
-      const events = givingAction.execute(context);
+      const events = executeWithValidation(givingAction, context);
       
       expectEvent(events, 'if.event.given', {
         item: flower.id,
@@ -291,7 +308,7 @@ describe('givingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(givingAction, world, command);
       
-      const events = givingAction.execute(context);
+      const events = executeWithValidation(givingAction, context);
       
       expectEvent(events, 'if.event.given', {
         accepted: true
@@ -321,7 +338,7 @@ describe('givingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(givingAction, world, command);
       
-      const events = givingAction.execute(context);
+      const events = executeWithValidation(givingAction, context);
       
       expectEvent(events, 'if.event.given', {
         item: coin.id,
@@ -358,7 +375,7 @@ describe('givingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(givingAction, world, command);
       
-      const events = givingAction.execute(context);
+      const events = executeWithValidation(givingAction, context);
       
       expectEvent(events, 'if.event.given', {
         accepted: true
@@ -388,7 +405,7 @@ describe('givingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(givingAction, world, command);
       
-      const events = givingAction.execute(context);
+      const events = executeWithValidation(givingAction, context);
       
       events.forEach(event => {
         if (event.entities) {
@@ -426,7 +443,7 @@ describe('Giving Action Edge Cases', () => {
     });
     const context = createRealTestContext(givingAction, world, command);
     
-    const events = givingAction.execute(context);
+    const events = executeWithValidation(givingAction, context);
     
     // Should gratefully accept (contains 'gold')
     expectEvent(events, 'action.success', {
@@ -459,7 +476,7 @@ describe('Giving Action Edge Cases', () => {
     });
     const context = createRealTestContext(givingAction, world, command);
     
-    const events = givingAction.execute(context);
+    const events = executeWithValidation(givingAction, context);
     
     // Should succeed - weight within limit
     expectEvent(events, 'if.event.given', {
@@ -489,7 +506,7 @@ describe('Giving Action Edge Cases', () => {
     });
     const context = createRealTestContext(givingAction, world, command);
     
-    const events = givingAction.execute(context);
+    const events = executeWithValidation(givingAction, context);
     
     // Should succeed - item without weight doesn't count
     expectEvent(events, 'if.event.given', {
