@@ -1,22 +1,26 @@
 /**
  * Opening action - opens containers and doors
- * 
+ *
  * This action properly delegates to OpenableBehavior and LockableBehavior
  * for validation and execution. It follows the validate/execute pattern.
- * 
- * MIGRATED: To three-phase pattern (validate/execute/report) for atomic events
+ *
+ * Uses four-phase pattern:
+ * 1. validate: Check target exists and can be opened
+ * 2. execute: Delegate to OpenableBehavior for state changes
+ * 3. report: Generate success events with opened/revealed data
+ * 4. blocked: Generate error events when validation fails
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent, EntityId } from '@sharpee/core';
 import { TraitType, OpenableBehavior, LockableBehavior, IOpenResult } from '@sharpee/world-model';
 import { buildEventData } from '../../data-builder-types';
-import { handleReportErrors } from '../../base/report-helpers';
 import { IFActions } from '../../constants';
 import { OpenedEventData, RevealedEventData, ExitRevealedEventData } from './opening-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { OpeningSharedData } from './opening-types';
+import { OpeningMessages } from './opening-messages';
 
 // Import our data builder
 import { openedDataConfig } from './opening-data';
@@ -40,48 +44,41 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
   },
   group: 'container_manipulation',
   
-  /**
-   * Validate whether the open action can be executed
-   * Uses behavior validation methods to check preconditions
-   */
   validate(context: ActionContext): ValidationResult {
     const noun = context.command.directObject?.entity;
-    
+
     // Validate we have a target
     if (!noun) {
-      return { 
-        valid: false, 
-        error: 'no_target'
-      };
+      return { valid: false, error: OpeningMessages.NO_TARGET };
     }
-    
+
     // Check if it's openable
     if (!noun.has(TraitType.OPENABLE)) {
-      return { 
-        valid: false, 
-        error: 'not_openable',
+      return {
+        valid: false,
+        error: OpeningMessages.NOT_OPENABLE,
         params: { item: noun.name }
       };
     }
-    
+
     // Use behavior's canOpen method for validation
     if (!OpenableBehavior.canOpen(noun)) {
-      return { 
-        valid: false, 
-        error: 'already_open',
+      return {
+        valid: false,
+        error: OpeningMessages.ALREADY_OPEN,
         params: { item: noun.name }
       };
     }
-    
+
     // Check lock status using behavior
     if (noun.has(TraitType.LOCKABLE) && LockableBehavior.isLocked(noun)) {
-      return { 
-        valid: false, 
-        error: 'locked',
+      return {
+        valid: false,
+        error: OpeningMessages.LOCKED,
         params: { item: noun.name }
       };
     }
-    
+
     return { valid: true };
   },
   
@@ -104,53 +101,25 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
     context.sharedData.openResult = result;
   },
 
-  /**
-   * Report events after opening
-   * Generates atomic events - one discrete fact per event
-   */
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    // Handle validation and execution errors using shared helper
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
-
+  report(context: ActionContext): ISemanticEvent[] {
+    // report() is only called on success - validation passed
     const noun = context.command.directObject!.entity!;
     const result = context.sharedData.openResult as IOpenResult;
-    
-    // Check if the behavior reported failure
-    if (!result.success) {
-      if (result.alreadyOpen) {
-        return [context.event('action.error', {
-          actionId: context.action.id,
-          messageId: 'already_open',
-          reason: 'already_open',
-          params: { item: noun.name }
-        })];
-      }
-      // Shouldn't happen if validate() was called, but handle it
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'cannot_open',
-        reason: 'cannot_open',
-        params: { item: noun.name }
-      })];
-    }
-    
-    // Build atomic events
     const events: ISemanticEvent[] = [];
-    
+
     // 1. The atomic opened event - just the fact of opening
     const openedData: OpenedEventData = {
       targetId: noun.id,
       targetName: noun.name
     };
     events.push(context.event('if.event.opened', openedData));
-    
+
     // 2. Domain event for backward compatibility (simplified)
     events.push(context.event('opened', {
       targetId: noun.id,
       targetName: noun.name
     }));
-    
+
     // 3. Revealed events - one per item if this is a container
     if (noun.has(TraitType.CONTAINER)) {
       const contents = context.world.getContents(noun.id);
@@ -164,37 +133,40 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
         events.push(context.event('if.event.revealed', revealedData));
       }
     }
-    
-    // 4. Exit revealed event if this is a door
-    // Note: This is simplified for now. A full implementation would need to:
-    // - Access the room's trait to get exit information
-    // - Check which exits use this door
-    // - Emit exit_revealed for each direction unblocked
-    // For now, we'll let story handlers deal with door-specific logic
-    
-    // 5. Success event with appropriate message
+
+    // 4. Success event with appropriate message
     const isContainer = noun.has(TraitType.CONTAINER);
     const contents = isContainer ? context.world.getContents(noun.id) : [];
-    
-    let messageId = 'opened';
-    let params: Record<string, any> = {
-      item: noun.name
-    };
-    
+
+    let messageId = OpeningMessages.OPENED;
+    let params: Record<string, any> = { item: noun.name };
+
     // Special message for empty containers
     if (isContainer && contents.length === 0) {
-      messageId = 'its_empty';
-      params = {
-        container: noun.name
-      };
+      messageId = OpeningMessages.ITS_EMPTY;
+      params = { container: noun.name };
     }
-    
+
     events.push(context.event('action.success', {
       actionId: context.action.id,
       messageId,
       params
     }));
-    
+
     return events;
+  },
+
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    // blocked() is called when validation fails
+    const noun = context.command.directObject?.entity;
+
+    return [context.event('action.blocked', {
+      actionId: context.action.id,
+      messageId: result.error,
+      params: {
+        ...result.params,
+        item: noun?.name
+      }
+    })];
   }
 };

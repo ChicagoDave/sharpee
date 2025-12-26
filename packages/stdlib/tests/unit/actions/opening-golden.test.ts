@@ -23,21 +23,21 @@ import {
 } from '../../test-utils';
 import type { WorldModel } from '@sharpee/world-model';
 
-// Helper to execute action using the new three-phase pattern
+// Helper to execute action using the four-phase pattern
 function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
-  // New three-phase pattern: validate -> execute -> report
+  // Four-phase pattern: validate -> execute/blocked -> report
   const validationResult = action.validate(context);
-  
+
   if (!validationResult.valid) {
-    // Action creates its own error events in report()
-    return action.report(context, validationResult);
+    // Use blocked() for validation failures
+    return action.blocked(context, validationResult);
   }
-  
-  // Execute mutations (returns void in new pattern)
+
+  // Execute mutations (returns void)
   action.execute(context);
-  
-  // Report generates all events
-  return action.report(context, validationResult);
+
+  // Report generates success events
+  return action.report(context);
 }
 
 describe('openingAction (Golden Pattern)', () => {
@@ -94,59 +94,56 @@ describe('openingAction (Golden Pattern)', () => {
       const { world } = setupBasicWorld();
       const command = createCommand(IFActions.OPENING);
       const context = createRealTestContext(openingAction, world, command);
-      
+
       const events = executeAction(openingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('no_target'),
-        reason: 'no_target'
+
+      expectEvent(events, 'action.blocked', {
+        messageId: 'no_target'
       });
     });
 
     test('should fail when target is not openable', () => {
       const { world, object } = TestData.withObject('rock');
-      
+
       const command = createCommand(
         IFActions.OPENING,
         { entity: object }
       );
       const context = createRealTestContext(openingAction, world, command);
-      
+
       const events = executeAction(openingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_openable'),
-        reason: 'not_openable',
-        params: { item: 'rock' }
+
+      expectEvent(events, 'action.blocked', {
+        messageId: 'not_openable',
+        params: expect.objectContaining({ item: 'rock' })
       });
     });
 
     test('should fail when already open', () => {
       const { world, object } = TestData.withObject('box', {
-        [TraitType.OPENABLE]: { 
+        [TraitType.OPENABLE]: {
           type: TraitType.OPENABLE,
           isOpen: true  // Already open
         }
       });
-      
+
       const command = createCommand(
         IFActions.OPENING,
         { entity: object }
       );
       const context = createRealTestContext(openingAction, world, command);
-      
+
       const events = executeAction(openingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('already_open'),
-        reason: 'already_open',
-        params: { item: 'box' }
+
+      expectEvent(events, 'action.blocked', {
+        messageId: 'already_open',
+        params: expect.objectContaining({ item: 'box' })
       });
     });
 
     test('should fail when locked', () => {
       const { world, object } = TestData.withObject('treasure chest', {
-        [TraitType.OPENABLE]: { 
+        [TraitType.OPENABLE]: {
           type: TraitType.OPENABLE,
           isOpen: false
         },
@@ -156,19 +153,18 @@ describe('openingAction (Golden Pattern)', () => {
           keyId: 'golden_key'
         }
       });
-      
+
       const command = createCommand(
         IFActions.OPENING,
         { entity: object }
       );
       const context = createRealTestContext(openingAction, world, command);
-      
+
       const events = executeAction(openingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('locked'),
-        reason: 'locked',
-        params: { item: 'treasure chest' }
+
+      expectEvent(events, 'action.blocked', {
+        messageId: 'locked',
+        params: expect.objectContaining({ item: 'treasure chest' })
       });
     });
   });
