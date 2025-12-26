@@ -1,8 +1,13 @@
 /**
  * Switching on action - turns on devices and lights
- * 
+ *
  * This action validates conditions for switching something on and returns
  * appropriate events. It delegates state changes to SwitchableBehavior.
+ *
+ * Uses three-phase pattern:
+ * 1. validate: Check if target is switchable and can be turned on
+ * 2. execute: Call SwitchableBehavior.switchOn(), store result in sharedData
+ * 3. report: Generate events from sharedData
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -13,6 +18,38 @@ import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { SwitchedOnEventData } from './switching_on-events';
 import { analyzeSwitchingContext, determineSwitchingMessage } from '../switching-shared';
+
+/**
+ * Shared data passed between execute and report phases
+ */
+interface SwitchingOnSharedData {
+  targetId: string;
+  targetName: string;
+  // Light source data
+  isLightSource?: boolean;
+  lightRadius?: number;
+  lightIntensity?: number;
+  willIlluminateLocation?: boolean;
+  // Temporary activation
+  autoOffTime?: number;
+  temporary?: boolean;
+  // Power and sound
+  powerConsumption?: number;
+  continuousSound?: string;
+  sound?: string;
+  // Side effects
+  willOpen?: boolean;
+  // Message info
+  messageId: string;
+  params: Record<string, any>;
+  // In case of behavior failure
+  failed?: boolean;
+  errorMessageId?: string;
+}
+
+function getSwitchingOnSharedData(context: ActionContext): SwitchingOnSharedData {
+  return context.sharedData as SwitchingOnSharedData;
+}
 
 export const switchingOnAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.SWITCHING_ON,
@@ -31,18 +68,18 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
     'door_opens',
     'illuminates_darkness'
   ],
-  
+
   validate(context: ActionContext): ValidationResult {
     const noun = context.command.directObject?.entity;
-    
+
     if (!noun) {
       return { valid: false, error: 'no_target' };
     }
-    
+
     if (!noun.has(TraitType.SWITCHABLE)) {
       return { valid: false, error: 'not_switchable', params: { target: noun.name } };
     }
-    
+
     if (!SwitchableBehavior.canSwitchOn(noun)) {
       const switchable = noun.get(TraitType.SWITCHABLE) as any;
       if (switchable.isOn) {
@@ -52,99 +89,87 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
         return { valid: false, error: 'no_power', params: { target: noun.name } };
       }
     }
-    
+
     return { valid: true };
   },
-  
-  execute(context: ActionContext): ISemanticEvent[] {
-    const noun = context.command.directObject?.entity!;
-    
+
+  execute(context: ActionContext): void {
+    const noun = context.command.directObject!.entity!;
+    const sharedData = getSwitchingOnSharedData(context);
+
+    // Store basic info
+    sharedData.targetId = noun.id;
+    sharedData.targetName = noun.name;
+
     // Delegate state change to behavior
     const result = SwitchableBehavior.switchOn(noun);
-    
+
     // Handle failure cases (defensive checks)
     if (!result.success) {
+      sharedData.failed = true;
       if (result.wasOn) {
-        return [context.event('action.error', {
-          actionId: context.action.id,
-          messageId: 'already_on',
-          reason: 'already_on',
-          params: { target: noun.name }
-        })];
+        sharedData.errorMessageId = 'already_on';
+      } else if (result.noPower) {
+        sharedData.errorMessageId = 'no_power';
+      } else {
+        sharedData.errorMessageId = 'not_switchable';
       }
-      if (result.noPower) {
-        return [context.event('action.error', {
-          actionId: context.action.id,
-          messageId: 'no_power',
-          reason: 'no_power',
-          params: { target: noun.name }
-        })];
-      }
-      // Shouldn't happen if validate worked
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'not_switchable',
-        reason: 'not_switchable',
-        params: { target: noun.name }
-      })];
+      return;
     }
-    
+
+    sharedData.failed = false;
+
     // Analyze the switching context
     const analysis = analyzeSwitchingContext(context, noun);
-    
-    // Build event data
-    const eventData: SwitchedOnEventData = {
-      target: noun.id,
-      targetName: noun.name
-    };
-    
-    const params: Record<string, any> = {
+
+    // Initialize params
+    sharedData.params = {
       target: noun.name
     };
-    
+
     // Add light source data if applicable
     if (analysis.isLightSource) {
-      eventData.isLightSource = true;
-      eventData.lightRadius = analysis.lightRadius;
-      eventData.lightIntensity = analysis.lightIntensity;
-      
+      sharedData.isLightSource = true;
+      sharedData.lightRadius = analysis.lightRadius;
+      sharedData.lightIntensity = analysis.lightIntensity;
+
       if (analysis.isInSameRoom && analysis.willAffectDarkness) {
-        eventData.willIlluminateLocation = true;
+        sharedData.willIlluminateLocation = true;
       }
     }
-    
+
     // Check for temporary activation
     if (result.autoOffTime && result.autoOffTime > 0) {
-      eventData.autoOffTime = result.autoOffTime;
-      eventData.temporary = true;
+      sharedData.autoOffTime = result.autoOffTime;
+      sharedData.temporary = true;
     }
-    
+
     // Add power and sound data
     if (result.powerConsumption) {
-      eventData.powerConsumption = result.powerConsumption;
+      sharedData.powerConsumption = result.powerConsumption;
     }
-    
+
     if (result.runningSound) {
-      eventData.continuousSound = result.runningSound;
+      sharedData.continuousSound = result.runningSound;
     }
-    
+
     if (result.onSound) {
-      eventData.sound = result.onSound;
-      params.sound = result.onSound;
+      sharedData.sound = result.onSound;
+      sharedData.params.sound = result.onSound;
     }
-    
+
     // Check for side effects
     let willOpen = false;
     if (noun.has(TraitType.CONTAINER) && noun.has(TraitType.OPENABLE)) {
       const openableTrait = noun.get(TraitType.OPENABLE) as any;
       if (!openableTrait.isOpen) {
-        eventData.willOpen = true;
+        sharedData.willOpen = true;
         willOpen = true;
       }
     }
-    
+
     // Determine appropriate message
-    const messageId = determineSwitchingMessage(
+    sharedData.messageId = determineSwitchingMessage(
       true, // isOn
       analysis,
       result.onSound,
@@ -152,25 +177,72 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       undefined, // no running sound when turning on
       willOpen
     );
-    
-    // Create events
-    const events: ISemanticEvent[] = [];
-    
-    // Create the SWITCHED_ON event for world model
-    events.push(context.event('if.event.switched_on', eventData));
-    
-    // Add success message
-    events.push(context.event('action.success', {
-      actionId: context.action.id,
-      messageId: messageId,
-      params: params
-    }));
-    
-    return events;
   },
-  
+
+  report(context: ActionContext): ISemanticEvent[] {
+    const sharedData = getSwitchingOnSharedData(context);
+
+    // Handle failure
+    if (sharedData.failed) {
+      return [context.event('action.error', {
+        actionId: this.id,
+        messageId: sharedData.errorMessageId,
+        reason: sharedData.errorMessageId,
+        params: { target: sharedData.targetName }
+      })];
+    }
+
+    // Build event data
+    const eventData: SwitchedOnEventData = {
+      target: sharedData.targetId,
+      targetName: sharedData.targetName
+    };
+
+    // Add light source data
+    if (sharedData.isLightSource) {
+      eventData.isLightSource = true;
+      eventData.lightRadius = sharedData.lightRadius;
+      eventData.lightIntensity = sharedData.lightIntensity;
+      if (sharedData.willIlluminateLocation) {
+        eventData.willIlluminateLocation = true;
+      }
+    }
+
+    // Add temporary activation data
+    if (sharedData.temporary) {
+      eventData.temporary = true;
+      eventData.autoOffTime = sharedData.autoOffTime;
+    }
+
+    // Add power and sound data
+    if (sharedData.powerConsumption) {
+      eventData.powerConsumption = sharedData.powerConsumption;
+    }
+    if (sharedData.continuousSound) {
+      eventData.continuousSound = sharedData.continuousSound;
+    }
+    if (sharedData.sound) {
+      eventData.sound = sharedData.sound;
+    }
+
+    // Add side effects
+    if (sharedData.willOpen) {
+      eventData.willOpen = true;
+    }
+
+    // Create events
+    return [
+      context.event('if.event.switched_on', eventData),
+      context.event('action.success', {
+        actionId: this.id,
+        messageId: sharedData.messageId,
+        params: sharedData.params
+      })
+    ];
+  },
+
   group: "device_manipulation",
-  
+
   metadata: {
     requiresDirectObject: true,
     requiresIndirectObject: false,
