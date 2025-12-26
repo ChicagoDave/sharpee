@@ -19,11 +19,6 @@ We are systematically refactoring each stdlib action to the three-phase pattern 
 ### Actions with Three-Phase Pattern (14 complete):
 about, attacking, opening, closing, taking, dropping, putting, inserting, removing, entering, exiting, going, looking, examining
 
-### Taking Action - In Progress
-- Checklist: `/docs/work/taking/checklist.md`
-- Phase 1-2 complete (analysis and design)
-- Phase 3 blocked on ADR-064 (World Events) - needs `world.moveEntity()` to return MoveResult
-
 ### Key Issues Being Fixed:
 1. **Context pollution**: Actions storing `_previousLocation` etc. directly on context
 2. **Direct mutations**: Should use behaviors, not direct world calls
@@ -61,6 +56,26 @@ Read `/docs/reference/core-concepts.md` at the start of each session for:
 - Work summaries: `docs/work/{target}/context/`
 - Logs: `logs/`
 - Current branch `refactor/three-phase-complete` → work in `docs/work/phases/`
+
+## Autonomous Work Flow
+
+### Context Management
+When context usage reaches ~10% remaining (check with `/context`):
+1. Write work summary to `docs/work/{target}/context/`
+2. Commit and push all changes
+3. Run `/compact` to compress context
+4. Read the work summary back
+5. Continue work
+
+### Async Communication (when user is away)
+If stuck or have questions during autonomous work:
+1. Create GitHub issue with question: `gh issue create --title "Claude Question: [topic]" --body "[details]"`
+2. Send ntfy notification with issue link:
+   ```bash
+   curl -d "Question: [brief desc] - reply on GitHub: [issue-url]" ntfy.sh/sharpee-chicagodave
+   ```
+3. Poll for response: `gh api repos/ChicagoDave/sharpee/issues/[N]/comments --jq '.[].body'`
+4. Continue work based on response
 
 ## Key Locations
 
