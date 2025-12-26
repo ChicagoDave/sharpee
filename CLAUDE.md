@@ -51,6 +51,7 @@ Read `/docs/reference/core-concepts.md` at the start of each session for:
 
 - Planning docs: `docs/work/{target}/`
 - Work summaries: `docs/work/{target}/context/`
+- **Plans**: Write plans to the current work target (NOT to ~/.claude/plans/)
 - Logs: `logs/`
 - Current branch `refactor/three-phase-complete` → work in `docs/work/phases/`
 
