@@ -22,16 +22,12 @@ setupBasicWorld,
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
-// Helper to execute action with three-phase pattern (mimics CommandExecutor flow)
+// Helper to execute action with four-phase pattern (mimics CommandExecutor flow)
 const executeWithValidation = (action: any, context: ActionContext) => {
   const validation = action.validate(context);
   if (!validation.valid) {
-    return [context.event('action.error', {
-      actionId: action.id,
-      messageId: validation.error || 'validation_failed',
-      reason: validation.error || 'validation_failed',
-      params: { item: context.command.directObject?.entity?.name }
-    })];
+    // Use blocked() method for validation failures
+    return action.blocked(context, validation);
   }
   // Execute mutations (returns void)
   action.execute(context);
@@ -65,31 +61,29 @@ describe('wearingAction (Golden Pattern)', () => {
       const { world, player } = setupBasicWorld();
       const command = createCommand(IFActions.WEARING);
       const context = createRealTestContext(wearingAction, world, command);
-      
+
       const events = executeWithValidation(wearingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('no_target'),
-        reason: 'no_target'
+
+      expectEvent(events, 'action.blocked', {
+        messageId: 'no_target'
       });
     });
 
     test('should fail when item is not wearable', () => {
       const { world, player, room } = TestData.withObject('red ball');
       // Ball has no wearable trait
-      
+
       const ball = findEntityByName(world, 'red ball')!;
       const context = createRealTestContext(wearingAction, world,
         createCommand(IFActions.WEARING, {
           entity: ball
         })
       );
-      
+
       const events = executeWithValidation(wearingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_wearable'),
-        params: { item: 'red ball' }
+
+      expectEvent(events, 'action.blocked', {
+        messageId: 'not_wearable'
       });
     });
 
@@ -101,19 +95,18 @@ describe('wearingAction (Golden Pattern)', () => {
           bodyPart: 'head'
         }
       });
-      
+
       const hat = findEntityByName(world, 'wool hat')!;
       const context = createRealTestContext(wearingAction, world,
         createCommand(IFActions.WEARING, {
           entity: hat
         })
       );
-      
+
       const events = executeWithValidation(wearingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('already_wearing'),
-        params: { item: 'wool hat' }
+
+      expectEvent(events, 'action.blocked', {
+        messageId: 'already_wearing'
       });
     });
 

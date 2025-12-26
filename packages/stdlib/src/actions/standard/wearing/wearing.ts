@@ -13,7 +13,6 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
-import { handleReportErrors } from '../../base/report-helpers';
 import { TraitType, WearableTrait, WearableBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
@@ -23,6 +22,7 @@ import {
   checkWearingConflicts,
   buildWearableEventParams
 } from '../wearable-shared';
+import { MESSAGES } from './wearing-messages';
 
 /**
  * Shared data passed between execute and report phases
@@ -143,14 +143,15 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
     sharedData.messageId = 'worn';
   },
 
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
-
+  /**
+   * Report phase - generates events after successful execution
+   * Only called on success path - validation has already passed
+   */
+  report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getWearingSharedData(context);
     const events: ISemanticEvent[] = [];
 
-    // Handle failure
+    // Check if behavior failed (safety net for edge cases)
     if (sharedData.failed) {
       return [context.event('action.error', {
         actionId: this.id,
@@ -185,6 +186,19 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
     }));
 
     return events;
+  },
+
+  /**
+   * Generate events when validation fails
+   * Called instead of execute/report when validate returns invalid
+   */
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    return [context.event('action.blocked', {
+      actionId: this.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
   },
 
   metadata: {
