@@ -512,9 +512,9 @@ describe('Locking Action Edge Cases', () => {
     });
     
     const context = createRealTestContext(lockingAction, world, command);
-    
-    const events = lockingAction.execute(context);
-    
+
+    const events = executeWithValidation(lockingAction, context);
+
     // Should succeed - no openable trait to check
     expectEvent(events, 'if.event.locked', {
       targetId: padlock.id
@@ -549,9 +549,9 @@ describe('Locking Action Edge Cases', () => {
     });
     
     const context = createRealTestContext(lockingAction, world, command);
-    
-    const events = lockingAction.execute(context);
-    
+
+    const events = executeWithValidation(lockingAction, context);
+
     // Should succeed with primary key
     expectEvent(events, 'if.event.locked', {
       targetId: box.id,
@@ -585,9 +585,9 @@ describe('Locking Action Edge Cases', () => {
     });
     
     const context = createRealTestContext(lockingAction, world, command);
-    
-    const events = lockingAction.execute(context);
-    
+
+    const events = executeWithValidation(lockingAction, context);
+
     expectEvent(events, 'if.event.locked', {
       targetId: gate.id,
       keyId: masterKey.id
