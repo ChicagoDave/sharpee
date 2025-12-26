@@ -273,6 +273,32 @@ Events drive the game's output and custom logic.
   - `if.event.pushed`: Object pushed
   - etc.
 
+### Text Output Pattern (Critical)
+
+**Actions NEVER emit text directly.** The flow is:
+
+1. Actions emit **semantic events** with `messageId` and `params`
+2. Report service receives events after turn completes
+3. Report service looks up `messageId` in language-specific message templates
+4. Report service renders final text to player
+
+```typescript
+// CORRECT: Emit event with messageId
+events.push(context.event('action.success', {
+  actionId: IFActions.WAITING,
+  messageId: 'time_passes'  // Report service looks this up
+}));
+
+// WRONG: Never emit text directly
+events.push({ text: 'Time passes.' });  // DON'T DO THIS
+```
+
+This separation enables:
+- Internationalization (different languages)
+- Customizable prose styles
+- Story-specific message overrides
+- Consistent output formatting
+
 ### Event Handlers (ADR-052)
 
 **Entity-level handlers:**
