@@ -6,7 +6,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { reading } from '../../../src/actions/standard/reading/reading';
 import { IFActions } from '../../../src/actions/constants';
-import { 
+import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
@@ -15,6 +15,12 @@ import {
 } from '../../test-utils';
 import { WorldModel, IFEntity, TraitType, ReadableTrait, EntityType } from '@sharpee/world-model';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
+
+// Helper to execute action with three-phase pattern
+const executeAndReport = (action: any, context: ActionContext) => {
+  action.execute(context);
+  return action.report(context);
+};
 
 describe('Reading Action - Golden Path', () => {
   let testData: TestData;
@@ -47,7 +53,7 @@ describe('Reading Action - Golden Path', () => {
       expect(validation.valid).toBe(true);
 
       // Execute
-      const events = reading.execute(context);
+      const events = executeAndReport(reading, context);
       
       // Should emit read event and success
       expect(events).toHaveLength(2);
@@ -90,7 +96,7 @@ describe('Reading Action - Golden Path', () => {
       const validation = reading.validate(context);
       expect(validation.valid).toBe(true);
 
-      const events = reading.execute(context);
+      const events = executeAndReport(reading, context);
       
       expectEvent(events, 'action.success', {
         actionId: 'if.action.reading',
@@ -119,7 +125,7 @@ describe('Reading Action - Golden Path', () => {
       const validation = reading.validate(context);
       expect(validation.valid).toBe(true);
 
-      const events = reading.execute(context);
+      const events = executeAndReport(reading, context);
       
       expectEvent(events, 'action.success', {
         actionId: 'if.action.reading',
@@ -148,7 +154,7 @@ describe('Reading Action - Golden Path', () => {
       const validation = reading.validate(context);
       expect(validation.valid).toBe(true);
 
-      const events = reading.execute(context);
+      const events = executeAndReport(reading, context);
       
       expectEvent(events, 'action.success', {
         actionId: 'if.action.reading',
@@ -184,7 +190,7 @@ describe('Reading Action - Golden Path', () => {
       const validation = reading.validate(context);
       expect(validation.valid).toBe(true);
 
-      const events = reading.execute(context);
+      const events = executeAndReport(reading, context);
       
       expectEvent(events, 'if.event.read', {
         text: 'Day 2: Things got worse...',
@@ -296,7 +302,7 @@ describe('Reading Action - Golden Path', () => {
       });
 
       const context = createRealTestContext(reading, testData.world, command);
-      reading.execute(context);
+      executeAndReport(reading, context);
 
       expect(readable.hasBeenRead).toBe(true);
     });
@@ -318,7 +324,7 @@ describe('Reading Action - Golden Path', () => {
       const validation = reading.validate(context);
       expect(validation.valid).toBe(true);
 
-      const events = reading.execute(context);
+      const events = executeAndReport(reading, context);
       expect(events[1].data?.params?.text).toBe('');
     });
   });

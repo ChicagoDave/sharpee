@@ -1,8 +1,13 @@
 /**
  * Showing action - show objects to NPCs or other actors
- * 
+ *
  * This action makes NPCs aware of objects without transferring ownership.
  * Useful for puzzles where NPCs react to seeing specific items.
+ *
+ * Uses three-phase pattern:
+ * 1. validate: Check item and viewer exist and are valid
+ * 2. execute: Analyze show reaction (no world mutations)
+ * 3. report: Emit shown event and success message
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -11,7 +16,20 @@ import { ScopeLevel } from '../../../scope/types';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, ActorTrait, IdentityTrait, IFEntity } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
-import { ShowingEventMap, ShownEventData } from './showing-events';
+import { ShownEventData } from './showing-events';
+
+/**
+ * Shared data passed between execute and report phases
+ */
+interface ShowingSharedData {
+  messageId?: string;
+  eventData?: ShownEventData;
+  params?: Record<string, any>;
+}
+
+function getShowingSharedData(context: ActionContext): ShowingSharedData {
+  return context.sharedData as ShowingSharedData;
+}
 
 interface ShowAnalysis {
   item: IFEntity;
@@ -173,58 +191,41 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
         params: { item: item.name }
       };
     }
-    
-    // Analyze the show action
-    const analysis = analyzeShowAction(context);
-    if (!analysis) {
-      return {
-        valid: false,
-        error: 'no_item',
-        params: {}
-      };
-    }
-    
-    return {
-      valid: true
-    };
+
+    return { valid: true };
   },
-  
-  execute(context: ActionContext): ISemanticEvent[] {
-    // Validate first if tests call execute directly
-    const validation = this.validate(context);
-    if (!validation.valid) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: validation.error!,
-        reason: validation.error!,
-        params: validation.params || {}
-      })];
-    }
-    
-    // Analyze the show action
+
+  execute(context: ActionContext): void {
+    // Showing has NO world mutations - it's a social interaction
+    // Analyze show reaction and store in sharedData for report phase
     const analysis = analyzeShowAction(context);
-    if (!analysis) {
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'no_item',
-        params: {}
-      })];
+    const sharedData = getShowingSharedData(context);
+
+    if (analysis) {
+      sharedData.messageId = analysis.messageId;
+      sharedData.eventData = analysis.eventData;
+      sharedData.params = analysis.params;
     }
-    
+  },
+
+  report(context: ActionContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
-    
-    // Create SHOWN event for world model
-    events.push(context.event('if.event.shown', analysis.eventData));
-    
-    // Add success message
+    const sharedData = getShowingSharedData(context);
+
+    // Emit shown event for world model
+    if (sharedData.eventData) {
+      events.push(context.event('if.event.shown', sharedData.eventData));
+    }
+
+    // Emit success message
     events.push(context.event('action.success', {
       actionId: context.action.id,
-      messageId: analysis.messageId,
-      params: analysis.params
+      messageId: sharedData.messageId || 'shown',
+      params: sharedData.params || {}
     }));
-    
+
     return events;
   },
-  
+
   group: "social"
 };
