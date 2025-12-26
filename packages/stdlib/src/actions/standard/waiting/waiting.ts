@@ -4,15 +4,15 @@
  * This is a signal action that emits an event to indicate the player
  * chose to wait. The engine handles turn advancement and daemon processing.
  *
- * Uses three-phase pattern:
+ * Uses four-phase pattern:
  * 1. validate: Always succeeds (no preconditions for waiting)
  * 2. execute: No world mutations (stores location in sharedData)
- * 3. report: Emits if.event.waited signal for engine/daemons
+ * 3. blocked: Handle validation failures (n/a - always succeeds)
+ * 4. report: Emits if.event.waited signal for engine/daemons
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
-import { handleReportErrors } from '../../base/report-helpers';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { WaitedEventData } from './waiting-events';
@@ -57,10 +57,17 @@ export const waitingAction: Action & { metadata: ActionMetadata } = {
     sharedData.locationName = location?.name;
   },
 
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    // Waiting always succeeds, but include blocked for consistency
+    return [context.event('action.blocked', {
+      actionId: this.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
+  },
 
+  report(context: ActionContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
     const sharedData = getWaitingSharedData(context);
 

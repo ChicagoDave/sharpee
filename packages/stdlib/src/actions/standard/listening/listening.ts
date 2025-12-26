@@ -4,10 +4,11 @@
  * This action allows players to listen for sounds in their current location
  * or from specific objects.
  *
- * Uses three-phase pattern:
+ * Uses four-phase pattern:
  * 1. validate: Always succeeds (no preconditions for listening)
  * 2. execute: Analyze sounds (no world mutations)
- * 3. report: Emit listened event and success message
+ * 3. blocked: Handle validation failures (n/a - always succeeds)
+ * 4. report: Emit listened event and success message
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -17,7 +18,6 @@ import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { ListenedEventData } from './listening-events';
-import { handleReportErrors } from '../../base/report-helpers';
 
 /**
  * Shared data passed between execute and report phases
@@ -168,10 +168,17 @@ export const listeningAction: Action & { metadata: ActionMetadata } = {
     sharedData.eventData = analysis.eventData;
   },
 
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    // Listening always succeeds, but include blocked for consistency
+    return [context.event('action.blocked', {
+      actionId: this.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
+  },
 
+  report(context: ActionContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
     const sharedData = getListeningSharedData(context);
 

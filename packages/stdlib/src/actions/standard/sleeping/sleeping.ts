@@ -5,10 +5,11 @@
  * the player character sleeping or dozing off. NPCs and daemons can
  * still act during this time.
  *
- * Uses three-phase pattern:
+ * Uses four-phase pattern:
  * 1. validate: Check if sleeping is allowed
  * 2. execute: Compute sleep state (no world mutations)
- * 3. report: Emit slept event and success message
+ * 3. blocked: Handle validation failures
+ * 4. report: Emit slept event and success message
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -16,7 +17,6 @@ import { ISemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { SleptEventData } from './sleeping-events';
-import { handleReportErrors } from '../../base/report-helpers';
 
 /**
  * Shared data passed between execute and report phases
@@ -122,10 +122,16 @@ export const sleepingAction: Action & { metadata: ActionMetadata } = {
     sharedData.wakeRefreshed = analysis.wakeRefreshed;
   },
 
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    return [context.event('action.blocked', {
+      actionId: this.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
+  },
 
+  report(context: ActionContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
     const sharedData = getSleepingSharedData(context);
 

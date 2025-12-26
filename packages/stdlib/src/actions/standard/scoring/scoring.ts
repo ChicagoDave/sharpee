@@ -4,10 +4,11 @@
  * This is a meta action that shows game progress information
  * without changing the world state.
  *
- * Uses three-phase pattern:
+ * Uses four-phase pattern:
  * 1. validate: Check if scoring is enabled
  * 2. execute: Compute score data (no world mutations)
- * 3. report: Emit score events
+ * 3. blocked: Handle validation failures
+ * 4. report: Emit score events
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -16,7 +17,6 @@ import { StandardCapabilities } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { ScoreDisplayedEventData } from './scoring-events';
-import { handleReportErrors } from '../../base/report-helpers';
 
 interface ScoringState {
   eventData: ScoreDisplayedEventData;
@@ -144,10 +144,16 @@ export const scoringAction: Action & { metadata: ActionMetadata } = {
     }
   },
 
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    return [context.event('action.blocked', {
+      actionId: this.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
+  },
 
+  report(context: ActionContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
     const sharedData = getScoringSharedData(context);
 

@@ -4,10 +4,11 @@
  * This action emits a platform event that will be processed after turn completion.
  * The engine will handle any necessary confirmations through its quit hook.
  *
- * Uses three-phase pattern:
+ * Uses four-phase pattern:
  * 1. validate: Always succeeds (no preconditions)
  * 2. execute: Analyze quit context (no world mutations)
- * 3. report: Emit quit events
+ * 3. blocked: Handle validation failures (n/a - always succeeds)
+ * 4. report: Emit quit events
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -15,7 +16,6 @@ import { ISemanticEvent, createQuitRequestedEvent, IQuitContext } from '@sharpee
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { QuitRequestedEventData } from './quitting-events';
-import { handleReportErrors } from '../../base/report-helpers';
 
 /**
  * Shared data passed between execute and report phases
@@ -99,10 +99,17 @@ export const quittingAction: Action & { metadata: ActionMetadata } = {
     sharedData.hasUnsavedProgress = analysis.hasUnsavedProgress;
   },
 
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    // Quitting always succeeds, but include blocked for consistency
+    return [context.event('action.blocked', {
+      actionId: this.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
+  },
 
+  report(context: ActionContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
     const sharedData = getQuittingSharedData(context);
 
