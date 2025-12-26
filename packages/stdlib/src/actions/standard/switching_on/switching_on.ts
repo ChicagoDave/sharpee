@@ -28,7 +28,7 @@ interface SwitchingOnSharedData {
   // Light source data
   isLightSource?: boolean;
   lightRadius?: number;
-  lightIntensity?: number;
+  lightIntensity?: string;
   willIlluminateLocation?: boolean;
   // Temporary activation
   autoOffTime?: number;

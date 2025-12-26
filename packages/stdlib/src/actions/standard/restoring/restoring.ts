@@ -1,8 +1,13 @@
 /**
  * Restoring action - restore saved game state
- * 
+ *
  * This is a meta action that triggers game restore functionality.
  * It emits a platform event that the engine will process after turn completion.
+ *
+ * Three-phase pattern:
+ * - validate: Check if restore is allowed, check for available saves
+ * - execute: Analyze restore context, store in sharedData (no world mutations)
+ * - report: Emit platform event and notifications
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -11,10 +16,87 @@ import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { RestoreRequestedEventData } from './restoring-events';
 
-interface RestoringState {
+interface SaveInfo {
+  slot: string;
+  name: string;
+  timestamp: number;
+  metadata: {
+    score?: number;
+    moves?: number;
+    version?: string;
+  };
+}
+
+interface RestoringSharedData {
   saveName: string;
+  availableSaves: SaveInfo[];
+  lastSave: { slot: string; timestamp: number } | null;
   restoreContext: IRestoreContext;
   eventData: RestoreRequestedEventData;
+}
+
+/**
+ * Build list of available saves from game state
+ */
+function buildAvailableSaves(existingSaves: Record<string, any>): SaveInfo[] {
+  return Object.entries(existingSaves).map(([slot, data]: [string, any]) => ({
+    slot,
+    name: data.name || slot,
+    timestamp: data.timestamp || Date.now(),
+    metadata: {
+      score: data.score,
+      moves: data.moves,
+      version: data.version
+    }
+  }));
+}
+
+/**
+ * Find the most recent save
+ */
+function findLastSave(saves: SaveInfo[]): { slot: string; timestamp: number } | null {
+  if (saves.length === 0) return null;
+
+  const latest = saves.reduce((best, save) =>
+    !best || save.timestamp > best.timestamp ? save : best
+  , null as SaveInfo | null);
+
+  return latest ? { slot: latest.slot, timestamp: latest.timestamp } : null;
+}
+
+/**
+ * Analyze restore context from game state
+ */
+function analyzeRestoreContext(context: ActionContext, saveName: string): RestoringSharedData {
+  // Get game state
+  const sharedData = context.world.getCapability('sharedData') || {};
+  const existingSaves = sharedData.saves || {};
+
+  // Build available saves info
+  const availableSaves = buildAvailableSaves(existingSaves);
+  const lastSave = findLastSave(availableSaves);
+
+  // Build restore context
+  const restoreContext: IRestoreContext = {
+    slot: saveName !== 'default' ? saveName : undefined,
+    availableSaves,
+    lastSave: lastSave || undefined
+  };
+
+  // Build event data
+  const eventData: RestoreRequestedEventData = {
+    saveName,
+    timestamp: Date.now(),
+    availableSaves: availableSaves.length
+  };
+
+  return {
+    saveName,
+    availableSaves,
+    lastSave,
+    restoreContext,
+    eventData
+  };
 }
 
 export const restoringAction: Action & { metadata: ActionMetadata } = {
@@ -41,136 +123,63 @@ export const restoringAction: Action & { metadata: ActionMetadata } = {
     'import_save',
     'save_imported'
   ],
-  
+
   validate(context: ActionContext): ValidationResult {
-    const actor = context.player;
-    
-    // Extract save slot or name if provided
-    const saveName = context.command.parsed.extras?.name || 
-                    context.command.parsed.extras?.slot ||
-                    context.command.indirectObject?.parsed.text ||
-                    'default';
-    
     // Get game state info
     const sharedData = context.world.getCapability('sharedData') || {};
     const existingSaves = sharedData.saves || {};
-    
+
     // Check for restore restrictions
     const restoreRestrictions = sharedData.restoreRestrictions || {};
-    
+
     if (restoreRestrictions.disabled) {
       return {
         valid: false,
         error: 'restore_not_allowed'
       };
     }
-    
-    // Build available saves info
-    const availableSaves = Object.entries(existingSaves).map(([slot, data]: [string, any]) => ({
-      slot,
-      name: data.name || slot,
-      timestamp: data.timestamp || Date.now(),
-      metadata: {
-        score: data.score,
-        moves: data.moves,
-        version: data.version
-      }
-    }));
-    
+
     // Check if any saves exist
-    if (availableSaves.length === 0) {
+    const saveCount = Object.keys(existingSaves).length;
+    if (saveCount === 0) {
       return {
         valid: false,
         error: 'no_saves'
       };
     }
-    
-    // Find last save info
-    const lastSave = availableSaves.reduce((latest, save) => 
-      !latest || save.timestamp > latest.timestamp ? save : latest
-    , null as any);
-    
-    // Build restore context
-    const restoreContext: IRestoreContext = {
-      slot: saveName !== 'default' ? saveName : undefined,
-      availableSaves,
-      lastSave: lastSave ? {
-        slot: lastSave.slot,
-        timestamp: lastSave.timestamp
-      } : undefined
-    };
-    
-    // Emit a notification that restore was requested
-    // The actual restore confirmation will come from the platform completion event
-    const eventData: RestoreRequestedEventData = {
-      saveName,
-      timestamp: Date.now(),
-      availableSaves: availableSaves.length
-    };
-    
-    return {
-      valid: true
-    };
+
+    return { valid: true };
   },
-  
-  execute(context: ActionContext): ISemanticEvent[] {
+
+  execute(context: ActionContext): void {
+    // Extract save slot or name if provided
+    const saveName = context.command.parsed.extras?.name ||
+                    context.command.parsed.extras?.slot ||
+                    context.command.indirectObject?.parsed?.text ||
+                    'default';
+
+    // Analyze restore context and store in sharedData
+    const data = analyzeRestoreContext(context, saveName);
+    Object.assign(context.sharedData, data);
+  },
+
+  report(context: ActionContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
-    
-    // Get save name from command - could be provided as extras or directObject
-    const extras = context.command.parsed.extras;
-    const directText = context.command.directObject?.parsed?.text;
-    const saveName = extras?.saveName || directText || 'default';
-    
-    // Get game state
-    const sharedData = context.world.getCapability('sharedData') || {};
-    const existingSaves = sharedData.saves || {};
-    
-    // Build available saves info
-    const availableSaves = Object.entries(existingSaves).map(([slot, data]: [string, any]) => ({
-      slot,
-      name: data.name || slot,
-      timestamp: data.timestamp || Date.now(),
-      metadata: {
-        score: data.score,
-        moves: data.moves,
-        version: data.version
-      }
-    }));
-    
-    // Find last save info
-    const lastSave = availableSaves.reduce((latest, save) => 
-      !latest || save.timestamp > latest.timestamp ? save : latest
-    , null as any);
-    
-    // Build restore context
-    const restoreContext: IRestoreContext = {
-      slot: saveName !== 'default' ? saveName : undefined,
-      availableSaves,
-      lastSave: lastSave ? {
-        slot: lastSave.slot,
-        timestamp: lastSave.timestamp
-      } : undefined
-    };
-    
-    const eventData: RestoreRequestedEventData = {
-      saveName,
-      timestamp: Date.now(),
-      availableSaves: availableSaves.length
-    };
-    
+    const data = context.sharedData as RestoringSharedData;
+
     // Emit platform restore requested event
     // The engine will handle this after turn completion
-    const platformEvent = createRestoreRequestedEvent(restoreContext);
+    const platformEvent = createRestoreRequestedEvent(data.restoreContext);
     events.push(platformEvent);
-    
+
     // Emit the restore requested event
-    events.push(context.event('if.event.restore_requested', eventData));
-    
+    events.push(context.event('if.event.restore_requested', data.eventData));
+
     return events;
   },
-  
+
   group: "meta",
-  
+
   metadata: {
     requiresDirectObject: false,
     requiresIndirectObject: false

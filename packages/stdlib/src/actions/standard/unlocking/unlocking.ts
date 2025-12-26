@@ -132,8 +132,6 @@ export const unlockingAction: Action & { metadata: ActionMetadata } = {
         sharedData.errorMessageId = 'wrong_key';
       } else if (result.noKey) {
         sharedData.errorMessageId = 'no_key';
-      } else if (result.stillLocked) {
-        sharedData.errorMessageId = 'still_locked';
       } else {
         sharedData.errorMessageId = 'cant_unlock';
       }

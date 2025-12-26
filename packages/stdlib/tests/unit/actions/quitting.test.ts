@@ -9,13 +9,37 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { quittingAction } from '../../../src/actions/standard/quitting';
 import { IFActions } from '../../../src/actions/constants';
-import { 
+import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
   createCommand
 } from '../../test-utils';
 import type { WorldModel } from '@sharpee/world-model';
+import type { ActionContext, Action } from '../../../src/actions/enhanced-types';
+
+/**
+ * Helper to execute action with proper three-phase pattern support
+ */
+const executeWithValidation = (action: Action, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    return [context.event('action.error', {
+      actionId: action.id,
+      error: validation.error,
+      messageId: validation.error
+    })];
+  }
+
+  // Three-phase pattern: execute returns void, report returns events
+  if (action.report) {
+    action.execute(context);
+    return action.report(context);
+  }
+
+  // Old two-phase pattern: execute returns events
+  return action.execute(context);
+};
 
 describe('quittingAction', () => {
   describe('Action Metadata', () => {
@@ -58,7 +82,7 @@ describe('quittingAction', () => {
       const command = createCommand(IFActions.QUITTING);
       const context = createRealTestContext(quittingAction, world, command);
       
-      const events = quittingAction.execute(context);
+      const events = executeWithValidation(quittingAction, context);
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
@@ -93,7 +117,7 @@ describe('quittingAction', () => {
       const command = createCommand(IFActions.QUITTING);
       const context = createRealTestContext(quittingAction, world, command);
       
-      const events = quittingAction.execute(context);
+      const events = executeWithValidation(quittingAction, context);
       
       // Should emit if.event.quit_requested
       expectEvent(events, 'if.event.quit_requested', {
@@ -125,7 +149,7 @@ describe('quittingAction', () => {
       const command = createCommand(IFActions.QUITTING);
       const context = createRealTestContext(quittingAction, world, command);
       
-      const events = quittingAction.execute(context);
+      const events = executeWithValidation(quittingAction, context);
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
@@ -158,7 +182,7 @@ describe('quittingAction', () => {
       const command = createCommand(IFActions.QUITTING);
       const context = createRealTestContext(quittingAction, world, command);
       
-      const events = quittingAction.execute(context);
+      const events = executeWithValidation(quittingAction, context);
       
       // Should not have the success message with hint
       const successEvents = events.filter(e => e.type === 'action.success');
@@ -184,7 +208,7 @@ describe('quittingAction', () => {
       command.parsed.extras = { force: true };
       const context = createRealTestContext(quittingAction, world, command);
       
-      const events = quittingAction.execute(context);
+      const events = executeWithValidation(quittingAction, context);
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
@@ -204,7 +228,7 @@ describe('quittingAction', () => {
       command.parsed.extras = { now: true };
       const context = createRealTestContext(quittingAction, world, command);
       
-      const events = quittingAction.execute(context);
+      const events = executeWithValidation(quittingAction, context);
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
@@ -219,7 +243,7 @@ describe('quittingAction', () => {
       command.parsed.action = 'exit';
       const context = createRealTestContext(quittingAction, world, command);
       
-      const events = quittingAction.execute(context);
+      const events = executeWithValidation(quittingAction, context);
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
@@ -246,7 +270,7 @@ describe('quittingAction', () => {
       const command = createCommand(IFActions.QUITTING);
       const context = createRealTestContext(quittingAction, world, command);
       
-      const events = quittingAction.execute(context);
+      const events = executeWithValidation(quittingAction, context);
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
@@ -271,7 +295,7 @@ describe('quittingAction', () => {
       const command = createCommand(IFActions.QUITTING);
       const context = createRealTestContext(quittingAction, world, command);
       
-      const events = quittingAction.execute(context);
+      const events = executeWithValidation(quittingAction, context);
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
@@ -296,7 +320,7 @@ describe('quittingAction', () => {
       const command = createCommand(IFActions.QUITTING);
       const context = createRealTestContext(quittingAction, world, command);
       
-      const events = quittingAction.execute(context);
+      const events = executeWithValidation(quittingAction, context);
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
@@ -314,7 +338,7 @@ describe('quittingAction', () => {
       const command = createCommand(IFActions.QUITTING);
       const context = createRealTestContext(quittingAction, world, command);
       
-      const events = quittingAction.execute(context);
+      const events = executeWithValidation(quittingAction, context);
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
@@ -344,7 +368,7 @@ describe('quittingAction', () => {
       const command = createCommand(IFActions.QUITTING);
       const context = createRealTestContext(quittingAction, world, command);
       
-      const events = quittingAction.execute(context);
+      const events = executeWithValidation(quittingAction, context);
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
@@ -376,7 +400,7 @@ describe('quittingAction', () => {
       const command = createCommand(IFActions.QUITTING);
       const context = createRealTestContext(quittingAction, world, command);
       
-      const events = quittingAction.execute(context);
+      const events = executeWithValidation(quittingAction, context);
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
