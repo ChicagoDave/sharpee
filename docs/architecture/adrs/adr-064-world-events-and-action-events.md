@@ -1,7 +1,7 @@
 # ADR-064: World Events and Action Events
 
 ## Status
-Proposed
+Accepted (December 2025)
 
 ## Context
 

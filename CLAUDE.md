@@ -1,35 +1,71 @@
 # Project Instructions for Claude
 
+## Overview
+
+Sharpee is a parser-based Interactive Fiction authoring tool built in Typescript.
+
 ## MAJOR DIRECTIONS
 
-- Never delete files without confirmation. You just deleted three unit test files without asking and we're redoing that work now. Never do that again, not even "to get a build working" or "to get the other tests working".
+- Never delete files without confirmation. Not even "to get a build working" or "to get the other tests working".
+- Never use batch scripts (sed/awk/grep) to modify multiple files. One file at a time.
+- We never care about backward compatibility, but discuss code smells or design flaws before changing.
+
+## Current Work: Action Refactoring (as of Sept 2025)
+
+We are systematically refactoring each stdlib action to the three-phase pattern (validate/execute/report).
+
+**Process**: See `/docs/work/phases/action-refactoring-master-plan.md` - one action at a time under a magnifying glass with full analysis, design spec, implementation, review, signoff.
+
+### Actions with Three-Phase Pattern (14 complete):
+about, attacking, opening, closing, taking, dropping, putting, inserting, removing, entering, exiting, going, looking, examining
+
+### Taking Action - In Progress
+- Checklist: `/docs/work/taking/checklist.md`
+- Phase 1-2 complete (analysis and design)
+- Phase 3 blocked on ADR-064 (World Events) - needs `world.moveEntity()` to return MoveResult
+
+### Key Issues Being Fixed:
+1. **Context pollution**: Actions storing `_previousLocation` etc. directly on context
+2. **Direct mutations**: Should use behaviors, not direct world calls
+3. **Inconsistent patterns**: Some old two-phase, some incorrect three-phase
+
+### ~33 Actions Still Needing Refactor:
+climbing, drinking, eating, giving, help, inventory, listening, locking, unlocking, pulling, pushing, quitting, reading, restarting, restoring, saving, scoring, searching, showing, sleeping, smelling, switching_on, switching_off, taking_off, talking, throwing, touching, waiting, wearing
 
 ## Core Concepts Reference
-Please read `/docs/reference/core-concepts.md` at the start of each session for essential context about:
+
+Read `/docs/reference/core-concepts.md` at the start of each session for:
 - Entity system and creation
 - Trait system and usage
-- Three-phase action pattern
-- ActionContext and sharedData
-- World model operations
+- Three-phase action pattern (validate/execute/report)
+- ActionContext and sharedData (NOT context pollution!)
+- Behaviors vs Actions (behaviors own mutations, actions coordinate)
 - Event system and handlers
-- Command processing flow
+- Reporting is done after a turn completes by a customized report service
 
 ## Testing Commands
 
 - **DO NOT** use `2>&1` with pnpm commands - they don't work together properly
-- Use pnpm commands without output redirection
-- Preferred test command format: `pnpm --filter '@sharpee/stdlib' test <test-name>`
+- Preferred format: `pnpm --filter '@sharpee/stdlib' test <test-name>`
 
-## Project-Specific Notes
+## Project Structure
 
-This is the Sharpee interactive fiction engine project. Key points:
 - Uses pnpm workspace with multiple packages
 - Main packages: engine, stdlib, world-model, parser-en-us
-- Actions follow validate/execute pattern (ADR-051)
+- Actions follow validate/execute/report pattern (ADR-051)
 - Event handlers for custom logic (ADR-052)
-- never use scripts. modify one file/problem at a time
-- we never care about backward compatibility, but if there are code smells or design flaws, we discuss options first
 
-Sharpee logic:
-- Traits are in packages/world-model/src/traits - read the list
-- Actions are in packages/stdlib/src/actions/standard where each action is in a subdirectory with three files: action.ts, action-events.ts, and action-data.ts
+## Work Patterns
+
+- Planning docs: `docs/work/{target}/`
+- Work summaries: `docs/work/{target}/context/`
+- Logs: `logs/`
+- Current branch `refactor/three-phase-complete` → work in `docs/work/phases/`
+
+## Key Locations
+
+- Traits: `packages/world-model/src/traits/`
+- Behaviors: `packages/world-model/src/behaviors/`
+- Actions: `packages/stdlib/src/actions/standard/` (each action has action.ts, action-events.ts, action-data.ts)
+- ADRs: `docs/architecture/adrs/`
+- Work tracking: `docs/work/`
