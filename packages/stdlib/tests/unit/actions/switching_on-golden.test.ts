@@ -24,16 +24,12 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
-// Helper to execute action with three-phase pattern (mimics CommandExecutor flow)
+// Helper to execute action with four-phase pattern (mimics CommandExecutor flow)
 const executeWithValidation = (action: any, context: ActionContext) => {
   const validation = action.validate(context);
   if (!validation.valid) {
-    return [context.event('action.error', {
-      actionId: action.id,
-      messageId: validation.error || 'validation_failed',
-      reason: validation.error || 'validation_failed',
-      params: validation.params || { target: context.command.directObject?.entity?.name }
-    })];
+    // Use blocked() method for validation failures
+    return action.blocked(context, validation);
   }
   // Execute mutations (returns void)
   action.execute(context);
@@ -72,11 +68,11 @@ describe('switchingOnAction (Golden Pattern)', () => {
     test('should fail when no target specified', () => {
       const { world } = setupBasicWorld();
       const context = createRealTestContext(switchingOnAction, world, createCommand(IFActions.SWITCHING_ON));
-      
+
       const events = executeWithValidation(switchingOnAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('no_target')
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('What do you want to turn on')
       });
     });
 
@@ -86,15 +82,15 @@ describe('switchingOnAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       const rock = world.createEntity('ordinary rock', 'object');
       world.moveEntity(rock.id, room.id);
-      
+
       const context = createRealTestContext(switchingOnAction, world, createCommand(IFActions.SWITCHING_ON, {
         entity: rock
       }));
-      
+
       const events = executeWithValidation(switchingOnAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_switchable'),
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining("can't be switched on"),
         params: { target: 'ordinary rock' }
       });
     });
@@ -107,15 +103,15 @@ describe('switchingOnAction (Golden Pattern)', () => {
         isOn: true // Already on
       });
       world.moveEntity(radio.id, room.id);
-      
+
       const context = createRealTestContext(switchingOnAction, world, createCommand(IFActions.SWITCHING_ON, {
         entity: radio
       }));
-      
+
       const events = executeWithValidation(switchingOnAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('already_on'),
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('already on'),
         params: { target: 'portable radio' }
       });
     });
@@ -130,15 +126,15 @@ describe('switchingOnAction (Golden Pattern)', () => {
         hasPower: false
       });
       world.moveEntity(tv.id, room.id);
-      
+
       const context = createRealTestContext(switchingOnAction, world, createCommand(IFActions.SWITCHING_ON, {
         entity: tv
       }));
-      
+
       const events = executeWithValidation(switchingOnAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('no_power'),
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('no power'),
         params: { target: 'television' }
       });
     });

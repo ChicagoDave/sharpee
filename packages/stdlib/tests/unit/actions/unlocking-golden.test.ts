@@ -22,10 +22,14 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
-// Helper to execute action with three-phase pattern (mimics CommandExecutor flow)
+// Helper to execute action with four-phase pattern (mimics CommandExecutor flow)
 const executeWithValidation = (action: any, context: ActionContext) => {
   const validation = action.validate(context);
   if (!validation.valid) {
+    // Use blocked() for validation failures
+    if (action.blocked) {
+      return action.blocked(context, validation);
+    }
     return [context.event('action.error', {
       actionId: action.id,
       messageId: validation.error || 'validation_failed',
@@ -68,18 +72,17 @@ describe('unlockingAction (Golden Pattern)', () => {
       const { world, player } = setupBasicWorld();
       const command = createCommand(IFActions.UNLOCKING);
       const context = createRealTestContext(unlockingAction, world, command);
-      
+
       const events = executeWithValidation(unlockingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('no_target'),
-        reason: 'no_target'
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('want to unlock')
       });
     });
 
     test('should fail when target is not lockable', () => {
       const { world, player, room, object: box } = TestData.withObject('wooden box', {
-        [TraitType.OPENABLE]: { 
+        [TraitType.OPENABLE]: {
           type: TraitType.OPENABLE,
           isOpen: false
         }
@@ -90,11 +93,11 @@ describe('unlockingAction (Golden Pattern)', () => {
           entity: box
         })
       );
-      
+
       const events = executeWithValidation(unlockingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_lockable'),
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining("can't be unlocked"),
         params: { item: 'wooden box' }
       });
     });
@@ -112,11 +115,11 @@ describe('unlockingAction (Golden Pattern)', () => {
           entity: chest
         })
       );
-      
+
       const events = executeWithValidation(unlockingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('already_unlocked'),
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('already unlocked'),
         params: { item: 'treasure chest' }
       });
     });
@@ -131,7 +134,7 @@ describe('unlockingAction (Golden Pattern)', () => {
           keyId: 'brass_key'  // Requires key
         }
       });
-      
+
       const door = findEntityByName(world, 'oak door')!;
       const context = createRealTestContext(unlockingAction, world,
         createCommand(IFActions.UNLOCKING, {
@@ -139,12 +142,11 @@ describe('unlockingAction (Golden Pattern)', () => {
         })
         // No indirect object (key)
       );
-      
+
       const events = executeWithValidation(unlockingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('no_key'),
-        reason: 'no_key'
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('need a key')
       });
     });
 
@@ -156,11 +158,11 @@ describe('unlockingAction (Golden Pattern)', () => {
           keyId: 'safe_key'
         }
       });
-      
+
       const safe = findEntityByName(world, 'safe')!;
       const key = world.createEntity('safe key', 'object');
       world.moveEntity(key.id, room.id);  // Key in room, not held
-      
+
       const context = createRealTestContext(unlockingAction, world,
         createCommand(IFActions.UNLOCKING, {
           entity: safe,
@@ -168,11 +170,11 @@ describe('unlockingAction (Golden Pattern)', () => {
           preposition: 'with'
         })
       );
-      
+
       const events = executeWithValidation(unlockingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('key_not_held'),
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('not holding'),
         params: { key: 'safe key' }
       });
     });
@@ -185,11 +187,11 @@ describe('unlockingAction (Golden Pattern)', () => {
           keyId: 'cabinet_key'  // Requires specific key
         }
       });
-      
+
       const cabinet = findEntityByName(world, 'cabinet')!;
       const wrongKey = world.createEntity('desk key', 'object');
       world.moveEntity(wrongKey.id, player.id);  // Player has wrong key
-      
+
       const context = createRealTestContext(unlockingAction, world,
         createCommand(IFActions.UNLOCKING, {
           entity: cabinet,
@@ -197,12 +199,12 @@ describe('unlockingAction (Golden Pattern)', () => {
           preposition: 'with'
         })
       );
-      
+
       const events = executeWithValidation(unlockingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('wrong_key'),
-        params: { 
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining("doesn't fit"),
+        params: {
           key: 'desk key',
           item: 'cabinet'
         }

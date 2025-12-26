@@ -21,10 +21,14 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
-// Helper to execute action with three-phase pattern (mimics CommandExecutor flow)
+// Helper to execute action with four-phase pattern (mimics CommandExecutor flow)
 const executeWithValidation = (action: any, context: ActionContext) => {
   const validation = action.validate(context);
   if (!validation.valid) {
+    // Use blocked() for validation failures
+    if (action.blocked) {
+      return action.blocked(context, validation);
+    }
     return [context.event('action.error', {
       actionId: action.id,
       messageId: validation.error || 'validation_failed',
@@ -67,36 +71,35 @@ describe('lockingAction (Golden Pattern)', () => {
       const { world } = setupBasicWorld();
       const command = createCommand(IFActions.LOCKING, {});
       const context = createRealTestContext(lockingAction, world, command);
-      
+
       const events = executeWithValidation(lockingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('no_target'),
-        reason: 'no_target'
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('want to lock')
       });
     });
 
     test('should fail when target is not lockable', () => {
       const { world, player, room } = setupBasicWorld();
       const box = world.createEntity('wooden box', 'object');
-      box.add({ 
+      box.add({
         type: TraitType.OPENABLE,
         isOpen: false
       });
       // No lockable trait
-      
+
       world.moveEntity(box.id, room.id);
-      
+
       const command = createCommand(IFActions.LOCKING, {
         entity: box
       });
-      
+
       const context = createRealTestContext(lockingAction, world, command);
-      
+
       const events = executeWithValidation(lockingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_lockable'),
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining("can't be locked"),
         params: { item: 'wooden box' }
       });
     });
@@ -109,19 +112,19 @@ describe('lockingAction (Golden Pattern)', () => {
         isLocked: true,  // Already locked
         keyId: 'golden_key'
       });
-      
+
       world.moveEntity(chest.id, room.id);
-      
+
       const command = createCommand(IFActions.LOCKING, {
         entity: chest
       });
-      
+
       const context = createRealTestContext(lockingAction, world, command);
-      
+
       const events = executeWithValidation(lockingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('already_locked'),
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('already locked'),
         params: { item: 'treasure chest' }
       });
     });
@@ -129,7 +132,7 @@ describe('lockingAction (Golden Pattern)', () => {
     test('should fail when target is open', () => {
       const { world, player, room } = setupBasicWorld();
       const cabinet = world.createEntity('cabinet', 'object');
-      cabinet.add({ 
+      cabinet.add({
         type: TraitType.OPENABLE,
         isOpen: true  // Open - can't lock
       });
@@ -137,19 +140,19 @@ describe('lockingAction (Golden Pattern)', () => {
         type: TraitType.LOCKABLE,
         isLocked: false
       });
-      
+
       world.moveEntity(cabinet.id, room.id);
-      
+
       const command = createCommand(IFActions.LOCKING, {
         entity: cabinet
       });
-      
+
       const context = createRealTestContext(lockingAction, world, command);
-      
+
       const events = executeWithValidation(lockingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_closed'),
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('close'),
         params: { item: 'cabinet' }
       });
     });
@@ -159,7 +162,7 @@ describe('lockingAction (Golden Pattern)', () => {
     test('should fail when key required but not provided', () => {
       const { world, player, room } = setupBasicWorld();
       const door = world.createEntity('oak door', 'object');
-      door.add({ 
+      door.add({
         type: TraitType.OPENABLE,
         isOpen: false
       });
@@ -168,28 +171,27 @@ describe('lockingAction (Golden Pattern)', () => {
         isLocked: false,
         keyId: 'brass_key'  // Requires key
       });
-      
+
       world.moveEntity(door.id, room.id);
-      
+
       const command = createCommand(IFActions.LOCKING, {
         entity: door
       });
       // No indirect object (key)
-      
+
       const context = createRealTestContext(lockingAction, world, command);
-      
+
       const events = executeWithValidation(lockingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('no_key'),
-        reason: 'no_key'
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('need a key')
       });
     });
 
     test('should fail when key not held by player', () => {
       const { world, player, room } = setupBasicWorld();
       const chest = world.createEntity('chest', 'object');
-      chest.add({ 
+      chest.add({
         type: TraitType.OPENABLE,
         isOpen: false
       });
@@ -198,24 +200,24 @@ describe('lockingAction (Golden Pattern)', () => {
         isLocked: false,
         keyId: 'iron_key'
       });
-      
+
       const key = world.createEntity('iron key', 'object');
-      
+
       world.moveEntity(chest.id, room.id);
       world.moveEntity(key.id, room.id);  // Key in room, not held
-      
+
       const command = createCommand(IFActions.LOCKING, {
         entity: chest,
         secondEntity: key,
         preposition: 'with'
       });
-      
+
       const context = createRealTestContext(lockingAction, world, command);
-      
+
       const events = executeWithValidation(lockingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('key_not_held'),
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('not holding'),
         params: { key: 'iron key' }
       });
     });
@@ -223,7 +225,7 @@ describe('lockingAction (Golden Pattern)', () => {
     test('should fail with wrong key', () => {
       const { world, player, room } = setupBasicWorld();
       const door = world.createEntity('door', 'object');
-      door.add({ 
+      door.add({
         type: TraitType.OPENABLE,
         isOpen: false
       });
@@ -232,25 +234,25 @@ describe('lockingAction (Golden Pattern)', () => {
         isLocked: false,
         keyId: 'gold_key'  // Requires gold key
       });
-      
+
       const wrongKey = world.createEntity('silver key', 'object');
-      
+
       world.moveEntity(door.id, room.id);
       world.moveEntity(wrongKey.id, player.id);  // Player has wrong key
-      
+
       const command = createCommand(IFActions.LOCKING, {
         entity: door,
         secondEntity: wrongKey,
         preposition: 'with'
       });
-      
+
       const context = createRealTestContext(lockingAction, world, command);
-      
+
       const events = executeWithValidation(lockingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('wrong_key'),
-        params: { 
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining("doesn't fit"),
+        params: {
           key: 'silver key',
           item: 'door'
         }
