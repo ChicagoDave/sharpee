@@ -60,12 +60,12 @@ Read `/docs/reference/core-concepts.md` at the start of each session for:
 ## Autonomous Work Flow
 
 ### Context Management
-When context usage reaches ~10% remaining (check with `/context`):
+When context usage reaches ~15% remaining:
 1. Write work summary to `docs/work/{target}/context/`
 2. Commit and push all changes
-3. Run `/compact` to compress context
-4. Read the work summary back
-5. Continue work
+3. Send ntfy: "Context low - work saved, need /compact to continue"
+4. STOP and wait for user to run `/compact`
+5. After compact, read the work summary back and continue
 
 ### Async Communication (when user is away)
 If stuck or have questions during autonomous work:
