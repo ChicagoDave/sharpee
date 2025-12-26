@@ -16,16 +16,16 @@ We are systematically refactoring each stdlib action to the three-phase pattern 
 
 **Process**: See `/docs/work/phases/action-refactoring-master-plan.md` - one action at a time under a magnifying glass with full analysis, design spec, implementation, review, signoff.
 
-### Actions with Three-Phase Pattern (36 complete):
-about, attacking, climbing, drinking, eating, opening, closing, pulling, pushing, taking, dropping, putting, inserting, removing, entering, exiting, going, looking, examining, waiting, locking, unlocking, switching_on, switching_off, wearing, taking_off, giving, throwing, touching, smelling, listening, talking, searching, reading, showing, sleeping
+### Actions with Three-Phase Pattern (40 complete):
+about, attacking, climbing, drinking, eating, opening, closing, pulling, pushing, taking, dropping, putting, inserting, removing, entering, exiting, going, looking, examining, waiting, locking, unlocking, switching_on, switching_off, wearing, taking_off, giving, throwing, touching, smelling, listening, talking, searching, reading, showing, sleeping, help, inventory, quitting, scoring
 
 ### Key Issues Being Fixed:
 1. **Context pollution**: Actions storing `_previousLocation` etc. directly on context
 2. **Direct mutations**: Should use behaviors, not direct world calls
 3. **Inconsistent patterns**: Some old two-phase, some incorrect three-phase
 
-### ~11 Actions Still Needing Refactor:
-help, inventory, quitting, restarting, restoring, saving, scoring
+### ~3 Actions Still Needing Refactor:
+restarting, restoring, saving
 
 ## Core Concepts Reference
 
