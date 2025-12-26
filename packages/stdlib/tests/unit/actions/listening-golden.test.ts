@@ -13,14 +13,37 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { listeningAction } from '../../../src/actions/standard/listening';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType } from '@sharpee/world-model';
-import { 
-  createRealTestContext, 
+import {
+  createRealTestContext,
   setupBasicWorld,
   expectEvent,
   TestData,
   createCommand
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
+
+// Helper to execute action with validation (mimics CommandExecutor flow)
+// Supports both old two-phase and new three-phase actions
+const executeWithValidation = (action: any, context: ActionContext) => {
+  const validation = action.validate(context);
+  if (!validation.valid) {
+    return [context.event('action.error', {
+      actionId: context.action.id,
+      messageId: validation.error,
+      reason: validation.error,
+      params: validation.params || {}
+    })];
+  }
+
+  // Three-phase pattern: execute returns void, report returns events
+  if (action.report) {
+    action.execute(context);
+    return action.report(context);
+  }
+
+  // Old two-phase pattern: execute returns events
+  return action.execute(context);
+};
 
 describe('listeningAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -66,7 +89,7 @@ describe('listeningAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(listeningAction, world, command);
       
-      const events = listeningAction.execute(context);
+      const events = executeWithValidation(listeningAction, context);
       
       // Should emit LISTENED event with sound info
       expectEvent(events, 'if.event.listened', {
@@ -99,7 +122,7 @@ describe('listeningAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(listeningAction, world, command);
       
-      const events = listeningAction.execute(context);
+      const events = executeWithValidation(listeningAction, context);
       
       // Should emit device_off message
       expectEvent(events, 'action.success', {
@@ -129,7 +152,7 @@ describe('listeningAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(listeningAction, world, command);
       
-      const events = listeningAction.execute(context);
+      const events = executeWithValidation(listeningAction, context);
       
       // Should emit LISTENED event with contents info
       expectEvent(events, 'if.event.listened', {
@@ -170,7 +193,7 @@ describe('listeningAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(listeningAction, world, command);
       
-      const events = listeningAction.execute(context);
+      const events = executeWithValidation(listeningAction, context);
       
       // Should emit liquid_sounds message
       expectEvent(events, 'action.success', {
@@ -196,7 +219,7 @@ describe('listeningAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(listeningAction, world, command);
       
-      const events = listeningAction.execute(context);
+      const events = executeWithValidation(listeningAction, context);
       
       // Should emit no_sound message
       expectEvent(events, 'action.success', {
@@ -218,7 +241,7 @@ describe('listeningAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(listeningAction, world, command);
       
-      const events = listeningAction.execute(context);
+      const events = executeWithValidation(listeningAction, context);
       
       // Should emit LISTENED event
       expectEvent(events, 'if.event.listened', {
@@ -242,7 +265,7 @@ describe('listeningAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(listeningAction, world, command);
       
-      const events = listeningAction.execute(context);
+      const events = executeWithValidation(listeningAction, context);
       
       // Should emit LISTENED event for environment
       expectEvent(events, 'if.event.listened', {
@@ -278,7 +301,7 @@ describe('listeningAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LISTENING, {});
       const context = createRealTestContext(listeningAction, world, command);
       
-      const events = listeningAction.execute(context);
+      const events = executeWithValidation(listeningAction, context);
       
       // Should emit LISTENED event with sound sources
       expectEvent(events, 'if.event.listened', {
@@ -316,7 +339,7 @@ describe('listeningAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LISTENING, {});
       const context = createRealTestContext(listeningAction, world, command);
       
-      const events = listeningAction.execute(context);
+      const events = executeWithValidation(listeningAction, context);
       
       // Should emit silence message (no active devices)
       expectEvent(events, 'action.success', {
@@ -346,7 +369,7 @@ describe('listeningAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LISTENING, {});
       const context = createRealTestContext(listeningAction, world, command);
       
-      const events = listeningAction.execute(context);
+      const events = executeWithValidation(listeningAction, context);
       
       // Should only detect the active radio
       expectEvent(events, 'if.event.listened', {
@@ -391,7 +414,7 @@ describe('listeningAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(listeningAction, world, command);
       
-      const events = listeningAction.execute(context);
+      const events = executeWithValidation(listeningAction, context);
       
       // Should detect liquid sounds (because of potion)
       expectEvent(events, 'action.success', {
@@ -423,7 +446,7 @@ describe('listeningAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(listeningAction, world, command);
       
-      const events = listeningAction.execute(context);
+      const events = executeWithValidation(listeningAction, context);
       
       // Should prioritize device_running over container sounds
       expectEvent(events, 'action.success', {
@@ -447,7 +470,7 @@ describe('listeningAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(listeningAction, world, command);
       
-      const events = listeningAction.execute(context);
+      const events = executeWithValidation(listeningAction, context);
       
       events.forEach(event => {
         if (event.entities) {
@@ -464,7 +487,7 @@ describe('listeningAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LISTENING, {});
       const context = createRealTestContext(listeningAction, world, command);
       
-      const events = listeningAction.execute(context);
+      const events = executeWithValidation(listeningAction, context);
       
       events.forEach(event => {
         if (event.entities) {

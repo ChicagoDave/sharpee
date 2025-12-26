@@ -24,6 +24,7 @@ import {
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 // Helper to execute action with validation (mimics CommandExecutor flow)
+// Supports both old two-phase and new three-phase actions
 const executeWithValidation = (action: any, context: ActionContext) => {
   const validation = action.validate(context);
   if (!validation.valid) {
@@ -34,6 +35,14 @@ const executeWithValidation = (action: any, context: ActionContext) => {
       params: validation.params || {}
     })];
   }
+
+  // Three-phase pattern: execute returns void, report returns events
+  if (action.report) {
+    action.execute(context);
+    return action.report(context);
+  }
+
+  // Old two-phase pattern: execute returns events
   return action.execute(context);
 };
 

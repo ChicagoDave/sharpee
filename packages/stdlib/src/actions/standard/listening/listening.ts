@@ -1,17 +1,35 @@
 /**
  * Listening action - listen for sounds in the environment
- * 
+ *
  * This action allows players to listen for sounds in their current location
  * or from specific objects.
+ *
+ * Uses three-phase pattern:
+ * 1. validate: Always succeeds (no preconditions for listening)
+ * 2. execute: Analyze sounds (no world mutations)
+ * 3. report: Emit listened event and success message
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, IFEntity } from '@sharpee/world-model';
+import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { ListenedEventData } from './listening-events';
+
+/**
+ * Shared data passed between execute and report phases
+ */
+interface ListeningSharedData {
+  messageId?: string;
+  params?: Record<string, any>;
+  eventData?: ListenedEventData;
+}
+
+function getListeningSharedData(context: ActionContext): ListeningSharedData {
+  return context.sharedData as ListeningSharedData;
+}
 
 interface ListeningAnalysis {
   messageId: string;
@@ -135,27 +153,36 @@ export const listeningAction: Action & { metadata: ActionMetadata } = {
   
   validate(context: ActionContext): ValidationResult {
     // Listening always succeeds - no preconditions
-    return {
-      valid: true
-    };
+    return { valid: true };
   },
-  
-  execute(context: ActionContext): ISemanticEvent[] {
-    const events: ISemanticEvent[] = [];
-    
-    // Use shared analysis function
+
+  execute(context: ActionContext): void {
+    // Listening has NO world mutations - it's a sensory action
+    // Analyze sounds and store in sharedData for report phase
     const analysis = analyzeListening(context);
-    
-    // Create LISTENED event for world model
-    events.push(context.event('if.event.listened', analysis.eventData));
-    
-    // Add success message
+    const sharedData = getListeningSharedData(context);
+
+    sharedData.messageId = analysis.messageId;
+    sharedData.params = analysis.params;
+    sharedData.eventData = analysis.eventData;
+  },
+
+  report(context: ActionContext): ISemanticEvent[] {
+    const events: ISemanticEvent[] = [];
+    const sharedData = getListeningSharedData(context);
+
+    // Emit listened event for world model
+    if (sharedData.eventData) {
+      events.push(context.event('if.event.listened', sharedData.eventData));
+    }
+
+    // Emit success message
     events.push(context.event('action.success', {
-      actionId: this.id,
-      messageId: analysis.messageId,
-      params: analysis.params
+      actionId: context.action.id,
+      messageId: sharedData.messageId || 'silence',
+      params: sharedData.params || {}
     }));
-    
+
     return events;
   }
 };
