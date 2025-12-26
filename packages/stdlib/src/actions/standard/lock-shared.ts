@@ -8,11 +8,12 @@ import { ISemanticEvent } from '@sharpee/core';
 
 /**
  * Shared message constants for lock/unlock validation
+ * These are message IDs, not English strings - lang-en-us resolves them
  */
 export const LOCK_MESSAGES = {
-  NO_KEY: 'You need a key to do that.',
-  KEY_NOT_HELD: 'You\'re not holding {key}.',
-  WRONG_KEY: 'That key doesn\'t fit {item}.',
+  NO_KEY: 'no_key',
+  KEY_NOT_HELD: 'key_not_held',
+  WRONG_KEY: 'wrong_key',
 };
 
 export interface LockAnalysis {

@@ -72,7 +72,7 @@ describe('switchingOnAction (Golden Pattern)', () => {
       const events = executeWithValidation(switchingOnAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('What do you want to turn on')
+        messageId: 'no_target'
       });
     });
 
@@ -90,7 +90,7 @@ describe('switchingOnAction (Golden Pattern)', () => {
       const events = executeWithValidation(switchingOnAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining("can't be switched on"),
+        messageId: 'not_switchable',
         params: { target: 'ordinary rock' }
       });
     });
@@ -111,7 +111,7 @@ describe('switchingOnAction (Golden Pattern)', () => {
       const events = executeWithValidation(switchingOnAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('already on'),
+        messageId: 'already_on',
         params: { target: 'portable radio' }
       });
     });
@@ -134,7 +134,7 @@ describe('switchingOnAction (Golden Pattern)', () => {
       const events = executeWithValidation(switchingOnAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('no power'),
+        messageId: 'no_power',
         params: { target: 'television' }
       });
     });

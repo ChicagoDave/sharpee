@@ -72,7 +72,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       const events = executeWithValidation(switchingOffAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('What do you want to turn off')
+        messageId: 'no_target'
       });
     });
 
@@ -90,7 +90,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       const events = executeWithValidation(switchingOffAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining("can't be switched off"),
+        messageId: 'not_switchable',
         params: { target: 'ordinary rock' }
       });
     });
@@ -111,7 +111,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       const events = executeWithValidation(switchingOffAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('already off'),
+        messageId: 'already_off',
         params: { target: 'portable radio' }
       });
     });

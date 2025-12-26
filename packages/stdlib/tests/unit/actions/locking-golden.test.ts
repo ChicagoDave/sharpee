@@ -75,7 +75,7 @@ describe('lockingAction (Golden Pattern)', () => {
       const events = executeWithValidation(lockingAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('want to lock')
+        messageId: 'no_target'
       });
     });
 
@@ -99,7 +99,7 @@ describe('lockingAction (Golden Pattern)', () => {
       const events = executeWithValidation(lockingAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining("can't be locked"),
+        messageId: 'not_lockable',
         params: { item: 'wooden box' }
       });
     });
@@ -124,7 +124,7 @@ describe('lockingAction (Golden Pattern)', () => {
       const events = executeWithValidation(lockingAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('already locked'),
+        messageId: 'already_locked',
         params: { item: 'treasure chest' }
       });
     });
@@ -152,7 +152,7 @@ describe('lockingAction (Golden Pattern)', () => {
       const events = executeWithValidation(lockingAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('close'),
+        messageId: 'not_closed',
         params: { item: 'cabinet' }
       });
     });
@@ -184,7 +184,7 @@ describe('lockingAction (Golden Pattern)', () => {
       const events = executeWithValidation(lockingAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('need a key')
+        messageId: 'no_key'
       });
     });
 
@@ -217,7 +217,7 @@ describe('lockingAction (Golden Pattern)', () => {
       const events = executeWithValidation(lockingAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('not holding'),
+        messageId: 'key_not_held',
         params: { key: 'iron key' }
       });
     });
@@ -251,7 +251,7 @@ describe('lockingAction (Golden Pattern)', () => {
       const events = executeWithValidation(lockingAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining("doesn't fit"),
+        messageId: 'wrong_key',
         params: {
           key: 'silver key',
           item: 'door'
@@ -292,8 +292,8 @@ describe('lockingAction (Golden Pattern)', () => {
       });
       
       expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('locked'),
-        params: { 
+        messageId: 'locked',
+        params: {
           item: 'small box',
           isContainer: true
         }
@@ -303,12 +303,12 @@ describe('lockingAction (Golden Pattern)', () => {
     test('should lock with correct key', () => {
       const { world, player, room } = setupBasicWorld();
       const safe = world.createEntity('wall safe', 'object');
-      safe.add({ 
+      safe.add({
         type: TraitType.OPENABLE,
         isOpen: false
       });
       // Add lockable trait without keyId initially
-      
+
       const key = world.createEntity('safe key', 'object');
       // Store the key's actual ID in the lockable trait
       safe.add({
@@ -316,28 +316,28 @@ describe('lockingAction (Golden Pattern)', () => {
         isLocked: false,
         keyId: key.id  // Use the actual entity ID
       });
-      
+
       world.moveEntity(safe.id, room.id);
       world.moveEntity(key.id, player.id);  // Player has key
-      
+
       const command = createCommand(IFActions.LOCKING, {
         entity: safe,
         secondEntity: key,
         preposition: 'with'
       });
-      
+
       const context = createRealTestContext(lockingAction, world, command);
-      
+
       const events = executeWithValidation(lockingAction, context);
-      
+
       expectEvent(events, 'if.event.locked', {
         targetId: safe.id,
         keyId: key.id
       });
-      
+
       expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('locked_with'),
-        params: { 
+        messageId: 'locked_with',
+        params: {
           item: 'wall safe',
           key: 'safe key'
         }

@@ -76,7 +76,7 @@ describe('unlockingAction (Golden Pattern)', () => {
       const events = executeWithValidation(unlockingAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('want to unlock')
+        messageId: 'no_target'
       });
     });
 
@@ -97,7 +97,7 @@ describe('unlockingAction (Golden Pattern)', () => {
       const events = executeWithValidation(unlockingAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining("can't be unlocked"),
+        messageId: 'not_lockable',
         params: { item: 'wooden box' }
       });
     });
@@ -119,7 +119,7 @@ describe('unlockingAction (Golden Pattern)', () => {
       const events = executeWithValidation(unlockingAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('already unlocked'),
+        messageId: 'already_unlocked',
         params: { item: 'treasure chest' }
       });
     });
@@ -146,7 +146,7 @@ describe('unlockingAction (Golden Pattern)', () => {
       const events = executeWithValidation(unlockingAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('need a key')
+        messageId: 'no_key'
       });
     });
 
@@ -174,7 +174,7 @@ describe('unlockingAction (Golden Pattern)', () => {
       const events = executeWithValidation(unlockingAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('not holding'),
+        messageId: 'key_not_held',
         params: { key: 'safe key' }
       });
     });
@@ -203,7 +203,7 @@ describe('unlockingAction (Golden Pattern)', () => {
       const events = executeWithValidation(unlockingAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining("doesn't fit"),
+        messageId: 'wrong_key',
         params: {
           key: 'desk key',
           item: 'cabinet'
@@ -236,7 +236,7 @@ describe('unlockingAction (Golden Pattern)', () => {
       });
       
       expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('unlocked'),
+        messageId: 'unlocked',
         params: { item: 'simple latch' }
       });
     });
@@ -252,19 +252,19 @@ describe('unlockingAction (Golden Pattern)', () => {
           type: TraitType.CONTAINER
         }
       });
-      
+
       const chest = findEntityByName(world, 'iron chest')!;
       const key = world.createEntity('iron key', 'object');
-      
+
       // Update the chest's lockable trait to use the actual key ID
       chest.add({
         type: TraitType.LOCKABLE,
         isLocked: true,
         keyId: key.id  // Use actual entity ID
       });
-      
+
       world.moveEntity(key.id, player.id);  // Player has key
-      
+
       const context = createRealTestContext(unlockingAction, world,
         createCommand(IFActions.UNLOCKING, {
           entity: chest,
@@ -272,17 +272,17 @@ describe('unlockingAction (Golden Pattern)', () => {
           preposition: 'with'
         })
       );
-      
+
       const events = executeWithValidation(unlockingAction, context);
-      
+
       expectEvent(events, 'if.event.unlocked', {
         targetId: chest.id,
         keyId: key.id
       });
-      
+
       expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('unlocked_with'),
-        params: { 
+        messageId: 'unlocked_with',
+        params: {
           item: 'iron chest',
           key: 'iron key',
           isContainer: true
