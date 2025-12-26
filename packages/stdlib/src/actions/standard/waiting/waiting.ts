@@ -12,6 +12,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
+import { handleReportErrors } from '../../base/report-helpers';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { WaitedEventData } from './waiting-events';
@@ -56,7 +57,10 @@ export const waitingAction: Action & { metadata: ActionMetadata } = {
     sharedData.locationName = location?.name;
   },
 
-  report(context: ActionContext): ISemanticEvent[] {
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const events: ISemanticEvent[] = [];
     const sharedData = getWaitingSharedData(context);
 

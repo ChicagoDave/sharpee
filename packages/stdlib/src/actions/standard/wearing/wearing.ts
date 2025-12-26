@@ -13,6 +13,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
+import { handleReportErrors } from '../../base/report-helpers';
 import { TraitType, WearableTrait, WearableBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
@@ -142,7 +143,10 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
     sharedData.messageId = 'worn';
   },
 
-  report(context: ActionContext): ISemanticEvent[] {
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const sharedData = getWearingSharedData(context);
     const events: ISemanticEvent[] = [];
 

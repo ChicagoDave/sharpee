@@ -12,6 +12,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
+import { handleReportErrors } from '../../base/report-helpers';
 import { TraitType, IdentityTrait, SwitchableTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { TouchedEventData } from './touching-events';
@@ -207,7 +208,10 @@ export const touchingAction: Action & { metadata: ActionMetadata } = {
     sharedData.eventData = eventData;
   },
 
-  report(context: ActionContext): ISemanticEvent[] {
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const events: ISemanticEvent[] = [];
     const sharedData = getTouchingSharedData(context);
 
