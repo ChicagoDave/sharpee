@@ -4,10 +4,11 @@
  * This action handles transferring objects from the player to NPCs.
  * NPCs may accept or refuse items based on their state.
  *
- * Uses three-phase pattern:
+ * Uses four-phase pattern:
  * 1. validate: Check if item can be given to recipient
  * 2. execute: Transfer item, store result in sharedData
- * 3. report: Generate events from sharedData
+ * 3. blocked: Generate events when validation fails
+ * 4. report: Generate success events from sharedData
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -17,7 +18,6 @@ import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, IdentityBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { GivingEventMap } from './giving-events';
-import { handleReportErrors } from '../../base/report-helpers';
 
 /**
  * Shared data passed between execute and report phases
@@ -220,10 +220,16 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
     };
   },
 
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    return [context.event('action.blocked', {
+      actionId: this.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
+  },
 
+  report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getGivingSharedData(context);
 
     // Build event data

@@ -123,7 +123,7 @@ describe('goingAction (Golden Pattern)', () => {
       const events = executeAction(goingAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('way do you want to go')
+        messageId: 'no_direction'
       });
     });
 
@@ -142,7 +142,7 @@ describe('goingAction (Golden Pattern)', () => {
       const events = executeAction(goingAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('leave your current location')
+        messageId: 'not_in_room'
       });
     });
 
@@ -167,7 +167,7 @@ describe('goingAction (Golden Pattern)', () => {
       const events = executeAction(goingAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('no obvious exits')
+        messageId: 'no_exits'
       });
     });
 
@@ -197,7 +197,7 @@ describe('goingAction (Golden Pattern)', () => {
       const events = executeAction(goingAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining("can't go"),
+        messageId: 'no_exit_that_way',
         params: { direction: Direction.NORTH }
       });
     });
@@ -315,7 +315,7 @@ describe('goingAction (Golden Pattern)', () => {
       const events = executeAction(goingAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('leads nowhere'),
+        messageId: 'destination_not_found',
         params: { direction: Direction.WEST }
       });
     });
@@ -352,7 +352,7 @@ describe('goingAction (Golden Pattern)', () => {
 
       // Should fail because the room is dark and player has no light
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('too dark'),
+        messageId: 'too_dark',
         params: { direction: Direction.DOWN }
       });
     });

@@ -12,7 +12,7 @@ import {
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ExitedEventData } from './exiting-events';
-import { MESSAGES } from './exiting-messages';
+import { ExitingMessages } from './exiting-messages';
 
 interface ExitingExecutionState {
   fromLocation: string;
@@ -54,7 +54,7 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
     if (!currentLocation) {
       return {
         valid: false,
-        error: MESSAGES.NOWHERE_TO_GO
+        error: ExitingMessages.NOWHERE_TO_GO
       };
     }
 
@@ -62,7 +62,7 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
     if (!currentContainer) {
       return {
         valid: false,
-        error: MESSAGES.NOWHERE_TO_GO
+        error: ExitingMessages.NOWHERE_TO_GO
       };
     }
 
@@ -73,7 +73,7 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
     if (isRoom) {
       return {
         valid: false,
-        error: MESSAGES.ALREADY_OUTSIDE
+        error: ExitingMessages.ALREADY_OUTSIDE
       };
     }
 
@@ -82,7 +82,7 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
     if (!parentLocation) {
       return {
         valid: false,
-        error: MESSAGES.NOWHERE_TO_GO
+        error: ExitingMessages.NOWHERE_TO_GO
       };
     }
 
@@ -91,7 +91,7 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
       if (!OpenableBehavior.isOpen(currentContainer)) {
         return {
           valid: false,
-          error: MESSAGES.CONTAINER_CLOSED,
+          error: ExitingMessages.CONTAINER_CLOSED,
           params: { container: currentContainer.name }
         };
       }

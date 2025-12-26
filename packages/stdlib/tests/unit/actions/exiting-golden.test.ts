@@ -78,7 +78,7 @@ describe('exitingAction (Golden Pattern)', () => {
       const events = executeWithValidation(exitingAction, context);
       
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('not inside anything')
+        messageId: 'already_outside'
       });
     });
 
@@ -96,7 +96,7 @@ describe('exitingAction (Golden Pattern)', () => {
       const events = executeWithValidation(exitingAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('nowhere to go')
+        messageId: 'nowhere_to_go'
       });
     });
 
@@ -118,7 +118,7 @@ describe('exitingAction (Golden Pattern)', () => {
       const events = executeWithValidation(exitingAction, context);
 
       expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('nowhere to go')
+        messageId: 'nowhere_to_go'
       });
     });
 

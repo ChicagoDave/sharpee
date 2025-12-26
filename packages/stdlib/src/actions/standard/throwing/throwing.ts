@@ -6,16 +6,16 @@
  * - Object hitting and possibly breaking
  * - Target reacting to being hit
  *
- * Uses three-phase pattern:
+ * Uses four-phase pattern:
  * 1. validate: Check if item can be thrown at target/direction
  * 2. execute: Calculate outcome, store result in sharedData
- * 3. report: Generate events from sharedData
+ * 3. blocked: Generate events when validation fails
+ * 4. report: Generate success events from sharedData
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
-import { handleReportErrors } from '../../base/report-helpers';
 import { TraitType, IdentityBehavior, ActorBehavior, RoomBehavior, OpenableBehavior, Direction, DirectionType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
@@ -322,10 +322,16 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     sharedData.finalLocation = sharedData.willBreak ? null : finalLocation;
   },
 
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    return [context.event('action.blocked', {
+      actionId: this.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
+  },
 
+  report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getThrowingSharedData(context);
     const events: ISemanticEvent[] = [];
 

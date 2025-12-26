@@ -138,7 +138,7 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
     const isContainer = noun.has(TraitType.CONTAINER);
     const contents = isContainer ? context.world.getContents(noun.id) : [];
 
-    let messageId = OpeningMessages.OPENED;
+    let messageId: string = OpeningMessages.OPENED;
     let params: Record<string, any> = { item: noun.name };
 
     // Special message for empty containers

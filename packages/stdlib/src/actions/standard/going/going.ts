@@ -29,7 +29,7 @@ import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
 import { buildEventData } from '../../data-builder-types';
-import { MESSAGES } from './going-messages';
+import { GoingMessages } from './going-messages';
 
 // Import our data builders
 import {
@@ -90,7 +90,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     if (!direction) {
       return {
         valid: false,
-        error: MESSAGES.NO_DIRECTION
+        error: GoingMessages.NO_DIRECTION
       };
     }
 
@@ -102,7 +102,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       // Player is inside something (container/supporter) - can't use room exits
       return {
         valid: false,
-        error: MESSAGES.NOT_IN_ROOM
+        error: GoingMessages.NOT_IN_ROOM
       };
     }
 
@@ -110,7 +110,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       // Shouldn't happen since currentLocation should always be a room
       return {
         valid: false,
-        error: MESSAGES.NOT_IN_ROOM
+        error: GoingMessages.NOT_IN_ROOM
       };
     }
 
@@ -122,12 +122,12 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       if (allExits.size === 0) {
         return {
           valid: false,
-          error: MESSAGES.NO_EXITS
+          error: GoingMessages.NO_EXITS
         };
       }
       return {
         valid: false,
-        error: MESSAGES.NO_EXIT_THAT_WAY,
+        error: GoingMessages.NO_EXIT_THAT_WAY,
         params: { direction: direction }
       };
     }
@@ -137,7 +137,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       const blockedMessage = RoomBehavior.getBlockedMessage(currentRoom, direction);
       return {
         valid: false,
-        error: MESSAGES.MOVEMENT_BLOCKED,
+        error: GoingMessages.MOVEMENT_BLOCKED,
         params: { direction: direction }
       };
     }
@@ -153,7 +153,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
         if (isLocked) {
           return {
             valid: false,
-            error: MESSAGES.DOOR_LOCKED,
+            error: GoingMessages.DOOR_LOCKED,
             params: {
               door: door.name,
               direction: direction,
@@ -166,7 +166,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
         if (isClosed) {
           return {
             valid: false,
-            error: MESSAGES.DOOR_CLOSED,
+            error: GoingMessages.DOOR_CLOSED,
             params: { door: door.name, direction: direction }
           };
         }
@@ -181,7 +181,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       // Destination doesn't exist
       return {
         valid: false,
-        error: MESSAGES.DESTINATION_NOT_FOUND,
+        error: GoingMessages.DESTINATION_NOT_FOUND,
         params: { direction: direction }
       };
     }
@@ -190,7 +190,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     if (isDarkRoom(destination) && !hasLightInRoom(actor, context)) {
       return {
         valid: false,
-        error: MESSAGES.TOO_DARK,
+        error: GoingMessages.TOO_DARK,
         params: { direction: direction }
       };
     }
