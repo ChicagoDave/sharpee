@@ -19,6 +19,7 @@ import { TraitType, WearableTrait, IFEntity } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { InventoryEventMap } from './inventory-events';
+import { handleReportErrors } from '../../base/report-helpers';
 
 /**
  * Shared data passed between execute and report phases
@@ -213,7 +214,10 @@ export const inventoryAction: Action & { metadata: ActionMetadata } = {
     sharedData.analysis = analysis;
   },
 
-  report(context: ActionContext): ISemanticEvent[] {
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const events: ISemanticEvent[] = [];
     const sharedData = getInventorySharedData(context);
     const analysis = sharedData.analysis;

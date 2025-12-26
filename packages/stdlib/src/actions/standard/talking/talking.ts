@@ -17,6 +17,7 @@ import { IFActions } from '../../constants';
 import { TalkedEventData } from './talking-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
+import { handleReportErrors } from '../../base/report-helpers';
 
 /**
  * Shared data passed between execute and report phases
@@ -188,7 +189,10 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     sharedData.eventData = eventData;
   },
 
-  report(context: ActionContext): ISemanticEvent[] {
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const events: ISemanticEvent[] = [];
     const sharedData = getTalkingSharedData(context);
 

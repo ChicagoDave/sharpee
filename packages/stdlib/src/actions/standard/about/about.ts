@@ -11,6 +11,7 @@ import { ISemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { AboutDisplayedEventData } from './about-events';
+import { handleReportErrors } from '../../base/report-helpers';
 
 export const aboutAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.ABOUT,
@@ -27,7 +28,10 @@ export const aboutAction: Action & { metadata: ActionMetadata } = {
     // The text service will construct output from story config
   },
   
-  report(context: ActionContext): ISemanticEvent[] {
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     // Simply emit an event signaling that about info should be displayed
     const eventData: AboutDisplayedEventData = {};
     

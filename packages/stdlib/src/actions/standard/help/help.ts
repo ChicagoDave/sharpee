@@ -19,6 +19,7 @@ import { ISemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { HelpDisplayedEventData } from './help-events';
+import { handleReportErrors } from '../../base/report-helpers';
 
 /**
  * Shared data passed between execute and report phases
@@ -121,7 +122,10 @@ export const helpAction: Action & { metadata: ActionMetadata } = {
     sharedData.eventData = state.eventData;
   },
 
-  report(context: ActionContext): ISemanticEvent[] {
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const sharedData = getHelpSharedData(context);
 
     // Emit the help event with the prepared data

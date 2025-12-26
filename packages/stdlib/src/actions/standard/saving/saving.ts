@@ -15,6 +15,7 @@ import { ISemanticEvent, createSaveRequestedEvent, ISaveContext } from '@sharpee
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { SaveRequestedEventData } from './saving-events';
+import { handleReportErrors } from '../../base/report-helpers';
 
 interface SavingSharedData {
   saveName: string;
@@ -151,7 +152,10 @@ export const savingAction: Action & { metadata: ActionMetadata } = {
     Object.assign(context.sharedData, data);
   },
 
-  report(context: ActionContext): ISemanticEvent[] {
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const events: ISemanticEvent[] = [];
     const data = context.sharedData as SavingSharedData;
 

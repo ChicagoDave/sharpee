@@ -15,6 +15,7 @@ import { ISemanticEvent, createQuitRequestedEvent, IQuitContext } from '@sharpee
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { QuitRequestedEventData } from './quitting-events';
+import { handleReportErrors } from '../../base/report-helpers';
 
 /**
  * Shared data passed between execute and report phases
@@ -98,7 +99,10 @@ export const quittingAction: Action & { metadata: ActionMetadata } = {
     sharedData.hasUnsavedProgress = analysis.hasUnsavedProgress;
   },
 
-  report(context: ActionContext): ISemanticEvent[] {
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const events: ISemanticEvent[] = [];
     const sharedData = getQuittingSharedData(context);
 

@@ -18,6 +18,7 @@ import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { SwitchedOnEventData } from './switching_on-events';
 import { analyzeSwitchingContext, determineSwitchingMessage } from '../switching-shared';
+import { handleReportErrors } from '../../base/report-helpers';
 
 /**
  * Shared data passed between execute and report phases
@@ -179,7 +180,10 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
     );
   },
 
-  report(context: ActionContext): ISemanticEvent[] {
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const sharedData = getSwitchingOnSharedData(context);
 
     // Handle failure

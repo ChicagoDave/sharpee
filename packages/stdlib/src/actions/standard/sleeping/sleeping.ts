@@ -16,6 +16,7 @@ import { ISemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { SleptEventData } from './sleeping-events';
+import { handleReportErrors } from '../../base/report-helpers';
 
 /**
  * Shared data passed between execute and report phases
@@ -121,7 +122,10 @@ export const sleepingAction: Action & { metadata: ActionMetadata } = {
     sharedData.wakeRefreshed = analysis.wakeRefreshed;
   },
 
-  report(context: ActionContext): ISemanticEvent[] {
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const events: ISemanticEvent[] = [];
     const sharedData = getSleepingSharedData(context);
 

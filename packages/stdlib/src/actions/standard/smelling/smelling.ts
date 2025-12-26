@@ -17,6 +17,7 @@ import { IFActions } from '../../constants';
 import { SmelledEventData } from './smelling-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
+import { handleReportErrors } from '../../base/report-helpers';
 
 /**
  * Shared data passed between execute and report phases
@@ -191,7 +192,10 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
     sharedData.params = analysis.params;
   },
 
-  report(context: ActionContext): ISemanticEvent[] {
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const events: ISemanticEvent[] = [];
     const sharedData = getSmellingSharedData(context);
 

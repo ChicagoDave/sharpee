@@ -15,6 +15,7 @@ import { ISemanticEvent, createRestartRequestedEvent, IRestartContext } from '@s
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { RestartRequestedEventData } from './restarting-events';
+import { handleReportErrors } from '../../base/report-helpers';
 
 interface RestartingSharedData {
   forceRestart: boolean;
@@ -106,7 +107,10 @@ export const restartingAction: Action & { metadata: ActionMetadata } = {
     Object.assign(context.sharedData, data);
   },
 
-  report(context: ActionContext): ISemanticEvent[] {
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const events: ISemanticEvent[] = [];
     const data = context.sharedData as RestartingSharedData;
 

@@ -15,6 +15,7 @@ import { ISemanticEvent, createRestoreRequestedEvent, IRestoreContext } from '@s
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { RestoreRequestedEventData } from './restoring-events';
+import { handleReportErrors } from '../../base/report-helpers';
 
 interface SaveInfo {
   slot: string;
@@ -163,7 +164,10 @@ export const restoringAction: Action & { metadata: ActionMetadata } = {
     Object.assign(context.sharedData, data);
   },
 
-  report(context: ActionContext): ISemanticEvent[] {
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const events: ISemanticEvent[] = [];
     const data = context.sharedData as RestoringSharedData;
 

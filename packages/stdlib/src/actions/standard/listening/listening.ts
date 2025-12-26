@@ -17,6 +17,7 @@ import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { ListenedEventData } from './listening-events';
+import { handleReportErrors } from '../../base/report-helpers';
 
 /**
  * Shared data passed between execute and report phases
@@ -167,7 +168,10 @@ export const listeningAction: Action & { metadata: ActionMetadata } = {
     sharedData.eventData = analysis.eventData;
   },
 
-  report(context: ActionContext): ISemanticEvent[] {
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const events: ISemanticEvent[] = [];
     const sharedData = getListeningSharedData(context);
 

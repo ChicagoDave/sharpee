@@ -17,6 +17,7 @@ import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, IdentityBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { GivingEventMap } from './giving-events';
+import { handleReportErrors } from '../../base/report-helpers';
 
 /**
  * Shared data passed between execute and report phases
@@ -219,7 +220,10 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
     };
   },
 
-  report(context: ActionContext): ISemanticEvent[] {
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const sharedData = getGivingSharedData(context);
 
     // Build event data

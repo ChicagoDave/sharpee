@@ -9,13 +9,14 @@
  * @module
  */
 
-import { Action, ActionContext } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType } from '@sharpee/world-model';
 import {
   ReadingEventData,
   createReadingEvent
 } from './reading-events';
+import { handleReportErrors } from '../../base/report-helpers';
 
 /**
  * Shared data passed between execute and report phases
@@ -141,7 +142,10 @@ export const reading: Action = {
     sharedData.params = params;
   },
 
-  report(context: ActionContext): ISemanticEvent[] {
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const sharedData = getReadingSharedData(context);
     const events: ISemanticEvent[] = [];
 

@@ -16,6 +16,7 @@ import { StandardCapabilities } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { ScoreDisplayedEventData } from './scoring-events';
+import { handleReportErrors } from '../../base/report-helpers';
 
 interface ScoringState {
   eventData: ScoreDisplayedEventData;
@@ -143,7 +144,10 @@ export const scoringAction: Action & { metadata: ActionMetadata } = {
     }
   },
 
-  report(context: ActionContext): ISemanticEvent[] {
+  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const events: ISemanticEvent[] = [];
     const sharedData = getScoringSharedData(context);
 
