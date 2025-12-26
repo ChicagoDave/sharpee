@@ -19,11 +19,23 @@ import { insertedDataConfig } from './inserting-data';
 import { puttingAction } from '../putting';
 import { createActionContext } from '../../enhanced-context';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
+import { handleReportErrors } from '../../base/report-helpers';
 
 interface InsertingState {
   item: any;
   container: any;
   puttingValidation: ValidationResult;
+}
+
+/**
+ * Shared data passed between execute and report phases
+ */
+interface InsertingSharedData {
+  modifiedContext?: ActionContext;
+}
+
+function getInsertingSharedData(context: ActionContext): InsertingSharedData {
+  return context.sharedData as InsertingSharedData;
 }
 
 export const insertingAction: Action & { metadata: ActionMetadata } = {
@@ -131,9 +143,10 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       modifiedCommand
     );
     
-    // Store modified context for report phase
-    (context as any)._modifiedContext = modifiedContext;
-    
+    // Store modified context for report phase using sharedData
+    const sharedData = getInsertingSharedData(context);
+    sharedData.modifiedContext = modifiedContext;
+
     // Execute putting action
     puttingAction.execute(modifiedContext);
   },
@@ -143,53 +156,12 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
    * Delegates to putting action's report
    */
   report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    // Handle validation errors
-    if (validationResult && !validationResult.valid) {
-      // Capture entity data for validation errors
-      const errorParams = { ...(validationResult.params || {}) };
-      
-      // Add entity snapshots if entities are available
-      if (context.command.directObject?.entity) {
-        errorParams.targetSnapshot = captureEntitySnapshot(
-          context.command.directObject.entity,
-          context.world,
-          false
-        );
-      }
-      if (context.command.indirectObject?.entity) {
-        errorParams.indirectTargetSnapshot = captureEntitySnapshot(
-          context.command.indirectObject.entity,
-          context.world,
-          false
-        );
-      }
+    // Handle validation and execution errors using shared helper
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
 
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          error: validationResult.error || 'validation_failed',
-          reason: validationResult.error || 'validation_failed',
-          messageId: validationResult.messageId || validationResult.error || 'action_failed',
-          params: errorParams
-        })
-      ];
-    }
-    
-    // Handle execution errors
-    if (executionError) {
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          error: 'execution_failed',
-          messageId: 'action_failed',
-          params: {
-            error: executionError.message
-          }
-        })
-      ];
-    }
-    
-    const modifiedContext = (context as any)._modifiedContext;
+    const sharedData = getInsertingSharedData(context);
+    const modifiedContext = sharedData.modifiedContext;
     
     if (!modifiedContext) {
       // Shouldn't happen, but handle gracefully

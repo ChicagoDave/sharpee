@@ -16,6 +16,7 @@ import {
   OpenableBehavior
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { handleReportErrors } from '../../base/report-helpers';
 import { EnteredEventData } from './entering-events';
 
 interface EnteringExecutionState {
@@ -24,6 +25,18 @@ interface EnteringExecutionState {
   fromLocation?: string;
   preposition: 'in' | 'on';
 }
+
+/**
+ * Shared data passed between execute and report phases
+ */
+interface EnteringSharedData {
+  enteringState?: EnteringExecutionState;
+}
+
+function getEnteringSharedData(context: ActionContext): EnteringSharedData {
+  return context.sharedData as EnteringSharedData;
+}
+
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 
@@ -149,14 +162,15 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
     // Simply move the actor to the target - that's all!
     context.world.moveEntity(actor.id, target.id);
     
-    // Store state for report phase
+    // Store state for report phase using sharedData
     const state: EnteringExecutionState = {
       targetId: target.id,
       targetName: target.name,
       fromLocation: currentLocation,
       preposition
     };
-    (context as any)._enteringState = state;
+    const sharedData = getEnteringSharedData(context);
+    sharedData.enteringState = state;
   },
   
   /**
@@ -164,32 +178,13 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
    * Handles validation errors, execution errors, and success events
    */
   report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    // Handle validation errors
-    if (validationResult && !validationResult.valid) {
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          messageId: validationResult.error || 'action_failed',
-          params: validationResult.params || {}
-        })
-      ];
-    }
-    
-    // Handle execution errors
-    if (executionError) {
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          messageId: 'action_failed',
-          params: {
-            error: executionError.message
-          }
-        })
-      ];
-    }
-    
+    // Handle validation and execution errors using shared helper
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     // Get stored state from execute phase
-    const state = (context as any)._enteringState as EnteringExecutionState | undefined;
+    const sharedData = getEnteringSharedData(context);
+    const state = sharedData.enteringState as EnteringExecutionState | undefined;
     if (!state) {
       // This shouldn't happen, but handle gracefully
       return [

@@ -11,6 +11,7 @@ import {
   OpenableBehavior
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { handleReportErrors } from '../../base/report-helpers';
 import { ExitedEventData } from './exiting-events';
 
 interface ExitingExecutionState {
@@ -19,6 +20,18 @@ interface ExitingExecutionState {
   toLocation: string;
   preposition: string;
 }
+
+/**
+ * Shared data passed between execute and report phases
+ */
+interface ExitingSharedData {
+  exitingState?: ExitingExecutionState;
+}
+
+function getExitingSharedData(context: ActionContext): ExitingSharedData {
+  return context.sharedData as ExitingSharedData;
+}
+
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 
@@ -108,14 +121,15 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
     // Simply move the actor to the parent location - that's all!
     context.world.moveEntity(actor.id, parentLocation);
     
-    // Store state for report phase
+    // Store state for report phase using sharedData
     const state: ExitingExecutionState = {
       fromLocation: currentLocation,
       fromLocationName: currentContainer.name,
       toLocation: parentLocation,
       preposition
     };
-    (context as any)._exitingState = state;
+    const sharedData = getExitingSharedData(context);
+    sharedData.exitingState = state;
   },
   
   /**
@@ -123,32 +137,13 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
    * Handles validation errors, execution errors, and success events
    */
   report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    // Handle validation errors
-    if (validationResult && !validationResult.valid) {
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          messageId: validationResult.error || 'action_failed',
-          params: validationResult.params || {}
-        })
-      ];
-    }
-    
-    // Handle execution errors
-    if (executionError) {
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          messageId: 'action_failed',
-          params: {
-            error: executionError.message
-          }
-        })
-      ];
-    }
-    
+    // Handle validation and execution errors using shared helper
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     // Get stored state from execute phase
-    const state = (context as any)._exitingState as ExitingExecutionState | undefined;
+    const sharedData = getExitingSharedData(context);
+    const state = sharedData.exitingState as ExitingExecutionState | undefined;
     if (!state) {
       // This shouldn't happen, but handle gracefully
       return [

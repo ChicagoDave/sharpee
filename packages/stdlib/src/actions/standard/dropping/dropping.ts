@@ -13,6 +13,7 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent, IEntity } from '@sharpee/core';
 import { TraitType, ContainerBehavior, SupporterBehavior, WearableBehavior, ActorBehavior, IDropItemResult } from '@sharpee/world-model';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
+import { handleReportErrors } from '../../base/report-helpers';
 import { buildEventData } from '../../data-builder-types';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
@@ -20,6 +21,17 @@ import { ScopeLevel } from '../../../scope/types';
 
 // Import our data builder
 import { droppedDataConfig, determineDroppingMessage } from './dropping-data';
+
+/**
+ * Shared data passed between execute and report phases
+ */
+interface DroppingSharedData {
+  dropResult?: IDropItemResult;
+}
+
+function getDroppingSharedData(context: ActionContext): DroppingSharedData {
+  return context.sharedData as DroppingSharedData;
+}
 
 export const droppingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.DROPPING,
@@ -101,61 +113,21 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
 
     // Delegate to ActorBehavior for dropping logic
     const result: IDropItemResult = ActorBehavior.dropItem(actor, noun, context.world);
-    
-    // Store result for report phase
-    (context as any)._dropResult = result;
+
+    // Store result for report phase using sharedData
+    const sharedData = getDroppingSharedData(context);
+    sharedData.dropResult = result;
   },
 
   report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    // Handle validation errors
-    if (validationResult && !validationResult.valid) {
-      // Capture entity data for validation errors
-      const errorParams = { ...(validationResult.params || {}) };
-      
-      // Add entity snapshots if entities are available
-      if (context.command.directObject?.entity) {
-        errorParams.targetSnapshot = captureEntitySnapshot(
-          context.command.directObject.entity,
-          context.world,
-          false
-        );
-      }
-      if (context.command.indirectObject?.entity) {
-        errorParams.indirectTargetSnapshot = captureEntitySnapshot(
-          context.command.indirectObject.entity,
-          context.world,
-          false
-        );
-      }
+    // Handle validation and execution errors using shared helper
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
 
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          error: validationResult.error || 'validation_failed',
-          reason: validationResult.error || 'validation_failed',
-          messageId: validationResult.messageId || validationResult.error || 'action_failed',
-          params: errorParams
-        })
-      ];
-    }
-    
-    // Handle execution errors
-    if (executionError) {
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          error: 'execution_failed',
-          messageId: 'action_failed',
-          params: {
-            error: executionError.message
-          }
-        })
-      ];
-    }
-    
     const actor = context.player;
     const noun = context.command.directObject?.entity!;
-    const result = (context as any)._dropResult as IDropItemResult;
+    const sharedData = getDroppingSharedData(context);
+    const result = sharedData.dropResult as IDropItemResult;
     
     // Handle failure cases
     if (!result.success) {

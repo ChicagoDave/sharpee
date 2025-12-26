@@ -11,6 +11,7 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, AttackBehavior, IAttackResult } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { handleReportErrors } from '../../base/report-helpers';
 import { AttackedEventData } from './attacking-events';
 import { AttackingSharedData, AttackResult } from './attacking-types';
 import { ActionMetadata } from '../../../validation';
@@ -151,33 +152,10 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
    * Generates atomic events - one discrete fact per event
    */
   report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    // Handle validation errors
-    if (validationResult && !validationResult.valid) {
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          error: validationResult.error || 'validation_failed',
-          reason: validationResult.error || 'validation_failed',
-          messageId: validationResult.messageId || validationResult.error || 'action_failed',
-          params: validationResult.params || {}
-        })
-      ];
-    }
-    
-    // Handle execution errors
-    if (executionError) {
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          error: 'execution_failed',
-          messageId: 'action_failed',
-          params: {
-            error: executionError.message
-          }
-        })
-      ];
-    }
-    
+    // Handle validation and execution errors using shared helper
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const target = context.command.directObject!.entity!;
     const weaponId = context.sharedData.weaponUsed as string | undefined;
     const weapon = weaponId ? context.world.getEntity(weaponId) : undefined;

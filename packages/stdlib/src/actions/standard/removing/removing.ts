@@ -11,6 +11,7 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
+import { handleReportErrors } from '../../base/report-helpers';
 import { 
   TraitType,
   OpenableBehavior,
@@ -26,6 +27,18 @@ import { buildEventData } from '../../data-builder-types';
 import { removedDataConfig } from './removing-data';
 import { ScopeLevel } from '../../../scope';
 import { RemovingEventMap } from './removing-events';
+
+/**
+ * Shared data passed between execute and report phases
+ */
+interface RemovingSharedData {
+  removeResult?: IRemoveItemResult | IRemoveItemFromSupporterResult | null;
+  takeResult?: ITakeItemResult;
+}
+
+function getRemovingSharedData(context: ActionContext): RemovingSharedData {
+  return context.sharedData as RemovingSharedData;
+}
 
 export const removingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.REMOVING,
@@ -145,14 +158,13 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
       removeResult = SupporterBehavior.removeItem(source, item, context.world);
     }
     
-    // Store result for report phase
-    (context as any)._removeResult = removeResult;
-    
+    // Store results for report phase using sharedData
+    const sharedData = getRemovingSharedData(context);
+    sharedData.removeResult = removeResult;
+
     // Then take the item using ActorBehavior
     const takeResult: ITakeItemResult = ActorBehavior.takeItem(actor, item, context.world);
-    
-    // Store result for report phase
-    (context as any)._takeResult = takeResult;
+    sharedData.takeResult = takeResult;
   },
 
   /**
@@ -160,57 +172,16 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
    * Generates events with complete state snapshots
    */
   report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    // Handle validation errors
-    if (validationResult && !validationResult.valid) {
-      // Capture entity data for validation errors
-      const errorParams = { ...(validationResult.params || {}) };
-      
-      // Add entity snapshots if entities are available
-      if (context.command.directObject?.entity) {
-        errorParams.targetSnapshot = captureEntitySnapshot(
-          context.command.directObject.entity,
-          context.world,
-          false
-        );
-      }
-      if (context.command.indirectObject?.entity) {
-        errorParams.indirectTargetSnapshot = captureEntitySnapshot(
-          context.command.indirectObject.entity,
-          context.world,
-          false
-        );
-      }
+    // Handle validation and execution errors using shared helper
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
 
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          error: validationResult.error || 'validation_failed',
-          reason: validationResult.error || 'validation_failed',
-          messageId: validationResult.messageId || validationResult.error || 'action_failed',
-          params: errorParams
-        })
-      ];
-    }
-    
-    // Handle execution errors
-    if (executionError) {
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          error: 'execution_failed',
-          messageId: 'action_failed',
-          params: {
-            error: executionError.message
-          }
-        })
-      ];
-    }
-    
     const actor = context.player;
     const item = context.command.directObject?.entity!;
     const source = context.command.indirectObject?.entity!;
-    const removeResult = (context as any)._removeResult as IRemoveItemResult | IRemoveItemFromSupporterResult | null;
-    const takeResult = (context as any)._takeResult as ITakeItemResult;
+    const sharedData = getRemovingSharedData(context);
+    const removeResult = sharedData.removeResult as IRemoveItemResult | IRemoveItemFromSupporterResult | null;
+    const takeResult = sharedData.takeResult as ITakeItemResult;
     
     const events: ISemanticEvent[] = [];
     

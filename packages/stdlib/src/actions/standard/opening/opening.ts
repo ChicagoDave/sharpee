@@ -11,6 +11,7 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent, EntityId } from '@sharpee/core';
 import { TraitType, OpenableBehavior, LockableBehavior, IOpenResult } from '@sharpee/world-model';
 import { buildEventData } from '../../data-builder-types';
+import { handleReportErrors } from '../../base/report-helpers';
 import { IFActions } from '../../constants';
 import { OpenedEventData, RevealedEventData, ExitRevealedEventData } from './opening-events';
 import { ActionMetadata } from '../../../validation';
@@ -108,33 +109,10 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
    * Generates atomic events - one discrete fact per event
    */
   report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    // Handle validation errors
-    if (validationResult && !validationResult.valid) {
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          error: validationResult.error || 'validation_failed',
-          reason: validationResult.error || 'validation_failed',
-          messageId: validationResult.messageId || validationResult.error || 'action_failed',
-          params: validationResult.params || {}
-        })
-      ];
-    }
-    
-    // Handle execution errors
-    if (executionError) {
-      return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          error: 'execution_failed',
-          messageId: 'action_failed',
-          params: {
-            error: executionError.message
-          }
-        })
-      ];
-    }
-    
+    // Handle validation and execution errors using shared helper
+    const errorEvents = handleReportErrors(context, validationResult, executionError);
+    if (errorEvents) return errorEvents;
+
     const noun = context.command.directObject!.entity!;
     const result = context.sharedData.openResult as IOpenResult;
     
