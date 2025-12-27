@@ -118,7 +118,7 @@ For lit rooms:
 
 ### Check If Dark
 A room is dark if:
-1. Room has `ROOM` trait with `requiresLight = true`
+1. Room has `ROOM` trait with `isDark = true`
 2. No active light sources in room
 3. Player not carrying active light source
 

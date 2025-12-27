@@ -170,7 +170,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const darkRoom = world.createEntity('Dark Cave', 'room');
       darkRoom.add({
         type: TraitType.ROOM,
-        requiresLight: true
+        isDark: true
       });
       
       world.moveEntity(player.id, darkRoom.id);
@@ -205,7 +205,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const darkRoom = world.createEntity('Dark Cave', 'room');
       darkRoom.add({
         type: TraitType.ROOM,
-        requiresLight: true
+        isDark: true
       });
       
       const torch = world.createEntity('burning torch', 'object');
@@ -243,7 +243,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const darkRoom = world.createEntity('Lit Cave', 'room');
       darkRoom.add({
         type: TraitType.ROOM,
-        requiresLight: true
+        isDark: true
       });
       
       const lamp = world.createEntity('electric lamp', 'object');

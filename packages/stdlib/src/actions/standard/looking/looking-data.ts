@@ -23,7 +23,7 @@ function checkIfDark(context: ActionContext): boolean {
   }
   
   const roomTrait = room.getTrait(TraitType.ROOM) as any;
-  if (!roomTrait.requiresLight) {
+  if (!roomTrait.isDark) {
     return false;
   }
   

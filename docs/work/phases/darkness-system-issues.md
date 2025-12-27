@@ -14,6 +14,7 @@ Testing the Cloak of Darkness story revealed multiple issues with how Sharpee ha
 
 **Severity**: Critical
 **Location**: `packages/stdlib/src/actions/standard/looking/looking-data.ts:26`
+**Status**: ✅ Fixed (2025-12-27)
 
 ### Problem
 
@@ -51,6 +52,8 @@ export class RoomTrait {
 ### Fix
 
 Replace `requiresLight` check with `isDark` check, and verify the logic matches `VisibilityBehavior`.
+
+**Resolution**: Changed line 26 from `if (!roomTrait.requiresLight)` to `if (!roomTrait.isDark)`. Updated tests in `looking-golden.test.ts` and design doc to use correct property name.
 
 ---
 
@@ -276,7 +279,7 @@ Include `isPlayer: boolean` flag in actor snapshots, or provide utility function
 
 ## Recommended Fix Order
 
-1. **Critical**: Fix `requiresLight` → `isDark` in looking action
+1. ~~**Critical**: Fix `requiresLight` → `isDark` in looking action~~ ✅ Done
 2. **High**: Unify darkness checking using VisibilityBehavior
 3. **High**: Review all actions for consistent snapshot data
 4. **Medium**: Document event data contracts
