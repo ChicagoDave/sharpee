@@ -319,6 +319,107 @@ story.on('if.event.pushed', (event) => {
 })
 ```
 
+## Perception System
+
+The perception system filters events based on what the player can perceive, handling darkness, blindness, and other sensory restrictions.
+
+### PerceptionService (ADR-069)
+
+The PerceptionService sits between action execution and the text service, transforming events that describe things the player cannot perceive into appropriate alternative events.
+
+**Location:**
+- Interface: `/packages/if-services/src/perception-service.ts`
+- Implementation: `/packages/stdlib/src/services/PerceptionService.ts`
+
+### Basic Usage
+
+```typescript
+import { PerceptionService } from '@sharpee/stdlib';
+
+// Create service
+const perceptionService = new PerceptionService();
+
+// Wire to engine
+const engine = new GameEngine({
+  world,
+  player,
+  parser,
+  language,
+  textService,
+  perceptionService  // Enable perception filtering
+});
+```
+
+### How It Works
+
+1. Action generates events (room description, contents list, etc.)
+2. PerceptionService filters events before they reach the text service
+3. Visual events are blocked or transformed when player can't see
+4. Non-visual events (action.failure, game.message) pass through unchanged
+
+### Sense Types
+
+```typescript
+type Sense = 'sight' | 'hearing' | 'smell' | 'touch';
+```
+
+Currently only `sight` is fully implemented. Other senses are extension points for future features.
+
+### Checking Perception
+
+```typescript
+// Check if actor can perceive
+const canSee = perceptionService.canPerceive(actor, location, world, 'sight');
+
+// Perception checks (for sight):
+// 1. Is actor blind? (future)
+// 2. Is actor blindfolded? (future)
+// 3. Is location dark? (via VisibilityBehavior)
+```
+
+### Event Filtering
+
+The service filters these visual event types when the player can't see:
+- `if.event.room.description` → `if.event.perception.blocked`
+- `if.event.contents.listed` → `if.event.perception.blocked`
+- `action.success` with `messageId: 'contents_list'` → `if.event.perception.blocked`
+
+The blocked event contains:
+```typescript
+interface PerceptionBlockedData {
+  originalType: string;  // What was blocked
+  reason: PerceptionBlockReason;  // Why (darkness, blindness, blindfolded)
+  sense: Sense;  // Which sense was blocked
+  originalData?: unknown;  // Original event data for debugging
+}
+```
+
+### Story Integration Example
+
+```typescript
+// In story setup
+const bar = world.createEntity('Dark Bar', EntityType.ROOM);
+bar.add(new RoomTrait({ isDark: true }));  // Dark until lit
+
+// When player enters while carrying cloak (absorbs light):
+// - Room description is filtered to perception.blocked
+// - "Blundering in dark" message still appears (game.message)
+// - Action failures still appear
+
+// When cloak is hung (bar becomes lit):
+roomTrait.isDark = false;
+// Now room description shows normally
+```
+
+### Text Service Handling
+
+The text service handles blocked perception events:
+```typescript
+case 'if.event.perception.blocked':
+  // Show "It's pitch dark, and you can't see a thing."
+  return this.languageProvider.getMessage('perception.blocked.darkness');
+```
+
 ## Command Processing Flow
 
 1. **Parse**: Text → ParsedCommand (parser)
