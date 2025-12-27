@@ -10,19 +10,48 @@ Sharpee is a parser-based Interactive Fiction authoring tool built in Typescript
 - Never use batch scripts (sed/awk/grep) to modify multiple files. One file at a time.
 - We never care about backward compatibility, but discuss code smells or design flaws before changing.
 
-## Current Work: Action Refactoring (as of Sept 2025)
+## Architecture Principles
 
-We are systematically refactoring each stdlib action to the three-phase pattern (validate/execute/report).
+### Language Layer Separation
+**All text output must go through the language layer.** Code in engine/stdlib/world-model emits semantic events with message IDs, not English strings. Actual prose lives in `lang-en-us` (or other language implementations).
 
-**Process**: See `/docs/work/phases/action-refactoring-master-plan.md` - one action at a time under a magnifying glass with full analysis, design spec, implementation, review, signoff.
+- stdlib: Define message IDs in `*-messages.ts` files
+- lang-en-us: Provide actual text via message ID → string/function mapping
+- Never hardcode English strings in engine, stdlib, or world-model
 
-### Actions with Three-Phase Pattern (43 complete - ALL DONE):
+### Logic Location
+Be deliberate about where logic belongs:
+
+| Layer | Responsibility | Examples |
+|-------|---------------|----------|
+| **engine** | Turn cycle, command execution, event dispatch | SchedulerService, NPC turn phase |
+| **world-model** | Traits, behaviors, entity state | LightSourceBehavior, ContainerTrait |
+| **stdlib** | Standard actions, common patterns | Opening action, guard behavior |
+| **story** | Game-specific content and overrides | Custom NPCs, puzzle logic |
+| **lang-{locale}** | All user-facing text | Error messages, descriptions |
+| **client** | UI rendering, input handling | React components, terminal I/O |
+
+Ask: "Where does this belong?" before implementing new features.
+
+## Current Work: Project Dungeo (Dec 2025)
+
+Dog-fooding Sharpee by implementing full Mainframe Zork (~191 rooms).
+
+**Documentation**: See `/docs/work/dungeo/` for:
+- `README.md` - Project overview and goals
+- `world-map.md` - All rooms organized by region
+- `objects-inventory.md` - Treasures, tools, NPCs
+- `stdlib-gap-analysis.md` - What exists vs. what's needed
+- `implementation-plan.md` - 10 phases, vertical slices
+
+**Key ADRs for Dungeo**:
+- ADR-070: NPC System Architecture
+- ADR-071: Daemons and Fuses (Timed Events)
+
+### Previous Work: Action Refactoring (Complete)
+
+All 43 stdlib actions now follow three-phase pattern (validate/execute/report):
 about, attacking, climbing, drinking, eating, opening, closing, pulling, pushing, taking, dropping, putting, inserting, removing, entering, exiting, going, looking, examining, waiting, locking, unlocking, switching_on, switching_off, wearing, taking_off, giving, throwing, touching, smelling, listening, talking, searching, reading, showing, sleeping, help, inventory, quitting, scoring, restarting, restoring, saving
-
-### Key Issues Fixed:
-1. **Context pollution**: Actions now use `context.sharedData` instead of polluting context directly
-2. **Direct mutations**: Actions use behaviors, not direct world calls
-3. **Consistent patterns**: All actions follow three-phase (validate/execute/report)
 
 ## Core Concepts Reference
 

@@ -111,16 +111,56 @@ interface NpcContext {
   playerVisible: boolean;  // Is player in same room?
 }
 
-// Actions an NPC can take
+// Actions an NPC can take - all use semantic event data, not raw text
 type NpcAction =
   | { type: 'move'; direction: Direction }
   | { type: 'moveTo'; roomId: EntityId }
   | { type: 'take'; target: EntityId }
   | { type: 'drop'; target: EntityId }
   | { type: 'attack'; target: EntityId }
-  | { type: 'speak'; message: string }
-  | { type: 'emote'; description: string }  // "The thief grins menacingly."
+  | { type: 'speak'; messageId: string; data?: Record<string, unknown> }
+  | { type: 'emote'; messageId: string; data?: Record<string, unknown> }
   | { type: 'custom'; handler: () => SemanticEvent[] };
+```
+
+### Language Layer Integration
+
+**Critical**: NPC actions emit semantic events with message IDs, not raw text. The language layer (`lang-en-us` or other implementations) provides the actual prose.
+
+```typescript
+// In stdlib: npc-messages.ts
+export const NpcMessages = {
+  // Guard behaviors
+  GUARD_BLOCKS: 'npc.guard.blocks',
+  GUARD_GROWLS: 'npc.guard.growls',
+
+  // Thief behaviors
+  THIEF_STEALS: 'npc.thief.steals',
+  THIEF_GLOATS: 'npc.thief.gloats',
+  THIEF_APPEARS: 'npc.thief.appears',
+  THIEF_LEAVES: 'npc.thief.leaves',
+
+  // Cyclops behaviors
+  CYCLOPS_IGNORES: 'npc.cyclops.ignores',
+  CYCLOPS_PANICS: 'npc.cyclops.panics',
+  CYCLOPS_FLEES: 'npc.cyclops.flees',
+
+  // Generic NPC
+  NPC_ENTERS: 'npc.enters',
+  NPC_LEAVES: 'npc.leaves',
+  NPC_ATTACKS: 'npc.attacks',
+} as const;
+
+// In lang-en-us: npc-text.ts
+export const npcText = {
+  'npc.guard.blocks': ({ npcName }) => `The ${npcName} blocks your way.`,
+  'npc.guard.growls': ({ npcName }) => `The ${npcName} growls menacingly.`,
+  'npc.thief.steals': ({ itemName }) => `"My, what a lovely ${itemName}!" The thief snatches it away.`,
+  'npc.thief.appears': () => `A seedy-looking thief sidles into view.`,
+  'npc.cyclops.panics': () => `The cyclops, hearing that name, panics!`,
+  'npc.cyclops.flees': () => `The cyclops flees, revealing a stairway!`,
+  // ...
+};
 ```
 
 ### Turn Cycle Integration
@@ -136,7 +176,7 @@ NPCs act at the end of each player turn, after the player's action completes:
    - For each NPC (deterministic order):
      - Call behavior.onTurn()
      - Execute NPC actions
-     - Generate NPC events
+     - Generate NPC events (semantic, with messageIds)
 6. Daemons run (see ADR-071)
 7. Turn complete
 ```
@@ -150,14 +190,13 @@ The stdlib provides common behavior patterns:
 const guardBehavior: NpcBehavior = {
   id: 'guard',
   onTurn: () => [],  // Does nothing on its own
-  onPlayerEnters: (ctx) => [{
-    type: 'speak',
-    message: 'The troll blocks your way, growling menacingly.'
-  }],
-  onAttacked: (ctx, attacker) => [{
-    type: 'attack',
-    target: attacker.id
-  }]
+  onPlayerEnters: (ctx) => [
+    { type: 'emote', messageId: NpcMessages.GUARD_BLOCKS, data: { npcName: ctx.npc.name } },
+    { type: 'emote', messageId: NpcMessages.GUARD_GROWLS, data: { npcName: ctx.npc.name } }
+  ],
+  onAttacked: (ctx, attacker) => [
+    { type: 'attack', target: attacker.id }
+  ]
 };
 
 // Wanderer - moves randomly, can be given goals
@@ -190,7 +229,11 @@ const thiefBehavior: NpcBehavior = {
       if (playerValuables.length > 0 && ctx.random.chance(0.4)) {
         const target = ctx.random.pick(playerValuables);
         actions.push({ type: 'take', target: target.id });
-        actions.push({ type: 'speak', message: '"My, what a lovely trinket!"' });
+        actions.push({
+          type: 'speak',
+          messageId: NpcMessages.THIEF_STEALS,
+          data: { itemName: target.name }
+        });
       }
     }
 
@@ -214,7 +257,8 @@ Authors define NPCs as entities with behavior binding:
 const troll = world.createEntity({
   id: 'troll',
   name: 'troll',
-  description: 'A large, menacing troll with a taste for adventurers.',
+  // Note: description is a message ID, resolved by language layer
+  descriptionId: 'entity.troll.description',
   location: 'troll-room',
   traits: {
     npc: {
@@ -235,7 +279,7 @@ const troll = world.createEntity({
 const thief = world.createEntity({
   id: 'thief',
   name: 'thief',
-  description: 'A seedy-looking gentleman with nimble fingers.',
+  descriptionId: 'entity.thief.description',
   location: 'thiefs-lair',
   traits: {
     npc: {
@@ -267,16 +311,19 @@ game.registerNpcBehavior({
         words.toLowerCase().includes('ulysses')) {
       // Cyclops flees
       return [
-        { type: 'emote', description: 'The cyclops, hearing that name, panics!' },
+        { type: 'emote', messageId: NpcMessages.CYCLOPS_PANICS },
         { type: 'custom', handler: () => {
           // Remove cyclops, open passage
           ctx.world.removeEntity(ctx.npc.id);
           ctx.world.setConnection('cyclops-room', 'up', 'treasure-room');
-          return [{ type: 'world.changed', data: { description: 'The cyclops flees, revealing a stairway!' } }];
+          return [{
+            type: 'world.changed',
+            data: { messageId: NpcMessages.CYCLOPS_FLEES }
+          }];
         }}
       ];
     }
-    return [{ type: 'speak', message: 'The cyclops ignores your words.' }];
+    return [{ type: 'emote', messageId: NpcMessages.CYCLOPS_IGNORES }];
   }
 });
 ```
@@ -288,11 +335,11 @@ NPC actions generate semantic events that flow through the normal event system:
 ```typescript
 type NpcEvent =
   | { type: 'npc.moved'; npc: EntityId; from: EntityId; to: EntityId; direction: Direction }
-  | { type: 'npc.spoke'; npc: EntityId; message: string }
+  | { type: 'npc.spoke'; npc: EntityId; messageId: string; data?: Record<string, unknown> }
   | { type: 'npc.took'; npc: EntityId; target: EntityId }
   | { type: 'npc.dropped'; npc: EntityId; target: EntityId }
   | { type: 'npc.attacked'; npc: EntityId; target: EntityId; result: CombatResult }
-  | { type: 'npc.emoted'; npc: EntityId; description: string }
+  | { type: 'npc.emoted'; npc: EntityId; messageId: string; data?: Record<string, unknown> }
   | { type: 'npc.died'; npc: EntityId; cause: string }
   | { type: 'npc.stateChanged'; npc: EntityId; changes: Partial<NpcTrait> };
 ```
@@ -300,14 +347,15 @@ type NpcEvent =
 These events are:
 1. Visible to event handlers (author can react)
 2. Reported to player if witnessed (same room)
-3. Part of the event log for reporting
+3. Resolved to text by language layer during reporting phase
+4. Part of the event log for reporting
 
 ### Visibility and Perception
 
 NPC actions are only reported if the player can perceive them:
 
-- Player in same room → Full description
-- Player in adjacent room → Sound-based hints ("You hear a grunt from the north")
+- Player in same room → Full description (via messageId)
+- Player in adjacent room → Sound-based hints (different messageId, e.g., `npc.heard.from.north`)
 - Player elsewhere → Nothing reported
 
 The `PerceptionService` handles this filtering (see ADR-069).
@@ -341,6 +389,7 @@ interface NpcBehavior {
 4. **Testable**: Seeded randomness enables deterministic tests
 5. **Familiar**: Strategy pattern is well-understood
 6. **Event integration**: NPC actions flow through existing event system
+7. **Localization ready**: All text via message IDs and language layer
 
 ### Negative
 
@@ -399,12 +448,14 @@ Pure ECS with system that queries components.
 2. `NpcBehavior` interface
 3. Turn cycle integration (after player action)
 4. Basic behaviors: guard, wanderer
+5. `npc-messages.ts` in stdlib
 
 ### Phase 2: Zork Requirements
 1. Thief behavior
 2. Combat integration (NPC attacks)
 3. Stealing mechanics
 4. NPC inventory management
+5. Extend `lang-en-us` with NPC text
 
 ### Phase 3: Polish
 1. Sound propagation (hear NPCs in adjacent rooms)

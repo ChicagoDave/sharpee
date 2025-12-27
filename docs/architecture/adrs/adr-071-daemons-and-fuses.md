@@ -46,6 +46,13 @@ Mainframe Zork requires several timed mechanisms:
 3. **Pull vs. Push**: Do timers notify, or does game loop poll?
 4. **Entity-bound vs. Free-floating**: Are timers attached to entities?
 
+### Logic Location
+
+The `SchedulerService` belongs in **engine** because:
+- It's part of the core turn cycle (runs after NPCs, before turn end)
+- It's not specific to any game or action
+- Stories and stdlib register daemons/fuses, but engine executes them
+
 ## Decision
 
 ### Core Concepts
@@ -94,7 +101,7 @@ interface Daemon {
   // Condition for running (optional - if omitted, always runs)
   condition?: (context: SchedulerContext) => boolean;
 
-  // The daemon's action - returns events to emit
+  // The daemon's action - returns semantic events (no raw text!)
   run: (context: SchedulerContext) => SemanticEvent[];
 
   // Priority for ordering (higher = runs first, default 0)
@@ -111,7 +118,7 @@ interface Fuse {
   // Turns until trigger (counts down each tick)
   turns: number;
 
-  // What happens when it triggers
+  // What happens when it triggers - returns semantic events
   trigger: (context: SchedulerContext) => SemanticEvent[];
 
   // Optional: entity this fuse is bound to (for automatic cleanup)
@@ -142,6 +149,48 @@ interface SchedulerResult {
   fusesTriggered: string[];
   daemonsRun: string[];
 }
+```
+
+### Language Layer Integration
+
+**Critical**: All events emitted by daemons and fuses use message IDs, not raw English text. The language layer resolves these to prose.
+
+```typescript
+// In stdlib: scheduler-messages.ts
+export const SchedulerMessages = {
+  // Lantern
+  LANTERN_DIM: 'scheduler.lantern.dim',
+  LANTERN_FLICKERS: 'scheduler.lantern.flickers',
+  LANTERN_DIES: 'scheduler.lantern.dies',
+
+  // Candles
+  CANDLES_LOW: 'scheduler.candles.low',
+  CANDLES_OUT: 'scheduler.candles.out',
+
+  // Ambient
+  AMBIENT_FOREST_BIRD: 'scheduler.ambient.forest.bird',
+  AMBIENT_FOREST_RUSTLE: 'scheduler.ambient.forest.rustle',
+  AMBIENT_FOREST_BRANCH: 'scheduler.ambient.forest.branch',
+  AMBIENT_FOREST_BREEZE: 'scheduler.ambient.forest.breeze',
+
+  // Dam
+  DAM_DRAINING: 'scheduler.dam.draining',
+  DAM_NEARLY_EMPTY: 'scheduler.dam.nearly_empty',
+  DAM_EMPTY_TRUNK: 'scheduler.dam.empty_trunk',
+} as const;
+
+// In lang-en-us: scheduler-text.ts
+export const schedulerText = {
+  'scheduler.lantern.dim': () => 'Your lantern is getting dim.',
+  'scheduler.lantern.flickers': () => 'Your lantern flickers ominously.',
+  'scheduler.lantern.dies': () => 'Your lantern flickers and goes out.',
+  'scheduler.candles.low': () => 'The candles are burning low.',
+  'scheduler.candles.out': () => 'The candles sputter and go out.',
+  'scheduler.ambient.forest.bird': () => 'A bird chirps in the distance.',
+  'scheduler.ambient.forest.rustle': () => 'Leaves rustle overhead.',
+  'scheduler.dam.empty_trunk': () => 'The last of the water drains away, revealing a trunk in the mud!',
+  // ...
+};
 ```
 
 ### Turn Cycle Integration
@@ -196,7 +245,7 @@ function onLanternLit(lantern: Entity, scheduler: SchedulerService) {
         type: 'object.stateChanged',
         data: {
           entityId: lamp.id,
-          description: 'Your lantern flickers and goes out.'
+          messageId: SchedulerMessages.LANTERN_DIES
         }
       }];
     }
@@ -233,12 +282,21 @@ scheduler.setFuse({
           id: 'volcano-eruption',
           name: 'Volcano Eruption',
           turns: 3,
-          trigger: (ctx) => [{ type: 'player.died', data: { cause: 'volcano' } }]
+          trigger: (ctx) => [{
+            type: 'player.died',
+            data: { causeId: DeathMessages.VOLCANO }
+          }]
         });
-        return [{ type: 'ambient', data: { message: 'The ground shakes violently!' } }];
+        return [{
+          type: 'ambient',
+          data: { messageId: SchedulerMessages.VOLCANO_VIOLENT }
+        }];
       }
     });
-    return [{ type: 'ambient', data: { message: 'You hear a distant rumbling.' } }];
+    return [{
+      type: 'ambient',
+      data: { messageId: SchedulerMessages.VOLCANO_RUMBLE }
+    }];
   }
 });
 ```
@@ -257,14 +315,14 @@ scheduler.registerDaemon({
   run: (ctx) => {
     if (ctx.random.chance(0.15)) {  // 15% chance
       const sounds = [
-        'A bird chirps in the distance.',
-        'Leaves rustle overhead.',
-        'You hear a branch snap somewhere nearby.',
-        'A gentle breeze stirs the trees.'
+        SchedulerMessages.AMBIENT_FOREST_BIRD,
+        SchedulerMessages.AMBIENT_FOREST_RUSTLE,
+        SchedulerMessages.AMBIENT_FOREST_BRANCH,
+        SchedulerMessages.AMBIENT_FOREST_BREEZE,
       ];
       return [{
         type: 'ambient',
-        data: { message: ctx.random.pick(sounds) }
+        data: { messageId: ctx.random.pick(sounds) }
       }];
     }
     return [];
@@ -291,25 +349,25 @@ function onDamOpened(scheduler: SchedulerService) {
         trigger: (ctx) => {
           // Stage 3: Fully drained, reveal trunk
           ctx.world.updateEntity('reservoir', {
-            description: 'The reservoir is now empty, revealing a muddy bottom.'
+            descriptionId: 'room.reservoir.drained'
           });
           ctx.world.updateEntity('trunk', { location: 'reservoir' });
           return [{
             type: 'world.changed',
-            data: { description: 'The last of the water drains away, revealing a trunk in the mud!' }
+            data: { messageId: SchedulerMessages.DAM_EMPTY_TRUNK }
           }];
         }
       });
       return [{
         type: 'ambient',
-        data: { message: 'The water level in the reservoir drops noticeably.' }
+        data: { messageId: SchedulerMessages.DAM_NEARLY_EMPTY }
       }];
     }
   });
 
   return [{
     type: 'ambient',
-    data: { message: 'Water begins rushing through the open sluice gates.' }
+    data: { messageId: SchedulerMessages.DAM_DRAINING }
   }];
 }
 ```
@@ -337,11 +395,11 @@ scheduler.setFuse({
         lightSource: { ...candles.traits.lightSource, isLit: false, isDead: true }
       },
       name: 'burned-out candles',
-      description: 'A pair of candles, burned down to stubs.'
+      descriptionId: 'object.candles.burned_out'
     });
     return [{
       type: 'object.stateChanged',
-      data: { description: 'The candles sputter and go out.' }
+      data: { messageId: SchedulerMessages.CANDLES_OUT }
     }];
   }
 });
@@ -402,7 +460,7 @@ The pattern is:
 
 Daemons and fuses are registered in two ways:
 
-**Static registration** (at game start):
+**Static registration** (at game start, in stdlib or story):
 
 ```typescript
 // In story initialization
@@ -410,7 +468,7 @@ game.scheduler.registerDaemon(forestAmbienceDaemon);
 game.scheduler.registerDaemon(thiefWanderingDaemon);
 ```
 
-**Dynamic registration** (during play):
+**Dynamic registration** (during play, via event handlers):
 
 ```typescript
 // In event handler when lantern is lit
@@ -442,7 +500,7 @@ Lantern battery: 247 -> 147 turns
 
 > /fuse-trigger lantern-battery
 [Manually triggered lantern-battery]
-Your lantern flickers and goes out.
+// Event emitted with messageId, resolved by language layer
 ```
 
 ## Consequences
@@ -455,6 +513,7 @@ Your lantern flickers and goes out.
 4. **Debuggable**: Introspection APIs for visibility
 5. **Serializable**: Full save/load support
 6. **Decoupled**: Scheduler doesn't know about specific game logic
+7. **Localization ready**: All output via message IDs
 
 ### Negative
 
@@ -508,20 +567,25 @@ Async/await style scheduling.
 
 ## Implementation Notes
 
-### Phase 1: Core Implementation
+### Phase 1: Core Implementation (engine)
 1. `SchedulerService` interface and implementation
 2. Basic daemon/fuse management
 3. Turn cycle integration
 4. Serialization support
 
-### Phase 2: Zork Integration
-1. Lantern battery fuse
-2. Candle burning fuse
-3. Ambient daemons (forest, underground)
-4. Dam draining sequence
+### Phase 2: Zork Integration (stdlib + story)
+1. `scheduler-messages.ts` in stdlib
+2. Lantern battery fuse
+3. Candle burning fuse
+4. Ambient daemons (forest, underground)
+5. Dam draining sequence
 
-### Phase 3: Polish
-1. Debug commands
+### Phase 3: Language Layer (lang-en-us)
+1. `scheduler-text.ts` with all message resolutions
+2. Extend text service to handle scheduler events
+
+### Phase 4: Polish
+1. Debug commands (client layer)
 2. Entity-bound auto-cleanup
 3. Performance optimization for many timers
 
