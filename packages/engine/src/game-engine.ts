@@ -16,8 +16,8 @@ import {
   EntityType
 } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
-import { 
-  ActionRegistry, 
+import {
+  ActionRegistry,
   StandardActionRegistry,
   standardActions,
   vocabularyRegistry,
@@ -26,7 +26,8 @@ import {
   CommandHistoryData,
   CommandHistoryEntry,
   IFActions,
-  MetaCommandRegistry
+  MetaCommandRegistry,
+  IPerceptionService
 } from '@sharpee/stdlib';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { TextService, TextServiceContext, TextOutput } from '@sharpee/if-services';
@@ -88,6 +89,7 @@ export class GameEngine {
   private eventSource = createSemanticEventSource();
   private systemEventSource?: any; // GenericEventSource<SystemEvent>
   private pendingPlatformOps: IPlatformEvent[] = [];
+  private perceptionService?: IPerceptionService;
 
   constructor(options: {
     world: WorldModel;
@@ -95,9 +97,11 @@ export class GameEngine {
     parser: Parser;
     language: LanguageProvider;
     textService: TextService;
+    perceptionService?: IPerceptionService;
     config?: EngineConfig;
   }) {
     this.world = options.world;
+    this.perceptionService = options.perceptionService;
     this.config = {
       maxHistory: 100,
       validateEvents: true,
@@ -436,10 +440,21 @@ export class GameEngine {
       };
       
       // Store events for this turn (convert to SemanticEvent and process through pipeline)
-      const semanticEvents = result.events.map(e => {
+      let semanticEvents = result.events.map(e => {
         const semantic = toSemanticEvent(e);
         return processEvent(semantic, enrichmentContext);
       });
+
+      // Apply perception filtering if service is configured
+      // This transforms events based on what the player can perceive
+      if (this.perceptionService) {
+        semanticEvents = this.perceptionService.filterEvents(
+          semanticEvents,
+          this.context.player,
+          this.world
+        );
+      }
+
       this.turnEvents.set(turn, semanticEvents);
       
       // Also track in event source for save/restore

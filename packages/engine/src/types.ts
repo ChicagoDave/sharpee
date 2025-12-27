@@ -7,6 +7,9 @@
 import { ISemanticEvent } from '@sharpee/core';
 import { IParsedCommand, IFEntity } from '@sharpee/world-model';
 
+// Re-export perception types from stdlib for convenience
+export { IPerceptionService, Sense } from '@sharpee/stdlib';
+
 /**
  * Basic game event (before sequencing)
  */

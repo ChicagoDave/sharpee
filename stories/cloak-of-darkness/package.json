@@ -16,6 +16,7 @@
   "dependencies": {
     "@sharpee/core": "file:../../packages/core",
     "@sharpee/engine": "file:../../packages/engine",
+    "@sharpee/stdlib": "file:../../packages/stdlib",
     "@sharpee/world-model": "file:../../packages/world-model",
     "@sharpee/lang-en-us": "file:../../packages/lang-en-us",
     "@sharpee/parser-en-us": "file:../../packages/parser-en-us",

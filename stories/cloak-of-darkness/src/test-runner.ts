@@ -7,6 +7,7 @@
 import { GameEngine, TurnResult } from '@sharpee/engine';
 import { WorldModel, IFEntity, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
+import { PerceptionService } from '@sharpee/stdlib';
 // @ts-ignore - lang-en-us types not available yet
 import { LanguageProvider } from '@sharpee/lang-en-us';
 // @ts-ignore - text-services types not available yet
@@ -38,13 +39,17 @@ async function runStory() {
       story.extendLanguage(language);
     }
     
+    // Create perception service for darkness/blindness filtering
+    const perceptionService = new PerceptionService();
+
     // Create engine with static dependencies
     const engine = new GameEngine({
       world,
       player,
       parser,
       language,
-      textService
+      textService,
+      perceptionService
     });
     
     // Set the story and start the engine
