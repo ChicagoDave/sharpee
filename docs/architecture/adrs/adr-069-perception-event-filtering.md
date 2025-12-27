@@ -422,6 +422,26 @@ We should let the author handle this. We're only concerned about core use cases.
 
 See #1
 
+## Tech Debt
+
+### PerceptionService Location
+
+**Current**: `@sharpee/stdlib/src/services/PerceptionService.ts`
+
+**Should be**: `@sharpee/if-services/src/perception-service.ts`
+
+**Rationale**: PerceptionService and TextService are sibling "IF pipeline services" that transform/process events. They belong together in `@sharpee/if-services`:
+- TextService: events → text output
+- PerceptionService: events → filtered events
+
+Both operate on the event stream between action execution and final output. The `if-services` package already depends on `@sharpee/world-model` (needed for `VisibilityBehavior`).
+
+**Migration**:
+1. Move `PerceptionService.ts` to `if-services`
+2. Update exports in both packages
+3. Update engine imports
+4. Update Cloak of Darkness imports
+
 ## References
 
 - ADR-068: Unified Darkness Checking
