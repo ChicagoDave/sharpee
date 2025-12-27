@@ -6,6 +6,47 @@ Implement in playable vertical slices, not horizontal layers. Each phase produce
 
 ---
 
+## Prerequisites: Required ADRs
+
+Before implementation begins, these architectural decisions must be finalized and approved.
+
+### Required for Phase 1
+
+| ADR | Status | Needed For |
+|-----|--------|------------|
+| ADR-070: NPC System | Proposed | Troll guard behavior |
+| ADR-071: Daemons/Fuses | Proposed | Lantern battery countdown |
+| ADR-072: Combat System | Not Started | Troll fight mechanics, randomization |
+
+### Required for Phase 3
+
+| ADR | Status | Needed For |
+|-----|--------|------------|
+| ADR-073: Vehicle System | Not Started | Boat mechanics, basket elevator |
+
+### Required for Phase 5
+
+| ADR | Status | Needed For |
+|-----|--------|------------|
+| ADR-070: NPC System | (see above) | Thief wandering, stealing, AI |
+
+### Parser Enhancements (Can Be Deferred)
+
+| ADR | Status | Needed For |
+|-----|--------|------------|
+| ADR-074: Multi-Command Input | Not Started | "N. N. E. TAKE LAMP" |
+| ADR-075: Pronoun Resolution | Not Started | "TAKE IT", "DROP THEM" |
+| ADR-076: AGAIN Command | Not Started | Repeat last action |
+
+### Implementation Order
+
+1. **ADR-070** (NPC) + **ADR-071** (Daemons) → Already drafted
+2. **ADR-072** (Combat) → Needed before Phase 1 implementation
+3. **ADR-073** (Vehicle) → Can be drafted during Phase 2
+4. Parser ADRs → Can be deferred, workaround with explicit commands
+
+---
+
 ## Phase 1: White House to Troll (Playable Demo)
 
 **Goal**: Playable from start through defeating troll, ~30 rooms
