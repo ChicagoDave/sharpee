@@ -1,23 +1,21 @@
 /**
  * Dropping action - puts down held objects
- * 
- * This action validates conditions for dropping an object and returns
- * appropriate events. It delegates validation to ContainerBehavior.
- * 
- * UPDATED: Uses new simplified context.event() method (ADR-041)
- * MIGRATED: To new folder structure with typed events (ADR-042)
- * MIGRATED: To three-phase pattern (validate/execute/report) for atomic events
+ *
+ * Uses four-phase pattern:
+ * 1. validate: Check object can be dropped
+ * 2. execute: Transfer the item from inventory to location
+ * 3. report: Generate success events
+ * 4. blocked: Generate error events when validation fails
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { ISemanticEvent, IEntity } from '@sharpee/core';
-import { TraitType, ContainerBehavior, SupporterBehavior, WearableBehavior, ActorBehavior, IDropItemResult } from '@sharpee/world-model';
-import { captureEntitySnapshot } from '../../base/snapshot-utils';
-import { handleReportErrors } from '../../base/report-helpers';
+import { ISemanticEvent } from '@sharpee/core';
+import { TraitType, ContainerBehavior, WearableBehavior, ActorBehavior, IDropItemResult } from '@sharpee/world-model';
 import { buildEventData } from '../../data-builder-types';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
+import { DroppingMessages } from './dropping-messages';
 
 // Import our data builder
 import { droppedDataConfig, determineDroppingMessage } from './dropping-data';
@@ -54,33 +52,33 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     const noun = context.command.directObject?.entity;
 
     if (!noun) {
-      return { valid: false, error: 'no_target' };
+      return { valid: false, error: DroppingMessages.NO_TARGET };
     }
 
     // Use ActorBehavior to validate dropping
     if (!ActorBehavior.isHolding(actor, noun.id, context.world)) {
-      return { 
-        valid: false, 
-        error: 'not_held',
-        params: { item: (noun.get(TraitType.IDENTITY) as any)?.name || noun.attributes?.name || noun.id }
+      return {
+        valid: false,
+        error: DroppingMessages.NOT_HELD,
+        params: { item: noun.name }
       };
     }
 
     // Check if the item is worn
     if (noun.has(TraitType.WEARABLE) && WearableBehavior.isWorn(noun)) {
-      return { 
-        valid: false, 
-        error: 'still_worn',
-        params: { item: (noun.get(TraitType.IDENTITY) as any)?.name || noun.attributes?.name || noun.id }
+      return {
+        valid: false,
+        error: DroppingMessages.STILL_WORN,
+        params: { item: noun.name }
       };
     }
 
     // Get drop location
     const playerLocation = context.world.getLocation(actor.id);
     const dropLocation = playerLocation ? context.world.getEntity(playerLocation) : context.currentLocation;
-    
+
     if (!dropLocation) {
-      return { valid: false, error: 'cant_drop_here' };
+      return { valid: false, error: DroppingMessages.CANT_DROP_HERE };
     }
 
     // Check if location can accept the item (for containers)
@@ -90,17 +88,14 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
         if (containerTrait.capacity?.maxItems !== undefined) {
           const contents = context.world.getContents(dropLocation.id);
           if (contents.length >= containerTrait.capacity.maxItems) {
-            return { 
-              valid: false, 
-              error: 'container_full',
-              params: { 
-                item: (noun.get(TraitType.IDENTITY) as any)?.name || noun.attributes?.name || noun.id,
-                container: (dropLocation.get(TraitType.IDENTITY) as any)?.name || dropLocation.attributes?.name || dropLocation.id
-              }
+            return {
+              valid: false,
+              error: DroppingMessages.CONTAINER_FULL,
+              params: { item: noun.name, container: dropLocation.name }
             };
           }
         }
-        return { valid: false, error: 'cant_drop_here' };
+        return { valid: false, error: DroppingMessages.CANT_DROP_HERE };
       }
     }
 
@@ -119,48 +114,11 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     sharedData.dropResult = result;
   },
 
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    // Handle validation and execution errors using shared helper
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
-
-    const actor = context.player;
-    const noun = context.command.directObject?.entity!;
-    const sharedData = getDroppingSharedData(context);
-    const result = sharedData.dropResult as IDropItemResult;
-    
-    // Handle failure cases
-    if (!result.success) {
-      if (result.notHeld) {
-        return [context.event('action.error', {
-          actionId: context.action.id,
-          messageId: 'not_held',
-          reason: 'not_held',
-          params: { item: noun.name }
-        })];
-      }
-      
-      if (result.stillWorn) {
-        return [context.event('action.error', {
-          actionId: context.action.id,
-          messageId: 'still_worn',
-          reason: 'still_worn',
-          params: { item: noun.name }
-        })];
-      }
-      
-      // Generic failure
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'cant_drop',
-        reason: 'cant_drop',
-        params: { item: noun.name }
-      })];
-    }
-
+  report(context: ActionContext): ISemanticEvent[] {
+    // report() is only called on success
     // Build event data using data builder
     const droppedData = buildEventData(droppedDataConfig, context);
-    
+
     // Determine success message
     const { messageId, params } = determineDroppingMessage(droppedData, context);
 
@@ -173,6 +131,16 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
         params: params
       })
     ];
+  },
+
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    const noun = context.command.directObject?.entity;
+
+    return [context.event('action.blocked', {
+      actionId: context.action.id,
+      messageId: result.error,
+      params: { ...result.params, item: noun?.name }
+    })];
   },
 
   group: "object_manipulation",

@@ -7,10 +7,11 @@
  * - Revealing hidden passages
  * - General pushing feedback
  *
- * Uses three-phase pattern:
+ * Uses four-phase pattern:
  * 1. validate: Check if target exists and is pushable
  * 2. execute: Toggle switchable state if applicable, store data
- * 3. report: Generate events for output
+ * 3. blocked: Generate events when validation fails
+ * 4. report: Generate success events
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -20,7 +21,6 @@ import { TraitType, PushableTrait, SwitchableTrait, SwitchableBehavior } from '@
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
 import { PushedEventData } from './pushing-events';
-import { handleReportErrors } from '../../base/report-helpers';
 
 /**
  * Shared data passed between execute and report phases
@@ -231,12 +231,21 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
   },
 
   /**
+   * Generate events when validation fails
+   */
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    return [context.event('action.blocked', {
+      actionId: this.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
+  },
+
+  /**
    * Report phase - generates all events after successful execution
    */
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
-
+  report(context: ActionContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
     const sharedData = getPushingSharedData(context);
 

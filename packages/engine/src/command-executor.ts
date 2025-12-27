@@ -98,15 +98,31 @@ export class CommandExecutor {
       }
       const actionContext = createActionContext(world, context, command, action, this.scopeResolver);
 
-      // Run action's three phases
+      // Run action's four phases: validate → execute → report (or blocked)
       const actionValidation = action.validate(actionContext);
-      
+
       let events: ISemanticEvent[];
-      
-      if (!actionValidation.valid) {
-        // Let action create its own error events
-        if (action.report) {
-          events = action.report(actionContext, actionValidation);
+
+      if (actionValidation.valid) {
+        // Execute mutations
+        const executeResult = action.execute(actionContext);
+
+        // Check pattern (new vs old)
+        if (executeResult === undefined || executeResult === null) {
+          // New pattern: use report() for success events only
+          if (action.report) {
+            events = action.report(actionContext);
+          } else {
+            throw new Error(`Action ${action.id} uses new pattern but lacks report()`);
+          }
+        } else {
+          // Old pattern: events from execute()
+          events = executeResult as ISemanticEvent[];
+        }
+      } else {
+        // Validation failed - use blocked() for error events
+        if (action.blocked) {
+          events = action.blocked(actionContext, actionValidation);
         } else {
           // Fallback for unmigrated actions
           events = [{
@@ -120,32 +136,6 @@ export class CommandExecutor {
             },
             entities: {}
           }];
-        }
-      } else {
-        // Execute mutations
-        let executionError: Error | undefined;
-        try {
-          const executeResult = await action.execute(actionContext);
-          
-          // Check pattern (new vs old)
-          if (executeResult === undefined || executeResult === null) {
-            // New pattern: use report()
-            if (action.report) {
-              events = action.report(actionContext, actionValidation);
-            } else {
-              throw new Error(`Action ${action.id} uses new pattern but lacks report()`);
-            }
-          } else {
-            // Old pattern: events from execute()
-            events = executeResult as ISemanticEvent[];
-          }
-        } catch (error) {
-          executionError = error as Error;
-          if (action.report) {
-            events = action.report(actionContext, actionValidation, executionError);
-          } else {
-            throw error;
-          }
         }
       }
 

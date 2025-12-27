@@ -6,6 +6,16 @@ import { ActionContext, ValidationResult } from '../enhanced-types';
 import { IFEntity, TraitType, LockableBehavior, OpenableBehavior } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
 
+/**
+ * Shared message constants for lock/unlock validation
+ * These are message IDs, not English strings - lang-en-us resolves them
+ */
+export const LOCK_MESSAGES = {
+  NO_KEY: 'no_key',
+  KEY_NOT_HELD: 'key_not_held',
+  WRONG_KEY: 'wrong_key',
+};
+
 export interface LockAnalysis {
   target: IFEntity;
   key?: IFEntity;
@@ -55,42 +65,42 @@ export function validateKeyRequirements(
   if (!LockableBehavior.requiresKey(target)) {
     return null; // No key required, validation passes
   }
-  
+
   // Key is required but not provided
   if (!key) {
-    return { 
-      valid: false, 
-      error: 'no_key'
+    return {
+      valid: false,
+      error: LOCK_MESSAGES.NO_KEY
     };
   }
-  
+
   // Check if player has the key
   const actor = context.player;
   const keyLocation = context.world.getLocation(key.id);
   if (keyLocation !== actor.id) {
-    return { 
-      valid: false, 
-      error: 'key_not_held',
+    return {
+      valid: false,
+      error: LOCK_MESSAGES.KEY_NOT_HELD,
       params: { key: key.name }
     };
   }
-  
+
   // Check if it's the right key
-  const canUseKey = isLocking 
+  const canUseKey = isLocking
     ? LockableBehavior.canLockWith(target, key.id)
     : LockableBehavior.canUnlockWith(target, key.id);
-    
+
   if (!canUseKey) {
-    return { 
-      valid: false, 
-      error: 'wrong_key',
-      params: { 
-        key: key.name, 
-        item: target.name 
+    return {
+      valid: false,
+      error: LOCK_MESSAGES.WRONG_KEY,
+      params: {
+        key: key.name,
+        item: target.name
       }
     };
   }
-  
+
   return null; // All key validations pass
 }
 

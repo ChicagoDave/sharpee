@@ -1,10 +1,14 @@
 /**
  * Putting action - put objects in containers or on supporters
- * 
+ *
  * This action handles putting objects into containers or onto supporters.
  * It determines the appropriate preposition based on the target's traits.
- * 
- * MIGRATED: To three-phase pattern (validate/execute/report) for atomic events
+ *
+ * Uses four-phase pattern:
+ * 1. validate: Check item and destination exist and are compatible
+ * 2. execute: Delegate to ContainerBehavior or SupporterBehavior
+ * 3. blocked: Generate error events when validation fails
+ * 4. report: Generate success events with put data
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -13,10 +17,10 @@ import { ScopeLevel } from '../../../scope/types';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, ContainerBehavior, SupporterBehavior, OpenableBehavior, IAddItemResult, IAddItemToSupporterResult } from '@sharpee/world-model';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
-import { handleReportErrors } from '../../base/report-helpers';
 import { IFActions } from '../../constants';
 import { buildEventData } from '../../data-builder-types';
 import { putDataConfig } from './putting-data';
+import { PuttingMessages } from './putting-messages';
 
 /**
  * Shared data passed between execute and report phases
@@ -48,68 +52,68 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
     'no_space'
   ],
   group: 'object_manipulation',
-  
+
   metadata: {
     requiresDirectObject: true,
     requiresIndirectObject: true,
     directObjectScope: ScopeLevel.CARRIED,
     indirectObjectScope: ScopeLevel.REACHABLE
   },
-  
+
   validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     const item = context.command.directObject?.entity;
     const target = context.command.indirectObject?.entity;
     const preposition = context.command.parsed.structure.preposition?.text;
-    
+
     // Validate we have an item
     if (!item) {
       return {
         valid: false,
-        error: 'no_target'
+        error: PuttingMessages.NO_TARGET
       };
     }
-    
+
     // Validate we have a destination
     if (!target) {
       return {
         valid: false,
-        error: 'no_destination',
+        error: PuttingMessages.NO_DESTINATION,
         params: { item: item.name }
       };
     }
-    
+
     // Prevent putting something inside/on itself
     if (item.id === target.id) {
-      const messageId = preposition === 'on' ? 'cant_put_on_itself' : 'cant_put_in_itself';
+      const messageId = preposition === 'on' ? PuttingMessages.CANT_PUT_ON_ITSELF : PuttingMessages.CANT_PUT_IN_ITSELF;
       return {
         valid: false,
         error: messageId,
         params: { item: item.name }
       };
     }
-    
+
     // Check if item is already in/on target
     if (context.world.getLocation(item.id) === target.id) {
       const relation = target.has(TraitType.SUPPORTER) ? 'on' : 'in';
       return {
         valid: false,
-        error: 'already_there',
-        params: { 
+        error: PuttingMessages.ALREADY_THERE,
+        params: {
           item: item.name,
           relation: relation,
-          destination: target.name 
+          destination: target.name
         }
       };
     }
-    
+
     // Determine if target is a container or supporter
     const isContainer = target.has(TraitType.CONTAINER);
     const isSupporter = target.has(TraitType.SUPPORTER);
-    
+
     // Determine the appropriate action based on preposition and target type
     let targetPreposition: 'in' | 'on';
-    
+
     if (preposition) {
       // User specified a preposition
       if ((preposition === 'in' || preposition === 'into' || preposition === 'inside') && isContainer) {
@@ -121,13 +125,13 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
         if (preposition === 'in' || preposition === 'into' || preposition === 'inside') {
           return {
             valid: false,
-            error: 'not_container',
+            error: PuttingMessages.NOT_CONTAINER,
             params: { destination: target.name }
           };
         } else {
           return {
             valid: false,
-            error: 'not_surface',
+            error: PuttingMessages.NOT_SURFACE,
             params: { destination: target.name }
           };
         }
@@ -141,58 +145,58 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       } else {
         return {
           valid: false,
-          error: 'not_container',
+          error: PuttingMessages.NOT_CONTAINER,
           params: { destination: target.name }
         };
       }
     }
-    
+
     // Container-specific checks using ContainerBehavior
     if (targetPreposition === 'in') {
       // Check if container is open
       if (target.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(target)) {
         return {
           valid: false,
-          error: 'container_closed',
+          error: PuttingMessages.CONTAINER_CLOSED,
           params: { container: target.name }
         };
       }
-      
+
       // Check capacity using ContainerBehavior
       if (!ContainerBehavior.canAccept(target, item, context.world)) {
         return {
           valid: false,
-          error: 'no_room',
+          error: PuttingMessages.NO_ROOM,
           params: { container: target.name }
         };
       }
     }
-    
+
     // Supporter-specific checks using SupporterBehavior
     if (targetPreposition === 'on') {
       if (!SupporterBehavior.canAccept(target, item, context.world)) {
         return {
           valid: false,
-          error: 'no_space',
+          error: PuttingMessages.NO_SPACE,
           params: { surface: target.name }
         };
       }
     }
-    
+
     return { valid: true };
   },
-  
+
   execute(context: ActionContext): void {
     const actor = context.player;
     const item = context.command.directObject!.entity!; // Safe because validate ensures it exists
     const target = context.command.indirectObject!.entity!; // Safe because validate ensures it exists
     const preposition = context.command.parsed.structure.preposition?.text;
-    
+
     // Determine the appropriate action based on preposition and target type
     const isContainer = target.has(TraitType.CONTAINER);
     const isSupporter = target.has(TraitType.SUPPORTER);
     let targetPreposition: 'in' | 'on';
-    
+
     if (preposition) {
       // User specified a preposition
       if ((preposition === 'in' || preposition === 'into' || preposition === 'inside') && isContainer) {
@@ -207,12 +211,12 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       // Auto-determine based on target type (prefer container over supporter)
       targetPreposition = isContainer ? 'in' : 'on';
     }
-    
+
     // Store data for report phase using sharedData
     const sharedData = getPuttingSharedData(context);
     sharedData.targetPreposition = targetPreposition;
 
-    // Delegate to appropriate behavior
+    // Delegate to appropriate behavior for validation
     if (targetPreposition === 'in') {
       const result: IAddItemResult = ContainerBehavior.addItem(target, item, context.world);
       sharedData.putResult = result;
@@ -221,53 +225,26 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       const result: IAddItemToSupporterResult = SupporterBehavior.addItem(target, item, context.world);
       sharedData.putResult = result;
     }
+
+    // Actually move the item to the target (behaviors validate, actions mutate)
+    context.world.moveEntity(item.id, target.id);
   },
 
   /**
-   * Report events after putting
-   * Generates events with complete state snapshots
+   * Report events after successful putting
+   * Only called on success path - validation passed
    */
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    // Handle validation and execution errors using shared helper
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
-
+  report(context: ActionContext): ISemanticEvent[] {
     const actor = context.player;
     const item = context.command.directObject!.entity!;
     const target = context.command.indirectObject!.entity!;
     const sharedData = getPuttingSharedData(context);
     const targetPreposition = sharedData.targetPreposition as 'in' | 'on';
     const result = sharedData.putResult as IAddItemResult | IAddItemToSupporterResult;
-    
+
     const events: ISemanticEvent[] = [];
-    
+
     if (targetPreposition === 'in') {
-      const containerResult = result as IAddItemResult;
-      
-      if (!containerResult.success) {
-        // Handle failure cases - these should not happen due to validation
-        if (containerResult.alreadyContains) {
-          return [context.event('action.error', {
-            actionId: context.action.id,
-            messageId: 'already_there',
-            params: { item: item.name, relation: 'in', destination: target.name }
-          })];
-        }
-        if (containerResult.containerFull) {
-          return [context.event('action.error', {
-            actionId: context.action.id,
-            messageId: 'no_room',
-            params: { container: target.name }
-          })];
-        }
-        // Generic failure
-        return [context.event('action.error', {
-          actionId: context.action.id,
-          messageId: 'cant_put',
-          params: { item: item.name }
-        })];
-      }
-      
       // Success - create events with snapshots
       events.push(context.event('if.event.put_in', {
         itemId: item.id,
@@ -277,41 +254,14 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
         itemSnapshot: captureEntitySnapshot(item, context.world, true),
         targetSnapshot: captureEntitySnapshot(target, context.world, true)
       }));
-      
+
       events.push(context.event('action.success', {
         actionId: context.action.id,
-        messageId: 'put_in',
+        messageId: PuttingMessages.PUT_IN,
         params: { item: item.name, container: target.name }
       }));
-      
     } else {
       // targetPreposition === 'on'
-      const supporterResult = result as IAddItemToSupporterResult;
-      
-      if (!supporterResult.success) {
-        // Handle failure cases - these should not happen due to validation
-        if (supporterResult.alreadyThere) {
-          return [context.event('action.error', {
-            actionId: context.action.id,
-            messageId: 'already_there',
-            params: { item: item.name, relation: 'on', destination: target.name }
-          })];
-        }
-        if (supporterResult.noSpace) {
-          return [context.event('action.error', {
-            actionId: context.action.id,
-            messageId: 'no_space',
-            params: { surface: target.name }
-          })];
-        }
-        // Generic failure
-        return [context.event('action.error', {
-          actionId: context.action.id,
-          messageId: 'cant_put',
-          params: { item: item.name }
-        })];
-      }
-      
       // Success - create events with snapshots
       events.push(context.event('if.event.put_on', {
         itemId: item.id,
@@ -321,14 +271,33 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
         itemSnapshot: captureEntitySnapshot(item, context.world, true),
         targetSnapshot: captureEntitySnapshot(target, context.world, true)
       }));
-      
+
       events.push(context.event('action.success', {
         actionId: context.action.id,
-        messageId: 'put_on',
+        messageId: PuttingMessages.PUT_ON,
         params: { item: item.name, surface: target.name }
       }));
     }
-    
+
     return events;
+  },
+
+  /**
+   * Generate events when validation fails
+   * Called instead of execute/report when validate returns invalid
+   */
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    const item = context.command.directObject?.entity;
+    const target = context.command.indirectObject?.entity;
+
+    return [context.event('action.blocked', {
+      actionId: context.action.id,
+      messageId: result.error,
+      params: {
+        ...result.params,
+        item: item?.name,
+        destination: target?.name
+      }
+    })];
   }
 };

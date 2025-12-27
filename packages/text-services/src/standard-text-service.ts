@@ -116,9 +116,11 @@ export class StandardTextService implements TextService {
         // Translate different event types to narrative text
         switch (event.type) {
             case 'if.event.room_description':
+            case 'if.event.room.description':
                 return this.translateRoomDescription(event);
-                
+
             case 'if.event.list_contents':
+            case 'if.event.list.contents':
                 // Usually handled by action.success, so skip
                 return '';
                 
@@ -126,8 +128,9 @@ export class StandardTextService implements TextService {
                 return this.translateActionSuccess(event);
                 
             case 'action.failure':
+            case 'action.blocked':
                 return this.translateActionFailure(event);
-                
+
             case 'game.message':
                 return this.translateGameMessage(event);
                 
@@ -227,7 +230,13 @@ export class StandardTextService implements TextService {
         }
         
         // Use reason or message from event
-        return data.reason || data.message || "You can't do that.";
+        // Check params.reason first (used by action.blocked events with human-readable messages),
+        // then fall back to data.reason. Prefer params.reason if it's different from the error code.
+        const paramsReason = (data.params as any)?.reason;
+        if (paramsReason && paramsReason !== data.reason && paramsReason !== data.messageId) {
+            return paramsReason;
+        }
+        return data.reason || paramsReason || data.message || "You can't do that.";
     }
     
     private translateGameMessage(event: ISemanticEvent): string {

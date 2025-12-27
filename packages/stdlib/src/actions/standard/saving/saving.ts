@@ -4,10 +4,11 @@
  * This is a meta action that triggers game save functionality.
  * It emits a platform event that the engine will process after turn completion.
  *
- * Three-phase pattern:
- * - validate: Check if save is allowed, validate save name
- * - execute: Analyze save context, store in sharedData (no world mutations)
- * - report: Emit platform event and notifications
+ * Four-phase pattern:
+ * 1. validate: Check if save is allowed, validate save name
+ * 2. execute: Analyze save context, store in sharedData (no world mutations)
+ * 3. blocked: Handle validation failures
+ * 4. report: Emit platform event and notifications
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -15,7 +16,6 @@ import { ISemanticEvent, createSaveRequestedEvent, ISaveContext } from '@sharpee
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { SaveRequestedEventData } from './saving-events';
-import { handleReportErrors } from '../../base/report-helpers';
 
 interface SavingSharedData {
   saveName: string;
@@ -152,10 +152,16 @@ export const savingAction: Action & { metadata: ActionMetadata } = {
     Object.assign(context.sharedData, data);
   },
 
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    return [context.event('action.blocked', {
+      actionId: this.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
+  },
 
+  report(context: ActionContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
     const data = context.sharedData as SavingSharedData;
 

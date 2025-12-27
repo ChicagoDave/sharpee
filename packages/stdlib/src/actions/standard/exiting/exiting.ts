@@ -4,15 +4,15 @@
  * This action handles exiting objects that the actor is currently inside/on.
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult, EnhancedActionContext } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
-import { 
+import {
   TraitType,
   OpenableBehavior
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
-import { handleReportErrors } from '../../base/report-helpers';
 import { ExitedEventData } from './exiting-events';
+import { ExitingMessages } from './exiting-messages';
 
 interface ExitingExecutionState {
   fromLocation: string;
@@ -50,53 +50,53 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
   validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     const currentLocation = context.world.getLocation(actor.id);
-    
+
     if (!currentLocation) {
-      return { 
-        valid: false, 
-        error: 'nowhere_to_go'
+      return {
+        valid: false,
+        error: ExitingMessages.NOWHERE_TO_GO
       };
     }
-    
+
     const currentContainer = context.world.getEntity(currentLocation);
     if (!currentContainer) {
-      return { 
-        valid: false, 
-        error: 'nowhere_to_go'
+      return {
+        valid: false,
+        error: ExitingMessages.NOWHERE_TO_GO
       };
     }
-    
+
     // Check if we're in something we can exit from
     // Rooms cannot be exited (use GO to move between rooms)
     const isRoom = currentContainer.has(TraitType.ROOM);
-    
+
     if (isRoom) {
-      return { 
-        valid: false, 
-        error: 'already_outside'
+      return {
+        valid: false,
+        error: ExitingMessages.ALREADY_OUTSIDE
       };
     }
-    
+
     // Find the parent location (where we'll exit to)
     const parentLocation = context.world.getLocation(currentLocation);
     if (!parentLocation) {
-      return { 
-        valid: false, 
-        error: 'nowhere_to_go'
+      return {
+        valid: false,
+        error: ExitingMessages.NOWHERE_TO_GO
       };
     }
-    
+
     // Check if container needs to be open to exit using behavior
     if (currentContainer.has(TraitType.CONTAINER) && currentContainer.has(TraitType.OPENABLE)) {
       if (!OpenableBehavior.isOpen(currentContainer)) {
-        return { 
-          valid: false, 
-          error: 'container_closed',
+        return {
+          valid: false,
+          error: ExitingMessages.CONTAINER_CLOSED,
           params: { container: currentContainer.name }
         };
       }
     }
-    
+
     return { valid: true };
   },
   
@@ -133,14 +133,10 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
   },
   
   /**
-   * Report phase - generates all events after successful execution
-   * Handles validation errors, execution errors, and success events
+   * Report phase - generates events after successful execution
+   * Only called on success path - validation has already passed
    */
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    // Handle validation and execution errors using shared helper
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
-
+  report(context: ActionContext): ISemanticEvent[] {
     // Get stored state from execute phase
     const sharedData = getExitingSharedData(context);
     const state = sharedData.exitingState as ExitingExecutionState | undefined;
@@ -156,29 +152,41 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
         })
       ];
     }
-    
+
     const events: ISemanticEvent[] = [];
-    
+
     // Create the EXITED event for world model updates
     const exitedData: ExitedEventData = {
       fromLocation: state.fromLocation,
       toLocation: state.toLocation,
       preposition: state.preposition
     };
-    
+
     events.push(context.event('if.event.exited', exitedData));
-    
+
     // Create success message
     events.push(context.event('action.success', {
       actionId: context.action.id,
       messageId: 'exited',
-      params: { 
+      params: {
         place: state.fromLocationName,
         preposition: state.preposition
       }
     }));
-    
+
     return events;
+  },
+
+  /**
+   * Generate events when validation fails
+   * Called instead of execute/report when validate returns invalid
+   */
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    return [context.event('action.blocked', {
+      actionId: context.action.id,
+      messageId: result.error,
+      params: result.params || {}
+    })];
   },
   
   metadata: {

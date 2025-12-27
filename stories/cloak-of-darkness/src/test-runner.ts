@@ -7,6 +7,7 @@
 import { GameEngine, TurnResult } from '@sharpee/engine';
 import { WorldModel, IFEntity, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
+import { PerceptionService } from '@sharpee/stdlib';
 // @ts-ignore - lang-en-us types not available yet
 import { LanguageProvider } from '@sharpee/lang-en-us';
 // @ts-ignore - text-services types not available yet
@@ -22,11 +23,13 @@ async function runStory() {
     // Create world and player
     const world = new WorldModel();
     const player = world.createEntity('player', EntityType.ACTOR);
+    world.setPlayer(player.id); // Register as the player so getPlayer() works
     
     // Create parser, language, and text service
     const language = new LanguageProvider();
     const parser = new Parser(language);
-    const textService = new TextService(language);
+    const textService = new TextService();
+    textService.setLanguageProvider(language);
     
     // Extend parser and language with story-specific vocabulary/messages
     if (story.extendParser) {
@@ -36,13 +39,17 @@ async function runStory() {
       story.extendLanguage(language);
     }
     
+    // Create perception service for darkness/blindness filtering
+    const perceptionService = new PerceptionService();
+
     // Create engine with static dependencies
     const engine = new GameEngine({
       world,
       player,
       parser,
       language,
-      textService
+      textService,
+      perceptionService
     });
     
     // Set the story and start the engine
@@ -72,18 +79,50 @@ async function runStory() {
       console.log('\n=== Game Over ===');
     });
     
-    // Execute some test commands
+    // Execute some test commands - LOSING PATH (dark bar disturbs message)
     const commands = [
       'look',
-      'examine cloak',
-      'west',
+      'south',           // Go to dark bar while carrying cloak - disturbs sawdust
+      'look',            // Try to look in dark - disturbs sawdust
+      'north',           // Leave bar
+      'south',           // Enter again - more disturbance
+      'north',           // Leave bar
+      'south',           // Enter again - message should be destroyed
+      'north',           // Leave bar
+      'west',            // Go to cloakroom
+      'hang cloak on hook',  // Now hang the cloak
+      'east',            // Back to foyer
+      'south',           // Bar is now lit
+      'debug:location',  // Debug command to check state
       'look',
-      'hang cloak on hook',
-      'east',
-      'south',
-      'examine message',
-      'read message'
+      'examine message', // Message should be destroyed
+      'read message'     // Should show loss
     ];
+
+    // Add debug command handler
+    const originalExecuteTurn = engine.executeTurn.bind(engine);
+    (engine as any).executeTurn = async (command: string) => {
+      if (command === 'debug:location') {
+        const player = world.getPlayer();
+        const loc = player ? world.getLocation(player.id) : null;
+        const locEntity = loc ? world.getEntity(loc) : null;
+        const inventory = player ? world.getContents(player.id) : [];
+        console.log('\n=== DEBUG ===');
+        console.log('Player ID:', player?.id);
+        console.log('Location ID:', loc);
+        console.log('Location Name:', locEntity?.name);
+        console.log('Location Contents:', world.getContents(loc || '').map((e: any) => e.name));
+        console.log('Player Inventory:', inventory.map((e: any) => e.name));
+        // Check cloak location
+        const cloak = world.getAllEntities().find((e: any) => e.name === 'velvet cloak');
+        if (cloak) {
+          console.log('Cloak Location:', world.getLocation(cloak.id));
+        }
+        console.log('=============\n');
+        return { events: [], success: true, turn: 0, input: command } as TurnResult;
+      }
+      return originalExecuteTurn(command);
+    };
     
     for (const command of commands) {
       console.log(`\n> ${command}`);

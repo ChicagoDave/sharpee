@@ -170,7 +170,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const darkRoom = world.createEntity('Dark Cave', 'room');
       darkRoom.add({
         type: TraitType.ROOM,
-        requiresLight: true
+        isDark: true
       });
       
       world.moveEntity(player.id, darkRoom.id);
@@ -205,7 +205,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const darkRoom = world.createEntity('Dark Cave', 'room');
       darkRoom.add({
         type: TraitType.ROOM,
-        requiresLight: true
+        isDark: true
       });
       
       const torch = world.createEntity('burning torch', 'object');
@@ -243,7 +243,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const darkRoom = world.createEntity('Lit Cave', 'room');
       darkRoom.add({
         type: TraitType.ROOM,
-        requiresLight: true
+        isDark: true
       });
       
       const lamp = world.createEntity('electric lamp', 'object');
@@ -479,59 +479,30 @@ describe('lookingAction (Golden Pattern)', () => {
       expect(events.every(e => e.type && e.data)).toBe(true);
     });
 
-    test('should handle validation errors in report()', () => {
+    test('should use blocked() to handle validation errors', () => {
       // Even though looking is always valid, test the pattern
       const { world, player, room } = setupBasicWorld();
-      
+
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
-      
+
       // Mock validation failure
       const mockValidationResult = {
         valid: false,
         error: 'test_error',
-        messageId: 'test_message',
         params: { test: 'value' }
       };
-      
-      // Call report with validation error
-      const events = lookingAction.report(context, mockValidationResult);
-      
-      // Should create error event with room snapshot
+
+      // Call blocked() with validation result
+      const events = lookingAction.blocked!(context, mockValidationResult);
+
+      // Should create blocked event
       expect(events).toHaveLength(1);
-      expect(events[0].type).toBe('action.error');
+      expect(events[0].type).toBe('action.blocked');
       expect(events[0].data).toMatchObject({
         actionId: IFActions.LOOKING,
-        error: 'test_error',
-        messageId: 'test_message',
-        params: {
-          test: 'value',
-          roomSnapshot: expect.objectContaining({
-            id: room.id,
-            name: expect.any(String)
-          })
-        }
-      });
-    });
-
-    test('should handle execution errors in report()', () => {
-      const { world, player, room } = setupBasicWorld();
-      
-      const command = createCommand(IFActions.LOOKING);
-      const context = createRealTestContext(lookingAction, world, command);
-      
-      // Call report with execution error
-      const executionError = new Error('Test execution error');
-      const events = lookingAction.report(context, { valid: true }, executionError);
-      
-      // Should create error event
-      expectEvent(events, 'action.error', {
-        actionId: IFActions.LOOKING,
-        error: 'execution_failed',
-        messageId: 'action_failed',
-        params: {
-          error: 'Test execution error'
-        }
+        messageId: 'test_error',
+        params: { test: 'value' }
       });
     });
   });

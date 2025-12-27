@@ -24,21 +24,21 @@ import { SemanticEvent } from '@sharpee/core';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 import type { ISemanticEvent } from '@sharpee/core';
 
-// Helper to execute action using the new three-phase pattern
+// Helper to execute action using the four-phase pattern
 function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
-  // New three-phase pattern: validate -> execute -> report
+  // Four-phase pattern: validate -> execute/blocked -> report
   const validationResult = action.validate(context);
-  
+
   if (!validationResult.valid) {
-    // Action creates its own error events in report()
-    return action.report(context, validationResult);
+    // Use blocked() for validation failures
+    return action.blocked(context, validationResult);
   }
-  
-  // Execute mutations (returns void in new pattern)
+
+  // Execute mutations (returns void)
   action.execute(context);
-  
-  // Report generates all events
-  return action.report(context, validationResult);
+
+  // Report generates success events
+  return action.report(context);
 }
 
 describe('puttingAction (Golden Pattern)', () => {
@@ -103,9 +103,8 @@ describe('puttingAction (Golden Pattern)', () => {
       
       const events = executeAction(puttingAction, context);
       
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('no_target'),
-        reason: 'no_target'
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('no_target')
       });
     });
 
@@ -122,7 +121,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       const events = executeAction(puttingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('no_destination'),
         params: { item: 'ball' }
       });
@@ -149,7 +148,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       const events = executeAction(puttingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('cant_put_in_itself'),
         params: { item: 'magic box' }
       });
@@ -172,7 +171,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       const events = executeAction(puttingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('cant_put_on_itself'),
         params: { item: 'folding table' }
       });
@@ -301,7 +300,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       const events = executeAction(puttingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('container_closed'),
         params: { container: 'locked chest' }
       });
@@ -326,7 +325,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       const events = executeAction(puttingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('not_surface'),
         params: { destination: 'cardboard box' }
       });
@@ -413,7 +412,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       const events = executeAction(puttingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('not_container'),
         params: { destination: 'kitchen counter' }
       });
@@ -451,7 +450,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       const events = executeAction(puttingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('no_room'),
         params: { container: 'coin pouch' }
       });
@@ -492,7 +491,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       const events = executeAction(puttingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('no_room'),
         params: { container: 'canvas bag' }
       });
@@ -528,7 +527,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       const events = executeAction(puttingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('no_space'),
         params: { surface: 'serving tray' }
       });
@@ -666,7 +665,7 @@ describe('Putting Action Edge Cases', () => {
     const events = executeAction(puttingAction, context);
     
     // 3 + 8 = 11, exceeds maxVolume of 10
-    expectEvent(events, 'action.error', {
+    expectEvent(events, 'action.blocked', {
       messageId: expect.stringContaining('no_room'),
       params: { container: 'fruit basket' }
     });
@@ -720,7 +719,7 @@ describe('Putting Action Edge Cases', () => {
     
     const events = executeAction(puttingAction, context);
     
-    expectEvent(events, 'action.error', {
+    expectEvent(events, 'action.blocked', {
       messageId: expect.stringContaining('not_container'),
       params: { destination: 'marble statue' }
     });

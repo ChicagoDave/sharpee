@@ -4,10 +4,11 @@
  * This action handles general talking/greeting NPCs.
  * More specific conversation topics use ASK/TELL.
  *
- * Uses three-phase pattern:
+ * Uses four-phase pattern:
  * 1. validate: Check target exists, is visible, is an actor
  * 2. execute: Analyze conversation state (no world mutations)
- * 3. report: Emit talked event and success message
+ * 3. blocked: Handle validation failures
+ * 4. report: Emit talked event and success message
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -17,7 +18,6 @@ import { IFActions } from '../../constants';
 import { TalkedEventData } from './talking-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
-import { handleReportErrors } from '../../base/report-helpers';
 
 /**
  * Shared data passed between execute and report phases
@@ -189,10 +189,16 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     sharedData.eventData = eventData;
   },
 
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    return [context.event('action.blocked', {
+      actionId: this.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
+  },
 
+  report(context: ActionContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
     const sharedData = getTalkingSharedData(context);
 

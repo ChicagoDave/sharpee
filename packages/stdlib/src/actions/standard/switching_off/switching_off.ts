@@ -18,7 +18,7 @@ import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { SwitchedOffEventData } from './switching_off-events';
 import { analyzeSwitchingContext, determineSwitchingMessage } from '../switching-shared';
-import { handleReportErrors } from '../../base/report-helpers';
+import { MESSAGES } from './switching_off-messages';
 
 /**
  * Shared data passed between execute and report phases
@@ -72,15 +72,15 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
     const noun = context.command.directObject?.entity;
 
     if (!noun) {
-      return { valid: false, error: 'no_target' };
+      return { valid: false, error: MESSAGES.NO_TARGET };
     }
 
     if (!noun.has(TraitType.SWITCHABLE)) {
-      return { valid: false, error: 'not_switchable', params: { target: noun.name } };
+      return { valid: false, error: MESSAGES.NOT_SWITCHABLE, params: { target: noun.name } };
     }
 
     if (!SwitchableBehavior.canSwitchOff(noun)) {
-      return { valid: false, error: 'already_off', params: { target: noun.name } };
+      return { valid: false, error: MESSAGES.ALREADY_OFF, params: { target: noun.name } };
     }
 
     return { valid: true };
@@ -173,13 +173,14 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
     );
   },
 
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
-
+  /**
+   * Report phase - generates events after successful execution
+   * Only called on success path - validation has already passed
+   */
+  report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getSwitchingOffSharedData(context);
 
-    // Handle failure
+    // Check if behavior failed (safety net for edge cases)
     if (sharedData.failed) {
       return [context.event('action.error', {
         actionId: this.id,
@@ -234,6 +235,19 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
         params: sharedData.params
       })
     ];
+  },
+
+  /**
+   * Generate events when validation fails
+   * Called instead of execute/report when validate returns invalid
+   */
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    return [context.event('action.blocked', {
+      actionId: this.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
   },
 
   group: "device_manipulation",

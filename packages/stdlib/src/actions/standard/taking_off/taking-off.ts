@@ -4,10 +4,11 @@
  * This action handles removing items that are currently worn.
  * It validates layering rules and provides appropriate feedback.
  *
- * Uses three-phase pattern:
+ * Uses four-phase pattern:
  * 1. validate: Check if item is worn and can be removed
  * 2. execute: Call WearableBehavior.remove(), store result in sharedData
- * 3. report: Generate events from sharedData
+ * 3. blocked: Generate events when validation fails
+ * 4. report: Generate success events from sharedData
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -146,16 +147,25 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
     sharedData.messageId = 'removed';
   },
 
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    return [context.event('action.blocked', {
+      actionId: this.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
+  },
+
   report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getTakingOffSharedData(context);
 
-    // Handle failure
+    // Handle behavior failures (safety net - should be rare after validation)
     if (sharedData.failed) {
-      return [context.event('action.error', {
+      return [context.event('action.blocked', {
         actionId: this.id,
         messageId: sharedData.errorMessageId,
         reason: sharedData.errorReason,
-        params: sharedData.errorParams
+        params: sharedData.errorParams || {}
       })];
     }
 

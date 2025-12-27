@@ -69,7 +69,7 @@ export const buildActorMovedData: ActionDataBuilder<Record<string, unknown>> = (
   // Capture room snapshots for atomic events
   const sourceSnapshot = captureRoomSnapshot(sourceRoom, context.world, false);
   const destinationSnapshot = captureRoomSnapshot(currentRoom, context.world, false);
-  const actorSnapshot = captureEntitySnapshot(actor, context.world, false);
+  const actorSnapshot = captureEntitySnapshot(actor, context.world, true); // Include inventory for darkness checks
   
   // Check if this was the first visit (stored during execute phase via sharedData)
   const sharedData = getGoingSharedData(context);

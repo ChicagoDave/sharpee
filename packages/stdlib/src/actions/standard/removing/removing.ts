@@ -1,18 +1,21 @@
 /**
  * Removing action - remove objects from containers or surfaces
- * 
+ *
  * This action handles taking objects from containers or supporters.
  * It's essentially a targeted form of taking.
- * 
- * MIGRATED: To three-phase pattern (validate/execute/report) for atomic events
+ *
+ * Uses four-phase pattern:
+ * 1. validate: Check item and source exist and are accessible
+ * 2. execute: Remove from source and take to inventory
+ * 3. blocked: Generate error events when validation fails
+ * 4. report: Generate success events with removed data
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
-import { handleReportErrors } from '../../base/report-helpers';
-import { 
+import {
   TraitType,
   OpenableBehavior,
   ContainerBehavior,
@@ -27,6 +30,7 @@ import { buildEventData } from '../../data-builder-types';
 import { removedDataConfig } from './removing-data';
 import { ScopeLevel } from '../../../scope';
 import { RemovingEventMap } from './removing-events';
+import { RemovingMessages } from './removing-messages';
 
 /**
  * Shared data passed between execute and report phases
@@ -54,110 +58,110 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
     'already_have'
   ],
   group: 'object_manipulation',
-  
+
   validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     const item = context.command.directObject?.entity;
     const source = context.command.indirectObject?.entity;
-    
+
     // Validate we have an item
     if (!item) {
-      return { 
-        valid: false, 
-        error: 'no_target',
+      return {
+        valid: false,
+        error: RemovingMessages.NO_TARGET,
         params: {}
       };
     }
-    
+
     // Validate we have a source
     if (!source) {
-      return { 
-        valid: false, 
-        error: 'no_source',
+      return {
+        valid: false,
+        error: RemovingMessages.NO_SOURCE,
         params: { item: item.name }
       };
     }
-    
+
     // Check if player already has the item
     if (ActorBehavior.isHolding(actor, item.id, context.world)) {
-      return { 
-        valid: false, 
-        error: 'already_have',
+      return {
+        valid: false,
+        error: RemovingMessages.ALREADY_HAVE,
         params: { item: item.name }
       };
     }
-    
+
     // Check if the item is actually in/on the source
     const itemLocation = context.world.getLocation(item.id);
     if (!itemLocation || itemLocation !== source.id) {
       if (source.has(TraitType.CONTAINER)) {
-        return { 
-          valid: false, 
-          error: 'not_in_container',
-          params: { 
-            item: item.name, 
-            container: source.name 
+        return {
+          valid: false,
+          error: RemovingMessages.NOT_IN_CONTAINER,
+          params: {
+            item: item.name,
+            container: source.name
           }
         };
       } else if (source.has(TraitType.SUPPORTER)) {
-        return { 
-          valid: false, 
-          error: 'not_on_surface',
-          params: { 
-            item: item.name, 
-            surface: source.name 
+        return {
+          valid: false,
+          error: RemovingMessages.NOT_ON_SURFACE,
+          params: {
+            item: item.name,
+            surface: source.name
           }
         };
       } else {
-        return { 
-          valid: false, 
-          error: 'not_in_container',
-          params: { 
-            item: item.name, 
-            container: source.name 
+        return {
+          valid: false,
+          error: RemovingMessages.NOT_IN_CONTAINER,
+          params: {
+            item: item.name,
+            container: source.name
           }
         };
       }
     }
-    
+
     // Container-specific checks using behavior
     if (source.has(TraitType.CONTAINER)) {
       // Check if container is open
       if (source.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(source)) {
-        return { 
-          valid: false, 
-          error: 'container_closed',
+        return {
+          valid: false,
+          error: RemovingMessages.CONTAINER_CLOSED,
           params: { container: source.name }
         };
       }
     }
-    
+
     // Use ActorBehavior to validate taking capacity
     if (!ActorBehavior.canTakeItem(actor, item, context.world)) {
       return {
         valid: false,
-        error: 'cannot_take',
+        error: RemovingMessages.CANNOT_TAKE,
         params: { item: item.name }
       };
     }
-    
+
     return { valid: true };
   },
-  
+
   execute(context: ActionContext): void {
     const actor = context.player;
     const item = context.command.directObject?.entity!;
     const source = context.command.indirectObject?.entity!;
-    
+
     // First remove from source using appropriate behavior
     let removeResult: IRemoveItemResult | IRemoveItemFromSupporterResult | null = null;
-    
+
     if (source.has(TraitType.CONTAINER)) {
       removeResult = ContainerBehavior.removeItem(source, item, context.world);
     } else if (source.has(TraitType.SUPPORTER)) {
       removeResult = SupporterBehavior.removeItem(source, item, context.world);
     }
-    
+
     // Store results for report phase using sharedData
     const sharedData = getRemovingSharedData(context);
     sharedData.removeResult = removeResult;
@@ -168,89 +172,33 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
   },
 
   /**
-   * Report events after removing
-   * Generates events with complete state snapshots
+   * Report events after successful removing
+   * Only called on success path - validation passed
    */
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    // Handle validation and execution errors using shared helper
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
-
+  report(context: ActionContext): ISemanticEvent[] {
     const actor = context.player;
     const item = context.command.directObject?.entity!;
     const source = context.command.indirectObject?.entity!;
     const sharedData = getRemovingSharedData(context);
     const removeResult = sharedData.removeResult as IRemoveItemResult | IRemoveItemFromSupporterResult | null;
     const takeResult = sharedData.takeResult as ITakeItemResult;
-    
+
     const events: ISemanticEvent[] = [];
-    
-    // Check remove result
-    if (removeResult && !removeResult.success) {
-      if (source.has(TraitType.CONTAINER)) {
-        const containerResult = removeResult as IRemoveItemResult;
-        if (containerResult.notContained) {
-          return [context.event('action.error', {
-            actionId: context.action.id,
-            messageId: 'not_in_container',
-            params: { item: item.name, container: source.name }
-          })];
-        }
-      } else if (source.has(TraitType.SUPPORTER)) {
-        const supporterResult = removeResult as IRemoveItemFromSupporterResult;
-        if (supporterResult.notThere) {
-          return [context.event('action.error', {
-            actionId: context.action.id,
-            messageId: 'not_on_surface',
-            params: { item: item.name, surface: source.name }
-          })];
-        }
-      }
-      // Generic failure
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'cant_remove',
-        params: { item: item.name }
-      })];
-    }
-    
-    // Check take result
-    if (!takeResult.success) {
-      if (takeResult.tooHeavy) {
-        return [context.event('action.error', {
-          actionId: context.action.id,
-          messageId: 'too_heavy',
-          params: { item: item.name }
-        })];
-      }
-      if (takeResult.inventoryFull) {
-        return [context.event('action.error', {
-          actionId: context.action.id,
-          messageId: 'container_full'
-        })];
-      }
-      // Generic failure
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: 'cant_take',
-        params: { item: item.name }
-      })];
-    }
-    
+
     // Build message params and determine message
     const params: Record<string, any> = {
       item: item.name
     };
-    
+
     let messageId: string;
     if (source.has(TraitType.CONTAINER)) {
       params.container = source.name;
-      messageId = 'removed_from';
+      messageId = RemovingMessages.REMOVED_FROM;
     } else {
       params.surface = source.name;
-      messageId = 'removed_from_surface';
+      messageId = RemovingMessages.REMOVED_FROM_SURFACE;
     }
-    
+
     // Create the TAKEN event (same as taking action) for world model updates with snapshots
     const takenData: RemovingEventMap['if.event.taken'] = {
       item: item.name,
@@ -263,19 +211,38 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
       actorSnapshot: captureEntitySnapshot(actor, context.world, false),
       sourceSnapshot: captureEntitySnapshot(source, context.world, source.has(TraitType.ROOM))
     } as RemovingEventMap['if.event.taken'] & { itemSnapshot?: any; actorSnapshot?: any; sourceSnapshot?: any };
-    
+
     events.push(context.event('if.event.taken', takenData));
-    
+
     // Create success message
     events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId,
-        params: params
-      }));
-    
+      actionId: context.action.id,
+      messageId,
+      params: params
+    }));
+
     return events;
   },
-  
+
+  /**
+   * Generate events when validation fails
+   * Called instead of execute/report when validate returns invalid
+   */
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    const item = context.command.directObject?.entity;
+    const source = context.command.indirectObject?.entity;
+
+    return [context.event('action.blocked', {
+      actionId: context.action.id,
+      messageId: result.error,
+      params: {
+        ...result.params,
+        item: item?.name,
+        source: source?.name
+      }
+    })];
+  },
+
   metadata: {
     requiresDirectObject: true,
     requiresIndirectObject: true,

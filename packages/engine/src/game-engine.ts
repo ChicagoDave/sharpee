@@ -16,8 +16,8 @@ import {
   EntityType
 } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
-import { 
-  ActionRegistry, 
+import {
+  ActionRegistry,
   StandardActionRegistry,
   standardActions,
   vocabularyRegistry,
@@ -26,7 +26,8 @@ import {
   CommandHistoryData,
   CommandHistoryEntry,
   IFActions,
-  MetaCommandRegistry
+  MetaCommandRegistry,
+  IPerceptionService
 } from '@sharpee/stdlib';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { TextService, TextServiceContext, TextOutput } from '@sharpee/if-services';
@@ -88,6 +89,7 @@ export class GameEngine {
   private eventSource = createSemanticEventSource();
   private systemEventSource?: any; // GenericEventSource<SystemEvent>
   private pendingPlatformOps: IPlatformEvent[] = [];
+  private perceptionService?: IPerceptionService;
 
   constructor(options: {
     world: WorldModel;
@@ -95,9 +97,11 @@ export class GameEngine {
     parser: Parser;
     language: LanguageProvider;
     textService: TextService;
+    perceptionService?: IPerceptionService;
     config?: EngineConfig;
   }) {
     this.world = options.world;
+    this.perceptionService = options.perceptionService;
     this.config = {
       maxHistory: 100,
       validateEvents: true,
@@ -436,10 +440,21 @@ export class GameEngine {
       };
       
       // Store events for this turn (convert to SemanticEvent and process through pipeline)
-      const semanticEvents = result.events.map(e => {
+      let semanticEvents = result.events.map(e => {
         const semantic = toSemanticEvent(e);
         return processEvent(semantic, enrichmentContext);
       });
+
+      // Apply perception filtering if service is configured
+      // This transforms events based on what the player can perceive
+      if (this.perceptionService) {
+        semanticEvents = this.perceptionService.filterEvents(
+          semanticEvents,
+          this.context.player,
+          this.world
+        );
+      }
+
       this.turnEvents.set(turn, semanticEvents);
       
       // Also track in event source for save/restore
@@ -476,10 +491,13 @@ export class GameEngine {
       // Always emit events through the engine's event system
       let victoryDetected = false;
       let victoryDetails: any = null;
-      
+
       for (const event of result.events) {
         this.emit('event', event);
-        
+
+        // Dispatch to entity handlers (entity.on)
+        this.dispatchEntityHandlers(event);
+
         // Check for story victory event but don't stop immediately
         // (we're still processing the turn)
         if (event.type === 'story.victory') {
@@ -1223,6 +1241,44 @@ export class GameEngine {
           (listener as any)(...args);
         } catch (error) {
           console.error(`Error in event listener for ${event}:`, error);
+        }
+      }
+    }
+  }
+
+  /**
+   * Dispatch an event to entity handlers (entity.on)
+   * Entities can define handlers for specific event types
+   */
+  private dispatchEntityHandlers(event: SequencedEvent): void {
+    // Get all entities that might have handlers
+    const entities = this.world.getAllEntities();
+
+    for (const entity of entities) {
+      // Check if entity has event handlers defined
+      const handlers = (entity as any).on;
+      if (!handlers || typeof handlers !== 'object') {
+        continue;
+      }
+
+      // Check if there's a handler for this event type
+      const handler = handlers[event.type];
+      if (typeof handler === 'function') {
+        try {
+          // Call the handler with the event
+          const result = handler(event);
+
+          // If handler returns events, add them to the current turn
+          if (Array.isArray(result)) {
+            const turnEvents = this.turnEvents.get(this.context.currentTurn) || [];
+            for (const reactionEvent of result) {
+              turnEvents.push(reactionEvent);
+              this.emit('event', reactionEvent);
+            }
+            this.turnEvents.set(this.context.currentTurn, turnEvents);
+          }
+        } catch (error) {
+          console.error(`Error in entity handler for ${entity.id} on ${event.type}:`, error);
         }
       }
     }

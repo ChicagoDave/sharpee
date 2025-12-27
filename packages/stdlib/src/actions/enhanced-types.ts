@@ -234,25 +234,36 @@ export interface Action {
   execute(context: ActionContext): ISemanticEvent[] | void;
   
   /**
-   * Generate ALL events including errors (new three-phase pattern)
-   * 
-   * This method is ALWAYS called and is responsible for creating ALL events:
-   * - Success events with captured entity snapshots when action succeeds
-   * - Error events when validation fails or execution encounters issues
-   * - Scope error events when entities are not accessible
-   * 
-   * The method receives the validation result and any execution errors through
-   * the context, allowing it to create appropriate events with full context.
-   * 
+   * Generate success events (four-phase pattern)
+   *
+   * This method is ONLY called when validation passes and execute() succeeds.
+   * It is responsible for creating success events with captured entity snapshots.
+   *
    * NOTE: This will become required once all actions are migrated to the new pattern.
    * For now it's optional to maintain backward compatibility with unmigrated actions.
-   * 
-   * @param context Unified action context with validation/execution results
-   * @param validationResult Result from validate() phase
-   * @param executionError Optional error from execute() phase
-   * @returns Array of events with captured state data
+   *
+   * @param context Unified action context
+   * @returns Array of success events with captured state data
    */
-  report?(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[];
+  report?(context: ActionContext): ISemanticEvent[];
+
+  /**
+   * Generate blocked events when validation fails (four-phase pattern)
+   *
+   * This method is called when validate() returns { valid: false }.
+   * It creates appropriate error/blocked events based on the validation result.
+   *
+   * Each action owns its own blocked messages and can customize the response.
+   * A default implementation generates a standard 'action.blocked' event.
+   *
+   * NOTE: This will become required once all actions are migrated to the new pattern.
+   * For now it's optional to maintain backward compatibility with unmigrated actions.
+   *
+   * @param context Unified action context
+   * @param result The validation result containing error info
+   * @returns Array of blocked/error events
+   */
+  blocked?(context: ActionContext, result: ValidationResult): ISemanticEvent[];
   
   /**
    * @deprecated Use validate() instead. This will be removed after refactoring.

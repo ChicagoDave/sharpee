@@ -1,63 +1,23 @@
 /**
  * Data builder for looking action
- * 
+ *
  * Centralizes all room snapshot and visibility logic for the looking action.
  * This separates data structure concerns from business logic.
  */
 
 import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
 import { ActionContext } from '../../enhanced-types';
-import { WorldModel, TraitType } from '@sharpee/world-model';
-import { SwitchableBehavior } from '@sharpee/world-model';
+import { WorldModel, TraitType, VisibilityBehavior } from '@sharpee/world-model';
 import { captureRoomSnapshot, captureEntitySnapshots } from '../../base/snapshot-utils';
 
 /**
- * Check if a location is dark (needs light but has none)
+ * Check if a location is dark (needs light but has none).
+ * Delegates to VisibilityBehavior.isDark() as the single source of truth.
  */
 function checkIfDark(context: ActionContext): boolean {
-  const player = context.player;
-  const room = context.world.getContainingRoom(player.id);
-  
-  if (!room || !room.hasTrait(TraitType.ROOM)) {
-    return false;
-  }
-  
-  const roomTrait = room.getTrait(TraitType.ROOM) as any;
-  if (!roomTrait.requiresLight) {
-    return false;
-  }
-  
-  // Check for light sources in the room
-  const hasRoomLight = context.world.getContents(room.id).some(item => {
-    if (item.hasTrait(TraitType.LIGHT_SOURCE)) {
-      const lightTrait = item.getTrait(TraitType.LIGHT_SOURCE) as any;
-      if (lightTrait.isLit !== undefined) {
-        return lightTrait.isLit;
-      }
-      if (item.hasTrait(TraitType.SWITCHABLE)) {
-        return SwitchableBehavior.isOn(item);
-      }
-      return true; // Default to true for light sources without explicit state
-    }
-    return false;
-  });
-  
-  // Check if player is carrying a light
-  const hasPlayerLight = context.world.getContents(player.id).some(item => {
-    if (item.hasTrait(TraitType.LIGHT_SOURCE)) {
-      const lightTrait = item.getTrait(TraitType.LIGHT_SOURCE) as any;
-      if (lightTrait.isLit !== undefined) {
-        return lightTrait.isLit;
-      }
-      if (item.hasTrait(TraitType.SWITCHABLE)) {
-        return SwitchableBehavior.isOn(item);
-      }
-      return true; // Default to true for light sources without explicit state
-    }
-    return false;
-  });
-  
-  return !hasRoomLight && !hasPlayerLight;
+  const room = context.world.getContainingRoom(context.player.id);
+  if (!room) return false;
+  return VisibilityBehavior.isDark(room, context.world);
 }
 
 /**

@@ -1,7 +1,7 @@
 # ADR-054: Semantic Grammar for Command Processing
 
 ## Status
-Proposed
+Accepted (Implemented)
 
 ## Context
 

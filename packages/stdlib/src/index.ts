@@ -23,3 +23,4 @@ export * from './vocabulary';
 export * from './capabilities';
 export * from './query-handlers';
 export * from './scope';
+export * from './services';

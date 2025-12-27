@@ -15,9 +15,14 @@ export class LightSourceTrait implements ITrait {
   
   /** Light output level (1-10) */
   brightness: number = 5;
-  
-  /** Whether the light is currently providing illumination */
-  isLit: boolean = false;
+
+  /**
+   * Whether the light is currently providing illumination.
+   * - true: explicitly lit
+   * - false: explicitly not lit
+   * - undefined: use switchable state or default to lit
+   */
+  isLit?: boolean;
   
   /** Optional fuel/battery remaining (undefined = infinite) */
   fuelRemaining?: number;

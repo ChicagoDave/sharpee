@@ -93,9 +93,9 @@ class InternalActionContext implements ActionContext {
     type: string, 
     eventData: any
   ): ISemanticEvent {
-    // Special handling for action.error and action.success events
+    // Special handling for action status events
     // These should NOT be double-wrapped
-    if (type === 'action.error' || type === 'action.success') {
+    if (type === 'action.error' || type === 'action.success' || type === 'action.blocked') {
       // For action status events, the data IS the payload
       const payload = {
         ...eventData,

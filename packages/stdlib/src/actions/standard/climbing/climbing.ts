@@ -4,10 +4,11 @@
  * This action handles climbing objects (trees, ladders, etc.) or climbing
  * in directions (up, down). It can result in movement or just changing position.
  *
- * Uses three-phase pattern:
+ * Uses four-phase pattern:
  * 1. validate: Check if climbing is possible (valid direction/climbable object)
  * 2. execute: Perform world mutation (move player to destination/onto object)
- * 3. report: Generate events for output
+ * 3. blocked: Generate events when validation fails
+ * 4. report: Generate success events
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -17,7 +18,6 @@ import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, ClimbableBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ClimbedEventData } from './climbing-events';
-import { handleReportErrors } from '../../base/report-helpers';
 
 /**
  * Shared data passed between execute and report phases
@@ -119,12 +119,21 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
   },
 
   /**
+   * Generate events when validation fails
+   */
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    return [context.event('action.blocked', {
+      actionId: this.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
+  },
+
+  /**
    * Report phase - generates all events after successful execution
    */
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
-
+  report(context: ActionContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
     const sharedData = getClimbingSharedData(context);
 

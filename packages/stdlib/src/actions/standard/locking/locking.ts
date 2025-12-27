@@ -18,7 +18,7 @@ import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { LockedEventData } from './locking-events';
 import { analyzeLockContext, validateKeyRequirements, determineLockMessage } from '../lock-shared';
-import { handleReportErrors } from '../../base/report-helpers';
+import { MESSAGES } from './locking-messages';
 
 /**
  * Shared data passed between execute and report phases
@@ -70,7 +70,7 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
     if (!noun) {
       return {
         valid: false,
-        error: 'no_target'
+        error: MESSAGES.NO_TARGET
       };
     }
 
@@ -78,7 +78,7 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
     if (!noun.has(TraitType.LOCKABLE)) {
       return {
         valid: false,
-        error: 'not_lockable',
+        error: MESSAGES.NOT_LOCKABLE,
         params: { item: noun.name }
       };
     }
@@ -89,14 +89,14 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
       if (LockableBehavior.isLocked(noun)) {
         return {
           valid: false,
-          error: 'already_locked',
+          error: MESSAGES.ALREADY_LOCKED,
           params: { item: noun.name }
         };
       }
       if (noun.has(TraitType.OPENABLE) && OpenableBehavior.isOpen(noun)) {
         return {
           valid: false,
-          error: 'not_closed',
+          error: MESSAGES.NOT_CLOSED,
           params: { item: noun.name }
         };
       }
@@ -188,15 +188,13 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
   },
 
   /**
-   * Report phase - generates all events after successful execution
+   * Report phase - generates events after successful execution
+   * Only called on success path - validation has already passed
    */
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
-
+  report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getLockingSharedData(context);
 
-    // Check if behavior failed
+    // Check if behavior failed (safety net for edge cases)
     if (sharedData.failed) {
       return [context.event('action.error', {
         actionId: this.id,
@@ -235,6 +233,19 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
         params: sharedData.params
       })
     ];
+  },
+
+  /**
+   * Generate events when validation fails
+   * Called instead of execute/report when validate returns invalid
+   */
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    return [context.event('action.blocked', {
+      actionId: this.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
   },
 
   metadata: {

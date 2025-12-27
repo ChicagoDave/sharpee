@@ -7,10 +7,11 @@
  * Unlike scoring which uses capability data, inventory queries
  * the world model directly since items are core entities.
  *
- * Uses three-phase pattern:
+ * Uses four-phase pattern:
  * 1. validate: Always succeeds (no preconditions)
  * 2. execute: Analyze inventory (no world mutations)
- * 3. report: Emit inventory events and success messages
+ * 3. report: Emit success events and messages
+ * 4. blocked: Generate error events (never called since always valid)
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -19,7 +20,7 @@ import { TraitType, WearableTrait, IFEntity } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { InventoryEventMap } from './inventory-events';
-import { handleReportErrors } from '../../base/report-helpers';
+import { InventoryMessages } from './inventory-messages';
 
 /**
  * Shared data passed between execute and report phases
@@ -214,10 +215,8 @@ export const inventoryAction: Action & { metadata: ActionMetadata } = {
     sharedData.analysis = analysis;
   },
 
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
-
+  report(context: ActionContext): ISemanticEvent[] {
+    // report() is only called on success - inventory always succeeds
     const events: ISemanticEvent[] = [];
     const sharedData = getInventorySharedData(context);
     const analysis = sharedData.analysis;
@@ -240,7 +239,7 @@ export const inventoryAction: Action & { metadata: ActionMetadata } = {
     if (analysis.holdingList) {
       events.push(context.event('action.success', {
         actionId: context.action.id,
-        messageId: 'holding_list',
+        messageId: InventoryMessages.HOLDING_LIST,
         params: { items: analysis.holdingList }
       }));
     }
@@ -248,7 +247,7 @@ export const inventoryAction: Action & { metadata: ActionMetadata } = {
     if (analysis.wornList) {
       events.push(context.event('action.success', {
         actionId: context.action.id,
-        messageId: 'worn_list',
+        messageId: InventoryMessages.WORN_LIST,
         params: { items: analysis.wornList }
       }));
     }
@@ -266,6 +265,16 @@ export const inventoryAction: Action & { metadata: ActionMetadata } = {
     }
 
     return events;
+  },
+
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    // blocked() is called when validation fails
+    // Inventory always succeeds, so this should never be called
+    return [context.event('action.blocked', {
+      actionId: context.action.id,
+      messageId: result.error,
+      params: result.params
+    })];
   },
 
   group: "meta",

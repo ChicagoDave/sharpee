@@ -4,20 +4,20 @@
  * This action handles eating items that have the EDIBLE trait.
  * It validates that the item is edible and not a drink.
  *
- * Uses three-phase pattern:
- * 1. validate: Check if item is edible, not a drink, and not consumed
- * 2. execute: Mark as consumed, store data in sharedData
- * 3. report: Generate events for output
+ * Uses four-phase pattern:
+ * 1. validate: Check if item is reachable, edible, not a drink, and not consumed
+ * 2. execute: Delegate to EdibleBehavior for consumption
+ * 3. blocked: Generate events when validation fails
+ * 4. report: Generate success events
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, EdibleTrait } from '@sharpee/world-model';
+import { TraitType, EdibleBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { EatenEventData } from './eating-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
-import { handleReportErrors } from '../../base/report-helpers';
 
 /**
  * Shared data passed between execute and report phases
@@ -45,19 +45,13 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
     'eaten',
     'eaten_all',
     'eaten_some',
-    'eaten_portion',
     'delicious',
     'tasty',
     'bland',
     'awful',
     'filling',
     'still_hungry',
-    'satisfying',
-    'poisonous',
-    'nibbled',
-    'tasted',
-    'devoured',
-    'munched'
+    'poisonous'
   ],
   metadata: {
     requiresDirectObject: true,
@@ -76,6 +70,15 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
+    // Defensive reachability check (Option A)
+    if (!context.canReach(item)) {
+      return {
+        valid: false,
+        error: 'not_reachable',
+        params: { item: item.name }
+      };
+    }
+
     // Check if item is edible
     if (!item.has(TraitType.EDIBLE)) {
       return {
@@ -85,10 +88,8 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    const edibleTrait = item.get(TraitType.EDIBLE) as EdibleTrait;
-
-    // Check if it's a drink (should use DRINKING action instead)
-    if ((edibleTrait as any).isDrink) {
+    // Use behavior for liquid check (it's a drink, not food)
+    if (EdibleBehavior.isLiquid(item)) {
       return {
         valid: false,
         error: 'is_drink',
@@ -96,8 +97,8 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Check if already consumed
-    if ((edibleTrait as any).consumed) {
+    // Use behavior for consumption check (servings > 0)
+    if (!EdibleBehavior.canConsume(item)) {
       return {
         valid: false,
         error: 'already_consumed',
@@ -114,8 +115,20 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
    */
   execute(context: ActionContext): void {
     const item = context.command.directObject!.entity!;
-    const edibleTrait = item.get(TraitType.EDIBLE) as EdibleTrait;
-    const sharedData = getEatingSharedData(context);
+    const actor = context.player;
+
+    // Capture state before mutation for event data
+    const servingsBefore = EdibleBehavior.getServings(item);
+    const nutrition = EdibleBehavior.getNutrition(item);
+    const taste = EdibleBehavior.getTaste(item);
+    const effects = EdibleBehavior.getEffects(item);
+    const satisfiesHunger = EdibleBehavior.satisfiesHunger(item);
+
+    // Delegate to behavior for consumption (decrements servings)
+    EdibleBehavior.consume(item, actor);
+
+    // Calculate servings remaining after consumption
+    const servingsRemaining = EdibleBehavior.getServings(item);
 
     // Build event data
     const eventData: EatenEventData = {
@@ -123,29 +136,36 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
       itemName: item.name
     };
 
+    // Add nutritional information if available
+    if (nutrition !== undefined && nutrition !== 1) {
+      eventData.nutrition = nutrition;
+    }
+
+    // Include servings info for multi-serving food (servingsBefore > 1)
+    // Note: We can't detect if single-serving food was originally multi-serving
+    // after all but one serving was consumed. This is a known limitation.
+    if (servingsBefore > 1) {
+      eventData.servings = servingsBefore;
+      eventData.servingsRemaining = servingsRemaining;
+    }
+
+    // Add effects if present
+    if (effects && effects.length > 0) {
+      eventData.effects = effects;
+    }
+
+    // Add hunger satisfaction if set
+    if (satisfiesHunger !== undefined) {
+      eventData.satisfiesHunger = satisfiesHunger;
+    }
+
     // Determine message based on properties
     let messageId = 'eaten';
 
-    // Add nutritional information if available
-    if ((edibleTrait as any).nutrition) {
-      eventData.nutrition = (edibleTrait as any).nutrition;
-    }
-
-    // Handle portions
-    if ((edibleTrait as any).portions) {
-      eventData.portions = (edibleTrait as any).portions;
-      eventData.portionsRemaining = ((edibleTrait as any).portions || 1) - 1;
-
-      if ((eventData.portionsRemaining as number) > 0) {
-        messageId = 'eaten_some';
-      } else {
-        messageId = 'eaten_all';
-      }
-    }
-
-    // Check taste/quality
-    const taste = (edibleTrait as any).taste;
-    if (taste) {
+    // Message priority: effects > taste > servings > hunger > default
+    if (effects && effects.includes('poison')) {
+      messageId = 'poisonous';
+    } else if (taste) {
       switch (taste) {
         case 'delicious':
           messageId = 'delicious';
@@ -163,30 +183,20 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
           messageId = 'awful';
           break;
       }
+    } else if (servingsBefore > 1 && servingsRemaining > 0) {
+      // Multi-serving food with servings remaining
+      messageId = 'eaten_some';
+    } else if (servingsBefore > 1 && servingsRemaining === 0) {
+      // Finished all servings of multi-serving food (e.g., ate 2-serving food going to 0)
+      messageId = 'eaten_all';
+    } else if (satisfiesHunger === true) {
+      messageId = 'filling';
+    } else if (satisfiesHunger === false) {
+      messageId = 'still_hungry';
     }
 
-    // Check for effects
-    if ((edibleTrait as any).effects) {
-      eventData.effects = (edibleTrait as any).effects;
-      if ((edibleTrait as any).effects.includes('poison')) {
-        messageId = 'poisonous';
-      }
-    }
-
-    // Check hunger satisfaction
-    if ((edibleTrait as any).satisfiesHunger !== undefined) {
-      eventData.satisfiesHunger = (edibleTrait as any).satisfiesHunger;
-      if ((edibleTrait as any).satisfiesHunger === true && messageId === 'eaten') {
-        messageId = 'filling';
-      } else if ((edibleTrait as any).satisfiesHunger === false) {
-        messageId = 'still_hungry';
-      }
-    }
-
-    // Perform mutation - mark as consumed
-    (edibleTrait as any).consumed = true;
-
-    // Store in sharedData
+    // Store in sharedData for report phase
+    const sharedData = getEatingSharedData(context);
     sharedData.itemId = item.id;
     sharedData.itemName = item.name;
     sharedData.messageId = messageId;
@@ -194,12 +204,21 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
   },
 
   /**
+   * Generate events when validation fails
+   */
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    return [context.event('action.blocked', {
+      actionId: this.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
+  },
+
+  /**
    * Report phase - generates all events after successful execution
    */
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
-
+  report(context: ActionContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
     const sharedData = getEatingSharedData(context);
 

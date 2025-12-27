@@ -4,10 +4,11 @@
  * This action makes NPCs aware of objects without transferring ownership.
  * Useful for puzzles where NPCs react to seeing specific items.
  *
- * Uses three-phase pattern:
+ * Uses four-phase pattern:
  * 1. validate: Check item and viewer exist and are valid
  * 2. execute: Analyze show reaction (no world mutations)
- * 3. report: Emit shown event and success message
+ * 3. blocked: Generate events when validation fails
+ * 4. report: Generate success events
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -17,7 +18,6 @@ import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, ActorTrait, IdentityTrait, IFEntity } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ShownEventData } from './showing-events';
-import { handleReportErrors } from '../../base/report-helpers';
 
 /**
  * Shared data passed between execute and report phases
@@ -209,10 +209,16 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
     }
   },
 
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    return [context.event('action.blocked', {
+      actionId: this.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
+  },
 
+  report(context: ActionContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
     const sharedData = getShowingSharedData(context);
 

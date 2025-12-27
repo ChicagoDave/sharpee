@@ -4,6 +4,7 @@ import { Behavior } from '../../behaviors/behavior';
 import { IFEntity } from '../../entities/if-entity';
 import { TraitType } from '../trait-types';
 import { LightSourceTrait } from './lightSourceTrait';
+import { SwitchableBehavior } from '../switchable/switchableBehavior';
 
 /**
  * Behavior for light source entities.
@@ -38,11 +39,28 @@ export class LightSourceBehavior extends Behavior {
   }
   
   /**
-   * Check if the light source is currently lit
+   * Check if the light source is currently lit.
+   *
+   * Priority:
+   * 1. Explicit isLit property (true/false)
+   * 2. Switchable trait state (isOn)
+   * 3. Default to lit (for inherently glowing items)
    */
   static isLit(source: IFEntity): boolean {
     const trait = LightSourceBehavior.require<LightSourceTrait>(source, TraitType.LIGHT_SOURCE);
-    return trait.isLit;
+
+    // Explicit isLit takes precedence
+    if (trait.isLit !== undefined) {
+      return trait.isLit;
+    }
+
+    // Fall back to switchable state
+    if (source.hasTrait(TraitType.SWITCHABLE)) {
+      return SwitchableBehavior.isOn(source);
+    }
+
+    // Default: light sources without explicit state are lit
+    return true;
   }
   
   /**

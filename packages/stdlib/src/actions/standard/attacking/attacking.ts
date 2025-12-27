@@ -1,17 +1,20 @@
 /**
  * Attacking action - hostile action against NPCs or objects
- * 
+ *
  * This action handles combat or destructive actions.
  * It's deliberately simple - games can extend with combat systems.
- * 
- * MIGRATED: To three-phase pattern (validate/execute/report) for atomic events
+ *
+ * Uses four-phase pattern:
+ * 1. validate: Check target exists and is reachable
+ * 2. execute: Perform attack via AttackBehavior
+ * 3. blocked: Generate events when validation fails
+ * 4. report: Generate success events
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, AttackBehavior, IAttackResult } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
-import { handleReportErrors } from '../../base/report-helpers';
 import { AttackedEventData } from './attacking-events';
 import { AttackingSharedData, AttackResult } from './attacking-types';
 import { ActionMetadata } from '../../../validation';
@@ -148,14 +151,22 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
   },
 
   /**
+   * Generate events when validation fails
+   */
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    return [context.event('action.blocked', {
+      actionId: this.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
+  },
+
+  /**
    * Report events after attacking
    * Generates atomic events - one discrete fact per event
    */
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    // Handle validation and execution errors using shared helper
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
-
+  report(context: ActionContext): ISemanticEvent[] {
     const target = context.command.directObject!.entity!;
     const weaponId = context.sharedData.weaponUsed as string | undefined;
     const weapon = weaponId ? context.world.getEntity(weaponId) : undefined;

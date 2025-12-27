@@ -22,21 +22,21 @@ import {
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 import type { ISemanticEvent } from '@sharpee/core';
 
-// Helper to execute action using the new three-phase pattern
+// Helper to execute action using the four-phase pattern
 function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
-  // New three-phase pattern: validate -> execute -> report
+  // Four-phase pattern: validate -> execute/blocked -> report
   const validationResult = action.validate(context);
-  
+
   if (!validationResult.valid) {
-    // Action creates its own error events in report()
-    return action.report(context, validationResult);
+    // Use blocked() for validation failures
+    return action.blocked(context, validationResult);
   }
-  
-  // Execute mutations (returns void in new pattern)
+
+  // Execute mutations (returns void)
   action.execute(context);
-  
-  // Report generates all events
-  return action.report(context, validationResult);
+
+  // Report generates success events
+  return action.report(context);
 }
 
 describe('removingAction (Golden Pattern)', () => {
@@ -96,9 +96,8 @@ describe('removingAction (Golden Pattern)', () => {
       
       const events = executeAction(removingAction, context);
       
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('no_target'),
-        reason: 'no_target'
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('no_target')
       });
     });
 
@@ -114,7 +113,7 @@ describe('removingAction (Golden Pattern)', () => {
       
       const events = executeAction(removingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('no_source'),
         params: { item: 'ball' }
       });
@@ -138,7 +137,7 @@ describe('removingAction (Golden Pattern)', () => {
       
       const events = executeAction(removingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('not_in_container'),
         params: { 
           item: 'gold coin',
@@ -165,7 +164,7 @@ describe('removingAction (Golden Pattern)', () => {
       
       const events = executeAction(removingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('not_on_surface'),
         params: { 
           item: 'old book',
@@ -190,7 +189,7 @@ describe('removingAction (Golden Pattern)', () => {
       
       const events = executeAction(removingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('already_have'),
         params: { item: 'brass key' }
       });
@@ -222,7 +221,7 @@ describe('removingAction (Golden Pattern)', () => {
       
       const events = executeAction(removingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('container_closed'),
         params: { container: 'treasure chest' }
       });
@@ -352,7 +351,7 @@ describe('removingAction (Golden Pattern)', () => {
       const events = executeAction(removingAction, context);
       
       // Should default to container error message
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('not_in_container'),
         params: { 
           item: 'crumpled note',
@@ -513,7 +512,7 @@ describe('Removing Action Edge Cases', () => {
     
     const events = executeAction(removingAction, context);
     
-    expectEvent(events, 'action.error', {
+    expectEvent(events, 'action.blocked', {
       messageId: expect.stringContaining('not_in_container'),
       params: { 
         item: 'playing card',

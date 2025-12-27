@@ -4,10 +4,11 @@
  * This action emits a platform event that will be processed after turn completion.
  * The engine will handle any necessary confirmations through its restart hook.
  *
- * Three-phase pattern:
- * - validate: Check if restart is allowed, gather game state
- * - execute: Analyze restart context, store in sharedData (no world mutations)
- * - report: Emit platform event and notifications
+ * Four-phase pattern:
+ * 1. validate: Check if restart is allowed, gather game state
+ * 2. execute: Analyze restart context, store in sharedData (no world mutations)
+ * 3. blocked: Handle validation failures (n/a - always succeeds)
+ * 4. report: Emit platform event and notifications
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -15,7 +16,6 @@ import { ISemanticEvent, createRestartRequestedEvent, IRestartContext } from '@s
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { RestartRequestedEventData } from './restarting-events';
-import { handleReportErrors } from '../../base/report-helpers';
 
 interface RestartingSharedData {
   forceRestart: boolean;
@@ -107,10 +107,17 @@ export const restartingAction: Action & { metadata: ActionMetadata } = {
     Object.assign(context.sharedData, data);
   },
 
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    // Restarting always succeeds, but include blocked for consistency
+    return [context.event('action.blocked', {
+      actionId: this.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
+  },
 
+  report(context: ActionContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
     const data = context.sharedData as RestartingSharedData;
 

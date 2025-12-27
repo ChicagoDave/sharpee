@@ -21,35 +21,21 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
-// Helper to execute action with validation (mimics CommandExecutor flow)
-// Updated to support three-phase pattern (validate/execute/report)
+// Helper to execute action using the four-phase pattern
 const executeWithValidation = (action: any, context: ActionContext) => {
+  // Four-phase pattern: validate -> execute/blocked -> report
   const validation = action.validate(context);
+
   if (!validation.valid) {
-    // For three-phase actions, use report method if available
-    if (action.report) {
-      return action.report(context, validation);
-    }
-    // Fallback for old-style actions
-    return [context.event('action.error', {
-      actionId: context.action.id,
-      messageId: validation.error,
-      params: validation.params || {}
-    })];
+    // Use blocked() for validation failures
+    return action.blocked(context, validation);
   }
-  
-  // For three-phase pattern: execute (mutations) then report (events)
-  if (action.report) {
-    try {
-      action.execute(context); // Returns void for three-phase
-      return action.report(context); // Returns events
-    } catch (error) {
-      return action.report(context, undefined, error as Error);
-    }
-  }
-  
-  // Fallback for old-style actions that return events directly
-  return action.execute(context);
+
+  // Execute mutations (returns void)
+  action.execute(context);
+
+  // Report generates success events
+  return action.report(context);
 };
 
 describe('enteringAction (Golden Pattern)', () => {
@@ -82,7 +68,7 @@ describe('enteringAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(enteringAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('no_target')
       });
     });
@@ -98,7 +84,7 @@ describe('enteringAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(enteringAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('not_enterable'),
         params: { place: 'red ball' }
       });
@@ -125,7 +111,7 @@ describe('enteringAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(enteringAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('already_inside'),
         params: { place: 'sports car' }
       });
@@ -150,7 +136,7 @@ describe('enteringAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(enteringAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('not_enterable'),
         params: { 
           place: 'phone booth'
@@ -179,7 +165,7 @@ describe('enteringAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(enteringAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('container_closed'),
         params: { container: 'wooden crate' }
       });
@@ -206,7 +192,7 @@ describe('enteringAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(enteringAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('too_full'),
         params: { 
           place: 'small elevator'

@@ -8,10 +8,11 @@
  * The action emits events with the requested help type/action,
  * and the text service retrieves the actual help content.
  *
- * Uses three-phase pattern:
+ * Uses four-phase pattern:
  * 1. validate: Always succeeds (no preconditions)
  * 2. execute: Analyze help request (no world mutations)
- * 3. report: Emit help_displayed event
+ * 3. blocked: Handle validation failures (n/a - always succeeds)
+ * 4. report: Emit help_displayed event
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -19,7 +20,6 @@ import { ISemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { HelpDisplayedEventData } from './help-events';
-import { handleReportErrors } from '../../base/report-helpers';
 
 /**
  * Shared data passed between execute and report phases
@@ -122,10 +122,17 @@ export const helpAction: Action & { metadata: ActionMetadata } = {
     sharedData.eventData = state.eventData;
   },
 
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    // Help always succeeds, but include blocked for consistency
+    return [context.event('action.blocked', {
+      actionId: this.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
+  },
 
+  report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getHelpSharedData(context);
 
     // Emit the help event with the prepared data

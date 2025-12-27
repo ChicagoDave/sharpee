@@ -1,10 +1,11 @@
 /**
  * Reading action - handles reading text from readable entities
  *
- * Uses three-phase pattern:
+ * Uses four-phase pattern:
  * 1. validate: Check target exists and is readable
  * 2. execute: Mark as read, compute text (mutation)
- * 3. report: Emit read event and success message
+ * 3. blocked: Generate events when validation fails
+ * 4. report: Generate success events
  *
  * @module
  */
@@ -16,7 +17,6 @@ import {
   ReadingEventData,
   createReadingEvent
 } from './reading-events';
-import { handleReportErrors } from '../../base/report-helpers';
 
 /**
  * Shared data passed between execute and report phases
@@ -142,10 +142,16 @@ export const reading: Action = {
     sharedData.params = params;
   },
 
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    return [context.event('action.blocked', {
+      actionId: this.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
+  },
 
+  report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getReadingSharedData(context);
     const events: ISemanticEvent[] = [];
 

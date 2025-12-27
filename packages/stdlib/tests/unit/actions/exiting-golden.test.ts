@@ -22,13 +22,13 @@ import {
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 // Helper to execute action with validation (mimics CommandExecutor flow)
-// Updated to support three-phase pattern (validate/execute/report)
+// Updated to support four-phase pattern (validate/execute/blocked/report)
 const executeWithValidation = (action: any, context: ActionContext) => {
   const validation = action.validate(context);
   if (!validation.valid) {
-    // For three-phase actions, use report method if available
-    if (action.report) {
-      return action.report(context, validation);
+    // For four-phase actions, use blocked method
+    if (action.blocked) {
+      return action.blocked(context, validation);
     }
     // Fallback for old-style actions
     return [context.event('action.error', {
@@ -37,17 +37,13 @@ const executeWithValidation = (action: any, context: ActionContext) => {
       params: validation.params || {}
     })];
   }
-  
-  // For three-phase pattern: execute (mutations) then report (events)
+
+  // For four-phase pattern: execute (mutations) then report (events)
   if (action.report) {
-    try {
-      action.execute(context); // Returns void for three-phase
-      return action.report(context); // Returns events
-    } catch (error) {
-      return action.report(context, undefined, error as Error);
-    }
+    action.execute(context); // Returns void
+    return action.report(context); // Returns events
   }
-  
+
   // Fallback for old-style actions that return events directly
   return action.execute(context);
 };
@@ -81,8 +77,8 @@ describe('exitingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(exitingAction, context);
       
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('already_outside')
+      expectEvent(events, 'action.blocked', {
+        messageId: 'already_outside'
       });
     });
 
@@ -93,14 +89,14 @@ describe('exitingAction (Golden Pattern)', () => {
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
       // Player has no location
-      
+
       const command = createCommand(IFActions.EXITING);
       const context = createRealTestContext(exitingAction, world, command);
-      
+
       const events = executeWithValidation(exitingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('nowhere_to_go')
+
+      expectEvent(events, 'action.blocked', {
+        messageId: 'nowhere_to_go'
       });
     });
 
@@ -109,27 +105,27 @@ describe('exitingAction (Golden Pattern)', () => {
       const player = world.createEntity('yourself', EntityType.ACTOR);
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
-      
+
       const floatingBox = world.createEntity('floating box', EntityType.CONTAINER);
       floatingBox.add({ type: TraitType.CONTAINER });
-      
+
       world.moveEntity(player.id, floatingBox.id);
       // Box has no location (floating in void)
-      
+
       const command = createCommand(IFActions.EXITING);
       const context = createRealTestContext(exitingAction, world, command);
-      
+
       const events = executeWithValidation(exitingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('nowhere_to_go')
+
+      expectEvent(events, 'action.blocked', {
+        messageId: 'nowhere_to_go'
       });
     });
 
     test.skip('should fail when container is closed', () => {
       // SKIPPED: Requires scope logic to properly set context.currentLocation for entities in containers
       const { world, player, room } = setupBasicWorld();
-      
+
       const crate = world.createEntity('shipping crate', EntityType.CONTAINER);
       crate.add({
         type: TraitType.CONTAINER,
@@ -139,17 +135,17 @@ describe('exitingAction (Golden Pattern)', () => {
         type: TraitType.OPENABLE,
         isOpen: false  // Closed
       });
-      
+
       world.moveEntity(crate.id, room.id);
       world.moveEntity(player.id, crate.id);  // Player inside closed crate
-      
+
       const command = createCommand(IFActions.EXITING);
       const context = createRealTestContext(exitingAction, world, command);
-      
+
       const events = executeWithValidation(exitingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('container_closed'),
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('closed'),
         params: { container: 'shipping crate' }
       });
     });
@@ -157,23 +153,23 @@ describe('exitingAction (Golden Pattern)', () => {
     test.skip('should fail when exit is blocked', () => {
       // SKIPPED: Requires scope logic to properly set context.currentLocation for entities with ENTRY trait
       const { world, player, room } = setupBasicWorld();
-      
+
       const booth = world.createEntity('phone booth', EntityType.SCENERY);
       booth.add({
         type: TraitType.ENTRY,
         canEnter: false  // Can't enter means can't exit
       });
-      
+
       world.moveEntity(booth.id, room.id);
       world.moveEntity(player.id, booth.id);
-      
+
       const command = createCommand(IFActions.EXITING);
       const context = createRealTestContext(exitingAction, world, command);
-      
+
       const events = executeWithValidation(exitingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('cant_exit'),
+
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('exit'),
         params: { place: 'phone booth' }
       });
     });

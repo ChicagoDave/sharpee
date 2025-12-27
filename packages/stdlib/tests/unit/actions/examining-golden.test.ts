@@ -22,21 +22,21 @@ import {
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 import { SemanticEvent } from '@sharpee/core';
 
-// Helper to execute action using the new three-phase pattern
+// Helper to execute action using the four-phase pattern
 function executeAction(action: any, context: ActionContext): SemanticEvent[] {
-  // New three-phase pattern: validate -> execute -> report
+  // Four-phase pattern: validate -> execute/blocked -> report
   const validationResult = action.validate(context);
-  
+
   if (!validationResult.valid) {
-    // Action creates its own error events in report()
-    return action.report(context, validationResult);
+    // Use blocked() for validation failures
+    return action.blocked(context, validationResult);
   }
-  
-  // Execute mutations (returns void in new pattern)
+
+  // Execute mutations (returns void)
   action.execute(context);
-  
-  // Report generates all events
-  return action.report(context, validationResult);
+
+  // Report generates success events
+  return action.report(context);
 }
 
 describe('examiningAction (Golden Pattern)', () => {
@@ -71,36 +71,33 @@ describe('examiningAction (Golden Pattern)', () => {
       const { world } = setupBasicWorld();
       const command = createCommand(IFActions.EXAMINING);
       const context = createRealTestContext(examiningAction, world, command);
-      
+
       const events = executeAction(examiningAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('no_target'),
-        error: 'no_target'
+
+      expectEvent(events, 'action.blocked', {
+        messageId: 'no_target'
       });
     });
 
     test('should fail when target not visible', () => {
       const { world, player, room, object } = TestData.withObject('red ball');
-      
+
       // Move object to a different room so it's not visible
       const otherRoom = world.createEntity('Other Room', 'room');
       otherRoom.add({ type: TraitType.ROOM });
       world.moveEntity(object.id, otherRoom.id);
-      
+
       const command = createCommand(IFActions.EXAMINING, {
         entity: object
       });
       const context = createRealTestContext(examiningAction, world, command);
-      
+
       const events = executeAction(examiningAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_visible'),
-        error: 'not_visible',
+
+      expectEvent(events, 'action.blocked', {
+        messageId: 'not_visible',
         params: expect.objectContaining({
-          target: 'red ball',
-          targetSnapshot: expect.any(Object)
+          target: 'red ball'
         })
       });
     });
@@ -523,76 +520,62 @@ describe('examiningAction (Golden Pattern)', () => {
   describe('Three-Phase Pattern Compliance', () => {
     test('should use report() to create all events', () => {
       const { world, player, room, object } = TestData.withObject('test object');
-      
+
       const command = createCommand(IFActions.EXAMINING, {
         entity: object
       });
       const context = createRealTestContext(examiningAction, world, command);
-      
-      // Verify the action has the report method (required for migrated actions)
+
+      // Verify the action has the report and blocked methods (four-phase pattern)
       expect(examiningAction.report).toBeDefined();
+      expect(examiningAction.blocked).toBeDefined();
       expect(typeof examiningAction.report).toBe('function');
-      
+      expect(typeof examiningAction.blocked).toBe('function');
+
       // Spy on the action methods to ensure correct pattern
       const validateSpy = vi.spyOn(examiningAction, 'validate');
       const executeSpy = vi.spyOn(examiningAction, 'execute');
-      // Cast to any since report is optional in the type but required for migrated actions
       const reportSpy = vi.spyOn(examiningAction as any, 'report');
-      
+
       const events = executeAction(examiningAction, context);
-      
-      // Verify three-phase pattern was followed
+
+      // Verify four-phase pattern was followed (report called with context only)
       expect(validateSpy).toHaveBeenCalledWith(context);
       expect(executeSpy).toHaveBeenCalledWith(context);
-      expect(reportSpy).toHaveBeenCalledWith(context, { valid: true });
-      
+      expect(reportSpy).toHaveBeenCalledWith(context);
+
       // Verify execute returns void (no events)
       const executeResult = examiningAction.execute(context);
       expect(executeResult).toBeUndefined();
-      
+
       // Verify report creates events
       expect(events.length).toBeGreaterThan(0);
       expect(events.every(e => e.type && e.data)).toBe(true);
     });
 
-    test('should handle validation errors in report()', () => {
-      const { world, player, room } = setupBasicWorld();
-      
+    test('should use blocked() to handle validation errors', () => {
+      const { world } = setupBasicWorld();
+
       const command = createCommand(IFActions.EXAMINING);
-      // No entity provided - should fail validation
       const context = createRealTestContext(examiningAction, world, command);
-      
-      const events = executeAction(examiningAction, context);
-      
-      // Should create error event
+
+      // Mock validation failure
+      const mockValidationResult = {
+        valid: false,
+        error: 'test_error',
+        params: { test: 'value' }
+      };
+
+      // Call blocked() with validation result
+      const events = examiningAction.blocked!(context, mockValidationResult);
+
+      // Should create blocked event
       expect(events).toHaveLength(1);
-      expect(events[0].type).toBe('action.error');
+      expect(events[0].type).toBe('action.blocked');
       expect(events[0].data).toMatchObject({
         actionId: IFActions.EXAMINING,
-        error: expect.any(String)
-      });
-    });
-
-    test('should handle execution errors in report()', () => {
-      const { world, player, room, object } = TestData.withObject('test object');
-      
-      const command = createCommand(IFActions.EXAMINING, {
-        entity: object
-      });
-      const context = createRealTestContext(examiningAction, world, command);
-      
-      // Call report with execution error
-      const executionError = new Error('Test execution error');
-      const events = examiningAction.report(context, { valid: true }, executionError);
-      
-      // Should create error event
-      expectEvent(events, 'action.error', {
-        actionId: IFActions.EXAMINING,
-        error: 'execution_failed',
-        messageId: 'action_failed',
-        params: {
-          error: 'Test execution error'
-        }
+        messageId: 'test_error',
+        params: expect.objectContaining({ test: 'value' })
       });
     });
   });

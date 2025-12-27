@@ -18,11 +18,13 @@ async function debugRun() {
     // Create world and player using static architecture
     const world = new WorldModel();
     const createdPlayer = world.createEntity('player', EntityType.ACTOR);
+    world.setPlayer(createdPlayer.id); // Register as the player so getPlayer() works
     
     // Create parser, language, and text service
     const language = new LanguageProvider();
     const parser = new Parser(language);
-    const textService = new TextService(language);
+    const textService = new TextService();
+    textService.setLanguageProvider(language);
     
     // Extend parser and language with story-specific vocabulary/messages
     if (story.extendParser) {

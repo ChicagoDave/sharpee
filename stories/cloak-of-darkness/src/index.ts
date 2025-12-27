@@ -48,44 +48,48 @@ export const config: StoryConfig = {
  */
 export class CloakOfDarknessStory implements Story {
   config = config;
-  
+
   private world!: WorldModel;
-  private message = "You have won!"; // The message in the sawdust
+  private winningText = "You have won!"; // The message in the sawdust
   private disturbances = 0; // Times the message has been disturbed
   private roomIds: Record<string, string> = {}; // Map of room names to IDs
+  private messageEntity!: IFEntity; // Reference to the message entity
   
   /**
    * Update the message based on current game state
    */
   private updateMessage(): void {
-    const message = this.world.getEntity('message');
-    if (!message) return;
-    
-    const identity = message.get(IdentityTrait);
-    const readable = message.get(ReadableTrait);
-    
+    if (!this.messageEntity) return;
+
+    const identity = this.messageEntity.get(IdentityTrait);
+    const readable = this.messageEntity.get(ReadableTrait);
+
     if (!identity || !readable) return;
-    
+
     // Update description based on state
     if (this.isBarDark()) {
       identity.description = "In the darkness, you can't see any message.";
       readable.text = "It's too dark to read.";
       readable.isReadable = false;
+      readable.cannotReadMessage = "It's too dark to read the message.";
     } else if (this.disturbances === 0) {
       identity.description = "The message, neatly marked in the sawdust, reads...";
-      readable.text = this.message;
+      readable.text = this.winningText;
       readable.isReadable = true;
+      readable.cannotReadMessage = undefined;
     } else if (this.disturbances < 3) {
       identity.description = "The message has been carelessly trampled, making it difficult to read.";
-      readable.text = "You can just make out: " + this.garbleMessage(this.message, this.disturbances);
+      readable.text = "You can just make out: " + this.garbleMessage(this.winningText, this.disturbances);
       readable.isReadable = true;
+      readable.cannotReadMessage = undefined;
     } else {
       identity.description = "The message has been completely obliterated.";
       readable.text = "The message is too trampled to read.";
       readable.isReadable = false;
+      readable.cannotReadMessage = "The message has been trampled beyond recognition. You have lost!";
     }
   }
-  
+
   /**
    * Initialize the world for Cloak of Darkness
    */
@@ -130,7 +134,7 @@ export class CloakOfDarknessStory implements Story {
     const hook = this.createHook(cloakroom);
     
     // Create the message
-    const message = this.createMessage(bar);
+    this.messageEntity = this.createMessage(bar);
     
     // Set initial player location to foyer
     const player = world.getPlayer();
@@ -138,7 +142,15 @@ export class CloakOfDarknessStory implements Story {
       console.log(`Moving player ${player.id} to foyer ${foyer.id}`);
       world.moveEntity(player.id, foyer.id);
       // Give player the cloak initially
+      console.log(`Moving cloak ${cloak.id} to player ${player.id}`);
       world.moveEntity(cloak.id, player.id);
+      // Verify cloak location
+      const cloakLoc = world.getLocation(cloak.id);
+      console.log(`Cloak location after move: ${cloakLoc}`);
+      const playerContents = world.getContents(player.id);
+      console.log(`Player contents: ${playerContents.map((e: any) => e.name).join(', ')}`);
+    } else {
+      console.log('WARNING: No player found in world!');
     }
   }
   
@@ -161,8 +173,10 @@ export class CloakOfDarknessStory implements Story {
         
         // Check if player is carrying the cloak
         const carried = context.world.getContents(context.actorId);
-        const hasCloak = carried.some((item: IFEntity) => item.attributes.name === 'cloak');
-        
+        const hasCloak = carried.some((item: IFEntity) =>
+          item.attributes.name === 'velvet cloak' || item.name === 'velvet cloak'
+        );
+
         // In dark room with cloak - can only see the room itself
         if (isDark && hasCloak) {
           // Cloak absorbs all light - return only the room
@@ -195,8 +209,10 @@ export class CloakOfDarknessStory implements Story {
         
         // Check if player is carrying the cloak
         const carried = context.world.getContents(context.actorId);
-        const hasCloak = carried.some((item: IFEntity) => item.attributes.name === 'cloak');
-        
+        const hasCloak = carried.some((item: IFEntity) =>
+          item.attributes.name === 'velvet cloak' || item.name === 'velvet cloak'
+        );
+
         // In pitch darkness (dark room with cloak), can't even see inventory
         if (isDark && hasCloak) {
           return [];
@@ -363,13 +379,14 @@ export class CloakOfDarknessStory implements Story {
   
   /**
    * Create the Bar (dark room with the message) without exits
+   * The bar starts dark - hanging the cloak on the hook lights it up
    */
   private createBarBase(): IFEntity {
     const bar = this.world.createEntity('Foyer Bar', EntityType.ROOM);
-    
+
     bar.add(new RoomTrait({
       exits: {}, // Will be added later
-      isDark: true // Dark!
+      isDark: true // Dark until cloak is hung on hook
     }));
     
     bar.add(new IdentityTrait({
@@ -384,21 +401,31 @@ export class CloakOfDarknessStory implements Story {
     bar.on = {
       'if.event.actor_moved': (event: any): ISemanticEvent[] | undefined => {
         const eventData = event.data || {};
-        
+
         // Use the new atomic event structure with snapshots
         const actorSnapshot = eventData.actor;
         const destinationSnapshot = eventData.destinationRoom;
-        
+
         // Check if this is the player entering this bar
         // Use snapshot data instead of world queries
-        const isPlayer = actorSnapshot?.id === 'player' || actorSnapshot?.name === 'yourself';
+        // Player can have various IDs/names depending on creation, so check if it matches world's player
+        const worldPlayer = this.world.getPlayer();
+        const isPlayer = actorSnapshot?.id === worldPlayer?.id;
         const isThisBar = destinationSnapshot?.id === bar.id || eventData.toRoom === bar.id;
-        
+
+        console.log(`[BAR HANDLER] Event: ${event.type}`);
+        console.log(`[BAR HANDLER] actorSnapshot?.id: ${actorSnapshot?.id}, worldPlayer?.id: ${worldPlayer?.id}`);
+        console.log(`[BAR HANDLER] destinationSnapshot?.id: ${destinationSnapshot?.id}, bar.id: ${bar.id}, toRoom: ${eventData.toRoom}`);
+        console.log(`[BAR HANDLER] isPlayer: ${isPlayer}, isThisBar: ${isThisBar}`);
+
         if (isPlayer && isThisBar) {
           // Check if player is carrying the cloak (look in actor's contents)
-          const hasCloak = actorSnapshot?.contents?.some((item: any) => 
+          console.log(`[BAR HANDLER] actorSnapshot.contents:`, actorSnapshot?.contents);
+          const hasCloak = actorSnapshot?.contents?.some((item: any) =>
             item.name === 'velvet cloak' || item.name === 'cloak'
           ) || false;
+          console.log(`[BAR HANDLER] hasCloak: ${hasCloak}, isDark: ${destinationSnapshot?.isDark}`);
+          console.log(`[BAR HANDLER] disturbances before: ${this.disturbances}`);
           
           // Check if the bar is dark (from room snapshot)
           const isDark = destinationSnapshot?.isDark === true;
@@ -553,7 +580,7 @@ export class CloakOfDarknessStory implements Story {
     message.add(new SceneryTrait());
     
     message.add(new ReadableTrait({
-      text: this.message
+      text: this.winningText
     }));
     
     // Add event handler for when the message is read
@@ -649,7 +676,7 @@ export class CloakOfDarknessStory implements Story {
     
     // Add custom messages for READ action
     language.addMessage('action.read.error.what_to_read', 'What do you want to read?');
-    language.addMessage('action.read.error.cant_read_message', '{reason}');
+    language.addMessage('READ.cant_read_message', '{reason}');
     language.addMessage('action.read.success.read_message', '{description}\n\n{text}');
     language.addMessage('action.read.error.nothing_to_read', 'There\'s nothing written on {item}.');
     
@@ -684,7 +711,7 @@ export class CloakOfDarknessStory implements Story {
           
           // Check if we have the required parts
           if (!directObject || !preposition || !indirectObject) {
-            return [context.event('action.error', {
+            return [context.event('action.failure', {
               actionId: context.action.id,
               messageId: 'incomplete_command',
               reason: 'missing_parts'
@@ -694,7 +721,7 @@ export class CloakOfDarknessStory implements Story {
           // Check if it's "hang X on Y"
           const prep = preposition.text?.toLowerCase();
           if (prep !== 'on') {
-            return [context.event('action.error', {
+            return [context.event('action.failure', {
               actionId: context.action.id,
               messageId: 'cant_hang_that_way',
               reason: 'wrong_preposition'
@@ -706,7 +733,7 @@ export class CloakOfDarknessStory implements Story {
           const supporter = indirectObject.entity;
           
           if (!item || !supporter) {
-            return [context.event('action.error', {
+            return [context.event('action.failure', {
               actionId: context.action.id,
               messageId: 'not_found',
               reason: 'entity_not_found'
@@ -714,11 +741,13 @@ export class CloakOfDarknessStory implements Story {
           }
           
           // Check if we're hanging the cloak on the hook
-          if (item.name === 'cloak' && supporter.name === 'hook') {
+          const isCloak = item.name === 'velvet cloak' || item.name === 'cloak';
+          const isHook = supporter.name === 'brass hook' || supporter.name === 'hook';
+          if (isCloak && isHook) {
             // Check if player is carrying the cloak
             const cloakLocation = context.world.getLocation(item.id);
             if (cloakLocation !== context.player.id) {
-              return [context.event('action.error', {
+              return [context.event('action.failure', {
                 actionId: context.action.id,
                 messageId: 'not_carrying',
                 reason: 'not_carrying',
@@ -764,7 +793,7 @@ export class CloakOfDarknessStory implements Story {
             ];
           } else {
             // Generic hang message
-            return [context.event('action.error', {
+            return [context.event('action.failure', {
               actionId: context.action.id,
               messageId: 'cant_hang_that',
               reason: 'invalid_combination',
@@ -793,7 +822,7 @@ export class CloakOfDarknessStory implements Story {
           const { directObject } = context.command;
           
           if (!directObject) {
-            return [context.event('action.error', {
+            return [context.event('action.failure', {
               actionId: context.action.id,
               messageId: 'what_to_read',
               reason: 'missing_object'
@@ -802,25 +831,46 @@ export class CloakOfDarknessStory implements Story {
           
           const item = directObject.entity;
           if (!item) {
-            return [context.event('action.error', {
+            return [context.event('action.failure', {
               actionId: context.action.id,
               messageId: 'not_found',
               reason: 'entity_not_found'
             })];
           }
           
-          // Check if it's the message
-          if (item.name === 'message') {
+          // Check if it's the message (could be 'message' or 'message in the sawdust')
+          if (item.name === 'message' || item.name === 'message in the sawdust') {
             const readable = item.get(ReadableTrait);
-            
+
             if (!readable || !readable.isReadable) {
               // Can't read it (too dark or too disturbed)
-              return [context.event('action.error', {
-                actionId: context.action.id,
-                messageId: 'cant_read_message',
-                reason: readable?.text || "You can't read that.",
-                params: { item: item.name }
-              })];
+              // Also emit a loss event if the message is destroyed
+              const reasonText = readable?.text || "You can't read that.";
+              const events: any[] = [
+                context.event('action.failure', {
+                  actionId: context.action.id,
+                  messageId: 'cant_read_message',
+                  reason: reasonText,
+                  params: { item: item.name, reason: reasonText }
+                })
+              ];
+
+              // If message is too trampled (not just too dark), it's a loss
+              if (readable?.text === "The message is too trampled to read.") {
+                this.world.setStateValue('game_lost', true);
+                events.push({
+                  id: `loss-${Date.now()}`,
+                  type: 'story.defeat',
+                  timestamp: Date.now(),
+                  entities: {},
+                  data: {
+                    message: 'You have lost!',
+                    reason: 'The message has been completely destroyed.'
+                  }
+                });
+              }
+
+              return events;
             }
             
             // Emit success event with entity snapshots - the message's event handler will check for victory
@@ -852,7 +902,7 @@ export class CloakOfDarknessStory implements Story {
           }
           
           // Not the message
-          return [context.event('action.error', {
+          return [context.event('action.failure', {
             actionId: context.action.id,
             messageId: 'nothing_to_read',
             reason: 'not_readable',
@@ -936,8 +986,9 @@ export class CloakOfDarknessStory implements Story {
    * Check if the story is complete
    */
   isComplete(): boolean {
-    // Story is complete when the message has been read successfully
-    return this.world.getStateValue('message_read_successfully') === true;
+    // Story is complete when the message has been read (win) or destroyed (loss)
+    return this.world.getStateValue('message_read_successfully') === true ||
+           this.world.getStateValue('game_lost') === true;
   }
 }
 

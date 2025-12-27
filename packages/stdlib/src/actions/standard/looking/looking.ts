@@ -1,10 +1,11 @@
 /**
  * Looking action - Provides description of current location and visible items
- * 
- * Uses three-phase pattern:
+ *
+ * Uses four-phase pattern:
  * 1. validate: Always valid (basic sensory action)
  * 2. execute: Mark room as visited (only mutation)
- * 3. report: Generate events with complete state snapshots
+ * 3. report: Generate success events with complete state snapshots
+ * 4. blocked: Generate error events (never called since looking always valid)
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -13,14 +14,14 @@ import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { captureRoomSnapshot } from '../../base/snapshot-utils';
-import { handleReportErrors } from '../../base/report-helpers';
 import { buildEventData } from '../../data-builder-types';
-import { 
-  lookingEventDataConfig, 
-  roomDescriptionDataConfig, 
+import {
+  lookingEventDataConfig,
+  roomDescriptionDataConfig,
   listContentsDataConfig,
   determineLookingMessage
 } from './looking-data';
+import { LookingMessages } from './looking-messages';
 
 export const lookingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.LOOKING,
@@ -57,15 +58,8 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
     // No events returned - they're generated in report()
   },
   
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    // Handle validation and execution errors using shared helper
-    // (though looking should never fail validation)
-    const errorEvents = handleReportErrors(context, validationResult, executionError, {
-      includeTargetSnapshot: false,  // Looking is about rooms, not objects
-      includeIndirectSnapshot: false
-    });
-    if (errorEvents) return errorEvents;
-
+  report(context: ActionContext): ISemanticEvent[] {
+    // report() is only called on success - looking always succeeds
     const events: ISemanticEvent[] = [];
     
     // Build and emit looked event
@@ -105,7 +99,17 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
     
     return events;
   },
-  
+
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    // blocked() is called when validation fails
+    // Looking always succeeds, so this should never be called
+    return [context.event('action.blocked', {
+      actionId: context.action.id,
+      messageId: result.error,
+      params: result.params
+    })];
+  },
+
   group: "observation",
   
   metadata: {

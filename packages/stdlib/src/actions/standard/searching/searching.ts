@@ -4,10 +4,11 @@
  * This action allows players to search containers, supporters, or locations
  * to find concealed items or discover additional details.
  *
- * Uses three-phase pattern:
+ * Uses four-phase pattern:
  * 1. validate: Check target is searchable (container open if applicable)
  * 2. execute: Analyze contents, reveal concealed items (mutation)
- * 3. report: Emit searched event and success message
+ * 3. blocked: Generate events when validation fails
+ * 4. report: Generate success events
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -26,7 +27,6 @@ import {
   determineSearchMessage,
   buildSearchEventData
 } from '../searching-helpers';
-import { handleReportErrors } from '../../base/report-helpers';
 
 /**
  * Shared data passed between execute and report phases
@@ -106,10 +106,16 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
     sharedData.params = params;
   },
 
-  report(context: ActionContext, validationResult?: ValidationResult, executionError?: Error): ISemanticEvent[] {
-    const errorEvents = handleReportErrors(context, validationResult, executionError);
-    if (errorEvents) return errorEvents;
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    return [context.event('action.blocked', {
+      actionId: this.id,
+      messageId: result.error,
+      reason: result.error,
+      params: result.params || {}
+    })];
+  },
 
+  report(context: ActionContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
     const sharedData = getSearchingSharedData(context);
 
