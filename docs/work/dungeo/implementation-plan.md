@@ -16,7 +16,7 @@ Before implementation begins, these architectural decisions must be finalized an
 |-----|--------|------------|
 | ADR-070: NPC System | Proposed | Troll guard behavior |
 | ADR-071: Daemons/Fuses | Proposed | Lantern battery countdown |
-| ADR-072: Combat System | Not Started | Troll fight mechanics, randomization |
+| ADR-072: Combat System | Proposed | Troll fight mechanics, randomization |
 
 ### Required for Phase 3
 
@@ -40,10 +40,9 @@ Before implementation begins, these architectural decisions must be finalized an
 
 ### Implementation Order
 
-1. **ADR-070** (NPC) + **ADR-071** (Daemons) → Already drafted
-2. **ADR-072** (Combat) → Needed before Phase 1 implementation
-3. **ADR-073** (Vehicle) → Can be drafted during Phase 2
-4. Parser ADRs → Can be deferred, workaround with explicit commands
+1. **ADR-070** (NPC) + **ADR-071** (Daemons) + **ADR-072** (Combat) → All drafted
+2. **ADR-073** (Vehicle) → Can be drafted during Phase 2
+3. Parser ADRs → Can be deferred, workaround with explicit commands
 
 ---
 
