@@ -479,6 +479,49 @@ eventBus.on('object.lit', (event) => {
 });
 ```
 
+### stdlib vs Story Responsibility
+
+This section clarifies what belongs in reusable packages vs. game-specific code.
+
+#### engine (Core Infrastructure)
+- `SchedulerService` implementation
+- Turn cycle integration (tick after NPCs)
+- Daemon/fuse lifecycle management (add, remove, pause, resume)
+- Serialization/deserialization of scheduler state
+- `SchedulerContext` type
+
+#### stdlib (Reusable Patterns)
+- `Daemon` and `Fuse` interface definitions
+- Helper functions for common patterns:
+  - `createConsumableFuse(entity, turnsRemaining, onDepleted)` - generic resource consumption
+  - `createAmbientDaemon(condition, messages, probability)` - random ambient events
+  - `createWarningSequence(stages)` - staged countdown with warnings
+- Generic message IDs in `scheduler-messages.ts`:
+  - `scheduler.ambient.*` - reusable ambient patterns
+  - Generic light source messages (if light sources are stdlib)
+
+#### story (Game-Specific - e.g., Dungeo)
+- Specific daemon/fuse instances:
+  - Lantern battery fuse (Dungeo has a brass lantern)
+  - Candle burning fuse (Dungeo has specific candles)
+  - Dam draining sequence (Zork-specific puzzle)
+  - Volcano eruption countdown (Zork-specific)
+  - Thief wandering daemon (Zork-specific NPC)
+- Game-specific message IDs:
+  - `dungeo.lantern.dim`, `dungeo.lantern.dies`
+  - `dungeo.dam.draining`, `dungeo.dam.empty_trunk`
+  - `dungeo.volcano.rumble`, `dungeo.volcano.erupts`
+- Forest ambience daemon with Zork-specific flavor text
+- Turn counts tuned for game balance (lantern = 350 turns, etc.)
+
+#### lang-en-us (Text Layer)
+- Text for stdlib's generic message IDs
+- Stories extend with their own message ID → text mappings
+
+**Key Principle**: The engine provides the `SchedulerService`. The stdlib provides the *interfaces* and *helper patterns*. The story provides the *specific timers* with game-appropriate tuning and messages.
+
+**Example**: stdlib might provide `createConsumableFuse()` as a helper, but the story creates the actual lantern fuse with 350 turns and Dungeo-specific messages.
+
 ### Debug Support
 
 For testing and debugging:

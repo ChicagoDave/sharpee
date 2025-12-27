@@ -481,6 +481,54 @@ scheduler.registerDaemon({
 | Troll | 25 | 2 | Weak fighter |
 | Thief | 70 | 3 | Master combatant |
 
+### stdlib vs Story Responsibility
+
+This section clarifies what belongs in reusable packages vs. game-specific code.
+
+#### world-model (Reusable Traits)
+- `CombatantTrait` interface definition (health, skill, baseDamage, etc.)
+- `WeaponTrait` interface definition (damage, skillBonus, special properties)
+- These are *interfaces*, not specific values
+
+#### stdlib (Reusable Mechanics)
+- `CombatService` implementation:
+  - `resolveAttack()` - core hit/damage calculation
+  - `canAttack()` - validation logic
+  - `getHealthStatus()` - descriptive health levels
+- Hit probability formula (the algorithm itself)
+- Enhanced `attacking` action using CombatService
+- Generic message IDs in `combat-messages.ts`:
+  - `combat.attack.missed`, `combat.attack.hit`, `combat.attack.killed`
+  - `combat.health.wounded`, `combat.health.badly_wounded`
+  - `combat.cannot_attack`, `combat.already_dead`
+- `CombatResult` and `HealthStatus` types
+
+#### story (Game-Specific - e.g., Dungeo)
+- Specific weapon entities with tuned stats:
+  - Elvish sword (damage: 3, skillBonus: 20, glowsNearDanger: true)
+  - Rusty knife (damage: 1, skillBonus: 0)
+  - Troll's axe (damage: 4, skillBonus: 5)
+- NPC combatant stats tuned for game balance:
+  - Troll: skill 25, health 10 (easy fight)
+  - Thief: skill 70, health 20 (hard fight)
+- Player death handling and resurrection logic:
+  - Where player respawns (forest-west in Zork)
+  - What happens to inventory on death
+- Elvish sword glow daemon (Zork-specific magic item)
+- Game-specific combat messages:
+  - `dungeo.combat.troll.dies` (custom death text)
+  - `dungeo.combat.sword.glows` (specific to elvish sword)
+
+#### lang-en-us (Text Layer)
+- Text for stdlib's generic combat message IDs
+- Stories extend with game-specific combat flavor text
+
+**Key Principle**: stdlib provides the *combat engine* (resolution algorithm, action integration). The story provides the *combatants and weapons* with specific stats, plus any special combat behaviors unique to that game.
+
+**Example**: The hit probability formula and damage calculation belong in stdlib. The fact that the thief has skill 70 and the elvish sword glows near orcs belongs in Dungeo.
+
+**Note**: The skill levels table above is Dungeo-specific tuning, not stdlib defaults. stdlib provides no default skill values - stories must define them.
+
 ## Consequences
 
 ### Positive

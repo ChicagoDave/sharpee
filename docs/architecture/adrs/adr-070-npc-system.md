@@ -248,12 +248,53 @@ const thiefBehavior: NpcBehavior = {
 };
 ```
 
+### stdlib vs Story Responsibility
+
+This section clarifies what belongs in reusable packages vs. game-specific code.
+
+#### engine (Core Infrastructure)
+- Turn cycle integration (NPC phase after player action)
+- NPC action execution (move, take, drop, attack, speak, emote)
+- Event emission for NPC actions
+
+#### world-model (Reusable Traits)
+- `NpcTrait` definition (the interface, not specific values)
+
+#### stdlib (Reusable Patterns)
+- `NpcBehavior` interface definition
+- `NpcContext` and `NpcAction` types
+- Generic behaviors that apply to many IF games:
+  - `guardBehavior` - stationary NPC that blocks passage
+  - `wandererBehavior` - NPC that moves randomly
+  - `followerBehavior` - NPC that follows player
+- Generic message IDs in `npc-messages.ts`:
+  - `npc.enters`, `npc.leaves`, `npc.attacks` (universal)
+  - `npc.guard.blocks`, `npc.guard.growls` (behavior-specific but reusable)
+
+#### story (Game-Specific - e.g., Dungeo)
+- Specific NPC entities (troll, thief, cyclops, spirits, dungeon master)
+- Custom behaviors unique to the game:
+  - `thiefBehavior` - steals valuables, has lair (Zork-specific)
+  - `cyclopsBehavior` - flees when named Odysseus (Zork-specific)
+  - `dungeonMasterBehavior` - guides through endgame (Zork-specific)
+- Game-specific message IDs in story's message file:
+  - `dungeo.thief.steals`, `dungeo.thief.gloats`
+  - `dungeo.cyclops.panics`, `dungeo.cyclops.flees`
+- NPC stat values (health, skill) tuned for game balance
+- Room restrictions (`allowedRooms`, `forbiddenRooms`)
+
+#### lang-en-us (Text Layer)
+- Text for stdlib's generic message IDs
+- Stories extend with their own message ID → text mappings
+
+**Key Principle**: stdlib provides the *mechanism*, story provides the *content*. If a behavior could reasonably appear in multiple IF games (guard, wanderer), it belongs in stdlib. If it's specific to Zork's fiction (thief stealing treasure, cyclops fearing Odysseus), it belongs in the story.
+
 ### Authoring NPCs
 
 Authors define NPCs as entities with behavior binding:
 
 ```typescript
-// Simple guard NPC
+// Simple guard NPC (uses stdlib guardBehavior)
 const troll = world.createEntity({
   id: 'troll',
   name: 'troll',
