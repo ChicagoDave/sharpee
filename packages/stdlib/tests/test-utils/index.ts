@@ -83,11 +83,11 @@ export function createRealTestContext(
     currentLocation: currentLocation!,
     canSee: (entity) => world.canSee(player.id, entity.id),
     canReach: (entity) => {
+      // Can always reach things we're carrying (check first for performance)
+      if (world.getLocation(entity.id) === player.id) return true;
+
       // Basic reachability logic
       if (!world.canSee(player.id, entity.id)) return false;
-      
-      // Can always reach things we're carrying
-      if (world.getLocation(entity.id) === player.id) return true;
       
       // Check if in same room
       const playerRoom = world.getContainingRoom(player.id);

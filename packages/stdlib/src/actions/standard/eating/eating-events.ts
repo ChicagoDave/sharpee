@@ -10,22 +10,22 @@ import { EntityId } from '@sharpee/core';
 export interface EatenEventData {
   /** The item being eaten */
   item: EntityId;
-  
+
   /** Name of the item */
   itemName: string;
-  
+
   /** Nutritional value */
   nutrition?: number;
-  
-  /** Number of portions */
-  portions?: number;
-  
-  /** Portions remaining after eating */
-  portionsRemaining?: number;
-  
-  /** Any effects from eating */
+
+  /** Number of servings (canonical name, replaces 'portions') */
+  servings?: number;
+
+  /** Servings remaining after eating */
+  servingsRemaining?: number;
+
+  /** Any effects from eating (e.g., 'poison', 'heal') */
   effects?: string[];
-  
+
   /** Whether this satisfies hunger */
   satisfiesHunger?: boolean;
 }
