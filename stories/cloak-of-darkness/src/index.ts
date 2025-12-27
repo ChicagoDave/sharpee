@@ -161,8 +161,10 @@ export class CloakOfDarknessStory implements Story {
         
         // Check if player is carrying the cloak
         const carried = context.world.getContents(context.actorId);
-        const hasCloak = carried.some((item: IFEntity) => item.attributes.name === 'cloak');
-        
+        const hasCloak = carried.some((item: IFEntity) =>
+          item.attributes.name === 'velvet cloak' || item.name === 'velvet cloak'
+        );
+
         // In dark room with cloak - can only see the room itself
         if (isDark && hasCloak) {
           // Cloak absorbs all light - return only the room
@@ -195,8 +197,10 @@ export class CloakOfDarknessStory implements Story {
         
         // Check if player is carrying the cloak
         const carried = context.world.getContents(context.actorId);
-        const hasCloak = carried.some((item: IFEntity) => item.attributes.name === 'cloak');
-        
+        const hasCloak = carried.some((item: IFEntity) =>
+          item.attributes.name === 'velvet cloak' || item.name === 'velvet cloak'
+        );
+
         // In pitch darkness (dark room with cloak), can't even see inventory
         if (isDark && hasCloak) {
           return [];
@@ -363,13 +367,14 @@ export class CloakOfDarknessStory implements Story {
   
   /**
    * Create the Bar (dark room with the message) without exits
+   * The bar starts dark - hanging the cloak on the hook lights it up
    */
   private createBarBase(): IFEntity {
     const bar = this.world.createEntity('Foyer Bar', EntityType.ROOM);
-    
+
     bar.add(new RoomTrait({
       exits: {}, // Will be added later
-      isDark: true // Dark!
+      isDark: true // Dark until cloak is hung on hook
     }));
     
     bar.add(new IdentityTrait({
@@ -714,7 +719,9 @@ export class CloakOfDarknessStory implements Story {
           }
           
           // Check if we're hanging the cloak on the hook
-          if (item.name === 'cloak' && supporter.name === 'hook') {
+          const isCloak = item.name === 'velvet cloak' || item.name === 'cloak';
+          const isHook = supporter.name === 'brass hook' || supporter.name === 'hook';
+          if (isCloak && isHook) {
             // Check if player is carrying the cloak
             const cloakLocation = context.world.getLocation(item.id);
             if (cloakLocation !== context.player.id) {

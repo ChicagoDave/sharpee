@@ -461,6 +461,9 @@ importers:
       '@sharpee/parser-en-us':
         specifier: file:../../packages/parser-en-us
         version: file:packages/parser-en-us
+      '@sharpee/text-services':
+        specifier: file:../../packages/text-services
+        version: file:packages/text-services
       '@sharpee/world-model':
         specifier: file:../../packages/world-model
         version: link:../../packages/world-model

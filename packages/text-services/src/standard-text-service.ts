@@ -116,9 +116,11 @@ export class StandardTextService implements TextService {
         // Translate different event types to narrative text
         switch (event.type) {
             case 'if.event.room_description':
+            case 'if.event.room.description':
                 return this.translateRoomDescription(event);
-                
+
             case 'if.event.list_contents':
+            case 'if.event.list.contents':
                 // Usually handled by action.success, so skip
                 return '';
                 

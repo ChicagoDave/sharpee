@@ -27,7 +27,7 @@ import {
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
-import { captureEntitySnapshot } from '../../base/snapshot-utils';
+import { captureEntitySnapshot, captureRoomSnapshot, captureEntitySnapshots } from '../../base/snapshot-utils';
 import { buildEventData } from '../../data-builder-types';
 import { GoingMessages } from './going-messages';
 
@@ -39,13 +39,15 @@ import {
   determineGoingMessage
 } from './going-data';
 
+// Note: Room description is now built directly in report() using sharedData.currentLocation
+
 /**
  * Shared data passed between execute and report phases
  */
 export interface GoingSharedData {
   isFirstVisit?: boolean;
-  fromRoomId?: string;
-  toRoomId?: string;
+  previousLocation?: string;  // Room we came from
+  currentLocation?: string;   // Room we're now in
   direction?: DirectionType;
 }
 
@@ -186,14 +188,9 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Check if destination is dark and player has no light
-    if (isDarkRoom(destination) && !hasLightInRoom(actor, context)) {
-      return {
-        valid: false,
-        error: GoingMessages.TOO_DARK,
-        params: { direction: direction }
-      };
-    }
+    // Note: We allow entry to dark rooms - you just can't see.
+    // Darkness affects visibility (looking), not movement.
+    // This matches traditional IF behavior (e.g., Cloak of Darkness).
 
     return { valid: true };
   },
@@ -201,35 +198,38 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
   execute(context: ActionContext): void {
     // Only perform the movement mutation
     const actor = context.player;
-    const currentRoom = context.currentLocation;
-    
+    const sourceRoom = context.currentLocation;
+
     // Get direction from parsed command (should already be a Direction constant)
     // Direction can come from extras or from directObject name
     let direction = context.command.parsed.extras?.direction as DirectionType;
-    
+
     // If no direction in extras, check if directObject has a name that could be a direction
     if (!direction && context.command.directObject?.entity) {
-      const entityName = context.command.directObject.entity.name || 
+      const entityName = context.command.directObject.entity.name ||
                         context.command.directObject.entity.attributes?.name;
       if (entityName) {
         direction = entityName as DirectionType;
       }
     }
-    
+
     // Get exit info and destination using behaviors
-    const exitConfig = RoomBehavior.getExit(currentRoom, direction)!;
-    const destination = context.world.getEntity(exitConfig.destination)!
-    
+    const exitConfig = RoomBehavior.getExit(sourceRoom, direction)!;
+    const destination = context.world.getEntity(exitConfig.destination)!;
+
     // Check if this is the first time entering the destination
     const isFirstVisit = !RoomBehavior.hasBeenVisited(destination);
 
-    // Store first visit status for report phase using sharedData
+    // Store locations and state for report phase using sharedData
     const sharedData = getGoingSharedData(context);
     sharedData.isFirstVisit = isFirstVisit;
+    sharedData.previousLocation = sourceRoom.id;
+    sharedData.currentLocation = destination.id;
+    sharedData.direction = direction;
 
     // Actually move the player!
     context.world.moveEntity(actor.id, destination.id);
-    
+
     // Mark the destination room as visited
     if (isFirstVisit) {
       RoomBehavior.markVisited(destination, actor);
@@ -241,25 +241,66 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
    * Only called on success path - validation has already passed
    */
   report(context: ActionContext): ISemanticEvent[] {
+    const sharedData = getGoingSharedData(context);
+
+    // Get the actual destination room (not the stale context.currentLocation)
+    const destinationRoom = context.world.getEntity(sharedData.currentLocation!)!;
+
     // Build event data using data builders
     const exitedData = buildEventData(actorExitedDataConfig, context);
     const movedData = buildEventData(actorMovedDataConfig, context);
     const enteredData = buildEventData(actorEnteredDataConfig, context);
 
-    // Determine success message
-    const { messageId, params } = determineGoingMessage(movedData);
+    // Build room description for the DESTINATION (using actual location, not stale context)
+    const roomSnapshot = captureRoomSnapshot(destinationRoom, context.world, false);
 
-    // Return all movement events
-    return [
+    // Get visible contents in the destination room
+    const destinationContents = context.world.getContents(destinationRoom.id)
+      .filter(e => e.id !== context.player.id);
+    const visibleSnapshots = captureEntitySnapshots(destinationContents, context.world);
+
+    const roomDescData = {
+      room: roomSnapshot,
+      visibleItems: visibleSnapshots,
+      roomId: destinationRoom.id,
+      roomName: destinationRoom.name,
+      roomDescription: destinationRoom.description,
+      includeContents: true,
+      verbose: true, // Always verbose after movement
+      previousLocation: sharedData.previousLocation,
+      currentLocation: sharedData.currentLocation,
+      contents: destinationContents.map(entity => ({
+        id: entity.id,
+        name: entity.name,
+        description: entity.description
+      }))
+    };
+
+    // Return all movement events plus room description
+    const events: ISemanticEvent[] = [
       context.event('if.event.actor_exited', exitedData),
       context.event('if.event.actor_moved', movedData),
       context.event('if.event.actor_entered', enteredData),
-      context.event('action.success', {
-        actionId: context.action.id,
-        messageId,
-        params
-      })
+      // Emit room description for the destination
+      context.event('if.event.room.description', roomDescData)
     ];
+
+    // Add contents list as action.success event (like looking does)
+    if (destinationContents.length > 0) {
+      const itemList = destinationContents.map(e => e.name).join(', ');
+      events.push(context.event('action.success', {
+        actionId: context.action.id,
+        messageId: 'contents_list',
+        params: {
+          items: itemList,
+          count: destinationContents.length,
+          previousLocation: sharedData.previousLocation,
+          currentLocation: sharedData.currentLocation
+        }
+      }));
+    }
+
+    return events;
   },
 
   /**

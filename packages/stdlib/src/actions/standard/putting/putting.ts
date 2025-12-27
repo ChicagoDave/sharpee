@@ -216,7 +216,7 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
     const sharedData = getPuttingSharedData(context);
     sharedData.targetPreposition = targetPreposition;
 
-    // Delegate to appropriate behavior
+    // Delegate to appropriate behavior for validation
     if (targetPreposition === 'in') {
       const result: IAddItemResult = ContainerBehavior.addItem(target, item, context.world);
       sharedData.putResult = result;
@@ -225,6 +225,9 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       const result: IAddItemToSupporterResult = SupporterBehavior.addItem(target, item, context.world);
       sharedData.putResult = result;
     }
+
+    // Actually move the item to the target (behaviors validate, actions mutate)
+    context.world.moveEntity(item.id, target.id);
   },
 
   /**

@@ -22,11 +22,13 @@ async function runStory() {
     // Create world and player
     const world = new WorldModel();
     const player = world.createEntity('player', EntityType.ACTOR);
+    world.setPlayer(player.id); // Register as the player so getPlayer() works
     
     // Create parser, language, and text service
     const language = new LanguageProvider();
     const parser = new Parser(language);
-    const textService = new TextService(language);
+    const textService = new TextService();
+    textService.setLanguageProvider(language);
     
     // Extend parser and language with story-specific vocabulary/messages
     if (story.extendParser) {
@@ -81,9 +83,36 @@ async function runStory() {
       'hang cloak on hook',
       'east',
       'south',
+      'debug:location',  // Debug command to check state
+      'look',
       'examine message',
       'read message'
     ];
+
+    // Add debug command handler
+    const originalExecuteTurn = engine.executeTurn.bind(engine);
+    (engine as any).executeTurn = async (command: string) => {
+      if (command === 'debug:location') {
+        const player = world.getPlayer();
+        const loc = player ? world.getLocation(player.id) : null;
+        const locEntity = loc ? world.getEntity(loc) : null;
+        const inventory = player ? world.getContents(player.id) : [];
+        console.log('\n=== DEBUG ===');
+        console.log('Player ID:', player?.id);
+        console.log('Location ID:', loc);
+        console.log('Location Name:', locEntity?.name);
+        console.log('Location Contents:', world.getContents(loc || '').map((e: any) => e.name));
+        console.log('Player Inventory:', inventory.map((e: any) => e.name));
+        // Check cloak location
+        const cloak = world.getAllEntities().find((e: any) => e.name === 'velvet cloak');
+        if (cloak) {
+          console.log('Cloak Location:', world.getLocation(cloak.id));
+        }
+        console.log('=============\n');
+        return { events: [], success: true, turn: 0, input: command } as TurnResult;
+      }
+      return originalExecuteTurn(command);
+    };
     
     for (const command of commands) {
       console.log(`\n> ${command}`);
