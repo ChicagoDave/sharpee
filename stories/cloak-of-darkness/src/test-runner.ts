@@ -74,19 +74,24 @@ async function runStory() {
       console.log('\n=== Game Over ===');
     });
     
-    // Execute some test commands
+    // Execute some test commands - LOSING PATH (dark bar disturbs message)
     const commands = [
       'look',
-      'examine cloak',
-      'west',
-      'look',
-      'hang cloak on hook',
-      'east',
-      'south',
+      'south',           // Go to dark bar while carrying cloak - disturbs sawdust
+      'look',            // Try to look in dark - disturbs sawdust
+      'north',           // Leave bar
+      'south',           // Enter again - more disturbance
+      'north',           // Leave bar
+      'south',           // Enter again - message should be destroyed
+      'north',           // Leave bar
+      'west',            // Go to cloakroom
+      'hang cloak on hook',  // Now hang the cloak
+      'east',            // Back to foyer
+      'south',           // Bar is now lit
       'debug:location',  // Debug command to check state
       'look',
-      'examine message',
-      'read message'
+      'examine message', // Message should be destroyed
+      'read message'     // Should show loss
     ];
 
     // Add debug command handler

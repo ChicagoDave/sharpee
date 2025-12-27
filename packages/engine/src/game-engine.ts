@@ -1235,7 +1235,7 @@ export class GameEngine {
    * Dispatch an event to entity handlers (entity.on)
    * Entities can define handlers for specific event types
    */
-  private dispatchEntityHandlers(event: ISemanticEvent): void {
+  private dispatchEntityHandlers(event: SequencedEvent): void {
     // Get all entities that might have handlers
     const entities = this.world.getAllEntities();
 
