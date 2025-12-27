@@ -14,13 +14,11 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
-  RoomTrait,
   IFEntity,
   RoomBehavior,
   OpenableBehavior,
   LockableBehavior,
   VisibilityBehavior,
-  LightSourceBehavior,
   Direction,
   DirectionType
 } from '@sharpee/world-model';
@@ -325,32 +323,5 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
   }
 };
 
-/**
- * Check if a room is dark
- */
-function isDarkRoom(room: IFEntity): boolean {
-  if (!room.has(TraitType.ROOM)) return false;
-  
-  const roomTrait = room.get(TraitType.ROOM) as RoomTrait;
-  return roomTrait.isDark || false;
-}
-
-/**
- * Check if actor has light in current room
- */
-function hasLightInRoom(actor: IFEntity, context: ActionContext): boolean {
-  // Check if actor itself provides light using behavior
-  if (actor.has(TraitType.LIGHT_SOURCE) && LightSourceBehavior.isLit(actor)) {
-    return true;
-  }
-  
-  // Check carried items for lit light sources
-  const carried = context.world.getContents(actor.id);
-  for (const item of carried) {
-    if (item.has(TraitType.LIGHT_SOURCE) && LightSourceBehavior.isLit(item)) {
-      return true;
-    }
-  }
-  
-  return false;
-}
+// Note: Darkness checking for rooms should use VisibilityBehavior.isDark()
+// which is the single source of truth (see ADR-068)

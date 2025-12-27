@@ -4,9 +4,56 @@ import { Behavior } from '../behaviors/behavior';
 import { IFEntity } from '../entities/if-entity';
 import { WorldModel } from './WorldModel';
 import { TraitType } from '../traits/trait-types';
+import { SwitchableBehavior } from '../traits/switchable/switchableBehavior';
 
 export class VisibilityBehavior extends Behavior {
   static requiredTraits = [];
+
+  /**
+   * Determines if a room is effectively dark (no usable light sources).
+   * This is the single source of truth for darkness checking.
+   *
+   * A room is dark if:
+   * 1. It has RoomTrait with isDark = true
+   * 2. There are no accessible, active light sources
+   *
+   * @param room - The room entity to check
+   * @param world - The world model
+   * @returns true if the room is dark and has no accessible light sources
+   */
+  static isDark(room: IFEntity, world: WorldModel): boolean {
+    const roomTrait = room.getTrait(TraitType.ROOM);
+    if (!roomTrait || !(roomTrait as any).isDark) {
+      return false; // Room isn't marked as dark
+    }
+    return !this.hasLightSource(room, world);
+  }
+
+  /**
+   * Determines if a light source entity is currently providing light.
+   * Checks isLit property first, falls back to switchable state, defaults to lit.
+   *
+   * Priority order:
+   * 1. Explicit isLit property (e.g., lit torch, extinguished candle)
+   * 2. Switchable trait state (e.g., flashlight isOn: true)
+   * 3. Default to lit (e.g., glowing gems, phosphorescent moss)
+   */
+  private static isLightActive(entity: IFEntity): boolean {
+    const lightTrait = entity.getTrait(TraitType.LIGHT_SOURCE) as any;
+
+    // Explicit isLit property takes precedence
+    if (lightTrait?.isLit !== undefined) {
+      return lightTrait.isLit === true;
+    }
+
+    // Fall back to switchable state
+    if (entity.hasTrait(TraitType.SWITCHABLE)) {
+      return SwitchableBehavior.isOn(entity);
+    }
+
+    // Default: light sources without explicit state are lit
+    return true;
+  }
 
   /**
    * Determines if an observer can see a target entity
@@ -202,24 +249,25 @@ export class VisibilityBehavior extends Behavior {
 
 
   /**
-   * Checks if a room has any active light sources
+   * Checks if a room has any accessible, active light sources.
+   * Handles nested containers, worn items, and various light source types.
    */
   private static hasLightSource(room: IFEntity, world: WorldModel): boolean {
-    // Check all entities in the room
-    const contents = world.getAllContents(room.id, { recursive: true });
-    
+    // Check all entities in the room, including worn items
+    const contents = world.getAllContents(room.id, { recursive: true, includeWorn: true });
+
     for (const entity of contents) {
-      if (entity.hasTrait(TraitType.LIGHT_SOURCE)) {
-        const light = entity.getTrait(TraitType.LIGHT_SOURCE) as any;
-        if (light && light.isLit === true) {
-          // Check if the light is accessible (not in a closed container)
-          if (this.isAccessible(entity.id, room.id, world)) {
-            return true;
-          }
-        }
-      }
+      if (!entity.hasTrait(TraitType.LIGHT_SOURCE)) continue;
+
+      // Check if light is active (isLit, switchable, or default)
+      if (!this.isLightActive(entity)) continue;
+
+      // Check if the light is accessible (not in a closed container)
+      if (!this.isAccessible(entity.id, room.id, world)) continue;
+
+      return true;
     }
-    
+
     return false;
   }
 

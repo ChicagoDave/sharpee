@@ -9,6 +9,9 @@ import { RoomTrait } from '../../../src/traits/room/roomTrait';
 import { OpenableTrait } from '../../../src/traits/openable/openableTrait';
 import { LightSourceTrait } from '../../../src/traits/light-source/lightSourceTrait';
 import { SceneryTrait } from '../../../src/traits/scenery/sceneryTrait';
+import { SwitchableTrait } from '../../../src/traits/switchable/switchableTrait';
+import { ActorTrait } from '../../../src/traits/actor/actorTrait';
+import { WearableTrait } from '../../../src/traits/wearable/wearableTrait';
 // Test helpers are not needed - we create entities directly
 
 describe('VisibilityBehavior', () => {
@@ -484,14 +487,215 @@ describe('VisibilityBehavior', () => {
         world.moveEntity(container.id, current);
         current = container.id;
       }
-      
+
       const deepItem = world.createEntity('Deep Item', 'item');
       world.moveEntity(deepItem.id, current);
-      
+
       // Should still work despite deep nesting
       expect(() => {
         VisibilityBehavior.canSee(observer, deepItem, world);
       }).not.toThrow();
+    });
+  });
+
+  /**
+   * Tests for isDark() - the single source of truth for darkness checking.
+   * See ADR-068 for the 10 light scenarios that must pass.
+   */
+  describe('isDark', () => {
+    let darkRoom: IFEntity;
+    let litRoom: IFEntity;
+    let player: IFEntity;
+
+    beforeEach(() => {
+      // Create a dark room (rooms use spatial index, not ContainerTrait)
+      darkRoom = world.createEntity('Dark Cave', 'room');
+      darkRoom.add(new RoomTrait({ isDark: true }));
+
+      // Create a lit room (for comparison)
+      litRoom = world.createEntity('Lit Room', 'room');
+      litRoom.add(new RoomTrait({ isDark: false }));
+
+      // Create player
+      player = world.createEntity('Player', 'actor');
+      player.add(new ActorTrait());
+      player.add(new ContainerTrait());
+    });
+
+    // Scenario 1: Dark room, no light sources
+    it('should return true for dark room with no lights', () => {
+      expect(VisibilityBehavior.isDark(darkRoom, world)).toBe(true);
+    });
+
+    // Scenario 1b: Room not marked dark
+    it('should return false for room not marked dark', () => {
+      expect(VisibilityBehavior.isDark(litRoom, world)).toBe(false);
+    });
+
+    // Scenario 2: Player carrying lit torch (isLit: true)
+    it('should return false when player carries lit torch', () => {
+      const torch = world.createEntity('torch', 'item');
+      torch.add(new LightSourceTrait({ isLit: true }));
+
+      world.moveEntity(player.id, darkRoom.id);
+      world.moveEntity(torch.id, player.id);
+
+      expect(VisibilityBehavior.isDark(darkRoom, world)).toBe(false);
+    });
+
+    // Scenario 3: Lit lamp on floor in room
+    it('should return false when lit lamp on floor', () => {
+      const lamp = world.createEntity('lamp', 'item');
+      lamp.add(new LightSourceTrait({ isLit: true }));
+
+      world.moveEntity(lamp.id, darkRoom.id);
+
+      expect(VisibilityBehavior.isDark(darkRoom, world)).toBe(false);
+    });
+
+    // Scenario 4: Lit candle inside OPEN box
+    it('should return false when lit candle in open box', () => {
+      const box = world.createEntity('box', 'container');
+      box.add(new ContainerTrait({ isTransparent: false }));
+      box.add(new OpenableTrait({ isOpen: true }));
+
+      const candle = world.createEntity('candle', 'item');
+      candle.add(new LightSourceTrait({ isLit: true }));
+
+      world.moveEntity(box.id, darkRoom.id);
+      world.moveEntity(candle.id, box.id);
+
+      expect(VisibilityBehavior.isDark(darkRoom, world)).toBe(false);
+    });
+
+    // Scenario 5: Lit candle inside CLOSED box (should NOT provide light)
+    it('should return true when lit candle in closed box', () => {
+      const box = world.createEntity('box', 'container');
+      box.add(new ContainerTrait({ isTransparent: false }));
+      box.add(new OpenableTrait({ isOpen: false }));
+
+      const candle = world.createEntity('candle', 'item');
+      candle.add(new LightSourceTrait({ isLit: true }));
+
+      world.moveEntity(box.id, darkRoom.id);
+      world.moveEntity(candle.id, box.id);
+
+      expect(VisibilityBehavior.isDark(darkRoom, world)).toBe(true);
+    });
+
+    // Scenario 6: Switchable flashlight (isOn: true, no isLit)
+    it('should return false when switchable flashlight is on', () => {
+      const flashlight = world.createEntity('flashlight', 'item');
+      flashlight.add(new LightSourceTrait()); // No isLit property
+      flashlight.add(new SwitchableTrait({ isOn: true }));
+
+      world.moveEntity(flashlight.id, darkRoom.id);
+
+      expect(VisibilityBehavior.isDark(darkRoom, world)).toBe(false);
+    });
+
+    // Scenario 6b: Switchable flashlight that's OFF
+    it('should return true when switchable flashlight is off', () => {
+      const flashlight = world.createEntity('flashlight', 'item');
+      flashlight.add(new LightSourceTrait()); // No isLit property
+      flashlight.add(new SwitchableTrait({ isOn: false }));
+
+      world.moveEntity(flashlight.id, darkRoom.id);
+
+      expect(VisibilityBehavior.isDark(darkRoom, world)).toBe(true);
+    });
+
+    // Scenario 7: Glowing gem (inherent light, no isLit property)
+    it('should return false for glowing gem with no isLit property', () => {
+      const gem = world.createEntity('glowing gem', 'item');
+      gem.add(new LightSourceTrait()); // No isLit, no switchable = default lit
+
+      world.moveEntity(gem.id, darkRoom.id);
+
+      expect(VisibilityBehavior.isDark(darkRoom, world)).toBe(false);
+    });
+
+    // Scenario 8: Player WEARING lit headlamp
+    it('should return false when player wearing lit headlamp', () => {
+      const headlamp = world.createEntity('headlamp', 'item');
+      headlamp.add(new LightSourceTrait({ isLit: true }));
+      headlamp.add(new WearableTrait({ isWorn: true }));
+
+      world.moveEntity(player.id, darkRoom.id);
+      world.moveEntity(headlamp.id, player.id);
+
+      expect(VisibilityBehavior.isDark(darkRoom, world)).toBe(false);
+    });
+
+    // Scenario 9: NPC in room carrying lantern
+    it('should return false when NPC carries lantern', () => {
+      const npc = world.createEntity('Guide', 'actor');
+      npc.add(new ActorTrait());
+      npc.add(new ContainerTrait());
+
+      const lantern = world.createEntity('lantern', 'item');
+      lantern.add(new LightSourceTrait({ isLit: true }));
+
+      world.moveEntity(npc.id, darkRoom.id);
+      world.moveEntity(lantern.id, npc.id);
+
+      expect(VisibilityBehavior.isDark(darkRoom, world)).toBe(false);
+    });
+
+    // Scenario 10: Light in ADJACENT room (shouldn't help)
+    it('should return true when light only in adjacent room', () => {
+      const adjacentRoom = world.createEntity('Lit Cave', 'room');
+      adjacentRoom.add(new RoomTrait({ isDark: false }));
+      adjacentRoom.add(new ContainerTrait());
+
+      const lamp = world.createEntity('lamp', 'item');
+      lamp.add(new LightSourceTrait({ isLit: true }));
+
+      world.moveEntity(lamp.id, adjacentRoom.id);
+      // Dark room has no lights
+
+      expect(VisibilityBehavior.isDark(darkRoom, world)).toBe(true);
+    });
+
+    // Edge case: isLit explicitly false should override default
+    it('should return true when light source has isLit: false', () => {
+      const extinguishedTorch = world.createEntity('extinguished torch', 'item');
+      extinguishedTorch.add(new LightSourceTrait({ isLit: false }));
+
+      world.moveEntity(extinguishedTorch.id, darkRoom.id);
+
+      expect(VisibilityBehavior.isDark(darkRoom, world)).toBe(true);
+    });
+
+    // Edge case: isLit takes precedence over switchable
+    it('should use isLit over switchable state when both present', () => {
+      // isLit: false should override isOn: true
+      const confusingDevice = world.createEntity('broken flashlight', 'item');
+      confusingDevice.add(new LightSourceTrait({ isLit: false }));
+      confusingDevice.add(new SwitchableTrait({ isOn: true }));
+
+      world.moveEntity(confusingDevice.id, darkRoom.id);
+
+      expect(VisibilityBehavior.isDark(darkRoom, world)).toBe(true);
+    });
+
+    // Edge case: Light in transparent closed container DOES provide light
+    it('should return false when light in transparent closed container', () => {
+      const glassBox = world.createEntity('glass box', 'container');
+      glassBox.add(new ContainerTrait({ isTransparent: true }));
+      glassBox.add(new OpenableTrait({ isOpen: true })); // Start open to add candle
+
+      const candle = world.createEntity('candle', 'item');
+      candle.add(new LightSourceTrait({ isLit: true }));
+
+      world.moveEntity(glassBox.id, darkRoom.id);
+      world.moveEntity(candle.id, glassBox.id);
+
+      // Now close the container
+      (glassBox.getTrait(TraitType.OPENABLE) as any).isOpen = false;
+
+      // Light should still work through transparent container
+      expect(VisibilityBehavior.isDark(darkRoom, world)).toBe(false);
     });
   });
 });
