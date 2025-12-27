@@ -672,7 +672,7 @@ export class CloakOfDarknessStory implements Story {
     
     // Add custom messages for READ action
     language.addMessage('action.read.error.what_to_read', 'What do you want to read?');
-    language.addMessage('action.read.error.cant_read_message', '{reason}');
+    language.addMessage('READ.cant_read_message', '{reason}');
     language.addMessage('action.read.success.read_message', '{description}\n\n{text}');
     language.addMessage('action.read.error.nothing_to_read', 'There\'s nothing written on {item}.');
     
@@ -707,7 +707,7 @@ export class CloakOfDarknessStory implements Story {
           
           // Check if we have the required parts
           if (!directObject || !preposition || !indirectObject) {
-            return [context.event('action.error', {
+            return [context.event('action.failure', {
               actionId: context.action.id,
               messageId: 'incomplete_command',
               reason: 'missing_parts'
@@ -717,7 +717,7 @@ export class CloakOfDarknessStory implements Story {
           // Check if it's "hang X on Y"
           const prep = preposition.text?.toLowerCase();
           if (prep !== 'on') {
-            return [context.event('action.error', {
+            return [context.event('action.failure', {
               actionId: context.action.id,
               messageId: 'cant_hang_that_way',
               reason: 'wrong_preposition'
@@ -729,7 +729,7 @@ export class CloakOfDarknessStory implements Story {
           const supporter = indirectObject.entity;
           
           if (!item || !supporter) {
-            return [context.event('action.error', {
+            return [context.event('action.failure', {
               actionId: context.action.id,
               messageId: 'not_found',
               reason: 'entity_not_found'
@@ -743,7 +743,7 @@ export class CloakOfDarknessStory implements Story {
             // Check if player is carrying the cloak
             const cloakLocation = context.world.getLocation(item.id);
             if (cloakLocation !== context.player.id) {
-              return [context.event('action.error', {
+              return [context.event('action.failure', {
                 actionId: context.action.id,
                 messageId: 'not_carrying',
                 reason: 'not_carrying',
@@ -789,7 +789,7 @@ export class CloakOfDarknessStory implements Story {
             ];
           } else {
             // Generic hang message
-            return [context.event('action.error', {
+            return [context.event('action.failure', {
               actionId: context.action.id,
               messageId: 'cant_hang_that',
               reason: 'invalid_combination',
@@ -818,7 +818,7 @@ export class CloakOfDarknessStory implements Story {
           const { directObject } = context.command;
           
           if (!directObject) {
-            return [context.event('action.error', {
+            return [context.event('action.failure', {
               actionId: context.action.id,
               messageId: 'what_to_read',
               reason: 'missing_object'
@@ -827,7 +827,7 @@ export class CloakOfDarknessStory implements Story {
           
           const item = directObject.entity;
           if (!item) {
-            return [context.event('action.error', {
+            return [context.event('action.failure', {
               actionId: context.action.id,
               messageId: 'not_found',
               reason: 'entity_not_found'
@@ -841,12 +841,13 @@ export class CloakOfDarknessStory implements Story {
             if (!readable || !readable.isReadable) {
               // Can't read it (too dark or too disturbed)
               // Also emit a loss event if the message is destroyed
+              const reasonText = readable?.text || "You can't read that.";
               const events: any[] = [
-                context.event('action.error', {
+                context.event('action.failure', {
                   actionId: context.action.id,
                   messageId: 'cant_read_message',
-                  reason: readable?.text || "You can't read that.",
-                  params: { item: item.name }
+                  reason: reasonText,
+                  params: { item: item.name, reason: reasonText }
                 })
               ];
 
@@ -897,7 +898,7 @@ export class CloakOfDarknessStory implements Story {
           }
           
           // Not the message
-          return [context.event('action.error', {
+          return [context.event('action.failure', {
             actionId: context.action.id,
             messageId: 'nothing_to_read',
             reason: 'not_readable',

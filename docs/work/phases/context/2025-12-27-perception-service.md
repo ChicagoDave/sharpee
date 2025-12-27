@@ -97,14 +97,37 @@ Action executes → events created → PerceptionService.filterEvents() → even
 - Blindfold detection (stubbed)
 - Hearing/smell/touch senses (stubbed, always return true)
 
+## Additional Work Done
+
+### Perception Filtering Tested - WORKING
+- Entering dark bar: No room description, no contents list ✅
+- Only "Blundering around in the dark!" message appears ✅
+- Entering lit bar (after hanging cloak): Full description + contents ✅
+- Disturbance tracking: 0 → 1 → 2 → 3 ✅
+- Message obliterated after 3+ disturbances ✅
+
+### Bug Fixed: `read message` showing empty output
+
+**Root cause**: Story used `action.error` instead of `action.failure`, and message key mismatch.
+
+**Fixes applied**:
+1. Changed all `action.error` → `action.failure` in story (action.error is for unexpected errors, not validation failures)
+2. Fixed message key: `action.read.error.cant_read_message` → `READ.cant_read_message` (matches action ID)
+3. Added `reason` to params so template `{reason}` can resolve
+
+### Tech Debt Documented
+- ADR-069 updated with Tech Debt section
+- PerceptionService should move from stdlib to if-services (alongside TextService)
+
 ## Next Steps
 
-1. Run full Cloak of Darkness tests (losing and winning paths)
+1. Test `read message` fix (builds done, needs runtime test)
 2. Add unit tests for PerceptionService
-3. Consider handling `if.event.perception.blocked` in TextService
+3. Move PerceptionService to if-services
 4. Document in developer guide
 
 ## Git Status
 
 Branch: `phase4`
-Ready to commit and push.
+Uncommitted changes:
+- stories/cloak-of-darkness/src/index.ts (action.error → action.failure, message key fix)

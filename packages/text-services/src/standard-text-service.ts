@@ -129,7 +129,7 @@ export class StandardTextService implements TextService {
                 
             case 'action.failure':
                 return this.translateActionFailure(event);
-                
+
             case 'game.message':
                 return this.translateGameMessage(event);
                 
