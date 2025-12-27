@@ -71,21 +71,25 @@ export class CloakOfDarknessStory implements Story {
       identity.description = "In the darkness, you can't see any message.";
       readable.text = "It's too dark to read.";
       readable.isReadable = false;
+      readable.cannotReadMessage = "It's too dark to read the message.";
     } else if (this.disturbances === 0) {
       identity.description = "The message, neatly marked in the sawdust, reads...";
       readable.text = this.winningText;
       readable.isReadable = true;
+      readable.cannotReadMessage = undefined;
     } else if (this.disturbances < 3) {
       identity.description = "The message has been carelessly trampled, making it difficult to read.";
       readable.text = "You can just make out: " + this.garbleMessage(this.winningText, this.disturbances);
       readable.isReadable = true;
+      readable.cannotReadMessage = undefined;
     } else {
       identity.description = "The message has been completely obliterated.";
       readable.text = "The message is too trampled to read.";
       readable.isReadable = false;
+      readable.cannotReadMessage = "The message has been trampled beyond recognition. You have lost!";
     }
   }
-  
+
   /**
    * Initialize the world for Cloak of Darkness
    */

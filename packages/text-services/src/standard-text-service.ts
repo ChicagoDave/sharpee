@@ -128,6 +128,7 @@ export class StandardTextService implements TextService {
                 return this.translateActionSuccess(event);
                 
             case 'action.failure':
+            case 'action.blocked':
                 return this.translateActionFailure(event);
 
             case 'game.message':
@@ -229,7 +230,13 @@ export class StandardTextService implements TextService {
         }
         
         // Use reason or message from event
-        return data.reason || data.message || "You can't do that.";
+        // Check params.reason first (used by action.blocked events with human-readable messages),
+        // then fall back to data.reason. Prefer params.reason if it's different from the error code.
+        const paramsReason = (data.params as any)?.reason;
+        if (paramsReason && paramsReason !== data.reason && paramsReason !== data.messageId) {
+            return paramsReason;
+        }
+        return data.reason || paramsReason || data.message || "You can't do that.";
     }
     
     private translateGameMessage(event: ISemanticEvent): string {
