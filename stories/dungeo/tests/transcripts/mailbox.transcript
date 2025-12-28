@@ -12,9 +12,9 @@ description: Test opening mailbox and reading the leaflet
 > open mailbox
 [OK: contains "open"]
 
-# Look inside - TODO: "look in" pattern not recognized by parser
+# Search inside the mailbox
 > search mailbox
-[FAIL: search pattern not recognized by parser - needs investigation]
+[OK: contains "leaflet"]
 
 # Take the leaflet
 > take leaflet

@@ -64,6 +64,35 @@ export function defineCoreGrammar(grammar: GrammarBuilder): void {
     .withPriority(100)
     .build();
 
+  // Searching with target
+  grammar
+    .define('search :target')
+    .where('target', (scope: ScopeBuilder) => scope.visible())
+    .mapsTo('if.action.searching')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('look in|inside :target')
+    .where('target', (scope: ScopeBuilder) => scope.visible())
+    .mapsTo('if.action.searching')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('look through :target')
+    .where('target', (scope: ScopeBuilder) => scope.visible())
+    .mapsTo('if.action.searching')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('rummage in|through :target')
+    .where('target', (scope: ScopeBuilder) => scope.visible())
+    .mapsTo('if.action.searching')
+    .withPriority(95)
+    .build();
+
   // Taking and dropping
   grammar
     .define('take :item')

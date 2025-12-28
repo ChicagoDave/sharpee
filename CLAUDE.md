@@ -19,6 +19,18 @@ Sharpee is a parser-based Interactive Fiction authoring tool built in Typescript
 - lang-en-us: Provide actual text via message ID → string/function mapping
 - Never hardcode English strings in engine, stdlib, or world-model
 
+### Parser vs Language Layer
+**Parser owns grammar, language layer owns text.**
+
+| Package | Owns | Examples |
+|---------|------|----------|
+| `parser-en-us` | Grammar patterns | `core-grammar.ts`: `search :target`, `look in :target` |
+| `lang-en-us` | Messages, help text | `searching.ts`: error messages, action descriptions |
+
+- Add new command patterns to `packages/parser-en-us/src/core-grammar.ts`
+- Patterns in `lang-en-us` action files are for documentation/help, not parsing
+- Stories can extend grammar for story-specific commands
+
 ### Logic Location
 Be deliberate about where logic belongs:
 
@@ -27,8 +39,9 @@ Be deliberate about where logic belongs:
 | **engine** | Turn cycle, command execution, event dispatch | SchedulerService, NPC turn phase |
 | **world-model** | Traits, behaviors, entity state | LightSourceBehavior, ContainerTrait |
 | **stdlib** | Standard actions, common patterns | Opening action, guard behavior |
-| **story** | Game-specific content and overrides | Custom NPCs, puzzle logic |
+| **parser-{locale}** | Grammar patterns, command parsing | `core-grammar.ts`, verb patterns |
 | **lang-{locale}** | All user-facing text | Error messages, descriptions |
+| **story** | Game-specific content and overrides | Custom NPCs, puzzle logic |
 | **client** | UI rendering, input handling | React components, terminal I/O |
 
 Ask: "Where does this belong?" before implementing new features.
@@ -69,6 +82,23 @@ Read `/docs/reference/core-concepts.md` at the start of each session for:
 - **DO NOT** use `2>&1` with pnpm commands - they don't work together properly
 - Preferred format: `pnpm --filter '@sharpee/stdlib' test <test-name>`
 
+### Transcript Testing (ADR-073)
+
+Story integration tests use `.transcript` files run by `@sharpee/transcript-tester`:
+
+```bash
+# Run all transcripts for a story
+node packages/transcript-tester/dist/cli.js stories/dungeo --all
+
+# Run specific transcript
+node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/transcripts/navigation.transcript
+
+# Verbose output
+node packages/transcript-tester/dist/cli.js stories/dungeo --all --verbose
+```
+
+Transcripts live in `stories/{story}/tests/transcripts/*.transcript`
+
 ## Project Structure
 
 - Uses pnpm workspace with multiple packages
@@ -82,7 +112,7 @@ Read `/docs/reference/core-concepts.md` at the start of each session for:
 - Work summaries: `docs/work/{target}/context/`
 - **Plans**: Write plans to the current work target (NOT to ~/.claude/plans/)
 - Logs: `logs/`
-- Current branch `refactor/three-phase-complete` → work in `docs/work/phases/`
+- Current branch `dungeo` → work in `docs/work/dungeo/`
 
 ## Autonomous Work Flow
 

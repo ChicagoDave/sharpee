@@ -1,0 +1,95 @@
+title: House Interior Exploration
+story: dungeo
+author: Sharpee Team
+description: Test entering the house, finding objects, and using the lantern
+
+---
+
+# Navigate to Behind House (north then east)
+> look
+[OK: contains "West of House"]
+
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+[OK: contains "window"]
+
+# Enter through the window into Kitchen
+> west
+[OK: contains "Kitchen"]
+[OK: contains "table"]
+
+# Examine kitchen objects
+> examine sack
+[OK: contains "sack"]
+[OK: contains "pepper"]
+
+> examine bottle
+[OK: contains "bottle"]
+
+# Go to Living Room
+> west
+[OK: contains "Living Room"]
+[OK: contains "trophy case"]
+
+# Find the lantern and sword
+> examine lantern
+[OK: contains "lantern"]
+[OK: contains "brass"]
+
+> examine sword
+[OK: contains "sword"]
+[OK: contains "elvish"]
+
+# Take the lantern and sword
+> take lantern
+[OK: contains "Taken"]
+
+> take sword
+[OK: contains "Taken"]
+
+# Check inventory shows both items
+> inventory
+[OK: contains "lantern"]
+[OK: contains "sword"]
+
+# Switch on the lantern
+> switch on lantern
+[OK: contains "on"]
+
+# Go up to the Attic via Kitchen
+> east
+[OK: contains "Kitchen"]
+
+> up
+[OK: contains "Attic"]
+[OK: contains "rope"]
+[OK: contains "knife"]
+
+# Examine attic objects
+> examine rope
+[OK: contains "rope"]
+
+> examine knife
+[OK: contains "knife"]
+[OK: contains "nasty"]
+
+# Take the useful items
+> take rope
+[OK: contains "Taken"]
+
+> take knife
+[OK: contains "Taken"]
+
+# Final inventory check - should have all 4 items
+> inventory
+[OK: contains "lantern"]
+[OK: contains "sword"]
+[OK: contains "rope"]
+[OK: contains "knife"]
+
+# Return to Kitchen
+> down
+[OK: contains "Kitchen"]

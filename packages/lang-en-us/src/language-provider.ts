@@ -27,8 +27,7 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
   constructor() {
     // Load all action messages
     this.loadActionMessages();
-    // Load NPC messages (ADR-070)
-    this.loadNpcMessages();
+    // NPC messages are injected at runtime by the story + engine (ADR-070)
   }
   
   /**
@@ -46,20 +45,6 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     }
   }
 
-  /**
-   * Load NPC messages (ADR-070)
-   */
-  private loadNpcMessages(): void {
-    // Import NPC language data
-    const { npcLanguage } = require('./npc/npc');
-    if (npcLanguage.messages) {
-      Object.entries(npcLanguage.messages).forEach(([key, value]) => {
-        // NPC messages are already fully-qualified
-        this.messages.set(key, value as string);
-      });
-    }
-  }
-  
   /**
    * Get a message by its ID with optional parameter substitution
    * @param messageId Full message ID (e.g., 'if.action.taking.taken')

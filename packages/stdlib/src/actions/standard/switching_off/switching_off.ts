@@ -13,7 +13,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, SwitchableBehavior } from '@sharpee/world-model';
+import { TraitType, SwitchableBehavior, LightSourceBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { SwitchedOffEventData } from './switching_off-events';
@@ -104,6 +104,11 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
 
     // Delegate state change to behavior
     const result = SwitchableBehavior.switchOff(noun);
+
+    // Coordinate with LightSourceBehavior if applicable
+    if (noun.has(TraitType.LIGHT_SOURCE)) {
+      LightSourceBehavior.extinguish(noun);
+    }
 
     // Handle failure cases (defensive checks)
     if (!result.success) {
