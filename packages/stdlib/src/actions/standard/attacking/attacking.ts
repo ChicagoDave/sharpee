@@ -126,10 +126,23 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
         return { valid: false, error: 'not_holding_weapon', params: { weapon: weapon.name } };
       }
     }
-    
+
+    // For combatants, check if target is already dead
+    if (target.has(TraitType.COMBATANT)) {
+      const combatService = new CombatService();
+      const combatValidation = combatService.canAttack(actor, target);
+      if (!combatValidation.valid) {
+        return {
+          valid: false,
+          error: combatValidation.messageId || 'already_dead',
+          params: { target: target.name }
+        };
+      }
+    }
+
     // Peaceful games might discourage violence
     // This check is left for game-specific implementations via event handlers
-    
+
     return { valid: true };
   },
   

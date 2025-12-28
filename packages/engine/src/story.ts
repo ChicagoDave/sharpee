@@ -2,7 +2,7 @@
  * Story configuration and interfaces
  */
 
-import { WorldModel, IFEntity, IGameEvent, EntityEventHandler } from '@sharpee/world-model';
+import { WorldModel, IFEntity, IGameEvent, SimpleEventHandler } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { TextService } from '@sharpee/if-services';
 import { Parser } from '@sharpee/stdlib';
@@ -173,14 +173,14 @@ export class StoryWithEvents implements Story {
   /**
    * Register a story-level event handler (daemon)
    */
-  on(eventType: string, handler: EntityEventHandler): void {
+  on(eventType: string, handler: SimpleEventHandler): void {
     this.eventEmitter.on(eventType, handler);
   }
   
   /**
    * Remove a story-level event handler
    */
-  off(eventType: string, handler: EntityEventHandler): void {
+  off(eventType: string, handler: SimpleEventHandler): void {
     this.eventEmitter.off(eventType, handler);
   }
   

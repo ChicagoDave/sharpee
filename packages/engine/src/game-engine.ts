@@ -506,8 +506,9 @@ export class GameEngine {
       for (const event of result.events) {
         this.emit('event', event);
 
-        // Dispatch to entity handlers (entity.on)
-        this.dispatchEntityHandlers(event);
+        // NOTE: Entity handlers (entity.on) are already dispatched by the
+        // event-processor in the command executor, so we don't call
+        // dispatchEntityHandlers here to avoid duplicate handler invocations.
 
         // Check for story victory event but don't stop immediately
         // (we're still processing the turn)
@@ -1418,8 +1419,8 @@ export class GameEngine {
       const handler = handlers[event.type];
       if (typeof handler === 'function') {
         try {
-          // Call the handler with the event
-          const result = handler(event);
+          // Call the handler with the event and world
+          const result = handler(event, this.world);
 
           // If handler returns events, add them to the current turn
           if (Array.isArray(result)) {

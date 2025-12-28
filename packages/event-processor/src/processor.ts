@@ -193,8 +193,8 @@ export class EventProcessor {
           data: (event.data as Record<string, any>) || {}
         };
 
-        // Invoke the handler
-        const handlerResult = target.on[event.type](gameEvent);
+        // Invoke the handler with event and world
+        const handlerResult = target.on[event.type](gameEvent, this.world);
 
         // Collect any returned events
         if (handlerResult && Array.isArray(handlerResult)) {
