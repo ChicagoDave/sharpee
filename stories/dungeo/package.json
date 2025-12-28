@@ -1,0 +1,40 @@
+{
+  "name": "@sharpee/story-dungeo",
+  "version": "1.0.0-alpha.1",
+  "description": "Dungeo - A Sharpee implementation of Mainframe Zork",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "build:dev": "tsc -p tsconfig.dev.json",
+    "dev": "tsc -p tsconfig.dev.json --watch",
+    "clean": "rimraf dist",
+    "test": "vitest",
+    "play": "node dist/run.js"
+  },
+  "dependencies": {
+    "@sharpee/core": "file:../../packages/core",
+    "@sharpee/engine": "file:../../packages/engine",
+    "@sharpee/stdlib": "file:../../packages/stdlib",
+    "@sharpee/world-model": "file:../../packages/world-model",
+    "@sharpee/lang-en-us": "file:../../packages/lang-en-us",
+    "@sharpee/parser-en-us": "file:../../packages/parser-en-us",
+    "@sharpee/text-services": "file:../../packages/text-services"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3",
+    "vitest": "^1.3.0"
+  },
+  "keywords": [
+    "sharpee",
+    "interactive-fiction",
+    "if",
+    "story",
+    "zork",
+    "dungeo"
+  ],
+  "author": "Sharpee Team",
+  "license": "MIT"
+}

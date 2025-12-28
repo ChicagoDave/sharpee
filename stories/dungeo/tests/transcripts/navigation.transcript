@@ -1,0 +1,39 @@
+title: White House Navigation
+story: dungeo
+author: Sharpee Team
+description: Test basic navigation around the white house area
+
+---
+
+# Start at West of House
+> look
+[OK: contains "West of House"]
+[OK: contains "white house"]
+[OK: contains "mailbox"]
+
+# Navigate around the house
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+[OK: contains "window"]
+
+> south
+[OK: contains "South of House"]
+
+> west
+[OK: contains "West of House"]
+
+# Full circuit the other way
+> south
+[OK: contains "South of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> north
+[OK: contains "North of House"]
+
+> west
+[OK: contains "West of House"]

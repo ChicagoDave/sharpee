@@ -1,0 +1,37 @@
+title: Mailbox and Leaflet
+story: dungeo
+description: Test opening mailbox and reading the leaflet
+
+---
+
+# Examine the mailbox
+> examine mailbox
+[FAIL: examine action output not yet implemented]
+
+# Open the mailbox
+> open mailbox
+[OK: contains "open"]
+
+# Look inside
+> look in mailbox
+[FAIL: look in container not yet showing contents]
+
+# Take the leaflet
+> take leaflet
+[FAIL: take action not producing correct output]
+
+# Read it
+> read leaflet
+[FAIL: read action not yet implemented for leaflet]
+
+# Check inventory
+> inventory
+[FAIL: inventory display not showing items]
+
+# Put it back
+> put leaflet in mailbox
+[FAIL: put action not yet producing correct output]
+
+# Close the mailbox
+> close mailbox
+[OK: contains "close"]

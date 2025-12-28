@@ -327,6 +327,9 @@ importers:
       '@sharpee/if-domain':
         specifier: file:../if-domain
         version: link:../if-domain
+      '@sharpee/if-services':
+        specifier: file:../if-services
+        version: link:../if-services
       '@sharpee/lang-en-us':
         specifier: file:../lang-en-us
         version: file:packages/lang-en-us
@@ -416,6 +419,49 @@ importers:
         specifier: ^2.0.0
         version: 2.1.9(@types/node@20.19.4)(@vitest/ui@3.2.4(vitest@3.2.4))(terser@5.43.1)
 
+  packages/transcript-tester:
+    dependencies:
+      '@sharpee/core':
+        specifier: workspace:*
+        version: link:../core
+      '@sharpee/engine':
+        specifier: workspace:*
+        version: link:../engine
+      '@sharpee/lang-en-us':
+        specifier: workspace:*
+        version: link:../lang-en-us
+      '@sharpee/parser-en-us':
+        specifier: workspace:*
+        version: link:../parser-en-us
+      '@sharpee/stdlib':
+        specifier: workspace:*
+        version: link:../stdlib
+      '@sharpee/text-services':
+        specifier: workspace:*
+        version: link:../text-services
+      '@sharpee/world-model':
+        specifier: workspace:*
+        version: link:../world-model
+      chalk:
+        specifier: ^4.1.2
+        version: 4.1.2
+      glob:
+        specifier: ^10.3.10
+        version: 10.4.5
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.19
+        version: 20.19.4
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      typescript:
+        specifier: ^5.3.3
+        version: 5.8.3
+      vitest:
+        specifier: ^1.3.0
+        version: 1.6.1(@types/node@20.19.4)(@vitest/ui@3.2.4(vitest@3.2.4))(terser@5.43.1)
+
   packages/world-model:
     dependencies:
       '@sharpee/core':
@@ -480,6 +526,43 @@ importers:
       typescript:
         specifier: ^5.3.3
         version: 5.8.3
+
+  stories/dungeo:
+    dependencies:
+      '@sharpee/core':
+        specifier: file:../../packages/core
+        version: link:../../packages/core
+      '@sharpee/engine':
+        specifier: file:../../packages/engine
+        version: link:../../packages/engine
+      '@sharpee/lang-en-us':
+        specifier: file:../../packages/lang-en-us
+        version: file:packages/lang-en-us
+      '@sharpee/parser-en-us':
+        specifier: file:../../packages/parser-en-us
+        version: file:packages/parser-en-us
+      '@sharpee/stdlib':
+        specifier: file:../../packages/stdlib
+        version: link:../../packages/stdlib
+      '@sharpee/text-services':
+        specifier: file:../../packages/text-services
+        version: file:packages/text-services
+      '@sharpee/world-model':
+        specifier: file:../../packages/world-model
+        version: link:../../packages/world-model
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.19
+        version: 20.19.4
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      typescript:
+        specifier: ^5.3.3
+        version: 5.8.3
+      vitest:
+        specifier: ^1.3.0
+        version: 1.6.1(@types/node@20.19.4)(@vitest/ui@3.2.4(vitest@3.2.4))(terser@5.43.1)
 
   stories/reflections:
     dependencies:

@@ -1,0 +1,41 @@
+{
+  "name": "@sharpee/transcript-tester",
+  "version": "1.0.0-alpha.1",
+  "description": "Transcript-based testing tool for Sharpee interactive fiction",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "transcript-test": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rimraf dist",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@sharpee/core": "workspace:*",
+    "@sharpee/engine": "workspace:*",
+    "@sharpee/world-model": "workspace:*",
+    "@sharpee/stdlib": "workspace:*",
+    "@sharpee/lang-en-us": "workspace:*",
+    "@sharpee/parser-en-us": "workspace:*",
+    "@sharpee/text-services": "workspace:*",
+    "chalk": "^4.1.2",
+    "glob": "^10.3.10"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3",
+    "vitest": "^1.3.0"
+  },
+  "keywords": [
+    "sharpee",
+    "interactive-fiction",
+    "testing",
+    "transcript"
+  ],
+  "author": "Sharpee Team",
+  "license": "MIT"
+}
