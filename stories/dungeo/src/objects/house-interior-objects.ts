@@ -28,20 +28,37 @@ import {
   SceneryTrait,
   LightSourceTrait,
   SwitchableTrait,
-  EntityType
+  PushableTrait,
+  RoomBehavior,
+  RoomTrait,
+  EntityType,
+  Direction,
+  IGameEvent,
+  IFEvents
 } from '@sharpee/world-model';
 
 import { HouseInteriorRoomIds } from '../regions/house-interior';
 
+// Simple ID generator for events
+let eventCounter = 0;
+function generateEventId(): string {
+  return `evt-${Date.now()}-${++eventCounter}`;
+}
+
 /**
  * Create all objects in the House Interior
+ * @param cellarId - ID of the cellar room (for trapdoor connection)
  */
-export function createHouseInteriorObjects(world: WorldModel, roomIds: HouseInteriorRoomIds): void {
+export function createHouseInteriorObjects(
+  world: WorldModel,
+  roomIds: HouseInteriorRoomIds,
+  cellarId?: string
+): void {
   // Kitchen objects
   createKitchenObjects(world, roomIds.kitchen);
 
-  // Living Room objects
-  createLivingRoomObjects(world, roomIds.livingRoom);
+  // Living Room objects (needs cellarId for rug/trapdoor puzzle)
+  createLivingRoomObjects(world, roomIds.livingRoom, cellarId);
 
   // Attic objects
   createAtticObjects(world, roomIds.attic);
@@ -134,7 +151,7 @@ function createKitchenObjects(world: WorldModel, kitchenId: string): void {
 
 // ============= Living Room Objects =============
 
-function createLivingRoomObjects(world: WorldModel, livingRoomId: string): void {
+function createLivingRoomObjects(world: WorldModel, livingRoomId: string, cellarId?: string): void {
   // Trophy case (container for treasures)
   const trophyCase = world.createEntity('trophy case', EntityType.CONTAINER);
   trophyCase.add(new IdentityTrait({
@@ -183,7 +200,20 @@ function createLivingRoomObjects(world: WorldModel, livingRoomId: string): void 
   }));
   world.moveEntity(lantern.id, livingRoomId);
 
-  // Oriental rug (hides trapdoor)
+  // Trapdoor (hidden under rug initially - NOT placed in room)
+  const trapdoor = world.createEntity('trapdoor', EntityType.SCENERY);
+  trapdoor.add(new IdentityTrait({
+    name: 'trapdoor',
+    aliases: ['trap door', 'door', 'trap'],
+    description: 'A closed trapdoor leading down into darkness.',
+    properName: false,
+    article: 'a'
+  }));
+  trapdoor.add(new OpenableTrait({ isOpen: false }));
+  trapdoor.add(new SceneryTrait());
+  // Trapdoor is NOT placed in room - it will be revealed when rug is moved
+
+  // Oriental rug (hides trapdoor - pushing reveals it)
   const rug = world.createEntity('oriental rug', EntityType.SCENERY);
   rug.add(new IdentityTrait({
     name: 'large oriental rug',
@@ -193,21 +223,57 @@ function createLivingRoomObjects(world: WorldModel, livingRoomId: string): void 
     article: 'a'
   }));
   rug.add(new SceneryTrait());
-  world.moveEntity(rug.id, livingRoomId);
-
-  // Trapdoor (hidden under rug initially)
-  const trapdoor = world.createEntity('trapdoor', EntityType.SCENERY);
-  trapdoor.add(new IdentityTrait({
-    name: 'trapdoor',
-    aliases: ['trap door', 'door', 'trap'],
-    description: 'A closed trapdoor leading down.',
-    properName: false,
-    article: 'a'
+  rug.add(new PushableTrait({
+    pushType: 'moveable',
+    repeatable: false,  // Can only be moved once
+    state: 'default'
   }));
-  trapdoor.add(new OpenableTrait({ isOpen: false }));
-  trapdoor.add(new SceneryTrait());
-  // Trapdoor is hidden initially - would need concealed trait
-  world.moveEntity(trapdoor.id, livingRoomId);
+
+  // Event handler: when rug is pushed, reveal the trapdoor
+  rug.on = {
+    'if.event.pushed': (event: IGameEvent) => {
+      const pushable = rug.get(PushableTrait);
+
+      // Only reveal once
+      if (pushable && pushable.state === 'pushed') {
+        return [];  // Already moved
+      }
+
+      // Move trapdoor into the room
+      world.moveEntity(trapdoor.id, livingRoomId);
+
+      // Add DOWN exit to cellar (if cellarId provided)
+      if (cellarId) {
+        const livingRoom = world.getEntity(livingRoomId);
+        if (livingRoom) {
+          RoomBehavior.setExit(livingRoom, Direction.DOWN, cellarId, trapdoor.id);
+        }
+      }
+
+      // Mark rug as moved
+      if (pushable) {
+        pushable.state = 'pushed';
+      }
+
+      // Return a semantic event to report what happened
+      return [{
+        id: generateEventId(),
+        type: 'game.message',
+        entities: {
+          actor: event.entities.actor,
+          target: trapdoor.id,
+          location: livingRoomId
+        },
+        data: {
+          messageId: 'dungeo.rug.moved.reveal_trapdoor'
+        },
+        timestamp: Date.now(),
+        narrate: true
+      }];
+    }
+  };
+
+  world.moveEntity(rug.id, livingRoomId);
 
   // Wooden door (nailed shut - scenery)
   const woodenDoor = world.createEntity('wooden door', EntityType.SCENERY);

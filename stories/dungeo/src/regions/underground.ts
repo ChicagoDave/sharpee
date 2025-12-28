@@ -242,27 +242,29 @@ function connectUndergroundRooms(world: WorldModel, roomIds: UndergroundRoomIds)
 
 /**
  * Connect Underground to Living Room (through trapdoor)
+ *
+ * Note: The DOWN exit from Living Room is NOT added here - it is added
+ * dynamically when the player moves the rug to reveal the trapdoor.
+ * See house-interior-objects.ts for the rug's event handler.
  */
 export function connectUndergroundToHouse(
   world: WorldModel,
   undergroundIds: UndergroundRoomIds,
   livingRoomId: string
 ): void {
-  // Cellar up to Living Room
+  // Cellar up to Living Room (always available once you're in the cellar)
   const cellar = world.getEntity(undergroundIds.cellar);
   if (cellar) {
     const roomTrait = cellar.get(RoomTrait);
     if (roomTrait) {
-      roomTrait.exits[Direction.UP] = { destination: livingRoomId };
+      // The 'via' references the trapdoor - player must open it to go up
+      roomTrait.exits[Direction.UP] = {
+        destination: livingRoomId,
+        via: 'trapdoor'  // Gate this exit on trapdoor being open
+      };
     }
   }
 
-  // Living Room down to Cellar (through trapdoor)
-  const livingRoom = world.getEntity(livingRoomId);
-  if (livingRoom) {
-    const roomTrait = livingRoom.get(RoomTrait);
-    if (roomTrait) {
-      roomTrait.exits[Direction.DOWN] = { destination: undergroundIds.cellar };
-    }
-  }
+  // Living Room DOWN exit is added by the rug's event handler when pushed
+  // See createLivingRoomObjects() in house-interior-objects.ts
 }

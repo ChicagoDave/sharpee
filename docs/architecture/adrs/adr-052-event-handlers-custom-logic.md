@@ -1,7 +1,7 @@
 # ADR-052: Event Handlers and Custom Logic
 
 ## Status
-**Proposed** - Supersedes ADR-051 (ActionBehaviors)
+**Implemented** (Phase 1: Entity Handlers) - Supersedes ADR-051 (ActionBehaviors)
 
 ## Context
 

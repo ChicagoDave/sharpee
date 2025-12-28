@@ -75,7 +75,7 @@ export class DungeoStory implements Story {
 
     // Create all objects and place them in rooms
     createWhiteHouseObjects(world, this.whiteHouseIds);
-    createHouseInteriorObjects(world, this.houseInteriorIds);
+    createHouseInteriorObjects(world, this.houseInteriorIds, this.undergroundIds.cellar);
     createForestObjects(world, this.forestIds);
     createUndergroundObjects(world, this.undergroundIds);
 
@@ -156,7 +156,8 @@ export class DungeoStory implements Story {
    * Extend the language provider with custom messages for this story
    */
   extendLanguage(language: LanguageProvider): void {
-    // Story-specific messages will be added here
+    // Rug/trapdoor puzzle
+    language.addMessage('dungeo.rug.moved.reveal_trapdoor', 'Moving the rug reveals a trapdoor.');
   }
 
   /**

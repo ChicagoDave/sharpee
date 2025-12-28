@@ -5,7 +5,7 @@
  */
 
 import * as path from 'path';
-import { GameEngine, TurnResult } from '@sharpee/engine';
+import { GameEngine, TurnResult, SequencedEvent } from '@sharpee/engine';
 import { WorldModel, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
@@ -29,6 +29,8 @@ export interface TestableGame {
   engine: GameEngine;
   world: WorldModel;
   lastOutput: string;
+  lastEvents: SequencedEvent[];
+  lastTurnResult: TurnResult | null;
   executeCommand(input: string): Promise<string>;
 }
 
@@ -106,9 +108,11 @@ export function createTestableGame(story: any): TestableGame {
   engine.setStory(story);
   engine.start();
 
-  // Capture text output
+  // Capture text output and events
   let lastOutput = '';
   let outputBuffer: string[] = [];
+  let lastEvents: SequencedEvent[] = [];
+  let lastTurnResult: TurnResult | null = null;
 
   engine.on('text:output', (text: string) => {
     outputBuffer.push(text);
@@ -119,12 +123,20 @@ export function createTestableGame(story: any): TestableGame {
     engine,
     world,
     lastOutput: '',
+    lastEvents: [],
+    lastTurnResult: null,
 
     async executeCommand(input: string): Promise<string> {
       outputBuffer = [];
+      lastEvents = [];
+      lastTurnResult = null;
 
       try {
-        await engine.executeTurn(input);
+        const result = await engine.executeTurn(input);
+        if (result) {
+          lastTurnResult = result;
+          lastEvents = result.events || [];
+        }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         outputBuffer.push(`Error: ${errorMessage}`);
@@ -132,6 +144,8 @@ export function createTestableGame(story: any): TestableGame {
 
       lastOutput = outputBuffer.join('\n');
       testableGame.lastOutput = lastOutput;
+      testableGame.lastEvents = lastEvents;
+      testableGame.lastTurnResult = lastTurnResult;
       return lastOutput;
     }
   };

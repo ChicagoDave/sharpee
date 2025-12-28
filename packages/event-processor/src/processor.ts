@@ -5,7 +5,7 @@
  */
 
 import { ISemanticEvent } from '@sharpee/core';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, IGameEvent } from '@sharpee/world-model';
 import { WorldChange, ProcessedEvents, ProcessorOptions } from '@sharpee/if-domain';
 import { registerStandardHandlers } from './handlers';
 
@@ -95,11 +95,14 @@ export class EventProcessor {
     // Apply the event
     try {
       this.world.applyEvent(event);
-      
+
+      // Invoke entity handlers (ADR-052)
+      const reactions = this.invokeEntityHandlers(event);
+
       return {
         success: true,
         changes,
-        reactions: [] // TODO: Implement reaction system
+        reactions
       };
     } catch (error) {
       return {
@@ -160,7 +163,54 @@ export class EventProcessor {
     results.reactions.push(...reactions);
     return results;
   }
-  
+
+  /**
+   * Invoke entity handlers for an event (ADR-052)
+   *
+   * Checks if the target entity has a handler registered for this event type.
+   * If so, invokes it and returns any reaction events.
+   */
+  private invokeEntityHandlers(event: ISemanticEvent): ISemanticEvent[] {
+    const reactions: ISemanticEvent[] = [];
+
+    // Check if event has a target entity
+    if (!event.entities?.target) {
+      return reactions;
+    }
+
+    // Get the target entity
+    const target = this.world.getEntity(event.entities.target);
+    if (!target) {
+      return reactions;
+    }
+
+    // Check if entity has a handler for this event type
+    if (target.on && target.on[event.type]) {
+      try {
+        // Convert to IGameEvent for the handler
+        const gameEvent: IGameEvent = {
+          ...event,
+          data: (event.data as Record<string, any>) || {}
+        };
+
+        // Invoke the handler
+        const handlerResult = target.on[event.type](gameEvent);
+
+        // Collect any returned events
+        if (handlerResult && Array.isArray(handlerResult)) {
+          reactions.push(...handlerResult);
+        }
+      } catch (error) {
+        console.error(
+          `Entity handler error for ${event.type} on ${target.id}:`,
+          error instanceof Error ? error.message : error
+        );
+      }
+    }
+
+    return reactions;
+  }
+
   /**
    * Get the world model
    */

@@ -168,10 +168,69 @@ function parseAssertion(tag: string): Assertion | null {
     return { type: 'todo', reason: todoMatch[1] || 'Not implemented' };
   }
 
-  // [STATE: expression]
-  const stateMatch = inner.match(/^STATE:\s*(.+)$/i);
-  if (stateMatch) {
-    return { type: 'state', value: stateMatch[1] };
+  // [EVENTS: N] - exact event count
+  const eventsMatch = inner.match(/^EVENTS:\s*(\d+)$/i);
+  if (eventsMatch) {
+    return { type: 'event-count', eventCount: parseInt(eventsMatch[1], 10) };
+  }
+
+  // [EVENT: true|false, N?, type="..." key="value"]
+  // Format: [EVENT: true, 1, type="if.event.pushed" target="y09"]
+  //         [EVENT: false, type="if.event.destroyed"]
+  const eventAssertMatch = inner.match(/^EVENT:\s*(true|false)\s*,\s*(.+)$/i);
+  if (eventAssertMatch) {
+    const assertTrue = eventAssertMatch[1].toLowerCase() === 'true';
+    const rest = eventAssertMatch[2];
+
+    // Check if there's a position number before the type
+    const positionMatch = rest.match(/^(\d+)\s*,\s*(.+)$/);
+    let eventPosition: number | undefined;
+    let propsStr: string;
+
+    if (positionMatch) {
+      eventPosition = parseInt(positionMatch[1], 10);
+      propsStr = positionMatch[2];
+    } else {
+      propsStr = rest;
+    }
+
+    // Parse key="value" pairs
+    const eventData: Record<string, any> = {};
+    let eventType: string | undefined;
+    const propRegex = /(\w+)="([^"]+)"/g;
+    let match;
+    while ((match = propRegex.exec(propsStr)) !== null) {
+      const [, key, value] = match;
+      if (key === 'type') {
+        eventType = value;
+      } else {
+        eventData[key] = value;
+      }
+    }
+
+    if (eventType) {
+      return {
+        type: 'event-assert',
+        assertTrue,
+        eventPosition,
+        eventType,
+        eventData: Object.keys(eventData).length > 0 ? eventData : undefined
+      };
+    }
+  }
+
+  // [STATE: true|false, expression]
+  // Format: [STATE: true, egg.location = thief]
+  //         [STATE: false, player.canSee(egg)]
+  const stateAssertMatch = inner.match(/^STATE:\s*(true|false)\s*,\s*(.+)$/i);
+  if (stateAssertMatch) {
+    const assertTrue = stateAssertMatch[1].toLowerCase() === 'true';
+    const expression = stateAssertMatch[2].trim();
+    return {
+      type: 'state-assert',
+      assertTrue,
+      stateExpression: expression
+    };
   }
 
   console.warn(`Unknown assertion format: ${tag}`);

@@ -89,18 +89,36 @@ function reportCommand(result: CommandResult, verbose: boolean): void {
       }
     }
 
-    // Show diff for failures
+    // Always show actual output in verbose mode, or for failures
+    if (verbose || (!passed && !skipped)) {
+      console.log(chalk.gray('    ─── Output ───'));
+      for (const line of actualOutput.split('\n')) {
+        if (line.trim()) {
+          console.log(chalk.white(`    ${line}`));
+        }
+      }
+      console.log(chalk.gray('    ─────────────'));
+
+      // Show events in verbose mode
+      if (verbose && result.actualEvents && result.actualEvents.length > 0) {
+        console.log(chalk.gray(`    ─── Events (${result.actualEvents.length}) ───`));
+        for (const event of result.actualEvents) {
+          const dataStr = Object.keys(event.data).length > 0
+            ? ` ${chalk.gray(JSON.stringify(event.data))}`
+            : '';
+          console.log(chalk.blue(`    • ${event.type}`) + dataStr);
+        }
+        console.log(chalk.gray('    ─────────────'));
+      }
+    }
+
+    // Show diff for failures with expected output
     if (!passed && !skipped && command.expectedOutput.length > 0) {
       console.log();
       console.log(chalk.gray('    Expected:'));
       for (const line of command.expectedOutput) {
         console.log(chalk.green(`    + ${line}`));
       }
-      console.log(chalk.gray('    Actual:'));
-      for (const line of actualOutput.split('\n')) {
-        console.log(chalk.red(`    - ${line}`));
-      }
-      console.log();
     }
   }
 
@@ -134,8 +152,18 @@ function formatAssertion(result: AssertionResult): string {
       return `Skipped: ${assertion.reason || 'no reason given'}`;
     case 'todo':
       return `TODO: ${assertion.reason || 'not implemented'}`;
-    case 'state':
-      return `State: ${assertion.value}`;
+    case 'event-count':
+      return message || `Event count: ${assertion.eventCount}`;
+    case 'event-assert': {
+      const prefix = assertion.assertTrue ? 'assertTrue' : 'assertFalse';
+      const posStr = assertion.eventPosition ? ` Event ${assertion.eventPosition}:` : '';
+      const dataStr = assertion.eventData ? ` ${JSON.stringify(assertion.eventData)}` : '';
+      return message || `${prefix}:${posStr} ${assertion.eventType}${dataStr}`;
+    }
+    case 'state-assert': {
+      const prefix = assertion.assertTrue ? 'assertTrue' : 'assertFalse';
+      return message || `${prefix}: ${assertion.stateExpression}`;
+    }
     default:
       return message || 'Unknown assertion';
   }

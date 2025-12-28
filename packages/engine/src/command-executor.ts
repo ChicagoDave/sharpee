@@ -143,15 +143,20 @@ export class CommandExecutor {
         executionTime = Date.now() - executionStart;
       }
 
-      // Process events
+      // Process events and collect reactions (ADR-052 entity handlers)
+      let allEvents = events;
+      if (events.length > 0) {
+        const processed = this.eventProcessor.processEvents(events);
+        // Add reaction events from entity handlers
+        if (processed.reactions && processed.reactions.length > 0) {
+          allEvents = [...events, ...processed.reactions];
+        }
+      }
+
       const sequenced = eventSequencer.sequenceAll(
-        events.map(e => ({ type: e.type, data: e.data })), 
+        allEvents.map(e => ({ type: e.type, data: e.data })),
         turn
       );
-      
-      if (sequenced.length > 0) {
-        this.eventProcessor.processEvents(events);
-      }
 
       const result: TurnResult = {
         turn,

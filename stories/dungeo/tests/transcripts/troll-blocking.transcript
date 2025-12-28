@@ -29,6 +29,14 @@ description: Test that the troll blocks passage east in the Troll Room
 > look
 [OK: contains "Living Room"]
 
+# Push the rug to reveal trapdoor
+> push rug
+[OK: contains "Moving the rug reveals a trapdoor"]
+
+# Open trapdoor to go down
+> open trapdoor
+[OK: contains "open"]
+
 # Go down to the Cellar
 > down
 [OK: contains "Cellar"]
