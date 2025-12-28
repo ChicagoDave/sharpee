@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -69,7 +69,7 @@ Rationale:
 Changes:
 - Remove `GameEngine.dispatchEntityHandlers()` method entirely
 - Route NPC and scheduler events through EventProcessor
-- Update GameEngine to call `eventProcessor.processEvents()` for all event sources
+- GameEngine calls `eventProcessor.processEvents()` for all event sources
 
 ### 2. Define Event Dispatch Semantics
 
@@ -93,7 +93,7 @@ For now, implement target-only. Global subscriptions are a future enhancement.
 
 ### 3. Add Handler Typing to IFEntity
 
-Make `on` a first-class typed property instead of any-cast addon.
+Make `on` a first-class typed property.
 
 ```typescript
 // packages/world-model/src/entities/if-entity.ts
@@ -113,26 +113,11 @@ export interface IFEntity {
 }
 ```
 
-Update `IEventHandlers` to use the correct signature:
-
-```typescript
-// packages/world-model/src/events/types.ts
-
-export interface IEventHandlers {
-  [eventType: string]: EntityEventHandler;
-}
-
-export type EntityEventHandler = (
-  event: IGameEvent,
-  world: WorldModel
-) => void | ISemanticEvent[];
-```
-
 ### 4. Unify Handler Signatures
 
-**Remove `SimpleEventHandler`. All handlers receive `(event, world)`.**
+**All handlers receive `(event, world)`.** Remove `SimpleEventHandler`.
 
-Story-level handlers (via EventEmitter) should also receive world access:
+Story-level handlers (via EventEmitter) receive world access:
 
 ```typescript
 // packages/engine/src/events/event-emitter.ts
@@ -146,7 +131,7 @@ export class EventEmitter {
 
   emit(event: IGameEvent): ISemanticEvent[] {
     for (const handler of handlers) {
-      const result = handler(event, this.world);  // Pass world
+      const result = handler(event, this.world);
       // ...
     }
   }
@@ -159,7 +144,7 @@ Update `StoryWithEvents` to pass world to EventEmitter:
 // packages/engine/src/story.ts
 
 export class StoryWithEvents {
-  private eventEmitter: EventEmitter;
+  private eventEmitter?: EventEmitter;
   private world?: WorldModel;
 
   initializeWorld(world: WorldModel): void {
@@ -180,30 +165,25 @@ Create `docs/architecture/event-catalog.md` listing:
 | `if.event.actor_moved` | going action | Moving actor | `{ from, to, direction }` |
 | ... | ... | ... | ... |
 
-## Implementation Plan
+## Implementation
 
-### Phase 1: Consolidate Dispatch (Required)
+### Phase 1: Unify Types
 
-1. Update `GameEngine` to route NPC/scheduler events through `EventProcessor`
-2. Remove `GameEngine.dispatchEntityHandlers()` method
-3. Update EventProcessor to handle events without targets gracefully
+1. Remove `SimpleEventHandler` from `world-model/src/events/types.ts`
+2. Add `on?: IEventHandlers` to `IFEntity` interface
+3. Update `EventEmitter` to require `WorldModel` in constructor
+4. Update `StoryWithEvents` to create EventEmitter in `initializeWorld()`
 
-### Phase 2: Add Typing (Required)
+### Phase 2: Consolidate Dispatch
 
-4. Add `on?: IEventHandlers` to `IFEntity` interface
-5. Remove all `(entity as any).on` casts
-6. Fix any type errors in story code
+5. Update `GameEngine` to route NPC/scheduler events through `EventProcessor`
+6. Remove `GameEngine.dispatchEntityHandlers()` method entirely
+7. Ensure EventProcessor handles events without targets gracefully (no-op)
 
-### Phase 3: Unify Signatures (Required)
+### Phase 3: Document
 
-7. Remove `SimpleEventHandler` type
-8. Update `EventEmitter` to accept and pass `WorldModel`
-9. Update `StoryWithEvents` to initialize EventEmitter with world
-
-### Phase 4: Document (Required)
-
-10. Create event catalog documentation
-11. Add event flow diagram to architecture docs
+8. Create event catalog documentation
+9. Update event flow diagram
 
 ## Consequences
 
@@ -217,21 +197,8 @@ Create `docs/architecture/event-catalog.md` listing:
 
 ### Negative
 
-- Breaking change for any code using `SimpleEventHandler`
-- EventEmitter now requires WorldModel at construction
-- Story initialization order matters (world before event registration)
-
-### Migration
-
-Existing entity handlers work unchanged. Story handlers using `SimpleEventHandler` need signature update:
-
-```typescript
-// Before
-story.on('if.event.death', (event) => { ... });
-
-// After
-story.on('if.event.death', (event, world) => { ... });
-```
+- EventEmitter requires WorldModel at construction (initialization order matters)
+- Story must call `initializeWorld()` before registering event handlers
 
 ## Alternatives Considered
 
@@ -239,13 +206,13 @@ story.on('if.event.death', (event, world) => { ... });
 
 Document when each is used and live with the inconsistency.
 
-**Rejected**: Confusing for contributors, error-prone, will lead to bugs.
+**Rejected**: Confusing, error-prone, will lead to bugs.
 
 ### Broadcast All Events
 
 Call handlers on all entities for every event.
 
-**Rejected**: Performance concern with many entities. Also semantically wrong - most handlers only care about events targeting them.
+**Rejected**: Performance concern with many entities. Semantically wrong - most handlers only care about events targeting them.
 
 ### Create Separate EventBus
 
@@ -256,5 +223,5 @@ New abstraction layer between events and handlers.
 ## References
 
 - `docs/work/dungeo/events-assessment.md` - Critical assessment that prompted this ADR
-- `packages/event-processor/src/processor.ts` - Current EventProcessor implementation
-- `packages/engine/src/game-engine.ts` - Current GameEngine dispatch (to be removed)
+- `packages/event-processor/src/processor.ts` - EventProcessor implementation
+- `packages/engine/src/game-engine.ts` - GameEngine (dispatch to be removed)
