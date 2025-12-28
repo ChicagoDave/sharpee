@@ -23,6 +23,9 @@ export * from './command-executor';
 // Main engine
 export * from './game-engine';
 
+// Scheduler (Daemons and Fuses - ADR-071)
+export * from './scheduler';
+
 // Note: Text service has been moved to @sharpee/text-service package
 
 // Re-export commonly used items
