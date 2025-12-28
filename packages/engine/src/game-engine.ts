@@ -34,7 +34,7 @@ import { TextService, TextServiceContext, TextOutput } from '@sharpee/if-service
 import { ISemanticEvent, createSemanticEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, ISerializedSchedulerState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent } from '@sharpee/core';
 
 import { ISchedulerService, createSchedulerService } from './scheduler';
-import { INpcService, createNpcService } from '@sharpee/stdlib';
+import { INpcService, createNpcService, guardBehavior, passiveBehavior } from '@sharpee/stdlib';
 
 import {
   GameContext,
@@ -136,7 +136,11 @@ export class GameEngine {
     this.platformEvents = createSemanticEventSource();
     this.scheduler = createSchedulerService();
     this.npcService = createNpcService();
-    
+
+    // Register standard NPC behaviors (ADR-070)
+    this.npcService.registerBehavior(guardBehavior);
+    this.npcService.registerBehavior(passiveBehavior);
+
     // Set provided dependencies
     this.languageProvider = options.language;
     this.parser = options.parser;

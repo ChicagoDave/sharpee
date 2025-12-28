@@ -390,6 +390,42 @@ export function defineCoreGrammar(grammar: GrammarBuilder): void {
     .withPriority(100)
     .build();
 
+  // Pushing and pulling
+  grammar
+    .define('push :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.pushing')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('shove :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.pushing')
+    .withPriority(95)
+    .build();
+
+  grammar
+    .define('move :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.pushing')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('pull :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.pulling')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('drag :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.pulling')
+    .withPriority(95)
+    .build();
+
   // Waiting
   grammar
     .define('wait')

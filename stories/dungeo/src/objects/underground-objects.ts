@@ -14,6 +14,7 @@ import {
   IFEntity,
   IdentityTrait,
   ActorTrait,
+  NpcTrait,
   SceneryTrait,
   EntityType
 } from '@sharpee/world-model';
@@ -50,7 +51,7 @@ function createCellarObjects(world: WorldModel, roomId: string): void {
 // ============= Troll Room Objects =============
 
 function createTrollRoomObjects(world: WorldModel, roomId: string): void {
-  // Troll (NPC - blocks east passage)
+  // Troll (NPC - blocks east passage using guard behavior)
   const troll = world.createEntity('troll', EntityType.ACTOR);
   troll.add(new IdentityTrait({
     name: 'nasty-looking troll',
@@ -62,7 +63,11 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
   troll.add(new ActorTrait({
     isPlayer: false
   }));
-  // Note: Combat behavior and blocking behavior would be added when those systems are implemented
+  troll.add(new NpcTrait({
+    behaviorId: 'guard',
+    isHostile: true,
+    canMove: false  // Troll stays in his room
+  }));
   world.moveEntity(troll.id, roomId);
 
   // Bloody axe (weapon - initially carried by troll or in room after defeating)

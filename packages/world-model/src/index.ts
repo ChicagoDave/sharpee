@@ -41,6 +41,7 @@ export * from './traits/clothing';
 export * from './traits/moveable-scenery';
 export * from './traits/pullable';
 export * from './traits/pushable';
+export * from './traits/npc';
 
 // Extension system
 export * from './extensions';

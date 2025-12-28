@@ -1,0 +1,56 @@
+title: Troll Blocking
+story: dungeo
+author: Sharpee Team
+description: Test that the troll blocks passage east in the Troll Room
+
+---
+
+# Navigate to house and get lantern
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> west
+[OK: contains "Kitchen"]
+
+> west
+[OK: contains "Living Room"]
+
+# Get the lantern and turn it on (needed for dark areas)
+> take lantern
+[OK: contains "Taken"]
+
+> switch on lantern
+[OK: contains "on"]
+
+# Verify we're in Living Room
+> look
+[OK: contains "Living Room"]
+
+# Go down to the Cellar
+> down
+[OK: contains "Cellar"]
+
+# Navigate to Troll Room via Narrow Passage
+> north
+[OK: contains "Narrow Passage"]
+
+> north
+[OK: contains "Troll Room"]
+[OK: contains "troll"]
+
+# Try to go east - should be blocked by troll
+> east
+[FAIL: contains "East-West Passage"]
+[OK: contains "troll"]
+[OK: contains "block"]
+
+# Verify we're still in Troll Room
+> look
+[OK: contains "Troll Room"]
+
+# Going south should still work
+> south
+[OK: contains "Narrow Passage"]

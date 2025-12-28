@@ -10,6 +10,7 @@ import {
   IFEntity,
   IdentityTrait,
   RoomTrait,
+  RoomBehavior,
   EntityType,
   Direction
 } from '@sharpee/world-model';
@@ -210,6 +211,8 @@ function connectUndergroundRooms(world: WorldModel, roomIds: UndergroundRoomIds)
         // West leads to forbidding hole - maybe later
       };
     }
+    // Block the east exit - troll prevents passage until defeated
+    RoomBehavior.blockExit(trollRoom, Direction.EAST, 'The troll blocks your way.');
   }
 
   // East-West Passage connections
