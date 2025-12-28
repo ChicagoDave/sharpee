@@ -1,12 +1,13 @@
 /**
  * English (US) Language Package for Sharpee IF Platform
- * 
+ *
  * Provides English language support including:
  * - Vocabulary (verbs, nouns, adjectives, etc.)
  * - Grammar patterns
  * - Text formatting and lemmatization
  * - Message templates
  * - Action patterns and messages
+ * - NPC messages (ADR-070)
  */
 
 export { EnglishLanguageProvider, default } from './language-provider';
@@ -20,3 +21,6 @@ export * from './grammar';
 
 // Export action language definitions
 export * from './actions';
+
+// Export NPC language definitions (ADR-070)
+export * from './npc';

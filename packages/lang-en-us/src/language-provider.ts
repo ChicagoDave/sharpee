@@ -27,6 +27,8 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
   constructor() {
     // Load all action messages
     this.loadActionMessages();
+    // Load NPC messages (ADR-070)
+    this.loadNpcMessages();
   }
   
   /**
@@ -41,6 +43,20 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
           this.messages.set(fullKey, value);
         });
       }
+    }
+  }
+
+  /**
+   * Load NPC messages (ADR-070)
+   */
+  private loadNpcMessages(): void {
+    // Import NPC language data
+    const { npcLanguage } = require('./npc/npc');
+    if (npcLanguage.messages) {
+      Object.entries(npcLanguage.messages).forEach(([key, value]) => {
+        // NPC messages are already fully-qualified
+        this.messages.set(key, value as string);
+      });
     }
   }
   
