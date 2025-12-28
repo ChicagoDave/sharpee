@@ -33,7 +33,13 @@ export function createWhiteHouseObjects(world: WorldModel, roomIds: WhiteHouseRo
   world.moveEntity(mailbox.id, roomIds.westOfHouse);
 
   // Place leaflet inside mailbox
-  world.moveEntity(leaflet.id, mailbox.id);
+  // Need to temporarily open the mailbox to place items (canMoveEntity checks isOpen)
+  const openable = mailbox.get(OpenableTrait);
+  if (openable) {
+    openable.isOpen = true;
+    world.moveEntity(leaflet.id, mailbox.id);
+    openable.isOpen = false;  // Close it again
+  }
 
   // Create front door scenery in West of House
   const frontDoor = createFrontDoor(world);

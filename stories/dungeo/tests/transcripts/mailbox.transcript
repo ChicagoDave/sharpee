@@ -6,31 +6,33 @@ description: Test opening mailbox and reading the leaflet
 
 # Examine the mailbox
 > examine mailbox
-[FAIL: examine action output not yet implemented]
+[OK: contains "small mailbox"]
 
 # Open the mailbox
 > open mailbox
 [OK: contains "open"]
 
-# Look inside
-> look in mailbox
-[FAIL: look in container not yet showing contents]
+# Look inside - TODO: "look in" pattern not recognized by parser
+> search mailbox
+[FAIL: search pattern not recognized by parser - needs investigation]
 
 # Take the leaflet
 > take leaflet
-[FAIL: take action not producing correct output]
+[OK: contains "take"]
+[OK: contains "leaflet"]
 
 # Read it
 > read leaflet
-[FAIL: read action not yet implemented for leaflet]
+[OK: contains "DUNGEO"]
 
 # Check inventory
 > inventory
-[FAIL: inventory display not showing items]
+[OK: contains "carrying"]
+[OK: contains "leaflet"]
 
 # Put it back
 > put leaflet in mailbox
-[FAIL: put action not yet producing correct output]
+[OK: contains "put"]
 
 # Close the mailbox
 > close mailbox

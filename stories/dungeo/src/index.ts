@@ -25,7 +25,13 @@ import {
 
 // Import room and object creators
 import { createWhiteHouseRooms, WhiteHouseRoomIds } from './regions/white-house';
+import { createHouseInteriorRooms, connectHouseInteriorToExterior, HouseInteriorRoomIds } from './regions/house-interior';
+import { createForestRooms, connectForestToExterior, ForestRoomIds } from './regions/forest';
+import { createUndergroundRooms, connectUndergroundToHouse, UndergroundRoomIds } from './regions/underground';
 import { createWhiteHouseObjects } from './objects/white-house-objects';
+import { createHouseInteriorObjects } from './objects/house-interior-objects';
+import { createForestObjects } from './objects/forest-objects';
+import { createUndergroundObjects } from './objects/underground-objects';
 
 /**
  * Dungeo story configuration
@@ -45,7 +51,10 @@ export class DungeoStory implements Story {
   config = config;
 
   private world!: WorldModel;
-  private roomIds: WhiteHouseRoomIds = {} as WhiteHouseRoomIds;
+  private whiteHouseIds: WhiteHouseRoomIds = {} as WhiteHouseRoomIds;
+  private houseInteriorIds: HouseInteriorRoomIds = {} as HouseInteriorRoomIds;
+  private forestIds: ForestRoomIds = {} as ForestRoomIds;
+  private undergroundIds: UndergroundRoomIds = {} as UndergroundRoomIds;
 
   /**
    * Initialize the world for Dungeo
@@ -54,15 +63,26 @@ export class DungeoStory implements Story {
     this.world = world;
 
     // Create all rooms
-    this.roomIds = createWhiteHouseRooms(world);
+    this.whiteHouseIds = createWhiteHouseRooms(world);
+    this.houseInteriorIds = createHouseInteriorRooms(world);
+    this.forestIds = createForestRooms(world);
+    this.undergroundIds = createUndergroundRooms(world);
+
+    // Connect regions
+    connectHouseInteriorToExterior(world, this.houseInteriorIds, this.whiteHouseIds.behindHouse);
+    connectForestToExterior(world, this.forestIds, this.whiteHouseIds.northOfHouse, this.whiteHouseIds.behindHouse);
+    connectUndergroundToHouse(world, this.undergroundIds, this.houseInteriorIds.livingRoom);
 
     // Create all objects and place them in rooms
-    createWhiteHouseObjects(world, this.roomIds);
+    createWhiteHouseObjects(world, this.whiteHouseIds);
+    createHouseInteriorObjects(world, this.houseInteriorIds);
+    createForestObjects(world, this.forestIds);
+    createUndergroundObjects(world, this.undergroundIds);
 
     // Set initial player location to West of House
     const player = world.getPlayer();
     if (player) {
-      world.moveEntity(player.id, this.roomIds.westOfHouse);
+      world.moveEntity(player.id, this.whiteHouseIds.westOfHouse);
     }
   }
 

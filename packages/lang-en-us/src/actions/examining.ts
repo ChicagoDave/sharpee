@@ -15,10 +15,26 @@ export const examiningLanguage = {
   ],
   
   messages: {
+    // Error messages
     'no_target': "Examine what?",
+    'not_visible': "You can't see {item} here.",
     'cant_see': "You can't see {item} here.",
+
+    // Success messages - these match stdlib's ExaminingMessages
+    'examined': "{description}",
+    'examined_self': "{description}",
+    'examined_container': "{description}",
+    'examined_supporter': "{description}",
+    'examined_readable': "{description}",
+    'examined_switchable': "{description}",
+    'examined_wearable': "{description}",
+    'examined_door': "{description}",
+    'nothing_special': "You see nothing special about {item}.",
     'description': "{description}",
+    'brief_description': "{description}",
     'no_description': "You see nothing special about {item}.",
+
+    // Legacy messages for compatibility
     'container_open': "{item} is open.",
     'container_closed': "{item} is closed.",
     'container_empty': "{item} is empty.",
