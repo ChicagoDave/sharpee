@@ -6,25 +6,62 @@ Accepted
 
 ## Context
 
-The entity event handler system currently has two competing dispatch mechanisms with different semantics, inconsistent typing, and undocumented behavior. This was exposed during the troll combat/scoring implementation (see `docs/work/dungeo/events-assessment.md`).
+The entity event handler system has diverged from its original design (ADR-052), resulting in two competing dispatch mechanisms, inconsistent typing, and undocumented behavior. This was exposed during troll combat/scoring implementation (see `docs/work/dungeo/events-assessment.md`).
 
-### Current State
+### Original Design (ADR-052)
 
-**Two Dispatch Mechanisms:**
+ADR-052 established the event handler pattern with clear intent:
 
-| Location | Method | Semantics | Used For |
-|----------|--------|-----------|----------|
-| `EventProcessor.invokeEntityHandlers()` | Target-only | Calls handler only on `event.entities.target` | Action events |
-| `GameEngine.dispatchEntityHandlers()` | Broadcast | Iterates ALL entities, calls any matching handler | NPC/scheduler events |
+1. **Entity handlers** defined on `entity.on` for direct reactions
+2. **Story handlers** via `Story.on()` for multi-entity logic (daemons)
+3. **Actions invoke handlers** directly after emitting events
+4. **Handler signature**: `(event) => EventResult | void`
 
-**Problems:**
+```typescript
+// ADR-052's design - actions invoke handlers
+function execute(context: ActionContext): SemanticEvent[] {
+  // Do the push
+  pushable.pushCount++;
 
-1. **Undocumented semantics** - No documentation explains when each is used or why
-2. **Inconsistent behavior** - Action events notify only target; scheduler events notify everyone
-3. **Type safety erosion** - GameEngine uses `(entity as any).on` to access handlers
-4. **Two handler signatures** - `EntityEventHandler(event, world)` vs `SimpleEventHandler(event)`
+  // Entity might have a handler - ACTION calls it
+  if (target.on?.pushed) {
+    const result = target.on.pushed(event);
+  }
 
-### Event Flow (Current, Undocumented)
+  // Emit for story handlers
+  context.emit(event);
+
+  return events;
+}
+```
+
+Key insight from ADR-052:
+> "We designed a system that revolves around writing events, but we ignored the need to write code for such events."
+
+### How Implementation Deviated
+
+The actual implementation diverged from ADR-052:
+
+| ADR-052 Design | Actual Implementation |
+|----------------|----------------------|
+| Actions invoke entity handlers | EventProcessor invokes handlers after event processing |
+| Single invocation point | Two invocation points (EventProcessor + GameEngine) |
+| Handler gets `(event)` | Handler gets `(event)` initially, then `(event, world)` after fix |
+| Story handlers via `Story.on()` | Story handlers via separate EventEmitter class |
+
+**What happened:**
+
+1. **EventProcessor was created** - Instead of actions invoking handlers directly, a centralized EventProcessor was built to process events and invoke handlers on target entities.
+
+2. **GameEngine added duplicate dispatch** - When NPC/scheduler systems were added (ADR-070, ADR-071), GameEngine added its own `dispatchEntityHandlers()` method with different semantics (broadcast to ALL entities, not just target).
+
+3. **World access was missing** - ADR-052's signature `(event) => EventResult` didn't include world access. When troll death handler needed to update score via `world.getCapability()`, we added world parameter, creating type split:
+   - `EntityEventHandler = (event, world) => ...`
+   - `SimpleEventHandler = (event) => ...` (for EventEmitter compatibility)
+
+4. **Duplicate calls caused bugs** - Both EventProcessor and GameEngine called handlers for the same events, causing troll death to award points 4x.
+
+### Current State (Broken)
 
 ```
 Player Command
@@ -32,12 +69,11 @@ Player Command
     ▼
 ┌─────────────────┐
 │ CommandExecutor │
-│                 │
 │ action.execute()│
 │       │         │
 │       ▼         │
 │ EventProcessor  │──────► invokeEntityHandlers(target only)
-│ .processEvents()│
+│ .processEvents()│        Handler gets (event, world)
 └────────┬────────┘
          │
          ▼
@@ -45,61 +81,63 @@ Player Command
 │   GameEngine    │
 │   .executeTurn()│
 │       │         │
-│       ├─────────┼──────► [Action events - NO dispatch, already done]
-│       │         │
+│       ├─────────┼──────► [Action events - WAS calling dispatch too!]
+│       │         │        (Removed in troll fix, but method still exists)
 │       ▼         │
-│   NPC Phase     │──────► dispatchEntityHandlers(broadcast)
-│       │         │
+│   NPC Phase     │──────► dispatchEntityHandlers(broadcast ALL entities)
+│       │         │        Handler gets (event, world)
 │       ▼         │
-│ Scheduler Phase │──────► dispatchEntityHandlers(broadcast)
+│ Scheduler Phase │──────► dispatchEntityHandlers(broadcast ALL entities)
+└─────────────────┘
+
+Story Handlers:
+┌─────────────────┐
+│ EventEmitter    │──────► SimpleEventHandler(event) - NO world access!
 └─────────────────┘
 ```
 
+**Problems:**
+
+1. Two dispatch mechanisms with different semantics (target-only vs broadcast)
+2. Type split between EntityEventHandler and SimpleEventHandler
+3. Story handlers can't access world state (defeats purpose of daemons)
+4. GameEngine uses `(entity as any).on` - type safety erosion
+5. No documentation of which path events take
+
 ## Decision
 
-### 1. Consolidate to Single Dispatch Location
+### Return to ADR-052 Principles with Corrections
+
+We consolidate to ADR-052's core design with one correction: **handlers receive world access**.
+
+ADR-052 didn't anticipate handlers needing to modify world state (scoring, unblocking exits, etc.). Adding `world` parameter is the right fix - handlers ARE game logic and need state access.
+
+### 1. Single Dispatch Location
 
 **EventProcessor owns all entity handler dispatch.**
 
-Rationale:
-- EventProcessor already has the correct target-only semantics
-- EventProcessor is purpose-built for event processing
-- GameEngine should orchestrate, not implement event dispatch
-
-Changes:
-- Remove `GameEngine.dispatchEntityHandlers()` method entirely
+- Remove `GameEngine.dispatchEntityHandlers()` entirely
 - Route NPC and scheduler events through EventProcessor
-- GameEngine calls `eventProcessor.processEvents()` for all event sources
+- EventProcessor already has correct target-only semantics per ADR-052
 
-### 2. Define Event Dispatch Semantics
+### 2. Unified Handler Signature
 
-**Target-only dispatch with explicit subscription for broadcast.**
-
-An entity's `on` handlers are called when:
-1. The entity is the `event.entities.target`, OR
-2. The entity explicitly subscribes to that event type globally
+**All handlers receive `(event, world)`.** Remove `SimpleEventHandler`.
 
 ```typescript
-// Target handler - only called when this entity is the target
-troll.on = {
-  'if.event.death': (event, world) => { /* I died */ }
-};
-
-// Global subscription - called for any death event (future enhancement)
-world.subscribe('if.event.death', (event, world) => { /* anyone died */ });
+export type EntityEventHandler = (
+  event: IGameEvent,
+  world: WorldModel
+) => void | ISemanticEvent[];
 ```
 
-For now, implement target-only. Global subscriptions are a future enhancement.
+Story handlers (daemons) need world access even more than entity handlers - they coordinate multi-entity logic.
 
-### 3. Add Handler Typing to IFEntity
+### 3. Typed Entity Handlers
 
-Make `on` a first-class typed property.
+Add `on` as first-class typed property on IFEntity:
 
 ```typescript
-// packages/world-model/src/entities/if-entity.ts
-
-import { IEventHandlers } from '../events/types';
-
 export interface IFEntity {
   id: EntityId;
   name: string;
@@ -113,23 +151,21 @@ export interface IFEntity {
 }
 ```
 
-### 4. Unify Handler Signatures
+Eliminate all `(entity as any).on` casts.
 
-**All handlers receive `(event, world)`.** Remove `SimpleEventHandler`.
-
-Story-level handlers (via EventEmitter) receive world access:
+### 4. EventEmitter Gets World
 
 ```typescript
-// packages/engine/src/events/event-emitter.ts
-
 export class EventEmitter {
   private world: WorldModel;
+  private handlers: Map<string, EntityEventHandler[]> = new Map();
 
   constructor(world: WorldModel) {
     this.world = world;
   }
 
   emit(event: IGameEvent): ISemanticEvent[] {
+    const handlers = this.handlers.get(event.type) || [];
     for (const handler of handlers) {
       const result = handler(event, this.world);
       // ...
@@ -138,32 +174,41 @@ export class EventEmitter {
 }
 ```
 
-Update `StoryWithEvents` to pass world to EventEmitter:
+### Corrected Event Flow
 
-```typescript
-// packages/engine/src/story.ts
-
-export class StoryWithEvents {
-  private eventEmitter?: EventEmitter;
-  private world?: WorldModel;
-
-  initializeWorld(world: WorldModel): void {
-    this.world = world;
-    this.eventEmitter = new EventEmitter(world);
-  }
-}
 ```
+Player Command
+    │
+    ▼
+┌─────────────────┐
+│ CommandExecutor │
+│ action.execute()│
+│       │         │
+│       ▼         │
+│ EventProcessor  │──────► invokeEntityHandlers(target only)
+│ .processEvents()│        Handler gets (event, world)
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────┐
+│   GameEngine.executeTurn()                  │
+│       │                                     │
+│       ├── Action events: NO dispatch        │
+│       │   (already done by EventProcessor)  │
+│       │                                     │
+│       ├── NPC events ────► EventProcessor   │
+│       │                    .processEvents() │
+│       │                                     │
+│       └── Scheduler events ► EventProcessor │
+│                             .processEvents()│
+└─────────────────────────────────────────────┘
 
-### 5. Document Event Types
-
-Create `docs/architecture/event-catalog.md` listing:
-
-| Event Type | Emitted By | Target | Data |
-|------------|------------|--------|------|
-| `if.event.death` | attacking action | Killed entity | `{ killedBy }` |
-| `if.event.taken` | taking action | Taken item | `{ taker }` |
-| `if.event.actor_moved` | going action | Moving actor | `{ from, to, direction }` |
-| ... | ... | ... | ... |
+Story Handlers (daemons):
+┌─────────────────┐
+│ EventEmitter    │──────► EntityEventHandler(event, world)
+│ (with world)    │        Full world access for daemons
+└─────────────────┘
+```
 
 ## Implementation
 
@@ -183,45 +228,46 @@ Create `docs/architecture/event-catalog.md` listing:
 ### Phase 3: Document
 
 8. Create event catalog documentation
-9. Update event flow diagram
+9. Update this ADR with final event flow diagram
 
 ## Consequences
 
 ### Positive
 
-- Single, documented dispatch mechanism
+- Returns to ADR-052's coherent single-dispatch design
+- All handlers have consistent `(event, world)` signature
+- Story handlers (daemons) can properly access world state
 - Type-safe handler registration
-- Consistent handler signatures
-- Story handlers can access world state
-- Easier to reason about event flow
+- Single documented event flow
 
 ### Negative
 
-- EventEmitter requires WorldModel at construction (initialization order matters)
-- Story must call `initializeWorld()` before registering event handlers
+- EventEmitter requires WorldModel at construction
+- Story must call `initializeWorld()` before registering handlers
 
 ## Alternatives Considered
 
 ### Keep Both Dispatch Mechanisms
 
-Document when each is used and live with the inconsistency.
+Document when each is used.
 
-**Rejected**: Confusing, error-prone, will lead to bugs.
+**Rejected**: Violates ADR-052 design. Confusing, error-prone.
 
-### Broadcast All Events
+### Return to ADR-052 Exactly (No World Parameter)
 
-Call handlers on all entities for every event.
+Keep original `(event) => EventResult` signature.
 
-**Rejected**: Performance concern with many entities. Semantically wrong - most handlers only care about events targeting them.
+**Rejected**: Handlers need world access for scoring, state changes, multi-entity coordination. This was a gap in ADR-052.
 
-### Create Separate EventBus
+### Actions Invoke Handlers Directly (Pure ADR-052)
 
-New abstraction layer between events and handlers.
+Move dispatch back into actions.
 
-**Rejected**: Over-engineering for current needs. Can revisit if subscription patterns become complex.
+**Rejected**: EventProcessor provides clean separation. Actions shouldn't know about handler dispatch - they emit events, processor handles reactions.
 
 ## References
 
+- `ADR-052: Event Handlers and Custom Logic` - Original design this consolidation returns to
 - `docs/work/dungeo/events-assessment.md` - Critical assessment that prompted this ADR
-- `packages/event-processor/src/processor.ts` - EventProcessor implementation
-- `packages/engine/src/game-engine.ts` - GameEngine (dispatch to be removed)
+- `packages/event-processor/src/processor.ts` - EventProcessor (correct implementation)
+- `packages/engine/src/game-engine.ts` - GameEngine dispatch (to be removed)
