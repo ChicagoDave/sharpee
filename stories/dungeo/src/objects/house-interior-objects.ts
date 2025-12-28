@@ -31,6 +31,7 @@ import {
   PushableTrait,
   RoomBehavior,
   RoomTrait,
+  WeaponTrait,
   EntityType,
   Direction,
   IGameEvent,
@@ -177,6 +178,13 @@ function createLivingRoomObjects(world: WorldModel, livingRoomId: string, cellar
     properName: false,
     article: 'an'
   }));
+  sword.add(new WeaponTrait({
+    damage: 5,              // Good damage
+    skillBonus: 10,         // Bonus to hit chance
+    weaponType: 'blade',
+    glowsNearDanger: true,  // Classic elvish sword behavior
+    isBlessed: true         // Extra damage to certain enemies
+  }));
   world.moveEntity(sword.id, livingRoomId);
 
   // Brass lantern
@@ -322,6 +330,11 @@ function createAtticObjects(world: WorldModel, atticId: string): void {
     description: 'A nasty-looking knife. It appears quite sharp.',
     properName: false,
     article: 'a'
+  }));
+  knife.add(new WeaponTrait({
+    damage: 2,              // Less damage than sword
+    skillBonus: 5,
+    weaponType: 'blade'
   }));
   world.moveEntity(knife.id, atticId);
 }

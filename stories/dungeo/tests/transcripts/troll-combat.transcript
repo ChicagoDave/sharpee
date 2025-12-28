@@ -1,0 +1,92 @@
+title: Troll Combat
+story: dungeo
+author: Sharpee Team
+description: Test defeating the troll with the sword and gaining score
+
+---
+
+# Navigate to house and get equipment
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> west
+[OK: contains "Kitchen"]
+
+> west
+[OK: contains "Living Room"]
+
+# Get the sword and lantern
+> take sword
+[OK: contains "Taken"]
+[EVENT: true, type="if.event.taken"]
+
+> take lantern
+[OK: contains "Taken"]
+
+> switch on lantern
+[OK: contains "on"]
+
+# Go underground
+> push rug
+[OK: contains "Moving the rug reveals a trapdoor"]
+
+> open trapdoor
+[OK: contains "open"]
+
+> down
+[OK: contains "Cellar"]
+
+# Navigate to Troll Room
+> north
+[OK: contains "Narrow Passage"]
+
+> north
+[OK: contains "Troll Room"]
+[OK: contains "troll"]
+
+# Attack the troll repeatedly until dead (combat is random)
+# With 10 HP and 6 damage per hit, need 2 hits to kill
+# Adding many attacks to account for misses
+> attack troll with sword
+[EVENT: true, type="if.event.attacked"]
+
+> attack troll with sword
+[EVENT: true, type="if.event.attacked"]
+
+> attack troll with sword
+[EVENT: true, type="if.event.attacked"]
+
+> attack troll with sword
+[EVENT: true, type="if.event.attacked"]
+
+> attack troll with sword
+[EVENT: true, type="if.event.attacked"]
+
+> attack troll with sword
+[EVENT: true, type="if.event.attacked"]
+
+> attack troll with sword
+[EVENT: true, type="if.event.attacked"]
+
+> attack troll with sword
+[EVENT: true, type="if.event.attacked"]
+
+> attack troll with sword
+[EVENT: true, type="if.event.attacked"]
+
+> attack troll with sword
+[EVENT: true, type="if.event.attacked"]
+
+# After 10 attacks, the troll should definitely be dead
+# Now we can go east
+> east
+[OK: contains "East-West Passage"]
+[EVENT: true, type="if.event.actor_moved"]
+[EVENT: false, type="action.blocked"]
+
+# Check score shows 10 points for defeating troll
+> score
+[OK: contains "10"]

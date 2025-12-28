@@ -20,7 +20,8 @@ import {
   ReadableTrait,
   SceneryTrait,
   EntityType,
-  Direction
+  Direction,
+  StandardCapabilities
 } from '@sharpee/world-model';
 
 // Import room and object creators
@@ -61,6 +62,16 @@ export class DungeoStory implements Story {
    */
   initializeWorld(world: WorldModel): void {
     this.world = world;
+
+    // Register scoring capability (Zork max score is 616)
+    world.registerCapability(StandardCapabilities.SCORING, {
+      initialData: {
+        scoreValue: 0,
+        maxScore: 616,
+        moves: 0,
+        achievements: []
+      }
+    });
 
     // Create all rooms
     this.whiteHouseIds = createWhiteHouseRooms(world);
@@ -158,6 +169,9 @@ export class DungeoStory implements Story {
   extendLanguage(language: LanguageProvider): void {
     // Rug/trapdoor puzzle
     language.addMessage('dungeo.rug.moved.reveal_trapdoor', 'Moving the rug reveals a trapdoor.');
+
+    // Troll combat
+    language.addMessage('dungeo.troll.death.passage_clear', 'With the troll dispatched, the passage to the east is now clear.');
   }
 
   /**

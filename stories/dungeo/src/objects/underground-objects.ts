@@ -2,8 +2,8 @@
  * Underground Objects - Items in the underground region (Phase 1)
  *
  * Troll Room:
- * - Troll (NPC - guards passage)
- * - Bloody axe (weapon, if troll defeated)
+ * - Troll (NPC - guards passage, can be killed)
+ * - Bloody axe (weapon, dropped when troll defeated)
  *
  * Cellar:
  * - Metal ramp (scenery)
@@ -16,10 +16,21 @@ import {
   ActorTrait,
   NpcTrait,
   SceneryTrait,
-  EntityType
+  CombatantTrait,
+  RoomBehavior,
+  EntityType,
+  Direction,
+  StandardCapabilities
 } from '@sharpee/world-model';
+import { ISemanticEvent } from '@sharpee/core';
 
 import { UndergroundRoomIds } from '../regions/underground';
+
+// Simple ID generator for events
+let eventCounter = 0;
+function generateEventId(): string {
+  return `evt-${Date.now()}-${++eventCounter}`;
+}
 
 /**
  * Create all objects in the Underground region
@@ -51,7 +62,7 @@ function createCellarObjects(world: WorldModel, roomId: string): void {
 // ============= Troll Room Objects =============
 
 function createTrollRoomObjects(world: WorldModel, roomId: string): void {
-  // Troll (NPC - blocks east passage using guard behavior)
+  // Troll (NPC - blocks east passage, can be killed with sword)
   const troll = world.createEntity('troll', EntityType.ACTOR);
   troll.add(new IdentityTrait({
     name: 'nasty-looking troll',
@@ -68,10 +79,59 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
     isHostile: true,
     canMove: false  // Troll stays in his room
   }));
+  // Make troll a combatant so it can be attacked and killed
+  // 10 HP means 2 good sword hits (5+1 each) will kill it
+  troll.add(new CombatantTrait({
+    health: 10,
+    maxHealth: 10,
+    skill: 40,           // Moderate combat skill
+    baseDamage: 5,       // Hits hard with that axe
+    armor: 0,
+    hostile: true,
+    canRetaliate: true,
+    dropsInventory: true,
+    deathMessage: 'The troll lets out a final grunt and collapses!'
+  }));
   world.moveEntity(troll.id, roomId);
 
-  // Bloody axe (weapon - initially carried by troll or in room after defeating)
-  // For now, place it in the room as loot
+  // Add death handler - when troll dies, unblock the east passage and add score
+  const trollRoom = world.getEntity(roomId);
+  (troll as any).on = {
+    'if.event.death': (_event: ISemanticEvent, w: WorldModel): ISemanticEvent[] => {
+      const events: ISemanticEvent[] = [];
+
+      // Unblock the east passage
+      if (trollRoom) {
+        RoomBehavior.unblockExit(trollRoom, Direction.EAST);
+      }
+
+      // Add score for defeating the troll
+      const scoring = w.getCapability(StandardCapabilities.SCORING);
+      if (scoring) {
+        scoring.scoreValue = (scoring.scoreValue || 0) + 10;
+        if (!scoring.achievements) {
+          scoring.achievements = [];
+        }
+        scoring.achievements.push('Defeated the troll');
+      }
+
+      // Emit message about passage being clear
+      events.push({
+        id: generateEventId(),
+        type: 'game.message',
+        entities: {},
+        data: {
+          messageId: 'dungeo.troll.death.passage_clear'
+        },
+        timestamp: Date.now(),
+        narrate: true
+      });
+
+      return events;
+    }
+  };
+
+  // Bloody axe (weapon - initially with troll, drops when killed)
   const axe = world.createEntity('bloody axe', EntityType.ITEM);
   axe.add(new IdentityTrait({
     name: 'bloody axe',
@@ -80,7 +140,6 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
-  // Keep axe with troll initially (would need proper NPC inventory)
-  // For now, just place in room
-  world.moveEntity(axe.id, roomId);
+  // Place axe in troll's inventory (will drop when killed via dropsInventory)
+  world.moveEntity(axe.id, troll.id);
 }
