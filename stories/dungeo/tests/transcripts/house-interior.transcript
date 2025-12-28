@@ -8,47 +8,61 @@ description: Test entering the house, finding objects, and using the lantern
 # Navigate to Behind House (north then east)
 > look
 [OK: contains "West of House"]
+[EVENT: true, type="if.event.room.description"]
 
 > north
 [OK: contains "North of House"]
+[EVENT: true, type="if.event.actor_moved"]
 
 > east
 [OK: contains "Behind House"]
 [OK: contains "window"]
+[EVENT: true, type="if.event.actor_moved"]
 
 # Enter through the window into Kitchen
 > west
 [OK: contains "Kitchen"]
 [OK: contains "table"]
+[EVENT: true, type="if.event.actor_moved"]
+[EVENT: true, type="if.event.actor_entered"]
 
 # Examine kitchen objects
 > examine sack
 [OK: contains "sack"]
 [OK: contains "pepper"]
+[EVENT: true, type="if.event.examined"]
 
 > examine bottle
 [OK: contains "bottle"]
+[EVENT: true, type="if.event.examined"]
 
 # Go to Living Room
 > west
 [OK: contains "Living Room"]
 [OK: contains "trophy case"]
+[EVENT: true, type="if.event.actor_moved"]
 
 # Find the lantern and sword
 > examine lantern
 [OK: contains "lantern"]
 [OK: contains "brass"]
+[EVENT: true, type="if.event.examined"]
 
 > examine sword
 [OK: contains "sword"]
 [OK: contains "elvish"]
+[EVENT: true, type="if.event.examined"]
 
 # Take the lantern and sword
 > take lantern
 [OK: contains "Taken"]
+[EVENT: true, type="if.event.taken"]
+[EVENT: true, type="action.success"]
+[EVENT: false, type="action.blocked"]
 
 > take sword
 [OK: contains "Taken"]
+[EVENT: true, type="if.event.taken"]
 
 # Check inventory shows both items
 > inventory
@@ -58,30 +72,39 @@ description: Test entering the house, finding objects, and using the lantern
 # Switch on the lantern
 > switch on lantern
 [OK: contains "on"]
+[EVENT: true, type="if.event.switched_on"]
+[EVENT: true, type="action.success"]
 
 # Go up to the Attic via Kitchen
 > east
 [OK: contains "Kitchen"]
+[EVENT: true, type="if.event.actor_moved"]
 
 > up
 [OK: contains "Attic"]
 [OK: contains "rope"]
 [OK: contains "knife"]
+[EVENT: true, type="if.event.actor_moved"]
+[EVENT: true, type="if.event.actor_entered"]
 
 # Examine attic objects
 > examine rope
 [OK: contains "rope"]
+[EVENT: true, type="if.event.examined"]
 
 > examine knife
 [OK: contains "knife"]
 [OK: contains "nasty"]
+[EVENT: true, type="if.event.examined"]
 
 # Take the useful items
 > take rope
 [OK: contains "Taken"]
+[EVENT: true, type="if.event.taken"]
 
 > take knife
 [OK: contains "Taken"]
+[EVENT: true, type="if.event.taken"]
 
 # Final inventory check - should have all 4 items
 > inventory
@@ -93,3 +116,4 @@ description: Test entering the house, finding objects, and using the lantern
 # Return to Kitchen
 > down
 [OK: contains "Kitchen"]
+[EVENT: true, type="if.event.actor_moved"]
