@@ -364,9 +364,9 @@
 |----------|----------|--------|-------|
 | Troll | Troll Room | ✅ Done | Guard behavior, blocks passage, combat |
 | Thief | Wandering | ✅ Done | Full AI: wander, steal, egg-open, combat, lair |
-| Cyclops | Cyclops Room | ❌ | Say "Odysseus" to scare |
-| Vampire bat | Bat Room | ❌ | Attacks without garlic |
-| Spirits | Entry to Hades | ❌ | Block until exorcised |
+| Cyclops | Cyclops Room | ✅ Done | Say "Odysseus"/"Ulysses" to scare, blocks north |
+| Vampire bat | Bat Room | ✅ Done | Daemon attacks without garlic, teleports player |
+| Spirits | Entry to Hades | ✅ Done | Block until exorcised (bell/book/candles) |
 | Dungeon Master | Endgame | ❌ | Ally in final puzzle |
 | Robot | Low Room | ❌ | Commandable NPC |
 | Gnome | Bank | ❌ | Appears with curtain |
@@ -379,9 +379,9 @@
 
 | Puzzle | Solution | Status | Points |
 |--------|----------|--------|--------|
-| Troll | Kill with sword | ❌ | 0 |
-| Thief | Kill with knife (late game) | ❌ | 25 |
-| Cyclops | Say "Odysseus" | ❌ | 10 |
+| Troll | Kill with sword | ✅ Done | 0 |
+| Thief | Kill with knife (late game) | ✅ Done | 25 |
+| Cyclops | Say "Odysseus" | ✅ Done | 10 |
 
 ### Mechanical Puzzles
 
@@ -400,8 +400,8 @@
 | Puzzle | Solution | Status | Reward |
 |--------|----------|--------|--------|
 | Riddle Room | Answer "well" | ❌ | Access Pearl Room |
-| Cyclops | Say "Odysseus" | ❌ | Passage opens |
-| Exorcism | Ring bell, light candles, read | ❌ | Access Land of Dead |
+| Cyclops | Say "Odysseus" | ✅ Done | Passage opens |
+| Exorcism | Ring bell, light candles, read book | ✅ Done | Access Land of Dead (+10 pts) |
 | Loud Room | Say "echo" | ❌ | Platinum bar |
 | Endgame trivia | Various answers | ❌ | Progress |
 
@@ -443,9 +443,9 @@
 | INFLATE/DEFLATE actions | ❌ | Boat |
 | WAVE action | ❌ | Sceptre/rainbow |
 | Water current | ❌ | River auto-movement |
-| RING action | ❌ | Bell |
+| RING action | ✅ Done | Bell |
 | PRAY action | ❌ | Resurrection |
-| Exorcism sequence | ❌ | Bell/book/candle |
+| Exorcism sequence | ✅ Done | Bell/book/candle |
 | DIG action | ❌ | Shovel/beach |
 | Sliding room mechanics | ❌ | Royal Puzzle |
 | PUSH WALL action | ❌ | Royal Puzzle |
@@ -509,25 +509,29 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 | Weapons | 4 | 4 | 100% |
 | Tools | 4 | 6 | 67% |
 | Containers | 5 | 5 | 100% |
-| NPCs | 2 | 8 | 25% |
-| Puzzles (working) | 3 | ~25 | 12% |
+| NPCs | 5 | 8 | 63% |
+| Puzzles (working) | 7 | ~25 | 28% |
 
 ---
 
 ## Priority Next Steps
 
-1. **Remaining NPCs** - Complete NPC roster:
-   - Cyclops: Speech handler (flees when named "Odysseus")
-   - Vampire bat: Attack daemon unless garlic present
-   - Spirits: Static blocker until exorcised
-2. **Remaining treasures** - Spheres, violin, grail, ruby, coins
-3. **Puzzle mechanics** - Riddle, loud room echo, exorcism, rainbow wave
-4. **Royal Puzzle** - 8x8 sliding block puzzle (see royal-puzzle.md)
+1. **Remaining treasures** - Spheres, violin, grail, ruby, coins, chalice
+2. **Puzzle mechanics** - Riddle, loud room echo, rainbow wave
+3. **Royal Puzzle** - 8x8 sliding block puzzle (see royal-puzzle.md)
+4. **Remaining NPCs** - Dungeon Master, Robot, Gnome
 5. **Endgame** (~15 rooms) - Final puzzle sequence
-6. **Round Room connections** - Need Grail Room, Winding Passage, Engravings Cave, N/S Passage
+6. **Additional regions** - Mirror rooms, remaining mine areas, library
 
 ## Recently Completed
 
+- ✅ **Exorcism Puzzle** (2025-12-29) - Bell/book/candle ritual to banish spirits at Entry to Hades
+- ✅ **RING Action** (2025-12-29) - Story-specific action for ringing the bell
+- ✅ **Spirits NPC** (2025-12-29) - Blocks south passage until exorcism, awards 10 points
+- ✅ **Vampire Bat** (2025-12-29) - Daemon that teleports player unless carrying garlic
+- ✅ **Cyclops NPC** (2025-12-29) - Say "Odysseus"/"Ulysses" to scare away, opens passage
+- ✅ **SAY Action** (2025-12-29) - Story-specific action for speech, routes to NPCs
+- ✅ **Transcript Tester Fix** (2025-12-29) - Now captures scheduler/NPC events properly
 - ✅ **Bank of Zork Puzzle** (2025-12-29) - Complete wall-walking puzzle with curtain, alarm daemon, and stone cube
 - ✅ **Parser Alias Matching** (2025-12-29) - Fixed ScopeEvaluator to match entities by IdentityTrait aliases
 - ✅ **Round Room Hub Connections** (2025-12-29) - Connected Engravings Cave, N/S Passage, Winding Passage, Cave regions

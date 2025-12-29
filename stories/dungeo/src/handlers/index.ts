@@ -5,3 +5,4 @@
  */
 
 export * from './bat-handler';
+export * from './exorcism-handler';

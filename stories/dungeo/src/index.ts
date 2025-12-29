@@ -29,14 +29,14 @@ import {
 import { DungeoScoringService } from './scoring';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages } from './actions';
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages } from './scheduler';
 import { setSchedulerForGDT } from './actions/gdt/commands';
 
 // Import handlers
-import { registerBatHandler, BatMessages } from './handlers';
+import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages } from './handlers';
 
 // Import room and object creators
 import { createWhiteHouseRooms, createWhiteHouseObjects, WhiteHouseRoomIds } from './regions/white-house';
@@ -377,6 +377,25 @@ export class DungeoStory implements Story {
       .mapsTo(SAY_ACTION_ID)
       .withPriority(155)
       .build();
+
+    // Ring action (Exorcism bell)
+    grammar
+      .define('ring :target')
+      .mapsTo(RING_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('ring bell')
+      .mapsTo(RING_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('ring the bell')
+      .mapsTo(RING_ACTION_ID)
+      .withPriority(155)
+      .build();
   }
 
   /**
@@ -511,6 +530,19 @@ export class DungeoStory implements Story {
     language.addMessage(BatMessages.CARRIES_AWAY, 'The bat carries you off into the darkness...');
     language.addMessage(BatMessages.COWERS, 'The vampire bat cowers away from you, repelled by the smell of garlic!');
     language.addMessage(BatMessages.DROPPED, 'The bat drops you unceremoniously.');
+
+    // Ring action messages
+    language.addMessage(RingMessages.RING_SUCCESS, 'Ding!');
+    language.addMessage(RingMessages.RING_BELL, 'The bell produces a clear, resonant tone.');
+    language.addMessage(RingMessages.NOT_RINGABLE, "That doesn't make a sound when rung.");
+    language.addMessage(RingMessages.NO_TARGET, 'Ring what?');
+
+    // Exorcism messages
+    language.addMessage(ExorcismMessages.SPIRITS_BLOCK, 'Ghostly figures bar your way, their hollow eyes staring through you. They will not let you pass.');
+    language.addMessage(ExorcismMessages.SPIRITS_VANISH, 'The spirits shriek in terror and vanish in a blinding flash of light!');
+    language.addMessage(ExorcismMessages.PASSAGE_OPENS, 'The way to the south is now clear.');
+    language.addMessage(ExorcismMessages.BELL_ECHOES, 'The bell echoes through the chamber.');
+    language.addMessage(ExorcismMessages.RITUAL_PROGRESS, 'You feel a strange energy building...');
   }
 
   /**
@@ -641,6 +673,14 @@ export class DungeoStory implements Story {
         this.mazeIds.maze11,
       ];
       registerBatHandler(scheduler, this.coalMineIds.batRoom, batDropLocations);
+
+      // Register exorcism handler (bell/book/candle puzzle)
+      registerExorcismHandler(
+        scheduler,
+        this.world,
+        this.templeIds.entryToHades,
+        this.templeIds.landOfDead
+      );
     }
 
     // Register NPCs (ADR-070)

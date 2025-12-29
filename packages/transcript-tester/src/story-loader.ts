@@ -118,6 +118,12 @@ export function createTestableGame(story: any): TestableGame {
     outputBuffer.push(text);
   });
 
+  // Capture ALL events through the event emitter (includes scheduler/NPC events)
+  let eventBuffer: SequencedEvent[] = [];
+  engine.on('event', (event: SequencedEvent) => {
+    eventBuffer.push(event);
+  });
+
   // Create the testable game interface
   const testableGame: TestableGame = {
     engine,
@@ -128,6 +134,7 @@ export function createTestableGame(story: any): TestableGame {
 
     async executeCommand(input: string): Promise<string> {
       outputBuffer = [];
+      eventBuffer = []; // Reset event buffer for this command
       lastEvents = [];
       lastTurnResult = null;
 
@@ -135,7 +142,8 @@ export function createTestableGame(story: any): TestableGame {
         const result = await engine.executeTurn(input);
         if (result) {
           lastTurnResult = result;
-          lastEvents = result.events || [];
+          // Use eventBuffer which captures ALL events (action + NPC + scheduler)
+          lastEvents = eventBuffer;
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);

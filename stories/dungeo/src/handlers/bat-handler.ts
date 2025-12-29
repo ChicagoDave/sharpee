@@ -91,15 +91,12 @@ export function registerBatHandler(
 
     // Only run when player is in or just entered the Bat Room
     condition: (context: SchedulerContext): boolean => {
-      const result = context.playerLocation === batRoomId;
-      console.log(`[BAT DEBUG] condition: playerLocation=${context.playerLocation}, batRoomId=${batRoomId}, result=${result}`);
-      return result;
+      return context.playerLocation === batRoomId;
     },
 
     run: (context: SchedulerContext): ISemanticEvent[] => {
       const { world, playerId, playerLocation } = context;
       const events: ISemanticEvent[] = [];
-      console.log(`[BAT DEBUG] run called: playerId=${playerId}, playerLocation=${playerLocation}`);
 
       // Check if we already acted this turn
       if (world.getStateValue(BAT_ACTED_KEY)) {
@@ -189,7 +186,7 @@ export function registerBatHandler(
   const resetDaemon: Daemon = {
     id: 'dungeo-bat-reset',
     name: 'Bat State Reset',
-    priority: 200, // Run after everything else
+    priority: -100, // Run AFTER bat daemon (lower priority = runs later)
 
     condition: (_context: SchedulerContext): boolean => {
       return true; // Always run
