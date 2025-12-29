@@ -12,7 +12,8 @@ import {
   IdentityTrait,
   EntityType,
   SceneryTrait,
-  OpenableTrait
+  OpenableTrait,
+  ReadableTrait
 } from '@sharpee/world-model';
 import { BankRoomIds } from '../index';
 
@@ -23,10 +24,17 @@ export function createBankObjects(world: WorldModel, roomIds: BankRoomIds): void
   createZorkmidCoin(world, roomIds.smallRoom);
 
   // Scenery
+  createStoneCube(world, roomIds.safetyDeposit);
+  createShimmeringCurtain(world, roomIds.safetyDeposit);
   createVelvetCurtain(world, roomIds.viewingRoom);
   createMahoganyDesk(world, roomIds.chairmansOffice);
   createBrassPlaque(world, roomIds.bankEntrance);
   createVaultDoor(world, roomIds.safetyDeposit);
+
+  // Walls for walk-through puzzle
+  createNorthWall(world, roomIds.safetyDeposit);
+  createNorthWall(world, roomIds.vault);
+  createSouthWall(world, roomIds.smallRoom);
 }
 
 function createPortrait(world: WorldModel, roomId: string): IFEntity {
@@ -133,4 +141,69 @@ function createVaultDoor(world: WorldModel, roomId: string): IFEntity {
   door.add(new OpenableTrait({ isOpen: true }));
   world.moveEntity(door.id, roomId);
   return door;
+}
+
+function createStoneCube(world: WorldModel, roomId: string): IFEntity {
+  const cube = world.createEntity('stone cube', EntityType.ITEM);
+  cube.add(new IdentityTrait({
+    name: 'stone cube',
+    aliases: ['cube', 'large cube', 'large stone cube', 'lettering', 'engraving'],
+    description: 'A large stone cube, about 10 feet on a side. Engraved on the side of the cube is some lettering.',
+    properName: false,
+    article: 'a'
+  }));
+  cube.add(new SceneryTrait());
+  // Make the cube readable with the vault information
+  cube.add(new ReadableTrait({
+    text: `             Bank of Zork
+                VAULT
+              *722 GUE*
+       Frobozz Magic Vault Company`
+  }));
+  world.moveEntity(cube.id, roomId);
+  return cube;
+}
+
+function createShimmeringCurtain(world: WorldModel, roomId: string): IFEntity {
+  const curtain = world.createEntity('shimmering curtain', EntityType.ITEM);
+  curtain.add(new IdentityTrait({
+    name: 'shimmering curtain',
+    aliases: ['curtain', 'curtain of light', 'shimmering curtain of light', 'light'],
+    description: 'The northern "wall" of the room is a shimmering curtain of light. It seems almost tangible, yet ethereal at the same time.',
+    properName: false,
+    article: 'a'
+  }));
+  curtain.add(new SceneryTrait());
+  // The curtain can be walked through - this will be handled by custom action
+  (curtain as any).isPassable = true;
+  world.moveEntity(curtain.id, roomId);
+  return curtain;
+}
+
+function createNorthWall(world: WorldModel, roomId: string): IFEntity {
+  const wall = world.createEntity('north wall', EntityType.SCENERY);
+  wall.add(new IdentityTrait({
+    name: 'north wall',
+    aliases: ['north wall', 'n wall', 'northern wall'],
+    description: 'The north wall looks solid but somehow insubstantial.',
+    properName: false,
+    article: 'the'
+  }));
+  wall.add(new SceneryTrait());
+  world.moveEntity(wall.id, roomId);
+  return wall;
+}
+
+function createSouthWall(world: WorldModel, roomId: string): IFEntity {
+  const wall = world.createEntity('south wall', EntityType.SCENERY);
+  wall.add(new IdentityTrait({
+    name: 'south wall',
+    aliases: ['south wall', 's wall', 'southern wall'],
+    description: 'The south wall looks solid but somehow insubstantial.',
+    properName: false,
+    article: 'the'
+  }));
+  wall.add(new SceneryTrait());
+  world.moveEntity(wall.id, roomId);
+  return wall;
 }

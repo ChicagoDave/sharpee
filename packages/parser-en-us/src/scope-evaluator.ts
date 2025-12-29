@@ -157,6 +157,40 @@ export class ScopeEvaluator {
   }
 
   /**
+   * Get entity names and aliases for matching
+   * Supports both legacy attributes.name and IdentityTrait patterns
+   */
+  private static getEntityNames(entity: IEntity): string[] {
+    const names: string[] = [];
+
+    // Check attributes (legacy pattern)
+    if (entity.attributes) {
+      if (entity.attributes.displayName) {
+        names.push(String(entity.attributes.displayName));
+      }
+      if (entity.attributes.name) {
+        names.push(String(entity.attributes.name));
+      }
+    }
+
+    // Check IdentityTrait (via .get() method)
+    if (typeof (entity as any).get === 'function') {
+      const identity = (entity as any).get('identity');
+      if (identity && typeof identity === 'object') {
+        if (identity.name) {
+          names.push(String(identity.name));
+        }
+        // Also check aliases
+        if (Array.isArray(identity.aliases)) {
+          names.push(...identity.aliases.map(String));
+        }
+      }
+    }
+
+    return names;
+  }
+
+  /**
    * Find entities by name in a given scope
    */
   static findEntitiesByName(
@@ -165,23 +199,24 @@ export class ScopeEvaluator {
     context: GrammarContext
   ): IEntity[] {
     const entitiesInScope = this.getEntitiesInScope(constraint, context);
-    
-    // Try exact match first
+    const searchName = name.toLowerCase();
+
+    // Try exact match first (name or any alias)
     const exactMatches = entitiesInScope.filter(e => {
-      if (!e || !e.attributes) return false;
-      const entityName = (e.attributes.displayName || e.attributes.name || '') as string;
-      return entityName.toLowerCase() === name.toLowerCase();
+      if (!e) return false;
+      const names = this.getEntityNames(e);
+      return names.some(n => n.toLowerCase() === searchName);
     });
-    
+
     if (exactMatches.length > 0) {
       return exactMatches;
     }
 
     // Try partial match
     const partialMatches = entitiesInScope.filter(e => {
-      if (!e || !e.attributes) return false;
-      const entityName = (e.attributes.displayName || e.attributes.name || '') as string;
-      return entityName.toLowerCase().includes(name.toLowerCase());
+      if (!e) return false;
+      const names = this.getEntityNames(e);
+      return names.some(n => n.toLowerCase().includes(searchName));
     });
 
     return partialMatches;

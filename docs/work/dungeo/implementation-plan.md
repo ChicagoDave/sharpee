@@ -413,7 +413,7 @@
 | Coal mine | Navigate maze | ✅ Done | Coal, bracelet |
 | Royal Puzzle | Push sandstone blocks | ❌ | Gold card |
 | Mirror box | Push panels, pole | ❌ | Dungeon entrance |
-| Bank | Enter walls, use curtain | 🚧 Partial | Portrait, bills |
+| Bank | Enter walls, use curtain | ✅ Done | Portrait, bills |
 
 ### Item Manipulation Puzzles
 
@@ -510,7 +510,7 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 | Tools | 4 | 6 | 67% |
 | Containers | 5 | 5 | 100% |
 | NPCs | 2 | 8 | 25% |
-| Puzzles (working) | 2 | ~25 | 8% |
+| Puzzles (working) | 3 | ~25 | 12% |
 
 ---
 
@@ -528,6 +528,9 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Recently Completed
 
+- ✅ **Bank of Zork Puzzle** (2025-12-29) - Complete wall-walking puzzle with curtain, alarm daemon, and stone cube
+- ✅ **Parser Alias Matching** (2025-12-29) - Fixed ScopeEvaluator to match entities by IdentityTrait aliases
+- ✅ **Round Room Hub Connections** (2025-12-29) - Connected Engravings Cave, N/S Passage, Winding Passage, Cave regions
 - ✅ **Maze Region** (2025-12-29) - 23 rooms: 15 maze rooms, 5 dead ends, Grating Room, Cyclops Room, Treasure Room
 - ✅ **Maze Connections** - Fixed Troll Room WEST→Maze, Round Room SW→Maze, all internal connections
 - ✅ **Thief NPC** - Full Mainframe Zork behavior: wandering, stealing, egg-opening, combat, lair stashing

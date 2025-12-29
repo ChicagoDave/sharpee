@@ -29,7 +29,7 @@ import {
 import { DungeoScoringService } from './scoring';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages } from './actions';
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages } from './scheduler';
@@ -39,7 +39,7 @@ import { setSchedulerForGDT } from './actions/gdt/commands';
 import { createWhiteHouseRooms, createWhiteHouseObjects, WhiteHouseRoomIds } from './regions/white-house';
 import { createHouseInteriorRooms, createHouseInteriorObjects, connectHouseInteriorToExterior, HouseInteriorRoomIds } from './regions/house-interior';
 import { createForestRooms, createForestObjects, connectForestToExterior, ForestRoomIds } from './regions/forest';
-import { createUndergroundRooms, createUndergroundObjects, connectUndergroundToHouse, connectStudioToKitchen, UndergroundRoomIds } from './regions/underground';
+import { createUndergroundRooms, createUndergroundObjects, connectUndergroundToHouse, connectStudioToKitchen, connectUndergroundToDam, connectGrailRoomToTemple, connectCaveToHades, UndergroundRoomIds } from './regions/underground';
 import { createDamRooms, connectDamToUnderground, createDamObjects, DamRoomIds } from './regions/dam';
 import { createCoalMineRooms, connectCoalMineToDam, createCoalMineObjects, CoalMineRoomIds } from './regions/coal-mine';
 import { createTempleRooms, connectTempleToDam, createTempleObjects, TempleRoomIds } from './regions/temple';
@@ -130,13 +130,25 @@ export class DungeoStory implements Story {
     connectCoalMineToDam(world, this.coalMineIds, this.damIds.maintenanceRoom);
     connectTempleToDam(world, this.templeIds, this.damIds.reservoirSouth);
     connectVolcanoToCoalMine(world, this.volcanoIds, this.coalMineIds.batRoom);
-    connectBankToUnderground(world, this.bankIds, this.undergroundIds.roundRoom);
+    connectBankToUnderground(world, this.bankIds, this.undergroundIds.cellar, this.undergroundIds.gallery);
+
+    // Store bank room IDs in world state for walk-through action
+    world.setStateValue('dungeo.bank.roomIds', this.bankIds);
     connectWellRoomToTemple(world, this.wellRoomIds, this.templeIds.torchRoom);
     connectFrigidRiverToDam(world, this.frigidRiverIds, this.damIds.damBase);
     connectMazeToClearing(world, this.mazeIds, this.forestIds.clearing);
     connectCyclopsToLivingRoom(world, this.mazeIds, this.houseInteriorIds.livingRoom);
     connectMazeToTrollRoom(world, this.mazeIds, this.undergroundIds.trollRoom);
     connectMazeToRoundRoom(world, this.mazeIds, this.undergroundIds.roundRoom);
+
+    // Connect Round Room hub area to Dam region (N/S Passage, Damp Cave, Loud Room)
+    connectUndergroundToDam(world, this.undergroundIds, this.damIds.loudRoom);
+
+    // Connect Grail Room to Temple
+    connectGrailRoomToTemple(world, this.undergroundIds, this.templeIds.temple);
+
+    // Connect Cave to Entry to Hades (default connection - mirror puzzle)
+    connectCaveToHades(world, this.undergroundIds, this.templeIds.entryToHades);
 
     // Create all objects and place them in rooms
     createWhiteHouseObjects(world, this.whiteHouseIds);
@@ -295,6 +307,51 @@ export class DungeoStory implements Story {
         .withPriority(252)
         .build();
     }
+
+    // Walk through action (Bank of Zork puzzle)
+    // "walk through curtain", "walk through north wall", "go through curtain", etc.
+    grammar
+      .define('walk through :target')
+      .mapsTo(WALK_THROUGH_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('go through :target')
+      .mapsTo(WALK_THROUGH_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('pass through :target')
+      .mapsTo(WALK_THROUGH_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    // Explicit patterns for walls (higher priority)
+    grammar
+      .define('walk through south wall')
+      .mapsTo(WALK_THROUGH_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('walk through north wall')
+      .mapsTo(WALK_THROUGH_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('go through south wall')
+      .mapsTo(WALK_THROUGH_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('go through north wall')
+      .mapsTo(WALK_THROUGH_ACTION_ID)
+      .withPriority(155)
+      .build();
   }
 
   /**
@@ -316,6 +373,11 @@ export class DungeoStory implements Story {
     language.addMessage(GDTEventTypes.EXITED, '{message}');
     language.addMessage(GDTEventTypes.OUTPUT, '{output}');
     language.addMessage(GDTEventTypes.UNKNOWN_COMMAND, '{message}');
+
+    // Bank of Zork puzzle messages
+    language.addMessage(BankPuzzleMessages.WALK_THROUGH, 'You feel somewhat disoriented as you pass through...');
+    language.addMessage(BankPuzzleMessages.NO_WALL, "I can't see any {direction} wall here.");
+    language.addMessage(BankPuzzleMessages.CANT_WALK_THROUGH, "You can't walk through that.");
 
     // Scheduler messages (ADR-071)
     // Lantern battery
@@ -499,7 +561,8 @@ export class DungeoStory implements Story {
         scheduler,
         this.world,
         this.forestIds,
-        this.damIds
+        this.damIds,
+        this.bankIds
       );
 
       // Make scheduler accessible to GDT DC command

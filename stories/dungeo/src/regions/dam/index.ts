@@ -68,26 +68,28 @@ export { createDamObjects } from './objects';
  * See README.md for connection diagram
  */
 function connectDamRooms(world: WorldModel, roomIds: DamRoomIds): void {
-  // Loud Room: UP to Deep Canyon
+  // Loud Room: internal connections only
+  // UP → Damp Cave and SW → N/S Passage are set externally by connectUndergroundToDam
   const loudRoom = world.getEntity(roomIds.loudRoom);
   if (loudRoom) {
     const roomTrait = loudRoom.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
-        [Direction.UP]: { destination: roomIds.deepCanyon },
-        // SOUTH to Round Room - connected externally
+        // SOUTH to Round Room - connected externally by connectDamToUnderground
+        // UP to Damp Cave - connected externally by connectUndergroundToDam
       };
     }
   }
 
-  // Deep Canyon: DOWN to Loud Room, NORTH to Dam Lobby
+  // Deep Canyon: SE to Round Room (via external), NORTH to Dam Lobby
+  // Note: Deep Canyon is accessed from Round Room NW, so the return is SE
   const deepCanyon = world.getEntity(roomIds.deepCanyon);
   if (deepCanyon) {
     const roomTrait = deepCanyon.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
-        [Direction.DOWN]: { destination: roomIds.loudRoom },
         [Direction.NORTH]: { destination: roomIds.damLobby },
+        // SOUTHEAST to Round Room - connected externally by connectDamToUnderground
       };
     }
   }
@@ -167,27 +169,30 @@ function connectDamRooms(world: WorldModel, roomIds: DamRoomIds): void {
 
 /**
  * Connect Dam region to Round Room (external connection)
+ *
+ * Note: Round Room NW → Deep Canyon (per map-connections.md)
+ * Loud Room is accessed via N/S Passage (underground region), not directly from Round Room.
  */
 export function connectDamToUnderground(
   world: WorldModel,
   damIds: DamRoomIds,
   roundRoomId: string
 ): void {
-  // Round Room NORTH to Loud Room
+  // Round Room NW → Deep Canyon
   const roundRoom = world.getEntity(roundRoomId);
   if (roundRoom) {
     const roomTrait = roundRoom.get(RoomTrait);
     if (roomTrait) {
-      roomTrait.exits[Direction.NORTH] = { destination: damIds.loudRoom };
+      roomTrait.exits[Direction.NORTHWEST] = { destination: damIds.deepCanyon };
     }
   }
 
-  // Loud Room SOUTH to Round Room
-  const loudRoom = world.getEntity(damIds.loudRoom);
-  if (loudRoom) {
-    const roomTrait = loudRoom.get(RoomTrait);
+  // Deep Canyon SE → Round Room
+  const deepCanyon = world.getEntity(damIds.deepCanyon);
+  if (deepCanyon) {
+    const roomTrait = deepCanyon.get(RoomTrait);
     if (roomTrait) {
-      roomTrait.exits[Direction.SOUTH] = { destination: roundRoomId };
+      roomTrait.exits[Direction.SOUTHEAST] = { destination: roundRoomId };
     }
   }
 }

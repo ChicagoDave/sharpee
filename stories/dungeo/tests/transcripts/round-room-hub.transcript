@@ -1,0 +1,145 @@
+title: Round Room Hub Navigation
+story: dungeo
+description: Test Round Room hub area rooms and connections per map-connections.md
+
+---
+
+# Start with GDT to get lantern and teleport to Round Room
+> gdt
+[OK: contains "GDT"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+# Exit GDT to turn on lantern, then re-enter
+> ex
+[OK: contains "Returning"]
+
+> turn on lantern
+[OK: contains "on"]
+
+> gdt
+[OK: contains "GDT"]
+
+> ah round room
+[OK: contains "Teleported to"]
+
+# Test exits from Round Room - lantern should be lit now
+> look
+[OK: contains "Round Room"]
+
+# Go NE to North-South Passage
+> ne
+[OK: contains "North-South Passage"]
+
+# Go back to Round Room (SW - opposite of NE)
+> sw
+[OK: contains "Round Room"]
+
+# Go NW to Deep Canyon
+> nw
+[OK: contains "Deep Canyon"]
+
+# Go back to Round Room (SE - opposite of NW)
+> se
+[OK: contains "Round Room"]
+
+# Go E to Grail Room
+> e
+[OK: contains "Grail Room"]
+
+# Go back to Round Room (W - opposite of E)
+> w
+[OK: contains "Round Room"]
+
+# Go SE to Winding Passage
+> se
+[OK: contains "Winding Passage"]
+
+# Go E to Mirror Room
+> e
+[OK: contains "Mirror Room"]
+
+# Go E to Cave
+> e
+[OK: contains "Cave"]
+
+# Go back to Mirror Room
+> w
+[OK: contains "Mirror Room"]
+
+# Go W to Winding Passage
+> w
+[OK: contains "Winding Passage"]
+
+# Test N from Winding Passage to Narrow Crawlway
+> n
+[OK: contains "Narrow Crawlway"]
+
+# Go N to Grail Room
+> n
+[OK: contains "Grail Room"]
+
+# Go up to Temple
+> u
+[OK: contains "Temple"]
+
+# Go back down to Grail Room
+> d
+[OK: contains "Grail Room"]
+
+# Back to Round Room via W
+> w
+[OK: contains "Round Room"]
+
+# Note: Round Room S currently goes to East of Chasm (Bank connection overwrites)
+# Test Engravings Cave via teleport instead
+> ah engravings cave
+[OK: contains "Teleported to"]
+
+# Go SE to Riddle Room
+> se
+[OK: contains "Riddle Room"]
+
+# Go back via down
+> d
+[OK: contains "Engravings Cave"]
+
+# Go N back to Round Room
+> n
+[OK: contains "Round Room"]
+
+# Go NE to N/S Passage
+> ne
+[OK: contains "North-South Passage"]
+
+# Go NE to Loud Room
+> ne
+[OK: contains "Loud Room"]
+
+# Go up to Damp Cave
+> u
+[OK: contains "Damp Cave"]
+
+# Go S back to Loud Room
+> s
+[OK: contains "Loud Room"]
+
+# Go SW to N/S Passage
+> sw
+[OK: contains "North-South Passage"]
+
+# Go SW back to Round Room
+> sw
+[OK: contains "Round Room"]
+
+# Test Cave to Entry to Hades
+> ah cave
+[OK: contains "Teleported to"]
+
+> d
+[OK: contains "Entrance to Hades"]
+
+# Exit GDT
+> ex
+[OK: contains "Returning"]

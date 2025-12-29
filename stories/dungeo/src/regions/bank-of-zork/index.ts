@@ -84,26 +84,30 @@ function connectBankRooms(world: WorldModel, roomIds: BankRoomIds): void {
     }
   }
 
-  // West of Chasm - leads to bank entrance
+  // West of Chasm - connects Cellar to Gallery (main passage)
+  // Per play transcript: W→Cellar, S→Gallery, N/E continue path
   const westOfChasm = world.getEntity(roomIds.westOfChasm);
   if (westOfChasm) {
     const roomTrait = westOfChasm.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
         [Direction.EAST]: { destination: roomIds.eastOfChasm },
-        [Direction.SOUTH]: { destination: roomIds.bankEntrance }
+        // W → Cellar - connected externally
+        // S → Gallery - connected externally
       };
     }
   }
 
-  // Bank Entrance
+  // Bank Entrance - "large entrance hall of the Bank of Zork"
+  // Per play transcript: E→Gallery, NW→West Viewing, NE→East Viewing
   const bankEntrance = world.getEntity(roomIds.bankEntrance);
   if (bankEntrance) {
     const roomTrait = bankEntrance.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
-        [Direction.NORTH]: { destination: roomIds.westOfChasm },
-        [Direction.SOUTH]: { destination: roomIds.bankLobby }
+        // E → Gallery - connected externally
+        [Direction.NORTHWEST]: { destination: roomIds.westTeller },  // West viewing area
+        [Direction.NORTHEAST]: { destination: roomIds.eastTeller },  // East viewing area
       };
     }
   }
@@ -121,13 +125,15 @@ function connectBankRooms(world: WorldModel, roomIds: BankRoomIds): void {
     }
   }
 
-  // West Teller
+  // West Teller's Room - small square room
+  // Per transcript: W → Safety Depository, SE → Bank Entrance
   const westTeller = world.getEntity(roomIds.westTeller);
   if (westTeller) {
     const roomTrait = westTeller.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
-        [Direction.EAST]: { destination: roomIds.eastTeller }
+        [Direction.WEST]: { destination: roomIds.safetyDeposit },
+        [Direction.SOUTHEAST]: { destination: roomIds.bankEntrance }
       };
     }
   }
@@ -157,76 +163,103 @@ function connectBankRooms(world: WorldModel, roomIds: BankRoomIds): void {
     }
   }
 
-  // Safety Deposit Area
+  // Safety Depository - large rectangular room with cube and shimmering curtain
+  // Per transcript: E/W/S doorways, N is the curtain (not a normal exit)
   const safetyDeposit = world.getEntity(roomIds.safetyDeposit);
   if (safetyDeposit) {
     const roomTrait = safetyDeposit.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
-        [Direction.WEST]: { destination: roomIds.chairmansOffice },
-        [Direction.SOUTH]: { destination: roomIds.vault }
+        [Direction.EAST]: { destination: roomIds.westTeller },
+        [Direction.WEST]: { destination: roomIds.westTeller },
+        [Direction.SOUTH]: { destination: roomIds.chairmansOffice }
       };
     }
   }
 
-  // Vault
+  // Vault - NO normal exits, only via walk-through-walls
+  // "This is the Vault of the Bank of Zork, in which there are no doors."
   const vault = world.getEntity(roomIds.vault);
   if (vault) {
     const roomTrait = vault.get(RoomTrait);
     if (roomTrait) {
-      roomTrait.exits = {
-        [Direction.NORTH]: { destination: roomIds.safetyDeposit }
-      };
+      roomTrait.exits = {};  // No normal exits
     }
   }
 
-  // Viewing Room
+  // Viewing Room - reached via curtain after completing the wall-walk cycle
+  // Per transcript: S → Bank Entrance
   const viewingRoom = world.getEntity(roomIds.viewingRoom);
   if (viewingRoom) {
     const roomTrait = viewingRoom.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
-        [Direction.EAST]: { destination: roomIds.chairmansOffice },
-        [Direction.SOUTH]: { destination: roomIds.smallRoom }
+        [Direction.SOUTH]: { destination: roomIds.bankEntrance }
       };
     }
   }
 
-  // Small Room (behind curtain)
+  // Small Room - NO normal exits, only via walk-through-walls
+  // "This is a small bare room with no distinguishing features. There are no exits from this room."
   const smallRoom = world.getEntity(roomIds.smallRoom);
   if (smallRoom) {
     const roomTrait = smallRoom.get(RoomTrait);
     if (roomTrait) {
-      roomTrait.exits = {
-        [Direction.NORTH]: { destination: roomIds.viewingRoom }
-      };
+      roomTrait.exits = {};  // No normal exits
     }
   }
 }
 
 /**
- * Connect Bank of Zork to Underground (via Round Room)
+ * Connect Bank of Zork to Underground (via Cellar and Gallery)
+ *
+ * Per play transcript:
+ * - Cellar S → West of Chasm
+ * - West of Chasm W → Cellar, S → Gallery
+ * - Gallery N → West of Chasm, W → Bank Entrance
+ * - Bank Entrance E → Gallery
  */
 export function connectBankToUnderground(
   world: WorldModel,
   bankIds: BankRoomIds,
-  roundRoomId: string
+  cellarId: string,
+  galleryId: string
 ): void {
-  // East of Chasm connects north to Round Room
-  const eastOfChasm = world.getEntity(bankIds.eastOfChasm);
-  if (eastOfChasm) {
-    const roomTrait = eastOfChasm.get(RoomTrait);
+  // Cellar S → West of Chasm
+  const cellar = world.getEntity(cellarId);
+  if (cellar) {
+    const roomTrait = cellar.get(RoomTrait);
     if (roomTrait) {
-      roomTrait.exits[Direction.NORTH] = { destination: roundRoomId };
+      roomTrait.exits[Direction.SOUTH] = { destination: bankIds.westOfChasm };
     }
   }
 
-  // Round Room connects south to East of Chasm
-  const roundRoom = world.getEntity(roundRoomId);
-  if (roundRoom) {
-    const roomTrait = roundRoom.get(RoomTrait);
+  // West of Chasm W → Cellar, S → Gallery
+  const westOfChasm = world.getEntity(bankIds.westOfChasm);
+  if (westOfChasm) {
+    const roomTrait = westOfChasm.get(RoomTrait);
     if (roomTrait) {
-      roomTrait.exits[Direction.SOUTH] = { destination: bankIds.eastOfChasm };
+      roomTrait.exits[Direction.WEST] = { destination: cellarId };
+      roomTrait.exits[Direction.SOUTH] = { destination: galleryId };
+    }
+  }
+
+  // Gallery N → West of Chasm, W → Bank Entrance
+  const gallery = world.getEntity(galleryId);
+  if (gallery) {
+    const roomTrait = gallery.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits[Direction.NORTH] = { destination: bankIds.westOfChasm };
+      roomTrait.exits[Direction.WEST] = { destination: bankIds.bankEntrance };
+    }
+  }
+
+  // Bank Entrance E → Gallery
+  const bankEntrance = world.getEntity(bankIds.bankEntrance);
+  if (bankEntrance) {
+    const roomTrait = bankEntrance.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits[Direction.EAST] = { destination: galleryId };
     }
   }
 }

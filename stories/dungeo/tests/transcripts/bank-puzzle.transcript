@@ -1,0 +1,61 @@
+title: Bank of Zork Puzzle Test
+story: dungeo
+description: Tests room navigation, stone cube, walk-through action, and alarm system
+
+---
+
+# Use GDT to get lantern and teleport to Bank
+> gdt
+[OK: contains "GDT"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> ex
+[OK: contains "Returning"]
+
+> turn on lantern
+[OK: contains "on"]
+
+> gdt
+[OK: contains "GDT"]
+
+> ah West Teller's Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+> l
+[OK: contains "small square room"]
+
+# Navigate to Safety Depository
+> w
+[OK: contains "Safety Depository"]
+
+# Examine the stone cube
+> examine cube
+[OK: contains "stone cube"]
+
+# Read the cube inscription
+> read cube
+[OK: contains "Bank of Zork"]
+[OK: contains "VAULT"]
+[OK: contains "722 GUE"]
+
+# Test walk through curtain - should go to Small Room
+> walk through curtain
+[OK: contains "disoriented"]
+[OK: contains "Small Room"]
+
+# Verify Small Room has no exits
+> n
+[OK: contains "no"]
+
+# Look to see what's in the room
+> look
+[OK: contains "Small Room"]
+
+# Walk through south wall to return to Safety Depository
+> walk through south wall
+[OK: contains "disoriented"]

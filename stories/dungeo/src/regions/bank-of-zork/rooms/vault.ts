@@ -1,18 +1,19 @@
 /**
  * Vault - The main bank vault
  *
- * The innermost sanctum of the Bank of Zork,
- * where the most valuable deposits were kept.
+ * Accessible only via walking through walls from Safety Depository.
+ * Contains the zorkmid bills treasure.
  */
 import { WorldModel, IFEntity, IdentityTrait, RoomTrait, EntityType } from '@sharpee/world-model';
 
 export function createVault(world: WorldModel): IFEntity {
   const room = world.createEntity('Vault', EntityType.ROOM);
+  // NO normal exits - only accessible via walk-through-walls
   room.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: false }));
   room.add(new IdentityTrait({
     name: 'Vault',
-    aliases: ['vault', 'bank vault', 'main vault'],
-    description: 'You are inside the main vault of the Bank of Zork. The walls are lined with reinforced steel, and the air is stale from centuries of being sealed. Despite the security, most of the shelves stand empty, their contents presumably removed long ago. A few items remain scattered about.',
+    aliases: ['vault', 'bank vault'],
+    description: 'This is the Vault of the Bank of Zork, in which there are no doors.',
     properName: true,
     article: 'the'
   }));

@@ -151,3 +151,47 @@ E:Cave
 Atlantis Room
 SE: Reservoir North
 U:Cave
+
+Gallery
+W:Bank Entrance
+S:Studio
+N:West Chasm
+
+Bank Entrance
+NW:West Teller
+NE:East Teller
+S:Gallery
+
+West Teller
+N:Viewing Room
+W:Vault Room
+
+East Teller
+N:Viewing Room
+E:Vault Room
+
+Viewing Room
+S: Bank Entrance
+
+Safety Depository
+S:Chairman's Office
+"walk through north wall":Vault of Zork
+
+Chairman's Office
+N:Safety Depository
+
+Vault of Zork
+(this is a walkthrough since it's very confusing. I'll need to do a full play through with wrong choices to get all of the info)
+
+walk through north wall
+walk through south wall
+walk through north wall
+take bills
+walk through north wall
+drop all except torch
+w
+w
+take all
+walk through north wall
+s
+s - back to Gallery (you escaped!)

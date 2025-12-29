@@ -17,6 +17,7 @@ export {
   type DamState
 } from './dam-fuse';
 export { registerForestAmbienceDaemon, isForestAmbienceActive } from './forest-daemon';
+export { registerBankAlarmDaemon, isBankAlarmActive } from './bank-alarm-daemon';
 
 import { WorldModel } from '@sharpee/world-model';
 import { ISchedulerService } from '@sharpee/engine';
@@ -24,8 +25,10 @@ import { registerLanternFuse } from './lantern-fuse';
 import { registerCandleFuse } from './candle-fuse';
 import { registerDamHandlers } from './dam-fuse';
 import { registerForestAmbienceDaemon } from './forest-daemon';
+import { registerBankAlarmDaemon } from './bank-alarm-daemon';
 import { ForestRoomIds } from '../regions/forest';
 import { DamRoomIds } from '../regions/dam';
+import { BankRoomIds } from '../regions/bank-of-zork';
 
 /**
  * Register all scheduled events for Dungeo
@@ -34,12 +37,14 @@ import { DamRoomIds } from '../regions/dam';
  * @param world - The world model
  * @param forestRoomIds - IDs of forest rooms for ambience daemon
  * @param damRoomIds - IDs of dam rooms for draining sequence
+ * @param bankRoomIds - IDs of bank rooms for alarm daemon
  */
 export function registerScheduledEvents(
   scheduler: ISchedulerService,
   world: WorldModel,
   forestRoomIds: ForestRoomIds,
-  damRoomIds: DamRoomIds
+  damRoomIds: DamRoomIds,
+  bankRoomIds: BankRoomIds
 ): void {
   // Register light source fuses
   registerLanternFuse(scheduler, world);
@@ -51,6 +56,9 @@ export function registerScheduledEvents(
   // Register ambience daemons
   const forestRooms = Object.values(forestRoomIds);
   registerForestAmbienceDaemon(scheduler, forestRooms);
+
+  // Register bank alarm daemon
+  registerBankAlarmDaemon(scheduler, world, bankRoomIds);
 
   console.log('Dungeo scheduler: Registered all daemons and fuses');
 }

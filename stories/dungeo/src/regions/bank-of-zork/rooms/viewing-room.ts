@@ -1,7 +1,8 @@
 /**
- * Viewing Room - A room with curtains for private viewing
+ * Viewing Room - Where customers view their safety deposit contents
  *
- * Customers would come here to examine their valuables in private.
+ * Reached by walking through the curtain (after completing the wall-walk cycle).
+ * Contains the warning sign about the protective device.
  */
 import { WorldModel, IFEntity, IdentityTrait, RoomTrait, EntityType } from '@sharpee/world-model';
 
@@ -11,7 +12,7 @@ export function createViewingRoom(world: WorldModel): IFEntity {
   room.add(new IdentityTrait({
     name: 'Viewing Room',
     aliases: ['viewing room', 'viewing'],
-    description: 'You are in a small viewing room where bank customers could examine their valuables in private. A heavy velvet curtain hangs on the south wall. The exit is to the north.',
+    description: 'This is a room used by holders of safety deposit boxes to view their contents. On the north side of the room is a sign which says\n\nREMAIN HERE WHILE THE BANK OFFICER RETRIEVES YOUR DEPOSIT BOX\nWHEN YOU ARE FINISHED, LEAVE THE BOX, AND EXIT TO THE SOUTH\nAN ADVANCED PROTECTIVE DEVICE PREVENTS ALL CUSTOMERS FROM\nREMOVING ANY SAFETY DEPOSIT BOX FROM THIS VIEWING AREA!\nThank you for banking at the Zork!',
     properName: true,
     article: 'the'
   }));
