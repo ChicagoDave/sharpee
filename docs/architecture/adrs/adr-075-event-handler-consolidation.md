@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted (Revised 2025-12-28)
 
 ## Context
 
@@ -103,78 +103,106 @@ Story Handlers:
 3. Story handlers can't access world state (defeats purpose of daemons)
 4. GameEngine uses `(entity as any).on` - type safety erosion
 5. No documentation of which path events take
+6. **Handlers can bypass stdlib** - passing full WorldModel allows direct mutations
+
+### The Gatekeeper Problem
+
+Passing `WorldModel` to handlers violates a key architectural boundary:
+
+**stdlib is the gatekeeper** - Actions in stdlib validate and control all mutations to world state. If handlers receive full world access, they can:
+
+- Mutate state without validation
+- Bypass the action pattern (validate/execute/report)
+- Create hard-to-trace state changes
+- Break invariants that actions maintain
+
+Example of the problem:
+```typescript
+// Handler bypasses stdlib entirely
+on: {
+  'combat.death': (event, world) => {
+    world.scoring.addPoints(10);  // Direct mutation!
+    world.flags.set('troll-dead', true);  // No validation!
+  }
+}
+```
 
 ## Decision
 
-### Return to ADR-052 Principles with Corrections
+### Effects-Based Handler Pattern
 
-We consolidate to ADR-052's core design with one correction: **handlers receive world access**.
+Instead of passing world model to handlers, handlers return **effects** that are processed through proper channels. This preserves stdlib as the gatekeeper while giving handlers the expressiveness they need.
 
-ADR-052 didn't anticipate handlers needing to modify world state (scoring, unblocking exits, etc.). Adding `world` parameter is the right fix - handlers ARE game logic and need state access.
-
-### 1. Single Dispatch Location
-
-**EventProcessor owns all entity handler dispatch.**
-
-- Remove `GameEngine.dispatchEntityHandlers()` entirely
-- Route NPC and scheduler events through EventProcessor
-- EventProcessor already has correct target-only semantics per ADR-052
-
-### 2. Unified Handler Signature
-
-**All handlers receive `(event, world)`.** Remove `SimpleEventHandler`.
+### 1. Handler Signature: Query In, Effects Out
 
 ```typescript
 export type EntityEventHandler = (
   event: IGameEvent,
-  world: WorldModel
-) => void | ISemanticEvent[];
-```
+  query: WorldQuery  // Read-only access
+) => Effect[];
 
-Story handlers (daemons) need world access even more than entity handlers - they coordinate multi-entity logic.
-
-### 3. Typed Entity Handlers
-
-Add `on` as first-class typed property on IFEntity:
-
-```typescript
-export interface IFEntity {
-  id: EntityId;
-  name: string;
-  // ... existing properties
-
-  /**
-   * Event handlers for this entity.
-   * Called when this entity is the target of an event.
-   */
-  on?: IEventHandlers;
+// Read-only query interface
+export interface WorldQuery {
+  getEntity(id: EntityId): IFEntity | undefined;
+  getPlayer(): IFEntity;
+  getCurrentRoom(): IFEntity;
+  getScore(): number;
+  getFlag(name: string): boolean;
+  // No mutation methods!
 }
 ```
 
-Eliminate all `(entity as any).on` casts.
+Handlers can read state to make decisions, but cannot mutate directly.
 
-### 4. EventEmitter Gets World
+### 2. Effect Types
 
 ```typescript
-export class EventEmitter {
-  private world: WorldModel;
-  private handlers: Map<string, EntityEventHandler[]> = new Map();
+export type Effect =
+  | { type: 'score'; points: number; reason?: string }
+  | { type: 'flag'; name: string; value: boolean }
+  | { type: 'message'; id: string; data?: Record<string, unknown> }
+  | { type: 'emit'; event: SemanticEvent }
+  | { type: 'schedule'; daemon: string; turns: number }
+  | { type: 'unblock'; exit: string; room: EntityId };
+```
 
-  constructor(world: WorldModel) {
-    this.world = world;
-  }
+Effects are **intents**, not mutations. They describe what should happen, not how.
 
-  emit(event: IGameEvent): ISemanticEvent[] {
-    const handlers = this.handlers.get(event.type) || [];
-    for (const handler of handlers) {
-      const result = handler(event, this.world);
-      // ...
+### 3. Effect Processor
+
+A new `EffectProcessor` validates and applies effects:
+
+```typescript
+export class EffectProcessor {
+  constructor(
+    private world: WorldModel,
+    private eventProcessor: EventProcessor
+  ) {}
+
+  process(effects: Effect[]): void {
+    for (const effect of effects) {
+      switch (effect.type) {
+        case 'score':
+          this.world.scoring.addPoints(effect.points);
+          break;
+        case 'flag':
+          this.world.flags.set(effect.name, effect.value);
+          break;
+        case 'emit':
+          this.eventProcessor.processEvents([effect.event]);
+          break;
+        // ... validated processing for each effect type
+      }
     }
   }
 }
 ```
 
-### Corrected Event Flow
+The EffectProcessor is the **only** place effects become mutations. It can validate, log, and ensure consistency.
+
+### 4. Single Dispatch Location
+
+**EventProcessor owns all handler dispatch.** Remove `GameEngine.dispatchEntityHandlers()`.
 
 ```
 Player Command
@@ -185,67 +213,116 @@ Player Command
 │ action.execute()│
 │       │         │
 │       ▼         │
-│ EventProcessor  │──────► invokeEntityHandlers(target only)
-│ .processEvents()│        Handler gets (event, world)
+│ EventProcessor  │──────► invokeEntityHandlers(target)
+│ .processEvents()│        Handler gets (event, query)
+│       │         │        Handler returns Effect[]
+│       ▼         │
+│ EffectProcessor │──────► Validated mutations
+│ .process()      │
 └────────┬────────┘
          │
          ▼
 ┌─────────────────────────────────────────────┐
 │   GameEngine.executeTurn()                  │
 │       │                                     │
-│       ├── Action events: NO dispatch        │
-│       │   (already done by EventProcessor)  │
-│       │                                     │
 │       ├── NPC events ────► EventProcessor   │
-│       │                    .processEvents() │
 │       │                                     │
-│       └── Scheduler events ► EventProcessor │
-│                             .processEvents()│
+│       └── Scheduler ─────► EventProcessor   │
 └─────────────────────────────────────────────┘
+```
 
-Story Handlers (daemons):
-┌─────────────────┐
-│ EventEmitter    │──────► EntityEventHandler(event, world)
-│ (with world)    │        Full world access for daemons
-└─────────────────┘
+### 5. Daemons Also Return Effects
+
+Daemons (scheduled tasks) follow the same pattern:
+
+```typescript
+export interface Daemon {
+  id: string;
+  tick(query: WorldQuery): Effect[];
+}
+
+// Example: lantern daemon
+const lanternDaemon: Daemon = {
+  id: 'lantern-fuel',
+  tick(query) {
+    const lantern = query.getEntity('lantern');
+    if (lantern?.traits.lightSource?.fuel <= 0) {
+      return [
+        { type: 'emit', event: { type: 'lantern.died', target: 'lantern' } },
+        { type: 'flag', name: 'in-darkness', value: true }
+      ];
+    }
+    // Fuel decrement is a mutation - must be an effect
+    return [{ type: 'fuel', entity: 'lantern', delta: -1 }];
+  }
+};
 ```
 
 ## Implementation
 
-### Phase 1: Unify Types
+### Phase 1: Define Effect System
 
-1. Remove `SimpleEventHandler` from `world-model/src/events/types.ts`
-2. Add `on?: IEventHandlers` to `IFEntity` interface
-3. Update `EventEmitter` to require `WorldModel` in constructor
-4. Update `StoryWithEvents` to create EventEmitter in `initializeWorld()`
+1. Create `Effect` type union in `world-model/src/effects/types.ts`
+2. Create `WorldQuery` interface (read-only view of WorldModel)
+3. Create `EffectProcessor` class
+4. Update `EntityEventHandler` signature to `(event, query) => Effect[]`
 
-### Phase 2: Consolidate Dispatch
+### Phase 2: Update Handlers
 
-5. Update `GameEngine` to route NPC/scheduler events through `EventProcessor`
-6. Remove `GameEngine.dispatchEntityHandlers()` method entirely
-7. Ensure EventProcessor handles events without targets gracefully (no-op)
+5. Update troll death handler to return effects
+6. Update any other entity handlers to return effects
+7. Update EventProcessor to collect and process effects
 
-### Phase 3: Document
+### Phase 3: Consolidate Dispatch
 
-8. Create event catalog documentation
-9. Update this ADR with final event flow diagram
+8. Route NPC/scheduler events through EventProcessor
+9. Remove `GameEngine.dispatchEntityHandlers()` entirely
+10. Update daemons to return effects
+
+### Phase 4: Remove Dead Code
+
+11. Remove `SimpleEventHandler` type
+12. Remove world parameter from handler signatures
+13. Update EventEmitter to use new pattern
 
 ## Consequences
 
 ### Positive
 
-- Returns to ADR-052's coherent single-dispatch design
-- All handlers have consistent `(event, world)` signature
-- Story handlers (daemons) can properly access world state
-- Type-safe handler registration
-- Single documented event flow
+- **stdlib remains gatekeeper** - All mutations flow through validated channels
+- **Handlers are pure** - Given event + query, return effects (testable!)
+- **Single dispatch** - EventProcessor owns all handler invocation
+- **Auditable** - EffectProcessor can log all mutations
+- **Extensible** - New effect types don't require signature changes
 
 ### Negative
 
-- EventEmitter requires WorldModel at construction
-- Story must call `initializeWorld()` before registering handlers
+- More ceremony for simple handlers (must return effects array)
+- Effect types must be defined upfront
+- Two-phase processing (collect effects, then apply)
+
+### Trade-offs
+
+| Direct World Access | Effects Pattern |
+|---------------------|-----------------|
+| Simpler handler code | More structured |
+| Easy to bypass validation | Forced through gatekeeper |
+| Hard to test (side effects) | Pure functions (easy to test) |
+| Mutations scattered | Mutations centralized |
 
 ## Alternatives Considered
+
+### Pass Full WorldModel (Original ADR-075)
+
+Give handlers `(event, world)` signature.
+
+**Rejected**: Bypasses stdlib gatekeeper. Handlers can mutate freely without validation.
+
+### Read-Only World + Mutation Callbacks
+
+Pass read-only world plus specific mutation functions.
+
+**Rejected**: Still allows direct mutation, just with indirection. Doesn't solve the gatekeeper problem.
 
 ### Keep Both Dispatch Mechanisms
 
@@ -253,21 +330,10 @@ Document when each is used.
 
 **Rejected**: Violates ADR-052 design. Confusing, error-prone.
 
-### Return to ADR-052 Exactly (No World Parameter)
-
-Keep original `(event) => EventResult` signature.
-
-**Rejected**: Handlers need world access for scoring, state changes, multi-entity coordination. This was a gap in ADR-052.
-
-### Actions Invoke Handlers Directly (Pure ADR-052)
-
-Move dispatch back into actions.
-
-**Rejected**: EventProcessor provides clean separation. Actions shouldn't know about handler dispatch - they emit events, processor handles reactions.
-
 ## References
 
-- `ADR-052: Event Handlers and Custom Logic` - Original design this consolidation returns to
-- `docs/work/dungeo/events-assessment.md` - Critical assessment that prompted this ADR
-- `packages/event-processor/src/processor.ts` - EventProcessor (correct implementation)
+- `ADR-052: Event Handlers and Custom Logic` - Original design
+- `docs/work/dungeo/events-assessment.md` - Critical assessment
+- `docs/work/dungeo/event-flow-diagram.md` - Visual sequence diagrams
+- `packages/event-processor/src/processor.ts` - EventProcessor
 - `packages/engine/src/game-engine.ts` - GameEngine dispatch (to be removed)
