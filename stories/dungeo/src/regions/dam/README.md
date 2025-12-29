@@ -39,6 +39,7 @@ graph TD
 
 | Object | Location | Purpose |
 |--------|----------|---------|
+| Platinum Bar | Loud Room | Treasure (10 points), heavy |
 | Guidebook | Dam Lobby | Explains dam history and controls |
 | Control Panel | Maintenance Room | Opens/closes sluice gates |
 | Wrench | Maintenance Room | Loosens bolt on panel |

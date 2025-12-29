@@ -33,6 +33,9 @@ import { createHouseInteriorRooms, createHouseInteriorObjects, connectHouseInter
 import { createForestRooms, createForestObjects, connectForestToExterior, ForestRoomIds } from './regions/forest';
 import { createUndergroundRooms, createUndergroundObjects, connectUndergroundToHouse, UndergroundRoomIds } from './regions/underground';
 import { createDamRooms, connectDamToUnderground, createDamObjects, DamRoomIds } from './regions/dam';
+import { createCoalMineRooms, connectCoalMineToDam, createCoalMineObjects, CoalMineRoomIds } from './regions/coal-mine';
+import { createTempleRooms, connectTempleToDam, createTempleObjects, TempleRoomIds } from './regions/temple';
+import { createVolcanoRooms, connectVolcanoToCoalMine, createVolcanoObjects, VolcanoRoomIds } from './regions/volcano';
 
 /**
  * Dungeo story configuration
@@ -58,6 +61,9 @@ export class DungeoStory implements Story {
   private forestIds: ForestRoomIds = {} as ForestRoomIds;
   private undergroundIds: UndergroundRoomIds = {} as UndergroundRoomIds;
   private damIds: DamRoomIds = {} as DamRoomIds;
+  private coalMineIds: CoalMineRoomIds = {} as CoalMineRoomIds;
+  private templeIds: TempleRoomIds = {} as TempleRoomIds;
+  private volcanoIds: VolcanoRoomIds = {} as VolcanoRoomIds;
 
   /**
    * Initialize the world for Dungeo
@@ -88,12 +94,18 @@ export class DungeoStory implements Story {
     this.forestIds = createForestRooms(world);
     this.undergroundIds = createUndergroundRooms(world);
     this.damIds = createDamRooms(world);
+    this.coalMineIds = createCoalMineRooms(world);
+    this.templeIds = createTempleRooms(world);
+    this.volcanoIds = createVolcanoRooms(world);
 
     // Connect regions
     connectHouseInteriorToExterior(world, this.houseInteriorIds, this.whiteHouseIds.behindHouse);
     connectForestToExterior(world, this.forestIds, this.whiteHouseIds.northOfHouse, this.whiteHouseIds.behindHouse);
     connectUndergroundToHouse(world, this.undergroundIds, this.houseInteriorIds.livingRoom);
     connectDamToUnderground(world, this.damIds, this.undergroundIds.roundRoom);
+    connectCoalMineToDam(world, this.coalMineIds, this.damIds.maintenanceRoom);
+    connectTempleToDam(world, this.templeIds, this.damIds.reservoirSouth);
+    connectVolcanoToCoalMine(world, this.volcanoIds, this.coalMineIds.batRoom);
 
     // Create all objects and place them in rooms
     createWhiteHouseObjects(world, this.whiteHouseIds);
@@ -101,6 +113,9 @@ export class DungeoStory implements Story {
     createForestObjects(world, this.forestIds);
     createUndergroundObjects(world, this.undergroundIds);
     createDamObjects(world, this.damIds);
+    createCoalMineObjects(world, this.coalMineIds);
+    createTempleObjects(world, this.templeIds);
+    createVolcanoObjects(world, this.volcanoIds);
 
     // Set initial player location to West of House
     const player = world.getPlayer();

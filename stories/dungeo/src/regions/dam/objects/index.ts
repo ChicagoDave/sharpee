@@ -20,6 +20,9 @@ import { DamRoomIds } from '../index';
  * Create all objects in the Dam region
  */
 export function createDamObjects(world: WorldModel, roomIds: DamRoomIds): void {
+  // Loud Room
+  createPlatinumBar(world, roomIds.loudRoom);
+
   // Dam Lobby
   createGuidebook(world, roomIds.damLobby);
 
@@ -148,4 +151,31 @@ function createTrunkOfJewels(world: WorldModel, roomId: string): IFEntity {
 
   world.moveEntity(trunk.id, roomId);
   return trunk;
+}
+
+/**
+ * Platinum Bar - Treasure in Loud Room
+ * Heavy bar that requires careful handling
+ */
+function createPlatinumBar(world: WorldModel, roomId: string): IFEntity {
+  const bar = world.createEntity('platinum bar', EntityType.ITEM);
+
+  bar.add(new IdentityTrait({
+    name: 'platinum bar',
+    aliases: ['bar', 'platinum', 'ingot', 'metal bar'],
+    description: 'This is a large bar of platinum, stamped "FROBOZZ MAGIC COMPANY".',
+    properName: false,
+    article: 'a'
+  }));
+
+  // Treasure scoring
+  (bar as any).isTreasure = true;
+  (bar as any).treasureId = 'platinum-bar';
+  (bar as any).treasureValue = 10;
+
+  // Heavy item - may need weight system later
+  (bar as any).weight = 10;
+
+  world.moveEntity(bar.id, roomId);
+  return bar;
 }
