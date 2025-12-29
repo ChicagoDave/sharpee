@@ -18,6 +18,9 @@ import { dxHandler } from './dx';
 import { ahHandler } from './ah';
 import { tkHandler } from './tk';
 import { aoHandler } from './ao';
+// Phase 3 - Display/Alter Flags
+import { dfHandler } from './df';
+import { afHandler } from './af';
 // Phase 2 - Toggle handlers
 import { ndHandler } from './nd';
 import { rdHandler } from './rd';
@@ -42,6 +45,10 @@ handlers.set('DX', dxHandler);
 handlers.set('AH', ahHandler);
 handlers.set('TK', tkHandler);
 handlers.set('AO', aoHandler);
+
+// Register Phase 3 - Display/Alter Flags
+handlers.set('DF', dfHandler);
+handlers.set('AF', afHandler);
 
 // Register Phase 2 - Toggle handlers
 handlers.set('ND', ndHandler);
@@ -107,5 +114,7 @@ export { dxHandler } from './dx';
 export { ahHandler } from './ah';
 export { tkHandler } from './tk';
 export { aoHandler } from './ao';
+export { dfHandler } from './df';
+export { afHandler } from './af';
 export { ndHandler } from './nd';
 export { rdHandler } from './rd';
