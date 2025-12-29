@@ -6,7 +6,7 @@
  * There is a small mailbox here."
  */
 
-import { Story, StoryConfig } from '@sharpee/engine';
+import { Story, StoryConfig, GameEngine } from '@sharpee/engine';
 import type { Parser } from '@sharpee/parser-en-us';
 import type { LanguageProvider } from '@sharpee/lang-en-us';
 import { ISemanticEvent } from '@sharpee/core';
@@ -23,12 +23,13 @@ import {
   EntityType,
   Direction,
   StandardCapabilities,
-  IWorldModel
+  IWorldModel,
+  IParsedCommand
 } from '@sharpee/world-model';
 import { DungeoScoringService } from './scoring';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive } from './actions';
 
 // Import room and object creators
 import { createWhiteHouseRooms, createWhiteHouseObjects, WhiteHouseRoomIds } from './regions/white-house';
@@ -369,6 +370,37 @@ export class DungeoStory implements Story {
   isComplete(): boolean {
     // For now, story is never complete (full game completion TBD)
     return false;
+  }
+
+  /**
+   * Called when the engine is fully initialized.
+   * Registers the GDT command transformer to bypass entity validation.
+   */
+  onEngineReady(engine: GameEngine): void {
+    // Register transformer that clears entity slots for GDT commands
+    // This allows GDT to use raw text arguments without entity resolution
+    engine.registerParsedCommandTransformer((parsed: IParsedCommand, world: WorldModel) => {
+      // Only transform when GDT mode is active
+      if (!isGDTActive(world)) {
+        return parsed;
+      }
+
+      // Check if this is a GDT command
+      if (parsed.action !== GDT_COMMAND_ACTION_ID && parsed.action !== GDT_ACTION_ID) {
+        return parsed;
+      }
+
+      // Clear entity slots so CommandValidator doesn't try to resolve them
+      // GDT will parse rawInput directly in its execute phase
+      return {
+        ...parsed,
+        structure: {
+          ...parsed.structure,
+          directObject: undefined,
+          indirectObject: undefined
+        }
+      };
+    });
   }
 }
 

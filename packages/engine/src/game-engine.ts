@@ -46,7 +46,7 @@ import {
 } from './types';
 import { Story } from './story';
 
-import { CommandExecutor, createCommandExecutor } from './command-executor';
+import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer } from './command-executor';
 import { EventSequenceUtils, eventSequencer } from './event-sequencer';
 import { toSequencedEvent, toSemanticEvent, processEvent } from './event-adapter';
 
@@ -225,16 +225,22 @@ export class GameEngine {
     // Register custom vocabulary if parser is available
     if (story.getCustomVocabulary && this.parser && this.parser.registerVerbs) {
       const customVocab = story.getCustomVocabulary();
-      
+
       // Register custom verbs
       if (customVocab.verbs && customVocab.verbs.length > 0) {
         this.parser.registerVerbs(customVocab.verbs);
       }
-      
+
       // Future: Register other vocabulary types
       // if (customVocab.nouns && this.parser.registerNouns) {
       //   this.parser.registerNouns(customVocab.nouns);
       // }
+    }
+
+    // Notify story that engine is fully initialized
+    // Allows stories to register command transformers and other hooks
+    if (story.onEngineReady) {
+      story.onEngineReady(this);
     }
   }
 
@@ -805,6 +811,27 @@ export class GameEngine {
    */
   registerSaveRestoreHooks(hooks: ISaveRestoreHooks): void {
     this.saveRestoreHooks = hooks;
+  }
+
+  /**
+   * Register a transformer for parsed commands.
+   * Transformers are called after parsing but before validation,
+   * allowing stories to modify commands (e.g., for debug tools).
+   *
+   * @param transformer - Function to transform parsed commands
+   */
+  registerParsedCommandTransformer(transformer: ParsedCommandTransformer): void {
+    this.commandExecutor.registerParsedCommandTransformer(transformer);
+  }
+
+  /**
+   * Unregister a parsed command transformer.
+   *
+   * @param transformer - The transformer to remove
+   * @returns true if the transformer was found and removed
+   */
+  unregisterParsedCommandTransformer(transformer: ParsedCommandTransformer): boolean {
+    return this.commandExecutor.unregisterParsedCommandTransformer(transformer);
   }
 
   /**

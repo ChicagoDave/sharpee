@@ -1,0 +1,49 @@
+title: GDT Unrestricted Access
+story: dungeo
+description: Tests that GDT can access and manipulate entities regardless of visibility
+
+---
+
+# Uses the parsed command transformer to bypass entity validation
+
+# Enter GDT mode
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+# Test TK with multi-word entity name (not visible from starting location)
+# The brass lantern is in the living room, not visible from West of House
+> tk brass lantern
+[OK: contains "Taken: brass lantern"]
+
+# Verify we got it in inventory
+> da
+[OK: contains "brass lantern (i06)"]
+
+# Test AO to move something to a location we're not in
+# Move the lantern to the kitchen (single-word location)
+> ao brass lantern kitchen
+[OK: contains "Moved: brass lantern -> Kitchen"]
+
+# Test DR to verify it moved
+> dr kitchen
+[OK: contains "brass lantern (i06)"]
+
+# Take it back
+> tk brass lantern
+[OK: contains "Taken: brass lantern"]
+
+# Test AO with special location 'player'
+> ao brass lantern player
+[OK: contains "Moved: brass lantern -> player inventory"]
+
+# Verify in inventory
+> da
+[OK: contains "brass lantern (i06)"]
+
+# Exit GDT
+> ex
+[OK: contains "Returning to game"]
+
+# Verify we still have the lantern after exiting GDT
+> inventory
+[OK: contains "brass lantern"]

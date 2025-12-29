@@ -3,9 +3,10 @@
  *
  * Creates the context object passed to GDT command handlers.
  * Provides helper methods for inspecting and modifying game state.
+ * Uses AuthorModel for mutations to bypass game rules (ADR-014).
  */
 
-import { WorldModel, IFEntity, EntityType } from '@sharpee/world-model';
+import { WorldModel, IFEntity, EntityType, AuthorModel } from '@sharpee/world-model';
 import { GDTContext, GDTFlags, DEFAULT_GDT_FLAGS, GDT_STATE_KEY } from './types';
 
 /**
@@ -40,6 +41,10 @@ export function createGDTContext(world: WorldModel): GDTContext {
   }
 
   const flags = getGDTFlags(world);
+
+  // Create AuthorModel for unrestricted mutations (ADR-014)
+  // This allows GDT to move entities into closed containers, etc.
+  const authorModel = new AuthorModel(world.getDataStore(), world);
 
   return {
     world,
@@ -110,7 +115,8 @@ export function createGDTContext(world: WorldModel): GDTContext {
     teleportPlayer(roomId: string): boolean {
       const room = this.findRoom(roomId);
       if (!room) return false;
-      world.moveEntity(player.id, room.id);
+      // Use AuthorModel to bypass game rules (can teleport anywhere)
+      authorModel.moveEntity(player.id, room.id);
       return true;
     },
 
@@ -126,7 +132,8 @@ export function createGDTContext(world: WorldModel): GDTContext {
       const target = this.findEntity(targetId);
       if (!target && targetId !== player.id) return false;
 
-      world.moveEntity(obj.id, targetId);
+      // Use AuthorModel to bypass game rules (can move into closed containers, etc.)
+      authorModel.moveEntity(obj.id, targetId);
       return true;
     }
   };

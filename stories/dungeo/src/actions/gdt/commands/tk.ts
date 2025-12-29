@@ -21,7 +21,8 @@ export const tkHandler: GDTCommandHandler = {
       };
     }
 
-    const targetId = args[0];
+    // Join all args to support multi-word names like "brass lantern"
+    const targetId = args.join(' ');
     const entity = context.findEntity(targetId);
 
     if (!entity) {

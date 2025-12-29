@@ -17,20 +17,22 @@ export const aoHandler: GDTCommandHandler = {
       return {
         success: false,
         output: [
-          'Usage: AO <object-id> <location-id>',
+          'Usage: AO <object-name> <location-name>',
           '',
           'Special locations:',
           '  player - Move to player inventory',
           '  here   - Move to current room',
-          '  <room-id> - Move to specific room',
-          '  <object-id> - Move into container/supporter'
+          '  <room-name> - Move to specific room',
+          '  <object-name> - Move into container/supporter'
         ],
         error: 'MISSING_ARGS'
       };
     }
 
-    const objectId = args[0];
-    let locationId = args[1];
+    // Last argument is the location, everything else is the object name
+    // This supports multi-word object names like "brass lantern"
+    let locationId = args[args.length - 1];
+    const objectId = args.slice(0, -1).join(' ');
 
     // Find the object
     const entity = context.findEntity(objectId);
