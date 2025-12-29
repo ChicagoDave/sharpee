@@ -1,9 +1,6 @@
 /**
- * Dead End
+ * Dead End Rooms (5 total)
  * "You have come to a dead end in the maze."
- *
- * Contains the skeleton of a previous adventurer, along with
- * a bag of coins and a skeleton key.
  */
 
 import {
@@ -14,8 +11,8 @@ import {
   EntityType
 } from '@sharpee/world-model';
 
-export function createDeadEnd(world: WorldModel): IFEntity {
-  const room = world.createEntity('Dead End', EntityType.ROOM);
+function createDeadEndRoom(world: WorldModel, num: number): IFEntity {
+  const room = world.createEntity(`Dead End ${num}`, EntityType.ROOM);
 
   room.add(new RoomTrait({
     exits: {},
@@ -32,4 +29,24 @@ export function createDeadEnd(world: WorldModel): IFEntity {
   }));
 
   return room;
+}
+
+export function createDeadEnd1(world: WorldModel): IFEntity {
+  return createDeadEndRoom(world, 1);
+}
+
+export function createDeadEnd2(world: WorldModel): IFEntity {
+  return createDeadEndRoom(world, 2);
+}
+
+export function createDeadEnd3(world: WorldModel): IFEntity {
+  return createDeadEndRoom(world, 3);
+}
+
+export function createDeadEnd4(world: WorldModel): IFEntity {
+  return createDeadEndRoom(world, 4);
+}
+
+export function createDeadEnd5(world: WorldModel): IFEntity {
+  return createDeadEndRoom(world, 5);
 }

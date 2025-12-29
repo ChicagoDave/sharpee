@@ -29,8 +29,8 @@ export function createMazeObjects(world: WorldModel, roomIds: MazeRoomIds): void
   // Grating Room objects
   createGratingRoomObjects(world, roomIds.gratingRoom);
 
-  // Dead End objects
-  createDeadEndObjects(world, roomIds.deadEnd);
+  // Dead End objects (skeleton, coins, key are in Dead End 1)
+  createDeadEndObjects(world, roomIds.deadEnd1);
 }
 
 // ============= Grating Room Objects =============

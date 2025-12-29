@@ -1,0 +1,103 @@
+title: Maze Navigation
+story: dungeo
+description: Test maze room connections and navigation
+
+---
+
+# Setup: Get lantern and teleport to Grating Room
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> tk brass lantern
+[OK: contains "Taken: brass lantern"]
+
+> ah grating room
+[OK: contains "Teleported to"]
+[OK: contains "Grating Room"]
+
+> ex
+[OK: contains "Returning to game"]
+
+# Turn on lantern (maze is dark)
+> turn on lantern
+[OK: contains "lantern"]
+[EVENT: true, type="action.success"]
+
+# Verify we're in Grating Room
+> look
+[OK: contains "Grating Room"]
+[OK: contains "small room near the surface"]
+
+# Enter the maze - southwest leads to Maze 1
+> southwest
+[OK: contains "maze"]
+[OK: contains "twisty little passages"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# Test self-loop: north from Maze 1 loops back to Maze 1
+> north
+[OK: contains "maze"]
+[OK: contains "twisty little passages"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# Navigate through maze: south to Maze 4
+> south
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# East to Maze 5 (main junction)
+> east
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# From Maze 5, navigate toward Cyclops Room
+# North to Maze 6
+> north
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# South back to Maze 5
+> south
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# Now go south from Maze 5 to Maze 7
+> south
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# Down from Maze 7 to Maze 12
+> down
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# West to Maze 14
+> west
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# South to Maze 15
+> south
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# West to Maze 17
+> west
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# North to Cyclops Room
+> north
+[OK: contains "Cyclops"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# Northwest to Treasure Room (Thief's Lair)
+> northwest
+[OK: contains "Treasure Room"]
+[OK: contains "marble"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# South back to Cyclops Room
+> south
+[OK: contains "Cyclops"]
+[EVENT: true, type="if.event.actor_moved"]

@@ -1,0 +1,114 @@
+title: Maze Looping Behavior
+story: dungeo
+description: Test that certain maze directions loop back to the same room
+
+---
+
+# Setup: Get lantern and teleport to Grating Room
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> tk brass lantern
+[OK: contains "Taken: brass lantern"]
+
+> ah grating room
+[OK: contains "Teleported to"]
+
+> ex
+[OK: contains "Returning to game"]
+
+# Turn on lantern
+> turn on lantern
+[OK: contains "lantern"]
+
+# Go to Maze 1
+> southwest
+[OK: contains "maze"]
+[OK: contains "twisty little passages"]
+
+# Test Maze 1 self-loop: north loops back to Maze 1
+# Going north repeatedly stays in maze
+> north
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+> north
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+> north
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# Navigate to Maze 3 to test another loop
+# From Maze 1: east to Maze 2
+> east
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# From Maze 2: east to Maze 3
+> east
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# Maze 3 has north looping to itself
+> north
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+> north
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+> north
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# Navigate to Dead End
+# From Maze 3: west to Maze 2
+> west
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# From Maze 2: down to Dead End
+> down
+[OK: contains "Dead End"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# Verify Dead End description
+> look
+[OK: contains "Dead End"]
+
+# Only exits from Dead End: east and up
+# East goes to Maze 4
+> east
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# Up from Dead End goes to Maze 2
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> ah dead end
+[OK: contains "Teleported to"]
+
+> ex
+[OK: contains "Returning to game"]
+
+> up
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# Test Maze 20 self-loop (west loops back)
+# Navigate to Maze 20: Need to go through the maze
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> ah treasure room
+[OK: contains "Teleported to"]
+
+> ex
+[OK: contains "Returning to game"]
+
+> look
+[OK: contains "Treasure Room"]

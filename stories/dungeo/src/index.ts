@@ -47,7 +47,7 @@ import { createVolcanoRooms, connectVolcanoToCoalMine, createVolcanoObjects, Vol
 import { createBankRooms, connectBankToUnderground, createBankObjects, BankRoomIds } from './regions/bank-of-zork';
 import { createWellRoomRooms, connectWellRoomToTemple, createWellRoomObjects, WellRoomIds } from './regions/well-room';
 import { createFrigidRiverRooms, connectFrigidRiverToDam, createFrigidRiverObjects, FrigidRiverRoomIds } from './regions/frigid-river';
-import { createMazeRooms, connectMazeToClearing, connectCyclopsToLivingRoom, createMazeObjects, MazeRoomIds } from './regions/maze';
+import { createMazeRooms, connectMazeToClearing, connectCyclopsToLivingRoom, connectMazeToTrollRoom, connectMazeToRoundRoom, createMazeObjects, MazeRoomIds } from './regions/maze';
 
 // Import NPCs
 import { registerThief, ThiefMessages } from './npcs/thief';
@@ -135,6 +135,8 @@ export class DungeoStory implements Story {
     connectFrigidRiverToDam(world, this.frigidRiverIds, this.damIds.damBase);
     connectMazeToClearing(world, this.mazeIds, this.forestIds.clearing);
     connectCyclopsToLivingRoom(world, this.mazeIds, this.houseInteriorIds.livingRoom);
+    connectMazeToTrollRoom(world, this.mazeIds, this.undergroundIds.trollRoom);
+    connectMazeToRoundRoom(world, this.mazeIds, this.undergroundIds.roundRoom);
 
     // Create all objects and place them in rooms
     createWhiteHouseObjects(world, this.whiteHouseIds);

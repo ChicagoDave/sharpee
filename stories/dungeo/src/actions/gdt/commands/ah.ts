@@ -55,7 +55,8 @@ export const ahHandler: GDTCommandHandler = {
       };
     }
 
-    const targetId = args[0];
+    // Join all args to support multi-word names like "grating room"
+    const targetId = args.join(' ');
     const room = context.findRoom(targetId);
 
     if (!room) {

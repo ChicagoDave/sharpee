@@ -25,7 +25,7 @@ export function createGratingRoom(world: WorldModel): IFEntity {
 
   room.add(new IdentityTrait({
     name: 'Grating Room',
-    aliases: ['grating room', 'room near surface'],
+    aliases: ['grating room', 'small room', 'room near surface'],
     description: 'You are in a small room near the surface. A metal grating in the ceiling leads upward.',
     properName: true,
     article: 'the'
