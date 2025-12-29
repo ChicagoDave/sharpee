@@ -29,11 +29,14 @@ import {
 import { DungeoScoringService } from './scoring';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages } from './actions';
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages } from './scheduler';
 import { setSchedulerForGDT } from './actions/gdt/commands';
+
+// Import handlers
+import { registerBatHandler, BatMessages } from './handlers';
 
 // Import room and object creators
 import { createWhiteHouseRooms, createWhiteHouseObjects, WhiteHouseRoomIds } from './regions/white-house';
@@ -51,6 +54,7 @@ import { createMazeRooms, connectMazeToClearing, connectCyclopsToLivingRoom, con
 
 // Import NPCs
 import { registerThief, ThiefMessages } from './npcs/thief';
+import { registerCyclops, CyclopsMessages } from './npcs/cyclops';
 
 /**
  * Dungeo story configuration
@@ -352,6 +356,27 @@ export class DungeoStory implements Story {
       .mapsTo(WALK_THROUGH_ACTION_ID)
       .withPriority(155)
       .build();
+
+    // Say action (Cyclops puzzle)
+    // "say odysseus", "say ulysses", "say hello"
+    grammar
+      .define('say :arg')
+      .mapsTo(SAY_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    // Higher priority for specific magic words
+    grammar
+      .define('say odysseus')
+      .mapsTo(SAY_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('say ulysses')
+      .mapsTo(SAY_ACTION_ID)
+      .withPriority(155)
+      .build();
   }
 
   /**
@@ -458,6 +483,34 @@ export class DungeoStory implements Story {
 
     // Post-death
     language.addMessage(ThiefMessages.DROPS_LOOT, 'The thief\'s ill-gotten gains scatter across the floor.');
+
+    // Cyclops NPC messages (ADR-070)
+    // Appearance/Blocking
+    language.addMessage(CyclopsMessages.BLOCKS, 'A huge cyclops stands before you, blocking the northern passage!');
+    language.addMessage(CyclopsMessages.GROWLS, 'The cyclops growls menacingly.');
+
+    // Speech responses
+    language.addMessage(CyclopsMessages.IGNORES, 'The cyclops ignores your words.');
+    language.addMessage(CyclopsMessages.PANICS, 'The cyclops, hearing that dreaded name, panics!');
+    language.addMessage(CyclopsMessages.FLEES, 'The cyclops runs away in terror, revealing a hidden passage!');
+    language.addMessage(CyclopsMessages.PASSAGE_OPENS, 'A passage north to the Strange Passage is now clear.');
+
+    // Combat
+    language.addMessage(CyclopsMessages.ATTACKS, 'The cyclops swings at you with massive fists!');
+    language.addMessage(CyclopsMessages.COUNTERATTACKS, 'The cyclops roars and swings back at you!');
+    language.addMessage(CyclopsMessages.WOUNDED, 'The cyclops staggers from your blow.');
+    language.addMessage(CyclopsMessages.DIES, 'The cyclops crashes to the ground with a tremendous thud!');
+
+    // Say action messages
+    language.addMessage(SayMessages.NOTHING_TO_SAY, 'You need to say something.');
+    language.addMessage(SayMessages.SAY_TO_AIR, 'You speak, but nobody is here to listen.');
+    language.addMessage(SayMessages.NPC_RESPONDS, '{npcName} responds to your words.');
+
+    // Vampire Bat messages
+    language.addMessage(BatMessages.ATTACKS, 'A large vampire bat swoops down from the ceiling and grabs you!');
+    language.addMessage(BatMessages.CARRIES_AWAY, 'The bat carries you off into the darkness...');
+    language.addMessage(BatMessages.COWERS, 'The vampire bat cowers away from you, repelled by the smell of garlic!');
+    language.addMessage(BatMessages.DROPPED, 'The bat drops you unceremoniously.');
   }
 
   /**
@@ -567,6 +620,27 @@ export class DungeoStory implements Story {
 
       // Make scheduler accessible to GDT DC command
       setSchedulerForGDT(this.world, scheduler);
+
+      // Register bat handler for Bat Room (coal mine)
+      // Valid drop locations: underground rooms excluding dangerous areas
+      const batDropLocations = [
+        this.undergroundIds.cellar,
+        this.undergroundIds.trollRoom,
+        this.undergroundIds.eastWestPassage,
+        this.undergroundIds.roundRoom,
+        this.undergroundIds.narrowPassage,
+        this.undergroundIds.gallery,
+        this.undergroundIds.studio,
+        this.templeIds.temple,
+        this.templeIds.narrowCorridor,
+        this.damIds.damLobby,
+        this.damIds.dam,
+        // Maze rooms (some of them)
+        this.mazeIds.maze1,
+        this.mazeIds.maze5,
+        this.mazeIds.maze11,
+      ];
+      registerBatHandler(scheduler, this.coalMineIds.batRoom, batDropLocations);
     }
 
     // Register NPCs (ADR-070)
@@ -585,6 +659,13 @@ export class DungeoStory implements Story {
         this.world,
         this.mazeIds.treasureRoom,
         surfaceRooms
+      );
+
+      // Register cyclops NPC in the Cyclops Room
+      registerCyclops(
+        npcService,
+        this.world,
+        this.mazeIds.cyclopsRoom
       );
     }
   }

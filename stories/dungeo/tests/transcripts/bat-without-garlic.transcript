@@ -1,0 +1,52 @@
+title: Bat Room Without Garlic
+story: dungeo
+description: Test entering the Bat Room without garlic - bat should carry player away
+
+---
+
+# Get lantern from Living Room for dark areas
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> west
+[OK: contains "Kitchen"]
+
+# Don't take garlic or sack
+
+> west
+[OK: contains "Living Room"]
+
+> take lantern
+[OK: contains "Taken"]
+
+> switch on lantern
+[OK: contains "on"]
+
+# Use GDT to teleport to Gas Room (adjacent to Bat Room)
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> ah Gas Room
+[OK: contains "Teleported"]
+[OK: contains "Gas Room"]
+
+> ex
+[OK: contains "Returning to game"]
+
+# Verify we're in Gas Room
+> look
+[OK: contains "Gas Room"]
+
+# Now walk east into Bat Room - bat should attack and carry us away
+> east
+[EVENT: true, type="npc.emoted" messageId="dungeo.bat.attacks"]
+[EVENT: true, type="npc.emoted" messageId="dungeo.bat.carries_away"]
+
+# We should have been teleported to a random underground room
+# (not in Bat Room anymore)
+> look
+[FAIL: contains "Bat Room"]
+[EVENT: true, type="if.event.looked"]

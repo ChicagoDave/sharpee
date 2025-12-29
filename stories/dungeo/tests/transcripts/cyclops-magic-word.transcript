@@ -1,0 +1,77 @@
+title: Cyclops Magic Word
+story: dungeo
+description: Test saying "odysseus" or "ulysses" to scare away the cyclops
+
+---
+
+# Get lantern from Living Room for dark areas
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> west
+[OK: contains "Kitchen"]
+
+> west
+[OK: contains "Living Room"]
+
+> take lantern
+[OK: contains "Taken"]
+
+> switch on lantern
+[OK: contains "on"]
+
+# Use GDT to teleport directly to Cyclops Room
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> ah Cyclops Room
+[OK: contains "Teleported"]
+[OK: contains "Cyclops Room"]
+
+> ex
+[OK: contains "Returning to game"]
+
+# Verify we're in Cyclops Room with the Cyclops
+> look
+[OK: contains "Cyclops Room"]
+[EVENT: true, type="if.event.looked"]
+
+# Try to go north - should be blocked by cyclops
+> north
+[FAIL: contains "Living Room"]
+[OK: contains "block"]
+[EVENT: true, type="action.blocked"]
+
+# Verify we're still in Cyclops Room
+> look
+[OK: contains "Cyclops Room"]
+
+# Now say the magic word
+> say odysseus
+[OK: contains "passage"]
+[EVENT: true, type="npc.emoted" messageId="dungeo.cyclops.panics"]
+[EVENT: true, type="npc.emoted" messageId="dungeo.cyclops.flees"]
+[EVENT: true, type="game.message" messageId="dungeo.cyclops.passage_opens"]
+
+# The passage should now be open - try going north
+> north
+[OK: contains "Living Room"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# Use GDT to go back to Cyclops Room and verify cyclops is gone
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> ah Cyclops Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning to game"]
+
+# Cyclops should no longer be in the room (NPC fled)
+> look
+[OK: contains "Cyclops Room"]
+[FAIL: contains "huge cyclops"]
