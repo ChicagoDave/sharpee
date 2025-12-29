@@ -5,8 +5,22 @@
  */
 
 import { GDTCommandHandler, GDTCommandCode, GDTContext, GDTCommandResult } from '../types';
+// Phase 1 handlers
 import { helpHandler } from './help';
 import { exitHandler } from './exit';
+// Phase 2 - Display handlers
+import { daHandler } from './da';
+import { drHandler } from './dr';
+import { doHandler } from './do';
+import { dsHandler } from './ds';
+import { dxHandler } from './dx';
+// Phase 2 - Alter handlers
+import { ahHandler } from './ah';
+import { tkHandler } from './tk';
+import { aoHandler } from './ao';
+// Phase 2 - Toggle handlers
+import { ndHandler } from './nd';
+import { rdHandler } from './rd';
 
 /**
  * Registry of all GDT command handlers
@@ -16,6 +30,22 @@ const handlers = new Map<GDTCommandCode, GDTCommandHandler>();
 // Register Phase 1 handlers
 handlers.set('HE', helpHandler);
 handlers.set('EX', exitHandler);
+
+// Register Phase 2 - Display handlers
+handlers.set('DA', daHandler);
+handlers.set('DR', drHandler);
+handlers.set('DO', doHandler);
+handlers.set('DS', dsHandler);
+handlers.set('DX', dxHandler);
+
+// Register Phase 2 - Alter handlers
+handlers.set('AH', ahHandler);
+handlers.set('TK', tkHandler);
+handlers.set('AO', aoHandler);
+
+// Register Phase 2 - Toggle handlers
+handlers.set('ND', ndHandler);
+handlers.set('RD', rdHandler);
 
 /**
  * Get a command handler by code
@@ -69,3 +99,13 @@ export function registerHandler(handler: GDTCommandHandler): void {
 // Re-export handlers
 export { helpHandler } from './help';
 export { exitHandler } from './exit';
+export { daHandler } from './da';
+export { drHandler } from './dr';
+export { doHandler } from './do';
+export { dsHandler } from './ds';
+export { dxHandler } from './dx';
+export { ahHandler } from './ah';
+export { tkHandler } from './tk';
+export { aoHandler } from './ao';
+export { ndHandler } from './nd';
+export { rdHandler } from './rd';

@@ -51,12 +51,21 @@ export function createGDTContext(world: WorldModel): GDTContext {
       let entity = world.getEntity(idOrName);
       if (entity) return entity;
 
-      // Try by name (case-insensitive)
+      // Try by name or alias (case-insensitive)
       const lowerName = idOrName.toLowerCase();
       for (const e of world.getAllEntities()) {
-        const identity = e.get('identity') as { name?: string } | undefined;
+        const identity = e.get('identity') as { name?: string; aliases?: string[] } | undefined;
+        // Check primary name
         if (identity?.name?.toLowerCase() === lowerName) {
           return e;
+        }
+        // Check aliases
+        if (identity?.aliases) {
+          for (const alias of identity.aliases) {
+            if (alias.toLowerCase() === lowerName) {
+              return e;
+            }
+          }
         }
       }
       return undefined;

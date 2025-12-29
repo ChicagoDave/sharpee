@@ -223,24 +223,66 @@ export class DungeoStory implements Story {
 
     // GDT two-letter commands (only active when in GDT mode)
     // These are high priority to override any other patterns
-    const gdtCodes = [
-      // Display commands
-      'da', 'dr', 'do', 'dc', 'dx', 'dh', 'dl', 'dv', 'df', 'ds', 'dn', 'dm', 'dt', 'dp', 'd2', 'dz',
-      // Alter commands
-      'ah', 'ao', 'ar', 'af', 'ac', 'aa', 'ax', 'av', 'an', 'az',
-      // Toggle commands
-      'nc', 'nd', 'nr', 'nt', 'rc', 'rd', 'rr', 'rt',
-      // Utility commands
-      'tk', 'pd', 'he', 'ex'
+
+    // Commands that don't take arguments
+    const noArgCodes = [
+      'da', 'ds', 'he', 'ex', 'nd', 'rd', 'nc', 'rc', 'nr', 'rr', 'nt', 'rt'
     ];
 
-    for (const code of gdtCodes) {
-      // Register pattern for the two-letter code
-      // The action will parse the full rawInput to get any arguments
+    // Commands that take one optional argument
+    const oneArgCodes = [
+      'dr', 'dx', 'do', 'dv', 'dc', 'dh', 'dl', 'df', 'dn', 'dm', 'dt', 'dp', 'd2', 'dz',
+      'ah', 'tk', 'ar', 'af', 'ac', 'aa', 'ax', 'av', 'an', 'az', 'pd'
+    ];
+
+    // Commands that take two arguments
+    const twoArgCodes = ['ao'];
+
+    // Register no-arg commands
+    for (const code of noArgCodes) {
       grammar
         .define(code)
         .mapsTo(GDT_COMMAND_ACTION_ID)
         .withPriority(250)
+        .build();
+    }
+
+    // Register one-arg commands (both standalone and with :arg)
+    // Using :arg instead of :target to avoid entity resolution constraints
+    for (const code of oneArgCodes) {
+      // Standalone version
+      grammar
+        .define(code)
+        .mapsTo(GDT_COMMAND_ACTION_ID)
+        .withPriority(250)
+        .build();
+
+      // With one argument - use :arg to capture any following text without entity resolution
+      grammar
+        .define(`${code} :arg`)
+        .mapsTo(GDT_COMMAND_ACTION_ID)
+        .withPriority(251)
+        .build();
+    }
+
+    // Register two-arg commands (standalone, one-arg, and two-arg versions)
+    for (const code of twoArgCodes) {
+      grammar
+        .define(code)
+        .mapsTo(GDT_COMMAND_ACTION_ID)
+        .withPriority(250)
+        .build();
+
+      grammar
+        .define(`${code} :arg`)
+        .mapsTo(GDT_COMMAND_ACTION_ID)
+        .withPriority(251)
+        .build();
+
+      grammar
+        .define(`${code} :arg1 :arg2`)
+        .mapsTo(GDT_COMMAND_ACTION_ID)
+        .withPriority(252)
         .build();
     }
   }

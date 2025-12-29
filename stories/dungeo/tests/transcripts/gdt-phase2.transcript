@@ -1,0 +1,109 @@
+title: GDT Phase 2 Commands
+story: dungeo
+description: Test GDT Phase 2 - Display and Toggle commands
+
+---
+
+# Enter GDT mode
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+[EVENT: true, type="action.success"]
+
+# DA - Display Adventurer
+> da
+[OK: contains "ADVENTURER"]
+[OK: contains "Location"]
+[OK: contains "West of House"]
+[OK: contains "Score"]
+[OK: contains "Inventory"]
+[EVENT: true, type="action.success"]
+
+# DR - Display Room (current room)
+> dr
+[OK: contains "ROOM"]
+[OK: contains "r01"]
+[OK: contains "Exits"]
+[EVENT: true, type="action.success"]
+
+# DS - Display State
+> ds
+[OK: contains "GAME STATE"]
+[OK: contains "Turn"]
+[OK: contains "Score"]
+[OK: contains "Entity Counts"]
+[EVENT: true, type="action.success"]
+
+# DX - Display Exits
+> dx
+[OK: contains "EXITS"]
+[OK: contains "NORTH"]
+[EVENT: true, type="action.success"]
+
+# DO - Display Object (requires arg)
+> do
+[OK: contains "Usage"]
+[EVENT: true, type="action.success"]
+
+# DO - Display specific object using entity name (visible in current room)
+> do mailbox
+[OK: contains "OBJECT"]
+[OK: contains "mailbox"]
+[OK: contains "Traits"]
+[EVENT: true, type="action.success"]
+
+# TK - Take (needs arg)
+> tk
+[OK: contains "Usage"]
+[EVENT: true, type="action.success"]
+
+# AO - Alter Object (needs args)
+> ao
+[OK: contains "Usage"]
+[OK: contains "Special locations"]
+[EVENT: true, type="action.success"]
+
+# AH - Alter Here (no args shows list)
+> ah
+[OK: contains "Usage"]
+[OK: contains "Available rooms"]
+[EVENT: true, type="action.success"]
+
+# ND - Enable immortality
+> nd
+[OK: contains "Immortality ENABLED"]
+[EVENT: true, type="action.success"]
+
+# ND again - already enabled
+> nd
+[OK: contains "already enabled"]
+[EVENT: true, type="action.success"]
+
+# Verify immortality flag in DA
+> da
+[OK: contains "Immortal: YES"]
+[EVENT: true, type="action.success"]
+
+# RD - Disable immortality
+> rd
+[OK: contains "Immortality DISABLED"]
+[EVENT: true, type="action.success"]
+
+# RD again - already disabled
+> rd
+[OK: contains "already disabled"]
+[EVENT: true, type="action.success"]
+
+# Verify immortality flag cleared
+> da
+[OK: contains "Immortal: no"]
+[EVENT: true, type="action.success"]
+
+# Exit GDT mode
+> ex
+[OK: contains "Returning to game"]
+[EVENT: true, type="action.success"]
+
+# Verify normal commands work after exit
+> look
+[OK: contains "West of House"]
+[EVENT: true, type="if.event.looked"]
