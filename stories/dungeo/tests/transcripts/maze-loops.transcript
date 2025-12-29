@@ -29,8 +29,8 @@ description: Test maze dead end rooms and their connections
 > ex
 [OK: contains "Returning to game"]
 
-# West to Maze-1
-> west
+# South to Maze-1 (per map-connections.md)
+> south
 [OK: contains "maze"]
 [EVENT: true, type="if.event.actor_moved"]
 

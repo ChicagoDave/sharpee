@@ -263,3 +263,31 @@ export function connectFrigidRiverToDam(
     }
   }
 }
+
+/**
+ * Connect End of Rainbow to Canyon Bottom (Forest region)
+ * Per map: End of Rainbow SE → Canyon Bottom, Canyon Bottom N → End of Rainbow
+ */
+export function connectRainbowToCanyon(
+  world: WorldModel,
+  frigidRiverIds: FrigidRiverRoomIds,
+  canyonBottomId: string
+): void {
+  // End of Rainbow SE → Canyon Bottom
+  const endOfRainbow = world.getEntity(frigidRiverIds.endOfRainbow);
+  if (endOfRainbow) {
+    const roomTrait = endOfRainbow.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits[Direction.SOUTHEAST] = { destination: canyonBottomId };
+    }
+  }
+
+  // Canyon Bottom N → End of Rainbow
+  const canyonBottom = world.getEntity(canyonBottomId);
+  if (canyonBottom) {
+    const roomTrait = canyonBottom.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits[Direction.NORTH] = { destination: frigidRiverIds.endOfRainbow };
+    }
+  }
+}

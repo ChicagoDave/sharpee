@@ -55,9 +55,15 @@
 | Room | Status | Notes |
 |------|--------|-------|
 | Round Room | ✅ Done | Spins until stopped |
-| Engravings Cave | ❌ | |
-| Winding Passage | ❌ | |
-| North-South Passage | ❌ | |
+| Engravings Cave | ✅ Done | S/N from Round Room |
+| Winding Passage | ✅ Done | SE from Round Room |
+| North-South Passage | ✅ Done | NE from Round Room |
+| Narrow Crawlway | ✅ Done | Between Grail Room and Mirror Room |
+| Mirror Room | ✅ Done | Mirror puzzle base |
+| Cave | ✅ Done | Leads to Hades or Atlantis |
+| Chasm | ✅ Done | N of N/S Passage |
+| Grail Room | ✅ Done | Grail treasure |
+| Damp Cave | ✅ Done | Above Loud Room |
 | Deep Canyon | ✅ Done | In dam region |
 
 ### The Well and Tea Room
@@ -525,6 +531,7 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Recently Completed
 
+- ✅ **Map Connection Audit & Fixes** (2025-12-29) - Restructured Cellar/Troll Room/N/S Crawlway layout to match Mainframe Zork map, connected Canyon Bottom ↔ End of Rainbow, troll now blocks north passage
 - ✅ **Exorcism Puzzle** (2025-12-29) - Bell/book/candle ritual to banish spirits at Entry to Hades
 - ✅ **RING Action** (2025-12-29) - Story-specific action for ringing the bell
 - ✅ **Spirits NPC** (2025-12-29) - Blocks south passage until exorcism, awards 10 points

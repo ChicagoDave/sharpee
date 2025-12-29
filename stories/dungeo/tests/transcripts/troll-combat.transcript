@@ -39,11 +39,8 @@ description: Test defeating the troll with the sword and gaining score
 > down
 [OK: contains "Cellar"]
 
-# Navigate to Troll Room
-> north
-[OK: contains "Narrow Passage"]
-
-> north
+# Navigate to Troll Room (new layout: Cellar E → Troll Room)
+> east
 [OK: contains "Troll Room"]
 [OK: contains "troll"]
 
@@ -81,8 +78,8 @@ description: Test defeating the troll with the sword and gaining score
 [OK: matches /./]
 
 # After 10 attacks, troll should definitely be dead
-# Verify we can go east (passage unblocked after troll death)
-> east
+# Verify we can go north (passage unblocked after troll death)
+> north
 [OK: contains "East-West Passage"]
 [EVENT: true, type="if.event.actor_moved"]
 [EVENT: false, type="action.blocked"]

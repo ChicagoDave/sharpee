@@ -211,11 +211,12 @@ function connectBankRooms(world: WorldModel, roomIds: BankRoomIds): void {
 }
 
 /**
- * Connect Bank of Zork to Underground (via Cellar and Gallery)
+ * Connect Bank of Zork to Underground (via Cellar, Gallery, and N/S Crawlway)
  *
- * Per play transcript:
+ * Per map-connections.md:
  * - Cellar S → West of Chasm
- * - West of Chasm W → Cellar, S → Gallery
+ * - West of Chasm W → Cellar, N → N/S Crawlway, S → Gallery
+ * - N/S Crawlway N → West Chasm
  * - Gallery N → West of Chasm, W → Bank Entrance
  * - Bank Entrance E → Gallery
  */
@@ -223,7 +224,8 @@ export function connectBankToUnderground(
   world: WorldModel,
   bankIds: BankRoomIds,
   cellarId: string,
-  galleryId: string
+  galleryId: string,
+  nsCrawlwayId?: string
 ): void {
   // Cellar S → West of Chasm
   const cellar = world.getEntity(cellarId);
@@ -234,13 +236,27 @@ export function connectBankToUnderground(
     }
   }
 
-  // West of Chasm W → Cellar, S → Gallery
+  // West of Chasm W → Cellar, N → N/S Crawlway, S → Gallery
   const westOfChasm = world.getEntity(bankIds.westOfChasm);
   if (westOfChasm) {
     const roomTrait = westOfChasm.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits[Direction.WEST] = { destination: cellarId };
       roomTrait.exits[Direction.SOUTH] = { destination: galleryId };
+      if (nsCrawlwayId) {
+        roomTrait.exits[Direction.NORTH] = { destination: nsCrawlwayId };
+      }
+    }
+  }
+
+  // N/S Crawlway N → West Chasm
+  if (nsCrawlwayId) {
+    const nsCrawlway = world.getEntity(nsCrawlwayId);
+    if (nsCrawlway) {
+      const roomTrait = nsCrawlway.get(RoomTrait);
+      if (roomTrait) {
+        roomTrait.exits[Direction.NORTH] = { destination: bankIds.westOfChasm };
+      }
     }
   }
 

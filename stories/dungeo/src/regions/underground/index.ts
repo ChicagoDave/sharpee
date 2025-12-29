@@ -120,14 +120,14 @@ export { createUndergroundObjects } from './objects';
 function connectUndergroundRooms(world: WorldModel, roomIds: UndergroundRoomIds): void {
   // === Original connections ===
 
-  // Cellar connections
-  // Note: S → West of Chasm is set by connectBankToUnderground
+  // Cellar connections (per map-connections.md)
+  // E → Troll Room, S → West of Chasm (Bank), U → Living Room
   const cellar = world.getEntity(roomIds.cellar);
   if (cellar) {
     const roomTrait = cellar.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
-        [Direction.NORTH]: { destination: roomIds.narrowPassage },
+        [Direction.EAST]: { destination: roomIds.trollRoom },
         // S → West of Chasm (Bank) - connected externally
         // Up connects to Living Room (through trapdoor) - set externally
       };
@@ -148,53 +148,64 @@ function connectUndergroundRooms(world: WorldModel, roomIds: UndergroundRoomIds)
     }
   }
 
-  // Studio connections
+  // Studio connections (per map-connections.md)
+  // NW → Gallery, N → N/S Crawlway, U → Kitchen (one item limit - handled externally)
   const studio = world.getEntity(roomIds.studio);
   if (studio) {
     const roomTrait = studio.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
-        [Direction.NORTH]: { destination: roomIds.gallery },
-        // DOWN goes to Kitchen via chimney - connected externally
+        [Direction.NORTHWEST]: { destination: roomIds.gallery },
+        [Direction.NORTH]: { destination: roomIds.narrowPassage },
+        // UP goes to Kitchen via chimney - connected externally
       };
     }
   }
 
-  // Narrow Passage connections
+  // North-South Crawlway connections (per map-connections.md)
+  // This is the "Narrow Passage" in code, but "North/South Crawlway" in the map
+  // E → Troll Room, N → West Chasm (external), S → Studio
   const narrowPassage = world.getEntity(roomIds.narrowPassage);
   if (narrowPassage) {
     const roomTrait = narrowPassage.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
-        [Direction.SOUTH]: { destination: roomIds.cellar },
-        [Direction.NORTH]: { destination: roomIds.trollRoom },
+        [Direction.EAST]: { destination: roomIds.trollRoom },
+        [Direction.SOUTH]: { destination: roomIds.studio },
+        // N → West Chasm - connected externally by connectBankToUnderground
       };
     }
   }
 
-  // Troll Room connections (troll blocks east initially)
+  // Troll Room connections (per map-connections.md)
+  // W → Cellar, N → E/W Passage, E → N/S Crawlway, S → Maze-1 (external)
+  // Troll blocks passage NORTH (to E/W Passage, leading deeper into dungeon)
   const trollRoom = world.getEntity(roomIds.trollRoom);
   if (trollRoom) {
     const roomTrait = trollRoom.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
-        [Direction.SOUTH]: { destination: roomIds.narrowPassage },
-        [Direction.EAST]: { destination: roomIds.eastWestPassage },
-        // West leads to Maze-1 - connected externally by maze region
+        [Direction.WEST]: { destination: roomIds.cellar },
+        [Direction.NORTH]: { destination: roomIds.eastWestPassage },
+        [Direction.EAST]: { destination: roomIds.narrowPassage },
+        // South leads to Maze-1 - connected externally by maze region
       };
     }
-    // Block the east exit - troll prevents passage until defeated
-    RoomBehavior.blockExit(trollRoom, Direction.EAST, 'The troll blocks your way.');
+    // Block north passage - troll prevents going deeper into dungeon until defeated
+    RoomBehavior.blockExit(trollRoom, Direction.NORTH, 'The troll blocks your way.');
   }
 
-  // East-West Passage connections
+  // East-West Passage connections (per map-connections.md)
+  // W → Troll Room (map says S, but description says W), E → Round Room
+  // Also: N/D → Deep Ravine (not implemented yet)
   const eastWestPassage = world.getEntity(roomIds.eastWestPassage);
   if (eastWestPassage) {
     const roomTrait = eastWestPassage.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
-        [Direction.WEST]: { destination: roomIds.trollRoom },
+        [Direction.SOUTH]: { destination: roomIds.trollRoom },
         [Direction.EAST]: { destination: roomIds.roundRoom },
+        // N/D → Deep Ravine - to be added when Deep Ravine is implemented
       };
     }
   }

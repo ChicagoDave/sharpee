@@ -73,7 +73,7 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
   troll.add(new IdentityTrait({
     name: 'nasty-looking troll',
     aliases: ['troll', 'nasty troll', 'ugly troll'],
-    description: 'A nasty-looking troll stands here, wielding a bloody axe. He blocks the way east.',
+    description: 'A nasty-looking troll stands here, wielding a bloody axe. He blocks the northern passage.',
     properName: false,
     article: 'a'
   }));
@@ -100,15 +100,15 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
   }));
   world.moveEntity(troll.id, roomId);
 
-  // Add death handler - when troll dies, unblock the east passage and add score
+  // Add death handler - when troll dies, unblock the north passage and add score
   const trollRoom = world.getEntity(roomId);
   (troll as any).on = {
     'if.event.death': (_event: ISemanticEvent, w: WorldModel): ISemanticEvent[] => {
       const events: ISemanticEvent[] = [];
 
-      // Unblock the east passage
+      // Unblock the north passage (leads to E/W Passage and deeper dungeon)
       if (trollRoom) {
-        RoomBehavior.unblockExit(trollRoom, Direction.EAST);
+        RoomBehavior.unblockExit(trollRoom, Direction.NORTH);
       }
 
       // Add score for defeating the troll

@@ -49,7 +49,7 @@ import { createTempleRooms, connectTempleToDam, createTempleObjects, TempleRoomI
 import { createVolcanoRooms, connectVolcanoToCoalMine, createVolcanoObjects, VolcanoRoomIds } from './regions/volcano';
 import { createBankRooms, connectBankToUnderground, createBankObjects, BankRoomIds } from './regions/bank-of-zork';
 import { createWellRoomRooms, connectWellRoomToTemple, createWellRoomObjects, WellRoomIds } from './regions/well-room';
-import { createFrigidRiverRooms, connectFrigidRiverToDam, createFrigidRiverObjects, FrigidRiverRoomIds } from './regions/frigid-river';
+import { createFrigidRiverRooms, connectFrigidRiverToDam, connectRainbowToCanyon, createFrigidRiverObjects, FrigidRiverRoomIds } from './regions/frigid-river';
 import { createMazeRooms, connectMazeToClearing, connectCyclopsToLivingRoom, connectMazeToTrollRoom, connectMazeToRoundRoom, createMazeObjects, MazeRoomIds } from './regions/maze';
 
 // Import NPCs
@@ -134,12 +134,13 @@ export class DungeoStory implements Story {
     connectCoalMineToDam(world, this.coalMineIds, this.damIds.maintenanceRoom);
     connectTempleToDam(world, this.templeIds, this.damIds.reservoirSouth);
     connectVolcanoToCoalMine(world, this.volcanoIds, this.coalMineIds.batRoom);
-    connectBankToUnderground(world, this.bankIds, this.undergroundIds.cellar, this.undergroundIds.gallery);
+    connectBankToUnderground(world, this.bankIds, this.undergroundIds.cellar, this.undergroundIds.gallery, this.undergroundIds.narrowPassage);
 
     // Store bank room IDs in world state for walk-through action
     world.setStateValue('dungeo.bank.roomIds', this.bankIds);
     connectWellRoomToTemple(world, this.wellRoomIds, this.templeIds.torchRoom);
     connectFrigidRiverToDam(world, this.frigidRiverIds, this.damIds.damBase);
+    connectRainbowToCanyon(world, this.frigidRiverIds, this.forestIds.canyonBottom);
     connectMazeToClearing(world, this.mazeIds, this.forestIds.clearing);
     connectCyclopsToLivingRoom(world, this.mazeIds, this.houseInteriorIds.livingRoom);
     connectMazeToTrollRoom(world, this.mazeIds, this.undergroundIds.trollRoom);
@@ -406,7 +407,7 @@ export class DungeoStory implements Story {
     language.addMessage('dungeo.rug.moved.reveal_trapdoor', 'Moving the rug reveals a trapdoor.');
 
     // Troll combat
-    language.addMessage('dungeo.troll.death.passage_clear', 'With the troll dispatched, the passage to the east is now clear.');
+    language.addMessage('dungeo.troll.death.passage_clear', 'With the troll dispatched, the passage to the north is now clear.');
 
     // Trophy case scoring
     language.addMessage('dungeo.treasure.scored', 'Your score just went up by {points} points!');

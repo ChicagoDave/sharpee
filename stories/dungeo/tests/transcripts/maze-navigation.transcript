@@ -84,8 +84,8 @@ description: Test maze room connections based on Mainframe Zork map
 > ex
 [OK: contains "Returning to game"]
 
-# West from Troll Room leads to Maze-1 (the "forbidding hole")
-> west
+# South from Troll Room leads to Maze-1 (per map-connections.md)
+> south
 [OK: contains "maze"]
 [OK: contains "twisty little passages"]
 [EVENT: true, type="if.event.actor_moved"]

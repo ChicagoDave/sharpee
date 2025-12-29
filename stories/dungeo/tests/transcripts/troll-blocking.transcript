@@ -1,7 +1,7 @@
 title: Troll Blocking
 story: dungeo
 author: Sharpee Team
-description: Test that the troll blocks passage east in the Troll Room
+description: Test that the troll blocks passage north in the Troll Room (to E/W Passage)
 
 ---
 
@@ -54,18 +54,14 @@ description: Test that the troll blocks passage east in the Troll Room
 [EVENT: true, type="if.event.actor_moved"]
 [EVENT: true, type="if.event.actor_entered"]
 
-# Navigate to Troll Room via Narrow Passage
-> north
-[OK: contains "Narrow Passage"]
-[EVENT: true, type="if.event.actor_moved"]
-
-> north
+# Go east to Troll Room (new layout: Cellar E → Troll Room)
+> east
 [OK: contains "Troll Room"]
 [OK: contains "troll"]
 [EVENT: true, type="if.event.actor_moved"]
 
-# Try to go east - should be blocked by troll
-> east
+# Try to go north - should be blocked by troll (leads to E/W Passage)
+> north
 [FAIL: contains "East-West Passage"]
 [OK: contains "troll"]
 [OK: contains "block"]
@@ -77,8 +73,8 @@ description: Test that the troll blocks passage east in the Troll Room
 [OK: contains "Troll Room"]
 [EVENT: true, type="if.event.room.description"]
 
-# Going south should still work
-> south
-[OK: contains "Narrow Passage"]
+# Going west back to Cellar should work
+> west
+[OK: contains "Cellar"]
 [EVENT: true, type="if.event.actor_moved"]
 [EVENT: false, type="action.blocked"]
