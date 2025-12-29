@@ -2,7 +2,27 @@
 
 ## Status
 
-Proposed
+Implemented
+
+**Phase 1 (Core) - Complete:**
+- SchedulerService in engine with full daemon/fuse management
+- Turn cycle integration (runs after NPCs)
+- Serialization support
+- SeededRandom in core
+- Full test coverage
+
+**Phase 2 (Dungeo Integration) - Complete:**
+- Lantern battery fuse (330 turns, warnings at 50 and 20)
+- Candle burning fuse (50 turns, warnings at 15 and 5)
+- Dam draining sequence (multi-stage fuse)
+- Forest ambience daemon (15% chance per turn)
+- All scheduler messages in language layer
+
+**Phase 3 (Language Layer) - Complete:**
+- All scheduler messages added via story.extendLanguage()
+
+**Phase 4 (Debug) - Complete:**
+- DC (Display Clock) GDT command for scheduler introspection
 
 ## Context
 

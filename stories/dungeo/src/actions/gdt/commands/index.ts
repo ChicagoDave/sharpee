@@ -24,6 +24,8 @@ import { afHandler } from './af';
 // Phase 2 - Toggle handlers
 import { ndHandler } from './nd';
 import { rdHandler } from './rd';
+// Phase 4 - Scheduler debug
+import { dcHandler, setSchedulerForGDT, SCHEDULER_GDT_KEY } from './dc';
 
 /**
  * Registry of all GDT command handlers
@@ -53,6 +55,9 @@ handlers.set('AF', afHandler);
 // Register Phase 2 - Toggle handlers
 handlers.set('ND', ndHandler);
 handlers.set('RD', rdHandler);
+
+// Register Phase 4 - Scheduler debug
+handlers.set('DC', dcHandler);
 
 /**
  * Get a command handler by code
@@ -118,3 +123,4 @@ export { dfHandler } from './df';
 export { afHandler } from './af';
 export { ndHandler } from './nd';
 export { rdHandler } from './rd';
+export { dcHandler, setSchedulerForGDT, SCHEDULER_GDT_KEY } from './dc';

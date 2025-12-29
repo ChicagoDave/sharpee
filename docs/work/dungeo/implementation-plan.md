@@ -448,8 +448,8 @@
 | Containers | ✅ Done | Sack, case, etc. |
 | Scoring (trophy case) | ✅ Done | ADR-076 |
 | Combat (basic) | ✅ Done | Troll, thief |
-| Timed events (daemons) | ❌ | Lantern battery, thief wandering |
-| NPC basics | ❌ | Troll blocking, thief AI |
+| Timed events (daemons) | ✅ Done | ADR-071 complete (lantern, candles, dam, forest) |
+| NPC basics | ✅ Done | ADR-070 implemented |
 | Vehicle trait | ❌ | Boat navigation |
 | INFLATE/DEFLATE actions | ❌ | Boat |
 | WAVE action | ❌ | Sceptre/rainbow |
@@ -463,7 +463,7 @@
 | Robot commands | ❌ | "tell robot 'X'" syntax |
 | Endgame trigger | ❌ | 616 points placed |
 | Victory condition | ❌ | Game completion |
-| GDT (debug tool) | ❌ | World manipulation, testing |
+| GDT (debug tool) | 🚧 Partial | Core commands working, DC added |
 | INCANT (cheat) | ❌ | Skip to endgame |
 
 ---
@@ -527,9 +527,19 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Priority Next Steps
 
-1. **The Maze** (~15 rooms) - Unlocks coins, keys, cyclops, thief lair
-2. **NPC System** (ADR-070) - Required for troll blocking, thief, cyclops
+1. **NPC Behaviors** - Wire up NpcTrait to actual NPCs:
+   - Troll: Guard behavior (blocks passage until defeated)
+   - Thief: Wanderer + stealer behavior (complex AI)
+   - Cyclops: Speech handler (flees when named "Odysseus")
+   - Vampire bat: Attack without garlic
+2. **The Maze** (~15 rooms) - Unlocks coins, keys, cyclops, thief lair
 3. **Remaining treasures** - Gallery painting, spheres, violin, grail, ruby
 4. **Puzzle mechanics** - Riddle, loud room echo, exorcism, rainbow wave
 5. **Royal Puzzle** - 8x8 sliding block puzzle (see royal-puzzle.md)
 6. **Endgame** (~15 rooms) - Final puzzle sequence
+
+## Recently Completed
+
+- ✅ **ADR-071 Timed Events** - Lantern battery, candle burning, dam draining, forest ambience
+- ✅ **ADR-070 NPC System** - NpcTrait architecture implemented
+- ✅ **GDT DC Command** - Scheduler introspection for debugging

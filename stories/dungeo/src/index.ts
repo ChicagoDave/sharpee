@@ -31,6 +31,10 @@ import { DungeoScoringService } from './scoring';
 // Import custom actions
 import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive } from './actions';
 
+// Import scheduler module
+import { registerScheduledEvents, DungeoSchedulerMessages } from './scheduler';
+import { setSchedulerForGDT } from './actions/gdt/commands';
+
 // Import room and object creators
 import { createWhiteHouseRooms, createWhiteHouseObjects, WhiteHouseRoomIds } from './regions/white-house';
 import { createHouseInteriorRooms, createHouseInteriorObjects, connectHouseInteriorToExterior, HouseInteriorRoomIds } from './regions/house-interior';
@@ -307,6 +311,60 @@ export class DungeoStory implements Story {
     language.addMessage(GDTEventTypes.EXITED, '{message}');
     language.addMessage(GDTEventTypes.OUTPUT, '{output}');
     language.addMessage(GDTEventTypes.UNKNOWN_COMMAND, '{message}');
+
+    // Scheduler messages (ADR-071)
+    // Lantern battery
+    language.addMessage(DungeoSchedulerMessages.LANTERN_DIM, 'Your lantern is getting dim.');
+    language.addMessage(DungeoSchedulerMessages.LANTERN_FLICKERS, 'Your lantern flickers ominously.');
+    language.addMessage(DungeoSchedulerMessages.LANTERN_DIES, 'Your lantern flickers and goes out.');
+    language.addMessage(DungeoSchedulerMessages.LANTERN_DEAD, 'The lantern is dead. You need a new battery.');
+
+    // Candle burning
+    language.addMessage(DungeoSchedulerMessages.CANDLES_LOW, 'The candles are burning low.');
+    language.addMessage(DungeoSchedulerMessages.CANDLES_FLICKER, 'The candles flicker.');
+    language.addMessage(DungeoSchedulerMessages.CANDLES_OUT, 'The candles sputter and go out.');
+
+    // Match burning
+    language.addMessage(DungeoSchedulerMessages.MATCH_BURNING, 'The match sputters.');
+    language.addMessage(DungeoSchedulerMessages.MATCH_OUT, 'The match goes out.');
+
+    // Dam draining
+    language.addMessage(DungeoSchedulerMessages.DAM_DRAINING, 'The sluice gates open and water begins draining from the reservoir.');
+    language.addMessage(DungeoSchedulerMessages.DAM_NEARLY_EMPTY, 'The reservoir is nearly empty now.');
+    language.addMessage(DungeoSchedulerMessages.DAM_EMPTY, 'The last of the water drains away.');
+    language.addMessage(DungeoSchedulerMessages.DAM_TRUNK_REVEALED, 'As the mud settles, a trunk becomes visible in the reservoir bed!');
+
+    // Forest ambience
+    language.addMessage(DungeoSchedulerMessages.FOREST_BIRD, 'A songbird chirps in the distance.');
+    language.addMessage(DungeoSchedulerMessages.FOREST_RUSTLE, 'Leaves rustle in the undergrowth.');
+    language.addMessage(DungeoSchedulerMessages.FOREST_BREEZE, 'A gentle breeze stirs the branches.');
+    language.addMessage(DungeoSchedulerMessages.FOREST_BRANCH, 'A branch cracks somewhere in the forest.');
+
+    // Underground ambience
+    language.addMessage(DungeoSchedulerMessages.UNDERGROUND_DRIP, 'Water drips somewhere in the darkness.');
+    language.addMessage(DungeoSchedulerMessages.UNDERGROUND_ECHO, 'A distant echo reaches your ears.');
+    language.addMessage(DungeoSchedulerMessages.UNDERGROUND_CREAK, 'The timbers creak ominously.');
+
+    // NPC messages (ADR-070)
+    // Guard behavior (troll)
+    language.addMessage('npc.guard.blocks', 'The {npcName} growls menacingly, blocking your way.');
+    language.addMessage('npc.guard.attacks', 'The {npcName} swings at you!');
+    language.addMessage('npc.guard.defeated', 'The {npcName} has been defeated!');
+
+    // Combat messages
+    language.addMessage('npc.attacks', 'The {npcName} attacks!');
+    language.addMessage('npc.misses', 'The {npcName} misses.');
+    language.addMessage('npc.hits', 'The {npcName} hits you!');
+    language.addMessage('npc.killed', 'The {npcName} is dead.');
+    language.addMessage('npc.unconscious', 'The {npcName} slumps to the ground, unconscious.');
+
+    // NPC movement
+    language.addMessage('npc.enters', 'A {npcName} enters.');
+    language.addMessage('npc.leaves', 'The {npcName} leaves.');
+    language.addMessage('npc.notices_player', 'The {npcName} notices you.');
+
+    // NPC speech
+    language.addMessage('npc.no_response', 'The {npcName} does not respond.');
   }
 
   /**
@@ -374,7 +432,7 @@ export class DungeoStory implements Story {
 
   /**
    * Called when the engine is fully initialized.
-   * Registers the GDT command transformer to bypass entity validation.
+   * Registers the GDT command transformer and scheduler events.
    */
   onEngineReady(engine: GameEngine): void {
     // Register transformer that clears entity slots for GDT commands
@@ -401,6 +459,21 @@ export class DungeoStory implements Story {
         }
       };
     });
+
+    // Register scheduler events (ADR-071 Phase 2)
+    const scheduler = engine.getScheduler();
+    if (scheduler) {
+      // Register all daemons and fuses
+      registerScheduledEvents(
+        scheduler,
+        this.world,
+        this.forestIds,
+        this.damIds
+      );
+
+      // Make scheduler accessible to GDT DC command
+      setSchedulerForGDT(this.world, scheduler);
+    }
   }
 }
 
