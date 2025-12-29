@@ -6,14 +6,15 @@
  * where the underground grating is located.
  */
 
-import {
-  WorldModel,
-  IFEntity,
-  IdentityTrait,
-  RoomTrait,
-  EntityType,
-  Direction
-} from '@sharpee/world-model';
+import { WorldModel, RoomTrait, Direction } from '@sharpee/world-model';
+
+// Room creators
+import { createForestPath1 } from './rooms/forest-path-1';
+import { createForestPath2 } from './rooms/forest-path-2';
+import { createForestPath3 } from './rooms/forest-path-3';
+import { createForestPath4 } from './rooms/forest-path-4';
+import { createClearing } from './rooms/clearing';
+import { createUpATree } from './rooms/up-a-tree';
 
 export interface ForestRoomIds {
   forestPath1: string;  // North of North of House
@@ -51,154 +52,9 @@ export function createForestRooms(world: WorldModel): ForestRoomIds {
 }
 
 /**
- * Forest Path 1 - North of the house
- * "This is a path winding through a dimly lit forest. The path heads
- * north-south here. One particularly large tree with some low branches
- * stands at the side of the path."
+ * Create all objects in the Forest region
  */
-function createForestPath1(world: WorldModel): IFEntity {
-  const room = world.createEntity('Forest Path', EntityType.ROOM);
-
-  room.add(new RoomTrait({
-    exits: {},
-    isDark: false,
-    isOutdoors: true
-  }));
-
-  room.add(new IdentityTrait({
-    name: 'Forest Path',
-    aliases: ['forest path', 'path', 'forest'],
-    description: 'This is a path winding through a dimly lit forest. The path heads north-south here. One particularly large tree with some low branches stands at the side of the path.',
-    properName: true,
-    article: ''
-  }));
-
-  return room;
-}
-
-/**
- * Forest Path 2 - Another section of forest
- * "This is a dimly lit forest, with large trees all around."
- */
-function createForestPath2(world: WorldModel): IFEntity {
-  const room = world.createEntity('Forest', EntityType.ROOM);
-
-  room.add(new RoomTrait({
-    exits: {},
-    isDark: false,
-    isOutdoors: true
-  }));
-
-  room.add(new IdentityTrait({
-    name: 'Forest',
-    aliases: ['forest', 'woods', 'trees'],
-    description: 'This is a dimly lit forest, with large trees all around.',
-    properName: true,
-    article: 'the'
-  }));
-
-  return room;
-}
-
-/**
- * Forest Path 3 - Dense forest
- * "The forest thins out, and the path becomes clearer."
- */
-function createForestPath3(world: WorldModel): IFEntity {
-  const room = world.createEntity('Forest Path', EntityType.ROOM);
-
-  room.add(new RoomTrait({
-    exits: {},
-    isDark: false,
-    isOutdoors: true
-  }));
-
-  room.add(new IdentityTrait({
-    name: 'Forest Path',
-    aliases: ['forest path', 'path'],
-    description: 'The forest thins out, and the path becomes clearer.',
-    properName: true,
-    article: ''
-  }));
-
-  return room;
-}
-
-/**
- * Forest Path 4 - Edge of forest near maze
- * "You are on a twisting path through a dense forest. The path splits here."
- */
-function createForestPath4(world: WorldModel): IFEntity {
-  const room = world.createEntity('Twisting Path', EntityType.ROOM);
-
-  room.add(new RoomTrait({
-    exits: {},
-    isDark: false,
-    isOutdoors: true
-  }));
-
-  room.add(new IdentityTrait({
-    name: 'Twisting Path',
-    aliases: ['twisting path', 'path', 'forest path'],
-    description: 'You are on a twisting path through a dense forest. The path splits here.',
-    properName: true,
-    article: ''
-  }));
-
-  return room;
-}
-
-/**
- * Clearing
- * "You are in a clearing, with a forest surrounding you on all sides.
- * A path leads south. On the ground is a pile of leaves. There is a
- * grating firmly fixed into the ground."
- */
-function createClearing(world: WorldModel): IFEntity {
-  const room = world.createEntity('Clearing', EntityType.ROOM);
-
-  room.add(new RoomTrait({
-    exits: {},
-    isDark: false,
-    isOutdoors: true
-  }));
-
-  room.add(new IdentityTrait({
-    name: 'Clearing',
-    aliases: ['clearing', 'forest clearing'],
-    description: 'You are in a clearing, with a forest surrounding you on all sides. A path leads south. On the ground is a pile of leaves.',
-    properName: true,
-    article: 'the'
-  }));
-
-  return room;
-}
-
-/**
- * Up a Tree
- * "You are about 10 feet above the ground nestled among some large
- * branches. The nearest branch above you is above your reach.
- * Beside you on the branch is a small bird's nest."
- */
-function createUpATree(world: WorldModel): IFEntity {
-  const room = world.createEntity('Up a Tree', EntityType.ROOM);
-
-  room.add(new RoomTrait({
-    exits: {},
-    isDark: false,
-    isOutdoors: true
-  }));
-
-  room.add(new IdentityTrait({
-    name: 'Up a Tree',
-    aliases: ['tree', 'in tree', 'up tree'],
-    description: 'You are about 10 feet above the ground nestled among some large branches. The nearest branch above you is above your reach. Beside you on the branch is a small bird\'s nest.',
-    properName: true,
-    article: ''
-  }));
-
-  return room;
-}
+export { createForestObjects } from './objects';
 
 /**
  * Connect Forest rooms to each other

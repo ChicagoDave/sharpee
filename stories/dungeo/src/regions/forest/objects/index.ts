@@ -23,7 +23,7 @@ import {
   EntityType
 } from '@sharpee/world-model';
 
-import { ForestRoomIds } from '../regions/forest';
+import { ForestRoomIds } from '../index';
 
 /**
  * Create all objects in the Forest region

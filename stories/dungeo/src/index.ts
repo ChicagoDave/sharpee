@@ -28,15 +28,11 @@ import {
 import { DungeoScoringService } from './scoring';
 
 // Import room and object creators
-import { createWhiteHouseRooms, WhiteHouseRoomIds } from './regions/white-house';
-import { createHouseInteriorRooms, connectHouseInteriorToExterior, HouseInteriorRoomIds } from './regions/house-interior';
-import { createForestRooms, connectForestToExterior, ForestRoomIds } from './regions/forest';
-import { createUndergroundRooms, connectUndergroundToHouse, UndergroundRoomIds } from './regions/underground';
+import { createWhiteHouseRooms, createWhiteHouseObjects, WhiteHouseRoomIds } from './regions/white-house';
+import { createHouseInteriorRooms, createHouseInteriorObjects, connectHouseInteriorToExterior, HouseInteriorRoomIds } from './regions/house-interior';
+import { createForestRooms, createForestObjects, connectForestToExterior, ForestRoomIds } from './regions/forest';
+import { createUndergroundRooms, createUndergroundObjects, connectUndergroundToHouse, UndergroundRoomIds } from './regions/underground';
 import { createDamRooms, connectDamToUnderground, createDamObjects, DamRoomIds } from './regions/dam';
-import { createWhiteHouseObjects } from './objects/white-house-objects';
-import { createHouseInteriorObjects } from './objects/house-interior-objects';
-import { createForestObjects } from './objects/forest-objects';
-import { createUndergroundObjects } from './objects/underground-objects';
 
 /**
  * Dungeo story configuration

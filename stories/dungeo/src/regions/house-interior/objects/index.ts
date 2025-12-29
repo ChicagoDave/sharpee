@@ -38,7 +38,7 @@ import {
   IFEvents
 } from '@sharpee/world-model';
 
-import { HouseInteriorRoomIds } from '../regions/house-interior';
+import { HouseInteriorRoomIds } from '../index';
 
 // Simple ID generator for events
 let eventCounter = 0;

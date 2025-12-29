@@ -24,7 +24,7 @@ import {
 } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
 
-import { UndergroundRoomIds } from '../regions/underground';
+import { UndergroundRoomIds } from '../index';
 
 // Simple ID generator for events
 let eventCounter = 0;

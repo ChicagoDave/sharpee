@@ -5,15 +5,14 @@
  * Includes: Cellar, Troll Room, East-West Passage, Round Room
  */
 
-import {
-  WorldModel,
-  IFEntity,
-  IdentityTrait,
-  RoomTrait,
-  RoomBehavior,
-  EntityType,
-  Direction
-} from '@sharpee/world-model';
+import { WorldModel, RoomTrait, RoomBehavior, Direction } from '@sharpee/world-model';
+
+// Room creators
+import { createCellar } from './rooms/cellar';
+import { createNarrowPassage } from './rooms/narrow-passage';
+import { createTrollRoom } from './rooms/troll-room';
+import { createEastWestPassage } from './rooms/east-west-passage';
+import { createRoundRoom } from './rooms/round-room';
 
 export interface UndergroundRoomIds {
   cellar: string;
@@ -48,137 +47,9 @@ export function createUndergroundRooms(world: WorldModel): UndergroundRoomIds {
 }
 
 /**
- * Cellar
- * "You are in a dark and damp cellar with a narrow passageway leading
- * north, and a crawlway to the south. On the west is the bottom of a
- * steep metal ramp which is unclimbable."
+ * Create all objects in the Underground region
  */
-function createCellar(world: WorldModel): IFEntity {
-  const room = world.createEntity('Cellar', EntityType.ROOM);
-
-  room.add(new RoomTrait({
-    exits: {},
-    isDark: true,  // Dark room - needs lantern
-    isOutdoors: false
-  }));
-
-  room.add(new IdentityTrait({
-    name: 'Cellar',
-    aliases: ['cellar', 'basement'],
-    description: 'You are in a dark and damp cellar with a narrow passageway leading north, and a crawlway to the south. On the west is the bottom of a steep metal ramp which is unclimbable.',
-    properName: true,
-    article: 'the'
-  }));
-
-  return room;
-}
-
-/**
- * Narrow Passage
- * "You are in a narrow passage connecting the cellar to the troll room."
- */
-function createNarrowPassage(world: WorldModel): IFEntity {
-  const room = world.createEntity('Narrow Passage', EntityType.ROOM);
-
-  room.add(new RoomTrait({
-    exits: {},
-    isDark: true,
-    isOutdoors: false
-  }));
-
-  room.add(new IdentityTrait({
-    name: 'Narrow Passage',
-    aliases: ['narrow passage', 'passage', 'tunnel'],
-    description: 'This is a narrow passage. The walls are damp and the air is stale.',
-    properName: true,
-    article: 'the'
-  }));
-
-  return room;
-}
-
-/**
- * Troll Room
- * "This is a small room with passages to the east and south and a
- * forbidding hole leading west. Bloodstains and deep scratches
- * (perhaps made by an axe) mar the walls."
- */
-function createTrollRoom(world: WorldModel): IFEntity {
-  const room = world.createEntity('Troll Room', EntityType.ROOM);
-
-  room.add(new RoomTrait({
-    exits: {},
-    isDark: true,
-    isOutdoors: false
-  }));
-
-  room.add(new IdentityTrait({
-    name: 'Troll Room',
-    aliases: ['troll room', 'bloody room'],
-    description: 'This is a small room with passages to the east and south and a forbidding hole leading west. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.',
-    properName: true,
-    article: 'the'
-  }));
-
-  return room;
-}
-
-/**
- * East-West Passage
- * "You are in a passage which continues to the east and west."
- */
-function createEastWestPassage(world: WorldModel): IFEntity {
-  const room = world.createEntity('East-West Passage', EntityType.ROOM);
-
-  room.add(new RoomTrait({
-    exits: {},
-    isDark: true,
-    isOutdoors: false
-  }));
-
-  room.add(new IdentityTrait({
-    name: 'East-West Passage',
-    aliases: ['passage', 'e/w passage', 'ew passage'],
-    description: 'You are in a passage which continues to the east and west.',
-    properName: true,
-    article: 'the'
-  }));
-
-  return room;
-}
-
-/**
- * Round Room
- * "This is a circular stone room with passages in all directions.
- * Several of them have unfortunately been blocked by cave-ins."
- *
- * NOTE: The Round Room has a spinning mechanism. When `isFixed` is false,
- * exiting the room randomizes which passage you end up in. Once the
- * associated puzzle is solved (TBD), `isFixed` becomes true and exits
- * work normally.
- */
-function createRoundRoom(world: WorldModel): IFEntity {
-  const room = world.createEntity('Round Room', EntityType.ROOM);
-
-  room.add(new RoomTrait({
-    exits: {},
-    isDark: true,
-    isOutdoors: false
-  }));
-
-  room.add(new IdentityTrait({
-    name: 'Round Room',
-    aliases: ['round room', 'circular room'],
-    description: 'This is a circular stone room with passages in all directions. Several of them have unfortunately been blocked by cave-ins.',
-    properName: true,
-    article: 'the'
-  }));
-
-  // Round Room spinning state - when false, exits are randomized (custom story state)
-  (room as any).isFixed = false;
-
-  return room;
-}
+export { createUndergroundObjects } from './objects';
 
 /**
  * Connect Underground rooms to each other
@@ -253,7 +124,7 @@ function connectUndergroundRooms(world: WorldModel, roomIds: UndergroundRoomIds)
  *
  * Note: The DOWN exit from Living Room is NOT added here - it is added
  * dynamically when the player moves the rug to reveal the trapdoor.
- * See house-interior-objects.ts for the rug's event handler.
+ * See house-interior/objects for the rug's event handler.
  */
 export function connectUndergroundToHouse(
   world: WorldModel,
@@ -274,5 +145,5 @@ export function connectUndergroundToHouse(
   }
 
   // Living Room DOWN exit is added by the rug's event handler when pushed
-  // See createLivingRoomObjects() in house-interior-objects.ts
+  // See createLivingRoomObjects() in house-interior/objects
 }

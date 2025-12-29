@@ -19,7 +19,7 @@ import {
   EntityType
 } from '@sharpee/world-model';
 
-import { WhiteHouseRoomIds } from '../regions/white-house';
+import { WhiteHouseRoomIds } from '../index';
 
 /**
  * Create all objects in the White House region
