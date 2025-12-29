@@ -1,7 +1,7 @@
 # Dungeo Implementation Tracking
 
 **Target**: Mainframe Zork 616-point version
-**Current Progress**: 84/~190 rooms (44%), 359/616 treasure points (58%)
+**Current Progress**: 107/~190 rooms (56%), 359/616 treasure points (58%)
 
 ---
 
@@ -44,22 +44,11 @@
 
 | Room | Status | Notes |
 |------|--------|-------|
-| Maze 1 (all alike) | ❌ | Twisty passages |
-| Maze 2 (all alike) | ❌ | |
-| Maze 3 (all alike) | ❌ | |
-| Maze 4 (all alike) | ❌ | |
-| Maze 5 (all alike) | ❌ | |
-| Maze 6 (all alike) | ❌ | |
-| Maze 7 (all alike) | ❌ | |
-| Maze 8 (all alike) | ❌ | |
-| Maze 9 (all alike) | ❌ | |
-| Maze 10 (all alike) | ❌ | |
-| Maze (all different) | ❌ | 5+ rooms |
-| Grating Room | ❌ | Exit to surface |
-| Dead End (adventurer) | ❌ | Bag of coins, skeleton key |
-| Cyclops Room | ❌ | Say "Odysseus" |
-| Strange Passage | ❌ | Shortcut to Living Room |
-| Treasure Room | ❌ | Thief's lair |
+| Maze 1-15 (all alike) | ✅ Done | 15 twisty passage rooms |
+| Grating Room | ✅ Done | Exit to surface via grating |
+| Dead End 1-5 | ✅ Done | 5 dead end rooms |
+| Cyclops Room | ✅ Done | Say "Odysseus" (TBD) |
+| Treasure Room | ✅ Done | Thief's lair |
 
 ### Round Room and Carousel Area
 
@@ -513,7 +502,7 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 | Category | Done | Total | % |
 |----------|------|-------|---|
-| Rooms | 84 | ~190 | 44% |
+| Rooms | 107 | ~190 | 56% |
 | Treasures | 20 | 32 | 63% |
 | Treasure Points | 359 | 616 | 58% |
 | Light Sources | 4 | 4 | 100% |
@@ -531,14 +520,16 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
    - Cyclops: Speech handler (flees when named "Odysseus")
    - Vampire bat: Attack daemon unless garlic present
    - Spirits: Static blocker until exorcised
-2. **The Maze** (~15 rooms) - Unlocks coins, keys, cyclops, thief lair
-3. **Remaining treasures** - Spheres, violin, grail, ruby, coins
-4. **Puzzle mechanics** - Riddle, loud room echo, exorcism, rainbow wave
-5. **Royal Puzzle** - 8x8 sliding block puzzle (see royal-puzzle.md)
-6. **Endgame** (~15 rooms) - Final puzzle sequence
+2. **Remaining treasures** - Spheres, violin, grail, ruby, coins
+3. **Puzzle mechanics** - Riddle, loud room echo, exorcism, rainbow wave
+4. **Royal Puzzle** - 8x8 sliding block puzzle (see royal-puzzle.md)
+5. **Endgame** (~15 rooms) - Final puzzle sequence
+6. **Round Room connections** - Need Grail Room, Winding Passage, Engravings Cave, N/S Passage
 
 ## Recently Completed
 
+- ✅ **Maze Region** (2025-12-29) - 23 rooms: 15 maze rooms, 5 dead ends, Grating Room, Cyclops Room, Treasure Room
+- ✅ **Maze Connections** - Fixed Troll Room WEST→Maze, Round Room SW→Maze, all internal connections
 - ✅ **Thief NPC** - Full Mainframe Zork behavior: wandering, stealing, egg-opening, combat, lair stashing
 - ✅ **GDT NR/RR Commands** - No Robber/Restore Robber for thief control
 - ✅ **ADR-071 Timed Events** - Lantern battery, candle burning, dam draining, forest ambience

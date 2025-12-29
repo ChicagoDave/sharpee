@@ -106,3 +106,48 @@ S:Engravings Cave
 N:Engravings Cave
 SW:Maze-1
 W:East/West Passage
+
+North/South Passage
+N:Chasm
+NE:Loud Room
+S:Round Room
+
+Grail Room
+W:Round Room
+U:Temple
+E:Narrow Crawlway
+
+Temple
+W:Grail Room
+"treasure":Teeasure Room
+E:Altar
+
+Altar
+W:Temple
+"pray":Clearing
+
+Winding Passage
+E:Mirror Room
+N:Narrow Crawlway
+
+Cave (zero or even number of mirror rubs)
+D:Hades
+
+Cave (odd number of mirror rubs)
+D:Atlantis Room
+
+Hades
+(blocked by evil spirits)
+
+Narrow Crawlway
+SW:Mirror Room
+N:Grail Room
+
+Mirror Room
+N:Narrow Crawlway
+W:Winding Passage
+E:Cave
+
+Atlantis Room
+SE: Reservoir North
+U:Cave

@@ -1,6 +1,6 @@
 title: Maze Navigation
 story: dungeo
-description: Test maze room connections and navigation
+description: Test maze room connections based on Mainframe Zork map
 
 ---
 
@@ -28,76 +28,105 @@ description: Test maze room connections and navigation
 [OK: contains "Grating Room"]
 [OK: contains "small room near the surface"]
 
-# Enter the maze - southwest leads to Maze 1
+# Enter the maze - southwest leads to Maze-12
 > southwest
 [OK: contains "maze"]
 [OK: contains "twisty little passages"]
 [EVENT: true, type="if.event.actor_moved"]
 
-# Test self-loop: north from Maze 1 loops back to Maze 1
-> north
-[OK: contains "maze"]
-[OK: contains "twisty little passages"]
-[EVENT: true, type="if.event.actor_moved"]
-
-# Navigate through maze: south to Maze 4
-> south
+# From Maze-12: northwest to Maze-14
+> northwest
 [OK: contains "maze"]
 [EVENT: true, type="if.event.actor_moved"]
 
-# East to Maze 5 (main junction)
-> east
-[OK: contains "maze"]
-[EVENT: true, type="if.event.actor_moved"]
-
-# From Maze 5, navigate toward Cyclops Room
-# North to Maze 6
-> north
-[OK: contains "maze"]
-[EVENT: true, type="if.event.actor_moved"]
-
-# South back to Maze 5
-> south
-[OK: contains "maze"]
-[EVENT: true, type="if.event.actor_moved"]
-
-# Now go south from Maze 5 to Maze 7
-> south
-[OK: contains "maze"]
-[EVENT: true, type="if.event.actor_moved"]
-
-# Down from Maze 7 to Maze 12
+# From Maze-14: down to Maze-10
 > down
 [OK: contains "maze"]
 [EVENT: true, type="if.event.actor_moved"]
 
-# West to Maze 14
+# From Maze-10: west to Maze-15
 > west
 [OK: contains "maze"]
 [EVENT: true, type="if.event.actor_moved"]
 
-# South to Maze 15
+# From Maze-15: east to Dead End-3
+> east
+[OK: contains "Dead End"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# From Dead End-3: south to Maze-9
 > south
 [OK: contains "maze"]
 [EVENT: true, type="if.event.actor_moved"]
 
-# West to Maze 17
-> west
-[OK: contains "maze"]
-[EVENT: true, type="if.event.actor_moved"]
-
-# North to Cyclops Room
-> north
+# From Maze-9: northeast to Cyclops Room
+> northeast
 [OK: contains "Cyclops"]
 [EVENT: true, type="if.event.actor_moved"]
 
-# Northwest to Treasure Room (Thief's Lair)
-> northwest
+# From Cyclops Room: up to Treasure Room
+> up
 [OK: contains "Treasure Room"]
-[OK: contains "marble"]
 [EVENT: true, type="if.event.actor_moved"]
 
-# South back to Cyclops Room
-> south
+# Navigate back down to Cyclops Room
+> down
 [OK: contains "Cyclops"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# Test path from Troll Room to Maze
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> ah troll room
+[OK: contains "Teleported to"]
+
+> ex
+[OK: contains "Returning to game"]
+
+# West from Troll Room leads to Maze-1 (the "forbidding hole")
+> west
+[OK: contains "maze"]
+[OK: contains "twisty little passages"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# From Maze-1: east to Maze-2
+> east
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# From Maze-2: west to Maze-4
+> west
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# From Maze-4: up to Maze-15
+> up
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# From Maze-15: north to Maze-4 (back)
+> north
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# Test Round Room to Maze connection
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> ah round room
+[OK: contains "Teleported to"]
+
+> ex
+[OK: contains "Returning to game"]
+
+# Southwest from Round Room leads to Maze-1
+> southwest
+[OK: contains "maze"]
+[OK: contains "twisty little passages"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# Northeast from Maze-1 leads back to Round Room
+> northeast
+[OK: contains "Round Room"]
 [EVENT: true, type="if.event.actor_moved"]

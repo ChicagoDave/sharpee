@@ -22,7 +22,7 @@ function createDeadEndRoom(world: WorldModel, num: number): IFEntity {
 
   room.add(new IdentityTrait({
     name: 'Dead End',
-    aliases: ['dead end'],
+    aliases: ['dead end', `dead end ${num}`, `deadend${num}`],
     description: 'You have come to a dead end in the maze.',
     properName: true,
     article: 'the'

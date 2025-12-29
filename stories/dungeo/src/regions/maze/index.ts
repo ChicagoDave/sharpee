@@ -468,6 +468,9 @@ export function connectCyclopsToLivingRoom(
 
 /**
  * Connect Maze-1 to Troll Room
+ *
+ * Per Troll Room description: "passages to the east and south and a
+ * forbidding hole leading west" - the WEST exit leads to the maze.
  */
 export function connectMazeToTrollRoom(
   world: WorldModel,
@@ -483,12 +486,12 @@ export function connectMazeToTrollRoom(
     }
   }
 
-  // Troll Room SOUTH to Maze-1
+  // Troll Room WEST to Maze-1 (the "forbidding hole leading west")
   const trollRoom = world.getEntity(trollRoomId);
   if (trollRoom) {
     const roomTrait = trollRoom.get(RoomTrait);
     if (roomTrait) {
-      roomTrait.exits[Direction.SOUTH] = { destination: mazeIds.maze1 };
+      roomTrait.exits[Direction.WEST] = { destination: mazeIds.maze1 };
     }
   }
 }

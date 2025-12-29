@@ -22,7 +22,7 @@ export function createMaze9(world: WorldModel): IFEntity {
 
   room.add(new IdentityTrait({
     name: 'Maze',
-    aliases: ['maze'],
+    aliases: ['maze', 'maze 9', 'maze9'],
     description: 'You are in a maze of twisty little passages, all alike.',
     properName: false,
     article: 'the'
