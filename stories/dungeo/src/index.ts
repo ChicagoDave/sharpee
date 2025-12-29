@@ -39,6 +39,7 @@ import { createVolcanoRooms, connectVolcanoToCoalMine, createVolcanoObjects, Vol
 import { createBankRooms, connectBankToUnderground, createBankObjects, BankRoomIds } from './regions/bank-of-zork';
 import { createWellRoomRooms, connectWellRoomToTemple, createWellRoomObjects, WellRoomIds } from './regions/well-room';
 import { createFrigidRiverRooms, connectFrigidRiverToDam, createFrigidRiverObjects, FrigidRiverRoomIds } from './regions/frigid-river';
+import { createMazeRooms, connectMazeToClearing, connectCyclopsToLivingRoom, createMazeObjects, MazeRoomIds } from './regions/maze';
 
 /**
  * Dungeo story configuration
@@ -70,6 +71,7 @@ export class DungeoStory implements Story {
   private bankIds: BankRoomIds = {} as BankRoomIds;
   private wellRoomIds: WellRoomIds = {} as WellRoomIds;
   private frigidRiverIds: FrigidRiverRoomIds = {} as FrigidRiverRoomIds;
+  private mazeIds: MazeRoomIds = {} as MazeRoomIds;
 
   /**
    * Initialize the world for Dungeo
@@ -106,6 +108,7 @@ export class DungeoStory implements Story {
     this.bankIds = createBankRooms(world);
     this.wellRoomIds = createWellRoomRooms(world);
     this.frigidRiverIds = createFrigidRiverRooms(world);
+    this.mazeIds = createMazeRooms(world);
 
     // Connect regions
     connectHouseInteriorToExterior(world, this.houseInteriorIds, this.whiteHouseIds.behindHouse);
@@ -119,6 +122,8 @@ export class DungeoStory implements Story {
     connectBankToUnderground(world, this.bankIds, this.undergroundIds.roundRoom);
     connectWellRoomToTemple(world, this.wellRoomIds, this.templeIds.torchRoom);
     connectFrigidRiverToDam(world, this.frigidRiverIds, this.damIds.damBase);
+    connectMazeToClearing(world, this.mazeIds, this.forestIds.clearing);
+    connectCyclopsToLivingRoom(world, this.mazeIds, this.houseInteriorIds.livingRoom);
 
     // Create all objects and place them in rooms
     createWhiteHouseObjects(world, this.whiteHouseIds);
@@ -132,6 +137,7 @@ export class DungeoStory implements Story {
     createBankObjects(world, this.bankIds);
     createWellRoomObjects(world, this.wellRoomIds);
     createFrigidRiverObjects(world, this.frigidRiverIds);
+    createMazeObjects(world, this.mazeIds);
 
     // Set initial player location to West of House
     const player = world.getPlayer();
