@@ -49,6 +49,9 @@ import { createWellRoomRooms, connectWellRoomToTemple, createWellRoomObjects, We
 import { createFrigidRiverRooms, connectFrigidRiverToDam, createFrigidRiverObjects, FrigidRiverRoomIds } from './regions/frigid-river';
 import { createMazeRooms, connectMazeToClearing, connectCyclopsToLivingRoom, createMazeObjects, MazeRoomIds } from './regions/maze';
 
+// Import NPCs
+import { registerThief, ThiefMessages } from './npcs/thief';
+
 /**
  * Dungeo story configuration
  */
@@ -365,6 +368,32 @@ export class DungeoStory implements Story {
 
     // NPC speech
     language.addMessage('npc.no_response', 'The {npcName} does not respond.');
+
+    // Thief NPC messages (ADR-070)
+    // Appearance/Movement
+    language.addMessage(ThiefMessages.APPEARS, 'A seedy-looking gentleman sidles into view.');
+    language.addMessage(ThiefMessages.LEAVES, 'The thief slinks away into the shadows.');
+    language.addMessage(ThiefMessages.LURKS, 'The thief lurks in the shadows, watching.');
+
+    // Stealing
+    language.addMessage(ThiefMessages.STEALS_FROM_PLAYER, '"My, what a lovely {itemName}!" The thief snatches it away.');
+    language.addMessage(ThiefMessages.STEALS_FROM_ROOM, 'The thief pockets the {itemName}.');
+    language.addMessage(ThiefMessages.NOTICES_VALUABLES, 'The thief\'s eyes gleam as he notices your possessions.');
+    language.addMessage(ThiefMessages.GLOATS, 'The thief grins smugly at you.');
+
+    // Egg-opening (special mechanic)
+    language.addMessage(ThiefMessages.OPENS_EGG, 'The thief, eyeing the jeweled egg with professional interest, skillfully opens it and reveals a clockwork canary!');
+
+    // Combat
+    language.addMessage(ThiefMessages.ATTACKS, 'The thief lunges at you with his stiletto!');
+    language.addMessage(ThiefMessages.COUNTERATTACKS, 'The thief parries and counterattacks!');
+    language.addMessage(ThiefMessages.DODGES, 'The thief deftly dodges your attack.');
+    language.addMessage(ThiefMessages.WOUNDED, 'The thief staggers from your blow.');
+    language.addMessage(ThiefMessages.FLEES, 'The thief, badly wounded, stumbles away into the darkness.');
+    language.addMessage(ThiefMessages.DIES, 'The thief falls to the ground, a look of surprise frozen on his face.');
+
+    // Post-death
+    language.addMessage(ThiefMessages.DROPS_LOOT, 'The thief\'s ill-gotten gains scatter across the floor.');
   }
 
   /**
@@ -473,6 +502,25 @@ export class DungeoStory implements Story {
 
       // Make scheduler accessible to GDT DC command
       setSchedulerForGDT(this.world, scheduler);
+    }
+
+    // Register NPCs (ADR-070)
+    const npcService = engine.getNpcService();
+    if (npcService) {
+      // Calculate surface room IDs (thief is forbidden from surface)
+      const surfaceRooms = [
+        ...Object.values(this.whiteHouseIds),
+        ...Object.values(this.houseInteriorIds),
+        ...Object.values(this.forestIds)
+      ];
+
+      // Register thief NPC in the Treasure Room (his lair)
+      registerThief(
+        npcService,
+        this.world,
+        this.mazeIds.treasureRoom,
+        surfaceRooms
+      );
     }
   }
 }

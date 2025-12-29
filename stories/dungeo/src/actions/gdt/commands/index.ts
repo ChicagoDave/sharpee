@@ -24,6 +24,8 @@ import { afHandler } from './af';
 // Phase 2 - Toggle handlers
 import { ndHandler } from './nd';
 import { rdHandler } from './rd';
+import { nrHandler } from './nr';
+import { rrHandler } from './rr';
 // Phase 4 - Scheduler debug
 import { dcHandler, setSchedulerForGDT, SCHEDULER_GDT_KEY } from './dc';
 
@@ -55,6 +57,8 @@ handlers.set('AF', afHandler);
 // Register Phase 2 - Toggle handlers
 handlers.set('ND', ndHandler);
 handlers.set('RD', rdHandler);
+handlers.set('NR', nrHandler);
+handlers.set('RR', rrHandler);
 
 // Register Phase 4 - Scheduler debug
 handlers.set('DC', dcHandler);
@@ -123,4 +127,6 @@ export { dfHandler } from './df';
 export { afHandler } from './af';
 export { ndHandler } from './nd';
 export { rdHandler } from './rd';
+export { nrHandler } from './nr';
+export { rrHandler } from './rr';
 export { dcHandler, setSchedulerForGDT, SCHEDULER_GDT_KEY } from './dc';

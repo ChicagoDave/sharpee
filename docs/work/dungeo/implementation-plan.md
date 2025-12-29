@@ -296,8 +296,8 @@
 |--------|----------|--------|-------|
 | Elvish sword | Living Room | ✅ Done | Glows blue near enemies |
 | Nasty knife | Attic | ✅ Done | Better vs thief |
-| Stiletto | Thief | ❌ | Thief's weapon |
-| Bloody axe | Troll | ❌ | Troll's weapon |
+| Stiletto | Thief | ✅ Done | Thief's weapon (drops on death) |
+| Bloody axe | Troll | ✅ Done | Troll's weapon (drops on death) |
 
 ### Tools
 
@@ -373,8 +373,8 @@
 
 | Creature | Location | Status | Notes |
 |----------|----------|--------|-------|
-| Troll | Troll Room | 🚧 Partial | Room exists, NPC behavior not done |
-| Thief | Wandering | ❌ | Steals, opens egg, fight late-game |
+| Troll | Troll Room | ✅ Done | Guard behavior, blocks passage, combat |
+| Thief | Wandering | ✅ Done | Full AI: wander, steal, egg-open, combat, lair |
 | Cyclops | Cyclops Room | ❌ | Say "Odysseus" to scare |
 | Vampire bat | Bat Room | ❌ | Attacks without garlic |
 | Spirits | Entry to Hades | ❌ | Block until exorcised |
@@ -517,29 +517,30 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 | Treasures | 20 | 32 | 63% |
 | Treasure Points | 359 | 616 | 58% |
 | Light Sources | 4 | 4 | 100% |
-| Weapons | 2 | 4 | 50% |
+| Weapons | 4 | 4 | 100% |
 | Tools | 4 | 6 | 67% |
 | Containers | 5 | 5 | 100% |
-| NPCs | 0 | 8 | 0% |
+| NPCs | 2 | 8 | 25% |
 | Puzzles (working) | 2 | ~25 | 8% |
 
 ---
 
 ## Priority Next Steps
 
-1. **NPC Behaviors** - Wire up NpcTrait to actual NPCs:
-   - Troll: Guard behavior (blocks passage until defeated)
-   - Thief: Wanderer + stealer behavior (complex AI)
+1. **Remaining NPCs** - Complete NPC roster:
    - Cyclops: Speech handler (flees when named "Odysseus")
-   - Vampire bat: Attack without garlic
+   - Vampire bat: Attack daemon unless garlic present
+   - Spirits: Static blocker until exorcised
 2. **The Maze** (~15 rooms) - Unlocks coins, keys, cyclops, thief lair
-3. **Remaining treasures** - Gallery painting, spheres, violin, grail, ruby
+3. **Remaining treasures** - Spheres, violin, grail, ruby, coins
 4. **Puzzle mechanics** - Riddle, loud room echo, exorcism, rainbow wave
 5. **Royal Puzzle** - 8x8 sliding block puzzle (see royal-puzzle.md)
 6. **Endgame** (~15 rooms) - Final puzzle sequence
 
 ## Recently Completed
 
+- ✅ **Thief NPC** - Full Mainframe Zork behavior: wandering, stealing, egg-opening, combat, lair stashing
+- ✅ **GDT NR/RR Commands** - No Robber/Restore Robber for thief control
 - ✅ **ADR-071 Timed Events** - Lantern battery, candle burning, dam draining, forest ambience
-- ✅ **ADR-070 NPC System** - NpcTrait architecture implemented
+- ✅ **ADR-070 NPC System** - NpcTrait architecture implemented, Troll and Thief working
 - ✅ **GDT DC Command** - Scheduler introspection for debugging
