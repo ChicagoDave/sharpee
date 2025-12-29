@@ -173,8 +173,7 @@ function createPlatinumBar(world: WorldModel, roomId: string): IFEntity {
   (bar as any).treasureId = 'platinum-bar';
   (bar as any).treasureValue = 10;
 
-  // Heavy item - may need weight system later
-  (bar as any).weight = 10;
+  // Note: Weight is now computed from traits, not set directly
 
   world.moveEntity(bar.id, roomId);
   return bar;
