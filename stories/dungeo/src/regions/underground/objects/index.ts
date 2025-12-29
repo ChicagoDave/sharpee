@@ -41,6 +41,12 @@ export function createUndergroundObjects(world: WorldModel, roomIds: Underground
 
   // Troll Room objects
   createTrollRoomObjects(world, roomIds.trollRoom);
+
+  // Gallery objects
+  createGalleryObjects(world, roomIds.gallery);
+
+  // Studio objects
+  createStudioObjects(world, roomIds.studio);
 }
 
 // ============= Cellar Objects =============
@@ -142,4 +148,52 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
   }));
   // Place axe in troll's inventory (will drop when killed via dropsInventory)
   world.moveEntity(axe.id, troll.id);
+}
+
+// ============= Gallery Objects =============
+
+function createGalleryObjects(world: WorldModel, roomId: string): void {
+  // Painting (treasure - 4 take + 7 case = 11 total)
+  const painting = world.createEntity('painting', EntityType.ITEM);
+  painting.add(new IdentityTrait({
+    name: 'painting',
+    aliases: ['painting', 'picture', 'art', 'artwork', 'canvas'],
+    description: 'A painting of remarkable beauty, depicting a woodland scene. It is the only painting remaining in the gallery.',
+    properName: false,
+    article: 'a'
+  }));
+  // Treasure scoring
+  (painting as any).isTreasure = true;
+  (painting as any).treasureId = 'painting';
+  (painting as any).treasureValue = 4;  // Take value
+  (painting as any).trophyCaseValue = 7;  // Additional case value
+  world.moveEntity(painting.id, roomId);
+}
+
+// ============= Studio Objects =============
+
+function createStudioObjects(world: WorldModel, roomId: string): void {
+  // Chimney (scenery - leads down to Kitchen)
+  const chimney = world.createEntity('chimney', EntityType.SCENERY);
+  chimney.add(new IdentityTrait({
+    name: 'chimney',
+    aliases: ['chimney', 'dark chimney', 'fireplace chimney'],
+    description: 'A dark chimney leads down. You could probably climb down it.',
+    properName: false,
+    article: 'a'
+  }));
+  chimney.add(new SceneryTrait());
+  world.moveEntity(chimney.id, roomId);
+
+  // Grotesque drawings (scenery)
+  const drawings = world.createEntity('drawings', EntityType.SCENERY);
+  drawings.add(new IdentityTrait({
+    name: 'crude drawings',
+    aliases: ['drawings', 'crude drawings', 'grotesque creatures', 'pictures'],
+    description: 'The walls are covered with crude drawings of what appear to be grotesque creatures, perhaps the work of a disturbed artist.',
+    properName: false,
+    article: 'some'
+  }));
+  drawings.add(new SceneryTrait());
+  world.moveEntity(drawings.id, roomId);
 }

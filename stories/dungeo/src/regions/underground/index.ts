@@ -2,7 +2,7 @@
  * Underground Region - The Great Underground Empire (Phase 1)
  *
  * Initial underground areas accessible from the house.
- * Includes: Cellar, Troll Room, East-West Passage, Round Room
+ * Includes: Cellar, Troll Room, East-West Passage, Round Room, Gallery, Studio
  */
 
 import { WorldModel, RoomTrait, RoomBehavior, Direction } from '@sharpee/world-model';
@@ -13,6 +13,8 @@ import { createNarrowPassage } from './rooms/narrow-passage';
 import { createTrollRoom } from './rooms/troll-room';
 import { createEastWestPassage } from './rooms/east-west-passage';
 import { createRoundRoom } from './rooms/round-room';
+import { createGallery } from './rooms/gallery';
+import { createStudio } from './rooms/studio';
 
 export interface UndergroundRoomIds {
   cellar: string;
@@ -20,6 +22,8 @@ export interface UndergroundRoomIds {
   eastWestPassage: string;
   roundRoom: string;
   narrowPassage: string;  // Connects cellar to troll room
+  gallery: string;        // Art gallery with painting
+  studio: string;         // Artist's studio with chimney
 }
 
 /**
@@ -31,13 +35,17 @@ export function createUndergroundRooms(world: WorldModel): UndergroundRoomIds {
   const eastWestPassage = createEastWestPassage(world);
   const roundRoom = createRoundRoom(world);
   const narrowPassage = createNarrowPassage(world);
+  const gallery = createGallery(world);
+  const studio = createStudio(world);
 
   const roomIds: UndergroundRoomIds = {
     cellar: cellar.id,
     trollRoom: trollRoom.id,
     eastWestPassage: eastWestPassage.id,
     roundRoom: roundRoom.id,
-    narrowPassage: narrowPassage.id
+    narrowPassage: narrowPassage.id,
+    gallery: gallery.id,
+    studio: studio.id
   };
 
   // Connect the underground rooms
@@ -62,7 +70,32 @@ function connectUndergroundRooms(world: WorldModel, roomIds: UndergroundRoomIds)
     if (roomTrait) {
       roomTrait.exits = {
         [Direction.NORTH]: { destination: roomIds.narrowPassage },
+        [Direction.WEST]: { destination: roomIds.gallery },
         // Up connects to Living Room (through trapdoor) - set externally
+      };
+    }
+  }
+
+  // Gallery connections
+  const gallery = world.getEntity(roomIds.gallery);
+  if (gallery) {
+    const roomTrait = gallery.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.EAST]: { destination: roomIds.cellar },
+        [Direction.NORTH]: { destination: roomIds.studio },
+      };
+    }
+  }
+
+  // Studio connections
+  const studio = world.getEntity(roomIds.studio);
+  if (studio) {
+    const roomTrait = studio.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.SOUTH]: { destination: roomIds.gallery },
+        // UP goes to Kitchen via chimney - connected externally
       };
     }
   }
@@ -117,6 +150,29 @@ function connectUndergroundRooms(world: WorldModel, roomIds: UndergroundRoomIds)
       };
     }
   }
+}
+
+/**
+ * Connect Studio to Kitchen via chimney
+ *
+ * Note: The chimney is one-way - you can slide DOWN from Studio to Kitchen,
+ * but Kitchen's UP exit remains pointing to the Attic (via stairs).
+ * This matches the original Zork behavior.
+ */
+export function connectStudioToKitchen(
+  world: WorldModel,
+  undergroundIds: UndergroundRoomIds,
+  kitchenId: string
+): void {
+  // Studio down to Kitchen via chimney (one-way)
+  const studio = world.getEntity(undergroundIds.studio);
+  if (studio) {
+    const roomTrait = studio.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits[Direction.DOWN] = { destination: kitchenId };
+    }
+  }
+  // Kitchen UP remains pointing to Attic - don't override it
 }
 
 /**

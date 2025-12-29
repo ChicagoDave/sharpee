@@ -31,7 +31,7 @@ import { DungeoScoringService } from './scoring';
 import { createWhiteHouseRooms, createWhiteHouseObjects, WhiteHouseRoomIds } from './regions/white-house';
 import { createHouseInteriorRooms, createHouseInteriorObjects, connectHouseInteriorToExterior, HouseInteriorRoomIds } from './regions/house-interior';
 import { createForestRooms, createForestObjects, connectForestToExterior, ForestRoomIds } from './regions/forest';
-import { createUndergroundRooms, createUndergroundObjects, connectUndergroundToHouse, UndergroundRoomIds } from './regions/underground';
+import { createUndergroundRooms, createUndergroundObjects, connectUndergroundToHouse, connectStudioToKitchen, UndergroundRoomIds } from './regions/underground';
 import { createDamRooms, connectDamToUnderground, createDamObjects, DamRoomIds } from './regions/dam';
 import { createCoalMineRooms, connectCoalMineToDam, createCoalMineObjects, CoalMineRoomIds } from './regions/coal-mine';
 import { createTempleRooms, connectTempleToDam, createTempleObjects, TempleRoomIds } from './regions/temple';
@@ -111,6 +111,7 @@ export class DungeoStory implements Story {
     connectHouseInteriorToExterior(world, this.houseInteriorIds, this.whiteHouseIds.behindHouse);
     connectForestToExterior(world, this.forestIds, this.whiteHouseIds.northOfHouse, this.whiteHouseIds.behindHouse);
     connectUndergroundToHouse(world, this.undergroundIds, this.houseInteriorIds.livingRoom);
+    connectStudioToKitchen(world, this.undergroundIds, this.houseInteriorIds.kitchen);
     connectDamToUnderground(world, this.damIds, this.undergroundIds.roundRoom);
     connectCoalMineToDam(world, this.coalMineIds, this.damIds.maintenanceRoom);
     connectTempleToDam(world, this.templeIds, this.damIds.reservoirSouth);

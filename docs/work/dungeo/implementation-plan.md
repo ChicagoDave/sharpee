@@ -1,369 +1,535 @@
-# Dungeo Implementation Plan
+# Dungeo Implementation Tracking
 
-## Approach
-
-Implement in playable vertical slices, not horizontal layers. Each phase produces a playable game that can be expanded.
-
----
-
-## Prerequisites: Required ADRs
-
-Before implementation begins, these architectural decisions must be finalized and approved.
-
-### Required for Phase 1
-
-| ADR | Status | Needed For |
-|-----|--------|------------|
-| ADR-070: NPC System | Proposed | Troll guard behavior |
-| ADR-071: Daemons/Fuses | Proposed | Lantern battery countdown |
-| ADR-072: Combat System | Proposed | Troll fight mechanics, randomization |
-
-### Required for Phase 3
-
-| ADR | Status | Needed For |
-|-----|--------|------------|
-| ADR-073: Vehicle System | Not Started | Boat mechanics, basket elevator |
-
-### Required for Phase 5
-
-| ADR | Status | Needed For |
-|-----|--------|------------|
-| ADR-070: NPC System | (see above) | Thief wandering, stealing, AI |
-
-### Parser Enhancements (Can Be Deferred)
-
-| ADR | Status | Needed For |
-|-----|--------|------------|
-| ADR-074: Multi-Command Input | Not Started | "N. N. E. TAKE LAMP" |
-| ADR-075: Pronoun Resolution | Not Started | "TAKE IT", "DROP THEM" |
-| ADR-076: AGAIN Command | Not Started | Repeat last action |
-
-### Implementation Order
-
-1. **ADR-070** (NPC) + **ADR-071** (Daemons) + **ADR-072** (Combat) → All drafted
-2. **ADR-073** (Vehicle) → Can be drafted during Phase 2
-3. Parser ADRs → Can be deferred, workaround with explicit commands
+**Target**: Mainframe Zork 616-point version
+**Current Progress**: 84/~190 rooms (44%), 359/616 treasure points (58%)
 
 ---
 
-## Phase 1: White House to Troll (Playable Demo)
+## Rooms by Region
 
-**Goal**: Playable from start through defeating troll, ~30 rooms
+### The House and Forest (Surface)
 
-### Rooms
-- Surface: West of House, North/South/Behind, Kitchen, Living Room, Attic
-- Forest: Forest rooms, Clearing, Up a Tree
-- Underground: Cellar, Troll Room, East-West Passage, Round Room
+| Room | Status | Notes |
+|------|--------|-------|
+| West of House | ✅ Done | Starting location, mailbox |
+| North of House | ✅ Done | |
+| South of House | ✅ Done | |
+| Behind House | ✅ Done | Window entrance |
+| Kitchen | ✅ Done | Sack, bottle |
+| Living Room | ✅ Done | Trophy case, trapdoor, lantern, sword |
+| Attic | ✅ Done | Rope, nasty knife |
+| Forest Path 1 | ✅ Done | Climbable tree |
+| Forest Path 2 | ✅ Done | |
+| Forest Path 3 | ✅ Done | |
+| Forest Path 4 | ✅ Done | |
+| Clearing | ✅ Done | Grating to maze |
+| Up a Tree | ✅ Done | Egg in nest |
+| Canyon View | ✅ Done | Top of Great Canyon |
+| Rocky Ledge | ✅ Done | Halfway down canyon |
+| Canyon Bottom | ✅ Done | Bottom of canyon |
 
-### Objects
-- Mailbox, leaflet, sword, lantern, rope, knife
-- Egg (unopened), sack with food and garlic
-- Trophy case, rug, trapdoor
+### The Cellar and Troll Area
 
-### Systems Needed
-- ✅ Light/darkness (exists)
-- ✅ Containers (exists)
-- ✅ Combat (basic exists)
-- ❌ Timed events (lantern battery)
-- ❌ NPC basics (troll - stationary guard)
+| Room | Status | Notes |
+|------|--------|-------|
+| Cellar | ✅ Done | Central hub |
+| Troll Room | ✅ Done | Troll guards passage |
+| East-West Passage | ✅ Done | |
+| Round Room | ✅ Done | Spins until stopped |
+| Narrow Passage | ✅ Done | |
+| Gallery | ✅ Done | Painting treasure |
+| Studio | ✅ Done | Chimney to kitchen |
 
-### Puzzles
-- Open mailbox, read leaflet
-- Find trapdoor under rug
-- Light lantern for underground
-- Defeat troll with sword
+### The Maze
 
-### Exit Criteria
-- Can traverse from West of House to Round Room
-- Troll blocks passage until defeated
-- Lantern tracks remaining light
-- Score increases for troll defeat
+| Room | Status | Notes |
+|------|--------|-------|
+| Maze 1 (all alike) | ❌ | Twisty passages |
+| Maze 2 (all alike) | ❌ | |
+| Maze 3 (all alike) | ❌ | |
+| Maze 4 (all alike) | ❌ | |
+| Maze 5 (all alike) | ❌ | |
+| Maze 6 (all alike) | ❌ | |
+| Maze 7 (all alike) | ❌ | |
+| Maze 8 (all alike) | ❌ | |
+| Maze 9 (all alike) | ❌ | |
+| Maze 10 (all alike) | ❌ | |
+| Maze (all different) | ❌ | 5+ rooms |
+| Grating Room | ❌ | Exit to surface |
+| Dead End (adventurer) | ❌ | Bag of coins, skeleton key |
+| Cyclops Room | ❌ | Say "Odysseus" |
+| Strange Passage | ❌ | Shortcut to Living Room |
+| Treasure Room | ❌ | Thief's lair |
 
----
+### Round Room and Carousel Area
 
-## Phase 2: Dam & Coal Mine
+| Room | Status | Notes |
+|------|--------|-------|
+| Round Room | ✅ Done | Spins until stopped |
+| Engravings Cave | ❌ | |
+| Winding Passage | ❌ | |
+| North-South Passage | ❌ | |
+| Deep Canyon | ✅ Done | In dam region |
 
-**Goal**: Add dam puzzle, coal mine, ~50 total rooms
+### The Well and Tea Room
 
-### New Rooms
-- Dam area: Dam, Dam Base, Dam Lobby, Maintenance Room
-- Reservoir (drained/filled)
-- Coal Mine: Shaft Room, Timber Room, Drafty Room, Machine Room, Coal Mine, Ladder area
+| Room | Status | Notes |
+|------|--------|-------|
+| Well Room | ✅ Done | Bucket mechanism |
+| Tea Room | ✅ Done | Cakes (eat-me, drink-me) |
+| Posts Room | ✅ Done | Tiny size area |
+| Pool Room | ✅ Done | Spices |
+| Tiny Cave | ✅ Done | |
+| Riddle Room | ✅ Done | Answer "well" |
+| Pearl Room | ✅ Done | Necklace |
+| Circular Room | ❌ | Top of well |
+| Low Room | ❌ | Robot |
+| Dingy Closet | ❌ | White sphere under cage |
 
-### New Objects
-- Matchbook, guidebook, wrench, screwdriver
-- Coal, machine, basket
-- Trunk of jewels (in reservoir)
+### Flood Control Dam #3
 
-### Systems Needed
-- ❌ Mechanical state (dam open/closed)
-- ❌ Basket/elevator mechanics
-- ❌ Multi-room cause/effect (dam affects reservoir)
+| Room | Status | Notes |
+|------|--------|-------|
+| Dam | ✅ Done | Bolt to drain reservoir |
+| Dam Lobby | ✅ Done | Guidebook, matchbook |
+| Dam Base | ✅ Done | Deflated boat, pump |
+| Maintenance Room | ✅ Done | Wrench, screwdriver, buttons |
+| Loud Room | ✅ Done | Platinum bar, say "echo" |
 
-### Puzzles
-- Open dam to drain reservoir
-- Use basket to descend shaft
-- Light coal in machine to get sharp sword
-- Get trunk from drained reservoir
+### The Reservoir
 
-### Exit Criteria
-- Dam controls work, affect water levels
-- Basket system functional
-- Coal mine traversable
-- Machine works with coal
+| Room | Status | Notes |
+|------|--------|-------|
+| Reservoir | ✅ Done | Trunk when drained |
+| Reservoir South | ✅ Done | |
+| Reservoir North | ❌ | Pump |
+| Stream View | ❌ | Torch (if thrown at glacier) |
+| Deep Ravine | ❌ | |
+| Rocky Crawl | ❌ | |
 
----
+### The Dome and Temple
 
-## Phase 3: River & Boat
+| Room | Status | Notes |
+|------|--------|-------|
+| Dome Room | ✅ Done | Rope tie point |
+| Torch Room | ✅ Done | Ivory torch |
+| Temple | ✅ Done | Bell |
+| Altar | ✅ Done | Book, candles |
+| Narrow Corridor | ✅ Done | |
+| Entry to Hades | ✅ Done | Bell/book/candle puzzle |
+| Land of the Dead | ✅ Done | Endgame trigger |
+| Egyptian Room | ✅ Done | Gold coffin |
+| Tiny Room | ❌ | Key puzzle |
+| Dreary Room | ❌ | Blue sphere |
+| Cave | ❌ | |
 
-**Goal**: Add river traversal, boat mechanics, ~70 total rooms
+### Mirror Rooms
 
-### New Rooms
-- River: Shore, River (multiple), Waterfall areas
-- Aragain Falls, Rainbow room, End of Rainbow
-- Atlantis, Reservoir Shore
+| Room | Status | Notes |
+|------|--------|-------|
+| Mirror Room (South) | ❌ | Touch to teleport |
+| Mirror Room (North) | ❌ | Touch to teleport |
+| Cold Passage | ❌ | |
+| Slide Room | ❌ | Rope puzzle, slide to cellar |
 
-### New Objects
-- Inflatable boat, hand pump
-- Buoy with emerald
-- Trident, pot of gold
-- Sceptre (for rainbow)
+### The Coal Mine
 
-### Systems Needed
-- ❌ Vehicle trait/behavior
-- ❌ INFLATE/DEFLATE actions
-- ❌ WAVE action (sceptre)
-- ❌ Water current (auto-movement)
+| Room | Status | Notes |
+|------|--------|-------|
+| Bat Room | ✅ Done | Garlic required, jade |
+| Shaft Room | ✅ Done | Basket mechanism |
+| Timber Room | ✅ Done | |
+| Drafty Room | ✅ Done | |
+| Gas Room | ✅ Done | Lamp only! Bracelet |
+| Coal Mine | ✅ Done | Maze-like |
+| Ladder Top | ✅ Done | |
+| Ladder Bottom | ✅ Done | |
+| Machine Room | ✅ Done | Coal to diamond |
+| Dead End | ❌ | Coal |
+| Mine Entrance | ❌ | |
+| Squeaky Room | ❌ | |
+| Wooden Tunnel | ❌ | |
+| Smelly Room | ❌ | |
+| Lower Shaft | ❌ | Basket terminus |
 
-### Puzzles
-- Inflate boat, patch boat
-- Navigate river without crashing
-- Wave sceptre for solid rainbow
-- Dig at end of rainbow
+### Egyptian Area
 
-### Exit Criteria
-- Boat fully functional
-- River navigation works
-- Rainbow puzzle solvable
-- DIG action works
+| Room | Status | Notes |
+|------|--------|-------|
+| Egyptian Room | ✅ Done | In temple region |
+| Glacier Room | ❌ | Throw torch at ice |
+| North-South Crawlway | ❌ | |
+| Ruby Room | ❌ | Ruby treasure |
 
----
+### Frigid River
 
-## Phase 4: Temple & Hades
+| Room | Status | Notes |
+|------|--------|-------|
+| Frigid River 1 | ✅ Done | Boat required |
+| Frigid River 2 | ✅ Done | |
+| Frigid River 3 | ✅ Done | |
+| Shore | ✅ Done | |
+| Sandy Beach | ✅ Done | Buried statue |
+| Aragain Falls | ✅ Done | Rainbow |
+| On the Rainbow | ✅ Done | |
+| End of Rainbow | ✅ Done | Pot of gold |
+| White Cliffs Beach | ✅ Done | |
+| White Cliffs | ✅ Done | |
+| Rocky Shore | ✅ Done | |
+| Atlantis | ✅ Done | Trident |
+| Cave Behind Falls | ✅ Done | |
+| Small Cave | ❌ | Shovel |
 
-**Goal**: Add temple, exorcism puzzle, ~90 total rooms
+### The Volcano
 
-### New Rooms
-- Temple, Altar area
-- Egyptian Room, Coffin area
-- Hades, Land of the Dead
-- Torch room, Dome area
+| Room | Status | Notes |
+|------|--------|-------|
+| Volcano Bottom | ✅ Done | Balloon basket |
+| Volcano Core | ✅ Done | Rising/falling |
+| Volcano View | ✅ Done | |
+| Narrow Ledge | ✅ Done | Zorkmid coin |
+| Dusty Room | ✅ Done | Crown |
+| Lava Room | ❌ | |
+| Wide Ledge | ❌ | |
+| Library | ❌ | Stamp in purple book |
 
-### New Objects
-- Bell, book, candles
-- Gold coffin, sceptre (if not from Ph3)
-- Ivory torch, crystal skull
-- Chalice
+### The Bank of Zork
 
-### Systems Needed
-- ❌ RING action (bell)
-- ❌ PRAY action
-- ❌ Exorcism sequence (bell, book, candle)
-- ❌ Spirit NPCs (blocking, dispellable)
+| Room | Status | Notes |
+|------|--------|-------|
+| East of Chasm | ✅ Done | |
+| West of Chasm | ✅ Done | |
+| Bank Entrance | ✅ Done | |
+| Bank Lobby | ✅ Done | |
+| West Teller | ✅ Done | |
+| East Teller | ✅ Done | |
+| Chairman's Office | ✅ Done | Portrait |
+| Safety Deposit | ✅ Done | Curtain of light |
+| Vault | ✅ Done | Zorkmid bills |
+| Viewing Room | ✅ Done | |
+| Small Room | ✅ Done | Through south wall |
 
-### Puzzles
-- Retrieve bell, book, candles
-- Perform exorcism to clear Hades
-- Get skull from Land of Dead
-- Rope descent in dome
+### The Royal Puzzle
 
-### Exit Criteria
-- Exorcism fully works
-- Spirits block until exorcised
-- Temple treasures retrievable
-- Rope mechanics work
+| Room | Status | Notes |
+|------|--------|-------|
+| Puzzle Entrance | ❌ | Entry point |
+| Room in a Puzzle | ❌ | 8x8 grid - 64 virtual positions |
 
----
+### The Endgame
 
-## Phase 5: The Thief
-
-**Goal**: Add wandering thief NPC
-
-### Systems Needed
-- ❌ NPC wandering AI
-- ❌ NPC inventory (thief carries stolen goods)
-- ❌ Thief stealing behavior
-- ❌ Thief combat (tougher than troll)
-- ❌ Thief lair (treasure dump)
-- ❌ Thief state (alive, dead, unconscious)
-
-### Behavior Spec
-- Wanders underground randomly
-- Steals valuable items from rooms and player
-- Fights if attacked or cornered
-- Returns treasure to lair
-- Can open egg properly (get canary)
-- Combat is randomized, sword skill matters
-
-### Exit Criteria
-- Thief wanders and steals
-- Thief can be killed
-- Thief's lair contains stolen goods
-- Proper egg opening via thief
-
----
-
-## Phase 6: Mazes
-
-**Goal**: Add both mazes, ~120 total rooms
-
-### New Rooms
-- Maze of Twisty Passages (all alike) - 10+ rooms
-- Maze of Twisty Passages (all different) - 10+ rooms
-- Grating room, Cyclops room
-
-### New Objects
-- Skeleton with rusty knife
-- Coins, jewels scattered in maze
-- Cyclops NPC
-
-### Systems Needed
-- ❌ Maze navigation (confusing connections)
-- ❌ Object dropping for maze mapping
-- ❌ Cyclops NPC (name puzzle)
-
-### Puzzles
-- Map mazes with dropped objects
-- Say "ODYSSEUS" to cyclops
-- Find skeleton and grating
-
-### Exit Criteria
-- Mazes navigable
-- Grating openable from below
-- Cyclops puzzle works
-
----
-
-## Phase 7: Royal Puzzle
-
-**Goal**: Add sliding room puzzle, ~150 total rooms
-
-### New Rooms
-- Royal Puzzle entrance
-- 16 sliding puzzle rooms
-- Solution chamber
-
-### Systems Needed
-- ❌ Sliding room mechanics
-- ❌ Room state tracking (positions)
-- ❌ PUSH WALL action
-
-### Puzzles
-- Navigate shifting puzzle rooms
-- Find correct sequence to solution
-
-### Exit Criteria
-- Puzzle rooms slide correctly
-- Solution achievable
-- Cardinal inscription readable
-
----
-
-## Phase 8: Bank of Zork
-
-**Goal**: Add bank puzzle, ~170 total rooms
-
-### New Rooms
-- Chasm area (east/west)
-- Bank interior: Lobby, offices, vault
-- Safety deposit area
-- Viewing room
-
-### New Objects
-- Portrait, zorkmid bills
-- Keys, vault door
-- Bills (multiple denominations)
-
-### Systems Needed
-- ❌ Curtain/viewing room mechanics
-- ❌ Complex lock (vault)
-- ❌ Teller/deposit box system
-
-### Exit Criteria
-- Bank traversable
-- Vault accessible via puzzle
-- All bank treasures retrievable
+| Room | Status | Notes |
+|------|--------|-------|
+| Tomb of Unknown Implementer | ❌ | Crypt |
+| Crypt | ❌ | Wait in darkness |
+| Top of Stairs | ❌ | Endgame start |
+| Stone Room | ❌ | Button |
+| Small Room | ❌ | Laser beam |
+| Hallway | ❌ | Mirror entrance |
+| Inside Mirror | ❌ | Rotating box |
+| Dungeon Entrance | ❌ | Trivia questions |
+| Narrow Corridor | ❌ | |
+| South Corridor | ❌ | |
+| East Corridor | ❌ | |
+| North Corridor | ❌ | |
+| Parapet | ❌ | Dial mechanism |
+| Prison Cell | ❌ | Cell door |
+| Treasury of Zork | ❌ | Victory! |
 
 ---
 
-## Phase 9: Wizard Area & Mirrors
+## Treasures (32 items, 616 points)
 
-**Goal**: Add mirror puzzles, ~185 total rooms
+| # | Treasure | Take | Case | Total | Location | Status |
+|---|----------|------|------|-------|----------|--------|
+| 1 | Jeweled egg | 5 | 5 | 10 | Bird's nest (Up a Tree) | ✅ Done |
+| 2 | Clockwork canary | 6 | 2 | 8 | Inside egg | ✅ Done |
+| 3 | Painting | 4 | 7 | 11 | Gallery | ✅ Done |
+| 4 | Bag of coins | 10 | 5 | 15 | Maze (adventurer's remains) | ❌ |
+| 5 | Pearl necklace | 9 | 5 | 14 | Pearl Room | ✅ Done |
+| 6 | Tin of spices | 5 | 5 | 10 | Pool Room | ✅ Done |
+| 7 | White crystal sphere | 6 | 6 | 12 | Dingy Closet | ❌ |
+| 8 | Fancy violin | 10 | 10 | 20 | Round Room (in box) | ❌ |
+| 9 | Grail | 2 | 5 | 7 | Grail Room | ❌ |
+| 10 | Platinum bar | 12 | 10 | 22 | Loud Room | ✅ Done |
+| 11 | Crystal trident | 4 | 11 | 15 | Atlantis Room | ✅ Done |
+| 12 | Jade figurine | 5 | 5 | 10 | Bat Room | ✅ Done |
+| 13 | Statue | 10 | 13 | 23 | Sandy Beach (buried) | ✅ Done |
+| 14 | Large emerald | 5 | 10 | 15 | Buoy (Frigid River) | ✅ Done |
+| 15 | Pot of gold | 10 | 10 | 20 | End of Rainbow | ✅ Done |
+| 16 | Chalice | 10 | 10 | 20 | Thief's Treasure Room | ❌ |
+| 17 | Trunk of jewels | 15 | 8 | 23 | Reservoir (drained) | ✅ Done |
+| 18 | Blue crystal sphere | 10 | 5 | 15 | Dreary Room | ❌ |
+| 19 | Huge diamond | 10 | 6 | 16 | Machine Room (from coal) | ✅ Done |
+| 20 | Sapphire bracelet | 5 | 3 | 8 | Gas Room | ✅ Done |
+| 21 | Red crystal sphere | 10 | 5 | 15 | Sooty Room | ❌ |
+| 22 | Gold coffin | 3 | 7 | 10 | Egyptian Room | ✅ Done |
+| 23 | Portrait | 10 | 5 | 15 | Chairman's Office | ✅ Done |
+| 24 | Zorkmid bills | 10 | 15 | 25 | Vault (Bank) | ✅ Done |
+| 25 | Gold card | 10 | 15 | 25 | Royal Puzzle | ❌ |
+| 26 | Ivory torch | 14 | 6 | 20 | Torch Room | ✅ Done |
+| 27 | Crown | 15 | 10 | 25 | Dusty Room | ✅ Done |
+| 28 | Flathead stamp | 4 | 10 | 14 | Library (Volcano) | ❌ |
+| 29 | Zorkmid coin | 10 | 12 | 22 | Narrow Ledge | ✅ Done |
+| 30 | Ruby | 15 | 8 | 23 | Ruby Room | ❌ |
+| 31 | Don Woods stamp | -- | 1 | 1 | Brochure (mail order) | ❌ |
+| 32 | Brass bauble | 1 | 1 | 2 | Forest (canary song) | ❌ |
 
-### New Rooms
-- Mirror rooms (north/south)
-- Wizard's workroom
-- Topiary/garden
-- Crypt, tomb areas
-
-### New Objects
-- Mirror (magical)
-- Ancient map
-- Wizard's items
-
-### Systems Needed
-- ❌ Mirror reflection mechanics
-- ❌ Mirror teleportation
-- ❌ Short pole/long pole puzzle
-
-### Exit Criteria
-- Mirror navigation works
-- Crypt accessible
-- All wizard area treasures
-
----
-
-## Phase 10: Endgame
-
-**Goal**: Complete game with endgame sequence, all ~191 rooms
-
-### New Rooms
-- Stone Barrow (endgame entrance)
-- Dungeon Master's domain
-- Puzzle House
-- Parapet, final rooms
-
-### New Objects
-- Master's items
-- Final treasures
-
-### Systems Needed
-- ❌ Endgame trigger (all treasures placed)
-- ❌ Dungeon Master NPC (guide)
-- ❌ Final puzzle sequence
-- ❌ Victory condition
-
-### Exit Criteria
-- All 616 points achievable
-- Endgame triggerable
-- Game completable
-- Victory message displays
+**Implemented**: 20/32 treasures (359/616 points = 58%)
 
 ---
 
-## Milestone Summary
+## Objects (Non-Treasure)
 
-| Phase | Rooms | Key Addition | Estimated Effort |
-|-------|-------|--------------|------------------|
-| 1 | ~30 | Playable demo | Foundation |
-| 2 | ~50 | Dam & Mine | Medium |
-| 3 | ~70 | River & Boat | High (vehicle) |
-| 4 | ~90 | Temple | Medium |
-| 5 | ~90 | Thief AI | High (NPC) |
-| 6 | ~120 | Mazes | Medium |
-| 7 | ~150 | Royal Puzzle | High (mechanics) |
-| 8 | ~170 | Bank | Medium |
-| 9 | ~185 | Mirrors | Medium |
-| 10 | ~191 | Endgame | Medium |
+### Light Sources
 
-Each phase produces a playable, saveable game that demonstrates progress.
+| Object | Location | Status | Notes |
+|--------|----------|--------|-------|
+| Brass lantern | Living Room | ✅ Done | 330 turns fuel |
+| Ivory torch | Torch Room | ✅ Done | Unlimited (also treasure) |
+| Candles | Altar | ✅ Done | For exorcism |
+| Matchbook | Dam Lobby | ✅ Done | Light candles |
+
+### Weapons
+
+| Object | Location | Status | Notes |
+|--------|----------|--------|-------|
+| Elvish sword | Living Room | ✅ Done | Glows blue near enemies |
+| Nasty knife | Attic | ✅ Done | Better vs thief |
+| Stiletto | Thief | ❌ | Thief's weapon |
+| Bloody axe | Troll | ❌ | Troll's weapon |
+
+### Tools
+
+| Object | Location | Status | Notes |
+|--------|----------|--------|-------|
+| Rope | Attic | ✅ Done | Dome Room, Slide Room |
+| Shovel | Small Cave | ❌ | Dig on beach |
+| Screwdriver | Maintenance Room | ✅ Done | Machine, keyhole |
+| Wrench | Maintenance Room | ✅ Done | Dam bolt |
+| Pump | Reservoir North | ❌ | Inflate boat |
+| Skeleton key | Dead End (maze) | ❌ | Grating |
+
+### Containers
+
+| Object | Location | Status | Notes |
+|--------|----------|--------|-------|
+| Trophy case | Living Room | ✅ Done | Store treasures |
+| Brown sack | Kitchen | ✅ Done | Lunch, garlic |
+| Basket | Shaft Room | ✅ Done | Raises/lowers in mine |
+| Inflatable boat | Dam Base | ✅ Done | Inflate with pump |
+| Buoy | Frigid River | ✅ Done | Contains emerald |
+
+### Food & Consumables
+
+| Object | Location | Status | Notes |
+|--------|----------|--------|-------|
+| Lunch | Sack | ✅ Done | Eat (optional) |
+| Garlic | Sack | ✅ Done | Repel vampire bat |
+| Water | Bottle | ✅ Done | Bucket puzzle |
+| Eat-me cake | Tea Room | ❌ | Shrink |
+| Drink-me cake | Tea Room | ❌ | Unused? |
+| Orange cake | Tea Room | ❌ | Grow |
+
+### Keys & Access Items
+
+| Object | Location | Status | Notes |
+|--------|----------|--------|-------|
+| Skeleton key | Dead End | ❌ | Grating |
+| Iron key | Tiny Room | ❌ | Dreary Room door |
+| Gold key | ? | ❌ | |
+| Sceptre | Coffin | ✅ Done | Wave for rainbow |
+
+### Books & Papers
+
+| Object | Location | Status | Notes |
+|--------|----------|--------|-------|
+| Leaflet | Mailbox | ✅ Done | Welcome message |
+| Guidebook | Dam Lobby | ✅ Done | Dam info, balloon fuel |
+| Matchbook | Dam Lobby | ✅ Done | Send for brochure |
+| Black book | Altar | ✅ Done | Exorcism |
+| Green paper | Tea Room | ❌ | Robot instructions |
+| Purple book | Library | ❌ | Contains stamp |
+| Lore book | Royal Puzzle | ❌ | Endgame item |
+
+### Miscellaneous
+
+| Object | Location | Status | Notes |
+|--------|----------|--------|-------|
+| Oriental rug | Living Room | ✅ Done | Covers trap door |
+| Mat | West of House | ❌ | Key puzzle |
+| Bell | Temple | ✅ Done | Exorcism |
+| Coal | Dead End (mine) | ✅ Done | Diamond via machine |
+| Brick | Attic | ❌ | Volcano explosion |
+| Braided wire | Stream View | ❌ | Balloon tether |
+| Shiny wire | (with brick) | ❌ | Fuse |
+| Timber | Mine | ❌ | Slide room anchor |
+| Brochure | Mail | ❌ | Contains stamp |
+| Robot | Low Room | ❌ | Push button |
+
+---
+
+## NPCs / Creatures
+
+| Creature | Location | Status | Notes |
+|----------|----------|--------|-------|
+| Troll | Troll Room | 🚧 Partial | Room exists, NPC behavior not done |
+| Thief | Wandering | ❌ | Steals, opens egg, fight late-game |
+| Cyclops | Cyclops Room | ❌ | Say "Odysseus" to scare |
+| Vampire bat | Bat Room | ❌ | Attacks without garlic |
+| Spirits | Entry to Hades | ❌ | Block until exorcised |
+| Dungeon Master | Endgame | ❌ | Ally in final puzzle |
+| Robot | Low Room | ❌ | Commandable NPC |
+| Gnome | Bank | ❌ | Appears with curtain |
+
+---
+
+## Puzzles
+
+### Combat Puzzles
+
+| Puzzle | Solution | Status | Points |
+|--------|----------|--------|--------|
+| Troll | Kill with sword | ❌ | 0 |
+| Thief | Kill with knife (late game) | ❌ | 25 |
+| Cyclops | Say "Odysseus" | ❌ | 10 |
+
+### Mechanical Puzzles
+
+| Puzzle | Solution | Status | Reward |
+|--------|----------|--------|--------|
+| Trap door | Move rug, open door | ✅ Done | Access underground |
+| Dam | Turn bolt with wrench | 🚧 Partial | Drain reservoir |
+| Carousel/Round Room | Robot push button | ❌ | Stop spinning |
+| Bucket/Well | Pour water to descend | ❌ | Access tea room |
+| Coal machine | Put coal, turn switch | 🚧 Partial | Diamond |
+| Basket | Lower/raise for mine | 🚧 Partial | Transport items |
+| Balloon | Light guidebook, wait, land | ❌ | Volcano access |
+
+### Word/Knowledge Puzzles
+
+| Puzzle | Solution | Status | Reward |
+|--------|----------|--------|--------|
+| Riddle Room | Answer "well" | ❌ | Access Pearl Room |
+| Cyclops | Say "Odysseus" | ❌ | Passage opens |
+| Exorcism | Ring bell, light candles, read | ❌ | Access Land of Dead |
+| Loud Room | Say "echo" | ❌ | Platinum bar |
+| Endgame trivia | Various answers | ❌ | Progress |
+
+### Spatial Puzzles
+
+| Puzzle | Solution | Status | Reward |
+|--------|----------|--------|--------|
+| Maze | Map carefully | ❌ | Coins, keys |
+| Coal mine | Navigate maze | ✅ Done | Coal, bracelet |
+| Royal Puzzle | Push sandstone blocks | ❌ | Gold card |
+| Mirror box | Push panels, pole | ❌ | Dungeon entrance |
+| Bank | Enter walls, use curtain | 🚧 Partial | Portrait, bills |
+
+### Item Manipulation Puzzles
+
+| Puzzle | Solution | Status | Reward |
+|--------|----------|--------|--------|
+| Egg | Let thief steal and open | ❌ | Canary |
+| Key (Tiny Room) | Mat under door, screwdriver | ❌ | Blue sphere |
+| Coffin | Drain reservoir, carry across | ❌ | 10 points |
+| Glacier | Throw torch at ice | ❌ | Ruby room |
+| Rainbow | Wave sceptre at falls | ❌ | Pot of gold |
+| Bauble | Wind canary in forest | ❌ | Bauble |
+| Buried treasure | Dig 4 times with shovel | ❌ | Statue |
+
+---
+
+## Systems Required
+
+| System | Status | Needed For |
+|--------|--------|------------|
+| Light/darkness | ✅ Done | Underground areas |
+| Containers | ✅ Done | Sack, case, etc. |
+| Scoring (trophy case) | ✅ Done | ADR-076 |
+| Combat (basic) | ✅ Done | Troll, thief |
+| Timed events (daemons) | ❌ | Lantern battery, thief wandering |
+| NPC basics | ❌ | Troll blocking, thief AI |
+| Vehicle trait | ❌ | Boat navigation |
+| INFLATE/DEFLATE actions | ❌ | Boat |
+| WAVE action | ❌ | Sceptre/rainbow |
+| Water current | ❌ | River auto-movement |
+| RING action | ❌ | Bell |
+| PRAY action | ❌ | Resurrection |
+| Exorcism sequence | ❌ | Bell/book/candle |
+| DIG action | ❌ | Shovel/beach |
+| Sliding room mechanics | ❌ | Royal Puzzle |
+| PUSH WALL action | ❌ | Royal Puzzle |
+| Robot commands | ❌ | "tell robot 'X'" syntax |
+| Endgame trigger | ❌ | 616 points placed |
+| Victory condition | ❌ | Game completion |
+| GDT (debug tool) | ❌ | World manipulation, testing |
+| INCANT (cheat) | ❌ | Skip to endgame |
+
+---
+
+## Cheat Mechanisms
+
+For an accurate Fortran port, both debug/cheat systems should be implemented.
+
+### GDT (Game Debugging Tool)
+
+Full debug interface with 35 commands in 4 categories:
+
+| Category | Commands | Examples |
+|----------|----------|----------|
+| Alter (9) | AA, AC, AF, AH, AN, AO, AR, AV, AX | `AH` teleport, `AO` move object |
+| Display (14) | DA, DC, DF, DH, DL, DM, DN, DO, DP, DR, DS, DT, DV, DX, D2 | `DO` show object, `DR` show room |
+| Villain (8) | NC, ND, NR, NT, RC, RD, RR, RT | `ND` immortality, `NR` disable thief |
+| Utility (4) | TK, PD, HE, EX | `TK` take any object |
+
+**Authentication**: Challenge-response (version-dependent)
+- Early: `SUPNIK,BARNEY,70524` (name, cat's name, badge number)
+- Later: `YRUZEV` → `VAX`
+
+See `docs/work/dungeo/gdt-command.md` for full command reference.
+
+### INCANT
+
+Skip directly to endgame:
+```
+>INCANT <challenge> <response>
+```
+
+**Authentication**: ENCRYP algorithm with key `ECORMS`
+
+| Challenge | Response |
+|-----------|----------|
+| `MHORAM` | `DFNOBO` |
+| `DNZHUO` | `IDEQTQ` |
+
+**Effect**: Teleport to Top of Stairs with elvish sword, 15/100 endgame points.
+
+See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementation.
+
+---
+
+## Summary
+
+| Category | Done | Total | % |
+|----------|------|-------|---|
+| Rooms | 84 | ~190 | 44% |
+| Treasures | 20 | 32 | 63% |
+| Treasure Points | 359 | 616 | 58% |
+| Light Sources | 4 | 4 | 100% |
+| Weapons | 2 | 4 | 50% |
+| Tools | 4 | 6 | 67% |
+| Containers | 5 | 5 | 100% |
+| NPCs | 0 | 8 | 0% |
+| Puzzles (working) | 2 | ~25 | 8% |
+
+---
+
+## Priority Next Steps
+
+1. **The Maze** (~15 rooms) - Unlocks coins, keys, cyclops, thief lair
+2. **NPC System** (ADR-070) - Required for troll blocking, thief, cyclops
+3. **Remaining treasures** - Gallery painting, spheres, violin, grail, ruby
+4. **Puzzle mechanics** - Riddle, loud room echo, exorcism, rainbow wave
+5. **Royal Puzzle** - 8x8 sliding block puzzle (see royal-puzzle.md)
+6. **Endgame** (~15 rooms) - Final puzzle sequence

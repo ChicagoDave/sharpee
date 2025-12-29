@@ -1,7 +1,7 @@
 /**
  * Forest Region - Forest paths around the white house
  *
- * Includes: Forest paths (4), Clearing, Up a Tree
+ * Includes: Forest paths (4), Clearing, Up a Tree, Canyon area (3)
  * The forest surrounds the white house and provides access to the Clearing
  * where the underground grating is located.
  */
@@ -15,6 +15,9 @@ import { createForestPath3 } from './rooms/forest-path-3';
 import { createForestPath4 } from './rooms/forest-path-4';
 import { createClearing } from './rooms/clearing';
 import { createUpATree } from './rooms/up-a-tree';
+import { createCanyonView } from './rooms/canyon-view';
+import { createRockyLedge } from './rooms/rocky-ledge';
+import { createCanyonBottom } from './rooms/canyon-bottom';
 
 export interface ForestRoomIds {
   forestPath1: string;  // North of North of House
@@ -23,6 +26,9 @@ export interface ForestRoomIds {
   forestPath4: string;  // South of forest path 3 (maze edge)
   clearing: string;     // Has grating
   upATree: string;      // Up the tree in forest
+  canyonView: string;   // Top of Great Canyon
+  rockyLedge: string;   // Halfway down canyon
+  canyonBottom: string; // Bottom of canyon
 }
 
 /**
@@ -35,6 +41,9 @@ export function createForestRooms(world: WorldModel): ForestRoomIds {
   const forestPath4 = createForestPath4(world);
   const clearing = createClearing(world);
   const upATree = createUpATree(world);
+  const canyonView = createCanyonView(world);
+  const rockyLedge = createRockyLedge(world);
+  const canyonBottom = createCanyonBottom(world);
 
   const roomIds: ForestRoomIds = {
     forestPath1: forestPath1.id,
@@ -42,7 +51,10 @@ export function createForestRooms(world: WorldModel): ForestRoomIds {
     forestPath3: forestPath3.id,
     forestPath4: forestPath4.id,
     clearing: clearing.id,
-    upATree: upATree.id
+    upATree: upATree.id,
+    canyonView: canyonView.id,
+    rockyLedge: rockyLedge.id,
+    canyonBottom: canyonBottom.id
   };
 
   // Connect the forest rooms
@@ -93,6 +105,43 @@ function connectForestRooms(world: WorldModel, roomIds: ForestRoomIds): void {
       roomTrait.exits = {
         [Direction.WEST]: { destination: roomIds.forestPath2 },
         [Direction.SOUTH]: { destination: roomIds.forestPath4 },
+        [Direction.EAST]: { destination: roomIds.canyonView },
+      };
+    }
+  }
+
+  // Canyon View
+  const canyonView = world.getEntity(roomIds.canyonView);
+  if (canyonView) {
+    const roomTrait = canyonView.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.WEST]: { destination: roomIds.forestPath3 },
+        [Direction.DOWN]: { destination: roomIds.rockyLedge },
+      };
+    }
+  }
+
+  // Rocky Ledge
+  const rockyLedge = world.getEntity(roomIds.rockyLedge);
+  if (rockyLedge) {
+    const roomTrait = rockyLedge.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.UP]: { destination: roomIds.canyonView },
+        [Direction.DOWN]: { destination: roomIds.canyonBottom },
+      };
+    }
+  }
+
+  // Canyon Bottom
+  const canyonBottom = world.getEntity(roomIds.canyonBottom);
+  if (canyonBottom) {
+    const roomTrait = canyonBottom.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.UP]: { destination: roomIds.rockyLedge },
+        // North/South could connect to river areas later
       };
     }
   }
