@@ -27,6 +27,9 @@ import {
 } from '@sharpee/world-model';
 import { DungeoScoringService } from './scoring';
 
+// Import custom actions
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes } from './actions';
+
 // Import room and object creators
 import { createWhiteHouseRooms, createWhiteHouseObjects, WhiteHouseRoomIds } from './regions/white-house';
 import { createHouseInteriorRooms, createHouseInteriorObjects, connectHouseInteriorToExterior, HouseInteriorRoomIds } from './regions/house-interior';
@@ -209,7 +212,37 @@ export class DungeoStory implements Story {
    * Extend the parser with custom vocabulary for this story
    */
   extendParser(parser: Parser): void {
-    // Zork-specific verbs will be added here as needed
+    const grammar = parser.getStoryGrammar();
+
+    // GDT entry command
+    grammar
+      .define('gdt')
+      .mapsTo(GDT_ACTION_ID)
+      .withPriority(200)
+      .build();
+
+    // GDT two-letter commands (only active when in GDT mode)
+    // These are high priority to override any other patterns
+    const gdtCodes = [
+      // Display commands
+      'da', 'dr', 'do', 'dc', 'dx', 'dh', 'dl', 'dv', 'df', 'ds', 'dn', 'dm', 'dt', 'dp', 'd2', 'dz',
+      // Alter commands
+      'ah', 'ao', 'ar', 'af', 'ac', 'aa', 'ax', 'av', 'an', 'az',
+      // Toggle commands
+      'nc', 'nd', 'nr', 'nt', 'rc', 'rd', 'rr', 'rt',
+      // Utility commands
+      'tk', 'pd', 'he', 'ex'
+    ];
+
+    for (const code of gdtCodes) {
+      // Register pattern for the two-letter code
+      // The action will parse the full rawInput to get any arguments
+      grammar
+        .define(code)
+        .mapsTo(GDT_COMMAND_ACTION_ID)
+        .withPriority(250)
+        .build();
+    }
   }
 
   /**
@@ -224,6 +257,13 @@ export class DungeoStory implements Story {
 
     // Trophy case scoring
     language.addMessage('dungeo.treasure.scored', 'Your score just went up by {points} points!');
+
+    // GDT messages - the actual formatting is done by the event data
+    // These templates will be enhanced by a custom event handler
+    language.addMessage(GDTEventTypes.ENTERED, '{message}');
+    language.addMessage(GDTEventTypes.EXITED, '{message}');
+    language.addMessage(GDTEventTypes.OUTPUT, '{output}');
+    language.addMessage(GDTEventTypes.UNKNOWN_COMMAND, '{message}');
   }
 
   /**
@@ -271,8 +311,7 @@ export class DungeoStory implements Story {
    * Get custom actions for this story
    */
   getCustomActions(): any[] {
-    // Story-specific actions will be added here
-    return [];
+    return customActions;
   }
 
   /**
