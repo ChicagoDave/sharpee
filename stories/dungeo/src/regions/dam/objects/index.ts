@@ -143,6 +143,7 @@ function createTrunkOfJewels(world: WorldModel, roomId: string): IFEntity {
 
   // Treasure scoring
   (trunk as any).isTreasure = true;
+  (trunk as any).treasureId = 'trunk-of-jewels';
   (trunk as any).treasureValue = 15;
 
   world.moveEntity(trunk.id, roomId);

@@ -9,6 +9,7 @@
 import { Story, StoryConfig } from '@sharpee/engine';
 import type { Parser } from '@sharpee/parser-en-us';
 import type { LanguageProvider } from '@sharpee/lang-en-us';
+import { ISemanticEvent } from '@sharpee/core';
 import {
   WorldModel,
   IFEntity,
@@ -21,8 +22,10 @@ import {
   SceneryTrait,
   EntityType,
   Direction,
-  StandardCapabilities
+  StandardCapabilities,
+  IWorldModel
 } from '@sharpee/world-model';
+import { DungeoScoringService } from './scoring';
 
 // Import room and object creators
 import { createWhiteHouseRooms, WhiteHouseRoomIds } from './regions/white-house';
@@ -53,6 +56,7 @@ export class DungeoStory implements Story {
   config = config;
 
   private world!: WorldModel;
+  private scoringService!: DungeoScoringService;
   private whiteHouseIds: WhiteHouseRoomIds = {} as WhiteHouseRoomIds;
   private houseInteriorIds: HouseInteriorRoomIds = {} as HouseInteriorRoomIds;
   private forestIds: ForestRoomIds = {} as ForestRoomIds;
@@ -71,9 +75,16 @@ export class DungeoStory implements Story {
         scoreValue: 0,
         maxScore: 616,
         moves: 0,
-        achievements: []
+        achievements: [],
+        scoredTreasures: []
       }
     });
+
+    // Create scoring service
+    this.scoringService = new DungeoScoringService(world);
+
+    // Register trophy case scoring handler
+    this.registerTrophyCaseHandler(world);
 
     // Create all rooms
     this.whiteHouseIds = createWhiteHouseRooms(world);
@@ -177,6 +188,50 @@ export class DungeoStory implements Story {
 
     // Troll combat
     language.addMessage('dungeo.troll.death.passage_clear', 'With the troll dispatched, the passage to the east is now clear.');
+
+    // Trophy case scoring
+    language.addMessage('dungeo.treasure.scored', 'Your score just went up by {points} points!');
+  }
+
+  /**
+   * Register the trophy case event handler for treasure scoring
+   *
+   * Note: world.registerEventHandler returns void, so we can't emit events.
+   * We just update the score directly - players can check with SCORE command.
+   */
+  private registerTrophyCaseHandler(world: WorldModel): void {
+    const TROPHY_CASE_NAME = 'trophy case';
+    const scoringService = this.scoringService;
+
+    world.registerEventHandler('if.event.put_in', (event: ISemanticEvent, w): void => {
+      const data = event.data as Record<string, any> | undefined;
+      const targetId = data?.targetId as string | undefined;
+      if (!targetId) return;
+
+      // Check if target is the trophy case
+      const targetEntity = w.getEntity(targetId);
+      if (!targetEntity) return;
+
+      const identity = targetEntity.get('identity') as { name?: string } | undefined;
+      if (identity?.name !== TROPHY_CASE_NAME) return;
+
+      // Get the item being placed
+      const itemId = data?.itemId as string | undefined;
+      if (!itemId) return;
+
+      const item = w.getEntity(itemId);
+      if (!item) return;
+
+      // Check if item is a treasure
+      const isTreasure = (item as any).isTreasure;
+      if (!isTreasure) return;
+
+      const treasureValue = (item as any).treasureValue || 0;
+      const treasureId = (item as any).treasureId || item.id;
+
+      // Score the treasure (prevents double-scoring)
+      scoringService.scoreTreasure(treasureId, treasureValue);
+    });
   }
 
   /**

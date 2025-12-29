@@ -115,6 +115,10 @@ function createTreeObjects(world: WorldModel, roomId: string): void {
     capacity: { maxItems: 1 }
   }));
   egg.add(new OpenableTrait({ isOpen: false }));
+  // Treasure scoring
+  (egg as any).isTreasure = true;
+  (egg as any).treasureId = 'jewel-encrusted-egg';
+  (egg as any).treasureValue = 5;
   // Place egg in nest
   world.moveEntity(egg.id, nest.id);
 
@@ -127,6 +131,10 @@ function createTreeObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
+  // Treasure scoring
+  (canary as any).isTreasure = true;
+  (canary as any).treasureId = 'clockwork-canary';
+  (canary as any).treasureValue = 6;
   // Place canary in egg (temporarily open egg)
   const eggOpenable = egg.get(OpenableTrait);
   if (eggOpenable) {

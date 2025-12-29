@@ -33,6 +33,11 @@ export const ScoringCapabilitySchema: ICapabilitySchema = {
     type: 'array',
     default: [],
     required: false
+  },
+  scoredTreasures: {
+    type: 'array',
+    default: [],
+    required: false
   }
 };
 
@@ -49,4 +54,5 @@ export interface ScoringData {
     points: number;
     timestamp: number;
   }>;
+  scoredTreasures?: string[];
 }
