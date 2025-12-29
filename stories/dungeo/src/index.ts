@@ -29,6 +29,7 @@ import { createWhiteHouseRooms, WhiteHouseRoomIds } from './regions/white-house'
 import { createHouseInteriorRooms, connectHouseInteriorToExterior, HouseInteriorRoomIds } from './regions/house-interior';
 import { createForestRooms, connectForestToExterior, ForestRoomIds } from './regions/forest';
 import { createUndergroundRooms, connectUndergroundToHouse, UndergroundRoomIds } from './regions/underground';
+import { createDamRooms, connectDamToUnderground, createDamObjects, DamRoomIds } from './regions/dam';
 import { createWhiteHouseObjects } from './objects/white-house-objects';
 import { createHouseInteriorObjects } from './objects/house-interior-objects';
 import { createForestObjects } from './objects/forest-objects';
@@ -56,6 +57,7 @@ export class DungeoStory implements Story {
   private houseInteriorIds: HouseInteriorRoomIds = {} as HouseInteriorRoomIds;
   private forestIds: ForestRoomIds = {} as ForestRoomIds;
   private undergroundIds: UndergroundRoomIds = {} as UndergroundRoomIds;
+  private damIds: DamRoomIds = {} as DamRoomIds;
 
   /**
    * Initialize the world for Dungeo
@@ -78,17 +80,20 @@ export class DungeoStory implements Story {
     this.houseInteriorIds = createHouseInteriorRooms(world);
     this.forestIds = createForestRooms(world);
     this.undergroundIds = createUndergroundRooms(world);
+    this.damIds = createDamRooms(world);
 
     // Connect regions
     connectHouseInteriorToExterior(world, this.houseInteriorIds, this.whiteHouseIds.behindHouse);
     connectForestToExterior(world, this.forestIds, this.whiteHouseIds.northOfHouse, this.whiteHouseIds.behindHouse);
     connectUndergroundToHouse(world, this.undergroundIds, this.houseInteriorIds.livingRoom);
+    connectDamToUnderground(world, this.damIds, this.undergroundIds.roundRoom);
 
     // Create all objects and place them in rooms
     createWhiteHouseObjects(world, this.whiteHouseIds);
     createHouseInteriorObjects(world, this.houseInteriorIds, this.undergroundIds.cellar);
     createForestObjects(world, this.forestIds);
     createUndergroundObjects(world, this.undergroundIds);
+    createDamObjects(world, this.damIds);
 
     // Set initial player location to West of House
     const player = world.getPlayer();
