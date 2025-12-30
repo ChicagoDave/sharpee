@@ -15,7 +15,7 @@ import { createVolcanoCore } from './rooms/volcano-core';
 import { createDustyRoom } from './rooms/dusty-room';
 import { createVolcanoView } from './rooms/volcano-view';
 import { createLavaRoom } from './rooms/lava-room';
-import { createSmallChamber } from './rooms/small-chamber';
+import { createRubyRoom } from './rooms/ruby-room';
 import { createLibrary } from './rooms/library';
 
 export interface VolcanoRoomIds {
@@ -26,7 +26,7 @@ export interface VolcanoRoomIds {
   dustyRoom: string;
   volcanoView: string;
   lavaRoom: string;
-  smallChamber: string;
+  rubyRoom: string;
   library: string;
 }
 
@@ -41,7 +41,7 @@ export function createVolcanoRooms(world: WorldModel): VolcanoRoomIds {
   const dustyRoom = createDustyRoom(world);
   const volcanoView = createVolcanoView(world);
   const lavaRoom = createLavaRoom(world);
-  const smallChamber = createSmallChamber(world);
+  const rubyRoom = createRubyRoom(world);
   const library = createLibrary(world);
 
   const roomIds: VolcanoRoomIds = {
@@ -52,7 +52,7 @@ export function createVolcanoRooms(world: WorldModel): VolcanoRoomIds {
     dustyRoom: dustyRoom.id,
     volcanoView: volcanoView.id,
     lavaRoom: lavaRoom.id,
-    smallChamber: smallChamber.id,
+    rubyRoom: rubyRoom.id,
     library: library.id
   };
 
@@ -76,23 +76,23 @@ function connectVolcanoRooms(world: WorldModel, roomIds: VolcanoRoomIds): void {
     }
   }
 
-  // Lava Room: S → Volcano Bottom, E → Small Chamber
+  // Lava Room: S → Volcano Bottom, E → Ruby Room
   const lavaRoom = world.getEntity(roomIds.lavaRoom);
   if (lavaRoom) {
     const roomTrait = lavaRoom.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
         [Direction.SOUTH]: { destination: roomIds.volcanoBottom },
-        [Direction.EAST]: { destination: roomIds.smallChamber },
+        [Direction.EAST]: { destination: roomIds.rubyRoom },
       };
     }
   }
 
-  // Small Chamber: W → Lava Room
+  // Ruby Room: W → Lava Room
   // S → Glacier Room (dam region) is connected externally
-  const smallChamber = world.getEntity(roomIds.smallChamber);
-  if (smallChamber) {
-    const roomTrait = smallChamber.get(RoomTrait);
+  const rubyRoom = world.getEntity(roomIds.rubyRoom);
+  if (rubyRoom) {
+    const roomTrait = rubyRoom.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
         [Direction.WEST]: { destination: roomIds.lavaRoom },
@@ -178,32 +178,32 @@ function connectVolcanoRooms(world: WorldModel, roomIds: VolcanoRoomIds): void {
 }
 
 /**
- * Connect Small Chamber to Glacier Room (dam region)
+ * Connect Ruby Room to Glacier Room (dam region)
  *
  * Per map-connections.md:
- * - Small Chamber S → Glacier Room
- * - Glacier Room W → Small Chamber
+ * - Ruby Room S → Glacier Room
+ * - Glacier Room W → Ruby Room
  */
 export function connectVolcanoToGlacier(
   world: WorldModel,
   volcanoIds: VolcanoRoomIds,
   glacierRoomId: string
 ): void {
-  // Small Chamber S → Glacier Room
-  const smallChamber = world.getEntity(volcanoIds.smallChamber);
-  if (smallChamber) {
-    const roomTrait = smallChamber.get(RoomTrait);
+  // Ruby Room S → Glacier Room
+  const rubyRoom = world.getEntity(volcanoIds.rubyRoom);
+  if (rubyRoom) {
+    const roomTrait = rubyRoom.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits[Direction.SOUTH] = { destination: glacierRoomId };
     }
   }
 
-  // Glacier Room W → Small Chamber
+  // Glacier Room W → Ruby Room
   const glacierRoom = world.getEntity(glacierRoomId);
   if (glacierRoom) {
     const roomTrait = glacierRoom.get(RoomTrait);
     if (roomTrait) {
-      roomTrait.exits[Direction.WEST] = { destination: volcanoIds.smallChamber };
+      roomTrait.exits[Direction.WEST] = { destination: volcanoIds.rubyRoom };
     }
   }
 }

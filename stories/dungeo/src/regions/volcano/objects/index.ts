@@ -2,7 +2,7 @@
  * Volcano Region Objects
  *
  * Dusty Room: Large emerald (5 pts)
- * Small Chamber: Ruby (15 pts take + 8 case = 23 pts)
+ * Ruby Room: Ruby (15 pts take + 8 case = 23 pts)
  * Library: Purple book containing Flathead stamp (4 pts take + 10 case = 14 pts)
  */
 import { WorldModel, IFEntity, IdentityTrait, ContainerTrait, ReadableTrait, EntityType } from '@sharpee/world-model';
@@ -10,7 +10,7 @@ import { VolcanoRoomIds } from '../index';
 
 export function createVolcanoObjects(world: WorldModel, roomIds: VolcanoRoomIds): void {
   createLargeEmerald(world, roomIds.dustyRoom);
-  createRuby(world, roomIds.smallChamber);
+  createRuby(world, roomIds.rubyRoom);
   createPurpleBook(world, roomIds.library);
 }
 

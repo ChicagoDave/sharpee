@@ -112,6 +112,27 @@ N:Chasm
 NE:Loud Room
 S:Round Room
 
+Loud Room
+W:North/South Passage
+U:Damp Cave
+E:Ancient Chasm
+
+Ancient Chasm
+S:Loud Room
+W:Dead End-1 (temple area)
+N:Dead End-2 (temple area)
+E:Small Cave (temple area)
+
+Dead End-1
+E:Ancient Chasm
+
+Dead End-2
+SW:Ancient Chasm
+
+Small Cave
+NW:Ancient Chasm
+S:Rocky Shore
+
 Grail Room
 W:Round Room
 U:Temple
@@ -252,7 +273,7 @@ E:End of Rainbow
 W:Aragain Falls
 
 Aragain Falls
-E:Rainbow Room
+E:Rainbow Room (wave stick)
 
 North of House
 N:Forest-Low-Branches
@@ -373,14 +394,14 @@ E:Egyptian Room
 
 Glacier Room
 N:Stream View
-W:Small Chamber
+W:Ruby Room
 
-Small Chamber
+Ruby Room
 S:Glacier Room
 W:Lava Room
 
 Lava Room
-W:Small Chamber
+W:Ruby Room
 S:Volcano Bottom
 
 Volcano Bottom
@@ -585,3 +606,84 @@ NE:Timber Room
 
 Machine Room
 NW:Bottom of Shaft
+
+**_ Well Room _**
+
+Engravings Cave
+N:Round Room
+SE:Riddle Room
+
+Riddle Room
+D:Engravings Cave
+E:Pearl Room
+
+Pearl Room
+W:Riddle Room
+E:Well Bottom
+
+Well Bottom
+(in bucket, pour water from bottle):Top of Well
+
+Top of Well
+(in bucket, fill bottle):Well Bottom
+E:Tea Room
+
+Tea Room
+W:Top of Well
+NW:Low Room
+E:Pool Room
+
+Low Room
+SE:Tea Room
+E:Machine Room
+
+Machine Room
+W:Low Rom
+S:Dingy Closet
+
+Dingy Closet
+N:Machine Room
+
+Pool Room
+W:Tea Room
+
+**_ Frigid River _**
+
+Rocky Shore
+NW:Small Cave
+(board boat):Frigid River-1
+
+Frigid River-1
+D:Frigid River-2
+
+Frigid River-2
+D:Frigid River-3
+
+Frigid River-3
+D:Frigid River-4
+W:Rocky Shore
+E:White Cliffs Beach-1
+
+Frigid River-4
+D:Frigid River-5
+W:Sandy Beach
+E:White Cliffs Beach-2
+
+White Cliffs Beach-1
+W:Frigid River-3
+S:White Cliffs Beach-2
+
+White Cliffs Beach-2
+W:Frigid River-4
+N:White Cliffs Beach-1
+
+Frigid River-5
+D:Over falls and you die
+
+Sandy Beach
+E:Frigid River-4
+S:Shore
+
+Shore
+N:Sandy Beach
+S:Aragain Falls

@@ -201,6 +201,47 @@ function connectTempleRooms(world: WorldModel, roomIds: TempleRoomIds): void {
 }
 
 /**
+ * Connect Temple region to Underground (Rocky Crawl → Dome Room, Egyptian Room)
+ * Per map-connections.md:
+ * - Dome Room E → Rocky Crawl
+ * - Egyptian Room E → Rocky Crawl
+ * - Rocky Crawl W → Dome Room, NW → Egyptian Room
+ */
+export function connectTempleToUnderground(
+  world: WorldModel,
+  templeIds: TempleRoomIds,
+  rockyCrawlId: string
+): void {
+  // Dome Room E → Rocky Crawl
+  const domeRoom = world.getEntity(templeIds.domeRoom);
+  if (domeRoom) {
+    const roomTrait = domeRoom.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits[Direction.EAST] = { destination: rockyCrawlId };
+    }
+  }
+
+  // Egyptian Room E → Rocky Crawl
+  const egyptianRoom = world.getEntity(templeIds.egyptianRoom);
+  if (egyptianRoom) {
+    const roomTrait = egyptianRoom.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits[Direction.EAST] = { destination: rockyCrawlId };
+    }
+  }
+
+  // Rocky Crawl W → Dome Room, NW → Egyptian Room
+  const rockyCrawl = world.getEntity(rockyCrawlId);
+  if (rockyCrawl) {
+    const roomTrait = rockyCrawl.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits[Direction.WEST] = { destination: templeIds.domeRoom };
+      roomTrait.exits[Direction.NORTHWEST] = { destination: templeIds.egyptianRoom };
+    }
+  }
+}
+
+/**
  * Connect Temple to Dam region (via Reservoir area)
  */
 export function connectTempleToDam(

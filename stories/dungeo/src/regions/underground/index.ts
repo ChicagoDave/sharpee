@@ -29,6 +29,8 @@ import { createChasm } from './rooms/chasm';
 import { createRiddleRoom } from './rooms/riddle-room';
 import { createDampCave } from './rooms/damp-cave';
 import { createSmallCave } from './rooms/small-cave';
+import { createDeepRavine } from './rooms/deep-ravine';
+import { createRockyCrawl } from './rooms/rocky-crawl';
 
 export interface UndergroundRoomIds {
   // Original rooms
@@ -53,6 +55,8 @@ export interface UndergroundRoomIds {
   riddleRoom: string;
   dampCave: string;       // Above Loud Room
   smallCave: string;      // Above Atlantis Room (Mirror Room Coal Mine state)
+  deepRavine: string;     // Between E/W Passage and Rocky Crawl
+  rockyCrawl: string;     // Between Deep Ravine and Dome Room
 }
 
 /**
@@ -81,6 +85,8 @@ export function createUndergroundRooms(world: WorldModel): UndergroundRoomIds {
   const riddleRoom = createRiddleRoom(world);
   const dampCave = createDampCave(world);
   const smallCave = createSmallCave(world);
+  const deepRavine = createDeepRavine(world);
+  const rockyCrawl = createRockyCrawl(world);
 
   const roomIds: UndergroundRoomIds = {
     // Original
@@ -104,7 +110,9 @@ export function createUndergroundRooms(world: WorldModel): UndergroundRoomIds {
     chasm: chasm.id,
     riddleRoom: riddleRoom.id,
     dampCave: dampCave.id,
-    smallCave: smallCave.id
+    smallCave: smallCave.id,
+    deepRavine: deepRavine.id,
+    rockyCrawl: rockyCrawl.id
   };
 
   // Connect the underground rooms
@@ -200,8 +208,7 @@ function connectUndergroundRooms(world: WorldModel, roomIds: UndergroundRoomIds)
   }
 
   // East-West Passage connections (per map-connections.md)
-  // W → Troll Room (map says S, but description says W), E → Round Room
-  // Also: N/D → Deep Ravine (not implemented yet)
+  // S → Troll Room, E → Round Room, N/D → Deep Ravine
   const eastWestPassage = world.getEntity(roomIds.eastWestPassage);
   if (eastWestPassage) {
     const roomTrait = eastWestPassage.get(RoomTrait);
@@ -209,7 +216,8 @@ function connectUndergroundRooms(world: WorldModel, roomIds: UndergroundRoomIds)
       roomTrait.exits = {
         [Direction.SOUTH]: { destination: roomIds.trollRoom },
         [Direction.EAST]: { destination: roomIds.roundRoom },
-        // N/D → Deep Ravine - to be added when Deep Ravine is implemented
+        [Direction.NORTH]: { destination: roomIds.deepRavine },
+        [Direction.DOWN]: { destination: roomIds.deepRavine },
       };
     }
   }
@@ -249,14 +257,41 @@ function connectUndergroundRooms(world: WorldModel, roomIds: UndergroundRoomIds)
     }
   }
 
-  // Chasm: S→N/S Passage, E→? (per play output, E goes back to N/S Passage)
+  // Chasm: S→Deep Ravine, E→N/S Passage (per map-connections.md)
   const chasm = world.getEntity(roomIds.chasm);
   if (chasm) {
     const roomTrait = chasm.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
-        [Direction.SOUTH]: { destination: roomIds.northSouthPassage },
+        [Direction.SOUTH]: { destination: roomIds.deepRavine },
         [Direction.EAST]: { destination: roomIds.northSouthPassage },
+      };
+    }
+  }
+
+  // Deep Ravine: S→E/W Passage, W→Rocky Crawl, E→Chasm (per map-connections.md)
+  const deepRavine = world.getEntity(roomIds.deepRavine);
+  if (deepRavine) {
+    const roomTrait = deepRavine.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.SOUTH]: { destination: roomIds.eastWestPassage },
+        [Direction.WEST]: { destination: roomIds.rockyCrawl },
+        [Direction.EAST]: { destination: roomIds.chasm },
+      };
+    }
+  }
+
+  // Rocky Crawl: E→Deep Ravine (per map-connections.md)
+  // W→Dome Room, NW→Egyptian Room - connected externally by temple region
+  const rockyCrawl = world.getEntity(roomIds.rockyCrawl);
+  if (rockyCrawl) {
+    const roomTrait = rockyCrawl.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.EAST]: { destination: roomIds.deepRavine },
+        // W→Dome Room - connected externally
+        // NW→Egyptian Room - connected externally
       };
     }
   }

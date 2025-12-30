@@ -1,7 +1,8 @@
 /**
- * Small Chamber - Contains the ruby treasure
+ * Ruby Room - Contains the ruby treasure
  *
  * Accessible through Glacier Room after melting the ice with torch.
+ * Per map-connections.md: S→Glacier Room, W→Lava Room
  */
 
 import {
@@ -12,8 +13,8 @@ import {
   EntityType
 } from '@sharpee/world-model';
 
-export function createSmallChamber(world: WorldModel): IFEntity {
-  const room = world.createEntity('Small Chamber', EntityType.ROOM);
+export function createRubyRoom(world: WorldModel): IFEntity {
+  const room = world.createEntity('Ruby Room', EntityType.ROOM);
 
   room.add(new RoomTrait({
     exits: {},
@@ -22,8 +23,8 @@ export function createSmallChamber(world: WorldModel): IFEntity {
   }));
 
   room.add(new IdentityTrait({
-    name: 'Small Chamber',
-    aliases: ['small chamber', 'chamber'],
+    name: 'Ruby Room',
+    aliases: ['ruby room'],
     description: 'You are in a small chamber. The walls are covered with red crystite formations that sparkle in the light. Passages lead south and west.',
     properName: true,
     article: 'the'

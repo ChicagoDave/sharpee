@@ -1,7 +1,7 @@
 # Dungeo Implementation Tracking
 
 **Target**: Mainframe Zork 616-point version
-**Current Progress**: 140/~190 rooms (74%), 485/616 treasure points (79%)
+**Current Progress**: 146/~190 rooms (77%), 485/616 treasure points (79%)
 
 ---
 
@@ -77,7 +77,7 @@
 | Tiny Cave | ✅ Done | |
 | Riddle Room | ✅ Done | Answer "well" - puzzle implemented |
 | Pearl Room | ✅ Done | Necklace |
-| Circular Room | ❌ | Top of well |
+| Circular Room | ✅ Done | Same as Round Room |
 | Low Room | ✅ Done | Robot NPC |
 | Machine Room (well) | ✅ Done | Triangular button for carousel |
 | Dingy Closet | ✅ Done | White sphere treasure |
@@ -91,6 +91,10 @@
 | Dam Base | ✅ Done | Deflated boat, pump |
 | Maintenance Room | ✅ Done | Wrench, screwdriver, buttons |
 | Loud Room | ✅ Done | Platinum bar, say "echo" |
+| Ancient Chasm | ✅ Done | E of Loud Room |
+| Temple Dead End 1 | ✅ Done | W of Ancient Chasm |
+| Temple Dead End 2 | ✅ Done | N of Ancient Chasm |
+| Temple Small Cave | ✅ Done | E of Ancient Chasm, S to Rocky Shore |
 
 ### The Reservoir
 
@@ -101,8 +105,8 @@
 | Reservoir North | ✅ Done | Connects to Atlantis |
 | Stream View | ✅ Done | |
 | Glacier Room | ✅ Done | Melt glacier with torch |
-| Deep Ravine | ❌ | |
-| Rocky Crawl | ❌ | |
+| Deep Ravine | ✅ Done | Connects E/W Passage to Rocky Crawl |
+| Rocky Crawl | ✅ Done | Connects Deep Ravine to Dome Room |
 
 ### The Dome and Temple
 
@@ -118,7 +122,6 @@
 | Egyptian Room | ✅ Done | Gold coffin |
 | Tiny Room | ✅ Done | Key puzzle |
 | Dreary Room | ✅ Done | Blue crystal sphere |
-| Cave | ❌ | |
 
 ### Mirror Rooms
 
@@ -159,15 +162,6 @@
 | Coal Mine | ✅ Done | Old coal source room |
 | Drafty Room | ✅ Done | Legacy room |
 
-### Egyptian Area
-
-| Room | Status | Notes |
-|------|--------|-------|
-| Egyptian Room | ✅ Done | In temple region |
-| Glacier Room | ❌ | Throw torch at ice |
-| North-South Crawlway | ❌ | |
-| Ruby Room | ❌ | Ruby treasure |
-
 ### Frigid River
 
 | Room | Status | Notes |
@@ -196,8 +190,8 @@
 | Volcano View | ✅ Done | |
 | Narrow Ledge | ✅ Done | Zorkmid coin (Ledge-1) |
 | Dusty Room | ✅ Done | Crown |
-| Small Chamber | ✅ Done | Ruby treasure |
-| Lava Room | ✅ Done | Connects Small Chamber to Volcano |
+| Ruby Room | ✅ Done | Ruby treasure |
+| Lava Room | ✅ Done | Connects Ruby Room to Volcano |
 | Wide Ledge | ✅ Done | Ledge-2, E → Dusty Room |
 | Library | ✅ Done | Stamp in purple book |
 
@@ -279,7 +273,7 @@
 | 27 | Crown | 15 | 10 | 25 | Dusty Room | ✅ Done |
 | 28 | Flathead stamp | 4 | 10 | 14 | Library (Volcano) | ✅ Done |
 | 29 | Zorkmid coin | 10 | 12 | 22 | Narrow Ledge | ✅ Done |
-| 30 | Ruby | 15 | 8 | 23 | Small Chamber | ✅ Done |
+| 30 | Ruby | 15 | 8 | 23 | Ruby Room | ✅ Done |
 | 31 | Don Woods stamp | -- | 1 | 1 | Brochure (mail order) | ❌ |
 | 32 | Brass bauble | 1 | 1 | 2 | Forest (canary song) | ❌ |
 
@@ -521,9 +515,9 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 | Category | Done | Total | % |
 |----------|------|-------|---|
-| Rooms | 110 | ~190 | 58% |
-| Treasures | 25 | 32 | 78% |
-| Treasure Points | 433 | 616 | 70% |
+| Rooms | 146 | ~190 | 77% |
+| Treasures | 27 | 32 | 84% |
+| Treasure Points | 485 | 616 | 79% |
 | Light Sources | 4 | 4 | 100% |
 | Weapons | 4 | 4 | 100% |
 | Tools | 5 | 6 | 83% |
@@ -535,15 +529,16 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Priority Next Steps
 
-1. **Remaining treasures** - Spheres (2), ruby, stamps (2), bauble
-2. **Puzzle mechanics** - Rainbow wave sceptre
+1. **Remaining treasures** - Red crystal sphere, gold card, stamps (2), bauble
+2. **Puzzle mechanics** - Rainbow wave sceptre, glacier torch melt
 3. **Royal Puzzle** - 8x8 sliding block puzzle (see royal-puzzle.md)
 4. **Remaining NPCs** - Dungeon Master, Gnome
 5. **Endgame** (~15 rooms) - Final puzzle sequence
-6. **Additional regions** - Mirror rooms, remaining mine areas, library
 
 ## Recently Completed
 
+- ✅ **Ancient Chasm Chain** (2025-12-30) - Added 4 rooms (Ancient Chasm, Temple Dead Ends 1-2, Temple Small Cave) connecting Loud Room to Rocky Shore. Renamed Small Chamber to Ruby Room.
+- ✅ **Deep Ravine & Rocky Crawl** (2025-12-30) - Added 2 rooms connecting E/W Passage to Dome Room/Egyptian Room. Fixed Chasm connections to go through Deep Ravine.
 - ✅ **Library & Wide Ledge** (2025-12-30) - Added Library room with purple book containing Flathead stamp (14 pts). Added Wide Ledge room. Fixed volcano internal connections per canonical map.
 - ✅ **Volcano-Glacier Connection Chain** (2025-12-30) - Added 7 rooms connecting Dam/Reservoir to Volcano: Reservoir North, Stream View, Glacier Room, Small Chamber, Lava Room. Removed incorrect Bat Room → Volcano connection.
 - ✅ **Ruby Treasure** (2025-12-30) - Added 23-point ruby in Small Chamber (volcano region). Moved from incorrect Volcano View location.

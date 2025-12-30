@@ -45,9 +45,9 @@ import { createWhiteHouseRooms, createWhiteHouseObjects, WhiteHouseRoomIds } fro
 import { createHouseInteriorRooms, createHouseInteriorObjects, connectHouseInteriorToExterior, HouseInteriorRoomIds } from './regions/house-interior';
 import { createForestRooms, createForestObjects, connectForestToExterior, ForestRoomIds } from './regions/forest';
 import { createUndergroundRooms, createUndergroundObjects, connectUndergroundToHouse, connectStudioToKitchen, connectUndergroundToDam, connectGrailRoomToTemple, connectCaveToHades, UndergroundRoomIds } from './regions/underground';
-import { createDamRooms, connectDamToUnderground, connectReservoirToAtlantis, connectGlacierToEgyptian, createDamObjects, DamRoomIds } from './regions/dam';
+import { createDamRooms, connectDamToUnderground, connectReservoirToAtlantis, connectGlacierToEgyptian, connectTempleSmallCaveToRockyShore, createDamObjects, DamRoomIds } from './regions/dam';
 import { createCoalMineRooms, connectCoalMineToDam, createCoalMineObjects, CoalMineRoomIds } from './regions/coal-mine';
-import { createTempleRooms, connectTempleToDam, createTempleObjects, TempleRoomIds } from './regions/temple';
+import { createTempleRooms, connectTempleToDam, connectTempleToUnderground, createTempleObjects, TempleRoomIds } from './regions/temple';
 import { createVolcanoRooms, connectVolcanoToGlacier, createVolcanoObjects, VolcanoRoomIds } from './regions/volcano';
 import { createBankRooms, connectBankToUnderground, createBankObjects, BankRoomIds } from './regions/bank-of-zork';
 import { createWellRoomRooms, connectWellRoomToTemple, createWellRoomObjects, WellRoomIds } from './regions/well-room';
@@ -137,6 +137,7 @@ export class DungeoStory implements Story {
     connectDamToUnderground(world, this.damIds, this.undergroundIds.roundRoom);
     connectCoalMineToDam(world, this.coalMineIds, this.damIds.maintenanceRoom);
     connectTempleToDam(world, this.templeIds, this.damIds.reservoirSouth);
+    connectTempleToUnderground(world, this.templeIds, this.undergroundIds.rockyCrawl);
     connectReservoirToAtlantis(world, this.damIds, this.undergroundIds.atlantisRoom);
     connectGlacierToEgyptian(world, this.damIds, this.templeIds.egyptianRoom);
     connectVolcanoToGlacier(world, this.volcanoIds, this.damIds.glacierRoom);
@@ -146,6 +147,7 @@ export class DungeoStory implements Story {
     world.setStateValue('dungeo.bank.roomIds', this.bankIds);
     connectWellRoomToTemple(world, this.wellRoomIds, this.templeIds.torchRoom);
     connectFrigidRiverToDam(world, this.frigidRiverIds, this.damIds.damBase);
+    connectTempleSmallCaveToRockyShore(world, this.damIds, this.frigidRiverIds.rockyShore);
     connectRainbowToCanyon(world, this.frigidRiverIds, this.forestIds.canyonBottom);
     connectMazeToClearing(world, this.mazeIds, this.forestIds.clearing);
     connectCyclopsToLivingRoom(world, this.mazeIds, this.houseInteriorIds.livingRoom);

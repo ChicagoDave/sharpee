@@ -19,6 +19,11 @@ import { createReservoir } from './rooms/reservoir';
 import { createReservoirNorth } from './rooms/reservoir-north';
 import { createStreamView } from './rooms/stream-view';
 import { createGlacierRoom } from './rooms/glacier-room';
+import { createAncientChasm } from './rooms/ancient-chasm';
+import { createTempleDeadEnd1 } from './rooms/temple-dead-end-1';
+import { createTempleDeadEnd2 } from './rooms/temple-dead-end-2';
+import { createTempleSmallCave } from './rooms/temple-small-cave';
+
 export interface DamRoomIds {
   loudRoom: string;
   deepCanyon: string;
@@ -31,6 +36,10 @@ export interface DamRoomIds {
   reservoirNorth: string;
   streamView: string;
   glacierRoom: string;
+  ancientChasm: string;
+  templeDeadEnd1: string;
+  templeDeadEnd2: string;
+  templeSmallCave: string;
 }
 
 /**
@@ -48,6 +57,10 @@ export function createDamRooms(world: WorldModel): DamRoomIds {
   const reservoirNorth = createReservoirNorth(world);
   const streamView = createStreamView(world);
   const glacierRoom = createGlacierRoom(world);
+  const ancientChasm = createAncientChasm(world);
+  const templeDeadEnd1 = createTempleDeadEnd1(world);
+  const templeDeadEnd2 = createTempleDeadEnd2(world);
+  const templeSmallCave = createTempleSmallCave(world);
 
   const roomIds: DamRoomIds = {
     loudRoom: loudRoom.id,
@@ -60,7 +73,11 @@ export function createDamRooms(world: WorldModel): DamRoomIds {
     reservoir: reservoir.id,
     reservoirNorth: reservoirNorth.id,
     streamView: streamView.id,
-    glacierRoom: glacierRoom.id
+    glacierRoom: glacierRoom.id,
+    ancientChasm: ancientChasm.id,
+    templeDeadEnd1: templeDeadEnd1.id,
+    templeDeadEnd2: templeDeadEnd2.id,
+    templeSmallCave: templeSmallCave.id
   };
 
   // Connect rooms within this region
@@ -79,14 +96,14 @@ export { createDamObjects } from './objects';
  * See README.md for connection diagram
  */
 function connectDamRooms(world: WorldModel, roomIds: DamRoomIds): void {
-  // Loud Room: internal connections only
+  // Loud Room: E → Ancient Chasm
   // UP → Damp Cave and SW → N/S Passage are set externally by connectUndergroundToDam
   const loudRoom = world.getEntity(roomIds.loudRoom);
   if (loudRoom) {
     const roomTrait = loudRoom.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
-        // SOUTH to Round Room - connected externally by connectDamToUnderground
+        [Direction.EAST]: { destination: roomIds.ancientChasm },
         // UP to Damp Cave - connected externally by connectUndergroundToDam
       };
     }
@@ -204,7 +221,7 @@ function connectDamRooms(world: WorldModel, roomIds: DamRoomIds): void {
   }
 
   // Glacier Room: SOUTH to Stream View
-  // WEST to Small Chamber (volcano region) is connected externally
+  // WEST to Ruby Room (volcano region) is connected externally
   // DOWN to Egyptian Room is connected externally
   const glacierRoom = world.getEntity(roomIds.glacierRoom);
   if (glacierRoom) {
@@ -212,6 +229,56 @@ function connectDamRooms(world: WorldModel, roomIds: DamRoomIds): void {
     if (roomTrait) {
       roomTrait.exits = {
         [Direction.SOUTH]: { destination: roomIds.streamView },
+      };
+    }
+  }
+
+  // === Ancient Chasm chain (per map-connections.md) ===
+
+  // Ancient Chasm: S→Loud Room, W→Dead End-1, N→Dead End-2, E→Small Cave
+  const ancientChasm = world.getEntity(roomIds.ancientChasm);
+  if (ancientChasm) {
+    const roomTrait = ancientChasm.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.SOUTH]: { destination: roomIds.loudRoom },
+        [Direction.WEST]: { destination: roomIds.templeDeadEnd1 },
+        [Direction.NORTH]: { destination: roomIds.templeDeadEnd2 },
+        [Direction.EAST]: { destination: roomIds.templeSmallCave },
+      };
+    }
+  }
+
+  // Temple Dead End 1: E→Ancient Chasm
+  const templeDeadEnd1 = world.getEntity(roomIds.templeDeadEnd1);
+  if (templeDeadEnd1) {
+    const roomTrait = templeDeadEnd1.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.EAST]: { destination: roomIds.ancientChasm },
+      };
+    }
+  }
+
+  // Temple Dead End 2: SW→Ancient Chasm
+  const templeDeadEnd2 = world.getEntity(roomIds.templeDeadEnd2);
+  if (templeDeadEnd2) {
+    const roomTrait = templeDeadEnd2.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.SOUTHWEST]: { destination: roomIds.ancientChasm },
+      };
+    }
+  }
+
+  // Temple Small Cave: NW→Ancient Chasm
+  // S→Rocky Shore (frigid river) is connected externally
+  const templeSmallCave = world.getEntity(roomIds.templeSmallCave);
+  if (templeSmallCave) {
+    const roomTrait = templeSmallCave.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.NORTHWEST]: { destination: roomIds.ancientChasm },
       };
     }
   }
@@ -305,6 +372,37 @@ export function connectGlacierToEgyptian(
     const roomTrait = egyptianRoom.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits[Direction.UP] = { destination: damIds.glacierRoom };
+    }
+  }
+}
+
+/**
+ * Connect Temple Small Cave to Rocky Shore (frigid river region)
+ *
+ * Per map-connections.md:
+ * - Temple Small Cave S → Rocky Shore
+ * - Rocky Shore NW → Temple Small Cave
+ */
+export function connectTempleSmallCaveToRockyShore(
+  world: WorldModel,
+  damIds: DamRoomIds,
+  rockyShoreId: string
+): void {
+  // Temple Small Cave S → Rocky Shore
+  const templeSmallCave = world.getEntity(damIds.templeSmallCave);
+  if (templeSmallCave) {
+    const roomTrait = templeSmallCave.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits[Direction.SOUTH] = { destination: rockyShoreId };
+    }
+  }
+
+  // Rocky Shore NW → Temple Small Cave
+  const rockyShore = world.getEntity(rockyShoreId);
+  if (rockyShore) {
+    const roomTrait = rockyShore.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits[Direction.NORTHWEST] = { destination: damIds.templeSmallCave };
     }
   }
 }
