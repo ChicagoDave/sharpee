@@ -111,10 +111,24 @@ An Architecture Decision Record captures important architectural decisions along
 - [ADR-030: Introduction of if-services Package](./adr-030-if-services-package.md) - Service layer
 - [ADR-031: Self-Inflating Help System](./adr-031-self-inflating-help-system.md) - Dynamic help
 
-### Development & Testing (ADRs 55-56)
+### Development & Testing (ADRs 55-56, 73)
 
 - [ADR-055: NPM Publishing Strategy](./adr-055-npm-publishing.md) - Package publishing approach
 - [ADR-056: Story Testing Framework](./adr-056-story-testing-framework.md) - Testing infrastructure
+- [ADR-073: Transcript-Based Story Testing](./adr-073-transcript-story-testing.md) - Transcript test format
+
+### NPC & Game Systems (ADRs 70-72, 76)
+
+- [ADR-070: NPC System Architecture](./adr-070-npc-system-architecture.md) - NPC behavior framework
+- [ADR-071: Daemons and Fuses](./adr-071-daemons-and-fuses.md) - Timed event system
+- [ADR-072: Combat System](./adr-072-combat-system.md) - Combat mechanics
+- [ADR-076: Scoring System](./adr-076-scoring-system.md) - Score tracking
+
+### Metadata & Distribution (ADRs 74-75, 77)
+
+- [ADR-074: IFID Requirements](./adr-074-ifid-requirements.md) - Story identification (Treaty of Babel)
+- [ADR-075: Effects-Based Handler Pattern](./adr-075-event-handler-consolidation.md) - Effect-returning event handlers
+- [ADR-077: Release Build System](./adr-077-release-build-system.md) - **[Research]** Bundled distribution for authors
 
 ### Special ADRs
 
@@ -196,4 +210,4 @@ What other options were evaluated?
 
 ---
 
-*Last updated: August 2024 | Total ADRs: 56*
+*Last updated: December 2025 | Total ADRs: 77*

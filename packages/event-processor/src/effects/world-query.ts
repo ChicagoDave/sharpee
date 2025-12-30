@@ -5,10 +5,7 @@
  * full world access. This preserves stdlib as the gatekeeper for mutations.
  */
 
-import { IFEntity } from '../entities/if-entity';
-import { TraitType } from '../traits/trait-types';
-import { ICapabilityData } from '../world/capabilities';
-import type { IWorldModel } from '../world/WorldModel';
+import type { IFEntity, TraitType, ICapabilityData, IWorldModel } from '@sharpee/world-model';
 
 /**
  * Read-only query interface for handlers

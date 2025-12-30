@@ -55,8 +55,5 @@ export * from './services';
 // Scope system
 export * from './scope';
 
-// Event system types
+// Event system types (basic types only - ADR-075 effects moved to event-processor)
 export * from './events/types';
-
-// Effects system (ADR-075)
-export * from './effects';

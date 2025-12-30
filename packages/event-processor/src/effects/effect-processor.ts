@@ -6,8 +6,7 @@
  */
 
 import { ISemanticEvent } from '@sharpee/core';
-import { WorldModel } from '../world/WorldModel';
-import { RoomTrait } from '../traits/room';
+import { WorldModel, RoomTrait } from '@sharpee/world-model';
 import {
   Effect,
   EffectError,

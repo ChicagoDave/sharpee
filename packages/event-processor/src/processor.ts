@@ -6,23 +6,20 @@
  */
 
 import { ISemanticEvent } from '@sharpee/core';
+import { WorldModel } from '@sharpee/world-model';
+import { WorldChange, ProcessedEvents, ProcessorOptions } from '@sharpee/if-domain';
+import { registerStandardHandlers } from './handlers';
 import {
-  WorldModel,
-  IGameEvent,
-  EntityEventHandler,
-  LegacyEntityEventHandler,
-  AnyEventHandler,
   Effect,
   EffectProcessor,
   createWorldQuery,
-  WorldQuery,
-  StoryEventHandler
-} from '@sharpee/world-model';
-import { WorldChange, ProcessedEvents, ProcessorOptions } from '@sharpee/if-domain';
-import { registerStandardHandlers } from './handlers';
+  WorldQuery
+} from './effects';
+import type { IGameEvent, StoryEventHandler, AnyEventHandler } from './handler-types';
 
-// Re-export StoryEventHandler for convenience
-export type { StoryEventHandler } from '@sharpee/world-model';
+// Re-export for convenience
+export type { StoryEventHandler, IGameEvent } from './handler-types';
+export type { Effect, WorldQuery } from './effects';
 
 export class EventProcessor {
   private world: WorldModel;

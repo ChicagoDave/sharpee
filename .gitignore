@@ -97,3 +97,6 @@ packages/**/src/**/*.js.map
 
 # Unreleased story extensions (keep private)
 packages/extensions/blood-magic/
+
+# Transcript test results
+test-results/

@@ -535,6 +535,9 @@ importers:
       '@sharpee/engine':
         specifier: file:../../packages/engine
         version: link:../../packages/engine
+      '@sharpee/event-processor':
+        specifier: file:../../packages/event-processor
+        version: link:../../packages/event-processor
       '@sharpee/lang-en-us':
         specifier: file:../../packages/lang-en-us
         version: file:packages/lang-en-us

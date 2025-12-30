@@ -4,6 +4,8 @@
  * Formats and displays test results with colors and diffs.
  */
 
+import * as fs from 'fs';
+import * as path from 'path';
 import {
   TranscriptResult,
   TestRunResult,
@@ -243,4 +245,165 @@ export function getExitCode(result: TestRunResult): number {
     return 1;
   }
   return 0;
+}
+
+/**
+ * Generate a timestamp string for filenames
+ */
+export function generateTimestamp(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
+}
+
+/**
+ * Write test results to a JSON file
+ */
+export function writeResultsToJson(
+  result: TestRunResult,
+  outputDir: string,
+  timestamp: string
+): string {
+  // Ensure output directory exists
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+
+  const filename = `results_${timestamp}.json`;
+  const filepath = path.join(outputDir, filename);
+
+  // Write JSON with serializable data (strip non-serializable like RegExp)
+  const serializableResult = JSON.parse(JSON.stringify(result, (key, value) => {
+    if (value instanceof RegExp) {
+      return value.toString();
+    }
+    return value;
+  }));
+
+  fs.writeFileSync(filepath, JSON.stringify(serializableResult, null, 2));
+  return filepath;
+}
+
+/**
+ * Write a human-readable report to a text file
+ */
+export function writeReportToFile(
+  result: TestRunResult,
+  outputDir: string,
+  timestamp: string
+): string {
+  // Ensure output directory exists
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+
+  const filename = `report_${timestamp}.txt`;
+  const filepath = path.join(outputDir, filename);
+
+  const lines: string[] = [];
+
+  lines.push('=' .repeat(60));
+  lines.push('TRANSCRIPT TEST REPORT');
+  lines.push(`Generated: ${new Date().toISOString()}`);
+  lines.push('='.repeat(60));
+  lines.push('');
+
+  // Overall summary
+  const { totalPassed, totalFailed, totalExpectedFailures, totalSkipped, totalDuration } = result;
+  const total = totalPassed + totalFailed + totalExpectedFailures + totalSkipped;
+
+  lines.push(`Total: ${total} tests in ${result.transcripts.length} transcript(s)`);
+  lines.push(`  Passed: ${totalPassed}`);
+  lines.push(`  Failed: ${totalFailed}`);
+  lines.push(`  Expected Failures: ${totalExpectedFailures}`);
+  lines.push(`  Skipped: ${totalSkipped}`);
+  lines.push(`  Duration: ${totalDuration}ms`);
+  lines.push('');
+
+  // Per-transcript details
+  for (const transcript of result.transcripts) {
+    lines.push('-'.repeat(60));
+    lines.push(`Transcript: ${transcript.transcript.filePath}`);
+    if (transcript.transcript.header.title) {
+      lines.push(`  Title: ${transcript.transcript.header.title}`);
+    }
+    lines.push(`  Results: ${transcript.passed} passed, ${transcript.failed} failed, ${transcript.expectedFailures} expected failures, ${transcript.skipped} skipped`);
+    lines.push('');
+
+    // Command details (only show failures in summary)
+    const failedCommands = transcript.commands.filter(c => !c.passed && !c.skipped && !c.expectedFailure);
+    if (failedCommands.length > 0) {
+      lines.push('  FAILURES:');
+      for (const cmd of failedCommands) {
+        lines.push(`    Line ${cmd.command.lineNumber}: > ${cmd.command.input}`);
+        if (cmd.error) {
+          lines.push(`      Error: ${cmd.error}`);
+        }
+        for (const ar of cmd.assertionResults) {
+          if (!ar.passed) {
+            lines.push(`      - ${ar.message || formatAssertionPlain(ar.assertion)}`);
+          }
+        }
+        lines.push('      Actual output:');
+        for (const line of cmd.actualOutput.split('\n')) {
+          if (line.trim()) {
+            lines.push(`        ${line}`);
+          }
+        }
+        lines.push('');
+      }
+    }
+  }
+
+  lines.push('='.repeat(60));
+  if (totalFailed === 0) {
+    lines.push('ALL TESTS PASSED');
+  } else {
+    lines.push(`${totalFailed} TEST(S) FAILED`);
+  }
+  lines.push('='.repeat(60));
+
+  fs.writeFileSync(filepath, lines.join('\n'));
+  return filepath;
+}
+
+/**
+ * Format an assertion without chalk colors (for file output)
+ */
+function formatAssertionPlain(assertion: any): string {
+  switch (assertion.type) {
+    case 'ok':
+      return 'Exact match';
+    case 'ok-contains':
+      return `Contains "${assertion.value}"`;
+    case 'ok-not-contains':
+      return `Does not contain "${assertion.value}"`;
+    case 'ok-matches':
+      return `Matches ${assertion.pattern}`;
+    case 'fail':
+      return `Expected failure: ${assertion.reason}`;
+    case 'skip':
+      return `Skipped: ${assertion.reason || 'no reason given'}`;
+    case 'todo':
+      return `TODO: ${assertion.reason || 'not implemented'}`;
+    case 'event-count':
+      return `Event count: ${assertion.eventCount}`;
+    case 'event-assert': {
+      const prefix = assertion.assertTrue ? 'assertTrue' : 'assertFalse';
+      const posStr = assertion.eventPosition ? ` Event ${assertion.eventPosition}:` : '';
+      const dataStr = assertion.eventData ? ` ${JSON.stringify(assertion.eventData)}` : '';
+      return `${prefix}:${posStr} ${assertion.eventType}${dataStr}`;
+    }
+    case 'state-assert': {
+      const prefix = assertion.assertTrue ? 'assertTrue' : 'assertFalse';
+      return `${prefix}: ${assertion.stateExpression}`;
+    }
+    default:
+      return 'Unknown assertion';
+  }
 }

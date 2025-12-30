@@ -13,7 +13,14 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { parseTranscriptFile, validateTranscript } from './parser';
 import { runTranscript } from './runner';
-import { reportTranscript, reportTestRun, getExitCode } from './reporter';
+import {
+  reportTranscript,
+  reportTestRun,
+  getExitCode,
+  generateTimestamp,
+  writeResultsToJson,
+  writeReportToFile
+} from './reporter';
 import { loadStory, findTranscripts, TestableGame } from './story-loader';
 import { TranscriptResult, TestRunResult } from './types';
 
@@ -23,6 +30,7 @@ interface CliOptions {
   verbose: boolean;
   stopOnFailure: boolean;
   all: boolean;
+  outputDir: string | null;
 }
 
 /**
@@ -34,7 +42,8 @@ function parseArgs(args: string[]): CliOptions {
     transcriptPaths: [],
     verbose: false,
     stopOnFailure: false,
-    all: false
+    all: false,
+    outputDir: null
   };
 
   let i = 0;
@@ -47,6 +56,11 @@ function parseArgs(args: string[]): CliOptions {
       options.stopOnFailure = true;
     } else if (arg === '--all' || arg === '-a') {
       options.all = true;
+    } else if (arg === '--output-dir' || arg === '-o') {
+      i++;
+      if (i < args.length) {
+        options.outputDir = args[i];
+      }
     } else if (arg === '--help' || arg === '-h') {
       printHelp();
       process.exit(0);
@@ -79,15 +93,17 @@ Arguments:
   transcript-files   One or more .transcript files to run
 
 Options:
-  -a, --all          Run all transcripts in the story's tests/ directory
-  -v, --verbose      Show detailed output for each command
+  -a, --all              Run all transcripts in the story's tests/ directory
+  -v, --verbose          Show detailed output for each command
   -s, --stop-on-failure  Stop on first failure
-  -h, --help         Show this help message
+  -o, --output-dir <dir> Write timestamped results to directory (JSON + text report)
+  -h, --help             Show this help message
 
 Examples:
   transcript-test stories/dungeo tests/navigation.transcript
   transcript-test stories/dungeo --all
   transcript-test stories/dungeo tests/*.transcript --verbose
+  transcript-test stories/dungeo --all -o test-results
 `);
 }
 
@@ -198,6 +214,17 @@ async function main(): Promise<void> {
   // Final report if multiple transcripts
   if (results.length > 1) {
     reportTestRun(runResult, { verbose: options.verbose });
+  }
+
+  // Write results to files if output directory specified
+  if (options.outputDir) {
+    const timestamp = generateTimestamp();
+    const jsonPath = writeResultsToJson(runResult, options.outputDir, timestamp);
+    const reportPath = writeReportToFile(runResult, options.outputDir, timestamp);
+    console.log();
+    console.log(`Results written to:`);
+    console.log(`  JSON:   ${jsonPath}`);
+    console.log(`  Report: ${reportPath}`);
   }
 
   // Exit with appropriate code
