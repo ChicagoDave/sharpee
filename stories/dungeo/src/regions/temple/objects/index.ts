@@ -41,6 +41,9 @@ export function createTempleObjects(world: WorldModel, roomIds: TempleRoomIds): 
   // Land of Dead objects
   createCrystalSkull(world, roomIds.landOfDead);
   createChalice(world, roomIds.landOfDead);
+
+  // Dreary Room objects
+  createBlueCrystalSphere(world, roomIds.drearyRoom);
 }
 
 /**
@@ -300,4 +303,31 @@ function createChalice(world: WorldModel, roomId: string): IFEntity {
 
   world.moveEntity(chalice.id, roomId);
   return chalice;
+}
+
+/**
+ * Blue Crystal Sphere - Treasure in Dreary Room
+ *
+ * One of three crystal spheres in the game (blue, white, red).
+ * Worth 10 points for taking, 5 additional points in trophy case.
+ */
+function createBlueCrystalSphere(world: WorldModel, roomId: string): IFEntity {
+  const sphere = world.createEntity('blue crystal sphere', EntityType.ITEM);
+
+  sphere.add(new IdentityTrait({
+    name: 'blue crystal sphere',
+    aliases: ['sphere', 'crystal sphere', 'blue sphere', 'crystal', 'blue crystal', 'ball'],
+    description: 'A beautiful sphere of blue crystal. It seems to glow with an inner light.',
+    properName: false,
+    article: 'a'
+  }));
+
+  // Treasure - 10 take + 5 case = 15 total
+  (sphere as any).isTreasure = true;
+  (sphere as any).treasureId = 'blue-crystal-sphere';
+  (sphere as any).treasureValue = 10;
+  (sphere as any).trophyCaseValue = 5;
+
+  world.moveEntity(sphere.id, roomId);
+  return sphere;
 }

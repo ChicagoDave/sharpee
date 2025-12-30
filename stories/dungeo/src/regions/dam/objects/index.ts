@@ -178,3 +178,4 @@ function createPlatinumBar(world: WorldModel, roomId: string): IFEntity {
   world.moveEntity(bar.id, roomId);
   return bar;
 }
+

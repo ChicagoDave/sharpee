@@ -373,46 +373,46 @@ E:Egyptian Room
 
 Glacier Room
 N:Stream View
-W:Ruby Room
+W:Small Chamber
 
-Ruby Room
+Small Chamber
 S:Glacier Room
 W:Lava Room
 
 Lava Room
-W:Ruby Room
+W:Small Chamber
 S:Volcano Bottom
 
 Volcano Bottom
 N:Lava Room
-U:Volcano Shaft (in balloon)
+(wait):Volcano Shaft (in balloon, receptacle open)
 
-Volcano Shaft-1
-D:Volcano Bottom (in balloon)
-U:Volcano Shaft-2
-W:Volcano Ledge-1
+Near Small Ledge
+(with):Volcano Bottom (in balloon, receptacle closed)
+(wait):Near Viewing Ledge (in balloon, receptacle open)
+W:Narrow Ledge
 
-Volcano Shaft-2
-D:Volcano Shaft-1 (in balloon)
-U:Volcano Shaft-3
+Near Viewing Ledge
+(wait):Near Small Ledge (in balloon, receptacle closed)
+(wait):Near Wide Ledge (in balloon, receptacle open)
 
-Volcano Shaft-3
-D:Volcano Shaft-2 (in balloon)
-W:Volcano Ledge-2
+Near Wide Ledge
+(wait):Near Viewing Ledge (in balloon, receptacle closed)
+W:Wide Ledge
 
-Volcano Ledge-1
+Narrow Ledge
 S:Library
-E:Volcano Shaft-1 (in balloon)
+E:Near Small Ledge (in balloon)
 
 Library
-N:Volcano Ledge-1
+N:Narrow Ledge
 
-Volcano Ledge-2
-E:Volcano Shaft-3 (in balloon)
+Wide Ledge
+E:Near Wide Ledge (in balloon)
 S:Dusty Room
 
 Dusty Room
-N:Volcano Ledge-2
+N:Wide Ledge
 
 \***\* 2025-12-30 \*\***
 

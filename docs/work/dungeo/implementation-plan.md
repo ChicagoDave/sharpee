@@ -1,7 +1,7 @@
 # Dungeo Implementation Tracking
 
 **Target**: Mainframe Zork 616-point version
-**Current Progress**: 131/~190 rooms (69%), 433/616 treasure points (70%)
+**Current Progress**: 138/~190 rooms (73%), 471/616 treasure points (76%)
 
 ---
 
@@ -98,8 +98,9 @@
 |------|--------|-------|
 | Reservoir | ✅ Done | Trunk when drained |
 | Reservoir South | ✅ Done | |
-| Reservoir North | ❌ | Pump |
-| Stream View | ❌ | Torch (if thrown at glacier) |
+| Reservoir North | ✅ Done | Connects to Atlantis |
+| Stream View | ✅ Done | |
+| Glacier Room | ✅ Done | Melt glacier with torch |
 | Deep Ravine | ❌ | |
 | Rocky Crawl | ❌ | |
 
@@ -115,8 +116,8 @@
 | Entry to Hades | ✅ Done | Bell/book/candle puzzle |
 | Land of the Dead | ✅ Done | Endgame trigger |
 | Egyptian Room | ✅ Done | Gold coffin |
-| Tiny Room | ❌ | Key puzzle |
-| Dreary Room | ❌ | Blue sphere |
+| Tiny Room | ✅ Done | Key puzzle |
+| Dreary Room | ✅ Done | Blue crystal sphere |
 | Cave | ❌ | |
 
 ### Mirror Rooms
@@ -190,13 +191,14 @@
 
 | Room | Status | Notes |
 |------|--------|-------|
-| Volcano Bottom | ✅ Done | Balloon basket |
+| Volcano Bottom | ✅ Done | N → Lava Room |
 | Volcano Core | ✅ Done | Rising/falling |
 | Volcano View | ✅ Done | |
-| Narrow Ledge | ✅ Done | Zorkmid coin |
+| Narrow Ledge | ✅ Done | Zorkmid coin (Ledge-1) |
 | Dusty Room | ✅ Done | Crown |
-| Lava Room | ❌ | |
-| Wide Ledge | ❌ | |
+| Small Chamber | ✅ Done | Ruby treasure |
+| Lava Room | ✅ Done | Connects Small Chamber to Volcano |
+| Wide Ledge | ❌ | Ledge-2 |
 | Library | ❌ | Stamp in purple book |
 
 ### The Bank of Zork
@@ -265,7 +267,7 @@
 | 15 | Pot of gold | 10 | 10 | 20 | End of Rainbow | ✅ Done |
 | 16 | Chalice | 10 | 10 | 20 | Thief's Treasure Room | ✅ Done |
 | 17 | Trunk of jewels | 15 | 8 | 23 | Reservoir (drained) | ✅ Done |
-| 18 | Blue crystal sphere | 10 | 5 | 15 | Dreary Room | ❌ |
+| 18 | Blue crystal sphere | 10 | 5 | 15 | Dreary Room | ✅ Done |
 | 19 | Huge diamond | 10 | 6 | 16 | Machine Room (from coal) | ✅ Done |
 | 20 | Sapphire bracelet | 5 | 3 | 8 | Gas Room | ✅ Done |
 | 21 | Red crystal sphere | 10 | 5 | 15 | Sooty Room | ❌ |
@@ -277,11 +279,11 @@
 | 27 | Crown | 15 | 10 | 25 | Dusty Room | ✅ Done |
 | 28 | Flathead stamp | 4 | 10 | 14 | Library (Volcano) | ❌ |
 | 29 | Zorkmid coin | 10 | 12 | 22 | Narrow Ledge | ✅ Done |
-| 30 | Ruby | 15 | 8 | 23 | Ruby Room | ❌ |
+| 30 | Ruby | 15 | 8 | 23 | Small Chamber | ✅ Done |
 | 31 | Don Woods stamp | -- | 1 | 1 | Brochure (mail order) | ❌ |
 | 32 | Brass bauble | 1 | 1 | 2 | Forest (canary song) | ❌ |
 
-**Implemented**: 25/32 treasures (433/616 points = 70%)
+**Implemented**: 27/32 treasures (471/616 points = 76%)
 
 ---
 
@@ -542,6 +544,10 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Recently Completed
 
+- ✅ **Volcano-Glacier Connection Chain** (2025-12-30) - Added 7 rooms connecting Dam/Reservoir to Volcano: Reservoir North, Stream View, Glacier Room, Small Chamber, Lava Room. Removed incorrect Bat Room → Volcano connection.
+- ✅ **Ruby Treasure** (2025-12-30) - Added 23-point ruby in Small Chamber (volcano region). Moved from incorrect Volcano View location.
+- ✅ **Blue Crystal Sphere Treasure** (2025-12-30) - Added 15-point treasure in Dreary Room (temple region).
+- ✅ **Tiny Room & Dreary Room** (2025-12-30) - Added rooms west of Torch Room for key puzzle area.
 - ✅ **ADR-075 Effects-Based Handler Pattern** (2025-12-30) - Fixed circular dependency by moving effects code from world-model to event-processor. Module loading improved from 77s to 12s. Mirror Room toggle now working.
 - ✅ **Transcript Tester File Output** (2025-12-30) - Added `--output-dir` option for timestamped JSON/text results in `test-results/` folder.
 - ✅ **ADR-077 Release Build System** (2025-12-30) - Created research ADR for bundled distribution to eliminate 12s module loading for authors.

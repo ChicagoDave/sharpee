@@ -16,6 +16,8 @@ import { createDomeRoom } from './rooms/dome-room';
 import { createNarrowCorridor } from './rooms/narrow-corridor';
 import { createEntryToHades } from './rooms/entry-to-hades';
 import { createLandOfDead } from './rooms/land-of-dead';
+import { createTinyRoom } from './rooms/tiny-room';
+import { createDrearyRoom } from './rooms/dreary-room';
 
 export interface TempleRoomIds {
   temple: string;
@@ -26,6 +28,8 @@ export interface TempleRoomIds {
   narrowCorridor: string;
   entryToHades: string;
   landOfDead: string;
+  tinyRoom: string;
+  drearyRoom: string;
 }
 
 /**
@@ -40,6 +44,8 @@ export function createTempleRooms(world: WorldModel): TempleRoomIds {
   const narrowCorridor = createNarrowCorridor(world);
   const entryToHades = createEntryToHades(world);
   const landOfDead = createLandOfDead(world);
+  const tinyRoom = createTinyRoom(world);
+  const drearyRoom = createDrearyRoom(world);
 
   const roomIds: TempleRoomIds = {
     temple: temple.id,
@@ -49,7 +55,9 @@ export function createTempleRooms(world: WorldModel): TempleRoomIds {
     domeRoom: domeRoom.id,
     narrowCorridor: narrowCorridor.id,
     entryToHades: entryToHades.id,
-    landOfDead: landOfDead.id
+    landOfDead: landOfDead.id,
+    tinyRoom: tinyRoom.id,
+    drearyRoom: drearyRoom.id
   };
 
   // Connect the temple rooms
@@ -105,13 +113,40 @@ function connectTempleRooms(world: WorldModel, roomIds: TempleRoomIds): void {
   }
 
   // Torch Room - contains ivory torch
+  // Per map-connections.md: W → Tiny Room, D → North/South Passage (external)
+  // Note: Current S → Dome Room is kept for now; map shows D → Torch Room from Dome
   const torchRoom = world.getEntity(roomIds.torchRoom);
   if (torchRoom) {
     const roomTrait = torchRoom.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
-        [Direction.WEST]: { destination: roomIds.egyptianRoom },
+        [Direction.WEST]: { destination: roomIds.tinyRoom },
         [Direction.SOUTH]: { destination: roomIds.domeRoom }
+      };
+    }
+  }
+
+  // Tiny Room - west of Torch Room
+  // Per map-connections.md: E → Torch Room, N → Dreary Room
+  const tinyRoom = world.getEntity(roomIds.tinyRoom);
+  if (tinyRoom) {
+    const roomTrait = tinyRoom.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.EAST]: { destination: roomIds.torchRoom },
+        [Direction.NORTH]: { destination: roomIds.drearyRoom }
+      };
+    }
+  }
+
+  // Dreary Room - north of Tiny Room, contains blue crystal sphere
+  // Per map-connections.md: S → Tiny Room
+  const drearyRoom = world.getEntity(roomIds.drearyRoom);
+  if (drearyRoom) {
+    const roomTrait = drearyRoom.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.SOUTH]: { destination: roomIds.tinyRoom }
       };
     }
   }

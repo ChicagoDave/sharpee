@@ -13,6 +13,8 @@ import { createNarrowLedge } from './rooms/narrow-ledge';
 import { createVolcanoCore } from './rooms/volcano-core';
 import { createDustyRoom } from './rooms/dusty-room';
 import { createVolcanoView } from './rooms/volcano-view';
+import { createLavaRoom } from './rooms/lava-room';
+import { createSmallChamber } from './rooms/small-chamber';
 
 export interface VolcanoRoomIds {
   volcanoBottom: string;
@@ -20,6 +22,8 @@ export interface VolcanoRoomIds {
   volcanoCore: string;
   dustyRoom: string;
   volcanoView: string;
+  lavaRoom: string;
+  smallChamber: string;
 }
 
 /**
@@ -31,13 +35,17 @@ export function createVolcanoRooms(world: WorldModel): VolcanoRoomIds {
   const volcanoCore = createVolcanoCore(world);
   const dustyRoom = createDustyRoom(world);
   const volcanoView = createVolcanoView(world);
+  const lavaRoom = createLavaRoom(world);
+  const smallChamber = createSmallChamber(world);
 
   const roomIds: VolcanoRoomIds = {
     volcanoBottom: volcanoBottom.id,
     narrowLedge: narrowLedge.id,
     volcanoCore: volcanoCore.id,
     dustyRoom: dustyRoom.id,
-    volcanoView: volcanoView.id
+    volcanoView: volcanoView.id,
+    lavaRoom: lavaRoom.id,
+    smallChamber: smallChamber.id
   };
 
   connectVolcanoRooms(world, roomIds);
@@ -48,13 +56,38 @@ export { createVolcanoObjects } from './objects';
 
 function connectVolcanoRooms(world: WorldModel, roomIds: VolcanoRoomIds): void {
   // Volcano Bottom - entry point
+  // N → Lava Room, UP → Narrow Ledge
   const volcanoBottom = world.getEntity(roomIds.volcanoBottom);
   if (volcanoBottom) {
     const roomTrait = volcanoBottom.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
+        [Direction.NORTH]: { destination: roomIds.lavaRoom },
         [Direction.UP]: { destination: roomIds.narrowLedge },
-        // North connects to Bat Room - set externally
+      };
+    }
+  }
+
+  // Lava Room: S → Volcano Bottom, E → Small Chamber
+  const lavaRoom = world.getEntity(roomIds.lavaRoom);
+  if (lavaRoom) {
+    const roomTrait = lavaRoom.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.SOUTH]: { destination: roomIds.volcanoBottom },
+        [Direction.EAST]: { destination: roomIds.smallChamber },
+      };
+    }
+  }
+
+  // Small Chamber: W → Lava Room
+  // S → Glacier Room (dam region) is connected externally
+  const smallChamber = world.getEntity(roomIds.smallChamber);
+  if (smallChamber) {
+    const roomTrait = smallChamber.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.WEST]: { destination: roomIds.lavaRoom },
       };
     }
   }
@@ -108,26 +141,32 @@ function connectVolcanoRooms(world: WorldModel, roomIds: VolcanoRoomIds): void {
 }
 
 /**
- * Connect Volcano to Coal Mine (via Bat Room)
+ * Connect Small Chamber to Glacier Room (dam region)
+ *
+ * Per map-connections.md:
+ * - Small Chamber S → Glacier Room
+ * - Glacier Room W → Small Chamber
  */
-export function connectVolcanoToCoalMine(
+export function connectVolcanoToGlacier(
   world: WorldModel,
   volcanoIds: VolcanoRoomIds,
-  batRoomId: string
+  glacierRoomId: string
 ): void {
-  const volcanoBottom = world.getEntity(volcanoIds.volcanoBottom);
-  if (volcanoBottom) {
-    const roomTrait = volcanoBottom.get(RoomTrait);
+  // Small Chamber S → Glacier Room
+  const smallChamber = world.getEntity(volcanoIds.smallChamber);
+  if (smallChamber) {
+    const roomTrait = smallChamber.get(RoomTrait);
     if (roomTrait) {
-      roomTrait.exits[Direction.NORTH] = { destination: batRoomId };
+      roomTrait.exits[Direction.SOUTH] = { destination: glacierRoomId };
     }
   }
 
-  const batRoom = world.getEntity(batRoomId);
-  if (batRoom) {
-    const roomTrait = batRoom.get(RoomTrait);
+  // Glacier Room W → Small Chamber
+  const glacierRoom = world.getEntity(glacierRoomId);
+  if (glacierRoom) {
+    const roomTrait = glacierRoom.get(RoomTrait);
     if (roomTrait) {
-      roomTrait.exits[Direction.SOUTH] = { destination: volcanoIds.volcanoBottom };
+      roomTrait.exits[Direction.WEST] = { destination: volcanoIds.smallChamber };
     }
   }
 }

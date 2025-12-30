@@ -9,7 +9,7 @@ import { VolcanoRoomIds } from '../index';
 
 export function createVolcanoObjects(world: WorldModel, roomIds: VolcanoRoomIds): void {
   createLargeEmerald(world, roomIds.dustyRoom);
-  createMobyRuby(world, roomIds.volcanoView);
+  createRuby(world, roomIds.smallChamber);
 }
 
 function createLargeEmerald(world: WorldModel, roomId: string): IFEntity {
@@ -28,18 +28,20 @@ function createLargeEmerald(world: WorldModel, roomId: string): IFEntity {
   return emerald;
 }
 
-function createMobyRuby(world: WorldModel, roomId: string): IFEntity {
-  const ruby = world.createEntity('moby ruby', EntityType.ITEM);
+function createRuby(world: WorldModel, roomId: string): IFEntity {
+  const ruby = world.createEntity('ruby', EntityType.ITEM);
   ruby.add(new IdentityTrait({
-    name: 'moby ruby',
-    aliases: ['ruby', 'huge ruby', 'red gem', 'moby'],
-    description: 'An enormous ruby, the size of your fist. It pulses with a deep red glow, as if containing volcanic fire.',
+    name: 'ruby',
+    aliases: ['large ruby', 'red gem', 'gem', 'jewel'],
+    description: 'This is an enormous ruby, the size of a robin\'s egg. It sparkles brilliantly in the light.',
     properName: false,
     article: 'a'
   }));
+  // Treasure - 15 take + 8 case = 23 total
   (ruby as any).isTreasure = true;
-  (ruby as any).treasureId = 'moby-ruby';
+  (ruby as any).treasureId = 'ruby';
   (ruby as any).treasureValue = 15;
+  (ruby as any).trophyCaseValue = 8;
   world.moveEntity(ruby.id, roomId);
   return ruby;
 }

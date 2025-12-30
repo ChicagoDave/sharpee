@@ -45,10 +45,10 @@ import { createWhiteHouseRooms, createWhiteHouseObjects, WhiteHouseRoomIds } fro
 import { createHouseInteriorRooms, createHouseInteriorObjects, connectHouseInteriorToExterior, HouseInteriorRoomIds } from './regions/house-interior';
 import { createForestRooms, createForestObjects, connectForestToExterior, ForestRoomIds } from './regions/forest';
 import { createUndergroundRooms, createUndergroundObjects, connectUndergroundToHouse, connectStudioToKitchen, connectUndergroundToDam, connectGrailRoomToTemple, connectCaveToHades, UndergroundRoomIds } from './regions/underground';
-import { createDamRooms, connectDamToUnderground, createDamObjects, DamRoomIds } from './regions/dam';
+import { createDamRooms, connectDamToUnderground, connectReservoirToAtlantis, connectGlacierToEgyptian, createDamObjects, DamRoomIds } from './regions/dam';
 import { createCoalMineRooms, connectCoalMineToDam, createCoalMineObjects, CoalMineRoomIds } from './regions/coal-mine';
 import { createTempleRooms, connectTempleToDam, createTempleObjects, TempleRoomIds } from './regions/temple';
-import { createVolcanoRooms, connectVolcanoToCoalMine, createVolcanoObjects, VolcanoRoomIds } from './regions/volcano';
+import { createVolcanoRooms, connectVolcanoToGlacier, createVolcanoObjects, VolcanoRoomIds } from './regions/volcano';
 import { createBankRooms, connectBankToUnderground, createBankObjects, BankRoomIds } from './regions/bank-of-zork';
 import { createWellRoomRooms, connectWellRoomToTemple, createWellRoomObjects, WellRoomIds } from './regions/well-room';
 import { createFrigidRiverRooms, connectFrigidRiverToDam, connectRainbowToCanyon, createFrigidRiverObjects, FrigidRiverRoomIds } from './regions/frigid-river';
@@ -137,7 +137,9 @@ export class DungeoStory implements Story {
     connectDamToUnderground(world, this.damIds, this.undergroundIds.roundRoom);
     connectCoalMineToDam(world, this.coalMineIds, this.damIds.maintenanceRoom);
     connectTempleToDam(world, this.templeIds, this.damIds.reservoirSouth);
-    connectVolcanoToCoalMine(world, this.volcanoIds, this.coalMineIds.batRoom);
+    connectReservoirToAtlantis(world, this.damIds, this.undergroundIds.atlantisRoom);
+    connectGlacierToEgyptian(world, this.damIds, this.templeIds.egyptianRoom);
+    connectVolcanoToGlacier(world, this.volcanoIds, this.damIds.glacierRoom);
     connectBankToUnderground(world, this.bankIds, this.undergroundIds.cellar, this.undergroundIds.gallery, this.undergroundIds.narrowPassage);
 
     // Store bank room IDs in world state for walk-through action

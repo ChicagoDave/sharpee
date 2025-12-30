@@ -16,7 +16,9 @@ import { createDamBase } from './rooms/dam-base';
 import { createMaintenanceRoom } from './rooms/maintenance-room';
 import { createReservoirSouth } from './rooms/reservoir-south';
 import { createReservoir } from './rooms/reservoir';
-
+import { createReservoirNorth } from './rooms/reservoir-north';
+import { createStreamView } from './rooms/stream-view';
+import { createGlacierRoom } from './rooms/glacier-room';
 export interface DamRoomIds {
   loudRoom: string;
   deepCanyon: string;
@@ -26,6 +28,9 @@ export interface DamRoomIds {
   maintenanceRoom: string;
   reservoirSouth: string;
   reservoir: string;
+  reservoirNorth: string;
+  streamView: string;
+  glacierRoom: string;
 }
 
 /**
@@ -40,6 +45,9 @@ export function createDamRooms(world: WorldModel): DamRoomIds {
   const maintenanceRoom = createMaintenanceRoom(world);
   const reservoirSouth = createReservoirSouth(world);
   const reservoir = createReservoir(world);
+  const reservoirNorth = createReservoirNorth(world);
+  const streamView = createStreamView(world);
+  const glacierRoom = createGlacierRoom(world);
 
   const roomIds: DamRoomIds = {
     loudRoom: loudRoom.id,
@@ -49,7 +57,10 @@ export function createDamRooms(world: WorldModel): DamRoomIds {
     damBase: damBase.id,
     maintenanceRoom: maintenanceRoom.id,
     reservoirSouth: reservoirSouth.id,
-    reservoir: reservoir.id
+    reservoir: reservoir.id,
+    reservoirNorth: reservoirNorth.id,
+    streamView: streamView.id,
+    glacierRoom: glacierRoom.id
   };
 
   // Connect rooms within this region
@@ -143,7 +154,7 @@ function connectDamRooms(world: WorldModel, roomIds: DamRoomIds): void {
     }
   }
 
-  // Reservoir South: SOUTH to Dam, NORTH to Reservoir
+  // Reservoir South: SOUTH to Dam, NORTH to Reservoir, WEST to Stream View
   const reservoirSouth = world.getEntity(roomIds.reservoirSouth);
   if (reservoirSouth) {
     const roomTrait = reservoirSouth.get(RoomTrait);
@@ -151,17 +162,56 @@ function connectDamRooms(world: WorldModel, roomIds: DamRoomIds): void {
       roomTrait.exits = {
         [Direction.SOUTH]: { destination: roomIds.dam },
         [Direction.NORTH]: { destination: roomIds.reservoir },
+        [Direction.WEST]: { destination: roomIds.streamView },
       };
     }
   }
 
-  // Reservoir: SOUTH to Reservoir South
+  // Reservoir: SOUTH to Reservoir South, NORTH to Reservoir North
   const reservoir = world.getEntity(roomIds.reservoir);
   if (reservoir) {
     const roomTrait = reservoir.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
         [Direction.SOUTH]: { destination: roomIds.reservoirSouth },
+        [Direction.NORTH]: { destination: roomIds.reservoirNorth },
+      };
+    }
+  }
+
+  // Reservoir North: SOUTH to Reservoir
+  // NORTH to Atlantis Room is connected externally by connectDamToUnderground
+  const reservoirNorth = world.getEntity(roomIds.reservoirNorth);
+  if (reservoirNorth) {
+    const roomTrait = reservoirNorth.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.SOUTH]: { destination: roomIds.reservoir },
+      };
+    }
+  }
+
+  // Stream View: EAST to Reservoir South, NORTH to Glacier Room
+  const streamView = world.getEntity(roomIds.streamView);
+  if (streamView) {
+    const roomTrait = streamView.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.EAST]: { destination: roomIds.reservoirSouth },
+        [Direction.NORTH]: { destination: roomIds.glacierRoom },
+      };
+    }
+  }
+
+  // Glacier Room: SOUTH to Stream View
+  // WEST to Small Chamber (volcano region) is connected externally
+  // DOWN to Egyptian Room is connected externally
+  const glacierRoom = world.getEntity(roomIds.glacierRoom);
+  if (glacierRoom) {
+    const roomTrait = glacierRoom.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.SOUTH]: { destination: roomIds.streamView },
       };
     }
   }
@@ -193,6 +243,68 @@ export function connectDamToUnderground(
     const roomTrait = deepCanyon.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits[Direction.SOUTHEAST] = { destination: roundRoomId };
+    }
+  }
+}
+
+/**
+ * Connect Reservoir North to Atlantis Room
+ *
+ * Per map-connections.md:
+ * - Reservoir North N → Atlantis Room
+ * - Atlantis Room SE → Reservoir North
+ */
+export function connectReservoirToAtlantis(
+  world: WorldModel,
+  damIds: DamRoomIds,
+  atlantisRoomId: string
+): void {
+  // Reservoir North N → Atlantis Room
+  const reservoirNorth = world.getEntity(damIds.reservoirNorth);
+  if (reservoirNorth) {
+    const roomTrait = reservoirNorth.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits[Direction.NORTH] = { destination: atlantisRoomId };
+    }
+  }
+
+  // Atlantis Room SE → Reservoir North
+  const atlantisRoom = world.getEntity(atlantisRoomId);
+  if (atlantisRoom) {
+    const roomTrait = atlantisRoom.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits[Direction.SOUTHEAST] = { destination: damIds.reservoirNorth };
+    }
+  }
+}
+
+/**
+ * Connect Glacier Room to Egyptian Room
+ *
+ * Per map-connections.md:
+ * - Egyptian Room U → Glacier Room
+ * - Glacier Room D → Egyptian Room
+ */
+export function connectGlacierToEgyptian(
+  world: WorldModel,
+  damIds: DamRoomIds,
+  egyptianRoomId: string
+): void {
+  // Glacier Room D → Egyptian Room
+  const glacierRoom = world.getEntity(damIds.glacierRoom);
+  if (glacierRoom) {
+    const roomTrait = glacierRoom.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits[Direction.DOWN] = { destination: egyptianRoomId };
+    }
+  }
+
+  // Egyptian Room U → Glacier Room
+  const egyptianRoom = world.getEntity(egyptianRoomId);
+  if (egyptianRoom) {
+    const roomTrait = egyptianRoom.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits[Direction.UP] = { destination: damIds.glacierRoom };
     }
   }
 }
