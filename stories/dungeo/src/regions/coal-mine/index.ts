@@ -25,6 +25,7 @@ import { createSlideLedge } from './rooms/slide-ledge';
 import { createSootyRoom } from './rooms/sooty-room';
 import { createMineEntrance } from './rooms/mine-entrance';
 import { createSqueakyRoom } from './rooms/squeaky-room';
+import { createSmallRoom } from './rooms/small-room';
 import { createShaftRoom } from './rooms/shaft-room';
 import { createWoodenTunnel } from './rooms/wooden-tunnel';
 import { createSmellyRoom } from './rooms/smelly-room';
@@ -42,9 +43,6 @@ import { createCoalMineDeadEnd } from './rooms/coal-mine-dead-end';
 import { createTimberRoom } from './rooms/timber-room';
 import { createBottomOfShaft } from './rooms/bottom-of-shaft';
 import { createMachineRoom } from './rooms/machine-room';
-import { createBatRoom } from './rooms/bat-room';
-import { createCoalMine } from './rooms/coal-mine';
-import { createDraftyRoom } from './rooms/drafty-room';
 
 export interface CoalMineRoomIds {
   // Mirror Room entrance area
@@ -62,6 +60,7 @@ export interface CoalMineRoomIds {
   // Mine entrance area
   mineEntrance: string;
   squeakyRoom: string;
+  smallRoom: string;
   shaftRoom: string;
   woodenTunnel: string;
   smellyRoom: string;
@@ -84,10 +83,6 @@ export interface CoalMineRoomIds {
   bottomOfShaft: string;
   machineRoom: string;
 
-  // Other areas
-  batRoom: string;
-  coalMine: string;
-  draftyRoom: string;
 }
 
 /**
@@ -109,6 +104,7 @@ export function createCoalMineRooms(world: WorldModel): CoalMineRoomIds {
   // Mine entrance area
   const mineEntrance = createMineEntrance(world);
   const squeakyRoom = createSqueakyRoom(world);
+  const smallRoom = createSmallRoom(world);
   const shaftRoom = createShaftRoom(world);
   const woodenTunnel = createWoodenTunnel(world);
   const smellyRoom = createSmellyRoom(world);
@@ -131,10 +127,6 @@ export function createCoalMineRooms(world: WorldModel): CoalMineRoomIds {
   const bottomOfShaft = createBottomOfShaft(world);
   const machineRoom = createMachineRoom(world);
 
-  // Other areas
-  const batRoom = createBatRoom(world);
-  const coalMine = createCoalMine(world);
-  const draftyRoom = createDraftyRoom(world);
 
   const roomIds: CoalMineRoomIds = {
     coldPassage: coldPassage.id,
@@ -147,6 +139,7 @@ export function createCoalMineRooms(world: WorldModel): CoalMineRoomIds {
     sootyRoom: sootyRoom.id,
     mineEntrance: mineEntrance.id,
     squeakyRoom: squeakyRoom.id,
+    smallRoom: smallRoom.id,
     shaftRoom: shaftRoom.id,
     woodenTunnel: woodenTunnel.id,
     smellyRoom: smellyRoom.id,
@@ -163,10 +156,7 @@ export function createCoalMineRooms(world: WorldModel): CoalMineRoomIds {
     coalMineDeadEnd: coalMineDeadEnd.id,
     timberRoom: timberRoom.id,
     bottomOfShaft: bottomOfShaft.id,
-    machineRoom: machineRoom.id,
-    batRoom: batRoom.id,
-    coalMine: coalMine.id,
-    draftyRoom: draftyRoom.id
+    machineRoom: machineRoom.id
   };
 
   // Connect the coal mine rooms
@@ -254,12 +244,13 @@ function connectCoalMineRooms(world: WorldModel, roomIds: CoalMineRoomIds): void
     }
   }
 
-  // Slide Ledge: S→Sooty Room
+  // Slide Ledge: U→Slide-2, S→Sooty Room
   const slideLedge = world.getEntity(roomIds.slideLedge);
   if (slideLedge) {
     const roomTrait = slideLedge.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
+        [Direction.UP]: { destination: roomIds.slide2 },
         [Direction.SOUTH]: { destination: roomIds.sootyRoom }
       };
     }
@@ -289,13 +280,25 @@ function connectCoalMineRooms(world: WorldModel, roomIds: CoalMineRoomIds): void
     }
   }
 
-  // Squeaky Room: S→Mine Entrance, W→Small Room (external?)
+  // Squeaky Room: S→Mine Entrance, W→Small Room
   const squeakyRoom = world.getEntity(roomIds.squeakyRoom);
   if (squeakyRoom) {
     const roomTrait = squeakyRoom.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
-        [Direction.SOUTH]: { destination: roomIds.mineEntrance }
+        [Direction.SOUTH]: { destination: roomIds.mineEntrance },
+        [Direction.WEST]: { destination: roomIds.smallRoom }
+      };
+    }
+  }
+
+  // Small Room: E→Squeaky Room (dead end)
+  const smallRoom = world.getEntity(roomIds.smallRoom);
+  if (smallRoom) {
+    const roomTrait = smallRoom.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.EAST]: { destination: roomIds.squeakyRoom }
       };
     }
   }

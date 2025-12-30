@@ -2,10 +2,11 @@
  * Coal Mine Objects
  *
  * Shaft Room: Basket (elevator mechanism)
- * Coal Mine: Coal (fuel for machine)
+ * Coal Mine Dead End: Coal (fuel for machine)
  * Machine Room: Machine (sharpens items when powered)
- * Bat Room: Vampire bat (NPC), Jade figurine (treasure)
+ * Squeaky Room: Vampire bat (NPC), Jade figurine (treasure)
  * Gas Room: Sapphire bracelet (treasure)
+ * Sooty Room: Red crystal sphere (treasure)
  */
 
 import {
@@ -28,18 +29,21 @@ export function createCoalMineObjects(world: WorldModel, roomIds: CoalMineRoomId
   // Shaft Room objects
   createBasket(world, roomIds.shaftRoom);
 
-  // Coal Mine objects
-  createCoal(world, roomIds.coalMine);
+  // Coal Mine Dead End objects
+  createCoal(world, roomIds.coalMineDeadEnd);
 
   // Machine Room objects
   createMachine(world, roomIds.machineRoom);
 
-  // Bat Room objects
-  createVampireBat(world, roomIds.batRoom);
-  createJadeFigurine(world, roomIds.batRoom);
+  // Squeaky Room objects (bat room)
+  createVampireBat(world, roomIds.squeakyRoom);
+  createJadeFigurine(world, roomIds.squeakyRoom);
 
   // Gas Room objects
   createSapphireBracelet(world, roomIds.gasRoom);
+
+  // Sooty Room objects
+  createRedCrystalSphere(world, roomIds.sootyRoom);
 }
 
 /**
@@ -186,4 +190,28 @@ function createSapphireBracelet(world: WorldModel, roomId: string): IFEntity {
 
   world.moveEntity(bracelet.id, roomId);
   return bracelet;
+}
+
+/**
+ * Red Crystal Sphere - Treasure in Sooty Room (15 pts total)
+ */
+function createRedCrystalSphere(world: WorldModel, roomId: string): IFEntity {
+  const sphere = world.createEntity('red crystal sphere', EntityType.ITEM);
+
+  sphere.add(new IdentityTrait({
+    name: 'red crystal sphere',
+    aliases: ['sphere', 'crystal sphere', 'red sphere', 'crystal', 'red crystal', 'ball'],
+    description: 'A beautiful sphere of red crystal. It seems to glow with an inner light.',
+    properName: false,
+    article: 'a'
+  }));
+
+  // Treasure scoring
+  (sphere as any).isTreasure = true;
+  (sphere as any).treasureId = 'red-crystal-sphere';
+  (sphere as any).treasureValue = 10;
+  (sphere as any).trophyCaseValue = 5;
+
+  world.moveEntity(sphere.id, roomId);
+  return sphere;
 }

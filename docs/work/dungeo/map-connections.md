@@ -54,7 +54,7 @@ D:Maze-13
 MAZE-12
 NW:Maze-14
 D:Maze-13
-NE:Grating Room (AKA Small Room)
+NE:Grating Room
 
 MAZE-13
 E:Maze-11
@@ -529,6 +529,9 @@ Squeaky Room
 S:Mine Entrance
 W:Small Room
 
+Small Room
+E:Squeaky Room
+
 Shaft Room
 W:Mine Entrance
 N:Wooden Tunnel
@@ -593,7 +596,7 @@ U:Ladder Top
 S:Timber Room
 NE:Coal Mine Dead End
 
-Coal Mine Dead End
+Dead End (Coal Mine, has lump of coal)
 S:Ladder Bottom
 
 Timber Room

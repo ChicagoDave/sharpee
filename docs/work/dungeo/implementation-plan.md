@@ -1,7 +1,7 @@
 # Dungeo Implementation Tracking
 
 **Target**: Mainframe Zork 616-point version
-**Current Progress**: 146/~190 rooms (77%), 485/616 treasure points (79%)
+**Current Progress**: 144/~190 rooms (76%), 500/616 treasure points (81%)
 
 ---
 
@@ -264,7 +264,7 @@
 | 18 | Blue crystal sphere | 10 | 5 | 15 | Dreary Room | ✅ Done |
 | 19 | Huge diamond | 10 | 6 | 16 | Machine Room (from coal) | ✅ Done |
 | 20 | Sapphire bracelet | 5 | 3 | 8 | Gas Room | ✅ Done |
-| 21 | Red crystal sphere | 10 | 5 | 15 | Sooty Room | ❌ |
+| 21 | Red crystal sphere | 10 | 5 | 15 | Sooty Room | ✅ Done |
 | 22 | Gold coffin | 3 | 7 | 10 | Egyptian Room | ✅ Done |
 | 23 | Portrait | 10 | 5 | 15 | Chairman's Office | ✅ Done |
 | 24 | Zorkmid bills | 10 | 15 | 25 | Vault (Bank) | ✅ Done |
@@ -529,7 +529,7 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Priority Next Steps
 
-1. **Remaining treasures** - Red crystal sphere, gold card, stamps (2), bauble
+1. **Remaining treasures** - Gold card, stamps (2), bauble
 2. **Puzzle mechanics** - Rainbow wave sceptre, glacier torch melt
 3. **Royal Puzzle** - 8x8 sliding block puzzle (see royal-puzzle.md)
 4. **Remaining NPCs** - Dungeon Master, Gnome

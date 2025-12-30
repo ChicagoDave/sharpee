@@ -762,7 +762,7 @@ export class DungeoStory implements Story {
         this.mazeIds.maze5,
         this.mazeIds.maze11,
       ];
-      registerBatHandler(scheduler, this.coalMineIds.batRoom, batDropLocations);
+      registerBatHandler(scheduler, this.coalMineIds.squeakyRoom, batDropLocations);
 
       // Register exorcism handler (bell/book/candle puzzle)
       registerExorcismHandler(
