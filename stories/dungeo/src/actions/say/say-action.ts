@@ -4,12 +4,15 @@
  * Handles player speech for Dungeo.
  * Routes speech to NPCs in the current room via their behaviors.
  *
- * Primary use: Cyclops puzzle - say "Odysseus" or "Ulysses" to scare it away.
+ * Handles several word puzzles:
+ * - Cyclops puzzle: say "Odysseus" or "Ulysses" to scare it away
+ * - Loud Room echo: say "echo" (dangerous without platinum bar!)
+ * - Riddle Room: answer "well" to open the stone door
  */
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
-import { NpcTrait, IdentityTrait, ActorTrait } from '@sharpee/world-model';
+import { NpcTrait, IdentityTrait, ActorTrait, RoomTrait, Direction } from '@sharpee/world-model';
 import { SAY_ACTION_ID, SayMessages } from './types';
 
 // Import cyclops-specific helpers
@@ -49,6 +52,143 @@ function extractSpokenWords(context: ActionContext): string | undefined {
   }
 
   return undefined;
+}
+
+/**
+ * Check if player is in the Loud Room
+ */
+function isInLoudRoom(context: ActionContext): boolean {
+  const identity = context.currentLocation.get(IdentityTrait);
+  if (!identity) return false;
+  return identity.name?.toLowerCase().includes('loud room') || false;
+}
+
+/**
+ * Check if player is in the Riddle Room (underground version)
+ */
+function isInRiddleRoom(context: ActionContext): boolean {
+  const identity = context.currentLocation.get(IdentityTrait);
+  if (!identity) return false;
+  return identity.name?.toLowerCase().includes('riddle room') || false;
+}
+
+/**
+ * Check if player has the platinum bar
+ */
+function hasPlatinumBar(context: ActionContext): boolean {
+  const player = context.player;
+  if (!player) return false;
+
+  // Get all items in player's inventory
+  const contents = context.world.getContents(player.id);
+  for (const item of contents) {
+    const identity = item.get(IdentityTrait);
+    if (!identity) continue;
+    if (identity.name?.toLowerCase().includes('platinum bar') ||
+        identity.aliases?.some(a => a.toLowerCase().includes('platinum'))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Handle saying "echo" in the Loud Room
+ * - Without platinum bar: DEATH
+ * - With platinum bar: Safe, puzzle solved
+ */
+function handleLoudRoomEcho(context: ActionContext): ISemanticEvent[] {
+  const events: ISemanticEvent[] = [];
+  const room = context.currentLocation as any;
+
+  // Check if already solved
+  if (room.echoSolved) {
+    events.push(context.event('action.success', {
+      actionId: SAY_ACTION_ID,
+      messageId: SayMessages.LOUD_ROOM_ACOUSTICS,
+    }));
+    return events;
+  }
+
+  // Check if player has the platinum bar
+  if (hasPlatinumBar(context)) {
+    // Safe! The bar absorbs the sound
+    room.echoSolved = true;
+    events.push(context.event('action.success', {
+      actionId: SAY_ACTION_ID,
+      messageId: SayMessages.LOUD_ROOM_ECHO_SAFE,
+    }));
+  } else {
+    // DEATH! The echo reverberations kill the player
+    events.push(context.event('player.died', {
+      actionId: SAY_ACTION_ID,
+      messageId: SayMessages.LOUD_ROOM_ECHO_DEATH,
+      cause: 'echo_reverberations',
+    }));
+  }
+
+  return events;
+}
+
+/**
+ * Handle answering "well" in the Riddle Room
+ * Opens the stone door to the east
+ */
+function handleRiddleAnswer(context: ActionContext, words: string): ISemanticEvent[] {
+  const events: ISemanticEvent[] = [];
+  const room = context.currentLocation as any;
+
+  // Check if already solved
+  if (room.riddleSolved) {
+    events.push(context.event('action.success', {
+      actionId: SAY_ACTION_ID,
+      messageId: SayMessages.RIDDLE_ALREADY_SOLVED,
+    }));
+    return events;
+  }
+
+  // Extract the answer (handle "answer X", "say X", "X")
+  let answer = words.toLowerCase().trim();
+  // Remove common prefixes
+  answer = answer.replace(/^(answer|say|reply)\s+/, '');
+  // Remove quotes
+  answer = answer.replace(/^["']|["']$/g, '');
+
+  // Check for correct answer
+  if (answer === 'well' || answer === 'a well') {
+    room.riddleSolved = true;
+
+    // Open the east exit - we need to find what room is east
+    // For now, we'll store that the riddle is solved and let the room
+    // connection logic handle it (or add the exit dynamically)
+    const roomTrait = context.currentLocation.get(RoomTrait);
+    if (roomTrait) {
+      // Find the Pearl Room or next room to connect
+      // We'll search for it by name
+      const allEntities = context.world.getAllEntities();
+      const pearlRoom = allEntities.find(e => {
+        const ident = e.get(IdentityTrait);
+        return ident?.name?.toLowerCase() === 'pearl room';
+      });
+
+      if (pearlRoom) {
+        roomTrait.exits[Direction.EAST] = { destination: pearlRoom.id };
+      }
+    }
+
+    events.push(context.event('action.success', {
+      actionId: SAY_ACTION_ID,
+      messageId: SayMessages.RIDDLE_CORRECT,
+    }));
+  } else {
+    // Wrong answer
+    events.push(context.event('action.success', {
+      actionId: SAY_ACTION_ID,
+      messageId: SayMessages.RIDDLE_WRONG,
+    }));
+  }
+
+  return events;
 }
 
 /**
@@ -159,6 +299,20 @@ export const sayAction: Action = {
   execute(context: ActionContext): void {
     const words = extractSpokenWords(context) || '';
     context.sharedData.spokenWords = words;
+    const lowerWords = words.toLowerCase();
+
+    // Check for room-specific puzzles first
+    // Loud Room "echo" puzzle
+    if (isInLoudRoom(context) && lowerWords === 'echo') {
+      context.sharedData.isLoudRoomEcho = true;
+      return;
+    }
+
+    // Riddle Room puzzle - any speech could be an answer attempt
+    if (isInRiddleRoom(context)) {
+      context.sharedData.isRiddleAnswer = true;
+      return;
+    }
 
     // Find NPCs in the room
     const npcs = findNpcsInRoom(context);
@@ -187,6 +341,17 @@ export const sayAction: Action = {
   report(context: ActionContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
     const words = context.sharedData.spokenWords as string;
+
+    // Handle Loud Room "echo" puzzle
+    if (context.sharedData.isLoudRoomEcho) {
+      return handleLoudRoomEcho(context);
+    }
+
+    // Handle Riddle Room puzzle
+    if (context.sharedData.isRiddleAnswer) {
+      return handleRiddleAnswer(context, words);
+    }
+
     const npcs = context.sharedData.npcsInRoom as any[];
 
     // Handle Cyclops specifically

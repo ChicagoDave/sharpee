@@ -1,7 +1,7 @@
 # Dungeo Implementation Tracking
 
 **Target**: Mainframe Zork 616-point version
-**Current Progress**: 107/~190 rooms (56%), 359/616 treasure points (58%)
+**Current Progress**: 110/~190 rooms (58%), 433/616 treasure points (70%)
 
 ---
 
@@ -75,11 +75,12 @@
 | Posts Room | ✅ Done | Tiny size area |
 | Pool Room | ✅ Done | Spices |
 | Tiny Cave | ✅ Done | |
-| Riddle Room | ✅ Done | Answer "well" |
+| Riddle Room | ✅ Done | Answer "well" - puzzle implemented |
 | Pearl Room | ✅ Done | Necklace |
 | Circular Room | ❌ | Top of well |
-| Low Room | ❌ | Robot |
-| Dingy Closet | ❌ | White sphere under cage |
+| Low Room | ✅ Done | Robot NPC |
+| Machine Room (well) | ✅ Done | Triangular button for carousel |
+| Dingy Closet | ✅ Done | White sphere treasure |
 
 ### Flood Control Dam #3
 
@@ -243,7 +244,7 @@
 | 4 | Bag of coins | 10 | 5 | 15 | Maze (adventurer's remains) | ✅ Done |
 | 5 | Pearl necklace | 9 | 5 | 14 | Pearl Room | ✅ Done |
 | 6 | Tin of spices | 5 | 5 | 10 | Pool Room | ✅ Done |
-| 7 | White crystal sphere | 6 | 6 | 12 | Dingy Closet | ❌ |
+| 7 | White crystal sphere | 6 | 6 | 12 | Dingy Closet | ✅ Done |
 | 8 | Fancy violin | 10 | 10 | 20 | Round Room (in box) | ✅ Done |
 | 9 | Grail | 2 | 5 | 7 | Grail Room | ✅ Done |
 | 10 | Platinum bar | 12 | 10 | 22 | Loud Room | ✅ Done |
@@ -270,7 +271,7 @@
 | 31 | Don Woods stamp | -- | 1 | 1 | Brochure (mail order) | ❌ |
 | 32 | Brass bauble | 1 | 1 | 2 | Forest (canary song) | ❌ |
 
-**Implemented**: 24/32 treasures (421/616 points = 68%)
+**Implemented**: 25/32 treasures (433/616 points = 70%)
 
 ---
 
@@ -360,7 +361,7 @@
 | Shiny wire | (with brick) | ❌ | Fuse |
 | Timber | Mine | ❌ | Slide room anchor |
 | Brochure | Mail | ❌ | Contains stamp |
-| Robot | Low Room | ❌ | Push button |
+| Robot | Low Room | ✅ Done | Push button |
 
 ---
 
@@ -374,7 +375,7 @@
 | Vampire bat | Bat Room | ✅ Done | Daemon attacks without garlic, teleports player |
 | Spirits | Entry to Hades | ✅ Done | Block until exorcised (bell/book/candles) |
 | Dungeon Master | Endgame | ❌ | Ally in final puzzle |
-| Robot | Low Room | ❌ | Commandable NPC |
+| Robot | Low Room | ✅ Done | Commandable NPC |
 | Gnome | Bank | ❌ | Appears with curtain |
 
 ---
@@ -395,7 +396,7 @@
 |--------|----------|--------|--------|
 | Trap door | Move rug, open door | ✅ Done | Access underground |
 | Dam | Turn bolt with wrench | 🚧 Partial | Drain reservoir |
-| Carousel/Round Room | Robot push button | 🚧 Partial | Stop spinning (handler ready, robot TBD) |
+| Carousel/Round Room | Robot push button | ✅ Done | Robot NPC + handler complete |
 | Bucket/Well | Pour water to descend | ❌ | Access tea room |
 | Coal machine | Put coal, turn switch | 🚧 Partial | Diamond |
 | Basket | Lower/raise for mine | 🚧 Partial | Transport items |
@@ -405,10 +406,10 @@
 
 | Puzzle | Solution | Status | Reward |
 |--------|----------|--------|--------|
-| Riddle Room | Answer "well" | ❌ | Access Pearl Room |
+| Riddle Room | Answer "well" | ✅ Done | Access Pearl Room |
 | Cyclops | Say "Odysseus" | ✅ Done | Passage opens |
 | Exorcism | Ring bell, light candles, read book | ✅ Done | Access Land of Dead (+10 pts) |
-| Loud Room | Say "echo" | ❌ | Platinum bar |
+| Loud Room | Say "echo" | ✅ Done | Platinum bar (death without bar) |
 | Endgame trivia | Various answers | ❌ | Progress |
 
 ### Spatial Puzzles
@@ -508,29 +509,32 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 | Category | Done | Total | % |
 |----------|------|-------|---|
-| Rooms | 107 | ~190 | 56% |
-| Treasures | 24 | 32 | 75% |
-| Treasure Points | 421 | 616 | 68% |
+| Rooms | 110 | ~190 | 58% |
+| Treasures | 25 | 32 | 78% |
+| Treasure Points | 433 | 616 | 70% |
 | Light Sources | 4 | 4 | 100% |
 | Weapons | 4 | 4 | 100% |
-| Tools | 4 | 6 | 67% |
+| Tools | 5 | 6 | 83% |
 | Containers | 5 | 5 | 100% |
-| NPCs | 5 | 8 | 63% |
-| Puzzles (working) | 8 | ~25 | 32% |
+| NPCs | 6 | 8 | 75% |
+| Puzzles (working) | 11 | ~25 | 44% |
 
 ---
 
 ## Priority Next Steps
 
-1. **Remaining treasures** - Spheres (3), ruby, stamps (2), bauble
-2. **Puzzle mechanics** - Riddle, loud room echo, rainbow wave
+1. **Remaining treasures** - Spheres (2), ruby, stamps (2), bauble
+2. **Puzzle mechanics** - Rainbow wave sceptre
 3. **Royal Puzzle** - 8x8 sliding block puzzle (see royal-puzzle.md)
-4. **Remaining NPCs** - Dungeon Master, Robot, Gnome
+4. **Remaining NPCs** - Dungeon Master, Gnome
 5. **Endgame** (~15 rooms) - Final puzzle sequence
 6. **Additional regions** - Mirror rooms, remaining mine areas, library
 
 ## Recently Completed
 
+- ✅ **Robot NPC & Round Room Puzzle Complete** (2025-12-30) - Low Room, Machine Room (well), Dingy Closet rooms + Robot NPC that can push triangular button to fix carousel
+- ✅ **Word Puzzles: Loud Room & Riddle Room** (2025-12-30) - SAY action extended: "echo" in Loud Room (death without platinum bar), "well" in Riddle Room (opens stone door)
+- ✅ **White Crystal Sphere Treasure** (2025-12-30) - Added 12-point treasure in Dingy Closet
 - ✅ **Treasures: Grail, Violin, Chalice, Bag of Coins** (2025-12-30) - Added 4 treasures: grail in Grail Room, fancy violin in Round Room box, chalice in Treasure Room, bag of coins in Dead End
 - ✅ **Round Room Randomization Handler** (2025-12-30) - Carousel room spinning mechanic ready (isFixed flag controls randomization, daemon implemented)
 - ✅ **Map Connection Audit & Fixes** (2025-12-29) - Restructured Cellar/Troll Room/N/S Crawlway layout to match Mainframe Zork map, connected Canyon Bottom ↔ End of Rainbow, troll now blocks north passage

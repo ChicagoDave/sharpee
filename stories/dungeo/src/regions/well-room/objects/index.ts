@@ -5,6 +5,9 @@
  * - Well (scenery) - Well Room
  * - Bucket - Well Room (for raising/lowering)
  * - Silver chalice (10 pts) - Pool Room
+ * - Robot - Low Room
+ * - Triangular button - Machine Room (well)
+ * - White crystal sphere - Dingy Closet
  */
 import {
   WorldModel,
@@ -13,7 +16,9 @@ import {
   EntityType,
   SceneryTrait,
   ContainerTrait,
-  OpenableTrait
+  OpenableTrait,
+  ActorTrait,
+  NpcTrait
 } from '@sharpee/world-model';
 import { WellRoomIds } from '../index';
 
@@ -36,6 +41,16 @@ export function createWellRoomObjects(world: WorldModel, roomIds: WellRoomIds): 
 
   // Posts Room scenery
   createWoodenPosts(world, roomIds.postsRoom);
+
+  // Low Room - Robot NPC
+  createRobot(world, roomIds.lowRoom);
+
+  // Machine Room (well) - Triangular button
+  createTriangularButton(world, roomIds.machineRoomWell);
+
+  // Dingy Closet - White crystal sphere and cage
+  createMetalCage(world, roomIds.dingyCloset);
+  createWhiteCrystalSphere(world, roomIds.dingyCloset);
 }
 
 function createWell(world: WorldModel, roomId: string): IFEntity {
@@ -142,4 +157,107 @@ function createRiddleInscription(world: WorldModel, roomId: string): IFEntity {
   inscription.add(new SceneryTrait());
   world.moveEntity(inscription.id, roomId);
   return inscription;
+}
+
+/**
+ * Robot NPC - Commandable helper that can push the triangular button
+ */
+function createRobot(world: WorldModel, roomId: string): IFEntity {
+  const robot = world.createEntity('robot', EntityType.ACTOR);
+
+  robot.add(new IdentityTrait({
+    name: 'robot',
+    aliases: ['robot', 'mechanical man', 'machine', 'mechanical device'],
+    description: 'A metallic robot with a hinged panel on its chest. It appears to be waiting for instructions.',
+    properName: false,
+    article: 'a'
+  }));
+
+  robot.add(new ActorTrait({
+    isPlayer: false
+  }));
+
+  robot.add(new NpcTrait({
+    behaviorId: 'robot',
+    isHostile: false,
+    canMove: true,
+    customProperties: {
+      following: false,
+      buttonPushed: false,
+      homeRoomId: roomId
+    }
+  }));
+
+  world.moveEntity(robot.id, roomId);
+  return robot;
+}
+
+/**
+ * Triangular Button - Too small for human fingers, robot can push it
+ */
+function createTriangularButton(world: WorldModel, roomId: string): IFEntity {
+  const button = world.createEntity('triangular button', EntityType.ITEM);
+
+  button.add(new IdentityTrait({
+    name: 'triangular button',
+    aliases: ['button', 'small button', 'triangle button'],
+    description: 'A small triangular button set into the wall. It is too small for your finger to push.',
+    properName: false,
+    article: 'a'
+  }));
+
+  button.add(new SceneryTrait());
+
+  // Button state
+  (button as any).isPushed = false;
+
+  world.moveEntity(button.id, roomId);
+  return button;
+}
+
+/**
+ * Metal Cage - Contains the white crystal sphere
+ */
+function createMetalCage(world: WorldModel, roomId: string): IFEntity {
+  const cage = world.createEntity('metal cage', EntityType.ITEM);
+
+  cage.add(new IdentityTrait({
+    name: 'metal cage',
+    aliases: ['cage', 'iron cage', 'wire cage'],
+    description: 'A strange wire cage with bars too close together to reach through. Something glows beneath it.',
+    properName: false,
+    article: 'a'
+  }));
+
+  cage.add(new SceneryTrait());
+
+  // The cage can be lifted to reveal the sphere
+  (cage as any).isLifted = false;
+
+  world.moveEntity(cage.id, roomId);
+  return cage;
+}
+
+/**
+ * White Crystal Sphere - Treasure hidden under the cage
+ */
+function createWhiteCrystalSphere(world: WorldModel, roomId: string): IFEntity {
+  const sphere = world.createEntity('white crystal sphere', EntityType.ITEM);
+
+  sphere.add(new IdentityTrait({
+    name: 'white crystal sphere',
+    aliases: ['sphere', 'crystal sphere', 'white sphere', 'crystal ball', 'crystal'],
+    description: 'A perfectly smooth sphere of white crystal. It glows with an inner light.',
+    properName: false,
+    article: 'a'
+  }));
+
+  // Treasure scoring
+  (sphere as any).isTreasure = true;
+  (sphere as any).treasureId = 'white-crystal-sphere';
+  (sphere as any).treasureValue = 6;  // Take value
+  (sphere as any).trophyCaseValue = 6;  // Additional case value
+
+  world.moveEntity(sphere.id, roomId);
+  return sphere;
 }

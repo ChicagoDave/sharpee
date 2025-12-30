@@ -15,6 +15,9 @@ import { createPoolRoom } from './rooms/pool-room';
 import { createTinyCave } from './rooms/tiny-cave';
 import { createRiddleRoom } from './rooms/riddle-room';
 import { createPearlRoom } from './rooms/pearl-room';
+import { createLowRoom } from './rooms/low-room';
+import { createMachineRoomWell } from './rooms/machine-room-well';
+import { createDingyCloset } from './rooms/dingy-closet';
 
 export interface WellRoomIds {
   wellRoom: string;
@@ -24,6 +27,9 @@ export interface WellRoomIds {
   tinyCave: string;
   riddleRoom: string;
   pearlRoom: string;
+  lowRoom: string;
+  machineRoomWell: string;
+  dingyCloset: string;
 }
 
 /**
@@ -37,6 +43,9 @@ export function createWellRoomRooms(world: WorldModel): WellRoomIds {
   const tinyCave = createTinyCave(world);
   const riddleRoom = createRiddleRoom(world);
   const pearlRoom = createPearlRoom(world);
+  const lowRoom = createLowRoom(world);
+  const machineRoomWell = createMachineRoomWell(world);
+  const dingyCloset = createDingyCloset(world);
 
   const roomIds: WellRoomIds = {
     wellRoom: wellRoom.id,
@@ -45,7 +54,10 @@ export function createWellRoomRooms(world: WorldModel): WellRoomIds {
     poolRoom: poolRoom.id,
     tinyCave: tinyCave.id,
     riddleRoom: riddleRoom.id,
-    pearlRoom: pearlRoom.id
+    pearlRoom: pearlRoom.id,
+    lowRoom: lowRoom.id,
+    machineRoomWell: machineRoomWell.id,
+    dingyCloset: dingyCloset.id
   };
 
   connectWellRoomRooms(world, roomIds);
@@ -98,7 +110,44 @@ function connectWellRoomRooms(world: WorldModel, roomIds: WellRoomIds): void {
     const roomTrait = poolRoom.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
-        [Direction.WEST]: { destination: roomIds.wellRoom }
+        [Direction.WEST]: { destination: roomIds.wellRoom },
+        [Direction.EAST]: { destination: roomIds.lowRoom }
+      };
+    }
+  }
+
+  // Low Room
+  const lowRoom = world.getEntity(roomIds.lowRoom);
+  if (lowRoom) {
+    const roomTrait = lowRoom.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.WEST]: { destination: roomIds.poolRoom },
+        [Direction.NORTHWEST]: { destination: roomIds.machineRoomWell }
+      };
+    }
+  }
+
+  // Machine Room (well area)
+  const machineRoomWell = world.getEntity(roomIds.machineRoomWell);
+  if (machineRoomWell) {
+    const roomTrait = machineRoomWell.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.SOUTHEAST]: { destination: roomIds.lowRoom },
+        [Direction.EAST]: { destination: roomIds.dingyCloset }
+      };
+    }
+  }
+
+  // Dingy Closet
+  const dingyCloset = world.getEntity(roomIds.dingyCloset);
+  if (dingyCloset) {
+    const roomTrait = dingyCloset.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.WEST]: { destination: roomIds.machineRoomWell }
+        // South leads to Grail Room - connected externally
       };
     }
   }

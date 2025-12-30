@@ -55,6 +55,7 @@ import { createMazeRooms, connectMazeToClearing, connectCyclopsToLivingRoom, con
 // Import NPCs
 import { registerThief, ThiefMessages } from './npcs/thief';
 import { registerCyclops, CyclopsMessages } from './npcs/cyclops';
+import { RobotMessages } from './npcs/robot';
 
 /**
  * Dungeo story configuration
@@ -521,10 +522,39 @@ export class DungeoStory implements Story {
     language.addMessage(CyclopsMessages.WOUNDED, 'The cyclops staggers from your blow.');
     language.addMessage(CyclopsMessages.DIES, 'The cyclops crashes to the ground with a tremendous thud!');
 
+    // Robot messages
+    language.addMessage(RobotMessages.DESCRIPTION, 'A metallic robot with a hinged panel on its chest.');
+    language.addMessage(RobotMessages.FOLLOWS, 'The robot follows you.');
+    language.addMessage(RobotMessages.WAITS, 'The robot will wait here.');
+    language.addMessage(RobotMessages.COMMAND_UNDERSTOOD, 'The robot beeps in acknowledgment.');
+    language.addMessage(RobotMessages.COMMAND_UNKNOWN, 'The robot whirs confusedly.');
+    language.addMessage(RobotMessages.PUSHES_BUTTON, 'The robot extends a thin metal finger and pushes the triangular button.');
+    language.addMessage(RobotMessages.NO_BUTTON, 'The robot looks around but sees no button to push.');
+    language.addMessage(RobotMessages.ALREADY_PUSHED, 'The robot has already pushed the button.');
+    language.addMessage(RobotMessages.CAROUSEL_FIXED, 'You hear a grinding noise from somewhere nearby. The carousel mechanism has stopped spinning!');
+
     // Say action messages
     language.addMessage(SayMessages.NOTHING_TO_SAY, 'You need to say something.');
     language.addMessage(SayMessages.SAY_TO_AIR, 'You speak, but nobody is here to listen.');
     language.addMessage(SayMessages.NPC_RESPONDS, '{npcName} responds to your words.');
+
+    // Loud Room echo puzzle messages
+    language.addMessage(SayMessages.LOUD_ROOM_ECHO_DEATH,
+      'The acoustics of the room cause your voice to echo back with increasing volume. ' +
+      'The reverberations are deafening! CRASH! The room collapses around you!');
+    language.addMessage(SayMessages.LOUD_ROOM_ECHO_SAFE,
+      'The platinum bar seems to absorb the sound, preventing dangerous reverberations. ' +
+      'The acoustics of the room cause your voice to echo: "echo...echo...echo..."');
+    language.addMessage(SayMessages.LOUD_ROOM_ACOUSTICS,
+      'The acoustics of the room cause your voice to echo: "echo...echo...echo..."');
+
+    // Riddle Room puzzle messages
+    language.addMessage(SayMessages.RIDDLE_CORRECT,
+      'There is a loud rumble as the stone door swings open, revealing a passage to the east!');
+    language.addMessage(SayMessages.RIDDLE_WRONG,
+      'A hollow voice intones: "Wrong, adventurer! Think more carefully about the riddle..."');
+    language.addMessage(SayMessages.RIDDLE_ALREADY_SOLVED,
+      'The stone door is already open. You may proceed east.');
 
     // Vampire Bat messages
     language.addMessage(BatMessages.ATTACKS, 'A large vampire bat swoops down from the ceiling and grabs you!');

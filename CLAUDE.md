@@ -46,6 +46,28 @@ Be deliberate about where logic belongs:
 
 Ask: "Where does this belong?" before implementing new features.
 
+### Story Organization Pattern
+Stories are organized by **regions**, with each region as a folder containing:
+
+```
+stories/{story}/src/regions/{region}/
+├── index.ts           # Exports room creators, connection function, region IDs
+├── rooms/
+│   ├── room-one.ts    # One file per room
+│   ├── room-two.ts
+│   └── ...
+├── objects/
+│   └── index.ts       # All objects for this region
+└── README.md          # Region documentation (optional)
+```
+
+**Key patterns:**
+- **One room per TypeScript file** in `rooms/` folder
+- Room files export a `createXxxRoom(world: WorldModel): IFEntity` function
+- Region `index.ts` imports all room creators, creates them, and connects exits
+- Objects are created in `objects/index.ts` and placed in their rooms
+- NPCs go in `stories/{story}/src/npcs/{npc-name}/` with entity, behavior, and messages files
+
 ## Current Work: Project Dungeo (Dec 2025)
 
 Dog-fooding Sharpee by implementing full Mainframe Zork (~191 rooms).
