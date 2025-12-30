@@ -727,4 +727,54 @@ export function defineCoreGrammar(grammar: GrammarBuilder): void {
     .mapsTo('if.action.asking')
     .withPriority(100)
     .build();
+
+  // Touching (sensory actions)
+  grammar
+    .define('touch :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.touching')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('rub :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.touching')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('feel :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.touching')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('pat :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.touching')
+    .withPriority(95)
+    .build();
+
+  grammar
+    .define('stroke :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.touching')
+    .withPriority(95)
+    .build();
+
+  grammar
+    .define('poke :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.touching')
+    .withPriority(95)
+    .build();
+
+  grammar
+    .define('prod :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.touching')
+    .withPriority(95)
+    .build();
 }

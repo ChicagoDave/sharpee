@@ -37,7 +37,7 @@ import { setSchedulerForGDT } from './actions/gdt/commands';
 
 // Import handlers
 import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages } from './handlers';
-import { initializeMirrorRoom, handleMirrorRubbed, MirrorRoomConfig, MirrorRoomMessages } from './handlers/mirror-room-handler';
+import { initializeMirrorRoom, createMirrorTouchHandler, MirrorRoomConfig, MirrorRoomMessages } from './handlers/mirror-room-handler';
 import { MIRROR_ID } from './regions/underground/objects';
 
 // Import room and object creators
@@ -185,6 +185,7 @@ export class DungeoStory implements Story {
 
   /**
    * Initialize the Mirror Room handler with all connection IDs
+   * The event handler is registered in onEngineReady via EventProcessor (ADR-075)
    */
   private initializeMirrorRoomHandler(world: WorldModel): void {
     // Find the mirror entity by scanning Mirror Room contents
@@ -222,25 +223,10 @@ export class DungeoStory implements Story {
       }
     };
 
-    // Initialize to State A
+    // Initialize to State A (sets up initial exits)
     initializeMirrorRoom(world, this.mirrorConfig);
 
-    // Register touched event handler for mirror
-    // NOTE: Currently BLOCKED by ADR-075 - event handler system only supports
-    // one handler per event type. This handler is registered but may not be called
-    // if another handler for 'if.event.touched' exists.
-    const config = this.mirrorConfig;
-    const worldModel = world;  // Capture the full WorldModel
-    world.registerEventHandler('if.event.touched', (event: ISemanticEvent, _w): void => {
-      const data = event.data as { target?: string } | undefined;
-      if (!data?.target || !config) return;
-
-      // Check if the touched entity is the mirror
-      if (data.target === config.mirrorId) {
-        // Handle mirror rubbing - toggle state
-        handleMirrorRubbed(worldModel, config);
-      }
-    });
+    // Handler registration moved to onEngineReady (ADR-075)
   }
 
   /**
@@ -810,6 +796,13 @@ export class DungeoStory implements Story {
         this.world,
         this.mazeIds.cyclopsRoom
       );
+    }
+
+    // Register Mirror Room handler (ADR-075)
+    if (this.mirrorConfig) {
+      const eventProcessor = engine.getEventProcessor();
+      const mirrorHandler = createMirrorTouchHandler(this.mirrorConfig);
+      eventProcessor.registerHandler('if.event.touched', mirrorHandler);
     }
   }
 }

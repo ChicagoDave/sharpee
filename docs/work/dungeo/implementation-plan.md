@@ -123,7 +123,7 @@
 
 | Room | Status | Notes |
 |------|--------|-------|
-| Mirror Room | ✅ Done | State toggle (RUB MIRROR) - 🚧 BLOCKED by ADR-075 |
+| Mirror Room | ✅ Done | State toggle (RUB MIRROR) - ADR-075 implemented |
 | Small Cave | ✅ Done | Above Atlantis (Mirror State B east) |
 | Tiny Cave | ✅ Done | Above Hades (Mirror State A east) |
 | Winding Passage | ✅ Done | Mirror State A west |

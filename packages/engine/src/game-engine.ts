@@ -788,6 +788,13 @@ export class GameEngine {
   }
 
   /**
+   * Get event processor for handler registration (ADR-075)
+   */
+  getEventProcessor(): EventProcessor {
+    return this.eventProcessor;
+  }
+
+  /**
    * Get the text service
    */
   getTextService(): TextService | undefined {

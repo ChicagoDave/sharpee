@@ -57,3 +57,6 @@ export * from './scope';
 
 // Event system types
 export * from './events/types';
+
+// Effects system (ADR-075)
+export * from './effects';

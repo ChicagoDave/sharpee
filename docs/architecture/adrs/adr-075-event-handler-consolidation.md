@@ -2,7 +2,18 @@
 
 ## Status
 
-Accepted (Revised 2025-12-30 - Atomic Transactions)
+IMPLEMENTED (2025-12-30)
+
+### Implementation Summary
+
+Core ADR-075 is implemented:
+- Effect types defined in `packages/world-model/src/effects/types.ts`
+- WorldQuery interface in `packages/world-model/src/effects/world-query.ts`
+- EffectProcessor in `packages/world-model/src/effects/effect-processor.ts`
+- EventProcessor updated to support multiple handlers and process effects
+- Mirror room handler uses new pattern - exits toggle correctly
+
+**Known limitation**: Message effects are processed but don't appear in turn output yet (events emitted via EffectProcessor callback are processed but not captured in turn results). This is an enhancement for Phase 4.
 
 ## Context
 
