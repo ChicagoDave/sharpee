@@ -37,6 +37,8 @@ import { setSchedulerForGDT } from './actions/gdt/commands';
 
 // Import handlers
 import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages } from './handlers';
+import { initializeMirrorRoom, handleMirrorRubbed, MirrorRoomConfig, MirrorRoomMessages } from './handlers/mirror-room-handler';
+import { MIRROR_ID } from './regions/underground/objects';
 
 // Import room and object creators
 import { createWhiteHouseRooms, createWhiteHouseObjects, WhiteHouseRoomIds } from './regions/white-house';
@@ -88,6 +90,7 @@ export class DungeoStory implements Story {
   private wellRoomIds: WellRoomIds = {} as WellRoomIds;
   private frigidRiverIds: FrigidRiverRoomIds = {} as FrigidRiverRoomIds;
   private mazeIds: MazeRoomIds = {} as MazeRoomIds;
+  private mirrorConfig: MirrorRoomConfig | null = null;
 
   /**
    * Initialize the world for Dungeo
@@ -170,11 +173,74 @@ export class DungeoStory implements Story {
     createFrigidRiverObjects(world, this.frigidRiverIds);
     createMazeObjects(world, this.mazeIds);
 
+    // Initialize Mirror Room state toggle
+    this.initializeMirrorRoomHandler(world);
+
     // Set initial player location to West of House
     const player = world.getPlayer();
     if (player) {
       world.moveEntity(player.id, this.whiteHouseIds.westOfHouse);
     }
+  }
+
+  /**
+   * Initialize the Mirror Room handler with all connection IDs
+   */
+  private initializeMirrorRoomHandler(world: WorldModel): void {
+    // Find the mirror entity by scanning Mirror Room contents
+    const mirrorRoom = world.getEntity(this.undergroundIds.mirrorRoom);
+    if (!mirrorRoom) return;
+
+    const contents = world.getContents(this.undergroundIds.mirrorRoom);
+    const mirror = contents.find(e => {
+      const identity = e.get('identity') as { aliases?: string[] } | undefined;
+      return identity?.aliases?.includes('mirror');
+    });
+
+    if (!mirror) {
+      console.warn('Mirror not found in Mirror Room');
+      return;
+    }
+
+    // Create mirror config
+    this.mirrorConfig = {
+      mirrorRoomId: this.undergroundIds.mirrorRoom,
+      mirrorId: mirror.id,
+
+      // State A destinations (Grail Room/Hades)
+      stateA: {
+        north: this.undergroundIds.narrowCrawlway,
+        west: this.undergroundIds.windingPassage,
+        east: this.undergroundIds.cave  // Leads down to Hades
+      },
+
+      // State B destinations (Coal Mine)
+      stateB: {
+        north: this.coalMineIds.steepCrawlway,
+        west: this.coalMineIds.coldPassage,
+        east: this.undergroundIds.smallCave  // Leads down to Atlantis
+      }
+    };
+
+    // Initialize to State A
+    initializeMirrorRoom(world, this.mirrorConfig);
+
+    // Register touched event handler for mirror
+    // NOTE: Currently BLOCKED by ADR-075 - event handler system only supports
+    // one handler per event type. This handler is registered but may not be called
+    // if another handler for 'if.event.touched' exists.
+    const config = this.mirrorConfig;
+    const worldModel = world;  // Capture the full WorldModel
+    world.registerEventHandler('if.event.touched', (event: ISemanticEvent, _w): void => {
+      const data = event.data as { target?: string } | undefined;
+      if (!data?.target || !config) return;
+
+      // Check if the touched entity is the mirror
+      if (data.target === config.mirrorId) {
+        // Handle mirror rubbing - toggle state
+        handleMirrorRubbed(worldModel, config);
+      }
+    });
   }
 
   /**
@@ -567,6 +633,9 @@ export class DungeoStory implements Story {
     language.addMessage(RingMessages.RING_BELL, 'The bell produces a clear, resonant tone.');
     language.addMessage(RingMessages.NOT_RINGABLE, "That doesn't make a sound when rung.");
     language.addMessage(RingMessages.NO_TARGET, 'Ring what?');
+
+    // Mirror Room messages
+    language.addMessage(MirrorRoomMessages.ROOM_SHAKES, 'There is a rumble from deep within the earth, and the room shakes.');
 
     // Exorcism messages
     language.addMessage(ExorcismMessages.SPIRITS_BLOCK, 'Ghostly figures bar your way, their hollow eyes staring through you. They will not let you pass.');

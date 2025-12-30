@@ -123,13 +123,15 @@
 
 | Room | Status | Notes |
 |------|--------|-------|
-| Mirror Room | ✅ Done | State toggle (RUB MIRROR) - TBD |
+| Mirror Room | ✅ Done | State toggle (RUB MIRROR) - 🚧 BLOCKED by ADR-075 |
 | Small Cave | ✅ Done | Above Atlantis (Mirror State B east) |
 | Tiny Cave | ✅ Done | Above Hades (Mirror State A east) |
 | Winding Passage | ✅ Done | Mirror State A west |
 | Narrow Crawlway | ✅ Done | Mirror State A north |
 | Cold Passage | ✅ Done | Mirror State B west |
 | Steep Crawlway | ✅ Done | Mirror State B north |
+
+**Note**: Mirror Room state toggle handler is implemented but blocked by event handler limitation (only one handler per event type). Requires ADR-075 implementation to enable multiple handlers.
 
 ### The Coal Mine
 
@@ -540,6 +542,9 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Recently Completed
 
+- 🚧 **Mirror Room State Toggle** (2025-12-30) - Handler implemented but BLOCKED by ADR-075 (event system only supports one handler per event type). Code ready in `mirror-room-handler.ts`, transcript test created.
+- ✅ **Coal Mine Region Restructure** (2025-12-30) - Created 21 new rooms: Cold Passage, Steep Crawlway, Slide rooms (4), Sooty Room, Mine Entrance, Squeaky Room, Wooden Tunnel, Smelly Room, Mine Maze (7), Ladder rooms, Timber Room, Bottom of Shaft, Machine Room
+- ✅ **Dam Puzzle Fix** (2025-12-30) - Corrected sequence: press yellow button (enables bolt) → turn bolt with wrench (starts draining)
 - ✅ **Robot NPC & Round Room Puzzle Complete** (2025-12-30) - Low Room, Machine Room (well), Dingy Closet rooms + Robot NPC that can push triangular button to fix carousel
 - ✅ **Word Puzzles: Loud Room & Riddle Room** (2025-12-30) - SAY action extended: "echo" in Loud Room (death without platinum bar), "well" in Riddle Room (opens stone door)
 - ✅ **White Crystal Sphere Treasure** (2025-12-30) - Added 12-point treasure in Dingy Closet

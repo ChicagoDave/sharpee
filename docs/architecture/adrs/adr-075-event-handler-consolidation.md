@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (Revised 2025-12-28)
+Accepted (Revised 2025-12-30 - Atomic Transactions)
 
 ## Context
 
@@ -36,18 +36,19 @@ function execute(context: ActionContext): SemanticEvent[] {
 ```
 
 Key insight from ADR-052:
+
 > "We designed a system that revolves around writing events, but we ignored the need to write code for such events."
 
 ### How Implementation Deviated
 
 The actual implementation diverged from ADR-052:
 
-| ADR-052 Design | Actual Implementation |
-|----------------|----------------------|
-| Actions invoke entity handlers | EventProcessor invokes handlers after event processing |
-| Single invocation point | Two invocation points (EventProcessor + GameEngine) |
-| Handler gets `(event)` | Handler gets `(event)` initially, then `(event, world)` after fix |
-| Story handlers via `Story.on()` | Story handlers via separate EventEmitter class |
+| ADR-052 Design                  | Actual Implementation                                             |
+| ------------------------------- | ----------------------------------------------------------------- |
+| Actions invoke entity handlers  | EventProcessor invokes handlers after event processing            |
+| Single invocation point         | Two invocation points (EventProcessor + GameEngine)               |
+| Handler gets `(event)`          | Handler gets `(event)` initially, then `(event, world)` after fix |
+| Story handlers via `Story.on()` | Story handlers via separate EventEmitter class                    |
 
 **What happened:**
 
@@ -56,6 +57,7 @@ The actual implementation diverged from ADR-052:
 2. **GameEngine added duplicate dispatch** - When NPC/scheduler systems were added (ADR-070, ADR-071), GameEngine added its own `dispatchEntityHandlers()` method with different semantics (broadcast to ALL entities, not just target).
 
 3. **World access was missing** - ADR-052's signature `(event) => EventResult` didn't include world access. When troll death handler needed to update score via `world.getCapability()`, we added world parameter, creating type split:
+
    - `EntityEventHandler = (event, world) => ...`
    - `SimpleEventHandler = (event) => ...` (for EventEmitter compatibility)
 
@@ -117,6 +119,7 @@ Passing `WorldModel` to handlers violates a key architectural boundary:
 - Break invariants that actions maintain
 
 Example of the problem:
+
 ```typescript
 // Handler bypasses stdlib entirely
 on: {
@@ -138,7 +141,7 @@ Instead of passing world model to handlers, handlers return **effects** that are
 ```typescript
 export type EntityEventHandler = (
   event: IGameEvent,
-  query: WorldQuery  // Read-only access
+  query: WorldQuery // Read-only access
 ) => Effect[];
 
 // Read-only query interface
@@ -170,35 +173,143 @@ Effects are **intents**, not mutations. They describe what should happen, not ho
 
 ### 3. Effect Processor
 
-A new `EffectProcessor` validates and applies effects:
+A new `EffectProcessor` validates and applies effects using **two-phase atomic processing**:
 
 ```typescript
-export class EffectProcessor {
-  constructor(
-    private world: WorldModel,
-    private eventProcessor: EventProcessor
-  ) {}
+export interface EffectResult {
+  success: boolean;
+  errors: EffectError[];
+  applied: Effect[];
+}
 
-  process(effects: Effect[]): void {
+export interface EffectError {
+  effect: Effect;
+  reason: string;
+}
+
+export class EffectProcessor {
+  constructor(private world: WorldModel, private eventProcessor: EventProcessor) {}
+
+  process(effects: Effect[]): EffectResult {
+    // Phase 1: Validate ALL effects before applying any
+    const errors = this.validateAll(effects);
+    if (errors.length > 0) {
+      return { success: false, errors, applied: [] };
+    }
+
+    // Phase 2: Apply all effects (atomic - all or nothing)
     for (const effect of effects) {
-      switch (effect.type) {
-        case 'score':
-          this.world.scoring.addPoints(effect.points);
-          break;
-        case 'flag':
-          this.world.flags.set(effect.name, effect.value);
-          break;
-        case 'emit':
-          this.eventProcessor.processEvents([effect.event]);
-          break;
-        // ... validated processing for each effect type
-      }
+      this.apply(effect);
+    }
+
+    return { success: true, errors: [], applied: effects };
+  }
+
+  private validateAll(effects: Effect[]): EffectError[] {
+    const errors: EffectError[] = [];
+    for (const effect of effects) {
+      const error = this.validate(effect);
+      if (error) errors.push({ effect, reason: error });
+    }
+    return errors;
+  }
+
+  private validate(effect: Effect): string | null {
+    switch (effect.type) {
+      case 'score':
+        if (typeof effect.points !== 'number') return 'points must be a number';
+        break;
+      case 'flag':
+        if (!effect.name) return 'flag name required';
+        break;
+      case 'unblock':
+        if (!this.world.getEntity(effect.room)) return `room ${effect.room} not found`;
+        break;
+      // ... validation for each effect type
+    }
+    return null;
+  }
+
+  private apply(effect: Effect): void {
+    switch (effect.type) {
+      case 'score':
+        this.world.scoring.addPoints(effect.points);
+        break;
+      case 'flag':
+        this.world.flags.set(effect.name, effect.value);
+        break;
+      case 'emit':
+        this.eventProcessor.processEvents([effect.event]);
+        break;
+      // ... apply each effect type
     }
   }
 }
 ```
 
 The EffectProcessor is the **only** place effects become mutations. It can validate, log, and ensure consistency.
+
+### Atomicity and Testing Stability
+
+**Effects are atomic transactions.** A handler returns a set of effects that represent a logical unit of work. Either all effects apply, or none do.
+
+**Why atomicity matters:**
+
+1. **Consistency** - Game state remains valid. No "troll died but score didn't update" scenarios.
+2. **Debuggability** - When something fails, no partial state to untangle.
+3. **Determinism** - Same input → same output, critical for testing and replay.
+
+**Testing requirements:**
+
+Effects must be **stable and deterministic** to enable reliable testing:
+
+```typescript
+// Test: Handler produces expected effects
+it('should award points when troll dies', () => {
+  const event = { type: 'combat.death', target: 'troll' };
+  const query = createMockQuery({ trollDead: false });
+
+  const effects = trollDeathHandler(event, query);
+
+  expect(effects).toEqual([
+    { type: 'score', points: 10, reason: 'troll' },
+    { type: 'flag', name: 'troll-dead', value: true },
+    { type: 'message', id: 'troll.death' },
+  ]);
+});
+
+// Test: EffectProcessor validates before applying
+it('should reject invalid effects without applying any', () => {
+  const effects = [
+    { type: 'score', points: 10 },
+    { type: 'unblock', exit: 'north', room: 'nonexistent-room' }, // Invalid!
+    { type: 'flag', name: 'something', value: true },
+  ];
+
+  const result = processor.process(effects);
+
+  expect(result.success).toBe(false);
+  expect(result.applied).toEqual([]); // Nothing applied
+  expect(world.scoring.getScore()).toBe(0); // Score unchanged
+});
+```
+
+**Key invariants for testing:**
+
+| Invariant                   | Enforcement                                    |
+| --------------------------- | ---------------------------------------------- |
+| Handlers are pure functions | `(event, query) => Effect[]` - no side effects |
+| Effects are data, not code  | Plain objects, serializable, comparable        |
+| Validation before mutation  | Two-phase processing in EffectProcessor        |
+| All-or-nothing application  | Atomic transaction semantics                   |
+| Deterministic ordering      | Effects applied in array order                 |
+
+This enables:
+
+- **Unit testing handlers** - Mock query, assert returned effects
+- **Integration testing** - Verify EffectProcessor applies correctly
+- **Snapshot testing** - Compare effect arrays across runs
+- **Replay/debugging** - Log effects, replay to reproduce bugs
 
 ### 4. Single Dispatch Location
 
@@ -249,12 +360,12 @@ const lanternDaemon: Daemon = {
     if (lantern?.traits.lightSource?.fuel <= 0) {
       return [
         { type: 'emit', event: { type: 'lantern.died', target: 'lantern' } },
-        { type: 'flag', name: 'in-darkness', value: true }
+        { type: 'flag', name: 'in-darkness', value: true },
       ];
     }
     // Fuel decrement is a mutation - must be an effect
     return [{ type: 'fuel', entity: 'lantern', delta: -1 }];
-  }
+  },
 };
 ```
 
@@ -291,8 +402,10 @@ const lanternDaemon: Daemon = {
 
 - **stdlib remains gatekeeper** - All mutations flow through validated channels
 - **Handlers are pure** - Given event + query, return effects (testable!)
+- **Atomic transactions** - Effects validated before any are applied; all-or-nothing
+- **Stable for testing** - Deterministic, serializable effects enable unit/snapshot testing
 - **Single dispatch** - EventProcessor owns all handler invocation
-- **Auditable** - EffectProcessor can log all mutations
+- **Auditable** - EffectProcessor can log all mutations for debugging/replay
 - **Extensible** - New effect types don't require signature changes
 
 ### Negative
@@ -303,12 +416,12 @@ const lanternDaemon: Daemon = {
 
 ### Trade-offs
 
-| Direct World Access | Effects Pattern |
-|---------------------|-----------------|
-| Simpler handler code | More structured |
-| Easy to bypass validation | Forced through gatekeeper |
+| Direct World Access         | Effects Pattern               |
+| --------------------------- | ----------------------------- |
+| Simpler handler code        | More structured               |
+| Easy to bypass validation   | Forced through gatekeeper     |
 | Hard to test (side effects) | Pure functions (easy to test) |
-| Mutations scattered | Mutations centralized |
+| Mutations scattered         | Mutations centralized         |
 
 ## Alternatives Considered
 

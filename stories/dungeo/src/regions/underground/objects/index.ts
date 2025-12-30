@@ -66,6 +66,9 @@ export function createUndergroundObjects(world: WorldModel, roomIds: Underground
 
   // Round Room objects
   createRoundRoomObjects(world, roomIds.roundRoom);
+
+  // Mirror Room objects
+  createMirrorRoomObjects(world, roomIds.mirrorRoom);
 }
 
 // ============= Cellar Objects =============
@@ -289,4 +292,28 @@ function createRoundRoomObjects(world: WorldModel, roomId: string): void {
     world.moveEntity(violin.id, box.id);
     boxOpenable.isOpen = false;
   }
+}
+
+// ============= Mirror Room Objects =============
+
+/**
+ * Mirror ID for use by the mirror handler
+ */
+export const MIRROR_ID = 'dungeo-mirror';
+
+function createMirrorRoomObjects(world: WorldModel, roomId: string): void {
+  // The enormous mirror on the south wall
+  // Touching/rubbing it toggles the room's exit state
+  const mirror = world.createEntity('mirror', EntityType.SCENERY);
+  (mirror as any).customId = MIRROR_ID;  // Set a known ID for the handler
+
+  mirror.add(new IdentityTrait({
+    name: 'enormous mirror',
+    aliases: ['mirror', 'enormous mirror', 'south mirror', 'wall mirror', 'large mirror'],
+    description: 'An enormous mirror fills the entire south wall of the room. Its surface is flawless and seems to shimmer with an otherworldly quality.',
+    properName: false,
+    article: 'an'
+  }));
+  mirror.add(new SceneryTrait());
+  world.moveEntity(mirror.id, roomId);
 }
