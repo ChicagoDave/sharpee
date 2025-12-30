@@ -1,7 +1,7 @@
 # Dungeo Implementation Tracking
 
 **Target**: Mainframe Zork 616-point version
-**Current Progress**: 138/~190 rooms (73%), 471/616 treasure points (76%)
+**Current Progress**: 140/~190 rooms (74%), 485/616 treasure points (79%)
 
 ---
 
@@ -198,8 +198,8 @@
 | Dusty Room | ✅ Done | Crown |
 | Small Chamber | ✅ Done | Ruby treasure |
 | Lava Room | ✅ Done | Connects Small Chamber to Volcano |
-| Wide Ledge | ❌ | Ledge-2 |
-| Library | ❌ | Stamp in purple book |
+| Wide Ledge | ✅ Done | Ledge-2, E → Dusty Room |
+| Library | ✅ Done | Stamp in purple book |
 
 ### The Bank of Zork
 
@@ -277,7 +277,7 @@
 | 25 | Gold card | 10 | 15 | 25 | Royal Puzzle | ❌ |
 | 26 | Ivory torch | 14 | 6 | 20 | Torch Room | ✅ Done |
 | 27 | Crown | 15 | 10 | 25 | Dusty Room | ✅ Done |
-| 28 | Flathead stamp | 4 | 10 | 14 | Library (Volcano) | ❌ |
+| 28 | Flathead stamp | 4 | 10 | 14 | Library (Volcano) | ✅ Done |
 | 29 | Zorkmid coin | 10 | 12 | 22 | Narrow Ledge | ✅ Done |
 | 30 | Ruby | 15 | 8 | 23 | Small Chamber | ✅ Done |
 | 31 | Don Woods stamp | -- | 1 | 1 | Brochure (mail order) | ❌ |
@@ -357,7 +357,7 @@
 | Matchbook | Dam Lobby | ✅ Done | Send for brochure |
 | Black book | Altar | ✅ Done | Exorcism |
 | Green paper | Tea Room | ❌ | Robot instructions |
-| Purple book | Library | ❌ | Contains stamp |
+| Purple book | Library | ✅ Done | Contains stamp |
 | Lore book | Royal Puzzle | ❌ | Endgame item |
 
 ### Miscellaneous
@@ -544,6 +544,7 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Recently Completed
 
+- ✅ **Library & Wide Ledge** (2025-12-30) - Added Library room with purple book containing Flathead stamp (14 pts). Added Wide Ledge room. Fixed volcano internal connections per canonical map.
 - ✅ **Volcano-Glacier Connection Chain** (2025-12-30) - Added 7 rooms connecting Dam/Reservoir to Volcano: Reservoir North, Stream View, Glacier Room, Small Chamber, Lava Room. Removed incorrect Bat Room → Volcano connection.
 - ✅ **Ruby Treasure** (2025-12-30) - Added 23-point ruby in Small Chamber (volcano region). Moved from incorrect Volcano View location.
 - ✅ **Blue Crystal Sphere Treasure** (2025-12-30) - Added 15-point treasure in Dreary Room (temple region).
