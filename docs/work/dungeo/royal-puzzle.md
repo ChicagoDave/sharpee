@@ -260,13 +260,21 @@ PUSH SOUTH WALL. SW. PUSH EAST WALL. NE. PUSH SOUTH WALL. NW. N. N. N.
 PUSH EAST WALL. SW. S. SE. NE. N. PUSH WEST WALL.
 ```
 
-Note: This solution uses diagonal movement (SE, NE, SW, NW). In the Fortran source, diagonal movement is allowed only if both orthogonal intermediate cells are empty.
+Note: This solution uses diagonal movement (SE, NE, SW, NW). See "Diagonal Movement" section below for the exact rules (at least ONE orthogonal path must be clear, not both).
 
 ---
 
-## Diagonal Movement (Optional)
+## Diagonal Movement
 
-The Fortran version allows diagonal movement under specific conditions:
+The Fortran version allows diagonal movement under specific conditions.
+
+**From dverb2.for source:**
+```fortran
+(((IABS(J).EQ.1).OR.(IABS(J).EQ.8)).OR.
+ ((CPVEC(CPHERE+K).EQ.0).OR.(CPVEC(NXT-K).EQ.0)))
+```
+
+This means: diagonal allowed if destination is empty AND **at least ONE** orthogonal path is clear (not both).
 
 ```
 function canMoveDiagonal(from, to):
@@ -276,11 +284,12 @@ function canMoveDiagonal(from, to):
   // Must be adjacent diagonal
   if abs(rowDiff) != 1 or abs(colDiff) != 1: return false
 
-  // Check both orthogonal paths
+  // Check at least ONE orthogonal path is clear
   horizontal = from + colDiff
   vertical = from + (rowDiff * 8)
 
-  return grid[horizontal] == 0 and grid[vertical] == 0 and grid[to] == 0
+  // Destination must be empty, and at least one path clear
+  return grid[to] == 0 and (grid[horizontal] == 0 or grid[vertical] == 0)
 ```
 
 ---

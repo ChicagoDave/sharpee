@@ -16,15 +16,20 @@ export * from './say';
 // Ring (Exorcism bell)
 export * from './ring';
 
+// Push Wall (Royal Puzzle)
+export * from './push-wall';
+
 // All custom actions for registration
 import { gdtActions } from './gdt';
 import { walkThroughActions } from './walk-through';
 import { sayActions } from './say';
 import { ringAction } from './ring';
+import { pushWallActions } from './push-wall';
 
 export const customActions = [
   ...gdtActions,
   ...walkThroughActions,
   ...sayActions,
-  ringAction
+  ringAction,
+  ...pushWallActions
 ];

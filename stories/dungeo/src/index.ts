@@ -53,6 +53,10 @@ import { createBankRooms, connectBankToUnderground, createBankObjects, BankRoomI
 import { createWellRoomRooms, connectWellRoomToTemple, createWellRoomObjects, WellRoomIds } from './regions/well-room';
 import { createFrigidRiverRooms, connectFrigidRiverToDam, connectRainbowToCanyon, createFrigidRiverObjects, FrigidRiverRoomIds } from './regions/frigid-river';
 import { createMazeRooms, connectMazeToClearing, connectCyclopsToLivingRoom, connectMazeToTrollRoom, connectMazeToRoundRoom, createMazeObjects, MazeRoomIds } from './regions/maze';
+import { createRoyalPuzzleRooms, connectRoyalPuzzleToTreasureRoom, RoyalPuzzleRoomIds } from './regions/royal-puzzle';
+
+// Import handlers
+import { registerRoyalPuzzleHandler, initializePuzzleState, PuzzleHandlerMessages } from './handlers/royal-puzzle';
 
 // Import NPCs
 import { registerThief, ThiefMessages } from './npcs/thief';
@@ -90,6 +94,7 @@ export class DungeoStory implements Story {
   private wellRoomIds: WellRoomIds = {} as WellRoomIds;
   private frigidRiverIds: FrigidRiverRoomIds = {} as FrigidRiverRoomIds;
   private mazeIds: MazeRoomIds = {} as MazeRoomIds;
+  private royalPuzzleIds: RoyalPuzzleRoomIds = {} as RoyalPuzzleRoomIds;
   private mirrorConfig: MirrorRoomConfig | null = null;
 
   /**
@@ -128,6 +133,7 @@ export class DungeoStory implements Story {
     this.wellRoomIds = createWellRoomRooms(world);
     this.frigidRiverIds = createFrigidRiverRooms(world);
     this.mazeIds = createMazeRooms(world);
+    this.royalPuzzleIds = createRoyalPuzzleRooms(world);
 
     // Connect regions
     connectHouseInteriorToExterior(world, this.houseInteriorIds, this.whiteHouseIds.behindHouse);
@@ -153,6 +159,12 @@ export class DungeoStory implements Story {
     connectCyclopsToLivingRoom(world, this.mazeIds, this.houseInteriorIds.livingRoom);
     connectMazeToTrollRoom(world, this.mazeIds, this.undergroundIds.trollRoom);
     connectMazeToRoundRoom(world, this.mazeIds, this.undergroundIds.roundRoom);
+
+    // Connect Royal Puzzle to Treasure Room
+    connectRoyalPuzzleToTreasureRoom(world, this.royalPuzzleIds, this.mazeIds.treasureRoom);
+
+    // Initialize puzzle state in world
+    initializePuzzleState(world, this.royalPuzzleIds);
 
     // Connect Round Room hub area to Dam region (N/S Passage, Damp Cave, Loud Room)
     connectUndergroundToDam(world, this.undergroundIds, this.damIds.loudRoom);
@@ -774,6 +786,9 @@ export class DungeoStory implements Story {
 
       // Register Round Room randomization handler (carousel room)
       registerRoundRoomHandler(scheduler, this.undergroundIds.roundRoom);
+
+      // Register Royal Puzzle handler (sliding block puzzle)
+      registerRoyalPuzzleHandler(scheduler, this.royalPuzzleIds);
     }
 
     // Register NPCs (ADR-070)
