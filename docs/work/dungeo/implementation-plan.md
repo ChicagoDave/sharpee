@@ -1,7 +1,7 @@
 # Dungeo Implementation Tracking
 
 **Target**: Mainframe Zork 616-point version
-**Current Progress**: 110/~190 rooms (58%), 433/616 treasure points (70%)
+**Current Progress**: 131/~190 rooms (69%), 433/616 treasure points (70%)
 
 ---
 
@@ -123,30 +123,38 @@
 
 | Room | Status | Notes |
 |------|--------|-------|
-| Mirror Room (South) | ❌ | Touch to teleport |
-| Mirror Room (North) | ❌ | Touch to teleport |
-| Cold Passage | ❌ | |
-| Slide Room | ❌ | Rope puzzle, slide to cellar |
+| Mirror Room | ✅ Done | State toggle (RUB MIRROR) - TBD |
+| Small Cave | ✅ Done | Above Atlantis (Mirror State B east) |
+| Tiny Cave | ✅ Done | Above Hades (Mirror State A east) |
+| Winding Passage | ✅ Done | Mirror State A west |
+| Narrow Crawlway | ✅ Done | Mirror State A north |
+| Cold Passage | ✅ Done | Mirror State B west |
+| Steep Crawlway | ✅ Done | Mirror State B north |
 
 ### The Coal Mine
 
 | Room | Status | Notes |
 |------|--------|-------|
-| Bat Room | ✅ Done | Garlic required, jade |
+| Slide Room | ✅ Done | Entry from Cold Passage |
+| Slide 1-3 | ✅ Done | One-way slide to Cellar |
+| Slide Ledge | ✅ Done | Exit from slide |
+| Sooty Room | ✅ Done | Red crystal sphere |
+| Mine Entrance | ✅ Done | Main mine entry |
+| Squeaky Room | ✅ Done | Squeaky floor |
 | Shaft Room | ✅ Done | Basket mechanism |
-| Timber Room | ✅ Done | |
-| Drafty Room | ✅ Done | |
+| Wooden Tunnel | ✅ Done | To mine maze |
+| Smelly Room | ✅ Done | Gas smell |
 | Gas Room | ✅ Done | Lamp only! Bracelet |
-| Coal Mine | ✅ Done | Maze-like |
+| Mine Maze 1-7 | ✅ Done | 7 maze rooms |
 | Ladder Top | ✅ Done | |
 | Ladder Bottom | ✅ Done | |
+| Coal Mine Dead End | ✅ Done | |
+| Timber Room | ✅ Done | |
+| Bottom of Shaft | ✅ Done | |
 | Machine Room | ✅ Done | Coal to diamond |
-| Dead End | ❌ | Coal |
-| Mine Entrance | ❌ | |
-| Squeaky Room | ❌ | |
-| Wooden Tunnel | ❌ | |
-| Smelly Room | ❌ | |
-| Lower Shaft | ❌ | Basket terminus |
+| Bat Room | ✅ Done | Garlic required, jade |
+| Coal Mine | ✅ Done | Old coal source room |
+| Drafty Room | ✅ Done | Legacy room |
 
 ### Egyptian Area
 
@@ -174,7 +182,7 @@
 | Rocky Shore | ✅ Done | |
 | Atlantis | ✅ Done | Trident |
 | Cave Behind Falls | ✅ Done | |
-| Small Cave | ❌ | Shovel |
+| Small Cave | ✅ Done | Above Atlantis (Mirror Room) |
 
 ### The Volcano
 

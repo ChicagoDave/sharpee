@@ -10,7 +10,7 @@ export function createTinyCave(world: WorldModel): IFEntity {
   room.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
   room.add(new IdentityTrait({
     name: 'Tiny Cave',
-    aliases: ['tiny cave', 'small cave', 'cramped cave'],
+    aliases: ['tiny cave', 'cramped cave'],
     description: 'You are in a tiny cave, barely large enough to stand in. The walls press in on all sides, and you have to duck to avoid hitting your head on the low ceiling.',
     properName: true,
     article: 'the'

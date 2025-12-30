@@ -130,10 +130,10 @@ Winding Passage
 E:Mirror Room
 N:Narrow Crawlway
 
-Cave (zero or even number of mirror rubs)
+Tiny Cave
 D:Hades
 
-Cave (odd number of mirror rubs)
+Small Cave
 D:Atlantis Room
 
 Hades
@@ -143,14 +143,24 @@ Narrow Crawlway
 SW:Mirror Room
 N:Grail Room
 
-Mirror Room
+Mirror Room (Grail Room/Tiny Cave->Hades state)
 N:Narrow Crawlway
 W:Winding Passage
-E:Cave
+E:Tiny Cave
+
+Mirror Room (Coal Mine state)
+N:Steep Crawlway
+E:Small Cave
+W:Cold Passage
 
 Atlantis Room
 SE: Reservoir North
-U:Cave
+U:Small Cave
+
+# to clarify
+
+Tiny Cave is up from Hades
+Small Cave is up from Atlantis Room
 
 Gallery
 W:Bank Entrance
@@ -403,3 +413,175 @@ S:Dusty Room
 
 Dusty Room
 N:Volcano Ledge-2
+
+\***\* 2025-12-30 \*\***
+
+# Reservoir and FLood Control Damn #3
+
+Stream View
+N:Glacier Room
+E:Reservoir South
+
+Reservoir South
+W:Stream View
+N:Reservoir
+U:Deep Canyon
+
+Reservoir
+S:Reservoir South
+N:Reservoir North
+
+Reservoir North
+S:Reservoir
+N:Atlantis Room
+
+Atlantis Room
+SE:Reservoir North
+U:Small Cave
+
+Small Cave (this might redundant)
+D:Atlantis Room
+N:Mirror Room
+
+Deep Canyon
+NW:Reservoir South
+S:Round Room
+E:Flood Control Dam #3
+
+Flood Control Dam #3
+S:Deep Canyon
+D:Damn Base
+N:Dam Lobby
+
+Dam Lobby
+S:Flood Control Dam #3
+N:Maintenance Room
+E:Maintenance Room
+
+Maintenance Room
+S:Dam Lobby
+W:Dam Lobby
+
+Dam Base
+N:Flood Control Dam #3
+
+Cold Passage
+E:Mirror Room (Coal Mine state)
+W:Slide Room
+N:Steep Crawlway
+
+Steep Crawlway
+S:Mirror Room (Coal Mine state)
+SW:Cold Passage
+
+Slide Room
+D:Slide-1
+E:Cold Passage
+N:Mine Entrance
+
+Slide-1
+U:Slide Room
+D:Slide-2
+
+Slide-2
+U:Slide-1
+D:Slide-3
+
+Slide-3
+U:Slide-2
+D:Cellar
+E:Slide Ledge
+
+Slide Ledge
+U:Slide-2
+S:Sooty Room
+
+Sooty Room
+N:Slide Ledge
+
+Mine Entrance
+S:Slide Room
+NW:Squeaky Room
+NE:Shaft Room
+
+Squeaky Room
+S:Mine Entrance
+W:Small Room
+
+Shaft Room
+W:Mine Entrance
+N:Wooden Tunnel
+
+Wooden Tunnel
+S:Shaft Room
+W:Smelly Room
+NE:Mine Maze-1
+
+Smelly Room
+E:Wooden Tunnel
+D:Gas Room
+
+Gas Room
+U:Smelly Room
+
+Mine Maze-1
+E:Wooden Tunnel
+N:Mine Maze-4
+SW:Mine Maze-2
+
+Mine Maze-2
+S:Mine Maze-1
+W:Mine Maze-5
+U:Mine Maze-3
+
+Mine Maze-3
+W:Mine Maze-2
+NE:Mine Maze-5
+E:Mine Maze-5
+
+Mine Maze-4
+S:Mine Maze-1
+NE:Mine Maze-7
+U:Mine Maze-5
+
+Mine Maze-5
+W:Mine Maze-2
+NE:Mine Maze-3
+S:Mine Maze-3
+D:Mine Maze-7
+N:Mine Maze-6
+E:Mine Maze-4
+
+Mine Maze-6
+W:Mine Maze-5
+S:Mine Maze-7
+D:Ladder Top
+E:Mine Maze-1
+
+Mine Maze-7
+U:Mine Maze-5
+SE:Mine Maze-4
+NW:Mine Maze-6
+
+Ladder Top
+U:Mine Maze-6
+D:Ladder Bottom
+
+Ladder Bottom
+U:Ladder Top
+S:Timber Room
+NE:Coal Mine Dead End
+
+Coal Mine Dead End
+S:Ladder Bottom
+
+Timber Room
+N:Ladder Bottom
+SW:Bottom of Shaft
+
+Bottom of Shaft
+E:Machine Room
+NE:Timber Room
+
+Machine Room
+NW:Bottom of Shaft

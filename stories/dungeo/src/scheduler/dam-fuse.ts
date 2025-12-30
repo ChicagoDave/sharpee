@@ -1,8 +1,12 @@
 /**
  * Dam Draining Sequence - ADR-071 Phase 2
  *
- * When the player presses the yellow button on the control panel (after
- * loosening the bolt with the wrench), a multi-stage draining sequence begins:
+ * Correct puzzle sequence (matching Mainframe Zork):
+ * 1. Player presses YELLOW button in Maintenance Room - enables bolt at Dam
+ * 2. Player goes to Dam and turns bolt with wrench - starts draining
+ *
+ * When the bolt is turned (after pressing the yellow button), a multi-stage
+ * draining sequence begins:
  *
  * Stage 1 (turn 0): "The sluice gates open and water begins draining from the reservoir."
  * Stage 2 (turn 5): "The water level is dropping rapidly now."
@@ -36,7 +40,7 @@ export const DAM_STATE_KEY = 'dungeo.dam.state';
 export interface DamState {
   isDraining: boolean;
   isDrained: boolean;
-  boltLoose: boolean;
+  buttonPressed: boolean;  // Yellow button pressed - enables bolt at Dam
 }
 
 /**
@@ -53,7 +57,7 @@ export function startDamDraining(
   // Get or create dam state
   let damState = world.getCapability(DAM_STATE_KEY) as DamState | null;
   if (!damState) {
-    damState = { isDraining: false, isDrained: false, boltLoose: false };
+    damState = { isDraining: false, isDrained: false, buttonPressed: false };
     world.registerCapability(DAM_STATE_KEY, { initialData: damState });
   }
 
@@ -207,9 +211,20 @@ export function isDamDraining(world: WorldModel): boolean {
 }
 
 /**
+ * Check if the yellow button has been pressed (bolt is enabled)
+ */
+export function isYellowButtonPressed(world: WorldModel): boolean {
+  const damState = world.getCapability(DAM_STATE_KEY) as DamState | null;
+  return damState?.buttonPressed ?? false;
+}
+
+/**
  * Register dam event handlers
  *
- * This sets up handlers for the "use wrench on bolt" and "push button" actions.
+ * Correct sequence (matching Mainframe Zork):
+ * 1. Press yellow button in Maintenance Room → enables bolt
+ * 2. Turn bolt with wrench at Dam → starts draining
+ *
  * Call this from story.onEngineReady().
  */
 export function registerDamHandlers(
@@ -222,27 +237,28 @@ export function registerDamHandlers(
     initialData: {
       isDraining: false,
       isDrained: false,
-      boltLoose: false
+      buttonPressed: false
     } as DamState
   });
 
-  // Handler for loosening the bolt
-  // This would be triggered by a custom "turn bolt with wrench" action
-  world.registerEventHandler('dungeo.bolt.loosened', (event, w: IWorldModel) => {
+  // Handler for pressing the yellow button (in Maintenance Room)
+  // This enables the bolt at the Dam to be turned
+  world.registerEventHandler('dungeo.button.yellow.pressed', (event, w: IWorldModel) => {
     const damState = w.getCapability(DAM_STATE_KEY) as DamState | null;
     if (damState) {
-      damState.boltLoose = true;
+      damState.buttonPressed = true;
+      // The green bubble on the control panel now glows, indicating bolt is enabled
     }
   });
 
-  // Handler for pressing the yellow button
-  // This would be triggered by a custom "push button" action
-  world.registerEventHandler('dungeo.button.pressed', (event, w: IWorldModel) => {
+  // Handler for turning the bolt (at the Dam)
+  // This only works if the yellow button was pressed first
+  world.registerEventHandler('dungeo.bolt.turned', (event, w: IWorldModel) => {
     const damState = w.getCapability(DAM_STATE_KEY) as DamState | null;
 
-    // Button only works if bolt is loose
-    if (!damState?.boltLoose) {
-      // Button does nothing if bolt is still tight
+    // Bolt only turns if yellow button was pressed (green bubble glowing)
+    if (!damState?.buttonPressed) {
+      // Bolt won't budge - yellow button not pressed yet
       return;
     }
 

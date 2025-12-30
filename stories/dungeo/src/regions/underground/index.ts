@@ -28,6 +28,7 @@ import { createAtlantisRoom } from './rooms/atlantis-room';
 import { createChasm } from './rooms/chasm';
 import { createRiddleRoom } from './rooms/riddle-room';
 import { createDampCave } from './rooms/damp-cave';
+import { createSmallCave } from './rooms/small-cave';
 
 export interface UndergroundRoomIds {
   // Original rooms
@@ -51,6 +52,7 @@ export interface UndergroundRoomIds {
   chasm: string;          // North of N/S Passage
   riddleRoom: string;
   dampCave: string;       // Above Loud Room
+  smallCave: string;      // Above Atlantis Room (Mirror Room Coal Mine state)
 }
 
 /**
@@ -78,6 +80,7 @@ export function createUndergroundRooms(world: WorldModel): UndergroundRoomIds {
   const chasm = createChasm(world);
   const riddleRoom = createRiddleRoom(world);
   const dampCave = createDampCave(world);
+  const smallCave = createSmallCave(world);
 
   const roomIds: UndergroundRoomIds = {
     // Original
@@ -100,7 +103,8 @@ export function createUndergroundRooms(world: WorldModel): UndergroundRoomIds {
     atlantisRoom: atlantisRoom.id,
     chasm: chasm.id,
     riddleRoom: riddleRoom.id,
-    dampCave: dampCave.id
+    dampCave: dampCave.id,
+    smallCave: smallCave.id
   };
 
   // Connect the underground rooms
@@ -345,14 +349,26 @@ function connectUndergroundRooms(world: WorldModel, roomIds: UndergroundRoomIds)
     }
   }
 
-  // Atlantis Room: U→Cave, SE→Reservoir North (external)
+  // Atlantis Room: U→Small Cave, SE→Reservoir North (external)
   const atlantisRoom = world.getEntity(roomIds.atlantisRoom);
   if (atlantisRoom) {
     const roomTrait = atlantisRoom.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
-        [Direction.UP]: { destination: roomIds.cave },
+        [Direction.UP]: { destination: roomIds.smallCave },
         // SE leads to Reservoir North - connected externally
+      };
+    }
+  }
+
+  // Small Cave: D→Atlantis Room, S→Mirror Room (when in Coal Mine state - external)
+  const smallCave = world.getEntity(roomIds.smallCave);
+  if (smallCave) {
+    const roomTrait = smallCave.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.DOWN]: { destination: roomIds.atlantisRoom },
+        // S→Mirror Room when in Coal Mine state - set by mirror toggle
       };
     }
   }
