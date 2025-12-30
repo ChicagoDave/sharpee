@@ -7,6 +7,17 @@
  *
  * Cellar:
  * - Metal ramp (scenery)
+ *
+ * Gallery:
+ * - Painting (treasure - 4 take + 7 case = 11 total)
+ *
+ * Grail Room:
+ * - Pedestal (scenery)
+ * - Grail (treasure - 2 take + 5 case = 7 total)
+ *
+ * Round Room:
+ * - Wooden box (container)
+ * - Fancy violin (treasure - 10 take + 10 case = 20 total)
  */
 
 import {
@@ -17,6 +28,8 @@ import {
   NpcTrait,
   SceneryTrait,
   CombatantTrait,
+  ContainerTrait,
+  OpenableTrait,
   RoomBehavior,
   EntityType,
   Direction,
@@ -47,6 +60,12 @@ export function createUndergroundObjects(world: WorldModel, roomIds: Underground
 
   // Studio objects
   createStudioObjects(world, roomIds.studio);
+
+  // Grail Room objects
+  createGrailRoomObjects(world, roomIds.grailRoom);
+
+  // Round Room objects
+  createRoundRoomObjects(world, roomIds.roundRoom);
 }
 
 // ============= Cellar Objects =============
@@ -196,4 +215,78 @@ function createStudioObjects(world: WorldModel, roomId: string): void {
   }));
   drawings.add(new SceneryTrait());
   world.moveEntity(drawings.id, roomId);
+}
+
+// ============= Grail Room Objects =============
+
+function createGrailRoomObjects(world: WorldModel, roomId: string): void {
+  // Pedestal (scenery)
+  const pedestal = world.createEntity('pedestal', EntityType.SCENERY);
+  pedestal.add(new IdentityTrait({
+    name: 'stone pedestal',
+    aliases: ['pedestal', 'stone pedestal', 'altar'],
+    description: 'A stone pedestal stands in the center of the room, carved with ancient symbols.',
+    properName: false,
+    article: 'a'
+  }));
+  pedestal.add(new SceneryTrait());
+  world.moveEntity(pedestal.id, roomId);
+
+  // Grail (treasure - 2 take + 5 case = 7 total)
+  const grail = world.createEntity('grail', EntityType.ITEM);
+  grail.add(new IdentityTrait({
+    name: 'grail',
+    aliases: ['grail', 'holy grail', 'cup', 'goblet', 'sacred grail'],
+    description: 'A plain wooden grail, yet it radiates an aura of ancient holiness. Its simple appearance belies its true value.',
+    properName: false,
+    article: 'a'
+  }));
+  // Treasure scoring
+  (grail as any).isTreasure = true;
+  (grail as any).treasureId = 'grail';
+  (grail as any).treasureValue = 2;  // Take value
+  (grail as any).trophyCaseValue = 5;  // Additional case value
+  world.moveEntity(grail.id, roomId);
+}
+
+// ============= Round Room Objects =============
+
+function createRoundRoomObjects(world: WorldModel, roomId: string): void {
+  // Wooden box (container - holds the violin)
+  const box = world.createEntity('wooden box', EntityType.CONTAINER);
+  box.add(new IdentityTrait({
+    name: 'wooden box',
+    aliases: ['box', 'wooden box', 'small box', 'case'],
+    description: 'A small wooden box, carefully crafted and latched shut.',
+    properName: false,
+    article: 'a'
+  }));
+  box.add(new ContainerTrait({
+    capacity: { maxItems: 3 }
+  }));
+  box.add(new OpenableTrait({ isOpen: false }));
+  world.moveEntity(box.id, roomId);
+
+  // Fancy violin (treasure - 10 take + 10 case = 20 total)
+  const violin = world.createEntity('fancy violin', EntityType.ITEM);
+  violin.add(new IdentityTrait({
+    name: 'fancy violin',
+    aliases: ['violin', 'fancy violin', 'fiddle', 'musical instrument', 'stradivarius'],
+    description: 'An exquisitely crafted violin of remarkable beauty. The workmanship is extraordinary, with intricate inlays and a lustrous finish.',
+    properName: false,
+    article: 'a'
+  }));
+  // Treasure scoring
+  (violin as any).isTreasure = true;
+  (violin as any).treasureId = 'fancy-violin';
+  (violin as any).treasureValue = 10;  // Take value
+  (violin as any).trophyCaseValue = 10;  // Additional case value
+
+  // Place violin inside the box (temporarily open it)
+  const boxOpenable = box.get(OpenableTrait);
+  if (boxOpenable) {
+    boxOpenable.isOpen = true;
+    world.moveEntity(violin.id, box.id);
+    boxOpenable.isOpen = false;
+  }
 }

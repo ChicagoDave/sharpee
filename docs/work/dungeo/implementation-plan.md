@@ -240,19 +240,19 @@
 | 1 | Jeweled egg | 5 | 5 | 10 | Bird's nest (Up a Tree) | ✅ Done |
 | 2 | Clockwork canary | 6 | 2 | 8 | Inside egg | ✅ Done |
 | 3 | Painting | 4 | 7 | 11 | Gallery | ✅ Done |
-| 4 | Bag of coins | 10 | 5 | 15 | Maze (adventurer's remains) | ❌ |
+| 4 | Bag of coins | 10 | 5 | 15 | Maze (adventurer's remains) | ✅ Done |
 | 5 | Pearl necklace | 9 | 5 | 14 | Pearl Room | ✅ Done |
 | 6 | Tin of spices | 5 | 5 | 10 | Pool Room | ✅ Done |
 | 7 | White crystal sphere | 6 | 6 | 12 | Dingy Closet | ❌ |
-| 8 | Fancy violin | 10 | 10 | 20 | Round Room (in box) | ❌ |
-| 9 | Grail | 2 | 5 | 7 | Grail Room | ❌ |
+| 8 | Fancy violin | 10 | 10 | 20 | Round Room (in box) | ✅ Done |
+| 9 | Grail | 2 | 5 | 7 | Grail Room | ✅ Done |
 | 10 | Platinum bar | 12 | 10 | 22 | Loud Room | ✅ Done |
 | 11 | Crystal trident | 4 | 11 | 15 | Atlantis Room | ✅ Done |
 | 12 | Jade figurine | 5 | 5 | 10 | Bat Room | ✅ Done |
 | 13 | Statue | 10 | 13 | 23 | Sandy Beach (buried) | ✅ Done |
 | 14 | Large emerald | 5 | 10 | 15 | Buoy (Frigid River) | ✅ Done |
 | 15 | Pot of gold | 10 | 10 | 20 | End of Rainbow | ✅ Done |
-| 16 | Chalice | 10 | 10 | 20 | Thief's Treasure Room | ❌ |
+| 16 | Chalice | 10 | 10 | 20 | Thief's Treasure Room | ✅ Done |
 | 17 | Trunk of jewels | 15 | 8 | 23 | Reservoir (drained) | ✅ Done |
 | 18 | Blue crystal sphere | 10 | 5 | 15 | Dreary Room | ❌ |
 | 19 | Huge diamond | 10 | 6 | 16 | Machine Room (from coal) | ✅ Done |
@@ -270,7 +270,7 @@
 | 31 | Don Woods stamp | -- | 1 | 1 | Brochure (mail order) | ❌ |
 | 32 | Brass bauble | 1 | 1 | 2 | Forest (canary song) | ❌ |
 
-**Implemented**: 20/32 treasures (359/616 points = 58%)
+**Implemented**: 24/32 treasures (421/616 points = 68%)
 
 ---
 
@@ -395,7 +395,7 @@
 |--------|----------|--------|--------|
 | Trap door | Move rug, open door | ✅ Done | Access underground |
 | Dam | Turn bolt with wrench | 🚧 Partial | Drain reservoir |
-| Carousel/Round Room | Robot push button | ❌ | Stop spinning |
+| Carousel/Round Room | Robot push button | 🚧 Partial | Stop spinning (handler ready, robot TBD) |
 | Bucket/Well | Pour water to descend | ❌ | Access tea room |
 | Coal machine | Put coal, turn switch | 🚧 Partial | Diamond |
 | Basket | Lower/raise for mine | 🚧 Partial | Transport items |
@@ -509,20 +509,20 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 | Category | Done | Total | % |
 |----------|------|-------|---|
 | Rooms | 107 | ~190 | 56% |
-| Treasures | 20 | 32 | 63% |
-| Treasure Points | 359 | 616 | 58% |
+| Treasures | 24 | 32 | 75% |
+| Treasure Points | 421 | 616 | 68% |
 | Light Sources | 4 | 4 | 100% |
 | Weapons | 4 | 4 | 100% |
 | Tools | 4 | 6 | 67% |
 | Containers | 5 | 5 | 100% |
 | NPCs | 5 | 8 | 63% |
-| Puzzles (working) | 7 | ~25 | 28% |
+| Puzzles (working) | 8 | ~25 | 32% |
 
 ---
 
 ## Priority Next Steps
 
-1. **Remaining treasures** - Spheres, violin, grail, ruby, coins, chalice
+1. **Remaining treasures** - Spheres (3), ruby, stamps (2), bauble
 2. **Puzzle mechanics** - Riddle, loud room echo, rainbow wave
 3. **Royal Puzzle** - 8x8 sliding block puzzle (see royal-puzzle.md)
 4. **Remaining NPCs** - Dungeon Master, Robot, Gnome
@@ -531,6 +531,8 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Recently Completed
 
+- ✅ **Treasures: Grail, Violin, Chalice, Bag of Coins** (2025-12-30) - Added 4 treasures: grail in Grail Room, fancy violin in Round Room box, chalice in Treasure Room, bag of coins in Dead End
+- ✅ **Round Room Randomization Handler** (2025-12-30) - Carousel room spinning mechanic ready (isFixed flag controls randomization, daemon implemented)
 - ✅ **Map Connection Audit & Fixes** (2025-12-29) - Restructured Cellar/Troll Room/N/S Crawlway layout to match Mainframe Zork map, connected Canyon Bottom ↔ End of Rainbow, troll now blocks north passage
 - ✅ **Exorcism Puzzle** (2025-12-29) - Bell/book/candle ritual to banish spirits at Entry to Hades
 - ✅ **RING Action** (2025-12-29) - Story-specific action for ringing the bell

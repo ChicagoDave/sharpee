@@ -36,7 +36,7 @@ import { registerScheduledEvents, DungeoSchedulerMessages } from './scheduler';
 import { setSchedulerForGDT } from './actions/gdt/commands';
 
 // Import handlers
-import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages } from './handlers';
+import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages } from './handlers';
 
 // Import room and object creators
 import { createWhiteHouseRooms, createWhiteHouseObjects, WhiteHouseRoomIds } from './regions/white-house';
@@ -682,6 +682,9 @@ export class DungeoStory implements Story {
         this.templeIds.entryToHades,
         this.templeIds.landOfDead
       );
+
+      // Register Round Room randomization handler (carousel room)
+      registerRoundRoomHandler(scheduler, this.undergroundIds.roundRoom);
     }
 
     // Register NPCs (ADR-070)

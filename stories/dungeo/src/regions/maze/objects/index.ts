@@ -8,6 +8,9 @@
  * - Skeleton (scenery - remains of previous adventurer)
  * - Bag of coins (treasure - 10 take + 5 case = 15 total)
  * - Skeleton key (tool - unlocks the grating)
+ *
+ * Treasure Room:
+ * - Chalice (treasure - 10 take + 10 case = 20 total) - Thief's lair
  */
 
 import {
@@ -31,6 +34,9 @@ export function createMazeObjects(world: WorldModel, roomIds: MazeRoomIds): void
 
   // Dead End objects (skeleton, coins, key are in Dead End 1)
   createDeadEndObjects(world, roomIds.deadEnd1);
+
+  // Treasure Room objects (Thief's lair)
+  createTreasureRoomObjects(world, roomIds.treasureRoom);
 }
 
 // ============= Grating Room Objects =============
@@ -102,4 +108,25 @@ function createDeadEndObjects(world: WorldModel, roomId: string): void {
   // Mark the key as being able to unlock the grating
   (key as any).unlocksId = 'metal grating';
   world.moveEntity(key.id, roomId);
+}
+
+// ============= Treasure Room Objects =============
+
+function createTreasureRoomObjects(world: WorldModel, roomId: string): void {
+  // Chalice (treasure - 10 take + 10 case = 20 total)
+  // This is the thief's lair, where he stashes his stolen treasures
+  const chalice = world.createEntity('chalice', EntityType.ITEM);
+  chalice.add(new IdentityTrait({
+    name: 'chalice',
+    aliases: ['chalice', 'golden chalice', 'cup', 'goblet', 'ornate chalice'],
+    description: 'An ornate golden chalice encrusted with precious gems. It gleams magnificently even in the dim light.',
+    properName: false,
+    article: 'a'
+  }));
+  // Treasure scoring
+  (chalice as any).isTreasure = true;
+  (chalice as any).treasureId = 'chalice';
+  (chalice as any).treasureValue = 10;  // Take value
+  (chalice as any).trophyCaseValue = 10;  // Additional case value
+  world.moveEntity(chalice.id, roomId);
 }
