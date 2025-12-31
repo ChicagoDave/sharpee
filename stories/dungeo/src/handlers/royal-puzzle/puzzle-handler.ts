@@ -81,8 +81,10 @@ function isInPuzzle(world: WorldModel): boolean {
   const roomInPuzzleId = world.getStateValue(PUZZLE_ROOM_KEY);
   if (!roomInPuzzleId) return false;
 
-  const playerId = world.getStateValue('player.id') || 'player';
-  const playerLocation = world.getLocation(playerId);
+  const player = world.getPlayer();
+  if (!player) return false;
+
+  const playerLocation = world.getLocation(player.id);
 
   return playerLocation === roomInPuzzleId;
 }
@@ -147,9 +149,9 @@ export function handlePuzzleMovement(
 
       // Move player to puzzle room (entrance)
       const puzzleRoomId = world.getStateValue(PUZZLE_ENTRANCE_KEY);
-      const playerId = world.getStateValue('player.id') || 'player';
-      if (puzzleRoomId) {
-        world.moveEntity(playerId, puzzleRoomId);
+      const player = world.getPlayer();
+      if (puzzleRoomId && player) {
+        world.moveEntity(player.id, puzzleRoomId);
       }
 
       events.push({
@@ -223,15 +225,16 @@ export function handlePuzzleMovement(
     // Execute the move
     executeMove(state, puzzleDir);
 
-    // Emit success and new room description
+    // Emit room description with direct message (uses message fallback)
     events.push({
       id: generateEventId(),
-      type: 'game.message',
+      type: 'action.success',
       timestamp: Date.now(),
       entities: {},
       data: {
-        messageId: PuzzleHandlerMessages.ROOM_DESCRIPTION,
-        text: getPuzzleDescription(state)
+        actionId: 'dungeo.puzzle.move',
+        messageId: 'puzzle_move_description',  // Not registered, so message field is used
+        message: getPuzzleDescription(state)
       },
       narrate: true
     });
@@ -272,9 +275,9 @@ export function handleTakeCard(world: WorldModel): ISemanticEvent[] | null {
 
     // Add card to player inventory
     const cardId = world.getStateValue(GOLD_CARD_KEY);
-    const playerId = world.getStateValue('player.id') || 'player';
-    if (cardId && playerId) {
-      world.moveEntity(cardId, playerId);
+    const player = world.getPlayer();
+    if (cardId && player) {
+      world.moveEntity(cardId, player.id);
     }
 
     events.push({
@@ -308,10 +311,34 @@ export function handleTakeCard(world: WorldModel): ISemanticEvent[] | null {
 }
 
 /**
- * Create the puzzle movement command transformer
+ * Check if the command is trying to take the gold card
+ */
+function isTakingCard(parsed: IParsedCommand): boolean {
+  const rawInput = parsed.rawInput?.toLowerCase() || '';
+  const directObj = parsed.structure?.directObject?.head?.toLowerCase() || '';
+
+  // Check if taking something card-related
+  const cardTerms = ['card', 'gold card', 'golden card', 'royal card'];
+
+  // Check direct object
+  if (cardTerms.some(term => directObj.includes(term.split(' ')[0]))) {
+    return true;
+  }
+
+  // Check raw input for "take card", "get card", "take gold card", etc.
+  if (rawInput.includes('card')) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Create the puzzle command transformer
  *
- * This intercepts GO/movement commands when player is in the puzzle
- * and handles them using puzzle grid logic instead of room exits.
+ * This intercepts commands when player is in the puzzle:
+ * 1. GO/movement commands - handled using puzzle grid logic
+ * 2. TAKE CARD commands - handled by puzzle take card logic when adjacent
  */
 export function createPuzzleCommandTransformer(): ParsedCommandTransformer {
   return (parsed: IParsedCommand, world: WorldModel): IParsedCommand => {
@@ -320,8 +347,34 @@ export function createPuzzleCommandTransformer(): ParsedCommandTransformer {
       return parsed;
     }
 
-    // Check if this is a GO/movement command
     const actionId = parsed.action?.toLowerCase();
+
+    // Handle TAKE commands for the card
+    if (actionId === 'take' || actionId === 'taking' || actionId === 'if.action.taking' || actionId === 'get') {
+      if (isTakingCard(parsed)) {
+        // Check if adjacent to card
+        const controller = findPuzzleController(world);
+        if (controller) {
+          const state = getPuzzleState(controller);
+          if (isAdjacentToCard(state)) {
+            // Redirect to puzzle take card action
+            return {
+              ...parsed,
+              action: 'dungeo.puzzle.take_card',
+              extras: {
+                ...parsed.extras,
+                originalAction: actionId,
+                isPuzzleTakeCard: true
+              }
+            };
+          }
+        }
+      }
+      // Not adjacent or not taking card - let normal TAKE handle it (will fail appropriately)
+      return parsed;
+    }
+
+    // Handle GO/movement commands
     if (actionId !== 'go' && actionId !== 'going' && actionId !== 'if.action.going') {
       return parsed;
     }
@@ -413,16 +466,17 @@ export function registerRoyalPuzzleHandler(
         narrate: true
       });
 
-      // Emit room description
+      // Emit room description with direct message (uses message fallback)
       const state = getPuzzleState(controller);
       events.push({
         id: generateEventId(),
-        type: 'game.message',
+        type: 'action.success',
         timestamp: Date.now(),
         entities: {},
         data: {
-          messageId: PuzzleHandlerMessages.ROOM_DESCRIPTION,
-          text: getPuzzleDescription(state)
+          actionId: 'dungeo.puzzle.entry',
+          messageId: 'puzzle_entry_description',  // Not registered, so message field is used
+          message: getPuzzleDescription(state)
         },
         narrate: true
       });

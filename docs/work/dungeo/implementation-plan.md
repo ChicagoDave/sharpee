@@ -461,8 +461,10 @@
 | PRAY action | ❌ | Resurrection |
 | Exorcism sequence | ✅ Done | Bell/book/candle |
 | DIG action | ❌ | Shovel/beach |
-| Sliding room mechanics | 🚧 Partial | Royal Puzzle (Phase 1 done) |
+| Sliding room mechanics | ✅ Done | Royal Puzzle (Phase 2 complete) |
 | PUSH WALL action | ✅ Done | Royal Puzzle |
+| Puzzle movement intercept | ✅ Done | Royal Puzzle |
+| TAKE CARD intercept | ✅ Done | Royal Puzzle |
 | Robot commands | ❌ | "tell robot 'X'" syntax |
 | Endgame trigger | ❌ | 616 points placed |
 | Victory condition | ❌ | Game completion |
@@ -530,15 +532,15 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Priority Next Steps
 
-1. **Royal Puzzle Phase 2** - Movement within puzzle, take card, exit with ladder
-2. **Remaining treasures** - Stamps (2), bauble
-3. **Puzzle mechanics** - Rainbow wave sceptre, glacier torch melt
-4. **Remaining NPCs** - Dungeon Master, Gnome
-5. **Endgame** (~15 rooms) - Final puzzle sequence
+1. **Remaining treasures** - Stamps (2), bauble
+2. **Puzzle mechanics** - Rainbow wave sceptre, glacier torch melt
+3. **Remaining NPCs** - Dungeon Master, Gnome
+4. **Endgame** (~15 rooms) - Final puzzle sequence
 
 ## Recently Completed
 
-- ✅ **Royal Puzzle Phase 1** (2025-12-30) - Added 3 rooms (Square Room, Puzzle Room, Room in a Puzzle), puzzle state management (8x8 grid from Fortran source), PUSH WALL action, gold card treasure (25 pts). Entry handlers created. Movement within puzzle still needs work.
+- ✅ **Royal Puzzle Phase 2** (2025-12-31) - Command transformer now intercepts GO/TAKE in puzzle. Fixed `isInPuzzle` bug (was using wrong player ID lookup). Added puzzle-take-card action for gold card. Added 12 push wall grammar patterns. Movement within puzzle, TAKE CARD, and exit mechanics now working. Transcript tests pass.
+- ✅ **Royal Puzzle Phase 1** (2025-12-30) - Added 3 rooms (Square Room, Puzzle Room, Room in a Puzzle), puzzle state management (8x8 grid from Fortran source), PUSH WALL action, gold card treasure (25 pts). Entry handlers created.
 - ✅ **Coal Mine Audit** (2025-12-30) - Removed 3 orphaned rooms, added Small Room, added red crystal sphere (15 pts), fixed Slide Ledge U exit.
 - ✅ **Ancient Chasm Chain** (2025-12-30) - Added 4 rooms (Ancient Chasm, Temple Dead Ends 1-2, Temple Small Cave) connecting Loud Room to Rocky Shore. Renamed Small Chamber to Ruby Room.
 - ✅ **Deep Ravine & Rocky Crawl** (2025-12-30) - Added 2 rooms connecting E/W Passage to Dome Room/Egyptian Room. Fixed Chasm connections to go through Deep Ravine.

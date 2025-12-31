@@ -1,24 +1,56 @@
-# Royal Puzzle Basic Test
-# Test entry, movement, and basic mechanics
+title: Royal Puzzle Basic Test
+story: dungeo
+description: Tests entry, push mechanics, and exit mechanics of the Royal Puzzle
 
-# Use GDT to teleport to puzzle room entrance
+---
+
+# Use GDT to get light and teleport to Puzzle Room
 > gdt
-*GDT*
+[OK: contains "GDT"]
 
-> dr puzzle-room
-*puzzle-room*
+> tk brass lantern
+[OK: contains "Taken"]
 
 > ex
-*[Exited]*
+[OK: contains "Returning"]
+
+> turn on lantern
+[OK: contains "on"]
+
+> gdt
+[OK: contains "GDT"]
+
+> ah Puzzle Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+# Verify we're in Puzzle Room with light
+> look
+[OK: contains "Puzzle Room"]
+[OK: contains "hole"]
 
 # Go down into the puzzle
 > down
-*sandstone*
+[OK: contains "sandstone"]
 
-# Test movement
+# Try moving - should be blocked (walls on all sides at start)
 > south
-*maze*
+[OK: contains "cannot"]
 
-# Try to exit without ladder
+# Try to go up - no ladder in position
 > up
-*no way*
+[OK: contains "no way"]
+
+# Push east wall - sandstone at position 10 slides to 11, player moves to 10
+> push east wall
+[OK: contains "slide"]
+
+# Now we're at position 10, can move south to 18 (which is empty)
+> south
+[OK: contains "maze"]
+
+# Look around
+> look
+[OK: contains "maze"]

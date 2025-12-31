@@ -563,13 +563,3 @@ export function connectSlideTocellar(
   }
 }
 
-// Legacy export for backward compatibility during transition
-export function connectCoalMineToDam(
-  world: WorldModel,
-  coalMineIds: CoalMineRoomIds,
-  maintenanceRoomId: string
-): void {
-  // This connection is no longer used in the new map
-  // Coal Mine now connects via Mirror Room → Cold Passage
-  console.warn('connectCoalMineToDam is deprecated - Coal Mine now connects via Mirror Room');
-}

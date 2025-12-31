@@ -29,7 +29,7 @@ import {
 import { DungeoScoringService } from './scoring';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages } from './actions';
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages } from './scheduler';
@@ -46,7 +46,7 @@ import { createHouseInteriorRooms, createHouseInteriorObjects, connectHouseInter
 import { createForestRooms, createForestObjects, connectForestToExterior, ForestRoomIds } from './regions/forest';
 import { createUndergroundRooms, createUndergroundObjects, connectUndergroundToHouse, connectStudioToKitchen, connectUndergroundToDam, connectGrailRoomToTemple, connectCaveToHades, UndergroundRoomIds } from './regions/underground';
 import { createDamRooms, connectDamToUnderground, connectReservoirToAtlantis, connectGlacierToEgyptian, connectTempleSmallCaveToRockyShore, createDamObjects, DamRoomIds } from './regions/dam';
-import { createCoalMineRooms, connectCoalMineToDam, createCoalMineObjects, CoalMineRoomIds } from './regions/coal-mine';
+import { createCoalMineRooms, createCoalMineObjects, CoalMineRoomIds } from './regions/coal-mine';
 import { createTempleRooms, connectTempleToDam, connectTempleToUnderground, createTempleObjects, TempleRoomIds } from './regions/temple';
 import { createVolcanoRooms, connectVolcanoToGlacier, createVolcanoObjects, VolcanoRoomIds } from './regions/volcano';
 import { createBankRooms, connectBankToUnderground, createBankObjects, BankRoomIds } from './regions/bank-of-zork';
@@ -141,7 +141,6 @@ export class DungeoStory implements Story {
     connectUndergroundToHouse(world, this.undergroundIds, this.houseInteriorIds.livingRoom);
     connectStudioToKitchen(world, this.undergroundIds, this.houseInteriorIds.kitchen);
     connectDamToUnderground(world, this.damIds, this.undergroundIds.roundRoom);
-    connectCoalMineToDam(world, this.coalMineIds, this.damIds.maintenanceRoom);
     connectTempleToDam(world, this.templeIds, this.damIds.reservoirSouth);
     connectTempleToUnderground(world, this.templeIds, this.undergroundIds.rockyCrawl);
     connectReservoirToAtlantis(world, this.damIds, this.undergroundIds.atlantisRoom);
@@ -466,6 +465,82 @@ export class DungeoStory implements Story {
       .mapsTo(RING_ACTION_ID)
       .withPriority(155)
       .build();
+
+    // Push wall action (Royal Puzzle)
+    // "push north wall", "push the east wall", "push eastern wall"
+    grammar
+      .define('push north wall')
+      .mapsTo(PUSH_WALL_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    grammar
+      .define('push south wall')
+      .mapsTo(PUSH_WALL_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    grammar
+      .define('push east wall')
+      .mapsTo(PUSH_WALL_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    grammar
+      .define('push west wall')
+      .mapsTo(PUSH_WALL_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    // With articles
+    grammar
+      .define('push the north wall')
+      .mapsTo(PUSH_WALL_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    grammar
+      .define('push the south wall')
+      .mapsTo(PUSH_WALL_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    grammar
+      .define('push the east wall')
+      .mapsTo(PUSH_WALL_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    grammar
+      .define('push the west wall')
+      .mapsTo(PUSH_WALL_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    // -ern variants
+    grammar
+      .define('push northern wall')
+      .mapsTo(PUSH_WALL_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    grammar
+      .define('push southern wall')
+      .mapsTo(PUSH_WALL_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    grammar
+      .define('push eastern wall')
+      .mapsTo(PUSH_WALL_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    grammar
+      .define('push western wall')
+      .mapsTo(PUSH_WALL_ACTION_ID)
+      .withPriority(160)
+      .build();
   }
 
   /**
@@ -659,6 +734,19 @@ export class DungeoStory implements Story {
     language.addMessage(PuzzleHandlerMessages.PUSH_NO_WALL, 'There is no wall there.');
     language.addMessage(PuzzleHandlerMessages.PUSH_IMMOVABLE, 'The marble wall is unyielding.');
     language.addMessage(PuzzleHandlerMessages.PUSH_NO_ROOM, 'There is no room for the wall to slide.');
+
+    // Push wall action messages
+    language.addMessage(PushWallMessages.NOT_IN_PUZZLE, 'There are no walls to push here.');
+    language.addMessage(PushWallMessages.NO_DIRECTION, 'Push which wall?');
+    language.addMessage(PushWallMessages.INVALID_DIRECTION, 'That is not a valid direction.');
+    language.addMessage(PushWallMessages.NO_WALL, 'There is no wall in that direction.');
+    language.addMessage(PushWallMessages.IMMOVABLE, 'That wall is solid marble. It will not budge.');
+    language.addMessage(PushWallMessages.NO_ROOM, 'There is no room for the wall to slide.');
+    language.addMessage(PushWallMessages.BOUNDARY, 'You cannot push walls at the edge.');
+    language.addMessage(PushWallMessages.SUCCESS, 'The sandstone wall slides into the space beyond.');
+    language.addMessage(PushWallMessages.SUCCESS_FIRST, 'The sandstone wall slides into the space beyond. You step into the vacated space.');
+    language.addMessage(PushWallMessages.LADDER_VISIBLE, 'One of the sandstone walls has a wooden ladder attached to it.');
+    language.addMessage(PushWallMessages.CARD_VISIBLE, 'Set into one wall is a small depression. Within it rests a gold card.');
   }
 
   /**

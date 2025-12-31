@@ -22,6 +22,9 @@ export * from './push-wall';
 // Puzzle Move (Royal Puzzle - movement inside the grid)
 export * from './puzzle-move';
 
+// Puzzle Take Card (Royal Puzzle - taking the gold card)
+export * from './puzzle-take-card';
+
 // All custom actions for registration
 import { gdtActions } from './gdt';
 import { walkThroughActions } from './walk-through';
@@ -29,6 +32,7 @@ import { sayActions } from './say';
 import { ringAction } from './ring';
 import { pushWallActions } from './push-wall';
 import { puzzleMoveAction } from './puzzle-move';
+import { puzzleTakeCardAction } from './puzzle-take-card';
 
 export const customActions = [
   ...gdtActions,
@@ -36,5 +40,6 @@ export const customActions = [
   ...sayActions,
   ringAction,
   ...pushWallActions,
-  puzzleMoveAction
+  puzzleMoveAction,
+  puzzleTakeCardAction
 ];
