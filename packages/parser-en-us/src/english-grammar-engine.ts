@@ -3,16 +3,17 @@
  * @description English-specific implementation of grammar matching
  */
 
-import { 
-  GrammarEngine, 
-  GrammarContext, 
+import {
+  GrammarEngine,
+  GrammarContext,
   PatternMatch,
   GrammarMatchOptions,
   PatternToken,
   CompiledPattern,
   SlotConstraint,
   ScopeBuilderImpl,
-  ScopeConstraintBuilder
+  ScopeConstraintBuilder,
+  SlotType
 } from '@sharpee/if-domain';
 import { Token } from '@sharpee/if-domain';
 import { EnglishPatternCompiler } from './english-pattern-compiler';
@@ -303,67 +304,174 @@ export class EnglishGrammarEngine extends GrammarEngine {
     pattern: CompiledPattern,
     rule: any, // GrammarRule
     context: GrammarContext
-  ): { tokens: number[]; text: string; confidence?: number } | null {
+  ): { tokens: number[]; text: string; confidence?: number; slotType?: SlotType } | null {
+    const DEBUG = process.env.PARSER_DEBUG === 'true';
+
     // Find the current slot in the pattern tokens
     let slotTokenIndex = -1;
+    let patternSlotToken: PatternToken | undefined;
     for (let i = 0; i < pattern.tokens.length; i++) {
       const token = pattern.tokens[i];
       if (token.type === 'slot' && token.value === slotName) {
         slotTokenIndex = i;
+        patternSlotToken = token;
         break;
       }
     }
-    
+
     if (slotTokenIndex === -1) {
       return null;
     }
-    
+
+    // Determine slot type: prefer SlotConstraint.slotType, then PatternToken.slotType
+    const slotConstraints = rule.slots.get(slotName);
+    const slotType = slotConstraints?.slotType || patternSlotToken?.slotType || SlotType.ENTITY;
+
+    if (DEBUG) {
+      console.log(`Slot '${slotName}' has type: ${slotType}`);
+    }
+
+    // Handle based on slot type
+    switch (slotType) {
+      case SlotType.TEXT:
+        return this.consumeTextSlot(tokens, startIndex, slotType);
+
+      case SlotType.TEXT_GREEDY:
+        return this.consumeGreedyTextSlot(tokens, startIndex, pattern, slotTokenIndex, slotType);
+
+      case SlotType.INSTRUMENT:
+        // For instruments, resolve entity but mark as instrument
+        return this.consumeEntitySlot(slotName, tokens, startIndex, pattern, slotTokenIndex, rule, context, slotType);
+
+      case SlotType.ENTITY:
+      default:
+        return this.consumeEntitySlot(slotName, tokens, startIndex, pattern, slotTokenIndex, rule, context, slotType);
+    }
+  }
+
+  /**
+   * Consume a single token as raw text (no entity resolution)
+   */
+  private consumeTextSlot(
+    tokens: Token[],
+    startIndex: number,
+    slotType: SlotType
+  ): { tokens: number[]; text: string; confidence: number; slotType: SlotType } | null {
+    if (startIndex >= tokens.length) {
+      return null;
+    }
+
+    const token = tokens[startIndex];
+    return {
+      tokens: [startIndex],
+      text: token.word,
+      confidence: 1.0,
+      slotType
+    };
+  }
+
+  /**
+   * Consume tokens until next pattern element or end (greedy text)
+   */
+  private consumeGreedyTextSlot(
+    tokens: Token[],
+    startIndex: number,
+    pattern: CompiledPattern,
+    slotTokenIndex: number,
+    slotType: SlotType
+  ): { tokens: number[]; text: string; confidence: number; slotType: SlotType } | null {
     const nextPatternToken = pattern.tokens[slotTokenIndex + 1];
     const consumedIndices: number[] = [];
     const consumedWords: string[] = [];
-    
+
+    for (let i = startIndex; i < tokens.length; i++) {
+      const token = tokens[i];
+
+      // Check if this token matches the next pattern element (delimiter)
+      if (nextPatternToken) {
+        if (nextPatternToken.type === 'literal' &&
+            token.normalized === nextPatternToken.value) {
+          break; // Stop - this token belongs to next pattern element
+        }
+
+        if (nextPatternToken.type === 'alternates' &&
+            nextPatternToken.alternates!.includes(token.normalized)) {
+          break; // Stop - this token belongs to next pattern element
+        }
+      }
+
+      consumedIndices.push(i);
+      consumedWords.push(token.word);
+    }
+
+    if (consumedIndices.length === 0) {
+      return null;
+    }
+
+    return {
+      tokens: consumedIndices,
+      text: consumedWords.join(' '),
+      confidence: 1.0,
+      slotType
+    };
+  }
+
+  /**
+   * Consume tokens as entity reference (with resolution)
+   */
+  private consumeEntitySlot(
+    slotName: string,
+    tokens: Token[],
+    startIndex: number,
+    pattern: CompiledPattern,
+    slotTokenIndex: number,
+    rule: any,
+    context: GrammarContext,
+    slotType: SlotType
+  ): { tokens: number[]; text: string; confidence?: number; slotType?: SlotType } | null {
+    const nextPatternToken = pattern.tokens[slotTokenIndex + 1];
+    const consumedIndices: number[] = [];
+    const consumedWords: string[] = [];
+
     // Consume tokens until we hit the next pattern element
     for (let i = startIndex; i < tokens.length; i++) {
       const token = tokens[i];
-      
+
       // Check if this token matches the next pattern element
       if (nextPatternToken) {
-        if (nextPatternToken.type === 'literal' && 
+        if (nextPatternToken.type === 'literal' &&
             token.normalized === nextPatternToken.value) {
-          // Stop here - this token belongs to the next pattern element
-          break;
+          break; // Stop - this token belongs to next pattern element
         }
-        
-        if (nextPatternToken.type === 'alternates' && 
+
+        if (nextPatternToken.type === 'alternates' &&
             nextPatternToken.alternates!.includes(token.normalized)) {
-          // Stop here - this token belongs to the next pattern element
-          break;
+          break; // Stop - this token belongs to next pattern element
         }
-        
+
         // If the next pattern token is another slot, we need to be more careful
         if (nextPatternToken.type === 'slot') {
-          // For consecutive slots, consume only one token for now
-          // This is a simple heuristic that works for patterns like "give :recipient :item"
+          // For consecutive slots, consume only one token
           consumedIndices.push(i);
           consumedWords.push(token.word);
           break;
         }
       }
-      
+
       consumedIndices.push(i);
       consumedWords.push(token.word);
     }
-    
+
     // Must consume at least one token
     if (consumedIndices.length === 0) {
       return null;
     }
-    
+
     // Check if the consumed text matches slot constraints
     const slotText = consumedWords.join(' ');
     const slotConstraints = rule.slots.get(slotName);
     let confidence = 1.0;
-    
+
     if (slotConstraints && slotConstraints.constraints.length > 0 && context.world) {
       // We have constraints and a world model to check against
       confidence = this.evaluateSlotConstraints(
@@ -371,7 +479,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
         slotConstraints,
         context
       );
-      
+
       // If constraints completely fail, return null
       if (confidence === 0) {
         if (process.env.PARSER_DEBUG === 'true') {
@@ -380,11 +488,12 @@ export class EnglishGrammarEngine extends GrammarEngine {
         return null;
       }
     }
-    
+
     return {
       tokens: consumedIndices,
       text: slotText,
-      confidence
+      confidence,
+      slotType
     };
   }
   

@@ -54,16 +54,23 @@ export interface StoryPatternBuilder extends PatternBuilder {
    * Set a description for debugging
    */
   describe(description: string): StoryPatternBuilder;
-  
+
   /**
    * Mark as experimental (lower confidence)
    */
   experimental(): StoryPatternBuilder;
-  
+
   /**
    * Set custom error message when this pattern fails
    */
   withErrorMessage(message: string): StoryPatternBuilder;
+
+  // Override base methods to return StoryPatternBuilder
+  where(slot: string, constraint: any): StoryPatternBuilder;
+  text(slot: string): StoryPatternBuilder;
+  instrument(slot: string): StoryPatternBuilder;
+  mapsTo(action: string): StoryPatternBuilder;
+  withPriority(priority: number): StoryPatternBuilder;
 }
 
 /**

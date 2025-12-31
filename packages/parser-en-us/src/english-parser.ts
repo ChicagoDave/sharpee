@@ -24,7 +24,8 @@ import {
   VerbVocabulary,
   VocabularyEntry,
   PatternMatch,
-  Constraint
+  Constraint,
+  SlotType
 } from '@sharpee/if-domain';
 
 import type { 
@@ -97,6 +98,9 @@ interface RichCandidate {
   pattern: string;
   confidence: number;
   action: string;
+  // ADR-080 additions
+  textSlots?: Map<string, string>;
+  instrument?: INounPhrase;
 }
 
 /**
@@ -404,9 +408,12 @@ export class EnglishParser implements Parser {
       },
       pattern: best.pattern,
       confidence: best.confidence,
-      action: best.action
+      action: best.action,
+      // ADR-080 additions
+      textSlots: best.textSlots,
+      instrument: best.instrument
     };
-    
+
     // Add extras if present
     if ((best as any).direction) {
       // Convert direction string to Direction constant
@@ -632,10 +639,26 @@ export class EnglishParser implements Parser {
       }
     }
     
+    // ADR-080: Track text slots and instruments
+    let textSlots: Map<string, string> | undefined;
+    let instrument: INounPhrase | undefined;
+
     // Process slots based on the pattern structure
     for (const [slotName, slotData] of slotEntries) {
       const slotTokens = slotData.tokens.map((idx: number) => tokens[idx]);
-      
+
+      // Check slot type from the match data (set by grammar engine)
+      const slotType = (slotData as any).slotType as SlotType | undefined;
+
+      // Handle text slots (TEXT or TEXT_GREEDY)
+      if (slotType === SlotType.TEXT || slotType === SlotType.TEXT_GREEDY) {
+        if (!textSlots) {
+          textSlots = new Map();
+        }
+        textSlots.set(slotName, slotData.text);
+        continue; // Don't also add to direct/indirect objects
+      }
+
       const phrase: INounPhrase = {
         tokens: slotData.tokens,
         text: slotData.text,
@@ -645,7 +668,13 @@ export class EnglishParser implements Parser {
         determiners: [],
         candidates: [slotData.text]
       };
-      
+
+      // Handle instrument slots
+      if (slotType === SlotType.INSTRUMENT) {
+        instrument = phrase;
+        continue; // Don't also add to direct/indirect objects
+      }
+
       // Determine where this slot should go based on the pattern
       if (rule.pattern.includes(' with :' + slotName)) {
         // This slot comes after 'with', put it in extras
@@ -757,14 +786,17 @@ export class EnglishParser implements Parser {
       indirectObject,
       pattern,
       confidence: match.confidence,
-      action: rule.action
+      action: rule.action,
+      // ADR-080 additions
+      textSlots,
+      instrument
     };
-    
+
     // Add extras if present
     if (Object.keys(extras).length > 0) {
       (candidate as any).extras = extras;
     }
-    
+
     return candidate;
   }
 

@@ -6,6 +6,21 @@
 import { IEntity } from '@sharpee/core';
 
 /**
+ * Slot types for grammar patterns
+ * Controls how the parser handles slot matching
+ */
+export enum SlotType {
+  /** Default: resolve slot text to an entity via vocabulary lookup */
+  ENTITY = 'entity',
+  /** Capture raw text without entity resolution (single token) */
+  TEXT = 'text',
+  /** Capture raw text until next pattern element or end (greedy) */
+  TEXT_GREEDY = 'text_greedy',
+  /** Resolve entity but mark as instrument for the action */
+  INSTRUMENT = 'instrument'
+}
+
+/**
  * Constraint types for slot matching
  */
 export type PropertyConstraint = Record<string, any>;
@@ -63,7 +78,21 @@ export interface PatternBuilder {
    * @param constraint The constraint to apply
    */
   where(slot: string, constraint: Constraint): PatternBuilder;
-  
+
+  /**
+   * Mark a slot as capturing raw text (single token) instead of resolving to entity
+   * For greedy text capture, use :slot... syntax in the pattern
+   * @param slot The slot name from the pattern
+   */
+  text(slot: string): PatternBuilder;
+
+  /**
+   * Mark a slot as an instrument for the action
+   * The slot will still resolve to an entity, but be stored in command.instrument
+   * @param slot The slot name from the pattern
+   */
+  instrument(slot: string): PatternBuilder;
+
   /**
    * Map this pattern to an action
    * @param action The action identifier
@@ -189,6 +218,8 @@ export interface SemanticMapping {
 export interface SlotConstraint {
   name: string;
   constraints: Constraint[];
+  /** How the parser should handle this slot (default: ENTITY) */
+  slotType?: SlotType;
 }
 
 /**
@@ -199,6 +230,8 @@ export interface PatternToken {
   value: string;
   alternates?: string[]; // For alternates like "in|into|inside"
   optional?: boolean;   // For optional elements like "[carefully]"
+  slotType?: SlotType;  // For slot tokens: how to handle matching
+  greedy?: boolean;     // For :slot... syntax: consume until delimiter
 }
 
 /**

@@ -4,14 +4,15 @@
  */
 
 import { Token } from '../parser-contracts/parser-types';
-import { 
-  GrammarRule, 
-  PatternMatch, 
+import {
+  GrammarRule,
+  PatternMatch,
   GrammarContext,
   CompiledPattern,
   GrammarBuilder,
   PatternBuilder,
-  SemanticProperties
+  SemanticProperties,
+  SlotType
 } from './grammar-builder';
 import { PatternCompiler } from './pattern-compiler';
 
@@ -144,7 +145,21 @@ export abstract class GrammarEngine {
             rule.slots!.set(slot, slotConstraint);
             return builder;
           },
-          
+
+          text(slot: string) {
+            const slotConstraint = rule.slots!.get(slot) || { name: slot, constraints: [] };
+            slotConstraint.slotType = SlotType.TEXT;
+            rule.slots!.set(slot, slotConstraint);
+            return builder;
+          },
+
+          instrument(slot: string) {
+            const slotConstraint = rule.slots!.get(slot) || { name: slot, constraints: [] };
+            slotConstraint.slotType = SlotType.INSTRUMENT;
+            rule.slots!.set(slot, slotConstraint);
+            return builder;
+          },
+
           mapsTo(action: string) {
             rule.action = action;
             return builder;
