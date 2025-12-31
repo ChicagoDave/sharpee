@@ -24,6 +24,7 @@ import {
 } from '@sharpee/world-model';
 
 import { MazeRoomIds } from '../index';
+import { createIncense } from '../../../objects/thiefs-canvas-objects';
 
 /**
  * Create all objects in the Maze region
@@ -108,6 +109,11 @@ function createDeadEndObjects(world: WorldModel, roomId: string): void {
   // Mark the key as being able to unlock the grating
   (key as any).unlocksId = 'metal grating';
   world.moveEntity(key.id, roomId);
+
+  // Incense - ADR-078 ghost ritual puzzle
+  // The skeleton was a devotee who died with this incense
+  const incense = createIncense(world);
+  world.moveEntity(incense.id, roomId);
 }
 
 // ============= Treasure Room Objects =============

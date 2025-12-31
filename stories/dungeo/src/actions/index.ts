@@ -25,6 +25,15 @@ export * from './puzzle-move';
 // Puzzle Take Card (Royal Puzzle - taking the gold card)
 export * from './puzzle-take-card';
 
+// Break (Ghost ritual - breaking the empty frame)
+export * from './break';
+
+// Burn (Ghost ritual - burning incense)
+export * from './burn';
+
+// Pray (Ghost ritual - blessing the basin)
+export * from './pray';
+
 // All custom actions for registration
 import { gdtActions } from './gdt';
 import { walkThroughActions } from './walk-through';
@@ -33,6 +42,9 @@ import { ringAction } from './ring';
 import { pushWallActions } from './push-wall';
 import { puzzleMoveAction } from './puzzle-move';
 import { puzzleTakeCardAction } from './puzzle-take-card';
+import { breakAction } from './break';
+import { burnAction } from './burn';
+import { prayAction } from './pray';
 
 export const customActions = [
   ...gdtActions,
@@ -41,5 +53,8 @@ export const customActions = [
   ringAction,
   ...pushWallActions,
   puzzleMoveAction,
-  puzzleTakeCardAction
+  puzzleTakeCardAction,
+  breakAction,
+  burnAction,
+  prayAction
 ];

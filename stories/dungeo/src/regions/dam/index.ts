@@ -23,6 +23,7 @@ import { createAncientChasm } from './rooms/ancient-chasm';
 import { createTempleDeadEnd1 } from './rooms/temple-dead-end-1';
 import { createTempleDeadEnd2 } from './rooms/temple-dead-end-2';
 import { createTempleSmallCave } from './rooms/temple-small-cave';
+import { createBasinRoom } from './rooms/basin-room';
 
 export interface DamRoomIds {
   loudRoom: string;
@@ -40,6 +41,7 @@ export interface DamRoomIds {
   templeDeadEnd1: string;
   templeDeadEnd2: string;
   templeSmallCave: string;
+  basinRoom: string;
 }
 
 /**
@@ -61,6 +63,7 @@ export function createDamRooms(world: WorldModel): DamRoomIds {
   const templeDeadEnd1 = createTempleDeadEnd1(world);
   const templeDeadEnd2 = createTempleDeadEnd2(world);
   const templeSmallCave = createTempleSmallCave(world);
+  const basinRoom = createBasinRoom(world);
 
   const roomIds: DamRoomIds = {
     loudRoom: loudRoom.id,
@@ -77,7 +80,8 @@ export function createDamRooms(world: WorldModel): DamRoomIds {
     ancientChasm: ancientChasm.id,
     templeDeadEnd1: templeDeadEnd1.id,
     templeDeadEnd2: templeDeadEnd2.id,
-    templeSmallCave: templeSmallCave.id
+    templeSmallCave: templeSmallCave.id,
+    basinRoom: basinRoom.id
   };
 
   // Connect rooms within this region
@@ -260,13 +264,25 @@ function connectDamRooms(world: WorldModel, roomIds: DamRoomIds): void {
     }
   }
 
-  // Temple Dead End 2: SW→Ancient Chasm
+  // Temple Dead End 2: SW→Ancient Chasm, E→Basin Room (through crack)
   const templeDeadEnd2 = world.getEntity(roomIds.templeDeadEnd2);
   if (templeDeadEnd2) {
     const roomTrait = templeDeadEnd2.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
         [Direction.SOUTHWEST]: { destination: roomIds.ancientChasm },
+        [Direction.EAST]: { destination: roomIds.basinRoom },
+      };
+    }
+  }
+
+  // Basin Room: W→Temple Dead End 2
+  const basinRoom = world.getEntity(roomIds.basinRoom);
+  if (basinRoom) {
+    const roomTrait = basinRoom.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.WEST]: { destination: roomIds.templeDeadEnd2 },
       };
     }
   }

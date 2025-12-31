@@ -25,6 +25,7 @@ import {
 } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
 import { ThiefMessages } from './thief-messages';
+import { createEmptyFrame } from '../../objects/thiefs-canvas-objects';
 
 /**
  * Thief state machine states
@@ -151,6 +152,22 @@ export function createThief(
         entities: { actor: thief.id },
         data: {
           messageId: ThiefMessages.DROPS_LOOT
+        },
+        timestamp: Date.now(),
+        narrate: true
+      });
+
+      // ADR-078: Spawn the empty frame in the Treasure Room
+      // The thief had a hidden treasure - an empty picture frame
+      const frame = createEmptyFrame(w);
+      w.moveEntity(frame.id, lairRoomId);
+
+      events.push({
+        id: generateEventId(),
+        type: 'game.message',
+        entities: { actor: thief.id, target: frame.id },
+        data: {
+          messageId: ThiefMessages.FRAME_SPAWNS
         },
         timestamp: Date.now(),
         narrate: true

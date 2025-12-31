@@ -30,6 +30,9 @@ export const ThiefMessages = {
 
   // Post-death
   DROPS_LOOT: 'dungeo.thief.drops_loot',
+
+  // ADR-078: Ghost ritual puzzle
+  FRAME_SPAWNS: 'dungeo.thief.frame_spawns',
 } as const;
 
 export type ThiefMessageId = (typeof ThiefMessages)[keyof typeof ThiefMessages];

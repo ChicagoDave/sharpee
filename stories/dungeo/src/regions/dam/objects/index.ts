@@ -15,6 +15,7 @@ import {
 } from '@sharpee/world-model';
 
 import { DamRoomIds } from '../index';
+import { createStoneBasin } from './basin-objects';
 
 /**
  * Create all objects in the Dam region
@@ -33,6 +34,9 @@ export function createDamObjects(world: WorldModel, roomIds: DamRoomIds): void {
 
   // Reservoir (when drained)
   createTrunkOfJewels(world, roomIds.reservoir);
+
+  // Basin Room - ADR-078 ghost ritual
+  createStoneBasin(world, roomIds.basinRoom);
 }
 
 /**

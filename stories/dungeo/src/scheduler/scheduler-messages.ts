@@ -37,6 +37,10 @@ export const DungeoSchedulerMessages = {
   UNDERGROUND_DRIP: 'dungeo.underground.drip',
   UNDERGROUND_ECHO: 'dungeo.underground.echo',
   UNDERGROUND_CREAK: 'dungeo.underground.creak',
+
+  // Incense burning - ADR-078 ghost ritual
+  INCENSE_BURNING: 'dungeo.incense.burning',
+  INCENSE_BURNS_OUT: 'dungeo.incense.burns_out',
 } as const;
 
 export type DungeoSchedulerMessageId = typeof DungeoSchedulerMessages[keyof typeof DungeoSchedulerMessages];

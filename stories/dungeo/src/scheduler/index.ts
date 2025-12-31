@@ -18,6 +18,7 @@ export {
 } from './dam-fuse';
 export { registerForestAmbienceDaemon, isForestAmbienceActive } from './forest-daemon';
 export { registerBankAlarmDaemon, isBankAlarmActive } from './bank-alarm-daemon';
+export { registerIncenseFuse, getIncenseBurnRemaining } from './incense-fuse';
 
 import { WorldModel } from '@sharpee/world-model';
 import { ISchedulerService } from '@sharpee/engine';
@@ -26,6 +27,7 @@ import { registerCandleFuse } from './candle-fuse';
 import { registerDamHandlers } from './dam-fuse';
 import { registerForestAmbienceDaemon } from './forest-daemon';
 import { registerBankAlarmDaemon } from './bank-alarm-daemon';
+import { registerIncenseFuse } from './incense-fuse';
 import { ForestRoomIds } from '../regions/forest';
 import { DamRoomIds } from '../regions/dam';
 import { BankRoomIds } from '../regions/bank-of-zork';
@@ -59,6 +61,9 @@ export function registerScheduledEvents(
 
   // Register bank alarm daemon
   registerBankAlarmDaemon(scheduler, world, bankRoomIds);
+
+  // Register incense fuse (ADR-078 Ghost Ritual puzzle)
+  registerIncenseFuse(scheduler, world);
 
   console.log('Dungeo scheduler: Registered all daemons and fuses');
 }

@@ -29,14 +29,14 @@ import {
 import { DungeoScoringService } from './scoring';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages } from './actions';
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages } from './scheduler';
 import { setSchedulerForGDT } from './actions/gdt/commands';
 
 // Import handlers
-import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages } from './handlers';
+import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages } from './handlers';
 import { initializeMirrorRoom, createMirrorTouchHandler, MirrorRoomConfig, MirrorRoomMessages } from './handlers/mirror-room-handler';
 import { MIRROR_ID } from './regions/underground/objects';
 
@@ -541,6 +541,52 @@ export class DungeoStory implements Story {
       .mapsTo(PUSH_WALL_ACTION_ID)
       .withPriority(160)
       .build();
+
+    // ADR-078: Ghost Ritual puzzle actions
+    // Break action - for breaking the empty frame
+    grammar
+      .define('break :target')
+      .mapsTo(BREAK_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('smash :target')
+      .mapsTo(BREAK_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    // Burn action - for burning incense
+    grammar
+      .define('burn :target')
+      .mapsTo(BURN_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('light :target')
+      .mapsTo(BURN_ACTION_ID)
+      .withPriority(145) // Lower than stdlib LIGHT for lantern
+      .build();
+
+    // Pray action - for blessing the basin
+    grammar
+      .define('pray')
+      .mapsTo(PRAY_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('pray at :target')
+      .mapsTo(PRAY_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('pray to :target')
+      .mapsTo(PRAY_ACTION_ID)
+      .withPriority(155)
+      .build();
   }
 
   /**
@@ -747,6 +793,44 @@ export class DungeoStory implements Story {
     language.addMessage(PushWallMessages.SUCCESS_FIRST, 'The sandstone wall slides into the space beyond. You step into the vacated space.');
     language.addMessage(PushWallMessages.LADDER_VISIBLE, 'One of the sandstone walls has a wooden ladder attached to it.');
     language.addMessage(PushWallMessages.CARD_VISIBLE, 'Set into one wall is a small depression. Within it rests a gold card.');
+
+    // ADR-078: Ghost Ritual puzzle messages
+
+    // Thief frame spawn
+    language.addMessage('dungeo.thief.frame_spawns', 'As the thief falls, an ornate but empty picture frame crashes to the ground.');
+
+    // Break action messages
+    language.addMessage(BreakMessages.BREAK_SUCCESS, 'You break the {target}.');
+    language.addMessage(BreakMessages.BREAK_FRAME, 'The frame shatters! Among the debris, you find a carved piece bearing strange symbols: "Only devotion can reveal my location."');
+    language.addMessage(BreakMessages.CANT_BREAK, "You can't break that.");
+    language.addMessage(BreakMessages.NO_TARGET, 'Break what?');
+    language.addMessage(BreakMessages.NOT_VISIBLE, "You don't see that here.");
+
+    // Burn action messages
+    language.addMessage(BurnMessages.BURN_SUCCESS, 'You burn the {target}.');
+    language.addMessage(BurnMessages.BURN_INCENSE, 'The incense begins to smolder, releasing fragrant smoke that fills the room.');
+    language.addMessage(BurnMessages.ALREADY_BURNING, 'It is already burning.');
+    language.addMessage(BurnMessages.BURNED_OUT, 'The incense has already burned out.');
+    language.addMessage(BurnMessages.CANT_BURN, "You can't burn that.");
+    language.addMessage(BurnMessages.NO_TARGET, 'Burn what?');
+    language.addMessage(BurnMessages.NOT_VISIBLE, "You don't see that here.");
+
+    // Incense fuse messages
+    language.addMessage(DungeoSchedulerMessages.INCENSE_BURNING, 'The incense continues to smolder.');
+    language.addMessage(DungeoSchedulerMessages.INCENSE_BURNS_OUT, 'The incense sputters and burns out completely, leaving only ash.');
+
+    // Pray action messages
+    language.addMessage(PrayMessages.PRAY_GENERIC, 'You offer a prayer, but nothing special happens.');
+    language.addMessage(PrayMessages.PRAY_DISARMED, 'The fragrant smoke seems to calm the evil presence in the room. The basin begins to glow faintly.');
+    language.addMessage(PrayMessages.PRAY_BLESSED, 'As you pray, the water shimmers with an ethereal light. It has been blessed.');
+    language.addMessage(PrayMessages.PRAY_ALREADY_BLESSED, 'The water is already blessed.');
+    language.addMessage(PrayMessages.NOT_IN_BASIN_ROOM, 'There is nothing special to pray to here.');
+
+    // Ghost ritual messages
+    language.addMessage(GhostRitualMessages.GHOST_APPEARS, 'The blessed water glows intensely. A spectral figure rises from the basin - the ghost of the thief! Dressed in adventurer\'s robes, he gestures toward the Gallery and speaks: "Well done, my friend. You are nearing the end game. Look to the Gallery for your reward." Then he fades away...');
+    language.addMessage(GhostRitualMessages.CANVAS_SPAWNS, 'A magnificent rolled up canvas has appeared in the Gallery!');
+    language.addMessage(GhostRitualMessages.WRONG_ITEM, 'The spirit laughs mockingly: "As we said, you have no rights here!" The item vanishes.');
+    language.addMessage(GhostRitualMessages.NOT_BLESSED, 'Nothing happens. The water remains still.');
   }
 
   /**
@@ -895,6 +979,9 @@ export class DungeoStory implements Story {
 
       // Register Royal Puzzle handler (sliding block puzzle)
       registerRoyalPuzzleHandler(scheduler, this.royalPuzzleIds);
+
+      // Register Ghost Ritual handler (ADR-078 Thief's Canvas puzzle)
+      registerGhostRitualHandler(this.world);
     }
 
     // Register NPCs (ADR-070)

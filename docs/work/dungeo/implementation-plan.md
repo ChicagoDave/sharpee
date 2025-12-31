@@ -1,7 +1,7 @@
 # Dungeo Implementation Tracking
 
-**Target**: Mainframe Zork 616-point version
-**Current Progress**: 144/~190 rooms (76%), 500/616 treasure points (81%)
+**Target**: Mainframe Zork 616-point version + ADR-078 extension
+**Current Progress**: 145/~191 rooms (76%), 534/650 treasure points (82%)
 
 ---
 
@@ -95,7 +95,7 @@
 | Temple Dead End 1 | ✅ Done | W of Ancient Chasm |
 | Temple Dead End 2 | ✅ Done | N of Ancient Chasm, E crack to Basin Room |
 | Temple Small Cave | ✅ Done | E of Ancient Chasm, S to Rocky Shore |
-| Basin Room | ❌ | ADR-078: Thief's Canvas puzzle (lethal trap) |
+| Basin Room | ✅ Done | ADR-078: Thief's Canvas puzzle (ghost ritual) |
 
 ### The Reservoir
 
@@ -242,7 +242,7 @@
 
 ---
 
-## Treasures (32 items, 616 points)
+## Treasures (33 items, 650 points)
 
 | # | Treasure | Take | Case | Total | Location | Status |
 |---|----------|------|------|-------|----------|--------|
@@ -445,7 +445,7 @@
 | Rainbow | Wave sceptre at falls | ❌ | Pot of gold |
 | Bauble | Wind canary in forest | ❌ | Bauble |
 | Buried treasure | Dig 4 times with shovel | ❌ | Statue |
-| Thief's Canvas (ADR-078) | Kill thief→frame→break→incense→pray→drop piece | ❌ | 34 pts canvas |
+| Thief's Canvas (ADR-078) | Kill thief→frame→break→incense→pray→drop piece | ✅ Done | 34 pts canvas |
 
 ---
 
@@ -539,14 +539,14 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Priority Next Steps
 
-1. **ADR-078 Thief's Canvas Puzzle** - Basin Room, incense, frame, BURN/PRAY actions, lethal trap (34 pts)
-2. **Remaining treasures** - Stamps (2), bauble
-3. **Puzzle mechanics** - Rainbow wave sceptre, glacier torch melt
-4. **Remaining NPCs** - Dungeon Master, Gnome
-5. **Endgame** (~15 rooms) - Final puzzle sequence
+1. **Remaining treasures** - Stamps (2), bauble
+2. **Puzzle mechanics** - Rainbow wave sceptre, glacier torch melt
+3. **Remaining NPCs** - Dungeon Master, Gnome
+4. **Endgame** (~15 rooms) - Final puzzle sequence
 
 ## Recently Completed
 
+- ✅ **ADR-078 Thief's Canvas Puzzle** (2025-12-31) - Added Basin Room (E of Temple Dead End 2), ghost ritual puzzle with incense, empty frame, frame piece, canvas. New actions: BREAK, BURN, PRAY. 3-turn incense fuse. Ghost appears when frame piece dropped in blessed basin, canvas spawns in Gallery. 34 points (10 take + 24 case). Progress: 145/~191 rooms, 534/650 points.
 - ✅ **Royal Puzzle Phase 2** (2025-12-31) - Command transformer now intercepts GO/TAKE in puzzle. Fixed `isInPuzzle` bug (was using wrong player ID lookup). Added puzzle-take-card action for gold card. Added 12 push wall grammar patterns. Movement within puzzle, TAKE CARD, and exit mechanics now working. Transcript tests pass.
 - ✅ **Royal Puzzle Phase 1** (2025-12-30) - Added 3 rooms (Square Room, Puzzle Room, Room in a Puzzle), puzzle state management (8x8 grid from Fortran source), PUSH WALL action, gold card treasure (25 pts). Entry handlers created.
 - ✅ **Coal Mine Audit** (2025-12-30) - Removed 3 orphaned rooms, added Small Room, added red crystal sphere (15 pts), fixed Slide Ledge U exit.
