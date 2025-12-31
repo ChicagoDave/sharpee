@@ -3,13 +3,16 @@
  */
 
 import { ISemanticEvent } from '@sharpee/core';
-import { EntityEventHandler, IFEntity, WorldModel } from '@sharpee/world-model';
+import { IFEntity, WorldModel } from '@sharpee/world-model';
 
 // GameEvent type - matches what's in world-model/src/events/types.ts
 interface GameEvent extends ISemanticEvent {
   type: string;
   data: Record<string, any>;
 }
+
+// Legacy event handler type (returns ISemanticEvent[] instead of Effect[])
+type EntityEventHandler = (event: GameEvent, world: WorldModel) => void | ISemanticEvent[];
 
 /**
  * Create a handler that toggles a switchable entity
