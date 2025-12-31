@@ -456,6 +456,147 @@ export class EnglishParser implements Parser {
   }
 
   /**
+   * Parse input that may contain multiple commands separated by periods or commas.
+   * Returns an array of parsed commands (or errors).
+   *
+   * Period chaining:
+   * - "take sword. go north." → [take sword, go north]
+   *
+   * Comma chaining (only when verb detected after comma):
+   * - "take sword, drop it" → [take sword, drop it] (verb after comma)
+   * - "take knife, lamp" → single command with list (no verb after comma)
+   *
+   * Examples:
+   * - "take sword. go north." → [take sword, go north]
+   * - "take sword" → [take sword]
+   * - "take sword. invalid. go north" → [take sword, error, go north]
+   */
+  parseChain(input: string): CommandResult<IParsedCommand, CoreParseError>[] {
+    // First split on periods
+    const periodSegments = this.splitOnPeriods(input);
+
+    // Then handle comma disambiguation within each segment
+    const allSegments: string[] = [];
+    for (const segment of periodSegments) {
+      const commaSegments = this.splitOnCommasIfChain(segment);
+      allSegments.push(...commaSegments);
+    }
+
+    // Parse each segment
+    return allSegments.map(segment => this.parse(segment));
+  }
+
+  /**
+   * Split a segment on commas only if a verb is detected after the comma.
+   * "take knife, drop lamp" → ["take knife", "drop lamp"] (verb after comma)
+   * "take knife, lamp" → ["take knife, lamp"] (no verb, treat as list)
+   */
+  private splitOnCommasIfChain(input: string): string[] {
+    // Replace quoted strings with placeholders to protect them
+    const placeholders: Map<string, string> = new Map();
+    let processedInput = input;
+    let placeholderIndex = 0;
+
+    // Handle double quotes
+    processedInput = processedInput.replace(/"[^"]*"/g, (match) => {
+      const placeholder = `__COMMA_QUOTE_${placeholderIndex++}__`;
+      placeholders.set(placeholder, match);
+      return placeholder;
+    });
+
+    // Handle single quotes
+    processedInput = processedInput.replace(/'[^']*'/g, (match) => {
+      const placeholder = `__COMMA_QUOTE_${placeholderIndex++}__`;
+      placeholders.set(placeholder, match);
+      return placeholder;
+    });
+
+    // Check for commas
+    const commaIndex = processedInput.indexOf(',');
+    if (commaIndex === -1) {
+      return [input]; // No commas, return as-is
+    }
+
+    // Check if word after comma is a verb
+    const afterComma = processedInput.slice(commaIndex + 1).trim();
+    const firstWordMatch = afterComma.match(/^(\w+)/);
+
+    if (!firstWordMatch) {
+      return [input]; // No word after comma, return as-is
+    }
+
+    const firstWord = firstWordMatch[1].toLowerCase();
+
+    // Check if it's a known verb
+    const isVerb = vocabularyRegistry.hasWord(firstWord, VocabPartOfSpeech.VERB);
+
+    if (isVerb) {
+      // It's a verb - split into separate commands
+      const parts = processedInput.split(',');
+      const segments: string[] = [];
+
+      for (const part of parts) {
+        let restored = part;
+        for (const [placeholder, original] of placeholders) {
+          restored = restored.replace(placeholder, original);
+        }
+        const trimmed = restored.trim();
+        if (trimmed.length > 0) {
+          segments.push(trimmed);
+        }
+      }
+
+      return segments;
+    }
+
+    // Not a verb after comma - return as single segment (list)
+    return [input];
+  }
+
+  /**
+   * Split input on periods, preserving quoted strings.
+   * Handles edge cases like trailing periods and empty segments.
+   */
+  private splitOnPeriods(input: string): string[] {
+    // Replace quoted strings with placeholders
+    const placeholders: Map<string, string> = new Map();
+    let processedInput = input;
+    let placeholderIndex = 0;
+
+    // Handle double quotes
+    processedInput = processedInput.replace(/"[^"]*"/g, (match) => {
+      const placeholder = `__PERIOD_QUOTE_${placeholderIndex++}__`;
+      placeholders.set(placeholder, match);
+      return placeholder;
+    });
+
+    // Handle single quotes
+    processedInput = processedInput.replace(/'[^']*'/g, (match) => {
+      const placeholder = `__PERIOD_QUOTE_${placeholderIndex++}__`;
+      placeholders.set(placeholder, match);
+      return placeholder;
+    });
+
+    // Split on periods
+    const rawSegments = processedInput.split('.');
+
+    // Restore placeholders and clean up segments
+    const segments: string[] = [];
+    for (const segment of rawSegments) {
+      let restored = segment;
+      for (const [placeholder, original] of placeholders) {
+        restored = restored.replace(placeholder, original);
+      }
+      const trimmed = restored.trim();
+      if (trimmed.length > 0) {
+        segments.push(trimmed);
+      }
+    }
+
+    return segments;
+  }
+
+  /**
    * Tokenize input with rich information preservation
    */
   private tokenizeRich(input: string): IToken[] {

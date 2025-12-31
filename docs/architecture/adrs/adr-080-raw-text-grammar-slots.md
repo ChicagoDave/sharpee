@@ -1,6 +1,6 @@
 # ADR-080: Grammar Enhancements for Classic IF Patterns
 
-**Status**: Proposed
+**Status**: Implemented (Phases 1-3)
 **Date**: 2025-12-31
 **Context**: Dungeo implementation revealing gaps in grammar coverage
 
@@ -412,6 +412,29 @@ grammar.define('write :content... on :surface').text('content').mapsTo('if.actio
 ---
 
 ## Implementation Notes
+
+### Phase 3: Command Chaining
+
+Implemented via `parseChain()` method on `EnglishParser`:
+
+```typescript
+// Returns array of parsed commands
+parser.parseChain('take sword. go north. drop sword')
+// → [Result<taking>, Result<going>, Result<dropping>]
+```
+
+**Period splitting**: Input is split on `.` (preserving quoted strings). Empty segments are filtered out.
+
+**Comma disambiguation**: Segments are further split on commas ONLY when the word after the comma is a known verb:
+
+```
+"take sword, drop it"     → ["take sword", "drop it"]  (verb after comma)
+"take knife, lamp"        → ["take knife, lamp"]       (noun after comma = list)
+```
+
+Vocabulary lookup via `vocabularyRegistry.hasWord(word, PartOfSpeech.VERB)` determines whether to split.
+
+**Error handling**: Each segment is parsed independently. Errors in one segment don't stop parsing of subsequent segments. Callers receive an array of Results and can handle failures individually.
 
 ### Consecutive Slots and Entity Boundary Detection
 
