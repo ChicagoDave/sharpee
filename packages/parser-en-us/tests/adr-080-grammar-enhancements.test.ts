@@ -263,4 +263,237 @@ describe('ADR-080: Grammar Enhancements', () => {
       expect((match.slots.get('weapon') as any)?.slotType).toBe(SlotType.INSTRUMENT);
     });
   });
+
+  // ADR-080 Phase 2: Multi-Object Parsing
+  describe('Grammar Engine - "all" Keyword Recognition', () => {
+    it('should recognize "all" and set isAll flag', () => {
+      const builder = engine.createBuilder();
+      builder.define('take :item')
+        .mapsTo('test:take')
+        .build();
+
+      const tokens = [
+        { word: 'take', normalized: 'take', position: 0, candidates: [] },
+        { word: 'all', normalized: 'all', position: 5, candidates: [] }
+      ];
+
+      const context: GrammarContext = {
+        world: null,
+        actorId: 'player',
+        currentLocation: 'test',
+        slots: new Map()
+      };
+
+      const matches = engine.findMatches(tokens, context);
+      expect(matches).toHaveLength(1);
+
+      const match = matches[0];
+      expect(match.slots.get('item')?.text).toBe('all');
+      expect((match.slots.get('item') as any)?.isAll).toBe(true);
+    });
+
+    it('should parse "all but X" with exclusion', () => {
+      const builder = engine.createBuilder();
+      builder.define('take :item')
+        .mapsTo('test:take')
+        .build();
+
+      const tokens = [
+        { word: 'take', normalized: 'take', position: 0, candidates: [] },
+        { word: 'all', normalized: 'all', position: 5, candidates: [] },
+        { word: 'but', normalized: 'but', position: 9, candidates: [] },
+        { word: 'sword', normalized: 'sword', position: 13, candidates: [] }
+      ];
+
+      const context: GrammarContext = {
+        world: null,
+        actorId: 'player',
+        currentLocation: 'test',
+        slots: new Map()
+      };
+
+      const matches = engine.findMatches(tokens, context);
+      expect(matches).toHaveLength(1);
+
+      const match = matches[0];
+      const slot = match.slots.get('item') as any;
+      expect(slot.text).toBe('all');
+      expect(slot.isAll).toBe(true);
+      expect(slot.excluded).toBeDefined();
+      expect(slot.excluded).toHaveLength(1);
+      expect(slot.excluded[0].text).toBe('sword');
+    });
+
+    it('should parse "all except X and Y" with multiple exclusions', () => {
+      const builder = engine.createBuilder();
+      builder.define('drop :item')
+        .mapsTo('test:drop')
+        .build();
+
+      const tokens = [
+        { word: 'drop', normalized: 'drop', position: 0, candidates: [] },
+        { word: 'all', normalized: 'all', position: 5, candidates: [] },
+        { word: 'except', normalized: 'except', position: 9, candidates: [] },
+        { word: 'sword', normalized: 'sword', position: 16, candidates: [] },
+        { word: 'and', normalized: 'and', position: 22, candidates: [] },
+        { word: 'shield', normalized: 'shield', position: 26, candidates: [] }
+      ];
+
+      const context: GrammarContext = {
+        world: null,
+        actorId: 'player',
+        currentLocation: 'test',
+        slots: new Map()
+      };
+
+      const matches = engine.findMatches(tokens, context);
+      expect(matches).toHaveLength(1);
+
+      const match = matches[0];
+      const slot = match.slots.get('item') as any;
+      expect(slot.isAll).toBe(true);
+      expect(slot.excluded).toHaveLength(2);
+      expect(slot.excluded[0].text).toBe('sword');
+      expect(slot.excluded[1].text).toBe('shield');
+    });
+  });
+
+  describe('Grammar Engine - "and" List Parsing', () => {
+    it('should parse "X and Y" as list', () => {
+      const builder = engine.createBuilder();
+      builder.define('take :item')
+        .mapsTo('test:take')
+        .build();
+
+      const tokens = [
+        { word: 'take', normalized: 'take', position: 0, candidates: [] },
+        { word: 'knife', normalized: 'knife', position: 5, candidates: [] },
+        { word: 'and', normalized: 'and', position: 11, candidates: [] },
+        { word: 'lamp', normalized: 'lamp', position: 15, candidates: [] }
+      ];
+
+      const context: GrammarContext = {
+        world: null,
+        actorId: 'player',
+        currentLocation: 'test',
+        slots: new Map()
+      };
+
+      const matches = engine.findMatches(tokens, context);
+      expect(matches).toHaveLength(1);
+
+      const match = matches[0];
+      const slot = match.slots.get('item') as any;
+      expect(slot.text).toBe('knife and lamp');
+      expect(slot.isList).toBe(true);
+      expect(slot.items).toHaveLength(2);
+      expect(slot.items[0].text).toBe('knife');
+      expect(slot.items[1].text).toBe('lamp');
+    });
+
+    it('should parse "X, Y, and Z" style list', () => {
+      const builder = engine.createBuilder();
+      builder.define('take :item')
+        .mapsTo('test:take')
+        .build();
+
+      const tokens = [
+        { word: 'take', normalized: 'take', position: 0, candidates: [] },
+        { word: 'knife', normalized: 'knife', position: 5, candidates: [] },
+        { word: 'and', normalized: 'and', position: 11, candidates: [] },
+        { word: 'lamp', normalized: 'lamp', position: 15, candidates: [] },
+        { word: 'and', normalized: 'and', position: 20, candidates: [] },
+        { word: 'rope', normalized: 'rope', position: 24, candidates: [] }
+      ];
+
+      const context: GrammarContext = {
+        world: null,
+        actorId: 'player',
+        currentLocation: 'test',
+        slots: new Map()
+      };
+
+      const matches = engine.findMatches(tokens, context);
+      expect(matches).toHaveLength(1);
+
+      const match = matches[0];
+      const slot = match.slots.get('item') as any;
+      expect(slot.isList).toBe(true);
+      expect(slot.items).toHaveLength(3);
+      expect(slot.items[0].text).toBe('knife');
+      expect(slot.items[1].text).toBe('lamp');
+      expect(slot.items[2].text).toBe('rope');
+    });
+
+    it('should parse list with multi-word items', () => {
+      const builder = engine.createBuilder();
+      builder.define('take :item')
+        .mapsTo('test:take')
+        .build();
+
+      // "take brass lantern and red key" - each item is multi-word
+      const tokens = [
+        { word: 'take', normalized: 'take', position: 0, candidates: [] },
+        { word: 'brass', normalized: 'brass', position: 5, candidates: [] },
+        { word: 'lantern', normalized: 'lantern', position: 11, candidates: [] },
+        { word: 'and', normalized: 'and', position: 19, candidates: [] },
+        { word: 'red', normalized: 'red', position: 23, candidates: [] },
+        { word: 'key', normalized: 'key', position: 27, candidates: [] }
+      ];
+
+      const context: GrammarContext = {
+        world: null,
+        actorId: 'player',
+        currentLocation: 'test',
+        slots: new Map()
+      };
+
+      const matches = engine.findMatches(tokens, context);
+      expect(matches).toHaveLength(1);
+
+      const match = matches[0];
+      const slot = match.slots.get('item') as any;
+      expect(slot.isList).toBe(true);
+      expect(slot.items).toHaveLength(2);
+      expect(slot.items[0].text).toBe('brass lantern');
+      expect(slot.items[1].text).toBe('red key');
+    });
+
+    it('should stop list at pattern delimiter', () => {
+      const builder = engine.createBuilder();
+      builder.define('put :item in :container')
+        .mapsTo('test:put')
+        .build();
+
+      // "put knife and lamp in bag"
+      const tokens = [
+        { word: 'put', normalized: 'put', position: 0, candidates: [] },
+        { word: 'knife', normalized: 'knife', position: 4, candidates: [] },
+        { word: 'and', normalized: 'and', position: 10, candidates: [] },
+        { word: 'lamp', normalized: 'lamp', position: 14, candidates: [] },
+        { word: 'in', normalized: 'in', position: 19, candidates: [] },
+        { word: 'bag', normalized: 'bag', position: 22, candidates: [] }
+      ];
+
+      const context: GrammarContext = {
+        world: null,
+        actorId: 'player',
+        currentLocation: 'test',
+        slots: new Map()
+      };
+
+      const matches = engine.findMatches(tokens, context);
+      expect(matches).toHaveLength(1);
+
+      const match = matches[0];
+      const itemSlot = match.slots.get('item') as any;
+      expect(itemSlot.isList).toBe(true);
+      expect(itemSlot.items).toHaveLength(2);
+      expect(itemSlot.items[0].text).toBe('knife');
+      expect(itemSlot.items[1].text).toBe('lamp');
+
+      const containerSlot = match.slots.get('container');
+      expect(containerSlot?.text).toBe('bag');
+    });
+  });
 });

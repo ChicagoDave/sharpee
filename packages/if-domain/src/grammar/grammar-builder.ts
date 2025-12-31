@@ -245,15 +245,26 @@ export interface CompiledPattern {
 }
 
 /**
+ * Slot match data with multi-object support
+ */
+export interface SlotMatch {
+  tokens: number[];       // Token indices
+  text: string;           // Combined text
+  slotType?: SlotType;    // How the slot was matched
+  // Multi-object support (ADR-080 Phase 2)
+  isAll?: boolean;        // True if "all" keyword
+  isList?: boolean;       // True if "X and Y" list
+  items?: SlotMatch[];    // List items when isList is true
+  excluded?: SlotMatch[]; // Excluded items for "all but X"
+}
+
+/**
  * Result of pattern matching
  */
 export interface PatternMatch {
   rule: GrammarRule;
   confidence: number;
-  slots: Map<string, { 
-    tokens: number[]; // Token indices
-    text: string;     // Combined text
-  }>;
+  slots: Map<string, SlotMatch>;
   consumed: number; // Number of tokens consumed
   semantics?: SemanticProperties; // Derived semantic properties
   matchedTokens?: { // Track which tokens matched which parts

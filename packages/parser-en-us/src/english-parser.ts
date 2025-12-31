@@ -101,6 +101,7 @@ interface RichCandidate {
   // ADR-080 additions
   textSlots?: Map<string, string>;
   instrument?: INounPhrase;
+  excluded?: INounPhrase[]; // For "all but X" patterns
 }
 
 /**
@@ -411,7 +412,8 @@ export class EnglishParser implements Parser {
       action: best.action,
       // ADR-080 additions
       textSlots: best.textSlots,
-      instrument: best.instrument
+      instrument: best.instrument,
+      excluded: best.excluded
     };
 
     // Add extras if present
@@ -639,9 +641,10 @@ export class EnglishParser implements Parser {
       }
     }
     
-    // ADR-080: Track text slots and instruments
+    // ADR-080: Track text slots, instruments, and excluded items
     let textSlots: Map<string, string> | undefined;
     let instrument: INounPhrase | undefined;
+    let excluded: INounPhrase[] | undefined;
 
     // Process slots based on the pattern structure
     for (const [slotName, slotData] of slotEntries) {
@@ -659,6 +662,7 @@ export class EnglishParser implements Parser {
         continue; // Don't also add to direct/indirect objects
       }
 
+      // Build base noun phrase
       const phrase: INounPhrase = {
         tokens: slotData.tokens,
         text: slotData.text,
@@ -668,6 +672,36 @@ export class EnglishParser implements Parser {
         determiners: [],
         candidates: [slotData.text]
       };
+
+      // ADR-080 Phase 2: Add multi-object support
+      const slotDataAny = slotData as any;
+      if (slotDataAny.isAll) {
+        phrase.isAll = true;
+        // Extract excluded items for "all but X" patterns
+        if (slotDataAny.excluded && slotDataAny.excluded.length > 0) {
+          excluded = slotDataAny.excluded.map((item: any) => ({
+            tokens: item.tokens,
+            text: item.text,
+            head: item.text.split(' ').pop() || item.text,
+            modifiers: [],
+            articles: [],
+            determiners: [],
+            candidates: [item.text]
+          }));
+        }
+      }
+      if (slotDataAny.isList && slotDataAny.items) {
+        phrase.isList = true;
+        phrase.items = slotDataAny.items.map((item: any) => ({
+          tokens: item.tokens,
+          text: item.text,
+          head: item.text.split(' ').pop() || item.text,
+          modifiers: [],
+          articles: [],
+          determiners: [],
+          candidates: [item.text]
+        }));
+      }
 
       // Handle instrument slots
       if (slotType === SlotType.INSTRUMENT) {
@@ -789,7 +823,8 @@ export class EnglishParser implements Parser {
       action: rule.action,
       // ADR-080 additions
       textSlots,
-      instrument
+      instrument,
+      excluded
     };
 
     // Add extras if present
