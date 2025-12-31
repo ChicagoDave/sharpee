@@ -98,13 +98,43 @@ Treasure Room → E → Square Room → D → Puzzle Room → D → Room in a Pu
 - Warning note in Puzzle Room (readable)
 - Entry daemon detects descent into puzzle
 
-## Still Needed (Phase 2)
+## Phase 2 Complete (2025-12-30)
 
-1. **Movement intercept**: GOING action in Room in a Puzzle should use puzzle state instead of room exits
-2. **Dynamic room description**: Show available directions based on grid state
-3. **TAKE CARD**: When adjacent to card block, allow taking
-4. **Exit logic**: UP only works when ladder at position 10
-5. **Full playthrough test**: Verify walkthrough works
+All core mechanics implemented:
+
+1. **Movement intercept** - `createPuzzleCommandTransformer()` in puzzle-handler.ts
+   - Intercepts GO commands when player is in Room in a Puzzle
+   - Redirects to custom `puzzleMoveAction` which uses grid state
+
+2. **Dynamic room description** - `getPuzzleDescription()` in puzzle-state.ts
+   - Shows available directions from current grid position
+   - Shows ladder/card when adjacent
+
+3. **Exit logic** - `handlePuzzleMovement()` handles UP
+   - Checks if player at entry position (9)
+   - Checks if ladder at exit position (10)
+   - Moves player back to Puzzle Room on success
+
+4. **TAKE CARD** - `handleTakeCard()` ready but not yet wired
+   - Checks adjacency to card block
+   - Converts block to sandstone, moves card to inventory
+
+### New Files Created
+
+- `src/actions/puzzle-move/puzzle-move-action.ts` - Custom movement action
+- `src/actions/puzzle-move/index.ts` - Exports
+
+### Files Modified
+
+- `src/handlers/royal-puzzle/puzzle-handler.ts` - Added transformer and handlers
+- `src/actions/index.ts` - Added puzzle-move to exports
+- `src/index.ts` - Register transformer, add language messages
+
+## Still Needed
+
+- **Wire TAKE CARD** - Need to intercept TAKE action for gold card
+- **Playthrough testing** - Verify full walkthrough works
+- **Save/restore** - Puzzle state persistence
 
 ## Testing
 

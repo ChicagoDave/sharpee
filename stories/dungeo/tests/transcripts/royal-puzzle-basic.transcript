@@ -1,0 +1,24 @@
+# Royal Puzzle Basic Test
+# Test entry, movement, and basic mechanics
+
+# Use GDT to teleport to puzzle room entrance
+> gdt
+*GDT*
+
+> dr puzzle-room
+*puzzle-room*
+
+> ex
+*[Exited]*
+
+# Go down into the puzzle
+> down
+*sandstone*
+
+# Test movement
+> south
+*maze*
+
+# Try to exit without ladder
+> up
+*no way*

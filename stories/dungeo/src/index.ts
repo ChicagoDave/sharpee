@@ -56,7 +56,7 @@ import { createMazeRooms, connectMazeToClearing, connectCyclopsToLivingRoom, con
 import { createRoyalPuzzleRooms, connectRoyalPuzzleToTreasureRoom, RoyalPuzzleRoomIds } from './regions/royal-puzzle';
 
 // Import handlers
-import { registerRoyalPuzzleHandler, initializePuzzleState, PuzzleHandlerMessages } from './handlers/royal-puzzle';
+import { registerRoyalPuzzleHandler, initializePuzzleState, createPuzzleCommandTransformer, PuzzleHandlerMessages } from './handlers/royal-puzzle';
 
 // Import NPCs
 import { registerThief, ThiefMessages } from './npcs/thief';
@@ -645,6 +645,20 @@ export class DungeoStory implements Story {
     language.addMessage(ExorcismMessages.PASSAGE_OPENS, 'The way to the south is now clear.');
     language.addMessage(ExorcismMessages.BELL_ECHOES, 'The bell echoes through the chamber.');
     language.addMessage(ExorcismMessages.RITUAL_PROGRESS, 'You feel a strange energy building...');
+
+    // Royal Puzzle messages
+    language.addMessage(PuzzleHandlerMessages.ENTER_PUZZLE, 'You squeeze through the narrow hole and find yourself in a confusing maze of sandstone walls.');
+    language.addMessage(PuzzleHandlerMessages.EXIT_PUZZLE, 'You climb the ladder and squeeze back through the hole in the ceiling.');
+    language.addMessage(PuzzleHandlerMessages.CANT_EXIT, 'There is no way to reach the hole in the ceiling.');
+    language.addMessage(PuzzleHandlerMessages.MOVE_BLOCKED, 'You cannot go that way.');
+    language.addMessage(PuzzleHandlerMessages.MOVE_SUCCESS, 'OK.');
+    language.addMessage(PuzzleHandlerMessages.ROOM_DESCRIPTION, '{text}');
+    language.addMessage(PuzzleHandlerMessages.TAKE_CARD, 'You carefully extract the gold card from its depression in the wall.');
+    language.addMessage(PuzzleHandlerMessages.CANT_TAKE_CARD, 'You are not close enough to reach the card.');
+    language.addMessage(PuzzleHandlerMessages.PUSH_SUCCESS, 'The sandstone wall slides into the space beyond.');
+    language.addMessage(PuzzleHandlerMessages.PUSH_NO_WALL, 'There is no wall there.');
+    language.addMessage(PuzzleHandlerMessages.PUSH_IMMOVABLE, 'The marble wall is unyielding.');
+    language.addMessage(PuzzleHandlerMessages.PUSH_NO_ROOM, 'There is no room for the wall to slide.');
   }
 
   /**
@@ -739,6 +753,10 @@ export class DungeoStory implements Story {
         }
       };
     });
+
+    // Register Royal Puzzle movement transformer
+    // This intercepts GO commands when player is inside the puzzle grid
+    engine.registerParsedCommandTransformer(createPuzzleCommandTransformer());
 
     // Register scheduler events (ADR-071 Phase 2)
     const scheduler = engine.getScheduler();
