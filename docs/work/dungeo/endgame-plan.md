@@ -428,7 +428,26 @@ stories/dungeo/src/
 2. **Dungeon Master behavior**: Does he fight? Help in combat?
 3. **West Corridor**: Why is it in the map but not visited in walkthrough?
 
-## Resolved (from FORTRAN source analysis)
+## Resolved
+
+### Text Database Decoder (2025-12-31) ✅
+
+Created working decoder for dtext.dat/dindx.dat:
+- **Location**: `docs/dungeon-ref/decode-text.js`
+- **Output**: `docs/dungeon-ref/dungeon-messages.txt` (1191 messages, 4282 lines)
+
+**Format discovered**:
+- dindx.dat is text (FORTRAN I8 format), not binary
+- RTEXT array starts at line 6425
+- dtext.dat: 80-byte records (4-byte group + 76-byte encrypted text)
+- Encryption: `char[i] = encrypted[i] XOR ((recordNum & 31) + (i + 1))`
+
+**Usage**:
+```bash
+node docs/dungeon-ref/decode-text.js --export    # All messages
+node docs/dungeon-ref/decode-text.js --endgame   # Endgame messages
+node docs/dungeon-ref/decode-text.js 770         # Specific message
+```
 
 ### Inside Mirror Mechanics (from objects.for)
 
