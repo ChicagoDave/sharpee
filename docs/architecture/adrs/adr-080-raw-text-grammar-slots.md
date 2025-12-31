@@ -1,159 +1,416 @@
-# ADR-080: Raw Text Grammar Slots
+# ADR-080: Grammar Enhancements for Classic IF Patterns
 
 **Status**: Proposed
 **Date**: 2025-12-31
-**Context**: Dungeo INCANT command implementation
+**Context**: Dungeo implementation revealing gaps in grammar coverage
 
 ## Problem
 
-Story authors need to define grammar patterns that capture arbitrary text input without entity resolution. Currently, all grammar slots (`:target`, `:item`, `:arg`, etc.) are treated as noun phrases that the validator attempts to resolve to game entities.
+The current grammar system handles single-object commands well but lacks support for common IF patterns that players expect:
 
-### Example: INCANT Command
+| Pattern | Example | Current Support |
+|---------|---------|-----------------|
+| Text slots | `incant mhoram dfnobo` | Not supported |
+| Multi-object "all" | `take all` | Not supported |
+| Exclusion | `take all but sword` | Not supported |
+| Object lists | `take knife and lamp` | Not supported |
+| Command chaining | `take sword. drop knife.` | Not supported |
+| Instruments | `read cake through flask` | Partial (pattern exists, no special handling) |
 
-```typescript
-// Story defines pattern
-grammar.define('incant :arg1 :arg2')
-  .mapsTo('dungeo:incant')
-  .build();
-```
-
-When player types `incant mhoram dfnobo`:
-1. Parser matches pattern, sets `directObject="mhoram"`, `indirectObject="dfnobo"`
-2. Validator tries to resolve "mhoram" as an entity
-3. Validation fails: `ENTITY_NOT_FOUND`
-4. Command never reaches the action's validate/execute phases
-
-The action needs the raw text "mhoram" and "dfnobo" to perform challenge-response authentication, but the platform assumes all slots refer to entities.
-
-### Current Workarounds
-
-1. **Specific literal patterns** (used by SAY):
-   ```typescript
-   grammar.define('say odysseus').mapsTo(SAY_ACTION_ID);  // Works
-   grammar.define('say ulysses').mapsTo(SAY_ACTION_ID);   // Works
-   grammar.define('say :arg').mapsTo(SAY_ACTION_ID);      // Fails for non-entities
-   ```
-   This doesn't scale for commands with many valid inputs.
-
-2. **ParsedCommandTransformer** (attempted for GDT/INCANT):
-   Clear entity slots after parsing but before validation. This works for GDT (which has a mode flag) but doesn't work reliably for standalone commands.
-
-## Use Cases
-
-1. **Magic words**: `incant <challenge> <response>`, `say <magic-word>`, `xyzzy`
-2. **Conversation topics**: `ask guard about <topic>`, `tell wizard about <subject>`
-3. **Password entry**: `type <password>`, `enter code <digits>`
-4. **Custom verbs with text**: `write <message> on paper`, `name sword <name>`
+These are well-established patterns from Infocom games that authors and players expect.
 
 ## Decision
 
-Add a new slot type `:text` (or `:raw`) that:
-1. Captures input text without entity resolution
-2. Passes raw string to the action via `parsed.structure` or a new `textSlots` map
-3. Skips validation for that slot
+Expand the grammar system to support all classic IF input patterns through a combination of:
 
-### Proposed Grammar API
+1. **Text slots** - Capture raw text without entity resolution
+2. **Multi-object parsing** - Handle "all", "but", and "and" in noun phrases
+3. **Command chaining** - Split input on periods into multiple commands
+4. **Instrument clauses** - First-class support for "with/through/using" tools
 
-```typescript
-// Single text argument
-grammar.define('incant :challenge(text) :response(text)')
-  .mapsTo('dungeo:incant')
-  .build();
+---
 
-// Or with explicit type annotation
-grammar.define('say :word')
-  .where('word', { type: 'text' })  // Skip entity resolution
-  .mapsTo(SAY_ACTION_ID)
-  .build();
-```
+## Part 1: Text Slots
 
-### Proposed Access Pattern
+### Problem
+Story authors need grammar patterns that capture arbitrary text input without entity resolution.
 
 ```typescript
-// In action's validate/execute:
-const challenge = context.command.textSlots?.get('challenge');
-const response = context.command.textSlots?.get('response');
-
-// Or via rawInput parsing (current workaround)
-const rawInput = context.command.parsed?.rawInput;
-```
-
-## Alternatives Considered
-
-### 1. Universal Raw Input Access
-Always provide `rawInput` and let actions parse it themselves.
-
-**Pros**: Simple, no parser changes
-**Cons**: Duplicates parsing logic in every action, error-prone
-
-### 2. Slot Type in Pattern Syntax
-Use syntax like `:name(text)` or `$name` for text slots.
-
-**Pros**: Concise, clear intent
-**Cons**: Parser syntax changes, potential conflicts
-
-### 3. Constraint-Based Type
-Use `.where()` with a type constraint: `.where('word', { type: 'text' })`
-
-**Pros**: Consistent with existing constraint API
-**Cons**: Verbose for common case
-
-### 4. Separate Pattern Method
-New method for text-only patterns: `grammar.defineText('incant :a :b')`
-
-**Pros**: Clear separation
-**Cons**: API proliferation
-
-## Recommendation
-
-**Option 3: Constraint-Based Type** with shorthand support.
-
-```typescript
-// Verbose form (explicit)
 grammar.define('incant :challenge :response')
-  .where('challenge', { type: 'text' })
-  .where('response', { type: 'text' })
   .mapsTo('dungeo:incant')
-  .build();
-
-// Shorthand form (convention: slots starting with $ are text)
-grammar.define('incant $challenge $response')
-  .mapsTo('dungeo:incant')
-  .build();
 ```
 
-## Implementation Notes
+When player types `incant mhoram dfnobo`, the validator tries to resolve "mhoram" as an entity and fails.
 
-### Parser Changes (packages/parser-en-us)
+### Solution
 
-1. Add `SlotType` enum: `ENTITY | TEXT | DIRECTION`
-2. Modify slot consumption to check type
-3. Skip entity resolution for TEXT slots
-4. Store text values in dedicated map
+Add `.text()` method to mark slots as raw text capture:
 
-### Validator Changes (packages/stdlib)
+```typescript
+// Single-word text slots
+grammar.define('incant :challenge :response')
+  .text('challenge')
+  .text('response')
+  .mapsTo('dungeo:incant')
 
-1. Skip entity resolution for TEXT-typed slots
-2. Pass text values through to action context
+// Greedy text (captures rest of input) - ellipsis in pattern
+grammar.define('say :message...')
+  .mapsTo(SAY_ACTION_ID)
 
-### Action Context Changes (packages/engine)
+// Greedy bounded (stops at 'on')
+grammar.define('write :content... on :surface')
+  .text('content')  // implied by ... but explicit is fine
+  .mapsTo('if.action.writing')
 
-1. Add `textSlots: Map<string, string>` to ActionContext
-2. Or extend `parsed.structure` with text slot values
+// Mixed - text and entity slots
+grammar.define('name :item :newname...')
+  .where('item', scope => scope.carried())
+  .text('newname')
+  .mapsTo('story:naming')
+```
+
+### Rules
+
+| Pattern | Method | Behavior |
+|---------|--------|----------|
+| `:slot` | none | Entity resolution (default) |
+| `:slot` | `.text()` | Single-token text capture |
+| `:slot` | `.where()` | Entity with scope constraint |
+| `:slot...` | none | Greedy text (implied by `...`) |
+| `:slot...` | `.text()` | Greedy text (explicit, redundant) |
+| `:slot...` | `.where()` | **Build error** - nonsensical |
+
+### Quoted Strings
+
+Quoted strings are already tokenized as single tokens. They work naturally:
+
+```
+> say "hello everyone"
+→ message = "hello everyone" (single token)
+
+> say hello everyone
+→ With :message... pattern, captures "hello everyone"
+```
+
+### Access in Actions
+
+```typescript
+// Text slots stored in textSlots map
+const challenge = context.command.textSlots?.get('challenge');
+const message = context.command.textSlots?.get('message');
+```
+
+---
+
+## Part 2: Multi-Object Parsing
+
+### The "all" Keyword
+
+```typescript
+// Grammar patterns
+grammar.define('take all').mapsTo('if.action.taking')
+grammar.define('drop all').mapsTo('if.action.dropping')
+grammar.define('put all in :container').mapsTo('if.action.inserting')
+```
+
+When the action receives "all":
+- `directObject.text` = "all"
+- `directObject.isAll` = true
+- Action iterates over entities matching its scope constraints
+
+### Exclusion with "but/except"
+
+```typescript
+grammar.define('take all but :excluded').mapsTo('if.action.taking')
+grammar.define('take all except :excluded').mapsTo('if.action.taking')
+grammar.define('drop all but :excluded').mapsTo('if.action.dropping')
+```
+
+Parser structure:
+```typescript
+{
+  directObject: { text: "all", isAll: true },
+  excluded: [{ text: "sword", entity: swordEntity }]
+}
+```
+
+### Object Lists with "and"
+
+```typescript
+// No special grammar needed - parser recognizes "and" in noun phrases
+> take knife and lamp
+
+// Parsed as:
+{
+  directObject: {
+    text: "knife and lamp",
+    isList: true,
+    items: [
+      { text: "knife", entity: knifeEntity },
+      { text: "lamp", entity: lampEntity }
+    ]
+  }
+}
+```
+
+The action receives a list and processes each item:
+
+```typescript
+// In taking action
+if (directObject.isList) {
+  for (const item of directObject.items) {
+    // Validate and execute for each
+  }
+}
+```
+
+### Combined: "all but X and Y"
+
+```
+> take all but sword and shield
+
+{
+  directObject: { isAll: true },
+  excluded: [
+    { text: "sword", entity: swordEntity },
+    { text: "shield", entity: shieldEntity }
+  ]
+}
+```
+
+---
+
+## Part 3: Command Chaining
+
+### Period as Command Separator
+
+```
+> take sword. drop knife. go north.
+```
+
+**Pre-processing phase** (before grammar matching):
+
+1. Split input on `.` (except within quotes)
+2. Parse each segment as independent command
+3. Execute sequentially, accumulating results
+4. Stop on first failure (optional: configurable)
+
+```typescript
+// Input: "take sword. drop knife."
+// Splits into: ["take sword", "drop knife"]
+// Each parsed and executed independently
+```
+
+### Comma Disambiguation
+
+Commas are ambiguous:
+- `take knife, lamp` → list (same verb implied)
+- `take knife, drop lamp` → chain (different verbs)
+
+**Heuristic**: If segment after comma starts with a known verb, treat as chain. Otherwise, treat as list continuation.
+
+```
+> take knife, lamp, sword
+→ List: take [knife, lamp, sword]
+
+> take knife, drop it
+→ Chain: take knife; drop it
+```
+
+---
+
+## Part 4: Instrument Clauses
+
+### Current State
+
+Patterns like `attack :target with :weapon` exist but `:weapon` is just another entity slot. There's no semantic distinction.
+
+### Enhancement
+
+Mark instrument slots explicitly for semantic clarity:
+
+```typescript
+grammar.define('read :target through :instrument')
+  .where('target', scope => scope.visible())
+  .instrument('instrument')  // NEW: marks as instrument
+  .mapsTo('if.action.reading')
+
+grammar.define('attack :target with :weapon')
+  .where('target', scope => scope.visible())
+  .instrument('weapon')
+  .mapsTo('if.action.attacking')
+```
+
+Instrument is stored distinctly in parsed command:
+
+```typescript
+{
+  directObject: { text: "cake", entity: cakeEntity },
+  instrument: { text: "flask", entity: flaskEntity }
+}
+```
+
+Actions can check for instrument presence:
+
+```typescript
+const instrument = context.command.instrument;
+if (instrument) {
+  // Use tool to perform action
+}
+```
+
+---
+
+## Implementation Plan
+
+### Phase 1: Grammar Builder Changes (if-domain)
+
+1. Add `SlotType` enum: `ENTITY | TEXT | TEXT_GREEDY | INSTRUMENT`
+2. Update `PatternToken` to include slot type and greedy flag
+3. Add `.text(slotName)` method to `PatternBuilder`
+4. Add `.instrument(slotName)` method to `PatternBuilder`
+5. Detect `...` suffix in pattern compilation
+
+### Phase 2: Pattern Compiler Changes (parser-en-us)
+
+1. Parse `:slot...` syntax, set greedy flag
+2. Validate: greedy + `.where()` = build error
+3. Track slot types in compiled pattern
+
+### Phase 3: Grammar Engine Changes (parser-en-us)
+
+1. `consumeSlot` checks slot type:
+   - TEXT: consume one token, no entity resolution
+   - TEXT_GREEDY: consume until delimiter or end
+   - INSTRUMENT: resolve entity, mark as instrument
+2. Recognize "all" keyword in noun phrases
+3. Recognize "but/except" as exclusion modifier
+4. Recognize "and" as list connector
+
+### Phase 4: Pre-processing Layer (parser-en-us)
+
+1. Command chaining: split on `.` before parsing
+2. Comma handling: detect verb after comma → chain vs list
+3. Return array of parsed commands
+
+### Phase 5: Parsed Command Structure (world-model)
+
+Update `IParsedCommand`:
+
+```typescript
+interface INounPhrase {
+  // ... existing fields ...
+  isAll?: boolean;
+  isList?: boolean;
+  items?: INounPhrase[];  // For lists
+}
+
+interface IParsedCommand {
+  // ... existing fields ...
+  textSlots?: Map<string, string>;
+  excluded?: INounPhrase[];  // For "all but X"
+  instrument?: INounPhrase;
+}
+```
+
+### Phase 6: Action Updates (stdlib)
+
+1. Taking/Dropping: handle `isAll` and `excluded`
+2. Actions with instruments: check `instrument` field
+3. Multi-item iteration for lists
+
+### Phase 7: Core Grammar Updates (parser-en-us)
+
+Add patterns for:
+- `take all`, `drop all`, `put all in :container`
+- `take all but :excluded`, `drop all except :excluded`
+- Instrument variants for existing actions
+
+---
+
+## Examples
+
+### Text Slots
+
+```typescript
+// Magic words
+grammar.define('incant :a :b').text('a').text('b').mapsTo('dungeo:incant')
+// Input: incant mhoram dfnobo → textSlots: {a: "mhoram", b: "dfnobo"}
+
+// Greedy message
+grammar.define('say :message...').mapsTo('if.action.saying')
+// Input: say hello there → textSlots: {message: "hello there"}
+
+// Bounded greedy
+grammar.define('write :content... on :surface').text('content').mapsTo('if.action.writing')
+// Input: write hello world on paper → textSlots: {content: "hello world"}, directObject: paper
+```
+
+### Multi-Object
+
+```
+> take all
+→ Action iterates all portable visible items
+
+> take all but lamp
+→ Action iterates all except lamp
+
+> take sword and shield
+→ Action processes sword, then shield
+
+> drop all except knife and fork
+→ Drop everything except knife and fork
+```
+
+### Command Chaining
+
+```
+> take sword. go north. drop sword.
+→ Three commands executed in sequence
+
+> take sword, shield, lamp
+→ Single command, three items
+
+> take sword, drop it
+→ Two commands (verb detected after comma)
+```
+
+### Instruments
+
+```
+> read scroll through magnifying glass
+→ Reading action receives instrument: magnifying glass
+
+> attack troll with elvish sword
+→ Attacking action receives instrument: elvish sword
+
+> unlock door with brass key
+→ Unlocking action receives instrument: brass key
+```
+
+---
 
 ## Consequences
 
 **Positive:**
-- Story authors can capture arbitrary text input
-- Enables magic word systems, conversation topics, passwords
-- Clean separation between entity refs and raw text
+- Authors can implement classic IF mechanics naturally
+- Players get expected input patterns
+- Clean separation of text vs entity slots
+- Multi-object handling reduces tedious repetition
 
 **Negative:**
-- Parser complexity increase
-- New API surface to document and maintain
-- Migration needed for existing workarounds
+- Significant parser complexity increase
+- Actions need updates to handle lists/all
+- More edge cases in disambiguation
+- Testing burden increases
 
-## Related
+**Migration:**
+- Existing patterns continue to work unchanged
+- New features are opt-in via `.text()`, `.instrument()`, and new patterns
+
+---
+
+## Related ADRs
 
 - ADR-054: Semantic Grammar
 - ADR-036: Parser Contracts (if-domain)

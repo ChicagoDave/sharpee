@@ -95,6 +95,9 @@ packages/**/src/**/*.js.map
 # Local development configuration
 .local/.turbo/
 
+# Turbo build cache
+.turbo/
+
 # Unreleased story extensions (keep private)
 packages/extensions/blood-magic/
 
