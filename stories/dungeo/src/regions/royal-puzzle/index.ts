@@ -163,5 +163,11 @@ export {
   DIRECTION_OFFSETS,
   ENTRY_POSITION,
   LADDER_EXIT_POSITION,
-  RoyalPuzzleState
+  RoyalPuzzleState,
+  // Cell type constants
+  MARBLE,
+  EMPTY,
+  SANDSTONE,
+  LADDER,
+  CARD_BLOCK
 } from './puzzle-state';

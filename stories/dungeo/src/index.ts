@@ -331,7 +331,7 @@ export class DungeoStory implements Story {
     ];
 
     // Commands that take two arguments
-    const twoArgCodes = ['ao'];
+    const twoArgCodes = ['ao', 'pz'];
 
     // Register no-arg commands
     for (const code of noArgCodes) {

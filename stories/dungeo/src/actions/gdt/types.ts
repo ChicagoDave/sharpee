@@ -52,7 +52,9 @@ export type GDTCommandCode =
   | 'TK' // Take
   | 'PD' // Program Detail
   | 'HE' // Help
-  | 'EX'; // Exit
+  | 'EX' // Exit
+  // Puzzle debug
+  | 'PZ'; // Puzzle
 
 /**
  * Parsed GDT command

@@ -1,0 +1,66 @@
+title: Royal Puzzle Exit Test
+story: dungeo
+description: Tests exit mechanics when ladder is positioned correctly
+
+---
+
+# Use GDT to get light and teleport to Puzzle Room
+> gdt
+[OK: contains "GDT"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> ex
+[OK: contains "Returning"]
+
+> turn on lantern
+[OK: contains "on"]
+
+> gdt
+[OK: contains "GDT"]
+
+> ah Puzzle Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+# Verify we're in Puzzle Room
+> look
+[OK: contains "Puzzle Room"]
+[OK: contains "hole"]
+
+# Go down into the puzzle
+> down
+[OK: contains "sandstone"]
+
+# Try to go up - no ladder in position yet
+> up
+[OK: contains "no way"]
+
+# Use GDT to set up for exit test
+> gdt
+[OK: contains "GDT"]
+
+# Set up exit state: ladder at position 10, player at entry position 9
+> pz exit
+[OK: contains "ladder"]
+[OK: contains "exit"]
+
+> ex
+[OK: contains "Returning"]
+
+# Now look - should see ladder reaching the ceiling
+> look
+[OK: contains "ladder"]
+[OK: contains "ceiling"]
+
+# Now we should be able to exit!
+> up
+[OK: contains "climb"]
+[OK: contains "ladder"]
+
+# Verify we're back in Puzzle Room
+> look
+[OK: contains "Puzzle Room"]

@@ -18,7 +18,9 @@ const VALID_CODES = new Set<string>([
   // Toggle commands
   'NC', 'ND', 'NR', 'NT', 'RC', 'RD', 'RR', 'RT',
   // Utility commands
-  'TK', 'PD', 'HE', 'EX'
+  'TK', 'PD', 'HE', 'EX',
+  // Puzzle debug
+  'PZ'
 ]);
 
 /**
