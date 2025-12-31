@@ -9,6 +9,7 @@ Sharpee is a parser-based Interactive Fiction authoring tool built in Typescript
 - Never delete files without confirmation. Not even "to get a build working" or "to get the other tests working".
 - Never use batch scripts (sed/awk/grep) to modify multiple files. One file at a time.
 - We never care about backward compatibility, but discuss code smells or design flaws before changing.
+- **Platform changes require discussion first.** Any changes to packages/ (engine, stdlib, world-model, parser-en-us, etc.) must be discussed with the user before implementation. Story-level changes (stories/) can proceed autonomously.
 
 ## Architecture Principles
 

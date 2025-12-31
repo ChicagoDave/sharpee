@@ -1,0 +1,59 @@
+title: Tomb and Crypt Navigation
+story: dungeo
+description: Test navigation to Tomb and Crypt (endgame entry rooms)
+
+---
+
+# Get to Land of the Dead using GDT
+> gdt
+[OK: contains "GDT"]
+
+> tk brass lantern
+[OK: contains "taken"]
+
+> turn on lantern
+[OK: contains "on"]
+
+# Teleport to Land of the Dead
+> gdt
+[OK: contains "GDT"]
+
+> ah Land of the Dead
+[OK: contains "moved"]
+[EVENT: true, type="gdt.command.executed"]
+
+> look
+[OK: contains "Land of the Dead"]
+[OK: contains "ghostly"]
+
+# Go south to Tomb
+> south
+[OK: contains "Tomb"]
+[OK: contains "Unknown Implementer"]
+
+# Examine the crypt door
+> examine door
+[OK: contains "heavy"]
+[OK: contains "marble"]
+
+# Open the crypt door
+> open door
+[OK: contains "open"]
+
+# Go north into Crypt
+> north
+[OK: contains "Crypt"]
+[OK: contains "empty"]
+[OK: contains "Feel Free"]
+
+# Go back south to Tomb
+> south
+[OK: contains "Tomb"]
+
+# Close the door from Tomb side
+> close door
+[OK: contains "close"]
+
+# Verify we can still open it
+> open door
+[OK: contains "open"]

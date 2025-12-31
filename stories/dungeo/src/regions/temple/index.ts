@@ -18,6 +18,8 @@ import { createEntryToHades } from './rooms/entry-to-hades';
 import { createLandOfDead } from './rooms/land-of-dead';
 import { createTinyRoom } from './rooms/tiny-room';
 import { createDrearyRoom } from './rooms/dreary-room';
+import { createTomb } from './rooms/tomb';
+import { createCrypt } from './rooms/crypt';
 
 export interface TempleRoomIds {
   temple: string;
@@ -30,6 +32,8 @@ export interface TempleRoomIds {
   landOfDead: string;
   tinyRoom: string;
   drearyRoom: string;
+  tomb: string;
+  crypt: string;
 }
 
 /**
@@ -46,6 +50,8 @@ export function createTempleRooms(world: WorldModel): TempleRoomIds {
   const landOfDead = createLandOfDead(world);
   const tinyRoom = createTinyRoom(world);
   const drearyRoom = createDrearyRoom(world);
+  const tomb = createTomb(world);
+  const crypt = createCrypt(world);
 
   const roomIds: TempleRoomIds = {
     temple: temple.id,
@@ -57,7 +63,9 @@ export function createTempleRooms(world: WorldModel): TempleRoomIds {
     entryToHades: entryToHades.id,
     landOfDead: landOfDead.id,
     tinyRoom: tinyRoom.id,
-    drearyRoom: drearyRoom.id
+    drearyRoom: drearyRoom.id,
+    tomb: tomb.id,
+    crypt: crypt.id
   };
 
   // Connect the temple rooms
@@ -189,12 +197,39 @@ function connectTempleRooms(world: WorldModel, roomIds: TempleRoomIds): void {
   }
 
   // Land of the Dead - final area of Hades
+  // South leads to Tomb of the Unknown Implementer
   const landOfDead = world.getEntity(roomIds.landOfDead);
   if (landOfDead) {
     const roomTrait = landOfDead.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
-        [Direction.NORTH]: { destination: roomIds.entryToHades }
+        [Direction.NORTH]: { destination: roomIds.entryToHades },
+        [Direction.SOUTH]: { destination: roomIds.tomb }
+      };
+    }
+  }
+
+  // Tomb of the Unknown Implementer - contains crypt door
+  // North leads to Crypt (through door), South back to Land of Dead
+  const tomb = world.getEntity(roomIds.tomb);
+  if (tomb) {
+    const roomTrait = tomb.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.NORTH]: { destination: roomIds.crypt },
+        [Direction.SOUTH]: { destination: roomIds.landOfDead }
+      };
+    }
+  }
+
+  // Crypt of the Implementers - endgame trigger location
+  // South leads back to Tomb (through door)
+  const crypt = world.getEntity(roomIds.crypt);
+  if (crypt) {
+    const roomTrait = crypt.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits = {
+        [Direction.SOUTH]: { destination: roomIds.tomb }
       };
     }
   }

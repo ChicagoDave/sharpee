@@ -44,6 +44,9 @@ export function createTempleObjects(world: WorldModel, roomIds: TempleRoomIds): 
 
   // Dreary Room objects
   createBlueCrystalSphere(world, roomIds.drearyRoom);
+
+  // Tomb objects - crypt door
+  createCryptDoor(world, roomIds.tomb, roomIds.crypt);
 }
 
 /**
@@ -330,4 +333,40 @@ function createBlueCrystalSphere(world: WorldModel, roomId: string): IFEntity {
 
   world.moveEntity(sphere.id, roomId);
   return sphere;
+}
+
+/**
+ * Crypt Door - Heavy marble door in Tomb leading to Crypt
+ *
+ * This door can be opened/closed. When closed, it blocks movement
+ * between Tomb and Crypt. The endgame trigger requires the player
+ * to be in the Crypt with the door closed and lamp off for 15 turns.
+ */
+function createCryptDoor(world: WorldModel, tombId: string, cryptId: string): IFEntity {
+  const door = world.createEntity('crypt door', EntityType.DOOR);
+
+  door.add(new IdentityTrait({
+    name: 'crypt door',
+    aliases: ['door', 'crypt', 'marble door', 'heavy door', 'crypt entrance'],
+    description: 'The door of the crypt is extremely heavy marble, but it opens and closes easily.',
+    properName: false,
+    article: 'the'
+  }));
+
+  door.add(new OpenableTrait({
+    isOpen: false  // Initially closed
+  }));
+
+  door.add(new SceneryTrait());
+
+  // Store which rooms this door connects
+  (door as any).connectsRooms = [tombId, cryptId];
+  (door as any).blocksDirection = {
+    [tombId]: 'NORTH',
+    [cryptId]: 'SOUTH'
+  };
+
+  // Place in Tomb (visible from both rooms conceptually)
+  world.moveEntity(door.id, tombId);
+  return door;
 }

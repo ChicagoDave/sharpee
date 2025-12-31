@@ -224,9 +224,9 @@
 
 | Room | Status | Notes |
 |------|--------|-------|
-| Tomb of Unknown Implementer | ❌ | Crypt |
-| Crypt | ❌ | Wait in darkness |
-| Top of Stairs | ❌ | Endgame start |
+| Tomb of Unknown Implementer | 🔄 WIP | Room+door created, exit connection bug |
+| Crypt | 🔄 WIP | Room created, exit connection bug |
+| Top of Stairs | ✅ Done | Endgame start (Phase 1) |
 | Stone Room | ❌ | Button |
 | Small Room | ❌ | Laser beam |
 | Hallway | ❌ | Mirror entrance |
@@ -546,6 +546,8 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Recently Completed
 
+- 🔄 **Endgame Phase 1: Tomb & Crypt Rooms** (2025-12-31) - Created Tomb of Unknown Implementer and Crypt rooms in Temple region. Added crypt door object. **BUG**: Exit from Land of Dead to Tomb not connecting (needs debugging). Also created ADR-080 (Raw Text Grammar Slots) for INCANT command - parser currently can't handle non-entity text arguments like magic words.
+- ✅ **ADR-079 Endgame Region Structure** (2025-12-31) - Created 11 endgame rooms (Top of Stairs through Treasury). Added INCANT action with ENCRYP algorithm (verified: encryp('MHORAM')='DFNOBO'). INCANT blocked by ADR-080.
 - ✅ **ADR-078 Hidden Max Points** (2025-12-31) - Max score shows 616 until thief dies, then 650. "Reality altered" message appears on first SCORE after thief death. New "Master of Secrets" rank at 500 pts for players who complete ghost ritual and obtain canvas.
 - ✅ **Royal Puzzle Complete** (2025-12-31) - Fixed LOOK, TAKE CARD, and blocked card mechanics. Gold card treasure now fully obtainable (25 pts). Dynamic room descriptions work correctly. All 403 transcript tests pass.
 - ✅ **ADR-078 Thief's Canvas Puzzle** (2025-12-31) - Added Basin Room (E of Temple Dead End 2), ghost ritual puzzle with incense, empty frame, frame piece, canvas. New actions: BREAK, BURN, PRAY. 3-turn incense fuse. Ghost appears when frame piece dropped in blessed basin, canvas spawns in Gallery. 34 points (10 take + 24 case). Progress: 145/~191 rooms, 534/650 points.
