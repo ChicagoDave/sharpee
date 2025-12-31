@@ -1,0 +1,50 @@
+title: Mailbox and Leaflet
+story: dungeo
+description: Test opening mailbox and reading the leaflet
+
+---
+
+# Examine the mailbox
+> examine mailbox
+[OK: contains "small mailbox"]
+[EVENT: true, type="if.event.examined"]
+
+# Open the mailbox
+> open mailbox
+[OK: contains "open"]
+[EVENT: true, type="if.event.opened"]
+[EVENT: true, type="action.success"]
+[EVENT: false, type="action.blocked"]
+
+# Search inside the mailbox
+> search mailbox
+[OK: contains "leaflet"]
+[EVENT: true, type="if.event.searched"]
+
+# Take the leaflet
+> take leaflet
+[OK: contains "take"]
+[OK: contains "leaflet"]
+[EVENT: true, type="if.event.taken"]
+
+# Read it
+> read leaflet
+[OK: contains "DUNGEO"]
+[EVENT: true, type="action.success"]
+
+# Check inventory
+> inventory
+[OK: contains "carrying"]
+[OK: contains "leaflet"]
+
+# Put it back
+> put leaflet in mailbox
+[OK: contains "put"]
+[EVENT: true, type="if.event.put_in"]
+[EVENT: true, type="action.success"]
+
+# Close the mailbox
+> close mailbox
+[OK: contains "close"]
+[EVENT: true, type="if.event.closed"]
+[EVENT: true, type="action.success"]

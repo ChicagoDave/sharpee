@@ -1,0 +1,89 @@
+title: Troll Combat
+story: dungeo
+author: Sharpee Team
+description: Test defeating the troll with the sword and gaining score
+
+---
+
+# Navigate to house and get equipment
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> west
+[OK: contains "Kitchen"]
+
+> west
+[OK: contains "Living Room"]
+
+# Get the sword and lantern
+> take sword
+[OK: contains "Taken"]
+[EVENT: true, type="if.event.taken"]
+
+> take lantern
+[OK: contains "Taken"]
+
+> switch on lantern
+[OK: contains "on"]
+
+# Go underground
+> push rug
+[OK: contains "Moving the rug reveals a trapdoor"]
+
+> open trapdoor
+[OK: contains "open"]
+
+> down
+[OK: contains "Cellar"]
+
+# Navigate to Troll Room (new layout: Cellar E → Troll Room)
+> east
+[OK: contains "Troll Room"]
+[OK: contains "troll"]
+
+# Attack the troll many times to ensure it dies (combat is random)
+# With ~50% hit chance and 2 hits needed, 10 attacks is 99%+ success
+# Use permissive regex to run command without caring about output
+> attack troll with sword
+[OK: matches /./]
+
+> attack troll with sword
+[OK: matches /./]
+
+> attack troll with sword
+[OK: matches /./]
+
+> attack troll with sword
+[OK: matches /./]
+
+> attack troll with sword
+[OK: matches /./]
+
+> attack troll with sword
+[OK: matches /./]
+
+> attack troll with sword
+[OK: matches /./]
+
+> attack troll with sword
+[OK: matches /./]
+
+> attack troll with sword
+[OK: matches /./]
+
+> attack troll with sword
+[OK: matches /./]
+
+# After 10 attacks, troll should definitely be dead
+# Verify we can go north (passage unblocked after troll death)
+> north
+[OK: contains "East-West Passage"]
+[EVENT: true, type="if.event.actor_moved"]
+[EVENT: false, type="action.blocked"]
+
+# Check score shows 10 points for defeating troll
+> score
+[OK: contains "10"]

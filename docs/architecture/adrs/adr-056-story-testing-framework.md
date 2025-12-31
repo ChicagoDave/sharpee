@@ -1,8 +1,11 @@
 # ADR-056: Story Testing Framework
 
-**Status:** Proposed  
-**Date:** 2025-08-19  
+**Status:** Replaced by ADR-073
+**Date:** 2025-08-19
+**Replaced:** 2025-12-27
 **Decision:** Implement a story-based testing framework for complex integration tests
+
+> **Note:** This ADR was replaced by [ADR-073: Transcript-Based Story Testing](adr-073-transcript-story-testing.md) which provides a simpler, more straightforward approach.
 
 ## Context
 

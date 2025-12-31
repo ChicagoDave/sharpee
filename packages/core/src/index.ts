@@ -27,3 +27,6 @@ export * from './debug';
 
 // Query system
 export * from './query';
+
+// Random utilities
+export * from './random';

@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "lib": ["ES2022"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "sourceMap": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@sharpee/core": ["./node_modules/@sharpee/core"],
+      "@sharpee/world-model": ["./node_modules/@sharpee/world-model"],
+      "@sharpee/stdlib": ["./node_modules/@sharpee/stdlib"],
+      "@sharpee/lang-en-us": ["./node_modules/@sharpee/lang-en-us"],
+      "@sharpee/parser-en-us": ["./node_modules/@sharpee/parser-en-us"],
+      "@sharpee/text-services": ["./node_modules/@sharpee/text-services"],
+      "@sharpee/engine": ["./node_modules/@sharpee/engine"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -47,6 +47,9 @@ import { DestructibleTrait } from './destructible/destructibleTrait';
 import { CombatantTrait } from './combatant/combatantTrait';
 import { EquippedTrait } from './equipped/equippedTrait';
 
+// NPC traits (ADR-070)
+import { NpcTrait } from './npc/npcTrait';
+
 /**
  * Map of trait types to their constructors
  */
@@ -91,6 +94,9 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
   [TraitType.DESTRUCTIBLE]: DestructibleTrait,
   [TraitType.COMBATANT]: CombatantTrait,
   [TraitType.EQUIPPED]: EquippedTrait,
+
+  // NPC traits (ADR-070)
+  [TraitType.NPC]: NpcTrait,
 
   // Object property traits
 
@@ -159,7 +165,10 @@ export {
   BreakableTrait,
   DestructibleTrait,
   CombatantTrait,
-  EquippedTrait
+  EquippedTrait,
+
+  // NPC traits (ADR-070)
+  NpcTrait
 
   // Object property traits
 };

@@ -1,0 +1,80 @@
+title: Troll Blocking
+story: dungeo
+author: Sharpee Team
+description: Test that the troll blocks passage north in the Troll Room (to E/W Passage)
+
+---
+
+# Navigate to house and get lantern
+> north
+[OK: contains "North of House"]
+[EVENT: true, type="if.event.actor_moved"]
+
+> east
+[OK: contains "Behind House"]
+[EVENT: true, type="if.event.actor_moved"]
+
+> west
+[OK: contains "Kitchen"]
+[EVENT: true, type="if.event.actor_moved"]
+
+> west
+[OK: contains "Living Room"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# Get the lantern and turn it on (needed for dark areas)
+> take lantern
+[OK: contains "Taken"]
+[EVENT: true, type="if.event.taken"]
+
+> switch on lantern
+[OK: contains "on"]
+[EVENT: true, type="if.event.switched_on"]
+
+# Verify we're in Living Room
+> look
+[OK: contains "Living Room"]
+[EVENT: true, type="if.event.room.description"]
+
+# Push the rug to reveal trapdoor
+> push rug
+[OK: contains "Moving the rug reveals a trapdoor"]
+[EVENT: true, type="if.event.pushed"]
+[EVENT: true, type="game.message" messageId="dungeo.rug.moved.reveal_trapdoor"]
+[STATE: true, trapdoor.location = r06]
+
+# Open trapdoor to go down
+> open trapdoor
+[OK: contains "open"]
+[EVENT: true, type="if.event.opened"]
+
+# Go down to the Cellar
+> down
+[OK: contains "Cellar"]
+[EVENT: true, type="if.event.actor_moved"]
+[EVENT: true, type="if.event.actor_entered"]
+
+# Go east to Troll Room (new layout: Cellar E → Troll Room)
+> east
+[OK: contains "Troll Room"]
+[OK: contains "troll"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# Try to go north - should be blocked by troll (leads to E/W Passage)
+> north
+[FAIL: contains "East-West Passage"]
+[OK: contains "troll"]
+[OK: contains "block"]
+[EVENT: true, type="action.blocked"]
+[EVENT: false, type="if.event.actor_moved"]
+
+# Verify we're still in Troll Room
+> look
+[OK: contains "Troll Room"]
+[EVENT: true, type="if.event.room.description"]
+
+# Going west back to Cellar should work
+> west
+[OK: contains "Cellar"]
+[EVENT: true, type="if.event.actor_moved"]
+[EVENT: false, type="action.blocked"]

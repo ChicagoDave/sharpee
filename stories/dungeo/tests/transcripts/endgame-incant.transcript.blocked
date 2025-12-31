@@ -1,0 +1,44 @@
+title: INCANT Endgame Cheat
+story: dungeo
+description: Test the INCANT command that teleports to endgame
+
+---
+
+# BLOCKED: ADR-080 - Parser needs raw text grammar slots
+# INCANT takes arbitrary text arguments, not entity references.
+# Until ADR-080 is implemented, this test is skipped.
+
+# Test wrong response (should fail silently)
+> incant mhoram wrongxx
+[SKIP: blocked by ADR-080 - raw text grammar slots not yet implemented]
+
+# Test correct response (MHORAM -> DFNOBO)
+> incant mhoram dfnobo
+[OK: contains "Greetings, Implementor"]
+[OK: contains "disoriented"]
+[EVENT: true, type="action.success"]
+
+# Should now be in Top of Stairs (endgame)
+> look
+[OK: contains "Top of Stairs"]
+[OK: contains "staircase"]
+[EVENT: true, type="if.event.looked"]
+
+# Can navigate to Stone Room
+> west
+[OK: contains "Stone Room"]
+[OK: contains "button"]
+[EVENT: true, type="action.success"]
+
+# Navigate to Small Room (laser beam)
+> south
+[OK: contains "Small Room"]
+[OK: contains "beam of light"]
+[EVENT: true, type="action.success"]
+
+# Navigate to Hallway
+> south
+[OK: contains "Hallway"]
+[OK: contains "compass rose"]
+[OK: contains "Guardians"]
+[EVENT: true, type="action.success"]

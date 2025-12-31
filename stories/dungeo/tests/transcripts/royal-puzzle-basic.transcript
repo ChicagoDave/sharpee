@@ -1,0 +1,76 @@
+title: Royal Puzzle Basic Test
+story: dungeo
+description: Tests entry, push mechanics, card taking, and blocked card message
+
+---
+
+# Use GDT to get light and teleport to Puzzle Room
+> gdt
+[OK: contains "GDT"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> ex
+[OK: contains "Returning"]
+
+> turn on lantern
+[OK: contains "on"]
+
+> gdt
+[OK: contains "GDT"]
+
+> ah Puzzle Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+# Verify we're in Puzzle Room with light
+> look
+[OK: contains "Puzzle Room"]
+[OK: contains "hole"]
+
+# Go down into the puzzle
+> down
+[OK: contains "sandstone"]
+
+# Try to go up - no ladder in position
+> up
+[OK: contains "no way"]
+
+# Push east wall - sandstone at position 10 slides to 11, player moves to 10
+> push east wall
+[OK: contains "slide"]
+
+# Now we're at position 10, can move south to 18 (which is empty)
+> south
+[OK: contains "maze"]
+
+# Try to take card from here - should be blocked (not adjacent)
+> take card
+[OK: contains "can't reach"]
+
+# Look around - should show dynamic description
+> look
+[OK: contains "maze"]
+[OK: contains "Passages"]
+
+# Move toward the card (at position 33)
+> south
+[OK: contains "maze"]
+
+> south
+[OK: contains "card"]
+
+# Now we should see the gold card description
+> look
+[OK: contains "gold card"]
+
+# Take the card
+> take card
+[OK: contains "card"]
+
+# Verify we have it
+> inventory
+[OK: contains "gold card"]

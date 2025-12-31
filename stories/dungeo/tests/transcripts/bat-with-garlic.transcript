@@ -1,0 +1,49 @@
+title: Squeaky Room With Garlic
+story: dungeo
+description: Test entering the Squeaky Room with garlic - bat should cower
+
+---
+
+# Get lantern from Living Room for dark areas
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> west
+[OK: contains "Kitchen"]
+
+# Get the brown sack which contains garlic
+> take sack
+[OK: contains "Taken"]
+
+> west
+[OK: contains "Living Room"]
+
+> take lantern
+[OK: contains "Taken"]
+
+> switch on lantern
+[OK: contains "on"]
+
+# Use GDT to teleport to Mine Entrance (adjacent to Squeaky Room)
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> ah Mine Entrance
+[OK: contains "Teleported"]
+[OK: contains "Mine Entrance"]
+
+> ex
+[OK: contains "Returning to game"]
+
+# Verify we're in Mine Entrance
+> look
+[OK: contains "Mine Entrance"]
+
+# Now walk northwest into Squeaky Room - bat should cower from garlic in sack
+> northwest
+[OK: contains "Squeaky"]
+# TODO: Bat behavior not yet implemented - when implemented, add this:
+# [EVENT: true, type="npc.emoted" messageId="dungeo.bat.cowers"]

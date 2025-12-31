@@ -3,7 +3,7 @@
  */
 
 import { ISemanticEvent } from '@sharpee/core';
-import { EntityEventHandler, IFEntity } from '@sharpee/world-model';
+import { IFEntity, WorldModel } from '@sharpee/world-model';
 
 // GameEvent type - matches what's in world-model/src/events/types.ts
 interface GameEvent extends ISemanticEvent {
@@ -11,16 +11,19 @@ interface GameEvent extends ISemanticEvent {
   data: Record<string, any>;
 }
 
+// Legacy event handler type (returns ISemanticEvent[] instead of Effect[])
+type EntityEventHandler = (event: GameEvent, world: WorldModel) => void | ISemanticEvent[];
+
 /**
  * Create a handler that toggles a switchable entity
  */
 export function createToggleHandler(entity: IFEntity): EntityEventHandler {
-  return (event: GameEvent) => {
+  return (event: GameEvent, _world: WorldModel) => {
     // Toggle the switch state
     const switchable = entity.get('SWITCHABLE');
     if (switchable && 'isOn' in switchable) {
       switchable.isOn = !switchable.isOn;
-      
+
       // Return event indicating the state change
       return [{
         id: `${Date.now()}-toggled`,
@@ -41,7 +44,7 @@ export function createToggleHandler(entity: IFEntity): EntityEventHandler {
  * Create a handler that opens something when triggered
  */
 export function createOpenHandler(entity: IFEntity, target: string): EntityEventHandler {
-  return (event: GameEvent) => {
+  return (event: GameEvent, _world: WorldModel) => {
     // Return event to open the target
     return [{
       id: `${Date.now()}-open-triggered`,
@@ -60,7 +63,7 @@ export function createOpenHandler(entity: IFEntity, target: string): EntityEvent
  * Create a handler that reveals a hidden passage
  */
 export function createRevealHandler(entity: IFEntity, passage: string): EntityEventHandler {
-  return (event: GameEvent) => {
+  return (event: GameEvent, _world: WorldModel) => {
     // Return event to reveal the passage
     return [{
       id: `${Date.now()}-passage-revealed`,
@@ -79,7 +82,7 @@ export function createRevealHandler(entity: IFEntity, passage: string): EntityEv
  * Create a handler that displays a message
  */
 export function createMessageHandler(message: string, params?: Record<string, any>): EntityEventHandler {
-  return (event: GameEvent) => {
+  return (event: GameEvent, _world: WorldModel) => {
     return [{
       id: `${Date.now()}-custom-message`,
       type: 'action.message',
@@ -98,10 +101,10 @@ export function createMessageHandler(message: string, params?: Record<string, an
  * Compose multiple handlers into one
  */
 export function composeHandlers(...handlers: EntityEventHandler[]): EntityEventHandler {
-  return (event: GameEvent) => {
+  return (event: GameEvent, world: WorldModel) => {
     const results: ISemanticEvent[] = [];
     for (const handler of handlers) {
-      const result = handler(event);
+      const result = handler(event, world);
       if (result && Array.isArray(result)) {
         results.push(...result);
       }
@@ -115,10 +118,10 @@ export function composeHandlers(...handlers: EntityEventHandler[]): EntityEventH
  */
 export function createOnceHandler(handler: EntityEventHandler): EntityEventHandler {
   let fired = false;
-  return (event: GameEvent) => {
+  return (event: GameEvent, world: WorldModel) => {
     if (!fired) {
       fired = true;
-      return handler(event);
+      return handler(event, world);
     }
   };
 }
@@ -128,10 +131,10 @@ export function createOnceHandler(handler: EntityEventHandler): EntityEventHandl
  */
 export function createAfterHandler(count: number, handler: EntityEventHandler): EntityEventHandler {
   let callCount = 0;
-  return (event: GameEvent) => {
+  return (event: GameEvent, world: WorldModel) => {
     callCount++;
     if (callCount >= count) {
-      return handler(event);
+      return handler(event, world);
     }
   };
 }
@@ -143,9 +146,9 @@ export function createConditionalHandler(
   condition: (event: GameEvent) => boolean,
   handler: EntityEventHandler
 ): EntityEventHandler {
-  return (event: GameEvent) => {
+  return (event: GameEvent, world: WorldModel) => {
     if (condition(event)) {
-      return handler(event);
+      return handler(event, world);
     }
   };
 }

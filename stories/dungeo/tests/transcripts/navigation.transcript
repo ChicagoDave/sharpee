@@ -1,0 +1,51 @@
+title: White House Navigation
+story: dungeo
+author: Sharpee Team
+description: Test basic navigation around the white house area
+
+---
+
+# Start at West of House
+> look
+[OK: contains "West of House"]
+[OK: contains "white house"]
+[OK: contains "mailbox"]
+[EVENT: true, type="if.event.room.description"]
+
+# Navigate around the house
+> north
+[OK: contains "North of House"]
+[EVENT: true, type="if.event.actor_moved"]
+[EVENT: true, type="if.event.actor_entered"]
+[EVENT: true, type="action.success"]
+
+> east
+[OK: contains "Behind House"]
+[OK: contains "window"]
+[EVENT: true, type="if.event.actor_moved"]
+
+> south
+[OK: contains "South of House"]
+[EVENT: true, type="if.event.actor_moved"]
+
+> west
+[OK: contains "West of House"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# Full circuit the other way
+> south
+[OK: contains "South of House"]
+[EVENT: true, type="if.event.actor_moved"]
+
+> east
+[OK: contains "Behind House"]
+[EVENT: true, type="if.event.actor_moved"]
+
+> north
+[OK: contains "North of House"]
+[EVENT: true, type="if.event.actor_moved"]
+
+> west
+[OK: contains "West of House"]
+[EVENT: true, type="if.event.actor_moved"]
+[EVENT: false, type="action.blocked"]

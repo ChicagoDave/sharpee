@@ -41,6 +41,7 @@ export * from './traits/clothing';
 export * from './traits/moveable-scenery';
 export * from './traits/pullable';
 export * from './traits/pushable';
+export * from './traits/npc';
 
 // Extension system
 export * from './extensions';
@@ -54,5 +55,5 @@ export * from './services';
 // Scope system
 export * from './scope';
 
-// Event system types
+// Event system types (basic types only - ADR-075 effects moved to event-processor)
 export * from './events/types';

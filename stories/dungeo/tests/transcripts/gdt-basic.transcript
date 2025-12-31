@@ -1,0 +1,30 @@
+title: GDT Basic Functionality
+story: dungeo
+description: Test GDT (Game Debugging Tool) Phase 1 commands
+
+---
+
+# Enter GDT mode
+> gdt
+[OK: contains "BOOMING VOICE"]
+[OK: contains "GAME DEBUGGING TOOL"]
+[EVENT: true, type="action.success"]
+
+# Get help in GDT mode
+> he
+[OK: contains "GDT COMMANDS"]
+[OK: contains "DISPLAY"]
+[OK: contains "ALTER"]
+[OK: contains "TOGGLE"]
+[OK: contains "UTILITY"]
+[EVENT: true, type="action.success"]
+
+# Exit GDT mode
+> ex
+[OK: contains "Returning to game"]
+[EVENT: true, type="action.success"]
+
+# Normal command should work after exit
+> look
+[OK: contains "West of House"]
+[EVENT: true, type="if.event.looked"]

@@ -31,7 +31,10 @@ import {
 } from '@sharpee/stdlib';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { TextService, TextServiceContext, TextOutput } from '@sharpee/if-services';
-import { ISemanticEvent, createSemanticEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent } from '@sharpee/core';
+import { ISemanticEvent, createSemanticEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, ISerializedSchedulerState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent } from '@sharpee/core';
+
+import { ISchedulerService, createSchedulerService } from './scheduler';
+import { INpcService, createNpcService, guardBehavior, passiveBehavior } from '@sharpee/stdlib';
 
 import {
   GameContext,
@@ -43,7 +46,7 @@ import {
 } from './types';
 import { Story } from './story';
 
-import { CommandExecutor, createCommandExecutor } from './command-executor';
+import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer } from './command-executor';
 import { EventSequenceUtils, eventSequencer } from './event-sequencer';
 import { toSequencedEvent, toSemanticEvent, processEvent } from './event-adapter';
 
@@ -90,6 +93,8 @@ export class GameEngine {
   private systemEventSource?: any; // GenericEventSource<SystemEvent>
   private pendingPlatformOps: IPlatformEvent[] = [];
   private perceptionService?: IPerceptionService;
+  private scheduler: ISchedulerService;
+  private npcService: INpcService;
 
   constructor(options: {
     world: WorldModel;
@@ -129,7 +134,13 @@ export class GameEngine {
     // Create subsystems
     this.eventProcessor = new EventProcessor(this.world);
     this.platformEvents = createSemanticEventSource();
-    
+    this.scheduler = createSchedulerService();
+    this.npcService = createNpcService();
+
+    // Register standard NPC behaviors (ADR-070)
+    this.npcService.registerBehavior(guardBehavior);
+    this.npcService.registerBehavior(passiveBehavior);
+
     // Set provided dependencies
     this.languageProvider = options.language;
     this.parser = options.parser;
@@ -214,16 +225,22 @@ export class GameEngine {
     // Register custom vocabulary if parser is available
     if (story.getCustomVocabulary && this.parser && this.parser.registerVerbs) {
       const customVocab = story.getCustomVocabulary();
-      
+
       // Register custom verbs
       if (customVocab.verbs && customVocab.verbs.length > 0) {
         this.parser.registerVerbs(customVocab.verbs);
       }
-      
+
       // Future: Register other vocabulary types
       // if (customVocab.nouns && this.parser.registerNouns) {
       //   this.parser.registerNouns(customVocab.nouns);
       // }
+    }
+
+    // Notify story that engine is fully initialized
+    // Allows stories to register command transformers and other hooks
+    if (story.onEngineReady) {
+      story.onEngineReady(this);
     }
   }
 
@@ -495,8 +512,9 @@ export class GameEngine {
       for (const event of result.events) {
         this.emit('event', event);
 
-        // Dispatch to entity handlers (entity.on)
-        this.dispatchEntityHandlers(event);
+        // NOTE: Entity handlers (entity.on) are already dispatched by the
+        // event-processor in the command executor, so we don't call
+        // dispatchEntityHandlers here to avoid duplicate handler invocations.
 
         // Check for story victory event but don't stop immediately
         // (we're still processing the turn)
@@ -506,6 +524,128 @@ export class GameEngine {
             reason: event.data?.reason || 'Story completed',
             score: event.data?.score || 0
           };
+        }
+      }
+
+      // Run NPC and scheduler ticks for non-meta commands
+      // Order: NPC phase (ADR-070), then scheduler tick (ADR-071)
+      if (!isMeta && result.success) {
+        const playerLocation = this.world.getLocation(this.context.player.id);
+
+        // NPC turn phase (ADR-070)
+        // NPCs act after player action but before scheduler
+        const npcEvents = this.npcService.tick({
+          world: this.world,
+          turn,
+          random: this.scheduler.getRandom(),
+          playerLocation: playerLocation || '',
+          playerId: this.context.player.id
+        });
+
+        // Process NPC events through the same pipeline as action events
+        if (npcEvents.length > 0) {
+          const npcEnrichmentContext = {
+            turn,
+            playerId: this.context.player.id,
+            locationId: playerLocation
+          };
+
+          let npcSemanticEvents = npcEvents.map(e =>
+            processEvent(e, npcEnrichmentContext)
+          );
+
+          // Apply perception filtering if service is configured
+          if (this.perceptionService) {
+            npcSemanticEvents = this.perceptionService.filterEvents(
+              npcSemanticEvents,
+              this.context.player,
+              this.world
+            );
+          }
+
+          // Add NPC events to turn events
+          const existingEvents = this.turnEvents.get(turn) || [];
+          this.turnEvents.set(turn, [...existingEvents, ...npcSemanticEvents]);
+
+          // Track in event source for save/restore
+          for (const event of npcSemanticEvents) {
+            this.eventSource.emit(event);
+
+            if (isPlatformRequestEvent(event)) {
+              this.pendingPlatformOps.push(event as IPlatformEvent);
+            }
+          }
+
+          // Emit events if configured
+          if (this.config.onEvent) {
+            for (const event of npcSemanticEvents) {
+              this.config.onEvent(event as any);
+            }
+          }
+
+          // Emit through engine's event system
+          for (const event of npcSemanticEvents) {
+            this.emit('event', event as any);
+            this.dispatchEntityHandlers(event as any);
+          }
+        }
+
+        // Scheduler tick (ADR-071)
+        // Daemons run, fuses count down - after NPCs
+        const schedulerResult = this.scheduler.tick(
+          this.world,
+          turn,
+          this.context.player.id
+        );
+
+        // Process scheduler events through the same pipeline as action events
+        if (schedulerResult.events.length > 0) {
+          const schedulerEnrichmentContext = {
+            turn,
+            playerId: this.context.player.id,
+            locationId: playerLocation
+          };
+
+          // Scheduler events are already ISemanticEvent, so just process them
+          let schedulerSemanticEvents = schedulerResult.events.map(e =>
+            processEvent(e, schedulerEnrichmentContext)
+          );
+
+          // Apply perception filtering if service is configured
+          if (this.perceptionService) {
+            schedulerSemanticEvents = this.perceptionService.filterEvents(
+              schedulerSemanticEvents,
+              this.context.player,
+              this.world
+            );
+          }
+
+          // Add scheduler events to turn events
+          const existingEvents = this.turnEvents.get(turn) || [];
+          this.turnEvents.set(turn, [...existingEvents, ...schedulerSemanticEvents]);
+
+          // Track in event source for save/restore
+          for (const event of schedulerSemanticEvents) {
+            this.eventSource.emit(event);
+
+            // Check for platform request events
+            if (isPlatformRequestEvent(event)) {
+              this.pendingPlatformOps.push(event as IPlatformEvent);
+            }
+          }
+
+          // Emit events if configured
+          if (this.config.onEvent) {
+            for (const event of schedulerSemanticEvents) {
+              this.config.onEvent(event as any);
+            }
+          }
+
+          // Emit through engine's event system
+          for (const event of schedulerSemanticEvents) {
+            this.emit('event', event as any);
+            this.dispatchEntityHandlers(event as any);
+          }
         }
       }
 
@@ -634,6 +774,27 @@ export class GameEngine {
   }
 
   /**
+   * Get scheduler service for daemons and fuses (ADR-071)
+   */
+  getScheduler(): ISchedulerService {
+    return this.scheduler;
+  }
+
+  /**
+   * Get NPC service for NPC behavior management (ADR-070)
+   */
+  getNpcService(): INpcService {
+    return this.npcService;
+  }
+
+  /**
+   * Get event processor for handler registration (ADR-075)
+   */
+  getEventProcessor(): EventProcessor {
+    return this.eventProcessor;
+  }
+
+  /**
    * Get the text service
    */
   getTextService(): TextService | undefined {
@@ -657,6 +818,27 @@ export class GameEngine {
    */
   registerSaveRestoreHooks(hooks: ISaveRestoreHooks): void {
     this.saveRestoreHooks = hooks;
+  }
+
+  /**
+   * Register a transformer for parsed commands.
+   * Transformers are called after parsing but before validation,
+   * allowing stories to modify commands (e.g., for debug tools).
+   *
+   * @param transformer - Function to transform parsed commands
+   */
+  registerParsedCommandTransformer(transformer: ParsedCommandTransformer): void {
+    this.commandExecutor.registerParsedCommandTransformer(transformer);
+  }
+
+  /**
+   * Unregister a parsed command transformer.
+   *
+   * @param transformer - The transformer to remove
+   * @returns true if the transformer was found and removed
+   */
+  unregisterParsedCommandTransformer(transformer: ParsedCommandTransformer): boolean {
+    return this.commandExecutor.unregisterParsedCommandTransformer(transformer);
   }
 
   /**
@@ -715,7 +897,8 @@ export class GameEngine {
       eventSource: this.serializeEventSource(),
       spatialIndex: this.serializeSpatialIndex(),
       turnHistory: this.serializeTurnHistory(),
-      parserState: this.serializeParserState()
+      parserState: this.serializeParserState(),
+      schedulerState: this.serializeSchedulerState()
     };
 
     return {
@@ -760,6 +943,11 @@ export class GameEngine {
     // Restore parser state if present
     if (saveData.engineState.parserState) {
       this.deserializeParserState(saveData.engineState.parserState);
+    }
+
+    // Restore scheduler state if present
+    if (saveData.engineState.schedulerState) {
+      this.deserializeSchedulerState(saveData.engineState.schedulerState);
     }
 
     // Update context
@@ -1265,8 +1453,8 @@ export class GameEngine {
       const handler = handlers[event.type];
       if (typeof handler === 'function') {
         try {
-          // Call the handler with the event
-          const result = handler(event);
+          // Call the handler with the event and world
+          const result = handler(event, this.world);
 
           // If handler returns events, add them to the current turn
           if (Array.isArray(result)) {
@@ -1569,6 +1757,49 @@ export class GameEngine {
   private deserializeParserState(state: ISerializedParserState): void {
     // Parser state restoration is parser-specific
     // For now, do nothing
+  }
+
+  /**
+   * Serialize scheduler state (daemons and fuses)
+   */
+  private serializeSchedulerState(): ISerializedSchedulerState {
+    const state = this.scheduler.getState();
+    return {
+      turn: state.turn,
+      daemons: state.daemons.map(d => ({
+        id: d.id,
+        isPaused: d.isPaused,
+        runCount: d.runCount
+      })),
+      fuses: state.fuses.map(f => ({
+        id: f.id,
+        turnsRemaining: f.turnsRemaining,
+        isPaused: f.isPaused,
+        entityId: f.entityId
+      })),
+      randomSeed: state.randomSeed
+    };
+  }
+
+  /**
+   * Deserialize scheduler state
+   */
+  private deserializeSchedulerState(state: ISerializedSchedulerState): void {
+    this.scheduler.setState({
+      turn: state.turn,
+      daemons: state.daemons.map(d => ({
+        id: d.id,
+        isPaused: d.isPaused,
+        runCount: d.runCount
+      })),
+      fuses: state.fuses.map(f => ({
+        id: f.id,
+        turnsRemaining: f.turnsRemaining,
+        isPaused: f.isPaused,
+        entityId: f.entityId
+      })),
+      randomSeed: state.randomSeed
+    });
   }
 
   /**

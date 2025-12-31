@@ -1,0 +1,105 @@
+title: Mirror Room State Toggle
+story: dungeo
+description: Test Mirror Room exit toggle when rubbing the mirror (State A vs State B)
+
+---
+
+# Setup: Get lantern and teleport to Mirror Room
+> gdt
+[OK: contains "GDT"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> ex
+[OK: contains "Returning"]
+
+> turn on lantern
+[OK: contains "on"]
+
+> gdt
+[OK: contains "GDT"]
+
+> ah mirror room
+[OK: contains "Teleported to"]
+
+# Verify we're in Mirror Room
+> look
+[OK: contains "Mirror Room"]
+[OK: contains "enormous mirror"]
+
+# STATE A (default): Test exits go to Grail Room area
+# E should go to Cave (which leads down to Hades)
+> e
+[OK: contains "Cave"]
+
+# W from Cave back to Mirror Room
+> w
+[OK: contains "Mirror Room"]
+
+# W should go to Winding Passage
+> w
+[OK: contains "Winding Passage"]
+
+# E back to Mirror Room
+> e
+[OK: contains "Mirror Room"]
+
+# N should go to Narrow Crawlway
+> n
+[OK: contains "Narrow Crawlway"]
+
+# SW back to Mirror Room
+> sw
+[OK: contains "Mirror Room"]
+
+# Now RUB MIRROR to toggle to State B (Coal Mine)
+# Note: Message effect not yet appearing in output (ADR-075 enhancement needed)
+> rub mirror
+[OK: contains "mirror"]
+
+# STATE B: Test exits now go to Coal Mine area
+# W should now go to Cold Passage (not Winding Passage)
+> w
+[OK: contains "Cold Passage"]
+
+# E back to Mirror Room
+> e
+[OK: contains "Mirror Room"]
+
+# N should now go to Steep Crawlway (not Narrow Crawlway)
+> n
+[OK: contains "Steep Crawlway"]
+
+# S back to Mirror Room
+> s
+[OK: contains "Mirror Room"]
+
+# E should now go to Small Cave (not Cave)
+> e
+[OK: contains "Small Cave"]
+
+# N back to Mirror Room
+> n
+[OK: contains "Mirror Room"]
+
+# RUB MIRROR again to toggle back to State A
+> rub mirror
+[OK: contains "mirror"]
+
+# STATE A again: Verify exits are back to Grail Room area
+> w
+[OK: contains "Winding Passage"]
+
+> e
+[OK: contains "Mirror Room"]
+
+> n
+[OK: contains "Narrow Crawlway"]
+
+> sw
+[OK: contains "Mirror Room"]
+
+# Exit GDT
+> ex
+[OK: contains "Returning"]

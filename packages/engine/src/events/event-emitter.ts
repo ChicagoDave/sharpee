@@ -3,28 +3,28 @@
  */
 
 import { ISemanticEvent } from '@sharpee/core';
-import { IGameEvent, EntityEventHandler } from '@sharpee/world-model';
+import { IGameEvent, SimpleEventHandler } from '@sharpee/world-model';
 
 /**
  * Simple event emitter for the game event system
- * Manages both story-level and entity-level event handlers
+ * Used for story-level event handlers (daemons)
  */
 export class EventEmitter {
-  private handlers: Map<string, EntityEventHandler[]> = new Map();
-  
+  private handlers: Map<string, SimpleEventHandler[]> = new Map();
+
   /**
    * Register a handler for an event type
    */
-  on(eventType: string, handler: EntityEventHandler): void {
+  on(eventType: string, handler: SimpleEventHandler): void {
     const handlers = this.handlers.get(eventType) || [];
     handlers.push(handler);
     this.handlers.set(eventType, handlers);
   }
-  
+
   /**
    * Remove a handler for an event type
    */
-  off(eventType: string, handler: EntityEventHandler): void {
+  off(eventType: string, handler: SimpleEventHandler): void {
     const handlers = this.handlers.get(eventType);
     if (handlers) {
       const index = handlers.indexOf(handler);

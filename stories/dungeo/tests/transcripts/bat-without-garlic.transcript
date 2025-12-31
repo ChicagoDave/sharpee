@@ -1,0 +1,48 @@
+title: Squeaky Room Without Garlic
+story: dungeo
+description: Test entering the Squeaky Room without garlic - bat should carry player away
+
+---
+
+# Get lantern from Living Room for dark areas
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> west
+[OK: contains "Kitchen"]
+
+# Don't take garlic or sack
+
+> west
+[OK: contains "Living Room"]
+
+> take lantern
+[OK: contains "Taken"]
+
+> switch on lantern
+[OK: contains "on"]
+
+# Use GDT to teleport to Mine Entrance (adjacent to Squeaky Room)
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> ah Mine Entrance
+[OK: contains "Teleported"]
+[OK: contains "Mine Entrance"]
+
+> ex
+[OK: contains "Returning to game"]
+
+# Verify we're in Mine Entrance
+> look
+[OK: contains "Mine Entrance"]
+
+# Now walk northwest into Squeaky Room - bat should attack and carry us away
+> northwest
+[OK: contains "Squeaky"]
+# TODO: Bat behavior not yet implemented - when implemented, add these assertions:
+# [EVENT: true, type="npc.emoted" messageId="dungeo.bat.attacks"]
+# [EVENT: true, type="npc.emoted" messageId="dungeo.bat.carries_away"]

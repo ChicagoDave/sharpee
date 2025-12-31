@@ -3,17 +3,19 @@
  */
 
 import { EntityId } from '@sharpee/core';
+import { CombatResult } from '../../../combat';
 
 /**
  * Result from attack behaviors
  */
 export interface AttackResult {
   success: boolean;
-  type: 'broke' | 'damaged' | 'destroyed' | 'killed' | 'hit' | 'ineffective';
+  type: 'broke' | 'damaged' | 'destroyed' | 'killed' | 'hit' | 'ineffective' | 'missed' | 'knocked_out';
   damage?: number;
   remainingHitPoints?: number;
   targetDestroyed?: boolean;
   targetKilled?: boolean;
+  targetKnockedOut?: boolean;
   itemsDropped?: EntityId[];
   debrisCreated?: EntityId[];
   exitRevealed?: string;
@@ -28,21 +30,31 @@ export interface AttackingSharedData {
    * Result from the AttackBehavior.attack() call
    */
   attackResult?: AttackResult;
-  
+
   /**
    * The weapon used (if any)
    */
   weaponUsed?: EntityId;
-  
+
   /**
    * Whether weapon was inferred
    */
   weaponInferred?: boolean;
-  
+
   /**
    * Custom message to use instead of default
    */
   customMessage?: string;
+
+  /**
+   * Full combat result from CombatService (when attacking combatants)
+   */
+  combatResult?: CombatResult;
+
+  /**
+   * Whether CombatService was used (vs AttackBehavior)
+   */
+  usedCombatService?: boolean;
 }
 
 /**

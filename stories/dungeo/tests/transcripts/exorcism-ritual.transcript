@@ -1,0 +1,91 @@
+title: Exorcism Ritual
+story: dungeo
+author: Sharpee Team
+description: Test the bell/book/candle exorcism to banish spirits at Entry to Hades
+
+---
+
+# Setup - get items and navigate to temple region
+
+> look
+[OK: contains "West of House"]
+
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> west
+[OK: contains "Kitchen"]
+
+> west
+[OK: contains "Living Room"]
+
+> take lantern
+[OK: contains "Taken"]
+
+> switch on lantern
+[OK: contains "on"]
+
+# Use GDT to teleport to the Altar (where bell, book, candles are)
+> gdt
+[OK: contains "GDT"]
+
+> ah Altar
+[OK: contains "Altar"]
+
+> ex
+[OK: contains "Returning"]
+
+> look
+[OK: contains "Altar"]
+[OK: contains "candles"]
+[OK: contains "book"]
+
+# Pick up the exorcism items
+> take bell
+[OK: contains "Taken"]
+
+> take black book
+[OK: contains "Taken"]
+
+> take candles
+[OK: contains "Taken"]
+
+# Navigate to Entry to Hades
+> down
+[OK: contains "Narrow Corridor"]
+
+> south
+[OK: contains "Entrance to Hades"]
+[OK: contains "Ghostly"]
+
+# Try to go south - should be blocked by spirits
+> south
+[FAIL: contains "Land of the Dead"]
+[OK: contains "Ghostly"]
+
+# Perform the exorcism ritual - ring bell, read book, light candles
+
+> ring bell
+[OK: contains "bell"]
+
+> read black book
+[OK: contains "Ritual"]
+
+> switch on candles
+[OK: contains "on"]
+
+# The spirits should now be banished
+> look
+[FAIL: contains "Ghostly"]
+[OK: contains "Entrance to Hades"]
+
+# Now we can pass to the south
+> south
+[OK: contains "Land of the Dead"]
+
+# Can return back
+> north
+[OK: contains "Entrance to Hades"]

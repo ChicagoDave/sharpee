@@ -241,6 +241,16 @@ export class StandardTextService implements TextService {
     
     private translateGameMessage(event: ISemanticEvent): string {
         const data = event.data as GameMessageData;
+
+        // Check for messageId and use language provider
+        if ((data as any).messageId && this.languageProvider) {
+            const messageId = (data as any).messageId;
+            const message = this.languageProvider.getMessage(messageId, (data as any).params);
+            if (message && message !== messageId) {
+                return message;
+            }
+        }
+
         return data.text || data.message || '';
     }
     

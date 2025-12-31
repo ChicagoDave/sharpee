@@ -64,6 +64,35 @@ export function defineCoreGrammar(grammar: GrammarBuilder): void {
     .withPriority(100)
     .build();
 
+  // Searching with target
+  grammar
+    .define('search :target')
+    .where('target', (scope: ScopeBuilder) => scope.visible())
+    .mapsTo('if.action.searching')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('look in|inside :target')
+    .where('target', (scope: ScopeBuilder) => scope.visible())
+    .mapsTo('if.action.searching')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('look through :target')
+    .where('target', (scope: ScopeBuilder) => scope.visible())
+    .mapsTo('if.action.searching')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('rummage in|through :target')
+    .where('target', (scope: ScopeBuilder) => scope.visible())
+    .mapsTo('if.action.searching')
+    .withPriority(95)
+    .build();
+
   // Taking and dropping
   grammar
     .define('take :item')
@@ -359,6 +388,42 @@ export function defineCoreGrammar(grammar: GrammarBuilder): void {
     .where('device', (scope: ScopeBuilder) => scope.touchable().matching({ switchable: true }))
     .mapsTo('if.action.switching_off')
     .withPriority(100)
+    .build();
+
+  // Pushing and pulling
+  grammar
+    .define('push :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.pushing')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('shove :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.pushing')
+    .withPriority(95)
+    .build();
+
+  grammar
+    .define('move :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.pushing')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('pull :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.pulling')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('drag :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.pulling')
+    .withPriority(95)
     .build();
 
   // Waiting
@@ -661,5 +726,55 @@ export function defineCoreGrammar(grammar: GrammarBuilder): void {
     .where('recipient', (scope: ScopeBuilder) => scope.visible().matching({ animate: true }))
     .mapsTo('if.action.asking')
     .withPriority(100)
+    .build();
+
+  // Touching (sensory actions)
+  grammar
+    .define('touch :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.touching')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('rub :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.touching')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('feel :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.touching')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('pat :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.touching')
+    .withPriority(95)
+    .build();
+
+  grammar
+    .define('stroke :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.touching')
+    .withPriority(95)
+    .build();
+
+  grammar
+    .define('poke :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.touching')
+    .withPriority(95)
+    .build();
+
+  grammar
+    .define('prod :target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .mapsTo('if.action.touching')
+    .withPriority(95)
     .build();
 }

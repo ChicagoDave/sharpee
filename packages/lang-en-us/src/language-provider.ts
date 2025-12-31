@@ -27,6 +27,7 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
   constructor() {
     // Load all action messages
     this.loadActionMessages();
+    // NPC messages are injected at runtime by the story + engine (ADR-070)
   }
   
   /**
@@ -43,7 +44,7 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
       }
     }
   }
-  
+
   /**
    * Get a message by its ID with optional parameter substitution
    * @param messageId Full message ID (e.g., 'if.action.taking.taken')

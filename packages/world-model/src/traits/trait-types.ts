@@ -49,7 +49,10 @@ export const TraitType = {
   BREAKABLE: 'breakable',
   DESTRUCTIBLE: 'destructible',
   COMBATANT: 'combatant',
-  EQUIPPED: 'equipped'
+  EQUIPPED: 'equipped',
+
+  // NPC traits (ADR-070)
+  NPC: 'npc'
 } as const;
 
 /**
@@ -114,7 +117,10 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   [TraitType.BREAKABLE]: TraitCategory.INTERACTIVE,
   [TraitType.DESTRUCTIBLE]: TraitCategory.INTERACTIVE,
   [TraitType.COMBATANT]: TraitCategory.INTERACTIVE,
-  [TraitType.EQUIPPED]: TraitCategory.INTERACTIVE
+  [TraitType.EQUIPPED]: TraitCategory.INTERACTIVE,
+
+  // NPC traits
+  [TraitType.NPC]: TraitCategory.STANDARD
 };
 
 /**

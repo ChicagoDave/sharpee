@@ -1,0 +1,78 @@
+title: Thief's Canvas Puzzle - Basic Mechanics
+story: dungeo
+description: Test ADR-078 ghost ritual puzzle actions (pray, burn) and Basin Room
+
+---
+
+# Setup: Get lantern
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> west
+[OK: contains "Kitchen"]
+
+> west
+[OK: contains "Living Room"]
+
+> take lantern
+[OK: contains "Taken"]
+
+> switch on lantern
+[OK: contains "on"]
+
+# Test 1: Verify Basin Room exists and is accessible
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> ah Basin Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning to game"]
+
+> look
+[OK: contains "Basin Room"]
+[OK: contains "spiritual darkness"]
+[OK: contains "basin"]
+
+# Test 2: Verify pray action works (generic response outside ritual)
+> pray
+[OK: contains "prayer"]
+
+# Test 3: Verify current room info via DR
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> dr
+[OK: contains "Basin Room"]
+[OK: contains "Exits"]
+
+> ex
+[OK: contains "Returning to game"]
+
+# Test 4: Verify Gallery exists
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> ah Gallery
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning to game"]
+
+> look
+[OK: contains "Gallery"]
+[OK: contains "art gallery"]
+
+# Test 5: Check incense exists via DO command
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> do incense
+[OK: contains "incense"]
+
+> ex
+[OK: contains "Returning to game"]

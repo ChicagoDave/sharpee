@@ -48,15 +48,66 @@ export interface ISaveMetadata {
 export interface IEngineState {
   /** Complete event history */
   eventSource: ISerializedEvent[];
-  
+
   /** Current world state */
   spatialIndex: ISerializedSpatialIndex;
-  
+
   /** Turn history for undo/redo */
   turnHistory: ISerializedTurn[];
-  
+
   /** Optional: Parser state if needed */
   parserState?: ISerializedParserState;
+
+  /** Optional: Scheduler state (daemons and fuses) */
+  schedulerState?: ISerializedSchedulerState;
+}
+
+/**
+ * Serialized scheduler state for save/load
+ */
+export interface ISerializedSchedulerState {
+  /** Current turn number */
+  turn: number;
+
+  /** Daemon states */
+  daemons: ISerializedDaemonState[];
+
+  /** Fuse states */
+  fuses: ISerializedFuseState[];
+
+  /** Random seed for deterministic replay */
+  randomSeed: number;
+}
+
+/**
+ * Serialized daemon runtime state
+ */
+export interface ISerializedDaemonState {
+  /** Daemon ID */
+  id: string;
+
+  /** Whether daemon is paused */
+  isPaused: boolean;
+
+  /** Number of times daemon has run */
+  runCount: number;
+}
+
+/**
+ * Serialized fuse runtime state
+ */
+export interface ISerializedFuseState {
+  /** Fuse ID */
+  id: string;
+
+  /** Turns remaining until trigger */
+  turnsRemaining: number;
+
+  /** Whether fuse is paused */
+  isPaused: boolean;
+
+  /** Optional: Entity the fuse is bound to */
+  entityId?: string;
 }
 
 /**
