@@ -255,6 +255,52 @@ No cryptic hollow voice needed - the Thief himself tells you where to go. This i
 
 Note: The frame piece is consumed in the ritual, so the painting can only be revealed once per game.
 
+### Hidden Max Points System
+
+The canvas is a secret treasure that doesn't appear in the normal point total. This creates narrative mystery and rewards completionists.
+
+**Design:**
+- Max points displays as **616** until the Thief is killed
+- First SCORE check after Thief's death displays: *"The death of the thief seems to alter reality in some subtle way..."*
+- Max points then displays as **650** (616 + 34 for canvas)
+- This message appears only once per game
+
+**New Rank: Master of Secrets**
+
+A special rank that can only be achieved after the Thief is killed and the canvas is obtained:
+
+| Rank | Threshold | Condition |
+|------|-----------|-----------|
+| Adventurer | 200 | - |
+| Master | 300 | - |
+| Wizard | 400 | - |
+| **Master of Secrets** | **500** | **Thief dead + canvas obtained** |
+| Master Adventurer | 500 | Standard path (thief alive or no canvas) |
+
+Players who collect the canvas achieve "Master of Secrets" at 500 points *before* reaching "Master Adventurer" through normal progression. This rewards the extra effort of the ghost ritual puzzle.
+
+**Implementation:**
+```typescript
+// In DungeoScoringService
+getMaxScore(): number {
+  const thiefDead = this.world.getStateValue('thief.killed');
+  return thiefDead ? 650 : 616;
+}
+
+getRank(): string {
+  const score = this.getScore();
+  const thiefDead = this.world.getStateValue('thief.killed');
+  const hasCanvas = this.hasAchievement('canvas-revealed');
+
+  // Master of Secrets: 500+ points AND thief dead AND canvas obtained
+  if (score >= 500 && thiefDead && hasCanvas) {
+    return 'Master of Secrets';
+  }
+  // Fall through to normal rank calculation
+  return super.getRank();
+}
+```
+
 ## Implementation
 
 ### Phase 1: Infrastructure

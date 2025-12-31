@@ -36,7 +36,7 @@ import { registerScheduledEvents, DungeoSchedulerMessages } from './scheduler';
 import { setSchedulerForGDT } from './actions/gdt/commands';
 
 // Import handlers
-import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages } from './handlers';
+import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages } from './handlers';
 import { initializeMirrorRoom, createMirrorTouchHandler, MirrorRoomConfig, MirrorRoomMessages } from './handlers/mirror-room-handler';
 import { MIRROR_ID } from './regions/underground/objects';
 
@@ -119,6 +119,9 @@ export class DungeoStory implements Story {
 
     // Register trophy case scoring handler
     this.registerTrophyCaseHandler(world);
+
+    // Register reality altered handler (ADR-078 hidden max points)
+    registerRealityAlteredHandler(world);
 
     // Create all rooms
     this.whiteHouseIds = createWhiteHouseRooms(world);
@@ -831,6 +834,9 @@ export class DungeoStory implements Story {
     language.addMessage(GhostRitualMessages.CANVAS_SPAWNS, 'A magnificent rolled up canvas has appeared in the Gallery!');
     language.addMessage(GhostRitualMessages.WRONG_ITEM, 'The spirit laughs mockingly: "As we said, you have no rights here!" The item vanishes.');
     language.addMessage(GhostRitualMessages.NOT_BLESSED, 'Nothing happens. The water remains still.');
+
+    // ADR-078: Hidden max points system
+    language.addMessage(RealityAlteredMessages.REALITY_ALTERED, 'The death of the thief seems to alter reality in some subtle way...');
   }
 
   /**
@@ -982,6 +988,9 @@ export class DungeoStory implements Story {
 
       // Register Ghost Ritual handler (ADR-078 Thief's Canvas puzzle)
       registerGhostRitualHandler(this.world);
+
+      // Register Reality Altered daemon (ADR-078 hidden max points)
+      registerRealityAlteredDaemon(scheduler);
     }
 
     // Register NPCs (ADR-070)

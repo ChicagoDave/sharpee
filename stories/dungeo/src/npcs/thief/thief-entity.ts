@@ -142,6 +142,13 @@ export function createThief(
           scoring.achievements = [];
         }
         scoring.achievements.push('Defeated the thief');
+
+        // ADR-078: Hidden max points system
+        // The death of the thief "alters reality" - max score increases from 616 to 650
+        // The canvas treasure (34 pts) becomes achievable
+        scoring.thiefDead = true;
+        scoring.maxScore = 650;
+        scoring.realityAlteredPending = true;  // Will show message on next SCORE
       }
 
       // Note: dropsInventory: true handles the actual item dropping

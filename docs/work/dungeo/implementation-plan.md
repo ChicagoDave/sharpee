@@ -464,8 +464,8 @@
 | WAVE action | ❌ | Sceptre/rainbow |
 | Water current | ❌ | River auto-movement |
 | RING action | ✅ Done | Bell |
-| PRAY action | ❌ | Resurrection, ADR-078 basin blessing |
-| BURN action | ❌ | ADR-078 incense (3-turn timer) |
+| PRAY action | ✅ Done | ADR-078 basin blessing |
+| BURN action | ✅ Done | ADR-078 incense (3-turn timer) |
 | Exorcism sequence | ✅ Done | Bell/book/candle |
 | DIG action | ❌ | Shovel/beach |
 | Sliding room mechanics | ✅ Done | Royal Puzzle (Phase 2 complete) |
@@ -546,6 +546,7 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Recently Completed
 
+- ✅ **ADR-078 Hidden Max Points** (2025-12-31) - Max score shows 616 until thief dies, then 650. "Reality altered" message appears on first SCORE after thief death. New "Master of Secrets" rank at 500 pts for players who complete ghost ritual and obtain canvas.
 - ✅ **Royal Puzzle Complete** (2025-12-31) - Fixed LOOK, TAKE CARD, and blocked card mechanics. Gold card treasure now fully obtainable (25 pts). Dynamic room descriptions work correctly. All 403 transcript tests pass.
 - ✅ **ADR-078 Thief's Canvas Puzzle** (2025-12-31) - Added Basin Room (E of Temple Dead End 2), ghost ritual puzzle with incense, empty frame, frame piece, canvas. New actions: BREAK, BURN, PRAY. 3-turn incense fuse. Ghost appears when frame piece dropped in blessed basin, canvas spawns in Gallery. 34 points (10 take + 24 case). Progress: 145/~191 rooms, 534/650 points.
 - ✅ **Royal Puzzle Phase 2** (2025-12-31) - Command transformer now intercepts GO/TAKE in puzzle. Fixed `isInPuzzle` bug (was using wrong player ID lookup). Added puzzle-take-card action for gold card. Added 12 push wall grammar patterns. Movement within puzzle, TAKE CARD, and exit mechanics now working. Transcript tests pass.

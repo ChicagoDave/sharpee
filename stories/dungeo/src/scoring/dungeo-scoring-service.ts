@@ -32,6 +32,12 @@ export interface IDungeoScoringService extends IScoringService {
 /**
  * Zork-specific rank definitions
  * Based on the original Zork ranking system
+ *
+ * Note: "Master of Secrets" (500 pts) is a special rank that requires:
+ * - Thief must be dead
+ * - Canvas must be obtained (ghost ritual complete)
+ * It appears BEFORE "Master Adventurer" in the ranking for players
+ * who complete the hidden puzzle. See ADR-078.
  */
 export const ZORK_RANKS: RankDefinition[] = [
   { threshold: 0, name: 'Beginner' },
@@ -127,5 +133,51 @@ export class DungeoScoringService extends ScoringService implements IDungeoScori
   hasAchievement(name: string): boolean {
     const scoring = this.getScoringData();
     return scoring?.achievements?.includes(name) ?? false;
+  }
+
+  /**
+   * Check if the thief has been killed
+   */
+  isThiefDead(): boolean {
+    const scoring = this.getScoringData();
+    return scoring?.thiefDead ?? false;
+  }
+
+  /**
+   * Check if reality altered message is pending
+   */
+  isRealityAlteredPending(): boolean {
+    const scoring = this.getScoringData();
+    return scoring?.realityAlteredPending ?? false;
+  }
+
+  /**
+   * Clear the reality altered pending flag
+   */
+  clearRealityAlteredPending(): void {
+    const scoring = this.getScoringData();
+    if (scoring) {
+      scoring.realityAlteredPending = false;
+    }
+  }
+
+  /**
+   * Get the current rank based on score
+   *
+   * Overrides base class to include "Master of Secrets" rank
+   * for players who complete the ghost ritual puzzle (ADR-078).
+   */
+  getRank(): string {
+    const score = this.getScore();
+    const scoring = this.getScoringData();
+
+    // Master of Secrets: 500+ points AND thief dead AND canvas obtained
+    // This rank appears BEFORE "Master Adventurer" for completionists
+    if (score >= 500 && scoring?.thiefDead && this.hasAchievement('canvas-revealed')) {
+      return 'Master of Secrets';
+    }
+
+    // Fall through to normal rank calculation
+    return super.getRank();
   }
 }
