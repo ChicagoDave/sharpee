@@ -29,7 +29,7 @@ import {
 import { DungeoScoringService } from './scoring';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages } from './actions';
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages } from './scheduler';
@@ -54,6 +54,7 @@ import { createWellRoomRooms, connectWellRoomToTemple, createWellRoomObjects, We
 import { createFrigidRiverRooms, connectFrigidRiverToDam, connectRainbowToCanyon, createFrigidRiverObjects, FrigidRiverRoomIds } from './regions/frigid-river';
 import { createMazeRooms, connectMazeToClearing, connectCyclopsToLivingRoom, connectMazeToTrollRoom, connectMazeToRoundRoom, createMazeObjects, MazeRoomIds } from './regions/maze';
 import { createRoyalPuzzleRooms, connectRoyalPuzzleToTreasureRoom, RoyalPuzzleRoomIds } from './regions/royal-puzzle';
+import { createEndgameRooms, createEndgameObjects, EndgameRoomIds } from './regions/endgame';
 
 // Import handlers
 import { registerRoyalPuzzleHandler, initializePuzzleState, createPuzzleCommandTransformer, PuzzleHandlerMessages } from './handlers/royal-puzzle';
@@ -95,6 +96,7 @@ export class DungeoStory implements Story {
   private frigidRiverIds: FrigidRiverRoomIds = {} as FrigidRiverRoomIds;
   private mazeIds: MazeRoomIds = {} as MazeRoomIds;
   private royalPuzzleIds: RoyalPuzzleRoomIds = {} as RoyalPuzzleRoomIds;
+  private endgameIds: EndgameRoomIds = {} as EndgameRoomIds;
   private mirrorConfig: MirrorRoomConfig | null = null;
 
   /**
@@ -137,6 +139,7 @@ export class DungeoStory implements Story {
     this.frigidRiverIds = createFrigidRiverRooms(world);
     this.mazeIds = createMazeRooms(world);
     this.royalPuzzleIds = createRoyalPuzzleRooms(world);
+    this.endgameIds = createEndgameRooms(world);
 
     // Connect regions
     connectHouseInteriorToExterior(world, this.houseInteriorIds, this.whiteHouseIds.behindHouse);
@@ -190,6 +193,12 @@ export class DungeoStory implements Story {
     createWellRoomObjects(world, this.wellRoomIds);
     createFrigidRiverObjects(world, this.frigidRiverIds);
     createMazeObjects(world, this.mazeIds);
+    createEndgameObjects(world, {
+      stoneRoom: this.endgameIds.stoneRoom,
+      parapet: this.endgameIds.parapet,
+      insideMirror: this.endgameIds.insideMirror,
+      prisonCell: this.endgameIds.prisonCell
+    });
 
     // Initialize Mirror Room state toggle
     this.initializeMirrorRoomHandler(world);
@@ -590,6 +599,14 @@ export class DungeoStory implements Story {
       .mapsTo(PRAY_ACTION_ID)
       .withPriority(155)
       .build();
+
+    // INCANT action (endgame cheat command)
+    // "incant mhoram dfnobo", "incant dnzhuo ideqtq"
+    grammar
+      .define('incant :arg1 :arg2')
+      .mapsTo(INCANT_ACTION_ID)
+      .withPriority(200)
+      .build();
   }
 
   /**
@@ -837,6 +854,11 @@ export class DungeoStory implements Story {
 
     // ADR-078: Hidden max points system
     language.addMessage(RealityAlteredMessages.REALITY_ALTERED, 'The death of the thief seems to alter reality in some subtle way...');
+
+    // INCANT cheat command messages
+    language.addMessage(IncantMessages.success, 'A hollow voice speaks: "Greetings, Implementor." You feel disoriented as reality shifts around you...');
+    language.addMessage(IncantMessages.failure, 'Nothing happens.');
+    language.addMessage(IncantMessages.syntax, 'The spell fizzles. (Usage: INCANT <challenge> <response>)');
   }
 
   /**

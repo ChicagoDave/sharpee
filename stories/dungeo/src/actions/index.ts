@@ -40,6 +40,9 @@ export * from './burn';
 // Pray (Ghost ritual - blessing the basin)
 export * from './pray';
 
+// Incant (Endgame cheat command)
+export * from './incant';
+
 // All custom actions for registration
 import { gdtActions } from './gdt';
 import { walkThroughActions } from './walk-through';
@@ -53,6 +56,7 @@ import { puzzleLookAction } from './puzzle-look';
 import { breakAction } from './break';
 import { burnAction } from './burn';
 import { prayAction } from './pray';
+import { incantAction } from './incant';
 
 export const customActions = [
   ...gdtActions,
@@ -66,5 +70,6 @@ export const customActions = [
   puzzleLookAction,
   breakAction,
   burnAction,
-  prayAction
+  prayAction,
+  incantAction
 ];
