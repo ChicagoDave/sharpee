@@ -218,7 +218,7 @@
 |------|--------|-------|
 | Square Room | ✅ Done | E of Treasure Room |
 | Puzzle Room | ✅ Done | Entry point above puzzle |
-| Room in a Puzzle | ✅ Done | 8x8 grid - movement, look, card taking all working |
+| Room in a Puzzle | ✅ Done | 8x8 grid - movement, look, card taking, exit all working |
 
 ### The Endgame
 
