@@ -86,7 +86,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
       return null;
     }
     
-    const slots = new Map<string, { tokens: number[]; text: string }>();
+    const slots = new Map<string, { tokens: number[]; text: string; slotType?: SlotType; isAll?: boolean; isList?: boolean; items?: any[]; excluded?: any[]; confidence?: number }>();
     let tokenIndex = 0;
     let confidence = 1.0;
     let skippedOptionals = 0;
@@ -434,7 +434,13 @@ export class EnglishGrammarEngine extends GrammarEngine {
     const nextPatternToken = pattern.tokens[slotTokenIndex + 1];
 
     // Check for "all" keyword at start
+    if (DEBUG) {
+      console.log(`consumeEntitySlot: startIndex=${startIndex}, token.word='${tokens[startIndex]?.word}', token.normalized='${tokens[startIndex]?.normalized}'`);
+    }
     if (startIndex < tokens.length && tokens[startIndex].normalized === 'all') {
+      if (DEBUG) {
+        console.log('Detected "all" keyword, calling consumeAllSlot');
+      }
       return this.consumeAllSlot(tokens, startIndex, nextPatternToken, slotType, DEBUG);
     }
 
