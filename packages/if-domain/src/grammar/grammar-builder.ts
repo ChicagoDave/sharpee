@@ -251,6 +251,7 @@ export interface SlotMatch {
   tokens: number[];       // Token indices
   text: string;           // Combined text
   slotType?: SlotType;    // How the slot was matched
+  confidence?: number;    // Match confidence (0-1)
   // Multi-object support (ADR-080 Phase 2)
   isAll?: boolean;        // True if "all" keyword
   isList?: boolean;       // True if "X and Y" list

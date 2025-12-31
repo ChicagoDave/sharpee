@@ -13,7 +13,8 @@ import {
   SlotConstraint,
   ScopeBuilderImpl,
   ScopeConstraintBuilder,
-  SlotType
+  SlotType,
+  SlotMatch
 } from '@sharpee/if-domain';
 import { Token } from '@sharpee/if-domain';
 import { EnglishPatternCompiler } from './english-pattern-compiler';
@@ -86,7 +87,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
       return null;
     }
     
-    const slots = new Map<string, { tokens: number[]; text: string; slotType?: SlotType; isAll?: boolean; isList?: boolean; items?: any[]; excluded?: any[]; confidence?: number }>();
+    const slots = new Map<string, SlotMatch>();
     let tokenIndex = 0;
     let confidence = 1.0;
     let skippedOptionals = 0;
@@ -304,7 +305,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
     pattern: CompiledPattern,
     rule: any, // GrammarRule
     context: GrammarContext
-  ): { tokens: number[]; text: string; confidence?: number; slotType?: SlotType } | null {
+  ): SlotMatch | null {
     const DEBUG = process.env.PARSER_DEBUG === 'true';
 
     // Find the current slot in the pattern tokens
@@ -356,7 +357,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
     tokens: Token[],
     startIndex: number,
     slotType: SlotType
-  ): { tokens: number[]; text: string; confidence: number; slotType: SlotType } | null {
+  ): SlotMatch | null {
     if (startIndex >= tokens.length) {
       return null;
     }
@@ -379,7 +380,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
     pattern: CompiledPattern,
     slotTokenIndex: number,
     slotType: SlotType
-  ): { tokens: number[]; text: string; confidence: number; slotType: SlotType } | null {
+  ): SlotMatch | null {
     const nextPatternToken = pattern.tokens[slotTokenIndex + 1];
     const consumedIndices: number[] = [];
     const consumedWords: string[] = [];
@@ -429,7 +430,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
     rule: any,
     context: GrammarContext,
     slotType: SlotType
-  ): { tokens: number[]; text: string; confidence?: number; slotType?: SlotType; isAll?: boolean; isList?: boolean; items?: any[]; excluded?: any[] } | null {
+  ): SlotMatch | null {
     const DEBUG = process.env.PARSER_DEBUG === 'true';
     const nextPatternToken = pattern.tokens[slotTokenIndex + 1];
 
@@ -459,10 +460,10 @@ export class EnglishGrammarEngine extends GrammarEngine {
     nextPatternToken: PatternToken | undefined,
     slotType: SlotType,
     DEBUG: boolean
-  ): { tokens: number[]; text: string; confidence: number; slotType: SlotType; isAll: boolean; excluded?: any[] } | null {
+  ): SlotMatch | null {
     const consumedIndices: number[] = [startIndex];
     let currentIndex = startIndex + 1;
-    const excluded: any[] = [];
+    const excluded: SlotMatch[] = [];
 
     // Check for "but" or "except" after "all"
     if (currentIndex < tokens.length) {
@@ -505,8 +506,8 @@ export class EnglishGrammarEngine extends GrammarEngine {
     startIndex: number,
     nextPatternToken: PatternToken | undefined,
     DEBUG: boolean
-  ): { tokens: number[]; items: any[] } | null {
-    const items: any[] = [];
+  ): { tokens: number[]; items: SlotMatch[] } | null {
+    const items: SlotMatch[] = [];
     const allTokens: number[] = [];
     let currentIndex = startIndex;
 
@@ -578,9 +579,9 @@ export class EnglishGrammarEngine extends GrammarEngine {
     context: GrammarContext,
     slotType: SlotType,
     DEBUG: boolean
-  ): { tokens: number[]; text: string; confidence?: number; slotType?: SlotType; isList?: boolean; items?: any[] } | null {
+  ): SlotMatch | null {
     const nextPatternToken = pattern.tokens[slotTokenIndex + 1];
-    const items: any[] = [];
+    const items: SlotMatch[] = [];
     const allTokens: number[] = [];
     const allWords: string[] = [];
     let currentIndex = startIndex;
@@ -718,7 +719,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
       }
     }
 
-    const result: any = {
+    const result: SlotMatch = {
       tokens: allTokens,
       text: allWords.join(' '),
       confidence,
