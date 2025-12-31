@@ -93,8 +93,9 @@
 | Loud Room | ✅ Done | Platinum bar, say "echo" |
 | Ancient Chasm | ✅ Done | E of Loud Room |
 | Temple Dead End 1 | ✅ Done | W of Ancient Chasm |
-| Temple Dead End 2 | ✅ Done | N of Ancient Chasm |
+| Temple Dead End 2 | ✅ Done | N of Ancient Chasm, E crack to Basin Room |
 | Temple Small Cave | ✅ Done | E of Ancient Chasm, S to Rocky Shore |
+| Basin Room | ❌ | ADR-078: Thief's Canvas puzzle (lethal trap) |
 
 ### The Reservoir
 
@@ -277,8 +278,9 @@
 | 30 | Ruby | 15 | 8 | 23 | Ruby Room | ✅ Done |
 | 31 | Don Woods stamp | -- | 1 | 1 | Brochure (mail order) | ❌ |
 | 32 | Brass bauble | 1 | 1 | 2 | Forest (canary song) | ❌ |
+| 33 | Thief's canvas | 10 | 14 | 34 | Gallery (ADR-078 ritual) | ❌ |
 
-**Implemented**: 27/32 treasures (471/616 points = 76%)
+**Implemented**: 27/33 treasures (471/650 points = 72%)
 
 ---
 
@@ -369,6 +371,9 @@
 | Timber | Mine | ❌ | Slide room anchor |
 | Brochure | Mail | ❌ | Contains stamp |
 | Robot | Low Room | ✅ Done | Push button |
+| Incense | Maze (skeleton) | ❌ | ADR-078: Burns 3 turns, disarms basin |
+| Empty frame | Treasure Room | ❌ | ADR-078: Appears after Thief dies |
+| Frame piece | (from frame) | ❌ | ADR-078: Drop in basin for canvas |
 
 ---
 
@@ -440,6 +445,7 @@
 | Rainbow | Wave sceptre at falls | ❌ | Pot of gold |
 | Bauble | Wind canary in forest | ❌ | Bauble |
 | Buried treasure | Dig 4 times with shovel | ❌ | Statue |
+| Thief's Canvas (ADR-078) | Kill thief→frame→break→incense→pray→drop piece | ❌ | 34 pts canvas |
 
 ---
 
@@ -458,7 +464,8 @@
 | WAVE action | ❌ | Sceptre/rainbow |
 | Water current | ❌ | River auto-movement |
 | RING action | ✅ Done | Bell |
-| PRAY action | ❌ | Resurrection |
+| PRAY action | ❌ | Resurrection, ADR-078 basin blessing |
+| BURN action | ❌ | ADR-078 incense (3-turn timer) |
 | Exorcism sequence | ✅ Done | Bell/book/candle |
 | DIG action | ❌ | Shovel/beach |
 | Sliding room mechanics | ✅ Done | Royal Puzzle (Phase 2 complete) |
@@ -518,9 +525,9 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 | Category | Done | Total | % |
 |----------|------|-------|---|
-| Rooms | 149 | ~190 | 78% |
-| Treasures | 28 | 32 | 88% |
-| Treasure Points | 510 | 616 | 83% |
+| Rooms | 149 | ~191 | 78% |
+| Treasures | 28 | 33 | 85% |
+| Treasure Points | 510 | 650 | 78% |
 | Light Sources | 4 | 4 | 100% |
 | Weapons | 4 | 4 | 100% |
 | Tools | 5 | 6 | 83% |
@@ -532,10 +539,11 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Priority Next Steps
 
-1. **Remaining treasures** - Stamps (2), bauble
-2. **Puzzle mechanics** - Rainbow wave sceptre, glacier torch melt
-3. **Remaining NPCs** - Dungeon Master, Gnome
-4. **Endgame** (~15 rooms) - Final puzzle sequence
+1. **ADR-078 Thief's Canvas Puzzle** - Basin Room, incense, frame, BURN/PRAY actions, lethal trap (34 pts)
+2. **Remaining treasures** - Stamps (2), bauble
+3. **Puzzle mechanics** - Rainbow wave sceptre, glacier torch melt
+4. **Remaining NPCs** - Dungeon Master, Gnome
+5. **Endgame** (~15 rooms) - Final puzzle sequence
 
 ## Recently Completed
 
