@@ -100,3 +100,6 @@ packages/extensions/blood-magic/
 
 # Transcript test results
 test-results/
+
+# Reference source code (not ours to distribute)
+docs/dungeon-ref/

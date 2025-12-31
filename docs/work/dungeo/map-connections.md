@@ -690,3 +690,71 @@ S:Shore
 Shore
 N:Sandy Beach
 S:Aragain Falls
+
+**_ End Game _**
+
+Hades
+E:Land of the Living Dead
+U:Tiny Cave
+
+Land of the Living Dead
+W:Hades
+E:Tomb
+
+Tomb
+W:Land of the Living Dead
+N:Crypt
+
+Crypt
+S:Tomb
+?:Top of Stairs
+
+Top of Stairs
+D:Stone Room
+
+Stone Room
+S:Top of Stairs
+N:Small Room (end game)
+
+Small Room (end game)
+N:Long Hallway
+S:Stone Room
+
+Long Hallway
+NE:North/South Hallway
+NW:North/South Hallway
+
+North/South Hallway
+SE:Long Hallway
+SW:Long Hallway
+N:Narrow Corridor
+
+Narrow Corridor
+S:North/South Hallway
+N:South Corridor
+
+South Corridor
+E:East Corridor
+W:West Corridor
+N:Prison Cell
+
+East Corridor
+S:South Corridor
+N:North Corridor
+
+West Corridor
+N:North Corridor
+S:South Corridor
+
+North Corridor
+W:West Corridor
+E:East Corridor
+S:Prion Cell
+N:Parapet
+
+Prison Cell
+S:South Corridor
+N:North Corridor
+
+Parapet
+S:North Corridor
