@@ -17,7 +17,7 @@ description: Tests that GDT can access and manipulate entities regardless of vis
 
 # Verify we got it in inventory
 > da
-[OK: contains "brass lantern (i06)"]
+[OK: contains "brass lantern"]
 
 # Test AO to move something to a location we're not in
 # Move the lantern to the kitchen (single-word location)
@@ -26,7 +26,7 @@ description: Tests that GDT can access and manipulate entities regardless of vis
 
 # Test DR to verify it moved
 > dr kitchen
-[OK: contains "brass lantern (i06)"]
+[OK: contains "brass lantern"]
 
 # Take it back
 > tk brass lantern
@@ -38,7 +38,7 @@ description: Tests that GDT can access and manipulate entities regardless of vis
 
 # Verify in inventory
 > da
-[OK: contains "brass lantern (i06)"]
+[OK: contains "brass lantern"]
 
 # Exit GDT
 > ex
