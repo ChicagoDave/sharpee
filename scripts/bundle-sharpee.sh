@@ -21,7 +21,7 @@ mkdir -p dist
 # Use esbuild to bundle everything
 echo "Bundling with esbuild..."
 npx esbuild \
-  packages/engine/dist/index.js \
+  scripts/bundle-entry.js \
   --bundle \
   --platform=node \
   --target=node18 \

@@ -550,6 +550,7 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 - ✅ **ADR-075 Effects-Based Handler Pattern** (2025-12-30) - Fixed circular dependency by moving effects code from world-model to event-processor. Module loading improved from 77s to 12s. Mirror Room toggle now working.
 - ✅ **Transcript Tester File Output** (2025-12-30) - Added `--output-dir` option for timestamped JSON/text results in `test-results/` folder.
 - ✅ **ADR-077 Release Build System** (2025-12-30) - Created research ADR for bundled distribution to eliminate 12s module loading for authors.
+- ✅ **Sharpee Bundle Complete** (2025-12-30) - 578x faster load times (81s → 142ms). Bundle entry aggregates all packages. Fast transcript testing now available via `./scripts/fast-transcript-test.sh`.
 - ✅ **Mirror Room State Toggle** (2025-12-30) - Handler complete using ADR-075 effects pattern. RUB MIRROR toggles exits between Grail Room area (State A) and Coal Mine area (State B).
 - ✅ **Coal Mine Region Restructure** (2025-12-30) - Created 21 new rooms: Cold Passage, Steep Crawlway, Slide rooms (4), Sooty Room, Mine Entrance, Squeaky Room, Wooden Tunnel, Smelly Room, Mine Maze (7), Ladder rooms, Timber Room, Bottom of Shaft, Machine Room
 - ✅ **Dam Puzzle Fix** (2025-12-30) - Corrected sequence: press yellow button (enables bolt) → turn bolt with wrench (starts draining)
