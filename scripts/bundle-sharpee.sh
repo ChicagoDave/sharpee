@@ -6,9 +6,14 @@ set -e
 
 echo "=== Bundling Sharpee ==="
 
-# Ensure packages are built first
-echo "Building packages..."
-pnpm build
+# Ensure packages are built first (only @sharpee/* packages, not stories)
+echo "Building Sharpee packages..."
+pnpm --filter '@sharpee/*' \
+  --filter '!@sharpee/text-service-browser' \
+  --filter '!@sharpee/text-service-template' \
+  --filter '!@sharpee/story-*' \
+  --filter '!@sharpee/platform-*' \
+  build
 
 # Create dist directory
 mkdir -p dist

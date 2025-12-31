@@ -3,92 +3,76 @@
 **Date**: 2025-12-30
 **Branch**: dungeo
 
-## What We Discovered
+## Bundle Success! 🎉
 
-### Load Time Issue (Not a Hang)
-The transcript testing "timeout" was **not** a circular dependency - it's just slow barrel export loading:
+| Metric | Before | After | Improvement |
+|--------|--------|-------|-------------|
+| Load time | 81,000ms | 140ms | **578x faster** |
+| Bundle size | - | 1MB | Single file |
 
-| Package | Load Time |
-|---------|-----------|
-| core | 2s |
-| world-model | 14s |
-| stdlib | 30s (!) |
-| engine | 2s |
-| dungeo | 33s |
-| **Total** | **81s** |
+## What We Built
 
-This is caused by Node.js resolving all barrel exports at require() time. Each `export * from './foo'` triggers synchronous file I/O.
-
-### Sharpee is Feature-Complete for Dungeo
-Reviewed implementation plan - **no more Sharpee changes needed**:
-- Stories can inject custom actions via `story.getCustomActions()` ✅
-- Dungeo already uses this for: GDT, SAY, RING, WALK_THROUGH, PUSH_WALL, PUZZLE_MOVE
-- Remaining verbs (WAVE, DIG, INFLATE, PRAY) can be story-specific actions
-
-### Build Script Created
-Created `scripts/build-dungeo.sh` with three modes:
-- No args: Just builds dungeo (fast, assumes Sharpee built)
-- `--full`: Rebuilds all Sharpee packages in dependency order
-- `--clean`: Cleans and rebuilds everything
-
-Fixed dependency order:
-1. core → 2. if-domain → 3. world-model → 4. lang-en-us → 5. if-services → 6. parser-en-us → 7. event-processor → 8. text-services → 9. stdlib → 10. engine → 11. transcript-tester → 12. dungeo
-
-### Fixed Build Error
-`packages/stdlib/src/events/helpers.ts` was importing non-existent `EntityEventHandler` from world-model. Fixed by defining the type locally.
-
-## Next Session: Bundle Sharpee
-
-User wants to dog-food a compiled Sharpee bundle while finishing Dungeo. This would:
-1. Dramatically reduce load times (goal: <500ms vs 81s)
-2. Test the release distribution before publishing
-3. Make development loop faster
-
-### Started But Not Finished
-Created `scripts/bundle-sharpee.sh` that uses esbuild to bundle, but:
-- esbuild not installed (`npm install -g esbuild` or add as dev dep)
-- Need to test if bundle actually works
-- Need to wire dungeo to use bundle instead of workspace packages
-
-### Bundle Approach (ADR-077)
+### 1. Bundle Script (`scripts/bundle-sharpee.sh`)
+Builds core Sharpee packages and bundles them with esbuild:
 ```bash
-npx esbuild packages/engine/dist/index.js \
-  --bundle \
-  --platform=node \
-  --target=node18 \
-  --outfile=dist/sharpee.js \
-  --external:readline \
-  --format=cjs
+./scripts/bundle-sharpee.sh
+# Output: dist/sharpee.js (1MB), dist/sharpee.js.map, dist/sharpee.d.ts
 ```
 
-Then dungeo would import from `../../dist/sharpee.js` instead of `@sharpee/*` packages.
+Excludes non-essential packages:
+- `@sharpee/story-*` (game content)
+- `@sharpee/platform-*` (UI layers)
+- `@sharpee/text-service-browser` (browser-only)
+- `@sharpee/text-service-template` (template)
 
-## Files Changed This Session
+### 2. Bundle Preload Script (`scripts/use-bundle.js`)
+Node.js require hook that intercepts `@sharpee/*` imports:
+```bash
+node -r ./scripts/use-bundle.js your-script.js
+# All @sharpee/* requires now return the bundle
+```
 
-1. `packages/stdlib/src/events/helpers.ts` - Fixed EntityEventHandler import
-2. `scripts/build-dungeo.sh` - Created build script with --full/--clean options
-3. `scripts/bundle-sharpee.sh` - Created (incomplete) bundle script
+### 3. Fast Transcript Testing (`scripts/fast-transcript-test.sh`)
+Convenience wrapper for transcript testing with the bundle:
+```bash
+./scripts/fast-transcript-test.sh stories/dungeo --all
+./scripts/fast-transcript-test.sh stories/dungeo path/to/test.transcript
+```
+
+## Technical Details
+
+### Why 81 Seconds?
+Node.js barrel exports (`export * from './foo'`) trigger synchronous file I/O at require time. Each package has dozens of barrel re-exports, causing cascading loads.
+
+### Why 140ms?
+esbuild inlines all dependencies into a single file. One file read instead of hundreds.
+
+### Build Fixes Applied
+1. Added `"composite": true` to `packages/core/tsconfig.json`
+2. Added `"composite": true` to `packages/if-domain/tsconfig.json`
+3. Excluded broken/unnecessary packages from bundle build
+
+## Files Created/Modified
+
+1. `scripts/bundle-sharpee.sh` - Bundle creation script
+2. `scripts/use-bundle.js` - Require hook for bundle usage
+3. `scripts/fast-transcript-test.sh` - Fast transcript testing
+4. `packages/core/tsconfig.json` - Added composite: true
+5. `packages/if-domain/tsconfig.json` - Added composite: true
+6. `dist/sharpee.js` - The bundle (1MB)
+7. `dist/sharpee.js.map` - Source map (1.6MB)
+8. `dist/sharpee.d.ts` - Type declarations
 
 ## Dungeo Progress
 
 - 149/190 rooms (78%)
 - 510/616 treasure points (83%)
-- Royal Puzzle Phase 2 partially done (movement mechanics exist but need wiring)
+- Royal Puzzle Phase 2 partially done
 - ~40 endgame rooms remaining
 - All remaining work is pure game dev (no Sharpee changes needed)
 
-## Commands for Next Session
+## Next Steps
 
-```bash
-# Install esbuild
-pnpm add -D -w esbuild
-
-# Run bundle script
-./scripts/bundle-sharpee.sh
-
-# Or manually test bundle
-npx esbuild packages/engine/dist/index.js --bundle --platform=node --outfile=dist/sharpee.js --external:readline
-
-# Test bundle load time
-node -e "const s=Date.now(); require('./dist/sharpee.js'); console.log(Date.now()-s+'ms')"
-```
+1. Test fast-transcript-test.sh with dungeo
+2. Continue dungeo implementation with fast dev loop
+3. Consider adding bundle to CI for release builds
