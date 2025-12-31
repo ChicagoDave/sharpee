@@ -1,7 +1,7 @@
 # Dungeo Implementation Tracking
 
 **Target**: Mainframe Zork 616-point version + ADR-078 extension
-**Current Progress**: 145/~191 rooms (76%), 534/650 treasure points (82%)
+**Current Progress**: 149/~191 rooms (78%), 530/650 treasure points (82%)
 
 ---
 
@@ -218,7 +218,7 @@
 |------|--------|-------|
 | Square Room | ✅ Done | E of Treasure Room |
 | Puzzle Room | ✅ Done | Entry point above puzzle |
-| Room in a Puzzle | 🚧 Partial | 8x8 grid - movement logic needs work |
+| Room in a Puzzle | ✅ Done | 8x8 grid - movement, look, card taking all working |
 
 ### The Endgame
 
@@ -270,7 +270,7 @@
 | 22 | Gold coffin | 3 | 7 | 10 | Egyptian Room | ✅ Done |
 | 23 | Portrait | 10 | 5 | 15 | Chairman's Office | ✅ Done |
 | 24 | Zorkmid bills | 10 | 15 | 25 | Vault (Bank) | ✅ Done |
-| 25 | Gold card | 10 | 15 | 25 | Royal Puzzle | ❌ |
+| 25 | Gold card | 10 | 15 | 25 | Royal Puzzle | ✅ Done |
 | 26 | Ivory torch | 14 | 6 | 20 | Torch Room | ✅ Done |
 | 27 | Crown | 15 | 10 | 25 | Dusty Room | ✅ Done |
 | 28 | Flathead stamp | 4 | 10 | 14 | Library (Volcano) | ✅ Done |
@@ -278,9 +278,9 @@
 | 30 | Ruby | 15 | 8 | 23 | Ruby Room | ✅ Done |
 | 31 | Don Woods stamp | -- | 1 | 1 | Brochure (mail order) | ❌ |
 | 32 | Brass bauble | 1 | 1 | 2 | Forest (canary song) | ❌ |
-| 33 | Thief's canvas | 10 | 14 | 34 | Gallery (ADR-078 ritual) | ❌ |
+| 33 | Thief's canvas | 10 | 24 | 34 | Gallery (ADR-078 ritual) | ✅ Done |
 
-**Implemented**: 27/33 treasures (471/650 points = 72%)
+**Implemented**: 29/33 treasures (530/650 points = 82%)
 
 ---
 
@@ -371,9 +371,9 @@
 | Timber | Mine | ❌ | Slide room anchor |
 | Brochure | Mail | ❌ | Contains stamp |
 | Robot | Low Room | ✅ Done | Push button |
-| Incense | Maze (skeleton) | ❌ | ADR-078: Burns 3 turns, disarms basin |
-| Empty frame | Treasure Room | ❌ | ADR-078: Appears after Thief dies |
-| Frame piece | (from frame) | ❌ | ADR-078: Drop in basin for canvas |
+| Incense | Maze (skeleton) | ✅ Done | ADR-078: Burns 3 turns, disarms basin |
+| Empty frame | Treasure Room | ✅ Done | ADR-078: Appears after Thief dies |
+| Frame piece | (from frame) | ✅ Done | ADR-078: Drop in basin for canvas |
 
 ---
 
@@ -430,7 +430,7 @@
 |--------|----------|--------|--------|
 | Maze | Map carefully | ❌ | Coins, keys |
 | Coal mine | Navigate maze | ✅ Done | Coal, bracelet |
-| Royal Puzzle | Push sandstone blocks | ❌ | Gold card |
+| Royal Puzzle | Push sandstone blocks | ✅ Done | Gold card (25 pts) |
 | Mirror box | Push panels, pole | ❌ | Dungeon entrance |
 | Bank | Enter walls, use curtain | ✅ Done | Portrait, bills |
 
@@ -526,14 +526,14 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 | Category | Done | Total | % |
 |----------|------|-------|---|
 | Rooms | 149 | ~191 | 78% |
-| Treasures | 28 | 33 | 85% |
-| Treasure Points | 510 | 650 | 78% |
+| Treasures | 29 | 33 | 88% |
+| Treasure Points | 530 | 650 | 82% |
 | Light Sources | 4 | 4 | 100% |
 | Weapons | 4 | 4 | 100% |
 | Tools | 5 | 6 | 83% |
 | Containers | 5 | 5 | 100% |
 | NPCs | 6 | 8 | 75% |
-| Puzzles (working) | 11 | ~25 | 44% |
+| Puzzles (working) | 12 | ~25 | 48% |
 
 ---
 
@@ -546,6 +546,7 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Recently Completed
 
+- ✅ **Royal Puzzle Complete** (2025-12-31) - Fixed LOOK, TAKE CARD, and blocked card mechanics. Gold card treasure now fully obtainable (25 pts). Dynamic room descriptions work correctly. All 403 transcript tests pass.
 - ✅ **ADR-078 Thief's Canvas Puzzle** (2025-12-31) - Added Basin Room (E of Temple Dead End 2), ghost ritual puzzle with incense, empty frame, frame piece, canvas. New actions: BREAK, BURN, PRAY. 3-turn incense fuse. Ghost appears when frame piece dropped in blessed basin, canvas spawns in Gallery. 34 points (10 take + 24 case). Progress: 145/~191 rooms, 534/650 points.
 - ✅ **Royal Puzzle Phase 2** (2025-12-31) - Command transformer now intercepts GO/TAKE in puzzle. Fixed `isInPuzzle` bug (was using wrong player ID lookup). Added puzzle-take-card action for gold card. Added 12 push wall grammar patterns. Movement within puzzle, TAKE CARD, and exit mechanics now working. Transcript tests pass.
 - ✅ **Royal Puzzle Phase 1** (2025-12-30) - Added 3 rooms (Square Room, Puzzle Room, Room in a Puzzle), puzzle state management (8x8 grid from Fortran source), PUSH WALL action, gold card treasure (25 pts). Entry handlers created.

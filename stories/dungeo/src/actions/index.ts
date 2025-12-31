@@ -25,6 +25,12 @@ export * from './puzzle-move';
 // Puzzle Take Card (Royal Puzzle - taking the gold card)
 export * from './puzzle-take-card';
 
+// Puzzle Take Card Blocked (Royal Puzzle - can't reach card)
+export * from './puzzle-take-card-blocked';
+
+// Puzzle Look (Royal Puzzle - dynamic room description)
+export * from './puzzle-look';
+
 // Break (Ghost ritual - breaking the empty frame)
 export * from './break';
 
@@ -42,6 +48,8 @@ import { ringAction } from './ring';
 import { pushWallActions } from './push-wall';
 import { puzzleMoveAction } from './puzzle-move';
 import { puzzleTakeCardAction } from './puzzle-take-card';
+import { puzzleTakeCardBlockedAction } from './puzzle-take-card-blocked';
+import { puzzleLookAction } from './puzzle-look';
 import { breakAction } from './break';
 import { burnAction } from './burn';
 import { prayAction } from './pray';
@@ -54,6 +62,8 @@ export const customActions = [
   ...pushWallActions,
   puzzleMoveAction,
   puzzleTakeCardAction,
+  puzzleTakeCardBlockedAction,
+  puzzleLookAction,
   breakAction,
   burnAction,
   prayAction

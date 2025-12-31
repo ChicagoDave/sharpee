@@ -61,7 +61,10 @@ export function createRoyalPuzzleRooms(world: WorldModel): RoyalPuzzleRoomIds {
   };
 
   // Create objects
-  const objects = createRoyalPuzzleObjects(world, { puzzleRoom: puzzleRoom.id });
+  const objects = createRoyalPuzzleObjects(world, {
+    puzzleRoom: puzzleRoom.id,
+    roomInPuzzle: roomInPuzzle.id
+  });
   roomIds.goldCard = objects.goldCard.id;
   roomIds.warningNote = objects.warningNote.id;
 

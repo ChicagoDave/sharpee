@@ -349,6 +349,19 @@ export function createPuzzleCommandTransformer(): ParsedCommandTransformer {
 
     const actionId = parsed.action?.toLowerCase();
 
+    // Handle LOOK commands - show dynamic puzzle description
+    if (actionId === 'look' || actionId === 'looking' || actionId === 'if.action.looking') {
+      return {
+        ...parsed,
+        action: 'dungeo.puzzle.look',
+        extras: {
+          ...parsed.extras,
+          originalAction: actionId,
+          isPuzzleLook: true
+        }
+      };
+    }
+
     // Handle TAKE commands for the card
     if (actionId === 'take' || actionId === 'taking' || actionId === 'if.action.taking' || actionId === 'get') {
       if (isTakingCard(parsed)) {
@@ -356,6 +369,10 @@ export function createPuzzleCommandTransformer(): ParsedCommandTransformer {
         const controller = findPuzzleController(world);
         if (controller) {
           const state = getPuzzleState(controller);
+          if (state.cardTaken) {
+            // Card already taken - let normal TAKE fail
+            return parsed;
+          }
           if (isAdjacentToCard(state)) {
             // Redirect to puzzle take card action
             return {
@@ -367,10 +384,21 @@ export function createPuzzleCommandTransformer(): ParsedCommandTransformer {
                 isPuzzleTakeCard: true
               }
             };
+          } else {
+            // Not adjacent - redirect to blocking action
+            return {
+              ...parsed,
+              action: 'dungeo.puzzle.take_card_blocked',
+              extras: {
+                ...parsed.extras,
+                originalAction: actionId,
+                isPuzzleTakeCardBlocked: true
+              }
+            };
           }
         }
       }
-      // Not adjacent or not taking card - let normal TAKE handle it (will fail appropriately)
+      // Not taking card - let normal TAKE handle it
       return parsed;
     }
 

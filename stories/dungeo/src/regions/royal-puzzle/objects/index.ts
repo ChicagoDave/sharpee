@@ -84,10 +84,14 @@ if you can find your way back.`
  */
 export function createRoyalPuzzleObjects(
   world: WorldModel,
-  roomIds: { puzzleRoom: string }
+  roomIds: { puzzleRoom: string; roomInPuzzle: string }
 ): { goldCard: IFEntity; warningNote: IFEntity } {
   const goldCard = createGoldCard(world);
   const warningNote = createWarningNote(world, roomIds.puzzleRoom);
+
+  // Place card in the Room in a Puzzle so it's in scope for entity resolution.
+  // The puzzle handler controls when it can actually be taken (only when adjacent).
+  world.moveEntity(goldCard.id, roomIds.roomInPuzzle);
 
   return { goldCard, warningNote };
 }

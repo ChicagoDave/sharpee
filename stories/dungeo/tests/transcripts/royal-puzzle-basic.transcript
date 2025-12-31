@@ -1,6 +1,6 @@
 title: Royal Puzzle Basic Test
 story: dungeo
-description: Tests entry, push mechanics, and exit mechanics of the Royal Puzzle
+description: Tests entry, push mechanics, card taking, and blocked card message
 
 ---
 
@@ -35,10 +35,6 @@ description: Tests entry, push mechanics, and exit mechanics of the Royal Puzzle
 > down
 [OK: contains "sandstone"]
 
-# Try moving - should be blocked (walls on all sides at start)
-> south
-[OK: contains "cannot"]
-
 # Try to go up - no ladder in position
 > up
 [OK: contains "no way"]
@@ -51,6 +47,30 @@ description: Tests entry, push mechanics, and exit mechanics of the Royal Puzzle
 > south
 [OK: contains "maze"]
 
-# Look around
+# Try to take card from here - should be blocked (not adjacent)
+> take card
+[OK: contains "can't reach"]
+
+# Look around - should show dynamic description
 > look
 [OK: contains "maze"]
+[OK: contains "Passages"]
+
+# Move toward the card (at position 33)
+> south
+[OK: contains "maze"]
+
+> south
+[OK: contains "card"]
+
+# Now we should see the gold card description
+> look
+[OK: contains "gold card"]
+
+# Take the card
+> take card
+[OK: contains "card"]
+
+# Verify we have it
+> inventory
+[OK: contains "gold card"]
