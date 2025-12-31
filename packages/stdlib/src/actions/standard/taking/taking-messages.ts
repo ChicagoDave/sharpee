@@ -15,6 +15,7 @@ export const TakingMessages = {
   TOO_HEAVY: 'too_heavy',
   CANNOT_TAKE: 'cannot_take',
   CANT_TAKE: 'cant_take',
+  NOTHING_TO_TAKE: 'nothing_to_take',  // For "take all" when nothing available
 
   // Success messages
   TAKEN: 'taken',

@@ -5,7 +5,7 @@
  */
 
 import { EntityId } from '@sharpee/core';
-import { IWearableData } from '@sharpee/world-model';
+import { IWearableData, IFEntity } from '@sharpee/world-model';
 
 /**
  * Type guard for wearable trait data
@@ -58,8 +58,20 @@ export function hasCapacityLimit(trait: unknown): trait is ContainerTraitData & 
 }
 
 /**
+ * Result of validating/executing a single entity in multi-object command
+ */
+export interface TakingItemResult {
+  entity: IFEntity;
+  success: boolean;
+  error?: string;  // messageId if validation failed
+  previousLocation?: EntityId;
+  implicitlyRemoved?: boolean;
+  wasWorn?: boolean;
+}
+
+/**
  * Typed shared data for taking action
- * 
+ *
  * This interface defines all data that the taking action
  * stores in context.sharedData for communication between phases
  */
@@ -69,28 +81,34 @@ export interface TakingSharedData {
    * Used to determine if it was in a container/supporter
    */
   previousLocation?: EntityId;
-  
+
   /**
    * True if a worn item was implicitly removed before taking
    * Triggers an additional 'removed' event
    */
   implicitlyRemoved?: boolean;
-  
+
   /**
    * True if the item was being worn (used with implicitlyRemoved)
    * Helps generate appropriate messages
    */
   wasWorn?: boolean;
-  
+
   /**
    * For future use: track if item was locked in container
    */
   wasLocked?: boolean;
-  
+
   /**
    * For future use: track if container was opened implicitly
    */
   containerOpened?: boolean;
+
+  /**
+   * Multi-object support: results for each entity
+   * When set, indicates this is a multi-object command
+   */
+  multiObjectResults?: TakingItemResult[];
 }
 
 /**
