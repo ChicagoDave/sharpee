@@ -12,9 +12,9 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@sharpee/core": "workspace:*",
-    "@sharpee/if-domain": "workspace:*",
-    "@sharpee/world-model": "workspace:*"
+    "@sharpee/core": "file:../core",
+    "@sharpee/if-domain": "file:../if-domain",
+    "@sharpee/world-model": "file:../world-model"
   },
   "devDependencies": {
     "@types/node": "^20.11.19",
