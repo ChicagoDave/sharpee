@@ -24,21 +24,28 @@ export interface IValidatedObjectReference {
 export interface IValidatedCommand {
   /** Original parsed command */
   parsed: IParsedCommand;
-  
+
   /** ID of the action that will handle this command */
   actionId: string;
-  
+
   /** Resolved direct object if present */
   directObject?: IValidatedObjectReference;
-  
+
   /** Resolved indirect object if present */
   indirectObject?: IValidatedObjectReference;
-  
+
+  /**
+   * Resolved instrument if present (ADR-080)
+   * For patterns using .instrument() to mark a slot as a tool/weapon
+   * e.g., "attack troll with sword" where sword is the instrument
+   */
+  instrument?: IValidatedObjectReference;
+
   /** Validation metadata */
   metadata?: {
     /** Time taken to validate */
     validationTime?: number;
-    
+
     /** Any warnings during validation */
     warnings?: string[];
   };

@@ -153,6 +153,18 @@ export class CommandValidator implements CommandValidator {
       indirectObject = resolved.value;
     }
 
+    // 3b. Resolve instrument if present in parsed command (ADR-080)
+    // Instruments are tools/weapons marked with .instrument() in grammar patterns
+    let instrument: IValidatedObjectReference | undefined;
+    if (command.instrument) {
+      // Instruments are typically carried or reachable
+      const resolved = this.resolveEntity(command.instrument, 'instrument', ScopeLevel.REACHABLE, command);
+      if (!resolved.success) {
+        return resolved;
+      }
+      instrument = resolved.value;
+    }
+
     // 4. Check scope constraints based on action metadata
     const metadata = this.getActionMetadata(actionHandler);
 
@@ -251,11 +263,23 @@ export class CommandValidator implements CommandValidator {
       };
     }
 
+    if (instrument) {
+      const player = this.world.getPlayer()!;
+      const entityScope = this.scopeResolver.getScope(player, instrument.entity as IFEntity);
+      const perceivedBy = this.getPerceivedSenses(player, instrument.entity as IFEntity);
+
+      scopeInfo.instrument = {
+        level: entityScope,
+        perceivedBy
+      };
+    }
+
     const validatedCommand: ValidatedCommand = {
       parsed: command,
       actionId: actionHandler.id,
       directObject,
       indirectObject,
+      instrument,
       metadata: {
         validationTime,
         warnings: warnings.length > 0 ? warnings : undefined
@@ -274,7 +298,7 @@ export class CommandValidator implements CommandValidator {
    */
   private resolveEntity(
     ref: INounPhrase,
-    objectType: 'direct' | 'indirect',
+    objectType: 'direct' | 'indirect' | 'instrument',
     requiredScope: ScopeLevel,
     command: IParsedCommand
   ): Result<IValidatedObjectReference, IValidationError> {

@@ -12,7 +12,8 @@ export const buildAttackedData: ActionDataBuilder<AttackedEventData> = (
   context: ActionContext
 ): AttackedEventData => {
   const target = context.command.directObject?.entity;
-  const weapon = context.command.indirectObject?.entity;
+  // ADR-080: Prefer instrument field, fall back to indirectObject
+  const weapon = context.command.instrument?.entity ?? context.command.indirectObject?.entity;
   
   if (!target) {
     return { 

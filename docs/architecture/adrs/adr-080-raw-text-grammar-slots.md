@@ -1,6 +1,6 @@
 # ADR-080: Grammar Enhancements for Classic IF Patterns
 
-**Status**: Implemented (Phases 1-3)
+**Status**: Complete
 **Date**: 2025-12-31
 **Context**: Dungeo implementation revealing gaps in grammar coverage
 

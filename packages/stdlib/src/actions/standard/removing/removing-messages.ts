@@ -16,5 +16,6 @@ export const RemovingMessages = {
   CANT_REMOVE: 'cant_remove',
   TOO_HEAVY: 'too_heavy',
   CONTAINER_FULL: 'container_full',
-  CANT_TAKE: 'cant_take'
+  CANT_TAKE: 'cant_take',
+  NOTHING_TO_REMOVE: 'nothing_to_remove'
 } as const;

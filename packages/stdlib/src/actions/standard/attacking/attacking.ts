@@ -96,7 +96,8 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
   validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     const target = context.command.directObject?.entity;
-    const weapon = context.command.indirectObject?.entity;
+    // ADR-080: Prefer instrument field (from .instrument() patterns), fall back to indirectObject
+    const weapon = context.command.instrument?.entity ?? context.command.indirectObject?.entity;
     
     // Must have a target
     if (!target) {
@@ -155,7 +156,8 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
   execute(context: ActionContext): void {
     // Assume validation has passed - no checks needed
     const target = context.command.directObject!.entity!; // Safe because validate ensures it exists
-    let weapon = context.command.indirectObject?.entity;
+    // ADR-080: Prefer instrument field (from .instrument() patterns), fall back to indirectObject
+    let weapon = context.command.instrument?.entity ?? context.command.indirectObject?.entity;
     let weaponInferred = false;
 
     // If no weapon specified, try to infer one from inventory
