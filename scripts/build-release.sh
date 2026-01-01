@@ -193,8 +193,20 @@ if [[ "$PUBLISH" == true ]]; then
   # Create GitHub release
   echo "  Creating GitHub release..."
 
-  # Generate release notes
-  RELEASE_NOTES=$(cat <<EOF
+  # Look for release notes file
+  NOTES_FILE="docs/releases/$FINAL_VERSION.md"
+
+  if [[ -f "$NOTES_FILE" ]]; then
+    echo "  Using release notes from $NOTES_FILE"
+    gh release create "$TAG" \
+      --title "Sharpee $FINAL_VERSION" \
+      --notes-file "$NOTES_FILE" \
+      $PRERELEASE_FLAG
+  else
+    echo "  Warning: No release notes file found at $NOTES_FILE"
+    echo "  Using default release notes"
+
+    RELEASE_NOTES=$(cat <<EOF
 ## Sharpee $FINAL_VERSION
 
 ### Packages
@@ -214,17 +226,14 @@ if [[ "$PUBLISH" == true ]]; then
 npm install @sharpee/sharpee@$FINAL_VERSION
 \`\`\`
 
-### CLI
-\`\`\`bash
-npx @sharpee/sharpee@$FINAL_VERSION --help
-\`\`\`
+See docs/releases/ for detailed release notes.
 EOF
 )
-
-  gh release create "$TAG" \
-    --title "Sharpee $FINAL_VERSION" \
-    --notes "$RELEASE_NOTES" \
-    $PRERELEASE_FLAG
+    gh release create "$TAG" \
+      --title "Sharpee $FINAL_VERSION" \
+      --notes "$RELEASE_NOTES" \
+      $PRERELEASE_FLAG
+  fi
 
   echo ""
   echo "Release published!"
