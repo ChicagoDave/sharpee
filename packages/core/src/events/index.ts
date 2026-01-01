@@ -2,7 +2,7 @@
 
 /**
  * Core event system
- * 
+ *
  * Provides a generic event bus and text processing system
  * without knowledge of specific event types
  */
@@ -13,6 +13,12 @@ export * from './standard-events';
 export * from './system-event';
 export * from './platform-events';
 export * from './game-events';
+
+// Export typed event system (ADR-082)
+export * from './event-registry';
+export * from './typed-event';
+export * from './event-factory';
+export * from './event-helpers';
 
 // Export event sources with specific names to avoid conflicts
 export {
