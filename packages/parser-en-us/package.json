@@ -18,7 +18,6 @@
     "test": "vitest",
     "test:ci": "vitest run",
     "lint": "eslint src --ext .ts",
-    "prepublishOnly": "npm run clean && npm run build"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",

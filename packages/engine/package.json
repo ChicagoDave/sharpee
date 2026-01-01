@@ -20,7 +20,6 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "clean": "rimraf dist",
-    "prepublishOnly": "npm run clean && npm run build"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",

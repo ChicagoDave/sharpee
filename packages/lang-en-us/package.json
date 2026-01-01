@@ -19,7 +19,6 @@
     "test:coverage": "vitest run --coverage",
     "clean": "rimraf dist",
     "lint": "eslint src --ext .ts",
-    "prepublishOnly": "npm run clean && npm run build"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",

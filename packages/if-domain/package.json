@@ -15,7 +15,6 @@
   "scripts": {
     "build": "tsc",
     "clean": "rimraf dist",
-    "prepublishOnly": "npm run clean && npm run build"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*"

@@ -21,7 +21,6 @@
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src --ext .ts",
     "clean": "rimraf dist",
-    "prepublishOnly": "npm run clean && npm run build"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
