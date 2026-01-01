@@ -1,6 +1,6 @@
 {
   "name": "sharpee",
-  "version": "1.0.0-alpha.1",
+  "version": "0.9.0-beta.2",
   "description": "A TypeScript-based Interactive Fiction Engine",
   "private": true,
   "packageManager": "pnpm@10.13.1",
