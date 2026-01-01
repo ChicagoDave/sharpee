@@ -2,7 +2,7 @@
 
 A modern TypeScript interactive fiction engine for creating text adventures and parser-based games.
 
-[![npm version](https://img.shields.io/npm/v/@sharpee/sharpee.svg)](https://www.npmjs.com/package/@sharpee/sharpee)
+[![npm version](https://img.shields.io/npm/v/@sharpee/sharpee/beta.svg)](https://www.npmjs.com/package/@sharpee/sharpee)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Installation
