@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/if-services",
-  "version": "0.9.1-beta.9",
+  "version": "0.9.1-beta.10",
   "description": "Runtime service interfaces for Sharpee Interactive Fiction Platform",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
