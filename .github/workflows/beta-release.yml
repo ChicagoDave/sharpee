@@ -171,7 +171,7 @@ jobs:
 
     - name: Publish to npm
       run: |
-        # Publish packages in dependency order
+        # Publish packages in dependency order (using OIDC/Trusted Publishing)
         for pkg in core if-domain world-model if-services text-services lang-en-us parser-en-us event-processor stdlib engine sharpee; do
           if [ -d "packages/$pkg" ] && [ -f "packages/$pkg/package.json" ]; then
             echo "Publishing @sharpee/$pkg..."
@@ -180,8 +180,6 @@ jobs:
             cd ../..
           fi
         done
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   # Notify on build completion (branch push, not tag)
   notify:
