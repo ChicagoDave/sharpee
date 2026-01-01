@@ -4,6 +4,7 @@
 **Duration**: ~1.5 hours
 **Feature/Area**: Parser Enhancement - Multi-Object Actions
 **Branch**: `adr-080-grammar-enhancements`
+**ADR**: `docs/architecture/adrs/adr-080-raw-text-grammar-slots.md`
 
 ## Objective
 
@@ -90,17 +91,42 @@ packages/stdlib/src/actions/standard/inserting/inserting.ts
 - Putting: 29 passed
 - Inserting: 15 passed
 
-## Phase 6 Status
+---
 
-| Action | Multi-Object Support |
-|--------|---------------------|
-| Taking | ✅ Complete |
-| Dropping | ✅ Complete |
-| Putting | ✅ Complete |
-| Inserting | ✅ Complete (delegates to putting) |
+## ADR-080 Overall Status
+
+### Phase Completion
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| **Phase 1** | Grammar Builder (SlotType, .text(), .instrument()) | ✅ Complete |
+| **Phase 2** | Pattern Compiler (:slot... syntax) | ✅ Complete |
+| **Phase 3** | Grammar Engine (all/but/and detection, consecutive slots) | ✅ Complete |
+| **Phase 4** | Command Chaining (period/comma splitting) | ✅ Complete |
+| **Phase 5** | Parsed Command Structure (textSlots, excluded, instrument) | ✅ Complete |
+| **Phase 6** | Action Updates | ⚠️ Partial |
+| **Phase 7** | Core Grammar Updates | ✅ Complete |
+
+### Phase 6 Action Support
+
+| Action | Multi-Object | Notes |
+|--------|-------------|-------|
+| Taking | ✅ | `take all`, `take all but X`, `take X and Y` |
+| Dropping | ✅ | `drop all`, `drop all but X`, `drop X and Y` |
+| Putting | ✅ | `put all in/on X` |
+| Inserting | ✅ | Delegates to putting |
+| Removing | ❌ | Not implemented |
+| Instrument handling | ❌ | Patterns exist but actions don't use `context.command.instrument` |
+
+### What's Still Missing
+
+1. **Removing action** - Needs multi-object support (`remove all from box`)
+2. **Instrument handling in actions** - Grammar patterns work (e.g., `attack troll with sword`), but actions don't check `context.command.instrument` for special handling
+
+---
 
 ## Next Steps
 
-1. Consider adding multi-object support to removing action
-2. Integration tests with parser to verify grammar patterns work end-to-end
-3. Phase 7: Verify grammar patterns (should already work via ADR-080 Phase 2)
+1. Add multi-object support to removing action
+2. Implement instrument field handling in combat/tool actions
+3. Integration tests with parser to verify grammar patterns work end-to-end
