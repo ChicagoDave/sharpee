@@ -51,7 +51,8 @@
     "lint": "pnpm -r run lint",
     "watch": "pnpm -r --parallel run watch",
     "watch:cli-en": "pnpm --filter '@sharpee/platform-cli-en-us' run watch",
-    "sharpee": "node packages/sharpee/dist/cli/index.js"
+    "sharpee": "node packages/sharpee/dist/cli/index.js",
+    "publish:beta": "pnpm --filter @sharpee/core publish --access public --tag beta && pnpm --filter @sharpee/if-domain publish --access public --tag beta && pnpm --filter @sharpee/world-model publish --access public --tag beta && pnpm --filter @sharpee/if-services publish --access public --tag beta && pnpm --filter @sharpee/text-services publish --access public --tag beta && pnpm --filter @sharpee/lang-en-us publish --access public --tag beta && pnpm --filter @sharpee/parser-en-us publish --access public --tag beta && pnpm --filter @sharpee/event-processor publish --access public --tag beta && pnpm --filter @sharpee/stdlib publish --access public --tag beta && pnpm --filter @sharpee/engine publish --access public --tag beta && pnpm --filter @sharpee/sharpee publish --access public --tag beta"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.2.4",
