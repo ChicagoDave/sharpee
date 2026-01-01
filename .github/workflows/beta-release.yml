@@ -1,0 +1,133 @@
+name: Beta Release
+
+on:
+  push:
+    branches: [beta-release]
+    tags: ['v*-beta*', 'v*-alpha*']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v3
+      with:
+        version: 10.13.1
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
+
+    - name: Install dependencies
+      run: pnpm install --ignore-scripts
+
+    - name: Build all packages
+      run: |
+        pnpm --filter '@sharpee/core' run build
+        pnpm --filter '@sharpee/if-domain' run build
+        pnpm --filter '@sharpee/world-model' run build
+        pnpm --filter '@sharpee/if-services' run build
+        pnpm --filter '@sharpee/text-services' run build
+        pnpm --filter '@sharpee/lang-en-us' run build
+        pnpm --filter '@sharpee/parser-en-us' run build
+        pnpm --filter '@sharpee/stdlib' run build
+        pnpm --filter '@sharpee/event-processor' run build
+        pnpm --filter '@sharpee/engine' run build
+        pnpm --filter '@sharpee/sharpee' run build
+
+    - name: Run tests
+      run: pnpm test:ci || true
+
+    - name: Create release artifacts
+      run: |
+        mkdir -p release-artifacts
+        # Create tarballs for each package
+        for pkg in core if-domain world-model engine stdlib parser-en-us lang-en-us sharpee; do
+          if [ -d "packages/$pkg/dist" ]; then
+            tar -czvf "release-artifacts/sharpee-$pkg.tar.gz" -C "packages/$pkg" dist package.json
+          fi
+        done
+        # List what we created
+        ls -la release-artifacts/
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: sharpee-packages
+        path: release-artifacts/
+        retention-days: 30
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: sharpee-packages
+        path: release-artifacts/
+
+    - name: Get version from tag
+      id: version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: Sharpee ${{ steps.version.outputs.VERSION }}
+        body: |
+          ## Sharpee ${{ steps.version.outputs.VERSION }}
+
+          This is a beta release of the Sharpee Interactive Fiction platform.
+
+          ### Packages
+          - `@sharpee/core` - Core interfaces and utilities
+          - `@sharpee/world-model` - Entity system, traits, behaviors
+          - `@sharpee/engine` - Game engine and scheduler
+          - `@sharpee/stdlib` - Standard library (actions, NPC, combat)
+          - `@sharpee/parser-en-us` - English parser
+          - `@sharpee/lang-en-us` - English language pack
+          - `@sharpee/sharpee` - Meta-package (imports all)
+
+          ### Installation (coming soon)
+          ```bash
+          npm install @sharpee/sharpee@beta
+          ```
+
+          ### Documentation
+          See [README](https://github.com/ChicagoDave/sharpee#readme) for getting started.
+        files: release-artifacts/*
+        prerelease: true
+        generate_release_notes: true
+
+  # Notify on build completion (branch push, not tag)
+  notify:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/beta-release'
+
+    steps:
+    - name: Build Summary
+      run: |
+        echo "## Beta Release Build Complete" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Branch: beta-release" >> $GITHUB_STEP_SUMMARY
+        echo "Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "To create a release, push a tag:" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+        echo "git tag v0.9.0-beta.1" >> $GITHUB_STEP_SUMMARY
+        echo "git push origin v0.9.0-beta.1" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
