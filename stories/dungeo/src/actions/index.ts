@@ -43,6 +43,15 @@ export * from './pray';
 // Incant (Endgame cheat command)
 export * from './incant';
 
+// Lift (Inside Mirror pole)
+export * from './lift';
+
+// Lower (Inside Mirror pole)
+export * from './lower';
+
+// Push Panel (Inside Mirror wall panels)
+export * from './push-panel';
+
 // All custom actions for registration
 import { gdtActions } from './gdt';
 import { walkThroughActions } from './walk-through';
@@ -57,6 +66,9 @@ import { breakAction } from './break';
 import { burnAction } from './burn';
 import { prayAction } from './pray';
 import { incantAction } from './incant';
+import { liftAction } from './lift';
+import { lowerAction } from './lower';
+import { pushPanelAction } from './push-panel';
 
 export const customActions = [
   ...gdtActions,
@@ -71,5 +83,8 @@ export const customActions = [
   breakAction,
   burnAction,
   prayAction,
-  incantAction
+  incantAction,
+  liftAction,
+  lowerAction,
+  pushPanelAction
 ];

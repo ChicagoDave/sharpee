@@ -1,0 +1,84 @@
+title: Endgame Entry - Crypt Darkness Ritual
+story: dungeo
+description: Test endgame trigger when player waits 15 turns in Crypt with door closed and lamp off
+
+---
+
+# Enter GDT mode
+> gdt
+[OK: contains "GDT"]
+
+# Take the lamp so we have it
+> tk brass lantern
+[OK: contains "taken"]
+
+# Turn on the lantern first
+> turn on lantern
+[OK: contains "on"]
+
+# Teleport to the Crypt directly
+> ah Crypt
+[OK: contains "Teleported"]
+[OK: contains "Crypt"]
+
+# Verify we're in the Crypt
+> look
+[OK: contains "Crypt"]
+[OK: contains "Feel Free"]
+
+# Turn off the lamp to trigger darkness condition
+# Note: Daemon counter starts here (turn 1 of 15)
+> turn off lantern
+[OK: contains "off"]
+
+# Daemon turns 2-4 (total turns 8-10)
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+# Daemon turn 5 (total turn 11) - atmosphere message
+> wait
+[OK: contains "darkness"]
+
+# Daemon turns 6-9 (total turns 12-15)
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+# Daemon turn 10 (total turn 16) - second atmosphere message
+> wait
+[OK: contains "darkness"]
+
+# Daemon turns 11-14 (total turns 17-20)
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+# Daemon turn 15 (total turn 21) - Endgame triggers!
+> wait
+[OK: contains "cloaked figure"]
+
+# Verify we're now at Top of Stairs
+> look
+[OK: contains "Top of Stairs"]

@@ -29,14 +29,14 @@ import {
 import { DungeoScoringService } from './scoring';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages } from './actions';
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages } from './scheduler';
 import { setSchedulerForGDT } from './actions/gdt/commands';
 
 // Import handlers
-import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages } from './handlers';
+import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages } from './handlers';
 import { initializeMirrorRoom, createMirrorTouchHandler, MirrorRoomConfig, MirrorRoomMessages } from './handlers/mirror-room-handler';
 import { MIRROR_ID } from './regions/underground/objects';
 
@@ -194,6 +194,7 @@ export class DungeoStory implements Story {
     createFrigidRiverObjects(world, this.frigidRiverIds);
     createMazeObjects(world, this.mazeIds);
     createEndgameObjects(world, {
+      smallRoom: this.endgameIds.smallRoom,
       stoneRoom: this.endgameIds.stoneRoom,
       parapet: this.endgameIds.parapet,
       insideMirror: this.endgameIds.insideMirror,
@@ -610,6 +611,153 @@ export class DungeoStory implements Story {
       .mapsTo(INCANT_ACTION_ID)
       .withPriority(200)
       .build();
+
+    // LIFT action (Inside Mirror pole)
+    grammar
+      .define('lift :target')
+      .mapsTo(LIFT_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('raise :target')
+      .mapsTo(LIFT_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('lift pole')
+      .mapsTo(LIFT_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('raise pole')
+      .mapsTo(LIFT_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('lift short pole')
+      .mapsTo(LIFT_ACTION_ID)
+      .withPriority(156)
+      .build();
+
+    grammar
+      .define('raise short pole')
+      .mapsTo(LIFT_ACTION_ID)
+      .withPriority(156)
+      .build();
+
+    // LOWER action (Inside Mirror pole)
+    grammar
+      .define('lower :target')
+      .mapsTo(LOWER_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('lower pole')
+      .mapsTo(LOWER_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('lower short pole')
+      .mapsTo(LOWER_ACTION_ID)
+      .withPriority(156)
+      .build();
+
+    // GO IN (Inside Mirror entry from Hallway)
+    // Note: This is handled by a command transformer that intercepts
+    // the going action when player is in Hallway and direction is IN
+
+    // PUSH PANEL action (Inside Mirror wall panels)
+    // These have higher priority than stdlib push to bypass scenery check
+    grammar
+      .define('push red panel')
+      .mapsTo(PUSH_PANEL_ACTION_ID)
+      .withPriority(170)
+      .build();
+
+    grammar
+      .define('push red wall')
+      .mapsTo(PUSH_PANEL_ACTION_ID)
+      .withPriority(170)
+      .build();
+
+    grammar
+      .define('push red')
+      .mapsTo(PUSH_PANEL_ACTION_ID)
+      .withPriority(170)
+      .build();
+
+    grammar
+      .define('push yellow panel')
+      .mapsTo(PUSH_PANEL_ACTION_ID)
+      .withPriority(170)
+      .build();
+
+    grammar
+      .define('push yellow wall')
+      .mapsTo(PUSH_PANEL_ACTION_ID)
+      .withPriority(170)
+      .build();
+
+    grammar
+      .define('push yellow')
+      .mapsTo(PUSH_PANEL_ACTION_ID)
+      .withPriority(170)
+      .build();
+
+    grammar
+      .define('push mahogany panel')
+      .mapsTo(PUSH_PANEL_ACTION_ID)
+      .withPriority(170)
+      .build();
+
+    grammar
+      .define('push mahogany wall')
+      .mapsTo(PUSH_PANEL_ACTION_ID)
+      .withPriority(170)
+      .build();
+
+    grammar
+      .define('push mahogany')
+      .mapsTo(PUSH_PANEL_ACTION_ID)
+      .withPriority(170)
+      .build();
+
+    grammar
+      .define('push pine panel')
+      .mapsTo(PUSH_PANEL_ACTION_ID)
+      .withPriority(170)
+      .build();
+
+    grammar
+      .define('push pine wall')
+      .mapsTo(PUSH_PANEL_ACTION_ID)
+      .withPriority(170)
+      .build();
+
+    grammar
+      .define('push pine')
+      .mapsTo(PUSH_PANEL_ACTION_ID)
+      .withPriority(170)
+      .build();
+
+    // Generic push panel patterns (fallback)
+    grammar
+      .define('push :target panel')
+      .mapsTo(PUSH_PANEL_ACTION_ID)
+      .withPriority(165)
+      .build();
+
+    grammar
+      .define('push :target wall')
+      .mapsTo(PUSH_PANEL_ACTION_ID)
+      .withPriority(165)
+      .build();
   }
 
   /**
@@ -862,6 +1010,56 @@ export class DungeoStory implements Story {
     language.addMessage(IncantMessages.success, 'A hollow voice speaks: "Greetings, Implementor." You feel disoriented as reality shifts around you...');
     language.addMessage(IncantMessages.failure, 'Nothing happens.');
     language.addMessage(IncantMessages.syntax, 'The spell fizzles. (Usage: INCANT <challenge> <response>)');
+
+    // Endgame trigger messages (Crypt darkness ritual)
+    language.addMessage(EndgameTriggerMessages.DARKNESS_DESCENDS, 'The darkness seems to press in around you. You sense a presence watching from the shadows...');
+    language.addMessage(EndgameTriggerMessages.CLOAKED_FIGURE, 'A cloaked figure appears from the shadows! "So, you have discovered the secret. Your quest is nearly at an end, but the final challenge awaits." The figure gestures, and reality dissolves around you...');
+    language.addMessage(EndgameTriggerMessages.TELEPORT, 'When your vision clears, you find yourself in a completely different place.');
+    language.addMessage(EndgameTriggerMessages.ENDGAME_BEGINS, 'The endgame has begun. Your score is now 15 out of a possible 100.');
+
+    // Laser puzzle messages (Small Room / Stone Room)
+    language.addMessage(LaserPuzzleMessages.BEAM_BROKEN, 'The sword falls through the beam of light, breaking it. The beam flickers and dies.');
+    language.addMessage(LaserPuzzleMessages.BEAM_ACTIVE, 'A narrow red beam of light crosses the room at the north end.');
+    language.addMessage(LaserPuzzleMessages.BUTTON_LASER_ACTIVE, 'You push the button, but nothing happens.');
+    language.addMessage(LaserPuzzleMessages.BUTTON_PRESSED, 'There is a rumbling sound from the north.');
+    language.addMessage(LaserPuzzleMessages.BUTTON_ALREADY_PRESSED, 'The button has already been pushed.');
+    language.addMessage(LaserPuzzleMessages.LOOK_BEAM_ACTIVE, 'A narrow red beam of light crosses the room at the north end, inches above the floor.');
+    language.addMessage(LaserPuzzleMessages.LOOK_BEAM_BROKEN, 'The beam of light is no longer visible.');
+
+    // Inside Mirror puzzle messages
+    language.addMessage(InsideMirrorMessages.POLE_RAISED, 'You raise the short pole until it is almost touching the ceiling.');
+    language.addMessage(InsideMirrorMessages.POLE_LOWERED_CHANNEL, 'The short pole slides smoothly into the stone channel and clicks into place.');
+    language.addMessage(InsideMirrorMessages.POLE_LOWERED_FLOOR, 'The short pole falls to the floor with a clunk. It doesn\'t fit into the channel at this angle.');
+    language.addMessage(InsideMirrorMessages.POLE_ALREADY_RAISED, 'The pole is already raised.');
+    language.addMessage(InsideMirrorMessages.POLE_ALREADY_LOWERED, 'The pole is already lowered.');
+    language.addMessage(InsideMirrorMessages.POLE_CANT_LOWER, 'You can\'t lower the pole right now.');
+    language.addMessage(InsideMirrorMessages.BOX_ROTATES, 'The structure rotates with a grinding sound. The T-bar arrow now points {direction}.');
+    language.addMessage(InsideMirrorMessages.BOX_MOVES, 'The structure slides along the groove with a rumbling sound.');
+    language.addMessage(InsideMirrorMessages.BOX_CANT_ROTATE, 'The structure won\'t rotate. The pole is locking it in place.');
+    language.addMessage(InsideMirrorMessages.BOX_CANT_MOVE_UNLOCKED, 'The structure wobbles but doesn\'t move. The pole must be lowered into the channel first.');
+    language.addMessage(InsideMirrorMessages.BOX_CANT_MOVE_ORIENTATION, 'The structure is not aligned with the groove. It won\'t slide.');
+    language.addMessage(InsideMirrorMessages.BOX_AT_END, 'The structure has reached the end of the groove.');
+    language.addMessage(InsideMirrorMessages.ENTER_MIRROR, 'You step into the strange wooden structure.');
+    language.addMessage(InsideMirrorMessages.EXIT_MIRROR, 'You climb out of the structure to the north.');
+    language.addMessage(InsideMirrorMessages.CANT_EXIT, 'You can\'t exit that way. The structure is not properly positioned.');
+    language.addMessage(InsideMirrorMessages.NO_MIRROR_HERE, 'There is no structure here to enter.');
+    language.addMessage(InsideMirrorMessages.TBAR_DIRECTION, 'The arrow on the T-bar points {direction}.');
+
+    // Lift/Lower action messages
+    language.addMessage(LiftMessages.CANT_LIFT, 'You can\'t lift that.');
+    language.addMessage(LiftMessages.NO_TARGET, 'Lift what?');
+    language.addMessage(LiftMessages.NOT_VISIBLE, 'You don\'t see that here.');
+    language.addMessage(LiftMessages.NOT_IN_MIRROR, 'There is nothing here to lift.');
+    language.addMessage(LowerMessages.CANT_LOWER, 'You can\'t lower that.');
+    language.addMessage(LowerMessages.NO_TARGET, 'Lower what?');
+    language.addMessage(LowerMessages.NOT_VISIBLE, 'You don\'t see that here.');
+    language.addMessage(LowerMessages.NOT_IN_MIRROR, 'There is nothing here to lower.');
+
+    // Push panel action messages
+    language.addMessage(PushPanelMessages.NOT_IN_MIRROR, 'There are no panels to push here.');
+    language.addMessage(PushPanelMessages.NO_TARGET, 'Push which panel?');
+    language.addMessage(PushPanelMessages.NOT_VISIBLE, 'You don\'t see a {target} here.');
+    language.addMessage(PushPanelMessages.NOT_A_PANEL, 'That isn\'t a panel you can push.');
   }
 
   /**
@@ -957,6 +1155,25 @@ export class DungeoStory implements Story {
       };
     });
 
+    // Register transformer for push-panel action
+    // Clears entity slots so CommandValidator doesn't try to resolve panel names
+    // The action extracts panel type from rawInput directly
+    engine.registerParsedCommandTransformer((parsed: IParsedCommand, _world: WorldModel) => {
+      if (parsed.action !== PUSH_PANEL_ACTION_ID) {
+        return parsed;
+      }
+
+      // Clear entity slots - action will use rawInput to find panel type
+      return {
+        ...parsed,
+        structure: {
+          ...parsed.structure,
+          directObject: undefined,
+          indirectObject: undefined
+        }
+      };
+    });
+
 
     // Register Royal Puzzle movement transformer
     // This intercepts GO commands when player is inside the puzzle grid
@@ -1017,7 +1234,36 @@ export class DungeoStory implements Story {
 
       // Register Reality Altered daemon (ADR-078 hidden max points)
       registerRealityAlteredDaemon(scheduler);
+
+      // Register Endgame Trigger handler (Crypt darkness ritual)
+      registerEndgameTriggerHandler(
+        scheduler,
+        this.world,
+        this.templeIds.crypt,
+        this.endgameIds.topOfStairs
+      );
     }
+
+    // Register Laser Puzzle handler (Small Room / Stone Room)
+    const schedulerForLaser = engine.getScheduler();
+    registerLaserPuzzleHandler(
+      engine,
+      this.world,
+      this.endgameIds.smallRoom,
+      this.endgameIds.stoneRoom,
+      schedulerForLaser || undefined
+    );
+
+    // Register Inside Mirror handler (rotating/sliding box puzzle)
+    const schedulerForMirror = engine.getScheduler();
+    registerInsideMirrorHandler(
+      engine,
+      this.world,
+      this.endgameIds.hallway,
+      this.endgameIds.insideMirror,
+      this.endgameIds.dungeonEntrance,
+      schedulerForMirror || undefined
+    );
 
     // Register NPCs (ADR-070)
     const npcService = engine.getNpcService();
