@@ -170,12 +170,13 @@ jobs:
 
     - name: Publish to npm (OIDC Trusted Publishing)
       run: |
+        echo "npm version: $(npm --version)"
         # Publish packages in dependency order
         for pkg in core if-domain world-model if-services text-services lang-en-us parser-en-us event-processor stdlib engine sharpee; do
           if [ -d "packages/$pkg" ] && [ -f "packages/$pkg/package.json" ]; then
             echo "Publishing @sharpee/$pkg..."
             cd "packages/$pkg"
-            npm publish --tag ${{ steps.npm-tag.outputs.TAG }} --access public --provenance || echo "Skipped (may already exist)"
+            npm publish --tag ${{ steps.npm-tag.outputs.TAG }} --access public || echo "Skipped (may already exist)"
             cd ../..
           fi
         done
