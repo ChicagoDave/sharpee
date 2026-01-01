@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/text-services",
-  "version": "0.9.0-beta.2",
+  "version": "0.9.0-beta.5",
   "description": "Text service implementations for Sharpee Interactive Fiction Platform",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -33,5 +33,8 @@
     "narrative"
   ],
   "author": "Sharpee Team",
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
 }

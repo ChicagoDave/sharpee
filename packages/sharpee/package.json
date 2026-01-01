@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/sharpee",
-  "version": "0.9.0-beta.4",
+  "version": "0.9.0-beta.5",
   "description": "Sharpee - Interactive Fiction Engine for TypeScript",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -20,14 +20,16 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@sharpee/core": "workspace:*",
-    "@sharpee/engine": "workspace:*",
-    "@sharpee/event-processor": "workspace:*",
-    "@sharpee/lang-en-us": "workspace:*",
-    "@sharpee/parser-en-us": "workspace:*",
-    "@sharpee/stdlib": "workspace:*",
-    "@sharpee/text-services": "workspace:*",
-    "@sharpee/world-model": "workspace:*"
+    "@sharpee/core": "0.9.0-beta.5",
+    "@sharpee/engine": "0.9.0-beta.5",
+    "@sharpee/event-processor": "0.9.0-beta.5",
+    "@sharpee/if-domain": "0.9.0-beta.5",
+    "@sharpee/if-services": "0.9.0-beta.5",
+    "@sharpee/lang-en-us": "0.9.0-beta.5",
+    "@sharpee/parser-en-us": "0.9.0-beta.5",
+    "@sharpee/stdlib": "0.9.0-beta.5",
+    "@sharpee/text-services": "0.9.0-beta.5",
+    "@sharpee/world-model": "0.9.0-beta.5"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

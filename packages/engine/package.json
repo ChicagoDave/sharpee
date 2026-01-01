@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/engine",
-  "version": "0.9.0-beta.2",
+  "version": "0.9.0-beta.5",
   "description": "Runtime engine for Sharpee IF Platform - game loop, command execution, and turn management",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/event-processor",
-  "version": "0.9.0-beta.2",
+  "version": "0.9.0-beta.5",
   "description": "Event processor for applying semantic events to the world model",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -33,5 +33,8 @@
     "event-processor"
   ],
   "author": "Sharpee Team",
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
 }
