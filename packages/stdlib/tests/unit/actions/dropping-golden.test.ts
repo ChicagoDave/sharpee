@@ -22,21 +22,21 @@ import {
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 import type { ISemanticEvent } from '@sharpee/core';
 
-// Helper to execute action using the new three-phase pattern
+// Helper to execute action using the four-phase pattern
 function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
-  // New three-phase pattern: validate -> execute -> report
+  // Four-phase pattern: validate -> execute/blocked -> report
   const validationResult = action.validate(context);
-  
+
   if (!validationResult.valid) {
-    // Action creates its own error events in report()
-    return action.report(context, validationResult);
+    // Use blocked() for validation failures
+    return action.blocked(context, validationResult);
   }
-  
-  // Execute mutations (returns void in new pattern)
+
+  // Execute mutations (returns void)
   action.execute(context);
-  
-  // Report generates all events
-  return action.report(context, validationResult);
+
+  // Report generates success events
+  return action.report(context);
 }
 
 describe('droppingAction (Golden Pattern)', () => {
@@ -99,9 +99,8 @@ describe('droppingAction (Golden Pattern)', () => {
       
       const events = executeAction(droppingAction, context);
       
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('no_target'),
-        reason: 'no_target'
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('no_target')
       });
     });
 
@@ -115,9 +114,8 @@ describe('droppingAction (Golden Pattern)', () => {
       
       const events = executeAction(droppingAction, context);
       
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_held'),
-        params: { item: 'red ball' }
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('not_held')
       });
     });
 
@@ -139,9 +137,8 @@ describe('droppingAction (Golden Pattern)', () => {
       
       const events = executeAction(droppingAction, context);
       
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('still_worn'),
-        params: { item: 'blue hat' }
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('still_worn')
       });
     });
   });
@@ -233,12 +230,8 @@ describe('droppingAction (Golden Pattern)', () => {
       
       const events = executeAction(droppingAction, context);
       
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('container_full'),
-        params: { 
-          item: 'ball',
-          container: 'small box' 
-        }
+      expectEvent(events, 'action.blocked', {
+        messageId: expect.stringContaining('container_full')
       });
     });
   });

@@ -16,5 +16,6 @@ export const PuttingMessages = {
   CANT_PUT_ON_ITSELF: 'cant_put_on_itself',
   NO_ROOM: 'no_room',
   NO_SPACE: 'no_space',
-  CANT_PUT: 'cant_put'
+  CANT_PUT: 'cant_put',
+  NOTHING_TO_PUT: 'nothing_to_put'
 } as const;

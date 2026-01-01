@@ -10,26 +10,21 @@
  * 2. execute: Delegate to putting action with 'in' preposition
  * 3. blocked: Generate error events when validation fails
  * 4. report: Generate success events (delegates to putting)
+ *
+ * Supports multi-object commands:
+ * - "insert all in box" - inserts all carried items in box
+ * - "insert all but X in box" - inserts all except specified items
+ * - "insert X and Y in box" - inserts multiple specified items
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
-import { buildEventData } from '../../data-builder-types';
-import { insertedDataConfig } from './inserting-data';
 import { puttingAction } from '../putting';
 import { createActionContext } from '../../enhanced-context';
-import { captureEntitySnapshot } from '../../base/snapshot-utils';
 import { InsertingMessages } from './inserting-messages';
-
-interface InsertingState {
-  item: any;
-  container: any;
-  puttingValidation: ValidationResult;
-}
 
 /**
  * Shared data passed between execute and report phases
@@ -40,6 +35,26 @@ interface InsertingSharedData {
 
 function getInsertingSharedData(context: ActionContext): InsertingSharedData {
   return context.sharedData as InsertingSharedData;
+}
+
+/**
+ * Create a modified command with 'in' preposition for delegation to putting
+ */
+function createModifiedCommand(context: ActionContext) {
+  return {
+    ...context.command,
+    parsed: {
+      ...context.command.parsed,
+      structure: {
+        ...context.command.parsed.structure,
+        preposition: {
+          tokens: [],
+          text: 'in'
+        }
+      },
+      preposition: 'in'
+    }
+  };
 }
 
 export const insertingAction: Action & { metadata: ActionMetadata } = {
@@ -53,7 +68,8 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
     'already_there',
     'inserted',
     'wont_fit',
-    'container_closed'
+    'container_closed',
+    'nothing_to_insert'
   ],
   group: 'object_manipulation',
 
@@ -68,8 +84,12 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
     const item = context.command.directObject?.entity;
     const container = context.command.indirectObject?.entity;
 
-    // Validate we have an item
-    if (!item) {
+    // For single-object commands, validate we have an item
+    // (Multi-object commands may not have a resolved entity yet)
+    const isMultiObject = context.command.parsed.structure.directObject?.isAll ||
+                          context.command.parsed.structure.directObject?.isList;
+
+    if (!isMultiObject && !item) {
       return {
         valid: false,
         error: InsertingMessages.NO_TARGET
@@ -81,25 +101,12 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: InsertingMessages.NO_DESTINATION,
-        params: { item: item.name }
+        params: { item: item?.name }
       };
     }
 
     // Create modified command with 'in' preposition for delegation to putting
-    const modifiedCommand = {
-      ...context.command,
-      parsed: {
-        ...context.command.parsed,
-        structure: {
-          ...context.command.parsed.structure,
-          preposition: {
-            tokens: [],
-            text: 'in'
-          }
-        },
-        preposition: 'in'
-      }
-    };
+    const modifiedCommand = createModifiedCommand(context);
 
     // Create a new context for the putting action with the modified command
     const modifiedContext = createActionContext(
@@ -116,28 +123,12 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       return puttingValidation as ValidationResult;
     }
 
-    return {
-      valid: true
-    };
+    return { valid: true };
   },
 
   execute(context: ActionContext): void {
-    // For most cases, delegate to putting with 'in' preposition
-    // This ensures consistent behavior between "insert X in Y" and "put X in Y"
-    const modifiedCommand = {
-      ...context.command,
-      parsed: {
-        ...context.command.parsed,
-        structure: {
-          ...context.command.parsed.structure,
-          preposition: {
-            tokens: [],
-            text: 'in'
-          }
-        },
-        preposition: 'in' // Add this for backward compatibility with tests
-      }
-    };
+    // Create modified command with 'in' preposition for delegation to putting
+    const modifiedCommand = createModifiedCommand(context);
 
     // Create a new context for the putting action with the modified command
     const modifiedContext = createActionContext(
