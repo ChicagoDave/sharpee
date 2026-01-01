@@ -5,13 +5,13 @@
  * Useful for testing and understanding the event flow
  */
 
-import { 
-  TextService, 
-  TextServiceContext, 
-  TextOutput 
+import {
+  TextService,
+  TextServiceContext,
+  TextOutput
 } from '@sharpee/if-services';
 import { LanguageProvider } from '@sharpee/if-domain';
-import { ISemanticEvent } from '@sharpee/core';
+import { ISemanticEvent, getUntypedEventData } from '@sharpee/core';
 
 export interface CLIEventsConfig {
   showTurnHeader?: boolean;
@@ -151,23 +151,26 @@ export class CLIEventsTextService implements TextService {
       if (typeof event.data === 'object') {
         // Special handling for action.error events to show translated message
         if (event.type === 'action.error' && this.languageProvider) {
-          const data = event.data as any;
-          const messageId = data.messageId || data.error || data.reason;
-          const params = data.params || {};
-          
+          const data = getUntypedEventData(event);
+          const messageId = String(data.messageId || data.error || data.reason || '');
+          const actionId = typeof data.actionId === 'string' ? data.actionId : '';
+          const params = (typeof data.params === 'object' && data.params !== null)
+            ? data.params as Record<string, unknown>
+            : {};
+
           // Try to get translated message from language provider
           let message = '';
           if (messageId) {
             // Try with action-specific message ID first
-            if (data.actionId) {
-              message = this.languageProvider.getMessage(`${data.actionId}.${messageId}`, params);
+            if (actionId) {
+              message = this.languageProvider.getMessage(`${actionId}.${messageId}`, params);
             }
-            
+
             // If that didn't work or returned the ID itself, try the generic message
-            if (!message || message === `${data.actionId}.${messageId}`) {
+            if (!message || message === `${actionId}.${messageId}`) {
               message = this.languageProvider.getMessage(messageId, params);
             }
-            
+
             // If we got a meaningful message, show it
             if (message && message !== messageId) {
               parts.push(`"${message}"`);
@@ -179,7 +182,7 @@ export class CLIEventsTextService implements TextService {
             parts.push(JSON.stringify(event.data));
           }
         } else {
-          const data = event.data as any;
+          const data = getUntypedEventData(event);
           if (data.message) {
             parts.push(`"${data.message}"`);
           } else if (data.text) {

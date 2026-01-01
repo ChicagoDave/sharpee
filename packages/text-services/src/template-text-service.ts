@@ -13,7 +13,12 @@ import {
   TextOutputChanneled
 } from '@sharpee/if-services';
 import { LanguageProvider } from '@sharpee/if-domain';
-import { ISemanticEvent } from '@sharpee/core';
+import {
+  ISemanticEvent,
+  isEventType,
+  getEventDataWithDefaults,
+  getUntypedEventData
+} from '@sharpee/core';
 
 export class TemplateTextService implements TextService {
   private context?: TextServiceContext;
@@ -119,78 +124,87 @@ export class TemplateTextService implements TextService {
   }
   
   private processQueryEvent(event: ISemanticEvent): string | null {
-    const data = event.data as any;
-    const query = data?.query || (event as any).payload?.query;
-    if (!query) return null;
-    
+    // Use getUntypedEventData for query events (handles complex nested structures)
+    const data = getUntypedEventData(event);
+    const queryData = data?.query || (event as any).payload?.query;
+    if (!queryData) return null;
+
     if (!this.languageProvider) {
       // Fallback without language provider
-      let prompt = query.messageId || 'Please respond:';
-      
-      if (query.options && query.options.length > 0) {
-        const options = query.options.map((opt: string, idx: number) => 
+      let prompt = queryData.messageId || 'Please respond:';
+
+      if (queryData.options && queryData.options.length > 0) {
+        const options = queryData.options.map((opt: string, idx: number) =>
           `${idx + 1}. ${opt}`
         ).join('\n');
         return `${prompt}\n\n${options}`;
       }
-      
+
       return prompt;
     }
-    
+
     // Get the message from language provider
-    const message = this.languageProvider.getMessage(query.messageId, query.messageParams || {});
-    if (!message) return query.messageId;
-    
+    const message = this.languageProvider.getMessage(queryData.messageId, queryData.messageParams || {});
+    if (!message) return queryData.messageId;
+
     // The message is already formatted
     let text = message;
-    
+
     // Add options if multiple choice
-    if (query.options && query.options.length > 0) {
-      const optionTexts = query.options.map((opt: string, idx: number) => {
+    if (queryData.options && queryData.options.length > 0) {
+      const optionTexts = queryData.options.map((opt: string, idx: number) => {
         // Try to get localized option text
         const optionText = this.languageProvider!.getMessage(`option.${opt}`) || opt;
         return `${idx + 1}. ${optionText}`;
       }).join('\n');
-      
+
       text = `${text}\n\n${optionTexts}`;
     }
-    
+
     return text;
   }
   
   private processQueryInvalidEvent(event: ISemanticEvent): string | null {
-    const data = event.data as any;
-    const message = data?.message || 'Invalid response.';
-    const hint = data?.hint;
-    
-    return hint ? `${message} ${hint}` : message;
+    // Use typed helper for query.invalid events
+    const { message, hint } = getEventDataWithDefaults(event, 'query.invalid', {
+      message: 'Invalid response.',
+      hint: undefined
+    });
+
+    return hint ? `${message} ${hint}` : (message ?? null);
   }
   
   private processMessageEvent(event: ISemanticEvent): string | null {
-    const data = event.data as any;
+    // Use getUntypedEventData for message events (handles many subtypes)
+    const data = getUntypedEventData(event);
     const messageId = data?.messageId || (event as any).payload?.messageId;
     if (!messageId || !this.languageProvider) return null;
-    
-    const params = (event.data as any)?.params || (event as any).payload?.params || {};
+
+    const params = data?.params || (event as any).payload?.params || {};
     const message = this.languageProvider.getMessage(messageId, params);
     return message || null;
   }
   
   private processQuitConfirmedEvent(event: ISemanticEvent): string | null {
-    const data = event.data as any;
-    const messageId = data?.messageId || 'quit_confirmed';
-    
+    // Use typed helper for quit.confirmed events
+    const data = getEventDataWithDefaults(event, 'quit.confirmed', {
+      messageId: 'quit_confirmed',
+      finalScore: 0,
+      maxScore: 0,
+      moves: 0
+    });
+
     if (!this.languageProvider) {
       return 'Thanks for playing!';
     }
-    
+
     const params = {
-      finalScore: data?.finalScore || 0,
-      maxScore: data?.maxScore || 0,
-      moves: data?.moves || 0
+      finalScore: data.finalScore,
+      maxScore: data.maxScore,
+      moves: data.moves
     };
-    
-    const message = this.languageProvider.getMessage(messageId, params);
+
+    const message = this.languageProvider.getMessage(data.messageId || 'quit_confirmed', params);
     return message || 'Thanks for playing!';
   }
   

@@ -4,7 +4,7 @@
  * These handlers process sensory observation events (search, listen, smell, touch)
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { ISemanticEvent, getUntypedEventData } from '@sharpee/core';
 import { WorldModel, IFEntity, TraitType, IdentityTrait, EventHandler } from '@sharpee/world-model';
 import { IFEvents } from '@sharpee/if-domain';
 
@@ -13,8 +13,8 @@ import { IFEvents } from '@sharpee/if-domain';
  */
 export const handleSearched: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target } = event.entities;
-  const data = event.data as any;
-  const foundItems = data?.foundItems as string[];
+  const data = getUntypedEventData(event);
+  const foundItems = Array.isArray(data?.foundItems) ? data.foundItems as string[] : [];
   
   if (target && foundItems && foundItems.length > 0) {
     // Reveal concealed items

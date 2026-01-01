@@ -5,7 +5,7 @@
  * pushing, pulling, turning, and using objects.
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { ISemanticEvent, getUntypedEventData } from '@sharpee/core';
 import { WorldModel, TraitType, EventHandler } from '@sharpee/world-model';
 import { IFEvents } from '@sharpee/if-domain';
 
@@ -14,8 +14,8 @@ import { IFEvents } from '@sharpee/if-domain';
  */
 export const handlePushed: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target, location } = event.entities;
-  const data = event.data as any;
-  const pushType = data?.pushType as string;
+  const data = getUntypedEventData(event);
+  const pushType = String(data?.pushType || '');
   
   if (!target) return;
   
@@ -61,8 +61,8 @@ export const handlePushed: EventHandler = (event: ISemanticEvent, world: any) =>
  */
 export const handlePulled: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target } = event.entities;
-  const data = event.data as any;
-  const pullType = data?.pullType as string;
+  const data = getUntypedEventData(event);
+  const pullType = String(data?.pullType || '');
   
   if (!target) return;
   
@@ -101,8 +101,8 @@ export const handlePulled: EventHandler = (event: ISemanticEvent, world: any) =>
  */
 export const handleTurned: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target } = event.entities;
-  const data = event.data as any;
-  const turnType = data?.turnType as string;
+  const data = getUntypedEventData(event);
+  const turnType = String(data?.turnType || '');
   const newSetting = data?.newSetting;
   
   if (!target) return;
@@ -137,8 +137,8 @@ export const handleTurned: EventHandler = (event: ISemanticEvent, world: any) =>
  */
 export const handleUsed: EventHandler = (event: ISemanticEvent, world: any) => {
   const { target } = event.entities;
-  const data = event.data as any;
-  const useType = data?.useType as string;
+  const data = getUntypedEventData(event);
+  const useType = String(data?.useType || '');
   
   if (!target) return;
   
