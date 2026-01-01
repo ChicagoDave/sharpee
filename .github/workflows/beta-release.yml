@@ -171,13 +171,13 @@ jobs:
 
     - name: Publish to npm
       run: |
-        echo "npm version: $(npm --version)"
-        # Publish packages in dependency order
+        echo "pnpm version: $(pnpm --version)"
+        # Publish packages in dependency order (pnpm converts workspace:* to real versions)
         for pkg in core if-domain world-model if-services text-services lang-en-us parser-en-us event-processor stdlib engine sharpee; do
           if [ -d "packages/$pkg" ] && [ -f "packages/$pkg/package.json" ]; then
             echo "Publishing @sharpee/$pkg..."
             cd "packages/$pkg"
-            npm publish --tag ${{ steps.npm-tag.outputs.TAG }} --access public
+            pnpm publish --tag ${{ steps.npm-tag.outputs.TAG }} --access public --no-git-checks
             cd ../..
           fi
         done
