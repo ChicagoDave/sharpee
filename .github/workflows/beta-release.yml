@@ -169,18 +169,20 @@ jobs:
           echo "TAG=latest" >> $GITHUB_OUTPUT
         fi
 
-    - name: Publish to npm (OIDC)
+    - name: Publish to npm
       run: |
         echo "npm version: $(npm --version)"
-        # Publish packages in dependency order with --provenance for OIDC
+        # Publish packages in dependency order
         for pkg in core if-domain world-model if-services text-services lang-en-us parser-en-us event-processor stdlib engine sharpee; do
           if [ -d "packages/$pkg" ] && [ -f "packages/$pkg/package.json" ]; then
             echo "Publishing @sharpee/$pkg..."
             cd "packages/$pkg"
-            npm publish --provenance --tag ${{ steps.npm-tag.outputs.TAG }} --access public
+            npm publish --tag ${{ steps.npm-tag.outputs.TAG }} --access public
             cd ../..
           fi
         done
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   # Notify on build completion (branch push, not tag)
   notify:
