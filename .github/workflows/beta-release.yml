@@ -118,7 +118,6 @@ jobs:
   publish-npm:
     needs: build
     runs-on: ubuntu-latest
-    environment: prod
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: read

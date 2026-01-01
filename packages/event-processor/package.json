@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/event-processor",
-  "version": "0.9.1-beta.10",
+  "version": "0.9.1-beta.11",
   "description": "Event processor for applying semantic events to the world model",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
