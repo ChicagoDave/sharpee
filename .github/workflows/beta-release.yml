@@ -136,7 +136,6 @@ jobs:
       with:
         node-version: '20'
         cache: 'pnpm'
-        registry-url: 'https://registry.npmjs.org'
 
     - name: Install dependencies
       run: pnpm install
@@ -169,9 +168,9 @@ jobs:
           echo "TAG=latest" >> $GITHUB_OUTPUT
         fi
 
-    - name: Publish to npm
+    - name: Publish to npm (OIDC Trusted Publishing)
       run: |
-        # Publish packages in dependency order (using OIDC/Trusted Publishing)
+        # Publish packages in dependency order
         for pkg in core if-domain world-model if-services text-services lang-en-us parser-en-us event-processor stdlib engine sharpee; do
           if [ -d "packages/$pkg" ] && [ -f "packages/$pkg/package.json" ]; then
             echo "Publishing @sharpee/$pkg..."

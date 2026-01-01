@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/text-services",
-  "version": "0.9.1-beta.3",
+  "version": "0.9.1-beta.4",
   "description": "Text service implementations for Sharpee Interactive Fiction Platform",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
