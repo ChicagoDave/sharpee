@@ -27,18 +27,7 @@ jobs:
       run: pnpm install --ignore-scripts
 
     - name: Build all packages
-      run: |
-        pnpm --filter '@sharpee/core' run build
-        pnpm --filter '@sharpee/if-domain' run build
-        pnpm --filter '@sharpee/world-model' run build
-        pnpm --filter '@sharpee/if-services' run build
-        pnpm --filter '@sharpee/text-services' run build
-        pnpm --filter '@sharpee/lang-en-us' run build
-        pnpm --filter '@sharpee/parser-en-us' run build
-        pnpm --filter '@sharpee/stdlib' run build
-        pnpm --filter '@sharpee/event-processor' run build
-        pnpm --filter '@sharpee/engine' run build
-        pnpm --filter '@sharpee/sharpee' run build
+      run: pnpm build --filter './packages/**'
 
     - name: Run tests
       run: pnpm test:ci || true
@@ -137,18 +126,7 @@ jobs:
       run: pnpm install --ignore-scripts
 
     - name: Build all packages
-      run: |
-        pnpm --filter '@sharpee/core' run build
-        pnpm --filter '@sharpee/if-domain' run build
-        pnpm --filter '@sharpee/world-model' run build
-        pnpm --filter '@sharpee/if-services' run build
-        pnpm --filter '@sharpee/text-services' run build
-        pnpm --filter '@sharpee/lang-en-us' run build
-        pnpm --filter '@sharpee/parser-en-us' run build
-        pnpm --filter '@sharpee/stdlib' run build
-        pnpm --filter '@sharpee/event-processor' run build
-        pnpm --filter '@sharpee/engine' run build
-        pnpm --filter '@sharpee/sharpee' run build
+      run: pnpm build --filter './packages/**'
 
     - name: Determine npm tag
       id: npm-tag
