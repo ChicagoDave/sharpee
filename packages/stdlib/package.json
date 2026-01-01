@@ -1,30 +1,35 @@
 {
   "name": "@sharpee/stdlib",
-  "version": "1.0.0-alpha.1",
-  "description": "Standard library for Sharpee IF Platform - command definitions and language interfaces",
+  "version": "0.9.0-beta.1",
+  "description": "Standard library for Sharpee IF Platform - actions, commands, and game mechanics",
   "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc --build",
     "test": "vitest",
     "test:ci": "CI=true vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:coverage:watch": "vitest --coverage",
-    "test:coverage:detailed": "vitest run --coverage --reporter=verbose",
-    "coverage:view": "open coverage/index.html",
-    "coverage:badge": "node scripts/coverage-badge.js",
-    "clean": "rimraf dist coverage"
+    "clean": "rimraf dist coverage",
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "dependencies": {
-    "@sharpee/core": "file:../core",
-    "@sharpee/if-domain": "file:../if-domain",
-    "@sharpee/if-services": "file:../if-services",
-    "@sharpee/lang-en-us": "file:../lang-en-us",
-    "@sharpee/world-model": "file:../world-model"
+    "@sharpee/core": "workspace:*",
+    "@sharpee/if-domain": "workspace:*",
+    "@sharpee/if-services": "workspace:*",
+    "@sharpee/lang-en-us": "workspace:*",
+    "@sharpee/world-model": "workspace:*"
   },
   "devDependencies": {
-    "@sharpee/parser-en-us": "file:../parser-en-us",
+    "@sharpee/parser-en-us": "workspace:*",
     "@types/node": "^20.11.19",
     "@vitest/ui": "^3.2.4",
     "rimraf": "^5.0.5",
@@ -35,11 +40,28 @@
     "dist"
   ],
   "keywords": [
-    "sharpee",
     "interactive-fiction",
     "if",
-    "stdlib"
+    "text-adventure",
+    "sharpee",
+    "stdlib",
+    "actions"
   ],
   "author": "Sharpee Team",
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ChicagoDave/sharpee.git",
+    "directory": "packages/stdlib"
+  },
+  "homepage": "https://github.com/ChicagoDave/sharpee#readme",
+  "bugs": {
+    "url": "https://github.com/ChicagoDave/sharpee/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

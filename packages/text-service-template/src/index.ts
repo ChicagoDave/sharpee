@@ -13,7 +13,9 @@ import {
   TextOutputChanneled
 } from '@sharpee/if-services';
 import { LanguageProvider } from '@sharpee/if-domain';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
+
+type SemanticEvent = ISemanticEvent;
 
 export class TemplateTextService implements TextService {
   private context?: TextServiceContext;
@@ -128,14 +130,14 @@ export class TemplateTextService implements TextService {
     if (!message) return query.messageId;
     
     // Format the message
-    let text = this.formatMessage(message.template, query.messageParams || {});
+    let text = this.formatMessage(message, query.messageParams || {});
     
     // Add options if multiple choice
     if (query.options && query.options.length > 0) {
       const optionTexts = query.options.map((opt: string, idx: number) => {
         // Try to get localized option text
         const optionMessage = this.languageProvider!.getMessage(`option.${opt}`);
-        const optionText = optionMessage ? optionMessage.template : opt;
+        const optionText = optionMessage ? optionMessage : opt;
         return `${idx + 1}. ${optionText}`;
       }).join('\n');
       
@@ -160,7 +162,7 @@ export class TemplateTextService implements TextService {
     if (!message) return null;
     
     const params = (event.data as any)?.params || (event as any).payload?.params || {};
-    return this.formatMessage(message.template, params);
+    return this.formatMessage(message, params);
   }
   
   private processQuitConfirmedEvent(event: SemanticEvent): string | null {
@@ -179,7 +181,7 @@ export class TemplateTextService implements TextService {
       moves: event.data?.moves || 0
     };
     
-    return this.formatMessage(message.template, params);
+    return this.formatMessage(message, params);
   }
   
   private processPlatformEvent(event: SemanticEvent): string | null {
@@ -241,7 +243,7 @@ export class TemplateTextService implements TextService {
       params.error = (event as any).payload?.error || 'Unknown error';
     }
     
-    return this.formatMessage(message.template, params);
+    return this.formatMessage(message, params);
   }
   
   private formatMessage(template: string, params: Record<string, any>): string {
