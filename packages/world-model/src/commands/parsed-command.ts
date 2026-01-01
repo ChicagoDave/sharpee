@@ -115,6 +115,14 @@ export interface INounPhrase {
   determiners: string[];
   /** Vocabulary candidates for the head noun */
   candidates: string[];
+
+  // ADR-080 additions for multi-object support
+  /** True if this represents "all" (e.g., "take all") */
+  isAll?: boolean;
+  /** True if this is a list of objects (e.g., "take knife and lamp") */
+  isList?: boolean;
+  /** Individual items when isList is true */
+  items?: INounPhrase[];
 }
 
 /**
@@ -133,10 +141,10 @@ export interface IPrepPhrase {
 export interface IParsedCommand {
   /** Raw input text exactly as typed */
   rawInput: string;
-  
+
   /** All tokens with position and classification */
   tokens: IToken[];
-  
+
   /** Structured command components */
   structure: {
     /** Verb phrase */
@@ -148,18 +156,29 @@ export interface IParsedCommand {
     /** Indirect object noun phrase */
     indirectObject?: INounPhrase;
   };
-  
+
   /** Which grammar pattern matched (e.g., "VERB_NOUN_PREP_NOUN") */
   pattern: string;
-  
+
   /** Parser confidence in this interpretation */
   confidence: number;
-  
+
   /** Identified action (for compatibility) */
   action: string;
-  
+
   /** Additional parsed elements */
   extras?: Record<string, any>;
+
+  // ADR-080 additions
+
+  /** Raw text slot values (for patterns with .text() slots or :slot... syntax) */
+  textSlots?: Map<string, string>;
+
+  /** Excluded noun phrases for "all but X" patterns */
+  excluded?: INounPhrase[];
+
+  /** Instrument noun phrase for "with/through/using" clauses */
+  instrument?: INounPhrase;
 }
 
 /**

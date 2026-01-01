@@ -1,6 +1,6 @@
 # ADR-080: Grammar Enhancements for Classic IF Patterns
 
-**Status**: Proposed
+**Status**: Complete
 **Date**: 2025-12-31
 **Context**: Dungeo implementation revealing gaps in grammar coverage
 
@@ -286,6 +286,7 @@ if (instrument) {
 2. Recognize "all" keyword in noun phrases
 3. Recognize "but/except" as exclusion modifier
 4. Recognize "and" as list connector
+5. **Consecutive slots handling**: When next pattern token is a slot (not a literal delimiter), use constraint-aware consumption to find entity boundaries
 
 ### Phase 4: Pre-processing Layer (parser-en-us)
 
@@ -407,6 +408,53 @@ grammar.define('write :content... on :surface').text('content').mapsTo('if.actio
 **Migration:**
 - Existing patterns continue to work unchanged
 - New features are opt-in via `.text()`, `.instrument()`, and new patterns
+
+---
+
+## Implementation Notes
+
+### Phase 3: Command Chaining
+
+Implemented via `parseChain()` method on `EnglishParser`:
+
+```typescript
+// Returns array of parsed commands
+parser.parseChain('take sword. go north. drop sword')
+// → [Result<taking>, Result<going>, Result<dropping>]
+```
+
+**Period splitting**: Input is split on `.` (preserving quoted strings). Empty segments are filtered out.
+
+**Comma disambiguation**: Segments are further split on commas ONLY when the word after the comma is a known verb:
+
+```
+"take sword, drop it"     → ["take sword", "drop it"]  (verb after comma)
+"take knife, lamp"        → ["take knife, lamp"]       (noun after comma = list)
+```
+
+Vocabulary lookup via `vocabularyRegistry.hasWord(word, PartOfSpeech.VERB)` determines whether to split.
+
+**Error handling**: Each segment is parsed independently. Errors in one segment don't stop parsing of subsequent segments. Callers receive an array of Results and can handle failures individually.
+
+### Consecutive Slots and Entity Boundary Detection
+
+Patterns with consecutive entity slots (e.g., `give :recipient :item`) require special handling in multi-object parsing. Without a literal delimiter between slots, the parser cannot use simple token matching to determine where one entity ends and another begins.
+
+**Problem**: For `give guard sword`, greedy consumption would assign both words to `:recipient`, leaving nothing for `:item`.
+
+**Solution**: When `nextPatternToken.type === 'slot'`, use constraint-aware consumption:
+
+1. Try progressively longer phrases (1 word, 2 words, etc.)
+2. Check each candidate against slot constraints
+3. Stop at the first match (greedy: shortest match wins)
+4. If no constraints defined, take only the first word (safe default)
+
+This preserves support for multi-word entities like "brass lantern" when constraints can identify them, while preventing over-consumption in consecutive slot patterns.
+
+| Pattern Type | Example | Next Token | Strategy |
+|-------------|---------|------------|----------|
+| Literal delimiter | `put :item in :container` | `in` (literal) | Greedy until delimiter |
+| Consecutive slots | `give :recipient :item` | `:item` (slot) | Constraint-aware, shortest match |
 
 ---
 

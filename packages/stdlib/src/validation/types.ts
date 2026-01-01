@@ -26,9 +26,12 @@ export interface ValidatedCommand extends CoreValidatedCommand {
   scopeInfo?: {
     /** Scope info for direct object */
     directObject?: ScopeInfo;
-    
+
     /** Scope info for indirect object */
     indirectObject?: ScopeInfo;
+
+    /** Scope info for instrument (ADR-080) */
+    instrument?: ScopeInfo;
   };
 }
 

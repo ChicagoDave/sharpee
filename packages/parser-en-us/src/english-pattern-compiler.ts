@@ -3,11 +3,12 @@
  * @description English-specific implementation of pattern compilation
  */
 
-import { 
-  PatternCompiler, 
-  CompiledPattern, 
+import {
+  PatternCompiler,
+  CompiledPattern,
   PatternToken,
-  PatternSyntaxError 
+  PatternSyntaxError,
+  SlotType
 } from '@sharpee/if-domain';
 
 /**
@@ -47,8 +48,15 @@ export class EnglishPatternCompiler implements PatternCompiler {
         const optionalWord = words[i];
         
         if (optionalWord.startsWith(':')) {
-          // Optional slot
-          const slotName = optionalWord.substring(1);
+          // Optional slot - check for greedy syntax :slot...
+          let slotName = optionalWord.substring(1);
+          let isGreedy = false;
+
+          if (slotName.endsWith('...')) {
+            slotName = slotName.slice(0, -3);
+            isGreedy = true;
+          }
+
           if (!slotName || !/^[a-zA-Z_]\w*$/.test(slotName)) {
             throw new PatternSyntaxError(
               `Invalid slot name: ${optionalWord}`,
@@ -67,7 +75,9 @@ export class EnglishPatternCompiler implements PatternCompiler {
           tokens.push({
             type: 'slot',
             value: slotName,
-            optional: true
+            optional: true,
+            greedy: isGreedy || undefined,
+            slotType: isGreedy ? SlotType.TEXT_GREEDY : undefined
           });
         } else if (optionalWord.includes('|')) {
           // Optional alternates
@@ -87,8 +97,16 @@ export class EnglishPatternCompiler implements PatternCompiler {
           });
         }
       } else if (word.startsWith(':')) {
-        // Slot token
-        const slotName = word.substring(1);
+        // Slot token - check for greedy syntax :slot...
+        let slotName = word.substring(1);
+        let isGreedy = false;
+
+        if (slotName.endsWith('...')) {
+          // Greedy slot: :message... captures until next pattern element
+          slotName = slotName.slice(0, -3);
+          isGreedy = true;
+        }
+
         if (!slotName || !/^[a-zA-Z_]\w*$/.test(slotName)) {
           throw new PatternSyntaxError(
             `Invalid slot name: ${word}`,
@@ -106,7 +124,9 @@ export class EnglishPatternCompiler implements PatternCompiler {
         slots.set(slotName, tokens.length);
         tokens.push({
           type: 'slot',
-          value: slotName
+          value: slotName,
+          greedy: isGreedy || undefined,
+          slotType: isGreedy ? SlotType.TEXT_GREEDY : undefined
         });
       } else if (word.includes('|')) {
         // Alternates token
@@ -173,19 +193,23 @@ export class EnglishPatternCompiler implements PatternCompiler {
     if (!pattern || pattern.trim().length === 0) {
       return false;
     }
-    
+
     const words = pattern.trim().split(/\s+/);
-    
+
     for (const word of words) {
       // Check for valid slot names
       if (word.startsWith(':')) {
-        const slotName = word.substring(1);
+        let slotName = word.substring(1);
+        // Handle greedy slots :slot...
+        if (slotName.endsWith('...')) {
+          slotName = slotName.slice(0, -3);
+        }
         // Slot name must not be empty and must start with letter or underscore
         if (!slotName || !/^[a-zA-Z_]\w*$/.test(slotName)) {
           return false;
         }
       }
-      
+
       // Check for empty alternates
       if (word.includes('|')) {
         // Check for trailing pipe
@@ -203,7 +227,7 @@ export class EnglishPatternCompiler implements PatternCompiler {
         }
       }
     }
-    
+
     return true;
   }
   
@@ -212,15 +236,20 @@ export class EnglishPatternCompiler implements PatternCompiler {
    */
   extractSlots(pattern: string): string[] {
     const slots: string[] = [];
-    const matches = pattern.match(/:\w+/g) || [];
-    
+    // Match :slotName or :slotName...
+    const matches = pattern.match(/:\w+(?:\.\.\.)?/g) || [];
+
     for (const match of matches) {
-      const slotName = match.substring(1);
+      // Strip : prefix and ... suffix
+      let slotName = match.substring(1);
+      if (slotName.endsWith('...')) {
+        slotName = slotName.slice(0, -3);
+      }
       if (!slots.includes(slotName)) {
         slots.push(slotName);
       }
     }
-    
+
     return slots;
   }
 }

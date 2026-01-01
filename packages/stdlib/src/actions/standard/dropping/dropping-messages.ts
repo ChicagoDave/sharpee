@@ -10,6 +10,7 @@ export const DroppingMessages = {
   CONTAINER_FULL: 'container_full',
   CANT_DROP_HERE: 'cant_drop_here',
   CANT_DROP: 'cant_drop',
+  NOTHING_TO_DROP: 'nothing_to_drop',
 
   // Success messages
   DROPPED: 'dropped',

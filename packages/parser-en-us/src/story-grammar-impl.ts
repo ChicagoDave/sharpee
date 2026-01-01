@@ -78,7 +78,17 @@ export class StoryGrammarImpl implements StoryGrammar {
         baseBuilder.where(slot, constraint);
         return storyBuilder;
       },
-      
+
+      text(slot: string): StoryPatternBuilder {
+        baseBuilder.text(slot);
+        return storyBuilder;
+      },
+
+      instrument(slot: string): StoryPatternBuilder {
+        baseBuilder.instrument(slot);
+        return storyBuilder;
+      },
+
       mapsTo(action: string): StoryPatternBuilder {
         baseBuilder.mapsTo(action);
         return storyBuilder;

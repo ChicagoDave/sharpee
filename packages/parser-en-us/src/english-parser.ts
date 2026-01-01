@@ -24,7 +24,8 @@ import {
   VerbVocabulary,
   VocabularyEntry,
   PatternMatch,
-  Constraint
+  Constraint,
+  SlotType
 } from '@sharpee/if-domain';
 
 import type { 
@@ -97,6 +98,10 @@ interface RichCandidate {
   pattern: string;
   confidence: number;
   action: string;
+  // ADR-080 additions
+  textSlots?: Map<string, string>;
+  instrument?: INounPhrase;
+  excluded?: INounPhrase[]; // For "all but X" patterns
 }
 
 /**
@@ -404,9 +409,13 @@ export class EnglishParser implements Parser {
       },
       pattern: best.pattern,
       confidence: best.confidence,
-      action: best.action
+      action: best.action,
+      // ADR-080 additions
+      textSlots: best.textSlots,
+      instrument: best.instrument,
+      excluded: best.excluded
     };
-    
+
     // Add extras if present
     if ((best as any).direction) {
       // Convert direction string to Direction constant
@@ -444,6 +453,147 @@ export class EnglishParser implements Parser {
       success: true,
       value: parsed
     };
+  }
+
+  /**
+   * Parse input that may contain multiple commands separated by periods or commas.
+   * Returns an array of parsed commands (or errors).
+   *
+   * Period chaining:
+   * - "take sword. go north." → [take sword, go north]
+   *
+   * Comma chaining (only when verb detected after comma):
+   * - "take sword, drop it" → [take sword, drop it] (verb after comma)
+   * - "take knife, lamp" → single command with list (no verb after comma)
+   *
+   * Examples:
+   * - "take sword. go north." → [take sword, go north]
+   * - "take sword" → [take sword]
+   * - "take sword. invalid. go north" → [take sword, error, go north]
+   */
+  parseChain(input: string): CommandResult<IParsedCommand, CoreParseError>[] {
+    // First split on periods
+    const periodSegments = this.splitOnPeriods(input);
+
+    // Then handle comma disambiguation within each segment
+    const allSegments: string[] = [];
+    for (const segment of periodSegments) {
+      const commaSegments = this.splitOnCommasIfChain(segment);
+      allSegments.push(...commaSegments);
+    }
+
+    // Parse each segment
+    return allSegments.map(segment => this.parse(segment));
+  }
+
+  /**
+   * Split a segment on commas only if a verb is detected after the comma.
+   * "take knife, drop lamp" → ["take knife", "drop lamp"] (verb after comma)
+   * "take knife, lamp" → ["take knife, lamp"] (no verb, treat as list)
+   */
+  private splitOnCommasIfChain(input: string): string[] {
+    // Replace quoted strings with placeholders to protect them
+    const placeholders: Map<string, string> = new Map();
+    let processedInput = input;
+    let placeholderIndex = 0;
+
+    // Handle double quotes
+    processedInput = processedInput.replace(/"[^"]*"/g, (match) => {
+      const placeholder = `__COMMA_QUOTE_${placeholderIndex++}__`;
+      placeholders.set(placeholder, match);
+      return placeholder;
+    });
+
+    // Handle single quotes
+    processedInput = processedInput.replace(/'[^']*'/g, (match) => {
+      const placeholder = `__COMMA_QUOTE_${placeholderIndex++}__`;
+      placeholders.set(placeholder, match);
+      return placeholder;
+    });
+
+    // Check for commas
+    const commaIndex = processedInput.indexOf(',');
+    if (commaIndex === -1) {
+      return [input]; // No commas, return as-is
+    }
+
+    // Check if word after comma is a verb
+    const afterComma = processedInput.slice(commaIndex + 1).trim();
+    const firstWordMatch = afterComma.match(/^(\w+)/);
+
+    if (!firstWordMatch) {
+      return [input]; // No word after comma, return as-is
+    }
+
+    const firstWord = firstWordMatch[1].toLowerCase();
+
+    // Check if it's a known verb
+    const isVerb = vocabularyRegistry.hasWord(firstWord, VocabPartOfSpeech.VERB);
+
+    if (isVerb) {
+      // It's a verb - split into separate commands
+      const parts = processedInput.split(',');
+      const segments: string[] = [];
+
+      for (const part of parts) {
+        let restored = part;
+        for (const [placeholder, original] of placeholders) {
+          restored = restored.replace(placeholder, original);
+        }
+        const trimmed = restored.trim();
+        if (trimmed.length > 0) {
+          segments.push(trimmed);
+        }
+      }
+
+      return segments;
+    }
+
+    // Not a verb after comma - return as single segment (list)
+    return [input];
+  }
+
+  /**
+   * Split input on periods, preserving quoted strings.
+   * Handles edge cases like trailing periods and empty segments.
+   */
+  private splitOnPeriods(input: string): string[] {
+    // Replace quoted strings with placeholders
+    const placeholders: Map<string, string> = new Map();
+    let processedInput = input;
+    let placeholderIndex = 0;
+
+    // Handle double quotes
+    processedInput = processedInput.replace(/"[^"]*"/g, (match) => {
+      const placeholder = `__PERIOD_QUOTE_${placeholderIndex++}__`;
+      placeholders.set(placeholder, match);
+      return placeholder;
+    });
+
+    // Handle single quotes
+    processedInput = processedInput.replace(/'[^']*'/g, (match) => {
+      const placeholder = `__PERIOD_QUOTE_${placeholderIndex++}__`;
+      placeholders.set(placeholder, match);
+      return placeholder;
+    });
+
+    // Split on periods
+    const rawSegments = processedInput.split('.');
+
+    // Restore placeholders and clean up segments
+    const segments: string[] = [];
+    for (const segment of rawSegments) {
+      let restored = segment;
+      for (const [placeholder, original] of placeholders) {
+        restored = restored.replace(placeholder, original);
+      }
+      const trimmed = restored.trim();
+      if (trimmed.length > 0) {
+        segments.push(trimmed);
+      }
+    }
+
+    return segments;
   }
 
   /**
@@ -632,10 +782,28 @@ export class EnglishParser implements Parser {
       }
     }
     
+    // ADR-080: Track text slots, instruments, and excluded items
+    let textSlots: Map<string, string> | undefined;
+    let instrument: INounPhrase | undefined;
+    let excluded: INounPhrase[] | undefined;
+
     // Process slots based on the pattern structure
     for (const [slotName, slotData] of slotEntries) {
       const slotTokens = slotData.tokens.map((idx: number) => tokens[idx]);
-      
+
+      // Check slot type from the match data (set by grammar engine)
+      const slotType = (slotData as any).slotType as SlotType | undefined;
+
+      // Handle text slots (TEXT or TEXT_GREEDY)
+      if (slotType === SlotType.TEXT || slotType === SlotType.TEXT_GREEDY) {
+        if (!textSlots) {
+          textSlots = new Map();
+        }
+        textSlots.set(slotName, slotData.text);
+        continue; // Don't also add to direct/indirect objects
+      }
+
+      // Build base noun phrase
       const phrase: INounPhrase = {
         tokens: slotData.tokens,
         text: slotData.text,
@@ -645,7 +813,43 @@ export class EnglishParser implements Parser {
         determiners: [],
         candidates: [slotData.text]
       };
-      
+
+      // ADR-080 Phase 2: Add multi-object support
+      const slotDataAny = slotData as any;
+      if (slotDataAny.isAll) {
+        phrase.isAll = true;
+        // Extract excluded items for "all but X" patterns
+        if (slotDataAny.excluded && slotDataAny.excluded.length > 0) {
+          excluded = slotDataAny.excluded.map((item: any) => ({
+            tokens: item.tokens,
+            text: item.text,
+            head: item.text.split(' ').pop() || item.text,
+            modifiers: [],
+            articles: [],
+            determiners: [],
+            candidates: [item.text]
+          }));
+        }
+      }
+      if (slotDataAny.isList && slotDataAny.items) {
+        phrase.isList = true;
+        phrase.items = slotDataAny.items.map((item: any) => ({
+          tokens: item.tokens,
+          text: item.text,
+          head: item.text.split(' ').pop() || item.text,
+          modifiers: [],
+          articles: [],
+          determiners: [],
+          candidates: [item.text]
+        }));
+      }
+
+      // Handle instrument slots
+      if (slotType === SlotType.INSTRUMENT) {
+        instrument = phrase;
+        continue; // Don't also add to direct/indirect objects
+      }
+
       // Determine where this slot should go based on the pattern
       if (rule.pattern.includes(' with :' + slotName)) {
         // This slot comes after 'with', put it in extras
@@ -757,14 +961,18 @@ export class EnglishParser implements Parser {
       indirectObject,
       pattern,
       confidence: match.confidence,
-      action: rule.action
+      action: rule.action,
+      // ADR-080 additions
+      textSlots,
+      instrument,
+      excluded
     };
-    
+
     // Add extras if present
     if (Object.keys(extras).length > 0) {
       (candidate as any).extras = extras;
     }
-    
+
     return candidate;
   }
 

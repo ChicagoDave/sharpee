@@ -129,6 +129,13 @@ export function defineCoreGrammar(grammar: GrammarBuilder): void {
     .withPriority(100)
     .build();
 
+  // ADR-080 Phase 2: Multi-object commands
+  // Note: The parser detects "all" and "X and Y" patterns automatically in entity slots.
+  // No special grammar patterns needed - existing patterns work because:
+  // - "take all" matches "take :item", consumeEntitySlot detects "all" keyword
+  // - "take knife and lamp" matches "take :item", parser creates list
+  // - "take all but sword" matches "take :item", parser detects exclusion
+
   // Container operations
   grammar
     .define('put :item in|into|inside :container')

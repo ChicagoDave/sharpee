@@ -64,7 +64,8 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
    */
   validate(context: ActionContext): ValidationResult {
     const noun = context.command.directObject?.entity;
-    const withKey = context.command.indirectObject?.entity;
+    // ADR-080: Prefer instrument field (from .instrument() patterns), fall back to indirectObject
+    const withKey = context.command.instrument?.entity ?? context.command.indirectObject?.entity;
 
     // Validate we have a target
     if (!noun) {
@@ -118,7 +119,8 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
    */
   execute(context: ActionContext): void {
     const noun = context.command.directObject!.entity!;
-    const withKey = context.command.indirectObject?.entity;
+    // ADR-080: Prefer instrument field, fall back to indirectObject
+    const withKey = context.command.instrument?.entity ?? context.command.indirectObject?.entity;
     const sharedData = getLockingSharedData(context);
 
     // Analyze the locking context
