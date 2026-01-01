@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/world-model",
-  "version": "0.9.1-beta.5",
+  "version": "0.9.1-beta.6",
   "description": "World model for Sharpee IF platform - entities, traits, and behaviors",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

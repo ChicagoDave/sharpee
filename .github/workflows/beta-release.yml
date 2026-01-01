@@ -168,6 +168,9 @@ jobs:
           echo "TAG=latest" >> $GITHUB_OUTPUT
         fi
 
+    - name: Clear default auth token (enables OIDC)
+      run: npm config set //registry.npmjs.org/:_authToken ""
+
     - name: Publish to npm (OIDC Trusted Publishing)
       run: |
         echo "npm version: $(npm --version)"
