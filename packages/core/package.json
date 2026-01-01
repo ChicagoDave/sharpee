@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/core",
-  "version": "0.9.1-beta.6",
+  "version": "0.9.1-beta.7",
   "description": "Core functionality for the Sharpee interactive fiction engine",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
