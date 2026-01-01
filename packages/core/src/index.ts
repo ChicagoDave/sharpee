@@ -3,6 +3,12 @@
 // Core data structures
 export * from './types';
 
+// IFID (Interactive Fiction Identifier) utilities
+export * from './ifid';
+
+// Story metadata
+export * from './metadata';
+
 // Event system - export from the events index which has everything organized
 export * from './events';
 

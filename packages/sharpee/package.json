@@ -4,6 +4,9 @@
   "description": "Main Sharpee IF Engine package - aggregates all components",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "sharpee": "./dist/cli/index.js"
+  },
   "scripts": {
     "build": "tsc",
     "clean": "rimraf dist",
