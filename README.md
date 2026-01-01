@@ -1,11 +1,11 @@
 # Sharpee Interactive Fiction Platform
 
-[![Version](https://img.shields.io/badge/version-1.0.0--alpha.1-orange.svg)](https://github.com/ChicagoDave/sharpee/releases)
+[![Version](https://img.shields.io/badge/version-0.9.0--beta.3-orange.svg)](https://www.npmjs.com/package/@sharpee/sharpee)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.2+-blue.svg)](https://www.typescriptlang.org/)
 [![Tests](https://img.shields.io/badge/tests-2700%2B%20passing-brightgreen.svg)](./packages)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 
-> ⚠️ **ALPHA SOFTWARE**: This is alpha software under active development. Features may change, documentation may contain errors or outdated information, and breaking changes may occur. Use in production at your own risk.
+> ⚠️ **BETA SOFTWARE**: This is beta software under active development. Features may change and breaking changes may occur. Use in production at your own risk.
 
 A modern, TypeScript-based platform for creating interactive fiction with a powerful event-driven architecture and extensible design.
 
