@@ -1,7 +1,29 @@
 # Work Summary: npm Release with OIDC Trusted Publishing
 
-**Date:** 2026-01-01 13:45
+**Date:** 2026-01-01 14:00
 **Branch:** `main`
+**Status:** OIDC still failing, need to continue debugging
+
+## Current State
+
+- 11 packages published manually to npm at 0.9.0-beta.5
+- OIDC Trusted Publishing configured on npm for all 11 packages
+- CI workflow at v0.9.1-beta.7, OIDC not working yet
+
+## Root Cause Found
+
+`actions/setup-node` sets `NODE_AUTH_TOKEN` as environment variable (not just .npmrc).
+This blocks OIDC auth. Need to unset it.
+
+## Next Step
+
+Update workflow to unset NODE_AUTH_TOKEN env var:
+```yaml
+env:
+  NODE_AUTH_TOKEN: ""
+```
+
+Then bump to beta.8 and test.
 
 ## Overview
 
