@@ -19,7 +19,7 @@
     "test:verbose": "vitest run --reporter=verbose",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "clean": "rimraf dist",
+    "clean": "rimraf dist"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",

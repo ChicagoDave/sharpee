@@ -20,7 +20,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src --ext .ts",
-    "clean": "rimraf dist",
+    "clean": "rimraf dist"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",

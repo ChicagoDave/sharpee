@@ -17,7 +17,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "clean": "rimraf dist",
+    "clean": "rimraf dist"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",

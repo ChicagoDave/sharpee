@@ -10,7 +10,7 @@
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
     "lint": "eslint src --ext .ts,.tsx",
-    "clean": "rimraf dist",
+    "clean": "rimraf dist"
   },
   "peerDependencies": {
     "@sharpee/core": "workspace:*",

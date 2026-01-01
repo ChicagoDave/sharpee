@@ -17,7 +17,7 @@
     "clean": "rimraf dist",
     "test": "vitest",
     "test:ci": "vitest run",
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint src --ext .ts"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",

@@ -20,7 +20,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:verbose": "vitest run --reporter=verbose",
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint src --ext .ts"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",
