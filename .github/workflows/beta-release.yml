@@ -101,7 +101,7 @@ jobs:
           - `@sharpee/lang-en-us` - English language pack
           - `@sharpee/sharpee` - Meta-package (imports all)
 
-          ### Installation (coming soon)
+          ### Installation
           ```bash
           npm install @sharpee/sharpee@beta
           ```
@@ -111,6 +111,70 @@ jobs:
         files: release-artifacts/*
         prerelease: true
         generate_release_notes: true
+
+  # Publish to npm when a tag is pushed
+  publish-npm:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v3
+      with:
+        version: 10.13.1
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: Install dependencies
+      run: pnpm install --ignore-scripts
+
+    - name: Build all packages
+      run: |
+        pnpm --filter '@sharpee/core' run build
+        pnpm --filter '@sharpee/if-domain' run build
+        pnpm --filter '@sharpee/world-model' run build
+        pnpm --filter '@sharpee/if-services' run build
+        pnpm --filter '@sharpee/text-services' run build
+        pnpm --filter '@sharpee/lang-en-us' run build
+        pnpm --filter '@sharpee/parser-en-us' run build
+        pnpm --filter '@sharpee/stdlib' run build
+        pnpm --filter '@sharpee/event-processor' run build
+        pnpm --filter '@sharpee/engine' run build
+        pnpm --filter '@sharpee/sharpee' run build
+
+    - name: Determine npm tag
+      id: npm-tag
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        if [[ "$VERSION" == *"beta"* ]]; then
+          echo "TAG=beta" >> $GITHUB_OUTPUT
+        elif [[ "$VERSION" == *"alpha"* ]]; then
+          echo "TAG=alpha" >> $GITHUB_OUTPUT
+        else
+          echo "TAG=latest" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Publish to npm
+      run: |
+        # Publish packages in dependency order
+        for pkg in core if-domain world-model text-services lang-en-us parser-en-us stdlib event-processor engine sharpee; do
+          if [ -d "packages/$pkg" ] && [ -f "packages/$pkg/package.json" ]; then
+            echo "Publishing @sharpee/$pkg..."
+            cd "packages/$pkg"
+            npm publish --tag ${{ steps.npm-tag.outputs.TAG }} --access public || echo "Skipped (may already exist)"
+            cd ../..
+          fi
+        done
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   # Notify on build completion (branch push, not tag)
   notify:
