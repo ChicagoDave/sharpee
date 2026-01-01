@@ -1,6 +1,6 @@
 # Work Summary: npm Beta Release Complete
 
-**Date:** 2026-01-01 15:00
+**Date:** 2026-01-01 13:45 - 15:15
 **Branch:** `main`
 **Status:** Complete - packages published to npm
 
@@ -77,6 +77,28 @@ Cleaned up README.md from 271 lines of aspirational content to 61 lines of accur
 - `.github/workflows/beta-release.yml` - Final working configuration
 - `packages/*/package.json` - Version 0.9.1-beta.13
 - `README.md` - Updated for beta release
+
+## Version History (This Session)
+
+| Version | Change | Result |
+|---------|--------|--------|
+| beta.7 | Had OIDC configured | 404 error |
+| beta.8 | Added `--provenance` flag | 404 error (provenance signed!) |
+| beta.9 | Added `environment: prod` | 404 error |
+| beta.10 | Removed environment from npm config | 404 error |
+| beta.11 | Removed environment from workflow | 404 error |
+| beta.12 | Switched to NPM_TOKEN auth | Published but `workspace:*` not converted |
+| beta.13 | Changed to `pnpm publish` | Success! |
+
+## Lessons Learned
+
+1. **npm OIDC Trusted Publishing is unreliable** - Provenance signed successfully but npm returned 404. No clear root cause despite correct configuration.
+
+2. **Use `pnpm publish` not `npm publish`** - Only pnpm converts `workspace:*` protocol to real version numbers during publish.
+
+3. **Token auth just works** - Classic npm Automation token is simple and reliable.
+
+4. **Shields.io badge needs dist-tag** - Use `/beta` in URL to show beta version instead of latest.
 
 ## Next Steps
 
