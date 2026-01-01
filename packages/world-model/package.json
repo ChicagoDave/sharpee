@@ -1,9 +1,17 @@
 {
   "name": "@sharpee/world-model",
-  "version": "1.0.0-alpha.1",
+  "version": "0.9.0-beta.1",
   "description": "World model for Sharpee IF platform - entities, traits, and behaviors",
   "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "clean": "rimraf dist",
@@ -12,26 +20,11 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:verbose": "vitest run --reporter=verbose",
-    "test:phase6": "vitest run tests/**/*{services,extensions,integration}*.test.ts",
-    "test:phase6:services": "vitest run tests/**/*services*.test.ts",
-    "test:phase6:extensions": "vitest run tests/**/*extensions*.test.ts",
-    "test:phase6:integration": "vitest run tests/**/integration/*.test.ts",
-    "test:phase6:coverage": "vitest run --coverage tests/**/*{services,extensions,integration}*.test.ts",
-    "test:phase6:watch": "vitest tests/**/*{services,extensions,integration}*.test.ts",
-    "lint": "eslint src --ext .ts",
-    "prepublishOnly": "npm run clean && npm run build"
+    "lint": "eslint src --ext .ts"
   },
-  "keywords": [
-    "interactive-fiction",
-    "world-model",
-    "entity-component-system",
-    "traits"
-  ],
-  "author": "Sharpee Team",
-  "license": "MIT",
   "dependencies": {
-    "@sharpee/core": "file:../core",
-    "@sharpee/if-domain": "file:../if-domain"
+    "@sharpee/core": "workspace:*",
+    "@sharpee/if-domain": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.8.0",
@@ -43,9 +36,31 @@
     "typescript": "^5.2.2"
   },
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
+  "keywords": [
+    "interactive-fiction",
+    "if",
+    "text-adventure",
+    "sharpee",
+    "world-model",
+    "entity-component-system",
+    "traits"
+  ],
+  "author": "Sharpee Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ChicagoDave/sharpee.git",
+    "directory": "packages/world-model"
+  },
+  "homepage": "https://github.com/ChicagoDave/sharpee#readme",
+  "bugs": {
+    "url": "https://github.com/ChicagoDave/sharpee/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "publishConfig": {
     "access": "public"
   }

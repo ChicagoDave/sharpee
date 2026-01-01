@@ -2,11 +2,14 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "declaration": true,
+    "declarationMap": true
   },
   "include": ["src/**/*"],
   "references": [
     { "path": "../core" },
-    { "path": "../if-domain" }
+    { "path": "../if-domain" },
+    { "path": "../if-services" }
   ]
 }

@@ -31,7 +31,7 @@ import {
 } from '@sharpee/stdlib';
 import { LanguageProvider } from '@sharpee/if-domain';
 import { TextService, TextServiceContext, TextOutput } from '@sharpee/if-services';
-import { ISemanticEvent, createSemanticEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, ISerializedSchedulerState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent } from '@sharpee/core';
+import { ISemanticEvent, createSemanticEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, ISerializedSchedulerState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, getUntypedEventData } from '@sharpee/core';
 
 import { ISchedulerService, createSchedulerService } from './scheduler';
 import { INpcService, createNpcService, guardBehavior, passiveBehavior } from '@sharpee/stdlib';
@@ -697,10 +697,11 @@ export class GameEngine {
             // Filter by turn number in the event data
             const currentTurn = turn;
             return this.platformEvents.getAllEvents()
-              .filter((e: any) => {
+              .filter((e: ISemanticEvent) => {
                 if (!e.tags?.includes('platform')) return false;
                 // Check if event has turn data
-                const eventTurn = (e.data as any)?.turn;
+                const eventData = getUntypedEventData(e);
+                const eventTurn = eventData?.turn;
                 // If no turn data, assume it's from initialization (turn 0)
                 return eventTurn === undefined ? currentTurn === 1 : eventTurn === currentTurn;
               });
@@ -1061,16 +1062,19 @@ export class GameEngine {
    * Emit a platform event with turn metadata
    */
   emitPlatformEvent(event: Omit<ISemanticEvent, 'id' | 'timestamp'>): void {
+    const existingData = typeof event.data === 'object' && event.data !== null
+      ? event.data
+      : {};
     const fullEvent: ISemanticEvent = {
       ...event,
       id: `platform_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       timestamp: Date.now(),
       data: {
-        ...(event.data as any || {}),
+        ...existingData,
         turn: this.context.currentTurn
       }
     };
-    
+
     this.platformEvents.addEvent(fullEvent);
   }
 
@@ -1384,10 +1388,13 @@ export class GameEngine {
    */
   private emitGameEvent(event: any): void {
     // Create a GameEvent that's compatible with the engine's type system
+    const existingData = typeof event.data === 'object' && event.data !== null
+      ? event.data
+      : {};
     const gameEvent: GameEvent = {
       type: event.type,
       data: {
-        ...(event.data as any || {}),
+        ...existingData,
         id: event.id || `event-${Date.now()}`,
         timestamp: event.timestamp || Date.now(),
         entities: event.entities || {}

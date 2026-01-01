@@ -1,6 +1,6 @@
 /**
  * Event utilities and patterns for IF actions
- * 
+ *
  * This module provides optional utilities and patterns that
  * actions can use to create consistent event data structures.
  * Actions are free to define their own event data types.
@@ -9,6 +9,7 @@
 export * from './action-events';
 export * from './common-patterns';
 export * from './event-utils';
+export * from './event-registry';
 
 /**
  * Design principle: Each action defines its own event data types

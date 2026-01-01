@@ -1,9 +1,17 @@
 {
   "name": "@sharpee/engine",
-  "version": "1.0.0-alpha.1",
+  "version": "0.9.0-beta.1",
   "description": "Runtime engine for Sharpee IF Platform - game loop, command execution, and turn management",
   "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "test": "vitest",
@@ -14,15 +22,15 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@sharpee/core": "file:../core",
-    "@sharpee/event-processor": "file:../event-processor",
-    "@sharpee/if-domain": "file:../if-domain",
-    "@sharpee/if-services": "file:../if-services",
-    "@sharpee/lang-en-us": "file:../lang-en-us",
-    "@sharpee/parser-en-us": "file:../parser-en-us",
-    "@sharpee/stdlib": "file:../stdlib",
-    "@sharpee/text-services": "file:../text-services",
-    "@sharpee/world-model": "file:../world-model"
+    "@sharpee/core": "workspace:*",
+    "@sharpee/event-processor": "workspace:*",
+    "@sharpee/if-domain": "workspace:*",
+    "@sharpee/if-services": "workspace:*",
+    "@sharpee/lang-en-us": "workspace:*",
+    "@sharpee/parser-en-us": "workspace:*",
+    "@sharpee/stdlib": "workspace:*",
+    "@sharpee/text-services": "workspace:*",
+    "@sharpee/world-model": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.11.19",
@@ -31,7 +39,31 @@
     "typescript": "^5.3.3"
   },
   "files": [
-    "dist",
-    "README.md"
-  ]
+    "dist"
+  ],
+  "keywords": [
+    "interactive-fiction",
+    "if",
+    "text-adventure",
+    "sharpee",
+    "engine",
+    "game-engine"
+  ],
+  "author": "Sharpee Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ChicagoDave/sharpee.git",
+    "directory": "packages/engine"
+  },
+  "homepage": "https://github.com/ChicagoDave/sharpee#readme",
+  "bugs": {
+    "url": "https://github.com/ChicagoDave/sharpee/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

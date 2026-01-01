@@ -10,9 +10,9 @@
     "test": "jest"
   },
   "dependencies": {
-    "@sharpee/core": "file:../core",
-    "@sharpee/if-domain": "file:../if-domain",
-    "@sharpee/if-services": "file:../if-services"
+    "@sharpee/core": "workspace:*",
+    "@sharpee/if-domain": "workspace:*",
+    "@sharpee/if-services": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

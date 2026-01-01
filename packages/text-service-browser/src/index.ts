@@ -7,13 +7,13 @@
  * - Command input line at bottom
  */
 
-import { 
-    TextService, 
-    TextServiceContext, 
-    TextOutput 
+import {
+    TextService,
+    TextServiceContext,
+    TextOutput
 } from '@sharpee/if-services';
 import { LanguageProvider } from '@sharpee/if-domain';
-import { ISemanticEvent } from '@sharpee/core';
+import { ISemanticEvent, getUntypedEventData } from '@sharpee/core';
 import { StandardTextService } from './standard-text-service';
 
 export interface BrowserTextServiceConfig {
@@ -103,25 +103,26 @@ export class BrowserTextService implements TextService {
     }
     
     private updateStatusFromEvent(event: ISemanticEvent): void {
+        const data = getUntypedEventData(event);
         switch (event.type) {
             case 'room.description':
             case 'room.entered':
-                if (event.data?.name) {
-                    this.currentLocation = event.data.name;
+                if (typeof data.name === 'string') {
+                    this.currentLocation = data.name;
                 }
                 break;
-                
+
             case 'game.score':
-                if (event.data?.score !== undefined) {
-                    this.currentScore = event.data.score;
-                } else if (event.data?.points !== undefined) {
-                    this.currentScore += event.data.points;
+                if (typeof data.score === 'number') {
+                    this.currentScore = data.score;
+                } else if (typeof data.points === 'number') {
+                    this.currentScore += data.points;
                 }
                 break;
-                
+
             case 'game.turn':
-                if (event.data?.turn !== undefined) {
-                    this.currentTurn = event.data.turn;
+                if (typeof data.turn === 'number') {
+                    this.currentTurn = data.turn;
                 }
                 break;
         }

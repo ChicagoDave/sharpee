@@ -92,7 +92,7 @@ export function enrichEvent(
   if (context) {
     // Add turn information to data
     if (context.turn !== undefined && enriched.data && typeof enriched.data === 'object') {
-      (enriched.data as any).turn = context.turn;
+      enriched.data = { ...enriched.data, turn: context.turn };
     }
 
     // Add player as actor if not specified

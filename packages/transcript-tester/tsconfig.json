@@ -1,19 +1,21 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "lib": ["ES2022"],
     "outDir": "./dist",
     "rootDir": "./src",
     "declaration": true,
-    "sourceMap": true,
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
+    "declarationMap": true,
     "resolveJsonModule": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "dist"],
+  "references": [
+    { "path": "../core" },
+    { "path": "../engine" },
+    { "path": "../lang-en-us" },
+    { "path": "../parser-en-us" },
+    { "path": "../stdlib" },
+    { "path": "../text-services" },
+    { "path": "../world-model" }
+  ]
 }

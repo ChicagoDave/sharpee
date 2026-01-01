@@ -1,27 +1,64 @@
 {
   "name": "@sharpee/sharpee",
-  "version": "1.0.0-alpha.1",
-  "description": "Main Sharpee IF Engine package - aggregates all components",
+  "version": "0.9.0-beta.1",
+  "description": "Sharpee - Interactive Fiction Engine for TypeScript",
   "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "bin": {
+    "sharpee": "./dist/cli/index.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
-    "clean": "rimraf dist",
-    "prepublishOnly": "npm run clean && npm run build"
+    "clean": "rimraf dist"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",
-    "@sharpee/world-model": "workspace:*",
     "@sharpee/engine": "workspace:*",
-    "@sharpee/stdlib": "workspace:*",
     "@sharpee/event-processor": "workspace:*",
     "@sharpee/lang-en-us": "workspace:*",
     "@sharpee/parser-en-us": "workspace:*",
-    "@sharpee/text-services": "workspace:*"
+    "@sharpee/stdlib": "workspace:*",
+    "@sharpee/text-services": "workspace:*",
+    "@sharpee/world-model": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "^20.11.0",
     "typescript": "^5.3.3",
     "rimraf": "^5.0.5"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "interactive-fiction",
+    "if",
+    "text-adventure",
+    "sharpee",
+    "game-engine",
+    "parser",
+    "zork"
+  ],
+  "author": "Sharpee Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ChicagoDave/sharpee.git",
+    "directory": "packages/sharpee"
+  },
+  "homepage": "https://github.com/ChicagoDave/sharpee#readme",
+  "bugs": {
+    "url": "https://github.com/ChicagoDave/sharpee/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "publishConfig": {
     "access": "public"

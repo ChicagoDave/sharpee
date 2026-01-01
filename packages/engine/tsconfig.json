@@ -8,5 +8,16 @@
     "types": ["node"]
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts", "tests/**/*"]
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts", "tests/**/*"],
+  "references": [
+    { "path": "../core" },
+    { "path": "../event-processor" },
+    { "path": "../if-domain" },
+    { "path": "../if-services" },
+    { "path": "../lang-en-us" },
+    { "path": "../parser-en-us" },
+    { "path": "../stdlib" },
+    { "path": "../text-services" },
+    { "path": "../world-model" }
+  ]
 }

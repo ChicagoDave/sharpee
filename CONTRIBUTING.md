@@ -466,16 +466,35 @@ We follow semantic versioning (semver):
 - **Minor** (0.1.0): New features
 - **Patch** (0.0.1): Bug fixes
 
+### npm Publishing Setup (Maintainers)
+
+To enable automated npm publishing:
+
+1. **Create npm Access Token**
+   - Go to https://www.npmjs.com/settings/YOUR_USERNAME/tokens
+   - Click "Generate New Token" → "Automation"
+   - Copy the token (starts with `npm_`)
+
+2. **Add GitHub Secret**
+   - Go to repo Settings → Secrets and variables → Actions
+   - Click "New repository secret"
+   - Name: `NPM_TOKEN`
+   - Value: paste your npm token
+
+3. **Ensure @sharpee scope access**
+   - You must be a member of the `@sharpee` npm organization
+   - Or create it at https://www.npmjs.com/org/create
+
 ### Release Checklist
 
-1. Update version numbers
+1. Update version numbers in all package.json files
 2. Update CHANGELOG.md
 3. Run full test suite
-4. Build all packages
+4. Build all packages: `./scripts/build-release.sh`
 5. Create release PR
-6. Tag release
-7. Publish to npm
-8. Update documentation site
+6. Tag release: `git tag v0.9.0-beta.2 && git push origin v0.9.0-beta.2`
+7. GitHub Actions automatically publishes to npm
+8. Verify packages at https://www.npmjs.com/org/sharpee
 
 ## Getting Help
 

@@ -50,7 +50,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "pnpm -r run lint",
     "watch": "pnpm -r --parallel run watch",
-    "watch:cli-en": "pnpm --filter '@sharpee/platform-cli-en-us' run watch"
+    "watch:cli-en": "pnpm --filter '@sharpee/platform-cli-en-us' run watch",
+    "sharpee": "node packages/sharpee/dist/cli/index.js"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.2.4",

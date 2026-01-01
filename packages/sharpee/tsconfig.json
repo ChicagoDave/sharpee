@@ -6,5 +6,15 @@
     "declaration": true,
     "declarationMap": true
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "references": [
+    { "path": "../core" },
+    { "path": "../engine" },
+    { "path": "../event-processor" },
+    { "path": "../lang-en-us" },
+    { "path": "../parser-en-us" },
+    { "path": "../stdlib" },
+    { "path": "../text-services" },
+    { "path": "../world-model" }
+  ]
 }

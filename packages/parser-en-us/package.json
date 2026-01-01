@@ -1,9 +1,17 @@
 {
   "name": "@sharpee/parser-en-us",
-  "version": "1.0.0-alpha.1",
+  "version": "0.9.0-beta.1",
   "description": "English (US) parser for Sharpee Interactive Fiction Platform",
   "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "clean": "rimraf dist",
@@ -25,15 +33,32 @@
     "typescript": "^5.2.2"
   },
   "files": [
-    "dist",
-    "README.md"
+    "dist"
   ],
   "keywords": [
     "interactive-fiction",
+    "if",
+    "text-adventure",
+    "sharpee",
     "parser",
     "english",
     "natural-language"
   ],
-  "author": "",
-  "license": "MIT"
+  "author": "Sharpee Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ChicagoDave/sharpee.git",
+    "directory": "packages/parser-en-us"
+  },
+  "homepage": "https://github.com/ChicagoDave/sharpee#readme",
+  "bugs": {
+    "url": "https://github.com/ChicagoDave/sharpee/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }
