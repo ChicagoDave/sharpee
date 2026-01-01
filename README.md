@@ -1,6 +1,6 @@
 # Sharpee Interactive Fiction Platform
 
-[![npm](https://img.shields.io/npm/v/@sharpee/sharpee?label=npm&color=orange)](https://www.npmjs.com/package/@sharpee/sharpee)
+[![npm](https://img.shields.io/npm/v/@sharpee/sharpee/beta?label=npm%40beta&color=orange)](https://www.npmjs.com/package/@sharpee/sharpee)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.2+-blue.svg)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 
