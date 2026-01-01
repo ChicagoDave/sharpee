@@ -299,6 +299,12 @@ importers:
       '@sharpee/event-processor':
         specifier: workspace:*
         version: link:../event-processor
+      '@sharpee/if-domain':
+        specifier: workspace:*
+        version: link:../if-domain
+      '@sharpee/if-services':
+        specifier: workspace:*
+        version: link:../if-services
       '@sharpee/lang-en-us':
         specifier: workspace:*
         version: link:../lang-en-us
