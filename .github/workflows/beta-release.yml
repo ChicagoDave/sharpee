@@ -24,7 +24,7 @@ jobs:
         cache: 'pnpm'
 
     - name: Install dependencies
-      run: pnpm install --ignore-scripts
+      run: pnpm install
 
     - name: Build packages in order
       run: |
@@ -136,7 +136,7 @@ jobs:
         registry-url: 'https://registry.npmjs.org'
 
     - name: Install dependencies
-      run: pnpm install --ignore-scripts
+      run: pnpm install
 
     - name: Build packages in order
       run: |
