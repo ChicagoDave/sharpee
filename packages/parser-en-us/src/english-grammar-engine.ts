@@ -344,6 +344,33 @@ export class EnglishGrammarEngine extends GrammarEngine {
         // For instruments, resolve entity but mark as instrument
         return this.consumeEntitySlot(slotName, tokens, startIndex, pattern, slotTokenIndex, rule, context, slotType);
 
+      // ADR-082: Typed Value Slots
+      case SlotType.NUMBER:
+        return this.consumeNumberSlot(tokens, startIndex);
+
+      case SlotType.ORDINAL:
+        return this.consumeOrdinalSlot(tokens, startIndex);
+
+      case SlotType.TIME:
+        return this.consumeTimeSlot(tokens, startIndex);
+
+      // ADR-082: Vocabulary-Constrained Slots
+      case SlotType.DIRECTION:
+        return this.consumeDirectionSlot(tokens, startIndex);
+
+      case SlotType.ADJECTIVE:
+        return this.consumeAdjectiveSlot(tokens, startIndex, context);
+
+      case SlotType.NOUN:
+        return this.consumeNounSlot(tokens, startIndex, context);
+
+      // ADR-082: Text Variant Slots
+      case SlotType.QUOTED_TEXT:
+        return this.consumeQuotedTextSlot(tokens, startIndex);
+
+      case SlotType.TOPIC:
+        return this.consumeTopicSlot(tokens, startIndex, pattern, slotTokenIndex);
+
       case SlotType.ENTITY:
       default:
         return this.consumeEntitySlot(slotName, tokens, startIndex, pattern, slotTokenIndex, rule, context, slotType);
@@ -794,5 +821,466 @@ export class EnglishGrammarEngine extends GrammarEngine {
     
     // Return confidence based on whether we found matching entities
     return hasMatchingEntity ? 1.0 : 0.0;
+  }
+
+  // ==========================================================================
+  // ADR-082: Typed Value Slot Consumption Functions
+  // ==========================================================================
+
+  /**
+   * Number words mapped to numeric values
+   */
+  private static readonly NUMBER_WORDS: Record<string, number> = {
+    zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5,
+    six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+    eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15,
+    sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20,
+    thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70,
+    eighty: 80, ninety: 90, hundred: 100
+  };
+
+  /**
+   * Ordinal words mapped to numeric values
+   */
+  private static readonly ORDINAL_WORDS: Record<string, number> = {
+    first: 1, second: 2, third: 3, fourth: 4, fifth: 5,
+    sixth: 6, seventh: 7, eighth: 8, ninth: 9, tenth: 10,
+    eleventh: 11, twelfth: 12, thirteenth: 13, fourteenth: 14, fifteenth: 15,
+    sixteenth: 16, seventeenth: 17, eighteenth: 18, nineteenth: 19, twentieth: 20
+  };
+
+  /**
+   * Direction vocabulary with canonical forms
+   */
+  private static readonly DIRECTIONS: Record<string, string> = {
+    // Cardinals
+    n: 'north', north: 'north',
+    s: 'south', south: 'south',
+    e: 'east', east: 'east',
+    w: 'west', west: 'west',
+    // Ordinals
+    ne: 'northeast', northeast: 'northeast',
+    nw: 'northwest', northwest: 'northwest',
+    se: 'southeast', southeast: 'southeast',
+    sw: 'southwest', southwest: 'southwest',
+    // Verticals
+    u: 'up', up: 'up',
+    d: 'down', down: 'down',
+    // Special
+    in: 'in', out: 'out'
+  };
+
+  /**
+   * Consume a number slot (integer)
+   * Matches digits (1, 29, 100) or words (one, twenty)
+   */
+  private consumeNumberSlot(
+    tokens: Token[],
+    startIndex: number
+  ): SlotMatch | null {
+    if (startIndex >= tokens.length) {
+      return null;
+    }
+
+    const token = tokens[startIndex];
+    const normalized = token.normalized;
+
+    // Check word form
+    if (normalized in EnglishGrammarEngine.NUMBER_WORDS) {
+      return {
+        tokens: [startIndex],
+        text: token.word,
+        confidence: 1.0,
+        slotType: SlotType.NUMBER
+      };
+    }
+
+    // Check digit form
+    if (/^\d+$/.test(normalized)) {
+      return {
+        tokens: [startIndex],
+        text: token.word,
+        confidence: 1.0,
+        slotType: SlotType.NUMBER
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Consume an ordinal slot
+   * Matches ordinal words (first, second) or suffixed numbers (1st, 2nd)
+   */
+  private consumeOrdinalSlot(
+    tokens: Token[],
+    startIndex: number
+  ): SlotMatch | null {
+    if (startIndex >= tokens.length) {
+      return null;
+    }
+
+    const token = tokens[startIndex];
+    const normalized = token.normalized;
+
+    // Check word form
+    if (normalized in EnglishGrammarEngine.ORDINAL_WORDS) {
+      return {
+        tokens: [startIndex],
+        text: token.word,
+        confidence: 1.0,
+        slotType: SlotType.ORDINAL
+      };
+    }
+
+    // Check suffixed number form (1st, 2nd, 3rd, 4th, etc.)
+    const ordinalMatch = normalized.match(/^(\d+)(st|nd|rd|th)$/);
+    if (ordinalMatch) {
+      return {
+        tokens: [startIndex],
+        text: token.word,
+        confidence: 1.0,
+        slotType: SlotType.ORDINAL
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Consume a time slot
+   * Matches HH:MM format (10:40, 6:00)
+   */
+  private consumeTimeSlot(
+    tokens: Token[],
+    startIndex: number
+  ): SlotMatch | null {
+    if (startIndex >= tokens.length) {
+      return null;
+    }
+
+    const token = tokens[startIndex];
+    const word = token.word;
+
+    // Match HH:MM format
+    const timeMatch = word.match(/^(\d{1,2}):(\d{2})$/);
+    if (timeMatch) {
+      const hours = parseInt(timeMatch[1], 10);
+      const minutes = parseInt(timeMatch[2], 10);
+
+      // Validate time range
+      if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
+        return {
+          tokens: [startIndex],
+          text: word,
+          confidence: 1.0,
+          slotType: SlotType.TIME
+        };
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Consume a direction slot
+   * Matches built-in direction vocabulary (n, north, up, etc.)
+   */
+  private consumeDirectionSlot(
+    tokens: Token[],
+    startIndex: number
+  ): SlotMatch | null {
+    if (startIndex >= tokens.length) {
+      return null;
+    }
+
+    const token = tokens[startIndex];
+    const normalized = token.normalized;
+
+    if (normalized in EnglishGrammarEngine.DIRECTIONS) {
+      return {
+        tokens: [startIndex],
+        text: token.word,
+        confidence: 1.0,
+        slotType: SlotType.DIRECTION
+      };
+    }
+
+    return null;
+  }
+
+  // ==========================================================================
+  // ADR-082: Vocabulary-Constrained Slot Consumption Functions
+  // ==========================================================================
+
+  /**
+   * Consume an adjective slot from story vocabulary
+   * Requires vocabulary to be registered via language provider
+   */
+  private consumeAdjectiveSlot(
+    tokens: Token[],
+    startIndex: number,
+    context: GrammarContext
+  ): SlotMatch | null {
+    if (startIndex >= tokens.length) {
+      return null;
+    }
+
+    const token = tokens[startIndex];
+    const normalized = token.normalized;
+
+    // Get adjective vocabulary from context (world has language provider)
+    const adjectives = this.getVocabulary(context, 'adjectives');
+
+    if (adjectives && adjectives.has(normalized)) {
+      return {
+        tokens: [startIndex],
+        text: token.word,
+        confidence: 1.0,
+        slotType: SlotType.ADJECTIVE
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Consume a noun slot from story vocabulary
+   * Requires vocabulary to be registered via language provider
+   */
+  private consumeNounSlot(
+    tokens: Token[],
+    startIndex: number,
+    context: GrammarContext
+  ): SlotMatch | null {
+    if (startIndex >= tokens.length) {
+      return null;
+    }
+
+    const token = tokens[startIndex];
+    const normalized = token.normalized;
+
+    // Get noun vocabulary from context (world has language provider)
+    const nouns = this.getVocabulary(context, 'nouns');
+
+    if (nouns && nouns.has(normalized)) {
+      return {
+        tokens: [startIndex],
+        text: token.word,
+        confidence: 1.0,
+        slotType: SlotType.NOUN
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Get vocabulary set from context
+   * Returns null if vocabulary not available
+   */
+  private getVocabulary(
+    context: GrammarContext,
+    type: 'adjectives' | 'nouns'
+  ): Set<string> | null {
+    // Try to get vocabulary from world's language provider
+    const world = context.world;
+    if (!world) return null;
+
+    // Check for vocabulary provider interface
+    const provider = world.getVocabularyProvider?.();
+    if (!provider) return null;
+
+    switch (type) {
+      case 'adjectives':
+        return provider.getAdjectives?.() || null;
+      case 'nouns':
+        return provider.getNouns?.() || null;
+      default:
+        return null;
+    }
+  }
+
+  // ==========================================================================
+  // ADR-082: Text Variant Slot Consumption Functions
+  // ==========================================================================
+
+  /**
+   * Consume a quoted text slot
+   * Matches text enclosed in double quotes
+   */
+  private consumeQuotedTextSlot(
+    tokens: Token[],
+    startIndex: number
+  ): SlotMatch | null {
+    if (startIndex >= tokens.length) {
+      return null;
+    }
+
+    const token = tokens[startIndex];
+    const word = token.word;
+
+    // Check if token starts with quote
+    if (!word.startsWith('"')) {
+      return null;
+    }
+
+    // Single token quoted text: "hello"
+    if (word.endsWith('"') && word.length > 2) {
+      return {
+        tokens: [startIndex],
+        text: word.slice(1, -1), // Remove quotes
+        confidence: 1.0,
+        slotType: SlotType.QUOTED_TEXT
+      };
+    }
+
+    // Multi-token quoted text: "hello world"
+    // Consume tokens until closing quote
+    const consumedIndices: number[] = [startIndex];
+    const consumedWords: string[] = [word.slice(1)]; // Remove opening quote
+
+    for (let i = startIndex + 1; i < tokens.length; i++) {
+      const t = tokens[i];
+      consumedIndices.push(i);
+
+      if (t.word.endsWith('"')) {
+        consumedWords.push(t.word.slice(0, -1)); // Remove closing quote
+        return {
+          tokens: consumedIndices,
+          text: consumedWords.join(' '),
+          confidence: 1.0,
+          slotType: SlotType.QUOTED_TEXT
+        };
+      }
+
+      consumedWords.push(t.word);
+    }
+
+    // No closing quote found
+    return null;
+  }
+
+  /**
+   * Consume a topic slot
+   * Consumes one or more words until next pattern element
+   */
+  private consumeTopicSlot(
+    tokens: Token[],
+    startIndex: number,
+    pattern: CompiledPattern,
+    slotTokenIndex: number
+  ): SlotMatch | null {
+    if (startIndex >= tokens.length) {
+      return null;
+    }
+
+    const nextPatternToken = pattern.tokens[slotTokenIndex + 1];
+    const consumedIndices: number[] = [];
+    const consumedWords: string[] = [];
+
+    for (let i = startIndex; i < tokens.length; i++) {
+      const token = tokens[i];
+
+      // Check for pattern delimiter
+      if (nextPatternToken) {
+        if (nextPatternToken.type === 'literal' &&
+            token.normalized === nextPatternToken.value) {
+          break;
+        }
+        if (nextPatternToken.type === 'alternates' &&
+            nextPatternToken.alternates!.includes(token.normalized)) {
+          break;
+        }
+      }
+
+      consumedIndices.push(i);
+      consumedWords.push(token.word);
+    }
+
+    if (consumedIndices.length === 0) {
+      return null;
+    }
+
+    return {
+      tokens: consumedIndices,
+      text: consumedWords.join(' '),
+      confidence: 1.0,
+      slotType: SlotType.TOPIC
+    };
+  }
+
+  // ==========================================================================
+  // ADR-082: Helper Functions for Typed Slot Values
+  // ==========================================================================
+
+  /**
+   * Extract typed value from a NUMBER slot match
+   */
+  static extractNumberValue(match: SlotMatch): number | null {
+    if (match.slotType !== SlotType.NUMBER) return null;
+
+    const normalized = match.text.toLowerCase();
+
+    // Word form
+    if (normalized in EnglishGrammarEngine.NUMBER_WORDS) {
+      return EnglishGrammarEngine.NUMBER_WORDS[normalized];
+    }
+
+    // Digit form
+    if (/^\d+$/.test(normalized)) {
+      return parseInt(normalized, 10);
+    }
+
+    return null;
+  }
+
+  /**
+   * Extract typed value from an ORDINAL slot match
+   */
+  static extractOrdinalValue(match: SlotMatch): number | null {
+    if (match.slotType !== SlotType.ORDINAL) return null;
+
+    const normalized = match.text.toLowerCase();
+
+    // Word form
+    if (normalized in EnglishGrammarEngine.ORDINAL_WORDS) {
+      return EnglishGrammarEngine.ORDINAL_WORDS[normalized];
+    }
+
+    // Suffixed number form
+    const ordinalMatch = normalized.match(/^(\d+)(st|nd|rd|th)$/);
+    if (ordinalMatch) {
+      return parseInt(ordinalMatch[1], 10);
+    }
+
+    return null;
+  }
+
+  /**
+   * Extract canonical direction from a DIRECTION slot match
+   */
+  static extractDirectionValue(match: SlotMatch): string | null {
+    if (match.slotType !== SlotType.DIRECTION) return null;
+
+    const normalized = match.text.toLowerCase();
+    return EnglishGrammarEngine.DIRECTIONS[normalized] || null;
+  }
+
+  /**
+   * Extract time components from a TIME slot match
+   */
+  static extractTimeValue(match: SlotMatch): { hours: number; minutes: number } | null {
+    if (match.slotType !== SlotType.TIME) return null;
+
+    const timeMatch = match.text.match(/^(\d{1,2}):(\d{2})$/);
+    if (timeMatch) {
+      return {
+        hours: parseInt(timeMatch[1], 10),
+        minutes: parseInt(timeMatch[2], 10)
+      };
+    }
+
+    return null;
   }
 }

@@ -17,7 +17,29 @@ export enum SlotType {
   /** Capture raw text until next pattern element or end (greedy) */
   TEXT_GREEDY = 'text_greedy',
   /** Resolve entity but mark as instrument for the action */
-  INSTRUMENT = 'instrument'
+  INSTRUMENT = 'instrument',
+
+  // ADR-082: Vocabulary-Constrained Slots
+  /** Match word from registered adjective vocabulary */
+  ADJECTIVE = 'adjective',
+  /** Match word from registered noun vocabulary */
+  NOUN = 'noun',
+  /** Match cardinal/ordinal direction (n, s, e, w, ne, up, down, etc.) */
+  DIRECTION = 'direction',
+
+  // ADR-082: Typed Value Slots
+  /** Match integer (digits or words: 1, 29, one, twenty) */
+  NUMBER = 'number',
+  /** Match ordinal (1st, first, 2nd, second, etc.) */
+  ORDINAL = 'ordinal',
+  /** Match time expression (10:40, 6:00) */
+  TIME = 'time',
+
+  // ADR-082: Text Variant Slots
+  /** Match text enclosed in double quotes */
+  QUOTED_TEXT = 'quoted_text',
+  /** Match conversation topic (one or more words) */
+  TOPIC = 'topic'
 }
 
 /**
@@ -67,6 +89,20 @@ export interface ScopeConstraint {
   explicitEntities: string[];
   includeRules: string[];
 }
+
+/**
+ * ADR-082: Typed slot value for non-entity slots
+ * Each variant carries the parsed/typed value from the input
+ */
+export type TypedSlotValue =
+  | { type: 'adjective'; word: string }
+  | { type: 'noun'; word: string }
+  | { type: 'direction'; direction: string; canonical: string }
+  | { type: 'number'; value: number; word: string }
+  | { type: 'ordinal'; value: number; word: string }
+  | { type: 'time'; hours: number; minutes: number; text: string }
+  | { type: 'quoted_text'; text: string }
+  | { type: 'topic'; words: string[] };
 
 /**
  * Pattern builder for defining grammar rules
@@ -128,7 +164,69 @@ export interface PatternBuilder {
    * @param defaults Default semantic properties
    */
   withDefaultSemantics(defaults: Partial<SemanticProperties>): PatternBuilder;
-  
+
+  // ADR-082: Typed Value Slots
+
+  /**
+   * Mark a slot as a number (integer)
+   * Matches digits (1, 29, 100) or words (one, twenty)
+   * @param slot The slot name from the pattern
+   */
+  number(slot: string): PatternBuilder;
+
+  /**
+   * Mark a slot as an ordinal
+   * Matches ordinal words (first, second) or suffixed numbers (1st, 2nd)
+   * @param slot The slot name from the pattern
+   */
+  ordinal(slot: string): PatternBuilder;
+
+  /**
+   * Mark a slot as a time expression
+   * Matches HH:MM format (10:40, 6:00)
+   * @param slot The slot name from the pattern
+   */
+  time(slot: string): PatternBuilder;
+
+  // ADR-082: Vocabulary-Constrained Slots
+
+  /**
+   * Mark a slot as a direction
+   * Matches built-in direction vocabulary (n, north, up, etc.)
+   * @param slot The slot name from the pattern
+   */
+  direction(slot: string): PatternBuilder;
+
+  /**
+   * Mark a slot as an adjective from story vocabulary
+   * Requires prior vocabulary registration via language.addAdjectives()
+   * @param slot The slot name from the pattern
+   */
+  adjective(slot: string): PatternBuilder;
+
+  /**
+   * Mark a slot as a noun from story vocabulary
+   * Requires prior vocabulary registration via language.addNouns()
+   * @param slot The slot name from the pattern
+   */
+  noun(slot: string): PatternBuilder;
+
+  // ADR-082: Text Variant Slots
+
+  /**
+   * Mark a slot as quoted text
+   * Matches text enclosed in double quotes
+   * @param slot The slot name from the pattern
+   */
+  quotedText(slot: string): PatternBuilder;
+
+  /**
+   * Mark a slot as a conversation topic
+   * Consumes one or more words as a topic
+   * @param slot The slot name from the pattern
+   */
+  topic(slot: string): PatternBuilder;
+
   /**
    * Build the final grammar rule
    */
