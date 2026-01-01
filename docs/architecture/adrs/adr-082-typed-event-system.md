@@ -1,7 +1,8 @@
 # ADR-082: Typed Event System
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-01-01
+**Implemented:** 2026-01-01
 **Context:** Beta release preparation exposed type safety gaps in event system
 
 ## Problem Statement
@@ -378,6 +379,55 @@ interface ISemanticEvent<TData = unknown> {
 ### Neutral
 - `ISemanticEvent` remains for backward compatibility
 - Untyped events still work (for flexibility)
+
+## Implementation Notes
+
+### Phase 1: Core Infrastructure (Complete)
+
+Created in `packages/core/src/events/`:
+
+| File | Purpose |
+|------|---------|
+| `event-registry.ts` | Central `EventDataRegistry` with 25+ core event data interfaces |
+| `typed-event.ts` | `TypedSemanticEvent<T>` generic and `KnownSemanticEvent` union |
+| `event-factory.ts` | `createTypedEvent()`, `createMessageEvent()`, `createEmptyEvent()` |
+| `event-helpers.ts` | `isEventType()`, `getEventData()`, `getEventDataWithDefaults()`, `getUntypedEventData()` |
+
+All exported from `@sharpee/core`.
+
+### Phase 2: Stdlib Event Types (Complete)
+
+Created `packages/stdlib/src/events/event-registry.ts` extending core registry:
+
+- **Taking/Dropping:** `if.event.taken`, `if.event.dropped`
+- **Looking/Examining:** `if.event.looked`, `if.event.room.description`, `if.event.list.contents`, `if.event.examined`
+- **Movement:** `if.event.actor_moved`, `if.event.actor_exited`, `if.event.actor_entered`
+- **Opening/Closing:** `if.event.opened`, `if.event.closed`, `if.event.revealed`, `if.event.exit_revealed`
+- **Containers:** `if.event.put_in`, `if.event.put_on`
+- **Locking:** `if.event.locked`, `if.event.unlocked`
+- **Wearing:** `if.event.worn`, `if.event.removed`
+- **Entering/Exiting:** `if.event.entered`, `if.event.exited`
+- **Switching:** `if.event.switched_on`, `if.event.switched_off`
+- **Meta:** `if.event.score_displayed`, `if.action.inventory`
+- **Generic:** `action.success`, `action.error`
+
+### Phase 3: Migration (Complete)
+
+Migrated 17 `event.data as any` usages in production code:
+
+| Package | Files |
+|---------|-------|
+| `text-services` | `template-text-service.ts`, `cli-events-text-service.ts` |
+| `text-service-template` | `index.ts` |
+| `text-service-browser` | `index.ts` |
+| `event-processor` | `device/index.ts`, `sensory.ts`, `complex-manipulation.ts` |
+| `engine` | `game-engine.ts`, `event-adapter.ts` |
+
+~40 casts remain in test files (lower priority, tests can use `as any` for flexibility).
+
+### Phase 4: Documentation (Complete)
+
+This ADR updated to reflect implementation. Key usage patterns documented in code.
 
 ## References
 
