@@ -65,15 +65,21 @@ function encryp(challenge: string): string {
 }
 
 /**
- * Extract challenge and response from command
+ * Extract challenge and response from command using ADR-080 text slots
  */
 function extractArgs(context: ActionContext): { challenge: string; response: string } | null {
-  const rawInput = context.command.parsed?.rawInput?.toUpperCase() || '';
+  const textSlots = context.command.parsed?.textSlots;
 
-  // Match: INCANT <word1> <word2>
-  const match = rawInput.match(/^INCANT\s+(\w+)\s+(\w+)/i);
-  if (match) {
-    return { challenge: match[1].toUpperCase(), response: match[2].toUpperCase() };
+  if (textSlots) {
+    const challenge = textSlots.get('challenge');
+    const response = textSlots.get('response');
+
+    if (challenge && response) {
+      return {
+        challenge: challenge.toUpperCase(),
+        response: response.toUpperCase()
+      };
+    }
   }
 
   return null;

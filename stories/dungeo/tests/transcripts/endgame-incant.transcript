@@ -4,19 +4,16 @@ description: Test the INCANT command that teleports to endgame
 
 ---
 
-# BLOCKED: ADR-080 - Parser needs raw text grammar slots
-# INCANT takes arbitrary text arguments, not entity references.
-# Until ADR-080 is implemented, this test is skipped.
-
 # Test wrong response (should fail silently)
 > incant mhoram wrongxx
-[SKIP: blocked by ADR-080 - raw text grammar slots not yet implemented]
+[OK: contains "incant"]
+[EVENT: true, type="action.blocked"]
 
 # Test correct response (MHORAM -> DFNOBO)
 > incant mhoram dfnobo
 [OK: contains "Greetings, Implementor"]
 [OK: contains "disoriented"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="game.message"]
 
 # Should now be in Top of Stairs (endgame)
 > look
@@ -28,17 +25,17 @@ description: Test the INCANT command that teleports to endgame
 > west
 [OK: contains "Stone Room"]
 [OK: contains "button"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="if.event.actor_moved"]
 
 # Navigate to Small Room (laser beam)
 > south
 [OK: contains "Small Room"]
 [OK: contains "beam of light"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="if.event.actor_moved"]
 
 # Navigate to Hallway
 > south
 [OK: contains "Hallway"]
 [OK: contains "compass rose"]
 [OK: contains "Guardians"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="if.event.actor_moved"]

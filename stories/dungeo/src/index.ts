@@ -602,8 +602,11 @@ export class DungeoStory implements Story {
 
     // INCANT action (endgame cheat command)
     // "incant mhoram dfnobo", "incant dnzhuo ideqtq"
+    // Uses ADR-080 text slots - args are raw text, not entity references
     grammar
-      .define('incant :arg1 :arg2')
+      .define('incant :challenge :response')
+      .text('challenge')
+      .text('response')
       .mapsTo(INCANT_ACTION_ID)
       .withPriority(200)
       .build();
@@ -954,12 +957,6 @@ export class DungeoStory implements Story {
       };
     });
 
-    // NOTE: INCANT command blocked by ADR-080 (raw text grammar slots)
-    // The parser doesn't support non-entity slots yet. INCANT needs :arg1 :arg2
-    // to be raw text, not entity references. Workaround options:
-    // 1. Define specific literal patterns for known challenge/response pairs
-    // 2. Wait for ADR-080 platform implementation
-    // 3. Use a different command structure (e.g., menu-based)
 
     // Register Royal Puzzle movement transformer
     // This intercepts GO commands when player is inside the puzzle grid
