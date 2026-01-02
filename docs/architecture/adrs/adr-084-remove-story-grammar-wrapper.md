@@ -119,12 +119,17 @@ Add `.direction()`, `.vocabulary()`, `.manner()` to `StoryGrammarImpl`. This is 
 
 ## Decision
 
-**Option B implemented**: `StoryGrammarImpl.define()` now uses a JavaScript Proxy to:
-1. Forward all method calls to the real `PatternBuilder`
-2. Intercept `.build()` to add story rule tracking and debug events
-3. Add story-specific methods (`describe()`, `experimental()`, `withErrorMessage()`)
+**Option A implemented**: Removed `StoryGrammarImpl` entirely.
 
-This gives stories full access to all PatternBuilder methods (`.direction()`, `.vocabulary()`, `.manner()`, etc.) with zero ongoing maintenance burden.
+`EnglishParser.getStoryGrammar()` now returns `GrammarBuilder` directly. Stories get:
+- Full access to all `PatternBuilder` methods (`.direction()`, `.vocabulary()`, `.manner()`, etc.)
+- Zero wrapper overhead
+- No tracking/debug features (these weren't used by any stories)
+
+Also removed:
+- `StoryGrammarImpl` class (`packages/parser-en-us/src/story-grammar-impl.ts`)
+- `StoryGrammar`, `StoryPatternBuilder`, `StoryExtensionBuilder` interfaces (`packages/if-domain/src/grammar/story-grammar.ts`)
+- Unused methods: `override()`, `extend()`, `getRules()`, `clear()`, `setDebugMode()`, `experimental()`, `describe()`, `withErrorMessage()`
 
 ## Related
 
