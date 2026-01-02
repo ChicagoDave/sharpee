@@ -588,4 +588,239 @@ describe('ADR-080: Grammar Enhancements', () => {
       expect(results[2].success).toBe(true);
     });
   });
+
+  // ADR-082: Vocabulary and Manner Slots
+  describe('ADR-082: Vocabulary Slots', () => {
+    it('should mark slot as VOCABULARY type via .fromVocabulary()', () => {
+      const builder = engine.createBuilder();
+      builder.define('push :color panel')
+        .fromVocabulary('color', 'panel-colors')
+        .mapsTo('test:push_panel')
+        .build();
+
+      const rules = engine.getRules();
+      expect(rules).toHaveLength(1);
+
+      const rule = rules[0];
+      const colorSlot = rule.slots.get('color');
+      expect(colorSlot?.slotType).toBe(SlotType.VOCABULARY);
+      expect(colorSlot?.vocabularyCategory).toBe('panel-colors');
+    });
+
+    it('should match vocabulary slot when category is active', () => {
+      const mockVocabProvider = {
+        match: (category: string, word: string, ctx: GrammarContext) => {
+          if (category === 'panel-colors' && ctx.currentLocation === 'mirror-room') {
+            return ['red', 'yellow', 'mahogany', 'pine'].includes(word);
+          }
+          return false;
+        }
+      };
+
+      const mockWorld = {
+        getGrammarVocabularyProvider: () => mockVocabProvider
+      };
+
+      const builder = engine.createBuilder();
+      builder.define('push :color panel')
+        .fromVocabulary('color', 'panel-colors')
+        .mapsTo('test:push_panel')
+        .build();
+
+      const tokens = [
+        { word: 'push', normalized: 'push', position: 0, candidates: [] },
+        { word: 'red', normalized: 'red', position: 5, candidates: [] },
+        { word: 'panel', normalized: 'panel', position: 9, candidates: [] }
+      ];
+
+      // In mirror room - should match
+      const mirrorContext: GrammarContext = {
+        world: mockWorld,
+        actorId: 'player',
+        currentLocation: 'mirror-room',
+        slots: new Map()
+      };
+
+      const matches = engine.findMatches(tokens, mirrorContext);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].slots.get('color')?.text).toBe('red');
+      expect((matches[0].slots.get('color') as any).category).toBe('panel-colors');
+    });
+
+    it('should not match vocabulary slot when category is inactive', () => {
+      const mockVocabProvider = {
+        match: (category: string, word: string, ctx: GrammarContext) => {
+          if (category === 'panel-colors' && ctx.currentLocation === 'mirror-room') {
+            return ['red', 'yellow'].includes(word);
+          }
+          return false;
+        }
+      };
+
+      const mockWorld = {
+        getGrammarVocabularyProvider: () => mockVocabProvider
+      };
+
+      const builder = engine.createBuilder();
+      builder.define('push :color panel')
+        .fromVocabulary('color', 'panel-colors')
+        .mapsTo('test:push_panel')
+        .build();
+
+      const tokens = [
+        { word: 'push', normalized: 'push', position: 0, candidates: [] },
+        { word: 'red', normalized: 'red', position: 5, candidates: [] },
+        { word: 'panel', normalized: 'panel', position: 9, candidates: [] }
+      ];
+
+      // Outside mirror room - should NOT match
+      const hallwayContext: GrammarContext = {
+        world: mockWorld,
+        actorId: 'player',
+        currentLocation: 'hallway',
+        slots: new Map()
+      };
+
+      const matches = engine.findMatches(tokens, hallwayContext);
+      expect(matches).toHaveLength(0);
+    });
+  });
+
+  describe('ADR-082: Manner Slots', () => {
+    it('should mark slot as MANNER type via .manner()', () => {
+      const builder = engine.createBuilder();
+      builder.define(':manner open :target')
+        .manner('manner')
+        .mapsTo('test:open')
+        .build();
+
+      const rules = engine.getRules();
+      expect(rules).toHaveLength(1);
+
+      const rule = rules[0];
+      expect(rule.slots.get('manner')?.slotType).toBe(SlotType.MANNER);
+    });
+
+    it('should match built-in manner adverbs', () => {
+      const builder = engine.createBuilder();
+      builder.define(':manner open :target')
+        .manner('manner')
+        .mapsTo('test:open')
+        .build();
+
+      const tokens = [
+        { word: 'carefully', normalized: 'carefully', position: 0, candidates: [] },
+        { word: 'open', normalized: 'open', position: 10, candidates: [] },
+        { word: 'door', normalized: 'door', position: 15, candidates: [] }
+      ];
+
+      const context: GrammarContext = {
+        world: null,
+        actorId: 'player',
+        currentLocation: 'test',
+        slots: new Map()
+      };
+
+      const matches = engine.findMatches(tokens, context);
+      expect(matches).toHaveLength(1);
+
+      const mannerSlot = matches[0].slots.get('manner');
+      expect(mannerSlot?.text).toBe('carefully');
+      expect((mannerSlot as any).manner).toBe('carefully');
+    });
+
+    it('should match multiple built-in manner adverbs', () => {
+      const adverbs = ['quickly', 'slowly', 'forcefully', 'gently', 'quietly', 'loudly'];
+
+      for (const adverb of adverbs) {
+        // Create fresh engine for each adverb
+        const testEngine = new EnglishGrammarEngine();
+        const builder = testEngine.createBuilder();
+        builder.define(':manner open :target')
+          .manner('manner')
+          .mapsTo('test:open')
+          .build();
+
+        const tokens = [
+          { word: adverb, normalized: adverb, position: 0, candidates: [] },
+          { word: 'open', normalized: 'open', position: 10, candidates: [] },
+          { word: 'door', normalized: 'door', position: 15, candidates: [] }
+        ];
+
+        const context: GrammarContext = {
+          world: null,
+          actorId: 'player',
+          currentLocation: 'test',
+          slots: new Map()
+        };
+
+        const matches = testEngine.findMatches(tokens, context);
+        expect(matches.length).toBeGreaterThan(0);
+        expect((matches[0].slots.get('manner') as any).manner).toBe(adverb);
+      }
+    });
+
+    it('should match story-extended manner adverbs', () => {
+      const mockVocabProvider = {
+        match: (category: string, word: string) => {
+          if (category === 'manner') {
+            return ['recklessly', 'frantically'].includes(word);
+          }
+          return false;
+        }
+      };
+
+      const mockWorld = {
+        getGrammarVocabularyProvider: () => mockVocabProvider
+      };
+
+      const builder = engine.createBuilder();
+      builder.define(':manner open :target')
+        .manner('manner')
+        .mapsTo('test:open')
+        .build();
+
+      const tokens = [
+        { word: 'recklessly', normalized: 'recklessly', position: 0, candidates: [] },
+        { word: 'open', normalized: 'open', position: 11, candidates: [] },
+        { word: 'door', normalized: 'door', position: 16, candidates: [] }
+      ];
+
+      const context: GrammarContext = {
+        world: mockWorld,
+        actorId: 'player',
+        currentLocation: 'test',
+        slots: new Map()
+      };
+
+      const matches = engine.findMatches(tokens, context);
+      expect(matches).toHaveLength(1);
+      expect((matches[0].slots.get('manner') as any).manner).toBe('recklessly');
+    });
+
+    it('should not match non-manner words', () => {
+      const builder = engine.createBuilder();
+      builder.define(':manner open :target')
+        .manner('manner')
+        .mapsTo('test:open')
+        .build();
+
+      const tokens = [
+        { word: 'banana', normalized: 'banana', position: 0, candidates: [] },
+        { word: 'open', normalized: 'open', position: 7, candidates: [] },
+        { word: 'door', normalized: 'door', position: 12, candidates: [] }
+      ];
+
+      const context: GrammarContext = {
+        world: null,
+        actorId: 'player',
+        currentLocation: 'test',
+        slots: new Map()
+      };
+
+      const matches = engine.findMatches(tokens, context);
+      // Should not match because 'banana' is not a manner adverb
+      expect(matches).toHaveLength(0);
+    });
+  });
 });

@@ -102,6 +102,9 @@ interface RichCandidate {
   textSlots?: Map<string, string>;
   instrument?: INounPhrase;
   excluded?: INounPhrase[]; // For "all but X" patterns
+  // ADR-082 additions
+  vocabularySlots?: Map<string, { word: string; category: string }>;
+  manner?: string;
 }
 
 /**
@@ -413,7 +416,10 @@ export class EnglishParser implements Parser {
       // ADR-080 additions
       textSlots: best.textSlots,
       instrument: best.instrument,
-      excluded: best.excluded
+      excluded: best.excluded,
+      // ADR-082 additions
+      vocabularySlots: best.vocabularySlots,
+      manner: best.manner
     };
 
     // Add extras if present
@@ -787,6 +793,10 @@ export class EnglishParser implements Parser {
     let instrument: INounPhrase | undefined;
     let excluded: INounPhrase[] | undefined;
 
+    // ADR-082: Track vocabulary slots and manner
+    let vocabularySlots: Map<string, { word: string; category: string }> | undefined;
+    let manner: string | undefined;
+
     // Process slots based on the pattern structure
     for (const [slotName, slotData] of slotEntries) {
       const slotTokens = slotData.tokens.map((idx: number) => tokens[idx]);
@@ -800,6 +810,26 @@ export class EnglishParser implements Parser {
           textSlots = new Map();
         }
         textSlots.set(slotName, slotData.text);
+        continue; // Don't also add to direct/indirect objects
+      }
+
+      // ADR-082: Handle vocabulary slots
+      if (slotType === SlotType.VOCABULARY) {
+        const slotDataAny = slotData as any;
+        if (!vocabularySlots) {
+          vocabularySlots = new Map();
+        }
+        vocabularySlots.set(slotName, {
+          word: slotDataAny.matchedWord || slotData.text.toLowerCase(),
+          category: slotDataAny.category || ''
+        });
+        continue; // Don't also add to direct/indirect objects
+      }
+
+      // ADR-082: Handle manner slots
+      if (slotType === SlotType.MANNER) {
+        const slotDataAny = slotData as any;
+        manner = slotDataAny.manner || slotData.text.toLowerCase();
         continue; // Don't also add to direct/indirect objects
       }
 
@@ -965,7 +995,10 @@ export class EnglishParser implements Parser {
       // ADR-080 additions
       textSlots,
       instrument,
-      excluded
+      excluded,
+      // ADR-082 additions
+      vocabularySlots,
+      manner
     };
 
     // Add extras if present

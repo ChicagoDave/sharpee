@@ -402,6 +402,11 @@ export interface SlotMatch {
   isList?: boolean;       // True if "X and Y" list
   items?: SlotMatch[];    // List items when isList is true
   excluded?: SlotMatch[]; // Excluded items for "all but X"
+  // ADR-082: Vocabulary slots
+  category?: string;      // For VOCABULARY: the category name matched
+  matchedWord?: string;   // For VOCABULARY: normalized word that matched
+  // ADR-082: Manner slots
+  manner?: string;        // For MANNER: the manner adverb matched
 }
 
 /**

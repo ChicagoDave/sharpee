@@ -365,6 +365,13 @@ export class EnglishGrammarEngine extends GrammarEngine {
       case SlotType.NOUN:
         return this.consumeNounSlot(tokens, startIndex, context);
 
+      // ADR-082: Category-Based Vocabulary Slots
+      case SlotType.VOCABULARY:
+        return this.consumeVocabularySlot(tokens, startIndex, context, slotConstraints?.vocabularyCategory);
+
+      case SlotType.MANNER:
+        return this.consumeMannerSlot(tokens, startIndex, context);
+
       // ADR-082: Text Variant Slots
       case SlotType.QUOTED_TEXT:
         return this.consumeQuotedTextSlot(tokens, startIndex);
@@ -1030,6 +1037,109 @@ export class EnglishGrammarEngine extends GrammarEngine {
         confidence: 1.0,
         slotType: SlotType.NOUN
       };
+    }
+
+    return null;
+  }
+
+  // ==========================================================================
+  // ADR-082: Category-Based Vocabulary Slot Consumption
+  // ==========================================================================
+
+  /**
+   * Built-in manner adverbs that modify how actions are performed.
+   * Stories can extend this via vocab.extend('manner', [...])
+   */
+  private static readonly MANNER_ADVERBS = new Set([
+    'carefully', 'quietly', 'quickly', 'slowly',
+    'forcefully', 'gently', 'loudly', 'softly',
+    'cautiously', 'boldly', 'stealthily', 'silently',
+    'hastily', 'deliberately', 'violently', 'tenderly'
+  ]);
+
+  /**
+   * Consume a vocabulary slot from a story-defined category.
+   * Uses GrammarVocabularyProvider to check if word is in category
+   * and if the category is active in the current context.
+   */
+  private consumeVocabularySlot(
+    tokens: Token[],
+    startIndex: number,
+    context: GrammarContext,
+    category: string | undefined
+  ): SlotMatch | null {
+    if (startIndex >= tokens.length || !category) {
+      return null;
+    }
+
+    const token = tokens[startIndex];
+    const word = token.normalized;
+
+    // Get the vocabulary provider from the world
+    const world = context.world;
+    if (!world?.getGrammarVocabularyProvider) {
+      return null;
+    }
+
+    const vocabProvider = world.getGrammarVocabularyProvider();
+
+    // Check if word matches the category in current context
+    if (vocabProvider.match(category, word, context)) {
+      return {
+        tokens: [startIndex],
+        text: token.word,
+        confidence: 1.0,
+        slotType: SlotType.VOCABULARY,
+        // Store category and matched word for action access
+        category,
+        matchedWord: word
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Consume a manner adverb slot.
+   * Matches built-in manner adverbs plus any story-defined extensions.
+   * The matched manner is intended to feed into command.intention.manner
+   */
+  private consumeMannerSlot(
+    tokens: Token[],
+    startIndex: number,
+    context: GrammarContext
+  ): SlotMatch | null {
+    if (startIndex >= tokens.length) {
+      return null;
+    }
+
+    const token = tokens[startIndex];
+    const word = token.normalized;
+
+    // First check built-in manner adverbs
+    if (EnglishGrammarEngine.MANNER_ADVERBS.has(word)) {
+      return {
+        tokens: [startIndex],
+        text: token.word,
+        confidence: 1.0,
+        slotType: SlotType.MANNER,
+        manner: word
+      };
+    }
+
+    // Then check story-extended manner vocabulary
+    const world = context.world;
+    if (world?.getGrammarVocabularyProvider) {
+      const vocabProvider = world.getGrammarVocabularyProvider();
+      if (vocabProvider.match('manner', word, context)) {
+        return {
+          tokens: [startIndex],
+          text: token.word,
+          confidence: 1.0,
+          slotType: SlotType.MANNER,
+          manner: word
+        };
+      }
     }
 
     return null;
