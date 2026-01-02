@@ -1,7 +1,7 @@
 # Dungeo Implementation Tracking
 
 **Target**: Mainframe Zork 616-point version + ADR-078 extension
-**Current Progress**: 149/~191 rooms (78%), 530/650 treasure points (82%)
+**Current Progress**: 160/~191 rooms (84%), 530/650 treasure points (82%)
 
 ---
 
@@ -227,18 +227,16 @@
 | Tomb of Unknown Implementer | 🔄 WIP | Room+door created, exit connection bug |
 | Crypt | 🔄 WIP | Room created, exit connection bug |
 | Top of Stairs | ✅ Done | Endgame start (Phase 1) |
-| Stone Room | ❌ | Button |
-| Small Room | ❌ | Laser beam |
-| Hallway | ❌ | Mirror entrance |
-| Inside Mirror | ❌ | Rotating box |
-| Dungeon Entrance | ❌ | Trivia questions |
-| Narrow Corridor | ❌ | |
-| South Corridor | ❌ | |
-| East Corridor | ❌ | |
-| North Corridor | ❌ | |
-| Parapet | ❌ | Dial mechanism |
-| Prison Cell | ❌ | Cell door |
-| Treasury of Zork | ❌ | Victory! |
+| Stone Room | ✅ Done | Button |
+| Small Room | ✅ Done | Laser beam |
+| Hallway | ✅ Done | Mirror entrance, statues |
+| Inside Mirror | ✅ Done | Rotating box puzzle - poles, panels, rotation, movement all working |
+| Dungeon Entrance | ✅ Done | Trivia questions location |
+| Narrow Corridor | ✅ Done | |
+| East-West Corridor | ✅ Done | |
+| Parapet | ✅ Done | Dial mechanism location |
+| Prison Cell | ✅ Done | Cell door |
+| Treasury of Zork | ✅ Done | Victory location |
 
 ---
 
@@ -431,7 +429,7 @@
 | Maze | Map carefully | ❌ | Coins, keys |
 | Coal mine | Navigate maze | ✅ Done | Coal, bracelet |
 | Royal Puzzle | Push sandstone blocks | ✅ Done | Gold card (25 pts) |
-| Mirror box | Push panels, pole | ❌ | Dungeon entrance |
+| Mirror box | Push panels, pole | ✅ Done | Dungeon entrance access |
 | Bank | Enter walls, use curtain | ✅ Done | Portrait, bills |
 
 ### Item Manipulation Puzzles
@@ -525,7 +523,7 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 | Category | Done | Total | % |
 |----------|------|-------|---|
-| Rooms | 149 | ~191 | 78% |
+| Rooms | 160 | ~191 | 84% |
 | Treasures | 29 | 33 | 88% |
 | Treasure Points | 530 | 650 | 82% |
 | Light Sources | 4 | 4 | 100% |
@@ -533,7 +531,7 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 | Tools | 5 | 6 | 83% |
 | Containers | 5 | 5 | 100% |
 | NPCs | 6 | 8 | 75% |
-| Puzzles (working) | 12 | ~25 | 48% |
+| Puzzles (working) | 13 | ~25 | 52% |
 
 ---
 
@@ -546,6 +544,8 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Recently Completed
 
+- ✅ **Inside Mirror Puzzle Complete** (2026-01-02) - Fixed 4 bugs: (1) story dist out of date, (2) double execution from event handlers calling state functions that actions already call, (3) nullish coalescing bug where poleState 0 was treated as falsy, (4) message params wrapper for language interpolation. All 56 endgame tests pass. Pole raise/lower, panel rotation/movement, and exit mechanics all working.
+- ✅ **ADR-082 Vocabulary Slots** (2026-01-02) - Parser now supports vocabulary-constrained slots with context predicates. Enables patterns like "incant :challenge :response" with VOCABULARY slots. Also added MANNER slot type for adverbs.
 - 🔄 **Endgame Phase 1: Tomb & Crypt Rooms** (2025-12-31) - Created Tomb of Unknown Implementer and Crypt rooms in Temple region. Added crypt door object. **BUG**: Exit from Land of Dead to Tomb not connecting (needs debugging). Also created ADR-080 (Raw Text Grammar Slots) for INCANT command - parser currently can't handle non-entity text arguments like magic words.
 - ✅ **ADR-079 Endgame Region Structure** (2025-12-31) - Created 11 endgame rooms (Top of Stairs through Treasury). Added INCANT action with ENCRYP algorithm (verified: encryp('MHORAM')='DFNOBO'). INCANT blocked by ADR-080.
 - ✅ **ADR-078 Hidden Max Points** (2025-12-31) - Max score shows 616 until thief dies, then 650. "Reality altered" message appears on first SCORE after thief death. New "Master of Secrets" rank at 500 pts for players who complete ghost ritual and obtain canvas.
