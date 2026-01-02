@@ -48,84 +48,95 @@ export class StoryGrammarImpl implements StoryGrammar {
 
   /**
    * Define a new grammar pattern
+   *
+   * Uses a transparent proxy to forward all PatternBuilder methods to the base
+   * builder while intercepting .build() for tracking and debug events.
+   * This ensures stories have access to ALL PatternBuilder features (ADR-084).
    */
   define(pattern: string): StoryPatternBuilder {
-    const self = this; // Capture this reference
+    const self = this;
     const builder = this.engine.createBuilder();
     const baseBuilder = builder.define(pattern);
-    
-    // Create enhanced builder with story-specific methods
-    const storyBuilder: StoryPatternBuilder = {
-      ...baseBuilder,
-      
-      describe(description: string): StoryPatternBuilder {
-        (baseBuilder as any).description = description;
-        return storyBuilder;
-      },
-      
-      experimental(): StoryPatternBuilder {
-        // Experimental patterns get lower confidence
-        (storyBuilder as any)._experimentalConfidence = 0.7;
-        return storyBuilder;
-      },
-      
-      withErrorMessage(message: string): StoryPatternBuilder {
-        (baseBuilder as any).errorMessage = message;
-        return storyBuilder;
-      },
-      
-      where(slot: string, constraint: any): StoryPatternBuilder {
-        baseBuilder.where(slot, constraint);
-        return storyBuilder;
-      },
 
-      text(slot: string): StoryPatternBuilder {
-        baseBuilder.text(slot);
-        return storyBuilder;
-      },
+    // Track story-specific metadata
+    let experimentalConfidence: number | undefined;
+    let description: string | undefined;
+    let errorMessage: string | undefined;
 
-      instrument(slot: string): StoryPatternBuilder {
-        baseBuilder.instrument(slot);
-        return storyBuilder;
-      },
-
-      mapsTo(action: string): StoryPatternBuilder {
-        baseBuilder.mapsTo(action);
-        return storyBuilder;
-      },
-      
-      withPriority(priority: number): StoryPatternBuilder {
-        baseBuilder.withPriority(priority);
-        return storyBuilder;
-      },
-      
-      build(): GrammarRule {
-        const rule = baseBuilder.build();
-        
-        // Apply experimental confidence if set
-        if ((storyBuilder as any)._experimentalConfidence) {
-          (rule as any).experimentalConfidence = (storyBuilder as any)._experimentalConfidence;
+    // Create a proxy that forwards all methods to baseBuilder
+    // but intercepts build() and adds story-specific methods
+    const storyBuilder = new Proxy(baseBuilder, {
+      get(target, prop, receiver) {
+        // Story-specific methods
+        if (prop === 'describe') {
+          return (desc: string): StoryPatternBuilder => {
+            description = desc;
+            (target as any).description = desc;
+            return storyBuilder as StoryPatternBuilder;
+          };
         }
-        
-        // Track as story rule
-        self.storyRules.set(rule.id, rule);
-        (rule as any).source = 'story';
-        
-        // Emit debug event
-        self.emitDebugEvent({
-          type: 'pattern_registered',
-          pattern: rule.pattern,
-          action: rule.action,
-          ruleId: rule.id,
-          source: 'story',
-          timestamp: Date.now()
-        });
-        
-        self.updateStats();
-        return rule;
+
+        if (prop === 'experimental') {
+          return (): StoryPatternBuilder => {
+            experimentalConfidence = 0.7;
+            return storyBuilder as StoryPatternBuilder;
+          };
+        }
+
+        if (prop === 'withErrorMessage') {
+          return (msg: string): StoryPatternBuilder => {
+            errorMessage = msg;
+            (target as any).errorMessage = msg;
+            return storyBuilder as StoryPatternBuilder;
+          };
+        }
+
+        // Intercept build() to add tracking
+        if (prop === 'build') {
+          return (): GrammarRule => {
+            const rule = target.build();
+
+            // Apply experimental confidence if set
+            if (experimentalConfidence !== undefined) {
+              (rule as any).experimentalConfidence = experimentalConfidence;
+            }
+
+            // Track as story rule
+            self.storyRules.set(rule.id, rule);
+            (rule as any).source = 'story';
+
+            // Emit debug event
+            self.emitDebugEvent({
+              type: 'pattern_registered',
+              pattern: rule.pattern,
+              action: rule.action,
+              ruleId: rule.id,
+              source: 'story',
+              timestamp: Date.now()
+            });
+
+            self.updateStats();
+            return rule;
+          };
+        }
+
+        // For all other methods, forward to base builder but return proxy for chaining
+        const value = Reflect.get(target, prop, receiver);
+        if (typeof value === 'function') {
+          return (...args: any[]) => {
+            const result = value.apply(target, args);
+            // If the method returns the builder (for chaining), return our proxy instead
+            if (result === target) {
+              return storyBuilder;
+            }
+            return result;
+          };
+        }
+
+        return value;
       }
-    };
-    
+    }) as StoryPatternBuilder;
+
     return storyBuilder;
   }
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted (2026-01-02)
 
 ## Context
 
@@ -119,7 +119,12 @@ Add `.direction()`, `.vocabulary()`, `.manner()` to `StoryGrammarImpl`. This is 
 
 ## Decision
 
-TBD - awaiting discussion.
+**Option B implemented**: `StoryGrammarImpl.define()` now uses a JavaScript Proxy to:
+1. Forward all method calls to the real `PatternBuilder`
+2. Intercept `.build()` to add story rule tracking and debug events
+3. Add story-specific methods (`describe()`, `experimental()`, `withErrorMessage()`)
+
+This gives stories full access to all PatternBuilder methods (`.direction()`, `.vocabulary()`, `.manner()`, etc.) with zero ongoing maintenance burden.
 
 ## Related
 
