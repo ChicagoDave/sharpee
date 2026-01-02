@@ -19,27 +19,33 @@ export enum SlotType {
   /** Resolve entity but mark as instrument for the action */
   INSTRUMENT = 'instrument',
 
-  // ADR-082: Vocabulary-Constrained Slots
-  /** Match word from registered adjective vocabulary */
-  ADJECTIVE = 'adjective',
-  /** Match word from registered noun vocabulary */
-  NOUN = 'noun',
+  // ADR-082: Built-in typed value slots
   /** Match cardinal/ordinal direction (n, s, e, w, ne, up, down, etc.) */
   DIRECTION = 'direction',
-
-  // ADR-082: Typed Value Slots
   /** Match integer (digits or words: 1, 29, one, twenty) */
   NUMBER = 'number',
   /** Match ordinal (1st, first, 2nd, second, etc.) */
   ORDINAL = 'ordinal',
   /** Match time expression (10:40, 6:00) */
   TIME = 'time',
+  /** Match manner adverb (carefully, quickly, forcefully) - feeds intention.manner */
+  MANNER = 'manner',
 
-  // ADR-082: Text Variant Slots
+  // ADR-082: Text variant slots
   /** Match text enclosed in double quotes */
   QUOTED_TEXT = 'quoted_text',
   /** Match conversation topic (one or more words) */
-  TOPIC = 'topic'
+  TOPIC = 'topic',
+
+  // ADR-082: Category-based vocabulary slots
+  /** Match word from a story-defined vocabulary category */
+  VOCABULARY = 'vocabulary',
+
+  // Deprecated: Use VOCABULARY with named categories instead
+  /** @deprecated Use VOCABULARY with .fromVocabulary() instead */
+  ADJECTIVE = 'adjective',
+  /** @deprecated Use VOCABULARY with .fromVocabulary() instead */
+  NOUN = 'noun'
 }
 
 /**
@@ -95,14 +101,17 @@ export interface ScopeConstraint {
  * Each variant carries the parsed/typed value from the input
  */
 export type TypedSlotValue =
-  | { type: 'adjective'; word: string }
-  | { type: 'noun'; word: string }
   | { type: 'direction'; direction: string; canonical: string }
   | { type: 'number'; value: number; word: string }
   | { type: 'ordinal'; value: number; word: string }
   | { type: 'time'; hours: number; minutes: number; text: string }
+  | { type: 'manner'; word: string }
   | { type: 'quoted_text'; text: string }
-  | { type: 'topic'; words: string[] };
+  | { type: 'topic'; words: string[] }
+  | { type: 'vocabulary'; word: string; category: string }
+  // Deprecated: Use 'vocabulary' type instead
+  | { type: 'adjective'; word: string }
+  | { type: 'noun'; word: string };
 
 /**
  * Pattern builder for defining grammar rules
@@ -188,7 +197,7 @@ export interface PatternBuilder {
    */
   time(slot: string): PatternBuilder;
 
-  // ADR-082: Vocabulary-Constrained Slots
+  // ADR-082: Built-in Vocabulary Slots
 
   /**
    * Mark a slot as a direction
@@ -198,16 +207,51 @@ export interface PatternBuilder {
   direction(slot: string): PatternBuilder;
 
   /**
-   * Mark a slot as an adjective from story vocabulary
-   * Requires prior vocabulary registration via language.addAdjectives()
+   * Mark a slot as a manner adverb
+   * Matches built-in manner vocabulary (carefully, quickly, forcefully, etc.)
+   * The matched word is stored in command.intention.manner
    * @param slot The slot name from the pattern
+   */
+  manner(slot: string): PatternBuilder;
+
+  // ADR-082: Category-Based Vocabulary Slots
+
+  /**
+   * Mark a slot as matching a story-defined vocabulary category
+   * The category must be registered via world.getVocabularyProvider().define()
+   *
+   * @param slot The slot name from the pattern
+   * @param category The vocabulary category name
+   *
+   * @example
+   * ```typescript
+   * // Register vocabulary
+   * vocab.define('panel-colors', {
+   *   words: ['red', 'yellow', 'mahogany', 'pine'],
+   *   when: (ctx) => ctx.currentLocation === insideMirrorId
+   * });
+   *
+   * // Use in grammar
+   * grammar
+   *   .define('push :color panel')
+   *   .fromVocabulary('color', 'panel-colors')
+   *   .mapsTo('push_panel')
+   *   .build();
+   * ```
+   */
+  fromVocabulary(slot: string, category: string): PatternBuilder;
+
+  // Deprecated methods - use fromVocabulary() instead
+
+  /**
+   * @deprecated Use fromVocabulary() with a named category instead
+   * Mark a slot as an adjective from story vocabulary
    */
   adjective(slot: string): PatternBuilder;
 
   /**
+   * @deprecated Use fromVocabulary() with a named category instead
    * Mark a slot as a noun from story vocabulary
-   * Requires prior vocabulary registration via language.addNouns()
-   * @param slot The slot name from the pattern
    */
   noun(slot: string): PatternBuilder;
 
@@ -318,6 +362,8 @@ export interface SlotConstraint {
   constraints: Constraint[];
   /** How the parser should handle this slot (default: ENTITY) */
   slotType?: SlotType;
+  /** For VOCABULARY slots: the category name to match against */
+  vocabularyCategory?: string;
 }
 
 /**
@@ -330,6 +376,7 @@ export interface PatternToken {
   optional?: boolean;   // For optional elements like "[carefully]"
   slotType?: SlotType;  // For slot tokens: how to handle matching
   greedy?: boolean;     // For :slot... syntax: consume until delimiter
+  vocabularyCategory?: string; // For VOCABULARY slots: category name
 }
 
 /**

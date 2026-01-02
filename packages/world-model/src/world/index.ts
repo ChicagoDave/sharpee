@@ -1,17 +1,25 @@
 // index.ts - World model exports
 
 // Export all types and the WorldModel interface/class from the same file
-export { 
+export {
   WorldModel,
   IWorldModel,
-  WorldState, 
-  WorldConfig, 
+  WorldState,
+  WorldConfig,
   ContentsOptions,
   WorldChange,
   EventHandler,
   EventValidator,
   EventPreviewer
 } from './WorldModel';
+
+// Re-export grammar vocabulary types from if-domain for convenience
+export {
+  IGrammarVocabularyProvider,
+  GrammarVocabularyProvider,
+  GrammarVocabularyConfig,
+  GrammarVocabularyMatch
+} from '@sharpee/if-domain';
 
 // Export other classes
 export { SpatialIndex } from './SpatialIndex';

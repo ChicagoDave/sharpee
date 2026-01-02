@@ -216,7 +216,7 @@ export abstract class GrammarEngine {
             return builder;
           },
 
-          // ADR-082: Vocabulary-Constrained Slots
+          // ADR-082: Built-in Vocabulary Slots
 
           direction(slot: string) {
             const slotConstraint = rule.slots!.get(slot) || { name: slot, constraints: [] };
@@ -224,6 +224,25 @@ export abstract class GrammarEngine {
             rule.slots!.set(slot, slotConstraint);
             return builder;
           },
+
+          manner(slot: string) {
+            const slotConstraint = rule.slots!.get(slot) || { name: slot, constraints: [] };
+            slotConstraint.slotType = SlotType.MANNER;
+            rule.slots!.set(slot, slotConstraint);
+            return builder;
+          },
+
+          // ADR-082: Category-Based Vocabulary Slots
+
+          fromVocabulary(slot: string, category: string) {
+            const slotConstraint = rule.slots!.get(slot) || { name: slot, constraints: [] };
+            slotConstraint.slotType = SlotType.VOCABULARY;
+            slotConstraint.vocabularyCategory = category;
+            rule.slots!.set(slot, slotConstraint);
+            return builder;
+          },
+
+          // Deprecated methods - use fromVocabulary() instead
 
           adjective(slot: string) {
             const slotConstraint = rule.slots!.get(slot) || { name: slot, constraints: [] };

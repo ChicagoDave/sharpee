@@ -24,7 +24,9 @@ import {
   WorldState,
   WorldConfig,
   ContentsOptions,
-  WorldChange
+  WorldChange,
+  IGrammarVocabularyProvider,
+  GrammarVocabularyProvider
 } from '@sharpee/if-domain';
 import { ScopeRegistry } from '../scope/scope-registry';
 import { ScopeEvaluator } from '../scope/scope-evaluator';
@@ -123,6 +125,9 @@ export interface IWorldModel {
   addScopeRule(rule: IScopeRule): void;
   removeScopeRule(ruleId: string): boolean;
   evaluateScope(actorId: string, actionId?: string): string[];
+
+  // Vocabulary Management (ADR-082)
+  getGrammarVocabularyProvider(): IGrammarVocabularyProvider;
 }
 
 // Type prefixes for entity ID generation
@@ -162,6 +167,9 @@ export class WorldModel implements IWorldModel {
   private scopeRegistry: ScopeRegistry;
   private scopeEvaluator: ScopeEvaluator;
 
+  // Vocabulary system (ADR-082)
+  private grammarVocabularyProvider: IGrammarVocabularyProvider;
+
   constructor(config: WorldConfig = {}, platformEvents?: ISemanticEventSource) {
     this.config = {
       enableSpatialIndex: true,
@@ -175,6 +183,9 @@ export class WorldModel implements IWorldModel {
     // Initialize scope system
     this.scopeRegistry = new ScopeRegistry();
     this.scopeEvaluator = new ScopeEvaluator(this.scopeRegistry);
+
+    // Initialize vocabulary system (ADR-082)
+    this.grammarVocabularyProvider = new GrammarVocabularyProvider();
 
     // Register default scope rules
     this.registerDefaultScopeRules();
@@ -842,6 +853,7 @@ export class WorldModel implements IWorldModel {
     this.appliedEvents = [];
     this.idCounters.clear();
     this.capabilities = {};
+    this.grammarVocabularyProvider.clear();
   }
 
   // Event Sourcing Implementation
@@ -966,6 +978,11 @@ export class WorldModel implements IWorldModel {
   // Scope Management Methods
   getScopeRegistry(): ScopeRegistry {
     return this.scopeRegistry;
+  }
+
+  // Vocabulary Management (ADR-082)
+  getGrammarVocabularyProvider(): IGrammarVocabularyProvider {
+    return this.grammarVocabularyProvider;
   }
 
   addScopeRule(rule: IScopeRule): void {
