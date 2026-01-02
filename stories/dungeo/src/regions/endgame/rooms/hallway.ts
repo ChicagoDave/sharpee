@@ -26,8 +26,8 @@ export function createHallway(world: WorldModel): IFEntity {
   room.add(new IdentityTrait({
     name: 'Hallway',
     aliases: ['hallway', 'long hallway', 'hall'],
-    // Dungeon message #681 + #682/683 guardian descriptions
-    description: 'This is part of the long hallway. The east and west walls are dressed stone. In the center of the hall is a shallow stone channel. In the center of the room the channel widens into a large hole around which is engraved a compass rose.\n\nIdentical stone statues face each other from pedestals on opposite sides of the corridor. The statues represent Guardians of Zork, a military order of ancient lineage. They are portrayed as heavily armored warriors standing at ease, hands clasped around formidable bludgeons.',
+    // Dungeon message #681 + #682/683 guardian descriptions + structure mention
+    description: 'This is part of the long hallway. The east and west walls are dressed stone. In the center of the hall is a shallow stone channel. In the center of the room the channel widens into a large hole around which is engraved a compass rose. Sitting in the center of the room is a strange wooden structure.\n\nIdentical stone statues face each other from pedestals on opposite sides of the corridor. The statues represent Guardians of Zork, a military order of ancient lineage. They are portrayed as heavily armored warriors standing at ease, hands clasped around formidable bludgeons.',
     properName: false,
     article: 'the'
   }));

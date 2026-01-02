@@ -17,7 +17,35 @@ export enum SlotType {
   /** Capture raw text until next pattern element or end (greedy) */
   TEXT_GREEDY = 'text_greedy',
   /** Resolve entity but mark as instrument for the action */
-  INSTRUMENT = 'instrument'
+  INSTRUMENT = 'instrument',
+
+  // ADR-082: Built-in typed value slots
+  /** Match cardinal/ordinal direction (n, s, e, w, ne, up, down, etc.) */
+  DIRECTION = 'direction',
+  /** Match integer (digits or words: 1, 29, one, twenty) */
+  NUMBER = 'number',
+  /** Match ordinal (1st, first, 2nd, second, etc.) */
+  ORDINAL = 'ordinal',
+  /** Match time expression (10:40, 6:00) */
+  TIME = 'time',
+  /** Match manner adverb (carefully, quickly, forcefully) - feeds intention.manner */
+  MANNER = 'manner',
+
+  // ADR-082: Text variant slots
+  /** Match text enclosed in double quotes */
+  QUOTED_TEXT = 'quoted_text',
+  /** Match conversation topic (one or more words) */
+  TOPIC = 'topic',
+
+  // ADR-082: Category-based vocabulary slots
+  /** Match word from a story-defined vocabulary category */
+  VOCABULARY = 'vocabulary',
+
+  // Deprecated: Use VOCABULARY with named categories instead
+  /** @deprecated Use VOCABULARY with .fromVocabulary() instead */
+  ADJECTIVE = 'adjective',
+  /** @deprecated Use VOCABULARY with .fromVocabulary() instead */
+  NOUN = 'noun'
 }
 
 /**
@@ -67,6 +95,23 @@ export interface ScopeConstraint {
   explicitEntities: string[];
   includeRules: string[];
 }
+
+/**
+ * ADR-082: Typed slot value for non-entity slots
+ * Each variant carries the parsed/typed value from the input
+ */
+export type TypedSlotValue =
+  | { type: 'direction'; direction: string; canonical: string }
+  | { type: 'number'; value: number; word: string }
+  | { type: 'ordinal'; value: number; word: string }
+  | { type: 'time'; hours: number; minutes: number; text: string }
+  | { type: 'manner'; word: string }
+  | { type: 'quoted_text'; text: string }
+  | { type: 'topic'; words: string[] }
+  | { type: 'vocabulary'; word: string; category: string }
+  // Deprecated: Use 'vocabulary' type instead
+  | { type: 'adjective'; word: string }
+  | { type: 'noun'; word: string };
 
 /**
  * Pattern builder for defining grammar rules
@@ -128,7 +173,104 @@ export interface PatternBuilder {
    * @param defaults Default semantic properties
    */
   withDefaultSemantics(defaults: Partial<SemanticProperties>): PatternBuilder;
-  
+
+  // ADR-082: Typed Value Slots
+
+  /**
+   * Mark a slot as a number (integer)
+   * Matches digits (1, 29, 100) or words (one, twenty)
+   * @param slot The slot name from the pattern
+   */
+  number(slot: string): PatternBuilder;
+
+  /**
+   * Mark a slot as an ordinal
+   * Matches ordinal words (first, second) or suffixed numbers (1st, 2nd)
+   * @param slot The slot name from the pattern
+   */
+  ordinal(slot: string): PatternBuilder;
+
+  /**
+   * Mark a slot as a time expression
+   * Matches HH:MM format (10:40, 6:00)
+   * @param slot The slot name from the pattern
+   */
+  time(slot: string): PatternBuilder;
+
+  // ADR-082: Built-in Vocabulary Slots
+
+  /**
+   * Mark a slot as a direction
+   * Matches built-in direction vocabulary (n, north, up, etc.)
+   * @param slot The slot name from the pattern
+   */
+  direction(slot: string): PatternBuilder;
+
+  /**
+   * Mark a slot as a manner adverb
+   * Matches built-in manner vocabulary (carefully, quickly, forcefully, etc.)
+   * The matched word is stored in command.intention.manner
+   * @param slot The slot name from the pattern
+   */
+  manner(slot: string): PatternBuilder;
+
+  // ADR-082: Category-Based Vocabulary Slots
+
+  /**
+   * Mark a slot as matching a story-defined vocabulary category
+   * The category must be registered via world.getVocabularyProvider().define()
+   *
+   * @param slot The slot name from the pattern
+   * @param category The vocabulary category name
+   *
+   * @example
+   * ```typescript
+   * // Register vocabulary
+   * vocab.define('panel-colors', {
+   *   words: ['red', 'yellow', 'mahogany', 'pine'],
+   *   when: (ctx) => ctx.currentLocation === insideMirrorId
+   * });
+   *
+   * // Use in grammar
+   * grammar
+   *   .define('push :color panel')
+   *   .fromVocabulary('color', 'panel-colors')
+   *   .mapsTo('push_panel')
+   *   .build();
+   * ```
+   */
+  fromVocabulary(slot: string, category: string): PatternBuilder;
+
+  // Deprecated methods - use fromVocabulary() instead
+
+  /**
+   * @deprecated Use fromVocabulary() with a named category instead
+   * Mark a slot as an adjective from story vocabulary
+   */
+  adjective(slot: string): PatternBuilder;
+
+  /**
+   * @deprecated Use fromVocabulary() with a named category instead
+   * Mark a slot as a noun from story vocabulary
+   */
+  noun(slot: string): PatternBuilder;
+
+  // ADR-082: Text Variant Slots
+
+  /**
+   * Mark a slot as quoted text
+   * Matches text enclosed in double quotes
+   * @param slot The slot name from the pattern
+   */
+  quotedText(slot: string): PatternBuilder;
+
+  /**
+   * Mark a slot as a conversation topic
+   * Consumes one or more words as a topic
+   * @param slot The slot name from the pattern
+   */
+  topic(slot: string): PatternBuilder;
+
   /**
    * Build the final grammar rule
    */
@@ -220,6 +362,8 @@ export interface SlotConstraint {
   constraints: Constraint[];
   /** How the parser should handle this slot (default: ENTITY) */
   slotType?: SlotType;
+  /** For VOCABULARY slots: the category name to match against */
+  vocabularyCategory?: string;
 }
 
 /**
@@ -232,6 +376,7 @@ export interface PatternToken {
   optional?: boolean;   // For optional elements like "[carefully]"
   slotType?: SlotType;  // For slot tokens: how to handle matching
   greedy?: boolean;     // For :slot... syntax: consume until delimiter
+  vocabularyCategory?: string; // For VOCABULARY slots: category name
 }
 
 /**
@@ -257,6 +402,11 @@ export interface SlotMatch {
   isList?: boolean;       // True if "X and Y" list
   items?: SlotMatch[];    // List items when isList is true
   excluded?: SlotMatch[]; // Excluded items for "all but X"
+  // ADR-082: Vocabulary slots
+  category?: string;      // For VOCABULARY: the category name matched
+  matchedWord?: string;   // For VOCABULARY: normalized word that matched
+  // ADR-082: Manner slots
+  manner?: string;        // For MANNER: the manner adverb matched
 }
 
 /**

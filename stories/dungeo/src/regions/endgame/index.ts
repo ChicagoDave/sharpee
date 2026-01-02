@@ -124,15 +124,15 @@ function connectEndgameRooms(world: WorldModel, roomIds: EndgameRoomIds): void {
   }
 
   // Hallway (guardians)
-  // N → Small Room, S → Dungeon Entrance
-  // "IN" → Inside Mirror (handled by command transformer)
+  // N → Small Room, S → Dungeon Entrance, IN → Inside Mirror
   const hallway = world.getEntity(roomIds.hallway);
   if (hallway) {
     const roomTrait = hallway.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
         [Direction.NORTH]: { destination: roomIds.smallRoom },
-        [Direction.SOUTH]: { destination: roomIds.dungeonEntrance }
+        [Direction.SOUTH]: { destination: roomIds.dungeonEntrance },
+        [Direction.IN]: { destination: roomIds.insideMirror }
       };
     }
   }

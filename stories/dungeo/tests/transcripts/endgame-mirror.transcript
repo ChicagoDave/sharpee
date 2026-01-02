@@ -1,0 +1,87 @@
+title: Endgame Inside Mirror Puzzle
+story: dungeo
+description: Test the Inside Mirror entry, pole operations, panel pushing, and exit
+
+---
+
+# Use INCANT to get to endgame
+> incant mhoram dfnobo
+[OK: contains "Implementor"]
+
+# We should be at Top of Stairs
+> look
+[OK: contains "Top of Stairs"]
+
+# Navigate to the Hallway where the mirror is
+> west
+[OK: contains "Stone Room"]
+
+> south
+[OK: contains "Small Room"]
+
+> south
+[OK: contains "Hallway"]
+[OK: contains "structure"]
+
+# Enter the mirror structure using IN direction
+> in
+[OK: contains "Inside Mirror"]
+[OK: contains "short pole"]
+[OK: contains "mahogany panel"]
+
+# Raise the pole (enables rotation)
+> raise pole
+[OK: contains "raise"]
+
+# Push red panel to rotate (should work since pole is raised)
+> push red panel
+[OK: contains "rotates"]
+[OK: contains "northeast"]
+
+# Push yellow panel to rotate the other way
+> push yellow
+[OK: contains "rotates"]
+[OK: contains "north"]
+
+# Lower the pole while N-S aligned - should go into channel
+> lower pole
+[OK: contains "channel"]
+
+# Now test movement - push mahogany to move forward
+> push mahogany
+[OK: contains "slides"]
+
+# Push pine to move backward
+> push pine
+[OK: contains "slides"]
+
+# Raise pole again
+> raise pole
+[OK: contains "raise"]
+
+# Rotate to misalign (push red twice to get to east)
+> push red
+[OK: contains "rotates"]
+[OK: contains "northeast"]
+
+> push red
+[OK: contains "rotates"]
+[OK: contains "east"]
+
+# Try to lower - should fall to floor since not N-S aligned
+> lower pole
+[OK: contains "floor"]
+[NOT: contains "channel"]
+
+# Check we're still in the mirror
+> look
+[OK: contains "Inside Mirror"]
+
+# Go out (back to hallway)
+> out
+[OK: contains "Hallway"]
+
+# Verify we're back in the hallway
+> look
+[OK: contains "Hallway"]
+[OK: contains "structure"]

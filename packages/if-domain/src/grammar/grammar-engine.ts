@@ -192,7 +192,88 @@ export abstract class GrammarEngine {
             rule.defaultSemantics = defaults;
             return builder;
           },
-          
+
+          // ADR-082: Typed Value Slots
+
+          number(slot: string) {
+            const slotConstraint = rule.slots!.get(slot) || { name: slot, constraints: [] };
+            slotConstraint.slotType = SlotType.NUMBER;
+            rule.slots!.set(slot, slotConstraint);
+            return builder;
+          },
+
+          ordinal(slot: string) {
+            const slotConstraint = rule.slots!.get(slot) || { name: slot, constraints: [] };
+            slotConstraint.slotType = SlotType.ORDINAL;
+            rule.slots!.set(slot, slotConstraint);
+            return builder;
+          },
+
+          time(slot: string) {
+            const slotConstraint = rule.slots!.get(slot) || { name: slot, constraints: [] };
+            slotConstraint.slotType = SlotType.TIME;
+            rule.slots!.set(slot, slotConstraint);
+            return builder;
+          },
+
+          // ADR-082: Built-in Vocabulary Slots
+
+          direction(slot: string) {
+            const slotConstraint = rule.slots!.get(slot) || { name: slot, constraints: [] };
+            slotConstraint.slotType = SlotType.DIRECTION;
+            rule.slots!.set(slot, slotConstraint);
+            return builder;
+          },
+
+          manner(slot: string) {
+            const slotConstraint = rule.slots!.get(slot) || { name: slot, constraints: [] };
+            slotConstraint.slotType = SlotType.MANNER;
+            rule.slots!.set(slot, slotConstraint);
+            return builder;
+          },
+
+          // ADR-082: Category-Based Vocabulary Slots
+
+          fromVocabulary(slot: string, category: string) {
+            const slotConstraint = rule.slots!.get(slot) || { name: slot, constraints: [] };
+            slotConstraint.slotType = SlotType.VOCABULARY;
+            slotConstraint.vocabularyCategory = category;
+            rule.slots!.set(slot, slotConstraint);
+            return builder;
+          },
+
+          // Deprecated methods - use fromVocabulary() instead
+
+          adjective(slot: string) {
+            const slotConstraint = rule.slots!.get(slot) || { name: slot, constraints: [] };
+            slotConstraint.slotType = SlotType.ADJECTIVE;
+            rule.slots!.set(slot, slotConstraint);
+            return builder;
+          },
+
+          noun(slot: string) {
+            const slotConstraint = rule.slots!.get(slot) || { name: slot, constraints: [] };
+            slotConstraint.slotType = SlotType.NOUN;
+            rule.slots!.set(slot, slotConstraint);
+            return builder;
+          },
+
+          // ADR-082: Text Variant Slots
+
+          quotedText(slot: string) {
+            const slotConstraint = rule.slots!.get(slot) || { name: slot, constraints: [] };
+            slotConstraint.slotType = SlotType.QUOTED_TEXT;
+            rule.slots!.set(slot, slotConstraint);
+            return builder;
+          },
+
+          topic(slot: string) {
+            const slotConstraint = rule.slots!.get(slot) || { name: slot, constraints: [] };
+            slotConstraint.slotType = SlotType.TOPIC;
+            rule.slots!.set(slot, slotConstraint);
+            return builder;
+          },
+
           build() {
             if (!rule.action) {
               throw new Error('Grammar rule must have an action (use .mapsTo())');

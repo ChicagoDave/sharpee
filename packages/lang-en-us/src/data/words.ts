@@ -103,7 +103,8 @@ export const englishWords = {
   ],
   
   /**
-   * Numbers as words
+   * Numbers as words (legacy array - use cardinalNumbers instead)
+   * @deprecated Use cardinalNumbers or ordinalNumbers maps
    */
   numberWords: [
     'zero', 'one', 'two', 'three', 'four', 'five',
@@ -180,3 +181,50 @@ export const abbreviations = new Map<string, string>([
   ['g', 'again'],
   ['q', 'quit']
 ]);
+
+/**
+ * Cardinal number words mapped to numeric values
+ * Used by NUMBER slot type in grammar patterns
+ */
+export const cardinalNumbers: Record<string, number> = {
+  zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5,
+  six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+  eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15,
+  sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20,
+  thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70,
+  eighty: 80, ninety: 90, hundred: 100
+};
+
+/**
+ * Ordinal number words mapped to numeric values
+ * Used by ORDINAL slot type in grammar patterns
+ */
+export const ordinalNumbers: Record<string, number> = {
+  first: 1, second: 2, third: 3, fourth: 4, fifth: 5,
+  sixth: 6, seventh: 7, eighth: 8, ninth: 9, tenth: 10,
+  eleventh: 11, twelfth: 12, thirteenth: 13, fourteenth: 14, fifteenth: 15,
+  sixteenth: 16, seventeenth: 17, eighteenth: 18, nineteenth: 19, twentieth: 20
+};
+
+/**
+ * Direction vocabulary with canonical forms
+ * Maps all variations (full names and abbreviations) to canonical direction names
+ * Used by DIRECTION slot type in grammar patterns
+ */
+export const directionMap: Record<string, string> = {
+  // Cardinals - full
+  north: 'north', south: 'south', east: 'east', west: 'west',
+  // Cardinals - abbreviated
+  n: 'north', s: 'south', e: 'east', w: 'west',
+  // Ordinals - full
+  northeast: 'northeast', northwest: 'northwest',
+  southeast: 'southeast', southwest: 'southwest',
+  // Ordinals - abbreviated
+  ne: 'northeast', nw: 'northwest', se: 'southeast', sw: 'southwest',
+  // Verticals - full
+  up: 'up', down: 'down',
+  // Verticals - abbreviated
+  u: 'up', d: 'down',
+  // Special
+  in: 'in', out: 'out'
+};

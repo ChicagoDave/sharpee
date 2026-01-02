@@ -179,6 +179,17 @@ export interface IParsedCommand {
 
   /** Instrument noun phrase for "with/through/using" clauses */
   instrument?: INounPhrase;
+
+  // ADR-082 additions
+
+  /** Typed slot values for non-entity slots (number, ordinal, direction, etc.) */
+  typedSlots?: Map<string, import('@sharpee/if-domain').TypedSlotValue>;
+
+  /** Vocabulary slot matches (from .fromVocabulary() patterns) */
+  vocabularySlots?: Map<string, import('@sharpee/if-domain').GrammarVocabularyMatch>;
+
+  /** Matched manner adverb (from .manner() patterns) - feeds intention.manner */
+  manner?: string;
 }
 
 /**

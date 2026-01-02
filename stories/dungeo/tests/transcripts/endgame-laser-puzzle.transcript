@@ -1,0 +1,50 @@
+title: Endgame Laser Puzzle
+story: dungeo
+description: Test laser beam and stone button puzzle mechanics
+
+---
+
+# Use INCANT to get to endgame (gives sword automatically)
+> incant mhoram dfnobo
+[OK: contains "Implementor"]
+
+# We should now be at Top of Stairs with the elvish sword
+> look
+[OK: contains "Top of Stairs"]
+
+# Go west to Stone Room
+> west
+[OK: contains "Stone Room"]
+[OK: contains "button"]
+
+# Try pushing button - currently shows "fixed in place" due to scenery trait
+# TODO: Need custom action handler for button pushing
+> push button
+[OK: contains "fixed"]
+
+# Go south to Small Room (laser beam room)
+> south
+[OK: contains "Small Room"]
+[OK: contains "beam"]
+
+# Examine the laser beam
+> examine beam
+[OK: contains "beam"]
+
+# Drop the sword to break the laser
+# This sets endgame.laserBeamActive = false
+> drop sword
+[OK: contains "drop"]
+
+# Look again - should see room description
+> look
+[OK: contains "Small Room"]
+
+# Go back to Stone Room
+> north
+[OK: contains "Stone Room"]
+
+# Button still shows fixed - need custom action for buttons
+# The event handler logic works, but scenery blocks the push action
+> push button
+[OK: contains "fixed"]

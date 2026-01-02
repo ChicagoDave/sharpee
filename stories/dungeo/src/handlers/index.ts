@@ -10,3 +10,6 @@ export * from './round-room-handler';
 export * from './royal-puzzle';
 export * from './ghost-ritual-handler';
 export * from './reality-altered-handler';
+export * from './endgame-trigger-handler';
+export * from './endgame-laser-handler';
+export * from './inside-mirror-handler';

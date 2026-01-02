@@ -21,6 +21,30 @@ import {
 } from '@sharpee/world-model';
 
 /**
+ * Create the laser beam scenery in Small Room
+ * The beam is visible when active, broken when sword is dropped
+ */
+function createLaserBeam(world: WorldModel, roomId: string): IFEntity {
+  const beam = world.createEntity('laser beam', EntityType.SCENERY);
+
+  beam.add(new IdentityTrait({
+    name: 'laser beam',
+    aliases: ['beam', 'red beam', 'light beam', 'narrow beam', 'beam of light'],
+    description: 'A narrow red beam of light crosses the room at the north end, inches above the floor.',
+    article: 'a'
+  }));
+
+  beam.add(new SceneryTrait());
+
+  world.moveEntity(beam.id, roomId);
+
+  // Mark for dynamic description based on state
+  (beam as any).isLaserBeam = true;
+
+  return beam;
+}
+
+/**
  * Create the stone button in Stone Room
  */
 function createStoneButton(world: WorldModel, roomId: string): IFEntity {
@@ -140,6 +164,106 @@ function createLongPole(world: WorldModel, roomId: string): IFEntity {
 }
 
 /**
+ * Create the mahogany panel in Inside Mirror
+ * Pushing this moves the box along the groove (when aligned N-S)
+ */
+function createMahoganyPanel(world: WorldModel, roomId: string): IFEntity {
+  const panel = world.createEntity('mahogany panel', EntityType.OBJECT);
+
+  panel.add(new IdentityTrait({
+    name: 'mahogany panel',
+    aliases: ['mahogany panel', 'mahogany wall', 'mahogany', 'left panel', 'left wall'],
+    description: 'The mahogany panel is smooth and well-polished. It forms one of the short walls of the structure.',
+    article: 'a'
+  }));
+
+  panel.add(new SceneryTrait());
+
+  world.moveEntity(panel.id, roomId);
+
+  // Mark as panel for puzzle mechanics
+  (panel as any).isPanel = true;
+  (panel as any).panelType = 'mahogany';
+
+  return panel;
+}
+
+/**
+ * Create the pine panel in Inside Mirror
+ * Pushing this moves the box (opposite direction from mahogany)
+ */
+function createPinePanel(world: WorldModel, roomId: string): IFEntity {
+  const panel = world.createEntity('pine panel', EntityType.OBJECT);
+
+  panel.add(new IdentityTrait({
+    name: 'pine panel',
+    aliases: ['pine panel', 'pine wall', 'pine', 'right panel', 'right wall', 'pine door'],
+    description: 'The pine panel is sturdy but plain. It forms one of the short walls of the structure.',
+    article: 'a'
+  }));
+
+  panel.add(new SceneryTrait());
+
+  world.moveEntity(panel.id, roomId);
+
+  // Mark as panel for puzzle mechanics
+  (panel as any).isPanel = true;
+  (panel as any).panelType = 'pine';
+
+  return panel;
+}
+
+/**
+ * Create the red panel in Inside Mirror
+ * Pushing this rotates the box 45 degrees
+ */
+function createRedPanel(world: WorldModel, roomId: string): IFEntity {
+  const panel = world.createEntity('red panel', EntityType.OBJECT);
+
+  panel.add(new IdentityTrait({
+    name: 'red panel',
+    aliases: ['red panel', 'red wall', 'red', 'red section'],
+    description: 'The red panel is painted a deep crimson. It forms part of the long wall opposite the entrance.',
+    article: 'a'
+  }));
+
+  panel.add(new SceneryTrait());
+
+  world.moveEntity(panel.id, roomId);
+
+  // Mark as panel for puzzle mechanics
+  (panel as any).isPanel = true;
+  (panel as any).panelType = 'red';
+
+  return panel;
+}
+
+/**
+ * Create the yellow panel in Inside Mirror
+ * Pushing this rotates the box 45 degrees (opposite direction from red)
+ */
+function createYellowPanel(world: WorldModel, roomId: string): IFEntity {
+  const panel = world.createEntity('yellow panel', EntityType.OBJECT);
+
+  panel.add(new IdentityTrait({
+    name: 'yellow panel',
+    aliases: ['yellow panel', 'yellow wall', 'yellow', 'yellow section'],
+    description: 'The yellow panel is painted a bright gold color. It forms part of the wall on the entrance side.',
+    article: 'a'
+  }));
+
+  panel.add(new SceneryTrait());
+
+  world.moveEntity(panel.id, roomId);
+
+  // Mark as panel for puzzle mechanics
+  (panel as any).isPanel = true;
+  (panel as any).panelType = 'yellow';
+
+  return panel;
+}
+
+/**
  * Create the bronze door in Prison Cell
  */
 function createBronzeDoor(world: WorldModel, roomId: string): IFEntity {
@@ -169,12 +293,16 @@ function createBronzeDoor(world: WorldModel, roomId: string): IFEntity {
 export function createEndgameObjects(
   world: WorldModel,
   roomIds: {
+    smallRoom: string;
     stoneRoom: string;
     parapet: string;
     insideMirror: string;
     prisonCell: string;
   }
 ): void {
+  // Small Room objects (laser puzzle)
+  createLaserBeam(world, roomIds.smallRoom);
+
   // Stone Room objects
   createStoneButton(world, roomIds.stoneRoom);
 
@@ -185,6 +313,10 @@ export function createEndgameObjects(
   // Inside Mirror objects
   createShortPole(world, roomIds.insideMirror);
   createLongPole(world, roomIds.insideMirror);
+  createMahoganyPanel(world, roomIds.insideMirror);
+  createPinePanel(world, roomIds.insideMirror);
+  createRedPanel(world, roomIds.insideMirror);
+  createYellowPanel(world, roomIds.insideMirror);
 
   // Prison Cell objects (bronze door only visible in cell 4)
   createBronzeDoor(world, roomIds.prisonCell);

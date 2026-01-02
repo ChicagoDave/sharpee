@@ -19,8 +19,8 @@ description: Test navigation to Tomb and Crypt (endgame entry rooms)
 [OK: contains "GDT"]
 
 > ah Land of the Dead
-[OK: contains "moved"]
-[EVENT: true, type="gdt.command.executed"]
+[OK: contains "Teleported"]
+[EVENT: true, type="action.success"]
 
 > look
 [OK: contains "Land of the Dead"]
