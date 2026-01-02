@@ -41,10 +41,9 @@ New debug command for dial puzzle testing:
 Created `victory-handler.ts` daemon:
 - Watches for player entering Treasury of Zork
 - Condition: `game.endgameStarted` true AND player in Treasury
-- Awards 35 points, sets `game.victory` and `game.ended`
-- Emits victory messages
-
-**Note:** Victory messages aren't rendering yet. The daemon condition and mechanics work (player can reach Treasury), but the events from `run()` don't appear in output. Needs investigation - possibly daemon output timing issue.
+- Awards 35 points (endgame score reaches 100), sets `game.victory` and `game.ended`
+- Emits four `game.message` events: ENTER_TREASURY, VICTORY_TEXT, FINAL_SCORE, CONGRATULATIONS
+- All victory messages render correctly via standard text service
 
 ### Room Connections
 
@@ -86,6 +85,5 @@ All 507 transcript tests pass (5 expected failures).
 
 ## Next Steps
 
-1. Debug why victory daemon messages don't render
-2. Remaining puzzles: Rainbow, glacier, buried treasure
-3. Missing systems: Vehicle trait (boat), INFLATE/DEFLATE
+1. Remaining puzzles: Rainbow, glacier, buried treasure
+2. Missing systems: Vehicle trait (boat), INFLATE/DEFLATE

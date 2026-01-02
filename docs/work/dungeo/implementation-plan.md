@@ -473,7 +473,7 @@
 | TAKE CARD intercept | ✅ Done | Royal Puzzle |
 | Robot commands | ❌ | "tell robot 'X'" syntax |
 | Endgame trigger | ✅ Done | Crypt darkness ritual (15 turns) |
-| Victory condition | ❌ | Game completion |
+| Victory condition | ✅ Done | Treasury entry triggers victory messages |
 | GDT (debug tool) | 🚧 Partial | Core commands working, DC added |
 | INCANT (cheat) | ✅ Done | Skip to endgame (ADR-080 text slots complete) |
 
@@ -538,18 +538,18 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Priority Next Steps
 
-1. **Endgame completion** - Victory daemon not triggering messages (mechanics work)
-2. **Remaining puzzles** - Rainbow (WAVE sceptre), glacier (throw torch), buried treasure (DIG)
-3. **Remaining treasures** - Don Woods stamp (mail order system), brass bauble (canary in forest)
-4. **Missing systems** - Vehicle trait (boat), INFLATE/DEFLATE, robot commands
+1. **Remaining puzzles** - Rainbow (WAVE sceptre), glacier (throw torch), buried treasure (DIG)
+2. **Remaining treasures** - Don Woods stamp (mail order system), brass bauble (canary in forest)
+3. **Missing systems** - Vehicle trait (boat), INFLATE/DEFLATE, robot commands
 
 ## Recently Completed
 
+- ✅ **Victory Handler Confirmed Working** (2026-01-02) - Verified victory daemon messages render correctly via StandardTextService. All 4 game.message events (ENTER_TREASURY, VICTORY_TEXT, FINAL_SCORE, CONGRATULATIONS) display properly when entering Treasury.
 - ✅ **Parapet Dial Puzzle** (2026-01-02) - Complete dial puzzle implementation:
   - SET DIAL action (1-8) with text slot parsing
   - PUSH DIAL BUTTON action activates cell rotation
   - GDT DL command for dial debugging (SET, PUSH, CELL, DOOR, OPEN, ENDGAME)
-  - Victory handler daemon (Treasury entry detection - messages not yet rendering)
+  - Victory handler daemon awards 35 pts on Treasury entry
   - Parapet D → Prison Cell connection on cell activation
   - Prison Cell S → Treasury when bronze door opens
 - ✅ **Dungeon Master Trivia System** (2026-01-02) - Added Dungeon Master NPC with 8 trivia questions (cycle +3 mod 8). Player must answer 3 correctly to open door N to Narrow Corridor. Created ANSWER action with greedy text slot, GDT TQ command for deterministic testing. Fixed door opening by dynamically adding N exit.
