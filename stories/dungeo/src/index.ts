@@ -479,80 +479,80 @@ export class DungeoStory implements Story {
       .withPriority(155)
       .build();
 
-    // Push wall action (Royal Puzzle)
+    // Push wall action (Royal Puzzle) - priority 175 to beat generic "push :target wall" (165)
     // "push north wall", "push the east wall", "push eastern wall"
     grammar
       .define('push north wall')
       .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(160)
+      .withPriority(175)
       .build();
 
     grammar
       .define('push south wall')
       .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(160)
+      .withPriority(175)
       .build();
 
     grammar
       .define('push east wall')
       .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(160)
+      .withPriority(175)
       .build();
 
     grammar
       .define('push west wall')
       .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(160)
+      .withPriority(175)
       .build();
 
     // With articles
     grammar
       .define('push the north wall')
       .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(160)
+      .withPriority(175)
       .build();
 
     grammar
       .define('push the south wall')
       .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(160)
+      .withPriority(175)
       .build();
 
     grammar
       .define('push the east wall')
       .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(160)
+      .withPriority(175)
       .build();
 
     grammar
       .define('push the west wall')
       .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(160)
+      .withPriority(175)
       .build();
 
     // -ern variants
     grammar
       .define('push northern wall')
       .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(160)
+      .withPriority(175)
       .build();
 
     grammar
       .define('push southern wall')
       .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(160)
+      .withPriority(175)
       .build();
 
     grammar
       .define('push eastern wall')
       .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(160)
+      .withPriority(175)
       .build();
 
     grammar
       .define('push western wall')
       .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(160)
+      .withPriority(175)
       .build();
 
     // ADR-078: Ghost Ritual puzzle actions
