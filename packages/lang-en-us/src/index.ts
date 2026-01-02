@@ -24,3 +24,13 @@ export * from './actions';
 
 // Export NPC language definitions (ADR-070)
 export * from './npc';
+
+// Export vocabulary data for parser use (ADR-082)
+export {
+  cardinalNumbers,
+  ordinalNumbers,
+  directionMap,
+  englishWords,
+  abbreviations,
+  irregularPlurals
+} from './data/words';

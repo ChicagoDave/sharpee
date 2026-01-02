@@ -19,6 +19,7 @@ import {
 import { Token } from '@sharpee/if-domain';
 import { EnglishPatternCompiler } from './english-pattern-compiler';
 import { ScopeEvaluator } from './scope-evaluator';
+import { cardinalNumbers, ordinalNumbers, directionMap } from '@sharpee/lang-en-us';
 
 /**
  * English-specific grammar matching engine
@@ -825,50 +826,8 @@ export class EnglishGrammarEngine extends GrammarEngine {
 
   // ==========================================================================
   // ADR-082: Typed Value Slot Consumption Functions
+  // Vocabulary imported from @sharpee/lang-en-us (cardinalNumbers, ordinalNumbers, directionMap)
   // ==========================================================================
-
-  /**
-   * Number words mapped to numeric values
-   */
-  private static readonly NUMBER_WORDS: Record<string, number> = {
-    zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5,
-    six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
-    eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15,
-    sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20,
-    thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70,
-    eighty: 80, ninety: 90, hundred: 100
-  };
-
-  /**
-   * Ordinal words mapped to numeric values
-   */
-  private static readonly ORDINAL_WORDS: Record<string, number> = {
-    first: 1, second: 2, third: 3, fourth: 4, fifth: 5,
-    sixth: 6, seventh: 7, eighth: 8, ninth: 9, tenth: 10,
-    eleventh: 11, twelfth: 12, thirteenth: 13, fourteenth: 14, fifteenth: 15,
-    sixteenth: 16, seventeenth: 17, eighteenth: 18, nineteenth: 19, twentieth: 20
-  };
-
-  /**
-   * Direction vocabulary with canonical forms
-   */
-  private static readonly DIRECTIONS: Record<string, string> = {
-    // Cardinals
-    n: 'north', north: 'north',
-    s: 'south', south: 'south',
-    e: 'east', east: 'east',
-    w: 'west', west: 'west',
-    // Ordinals
-    ne: 'northeast', northeast: 'northeast',
-    nw: 'northwest', northwest: 'northwest',
-    se: 'southeast', southeast: 'southeast',
-    sw: 'southwest', southwest: 'southwest',
-    // Verticals
-    u: 'up', up: 'up',
-    d: 'down', down: 'down',
-    // Special
-    in: 'in', out: 'out'
-  };
 
   /**
    * Consume a number slot (integer)
@@ -885,8 +844,8 @@ export class EnglishGrammarEngine extends GrammarEngine {
     const token = tokens[startIndex];
     const normalized = token.normalized;
 
-    // Check word form
-    if (normalized in EnglishGrammarEngine.NUMBER_WORDS) {
+    // Check word form (using imported vocabulary from lang-en-us)
+    if (normalized in cardinalNumbers) {
       return {
         tokens: [startIndex],
         text: token.word,
@@ -923,8 +882,8 @@ export class EnglishGrammarEngine extends GrammarEngine {
     const token = tokens[startIndex];
     const normalized = token.normalized;
 
-    // Check word form
-    if (normalized in EnglishGrammarEngine.ORDINAL_WORDS) {
+    // Check word form (using imported vocabulary from lang-en-us)
+    if (normalized in ordinalNumbers) {
       return {
         tokens: [startIndex],
         text: token.word,
@@ -997,7 +956,8 @@ export class EnglishGrammarEngine extends GrammarEngine {
     const token = tokens[startIndex];
     const normalized = token.normalized;
 
-    if (normalized in EnglishGrammarEngine.DIRECTIONS) {
+    // Check direction vocabulary (using imported vocabulary from lang-en-us)
+    if (normalized in directionMap) {
       return {
         tokens: [startIndex],
         text: token.word,
@@ -1222,9 +1182,9 @@ export class EnglishGrammarEngine extends GrammarEngine {
 
     const normalized = match.text.toLowerCase();
 
-    // Word form
-    if (normalized in EnglishGrammarEngine.NUMBER_WORDS) {
-      return EnglishGrammarEngine.NUMBER_WORDS[normalized];
+    // Word form (using imported vocabulary from lang-en-us)
+    if (normalized in cardinalNumbers) {
+      return cardinalNumbers[normalized];
     }
 
     // Digit form
@@ -1243,9 +1203,9 @@ export class EnglishGrammarEngine extends GrammarEngine {
 
     const normalized = match.text.toLowerCase();
 
-    // Word form
-    if (normalized in EnglishGrammarEngine.ORDINAL_WORDS) {
-      return EnglishGrammarEngine.ORDINAL_WORDS[normalized];
+    // Word form (using imported vocabulary from lang-en-us)
+    if (normalized in ordinalNumbers) {
+      return ordinalNumbers[normalized];
     }
 
     // Suffixed number form
@@ -1264,7 +1224,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
     if (match.slotType !== SlotType.DIRECTION) return null;
 
     const normalized = match.text.toLowerCase();
-    return EnglishGrammarEngine.DIRECTIONS[normalized] || null;
+    return directionMap[normalized] || null;
   }
 
   /**
