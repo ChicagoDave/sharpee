@@ -479,80 +479,20 @@ export class DungeoStory implements Story {
       .withPriority(155)
       .build();
 
-    // Push wall action (Royal Puzzle) - priority 175 to beat generic "push :target wall" (165)
-    // "push north wall", "push the east wall", "push eastern wall"
+    // Push wall action (Royal Puzzle) - uses direction slot type
+    // Handles: "push n wall", "push north wall", "push the east wall", etc.
     grammar
-      .define('push north wall')
+      .define('push :direction wall')
+      .direction('direction')
       .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(175)
+      .withPriority(160)
       .build();
 
     grammar
-      .define('push south wall')
+      .define('push the :direction wall')
+      .direction('direction')
       .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(175)
-      .build();
-
-    grammar
-      .define('push east wall')
-      .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(175)
-      .build();
-
-    grammar
-      .define('push west wall')
-      .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(175)
-      .build();
-
-    // With articles
-    grammar
-      .define('push the north wall')
-      .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(175)
-      .build();
-
-    grammar
-      .define('push the south wall')
-      .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(175)
-      .build();
-
-    grammar
-      .define('push the east wall')
-      .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(175)
-      .build();
-
-    grammar
-      .define('push the west wall')
-      .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(175)
-      .build();
-
-    // -ern variants
-    grammar
-      .define('push northern wall')
-      .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(175)
-      .build();
-
-    grammar
-      .define('push southern wall')
-      .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(175)
-      .build();
-
-    grammar
-      .define('push eastern wall')
-      .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(175)
-      .build();
-
-    grammar
-      .define('push western wall')
-      .mapsTo(PUSH_WALL_ACTION_ID)
-      .withPriority(175)
+      .withPriority(160)
       .build();
 
     // ADR-078: Ghost Ritual puzzle actions
@@ -746,18 +686,10 @@ export class DungeoStory implements Story {
       .withPriority(170)
       .build();
 
-    // Generic push panel patterns (fallback)
-    grammar
-      .define('push :target panel')
-      .mapsTo(PUSH_PANEL_ACTION_ID)
-      .withPriority(165)
-      .build();
-
-    grammar
-      .define('push :target wall')
-      .mapsTo(PUSH_PANEL_ACTION_ID)
-      .withPriority(165)
-      .build();
+    // Note: No generic "push :target wall" pattern - we only support explicit
+    // panel colors (red/yellow/mahogany/pine) for Inside Mirror and explicit
+    // directions (north/south/east/west) for Royal Puzzle. This prevents
+    // ambiguity where "push east wall" would incorrectly match the panel action.
   }
 
   /**

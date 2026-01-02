@@ -828,6 +828,14 @@ export class EnglishParser implements Parser {
         continue; // Don't also add to direct/indirect objects
       }
 
+      // ADR-084: Handle direction slots - put in extras.direction
+      if (slotType === SlotType.DIRECTION) {
+        const directionText = slotData.text.toLowerCase();
+        const directionConstant = parseDirection(directionText);
+        extras.direction = directionConstant || directionText;
+        continue; // Don't also add to direct/indirect objects
+      }
+
       // Build base noun phrase
       const phrase: INounPhrase = {
         tokens: slotData.tokens,
