@@ -7,7 +7,7 @@
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
-import { IdentityTrait, IFEntity } from '@sharpee/world-model';
+import { IdentityTrait, IFEntity, RoomTrait, Direction } from '@sharpee/world-model';
 import { WAVE_ACTION_ID, WaveMessages } from './types';
 
 // Room name patterns where waving the sceptre has effect
@@ -110,20 +110,47 @@ export const waveAction: Action = {
       // Toggle rainbow state
       const rainbowActive = (world.getStateValue('dungeo.rainbow.active') as boolean) || false;
 
+      // Find the rainbow rooms by name
+      const aragainFalls = world.getAllEntities().find(e => {
+        const identity = e.get(IdentityTrait);
+        return identity?.name === 'Aragain Falls';
+      });
+      const onTheRainbow = world.getAllEntities().find(e => {
+        const identity = e.get(IdentityTrait);
+        return identity?.name === 'On the Rainbow';
+      });
+
       if (rainbowActive) {
         // Dismiss the rainbow
         world.setStateValue('dungeo.rainbow.active', false);
         sharedData.rainbowDismissed = true;
 
-        // Remove exit from falls to rainbow
-        // (The story's room connections should check this state)
+        // Remove exit from Aragain Falls to rainbow
+        if (aragainFalls) {
+          const roomTrait = aragainFalls.get(RoomTrait);
+          if (roomTrait) {
+            delete roomTrait.exits[Direction.WEST];
+            // Restore blocked message
+            if (!roomTrait.blockedExits) roomTrait.blockedExits = {};
+            roomTrait.blockedExits[Direction.WEST] = 'The rainbow is beautiful, but it looks far too insubstantial to walk on.';
+          }
+        }
       } else {
         // Create the rainbow
         world.setStateValue('dungeo.rainbow.active', true);
         sharedData.rainbowCreated = true;
 
-        // Enable exit from falls to rainbow
-        // (The story's room connections should check this state)
+        // Add exit from Aragain Falls to On the Rainbow
+        if (aragainFalls && onTheRainbow) {
+          const roomTrait = aragainFalls.get(RoomTrait);
+          if (roomTrait) {
+            roomTrait.exits[Direction.WEST] = { destination: onTheRainbow.id };
+            // Remove blocked message since exit is now open
+            if (roomTrait.blockedExits) {
+              delete roomTrait.blockedExits[Direction.WEST];
+            }
+          }
+        }
       }
     }
   },

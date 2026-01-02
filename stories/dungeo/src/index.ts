@@ -58,6 +58,7 @@ import { createEndgameRooms, createEndgameObjects, EndgameRoomIds } from './regi
 
 // Import handlers
 import { registerRoyalPuzzleHandler, initializePuzzleState, createPuzzleCommandTransformer, PuzzleHandlerMessages } from './handlers/royal-puzzle';
+import { createRainbowCommandTransformer } from './handlers/rainbow-handler';
 
 // Import NPCs
 import { registerThief, ThiefMessages } from './npcs/thief';
@@ -1362,6 +1363,10 @@ export class DungeoStory implements Story {
     // Register Royal Puzzle movement transformer
     // This intercepts GO commands when player is inside the puzzle grid
     engine.registerParsedCommandTransformer(createPuzzleCommandTransformer());
+
+    // Register Rainbow blocking transformer
+    // Intercepts "go west" at Aragain Falls when rainbow is not solid
+    engine.registerParsedCommandTransformer(createRainbowCommandTransformer());
 
     // Register scheduler events (ADR-071 Phase 2)
     const scheduler = engine.getScheduler();

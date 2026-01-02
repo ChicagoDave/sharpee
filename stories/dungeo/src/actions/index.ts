@@ -73,6 +73,9 @@ export * from './dig';
 // Wind (Canary/bauble - wind canary in forest)
 export * from './wind';
 
+// Rainbow Blocked (going west at Aragain Falls before waving)
+export * from './rainbow-blocked';
+
 // All custom actions for registration
 import { gdtActions } from './gdt';
 import { walkThroughActions } from './walk-through';
@@ -97,6 +100,7 @@ import { pushDialButtonAction } from './push-dial-button';
 import { waveAction, WAVE_ACTION_ID, WaveMessages } from './wave';
 import { digAction, DIG_ACTION_ID, DigMessages } from './dig';
 import { windAction, WIND_ACTION_ID, WindMessages } from './wind';
+import { rainbowBlockedAction } from './rainbow-blocked';
 
 // Re-export for use in index.ts
 export { WAVE_ACTION_ID, WaveMessages } from './wave';
@@ -126,5 +130,6 @@ export const customActions = [
   pushDialButtonAction,
   waveAction,
   digAction,
-  windAction
+  windAction,
+  rainbowBlockedAction
 ];

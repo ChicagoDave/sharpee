@@ -18,7 +18,7 @@
 ### Item Manipulation
 | Puzzle | Solution | Blocker |
 |--------|----------|---------|
-| Rainbow | WAVE sceptre at falls | ✅ WAVE action done |
+| Rainbow | WAVE sceptre at falls | ✅ Complete (action + dynamic exits) |
 | Glacier | Throw torch at ice | Need THROW at target |
 | Buried treasure | DIG 4x with shovel | ✅ DIG action + shovel done |
 | Egg/Canary | Let thief steal & open | Thief egg-opening logic |

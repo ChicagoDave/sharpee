@@ -143,20 +143,23 @@ function connectFrigidRiverRooms(world: WorldModel, roomIds: FrigidRiverRoomIds)
     }
   }
 
-  // Aragain Falls
+  // Aragain Falls - rainbow exits added dynamically when rainbow is solid
   const aragainFalls = world.getEntity(roomIds.aragainFalls);
   if (aragainFalls) {
     const roomTrait = aragainFalls.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
         [Direction.NORTH]: { destination: roomIds.frigidRiver3 },
-        [Direction.WEST]: { destination: roomIds.onTheRainbow },
+        // West to rainbow - added dynamically by wave action when rainbow is solid
         // Going south over the falls is death - not connected
+      };
+      roomTrait.blockedExits = {
+        [Direction.WEST]: 'The rainbow is beautiful, but it looks far too insubstantial to walk on.'
       };
     }
   }
 
-  // On the Rainbow
+  // On the Rainbow - exits set, but room only reachable when rainbow is solid
   const onTheRainbow = world.getEntity(roomIds.onTheRainbow);
   if (onTheRainbow) {
     const roomTrait = onTheRainbow.get(RoomTrait);
@@ -168,7 +171,7 @@ function connectFrigidRiverRooms(world: WorldModel, roomIds: FrigidRiverRoomIds)
     }
   }
 
-  // End of Rainbow
+  // End of Rainbow - exits set, but room only reachable when rainbow is solid
   const endOfRainbow = world.getEntity(roomIds.endOfRainbow);
   if (endOfRainbow) {
     const roomTrait = endOfRainbow.get(RoomTrait);
