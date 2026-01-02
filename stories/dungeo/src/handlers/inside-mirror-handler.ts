@@ -90,7 +90,7 @@ export function getMirrorState(world: WorldModel): {
   return {
     direction: (world.getStateValue(DIRECTION_KEY) as number) || 0,
     position: (world.getStateValue(POSITION_KEY) as number) || 0,
-    poleState: (world.getStateValue(POLE_STATE_KEY) as number) || POLE_ON_FLOOR
+    poleState: (world.getStateValue(POLE_STATE_KEY) as number) ?? POLE_ON_FLOOR
   };
 }
 
@@ -254,77 +254,9 @@ export function registerInsideMirrorHandler(
   dungeonEntranceId: EntityId,
   scheduler?: ISchedulerService
 ): void {
-  // Handler for LIFT action on short pole
-  world.registerEventHandler('if.event.lifted', (event: ISemanticEvent) => {
-    const player = world.getPlayer();
-    if (!player) return;
-
-    const playerLocation = world.getLocation(player.id);
-    if (playerLocation !== insideMirrorId) return;
-
-    const data = event.data as Record<string, any> | undefined;
-    const targetId = data?.targetId || event.entities?.target;
-    if (!targetId) return;
-
-    const entity = world.getEntity(targetId);
-    if (!entity) return;
-
-    if ((entity as any).poleType !== 'short') return;
-
-    raisePole(world);
-  });
-
-  // Handler for LOWER action on short pole
-  world.registerEventHandler('if.event.lowered', (event: ISemanticEvent) => {
-    const player = world.getPlayer();
-    if (!player) return;
-
-    const playerLocation = world.getLocation(player.id);
-    if (playerLocation !== insideMirrorId) return;
-
-    const data = event.data as Record<string, any> | undefined;
-    const targetId = data?.targetId || event.entities?.target;
-    if (!targetId) return;
-
-    const entity = world.getEntity(targetId);
-    if (!entity) return;
-
-    if ((entity as any).poleType !== 'short') return;
-
-    lowerPole(world);
-  });
-
-  // Handler for PUSH action on panels
-  world.registerEventHandler('if.event.pushed', (event: ISemanticEvent) => {
-    const player = world.getPlayer();
-    if (!player) return;
-
-    const playerLocation = world.getLocation(player.id);
-    if (playerLocation !== insideMirrorId) return;
-
-    const data = event.data as Record<string, any> | undefined;
-    const targetId = data?.targetId || event.entities?.target;
-    if (!targetId) return;
-
-    const entity = world.getEntity(targetId);
-    if (!entity) return;
-
-    const panelType = (entity as any).panelType;
-    if (!panelType) return;
-
-    // Red/Yellow panels rotate
-    if (panelType === 'red') {
-      rotateBox(world, true);  // Clockwise
-    } else if (panelType === 'yellow') {
-      rotateBox(world, false); // Counter-clockwise
-    }
-    // Mahogany/Pine panels move
-    else if (panelType === 'mahogany') {
-      moveBox(world, true);   // Forward (increase position)
-    } else if (panelType === 'pine') {
-      moveBox(world, false);  // Backward (decrease position)
-    }
-  });
+  // NOTE: All state changes (lift, lower, push) are handled by their respective actions.
+  // Event handlers for if.event.lifted, if.event.lowered, if.event.pushed were removed
+  // to avoid double execution. The daemon handles feedback messages.
 
   // Update Inside Mirror exits dynamically based on state
   function updateMirrorExits(): void {
@@ -407,7 +339,7 @@ export function registerInsideMirrorHandler(
             entities: {},
             data: {
               messageId: InsideMirrorMessages.BOX_ROTATES,
-              direction: newDirection
+              params: { direction: newDirection }
             }
           });
           // Also show T-bar direction
@@ -418,7 +350,7 @@ export function registerInsideMirrorHandler(
             entities: {},
             data: {
               messageId: InsideMirrorMessages.TBAR_DIRECTION,
-              direction: newDirection
+              params: { direction: newDirection }
             }
           });
           w.setStateValue(BOX_ROTATED_KEY, undefined);
@@ -433,7 +365,7 @@ export function registerInsideMirrorHandler(
             entities: {},
             data: {
               messageId: InsideMirrorMessages.BOX_MOVES,
-              position: newPosition
+              params: { position: newPosition }
             }
           });
           w.setStateValue(BOX_MOVED_KEY, undefined);
