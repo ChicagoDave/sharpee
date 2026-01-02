@@ -1,7 +1,7 @@
 # Dungeo Implementation Tracking
 
 **Target**: Mainframe Zork 616-point version + ADR-078 extension
-**Current Progress**: 160/~191 rooms (84%), 647/650 treasure points (99.5%)
+**Current Progress**: 169 rooms (100%), 647/650 treasure points (99.5%)
 
 ---
 
@@ -460,13 +460,14 @@
 | NPC basics | ✅ Done | ADR-070 implemented |
 | Vehicle trait | ❌ | Boat navigation |
 | INFLATE/DEFLATE actions | ❌ | Boat |
-| WAVE action | ❌ | Sceptre/rainbow |
+| WAVE action | ✅ Done | Sceptre/rainbow (2026-01-02) |
 | Water current | ❌ | River auto-movement |
 | RING action | ✅ Done | Bell |
 | PRAY action | ✅ Done | ADR-078 basin blessing |
 | BURN action | ✅ Done | ADR-078 incense (3-turn timer) |
 | Exorcism sequence | ✅ Done | Bell/book/candle |
-| DIG action | ❌ | Shovel/beach |
+| DIG action | ✅ Done | Shovel/beach (2026-01-02) |
+| WIND action | ✅ Done | Canary/bauble (2026-01-02) |
 | Sliding room mechanics | ✅ Done | Royal Puzzle (Phase 2 complete) |
 | PUSH WALL action | ✅ Done | Royal Puzzle |
 | Puzzle movement intercept | ✅ Done | Royal Puzzle |
@@ -524,7 +525,7 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 | Category | Done | Total | % |
 |----------|------|-------|---|
-| Rooms | 160 | ~191 | 84% |
+| Rooms | 169 | 169 | 100% |
 | Treasures | 31 | 33 | 94% |
 | Treasure Points | 647 | 650 | 99.5% |
 | Light Sources | 4 | 4 | 100% |
@@ -538,12 +539,18 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Priority Next Steps
 
-1. **Remaining puzzles** - Rainbow (WAVE sceptre), glacier (throw torch), buried treasure (DIG)
-2. **Remaining treasures** - Don Woods stamp (mail order system), brass bauble (canary in forest)
+1. **Remaining puzzles** - Glacier (throw torch), egg/canary (thief logic)
+2. **Remaining treasures** - Don Woods stamp (mail order system), brass bauble (canary in forest - WIND action done, needs bauble spawn)
 3. **Missing systems** - Vehicle trait (boat), INFLATE/DEFLATE, robot commands
 
 ## Recently Completed
 
+- ✅ **WAVE/DIG/WIND Actions** (2026-01-02) - Implemented three story-specific actions:
+  - WAVE action: Wave sceptre at Aragain Falls to create/dismiss rainbow
+  - DIG action: Dig at Sandy Beach (4 digs) to reveal buried statue
+  - WIND action: Wind canary in forest location (bauble spawn needs object)
+  - Added shovel and statue objects to Sandy Beach
+  - 3 new transcript tests (38 tests total), all 550 tests pass
 - ✅ **Victory Handler Confirmed Working** (2026-01-02) - Verified victory daemon messages render correctly via StandardTextService. All 4 game.message events (ENTER_TREASURY, VICTORY_TEXT, FINAL_SCORE, CONGRATULATIONS) display properly when entering Treasury.
 - ✅ **Parapet Dial Puzzle** (2026-01-02) - Complete dial puzzle implementation:
   - SET DIAL action (1-8) with text slot parsing

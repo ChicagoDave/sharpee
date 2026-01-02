@@ -29,7 +29,7 @@ import {
 import { DungeoScoringService } from './scoring';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages } from './actions';
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages } from './scheduler';
@@ -798,6 +798,57 @@ export class DungeoStory implements Story {
       .mapsTo(PUSH_DIAL_BUTTON_ACTION_ID)
       .withPriority(165)
       .build();
+
+    // WAVE action (Rainbow puzzle - wave sceptre at falls)
+    grammar
+      .define('wave :target')
+      .mapsTo(WAVE_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('wave :target at :location')
+      .mapsTo(WAVE_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    // DIG action (Buried treasure - dig with shovel)
+    grammar
+      .define('dig')
+      .mapsTo(DIG_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('dig with :tool')
+      .mapsTo(DIG_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('dig :target')
+      .mapsTo(DIG_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('dig in :target')
+      .mapsTo(DIG_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    // WIND action (Canary/bauble - wind clockwork canary)
+    grammar
+      .define('wind :target')
+      .mapsTo(WIND_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('wind up :target')
+      .mapsTo(WIND_ACTION_ID)
+      .withPriority(155)
+      .build();
   }
 
   /**
@@ -1167,6 +1218,32 @@ export class DungeoStory implements Story {
     language.addMessage(VictoryMessages.VICTORY_TEXT, 'Congratulations, brave adventurer! You have completed the greatest of all treasure hunts and discovered the legendary Treasury of Zork. The riches of the Great Underground Empire are yours!');
     language.addMessage(VictoryMessages.FINAL_SCORE, 'Your final score is {totalScore} points out of a possible 716 (616 main game + 100 endgame).\nEndgame score: {endgameScore}/100\nMain game score: {mainScore}/616');
     language.addMessage(VictoryMessages.CONGRATULATIONS, 'You have achieved the rank of MASTER ADVENTURER.\n\n*** THE END ***');
+
+    // Wave action messages (Rainbow puzzle)
+    language.addMessage(WaveMessages.SUCCESS, 'You wave the {target}.');
+    language.addMessage(WaveMessages.RAINBOW_APPEARS, 'As you wave the sceptre, a shimmering rainbow appears, bridging the falls! You can now cross to the other side.');
+    language.addMessage(WaveMessages.RAINBOW_GONE, 'The rainbow shimmers and fades away.');
+    language.addMessage(WaveMessages.NO_EFFECT, 'You wave the {target}, but nothing happens.');
+    language.addMessage(WaveMessages.NO_TARGET, 'Wave what?');
+    language.addMessage(WaveMessages.NOT_HOLDING, "You're not holding that.");
+
+    // Dig action messages (Buried treasure)
+    language.addMessage(DigMessages.SUCCESS, 'You dig for a while.');
+    language.addMessage(DigMessages.FOUND_STATUE, 'Your shovel strikes something solid! Digging more carefully, you uncover a beautiful statue.');
+    language.addMessage(DigMessages.KEEP_DIGGING, 'You dig some sand away. You could swear the sand looks a bit different here.');
+    language.addMessage(DigMessages.NOTHING_HERE, "You've already dug up everything here.");
+    language.addMessage(DigMessages.NO_SHOVEL, 'You have nothing to dig with.');
+    language.addMessage(DigMessages.CANT_DIG_HERE, "The ground is too hard to dig here.");
+
+    // Wind action messages (Canary/bauble)
+    language.addMessage(WindMessages.SUCCESS, 'You wind the {target}.');
+    language.addMessage(WindMessages.CANARY_SINGS, 'The canary begins to sing a beautiful song.');
+    language.addMessage(WindMessages.BAUBLE_APPEARS, 'The canary begins to sing. From somewhere nearby, an answering song is heard. Suddenly, a shiny brass bauble drops at your feet!');
+    language.addMessage(WindMessages.NOT_IN_FOREST, 'The canary sings, but there is no response.');
+    language.addMessage(WindMessages.NO_TARGET, 'Wind what?');
+    language.addMessage(WindMessages.NOT_WINDABLE, "That doesn't have a winding mechanism.");
+    language.addMessage(WindMessages.NOT_HOLDING, "You're not holding that.");
+    language.addMessage(WindMessages.ALREADY_WOUND, "The canary seems content and doesn't need winding.");
   }
 
   /**

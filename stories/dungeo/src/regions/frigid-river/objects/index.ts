@@ -21,6 +21,10 @@ export function createFrigidRiverObjects(world: WorldModel, roomIds: FrigidRiver
   createPotOfGold(world, roomIds.endOfRainbow);
   createTrident(world, roomIds.atlantis);
   createBuoy(world, roomIds.sandyBeach);
+  createStatue(world, roomIds.sandyBeach); // Buried - revealed by digging
+
+  // Tools
+  createShovel(world, roomIds.sandyBeach);
 
   // Scenery
   createRainbow(world, roomIds.aragainFalls);
@@ -139,4 +143,39 @@ function createInflatableBoat(world: WorldModel, roomId: string): IFEntity {
   (boat as any).isInflated = true;
   world.moveEntity(boat.id, roomId);
   return boat;
+}
+
+function createShovel(world: WorldModel, roomId: string): IFEntity {
+  const shovel = world.createEntity('shovel', EntityType.ITEM);
+  shovel.add(new IdentityTrait({
+    name: 'shovel',
+    aliases: ['spade', 'digging tool'],
+    description: 'A sturdy shovel, suitable for digging in sand or soft earth.',
+    properName: false,
+    article: 'a'
+  }));
+  world.moveEntity(shovel.id, roomId);
+  return shovel;
+}
+
+function createStatue(world: WorldModel, roomId: string): IFEntity {
+  const statue = world.createEntity('statue', EntityType.ITEM);
+  statue.add(new IdentityTrait({
+    name: 'beautiful statue',
+    aliases: ['statue', 'sculpture', 'figure', 'figurine'],
+    description: 'A beautiful statue of an ancient adventurer, carved from a single piece of white marble. The craftsmanship is exquisite.',
+    properName: false,
+    article: 'a'
+  }));
+  (statue as any).isTreasure = true;
+  (statue as any).treasureId = 'statue';
+  (statue as any).treasureValue = 10;
+  (statue as any).trophyCaseValue = 13;
+  // Statue is buried - only visible after digging
+  (statue as any).isBuried = true;
+  (statue as any).isVisible = false;
+  // Don't place in room initially - will be revealed by digging
+  // world.moveEntity(statue.id, roomId);
+  world.setStateValue('dungeo.statue.locationId', roomId);
+  return statue;
 }

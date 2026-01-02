@@ -64,6 +64,15 @@ export * from './set-dial';
 // Push Dial Button (Parapet dial puzzle)
 export * from './push-dial-button';
 
+// Wave (Rainbow puzzle - wave sceptre at falls)
+export * from './wave';
+
+// Dig (Buried treasure - dig with shovel)
+export * from './dig';
+
+// Wind (Canary/bauble - wind canary in forest)
+export * from './wind';
+
 // All custom actions for registration
 import { gdtActions } from './gdt';
 import { walkThroughActions } from './walk-through';
@@ -85,6 +94,14 @@ import { knockAction } from './knock';
 import { answerAction } from './answer';
 import { setDialAction } from './set-dial';
 import { pushDialButtonAction } from './push-dial-button';
+import { waveAction, WAVE_ACTION_ID, WaveMessages } from './wave';
+import { digAction, DIG_ACTION_ID, DigMessages } from './dig';
+import { windAction, WIND_ACTION_ID, WindMessages } from './wind';
+
+// Re-export for use in index.ts
+export { WAVE_ACTION_ID, WaveMessages } from './wave';
+export { DIG_ACTION_ID, DigMessages } from './dig';
+export { WIND_ACTION_ID, WindMessages } from './wind';
 
 export const customActions = [
   ...gdtActions,
@@ -106,5 +123,8 @@ export const customActions = [
   knockAction,
   answerAction,
   setDialAction,
-  pushDialButtonAction
+  pushDialButtonAction,
+  waveAction,
+  digAction,
+  windAction
 ];
