@@ -1,7 +1,7 @@
 # Dungeo Implementation Tracking
 
 **Target**: Mainframe Zork 616-point version + ADR-078 extension
-**Current Progress**: 160/~191 rooms (84%), 530/650 treasure points (82%)
+**Current Progress**: 160/~191 rooms (84%), 647/650 treasure points (99.5%)
 
 ---
 
@@ -224,8 +224,8 @@
 
 | Room | Status | Notes |
 |------|--------|-------|
-| Tomb of Unknown Implementer | 🔄 WIP | Room+door created, exit connection bug |
-| Crypt | 🔄 WIP | Room created, exit connection bug |
+| Tomb of Unknown Implementer | ✅ Done | Room+door, S→Land of Dead, N→Crypt |
+| Crypt | ✅ Done | Endgame trigger location, S→Tomb |
 | Top of Stairs | ✅ Done | Endgame start (Phase 1) |
 | Stone Room | ✅ Done | Button |
 | Small Room | ✅ Done | Laser beam |
@@ -278,7 +278,8 @@
 | 32 | Brass bauble | 1 | 1 | 2 | Forest (canary song) | ❌ |
 | 33 | Thief's canvas | 10 | 24 | 34 | Gallery (ADR-078 ritual) | ✅ Done |
 
-**Implemented**: 29/33 treasures (530/650 points = 82%)
+**Implemented**: 31/33 treasures (647/650 points = 99.5%)
+**Missing**: Don Woods stamp (1 pt - mail order), Brass bauble (2 pts - canary song)
 
 ---
 
@@ -471,10 +472,10 @@
 | Puzzle movement intercept | ✅ Done | Royal Puzzle |
 | TAKE CARD intercept | ✅ Done | Royal Puzzle |
 | Robot commands | ❌ | "tell robot 'X'" syntax |
-| Endgame trigger | ❌ | 616 points placed |
+| Endgame trigger | ✅ Done | Crypt darkness ritual (15 turns) |
 | Victory condition | ❌ | Game completion |
 | GDT (debug tool) | 🚧 Partial | Core commands working, DC added |
-| INCANT (cheat) | ❌ | Skip to endgame |
+| INCANT (cheat) | ✅ Done | Skip to endgame (ADR-080 text slots complete) |
 
 ---
 
@@ -524,30 +525,32 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 | Category | Done | Total | % |
 |----------|------|-------|---|
 | Rooms | 160 | ~191 | 84% |
-| Treasures | 29 | 33 | 88% |
-| Treasure Points | 530 | 650 | 82% |
+| Treasures | 31 | 33 | 94% |
+| Treasure Points | 647 | 650 | 99.5% |
 | Light Sources | 4 | 4 | 100% |
 | Weapons | 4 | 4 | 100% |
 | Tools | 5 | 6 | 83% |
 | Containers | 5 | 5 | 100% |
 | NPCs | 6 | 8 | 75% |
-| Puzzles (working) | 13 | ~25 | 52% |
+| Puzzles (working) | 15 | ~25 | 60% |
 
 ---
 
 ## Priority Next Steps
 
-1. **Remaining treasures** - Stamps (2), bauble
-2. **Puzzle mechanics** - Rainbow wave sceptre, glacier torch melt
-3. **Remaining NPCs** - Dungeon Master, Gnome
-4. **Endgame** (~15 rooms) - Final puzzle sequence
+1. **Endgame completion** - Dungeon Master NPC, trivia puzzle, victory condition
+2. **Remaining puzzles** - Rainbow (WAVE sceptre), glacier (throw torch), buried treasure (DIG)
+3. **Remaining treasures** - Don Woods stamp (mail order system), brass bauble (canary in forest)
+4. **Missing systems** - Vehicle trait (boat), INFLATE/DEFLATE, robot commands
 
 ## Recently Completed
 
+- ✅ **ADR-084 Story Grammar Removal** (2026-01-02) - Removed StoryGrammarImpl wrapper (~930 lines). Stories now get direct access to GrammarBuilder with full .direction(), .vocabulary(), .manner() methods. Simplified Royal Puzzle grammar from 12+ explicit patterns to 2 parameterized patterns.
 - ✅ **Inside Mirror Puzzle Complete** (2026-01-02) - Fixed 4 bugs: (1) story dist out of date, (2) double execution from event handlers calling state functions that actions already call, (3) nullish coalescing bug where poleState 0 was treated as falsy, (4) message params wrapper for language interpolation. All 56 endgame tests pass. Pole raise/lower, panel rotation/movement, and exit mechanics all working.
 - ✅ **ADR-082 Vocabulary Slots** (2026-01-02) - Parser now supports vocabulary-constrained slots with context predicates. Enables patterns like "incant :challenge :response" with VOCABULARY slots. Also added MANNER slot type for adverbs.
-- 🔄 **Endgame Phase 1: Tomb & Crypt Rooms** (2025-12-31) - Created Tomb of Unknown Implementer and Crypt rooms in Temple region. Added crypt door object. **BUG**: Exit from Land of Dead to Tomb not connecting (needs debugging). Also created ADR-080 (Raw Text Grammar Slots) for INCANT command - parser currently can't handle non-entity text arguments like magic words.
-- ✅ **ADR-079 Endgame Region Structure** (2025-12-31) - Created 11 endgame rooms (Top of Stairs through Treasury). Added INCANT action with ENCRYP algorithm (verified: encryp('MHORAM')='DFNOBO'). INCANT blocked by ADR-080.
+- ✅ **Endgame Phase 1: Tomb & Crypt Rooms** (2025-12-31) - Created Tomb of Unknown Implementer and Crypt rooms in Temple region. Added crypt door object. All connections working (Land of Dead ↔ Tomb ↔ Crypt).
+- ✅ **ADR-080 Text Slots & Multi-Object** (2025-12-31→2026-01-01) - Parser now supports text slots for non-entity arguments, greedy text capture, instrument slots, and multi-object parsing (take all, take all but X, take X and Y).
+- ✅ **ADR-079 Endgame Region Structure** (2025-12-31) - Created 11 endgame rooms (Top of Stairs through Treasury). Added INCANT action with ENCRYP algorithm (verified: encryp('MHORAM')='DFNOBO').
 - ✅ **ADR-078 Hidden Max Points** (2025-12-31) - Max score shows 616 until thief dies, then 650. "Reality altered" message appears on first SCORE after thief death. New "Master of Secrets" rank at 500 pts for players who complete ghost ritual and obtain canvas.
 - ✅ **Royal Puzzle Complete** (2025-12-31) - Fixed LOOK, TAKE CARD, and blocked card mechanics. Gold card treasure now fully obtainable (25 pts). Dynamic room descriptions work correctly. All 403 transcript tests pass.
 - ✅ **ADR-078 Thief's Canvas Puzzle** (2025-12-31) - Added Basin Room (E of Temple Dead End 2), ghost ritual puzzle with incense, empty frame, frame piece, canvas. New actions: BREAK, BURN, PRAY. 3-turn incense fuse. Ghost appears when frame piece dropped in blessed basin, canvas spawns in Gallery. 34 points (10 take + 24 case). Progress: 145/~191 rooms, 534/650 points.
