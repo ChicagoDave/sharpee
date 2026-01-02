@@ -345,7 +345,7 @@ export class DungeoStory implements Story {
     ];
 
     // Commands that take two arguments
-    const twoArgCodes = ['ao', 'pz'];
+    const twoArgCodes = ['ao', 'pz', 'tq'];
 
     // Register no-arg commands
     for (const code of noArgCodes) {
@@ -723,10 +723,10 @@ export class DungeoStory implements Story {
       .withPriority(155)
       .build();
 
-    // ANSWER action (Trivia responses) - uses greedy text slot
+    // ANSWER action (Trivia responses) - uses greedy text slot (:text... syntax)
+    // Note: Don't call .text() - the :text... syntax already sets TEXT_GREEDY
     grammar
       .define('answer :text...')
-      .text('text')
       .mapsTo(ANSWER_ACTION_ID)
       .withPriority(150)
       .build();

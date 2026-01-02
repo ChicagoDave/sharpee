@@ -30,6 +30,8 @@ import { rrHandler } from './rr';
 import { dcHandler, setSchedulerForGDT, SCHEDULER_GDT_KEY } from './dc';
 // Phase 5 - Puzzle debug
 import { pzHandler } from './pz';
+// Phase 6 - Trivia debug
+import { tqHandler } from './tq';
 
 /**
  * Registry of all GDT command handlers
@@ -67,6 +69,9 @@ handlers.set('DC', dcHandler);
 
 // Register Phase 5 - Puzzle debug
 handlers.set('PZ', pzHandler);
+
+// Register Phase 6 - Trivia debug
+handlers.set('TQ', tqHandler);
 
 /**
  * Get a command handler by code
@@ -136,3 +141,4 @@ export { nrHandler } from './nr';
 export { rrHandler } from './rr';
 export { dcHandler, setSchedulerForGDT, SCHEDULER_GDT_KEY } from './dc';
 export { pzHandler } from './pz';
+export { tqHandler } from './tq';

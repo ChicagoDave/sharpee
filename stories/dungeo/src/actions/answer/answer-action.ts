@@ -10,7 +10,7 @@
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
-import { IdentityTrait, NpcTrait } from '@sharpee/world-model';
+import { IdentityTrait, NpcTrait, RoomTrait, Direction } from '@sharpee/world-model';
 import { ANSWER_ACTION_ID, AnswerMessages } from './types';
 import {
   processAnswer,
@@ -37,6 +37,44 @@ function isAtDungeonEntrance(context: ActionContext): boolean {
 
   const identity = room.get(IdentityTrait);
   return identity?.name === 'Dungeon Entrance';
+}
+
+/**
+ * Find a room by name
+ */
+function findRoomByName(context: ActionContext, name: string): string | null {
+  const { world } = context;
+  for (const entity of world.getAllEntities()) {
+    const identity = entity.get(IdentityTrait);
+    if (identity?.name === name) {
+      return entity.id;
+    }
+  }
+  return null;
+}
+
+/**
+ * Open the door by adding N exit from Dungeon Entrance to Narrow Corridor
+ */
+function openDungeonDoor(context: ActionContext): void {
+  const { world, player } = context;
+
+  // Get the Dungeon Entrance room (player should be there)
+  const playerLocation = world.getLocation(player.id);
+  if (!playerLocation) return;
+
+  const dungeonEntrance = world.getEntity(playerLocation);
+  if (!dungeonEntrance) return;
+
+  // Find Narrow Corridor
+  const narrowCorridorId = findRoomByName(context, 'Narrow Corridor');
+  if (!narrowCorridorId) return;
+
+  // Add N exit to Dungeon Entrance
+  const roomTrait = dungeonEntrance.get(RoomTrait);
+  if (roomTrait) {
+    roomTrait.exits[Direction.NORTH] = { destination: narrowCorridorId };
+  }
 }
 
 /**
@@ -166,6 +204,9 @@ export const answerAction: Action = {
     if (result.state.passed) {
       world.setStateValue('dungeonMaster.doorOpen', true);
       setDungeonMasterState(world, 'FOLLOWING');
+
+      // Actually open the door by adding the N exit
+      openDungeonDoor(context);
 
       // Update DM's custom properties
       const dm = getDungeonMaster(world);
