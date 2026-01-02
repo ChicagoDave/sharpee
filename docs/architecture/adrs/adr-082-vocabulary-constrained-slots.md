@@ -1,457 +1,463 @@
-# ADR-082: Extended Grammar Slot Types
+# ADR-082: Context-Aware Vocabulary and Extended Grammar Slots
 
-**Status:** Accepted (Phases 1-3 implemented)
-**Date:** 2026-01-01
+**Status:** Revised (incorporating context-aware design)
+**Date:** 2026-01-01 (revised)
 **Deciders:** ChicagoDave, Claude
-**Context:** Comprehensive IF grammar requirements based on analysis of 25+ games across 40 years
+**Context:** Comprehensive IF grammar requirements with Sharpee's context awareness and intention systems
 
 ## Problem
 
-The current grammar system supports only three slot types:
+The current grammar system supports only basic slot types:
 - **ENTITY** - resolves to a game entity
 - **TEXT** - captures a single raw word
 - **TEXT_GREEDY** - captures words until a delimiter
 
-This is insufficient for the full range of interactive fiction command patterns. Analysis of games from Zork (1980) through modern works like Hadean Lands (2014) and Counterfeit Monkey (2012) reveals many command patterns that require typed slot values beyond simple entity resolution.
+This is insufficient for puzzles like the Inside Mirror ("push red panel") where:
+1. "red" is a vocabulary word, not an entity
+2. The command is only valid in a specific location
+3. The parser should reject invalid colors at parse time, not in action validation
 
-### Patterns That Cannot Be Expressed
+### Key Insight
 
-| Pattern | Example | Problem |
-|---------|---------|---------|
-| Numeric dials | `turn dial to 29` | No numeric slot type |
-| Vocabulary constraints | `push red panel` | No adjective/noun validation |
-| Directional actions | `pace 5 north` | No direction slot type |
-| Time expressions | `wait until 10:40` | No time slot type |
-| Ordinal selection | `take first key` | No ordinal slot type |
-| Quoted text | `write "hello" on cube` | No quoted text capture |
-| Conversation topics | `ask wizard about curse` | No topic slot type |
+Sharpee has **context awareness** built into the parser via `GrammarContext`. Vocabulary should be scoped to contexts, not global. The parser already knows the player's location—vocabulary should leverage this.
 
-## Research Summary
+## Solution: Context-Aware Vocabulary
 
-### Games Analyzed
+### Core Concept
 
-**Infocom Era (1980-1989):**
-Zork I-III, Enchanter, Sorcerer, Spellbreaker, Hitchhiker's Guide, Trinity, Planetfall, Stationfall, Suspended, A Mind Forever Voyaging, Leather Goddesses of Phobos, Deadline, Witness, Nord and Bert, Bureaucracy
+Vocabulary categories are registered with optional context predicates. The parser only considers a pattern if its vocabulary is active in the current context.
 
-**Inform/TADS Era (1993-2005):**
-Curses, Anchorhead, Photopia, Savoir-Faire, Shade, So Far, Babel
+```typescript
+// Vocabulary only active in Inside Mirror
+vocab.define('panel-colors', {
+  words: ['red', 'yellow', 'mahogany', 'pine'],
+  when: (ctx) => ctx.currentLocation === insideMirrorId
+});
 
-**Modern Era (2006-present):**
-Blue Lacuna, Hadean Lands, Counterfeit Monkey, Cragne Manor
+// Grammar references the category
+grammar
+  .define('push :color panel')
+  .fromVocabulary('color', 'panel-colors')
+  .mapsTo('dungeo.action.push_panel')
+  .build();
+```
 
-### Pattern Categories Discovered
+### Parse-Time Flow
 
-1. **Vocabulary-Constrained** - adjective, noun, direction slots
-2. **Numeric** - integer, ordinal, time values
-3. **Text Capture** - raw, quoted, topic-style
-4. **Magic Systems** - spell names, ritual invocations
-5. **Delegation** - NPC command embedding
-6. **Meta-Commands** - recall, find, go-to
+```
+Input: "push red panel"
+Context: { currentLocation: insideMirrorId, world, actorId }
+              │
+              ▼
+    ┌─────────────────────────────────┐
+    │ Pattern: "push :color panel"    │
+    │ Slot 'color' → 'panel-colors'   │
+    └─────────────────────────────────┘
+              │
+              ▼
+    Is 'panel-colors' active in context?
+              │
+       ┌──────┴──────┐
+      Yes            No
+       │              │
+       ▼              ▼
+    Is 'red' in     Pattern doesn't match,
+    panel-colors?   try next pattern
+       │            (falls through to stdlib push)
+       ▼
+    Match! → push_panel action
+```
 
-## Proposed Solution
+### Benefits Over Global Vocabulary
 
-Extend `SlotType` enum with new typed slots and add corresponding builder methods.
+| Aspect | Global Vocabulary | Context-Aware Vocabulary |
+|--------|-------------------|--------------------------|
+| "push red panel" outside Mirror | Parses, action rejects | Pattern doesn't match |
+| Error handling | In action's validate() | At parser level |
+| Vocabulary pollution | All puzzle words always active | Only relevant words active |
+| Disambiguation | Must manage pattern priority | Context resolves naturally |
 
-### SlotType Enum
+## VocabularyProvider Interface
+
+```typescript
+interface VocabularyProvider {
+  /**
+   * Define a named vocabulary category
+   * @param category - Unique category name
+   * @param config - Words and optional context predicate
+   */
+  define(category: string, config: {
+    words: string[];
+    when?: (ctx: GrammarContext) => boolean;
+  }): void;
+
+  /**
+   * Extend an existing category with additional words
+   */
+  extend(category: string, words: string[]): void;
+
+  /**
+   * Check if word matches category in current context
+   */
+  match(category: string, word: string, ctx: GrammarContext): boolean;
+
+  /**
+   * Get all words in a category (for tooling/debugging)
+   */
+  getWords(category: string): Set<string>;
+
+  /**
+   * Check if category is active in context
+   */
+  isActive(category: string, ctx: GrammarContext): boolean;
+}
+```
+
+## Slot Type Taxonomy
+
+### Built-In Universal Slots (Always Active)
+
+These require no registration—they're universal concepts with built-in vocabularies.
+
+| Slot Type | Builder Method | Example | Output |
+|-----------|----------------|---------|--------|
+| NUMBER | `.number(slot)` | "turn dial to 29" | `{ type: 'number', value: 29 }` |
+| ORDINAL | `.ordinal(slot)` | "take first key" | `{ type: 'ordinal', value: 1 }` |
+| TIME | `.time(slot)` | "wait until 10:40" | `{ type: 'time', hours: 10, minutes: 40 }` |
+| DIRECTION | `.direction(slot)` | "go north" | `{ type: 'direction', canonical: 'north' }` |
+| MANNER | `.manner(slot)` | "carefully open" | `{ type: 'manner', word: 'carefully' }` → `intention.manner` |
+| QUOTED_TEXT | `.quotedText(slot)` | `say "hello"` | `{ type: 'quoted_text', text: 'hello' }` |
+| TOPIC | `.topic(slot)` | "ask about the war" | `{ type: 'topic', words: ['the', 'war'] }` |
+
+### Category-Based Slots (Story-Defined)
+
+Stories register vocabulary categories, then reference them in patterns.
+
+```typescript
+// Builder method
+.fromVocabulary(slotName: string, categoryName: string): PatternBuilder
+```
+
+## MANNER Slot and Intention Integration
+
+Sharpee's intention system differentiates it from traditional IF. The MANNER slot feeds directly into `command.intention.manner`.
+
+### Built-In Manner Vocabulary
+
+```typescript
+const MANNER_ADVERBS = [
+  'carefully', 'quietly', 'quickly', 'slowly',
+  'forcefully', 'gently', 'loudly', 'softly',
+  'cautiously', 'boldly', 'stealthily'
+];
+```
+
+### Usage
+
+```typescript
+// Pattern with optional manner
+grammar
+  .define(':manner? open :target')
+  .manner('manner')
+  .entity('target')
+  .mapsTo('open')
+  .build();
+
+// Matches: "open door", "carefully open door", "forcefully open door"
+```
+
+### Action Usage
+
+```typescript
+execute(context: ActionContext): void {
+  const manner = context.command.intention?.manner;
+
+  if (manner === 'carefully') {
+    // Less noise, less chance of breaking
+  } else if (manner === 'forcefully') {
+    // More noise, might damage, but succeeds if stuck
+  } else if (manner === 'quietly') {
+    // NPCs don't notice
+  }
+}
+```
+
+### Story Extension
+
+```typescript
+// Add story-specific manner adverbs
+vocab.extend('manner', ['recklessly', 'methodically', 'frantically']);
+```
+
+## SlotType Enum (Revised)
 
 ```typescript
 export enum SlotType {
-  // Existing
+  // Entity resolution
   ENTITY = 'entity',
-  TEXT = 'text',
-  TEXT_GREEDY = 'text_greedy',
   INSTRUMENT = 'instrument',
 
-  // Vocabulary-Constrained (NEW)
-  ADJECTIVE = 'adjective',
-  NOUN = 'noun',
-  DIRECTION = 'direction',
+  // Text capture
+  TEXT = 'text',
+  TEXT_GREEDY = 'text_greedy',
+  QUOTED_TEXT = 'quoted_text',
+  TOPIC = 'topic',
 
-  // Typed Values (NEW)
+  // Built-in typed values
   NUMBER = 'number',
   ORDINAL = 'ordinal',
   TIME = 'time',
+  DIRECTION = 'direction',
+  MANNER = 'manner',
 
-  // Text Variants (NEW)
-  QUOTED_TEXT = 'quoted_text',
-  TOPIC = 'topic'
+  // Category-based (story-defined vocabulary)
+  VOCABULARY = 'vocabulary'
 }
 ```
 
-### PatternBuilder Methods
+**Note:** Generic ADJECTIVE and NOUN slots are removed. Use `.fromVocabulary()` with named categories instead.
+
+## PatternBuilder Interface (Revised)
 
 ```typescript
 interface PatternBuilder {
-  // Existing
-  text(slot: string): PatternBuilder;
+  // Entity resolution
+  entity(slot: string): PatternBuilder;
   instrument(slot: string): PatternBuilder;
   where(slot: string, constraint: Constraint): PatternBuilder;
 
-  // Vocabulary-Constrained (NEW)
-  adjective(slot: string): PatternBuilder;
-  noun(slot: string): PatternBuilder;
-  direction(slot: string): PatternBuilder;
+  // Text capture
+  text(slot: string): PatternBuilder;
+  quotedText(slot: string): PatternBuilder;
+  topic(slot: string): PatternBuilder;
 
-  // Typed Values (NEW)
+  // Built-in typed values
   number(slot: string): PatternBuilder;
   ordinal(slot: string): PatternBuilder;
   time(slot: string): PatternBuilder;
+  direction(slot: string): PatternBuilder;
+  manner(slot: string): PatternBuilder;
 
-  // Text Variants (NEW)
-  quotedText(slot: string): PatternBuilder;
-  topic(slot: string): PatternBuilder;
+  // Category-based vocabulary
+  fromVocabulary(slot: string, category: string): PatternBuilder;
+
+  // Pattern metadata
+  mapsTo(actionId: string): PatternBuilder;
+  withPriority(priority: number): PatternBuilder;
+  build(): void;
 }
 ```
 
-### IParsedCommand Extension
+## IParsedCommand Extension
 
 ```typescript
 interface IParsedCommand {
   // Existing
+  actionId: string;
+  structure: CommandStructure;
   textSlots?: Map<string, string>;
   instrument?: EntityReference;
 
   // NEW: Typed slot values
   typedSlots?: Map<string, TypedSlotValue>;
+
+  // NEW: Vocabulary matches (from .fromVocabulary())
+  vocabularySlots?: Map<string, VocabularyMatch>;
 }
 
 type TypedSlotValue =
-  | { type: 'adjective' | 'noun'; word: string }
-  | { type: 'direction'; direction: Direction }
-  | { type: 'number'; value: number }
+  | { type: 'number'; value: number; word: string }
   | { type: 'ordinal'; value: number; word: string }
-  | { type: 'time'; hours: number; minutes: number }
+  | { type: 'time'; hours: number; minutes: number; text: string }
+  | { type: 'direction'; direction: string; canonical: string }
+  | { type: 'manner'; word: string }
   | { type: 'quoted_text'; text: string }
   | { type: 'topic'; words: string[] };
-```
 
-## Slot Type Specifications
-
-### 1. ADJECTIVE
-
-Matches a single word from the registered adjective vocabulary.
-
-```typescript
-// Registration
-language.addAdjectives(['red', 'yellow', 'mahogany', 'pine', 'large', 'small']);
-
-// Pattern
-grammar.define('push :color panel').adjective('color').mapsTo('push_panel');
-
-// Matches: push RED panel, push YELLOW panel
-// Rejects: push BANANA panel (not in vocabulary)
-```
-
-### 2. NOUN
-
-Matches a single word from the registered noun vocabulary.
-
-```typescript
-// Registration
-language.addNouns(['panel', 'wall', 'button', 'lever']);
-
-// Pattern
-grammar.define('push :surface').noun('surface').mapsTo('push_surface');
-```
-
-### 3. DIRECTION
-
-Matches cardinal directions, ordinal directions, and special directions.
-
-```typescript
-// Built-in vocabulary
-const directions = [
-  'north', 'south', 'east', 'west',
-  'northeast', 'northwest', 'southeast', 'southwest',
-  'up', 'down', 'in', 'out',
-  'n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw', 'u', 'd'
-];
-
-// Pattern
-grammar.define('push :entity :dir').direction('dir').mapsTo('push_direction');
-
-// Matches: push boulder EAST, push cart NORTH
-```
-
-### 4. NUMBER
-
-Matches integer values (digits or number words).
-
-```typescript
-// Built-in number words: one, two, three, ... twenty
-// Also matches: 1, 2, 3, 42, 100, etc.
-
-// Pattern
-grammar.define('turn dial to :n').number('n').mapsTo('set_dial');
-grammar.define('wait :n').number('n').mapsTo('wait_turns');
-grammar.define('set slider to :value').number('value').mapsTo('set_slider');
-
-// Matches: turn dial to 29, wait 5, set slider to 414
-```
-
-### 5. ORDINAL
-
-Matches ordinal values (first, second, 1st, 2nd, etc.).
-
-```typescript
-// Built-in: first, second, third, ... twentieth
-// Also: 1st, 2nd, 3rd, 4th, etc.
-
-// Pattern
-grammar.define('take :ord :entity').ordinal('ord').mapsTo('take_nth');
-grammar.define('push :ord button').ordinal('ord').mapsTo('push_nth_button');
-
-// Matches: take FIRST key, push THIRD button, take 2ND coin
-```
-
-### 6. TIME
-
-Matches time expressions in HH:MM format or relative time.
-
-```typescript
-// Matches: 10:40, 6:00, 23:59
-// Also: 30 minutes, 2 hours
-
-// Pattern
-grammar.define('wait until :t').time('t').mapsTo('wait_until');
-grammar.define('set alarm to :t').time('t').mapsTo('set_alarm');
-
-// Matches: wait until 10:40, set alarm to 6:00
-```
-
-### 7. QUOTED_TEXT
-
-Matches text enclosed in double quotes.
-
-```typescript
-// Pattern
-grammar.define('write ":msg" on :entity').quotedText('msg').mapsTo('inscribe');
-grammar.define('say ":words"').quotedText('words').mapsTo('speak');
-grammar.define('carve ":text" on :entity').quotedText('text').mapsTo('carve');
-
-// Matches: write "EARTH" on cube, say "hello there"
-```
-
-### 8. TOPIC
-
-Matches one or more words as a conversation topic (fuzzy matching).
-
-```typescript
-// Pattern
-grammar.define('ask :entity about :topic').topic('topic').mapsTo('ask_about');
-grammar.define('tell :entity about :topic').topic('topic').mapsTo('tell_about');
-grammar.define('recall :topic').topic('topic').mapsTo('recall');
-
-// Matches: ask wizard about THE CURSE, tell guard about robbery
-// Topic captures: ['the', 'curse'] or ['robbery']
+interface VocabularyMatch {
+  word: string;
+  category: string;
+}
 ```
 
 ## Usage Examples
 
-### Dungeo Inside Mirror Puzzle
+### Dungeo Inside Mirror
 
 ```typescript
-// Register vocabulary
-language.addAdjectives(['red', 'yellow', 'mahogany', 'pine']);
-language.addNouns(['panel', 'wall']);
+// Story initialization
+const vocab = world.getVocabularyProvider();
+const insideMirrorId = world.getStateValue('endgame.insideMirrorId');
 
-// Define patterns
-grammar.define('push :color :surface')
-  .adjective('color')
-  .noun('surface')
+vocab.define('panel-colors', {
+  words: ['red', 'yellow', 'mahogany', 'pine'],
+  when: (ctx) => ctx.currentLocation === insideMirrorId
+});
+
+vocab.define('surfaces', {
+  words: ['panel', 'wall'],
+  when: (ctx) => ctx.currentLocation === insideMirrorId
+});
+
+// Grammar patterns
+grammar
+  .define('push :color :surface')
+  .fromVocabulary('color', 'panel-colors')
+  .fromVocabulary('surface', 'surfaces')
   .mapsTo('dungeo.action.push_panel')
-  .withPriority(170);
+  .build();
 
-grammar.define('push :color')
-  .adjective('color')
+grammar
+  .define('push :color')
+  .fromVocabulary('color', 'panel-colors')
   .mapsTo('dungeo.action.push_panel')
-  .withPriority(165);
+  .build();
 ```
 
-### Babel Radiation Chamber
+### Simplified Action
 
 ```typescript
-grammar.define('set dial to :n')
-  .number('n')
-  .mapsTo('set_dial')
-  .withPriority(160);
+// The action no longer needs to check location or parse raw input
+const pushPanelAction: Action = {
+  id: 'dungeo.action.push_panel',
 
-grammar.define('set :color slider to :n')
-  .adjective('color')
-  .number('n')
-  .mapsTo('set_slider')
-  .withPriority(165);
-```
+  validate(context: ActionContext): ValidationResult {
+    // If we got here, context was valid (parser checked location)
+    const colorMatch = context.command.parsed?.vocabularySlots?.get('color');
 
-### Spellbreaker Cube Inscription
+    if (!colorMatch) {
+      return { valid: false, error: 'NO_COLOR_SPECIFIED' };
+    }
 
-```typescript
-grammar.define('write ":text" on :entity')
-  .quotedText('text')
-  .mapsTo('inscribe')
-  .withPriority(160);
+    context.sharedData.panelColor = colorMatch.word;
+    return { valid: true };
+  },
 
-grammar.define('label :entity ":text"')
-  .quotedText('text')
-  .mapsTo('inscribe')
-  .withPriority(155);
-```
+  execute(context: ActionContext): void {
+    const color = context.sharedData.panelColor;
 
-### Curses Measured Movement
-
-```typescript
-grammar.define('pace :n :dir')
-  .number('n')
-  .direction('dir')
-  .mapsTo('pace')
-  .withPriority(160);
-```
-
-### Suspended Robot Commands
-
-```typescript
-// NPC delegation uses existing TEXT_GREEDY for the command portion
-grammar.define(':npc, :command...')
-  .entity('npc')
-  .mapsTo('delegate_command')
-  .withPriority(200);
-```
-
-## Implementation Notes
-
-### Vocabulary Registration
-
-Stories register vocabulary through the language provider:
-
-```typescript
-interface ParserLanguageProvider {
-  // Existing
-  getPrepositions(): string[];
-
-  // NEW
-  getAdjectives(): string[];
-  getNouns(): string[];
-  addAdjectives(words: string[]): void;
-  addNouns(words: string[]): void;
-}
-```
-
-### Grammar Engine Changes
-
-The grammar engine needs new consumption functions:
-
-```typescript
-function consumeTypedSlot(
-  tokens: string[],
-  position: number,
-  slotType: SlotType,
-  languageProvider: ParserLanguageProvider
-): TypedSlotMatch | null {
-  switch (slotType) {
-    case SlotType.NUMBER:
-      return consumeNumber(tokens, position);
-    case SlotType.ORDINAL:
-      return consumeOrdinal(tokens, position);
-    case SlotType.TIME:
-      return consumeTime(tokens, position);
-    case SlotType.DIRECTION:
-      return consumeDirection(tokens, position);
-    case SlotType.ADJECTIVE:
-      return consumeVocabulary(tokens, position, languageProvider.getAdjectives());
-    case SlotType.NOUN:
-      return consumeVocabulary(tokens, position, languageProvider.getNouns());
-    case SlotType.QUOTED_TEXT:
-      return consumeQuotedText(tokens, position);
-    case SlotType.TOPIC:
-      return consumeTopic(tokens, position);
-    default:
-      return null;
+    if (color === 'red') rotateBox(world, true);
+    else if (color === 'yellow') rotateBox(world, false);
+    else if (color === 'mahogany') moveBox(world, true);
+    else if (color === 'pine') moveBox(world, false);
   }
-}
-```
-
-### Number Parsing
-
-```typescript
-const numberWords: Record<string, number> = {
-  zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5,
-  six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
-  eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15,
-  sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20
 };
-
-function consumeNumber(tokens: string[], position: number): NumberMatch | null {
-  const token = tokens[position]?.toLowerCase();
-  if (!token) return null;
-
-  // Check word form
-  if (token in numberWords) {
-    return { value: numberWords[token], consumed: 1 };
-  }
-
-  // Check digit form
-  if (/^\d+$/.test(token)) {
-    return { value: parseInt(token, 10), consumed: 1 };
-  }
-
-  return null;
-}
 ```
 
-## Alternatives Considered
+### Dungeo Parapet Dial
 
-### 1. Regex-Based Patterns
+```typescript
+vocab.define('dial-positions', {
+  words: ['1', '2', '3', '4', '5', '6', '7', '8'],
+  when: (ctx) => ctx.currentLocation === parapetId
+});
 
-Allow arbitrary regex in patterns. Rejected because:
-- Too complex for story authors
-- Hard to provide good error messages
-- Doesn't integrate with vocabulary system
+grammar
+  .define('turn dial to :pos')
+  .fromVocabulary('pos', 'dial-positions')
+  .mapsTo('dungeo.action.set_dial')
+  .build();
 
-### 2. Custom Slot Types
+// Or use NUMBER slot if any integer is valid
+grammar
+  .define('turn dial to :n')
+  .number('n')
+  .mapsTo('dungeo.action.set_dial')
+  .build();
+```
 
-Let stories define their own slot types. Rejected because:
-- Adds significant complexity
-- The built-in types cover 95%+ of use cases
-- Can be added later if needed
+### Combat with Manner
 
-### 3. Entity Tags Instead of Vocabulary
+```typescript
+vocab.define('combat-styles', {
+  words: ['aggressively', 'defensively', 'recklessly'],
+  when: (ctx) => {
+    // Only active when in combat
+    return ctx.world.getStateValue('inCombat') === true;
+  }
+});
 
-Tag entities with "is_adjective", "is_noun". Rejected because:
-- Conflates entity system with grammar system
-- Creates entities that aren't really game objects
-- Vocabulary words often aren't entities at all
+grammar
+  .define(':style attack :target')
+  .fromVocabulary('style', 'combat-styles')
+  .entity('target')
+  .mapsTo('attack')
+  .build();
+```
 
-## Decision
+## Implementation Phases
 
-Implement the extended slot type system with vocabulary-constrained, numeric, and text variant slots.
+### Phase 1: Core Infrastructure (Complete)
+- NUMBER, ORDINAL, TIME, DIRECTION slots
+- QUOTED_TEXT, TOPIC slots
+- `typedSlots` on IParsedCommand
+
+### Phase 2: Vocabulary Provider
+- VocabularyProvider interface in if-domain
+- Implementation in world-model
+- Context predicate evaluation
+
+### Phase 3: Category-Based Slots
+- `.fromVocabulary()` builder method
+- `vocabularySlots` on IParsedCommand
+- Context-aware pattern matching
+
+### Phase 4: Manner and Intention
+- MANNER slot type
+- Built-in manner adverbs
+- Integration with `command.intention.manner`
+
+### Phase 5: Dungeo Integration
+- Migrate Inside Mirror to vocabulary-based
+- Migrate Parapet dial
+- Add manner support to combat actions
 
 ## Consequences
 
 ### Positive
 
-- Enables the full range of classic IF command patterns
-- Clean type system for slot values
-- Stories can express complex grammars declaratively
-- Vocabulary validation prevents nonsense inputs
-- Numbers, times, and ordinals are properly typed
-- Explicit vocabulary registration makes contracts clear and discoverable
-- Enables tooling support (autocomplete, validation at load time)
+- **Context-aware parsing** - Patterns only match where vocabulary is active
+- **Clean separation** - Parser handles context, action handles logic
+- **Better errors** - "I don't recognize that color" at parse time
+- **Reduced action complexity** - No location checks in validate()
+- **Intention integration** - Manner adverbs affect action behavior
+- **Explicit vocabulary** - Story declares what words mean where
 
 ### Negative
 
-- Grammar engine becomes more complex
-- Multiple slot type systems to understand
-- Migration path for existing patterns
+- More upfront vocabulary registration
+- Context predicates add complexity
+- Must think about vocabulary scope during story design
 
-## Implementation Phases
+## Alternatives Considered
 
-1. **Phase 1:** NUMBER, ORDINAL slots (highest priority for puzzles)
-2. **Phase 2:** ADJECTIVE, NOUN, DIRECTION vocabulary slots
-3. **Phase 3:** QUOTED_TEXT, TIME slots
-4. **Phase 4:** TOPIC slot (conversation systems)
+### 1. Global Vocabulary Pools
+
+Generic `.adjective()` / `.noun()` matching any registered word. Rejected because:
+- No context scoping
+- All puzzle words active everywhere
+- Action must re-check context
+
+### 2. Inline Vocabulary on Pattern
+
+```typescript
+.adjective('color', ['red', 'yellow', 'mahogany', 'pine'])
+```
+
+Rejected because:
+- Vocabulary might be shared across patterns
+- No context awareness
+- Harder to extend dynamically
+
+### 3. Action-Level Context Checks
+
+Keep vocabulary global, let actions check context. Rejected because:
+- Duplicates context checks in every action
+- Worse error messages
+- Doesn't leverage parser's context awareness
 
 ## References
 
 - [Grammar Pattern Catalog](/docs/work/dungeo/context/2026-01-01-1314-grammar-pattern-catalog.md)
-- [Key & Compass Walkthroughs](https://plover.net/~davidw/sol/)
-- [Inform 7 Understanding](https://ganelson.github.io/inform-website/book/WI_15_16.html)
+- [Sharpee Intention System](/docs/reference/intention-system.md)
+- [GrammarContext Interface](/packages/if-domain/src/grammar/grammar-context.ts)
