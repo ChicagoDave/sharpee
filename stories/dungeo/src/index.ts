@@ -29,7 +29,7 @@ import {
 import { DungeoScoringService } from './scoring';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages } from './actions';
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages } from './scheduler';
@@ -63,6 +63,7 @@ import { registerRoyalPuzzleHandler, initializePuzzleState, createPuzzleCommandT
 import { registerThief, ThiefMessages } from './npcs/thief';
 import { registerCyclops, CyclopsMessages } from './npcs/cyclops';
 import { RobotMessages } from './npcs/robot';
+import { registerDungeonMaster, DungeonMasterMessages } from './npcs/dungeon-master';
 
 /**
  * Dungeo story configuration
@@ -690,6 +691,45 @@ export class DungeoStory implements Story {
     // panel colors (red/yellow/mahogany/pine) for Inside Mirror and explicit
     // directions (north/south/east/west) for Royal Puzzle. This prevents
     // ambiguity where "push east wall" would incorrectly match the panel action.
+
+    // KNOCK action (Dungeon Master trivia trigger)
+    grammar
+      .define('knock')
+      .mapsTo(KNOCK_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('knock on :target')
+      .mapsTo(KNOCK_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('knock on door')
+      .mapsTo(KNOCK_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    grammar
+      .define('knock on the door')
+      .mapsTo(KNOCK_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    grammar
+      .define('knock door')
+      .mapsTo(KNOCK_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    // ANSWER action (Trivia responses) - uses greedy text slot
+    grammar
+      .define('answer :text...')
+      .text('text')
+      .mapsTo(ANSWER_ACTION_ID)
+      .withPriority(150)
+      .build();
   }
 
   /**
@@ -992,6 +1032,54 @@ export class DungeoStory implements Story {
     language.addMessage(PushPanelMessages.NO_TARGET, 'Push which panel?');
     language.addMessage(PushPanelMessages.NOT_VISIBLE, 'You don\'t see a {target} here.');
     language.addMessage(PushPanelMessages.NOT_A_PANEL, 'That isn\'t a panel you can push.');
+
+    // Dungeon Master NPC messages
+    language.addMessage(DungeonMasterMessages.DESCRIPTION, 'A strange old man with a long, flowing beard and penetrating eyes.');
+    language.addMessage(DungeonMasterMessages.APPEARS_AT_DOOR, 'The barred panel in the door slides open, revealing a strange old man with a long, flowing beard and penetrating eyes. He speaks in a deep, resonant voice.');
+    language.addMessage(DungeonMasterMessages.FOLLOWING, 'The Dungeon Master follows you.');
+    language.addMessage(DungeonMasterMessages.STAYING, 'The Dungeon Master nods and remains where he is.');
+    language.addMessage(DungeonMasterMessages.SETS_DIAL, 'The Dungeon Master turns the dial to {dialValue}.');
+    language.addMessage(DungeonMasterMessages.PUSHES_BUTTON, 'The Dungeon Master pushes the button. You hear machinery grinding somewhere below.');
+    language.addMessage(DungeonMasterMessages.CANNOT_DO_THAT, 'The Dungeon Master shakes his head slowly.');
+
+    // Trivia question messages (based on FORTRAN source)
+    language.addMessage(DungeonMasterMessages.QUESTION_0, '"What room can one enter, but yet not enter, and reach the lair of the thief?"');
+    language.addMessage(DungeonMasterMessages.QUESTION_1, '"Where, besides the temple, can one end up after going through the altar?"');
+    language.addMessage(DungeonMasterMessages.QUESTION_2, '"What is the minimum total value of the zorkmid treasures in the game?"');
+    language.addMessage(DungeonMasterMessages.QUESTION_3, '"What item enables one to determine the function of the various cakes?"');
+    language.addMessage(DungeonMasterMessages.QUESTION_4, '"What is a useful thing to do with the mirror?"');
+    language.addMessage(DungeonMasterMessages.QUESTION_5, '"What body part offends the spirits in the land of the dead?"');
+    language.addMessage(DungeonMasterMessages.QUESTION_6, '"What object in the game is haunted?"');
+    language.addMessage(DungeonMasterMessages.QUESTION_7, '"Is the phrase \'hello sailor\' useful anywhere in the game?"');
+
+    // Trivia response messages
+    language.addMessage(DungeonMasterMessages.CORRECT_ANSWER, 'The old man nods approvingly. "Correct."');
+    language.addMessage(DungeonMasterMessages.WRONG_ANSWER_1, 'The old man frowns. "That is not correct. Think carefully."');
+    language.addMessage(DungeonMasterMessages.WRONG_ANSWER_2, 'The old man shakes his head. "Wrong again. You have three more chances."');
+    language.addMessage(DungeonMasterMessages.WRONG_ANSWER_3, 'The old man sighs. "Still incorrect. Two chances remain."');
+    language.addMessage(DungeonMasterMessages.WRONG_ANSWER_4, 'The old man looks disappointed. "Wrong. This is your last chance."');
+    language.addMessage(DungeonMasterMessages.WRONG_ANSWER_5, 'The old man waves his hand dismissively. "You have failed. The door shall remain closed to you forever."');
+    language.addMessage(DungeonMasterMessages.TRIVIA_PASSED, 'The old man smiles warmly. "You have proven your knowledge. Enter, friend, and face the final challenge."');
+    language.addMessage(DungeonMasterMessages.TRIVIA_FAILED, 'The panel slides shut. You are not worthy to continue.');
+    language.addMessage(DungeonMasterMessages.DOOR_OPENS, 'The wooden door swings open with a creak.');
+    language.addMessage(DungeonMasterMessages.NO_ANSWER_YET, 'You must first knock on the door to begin the challenge.');
+    language.addMessage(DungeonMasterMessages.ALREADY_PASSED, 'You have already passed the challenge. The door is open.');
+
+    // Knock action messages
+    language.addMessage(KnockMessages.KNOCK_GENERIC, 'You knock, but no one answers.');
+    language.addMessage(KnockMessages.KNOCK_DOOR, 'You knock on the door.');
+    language.addMessage(KnockMessages.DM_APPEARS, 'The barred panel in the door slides open, revealing a strange old man with a long, flowing beard. He speaks: "I am the Dungeon Master. To prove yourself worthy of entry, you must answer my questions correctly. Three correct answers will grant you passage; five wrong answers will seal your fate."');
+    language.addMessage(KnockMessages.DM_ALREADY_APPEARED, 'The Dungeon Master waits for your answer.');
+    language.addMessage(KnockMessages.TRIVIA_ALREADY_PASSED, 'The door is already open. You may proceed.');
+    language.addMessage(KnockMessages.TRIVIA_ALREADY_FAILED, 'The door remains sealed. You have already failed the challenge.');
+    language.addMessage(KnockMessages.NOTHING_TO_KNOCK, 'There is nothing here to knock on.');
+
+    // Answer action messages
+    language.addMessage(AnswerMessages.NO_QUESTION, 'There is no question to answer.');
+    language.addMessage(AnswerMessages.NO_ANSWER_GIVEN, 'Answer what?');
+    language.addMessage(AnswerMessages.TRIVIA_NOT_STARTED, 'You must first knock on the door to begin the challenge.');
+    language.addMessage(AnswerMessages.TRIVIA_ALREADY_PASSED, 'You have already passed the challenge.');
+    language.addMessage(AnswerMessages.TRIVIA_ALREADY_FAILED, 'You have already failed the challenge. There are no more questions.');
   }
 
   /**
@@ -1220,6 +1308,13 @@ export class DungeoStory implements Story {
         npcService,
         this.world,
         this.mazeIds.cyclopsRoom
+      );
+
+      // Register Dungeon Master NPC in the Dungeon Entrance (endgame)
+      registerDungeonMaster(
+        npcService,
+        this.world,
+        this.endgameIds.dungeonEntrance
       );
     }
 

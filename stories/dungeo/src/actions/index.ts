@@ -52,6 +52,12 @@ export * from './lower';
 // Push Panel (Inside Mirror wall panels)
 export * from './push-panel';
 
+// Knock (Dungeon Master trivia trigger)
+export * from './knock';
+
+// Answer (Trivia responses)
+export * from './answer';
+
 // All custom actions for registration
 import { gdtActions } from './gdt';
 import { walkThroughActions } from './walk-through';
@@ -69,6 +75,8 @@ import { incantAction } from './incant';
 import { liftAction } from './lift';
 import { lowerAction } from './lower';
 import { pushPanelAction } from './push-panel';
+import { knockAction } from './knock';
+import { answerAction } from './answer';
 
 export const customActions = [
   ...gdtActions,
@@ -86,5 +94,7 @@ export const customActions = [
   incantAction,
   liftAction,
   lowerAction,
-  pushPanelAction
+  pushPanelAction,
+  knockAction,
+  answerAction
 ];
