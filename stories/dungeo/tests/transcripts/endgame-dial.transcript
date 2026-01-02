@@ -1,0 +1,81 @@
+title: Endgame Dial - Parapet Dial Puzzle
+story: dungeo
+description: Test the Parapet dial puzzle and GDT DL command
+
+---
+
+# Tests the dial puzzle mechanics at the Parapet.
+# The dial controls which prison cell is rotated into position.
+# Cell is accessed via DOWN from Parapet.
+
+# Enter GDT mode
+> gdt
+[OK: contains "GDT ready"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> turn on lantern
+[OK: contains "switches on"]
+
+# Teleport to Parapet (endgame area)
+> ah Parapet
+[OK: contains "Teleported to"]
+
+> look
+[OK: contains "Parapet"]
+[OK: contains "dial"]
+
+# Test DL command - display dial state
+> dl
+[OK: contains "Dial State"]
+[OK: contains "Dial Setting"]
+[OK: contains "Bronze Door"]
+
+# Test set dial to 4 (directly using action)
+> ex
+[OK: contains "Returning to game"]
+
+# Test SET DIAL action at Parapet
+> set dial to 4
+[OK: contains "turn the dial"]
+[OK: contains "4"]
+
+# Re-enter GDT mode
+> gdt
+[OK: contains "GDT ready"]
+
+# Verify dial is now at 4
+> dl
+[OK: contains "Dial Setting: 4"]
+
+# Test pushing the button
+> dl push
+[OK: contains "Button pushed"]
+[OK: contains "Cell 4 activated"]
+[OK: contains "Bronze Door Visible: true"]
+
+# Test setting dial to another value
+> dl set 6
+[OK: contains "Dial set to 6"]
+
+# Test direct cell activation
+> dl cell 4
+[OK: contains "Cell 4 activated"]
+[OK: contains "Bronze Door Visible: true"]
+
+# Test opening the bronze door
+> dl open
+[OK: contains "Bronze door opened"]
+[OK: contains "Treasury"]
+
+# Exit GDT mode and go down to Prison Cell
+> ex
+[OK: contains "Returning to game"]
+
+# Navigate down to Prison Cell
+> d
+[OK: contains "Prison Cell"]
+
+# With bronze door open, should be able to go S to Treasury
+# (Note: This will trigger victory if endgame is started)

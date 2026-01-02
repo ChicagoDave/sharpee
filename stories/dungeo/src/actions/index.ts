@@ -58,6 +58,12 @@ export * from './knock';
 // Answer (Trivia responses)
 export * from './answer';
 
+// Set Dial (Parapet dial puzzle)
+export * from './set-dial';
+
+// Push Dial Button (Parapet dial puzzle)
+export * from './push-dial-button';
+
 // All custom actions for registration
 import { gdtActions } from './gdt';
 import { walkThroughActions } from './walk-through';
@@ -77,6 +83,8 @@ import { lowerAction } from './lower';
 import { pushPanelAction } from './push-panel';
 import { knockAction } from './knock';
 import { answerAction } from './answer';
+import { setDialAction } from './set-dial';
+import { pushDialButtonAction } from './push-dial-button';
 
 export const customActions = [
   ...gdtActions,
@@ -96,5 +104,7 @@ export const customActions = [
   lowerAction,
   pushPanelAction,
   knockAction,
-  answerAction
+  answerAction,
+  setDialAction,
+  pushDialButtonAction
 ];

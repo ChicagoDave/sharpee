@@ -29,14 +29,14 @@ import {
 import { DungeoScoringService } from './scoring';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages } from './actions';
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages } from './scheduler';
 import { setSchedulerForGDT } from './actions/gdt/commands';
 
 // Import handlers
-import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages } from './handlers';
+import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages } from './handlers';
 import { initializeMirrorRoom, createMirrorTouchHandler, MirrorRoomConfig, MirrorRoomMessages } from './handlers/mirror-room-handler';
 import { MIRROR_ID } from './regions/underground/objects';
 
@@ -730,6 +730,74 @@ export class DungeoStory implements Story {
       .mapsTo(ANSWER_ACTION_ID)
       .withPriority(150)
       .build();
+
+    // SET DIAL action (Parapet dial puzzle)
+    // "set dial to 4", "turn dial to 6", "turn indicator to 8"
+    grammar
+      .define('set dial to :number')
+      .text('number')
+      .mapsTo(SET_DIAL_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('turn dial to :number')
+      .text('number')
+      .mapsTo(SET_DIAL_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('set indicator to :number')
+      .text('number')
+      .mapsTo(SET_DIAL_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('turn indicator to :number')
+      .text('number')
+      .mapsTo(SET_DIAL_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    // PUSH DIAL BUTTON action (Parapet dial puzzle)
+    // Only specific patterns to avoid interfering with laser puzzle button
+    grammar
+      .define('push dial button')
+      .mapsTo(PUSH_DIAL_BUTTON_ACTION_ID)
+      .withPriority(165)
+      .build();
+
+    grammar
+      .define('press dial button')
+      .mapsTo(PUSH_DIAL_BUTTON_ACTION_ID)
+      .withPriority(165)
+      .build();
+
+    grammar
+      .define('push the dial button')
+      .mapsTo(PUSH_DIAL_BUTTON_ACTION_ID)
+      .withPriority(165)
+      .build();
+
+    grammar
+      .define('press the dial button')
+      .mapsTo(PUSH_DIAL_BUTTON_ACTION_ID)
+      .withPriority(165)
+      .build();
+
+    grammar
+      .define('push sundial button')
+      .mapsTo(PUSH_DIAL_BUTTON_ACTION_ID)
+      .withPriority(165)
+      .build();
+
+    grammar
+      .define('press sundial button')
+      .mapsTo(PUSH_DIAL_BUTTON_ACTION_ID)
+      .withPriority(165)
+      .build();
   }
 
   /**
@@ -1080,6 +1148,25 @@ export class DungeoStory implements Story {
     language.addMessage(AnswerMessages.TRIVIA_NOT_STARTED, 'You must first knock on the door to begin the challenge.');
     language.addMessage(AnswerMessages.TRIVIA_ALREADY_PASSED, 'You have already passed the challenge.');
     language.addMessage(AnswerMessages.TRIVIA_ALREADY_FAILED, 'You have already failed the challenge. There are no more questions.');
+
+    // Set Dial action messages (Parapet puzzle)
+    language.addMessage(SetDialMessages.SET_DIAL, 'You turn the dial to {dialValue}.');
+    language.addMessage(SetDialMessages.DIAL_MUST_BE_1_TO_8, 'The dial only has numbers one through eight.');
+    language.addMessage(SetDialMessages.NOT_AT_PARAPET, 'There is no dial here.');
+    language.addMessage(SetDialMessages.NO_DIAL_HERE, 'There is no dial here.');
+
+    // Push Dial Button action messages (Parapet puzzle)
+    language.addMessage(PushDialButtonMessages.PUSH_BUTTON, 'You push the button in the center of the dial.');
+    language.addMessage(PushDialButtonMessages.MACHINERY_SOUNDS, 'You hear grinding machinery somewhere below, as the cells around the pit rotate.');
+    language.addMessage(PushDialButtonMessages.CELL_ROTATES, 'Cell {dialSetting} is now in position.');
+    language.addMessage(PushDialButtonMessages.NOT_AT_PARAPET, 'There is no button here to push.');
+    language.addMessage(PushDialButtonMessages.NO_BUTTON, 'There is no button here.');
+
+    // Victory messages (Treasury of Zork)
+    language.addMessage(VictoryMessages.ENTER_TREASURY, 'You have entered the Treasury of Zork!');
+    language.addMessage(VictoryMessages.VICTORY_TEXT, 'Congratulations, brave adventurer! You have completed the greatest of all treasure hunts and discovered the legendary Treasury of Zork. The riches of the Great Underground Empire are yours!');
+    language.addMessage(VictoryMessages.FINAL_SCORE, 'Your final score is {totalScore} points out of a possible 716 (616 main game + 100 endgame).\nEndgame score: {endgameScore}/100\nMain game score: {mainScore}/616');
+    language.addMessage(VictoryMessages.CONGRATULATIONS, 'You have achieved the rank of MASTER ADVENTURER.\n\n*** THE END ***');
   }
 
   /**
@@ -1262,6 +1349,9 @@ export class DungeoStory implements Story {
         this.templeIds.crypt,
         this.endgameIds.topOfStairs
       );
+
+      // Register Victory handler (Treasury of Zork entry)
+      registerVictoryHandler(scheduler, this.endgameIds.treasury);
     }
 
     // Register Laser Puzzle handler (Small Room / Stone Room)

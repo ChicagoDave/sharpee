@@ -32,6 +32,8 @@ import { dcHandler, setSchedulerForGDT, SCHEDULER_GDT_KEY } from './dc';
 import { pzHandler } from './pz';
 // Phase 6 - Trivia debug
 import { tqHandler } from './tq';
+// Phase 7 - Dial debug
+import { dlHandler } from './dl';
 
 /**
  * Registry of all GDT command handlers
@@ -72,6 +74,9 @@ handlers.set('PZ', pzHandler);
 
 // Register Phase 6 - Trivia debug
 handlers.set('TQ', tqHandler);
+
+// Register Phase 7 - Dial debug
+handlers.set('DL', dlHandler);
 
 /**
  * Get a command handler by code
@@ -142,3 +147,4 @@ export { rrHandler } from './rr';
 export { dcHandler, setSchedulerForGDT, SCHEDULER_GDT_KEY } from './dc';
 export { pzHandler } from './pz';
 export { tqHandler } from './tq';
+export { dlHandler } from './dl';

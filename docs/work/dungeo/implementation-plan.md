@@ -385,7 +385,7 @@
 | Cyclops | Cyclops Room | ✅ Done | Say "Odysseus"/"Ulysses" to scare, blocks north |
 | Vampire bat | Bat Room | ✅ Done | Daemon attacks without garlic, teleports player |
 | Spirits | Entry to Hades | ✅ Done | Block until exorcised (bell/book/candles) |
-| Dungeon Master | Endgame | ❌ | Ally in final puzzle |
+| Dungeon Master | Endgame | ✅ Done | Trivia system with 8 questions, opens door after 3 correct |
 | Robot | Low Room | ✅ Done | Commandable NPC |
 | Gnome | Bank | ❌ | Appears with curtain |
 
@@ -421,7 +421,7 @@
 | Cyclops | Say "Odysseus" | ✅ Done | Passage opens |
 | Exorcism | Ring bell, light candles, read book | ✅ Done | Access Land of Dead (+10 pts) |
 | Loud Room | Say "echo" | ✅ Done | Platinum bar (death without bar) |
-| Endgame trivia | Various answers | ❌ | Progress |
+| Endgame trivia | Answer 3 questions correctly | ✅ Done | Opens door to Narrow Corridor |
 
 ### Spatial Puzzles
 
@@ -538,13 +538,21 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Priority Next Steps
 
-1. **Endgame completion** - Dungeon Master NPC, trivia puzzle, victory condition
+1. **Endgame completion** - Victory daemon not triggering messages (mechanics work)
 2. **Remaining puzzles** - Rainbow (WAVE sceptre), glacier (throw torch), buried treasure (DIG)
 3. **Remaining treasures** - Don Woods stamp (mail order system), brass bauble (canary in forest)
 4. **Missing systems** - Vehicle trait (boat), INFLATE/DEFLATE, robot commands
 
 ## Recently Completed
 
+- ✅ **Parapet Dial Puzzle** (2026-01-02) - Complete dial puzzle implementation:
+  - SET DIAL action (1-8) with text slot parsing
+  - PUSH DIAL BUTTON action activates cell rotation
+  - GDT DL command for dial debugging (SET, PUSH, CELL, DOOR, OPEN, ENDGAME)
+  - Victory handler daemon (Treasury entry detection - messages not yet rendering)
+  - Parapet D → Prison Cell connection on cell activation
+  - Prison Cell S → Treasury when bronze door opens
+- ✅ **Dungeon Master Trivia System** (2026-01-02) - Added Dungeon Master NPC with 8 trivia questions (cycle +3 mod 8). Player must answer 3 correctly to open door N to Narrow Corridor. Created ANSWER action with greedy text slot, GDT TQ command for deterministic testing. Fixed door opening by dynamically adding N exit.
 - ✅ **ADR-084 Story Grammar Removal** (2026-01-02) - Removed StoryGrammarImpl wrapper (~930 lines). Stories now get direct access to GrammarBuilder with full .direction(), .vocabulary(), .manner() methods. Simplified Royal Puzzle grammar from 12+ explicit patterns to 2 parameterized patterns.
 - ✅ **Inside Mirror Puzzle Complete** (2026-01-02) - Fixed 4 bugs: (1) story dist out of date, (2) double execution from event handlers calling state functions that actions already call, (3) nullish coalescing bug where poleState 0 was treated as falsy, (4) message params wrapper for language interpolation. All 56 endgame tests pass. Pole raise/lower, panel rotation/movement, and exit mechanics all working.
 - ✅ **ADR-082 Vocabulary Slots** (2026-01-02) - Parser now supports vocabulary-constrained slots with context predicates. Enables patterns like "incant :challenge :response" with VOCABULARY slots. Also added MANNER slot type for adverbs.
