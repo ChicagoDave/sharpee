@@ -43,8 +43,7 @@ import { PartOfSpeech } from '@sharpee/world-model';
 import type { ISystemEvent, Result } from '@sharpee/core';
 import { EnglishGrammarEngine } from './english-grammar-engine';
 import { defineCoreGrammar } from './core-grammar';
-import { scope, StoryGrammar } from '@sharpee/if-domain';
-import { StoryGrammarImpl } from './story-grammar-impl';
+import { scope, GrammarBuilder } from '@sharpee/if-domain';
 import { parseDirection } from './direction-mappings';
 
 // Type alias for clarity
@@ -116,7 +115,6 @@ export class EnglishParser implements Parser {
   private onDebugEvent?: (event: ISystemEvent) => void;
   private platformEventEmitter?: (event: any) => void;
   private grammarEngine: EnglishGrammarEngine;
-  private storyGrammar: StoryGrammarImpl;
   private worldContext: {
     world: any;
     actorId: string;
@@ -131,10 +129,7 @@ export class EnglishParser implements Parser {
     this.grammarEngine = new EnglishGrammarEngine();
     const grammar = this.grammarEngine.createBuilder();
     defineCoreGrammar(grammar);
-    
-    // Initialize story grammar
-    this.storyGrammar = new StoryGrammarImpl(this.grammarEngine);
-    
+
     this.initializeVocabulary();
   }
 
@@ -833,6 +828,14 @@ export class EnglishParser implements Parser {
         continue; // Don't also add to direct/indirect objects
       }
 
+      // ADR-084: Handle direction slots - put in extras.direction
+      if (slotType === SlotType.DIRECTION) {
+        const directionText = slotData.text.toLowerCase();
+        const directionConstant = parseDirection(directionText);
+        extras.direction = directionConstant || directionText;
+        continue; // Don't also add to direct/indirect objects
+      }
+
       // Build base noun phrase
       const phrase: INounPhrase = {
         tokens: slotData.tokens,
@@ -1014,24 +1017,28 @@ export class EnglishParser implements Parser {
    * @deprecated Use getStoryGrammar() for full API
    */
   registerGrammar(pattern: string, action: string, constraints?: Record<string, Constraint>): void {
-    const builder = this.storyGrammar.define(pattern)
+    const builder = this.grammarEngine.createBuilder().define(pattern)
       .mapsTo(action);
-    
+
     // Apply constraints if provided
     if (constraints) {
       for (const [slot, constraint] of Object.entries(constraints)) {
         builder.where(slot, constraint);
       }
     }
-    
+
     builder.build();
   }
 
   /**
-   * Get the story grammar API
+   * Get the grammar builder for story-specific rules.
+   * Stories use this to define custom grammar patterns.
+   *
+   * ADR-084: Returns the grammar builder directly instead of a wrapper,
+   * giving stories full access to all PatternBuilder methods.
    */
-  getStoryGrammar(): StoryGrammar {
-    return this.storyGrammar;
+  getStoryGrammar(): GrammarBuilder {
+    return this.grammarEngine.createBuilder();
   }
 
   /**
@@ -1184,18 +1191,19 @@ export class EnglishParser implements Parser {
     vocabularyRegistry.registerDynamicVerbs([verbDef], 'story');
     
     // Also register grammar patterns for the verb
+    const grammarBuilder = this.grammarEngine.createBuilder();
     for (const verb of verbs) {
       // Register patterns based on the pattern type
       if (pattern === 'VERB_OBJ' || pattern === 'VERB_NOUN') {
         // Register verb + object pattern
-        this.storyGrammar.define(`${verb} :object`)
+        grammarBuilder.define(`${verb} :object`)
           .mapsTo(actionId)
           .withPriority(150)
           .build();
       } else if (pattern === 'VERB_PREP_NOUN' && prepositions) {
         // Register verb + preposition + object patterns
         for (const prep of prepositions) {
-          this.storyGrammar.define(`${verb} ${prep} :object`)
+          grammarBuilder.define(`${verb} ${prep} :object`)
             .mapsTo(actionId)
             .withPriority(150)
             .build();
@@ -1203,14 +1211,14 @@ export class EnglishParser implements Parser {
       } else if (pattern === 'VERB_NOUN_PREP_NOUN' && prepositions) {
         // Register verb + object + preposition + object patterns
         for (const prep of prepositions) {
-          this.storyGrammar.define(`${verb} :object1 ${prep} :object2`)
+          grammarBuilder.define(`${verb} :object1 ${prep} :object2`)
             .mapsTo(actionId)
             .withPriority(150)
             .build();
         }
       } else {
         // Default: verb only pattern
-        this.storyGrammar.define(verb)
+        grammarBuilder.define(verb)
           .mapsTo(actionId)
           .withPriority(150)
           .build();
@@ -1286,15 +1294,16 @@ export class EnglishParser implements Parser {
    */
   addPreposition(word: string): void {
     vocabularyRegistry.registerPrepositions([word]);
-    
+
     // Also register common grammar patterns that use this preposition
     // This allows actions like "put X <preposition> Y" to work
-    this.storyGrammar.define(`put :object ${word} :location`)
+    const grammarBuilder = this.grammarEngine.createBuilder();
+    grammarBuilder.define(`put :object ${word} :location`)
       .mapsTo('if.action.putting')
       .withPriority(150)
       .build();
-      
-    this.storyGrammar.define(`place :object ${word} :location`)
+
+    grammarBuilder.define(`place :object ${word} :location`)
       .mapsTo('if.action.putting')
       .withPriority(150)
       .build();

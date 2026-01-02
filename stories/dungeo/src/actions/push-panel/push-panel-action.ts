@@ -138,7 +138,7 @@ export const pushPanelAction: Action = {
 
     // If no slot target, try to extract panel type from raw input
     // (for literal patterns like "push red panel")
-    const rawInput = context.command.rawInput || '';
+    const rawInput = context.command.parsed?.rawInput || '';
     const extractedType = extractPanelTypeFromInput(rawInput);
 
     let panel: IFEntity | undefined;

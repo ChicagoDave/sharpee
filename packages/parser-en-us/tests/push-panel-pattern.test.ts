@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
-import { ParserLanguageProvider, StoryGrammar, ScopeBuilder } from '@sharpee/if-domain';
+import { ParserLanguageProvider, GrammarBuilder, ScopeBuilder } from '@sharpee/if-domain';
 import { Entity } from '@sharpee/core';
 
 // Mock language provider with push action
@@ -67,12 +67,12 @@ class MockWorldModel {
 
 describe('Push Panel Pattern Matching', () => {
   let parser: EnglishParser;
-  let storyGrammar: StoryGrammar;
+  let grammar: GrammarBuilder;
   let world: MockWorldModel;
 
   beforeEach(() => {
     parser = new EnglishParser(mockLanguageProvider);
-    storyGrammar = parser.getStoryGrammar();
+    grammar = parser.getStoryGrammar();
     world = new MockWorldModel();
     parser.setWorldContext(world, 'player', 'room');
   });
@@ -80,7 +80,7 @@ describe('Push Panel Pattern Matching', () => {
   describe('literal pattern priority', () => {
     it('should match literal "push red panel" over "push :target"', () => {
       // Register story pattern with literal words - higher priority
-      storyGrammar
+      grammar
         .define('push red panel')
         .mapsTo('story.action.push_panel')
         .withPriority(170)
@@ -99,7 +99,7 @@ describe('Push Panel Pattern Matching', () => {
     });
 
     it('should match shorter "push red" literal pattern', () => {
-      storyGrammar
+      grammar
         .define('push red')
         .mapsTo('story.action.push_panel')
         .withPriority(170)
@@ -116,7 +116,7 @@ describe('Push Panel Pattern Matching', () => {
     });
 
     it('should still match core push for non-panel targets', () => {
-      storyGrammar
+      grammar
         .define('push red panel')
         .mapsTo('story.action.push_panel')
         .withPriority(170)
@@ -135,7 +135,7 @@ describe('Push Panel Pattern Matching', () => {
 
     it('should prefer higher priority story pattern over lower priority core pattern', () => {
       // Register multiple patterns with different priorities
-      storyGrammar
+      grammar
         .define('push red')
         .mapsTo('story.action.push_panel')
         .withPriority(170) // Higher than core push (100)
@@ -156,13 +156,13 @@ describe('Push Panel Pattern Matching', () => {
   describe('slot pattern vs literal pattern', () => {
     it('should prefer literal pattern over slot pattern with same priority', () => {
       // Both patterns have same priority
-      storyGrammar
+      grammar
         .define('push red panel')
         .mapsTo('story.action.push_red_panel')
         .withPriority(100)
         .build();
 
-      storyGrammar
+      grammar
         .define('push :target panel')
         .mapsTo('story.action.push_generic_panel')
         .withPriority(100)

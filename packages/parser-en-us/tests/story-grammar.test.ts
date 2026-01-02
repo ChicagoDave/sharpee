@@ -1,11 +1,14 @@
 /**
  * @file Story Grammar Tests
- * @description Tests for story-specific grammar registration
+ * @description Tests for story-specific grammar registration via GrammarBuilder
+ *
+ * ADR-084: Stories now get direct access to GrammarBuilder, giving them
+ * full access to all PatternBuilder methods without a wrapper layer.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
-import { ParserLanguageProvider, StoryGrammar, ScopeBuilder } from '@sharpee/if-domain';
+import { ParserLanguageProvider, GrammarBuilder, ScopeBuilder } from '@sharpee/if-domain';
 import { Entity } from '@sharpee/core';
 
 // Mock language provider
@@ -46,7 +49,7 @@ class MockWorldModel {
       visible: true,
       magical: true
     } as any);
-    
+
     this.entities.set('sword', {
       id: 'sword',
       name: 'sword',
@@ -55,7 +58,7 @@ class MockWorldModel {
       portable: true,
       weapon: true
     } as any);
-    
+
     this.entities.set('dragon', {
       id: 'dragon',
       name: 'dragon',
@@ -80,19 +83,19 @@ class MockWorldModel {
 
 describe('Story Grammar API', () => {
   let parser: EnglishParser;
-  let storyGrammar: StoryGrammar;
+  let grammar: GrammarBuilder;
   let world: MockWorldModel;
 
   beforeEach(() => {
     parser = new EnglishParser(mockLanguageProvider);
-    storyGrammar = parser.getStoryGrammar();
+    grammar = parser.getStoryGrammar();
     world = new MockWorldModel();
     parser.setWorldContext(world, 'player', 'room');
   });
 
   describe('basic pattern registration', () => {
     it('should register a simple story pattern', () => {
-      storyGrammar
+      grammar
         .define('cast :spell')
         .mapsTo('story.action.casting')
         .withPriority(100)
@@ -107,7 +110,7 @@ describe('Story Grammar API', () => {
     });
 
     it('should register pattern with constraints', () => {
-      storyGrammar
+      grammar
         .define('scry :target')
         .where('target', (scope: ScopeBuilder) => scope.visible().matching({ magical: true }))
         .mapsTo('story.action.scrying')
@@ -124,144 +127,43 @@ describe('Story Grammar API', () => {
       const result2 = parser.parse('scry sword');
       expect(result2.success).toBe(false);
     });
+  });
 
-    it('should support experimental patterns with lower confidence', () => {
-      storyGrammar
-        .define('meditate on :subject')
-        .experimental()
-        .mapsTo('story.action.meditating')
+  describe('ADR-084: full PatternBuilder access', () => {
+    it('should allow .direction() for direction-constrained slots', () => {
+      grammar
+        .define('push :direction wall')
+        .direction('direction')
+        .mapsTo('story.action.push_wall')
+        .withPriority(175)
         .build();
 
-      const result = parser.parse('meditate on existence');
+      const result = parser.parse('push east wall');
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.value.confidence).toBeLessThan(1.0);
+        expect(result.value.action).toBe('story.action.push_wall');
       }
     });
-  });
 
-  describe('pattern overriding', () => {
-    it('should override core patterns with higher priority', () => {
-      // Override the core 'take' action
-      storyGrammar
-        .override('if.action.taking', 'acquire :item')
+    it('should allow .text() for raw text capture', () => {
+      grammar
+        .define('say :words...')
+        .text('words')
+        .mapsTo('story.action.saying')
         .build();
 
-      // New pattern should work
-      const result1 = parser.parse('acquire sword');
-      expect(result1.success).toBe(true);
-      if (result1.success) {
-        expect(result1.value.action).toBe('if.action.taking');
+      const result = parser.parse('say hello world');
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value.action).toBe('story.action.saying');
+        expect(result.value.textSlots?.get('words')).toBe('hello world');
       }
-
-      // Original pattern should still work
-      const result2 = parser.parse('take sword');
-      expect(result2.success).toBe(true);
-    });
-  });
-
-  describe('pattern extension', () => {
-    it('should extend existing patterns with additional constraints', () => {
-      // Extend examining to require magical items
-      storyGrammar
-        .extend('if.action.examining')
-        .where('object', (scope: ScopeBuilder) => scope.visible().matching({ magical: true }))
-        .withHigherPriority(20)
-        .build();
-
-      // Should work with magical crystal
-      const result1 = parser.parse('examine crystal');
-      expect(result1.success).toBe(true);
-
-      // Regular examine should still work (lower priority)
-      const result2 = parser.parse('examine sword');
-      expect(result2.success).toBe(true);
-    });
-  });
-
-  describe('pattern management', () => {
-    it('should track story rules separately', () => {
-      // Add some story rules
-      storyGrammar
-        .define('enchant :item')
-        .mapsTo('story.action.enchanting')
-        .build();
-
-      storyGrammar
-        .define('summon :creature')
-        .mapsTo('story.action.summoning')
-        .build();
-
-      const rules = storyGrammar.getRules();
-      expect(rules.length).toBe(2);
-      expect(rules.every(r => r.action.startsWith('story.'))).toBe(true);
-    });
-
-    it('should clear story rules without affecting core rules', () => {
-      // Add story rule
-      storyGrammar
-        .define('teleport to :location')
-        .mapsTo('story.action.teleporting')
-        .build();
-
-      // Verify it works
-      const result1 = parser.parse('teleport to castle');
-      expect(result1.success).toBe(true);
-
-      // Clear story rules
-      storyGrammar.clear();
-
-      // Story pattern should no longer work
-      const result2 = parser.parse('teleport to castle');
-      expect(result2.success).toBe(false);
-
-      // Core patterns should still work
-      const result3 = parser.parse('take sword');
-      expect(result3.success).toBe(true);
-    });
-  });
-
-  describe('debugging features', () => {
-    it('should support debug mode with event callbacks', () => {
-      const debugEvents: any[] = [];
-      
-      storyGrammar.setDebugMode(true);
-      (storyGrammar as any).setDebugCallback((event: any) => {
-        debugEvents.push(event);
-      });
-
-      // Register a pattern
-      storyGrammar
-        .define('debug :action')
-        .describe('Test pattern for debugging')
-        .mapsTo('story.action.debugging')
-        .build();
-
-      expect(debugEvents.length).toBe(1);
-      expect(debugEvents[0].type).toBe('pattern_registered');
-      expect(debugEvents[0].pattern).toBe('debug :action');
-    });
-
-    it('should provide grammar statistics', () => {
-      // Add some patterns
-      storyGrammar
-        .define('fly')
-        .mapsTo('story.action.flying')
-        .build();
-
-      storyGrammar
-        .override('if.action.taking', 'grab :item')
-        .build();
-
-      const stats = (storyGrammar as any).getStats();
-      expect(stats.storyRules).toBeGreaterThan(0);
-      expect(stats.totalRules).toBeGreaterThan(stats.storyRules);
     });
   });
 
   describe('complex story patterns', () => {
     it('should handle multi-slot story patterns', () => {
-      storyGrammar
+      grammar
         .define('attack :target with :weapon')
         .where('target', (scope: ScopeBuilder) => scope.visible().matching({ creature: true }))
         .where('weapon', (scope: ScopeBuilder) => scope.carried().matching({ weapon: true }))
@@ -270,9 +172,9 @@ describe('Story Grammar API', () => {
         .build();
 
       // Move sword to inventory
-      world['entities'].set('sword', { 
-        ...world.getEntity('sword')!, 
-        visible: false 
+      world['entities'].set('sword', {
+        ...world.getEntity('sword')!,
+        visible: false
       });
       world['getCarriedEntities'] = () => [world.getEntity('sword')!];
 

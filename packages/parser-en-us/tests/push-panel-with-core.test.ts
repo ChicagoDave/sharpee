@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
-import { ParserLanguageProvider, StoryGrammar, ScopeBuilder } from '@sharpee/if-domain';
+import { ParserLanguageProvider, GrammarBuilder, ScopeBuilder } from '@sharpee/if-domain';
 import { Entity } from '@sharpee/core';
 import { registerCoreGrammar } from '../src/core-grammar';
 
@@ -71,7 +71,7 @@ class MockWorldModel {
 
 describe('Push Panel With Core Grammar', () => {
   let parser: EnglishParser;
-  let storyGrammar: StoryGrammar;
+  let grammar: GrammarBuilder;
   let world: MockWorldModel;
 
   beforeEach(() => {
@@ -80,7 +80,7 @@ describe('Push Panel With Core Grammar', () => {
     // Register FULL core grammar (this includes "push :target")
     registerCoreGrammar(parser.getSemanticGrammar());
 
-    storyGrammar = parser.getStoryGrammar();
+    grammar = parser.getStoryGrammar();
     world = new MockWorldModel();
     parser.setWorldContext(world, 'player', 'room');
   });
@@ -99,7 +99,7 @@ describe('Push Panel With Core Grammar', () => {
 
   it('should match story pattern over core pattern with higher priority', () => {
     // Now add story pattern with higher priority
-    storyGrammar
+    grammar
       .define('push red panel')
       .mapsTo('story.action.push_panel')
       .withPriority(170) // Core push is 100
@@ -118,7 +118,7 @@ describe('Push Panel With Core Grammar', () => {
 
   it('should check all matching rules', () => {
     // Add story pattern
-    storyGrammar
+    grammar
       .define('push red panel')
       .mapsTo('story.action.push_panel')
       .withPriority(170)

@@ -4,13 +4,13 @@
  * Handles pushing sandstone walls in the Royal Puzzle.
  * Only works inside the Room in a Puzzle.
  *
- * Syntax: "push [direction] wall" or "push wall [direction]"
- * Examples: "push east wall", "push the eastern wall", "push wall to the north"
+ * Syntax: "push :direction wall" where :direction is a direction slot
+ * Examples: "push east wall", "push n wall", "push the west wall"
  */
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
-import { IdentityTrait } from '@sharpee/world-model';
+import { IdentityTrait, DirectionType, Direction } from '@sharpee/world-model';
 import { PUSH_WALL_ACTION_ID, PushWallMessages, PushDirection } from './types';
 import {
   getPuzzleState,
@@ -23,40 +23,25 @@ import {
 } from '../../regions/royal-puzzle';
 
 /**
- * Extract push direction from command input
+ * Map Direction constants to PushDirection strings
  */
-function extractDirection(context: ActionContext): PushDirection | undefined {
-  const rawInput = context.command.parsed?.rawInput?.toLowerCase() || '';
+const DIRECTION_MAP: Partial<Record<DirectionType, PushDirection>> = {
+  [Direction.NORTH]: 'north',
+  [Direction.SOUTH]: 'south',
+  [Direction.EAST]: 'east',
+  [Direction.WEST]: 'west',
+};
 
-  // Try to find direction in various patterns
-  // "push east wall", "push eastern wall", "push the east wall"
-  // "push wall east", "push wall to the east"
-  const directionPatterns = [
-    /push\s+(?:the\s+)?(?:north(?:ern)?)\s+wall/,
-    /push\s+(?:the\s+)?(?:south(?:ern)?)\s+wall/,
-    /push\s+(?:the\s+)?(?:east(?:ern)?)\s+wall/,
-    /push\s+(?:the\s+)?(?:west(?:ern)?)\s+wall/,
-    /push\s+wall\s+(?:to\s+(?:the\s+)?)?(?:north)/,
-    /push\s+wall\s+(?:to\s+(?:the\s+)?)?(?:south)/,
-    /push\s+wall\s+(?:to\s+(?:the\s+)?)?(?:east)/,
-    /push\s+wall\s+(?:to\s+(?:the\s+)?)?(?:west)/,
-  ];
+/**
+ * Get push direction from parsed command
+ * The parser provides the direction via extras.direction as a Direction constant
+ */
+function getDirection(context: ActionContext): PushDirection | undefined {
+  // Get direction from parsed extras (same pattern as going action)
+  const directionConstant = context.command.parsed?.extras?.direction as DirectionType | undefined;
 
-  // Check for north
-  if (/push\s+(?:the\s+)?(?:north(?:ern)?)\s+wall|push\s+wall\s+(?:to\s+(?:the\s+)?)?north/.test(rawInput)) {
-    return 'north';
-  }
-  // Check for south
-  if (/push\s+(?:the\s+)?(?:south(?:ern)?)\s+wall|push\s+wall\s+(?:to\s+(?:the\s+)?)?south/.test(rawInput)) {
-    return 'south';
-  }
-  // Check for east
-  if (/push\s+(?:the\s+)?(?:east(?:ern)?)\s+wall|push\s+wall\s+(?:to\s+(?:the\s+)?)?east/.test(rawInput)) {
-    return 'east';
-  }
-  // Check for west
-  if (/push\s+(?:the\s+)?(?:west(?:ern)?)\s+wall|push\s+wall\s+(?:to\s+(?:the\s+)?)?west/.test(rawInput)) {
-    return 'west';
+  if (directionConstant) {
+    return DIRECTION_MAP[directionConstant];
   }
 
   return undefined;
@@ -82,23 +67,17 @@ function findPuzzleController(context: ActionContext): any | undefined {
   });
 }
 
-/**
- * Check if this command looks like a push wall command
- */
-function isPushWallCommand(context: ActionContext): boolean {
-  const rawInput = context.command.parsed?.rawInput?.toLowerCase() || '';
-  return rawInput.includes('push') && rawInput.includes('wall');
-}
-
 export const pushWallAction: Action = {
   id: PUSH_WALL_ACTION_ID,
   group: 'puzzle',
 
   validate(context: ActionContext): ValidationResult {
-    // First check if this looks like a push wall command
-    if (!isPushWallCommand(context)) {
-      // Let the regular push action handle it
-      return { valid: false, error: 'not_push_wall' };
+    // Grammar pattern already ensures we have a direction slot
+    // Get the direction from parsed command
+    const direction = getDirection(context);
+    if (!direction) {
+      // No valid direction in the command - shouldn't happen with proper grammar
+      return { valid: false, error: PushWallMessages.NO_DIRECTION };
     }
 
     // Must be in Room in a Puzzle
@@ -110,12 +89,6 @@ export const pushWallAction: Action = {
     const controller = findPuzzleController(context);
     if (!controller) {
       return { valid: false, error: PushWallMessages.NOT_IN_PUZZLE };
-    }
-
-    // Must specify a direction
-    const direction = extractDirection(context);
-    if (!direction) {
-      return { valid: false, error: PushWallMessages.NO_DIRECTION };
     }
 
     // Check if push is valid
@@ -138,7 +111,7 @@ export const pushWallAction: Action = {
   execute(context: ActionContext): void {
     const controller = findPuzzleController(context)!;
     const state = getPuzzleState(controller);
-    const direction = extractDirection(context)!;
+    const direction = getDirection(context)!;
 
     // Store info for reporting
     const isFirstPush = state.pushCount === 0;
@@ -157,11 +130,6 @@ export const pushWallAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    // Don't emit events for non-push-wall commands
-    if (result.error === 'not_push_wall') {
-      return [];
-    }
-
     return [context.event('action.blocked', {
       actionId: PUSH_WALL_ACTION_ID,
       messageId: result.error,
