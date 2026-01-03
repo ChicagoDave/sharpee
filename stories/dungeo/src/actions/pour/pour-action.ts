@@ -102,9 +102,24 @@ export const pourAction: Action = {
     const waterContainer = sharedData.waterContainer as IFEntity | undefined;
     const bucket = sharedData.bucket as IFEntity | undefined;
 
+    // Debug logging
+    const DEBUG = process.env.PARSER_DEBUG === 'true';
+    if (DEBUG) {
+      console.log('[POUR] water:', water?.id);
+      console.log('[POUR] bucket:', bucket?.id);
+      if (bucket) {
+        console.log('[POUR] bucket traits:', Array.from((bucket as any)._traits?.keys?.() || []));
+      }
+    }
+
     // If pouring into bucket at well
     if (bucket) {
       const vehicleTrait = bucket.get(VehicleTrait);
+      if (DEBUG) {
+        console.log('[POUR] vehicleTrait:', vehicleTrait);
+        console.log('[POUR] vehicleType:', vehicleTrait?.vehicleType);
+        console.log('[POUR] currentPosition:', vehicleTrait?.currentPosition);
+      }
 
       if (vehicleTrait && vehicleTrait.vehicleType === 'counterweight') {
         // Move water into bucket
