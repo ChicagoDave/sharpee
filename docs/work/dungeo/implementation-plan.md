@@ -274,12 +274,11 @@
 | 28 | Flathead stamp | 4 | 10 | 14 | Library (Volcano) | ✅ Done |
 | 29 | Zorkmid coin | 10 | 12 | 22 | Narrow Ledge | ✅ Done |
 | 30 | Ruby | 15 | 8 | 23 | Ruby Room | ✅ Done |
-| 31 | Don Woods stamp | -- | 1 | 1 | Brochure (mail order) | ❌ |
-| 32 | Brass bauble | 1 | 1 | 2 | Forest (canary song) | ❌ |
+| 31 | Don Woods stamp | -- | 1 | 1 | Brochure (mail order) | ✅ Done |
+| 32 | Brass bauble | 1 | 1 | 2 | Forest (canary song) | ✅ Done |
 | 33 | Thief's canvas | 10 | 24 | 34 | Gallery (ADR-078 ritual) | ✅ Done |
 
-**Implemented**: 31/33 treasures (647/650 points = 99.5%)
-**Missing**: Don Woods stamp (1 pt - mail order), Brass bauble (2 pts - canary song)
+**Implemented**: 33/33 treasures (650/650 points = 100%)
 
 ---
 
@@ -368,7 +367,7 @@
 | Braided wire | Stream View | ❌ | Balloon tether |
 | Shiny wire | (with brick) | ❌ | Fuse |
 | Timber | Mine | ❌ | Slide room anchor |
-| Brochure | Mail | ❌ | Contains stamp |
+| Brochure | Mail | ✅ Done | Contains stamp (SEND FOR BROCHURE) |
 | Robot | Low Room | ✅ Done | Push button |
 | Incense | Maze (skeleton) | ✅ Done | ADR-078: Burns 3 turns, disarms basin |
 | Empty frame | Treasure Room | ✅ Done | ADR-078: Appears after Thief dies |
@@ -539,12 +538,13 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Priority Next Steps
 
-1. **Remaining puzzles** - Egg/canary (thief logic), bucket/well, balloon
-2. **Remaining treasures** - Don Woods stamp (mail order system), brass bauble (canary in forest - WIND action done, needs bauble spawn)
-3. **Missing systems** - Vehicle trait (boat), INFLATE/DEFLATE, robot commands
+1. **Remaining puzzles** - Bucket/well, balloon, key puzzles
+2. **Missing systems** - Vehicle trait (boat), INFLATE/DEFLATE, robot commands, match lighting
 
 ## Recently Completed
 
+- ✅ **Mail Order Stamp** (2026-01-03) - Implemented Don Woods stamp puzzle (final 1 pt). Added matchbook to Dam Lobby with "SEND FOR BROCHURE" ad. SEND action creates brochure in mailbox containing ASCII art stamp. 650/650 points complete!
+- ✅ **Egg/Canary/Bauble Puzzle** (2026-01-03) - Fixed WIND action to create brass bauble entity (2 pts) when canary wound in forest. Verified thief egg-opening mechanic works.
 - ✅ **Glacier Puzzle** (2026-01-02) - Throw lit torch at glacier to melt it and reveal north passage to Volcano View. Handler listens for thrown events, validates torch is lit, opens bidirectional exits, destroys torch. 16 new tests.
 - ✅ **WAVE/DIG/WIND Actions** (2026-01-02) - Implemented three story-specific actions:
   - WAVE action: Wave sceptre at Aragain Falls to create/dismiss rainbow

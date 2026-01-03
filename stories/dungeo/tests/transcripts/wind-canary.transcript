@@ -40,3 +40,37 @@ description: Tests WIND action with clockwork canary in forest to get bauble
 # Wind canary in forest - should produce bauble
 > wind canary
 [OK: contains "bauble"]
+
+# Verify bauble is on the ground
+> look
+[OK: contains "bauble"]
+
+# Take the bauble (should be a treasure worth 2 points)
+> take bauble
+[OK: contains "Taken"]
+
+> inventory
+[OK: contains "brass bauble"]
+
+# Winding again should indicate already wound
+> wind canary
+[OK: contains "content"]
+
+# Verify it's recognized as a treasure - put in trophy case
+> gdt
+[OK: contains "GDT"]
+
+> ah Living Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+> open case
+[OK: contains "open"]
+
+> put bauble in case
+[OK: contains "put"]
+
+> score
+[OK: contains "score"]

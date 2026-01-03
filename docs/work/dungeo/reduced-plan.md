@@ -1,15 +1,15 @@
 # Dungeo: Remaining Work
 
-**Status**: 169 rooms (100%), 647/650 points (99.5%)
+**Status**: 169 rooms (100%), 650/650 points (100%)
 
 ---
 
-## Remaining Treasures (3 pts)
+## Remaining Treasures (0 pts) - ALL COMPLETE!
 
 | Treasure | Points | Requirement | Notes |
 |----------|--------|-------------|-------|
-| Don Woods stamp | 1 | Mail order system | Send for brochure, stamp inside |
-| Brass bauble | 2 | Wind canary in forest | Canary sings, bauble appears |
+| ~~Don Woods stamp~~ | ~~1~~ | ~~Mail order system~~ | ✅ Complete |
+| ~~Brass bauble~~ | ~~2~~ | ~~Wind canary in forest~~ | ✅ Complete |
 
 ---
 
@@ -21,8 +21,8 @@
 | Rainbow | WAVE sceptre at falls | ✅ Complete (action + dynamic exits) |
 | Glacier | Throw torch at ice | ✅ Complete (handler + dynamic exits) |
 | Buried treasure | DIG 4x with shovel | ✅ DIG action + shovel done |
-| Egg/Canary | Let thief steal & open | Thief egg-opening logic |
-| Bauble | Wind canary in forest | ✅ WIND action done, need bauble object |
+| Egg/Canary | Let thief steal & open | ✅ Complete (thief has logic, player can also open) |
+| Bauble | Wind canary in forest | ✅ Complete (bauble spawns on WIND in forest) |
 
 ### Mechanical
 | Puzzle | Solution | Blocker |
@@ -59,7 +59,7 @@
 |--------|----------|-------|
 | Shovel | Sandy Beach | ✅ Done |
 | Statue | Sandy Beach | ✅ Done (buried, revealed by DIG) |
-| Bauble | Forest | Spawned by WIND canary (need object) |
+| ~~Bauble~~ | ~~Forest~~ | ✅ Spawned by WIND canary |
 | Pump | Reservoir North | Inflate boat |
 | Skeleton key | Dead End (maze) | Grating |
 | Iron key | Tiny Room | Dreary Room door |
@@ -89,4 +89,5 @@
 - [x] DIG action (simple verb, enables statue) ✅
 - [x] Add shovel object to Sandy Beach ✅
 - [x] WIND action (simple verb, enables bauble) ✅
-- [ ] Add bauble object that spawns when canary wound in forest
+- [x] Add bauble object that spawns when canary wound in forest ✅
+- [x] SEND action + matchbook/brochure (mail order stamp) ✅

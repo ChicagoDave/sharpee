@@ -29,7 +29,7 @@ import {
 import { DungeoScoringService } from './scoring';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages } from './actions';
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages } from './scheduler';
@@ -853,6 +853,31 @@ export class DungeoStory implements Story {
       .mapsTo(WIND_ACTION_ID)
       .withPriority(155)
       .build();
+
+    // SEND action (Mail order puzzle - send for brochure)
+    grammar
+      .define('send for brochure')
+      .mapsTo(SEND_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('send for free brochure')
+      .mapsTo(SEND_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('order brochure')
+      .mapsTo(SEND_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('mail order')
+      .mapsTo(SEND_ACTION_ID)
+      .withPriority(145)
+      .build();
   }
 
   /**
@@ -1248,6 +1273,12 @@ export class DungeoStory implements Story {
     language.addMessage(WindMessages.NOT_WINDABLE, "That doesn't have a winding mechanism.");
     language.addMessage(WindMessages.NOT_HOLDING, "You're not holding that.");
     language.addMessage(WindMessages.ALREADY_WOUND, "The canary seems content and doesn't need winding.");
+
+    // Send action messages (Mail order puzzle)
+    language.addMessage(SendMessages.SEND_FOR_BROCHURE, "Ok, but you know how strapped the postal service is lately...");
+    language.addMessage(SendMessages.ALREADY_SENT, "You've already sent for the brochure.");
+    language.addMessage(SendMessages.NO_TARGET, "Send for what?");
+    language.addMessage(SendMessages.BROCHURE_KNOCK, "There is a knocking sound from the front of the house. The postal service must be getting faster!");
 
     // Glacier puzzle messages (throw torch at glacier)
     language.addMessage(GlacierMessages.GLACIER_MELTS, 'The torch strikes the glacier and begins to melt into it! Steam billows from the ice as a massive section collapses, revealing a passage to the north.');

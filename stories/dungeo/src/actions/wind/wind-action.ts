@@ -8,7 +8,7 @@
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
-import { IdentityTrait, IFEntity } from '@sharpee/world-model';
+import { IdentityTrait, IFEntity, EntityType } from '@sharpee/world-model';
 import { WIND_ACTION_ID, WindMessages } from './types';
 
 // Room patterns that count as "forest"
@@ -117,7 +117,7 @@ export const windAction: Action = {
   },
 
   execute(context: ActionContext): void {
-    const { world, sharedData } = context;
+    const { world, player, sharedData } = context;
 
     const isCanaryTarget = sharedData.isCanary as boolean;
 
@@ -141,6 +141,24 @@ export const windAction: Action = {
       world.setStateValue('dungeo.canary.bauble_produced', true);
       world.setStateValue('dungeo.bauble.revealed', true);
       sharedData.baubleAppeared = true;
+
+      // Create the brass bauble and drop it at the player's feet
+      const playerLocation = world.getLocation(player.id);
+      if (playerLocation) {
+        const bauble = world.createEntity('brass bauble', EntityType.ITEM);
+        bauble.add(new IdentityTrait({
+          name: 'brass bauble',
+          aliases: ['bauble', 'shiny bauble', 'brass ball', 'ball'],
+          description: 'A shiny brass bauble, dropped by an unseen songbird in response to the canary\'s tune.',
+          properName: false,
+          article: 'a'
+        }));
+        // Treasure scoring (2 points)
+        (bauble as any).isTreasure = true;
+        (bauble as any).treasureId = 'brass-bauble';
+        (bauble as any).treasureValue = 2;
+        world.moveEntity(bauble.id, playerLocation);
+      }
     }
     // Otherwise canary just sings (no bauble)
   },

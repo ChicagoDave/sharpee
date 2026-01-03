@@ -26,6 +26,7 @@ export function createDamObjects(world: WorldModel, roomIds: DamRoomIds): void {
 
   // Dam Lobby
   createGuidebook(world, roomIds.damLobby);
+  createMatchbook(world, roomIds.damLobby);
 
   // Maintenance Room
   createControlPanel(world, roomIds.maintenanceRoom);
@@ -66,6 +67,37 @@ function createGlacier(world: WorldModel, roomId: string): IFEntity {
 
   world.moveEntity(glacier.id, roomId);
   return glacier;
+}
+
+/**
+ * Matchbook - Contains the "Send for brochure" advertisement
+ * Reading this hints at the mail order puzzle
+ */
+function createMatchbook(world: WorldModel, roomId: string): IFEntity {
+  const matchbook = world.createEntity('matchbook', EntityType.ITEM);
+
+  matchbook.add(new IdentityTrait({
+    name: 'matchbook',
+    aliases: ['matches', 'book of matches', 'match book'],
+    description: 'A matchbook advertising MIT Tech. The cover says "STRADDLING THE CUTTING EDGE OF NOTHING".',
+    properName: false,
+    article: 'a'
+  }));
+
+  matchbook.add(new ReadableTrait({
+    text: `   *** MIT TECH CORRESPONDENCE SCHOOL ***
+
+"My income soared after I received my degree!" - Mr. TAA of Muddle, Mass.
+
+"I got a great job in paper shuffling!" - Mr. MARC of Boston
+
+Straddling the cutting edge of nothing! Earn your MDL degree at home!
+
+       *** SEND FOR OUR FREE BROCHURE TODAY! ***`
+  }));
+
+  world.moveEntity(matchbook.id, roomId);
+  return matchbook;
 }
 
 /**

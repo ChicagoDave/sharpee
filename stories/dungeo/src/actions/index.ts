@@ -73,6 +73,9 @@ export * from './dig';
 // Wind (Canary/bauble - wind canary in forest)
 export * from './wind';
 
+// Send (Mail order puzzle - send for brochure)
+export * from './send';
+
 // Rainbow Blocked (going west at Aragain Falls before waving)
 export * from './rainbow-blocked';
 
@@ -100,12 +103,14 @@ import { pushDialButtonAction } from './push-dial-button';
 import { waveAction, WAVE_ACTION_ID, WaveMessages } from './wave';
 import { digAction, DIG_ACTION_ID, DigMessages } from './dig';
 import { windAction, WIND_ACTION_ID, WindMessages } from './wind';
+import { sendAction, SEND_ACTION_ID, SendMessages } from './send';
 import { rainbowBlockedAction } from './rainbow-blocked';
 
 // Re-export for use in index.ts
 export { WAVE_ACTION_ID, WaveMessages } from './wave';
 export { DIG_ACTION_ID, DigMessages } from './dig';
 export { WIND_ACTION_ID, WindMessages } from './wind';
+export { SEND_ACTION_ID, SendMessages } from './send';
 
 export const customActions = [
   ...gdtActions,
@@ -131,5 +136,6 @@ export const customActions = [
   waveAction,
   digAction,
   windAction,
+  sendAction,
   rainbowBlockedAction
 ];
