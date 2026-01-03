@@ -20,7 +20,9 @@ const VALID_CODES = new Set<string>([
   // Utility commands
   'TK', 'PD', 'HE', 'EX',
   // Puzzle debug
-  'PZ'
+  'PZ',
+  // Trivia debug
+  'TQ'
 ]);
 
 /**

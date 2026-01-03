@@ -1,0 +1,65 @@
+title: Throw Torch at Glacier
+story: dungeo
+description: Tests throwing lit torch at glacier to melt it and reveal north passage
+
+---
+
+# Get equipped with lantern and teleport to Torch Room for the ivory torch
+> gdt
+[OK: contains "GDT"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> ah Torch Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+# Take the ivory torch
+> take torch
+[OK: contains "Taken"]
+
+# Light the lantern first (we need light to see)
+> turn on lantern
+[OK: contains "on"]
+
+# Light the torch
+> turn on torch
+[OK: contains "on"]
+
+# Teleport to Glacier Room
+> gdt
+[OK: contains "GDT"]
+
+> ah Glacier Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+# Look around - we should see the glacier
+> look
+[OK: contains "Glacier Room"]
+[OK: contains "glacier"]
+
+# Try to go north - should be blocked (no exit exists yet)
+> north
+[OK: contains "no_exit"]
+
+# Throw the lit torch at the glacier
+> throw torch at glacier
+[OK: contains "throw"]
+
+# Now the passage north should be open
+> north
+[OK: contains "Volcano View"]
+
+# We should be able to go back south
+> south
+[OK: contains "Glacier Room"]
+
+# The glacier should be different now (melted)
+> look at glacier
+[OK: contains "pool"]

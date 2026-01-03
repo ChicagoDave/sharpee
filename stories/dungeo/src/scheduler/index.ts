@@ -65,5 +65,8 @@ export function registerScheduledEvents(
   // Register incense fuse (ADR-078 Ghost Ritual puzzle)
   registerIncenseFuse(scheduler, world);
 
+  // Note: Crypt trigger daemon is registered via registerEndgameTriggerHandler
+  // in src/handlers/endgame-trigger-handler.ts
+
   console.log('Dungeo scheduler: Registered all daemons and fuses');
 }

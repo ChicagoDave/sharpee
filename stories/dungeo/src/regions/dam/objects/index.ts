@@ -26,6 +26,7 @@ export function createDamObjects(world: WorldModel, roomIds: DamRoomIds): void {
 
   // Dam Lobby
   createGuidebook(world, roomIds.damLobby);
+  createMatchbook(world, roomIds.damLobby);
 
   // Maintenance Room
   createControlPanel(world, roomIds.maintenanceRoom);
@@ -37,6 +38,66 @@ export function createDamObjects(world: WorldModel, roomIds: DamRoomIds): void {
 
   // Basin Room - ADR-078 ghost ritual
   createStoneBasin(world, roomIds.basinRoom);
+
+  // Glacier Room - glacier blocks north passage
+  createGlacier(world, roomIds.glacierRoom);
+}
+
+/**
+ * Glacier - Blocks north passage, melted by throwing lit torch
+ *
+ * When the ivory torch (lit) is thrown at the glacier, it melts
+ * and reveals the north passage to Volcano View.
+ */
+function createGlacier(world: WorldModel, roomId: string): IFEntity {
+  const glacier = world.createEntity('glacier', EntityType.SCENERY);
+
+  glacier.add(new IdentityTrait({
+    name: 'glacier',
+    aliases: ['ice', 'massive glacier', 'ice wall', 'wall of ice'],
+    description: 'A massive wall of ice fills the northern part of the room, blocking any passage in that direction. It glistens with an inner cold light.',
+    properName: false,
+    article: 'a'
+  }));
+
+  glacier.add(new SceneryTrait());
+
+  // Track melted state
+  (glacier as any).isMelted = false;
+
+  world.moveEntity(glacier.id, roomId);
+  return glacier;
+}
+
+/**
+ * Matchbook - Contains the "Send for brochure" advertisement
+ * Reading this hints at the mail order puzzle
+ */
+function createMatchbook(world: WorldModel, roomId: string): IFEntity {
+  const matchbook = world.createEntity('matchbook', EntityType.ITEM);
+
+  matchbook.add(new IdentityTrait({
+    name: 'matchbook',
+    aliases: ['matches', 'book of matches', 'match book'],
+    description: 'A matchbook advertising MIT Tech. The cover says "STRADDLING THE CUTTING EDGE OF NOTHING".',
+    properName: false,
+    article: 'a'
+  }));
+
+  matchbook.add(new ReadableTrait({
+    text: `   *** MIT TECH CORRESPONDENCE SCHOOL ***
+
+"My income soared after I received my degree!" - Mr. TAA of Muddle, Mass.
+
+"I got a great job in paper shuffling!" - Mr. MARC of Boston
+
+Straddling the cutting edge of nothing! Earn your MDL degree at home!
+
+       *** SEND FOR OUR FREE BROCHURE TODAY! ***`
+  }));
+
+  world.moveEntity(matchbook.id, roomId);
+  return matchbook;
 }
 
 /**

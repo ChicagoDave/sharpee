@@ -1,0 +1,58 @@
+title: Dig Action - Buried Statue
+story: dungeo
+description: Tests DIG action at Sandy Beach to find buried statue
+
+---
+
+# Get equipped and teleport to Sandy Beach
+> gdt
+[OK: contains "GDT"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> tk shovel
+[OK: contains "Taken"]
+
+> ex
+[OK: contains "Returning"]
+
+> turn on lantern
+[OK: contains "on"]
+
+> gdt
+[OK: contains "GDT"]
+
+> ah Sandy Beach
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+# Check we're at the beach
+> look
+[OK: contains "Sandy Beach"]
+
+# First dig - need 4 total
+> dig
+[OK: contains "dig"]
+
+# Second dig
+> dig
+[OK: contains "dig"]
+
+# Third dig
+> dig
+[OK: contains "dig"]
+
+# Fourth dig - should find statue
+> dig
+[OK: contains "statue"]
+
+# Verify statue is now visible
+> look
+[OK: contains "statue"]
+
+# Can take the statue
+> take statue
+[OK: contains "Taken"]

@@ -1,0 +1,53 @@
+title: Endgame Victory - Treasury of Zork
+story: dungeo
+description: Test victory sequence when entering Treasury of Zork
+
+---
+
+# Tests the victory handler when entering the Treasury.
+# Victory requires:
+# 1. Endgame mode active
+# 2. Bronze door open (dial set to 4, button pushed)
+# 3. Enter Treasury from Prison Cell
+
+# Enter GDT mode
+> gdt
+[OK: contains "GDT ready"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> turn on lantern
+[OK: contains "switches on"]
+
+# Teleport to Parapet
+> ah Parapet
+[OK: contains "Teleported to"]
+
+# Set up dial puzzle - dial to 4, activate cell
+> dl cell 4
+[OK: contains "Cell 4 activated"]
+[OK: contains "Bronze Door Visible: true"]
+
+# Open the bronze door
+> dl open
+[OK: contains "Bronze door opened"]
+
+# Enable endgame mode
+> dl endgame
+[OK: contains "Endgame mode activated"]
+
+# Teleport directly to Prison Cell
+> ah Prison Cell
+[OK: contains "Teleported to"]
+
+> look
+[OK: contains "Prison Cell"]
+
+# Exit GDT mode
+> ex
+[OK: contains "Returning to game"]
+
+# Enter Treasury - this should trigger victory!
+> s
+[OK: contains "Treasury"]

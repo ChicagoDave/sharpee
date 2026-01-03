@@ -29,14 +29,14 @@ import {
 import { DungeoScoringService } from './scoring';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages } from './actions';
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages } from './scheduler';
 import { setSchedulerForGDT } from './actions/gdt/commands';
 
 // Import handlers
-import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages } from './handlers';
+import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages, registerGlacierHandler, GlacierMessages } from './handlers';
 import { initializeMirrorRoom, createMirrorTouchHandler, MirrorRoomConfig, MirrorRoomMessages } from './handlers/mirror-room-handler';
 import { MIRROR_ID } from './regions/underground/objects';
 
@@ -58,11 +58,13 @@ import { createEndgameRooms, createEndgameObjects, EndgameRoomIds } from './regi
 
 // Import handlers
 import { registerRoyalPuzzleHandler, initializePuzzleState, createPuzzleCommandTransformer, PuzzleHandlerMessages } from './handlers/royal-puzzle';
+import { createRainbowCommandTransformer } from './handlers/rainbow-handler';
 
 // Import NPCs
 import { registerThief, ThiefMessages } from './npcs/thief';
 import { registerCyclops, CyclopsMessages } from './npcs/cyclops';
 import { RobotMessages } from './npcs/robot';
+import { registerDungeonMaster, DungeonMasterMessages } from './npcs/dungeon-master';
 
 /**
  * Dungeo story configuration
@@ -204,6 +206,9 @@ export class DungeoStory implements Story {
     // Initialize Mirror Room state toggle
     this.initializeMirrorRoomHandler(world);
 
+    // Register glacier handler (throw torch at glacier puzzle)
+    registerGlacierHandler(world, this.damIds.glacierRoom, this.volcanoIds.volcanoView);
+
     // Set initial player location to West of House
     const player = world.getPlayer();
     if (player) {
@@ -344,7 +349,7 @@ export class DungeoStory implements Story {
     ];
 
     // Commands that take two arguments
-    const twoArgCodes = ['ao', 'pz'];
+    const twoArgCodes = ['ao', 'pz', 'tq'];
 
     // Register no-arg commands
     for (const code of noArgCodes) {
@@ -690,6 +695,189 @@ export class DungeoStory implements Story {
     // panel colors (red/yellow/mahogany/pine) for Inside Mirror and explicit
     // directions (north/south/east/west) for Royal Puzzle. This prevents
     // ambiguity where "push east wall" would incorrectly match the panel action.
+
+    // KNOCK action (Dungeon Master trivia trigger)
+    grammar
+      .define('knock')
+      .mapsTo(KNOCK_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('knock on :target')
+      .mapsTo(KNOCK_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('knock on door')
+      .mapsTo(KNOCK_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    grammar
+      .define('knock on the door')
+      .mapsTo(KNOCK_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    grammar
+      .define('knock door')
+      .mapsTo(KNOCK_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    // ANSWER action (Trivia responses) - uses greedy text slot (:text... syntax)
+    // Note: Don't call .text() - the :text... syntax already sets TEXT_GREEDY
+    grammar
+      .define('answer :text...')
+      .mapsTo(ANSWER_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    // SET DIAL action (Parapet dial puzzle)
+    // "set dial to 4", "turn dial to 6", "turn indicator to 8"
+    grammar
+      .define('set dial to :number')
+      .text('number')
+      .mapsTo(SET_DIAL_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('turn dial to :number')
+      .text('number')
+      .mapsTo(SET_DIAL_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('set indicator to :number')
+      .text('number')
+      .mapsTo(SET_DIAL_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('turn indicator to :number')
+      .text('number')
+      .mapsTo(SET_DIAL_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    // PUSH DIAL BUTTON action (Parapet dial puzzle)
+    // Only specific patterns to avoid interfering with laser puzzle button
+    grammar
+      .define('push dial button')
+      .mapsTo(PUSH_DIAL_BUTTON_ACTION_ID)
+      .withPriority(165)
+      .build();
+
+    grammar
+      .define('press dial button')
+      .mapsTo(PUSH_DIAL_BUTTON_ACTION_ID)
+      .withPriority(165)
+      .build();
+
+    grammar
+      .define('push the dial button')
+      .mapsTo(PUSH_DIAL_BUTTON_ACTION_ID)
+      .withPriority(165)
+      .build();
+
+    grammar
+      .define('press the dial button')
+      .mapsTo(PUSH_DIAL_BUTTON_ACTION_ID)
+      .withPriority(165)
+      .build();
+
+    grammar
+      .define('push sundial button')
+      .mapsTo(PUSH_DIAL_BUTTON_ACTION_ID)
+      .withPriority(165)
+      .build();
+
+    grammar
+      .define('press sundial button')
+      .mapsTo(PUSH_DIAL_BUTTON_ACTION_ID)
+      .withPriority(165)
+      .build();
+
+    // WAVE action (Rainbow puzzle - wave sceptre at falls)
+    grammar
+      .define('wave :target')
+      .mapsTo(WAVE_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('wave :target at :location')
+      .mapsTo(WAVE_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    // DIG action (Buried treasure - dig with shovel)
+    grammar
+      .define('dig')
+      .mapsTo(DIG_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('dig with :tool')
+      .mapsTo(DIG_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('dig :target')
+      .mapsTo(DIG_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('dig in :target')
+      .mapsTo(DIG_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    // WIND action (Canary/bauble - wind clockwork canary)
+    grammar
+      .define('wind :target')
+      .mapsTo(WIND_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('wind up :target')
+      .mapsTo(WIND_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    // SEND action (Mail order puzzle - send for brochure)
+    grammar
+      .define('send for brochure')
+      .mapsTo(SEND_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('send for free brochure')
+      .mapsTo(SEND_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('order brochure')
+      .mapsTo(SEND_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('mail order')
+      .mapsTo(SEND_ACTION_ID)
+      .withPriority(145)
+      .build();
   }
 
   /**
@@ -992,6 +1180,112 @@ export class DungeoStory implements Story {
     language.addMessage(PushPanelMessages.NO_TARGET, 'Push which panel?');
     language.addMessage(PushPanelMessages.NOT_VISIBLE, 'You don\'t see a {target} here.');
     language.addMessage(PushPanelMessages.NOT_A_PANEL, 'That isn\'t a panel you can push.');
+
+    // Dungeon Master NPC messages
+    language.addMessage(DungeonMasterMessages.DESCRIPTION, 'A strange old man with a long, flowing beard and penetrating eyes.');
+    language.addMessage(DungeonMasterMessages.APPEARS_AT_DOOR, 'The barred panel in the door slides open, revealing a strange old man with a long, flowing beard and penetrating eyes. He speaks in a deep, resonant voice.');
+    language.addMessage(DungeonMasterMessages.FOLLOWING, 'The Dungeon Master follows you.');
+    language.addMessage(DungeonMasterMessages.STAYING, 'The Dungeon Master nods and remains where he is.');
+    language.addMessage(DungeonMasterMessages.SETS_DIAL, 'The Dungeon Master turns the dial to {dialValue}.');
+    language.addMessage(DungeonMasterMessages.PUSHES_BUTTON, 'The Dungeon Master pushes the button. You hear machinery grinding somewhere below.');
+    language.addMessage(DungeonMasterMessages.CANNOT_DO_THAT, 'The Dungeon Master shakes his head slowly.');
+
+    // Trivia question messages (based on FORTRAN source)
+    language.addMessage(DungeonMasterMessages.QUESTION_0, '"What room can one enter, but yet not enter, and reach the lair of the thief?"');
+    language.addMessage(DungeonMasterMessages.QUESTION_1, '"Where, besides the temple, can one end up after going through the altar?"');
+    language.addMessage(DungeonMasterMessages.QUESTION_2, '"What is the minimum total value of the zorkmid treasures in the game?"');
+    language.addMessage(DungeonMasterMessages.QUESTION_3, '"What item enables one to determine the function of the various cakes?"');
+    language.addMessage(DungeonMasterMessages.QUESTION_4, '"What is a useful thing to do with the mirror?"');
+    language.addMessage(DungeonMasterMessages.QUESTION_5, '"What body part offends the spirits in the land of the dead?"');
+    language.addMessage(DungeonMasterMessages.QUESTION_6, '"What object in the game is haunted?"');
+    language.addMessage(DungeonMasterMessages.QUESTION_7, '"Is the phrase \'hello sailor\' useful anywhere in the game?"');
+
+    // Trivia response messages
+    language.addMessage(DungeonMasterMessages.CORRECT_ANSWER, 'The old man nods approvingly. "Correct."');
+    language.addMessage(DungeonMasterMessages.WRONG_ANSWER_1, 'The old man frowns. "That is not correct. Think carefully."');
+    language.addMessage(DungeonMasterMessages.WRONG_ANSWER_2, 'The old man shakes his head. "Wrong again. You have three more chances."');
+    language.addMessage(DungeonMasterMessages.WRONG_ANSWER_3, 'The old man sighs. "Still incorrect. Two chances remain."');
+    language.addMessage(DungeonMasterMessages.WRONG_ANSWER_4, 'The old man looks disappointed. "Wrong. This is your last chance."');
+    language.addMessage(DungeonMasterMessages.WRONG_ANSWER_5, 'The old man waves his hand dismissively. "You have failed. The door shall remain closed to you forever."');
+    language.addMessage(DungeonMasterMessages.TRIVIA_PASSED, 'The old man smiles warmly. "You have proven your knowledge. Enter, friend, and face the final challenge."');
+    language.addMessage(DungeonMasterMessages.TRIVIA_FAILED, 'The panel slides shut. You are not worthy to continue.');
+    language.addMessage(DungeonMasterMessages.DOOR_OPENS, 'The wooden door swings open with a creak.');
+    language.addMessage(DungeonMasterMessages.NO_ANSWER_YET, 'You must first knock on the door to begin the challenge.');
+    language.addMessage(DungeonMasterMessages.ALREADY_PASSED, 'You have already passed the challenge. The door is open.');
+
+    // Knock action messages
+    language.addMessage(KnockMessages.KNOCK_GENERIC, 'You knock, but no one answers.');
+    language.addMessage(KnockMessages.KNOCK_DOOR, 'You knock on the door.');
+    language.addMessage(KnockMessages.DM_APPEARS, 'The barred panel in the door slides open, revealing a strange old man with a long, flowing beard. He speaks: "I am the Dungeon Master. To prove yourself worthy of entry, you must answer my questions correctly. Three correct answers will grant you passage; five wrong answers will seal your fate."');
+    language.addMessage(KnockMessages.DM_ALREADY_APPEARED, 'The Dungeon Master waits for your answer.');
+    language.addMessage(KnockMessages.TRIVIA_ALREADY_PASSED, 'The door is already open. You may proceed.');
+    language.addMessage(KnockMessages.TRIVIA_ALREADY_FAILED, 'The door remains sealed. You have already failed the challenge.');
+    language.addMessage(KnockMessages.NOTHING_TO_KNOCK, 'There is nothing here to knock on.');
+
+    // Answer action messages
+    language.addMessage(AnswerMessages.NO_QUESTION, 'There is no question to answer.');
+    language.addMessage(AnswerMessages.NO_ANSWER_GIVEN, 'Answer what?');
+    language.addMessage(AnswerMessages.TRIVIA_NOT_STARTED, 'You must first knock on the door to begin the challenge.');
+    language.addMessage(AnswerMessages.TRIVIA_ALREADY_PASSED, 'You have already passed the challenge.');
+    language.addMessage(AnswerMessages.TRIVIA_ALREADY_FAILED, 'You have already failed the challenge. There are no more questions.');
+
+    // Set Dial action messages (Parapet puzzle)
+    language.addMessage(SetDialMessages.SET_DIAL, 'You turn the dial to {dialValue}.');
+    language.addMessage(SetDialMessages.DIAL_MUST_BE_1_TO_8, 'The dial only has numbers one through eight.');
+    language.addMessage(SetDialMessages.NOT_AT_PARAPET, 'There is no dial here.');
+    language.addMessage(SetDialMessages.NO_DIAL_HERE, 'There is no dial here.');
+
+    // Push Dial Button action messages (Parapet puzzle)
+    language.addMessage(PushDialButtonMessages.PUSH_BUTTON, 'You push the button in the center of the dial.');
+    language.addMessage(PushDialButtonMessages.MACHINERY_SOUNDS, 'You hear grinding machinery somewhere below, as the cells around the pit rotate.');
+    language.addMessage(PushDialButtonMessages.CELL_ROTATES, 'Cell {dialSetting} is now in position.');
+    language.addMessage(PushDialButtonMessages.NOT_AT_PARAPET, 'There is no button here to push.');
+    language.addMessage(PushDialButtonMessages.NO_BUTTON, 'There is no button here.');
+
+    // Victory messages (Treasury of Zork)
+    language.addMessage(VictoryMessages.ENTER_TREASURY, 'You have entered the Treasury of Zork!');
+    language.addMessage(VictoryMessages.VICTORY_TEXT, 'Congratulations, brave adventurer! You have completed the greatest of all treasure hunts and discovered the legendary Treasury of Zork. The riches of the Great Underground Empire are yours!');
+    language.addMessage(VictoryMessages.FINAL_SCORE, 'Your final score is {totalScore} points out of a possible 716 (616 main game + 100 endgame).\nEndgame score: {endgameScore}/100\nMain game score: {mainScore}/616');
+    language.addMessage(VictoryMessages.CONGRATULATIONS, 'You have achieved the rank of MASTER ADVENTURER.\n\n*** THE END ***');
+
+    // Wave action messages (Rainbow puzzle)
+    language.addMessage(WaveMessages.SUCCESS, 'You wave the {target}.');
+    language.addMessage(WaveMessages.RAINBOW_APPEARS, 'As you wave the sceptre, a shimmering rainbow appears, bridging the falls! You can now cross to the other side.');
+    language.addMessage(WaveMessages.RAINBOW_GONE, 'The rainbow shimmers and fades away.');
+    language.addMessage(WaveMessages.NO_EFFECT, 'You wave the {target}, but nothing happens.');
+    language.addMessage(WaveMessages.NO_TARGET, 'Wave what?');
+    language.addMessage(WaveMessages.NOT_HOLDING, "You're not holding that.");
+
+    // Dig action messages (Buried treasure)
+    language.addMessage(DigMessages.SUCCESS, 'You dig for a while.');
+    language.addMessage(DigMessages.FOUND_STATUE, 'Your shovel strikes something solid! Digging more carefully, you uncover a beautiful statue.');
+    language.addMessage(DigMessages.KEEP_DIGGING, 'You dig some sand away. You could swear the sand looks a bit different here.');
+    language.addMessage(DigMessages.NOTHING_HERE, "You've already dug up everything here.");
+    language.addMessage(DigMessages.NO_SHOVEL, 'You have nothing to dig with.');
+    language.addMessage(DigMessages.CANT_DIG_HERE, "The ground is too hard to dig here.");
+
+    // Wind action messages (Canary/bauble)
+    language.addMessage(WindMessages.SUCCESS, 'You wind the {target}.');
+    language.addMessage(WindMessages.CANARY_SINGS, 'The canary begins to sing a beautiful song.');
+    language.addMessage(WindMessages.BAUBLE_APPEARS, 'The canary begins to sing. From somewhere nearby, an answering song is heard. Suddenly, a shiny brass bauble drops at your feet!');
+    language.addMessage(WindMessages.NOT_IN_FOREST, 'The canary sings, but there is no response.');
+    language.addMessage(WindMessages.NO_TARGET, 'Wind what?');
+    language.addMessage(WindMessages.NOT_WINDABLE, "That doesn't have a winding mechanism.");
+    language.addMessage(WindMessages.NOT_HOLDING, "You're not holding that.");
+    language.addMessage(WindMessages.ALREADY_WOUND, "The canary seems content and doesn't need winding.");
+
+    // Send action messages (Mail order puzzle)
+    language.addMessage(SendMessages.SEND_FOR_BROCHURE, "Ok, but you know how strapped the postal service is lately...");
+    language.addMessage(SendMessages.ALREADY_SENT, "You've already sent for the brochure.");
+    language.addMessage(SendMessages.NO_TARGET, "Send for what?");
+    language.addMessage(SendMessages.BROCHURE_KNOCK, "There is a knocking sound from the front of the house. The postal service must be getting faster!");
+
+    // Glacier puzzle messages (throw torch at glacier)
+    language.addMessage(GlacierMessages.GLACIER_MELTS, 'The torch strikes the glacier and begins to melt into it! Steam billows from the ice as a massive section collapses, revealing a passage to the north.');
+    language.addMessage(GlacierMessages.TORCH_CONSUMED, 'The torch is consumed by the melting ice.');
+    language.addMessage(GlacierMessages.PASSAGE_REVEALED, 'A passage north has been revealed!');
+    language.addMessage(GlacierMessages.THROW_COLD, 'The torch bounces off the glacier harmlessly. Perhaps if it were lit, it might have more effect.');
+    language.addMessage(GlacierMessages.THROW_WRONG_ITEM, 'The {item} bounces off the glacier and falls to the ground.');
   }
 
   /**
@@ -1111,6 +1405,10 @@ export class DungeoStory implements Story {
     // This intercepts GO commands when player is inside the puzzle grid
     engine.registerParsedCommandTransformer(createPuzzleCommandTransformer());
 
+    // Register Rainbow blocking transformer
+    // Intercepts "go west" at Aragain Falls when rainbow is not solid
+    engine.registerParsedCommandTransformer(createRainbowCommandTransformer());
+
     // Register scheduler events (ADR-071 Phase 2)
     const scheduler = engine.getScheduler();
     if (scheduler) {
@@ -1174,6 +1472,9 @@ export class DungeoStory implements Story {
         this.templeIds.crypt,
         this.endgameIds.topOfStairs
       );
+
+      // Register Victory handler (Treasury of Zork entry)
+      registerVictoryHandler(scheduler, this.endgameIds.treasury);
     }
 
     // Register Laser Puzzle handler (Small Room / Stone Room)
@@ -1220,6 +1521,13 @@ export class DungeoStory implements Story {
         npcService,
         this.world,
         this.mazeIds.cyclopsRoom
+      );
+
+      // Register Dungeon Master NPC in the Dungeon Entrance (endgame)
+      registerDungeonMaster(
+        npcService,
+        this.world,
+        this.endgameIds.dungeonEntrance
       );
     }
 

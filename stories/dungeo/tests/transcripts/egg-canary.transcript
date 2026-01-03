@@ -1,0 +1,90 @@
+title: Egg/Canary - Complete Puzzle Flow
+story: dungeo
+description: Tests the jeweled egg containing the clockwork canary, and the bauble puzzle
+
+---
+
+# Get equipped
+> gdt
+[OK: contains "GDT"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> ex
+[OK: contains "Returning"]
+
+> turn on lantern
+[OK: contains "on"]
+
+# Go to Up a Tree where the egg is
+> gdt
+[OK: contains "GDT"]
+
+> ah Up a Tree
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+# Look around - should see a nest
+> look
+[OK: contains "nest"]
+
+# The egg is in the nest
+> look in nest
+[OK: contains "egg"]
+
+# Take the egg
+> take egg
+[OK: contains "take"]
+
+> inventory
+[OK: contains "egg"]
+
+# The egg contains the canary - can't access it when closed
+> look in egg
+[OK: contains "closed"]
+
+# Open the egg
+> open egg
+[OK: contains "open"]
+
+# Now we can see the canary
+> look in egg
+[OK: contains "canary"]
+
+# Take the canary
+> take canary
+[OK: contains "take"]
+
+> inventory
+[OK: contains "canary"]
+
+# Wind the canary here (not in forest) - should just sing
+> wind canary
+[OK: contains "sing"]
+
+# Go to a forest location
+> gdt
+[OK: contains "GDT"]
+
+> ah Forest Path
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+# Wind canary in forest - bauble should appear
+> wind canary
+[OK: contains "bauble"]
+
+# Take the bauble
+> take bauble
+[OK: contains "Taken"]
+
+# Verify we have all the treasures
+> inventory
+[OK: contains "canary"]
+[OK: contains "bauble"]
+[OK: contains "egg"]

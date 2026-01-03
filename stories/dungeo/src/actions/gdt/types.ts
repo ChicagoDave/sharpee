@@ -54,7 +54,9 @@ export type GDTCommandCode =
   | 'HE' // Help
   | 'EX' // Exit
   // Puzzle debug
-  | 'PZ'; // Puzzle
+  | 'PZ' // Puzzle
+  // Trivia debug
+  | 'TQ'; // Trivia Questions
 
 /**
  * Parsed GDT command

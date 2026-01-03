@@ -1,0 +1,60 @@
+title: Endgame Trivia - Dungeon Master Questions
+story: dungeo
+description: Test the Dungeon Master trivia puzzle at the Dungeon Entrance
+
+---
+
+# Tests the knock and answer mechanics at the Dungeon Entrance.
+
+# Enter GDT mode
+> gdt
+[OK: contains "GDT ready"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> turn on lantern
+[OK: contains "switches on"]
+
+# Teleport directly to Dungeon Entrance
+> ah Dungeon Entrance
+[OK: contains "Teleported to"]
+
+> look
+[OK: contains "Dungeon Entrance"]
+[OK: contains "wooden door"]
+[OK: contains "barred panel"]
+
+# Test knock - starts trivia (with random question)
+> knock
+[OK: contains "barred panel"]
+[OK: contains "slides open"]
+[OK: contains "Dungeon Master"]
+[OK: contains "answer my questions"]
+[OK: contains "Three correct answers"]
+
+# Use TQ RESET to set deterministic question 0 (answer: temple)
+> tq reset
+[OK: contains "question 0"]
+
+# Test answer - should work with deterministic question
+> answer temple
+[OK: contains "correct"]
+
+# Question cycles to 3 (0+3 mod 8), answer: flask
+> answer flask
+[OK: contains "correct"]
+
+# Question cycles to 6 (3+3 mod 8), answer: rusty knife
+# This is the 3rd correct answer, so trivia passes
+> answer rusty knife
+[OK: contains "proven your knowledge"]
+[OK: contains "door"]
+
+# Exit GDT mode
+> ex
+[OK: contains "Returning to game"]
+
+# Now we should be able to go north
+> n
+[OK: contains "Narrow Corridor"]

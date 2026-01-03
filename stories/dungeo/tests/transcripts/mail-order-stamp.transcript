@@ -1,0 +1,114 @@
+title: Mail Order Puzzle - Don Woods Stamp
+story: dungeo
+description: Tests sending for brochure to get the Don Woods stamp (1 point treasure)
+
+---
+
+# Start by getting the matchbook from Dam Lobby
+> gdt
+[OK: contains "GDT"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> ex
+[OK: contains "Returning"]
+
+> turn on lantern
+[OK: contains "on"]
+
+# Go to Dam Lobby and get the matchbook
+> gdt
+[OK: contains "GDT"]
+
+> ah Dam Lobby
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+> look
+[OK: contains "Lobby"]
+
+# The matchbook should be here
+> take matchbook
+[OK: contains "take"]
+
+> inventory
+[OK: contains "matchbook"]
+
+# Read the matchbook to see the advertisement
+> read matchbook
+[OK: contains "BROCHURE"]
+
+# Send for the brochure
+> send for brochure
+[OK: contains "postal"]
+[OK: contains "knock"]
+
+# Go to West of House to check the mailbox
+> gdt
+[OK: contains "GDT"]
+
+> ah West of House
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+# Open the mailbox
+> open mailbox
+[OK: contains "open"]
+
+# The brochure should be there
+> look in mailbox
+[OK: contains "brochure"]
+
+# Take the brochure
+> take brochure
+[OK: contains "take"]
+
+> inventory
+[OK: contains "brochure"]
+
+# Read the brochure
+> read brochure
+[OK: contains "MIT"]
+
+# The brochure contains the stamp
+> look in brochure
+[OK: contains "stamp"]
+
+# Take the stamp
+> take stamp
+[OK: contains "take"]
+
+> inventory
+[OK: contains "stamp"]
+
+# Examine the stamp
+> examine stamp
+[OK: contains "Woods"]
+
+# Put it in the trophy case
+> gdt
+[OK: contains "GDT"]
+
+> ah Living Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+> open case
+[OK: contains "open"]
+
+> put stamp in case
+[OK: contains "put"]
+
+> score
+[OK: contains "score"]
+
+# Try ordering again - should say already sent
+> send for brochure
+[OK: contains "already"]

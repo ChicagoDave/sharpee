@@ -52,6 +52,33 @@ export * from './lower';
 // Push Panel (Inside Mirror wall panels)
 export * from './push-panel';
 
+// Knock (Dungeon Master trivia trigger)
+export * from './knock';
+
+// Answer (Trivia responses)
+export * from './answer';
+
+// Set Dial (Parapet dial puzzle)
+export * from './set-dial';
+
+// Push Dial Button (Parapet dial puzzle)
+export * from './push-dial-button';
+
+// Wave (Rainbow puzzle - wave sceptre at falls)
+export * from './wave';
+
+// Dig (Buried treasure - dig with shovel)
+export * from './dig';
+
+// Wind (Canary/bauble - wind canary in forest)
+export * from './wind';
+
+// Send (Mail order puzzle - send for brochure)
+export * from './send';
+
+// Rainbow Blocked (going west at Aragain Falls before waving)
+export * from './rainbow-blocked';
+
 // All custom actions for registration
 import { gdtActions } from './gdt';
 import { walkThroughActions } from './walk-through';
@@ -69,6 +96,21 @@ import { incantAction } from './incant';
 import { liftAction } from './lift';
 import { lowerAction } from './lower';
 import { pushPanelAction } from './push-panel';
+import { knockAction } from './knock';
+import { answerAction } from './answer';
+import { setDialAction } from './set-dial';
+import { pushDialButtonAction } from './push-dial-button';
+import { waveAction, WAVE_ACTION_ID, WaveMessages } from './wave';
+import { digAction, DIG_ACTION_ID, DigMessages } from './dig';
+import { windAction, WIND_ACTION_ID, WindMessages } from './wind';
+import { sendAction, SEND_ACTION_ID, SendMessages } from './send';
+import { rainbowBlockedAction } from './rainbow-blocked';
+
+// Re-export for use in index.ts
+export { WAVE_ACTION_ID, WaveMessages } from './wave';
+export { DIG_ACTION_ID, DigMessages } from './dig';
+export { WIND_ACTION_ID, WindMessages } from './wind';
+export { SEND_ACTION_ID, SendMessages } from './send';
 
 export const customActions = [
   ...gdtActions,
@@ -86,5 +128,14 @@ export const customActions = [
   incantAction,
   liftAction,
   lowerAction,
-  pushPanelAction
+  pushPanelAction,
+  knockAction,
+  answerAction,
+  setDialAction,
+  pushDialButtonAction,
+  waveAction,
+  digAction,
+  windAction,
+  sendAction,
+  rainbowBlockedAction
 ];
