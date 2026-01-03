@@ -37,6 +37,35 @@ export function createDamObjects(world: WorldModel, roomIds: DamRoomIds): void {
 
   // Basin Room - ADR-078 ghost ritual
   createStoneBasin(world, roomIds.basinRoom);
+
+  // Glacier Room - glacier blocks north passage
+  createGlacier(world, roomIds.glacierRoom);
+}
+
+/**
+ * Glacier - Blocks north passage, melted by throwing lit torch
+ *
+ * When the ivory torch (lit) is thrown at the glacier, it melts
+ * and reveals the north passage to Volcano View.
+ */
+function createGlacier(world: WorldModel, roomId: string): IFEntity {
+  const glacier = world.createEntity('glacier', EntityType.SCENERY);
+
+  glacier.add(new IdentityTrait({
+    name: 'glacier',
+    aliases: ['ice', 'massive glacier', 'ice wall', 'wall of ice'],
+    description: 'A massive wall of ice fills the northern part of the room, blocking any passage in that direction. It glistens with an inner cold light.',
+    properName: false,
+    article: 'a'
+  }));
+
+  glacier.add(new SceneryTrait());
+
+  // Track melted state
+  (glacier as any).isMelted = false;
+
+  world.moveEntity(glacier.id, roomId);
+  return glacier;
 }
 
 /**

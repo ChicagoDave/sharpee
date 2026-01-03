@@ -36,7 +36,7 @@ import { registerScheduledEvents, DungeoSchedulerMessages } from './scheduler';
 import { setSchedulerForGDT } from './actions/gdt/commands';
 
 // Import handlers
-import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages } from './handlers';
+import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages, registerGlacierHandler, GlacierMessages } from './handlers';
 import { initializeMirrorRoom, createMirrorTouchHandler, MirrorRoomConfig, MirrorRoomMessages } from './handlers/mirror-room-handler';
 import { MIRROR_ID } from './regions/underground/objects';
 
@@ -205,6 +205,9 @@ export class DungeoStory implements Story {
 
     // Initialize Mirror Room state toggle
     this.initializeMirrorRoomHandler(world);
+
+    // Register glacier handler (throw torch at glacier puzzle)
+    registerGlacierHandler(world, this.damIds.glacierRoom, this.volcanoIds.volcanoView);
 
     // Set initial player location to West of House
     const player = world.getPlayer();
@@ -1245,6 +1248,13 @@ export class DungeoStory implements Story {
     language.addMessage(WindMessages.NOT_WINDABLE, "That doesn't have a winding mechanism.");
     language.addMessage(WindMessages.NOT_HOLDING, "You're not holding that.");
     language.addMessage(WindMessages.ALREADY_WOUND, "The canary seems content and doesn't need winding.");
+
+    // Glacier puzzle messages (throw torch at glacier)
+    language.addMessage(GlacierMessages.GLACIER_MELTS, 'The torch strikes the glacier and begins to melt into it! Steam billows from the ice as a massive section collapses, revealing a passage to the north.');
+    language.addMessage(GlacierMessages.TORCH_CONSUMED, 'The torch is consumed by the melting ice.');
+    language.addMessage(GlacierMessages.PASSAGE_REVEALED, 'A passage north has been revealed!');
+    language.addMessage(GlacierMessages.THROW_COLD, 'The torch bounces off the glacier harmlessly. Perhaps if it were lit, it might have more effect.');
+    language.addMessage(GlacierMessages.THROW_WRONG_ITEM, 'The {item} bounces off the glacier and falls to the ground.');
   }
 
   /**

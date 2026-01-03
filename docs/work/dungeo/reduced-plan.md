@@ -19,7 +19,7 @@
 | Puzzle | Solution | Blocker |
 |--------|----------|---------|
 | Rainbow | WAVE sceptre at falls | ✅ Complete (action + dynamic exits) |
-| Glacier | Throw torch at ice | Need THROW at target |
+| Glacier | Throw torch at ice | ✅ Complete (handler + dynamic exits) |
 | Buried treasure | DIG 4x with shovel | ✅ DIG action + shovel done |
 | Egg/Canary | Let thief steal & open | Thief egg-opening logic |
 | Bauble | Wind canary in forest | ✅ WIND action done, need bauble object |
