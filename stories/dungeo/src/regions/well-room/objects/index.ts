@@ -18,14 +18,16 @@ import {
   ContainerTrait,
   OpenableTrait,
   ActorTrait,
-  NpcTrait
+  NpcTrait,
+  VehicleTrait
 } from '@sharpee/world-model';
 import { WellRoomIds } from '../index';
 
 export function createWellRoomObjects(world: WorldModel, roomIds: WellRoomIds): void {
-  // Well Room objects
-  createWell(world, roomIds.wellRoom);
-  createBucket(world, roomIds.wellRoom);
+  // Well/bucket objects - bucket starts at Well Bottom
+  createWellScenery(world, roomIds.topOfWell);
+  createWellScenery(world, roomIds.wellBottom);
+  createBucket(world, roomIds.wellBottom, roomIds.topOfWell, roomIds.wellBottom);
 
   // Pool Room treasure
   createSilverChalice(world, roomIds.poolRoom);
@@ -53,7 +55,7 @@ export function createWellRoomObjects(world: WorldModel, roomIds: WellRoomIds): 
   createWhiteCrystalSphere(world, roomIds.dingyCloset);
 }
 
-function createWell(world: WorldModel, roomId: string): IFEntity {
+function createWellScenery(world: WorldModel, roomId: string): IFEntity {
   const well = world.createEntity('well', EntityType.ITEM);
   well.add(new IdentityTrait({
     name: 'well',
@@ -67,21 +69,46 @@ function createWell(world: WorldModel, roomId: string): IFEntity {
   return well;
 }
 
-function createBucket(world: WorldModel, roomId: string): IFEntity {
+function createBucket(
+  world: WorldModel,
+  startRoomId: string,
+  topOfWellId: string,
+  wellBottomId: string
+): IFEntity {
   const bucket = world.createEntity('bucket', EntityType.ITEM);
   bucket.add(new IdentityTrait({
     name: 'bucket',
     aliases: ['wooden bucket', 'pail'],
-    description: 'A wooden bucket attached to a rope. It can be lowered into the well.',
+    description: 'A wooden bucket attached to a rope wound around a windlass.',
     properName: false,
     article: 'a'
   }));
+
+  // Container: enterable so player can get in
   bucket.add(new ContainerTrait({
-    capacity: { maxItems: 5, maxWeight: 20 }
+    capacity: { maxItems: 5, maxWeight: 20 },
+    enterable: true
   }));
-  // Bucket state - at top or lowered
-  (bucket as any).isLowered = false;
-  world.moveEntity(bucket.id, roomId);
+  bucket.add(new OpenableTrait({ isOpen: true })); // Always open container
+
+  // Vehicle: counterweight mechanism (water weight moves it)
+  bucket.add(new VehicleTrait({
+    vehicleType: 'counterweight',
+    blocksWalkingMovement: true,
+    requiresExitBeforeLeaving: true,
+    currentPosition: 'bottom',
+    positionRooms: {
+      'top': topOfWellId,
+      'bottom': wellBottomId
+    },
+    isOperational: true
+  }));
+
+  // Additional bucket state for counterweight puzzle
+  // Whether bucket contains water (for counterweight mechanism)
+  (bucket as any).hasWater = false;
+
+  world.moveEntity(bucket.id, startRoomId);
   return bucket;
 }
 

@@ -50,6 +50,9 @@ import { EquippedTrait } from './equipped/equippedTrait';
 // NPC traits (ADR-070)
 import { NpcTrait } from './npc/npcTrait';
 
+// Transport traits
+import { VehicleTrait } from './vehicle/vehicleTrait';
+
 /**
  * Map of trait types to their constructors
  */
@@ -97,6 +100,9 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
 
   // NPC traits (ADR-070)
   [TraitType.NPC]: NpcTrait,
+
+  // Transport traits
+  [TraitType.VEHICLE]: VehicleTrait,
 
   // Object property traits
 
@@ -168,7 +174,10 @@ export {
   EquippedTrait,
 
   // NPC traits (ADR-070)
-  NpcTrait
+  NpcTrait,
+
+  // Transport traits
+  VehicleTrait
 
   // Object property traits
 };
