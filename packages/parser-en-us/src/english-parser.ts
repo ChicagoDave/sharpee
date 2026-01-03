@@ -42,7 +42,7 @@ import { PartOfSpeech } from '@sharpee/world-model';
 
 import type { ISystemEvent, Result } from '@sharpee/core';
 import { EnglishGrammarEngine } from './english-grammar-engine';
-import { defineCoreGrammar } from './core-grammar';
+import { defineGrammar } from './grammar';
 import { scope, GrammarBuilder } from '@sharpee/if-domain';
 import { parseDirection } from './direction-mappings';
 
@@ -128,7 +128,7 @@ export class EnglishParser implements Parser {
     // Initialize grammar engine
     this.grammarEngine = new EnglishGrammarEngine();
     const grammar = this.grammarEngine.createBuilder();
-    defineCoreGrammar(grammar);
+    defineGrammar(grammar);
 
     this.initializeVocabulary();
   }

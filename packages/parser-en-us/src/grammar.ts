@@ -1,15 +1,23 @@
 /**
- * @file Core English Grammar Rules
+ * @file English Grammar Rules
  * @description Standard grammar patterns for English interactive fiction
+ *
+ * Rule Priority Guidelines:
+ * - 100+: Semantic rules with constraints (e.g., .matching({ enterable: true }))
+ * - 100: Standard patterns
+ * - 95: Synonyms/alternatives
+ * - 90: Abbreviations
+ *
+ * Semantic rules should come first to match before fallback patterns.
  */
 
 import { GrammarBuilder, ScopeBuilder } from '@sharpee/if-domain';
 
 /**
- * Define core English grammar rules
+ * Define English grammar rules
  * @param grammar The grammar builder to use
  */
-export function defineCoreGrammar(grammar: GrammarBuilder): void {
+export function defineGrammar(grammar: GrammarBuilder): void {
   // Basic verb patterns
   grammar
     .define('look')
@@ -782,6 +790,135 @@ export function defineCoreGrammar(grammar: GrammarBuilder): void {
     .define('prod :target')
     .where('target', (scope: ScopeBuilder) => scope.touchable())
     .mapsTo('if.action.touching')
+    .withPriority(95)
+    .build();
+
+  // ============================================================================
+  // ENTERING AND EXITING
+  // Semantic rules (with constraints) have higher priority than simple fallbacks
+  // ============================================================================
+
+  // Semantic: enter specific enterable thing (priority 100)
+  grammar
+    .define('enter :portal')
+    .where('portal', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .mapsTo('if.action.entering')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('get in :portal')
+    .where('portal', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .mapsTo('if.action.entering')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('get into :portal')
+    .where('portal', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .mapsTo('if.action.entering')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('climb in :portal')
+    .where('portal', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .mapsTo('if.action.entering')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('climb into :portal')
+    .where('portal', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .mapsTo('if.action.entering')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('go in :portal')
+    .where('portal', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .mapsTo('if.action.entering')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('go into :portal')
+    .where('portal', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .mapsTo('if.action.entering')
+    .withPriority(100)
+    .build();
+
+  // Exiting (bare command, no target - exits current container/location)
+  grammar
+    .define('exit')
+    .mapsTo('if.action.exiting')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('get out')
+    .mapsTo('if.action.exiting')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('leave')
+    .mapsTo('if.action.exiting')
+    .withPriority(95)
+    .build();
+
+  grammar
+    .define('climb out')
+    .mapsTo('if.action.exiting')
+    .withPriority(100)
+    .build();
+
+  // Vehicle-specific synonyms (map to entering/exiting actions)
+  grammar
+    .define('board :vehicle')
+    .where('vehicle', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .mapsTo('if.action.entering')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('get on :vehicle')
+    .where('vehicle', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .mapsTo('if.action.entering')
+    .withPriority(100)
+    .build();
+
+  // Exiting with a target (exit specific container/vehicle)
+  grammar
+    .define('exit :container')
+    .where('container', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .mapsTo('if.action.exiting')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('disembark')
+    .mapsTo('if.action.exiting')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('disembark :vehicle')
+    .where('vehicle', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .mapsTo('if.action.exiting')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('get off :vehicle')
+    .where('vehicle', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .mapsTo('if.action.exiting')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('alight')
+    .mapsTo('if.action.exiting')
     .withPriority(95)
     .build();
 }
