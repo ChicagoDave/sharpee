@@ -29,7 +29,7 @@ import {
 import { DungeoScoringService } from './scoring';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages } from './actions';
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages } from './scheduler';
@@ -878,6 +878,74 @@ export class DungeoStory implements Story {
       .mapsTo(SEND_ACTION_ID)
       .withPriority(145)
       .build();
+
+    // POUR action (Bucket/Well puzzle - pour water to rise)
+    grammar
+      .define('pour :target')
+      .mapsTo(POUR_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('pour water')
+      .mapsTo(POUR_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('pour water in :container')
+      .mapsTo(POUR_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    grammar
+      .define('pour water into :container')
+      .mapsTo(POUR_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    grammar
+      .define('pour :target in :container')
+      .mapsTo(POUR_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('pour :target into :container')
+      .mapsTo(POUR_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    // FILL action (Bucket/Well puzzle - fill bottle to descend)
+    grammar
+      .define('fill :target')
+      .mapsTo(FILL_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('fill bottle')
+      .mapsTo(FILL_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('fill :target from :source')
+      .mapsTo(FILL_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    grammar
+      .define('fill bottle from bucket')
+      .mapsTo(FILL_ACTION_ID)
+      .withPriority(165)
+      .build();
+
+    grammar
+      .define('fill bottle with water')
+      .mapsTo(FILL_ACTION_ID)
+      .withPriority(160)
+      .build();
   }
 
   /**
@@ -1279,6 +1347,27 @@ export class DungeoStory implements Story {
     language.addMessage(SendMessages.ALREADY_SENT, "You've already sent for the brochure.");
     language.addMessage(SendMessages.NO_TARGET, "Send for what?");
     language.addMessage(SendMessages.BROCHURE_KNOCK, "There is a knocking sound from the front of the house. The postal service must be getting faster!");
+
+    // Pour action messages (Bucket/Well puzzle)
+    language.addMessage(PourMessages.SUCCESS, 'The water spills on the ground and evaporates.');
+    language.addMessage(PourMessages.INTO_BUCKET, 'The water splashes into the bucket.');
+    language.addMessage(PourMessages.BUCKET_RISES, 'The bucket becomes heavy with water and slowly rises to the top of the well, carrying you with it!');
+    language.addMessage(PourMessages.BUCKET_AT_TOP, 'The water splashes into the bucket, but it is already at the top of the well.');
+    language.addMessage(PourMessages.NO_WATER, "You don't have any water to pour.");
+    language.addMessage(PourMessages.NO_TARGET, 'Pour what?');
+    language.addMessage(PourMessages.NOTHING_HAPPENS, 'Nothing happens.');
+    language.addMessage(PourMessages.NOT_IN_BUCKET, "You're not in the bucket.");
+
+    // Fill action messages (Bucket/Well puzzle)
+    language.addMessage(FillMessages.SUCCESS, 'You fill the bottle.');
+    language.addMessage(FillMessages.FROM_BUCKET, 'You fill the bottle from the bucket.');
+    language.addMessage(FillMessages.BUCKET_DESCENDS, 'As the water leaves the bucket, it becomes lighter and slowly descends to the bottom of the well, carrying you with it!');
+    language.addMessage(FillMessages.BUCKET_AT_BOTTOM, 'You fill the bottle from the bucket, but it is already at the bottom of the well.');
+    language.addMessage(FillMessages.NO_BOTTLE, "You don't have a bottle to fill.");
+    language.addMessage(FillMessages.BOTTLE_FULL, 'The bottle is already full.');
+    language.addMessage(FillMessages.NO_SOURCE, 'There is no water source here.');
+    language.addMessage(FillMessages.NO_WATER_IN_BUCKET, 'The bucket is empty.');
+    language.addMessage(FillMessages.NOTHING_HAPPENS, 'Nothing happens.');
 
     // Glacier puzzle messages (throw torch at glacier)
     language.addMessage(GlacierMessages.GLACIER_MELTS, 'The torch strikes the glacier and begins to melt into it! Steam billows from the ice as a massive section collapses, revealing a passage to the north.');

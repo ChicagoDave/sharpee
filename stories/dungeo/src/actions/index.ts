@@ -79,6 +79,12 @@ export * from './send';
 // Rainbow Blocked (going west at Aragain Falls before waving)
 export * from './rainbow-blocked';
 
+// Pour (Bucket/Well puzzle - pour water to rise)
+export * from './pour';
+
+// Fill (Bucket/Well puzzle - fill bottle to descend)
+export * from './fill';
+
 // All custom actions for registration
 import { gdtActions } from './gdt';
 import { walkThroughActions } from './walk-through';
@@ -105,12 +111,16 @@ import { digAction, DIG_ACTION_ID, DigMessages } from './dig';
 import { windAction, WIND_ACTION_ID, WindMessages } from './wind';
 import { sendAction, SEND_ACTION_ID, SendMessages } from './send';
 import { rainbowBlockedAction } from './rainbow-blocked';
+import { pourAction, POUR_ACTION_ID, PourMessages } from './pour';
+import { fillAction, FILL_ACTION_ID, FillMessages } from './fill';
 
 // Re-export for use in index.ts
 export { WAVE_ACTION_ID, WaveMessages } from './wave';
 export { DIG_ACTION_ID, DigMessages } from './dig';
 export { WIND_ACTION_ID, WindMessages } from './wind';
 export { SEND_ACTION_ID, SendMessages } from './send';
+export { POUR_ACTION_ID, PourMessages } from './pour';
+export { FILL_ACTION_ID, FillMessages } from './fill';
 
 export const customActions = [
   ...gdtActions,
@@ -137,5 +147,7 @@ export const customActions = [
   digAction,
   windAction,
   sendAction,
-  rainbowBlockedAction
+  rainbowBlockedAction,
+  pourAction,
+  fillAction
 ];
