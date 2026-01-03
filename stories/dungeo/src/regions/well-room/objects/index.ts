@@ -18,7 +18,8 @@ import {
   ContainerTrait,
   OpenableTrait,
   ActorTrait,
-  NpcTrait
+  NpcTrait,
+  VehicleTrait
 } from '@sharpee/world-model';
 import { WellRoomIds } from '../index';
 
@@ -82,16 +83,28 @@ function createBucket(
     properName: false,
     article: 'a'
   }));
+
+  // Container: enterable so player can get in
   bucket.add(new ContainerTrait({
-    capacity: { maxItems: 5, maxWeight: 20 }
+    capacity: { maxItems: 5, maxWeight: 20 },
+    enterable: true
   }));
   bucket.add(new OpenableTrait({ isOpen: true })); // Always open container
 
-  // Bucket state for well puzzle
-  // Bucket position: 'bottom' or 'top'
-  (bucket as any).bucketPosition = 'bottom';
-  (bucket as any).topOfWellId = topOfWellId;
-  (bucket as any).wellBottomId = wellBottomId;
+  // Vehicle: counterweight mechanism (water weight moves it)
+  bucket.add(new VehicleTrait({
+    vehicleType: 'counterweight',
+    blocksWalkingMovement: true,
+    requiresExitBeforeLeaving: true,
+    currentPosition: 'bottom',
+    positionRooms: {
+      'top': topOfWellId,
+      'bottom': wellBottomId
+    },
+    isOperational: true
+  }));
+
+  // Additional bucket state for counterweight puzzle
   // Whether bucket contains water (for counterweight mechanism)
   (bucket as any).hasWater = false;
 
