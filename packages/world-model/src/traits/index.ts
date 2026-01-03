@@ -39,6 +39,12 @@ export * from './destructible';
 export * from './combatant';
 export * from './equipped';
 
+// Transport traits
+export * from './vehicle';
+
+// NPC traits
+export * from './npc';
+
 // Register function
 export * from './register-all';
 

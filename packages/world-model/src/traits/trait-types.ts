@@ -52,7 +52,10 @@ export const TraitType = {
   EQUIPPED: 'equipped',
 
   // NPC traits (ADR-070)
-  NPC: 'npc'
+  NPC: 'npc',
+
+  // Transport traits
+  VEHICLE: 'vehicle'
 } as const;
 
 /**
@@ -120,7 +123,10 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   [TraitType.EQUIPPED]: TraitCategory.INTERACTIVE,
 
   // NPC traits
-  [TraitType.NPC]: TraitCategory.STANDARD
+  [TraitType.NPC]: TraitCategory.STANDARD,
+
+  // Transport traits
+  [TraitType.VEHICLE]: TraitCategory.INTERACTIVE
 };
 
 /**
