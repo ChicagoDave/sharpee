@@ -440,10 +440,10 @@
 | Egg | Let thief steal and open | ❌ | Canary |
 | Key (Tiny Room) | Mat under door, screwdriver | ❌ | Blue sphere |
 | Coffin | Drain reservoir, carry across | ❌ | 10 points |
-| Glacier | Throw torch at ice | ❌ | Ruby room |
-| Rainbow | Wave sceptre at falls | ❌ | Pot of gold |
-| Bauble | Wind canary in forest | ❌ | Bauble |
-| Buried treasure | Dig 4 times with shovel | ❌ | Statue |
+| Glacier | Throw torch at ice | ✅ Done | Volcano View access |
+| Rainbow | Wave sceptre at falls | ✅ Done | Pot of gold |
+| Bauble | Wind canary in forest | ❌ | Bauble (WIND action done, need spawn) |
+| Buried treasure | Dig 4 times with shovel | ✅ Done | Statue |
 | Thief's Canvas (ADR-078) | Kill thief→frame→break→incense→pray→drop piece | ✅ Done | 34 pts canvas |
 
 ---
@@ -533,18 +533,19 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 | Tools | 5 | 6 | 83% |
 | Containers | 5 | 5 | 100% |
 | NPCs | 6 | 8 | 75% |
-| Puzzles (working) | 15 | ~25 | 60% |
+| Puzzles (working) | 18 | ~25 | 72% |
 
 ---
 
 ## Priority Next Steps
 
-1. **Remaining puzzles** - Glacier (throw torch), egg/canary (thief logic)
+1. **Remaining puzzles** - Egg/canary (thief logic), bucket/well, balloon
 2. **Remaining treasures** - Don Woods stamp (mail order system), brass bauble (canary in forest - WIND action done, needs bauble spawn)
 3. **Missing systems** - Vehicle trait (boat), INFLATE/DEFLATE, robot commands
 
 ## Recently Completed
 
+- ✅ **Glacier Puzzle** (2026-01-02) - Throw lit torch at glacier to melt it and reveal north passage to Volcano View. Handler listens for thrown events, validates torch is lit, opens bidirectional exits, destroys torch. 16 new tests.
 - ✅ **WAVE/DIG/WIND Actions** (2026-01-02) - Implemented three story-specific actions:
   - WAVE action: Wave sceptre at Aragain Falls to create/dismiss rainbow
   - DIG action: Dig at Sandy Beach (4 digs) to reveal buried statue
