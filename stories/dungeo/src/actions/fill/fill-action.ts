@@ -190,7 +190,8 @@ export const fillAction: Action = {
     const events: ISemanticEvent[] = [];
 
     if (sharedData.bucketDescended && sharedData.playerDescended) {
-      events.push(context.event('game.message', {
+      events.push(context.event('action.success', {
+        actionId: FILL_ACTION_ID,
         messageId: FillMessages.BUCKET_DESCENDS
       }));
 
@@ -206,23 +207,28 @@ export const fillAction: Action = {
         }));
       }
     } else if (sharedData.bucketDescended) {
-      events.push(context.event('game.message', {
+      events.push(context.event('action.success', {
+        actionId: FILL_ACTION_ID,
         messageId: FillMessages.BUCKET_DESCENDS
       }));
     } else if (sharedData.bucketAlreadyAtBottom && sharedData.filledFromBucket) {
-      events.push(context.event('game.message', {
+      events.push(context.event('action.success', {
+        actionId: FILL_ACTION_ID,
         messageId: FillMessages.BUCKET_AT_BOTTOM
       }));
     } else if (sharedData.filledFromBucket) {
-      events.push(context.event('game.message', {
+      events.push(context.event('action.success', {
+        actionId: FILL_ACTION_ID,
         messageId: FillMessages.FROM_BUCKET
       }));
     } else if (sharedData.noSource) {
-      events.push(context.event('game.message', {
+      events.push(context.event('action.success', {
+        actionId: FILL_ACTION_ID,
         messageId: FillMessages.NO_SOURCE
       }));
     } else {
-      events.push(context.event('game.message', {
+      events.push(context.event('action.success', {
+        actionId: FILL_ACTION_ID,
         messageId: FillMessages.NOTHING_HAPPENS
       }));
     }

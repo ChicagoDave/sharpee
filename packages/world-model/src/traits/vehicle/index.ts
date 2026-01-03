@@ -2,5 +2,5 @@
  * Vehicle trait module
  */
 
-export * from './vehicleTrait';
+export * from './VehicleTrait';
 export * from './vehicleBehavior';

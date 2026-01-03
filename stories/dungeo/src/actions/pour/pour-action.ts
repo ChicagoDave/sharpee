@@ -172,7 +172,8 @@ export const pourAction: Action = {
     const events: ISemanticEvent[] = [];
 
     if (sharedData.bucketRose && sharedData.playerRose) {
-      events.push(context.event('game.message', {
+      events.push(context.event('action.success', {
+        actionId: POUR_ACTION_ID,
         messageId: PourMessages.BUCKET_RISES
       }));
 
@@ -188,23 +189,28 @@ export const pourAction: Action = {
         }));
       }
     } else if (sharedData.bucketRose) {
-      events.push(context.event('game.message', {
+      events.push(context.event('action.success', {
+        actionId: POUR_ACTION_ID,
         messageId: PourMessages.BUCKET_RISES
       }));
     } else if (sharedData.bucketAlreadyAtTop && sharedData.pouredIntoBucket) {
-      events.push(context.event('game.message', {
+      events.push(context.event('action.success', {
+        actionId: POUR_ACTION_ID,
         messageId: PourMessages.BUCKET_AT_TOP
       }));
     } else if (sharedData.pouredIntoBucket) {
-      events.push(context.event('game.message', {
+      events.push(context.event('action.success', {
+        actionId: POUR_ACTION_ID,
         messageId: PourMessages.INTO_BUCKET
       }));
     } else if (sharedData.pouredOnGround) {
-      events.push(context.event('game.message', {
+      events.push(context.event('action.success', {
+        actionId: POUR_ACTION_ID,
         messageId: PourMessages.SUCCESS
       }));
     } else {
-      events.push(context.event('game.message', {
+      events.push(context.event('action.success', {
+        actionId: POUR_ACTION_ID,
         messageId: PourMessages.NOTHING_HAPPENS
       }));
     }

@@ -1,0 +1,95 @@
+title: Bucket/Well Puzzle
+story: dungeo
+description: Tests the VehicleTrait counterweight mechanism for bucket and well
+
+---
+
+# Setup - enter GDT, get lantern, turn it on
+> gdt
+[OK: contains "GDT ready"]
+[EVENT: true, type="action.success"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+[EVENT: true, type="action.success"]
+
+> ex
+[OK: contains "Returning to game"]
+[EVENT: true, type="action.success"]
+
+> turn on lantern
+[OK: contains "switches on"]
+[EVENT: true, type="action.success"]
+
+# Get the bottle with water from kitchen
+> gdt
+[OK: contains "GDT ready"]
+[EVENT: true, type="action.success"]
+
+> ah Kitchen
+[OK: contains "Teleported to: Kitchen"]
+[EVENT: true, type="action.success"]
+
+> ex
+[OK: contains "Returning to game"]
+[EVENT: true, type="action.success"]
+
+> look
+[OK: contains "Kitchen"]
+[EVENT: true, type="if.event.room.description"]
+
+> take bottle
+[OK: contains "Taken"]
+[EVENT: true, type="action.success"]
+
+# Go to Well Bottom where bucket starts
+> gdt
+[OK: contains "GDT ready"]
+[EVENT: true, type="action.success"]
+
+> ah Well Bottom
+[OK: contains "Teleported to: Well Bottom"]
+[EVENT: true, type="action.success"]
+
+> ex
+[OK: contains "Returning to game"]
+[EVENT: true, type="action.success"]
+
+> look
+[OK: contains "Well Bottom"]
+[EVENT: true, type="if.event.room.description"]
+
+# The bucket should be here
+> examine bucket
+[OK: contains "bucket"]
+[EVENT: true, type="action.success"]
+
+# Enter the bucket
+> enter bucket
+[OK: contains "bucket"]
+[EVENT: true, type="action.success"]
+
+# Now pour water to make bucket rise
+> pour water
+[OK: contains "rises"]
+[EVENT: true, type="action.success"]
+
+# Should now be at Top of Well - check via look
+> look
+[OK: contains "Top of Well"]
+[EVENT: true, type="if.event.room.description"]
+
+# Now fill bottle from bucket to descend
+> fill bottle
+[OK: contains "descends"]
+[EVENT: true, type="action.success"]
+
+# Should now be at Well Bottom again
+> look
+[OK: contains "Well Bottom"]
+[EVENT: true, type="if.event.room.description"]
+
+# Exit the bucket
+> exit bucket
+[OK: contains "bucket"]
+[EVENT: true, type="action.success"]

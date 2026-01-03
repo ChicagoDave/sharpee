@@ -76,6 +76,13 @@ export class VehicleTrait implements ITrait {
    */
   notOperationalReason?: string;
 
+  /**
+   * If true, visibility passes through to the containing room.
+   * - Bucket, raft, boat: transparent (can see the room you're in)
+   * - Airplane, submarine: not transparent (see vehicle interior only)
+   */
+  transparent: boolean;
+
   constructor(options: Partial<Omit<VehicleTrait, 'type' | 'movesWithContents'>> = {}) {
     this.vehicleType = options.vehicleType ?? 'generic';
     this.blocksWalkingMovement = options.blocksWalkingMovement ?? true;
@@ -84,6 +91,7 @@ export class VehicleTrait implements ITrait {
     this.positionRooms = options.positionRooms;
     this.isOperational = options.isOperational ?? true;
     this.notOperationalReason = options.notOperationalReason;
+    this.transparent = options.transparent ?? true; // Default to transparent for most IF vehicles
   }
 }
 
