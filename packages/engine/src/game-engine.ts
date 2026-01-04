@@ -29,7 +29,7 @@ import {
   MetaCommandRegistry,
   IPerceptionService
 } from '@sharpee/stdlib';
-import { LanguageProvider } from '@sharpee/if-domain';
+import { LanguageProvider, IEventProcessorWiring } from '@sharpee/if-domain';
 import { TextService, TextServiceContext, TextOutput } from '@sharpee/if-services';
 import { ISemanticEvent, createSemanticEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, ISerializedSchedulerState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, getUntypedEventData } from '@sharpee/core';
 
@@ -133,6 +133,20 @@ export class GameEngine {
 
     // Create subsystems
     this.eventProcessor = new EventProcessor(this.world);
+
+    // Wire WorldModel event handlers to EventProcessor (ADR-086)
+    // This ensures handlers registered via world.registerEventHandler() are invoked
+    const wiring: IEventProcessorWiring = {
+      registerHandler: (eventType, handler) => {
+        this.eventProcessor.registerHandler(eventType, (event, _query) => {
+          // The adapted handler doesn't need WorldQuery, it captures world in closure
+          // Cast to Effect[] since handler returns unknown[] (to avoid circular deps)
+          return handler(event) as any[];
+        });
+      }
+    };
+    this.world.connectEventProcessor(wiring);
+
     this.platformEvents = createSemanticEventSource();
     this.scheduler = createSchedulerService();
     this.npcService = createNpcService();
