@@ -351,7 +351,6 @@
 | Black book | Altar | ✅ Done | Exorcism |
 | Green paper | Tea Room | ✅ Done | FROBOZZ MAGIC BOAT instructions |
 | Purple book | Library | ✅ Done | Contains stamp |
-| Lore book | Royal Puzzle | ❌ | Endgame item |
 
 ### Miscellaneous
 
@@ -384,7 +383,6 @@
 | Spirits | Entry to Hades | ✅ Done | Block until exorcised (bell/book/candles) |
 | Dungeon Master | Endgame | ✅ Done | Trivia system with 8 questions, opens door after 3 correct |
 | Robot | Low Room | ✅ Done | Commandable NPC |
-| Gnome | Bank | ❌ | Appears with curtain |
 
 ---
 
@@ -424,7 +422,7 @@
 
 | Puzzle | Solution | Status | Reward |
 |--------|----------|--------|--------|
-| Maze | Map carefully | ❌ | Coins, keys |
+| Maze | Map carefully (drop objects) | ✅ Done | Coins, key (45 pts total) |
 | Coal mine | Navigate maze | ✅ Done | Coal, bracelet |
 | Royal Puzzle | Push sandstone blocks | ✅ Done | Gold card (25 pts) |
 | Mirror box | Push panels, pole | ✅ Done | Dungeon entrance access |
@@ -529,8 +527,8 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 | Weapons | 4 | 4 | 100% |
 | Tools | 6 | 6 | 100% |
 | Containers | 5 | 5 | 100% |
-| NPCs | 7 | 8 | 88% |
-| Puzzles (working) | 18 | ~25 | 72% |
+| NPCs | 7 | 7 | 100% |
+| Puzzles (working) | 19 | ~25 | 76% |
 
 ---
 
