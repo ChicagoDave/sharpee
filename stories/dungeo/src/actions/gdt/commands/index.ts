@@ -34,6 +34,8 @@ import { pzHandler } from './pz';
 import { tqHandler } from './tq';
 // Phase 7 - Dial debug
 import { dlHandler } from './dl';
+// Phase 8 - Kill command
+import { klHandler, setEngineForKL } from './kl';
 
 /**
  * Registry of all GDT command handlers
@@ -77,6 +79,9 @@ handlers.set('TQ', tqHandler);
 
 // Register Phase 7 - Dial debug
 handlers.set('DL', dlHandler);
+
+// Register Phase 8 - Kill command
+handlers.set('KL', klHandler);
 
 /**
  * Get a command handler by code
@@ -148,3 +153,4 @@ export { dcHandler, setSchedulerForGDT, SCHEDULER_GDT_KEY } from './dc';
 export { pzHandler } from './pz';
 export { tqHandler } from './tq';
 export { dlHandler } from './dl';
+export { klHandler, setEngineForKL } from './kl';

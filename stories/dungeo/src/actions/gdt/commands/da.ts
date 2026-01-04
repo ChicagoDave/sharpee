@@ -5,6 +5,7 @@
  */
 
 import { GDTCommandHandler, GDTContext, GDTCommandResult } from '../types';
+import { StandardCapabilities } from '@sharpee/world-model';
 
 export const daHandler: GDTCommandHandler = {
   code: 'DA',
@@ -31,10 +32,11 @@ export const daHandler: GDTCommandHandler = {
       output.push('Location: <none>');
     }
 
-    // Score and moves
-    const score = world.getStateValue('score') ?? 0;
-    const maxScore = world.getStateValue('maxScore') ?? 0;
-    const moves = world.getStateValue('moves') ?? 0;
+    // Score and moves - read from SCORING capability
+    const scoring = world.getCapability(StandardCapabilities.SCORING);
+    const score = scoring?.scoreValue ?? 0;
+    const maxScore = scoring?.maxScore ?? 0;
+    const moves = scoring?.moves ?? 0;
     output.push(`Score: ${score}/${maxScore}`);
     output.push(`Moves: ${moves}`);
 

@@ -33,7 +33,7 @@ import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isG
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages, registerBalloonPutHandler, BalloonHandlerMessages } from './scheduler';
-import { setSchedulerForGDT } from './actions/gdt/commands';
+import { setSchedulerForGDT, setEngineForKL } from './actions/gdt/commands';
 
 // Import handlers
 import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages, registerGlacierHandler, GlacierMessages } from './handlers';
@@ -349,7 +349,7 @@ export class DungeoStory implements Story {
     // Commands that take one optional argument
     const oneArgCodes = [
       'dr', 'dx', 'do', 'dv', 'dc', 'dh', 'dl', 'df', 'dn', 'dm', 'dt', 'dp', 'd2', 'dz',
-      'ah', 'tk', 'ar', 'af', 'ac', 'aa', 'ax', 'av', 'an', 'az', 'pd'
+      'ah', 'tk', 'ar', 'af', 'ac', 'aa', 'ax', 'av', 'an', 'az', 'pd', 'kl'
     ];
 
     // Commands that take two arguments
@@ -1641,6 +1641,9 @@ export class DungeoStory implements Story {
 
       // Make scheduler accessible to GDT DC command
       setSchedulerForGDT(this.world, scheduler);
+
+      // Make engine accessible to GDT KL command
+      setEngineForKL(engine);
 
       // Register bat handler for Bat Room (coal mine)
       // Valid drop locations: underground rooms excluding dangerous areas

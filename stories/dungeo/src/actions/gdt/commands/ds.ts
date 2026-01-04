@@ -5,6 +5,7 @@
  */
 
 import { GDTCommandHandler, GDTContext, GDTCommandResult } from '../types';
+import { StandardCapabilities } from '@sharpee/world-model';
 
 export const dsHandler: GDTCommandHandler = {
   code: 'DS',
@@ -19,10 +20,11 @@ export const dsHandler: GDTCommandHandler = {
     output.push('=== GAME STATE ===');
     output.push('');
 
-    // Core stats
-    const score = world.getStateValue('score') ?? 0;
-    const maxScore = world.getStateValue('maxScore') ?? 0;
-    const moves = world.getStateValue('moves') ?? 0;
+    // Core stats - read from SCORING capability
+    const scoring = world.getCapability(StandardCapabilities.SCORING);
+    const score = scoring?.scoreValue ?? 0;
+    const maxScore = scoring?.maxScore ?? 0;
+    const moves = scoring?.moves ?? world.getStateValue('moves') ?? 0;
     const turnCount = world.getStateValue('turnCount') ?? moves;
 
     output.push(`Turn: ${turnCount}`);
