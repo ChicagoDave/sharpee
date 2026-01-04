@@ -38,8 +38,10 @@ export function createWellRoomObjects(world: WorldModel, roomIds: WellRoomIds): 
   // Riddle Room scenery
   createRiddleInscription(world, roomIds.riddleRoom);
 
-  // Tea Room scenery
+  // Tea Room scenery and items
   createDustyTable(world, roomIds.teaRoom);
+  createGreenPaper(world, roomIds.teaRoom);
+  createCakes(world, roomIds.teaRoom);
 
   // Posts Room scenery
   createWoodenPosts(world, roomIds.postsRoom);
@@ -287,4 +289,90 @@ function createWhiteCrystalSphere(world: WorldModel, roomId: string): IFEntity {
 
   world.moveEntity(sphere.id, roomId);
   return sphere;
+}
+
+/**
+ * Green Paper - Found in Tea Room, reading reveals a clue
+ */
+function createGreenPaper(world: WorldModel, roomId: string): IFEntity {
+  const paper = world.createEntity('green paper', EntityType.ITEM);
+
+  paper.add(new IdentityTrait({
+    name: 'piece of paper',
+    aliases: ['paper', 'green paper', 'note', 'piece of green paper'],
+    description: 'A small piece of green paper with some writing on it.',
+    properName: false,
+    article: 'a'
+  }));
+
+  // Readable text - FROBOZZ MAGIC BOAT COMPANY
+  (paper as any).readText = `
+     ============================================
+              FROBOZZ MAGIC BOAT COMPANY
+     ============================================
+
+     Hello, Sailor!
+
+     Instructions for use:
+
+     To Inflate: Apply pump to valve.
+     To Deflate: Open valve.
+     To Patch: Apply patch to boat.
+
+     WARNING: Boat should be properly deflated before
+     leaving water as sharp objects may puncture it.
+
+     ============================================`;
+
+  world.moveEntity(paper.id, roomId);
+  return paper;
+}
+
+/**
+ * Create cakes in Tea Room - Alice in Wonderland reference
+ *
+ * eat-me cake: Changes player size (makes you large)
+ * drink-me cake: Changes player size (makes you small) - it's a cake, not liquid!
+ * orange cake: Edible but no special effect
+ */
+function createCakes(world: WorldModel, roomId: string): void {
+  // "Eat Me" cake
+  const eatMeCake = world.createEntity('eat-me cake', EntityType.ITEM);
+  eatMeCake.add(new IdentityTrait({
+    name: '"Eat Me" cake',
+    aliases: ['eat me', 'eat-me', 'eat me cake', 'white cake'],
+    description: 'A small cake with "Eat Me" written on it in frosting.',
+    properName: false,
+    article: 'an'
+  }));
+  // Eating this makes you grow large
+  (eatMeCake as any).isEdible = true;
+  (eatMeCake as any).onEatEffect = 'grow';
+  world.moveEntity(eatMeCake.id, roomId);
+
+  // "Drink Me" cake (yes, it's a cake in Dungeon)
+  const drinkMeCake = world.createEntity('drink-me cake', EntityType.ITEM);
+  drinkMeCake.add(new IdentityTrait({
+    name: '"Drink Me" cake',
+    aliases: ['drink me', 'drink-me', 'drink me cake', 'blue cake'],
+    description: 'A small blue cake with "Drink Me" written on it.',
+    properName: false,
+    article: 'a'
+  }));
+  // Eating this makes you shrink
+  (drinkMeCake as any).isEdible = true;
+  (drinkMeCake as any).onEatEffect = 'shrink';
+  world.moveEntity(drinkMeCake.id, roomId);
+
+  // Orange cake - just food
+  const orangeCake = world.createEntity('orange cake', EntityType.ITEM);
+  orangeCake.add(new IdentityTrait({
+    name: 'orange cake',
+    aliases: ['orange', 'orange colored cake', 'cake'],
+    description: 'A small orange-colored cake. It looks delicious.',
+    properName: false,
+    article: 'an'
+  }));
+  (orangeCake as any).isEdible = true;
+  world.moveEntity(orangeCake.id, roomId);
 }

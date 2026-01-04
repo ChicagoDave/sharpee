@@ -69,6 +69,9 @@ export function createUndergroundObjects(world: WorldModel, roomIds: Underground
 
   // Mirror Room objects
   createMirrorRoomObjects(world, roomIds.mirrorRoom);
+
+  // Small Cave objects
+  createSmallCaveObjects(world, roomIds.smallCave);
 }
 
 // ============= Cellar Objects =============
@@ -316,4 +319,19 @@ function createMirrorRoomObjects(world: WorldModel, roomId: string): void {
   }));
   mirror.add(new SceneryTrait());
   world.moveEntity(mirror.id, roomId);
+}
+
+// ============= Small Cave Objects =============
+
+function createSmallCaveObjects(world: WorldModel, roomId: string): void {
+  // Shovel (tool - used to dig in sandy areas, e.g., Sandy Beach for scarab)
+  const shovel = world.createEntity('shovel', EntityType.ITEM);
+  shovel.add(new IdentityTrait({
+    name: 'shovel',
+    aliases: ['shovel', 'spade'],
+    description: 'A sturdy shovel with a wooden handle and metal blade.',
+    properName: false,
+    article: 'a'
+  }));
+  world.moveEntity(shovel.id, roomId);
 }

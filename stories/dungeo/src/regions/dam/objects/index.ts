@@ -36,6 +36,9 @@ export function createDamObjects(world: WorldModel, roomIds: DamRoomIds): void {
   // Reservoir (when drained)
   createTrunkOfJewels(world, roomIds.reservoir);
 
+  // Reservoir North
+  createPump(world, roomIds.reservoirNorth);
+
   // Basin Room - ADR-078 ghost ritual
   createStoneBasin(world, roomIds.basinRoom);
 
@@ -244,6 +247,25 @@ function createPlatinumBar(world: WorldModel, roomId: string): IFEntity {
 
   world.moveEntity(bar.id, roomId);
   return bar;
+}
+
+/**
+ * Hand Pump - Used to inflate/deflate the boat
+ * Found in Reservoir North, necessary for boat travel on Frigid River
+ */
+function createPump(world: WorldModel, roomId: string): IFEntity {
+  const pump = world.createEntity('hand pump', EntityType.ITEM);
+
+  pump.add(new IdentityTrait({
+    name: 'hand pump',
+    aliases: ['pump', 'air pump', 'hand pump', 'rubber pump'],
+    description: 'This is a small hand-held air pump.',
+    properName: false,
+    article: 'a'
+  }));
+
+  world.moveEntity(pump.id, roomId);
+  return pump;
 }
 
 

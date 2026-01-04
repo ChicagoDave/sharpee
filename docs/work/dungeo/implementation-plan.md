@@ -307,11 +307,11 @@
 | Object | Location | Status | Notes |
 |--------|----------|--------|-------|
 | Rope | Attic | ✅ Done | Dome Room, Slide Room |
-| Shovel | Small Cave | ❌ | Dig on beach |
+| Shovel | Small Cave | ✅ Done | Dig on beach |
 | Screwdriver | Maintenance Room | ✅ Done | Machine, keyhole |
 | Wrench | Maintenance Room | ✅ Done | Dam bolt |
-| Pump | Reservoir North | ❌ | Inflate boat |
-| Skeleton key | Dead End (maze) | ❌ | Grating |
+| Pump | Reservoir North | ✅ Done | Inflate boat |
+| Skeleton key | Dead End (maze) | ✅ Done | Grating |
 
 ### Containers
 
@@ -330,17 +330,15 @@
 | Lunch | Sack | ✅ Done | Eat (optional) |
 | Garlic | Sack | ✅ Done | Repel vampire bat |
 | Water | Bottle | ✅ Done | Bucket puzzle |
-| Eat-me cake | Tea Room | ❌ | Shrink |
-| Drink-me cake | Tea Room | ❌ | Unused? |
-| Orange cake | Tea Room | ❌ | Grow |
+| Eat-me cake | Tea Room | ✅ Done | Grow (makes player large) |
+| Drink-me cake | Tea Room | ✅ Done | Shrink (makes player small) |
+| Orange cake | Tea Room | ✅ Done | Edible, no special effect |
 
 ### Keys & Access Items
 
 | Object | Location | Status | Notes |
 |--------|----------|--------|-------|
-| Skeleton key | Dead End | ❌ | Grating |
-| Iron key | Tiny Room | ❌ | Dreary Room door |
-| Gold key | ? | ❌ | |
+| Skeleton key | Dead End (maze) | ✅ Done | Grating |
 | Sceptre | Coffin | ✅ Done | Wave for rainbow |
 
 ### Books & Papers
@@ -351,7 +349,7 @@
 | Guidebook | Dam Lobby | ✅ Done | Dam info, balloon fuel |
 | Matchbook | Dam Lobby | ✅ Done | Send for brochure |
 | Black book | Altar | ✅ Done | Exorcism |
-| Green paper | Tea Room | ❌ | Robot instructions |
+| Green paper | Tea Room | ✅ Done | FROBOZZ MAGIC BOAT instructions |
 | Purple book | Library | ✅ Done | Contains stamp |
 | Lore book | Royal Puzzle | ❌ | Endgame item |
 
@@ -360,13 +358,13 @@
 | Object | Location | Status | Notes |
 |--------|----------|--------|-------|
 | Oriental rug | Living Room | ✅ Done | Covers trap door |
-| Mat | West of House | ❌ | Key puzzle |
+| Mat | West of House | ✅ Done | Welcome mat |
 | Bell | Temple | ✅ Done | Exorcism |
 | Coal | Dead End (mine) | ✅ Done | Diamond via machine |
-| Brick | Attic | ❌ | Volcano explosion |
-| Braided wire | Stream View | ❌ | Balloon tether |
-| Shiny wire | (with brick) | ❌ | Fuse |
-| Timber | Mine | ❌ | Slide room anchor |
+| Brick | Attic | ✅ Done | Explosive with fuse |
+| Braided wire | Stream View | ✅ Done | Balloon tether (in balloon region) |
+| Shiny wire | Attic | ✅ Done | Fuse wire |
+| Timber | Timber Room | ✅ Done | Props for puzzles |
 | Brochure | Mail | ✅ Done | Contains stamp (SEND FOR BROCHURE) |
 | Robot | Low Room | ✅ Done | Push button |
 | Incense | Maze (skeleton) | ✅ Done | ADR-078: Burns 3 turns, disarms basin |
@@ -525,25 +523,26 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 | Category | Done | Total | % |
 |----------|------|-------|---|
 | Rooms | 169 | 169 | 100% |
-| Treasures | 31 | 33 | 94% |
-| Treasure Points | 647 | 650 | 99.5% |
+| Treasures | 33 | 33 | 100% |
+| Treasure Points | 650 | 650 | 100% |
 | Light Sources | 4 | 4 | 100% |
 | Weapons | 4 | 4 | 100% |
-| Tools | 5 | 6 | 83% |
+| Tools | 6 | 6 | 100% |
 | Containers | 5 | 5 | 100% |
-| NPCs | 6 | 8 | 75% |
+| NPCs | 7 | 8 | 88% |
 | Puzzles (working) | 18 | ~25 | 72% |
 
 ---
 
 ## Priority Next Steps
 
-1. **Remaining puzzles** - Key puzzles, eat-me/drink-me cakes, basket mechanism
-2. **Missing systems** - INFLATE/DEFLATE (boat), robot commands, match lighting
+1. **Remaining puzzles** - Cake size changes, basket mechanism, coffin transport
+2. **Missing systems** - INFLATE/DEFLATE (boat), robot commands
 3. **Cleanup** - Remove obsolete `event-handler-migration-plan.md` (ADR-086 fixed all handlers)
 
 ## Recently Completed
 
+- ✅ **Missing Objects Placement** (2026-01-04) - Added 10 missing objects to proper locations: shovel (Small Cave), pump (Reservoir North), welcome mat (West of House), brick+wire (Attic), timber (Timber Room), green paper+3 cakes (Tea Room). Researched FORTRAN source and confirmed there is NO "gold key" - only skeleton key (maze, for grating) and rusty key (endgame). Removed incorrectly-added iron key. All 680 tests pass.
 - ✅ **UNDO System** (2026-01-04) - Implemented snapshot-based undo with 5-10 turn buffer. Engine creates snapshots before state-changing commands (not meta/info commands like look, examine, inventory). Platform events: UNDO_REQUESTED/COMPLETED/FAILED. Fixed bugs in command-executor, event-adapter (was stripping requiresClientAction, converting underscores to dots in platform event types). All 680 tests pass.
 - ✅ **ADR-086 Event Handler Unification** (2026-01-04) - Fixed critical bug where `world.registerEventHandler()` handlers were never called. Added `IEventProcessorWiring` interface to if-domain. Engine now wires WorldModel handlers to EventProcessor automatically. All 16 handlers (lantern, candles, exorcism, glacier, ghost ritual, laser, dam, reality altered, balloon, trophy case) now work without code changes.
 - ✅ **ADR-085 Event-Based Scoring System** (2026-01-04) - Added `SCORE_GAINED`/`SCORE_LOST` events. Updated `ScoringService` with `ScoringDefinition` interface, `hasScored()`, `scorePoints()`, `losePoints()`, `getRankMessageId()` methods. Trophy case handler migrated to EventProcessor. DungeoScoringService updated with new config format.

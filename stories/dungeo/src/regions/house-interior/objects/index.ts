@@ -337,4 +337,29 @@ function createAtticObjects(world: WorldModel, atticId: string): void {
     weaponType: 'blade'
   }));
   world.moveEntity(knife.id, atticId);
+
+  // Brick - usable as explosive material with fuse
+  const brick = world.createEntity('brick', EntityType.ITEM);
+  brick.add(new IdentityTrait({
+    name: 'brick',
+    aliases: ['red brick', 'clay brick', 'explosive'],
+    description: 'A square brick of calciumite with some fuse wire wrapped around it.',
+    properName: false,
+    article: 'a'
+  }));
+  // Mark as explosive/burnable
+  (brick as any).isExplosive = true;
+  (brick as any).hasFuse = true;
+  world.moveEntity(brick.id, atticId);
+
+  // Shiny wire - used for various puzzles and mechanisms
+  const wire = world.createEntity('shiny wire', EntityType.ITEM);
+  wire.add(new IdentityTrait({
+    name: 'shiny wire',
+    aliases: ['wire', 'thin wire', 'metal wire', 'fuse wire'],
+    description: 'A thin piece of shiny wire, suitable as a fuse or for various mechanical uses.',
+    properName: false,
+    article: 'a'
+  }));
+  world.moveEntity(wire.id, atticId);
 }

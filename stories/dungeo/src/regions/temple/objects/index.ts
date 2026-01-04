@@ -370,3 +370,4 @@ function createCryptDoor(world: WorldModel, tombId: string, cryptId: string): IF
   world.moveEntity(door.id, tombId);
   return door;
 }
+
