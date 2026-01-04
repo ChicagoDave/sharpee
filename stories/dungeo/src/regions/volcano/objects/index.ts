@@ -4,14 +4,41 @@
  * Dusty Room: Large emerald (5 pts)
  * Ruby Room: Ruby (15 pts take + 8 case = 23 pts)
  * Library: Purple book containing Flathead stamp (4 pts take + 10 case = 14 pts)
+ * Volcano Bottom: Hot air balloon for volcano navigation
  */
 import { WorldModel, IFEntity, IdentityTrait, ContainerTrait, ReadableTrait, EntityType } from '@sharpee/world-model';
 import { VolcanoRoomIds } from '../index';
+import { createBalloonObjects } from './balloon-objects';
 
-export function createVolcanoObjects(world: WorldModel, roomIds: VolcanoRoomIds): void {
+// Re-export balloon types and helpers
+export * from './balloon-objects';
+
+export interface VolcanoObjectIds {
+  balloonId: string;
+  receptacleId: string;
+  hook1Id: string;
+  hook2Id: string;
+}
+
+export function createVolcanoRegionObjects(world: WorldModel, roomIds: VolcanoRoomIds): VolcanoObjectIds {
+  // Treasures
   createLargeEmerald(world, roomIds.dustyRoom);
   createRuby(world, roomIds.rubyRoom);
   createPurpleBook(world, roomIds.library);
+
+  // Balloon and components (pass ledge room IDs for exit mechanics)
+  const balloonIds = createBalloonObjects(world, {
+    volcanoBottom: roomIds.volcanoBottom,
+    narrowLedge: roomIds.narrowLedge,
+    wideLedge: roomIds.wideLedge
+  });
+
+  return balloonIds;
+}
+
+// Legacy export for backward compatibility
+export function createVolcanoObjects(world: WorldModel, roomIds: VolcanoRoomIds): void {
+  createVolcanoRegionObjects(world, roomIds);
 }
 
 function createLargeEmerald(world: WorldModel, roomId: string): IFEntity {

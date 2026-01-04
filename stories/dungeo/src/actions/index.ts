@@ -85,6 +85,20 @@ export * from './pour';
 // Fill (Bucket/Well puzzle - fill bottle to descend)
 export * from './fill';
 
+// Light (Balloon puzzle - light objects with matches)
+export * from './light';
+
+// Tie (Balloon puzzle - tie rope to hooks)
+export * from './tie';
+
+// Untie (Balloon puzzle - untie rope from hooks)
+export * from './untie';
+
+// Re-export balloon action IDs and messages
+export { LIGHT_ACTION_ID, LightMessages } from './light';
+export { TIE_ACTION_ID, TieMessages } from './tie';
+export { UNTIE_ACTION_ID, UntieMessages } from './untie';
+
 // All custom actions for registration
 import { gdtActions } from './gdt';
 import { walkThroughActions } from './walk-through';
@@ -113,6 +127,13 @@ import { sendAction, SEND_ACTION_ID, SendMessages } from './send';
 import { rainbowBlockedAction } from './rainbow-blocked';
 import { pourAction, POUR_ACTION_ID, PourMessages } from './pour';
 import { fillAction, FILL_ACTION_ID, FillMessages } from './fill';
+import { lightAction, LIGHT_ACTION_ID, LightMessages } from './light';
+import { tieAction, TIE_ACTION_ID, TieMessages } from './tie';
+import { untieAction, UNTIE_ACTION_ID, UntieMessages } from './untie';
+import { balloonExitAction, BALLOON_EXIT_ACTION_ID, BalloonExitMessages } from '../handlers/balloon-handler';
+
+// Re-export balloon exit for use in index.ts
+export { BALLOON_EXIT_ACTION_ID, BalloonExitMessages } from '../handlers/balloon-handler';
 
 // Re-export for use in index.ts
 export { WAVE_ACTION_ID, WaveMessages } from './wave';
@@ -149,5 +170,9 @@ export const customActions = [
   sendAction,
   rainbowBlockedAction,
   pourAction,
-  fillAction
+  fillAction,
+  lightAction,
+  tieAction,
+  untieAction,
+  balloonExitAction
 ];

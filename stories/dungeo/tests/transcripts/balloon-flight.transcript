@@ -1,0 +1,46 @@
+title: Balloon Flight Basic
+story: dungeo
+description: Tests basic balloon entry/exit at ground level
+
+---
+
+# Balloon Flight - Tests basic balloon entry/exit
+# Uses GDT to get lantern and teleport to balloon location
+
+## Get lantern and teleport
+> gdt
+[OK: contains "GDT ready"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> ah Volcano Bottom
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning to game"]
+
+## Turn on lantern (room is dark)
+> turn on lantern
+[OK: contains "switches on"]
+
+## Verify location
+> look
+[OK: contains "Volcano Bottom"]
+[OK: contains "balloon"]
+
+## Enter the balloon
+> enter balloon
+[OK: contains "get into balloon"]
+
+## Exit at ground level (should work normally)
+> exit
+[OK: contains "get out of balloon"]
+
+## Re-enter for verification
+> enter balloon
+[OK: contains "get into balloon"]
+
+## Exit again
+> exit
+[OK: contains "get out of balloon"]

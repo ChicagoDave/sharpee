@@ -16,3 +16,4 @@ export * from './inside-mirror-handler';
 export * from './victory-handler';
 export * from './rainbow-handler';
 export * from './glacier-handler';
+export * from './balloon-handler';

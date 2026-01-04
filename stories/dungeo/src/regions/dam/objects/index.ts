@@ -41,6 +41,8 @@ export function createDamObjects(world: WorldModel, roomIds: DamRoomIds): void {
 
   // Glacier Room - glacier blocks north passage
   createGlacier(world, roomIds.glacierRoom);
+
+  // Note: Braided rope is now part of balloon (volcano/objects/balloon-objects.ts)
 }
 
 /**
@@ -243,4 +245,5 @@ function createPlatinumBar(world: WorldModel, roomId: string): IFEntity {
   world.moveEntity(bar.id, roomId);
   return bar;
 }
+
 
