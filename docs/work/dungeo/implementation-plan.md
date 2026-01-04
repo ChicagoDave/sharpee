@@ -407,10 +407,10 @@
 | Trap door | Move rug, open door | ✅ Done | Access underground |
 | Dam | Turn bolt with wrench | 🚧 Partial | Drain reservoir |
 | Carousel/Round Room | Robot push button | ✅ Done | Robot NPC + handler complete |
-| Bucket/Well | Pour water to descend | ❌ | Access tea room |
+| Bucket/Well | Pour water to descend | ✅ Done | Access tea room |
 | Coal machine | Put coal, turn switch | 🚧 Partial | Diamond |
 | Basket | Lower/raise for mine | 🚧 Partial | Transport items |
-| Balloon | Light guidebook, wait, land | ❌ | Volcano access |
+| Balloon | TIE wire, LIGHT guidebook, wait, land | ✅ Done | Volcano ledge access |
 
 ### Word/Knowledge Puzzles
 
@@ -538,11 +538,15 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Priority Next Steps
 
-1. **Remaining puzzles** - Balloon, key puzzles, eat-me/drink-me cakes
+1. **Remaining puzzles** - Key puzzles, eat-me/drink-me cakes, basket mechanism
 2. **Missing systems** - INFLATE/DEFLATE (boat), robot commands, match lighting
+3. **Cleanup** - Remove obsolete `event-handler-migration-plan.md` (ADR-086 fixed all handlers)
 
 ## Recently Completed
 
+- ✅ **ADR-086 Event Handler Unification** (2026-01-04) - Fixed critical bug where `world.registerEventHandler()` handlers were never called. Added `IEventProcessorWiring` interface to if-domain. Engine now wires WorldModel handlers to EventProcessor automatically. All 16 handlers (lantern, candles, exorcism, glacier, ghost ritual, laser, dam, reality altered, balloon, trophy case) now work without code changes.
+- ✅ **ADR-085 Event-Based Scoring System** (2026-01-04) - Added `SCORE_GAINED`/`SCORE_LOST` events. Updated `ScoringService` with `ScoringDefinition` interface, `hasScored()`, `scorePoints()`, `losePoints()`, `getRankMessageId()` methods. Trophy case handler migrated to EventProcessor. DungeoScoringService updated with new config format.
+- ✅ **Balloon Puzzle with TIE/UNTIE/LIGHT Actions** (2026-01-03) - Balloon vehicle at Volcano Bottom. TIE wire to hook, UNTIE to release, LIGHT guidebook for fuel. Balloon daemon handles vertical movement between 8 positions (ground, 4 ledges, 4 mid-air). Exit blocked in mid-air. 675 tests pass.
 - ✅ **Bucket/Well Puzzle Complete** (2026-01-03) - Fixed visibility when inside transparent vehicles. Added `VehicleTrait.transparent` property (defaults to true). Added `VisibilityBehavior.getDescribableLocation()` to determine what to describe when looking. Updated looking action to use visibility logic. Bucket rises/descends correctly, LOOK from inside bucket describes the room. 20/20 bucket tests pass, 656 total tests pass.
 - ✅ **Grammar Normalization** (2026-01-03) - Major parser cleanup: deleted 6 dead code files (semantic-grammar.ts, semantic-core-grammar.ts, semantic-grammar-rules.ts, semantic-parser-engine.ts, semantic-rules/). Renamed core-grammar.ts → grammar.ts. Added `enter :portal` pattern with `.matching({ enterable: true })` constraint. Added vehicle grammar: board, disembark, get on/off, alight. Priority ordering: semantic rules (100+) before fallbacks (90-95). "enter bucket" now works!
 - ✅ **VehicleTrait** (2026-01-03) - New trait for enterable transport containers. Properties: vehicleType ('watercraft'|'counterweight'|'elevator'|'tram'|'cart'), blocksWalkingMovement. Works with ContainerTrait enterable. Added to bucket for well puzzle.
