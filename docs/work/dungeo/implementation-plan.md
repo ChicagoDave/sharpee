@@ -401,7 +401,7 @@
 | Puzzle | Solution | Status | Reward |
 |--------|----------|--------|--------|
 | Trap door | Move rug, open door | ✅ Done | Access underground |
-| Dam | Turn bolt with wrench | 🚧 Partial | Drain reservoir |
+| Dam | Turn bolt with wrench | ✅ Done | Drain reservoir |
 | Carousel/Round Room | Robot push button | ✅ Done | Robot NPC + handler complete |
 | Bucket/Well | Pour water to descend | ✅ Done | Access tea room |
 | Coal machine | Put coal, turn switch | 🚧 Partial | Diamond |
