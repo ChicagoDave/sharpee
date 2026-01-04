@@ -544,6 +544,7 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Recently Completed
 
+- ✅ **UNDO System** (2026-01-04) - Implemented snapshot-based undo with 5-10 turn buffer. Engine creates snapshots before state-changing commands (not meta/info commands like look, examine, inventory). Platform events: UNDO_REQUESTED/COMPLETED/FAILED. Fixed bugs in command-executor, event-adapter (was stripping requiresClientAction, converting underscores to dots in platform event types). All 680 tests pass.
 - ✅ **ADR-086 Event Handler Unification** (2026-01-04) - Fixed critical bug where `world.registerEventHandler()` handlers were never called. Added `IEventProcessorWiring` interface to if-domain. Engine now wires WorldModel handlers to EventProcessor automatically. All 16 handlers (lantern, candles, exorcism, glacier, ghost ritual, laser, dam, reality altered, balloon, trophy case) now work without code changes.
 - ✅ **ADR-085 Event-Based Scoring System** (2026-01-04) - Added `SCORE_GAINED`/`SCORE_LOST` events. Updated `ScoringService` with `ScoringDefinition` interface, `hasScored()`, `scorePoints()`, `losePoints()`, `getRankMessageId()` methods. Trophy case handler migrated to EventProcessor. DungeoScoringService updated with new config format.
 - ✅ **Balloon Puzzle with TIE/UNTIE/LIGHT Actions** (2026-01-03) - Balloon vehicle at Volcano Bottom. TIE wire to hook, UNTIE to release, LIGHT guidebook for fuel. Balloon daemon handles vertical movement between 8 positions (ground, 4 ledges, 4 mid-air). Exit blocked in mid-air. 675 tests pass.
