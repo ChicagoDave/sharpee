@@ -291,7 +291,7 @@ function createMaintenanceButtons(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
-  yellowButton.add(new SceneryTrait());
+  // Note: Don't add SceneryTrait - buttons need to be in parser scope
   (yellowButton as any).buttonColor = 'yellow';
   world.moveEntity(yellowButton.id, roomId);
 
@@ -304,7 +304,7 @@ function createMaintenanceButtons(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
-  brownButton.add(new SceneryTrait());
+  // Note: Don't add SceneryTrait - buttons need to be in parser scope
   (brownButton as any).buttonColor = 'brown';
   world.moveEntity(brownButton.id, roomId);
 
@@ -317,7 +317,7 @@ function createMaintenanceButtons(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
-  redButton.add(new SceneryTrait());
+  // Note: Don't add SceneryTrait - buttons need to be in parser scope
   (redButton as any).buttonColor = 'red';
   world.moveEntity(redButton.id, roomId);
 
@@ -330,7 +330,7 @@ function createMaintenanceButtons(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
-  blueButton.add(new SceneryTrait());
+  // Note: Don't add SceneryTrait - buttons need to be in parser scope
   (blueButton as any).buttonColor = 'blue';
   world.moveEntity(blueButton.id, roomId);
 }
@@ -354,7 +354,7 @@ function createDamBolt(world: WorldModel, roomId: string): IFEntity {
     article: 'a'
   }));
 
-  bolt.add(new SceneryTrait());
+  // Note: Don't add SceneryTrait - bolt needs to be in parser scope
 
   world.moveEntity(bolt.id, roomId);
   return bolt;

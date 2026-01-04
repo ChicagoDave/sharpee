@@ -36,22 +36,12 @@ export const pressButtonAction: Action = {
   group: 'manipulation',
 
   validate(context: ActionContext): ValidationResult {
-    const { command, world, player } = context;
-    const structure = command.parsed?.structure;
-    const directObject = structure?.directObject;
+    const target = context.command.directObject?.entity;
 
-    if (!directObject?.entityRef) {
-      return {
-        valid: false,
-        error: PressButtonMessages.NOT_A_BUTTON
-      };
-    }
-
-    const target = world.getEntity(directObject.entityRef);
     if (!target) {
       return {
         valid: false,
-        error: 'stdlib.errors.not_visible'
+        error: PressButtonMessages.NOT_A_BUTTON
       };
     }
 
@@ -92,16 +82,12 @@ export const pressButtonAction: Action = {
         // Enable bolt (GATEF=TRUE)
         damState.buttonPressed = true;
         sharedData.resultMessage = PressButtonMessages.CLICK;
-        // Emit event for any listeners
-        world.emitEvent?.('dungeo.button.yellow.pressed', { buttonId: target.id });
         break;
 
       case 'brown':
         // Disable bolt (GATEF=FALSE)
         damState.buttonPressed = false;
         sharedData.resultMessage = PressButtonMessages.CLICK;
-        // Emit event for any listeners
-        world.emitEvent?.('dungeo.button.brown.pressed', { buttonId: target.id });
         break;
 
       case 'red':

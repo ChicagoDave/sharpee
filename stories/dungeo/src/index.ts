@@ -1020,6 +1020,33 @@ export class DungeoStory implements Story {
       .mapsTo(UNTIE_ACTION_ID)
       .withPriority(150)
       .build();
+
+    // Press button patterns (dam maintenance room)
+    grammar
+      .define('press :target')
+      .mapsTo(PRESS_BUTTON_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('push :target')
+      .mapsTo(PRESS_BUTTON_ACTION_ID)
+      .withPriority(145)  // Lower than stdlib pushing
+      .build();
+
+    // Turn bolt patterns (dam)
+    grammar
+      .define('turn :target')
+      .mapsTo(TURN_BOLT_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('turn :target with :instrument')
+      .instrument('instrument')
+      .mapsTo(TURN_BOLT_ACTION_ID)
+      .withPriority(155)
+      .build();
   }
 
   /**
@@ -1493,6 +1520,22 @@ export class DungeoStory implements Story {
     language.addMessage(BalloonExitMessages.EXIT_SUCCESS, 'You climb out of the balloon.');
     language.addMessage(BalloonExitMessages.EXIT_BLOCKED_MIDAIR, 'You are too high in the air to exit safely! The balloon is floating in mid-air.');
     language.addMessage(BalloonExitMessages.EXIT_TO_LEDGE, 'You carefully climb out of the balloon onto the ledge.');
+
+    // Dam puzzle - Press button action messages
+    language.addMessage(PressButtonMessages.CLICK, 'Click.');
+    language.addMessage(PressButtonMessages.NOT_A_BUTTON, "That's not a button.");
+    language.addMessage(PressButtonMessages.LIGHTS_ON, 'The lights come on.');
+    language.addMessage(PressButtonMessages.LIGHTS_OFF, 'The lights go out.');
+    language.addMessage(PressButtonMessages.BLUE_JAMMED, 'The blue button appears to be jammed.');
+    language.addMessage(PressButtonMessages.BLUE_LEAK_STARTED, 'There is a rumbling sound from below, and water begins to leak into the room!');
+
+    // Dam puzzle - Turn bolt action messages
+    language.addMessage(TurnBoltMessages.WRONG_TOOL, 'The wrench won\'t fit on that.');
+    language.addMessage(TurnBoltMessages.WONT_TURN, 'The bolt won\'t turn. Perhaps the control panel has something to do with it.');
+    language.addMessage(TurnBoltMessages.GATES_OPEN, 'The sluice gates open and water pours through the dam.');
+    language.addMessage(TurnBoltMessages.GATES_CLOSE, 'The sluice gates close, stopping the flow of water.');
+    language.addMessage(TurnBoltMessages.NOT_A_BOLT, "You can't turn that.");
+    language.addMessage(TurnBoltMessages.NO_TOOL, 'You can\'t turn the bolt with your bare hands.');
   }
 
   /**
@@ -1696,6 +1739,9 @@ export class DungeoStory implements Story {
 
       // Register Victory handler (Treasury of Zork entry)
       registerVictoryHandler(scheduler, this.endgameIds.treasury);
+
+      // Wire turn bolt action to scheduler (dam puzzle)
+      setTurnBoltScheduler(scheduler, this.damIds.reservoir);
     }
 
     // Register Laser Puzzle handler (Small Room / Stone Room)

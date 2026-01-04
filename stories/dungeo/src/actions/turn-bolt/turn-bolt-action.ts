@@ -73,22 +73,13 @@ export const turnBoltAction: Action = {
   group: 'manipulation',
 
   validate(context: ActionContext): ValidationResult {
-    const { command, world, player } = context;
-    const structure = command.parsed?.structure;
-    const directObject = structure?.directObject;
+    const { world } = context;
+    const target = context.command.directObject?.entity;
 
-    if (!directObject?.entityRef) {
-      return {
-        valid: false,
-        error: TurnBoltMessages.NOT_A_BOLT
-      };
-    }
-
-    const target = world.getEntity(directObject.entityRef);
     if (!target) {
       return {
         valid: false,
-        error: 'stdlib.errors.not_visible'
+        error: TurnBoltMessages.NOT_A_BOLT
       };
     }
 
@@ -100,16 +91,8 @@ export const turnBoltAction: Action = {
       };
     }
 
-    // Check for instrument (with X)
-    const instrument = structure?.instrument;
-    let toolEntity: IFEntity | undefined;
-
-    if (instrument?.entityRef) {
-      toolEntity = world.getEntity(instrument.entityRef);
-    } else {
-      // Try to find wrench in inventory implicitly
-      toolEntity = findWrenchInInventory(context);
-    }
+    // Check for instrument (with X) - try to find wrench in inventory if not specified
+    let toolEntity: IFEntity | undefined = findWrenchInInventory(context);
 
     if (!toolEntity) {
       return {
@@ -170,9 +153,6 @@ export const turnBoltAction: Action = {
       // Already draining, nothing to do
       sharedData.resultMessage = TurnBoltMessages.GATES_OPEN;
     }
-
-    // Emit event for any listeners
-    world.emitEvent?.('dungeo.bolt.turned', {});
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
