@@ -200,10 +200,8 @@ export class CommandExecutor {
         }
       }
 
-      const sequenced = eventSequencer.sequenceAll(
-        allEvents.map(e => ({ type: e.type, data: e.data })),
-        turn
-      );
+      // Preserve all event properties (including requiresClientAction for platform events)
+      const sequenced = eventSequencer.sequenceAll(allEvents, turn);
 
       const result: TurnResult = {
         turn,

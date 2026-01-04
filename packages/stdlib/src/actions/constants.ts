@@ -102,6 +102,7 @@ export const IFActions = {
   RESTORING: 'if.action.restoring',
   RESTARTING: 'if.action.restarting',
   QUITTING: 'if.action.quitting',
+  UNDOING: 'if.action.undoing',
   SCORING: 'if.action.scoring',
   VERIFYING: 'if.action.verifying',
   VERSION: 'if.action.version',

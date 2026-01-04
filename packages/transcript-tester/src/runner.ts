@@ -21,7 +21,7 @@ import {
 interface GameEngine {
   executeCommand(input: string): Promise<string> | string;
   getOutput?(): string;
-  lastEvents?: Array<{ type: string; data: any }>;
+  lastEvents?: Array<{ type: string; data?: any }>;
   world?: WorldModel;
 }
 

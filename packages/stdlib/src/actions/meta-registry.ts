@@ -37,7 +37,8 @@ export class MetaCommandRegistry {
     
     // Undo system
     'if.action.again',       // AGAIN (repeat last command)
-    'undo',                  // UNDO
+    'if.action.undoing',     // UNDO (action ID)
+    'undo',                  // UNDO (grammar pattern)
     
     // Preference commands
     'verbose',          // VERBOSE mode
@@ -126,6 +127,7 @@ export class MetaCommandRegistry {
       'if.action.restoring',
       'if.action.quitting',
       'if.action.restarting',
+      'if.action.undoing',
       'if.action.scoring',
       'if.action.version',
       'if.action.about',
@@ -159,7 +161,7 @@ export class MetaCommandRegistry {
   static hasCustomCommands(): boolean {
     const defaults = new Set([
       'if.action.saving', 'if.action.restoring', 'if.action.quitting', 'if.action.restarting',
-      'if.action.scoring', 'if.action.version', 'if.action.about', 'if.action.help',
+      'if.action.undoing', 'if.action.scoring', 'if.action.version', 'if.action.about', 'if.action.help',
       'if.action.again', 'transcript', 'transcript_on', 'transcript_off',
       'undo', 'verbose', 'brief', 'superbrief', 'notify'
     ]);

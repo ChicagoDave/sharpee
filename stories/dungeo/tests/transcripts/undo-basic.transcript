@@ -1,0 +1,25 @@
+title: Basic undo test
+story: dungeo
+description: Test the UNDO command to restore previous game state
+
+---
+
+# Start in West of House
+> look
+[OK: contains "West of House"]
+
+# Move somewhere
+> north
+[OK: contains "North of House"]
+
+# Verify location
+> look
+[OK: contains "North of House"]
+
+# Undo should return us to West of House
+> undo
+[EVENT: true, type="platform.undo_completed"]
+
+# Verify we're back at West of House
+> look
+[OK: contains "West of House"]

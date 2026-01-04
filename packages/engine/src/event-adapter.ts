@@ -26,8 +26,21 @@ export function normalizeEvent(event: ISemanticEvent): ISemanticEvent {
     narrate: event.narrate
   };
 
+  // Preserve platform event properties
+  if ('requiresClientAction' in event && (event as any).requiresClientAction) {
+    (normalized as any).requiresClientAction = true;
+  }
+  if ('payload' in event) {
+    (normalized as any).payload = (event as any).payload;
+  }
+
   // Normalize event type to lowercase with dots
-  normalized.type = normalized.type.toLowerCase().replace(/_/g, '.');
+  // But skip underscore replacement for platform events (they use underscores in type names)
+  if (!normalized.type.startsWith('platform.')) {
+    normalized.type = normalized.type.toLowerCase().replace(/_/g, '.');
+  } else {
+    normalized.type = normalized.type.toLowerCase();
+  }
 
   // Ensure entities object has proper structure
   if (!normalized.entities) {
@@ -201,13 +214,24 @@ function determineScope(event: ISemanticEvent): 'turn' | 'global' | 'system' {
 
 /**
  * Convert a SequencedEvent back to a SemanticEvent (for processing)
+ * Preserves platform event properties (requiresClientAction, payload) if present
  */
 export function toSemanticEvent(event: SequencedEvent): ISemanticEvent {
-  return {
+  const base: ISemanticEvent = {
     id: event.source || `${event.turn}-${event.sequence}`,
     type: event.type,
     timestamp: event.timestamp.getTime(),
     data: event.data,
     entities: {} // Engine should populate this based on context
   };
+
+  // Preserve platform event properties
+  if ('requiresClientAction' in event && (event as any).requiresClientAction) {
+    (base as any).requiresClientAction = true;
+  }
+  if ('payload' in event) {
+    (base as any).payload = (event as any).payload;
+  }
+
+  return base;
 }

@@ -31,7 +31,7 @@ import {
 } from '@sharpee/stdlib';
 import { LanguageProvider, IEventProcessorWiring } from '@sharpee/if-domain';
 import { TextService, TextServiceContext, TextOutput } from '@sharpee/if-services';
-import { ISemanticEvent, createSemanticEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, ISerializedSchedulerState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, getUntypedEventData } from '@sharpee/core';
+import { ISemanticEvent, createSemanticEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, ISerializedSchedulerState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, getUntypedEventData } from '@sharpee/core';
 
 import { ISchedulerService, createSchedulerService } from './scheduler';
 import { INpcService, createNpcService, guardBehavior, passiveBehavior } from '@sharpee/stdlib';
@@ -96,6 +96,10 @@ export class GameEngine {
   private scheduler: ISchedulerService;
   private npcService: INpcService;
 
+  // Undo system - circular buffer of world snapshots
+  private undoSnapshots: string[] = [];
+  private undoSnapshotTurns: number[] = []; // Track which turn each snapshot is from
+
   constructor(options: {
     world: WorldModel;
     player: IFEntity;
@@ -111,6 +115,7 @@ export class GameEngine {
       maxHistory: 100,
       validateEvents: true,
       collectTiming: false,
+      maxUndoSnapshots: 10,
       ...options.config
     };
 
@@ -386,6 +391,19 @@ export class GameEngine {
       throw new Error('Engine must have a story set before executing turns');
     }
 
+    // Create undo snapshot BEFORE processing the turn
+    // Skip for meta/info commands that shouldn't create undo points
+    const normalizedForUndo = input.trim().toLowerCase();
+    const nonUndoableCommands = [
+      'undo', 'save', 'restore', 'restart', 'quit',
+      'score', 'version', 'about', 'help',
+      'look', 'l', 'examine', 'x', 'inventory', 'i',
+      'verbose', 'brief', 'superbrief', 'notify'
+    ];
+    if (!nonUndoableCommands.some(cmd => normalizedForUndo === cmd || normalizedForUndo.startsWith(cmd + ' '))) {
+      this.createUndoSnapshot();
+    }
+
     // Handle 'again' / 'g' command substitution
     const normalized = input.trim().toLowerCase();
     if (normalized === 'g' || normalized === 'again') {
@@ -491,12 +509,12 @@ export class GameEngine {
       // Also track in event source for save/restore
       for (const semanticEvent of semanticEvents) {
         this.eventSource.emit(semanticEvent);
-        
+
         // Check if this is a client.query event
         if (semanticEvent.type === 'client.query') {
           // The handleClientQuery will be called by the event listener
         }
-        
+
         // Check if this is a platform request event
         if (isPlatformRequestEvent(semanticEvent)) {
           this.pendingPlatformOps.push(semanticEvent as IPlatformEvent);
@@ -679,6 +697,10 @@ export class GameEngine {
       // Process pending platform operations before text service
       if (this.pendingPlatformOps.length > 0) {
         await this.processPlatformOperations(turn);
+
+        // Update result.events with any platform completion events
+        const allTurnEvents = this.turnEvents.get(turn) || [];
+        result.events = allTurnEvents as any; // Platform ops may have added completion events
       }
 
       // Process text output
@@ -894,6 +916,68 @@ export class GameEngine {
       console.error('Restore failed:', error);
       return false;
     }
+  }
+
+  /**
+   * Create an undo snapshot of the current world state
+   */
+  private createUndoSnapshot(): void {
+    const maxSnapshots = this.config.maxUndoSnapshots ?? 10;
+    if (maxSnapshots <= 0) return; // Undo disabled
+
+    // Serialize world state
+    const snapshot = this.world.toJSON();
+    const turn = this.context.currentTurn;
+
+    // Add to circular buffer
+    this.undoSnapshots.push(snapshot);
+    this.undoSnapshotTurns.push(turn);
+
+    // Trim if over limit
+    while (this.undoSnapshots.length > maxSnapshots) {
+      this.undoSnapshots.shift();
+      this.undoSnapshotTurns.shift();
+    }
+  }
+
+  /**
+   * Undo to previous turn
+   * @returns true if undo succeeded, false if nothing to undo
+   */
+  undo(): boolean {
+    if (this.undoSnapshots.length === 0) {
+      return false; // Nothing to undo
+    }
+
+    // Pop the most recent snapshot (this is the state BEFORE the last undoable command)
+    const snapshot = this.undoSnapshots.pop()!;
+    const turn = this.undoSnapshotTurns.pop()!;
+
+    // Restore world state
+    this.world.loadJSON(snapshot);
+
+    // Restore turn counter
+    this.context.currentTurn = turn;
+
+    // Update vocabulary for current scope
+    this.updateScopeVocabulary();
+
+    this.emit('state:changed', this.context);
+    return true;
+  }
+
+  /**
+   * Check if undo is available
+   */
+  canUndo(): boolean {
+    return this.undoSnapshots.length > 0;
+  }
+
+  /**
+   * Get number of undo levels available
+   */
+  getUndoLevels(): number {
+    return this.undoSnapshots.length;
   }
 
   /**
@@ -1363,10 +1447,28 @@ export class GameEngine {
             }
             break;
           }
+
+          case PlatformEventType.UNDO_REQUESTED: {
+            const previousTurn = this.context.currentTurn;
+            const success = this.undo();
+
+            if (success) {
+              const completionEvent = createUndoCompletedEvent(true, this.context.currentTurn);
+              this.eventSource.emit(completionEvent);
+              this.turnEvents.get(currentTurn)?.push(completionEvent);
+              this.emit('event', completionEvent as any);
+            } else {
+              const errorEvent = createUndoCompletedEvent(false, undefined, 'Nothing to undo');
+              this.eventSource.emit(errorEvent);
+              this.turnEvents.get(currentTurn)?.push(errorEvent);
+              this.emit('event', errorEvent as any);
+            }
+            break;
+          }
         }
       } catch (error) {
         console.error(`Error processing platform operation ${platformOp.type}:`, error);
-        
+
         // Emit appropriate error event based on operation type
         let errorEvent: IPlatformEvent;
         switch (platformOp.type) {
@@ -1381,6 +1483,9 @@ export class GameEngine {
             break;
           case PlatformEventType.RESTART_REQUESTED:
             errorEvent = createRestartCompletedEvent(false);
+            break;
+          case PlatformEventType.UNDO_REQUESTED:
+            errorEvent = createUndoCompletedEvent(false, undefined, error instanceof Error ? error.message : 'Unknown error');
             break;
           default:
             continue;

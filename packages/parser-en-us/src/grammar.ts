@@ -485,6 +485,12 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .withPriority(90)
     .build();
 
+  grammar
+    .define('undo')
+    .mapsTo('if.action.undoing')
+    .withPriority(100)
+    .build();
+
   // Score and version
   grammar
     .define('score')
