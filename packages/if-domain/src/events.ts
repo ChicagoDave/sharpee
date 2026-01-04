@@ -142,3 +142,32 @@ export const IFEventCategory = {
 } as const;
 
 export type IFEventCategoryType = typeof IFEventCategory[keyof typeof IFEventCategory];
+
+/**
+ * Event processor wiring types (ADR-086)
+ *
+ * These types allow WorldModel to wire its event handlers to the engine's
+ * EventProcessor without creating a circular dependency.
+ */
+
+import type { ISemanticEvent } from '@sharpee/core';
+
+/**
+ * Callback for registering a handler with the event processor.
+ * The handler returns an array (Effect[] in practice, but typed loosely to avoid circular deps).
+ */
+export type EventProcessorRegisterFn = (
+  eventType: string,
+  handler: (event: ISemanticEvent) => unknown[]
+) => void;
+
+/**
+ * Interface for wiring WorldModel handlers to EventProcessor.
+ * WorldModel receives this during engine initialization.
+ */
+export interface IEventProcessorWiring {
+  /**
+   * Register a handler with the event processor
+   */
+  registerHandler: EventProcessorRegisterFn;
+}

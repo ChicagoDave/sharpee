@@ -26,7 +26,8 @@ import {
   ContentsOptions,
   WorldChange,
   IGrammarVocabularyProvider,
-  GrammarVocabularyProvider
+  GrammarVocabularyProvider,
+  IEventProcessorWiring
 } from '@sharpee/if-domain';
 import { ScopeRegistry } from '../scope/scope-registry';
 import { ScopeEvaluator } from '../scope/scope-evaluator';
@@ -111,6 +112,12 @@ export interface IWorldModel {
   registerEventValidator(eventType: string, validator: EventValidator): void;
   registerEventPreviewer(eventType: string, previewer: EventPreviewer): void;
 
+  /**
+   * Wire all registered event handlers to the engine's EventProcessor (ADR-086).
+   * Called by the engine during initialization to ensure handlers are invoked.
+   */
+  connectEventProcessor(wiring: IEventProcessorWiring): void;
+
   applyEvent(event: ISemanticEvent): void;
   canApplyEvent(event: ISemanticEvent): boolean;
   previewEvent(event: ISemanticEvent): WorldChange[];
@@ -159,6 +166,7 @@ export class WorldModel implements IWorldModel {
   private eventValidators = new Map<string, EventValidator>();
   private eventPreviewers = new Map<string, EventPreviewer>();
   private appliedEvents: ISemanticEvent[] = [];
+  private eventProcessorWiring: IEventProcessorWiring | null = null;
   private maxEventHistory = 1000; // Configurable limit
 
   private platformEvents?: ISemanticEventSource;
@@ -859,10 +867,17 @@ export class WorldModel implements IWorldModel {
   // Event Sourcing Implementation
   registerEventHandler(eventType: string, handler: EventHandler): void {
     this.eventHandlers.set(eventType, handler);
+
+    // If already connected to EventProcessor, wire this handler immediately (ADR-086)
+    if (this.eventProcessorWiring) {
+      this.wireHandlerToProcessor(eventType, handler);
+    }
   }
 
   unregisterEventHandler(eventType: string): void {
     this.eventHandlers.delete(eventType);
+    // Note: We don't unregister from EventProcessor as it doesn't support removal by type
+    // Handlers will still be called but won't find the handler in eventHandlers
   }
 
   registerEventValidator(eventType: string, validator: EventValidator): void {
@@ -871,6 +886,34 @@ export class WorldModel implements IWorldModel {
 
   registerEventPreviewer(eventType: string, previewer: EventPreviewer): void {
     this.eventPreviewers.set(eventType, previewer);
+  }
+
+  /**
+   * Connect this WorldModel to the engine's EventProcessor (ADR-086).
+   * Wires all existing handlers and enables automatic wiring for future handlers.
+   */
+  connectEventProcessor(wiring: IEventProcessorWiring): void {
+    this.eventProcessorWiring = wiring;
+
+    // Wire all existing handlers
+    for (const [eventType, handler] of this.eventHandlers) {
+      this.wireHandlerToProcessor(eventType, handler);
+    }
+  }
+
+  /**
+   * Adapt a WorldModel handler to EventProcessor signature and register it.
+   */
+  private wireHandlerToProcessor(eventType: string, handler: EventHandler): void {
+    if (!this.eventProcessorWiring) return;
+
+    // Adapt the handler: WorldModel handlers return void, EventProcessor expects Effect[]
+    const adaptedHandler = (event: ISemanticEvent): unknown[] => {
+      handler(event, this);
+      return [];
+    };
+
+    this.eventProcessorWiring.registerHandler(eventType, adaptedHandler);
   }
 
   applyEvent(event: ISemanticEvent): void {
