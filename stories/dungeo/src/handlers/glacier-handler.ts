@@ -6,7 +6,7 @@
  * and reveals the north passage to Volcano View.
  */
 
-import { WorldModel, RoomTrait, Direction, IdentityTrait, LightSourceTrait } from '@sharpee/world-model';
+import { WorldModel, IWorldModel, RoomTrait, Direction, IdentityTrait, LightSourceTrait } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
 
 // State keys
@@ -24,7 +24,7 @@ export const GlacierMessages = {
 /**
  * Check if the glacier has already been melted
  */
-export function isGlacierMelted(world: WorldModel): boolean {
+export function isGlacierMelted(world: IWorldModel): boolean {
   return (world.getStateValue(GLACIER_MELTED_KEY) as boolean) || false;
 }
 
@@ -38,7 +38,7 @@ export function registerGlacierHandler(
   glacierRoomId: string,
   volcanoViewId: string
 ): void {
-  world.registerEventHandler('if.event.thrown', (event: ISemanticEvent, w: WorldModel): void => {
+  world.registerEventHandler('if.event.thrown', (event: ISemanticEvent, w: IWorldModel): void => {
     // Already melted - nothing to do
     if (isGlacierMelted(w)) {
       return;
@@ -95,7 +95,7 @@ export function registerGlacierHandler(
  * Melt the glacier and open the passage
  */
 function meltGlacier(
-  world: WorldModel,
+  world: IWorldModel,
   glacierRoomId: string,
   volcanoViewId: string,
   torchId: string

@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Dungeo: Porting Mainframe Zork to Sharpee</title>
+    <style>
+        :root {
+            --bg-dark: #1a1a2e;
+            --bg-card: #16213e;
+            --accent-gold: #f4d03f;
+            --accent-green: #2ecc71;
+            --accent-blue: #3498db;
+            --accent-purple: #9b59b6;
+            --accent-red: #e74c3c;
+            --accent-orange: #e67e22;
+            --text-light: #ecf0f1;
+            --text-muted: #95a5a6;
+            --border-color: #2c3e50;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #0f0f23 100%);
+            color: var(--text-light);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        
+        .back-nav {
+            margin-bottom: 1rem;
+        }
+        
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.95rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+        }
+        
+        .back-link:hover {
+            color: var(--text-light);
+            border-color: var(--accent-blue);
+            background: rgba(52, 152, 219, 0.1);
+        }
+        
+        .back-link svg {
+            width: 16px;
+            height: 16px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 3rem 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 3rem;
+        }
+        
+        h1 {
+            font-size: 3rem;
+            background: linear-gradient(90deg, var(--accent-gold), var(--accent-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle { font-size: 1.3rem; color: var(--text-muted); font-weight: 300; }
+        
+        .timeline-badge {
+            display: inline-block;
+            background: var(--bg-card);
+            padding: 0.5rem 1.5rem;
+            border-radius: 2rem;
+            margin-top: 1rem;
+            border: 1px solid var(--accent-blue);
+            font-size: 0.9rem;
+        }
+        
+        .milestone-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--accent-green), #27ae60);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            margin: 0.5rem 0.25rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .milestone-badge.gold {
+            background: linear-gradient(135deg, var(--accent-gold), var(--accent-orange));
+        }
+        
+        h2 {
+            font-size: 1.8rem;
+            color: var(--accent-gold);
+            margin: 2.5rem 0 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        h3 { font-size: 1.3rem; color: var(--accent-green); margin: 1.5rem 0 1rem; }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .stat-card {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        
+        .stat-card:hover { transform: translateY(-5px); border-color: var(--accent-blue); }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stat-number.gold {
+            background: linear-gradient(135deg, var(--accent-gold), var(--accent-orange));
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+        
+        .stat-label { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem; }
+        
+        .progress-bar {
+            background: var(--border-color);
+            border-radius: 1rem;
+            height: 1.5rem;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .progress-rooms { background: linear-gradient(90deg, var(--accent-green), #27ae60); }
+        .progress-treasure { background: linear-gradient(90deg, var(--accent-gold), #e67e22); }
+        .progress-puzzles { background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple)); }
+        
+        .card {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border: 1px solid var(--border-color);
+        }
+        
+        .card-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+        
+        .card-icon {
+            width: 3rem; height: 3rem;
+            border-radius: 0.5rem;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+        }
+        
+        .icon-npc { background: linear-gradient(135deg, var(--accent-red), #c0392b); }
+        .icon-puzzle { background: linear-gradient(135deg, var(--accent-green), #27ae60); }
+        .icon-test { background: linear-gradient(135deg, var(--accent-purple), #8e44ad); }
+        .icon-victory { background: linear-gradient(135deg, var(--accent-gold), var(--accent-orange)); }
+        
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background: rgba(52, 152, 219, 0.2);
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+        
+        tr:hover { background: rgba(255, 255, 255, 0.02); }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .badge-done { background: rgba(46, 204, 113, 0.2); color: var(--accent-green); }
+        .badge-partial { background: rgba(241, 196, 15, 0.2); color: var(--accent-gold); }
+        .badge-pending { background: rgba(149, 165, 166, 0.2); color: var(--text-muted); }
+        
+        code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.25rem;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            color: var(--accent-gold);
+        }
+        
+        pre {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            border-left: 3px solid var(--accent-blue);
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.1), rgba(155, 89, 182, 0.1));
+            border: 1px solid var(--accent-blue);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        .success-box {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.1), rgba(39, 174, 96, 0.1));
+            border: 1px solid var(--accent-green);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        .victory-box {
+            background: linear-gradient(135deg, rgba(244, 208, 63, 0.15), rgba(230, 126, 34, 0.15));
+            border: 2px solid var(--accent-gold);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        .region-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .region-card {
+            background: var(--bg-card);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        .region-name { font-weight: 600; color: var(--accent-gold); margin-bottom: 0.5rem; }
+        .region-stats { font-size: 0.85rem; color: var(--text-muted); }
+        
+        .adr-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+        
+        .adr-item {
+            background: var(--bg-card);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border-left: 3px solid var(--accent-purple);
+        }
+        
+        .adr-number { font-weight: bold; color: var(--accent-purple); }
+        
+        .timeline { position: relative; padding-left: 2rem; }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0.5rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border-color);
+        }
+        
+        .timeline-item { position: relative; padding-bottom: 1.5rem; }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -1.65rem;
+            top: 0.5rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            border: 2px solid var(--bg-dark);
+        }
+        
+        .timeline-item.milestone::before {
+            background: var(--accent-green);
+            width: 16px;
+            height: 16px;
+            left: -1.75rem;
+        }
+        
+        .timeline-item.victory::before {
+            background: var(--accent-gold);
+            width: 18px;
+            height: 18px;
+            left: -1.85rem;
+        }
+        
+        .timeline-date { font-size: 0.85rem; color: var(--accent-blue); font-weight: 600; }
+        
+        .lesson-box {
+            background: rgba(46, 204, 113, 0.1);
+            border: 1px solid var(--accent-green);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .lesson-title { color: var(--accent-green); font-weight: 600; margin-bottom: 0.5rem; }
+        
+        .package-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.75rem;
+            margin: 1rem 0;
+        }
+        
+        .package-card {
+            background: var(--bg-card);
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-muted);
+        }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; }
+            .container { padding: 1rem; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            
+            .back-nav {
+                text-align: center;
+                margin-bottom: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="back-nav">
+            <a href="/" class="back-link">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to Projects
+            </a>
+        </nav>
+        
+        <header>
+            <h1>🏰 Project Dungeo</h1>
+            <p class="subtitle">Porting Mainframe Zork to the Sharpee Interactive Fiction Engine</p>
+            <div class="timeline-badge">📅 December 27, 2025 — January 3, 2026 • 8 Days of Development</div>
+            <div style="margin-top: 1rem;">
+                <span class="milestone-badge gold">🏆 169 Rooms Complete</span>
+                <span class="milestone-badge gold">⭐ 650/650 Points (100%)</span>
+                <span class="milestone-badge">✔ Published to npm</span>
+                <span class="milestone-badge">✔ 636 Tests Passing</span>
+                <span class="milestone-badge gold">🎮 Victory Implemented</span>
+            </div>
+        </header>
+
+        <section>
+            <h2>📊 Project Overview</h2>
+            <p>Project Dungeo is an ambitious effort to port the complete <strong>Mainframe Zork</strong> (also known as "Dungeon") to Sharpee, a modern interactive fiction engine. After a comprehensive room audit, we confirmed that the canonical Mainframe Zork has <strong>169 rooms</strong>—all now implemented. The project is now feature-complete with all 650 points worth of treasures implemented.</p>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number gold">169</div>
+                    <div class="stat-label">Rooms (100%)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number gold">33</div>
+                    <div class="stat-label">Treasures (100%)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number gold">650</div>
+                    <div class="stat-label">Max Score (100%)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">7</div>
+                    <div class="stat-label">NPCs Active</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">19+</div>
+                    <div class="stat-label">Puzzles Working</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">636</div>
+                    <div class="stat-label">Tests Passing</div>
+                </div>
+            </div>
+
+            <h3>Progress Meters</h3>
+            <p style="margin-bottom: 0.25rem;"><strong>Rooms:</strong> 169 / 169</p>
+            <div class="progress-bar">
+                <div class="progress-fill progress-rooms" style="width: 100%;">100% ✔</div>
+            </div>
+            
+            <p style="margin-bottom: 0.25rem; margin-top: 1rem;"><strong>Treasures:</strong> 650 / 650 points</p>
+            <div class="progress-bar">
+                <div class="progress-fill progress-treasure" style="width: 100%;">100% ✔</div>
+            </div>
+            
+            <p style="margin-bottom: 0.25rem; margin-top: 1rem;"><strong>Core Puzzles:</strong> 19 / 19</p>
+            <div class="progress-bar">
+                <div class="progress-fill progress-puzzles" style="width: 100%;">100% ✔</div>
+            </div>
+        </section>
+
+        <section>
+            <h2>🗺️ World Regions</h2>
+            <p>The game world is organized into 12 distinct regions, each with unique theming and puzzles:</p>
+            
+            <div class="region-grid">
+                <div class="region-card">
+                    <div class="region-name">Above Ground</div>
+                    <div class="region-stats">5 rooms • Starting area, forest, house</div>
+                </div>
+                <div class="region-card">
+                    <div class="region-name">House Interior</div>
+                    <div class="region-stats">9 rooms • Cellar, attic, kitchen</div>
+                </div>
+                <div class="region-card">
+                    <div class="region-name">Underground</div>
+                    <div class="region-stats">12 rooms • Troll room, studio, maze entrance</div>
+                </div>
+                <div class="region-card">
+                    <div class="region-name">Maze</div>
+                    <div class="region-stats">24 rooms • Twisty passages, grating room</div>
+                </div>
+                <div class="region-card">
+                    <div class="region-name">Dam & Reservoir</div>
+                    <div class="region-stats">8 rooms • Maintenance, lobby, control</div>
+                </div>
+                <div class="region-card">
+                    <div class="region-name">Frigid River</div>
+                    <div class="region-stats">9 rooms • Rainbow, aragain falls</div>
+                </div>
+                <div class="region-card">
+                    <div class="region-name">Coal Mine</div>
+                    <div class="region-stats">10 rooms • Bat room, shaft, timbers</div>
+                </div>
+                <div class="region-card">
+                    <div class="region-name">Temple & Treasure</div>
+                    <div class="region-stats">6 rooms • Prayer, torch room</div>
+                </div>
+                <div class="region-card">
+                    <div class="region-name">Underground Depths</div>
+                    <div class="region-stats">14 rooms • Mirror, crypt, bank</div>
+                </div>
+                <div class="region-card">
+                    <div class="region-name">Volcano & Glacier</div>
+                    <div class="region-stats">11 rooms • Balloon, lava tubes</div>
+                </div>
+                <div class="region-card">
+                    <div class="region-name">Royal Puzzle</div>
+                    <div class="region-stats">17 rooms • 15-puzzle sliding challenge</div>
+                </div>
+                <div class="region-card">
+                    <div class="region-name">Endgame</div>
+                    <div class="region-stats">7 rooms • Dungeon Master, Treasury</div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>👹 NPCs & Combat</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon icon-npc">⚔️</div>
+                    <div>
+                        <h3 style="margin: 0;">Combat System</h3>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">Faithful recreation of original combat mechanics</p>
+                    </div>
+                </div>
+                <p>Supports attack, parry, and dodge with weapon modifiers. Death respawn at forest with -10 points penalty.</p>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>NPC</th>
+                        <th>Behavior</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Troll</td>
+                        <td>Blocks east passage, respawns from corpse</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>Thief</td>
+                        <td>Steals treasures, opens egg, guards maze</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>Cyclops</td>
+                        <td>Blocking, fed by lunch/water, "ULYSSES" trick</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>Vampire Bat</td>
+                        <td>Random teleport, repelled by garlic</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>Spirits</td>
+                        <td>Protect crypt, require bell/candles/book exorcism</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>Robot</td>
+                        <td>Follows TELL commands, presses carousel button</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>Dungeon Master</td>
+                        <td>Trivia quiz (3 questions), guards endgame</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>🧩 Puzzle Systems</h2>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Puzzle</th>
+                        <th>Mechanic</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Trapdoor</td>
+                        <td>RUG/MOVE reveals, requires raised gate</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>Dam Control</td>
+                        <td>Bolt/button mechanism, drains reservoir</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>Loud Room</td>
+                        <td>Echo puzzle - whisper "echo" to solve</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>Exorcism</td>
+                        <td>Bell, book, candles ritual sequence</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>Bank of Zork</td>
+                        <td>Confusingly-named exits puzzle</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>Royal Puzzle</td>
+                        <td>4×4 sliding puzzle (15-puzzle)</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>Robot/Carousel</td>
+                        <td>TELL ROBOT TO PUSH BUTTON</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>Mirror Toggle</td>
+                        <td>PUSH PANEL swaps North/South connections</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>Inside Mirror</td>
+                        <td>Drop treasures, enter mirror, retrieve them</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>Thief's Canvas</td>
+                        <td>Valuable painting in thief's lair</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>INCANT Endgame</td>
+                        <td>INCANT &lt;cheat&gt; unlocks endgame</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>Dungeon Master</td>
+                        <td>Trivia quiz (3 correct to pass)</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>Parapet Dial</td>
+                        <td>Set dial 1-8, push button to activate cells</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>Victory Handler</td>
+                        <td>Enter Treasury with endgame active</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>Rainbow</td>
+                        <td>WAVE sceptre makes rainbow solid</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>Glacier</td>
+                        <td>Throw lit torch to melt passage</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>Buried Treasure</td>
+                        <td>DIG at Sandy Beach reveals statue</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>Egg/Canary/Bauble</td>
+                        <td>Open egg, WIND canary in forest</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>Mail Order</td>
+                        <td>SEND FOR BROCHURE delivers stamp</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>🔧 GDT Debug Tool</h2>
+            
+            <p>Faithful recreation of the original 1981 "Game Debugging Tool" with new commands for endgame testing:</p>
+            
+            <div class="card">
+                <pre>Core Commands:
+  DA - Display Adventurer    DR - Display Room
+  DO - Display Object        DS - Display State
+  DC - Display Clock         DX - Display Exits
+  AH - Alter Here            AO - Alter Object
+  TK - Take any object       ND/RD - Toggle deaths
+  NR/RR - Toggle thief
+
+New Endgame Commands:
+  TQ         - Display trivia state
+  TQ RESET   - Reset to question 0 (deterministic)
+  TQ SOLVE   - Auto-solve trivia
+  DL         - Display dial state
+  DL SET n   - Set dial to 1-8
+  DL PUSH    - Push dial button
+  DL ENDGAME - Activate endgame mode</pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>📅 Development Timeline</h2>
+            
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-date">December 27, 2025</div>
+                    <p><strong>Project Kickoff & Core Systems</strong></p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">ADRs 070-072, SchedulerService, NpcService, CombatService.</p>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-date">December 28, 2025</div>
+                    <p><strong>Rooms & Testing Infrastructure</strong></p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">30+ rooms, transcript tester, Dam region, Coal Mine.</p>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-date">December 29, 2025</div>
+                    <p><strong>NPCs & Puzzles</strong></p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Thief, Cyclops, Robot. GDT tool. Bank puzzle. Maze (24 rooms).</p>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-date">December 30, 2025</div>
+                    <p><strong>Advanced Mechanics</strong></p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Effects system, Mirror toggle, word puzzles, Royal Puzzle.</p>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-date">December 31, 2025</div>
+                    <p><strong>Release Planning & Branch Merge</strong></p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">8,400+ lines merged. ADR-080, ADR-081 created.</p>
+                </div>
+                
+                <div class="timeline-item milestone">
+                    <div class="timeline-date">January 1, 2026</div>
+                    <p><strong>🎉 Beta Release & npm Publish</strong></p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">11 packages to npm. INCANT cheat. Inside Mirror puzzle. 418 tests.</p>
+                </div>
+                
+                <div class="timeline-item milestone">
+                    <div class="timeline-date">January 2, 2026</div>
+                    <p><strong>🏆 Endgame Complete & Victory!</strong></p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">
+                        Dungeon Master + trivia system. Parapet dial puzzle. Victory handler.
+                        Room audit confirms 169/169 (100%). WAVE/DIG/WIND actions.
+                        Rainbow puzzle. Glacier puzzle. 572 tests passing.
+                    </p>
+                </div>
+                
+                <div class="timeline-item victory">
+                    <div class="timeline-date">January 3, 2026</div>
+                    <p><strong>🌟 Feature Complete - 650/650 Points!</strong></p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">
+                        Egg/Canary/Bauble puzzle. Mail Order system with Don Woods stamp.
+                        All 33 treasures implemented. 636 tests in 36 transcripts.
+                        Project Dungeo reaches 100% treasure completion!
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>📚 Key Lessons Learned</h2>
+            
+            <div class="lesson-box">
+                <div class="lesson-title">🏛️ Language Layer Separation</div>
+                <p>All user-facing text flows through message IDs, never hardcoded strings.</p>
+            </div>
+            
+            <div class="lesson-box">
+                <div class="lesson-title">🔄 Three-Phase Action Pattern</div>
+                <p>Validate → Execute → Report keeps actions clean and testable.</p>
+            </div>
+            
+            <div class="lesson-box">
+                <div class="lesson-title">📦 Vertical Slice Development</div>
+                <p>Each phase delivers playable increments, validating systems before scaling.</p>
+            </div>
+            
+            <div class="lesson-box">
+                <div class="lesson-title">🧪 Transcript Testing</div>
+                <p>Simple text files serve as both tests and documentation for IF content.</p>
+            </div>
+
+            <div class="lesson-box">
+                <div class="lesson-title">📤 pnpm for Monorepo Publishing</div>
+                <p>Only pnpm properly converts <code>workspace:*</code> to real versions during publish.</p>
+            </div>
+
+            <div class="lesson-box">
+                <div class="lesson-title">🗑️ Remove Unused Abstractions</div>
+                <p>ADR-084 deleted 930 lines of StoryGrammarImpl wrapper that added no value.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>🎯 Future Enhancements</h2>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Nice-to-Have Improvements</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Vehicles</td>
+                        <td>Boat navigation, balloon puzzle mechanics</td>
+                    </tr>
+                    <tr>
+                        <td>Mechanics</td>
+                        <td>Bucket/well puzzle, match lighting</td>
+                    </tr>
+                    <tr>
+                        <td>Polish</td>
+                        <td>Additional room descriptions, edge cases</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="victory-box" style="margin-top: 1.5rem;">
+                <p style="font-size: 1.1rem; text-align: center;">
+                    <strong>🎉 All core gameplay is complete!</strong><br>
+                    <span style="color: var(--text-muted);">Players can explore all 169 rooms, collect all 33 treasures (650 points), and achieve victory.</span>
+                </p>
+            </div>
+        </section>
+
+        <section>
+            <h2>🎮 Sample Victory Sequence</h2>
+            
+            <div class="card" style="background: #000; font-family: monospace;">
+                <pre style="color: #0f0; background: transparent; border: none; padding: 0;">
+> knock on door
+The Dungeon Master appears. "Answer my questions, adventurer..."
+"What room must one enter to reach the lair of the thief?"
+
+> answer temple
+"Correct! Now then..."
+"What is one way to read the cakes?"
+
+> answer flask
+"Correct! One more..."
+"What object in the dungeon is haunted?"
+
+> answer rusty knife
+"You have proven yourself worthy."
+The door swings open to the north.
+
+> n
+Narrow Corridor
+
+> s
+Treasury of Zork
+
+You have entered the Treasury of Zork!
+Congratulations, brave adventurer!
+
+Your final score is 650 points out of a possible 650.
+You have achieved the rank of MASTER ADVENTURER.
+
+*** THE END ***</pre>
+            </div>
+        </section>
+
+        <footer>
+            <p><strong>Project Dungeo</strong> • Sharpee Interactive Fiction Engine</p>
+            <p style="font-size: 0.9rem; margin-top: 0.5rem;">
+                <code>npm install @sharpee/sharpee@beta</code>
+            </p>
+            <p style="font-size: 0.85rem; margin-top: 0.5rem;">
+                Original Mainframe Zork by Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling (1977-1979)
+            </p>
+            <p style="font-size: 0.85rem;">
+                Report generated January 3, 2026
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

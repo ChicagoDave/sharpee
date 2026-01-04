@@ -5,6 +5,7 @@ import { IFEntity } from '../entities/if-entity';
 import { WorldModel } from './WorldModel';
 import { TraitType } from '../traits/trait-types';
 import { SwitchableBehavior } from '../traits/switchable/switchableBehavior';
+import { VehicleTrait } from '../traits/vehicle/VehicleTrait';
 
 export class VisibilityBehavior extends Behavior {
   static requiredTraits = [];
@@ -396,24 +397,24 @@ export class VisibilityBehavior extends Behavior {
 
     // Check containment path for closed opaque containers
     let current = entity.id;
-    
+
     while (true) {
       const location = world.getLocation(current);
       if (!location) break; // Reached top level
-      
+
       const container = world.getEntity(location);
       if (!container) break;
-      
+
       // Actors don't block visibility of their contents
       if (container.hasTrait(TraitType.ACTOR)) {
         current = location;
         continue;
       }
-      
+
       // Check if this container blocks visibility
       if (container.hasTrait(TraitType.CONTAINER)) {
         const containerTrait = container.getTrait(TraitType.CONTAINER) as any;
-        
+
         // If container is opaque and closed, entity is not visible
         const isTransparent = containerTrait?.isTransparent ?? false;
         if (!isTransparent) {
@@ -427,10 +428,75 @@ export class VisibilityBehavior extends Behavior {
           // Opaque but not openable - can see through
         }
       }
-      
+
       current = location;
     }
 
     return true;
+  }
+
+  /**
+   * Gets the location that should be described when an observer looks around.
+   * Accounts for vehicle/container transparency:
+   * - In a transparent vehicle → describe the room
+   * - In an open container → describe the room
+   * - In a closed container → describe the container
+   * - In a room → describe the room
+   *
+   * @returns The entity to describe and optionally the immediate container
+   */
+  static getDescribableLocation(
+    observer: IFEntity,
+    world: WorldModel
+  ): { location: IFEntity; immediateContainer: IFEntity | null } {
+    const immediateLocationId = world.getLocation(observer.id);
+    if (!immediateLocationId) {
+      // Observer is not in anything - unusual but handle it
+      return { location: observer, immediateContainer: null };
+    }
+
+    const immediateLocation = world.getEntity(immediateLocationId);
+    if (!immediateLocation) {
+      return { location: observer, immediateContainer: null };
+    }
+
+    // If immediate location is a room, we're done
+    if (immediateLocation.hasTrait(TraitType.ROOM)) {
+      return { location: immediateLocation, immediateContainer: null };
+    }
+
+    // Check if we're in a vehicle
+    if (immediateLocation.hasTrait(TraitType.VEHICLE)) {
+      const vehicleTrait = immediateLocation.getTrait(TraitType.VEHICLE) as VehicleTrait;
+      if (vehicleTrait.transparent) {
+        // Transparent vehicle - describe the room
+        const room = world.getContainingRoom(observer.id);
+        if (room) {
+          return { location: room, immediateContainer: immediateLocation };
+        }
+      }
+      // Opaque vehicle - describe the vehicle interior
+      return { location: immediateLocation, immediateContainer: null };
+    }
+
+    // Check if we're in a container
+    if (immediateLocation.hasTrait(TraitType.CONTAINER)) {
+      // Check if container is open (visibility passes through)
+      if (immediateLocation.hasTrait(TraitType.OPENABLE)) {
+        const openable = immediateLocation.getTrait(TraitType.OPENABLE) as any;
+        if (openable?.isOpen) {
+          // Open container - describe the room
+          const room = world.getContainingRoom(observer.id);
+          if (room) {
+            return { location: room, immediateContainer: immediateLocation };
+          }
+        }
+      }
+      // Closed container - describe the container
+      return { location: immediateLocation, immediateContainer: null };
+    }
+
+    // Default: describe what we're in
+    return { location: immediateLocation, immediateContainer: null };
   }
 }

@@ -60,7 +60,7 @@ export function createVolcanoRooms(world: WorldModel): VolcanoRoomIds {
   return roomIds;
 }
 
-export { createVolcanoObjects } from './objects';
+export { createVolcanoObjects, createVolcanoRegionObjects, VolcanoObjectIds } from './objects';
 
 function connectVolcanoRooms(world: WorldModel, roomIds: VolcanoRoomIds): void {
   // Volcano Bottom - entry point

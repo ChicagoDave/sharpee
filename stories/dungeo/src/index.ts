@@ -29,10 +29,10 @@ import {
 import { DungeoScoringService } from './scoring';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages } from './actions';
 
 // Import scheduler module
-import { registerScheduledEvents, DungeoSchedulerMessages } from './scheduler';
+import { registerScheduledEvents, DungeoSchedulerMessages, registerBalloonPutHandler, BalloonHandlerMessages } from './scheduler';
 import { setSchedulerForGDT } from './actions/gdt/commands';
 
 // Import handlers
@@ -48,7 +48,7 @@ import { createUndergroundRooms, createUndergroundObjects, connectUndergroundToH
 import { createDamRooms, connectDamToUnderground, connectReservoirToAtlantis, connectGlacierToEgyptian, connectTempleSmallCaveToRockyShore, createDamObjects, DamRoomIds } from './regions/dam';
 import { createCoalMineRooms, createCoalMineObjects, CoalMineRoomIds } from './regions/coal-mine';
 import { createTempleRooms, connectTempleToDam, connectTempleToUnderground, createTempleObjects, TempleRoomIds } from './regions/temple';
-import { createVolcanoRooms, connectVolcanoToGlacier, createVolcanoObjects, VolcanoRoomIds } from './regions/volcano';
+import { createVolcanoRooms, connectVolcanoToGlacier, createVolcanoRegionObjects, VolcanoRoomIds, VolcanoObjectIds } from './regions/volcano';
 import { createBankRooms, connectBankToUnderground, createBankObjects, BankRoomIds } from './regions/bank-of-zork';
 import { createWellRoomRooms, connectWellRoomToTemple, createWellRoomObjects, WellRoomIds } from './regions/well-room';
 import { createFrigidRiverRooms, connectFrigidRiverToDam, connectRainbowToCanyon, createFrigidRiverObjects, FrigidRiverRoomIds } from './regions/frigid-river';
@@ -59,6 +59,7 @@ import { createEndgameRooms, createEndgameObjects, EndgameRoomIds } from './regi
 // Import handlers
 import { registerRoyalPuzzleHandler, initializePuzzleState, createPuzzleCommandTransformer, PuzzleHandlerMessages } from './handlers/royal-puzzle';
 import { createRainbowCommandTransformer } from './handlers/rainbow-handler';
+import { createBalloonExitTransformer } from './handlers/balloon-handler';
 
 // Import NPCs
 import { registerThief, ThiefMessages } from './npcs/thief';
@@ -99,6 +100,7 @@ export class DungeoStory implements Story {
   private mazeIds: MazeRoomIds = {} as MazeRoomIds;
   private royalPuzzleIds: RoyalPuzzleRoomIds = {} as RoyalPuzzleRoomIds;
   private endgameIds: EndgameRoomIds = {} as EndgameRoomIds;
+  private balloonIds: VolcanoObjectIds | null = null;
   private mirrorConfig: MirrorRoomConfig | null = null;
 
   /**
@@ -121,8 +123,7 @@ export class DungeoStory implements Story {
     // Create scoring service
     this.scoringService = new DungeoScoringService(world);
 
-    // Register trophy case scoring handler
-    this.registerTrophyCaseHandler(world);
+    // Note: Trophy case handler is registered in onEngineReady() using EventProcessor
 
     // Register reality altered handler (ADR-078 hidden max points)
     registerRealityAlteredHandler(world);
@@ -190,7 +191,10 @@ export class DungeoStory implements Story {
     createDamObjects(world, this.damIds);
     createCoalMineObjects(world, this.coalMineIds);
     createTempleObjects(world, this.templeIds);
-    createVolcanoObjects(world, this.volcanoIds);
+    this.balloonIds = createVolcanoRegionObjects(world, this.volcanoIds);
+
+    // Balloon PUT handler is registered in onEngineReady() using EventProcessor
+
     createBankObjects(world, this.bankIds);
     createWellRoomObjects(world, this.wellRoomIds);
     createFrigidRiverObjects(world, this.frigidRiverIds);
@@ -946,6 +950,76 @@ export class DungeoStory implements Story {
       .mapsTo(FILL_ACTION_ID)
       .withPriority(160)
       .build();
+
+    // LIGHT action (Balloon puzzle - light objects with fire source)
+    // Higher priority than "light :target" (BURN at 145) since this has a tool
+    grammar
+      .define('light :object with :tool')
+      .mapsTo(LIGHT_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    grammar
+      .define('set fire to :object with :tool')
+      .mapsTo(LIGHT_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    grammar
+      .define('ignite :object with :tool')
+      .mapsTo(LIGHT_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    // TIE action (Balloon puzzle - tie rope to hooks)
+    grammar
+      .define('tie :object to :target')
+      .mapsTo(TIE_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('tie :object')
+      .mapsTo(TIE_ACTION_ID)
+      .withPriority(145)
+      .build();
+
+    grammar
+      .define('fasten :object to :target')
+      .mapsTo(TIE_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('attach :object to :target')
+      .mapsTo(TIE_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    // UNTIE action (Balloon puzzle - untie rope from hooks)
+    grammar
+      .define('untie :object')
+      .mapsTo(UNTIE_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('untie :object from :target')
+      .mapsTo(UNTIE_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('unfasten :object')
+      .mapsTo(UNTIE_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('detach :object')
+      .mapsTo(UNTIE_ACTION_ID)
+      .withPriority(150)
+      .build();
   }
 
   /**
@@ -1375,46 +1449,93 @@ export class DungeoStory implements Story {
     language.addMessage(GlacierMessages.PASSAGE_REVEALED, 'A passage north has been revealed!');
     language.addMessage(GlacierMessages.THROW_COLD, 'The torch bounces off the glacier harmlessly. Perhaps if it were lit, it might have more effect.');
     language.addMessage(GlacierMessages.THROW_WRONG_ITEM, 'The {item} bounces off the glacier and falls to the ground.');
+
+    // Light action messages (Balloon puzzle - lighting objects with fire source)
+    language.addMessage(LightMessages.SUCCESS, 'The {target} catches fire.');
+    language.addMessage(LightMessages.NO_FIRE_SOURCE, "You don't have a way to light that.");
+    language.addMessage(LightMessages.NOT_FLAMMABLE, "That won't burn.");
+    language.addMessage(LightMessages.ALREADY_BURNING, 'It is already burning.');
+    language.addMessage(LightMessages.GUIDEBOOK_LIT, 'The guidebook catches fire and begins to burn brightly.');
+    language.addMessage(LightMessages.IN_RECEPTACLE, 'You place the burning {target} in the receptacle. The balloon begins to rise!');
+
+    // Tie action messages (Balloon puzzle - tethering)
+    language.addMessage(TieMessages.SUCCESS, 'The balloon is now anchored.');
+    language.addMessage(TieMessages.NO_ROPE, "You don't have anything to tie with.");
+    language.addMessage(TieMessages.NOT_AT_LEDGE, 'There is nothing to tie the rope to here.');
+    language.addMessage(TieMessages.ALREADY_TIED, 'The rope is already tied to a hook.');
+    language.addMessage(TieMessages.NO_HOOK, 'There is no hook to tie the rope to.');
+    language.addMessage(TieMessages.NOT_IN_BALLOON, "You're not in the balloon.");
+
+    // Untie action messages (Balloon puzzle - releasing tether)
+    language.addMessage(UntieMessages.SUCCESS, 'You untie the rope.');
+    language.addMessage(UntieMessages.NOT_TIED, "The rope isn't tied to anything.");
+    language.addMessage(UntieMessages.NO_ROPE, "There's no rope here to untie.");
+
+    // Balloon daemon messages
+    language.addMessage(DungeoSchedulerMessages.BALLOON_RISING, 'The balloon rises slowly.');
+    language.addMessage(DungeoSchedulerMessages.BALLOON_FALLING, 'The balloon sinks slowly.');
+    language.addMessage(DungeoSchedulerMessages.BALLOON_AT_LEDGE, 'The balloon drifts near a ledge.');
+    language.addMessage(DungeoSchedulerMessages.BALLOON_LANDED, 'The balloon settles to the ground.');
+    language.addMessage(DungeoSchedulerMessages.BALLOON_CRASH, 'The balloon rises too high and hits the jagged ceiling of the volcano! The bag is torn apart and the balloon plunges to the ground far below.');
+    language.addMessage(DungeoSchedulerMessages.BALLOON_HOOK_VISIBLE, 'You can see a hook on the rock face here.');
+    language.addMessage(DungeoSchedulerMessages.BALLOON_INFLATING, 'Hot air fills the balloon and it begins to rise.');
+    language.addMessage(DungeoSchedulerMessages.BALLOON_DEFLATING, 'The balloon deflates as the heat source dies.');
+
+    // Balloon handler messages
+    language.addMessage(BalloonHandlerMessages.OBJECT_BURNED_OUT, 'The {itemName} has burned out completely.');
+
+    // Balloon exit messages (from handlers)
+    const BalloonExitMessages = {
+      EXIT_SUCCESS: 'dungeo.balloon.exit_success',
+      EXIT_BLOCKED_MIDAIR: 'dungeo.balloon.exit_blocked_midair',
+      EXIT_TO_LEDGE: 'dungeo.balloon.exit_to_ledge'
+    };
+    language.addMessage(BalloonExitMessages.EXIT_SUCCESS, 'You climb out of the balloon.');
+    language.addMessage(BalloonExitMessages.EXIT_BLOCKED_MIDAIR, 'You are too high in the air to exit safely! The balloon is floating in mid-air.');
+    language.addMessage(BalloonExitMessages.EXIT_TO_LEDGE, 'You carefully climb out of the balloon onto the ledge.');
   }
 
   /**
-   * Register the trophy case event handler for treasure scoring
+   * Register the trophy case event handler for treasure scoring (ADR-085)
    *
-   * Note: world.registerEventHandler returns void, so we can't emit events.
-   * We just update the score directly - players can check with SCORE command.
+   * Uses EventProcessor.registerHandler for proper event dispatch.
+   * Returns empty effects array since scoring updates capability directly.
    */
-  private registerTrophyCaseHandler(world: WorldModel): void {
+  private registerTrophyCaseHandler(engine: GameEngine): void {
     const TROPHY_CASE_NAME = 'trophy case';
     const scoringService = this.scoringService;
+    const world = this.world;
 
-    world.registerEventHandler('if.event.put_in', (event: ISemanticEvent, w): void => {
+    engine.getEventProcessor().registerHandler('if.event.put_in', (event) => {
       const data = event.data as Record<string, any> | undefined;
       const targetId = data?.targetId as string | undefined;
-      if (!targetId) return;
+      if (!targetId) return [];
 
       // Check if target is the trophy case
-      const targetEntity = w.getEntity(targetId);
-      if (!targetEntity) return;
+      const targetEntity = world.getEntity(targetId);
+      if (!targetEntity) return [];
 
       const identity = targetEntity.get('identity') as { name?: string } | undefined;
-      if (identity?.name !== TROPHY_CASE_NAME) return;
+      if (identity?.name !== TROPHY_CASE_NAME) return [];
 
       // Get the item being placed
       const itemId = data?.itemId as string | undefined;
-      if (!itemId) return;
+      if (!itemId) return [];
 
-      const item = w.getEntity(itemId);
-      if (!item) return;
+      const item = world.getEntity(itemId);
+      if (!item) return [];
 
       // Check if item is a treasure
       const isTreasure = (item as any).isTreasure;
-      if (!isTreasure) return;
+      if (!isTreasure) return [];
 
       const treasureValue = (item as any).treasureValue || 0;
       const treasureId = (item as any).treasureId || item.id;
 
       // Score the treasure (prevents double-scoring)
       scoringService.scoreTreasure(treasureId, treasureValue);
+
+      return [];
     });
   }
 
@@ -1498,6 +1619,10 @@ export class DungeoStory implements Story {
     // Intercepts "go west" at Aragain Falls when rainbow is not solid
     engine.registerParsedCommandTransformer(createRainbowCommandTransformer());
 
+    // Register Balloon exit transformer
+    // Handles exit from balloon at ledge positions vs mid-air
+    engine.registerParsedCommandTransformer(createBalloonExitTransformer());
+
     // Register scheduler events (ADR-071 Phase 2)
     const scheduler = engine.getScheduler();
     if (scheduler) {
@@ -1507,7 +1632,11 @@ export class DungeoStory implements Story {
         this.world,
         this.forestIds,
         this.damIds,
-        this.bankIds
+        this.bankIds,
+        this.balloonIds ? {
+          balloonId: this.balloonIds.balloonId,
+          receptacleId: this.balloonIds.receptacleId
+        } : undefined
       );
 
       // Make scheduler accessible to GDT DC command
@@ -1625,6 +1754,14 @@ export class DungeoStory implements Story {
       const eventProcessor = engine.getEventProcessor();
       const mirrorHandler = createMirrorTouchHandler(this.mirrorConfig);
       eventProcessor.registerHandler('if.event.touched', mirrorHandler);
+    }
+
+    // Register trophy case scoring handler (ADR-085)
+    this.registerTrophyCaseHandler(engine);
+
+    // Register balloon PUT handler (tracks burning objects in receptacle)
+    if (this.balloonIds) {
+      registerBalloonPutHandler(engine, this.world, this.balloonIds.balloonId, this.balloonIds.receptacleId);
     }
   }
 }

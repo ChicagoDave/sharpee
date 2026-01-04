@@ -102,9 +102,24 @@ export const pourAction: Action = {
     const waterContainer = sharedData.waterContainer as IFEntity | undefined;
     const bucket = sharedData.bucket as IFEntity | undefined;
 
+    // Debug logging
+    const DEBUG = process.env.PARSER_DEBUG === 'true';
+    if (DEBUG) {
+      console.log('[POUR] water:', water?.id);
+      console.log('[POUR] bucket:', bucket?.id);
+      if (bucket) {
+        console.log('[POUR] bucket traits:', Array.from((bucket as any)._traits?.keys?.() || []));
+      }
+    }
+
     // If pouring into bucket at well
     if (bucket) {
       const vehicleTrait = bucket.get(VehicleTrait);
+      if (DEBUG) {
+        console.log('[POUR] vehicleTrait:', vehicleTrait);
+        console.log('[POUR] vehicleType:', vehicleTrait?.vehicleType);
+        console.log('[POUR] currentPosition:', vehicleTrait?.currentPosition);
+      }
 
       if (vehicleTrait && vehicleTrait.vehicleType === 'counterweight') {
         // Move water into bucket
@@ -157,7 +172,8 @@ export const pourAction: Action = {
     const events: ISemanticEvent[] = [];
 
     if (sharedData.bucketRose && sharedData.playerRose) {
-      events.push(context.event('game.message', {
+      events.push(context.event('action.success', {
+        actionId: POUR_ACTION_ID,
         messageId: PourMessages.BUCKET_RISES
       }));
 
@@ -173,23 +189,28 @@ export const pourAction: Action = {
         }));
       }
     } else if (sharedData.bucketRose) {
-      events.push(context.event('game.message', {
+      events.push(context.event('action.success', {
+        actionId: POUR_ACTION_ID,
         messageId: PourMessages.BUCKET_RISES
       }));
     } else if (sharedData.bucketAlreadyAtTop && sharedData.pouredIntoBucket) {
-      events.push(context.event('game.message', {
+      events.push(context.event('action.success', {
+        actionId: POUR_ACTION_ID,
         messageId: PourMessages.BUCKET_AT_TOP
       }));
     } else if (sharedData.pouredIntoBucket) {
-      events.push(context.event('game.message', {
+      events.push(context.event('action.success', {
+        actionId: POUR_ACTION_ID,
         messageId: PourMessages.INTO_BUCKET
       }));
     } else if (sharedData.pouredOnGround) {
-      events.push(context.event('game.message', {
+      events.push(context.event('action.success', {
+        actionId: POUR_ACTION_ID,
         messageId: PourMessages.SUCCESS
       }));
     } else {
-      events.push(context.event('game.message', {
+      events.push(context.event('action.success', {
+        actionId: POUR_ACTION_ID,
         messageId: PourMessages.NOTHING_HAPPENS
       }));
     }

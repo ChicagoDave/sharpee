@@ -42,6 +42,7 @@ export * from './traits/moveable-scenery';
 export * from './traits/pullable';
 export * from './traits/pushable';
 export * from './traits/npc';
+export * from './traits/vehicle';
 
 // Extension system
 export * from './extensions';

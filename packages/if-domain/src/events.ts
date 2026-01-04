@@ -122,6 +122,10 @@ export const IFEvents = {
   SCORE_DISPLAYED: 'score_displayed',
   HELP_DISPLAYED: 'help_displayed',
   ABOUT_DISPLAYED: 'about_displayed',
+
+  // Scoring events (ADR-085)
+  SCORE_GAINED: 'if.event.score_gained',
+  SCORE_LOST: 'if.event.score_lost',
 } as const;
 
 export type IFEventType = typeof IFEvents[keyof typeof IFEvents];

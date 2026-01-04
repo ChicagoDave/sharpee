@@ -1,0 +1,40 @@
+title: Balloon Actions
+story: dungeo
+description: Tests LIGHT, TIE, UNTIE grammar patterns and basic action flow
+
+---
+
+# Balloon Actions - Basic test
+# Tests: LIGHT, TIE, UNTIE grammar patterns and basic action flow
+
+## Setup - get lantern and navigate to balloon
+> gdt
+[OK: contains "GDT ready"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> ah Volcano Bottom
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning to game"]
+
+> turn on lantern
+[OK: contains "switches on"]
+
+## Examine balloon - should mention wire
+> look at balloon
+[OK: contains "braided wire"]
+
+## Try tie without being in balloon - should fail
+> tie wire
+[OK: contains "not_in_balloon"]
+
+## Enter the balloon
+> enter balloon
+[OK: contains "get into balloon"]
+
+## Exit balloon
+> exit balloon
+[OK: contains "get out"]

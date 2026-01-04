@@ -41,6 +41,16 @@ export const DungeoSchedulerMessages = {
   // Incense burning - ADR-078 ghost ritual
   INCENSE_BURNING: 'dungeo.incense.burning',
   INCENSE_BURNS_OUT: 'dungeo.incense.burns_out',
+
+  // Balloon movement - hot air balloon in volcano shaft
+  BALLOON_RISING: 'dungeo.balloon.rising',
+  BALLOON_FALLING: 'dungeo.balloon.falling',
+  BALLOON_AT_LEDGE: 'dungeo.balloon.at_ledge',
+  BALLOON_LANDED: 'dungeo.balloon.landed',
+  BALLOON_CRASH: 'dungeo.balloon.crash',
+  BALLOON_HOOK_VISIBLE: 'dungeo.balloon.hook_visible',
+  BALLOON_INFLATING: 'dungeo.balloon.inflating',
+  BALLOON_DEFLATING: 'dungeo.balloon.deflating',
 } as const;
 
 export type DungeoSchedulerMessageId = typeof DungeoSchedulerMessages[keyof typeof DungeoSchedulerMessages];

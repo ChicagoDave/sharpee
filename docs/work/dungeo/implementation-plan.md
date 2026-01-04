@@ -457,7 +457,7 @@
 | Combat (basic) | ✅ Done | Troll, thief |
 | Timed events (daemons) | ✅ Done | ADR-071 complete (lantern, candles, dam, forest) |
 | NPC basics | ✅ Done | ADR-070 implemented |
-| Vehicle trait | ❌ | Boat navigation |
+| Vehicle trait | ✅ Done | Boat navigation, bucket |
 | INFLATE/DEFLATE actions | ❌ | Boat |
 | WAVE action | ✅ Done | Sceptre/rainbow (2026-01-02) |
 | Water current | ❌ | River auto-movement |
@@ -538,11 +538,15 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Priority Next Steps
 
-1. **Remaining puzzles** - Bucket/well, balloon, key puzzles
-2. **Missing systems** - Vehicle trait (boat), INFLATE/DEFLATE, robot commands, match lighting
+1. **Remaining puzzles** - Balloon, key puzzles, eat-me/drink-me cakes
+2. **Missing systems** - INFLATE/DEFLATE (boat), robot commands, match lighting
 
 ## Recently Completed
 
+- ✅ **Bucket/Well Puzzle Complete** (2026-01-03) - Fixed visibility when inside transparent vehicles. Added `VehicleTrait.transparent` property (defaults to true). Added `VisibilityBehavior.getDescribableLocation()` to determine what to describe when looking. Updated looking action to use visibility logic. Bucket rises/descends correctly, LOOK from inside bucket describes the room. 20/20 bucket tests pass, 656 total tests pass.
+- ✅ **Grammar Normalization** (2026-01-03) - Major parser cleanup: deleted 6 dead code files (semantic-grammar.ts, semantic-core-grammar.ts, semantic-grammar-rules.ts, semantic-parser-engine.ts, semantic-rules/). Renamed core-grammar.ts → grammar.ts. Added `enter :portal` pattern with `.matching({ enterable: true })` constraint. Added vehicle grammar: board, disembark, get on/off, alight. Priority ordering: semantic rules (100+) before fallbacks (90-95). "enter bucket" now works!
+- ✅ **VehicleTrait** (2026-01-03) - New trait for enterable transport containers. Properties: vehicleType ('watercraft'|'counterweight'|'elevator'|'tram'|'cart'), blocksWalkingMovement. Works with ContainerTrait enterable. Added to bucket for well puzzle.
+- ✅ **POUR/FILL Actions** (2026-01-03) - Story-specific actions for bucket/well puzzle. POUR water in bucket rises, FILL bottle descends.
 - ✅ **Mail Order Stamp** (2026-01-03) - Implemented Don Woods stamp puzzle (final 1 pt). Added matchbook to Dam Lobby with "SEND FOR BROCHURE" ad. SEND action creates brochure in mailbox containing ASCII art stamp. 650/650 points complete!
 - ✅ **Egg/Canary/Bauble Puzzle** (2026-01-03) - Fixed WIND action to create brass bauble entity (2 pts) when canary wound in forest. Verified thief egg-opening mechanic works.
 - ✅ **Glacier Puzzle** (2026-01-02) - Throw lit torch at glacier to melt it and reveal north passage to Volcano View. Handler listens for thrown events, validates torch is lit, opens bidirectional exits, destroys torch. 16 new tests.

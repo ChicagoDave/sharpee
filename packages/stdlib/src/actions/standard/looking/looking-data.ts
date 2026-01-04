@@ -29,20 +29,24 @@ export const buildLookingEventData: ActionDataBuilder<Record<string, unknown>> =
   postState?: WorldModel
 ): Record<string, unknown> => {
   const player = context.player;
-  const location = context.currentLocation;
-  
+  // Use visibility logic to determine what location to describe
+  const { location, immediateContainer } = VisibilityBehavior.getDescribableLocation(
+    player,
+    context.world
+  );
+
   // Get visible items (excluding the room itself and the player)
   const visible = context.getVisible().filter(
     e => e.id !== location.id && e.id !== player.id
   );
-  
+
   // Check if dark
   const isDark = checkIfDark(context);
-  
+
   // Create atomic looked event with complete room snapshot
   const roomSnapshot = captureRoomSnapshot(location, context.world, false);
   const visibleSnapshots = captureEntitySnapshots(visible, context.world);
-  
+
   return {
     actorId: player.id,
     // New atomic structure
@@ -53,6 +57,7 @@ export const buildLookingEventData: ActionDataBuilder<Record<string, unknown>> =
     locationName: location.name,
     locationDescription: location.description,
     isDark: isDark,
+    inVehicle: immediateContainer?.name || null,
     contents: visible.map(entity => ({
       id: entity.id,
       name: entity.name,
@@ -70,22 +75,26 @@ export const buildRoomDescriptionData: ActionDataBuilder<Record<string, unknown>
   preState?: WorldModel,
   postState?: WorldModel
 ): Record<string, unknown> => {
-  const location = context.currentLocation;
-  
+  // Use visibility logic to determine what location to describe
+  const { location, immediateContainer } = VisibilityBehavior.getDescribableLocation(
+    context.player,
+    context.world
+  );
+
   // Get visible items (excluding the room itself and the player)
   const visible = context.getVisible().filter(
     e => e.id !== location.id && e.id !== context.player.id
   );
-  
+
   // Create snapshots
   const roomSnapshot = captureRoomSnapshot(location, context.world, false);
   const visibleSnapshots = captureEntitySnapshots(visible, context.world);
-  
+
   // Determine if verbose mode
   const verboseMode = (context as any).verboseMode ?? true;
   const firstVisit = !(context as any).visitedLocations?.includes(location.id);
   const isVerbose = verboseMode || firstVisit;
-  
+
   return {
     // New atomic structure
     room: roomSnapshot,
@@ -96,6 +105,7 @@ export const buildRoomDescriptionData: ActionDataBuilder<Record<string, unknown>
     roomDescription: location.description,
     includeContents: true,
     verbose: isVerbose,
+    inVehicle: immediateContainer?.name || null,
     contents: visible.map(entity => ({
       id: entity.id,
       name: entity.name,
@@ -113,31 +123,35 @@ export const buildListContentsData: ActionDataBuilder<Record<string, unknown>> =
   preState?: WorldModel,
   postState?: WorldModel
 ): Record<string, unknown> => {
-  const location = context.currentLocation;
-  
+  // Use visibility logic to determine what location to describe
+  const { location } = VisibilityBehavior.getDescribableLocation(
+    context.player,
+    context.world
+  );
+
   // Get visible items (excluding the room itself and the player)
   const visible = context.getVisible().filter(
     e => e.id !== location.id && e.id !== context.player.id
   );
-  
+
   if (visible.length === 0) {
     return {}; // No list event needed if nothing visible
   }
-  
+
   // Create snapshots
   const roomSnapshot = captureRoomSnapshot(location, context.world, false);
   const visibleSnapshots = captureEntitySnapshots(visible, context.world);
-  
+
   // Group visible items by type
   const npcs = visible.filter(e => e.hasTrait(TraitType.ACTOR));
   const containers = visible.filter(e => e.hasTrait(TraitType.CONTAINER) && !e.hasTrait(TraitType.ACTOR));
   const supporters = visible.filter(e => e.hasTrait(TraitType.SUPPORTER) && !e.hasTrait(TraitType.CONTAINER));
-  const otherItems = visible.filter(e => 
-    !e.hasTrait(TraitType.ACTOR) && 
-    !e.hasTrait(TraitType.CONTAINER) && 
+  const otherItems = visible.filter(e =>
+    !e.hasTrait(TraitType.ACTOR) &&
+    !e.hasTrait(TraitType.CONTAINER) &&
     !e.hasTrait(TraitType.SUPPORTER)
   );
-  
+
   return {
     // New atomic structure (full snapshots)
     allItems: visibleSnapshots,
@@ -161,73 +175,84 @@ export function determineLookingMessage(
   context: ActionContext,
   isDark: boolean
 ): { messageId: string; params: Record<string, any> } {
-  const location = context.currentLocation;
+  // Use visibility logic to determine what location to describe
+  const { location, immediateContainer } = VisibilityBehavior.getDescribableLocation(
+    context.player,
+    context.world
+  );
   const params: Record<string, any> = {};
-  
+
   if (isDark) {
     return {
       messageId: 'room_dark',
       params: { location: location.name }
     };
   }
-  
+
   // Always include location name initially
   params.location = location.name;
-  
-  // Check if we're in a special location
-  if (location.hasTrait(TraitType.CONTAINER)) {
+
+  // If we're in an immediate container (but can see the room), note it
+  if (immediateContainer) {
+    params.inVehicle = immediateContainer.name;
+  }
+
+  // Check if we're in a closed container/vehicle (can't see the room)
+  // This only happens when getDescribableLocation returns the container itself
+  if (!immediateContainer && location.hasTrait(TraitType.CONTAINER)) {
     return {
       messageId: 'in_container',
-      params: { 
+      params: {
         container: location.name,
-        location: location.name  // Keep location for backward compatibility
+        location: location.name
       }
     };
-  } else if (location.hasTrait(TraitType.SUPPORTER)) {
+  } else if (!immediateContainer && location.hasTrait(TraitType.SUPPORTER)) {
     return {
       messageId: 'on_supporter',
-      params: { 
+      params: {
         supporter: location.name,
-        location: location.name  // Keep location for backward compatibility
+        location: location.name
       }
     };
   }
-  
+
   // Check for brief/verbose mode
   const verboseMode = (context as any).verboseMode ?? true;
   const firstVisit = !(context as any).visitedLocations?.includes(location.id);
-  
+
   let messageId = (!verboseMode && !firstVisit) ? 'room_description_brief' : 'room_description';
-  
+
   // Check for visible items
   const visible = context.getVisible().filter(
     e => e.id !== location.id && e.id !== context.player.id
   );
-  
+
   // Check command verb for variations
   const verb = context.command.parsed.structure.verb?.text.toLowerCase() || 'look';
   const hasDirectObject = (context.command.directObject !== undefined && context.command.directObject !== null) ||
                         (context.command.parsed.structure.directObject !== undefined && context.command.parsed.structure.directObject !== null);
-  
+
   // Special handling for examine without object
   const isExamineSurroundings = verb === 'examine' && !hasDirectObject;
-  
+
   if (isExamineSurroundings) {
     return { messageId: 'examine_surroundings', params };
   }
-  
-  // If there are visible items and not a special location, use contents_list
-  if (visible.length > 0 && !location.hasTrait(TraitType.CONTAINER) && !location.hasTrait(TraitType.SUPPORTER)) {
+
+  // If there are visible items, use contents_list
+  if (visible.length > 0) {
     const itemList = visible.map(e => e.name).join(', ');
     return {
       messageId: 'contents_list',
       params: {
         items: itemList,
-        count: visible.length
+        count: visible.length,
+        ...params
       }
     };
   }
-  
+
   return { messageId, params };
 }
 

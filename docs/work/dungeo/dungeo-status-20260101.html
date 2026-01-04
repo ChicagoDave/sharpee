@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Dungeo: Porting Mainframe Zork to Sharpee</title>
+    <style>
+        :root {
+            --bg-dark: #1a1a2e;
+            --bg-card: #16213e;
+            --accent-gold: #f4d03f;
+            --accent-green: #2ecc71;
+            --accent-blue: #3498db;
+            --accent-purple: #9b59b6;
+            --accent-red: #e74c3c;
+            --accent-orange: #e67e22;
+            --text-light: #ecf0f1;
+            --text-muted: #95a5a6;
+            --border-color: #2c3e50;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #0f0f23 100%);
+            color: var(--text-light);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            text-align: center;
+            padding: 3rem 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 3rem;
+        }
+        
+        h1 {
+            font-size: 3rem;
+            background: linear-gradient(90deg, var(--accent-gold), var(--accent-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+        
+        .timeline-badge {
+            display: inline-block;
+            background: var(--bg-card);
+            padding: 0.5rem 1.5rem;
+            border-radius: 2rem;
+            margin-top: 1rem;
+            border: 1px solid var(--accent-blue);
+            font-size: 0.9rem;
+        }
+        
+        .milestone-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--accent-green), #27ae60);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            margin: 0.5rem 0.25rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        h2 {
+            font-size: 1.8rem;
+            color: var(--accent-gold);
+            margin: 2.5rem 0 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        h3 {
+            font-size: 1.3rem;
+            color: var(--accent-green);
+            margin: 1.5rem 0 1rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .stat-card {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-blue);
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        
+        .progress-bar {
+            background: var(--border-color);
+            border-radius: 1rem;
+            height: 1.5rem;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            transition: width 0.5s ease;
+        }
+        
+        .progress-rooms { background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple)); }
+        .progress-treasure { background: linear-gradient(90deg, var(--accent-gold), #e67e22); }
+        .progress-puzzles { background: linear-gradient(90deg, var(--accent-green), #27ae60); }
+        
+        .card {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border: 1px solid var(--border-color);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .card-icon {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        
+        .icon-npc { background: linear-gradient(135deg, var(--accent-red), #c0392b); }
+        .icon-system { background: linear-gradient(135deg, var(--accent-blue), #2980b9); }
+        .icon-puzzle { background: linear-gradient(135deg, var(--accent-green), #27ae60); }
+        .icon-test { background: linear-gradient(135deg, var(--accent-purple), #8e44ad); }
+        .icon-region { background: linear-gradient(135deg, var(--accent-gold), #e67e22); }
+        .icon-npm { background: linear-gradient(135deg, #cb3837, #a33); }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background: rgba(52, 152, 219, 0.2);
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .badge-done { background: rgba(46, 204, 113, 0.2); color: var(--accent-green); }
+        .badge-partial { background: rgba(241, 196, 15, 0.2); color: var(--accent-gold); }
+        .badge-pending { background: rgba(149, 165, 166, 0.2); color: var(--text-muted); }
+        .badge-npm { background: rgba(203, 56, 55, 0.2); color: #cb3837; }
+        
+        code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.25rem;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            color: var(--accent-gold);
+        }
+        
+        pre {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            border-left: 3px solid var(--accent-blue);
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.1), rgba(155, 89, 182, 0.1));
+            border: 1px solid var(--accent-blue);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        .success-box {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.1), rgba(39, 174, 96, 0.1));
+            border: 1px solid var(--accent-green);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        .region-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .region-card {
+            background: var(--bg-card);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        .region-name {
+            font-weight: 600;
+            color: var(--accent-gold);
+            margin-bottom: 0.5rem;
+        }
+        
+        .region-stats {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        
+        .adr-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+        
+        .adr-item {
+            background: var(--bg-card);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border-left: 3px solid var(--accent-purple);
+        }
+        
+        .adr-number {
+            font-weight: bold;
+            color: var(--accent-purple);
+        }
+        
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0.5rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border-color);
+        }
+        
+        .timeline-item {
+            position: relative;
+            padding-bottom: 1.5rem;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -1.65rem;
+            top: 0.5rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            border: 2px solid var(--bg-dark);
+        }
+        
+        .timeline-item.milestone::before {
+            background: var(--accent-green);
+            width: 16px;
+            height: 16px;
+            left: -1.75rem;
+        }
+        
+        .timeline-date {
+            font-size: 0.85rem;
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+        
+        .lesson-box {
+            background: rgba(46, 204, 113, 0.1);
+            border: 1px solid var(--accent-green);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .lesson-title {
+            color: var(--accent-green);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .package-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.75rem;
+            margin: 1rem 0;
+        }
+        
+        .package-card {
+            background: var(--bg-card);
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-muted);
+        }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; }
+            .container { padding: 1rem; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏰 Project Dungeo</h1>
+            <p class="subtitle">Porting Mainframe Zork to the Sharpee Interactive Fiction Engine</p>
+            <div class="timeline-badge">📅 December 27, 2025 – January 1, 2026 • 6 Days of Development</div>
+            <div style="margin-top: 1rem;">
+                <span class="milestone-badge">✓ Beta Released</span>
+                <span class="milestone-badge">✓ Published to npm</span>
+                <span class="milestone-badge">✓ 418 Tests Passing</span>
+            </div>
+        </header>
+
+        <section>
+            <h2>📊 Project Overview</h2>
+            <p>Project Dungeo is an ambitious effort to port the complete <strong>Mainframe Zork</strong> (also known as "Dungeon") to Sharpee, a modern interactive fiction engine. This serves as both a nostalgic recreation of the classic 1977-1979 text adventure and a comprehensive stress-test of Sharpee's capabilities. The project culminated in the first public beta release of the Sharpee engine on npm.</p>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">150</div>
+                    <div class="stat-label">Rooms Implemented</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">40</div>
+                    <div class="stat-label">Treasures Created</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">616</div>
+                    <div class="stat-label">Max Score Points</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">6</div>
+                    <div class="stat-label">NPCs Active</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">12+</div>
+                    <div class="stat-label">Puzzles Working</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">418</div>
+                    <div class="stat-label">Tests Passing</div>
+                </div>
+            </div>
+
+            <h3>Progress Meters</h3>
+            <p style="margin-bottom: 0.25rem;"><strong>Rooms:</strong> 150 / ~191</p>
+            <div class="progress-bar">
+                <div class="progress-fill progress-rooms" style="width: 78%;">78%</div>
+            </div>
+            
+            <p style="margin-bottom: 0.25rem; margin-top: 1rem;"><strong>Treasure Points:</strong> 500 / 616</p>
+            <div class="progress-bar">
+                <div class="progress-fill progress-treasure" style="width: 81%;">81%</div>
+            </div>
+            
+            <p style="margin-bottom: 0.25rem; margin-top: 1rem;"><strong>Puzzles:</strong> 12 / ~25</p>
+            <div class="progress-bar">
+                <div class="progress-fill progress-puzzles" style="width: 48%;">48%</div>
+            </div>
+        </section>
+
+        <section>
+            <h2>📦 npm Beta Release</h2>
+            
+            <div class="success-box">
+                <h3 style="color: var(--accent-green); margin-top: 0;">🎉 Sharpee Published to npm!</h3>
+                <p>All 11 core packages published at version <code>0.9.1-beta.13</code></p>
+                <pre style="margin-top: 1rem; border-color: var(--accent-green);">npm install @sharpee/sharpee@beta</pre>
+            </div>
+
+            <div class="package-grid">
+                <div class="package-card">@sharpee/core</div>
+                <div class="package-card">@sharpee/if-domain</div>
+                <div class="package-card">@sharpee/world-model</div>
+                <div class="package-card">@sharpee/if-services</div>
+                <div class="package-card">@sharpee/text-services</div>
+                <div class="package-card">@sharpee/lang-en-us</div>
+                <div class="package-card">@sharpee/parser-en-us</div>
+                <div class="package-card">@sharpee/event-processor</div>
+                <div class="package-card">@sharpee/stdlib</div>
+                <div class="package-card">@sharpee/engine</div>
+                <div class="package-card">@sharpee/sharpee</div>
+            </div>
+
+            <div class="lesson-box">
+                <div class="lesson-title">📚 Key Publishing Lesson</div>
+                <p>Use <code>pnpm publish</code> instead of <code>npm publish</code> in monorepos! Only pnpm properly converts <code>workspace:*</code> protocol to real version numbers during publish. npm OIDC Trusted Publishing was unreliable despite correct configuration—classic token auth proved more dependable.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>🏗️ Architecture Decisions</h2>
+            <p>Eleven Architecture Decision Records (ADRs) were created to guide the implementation:</p>
+            
+            <div class="adr-list">
+                <div class="adr-item">
+                    <span class="adr-number">ADR-070</span>
+                    <strong>NPC System</strong>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Entity + Behavior pattern with hooks for onTurn, onPlayerEnters, onAttacked</p>
+                </div>
+                <div class="adr-item">
+                    <span class="adr-number">ADR-071</span>
+                    <strong>Daemons & Fuses</strong>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Turn-based timers for lantern battery, candle burning, ambient effects</p>
+                </div>
+                <div class="adr-item">
+                    <span class="adr-number">ADR-072</span>
+                    <strong>Combat System</strong>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Skill-based probability with CombatantTrait and WeaponTrait</p>
+                </div>
+                <div class="adr-item">
+                    <span class="adr-number">ADR-073</span>
+                    <strong>Transcript Testing</strong>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Simple .transcript files with command/assertion format</p>
+                </div>
+                <div class="adr-item">
+                    <span class="adr-number">ADR-074</span>
+                    <strong>IFID System</strong>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Treaty of Babel-compliant story identification</p>
+                </div>
+                <div class="adr-item">
+                    <span class="adr-number">ADR-075</span>
+                    <strong>Effects-Based Handlers</strong>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Handlers return Effect[] arrays processed atomically</p>
+                </div>
+                <div class="adr-item">
+                    <span class="adr-number">ADR-076</span>
+                    <strong>Scoring System</strong>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Two-layer architecture: stdlib default + story override</p>
+                </div>
+                <div class="adr-item">
+                    <span class="adr-number">ADR-077</span>
+                    <strong>Release Build System</strong>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Bundle strategy for fast module loading (578× improvement)</p>
+                </div>
+                <div class="adr-item">
+                    <span class="adr-number">ADR-080</span>
+                    <strong>Grammar Enhancements</strong>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Text slots, multi-object parsing, command chaining, instruments</p>
+                </div>
+                <div class="adr-item">
+                    <span class="adr-number">ADR-081</span>
+                    <strong>npm Release Strategy</strong>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Synchronized versioning, meta-package, CI/CD pipeline</p>
+                </div>
+                <div class="adr-item">
+                    <span class="adr-number">ADR-082</span>
+                    <strong>Typed Event System</strong>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Type-safe events with EventDataRegistry and helpers</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>🗺️ Regions Implemented</h2>
+            <p>The game world is organized into distinct regions, each with its own rooms, objects, and puzzles:</p>
+            
+            <div class="region-grid">
+                <div class="region-card">
+                    <div class="region-name">🏠 White House</div>
+                    <div class="region-stats">4 rooms • Starting area with mailbox puzzle</div>
+                </div>
+                <div class="region-card">
+                    <div class="region-name">🏡 House Interior</div>
+                    <div class="region-stats">3 rooms • Kitchen, Living Room, Attic</div>
+                </div>
+                <div class="region-card">
+                    <div class="region-name">🌲 Forest</div>
+                    <div class="region-stats">9 rooms • Paths, Clearing, Canyon View</div>
+                </div>
+                <div class="region-card">
+                    <div class="region-name">⛏️ Underground</div>
+                    <div class="region-stats">17 rooms • Cellar to Round Room hub</div>
+                </div>
+                <div class="region-card">
+                    <div class="region-name">🌊 Dam</div>
+                    <div class="region-stats">15 rooms • Flood Control Dam #3, Reservoir</div>
+                </div>
+                <div class="region-card">
+                    <div class="region-name">⚒️ Coal Mine</div>
+                    <div class="region-stats">29 rooms • Mine maze, Gas Room, Slides</div>
+                </div>
+                <div class="region-card">
+                    <div class="region-name">🏛️ Temple</div>
+                    <div class="region-stats">12 rooms • Altar, Egyptian Room, Hades</div>
+                </div>
+                <div class="region-card">
+                    <div class="region-name">🌋 Volcano</div>
+                    <div class="region-stats">7 rooms • Lava Room, Ruby Room</div>
+                </div>
+                <div class="region-card">
+                    <div class="region-name">🏦 Bank of Zork</div>
+                    <div class="region-stats">11 rooms • Wall-walking puzzle</div>
+                </div>
+                <div class="region-card">
+                    <div class="region-name">🚿 Well Room</div>
+                    <div class="region-stats">10 rooms • Riddle Room, Pearl Room</div>
+                </div>
+                <div class="region-card">
+                    <div class="region-name">🏔️ Frigid River</div>
+                    <div class="region-stats">13 rooms • Rainbow, Aragain Falls</div>
+                </div>
+                <div class="region-card">
+                    <div class="region-name">🧩 Maze</div>
+                    <div class="region-stats">24 rooms • Twisty passages, Dead Ends</div>
+                </div>
+                <div class="region-card">
+                    <div class="region-name">👑 Royal Puzzle</div>
+                    <div class="region-stats">3 rooms • 8×8 sliding block puzzle</div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>👾 NPCs & Combat</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon icon-npc">⚔️</div>
+                    <div>
+                        <h3 style="margin: 0;">Combat System</h3>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">Skill-based probability with counterattacks</p>
+                    </div>
+                </div>
+                <pre>Hit Chance = 50% + (attackerSkill + weaponBonus - defenderSkill)
+                (clamped to 10% - 95%)
+
+Damage = baseDamage + weaponDamage - armorReduction
+
+Health Thresholds:
+  > 80% = Healthy
+  50-80% = Wounded
+  20-50% = Badly Wounded
+  < 20% = Near Death (auto-knockout)</pre>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>NPC</th>
+                        <th>Location</th>
+                        <th>Behavior</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>🧌 Troll</td>
+                        <td>Troll Room</td>
+                        <td>Guards north passage, fights with bloody axe</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>🥷 Thief</td>
+                        <td>Wandering</td>
+                        <td>Steals treasures, opens egg, skill 70 combat</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>👁️ Cyclops</td>
+                        <td>Cyclops Room</td>
+                        <td>Flees on "Odysseus", guards Living Room shortcut</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>🦇 Vampire Bat</td>
+                        <td>Squeaky Room</td>
+                        <td>Teleports player unless garlic present</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>🤖 Robot</td>
+                        <td>Low Room</td>
+                        <td>Follows player, pushes buttons on command</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>👻 Spirits</td>
+                        <td>Entry to Hades</td>
+                        <td>Block passage until exorcism ritual</td>
+                        <td><span class="badge badge-done">Complete</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>🧩 Puzzles Implemented</h2>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Puzzle</th>
+                        <th>Mechanic</th>
+                        <th>Reward</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Rug/Trapdoor</td>
+                        <td>Push rug to reveal hidden trapdoor</td>
+                        <td>Access to Cellar</td>
+                    </tr>
+                    <tr>
+                        <td>Troll Combat</td>
+                        <td>Defeat troll with elvish sword</td>
+                        <td>10 pts, passage opens</td>
+                    </tr>
+                    <tr>
+                        <td>Bank Wall-Walking</td>
+                        <td>Walk through curtain/walls, avoid alarm</td>
+                        <td>30 pts in treasures</td>
+                    </tr>
+                    <tr>
+                        <td>Cyclops "Odysseus"</td>
+                        <td>Say the magic word to scare cyclops</td>
+                        <td>10 pts, shortcut opens</td>
+                    </tr>
+                    <tr>
+                        <td>Exorcism Ritual</td>
+                        <td>Ring bell, read book, light candles</td>
+                        <td>10 pts, Hades opens</td>
+                    </tr>
+                    <tr>
+                        <td>Loud Room "Echo"</td>
+                        <td>Say "echo" while holding platinum bar</td>
+                        <td>Safe passage</td>
+                    </tr>
+                    <tr>
+                        <td>Riddle Room</td>
+                        <td>Answer "well" to open stone door</td>
+                        <td>Access to Pearl Room</td>
+                    </tr>
+                    <tr>
+                        <td>Trophy Case Scoring</td>
+                        <td>Place treasures in case for points</td>
+                        <td>Bonus points per treasure</td>
+                    </tr>
+                    <tr>
+                        <td>Royal Puzzle</td>
+                        <td>8×8 sliding block puzzle, push sandstone</td>
+                        <td>25 pts (Gold Card)</td>
+                    </tr>
+                    <tr>
+                        <td>Mirror Room Toggle</td>
+                        <td>Rub mirror to swap between two regions</td>
+                        <td>Access to Coal Mine</td>
+                    </tr>
+                    <tr>
+                        <td>Robot Button</td>
+                        <td>Command robot to push triangular button</td>
+                        <td>Fixes Round Room carousel</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>🔮 INCANT: The Hidden Endgame Cheat</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon icon-puzzle">🔐</div>
+                    <div>
+                        <h3 style="margin: 0;">ENCRYP Algorithm</h3>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">Ported from Bob Supnik's 1981 Fortran implementation</p>
+                    </div>
+                </div>
+                <p style="margin-bottom: 1rem;">The INCANT command is a piece of IF history—a hidden cheat that allows players to skip directly to the endgame using challenge-response authentication:</p>
+                <pre>> incant mhoram dfnobo
+Greetings, Implementor!
+
+Top of Stairs
+You are at the top of a flight of stairs...</pre>
+                <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-muted);">The TypeScript implementation faithfully ports the original ENCRYP subroutine, using a 6-character XOR cipher with the key "ECORMS". Any word can be used as a challenge—the algorithm deterministically generates the required response.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>⏱️ Timed Events (Daemons & Fuses)</h2>
+            
+            <div class="highlight-box">
+                <p><strong>Daemons</strong> are recurring events that fire every N turns.</p>
+                <p><strong>Fuses</strong> are one-shot events that fire after N turns.</p>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Type</th>
+                        <th>Duration</th>
+                        <th>Effect</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>🔦 Lantern Battery</td>
+                        <td>Fuse</td>
+                        <td>330 turns</td>
+                        <td>Warnings at 50/20 turns, then dies</td>
+                    </tr>
+                    <tr>
+                        <td>🕯️ Candle Burning</td>
+                        <td>Fuse</td>
+                        <td>50 turns</td>
+                        <td>Warnings at 15/5 turns, then out</td>
+                    </tr>
+                    <tr>
+                        <td>💧 Dam Draining</td>
+                        <td>Multi-Fuse</td>
+                        <td>41 turns</td>
+                        <td>4-stage sequence, reveals trunk</td>
+                    </tr>
+                    <tr>
+                        <td>🌲 Forest Ambience</td>
+                        <td>Daemon</td>
+                        <td>Every turn</td>
+                        <td>15% chance of bird/rustle/breeze</td>
+                    </tr>
+                    <tr>
+                        <td>🦇 Bat Attack</td>
+                        <td>Daemon</td>
+                        <td>On room entry</td>
+                        <td>Teleport unless garlic present</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>🧪 Testing Infrastructure</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon icon-test">📝</div>
+                    <div>
+                        <h3 style="margin: 0;">Transcript-Based Testing</h3>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">ADR-073: Simple .transcript files validate gameplay</p>
+                    </div>
+                </div>
+                <pre># Example transcript test
+---
+story: dungeo
+title: Mailbox Puzzle
+---
+
+> open mailbox
+~ You open the small mailbox.
+[EVENT: true, type="if.event.opened"]
+
+> take leaflet
+~ Taken.
+[STATE: true, leaflet.location = player]
+
+> read leaflet
+~ "WELCOME TO ZORK!"</pre>
+
+                <h4 style="margin-top: 1rem;">Assertion Types</h4>
+                <table>
+                    <tr><td><code>~</code></td><td>Output contains text</td></tr>
+                    <tr><td><code>!~</code></td><td>Output does NOT contain text</td></tr>
+                    <tr><td><code>/regex/</code></td><td>Output matches regex</td></tr>
+                    <tr><td><code>[EVENT: true, type="..."]</code></td><td>Event was emitted</td></tr>
+                    <tr><td><code>[STATE: true, entity.prop = val]</code></td><td>World state check</td></tr>
+                    <tr><td><code>[TODO]</code></td><td>Expected failure (not yet implemented)</td></tr>
+                </table>
+            </div>
+
+            <div class="stats-grid" style="margin-top: 1.5rem;">
+                <div class="stat-card">
+                    <div class="stat-number">22+</div>
+                    <div class="stat-label">Transcript Files</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">418</div>
+                    <div class="stat-label">Tests Passing</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">5</div>
+                    <div class="stat-label">Expected Failures</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">145ms</div>
+                    <div class="stat-label">Test Duration</div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>🔧 GDT Debug Tool</h2>
+            
+            <p>Implemented a faithful recreation of the original 1981 "Game Debugging Tool" by Bob Supnik:</p>
+            
+            <div class="card">
+                <pre>GDT Commands:
+
+Display:
+  DA - Display Adventurer (location, score, inventory)
+  DR - Display Room (properties, exits, contents)
+  DO - Display Object (traits, location)
+  DS - Display State (turn count, score)
+  DC - Display Clock (active daemons and fuses)
+  DX - Display Exits
+
+Alter:
+  AH - Alter Here (teleport player)
+  AO - Alter Object (move any object)
+  TK - Take (acquire any object)
+  PZ - Puzzle state (Royal Puzzle debug)
+
+Toggle:
+  ND - No Deaths (immortality on)
+  RD - Restore Deaths (immortality off)
+  NR - No Robber (disable thief)
+  RR - Restore Robber (enable thief)
+
+Utility:
+  HE - Help
+  EX - Exit GDT</pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>⚡ Performance Optimization</h2>
+            
+            <div class="highlight-box">
+                <h3 style="color: var(--accent-green); margin-top: 0;">Bundle System Achievement</h3>
+                <p>Created an esbuild-based bundle system that dramatically improved load times:</p>
+                
+                <table style="margin-top: 1rem;">
+                    <tr>
+                        <th>Metric</th>
+                        <th>Before</th>
+                        <th>After</th>
+                        <th>Improvement</th>
+                    </tr>
+                    <tr>
+                        <td>Module Load Time</td>
+                        <td>81,000ms</td>
+                        <td>142ms</td>
+                        <td style="color: var(--accent-green); font-weight: bold;">578× faster</td>
+                    </tr>
+                    <tr>
+                        <td>Test Suite Run</td>
+                        <td>~82s</td>
+                        <td>145ms</td>
+                        <td style="color: var(--accent-green); font-weight: bold;">565× faster</td>
+                    </tr>
+                    <tr>
+                        <td>Bundle Size</td>
+                        <td>N/A</td>
+                        <td>1.2MB</td>
+                        <td>Single file</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <p>The slowdown was caused by Node.js barrel exports (<code>export * from './foo'</code>) triggering synchronous file I/O. The bundle inlines all dependencies into a single file, eliminating the cascading loads.</p>
+        </section>
+
+        <section>
+            <h2>📅 Development Timeline</h2>
+            
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-date">December 27, 2025</div>
+                    <p><strong>Project Kickoff & Core Systems</strong></p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Created planning docs, wrote ADRs 070-072, implemented SchedulerService, NpcService, CombatService. Phase 1 prerequisites complete.</p>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-date">December 28, 2025</div>
+                    <p><strong>Rooms & Testing Infrastructure</strong></p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Implemented 30+ rooms, transcript tester, entity handlers, trophy case scoring. Created Dam region, began Coal Mine.</p>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-date">December 29, 2025</div>
+                    <p><strong>NPCs & Puzzles</strong></p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Implemented Thief, Cyclops, Robot NPCs. Created GDT debug tool. Built Bank of Zork wall-walking puzzle. Added Maze region (24 rooms).</p>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-date">December 30, 2025</div>
+                    <p><strong>Advanced Mechanics</strong></p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Implemented ADR-075 effects system, Mirror Room toggle, Coal Mine restructure, word puzzles (Loud Room, Riddle Room), Royal Puzzle sliding mechanics.</p>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-date">December 31, 2025</div>
+                    <p><strong>Release Planning & Branch Merge</strong></p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Merged 8,400+ lines to main. Created ADR-080 (Grammar Enhancements) and ADR-081 (npm Release Strategy). Royal Puzzle exit mechanics complete.</p>
+                </div>
+                
+                <div class="timeline-item milestone">
+                    <div class="timeline-date">January 1, 2026</div>
+                    <p><strong>🎉 Beta Release & npm Publish</strong></p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">
+                        Implemented ADR-074 (IFID), ADR-082 (Typed Events). Refactored monorepo to workspace:* dependencies. 
+                        Published 11 packages to npm at 0.9.1-beta.13. Implemented INCANT endgame cheat with ENCRYP algorithm. 
+                        418/423 tests passing.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>📚 Key Lessons Learned</h2>
+            
+            <div class="lesson-box">
+                <div class="lesson-title">🏛️ Language Layer Separation</div>
+                <p>All user-facing text flows through message IDs, never hardcoded strings. This enables localization and keeps logic clean:</p>
+                <pre>// Bad: hardcoded
+return "The troll blocks your path!";
+
+// Good: message ID
+return { messageId: 'npc.troll.blocks_path' };</pre>
+            </div>
+            
+            <div class="lesson-box">
+                <div class="lesson-title">🔄 Three-Phase Action Pattern</div>
+                <p>Every action follows Validate → Execute → Report:</p>
+                <pre>validate: Check preconditions, entity scope, permissions
+execute:  Apply state changes, emit events
+report:   Generate output messages from semantic events</pre>
+            </div>
+            
+            <div class="lesson-box">
+                <div class="lesson-title">📦 Vertical Slice Development</div>
+                <p>Rather than building features in isolation, each phase delivers a playable increment. Phase 1 (White House to Troll) validated NPC, combat, and daemons before scaling up.</p>
+            </div>
+            
+            <div class="lesson-box">
+                <div class="lesson-title">🧪 Transcript Testing</div>
+                <p>Simple text files that capture expected gameplay are more maintainable than complex unit tests for IF content. They serve as both tests and documentation.</p>
+            </div>
+            
+            <div class="lesson-box">
+                <div class="lesson-title">⚙️ Effects-Based Handlers</div>
+                <p>Event handlers return Effect[] arrays instead of mutating world state directly. This enables atomic processing, validation, and keeps stdlib as the gatekeeper for all mutations.</p>
+            </div>
+
+            <div class="lesson-box">
+                <div class="lesson-title">📤 pnpm for Monorepo Publishing</div>
+                <p>Use <code>pnpm publish</code> (not npm) in monorepos—only pnpm properly converts <code>workspace:*</code> to real versions. npm OIDC was unreliable; classic token auth just works.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>🎯 What Remains</h2>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Remaining Work</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Rooms</td>
+                        <td>~41 rooms (Endgame sequence)</td>
+                    </tr>
+                    <tr>
+                        <td>Treasures</td>
+                        <td>Don Woods stamp (1pt), Brass bauble (2pt), misc</td>
+                    </tr>
+                    <tr>
+                        <td>Puzzles</td>
+                        <td>Rainbow wave (sceptre), balloon ride, more</td>
+                    </tr>
+                    <tr>
+                        <td>NPCs</td>
+                        <td>Dungeon Master, Gnome</td>
+                    </tr>
+                    <tr>
+                        <td>Systems</td>
+                        <td>WAVE action, vehicle mechanics, endgame puzzles</td>
+                    </tr>
+                    <tr>
+                        <td>Endgame</td>
+                        <td>Guardian puzzles, rotating room, Dungeon Master trivia</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>🎮 Sample Gameplay</h2>
+            
+            <div class="card" style="background: #000; font-family: monospace;">
+                <pre style="color: #0f0; background: transparent; border: none; padding: 0;">
+West of House
+You are standing in an open field west of a white house,
+with a boarded front door.
+There is a small mailbox here.
+
+> open mailbox
+Opening the small mailbox reveals a leaflet.
+
+> take leaflet
+Taken.
+
+> read leaflet
+"WELCOME TO ZORK!
+
+ZORK is a game of adventure, danger, and low cunning.
+In it you will explore some of the most amazing territory
+ever seen by mortals. No computer should be without one!"
+
+> go north
+North of House
+You are facing the north side of a white house.
+There is no door here, and all the windows are boarded.
+
+> go east
+Behind House
+You are behind the white house. A path leads into the forest
+to the east. In one corner of the house there is a small
+window which is slightly ajar.
+
+> open window
+With great effort, you open the window far enough to allow
+entry.
+
+> enter window
+Kitchen
+You are in the kitchen of the white house. A table seems to
+have been used recently for the preparation of food.
+A passage leads to the west and a staircase can be seen
+leading upward. A dark staircase can be seen leading down.
+On the table is an elongated brown sack, smelling of hot
+peppers. A bottle is sitting on the table.
+A brass lantern is on the floor nearby.
+There is an elvish sword of great antiquity here.
+
+> take sword
+Taken.
+
+> take lantern
+Taken.
+
+> turn on lantern
+The brass lantern is now on.
+
+>_</pre>
+            </div>
+        </section>
+
+        <footer>
+            <p><strong>Project Dungeo</strong> • Sharpee Interactive Fiction Engine</p>
+            <p style="font-size: 0.9rem; margin-top: 0.5rem;">
+                <code>npm install @sharpee/sharpee@beta</code>
+            </p>
+            <p style="font-size: 0.85rem; margin-top: 0.5rem;">
+                Original Mainframe Zork by Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling (1977-1979)
+            </p>
+            <p style="font-size: 0.85rem;">
+                Report generated January 1, 2026
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

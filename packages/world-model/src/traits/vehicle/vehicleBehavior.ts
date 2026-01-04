@@ -10,7 +10,7 @@
 import { WorldModel } from '../../world/WorldModel';
 import { IFEntity } from '../../entities/if-entity';
 import { TraitType } from '../trait-types';
-import { VehicleTrait } from './vehicleTrait';
+import { VehicleTrait } from './VehicleTrait';
 
 /**
  * Check if an entity is a vehicle

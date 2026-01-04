@@ -51,7 +51,7 @@ import { EquippedTrait } from './equipped/equippedTrait';
 import { NpcTrait } from './npc/npcTrait';
 
 // Transport traits
-import { VehicleTrait } from './vehicle/vehicleTrait';
+import { VehicleTrait } from './vehicle/VehicleTrait';
 
 /**
  * Map of trait types to their constructors
