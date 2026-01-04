@@ -9,7 +9,7 @@
 
 import { WorldModel, IWorldModel, IdentityTrait, OpenableTrait, ContainerTrait, VehicleTrait, IParsedCommand } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
-import { ISchedulerService, Daemon, Fuse, SchedulerContext } from '@sharpee/engine';
+import { ISchedulerService, Daemon, Fuse, SchedulerContext, GameEngine } from '@sharpee/engine';
 import { DungeoSchedulerMessages } from '../scheduler/scheduler-messages';
 import { BalloonState, isLedgePosition, isMidairPosition } from '../regions/volcano/objects/balloon-objects';
 
@@ -78,8 +78,11 @@ function updateClothBagState(world: IWorldModel, isInflated: boolean): void {
  * - Tracks burning objects placed in receptacle
  * - Updates balloon operational state
  * - Manages cloth bag inflation
+ *
+ * Uses EventProcessor.registerHandler for proper event dispatch (ADR-085).
  */
 export function registerBalloonPutHandler(
+  engine: GameEngine,
   world: WorldModel,
   balloonId: string,
   receptacleId: string
@@ -87,72 +90,79 @@ export function registerBalloonPutHandler(
   balloonEntityId = balloonId;
   receptacleEntityId = receptacleId;
 
-  world.registerEventHandler('if.event.put_in', (event: ISemanticEvent, w: IWorldModel): void => {
+  const eventProcessor = engine.getEventProcessor();
+
+  // Handle putting items in the receptacle
+  eventProcessor.registerHandler('if.event.put_in', (event: ISemanticEvent): ISemanticEvent[] => {
     const data = event.data as Record<string, any> | undefined;
-    if (!data) return;
+    if (!data) return [];
 
     // Check if target is the receptacle
     const targetId = data.targetId as string | undefined;
-    if (targetId !== receptacleEntityId) return;
+    if (targetId !== receptacleEntityId) return [];
 
     // Get the item being placed
     const itemId = data.itemId as string | undefined;
-    if (!itemId) return;
+    if (!itemId) return [];
 
-    const item = w.getEntity(itemId);
-    if (!item) return;
+    const item = world.getEntity(itemId);
+    if (!item) return [];
 
     // Check if item is burning
     const isBurning = (item as any).isBurning === true;
 
     // Get balloon state
-    const balloonState = getBalloonState(w);
-    if (!balloonState) return;
+    const balloonState = getBalloonState(world);
+    if (!balloonState) return [];
 
     if (isBurning) {
       // Track the burning object
       balloonState.burningObject = itemId;
-      w.setStateValue(BALLOON_BURNING_OBJECT_KEY, itemId);
-      w.setStateValue(BALLOON_INFLATED_KEY, true);
+      world.setStateValue(BALLOON_BURNING_OBJECT_KEY, itemId);
+      world.setStateValue(BALLOON_INFLATED_KEY, true);
 
       // Update cloth bag to inflated
-      updateClothBagState(w, true);
+      updateClothBagState(world, true);
 
       // Set flag for messaging
-      w.setStateValue('dungeo.balloon.just_inflated', true);
+      world.setStateValue('dungeo.balloon.just_inflated', true);
     }
+
+    return [];
   });
 
-  // Also handle taking items from receptacle
-  world.registerEventHandler('if.event.taken', (event: ISemanticEvent, w: IWorldModel): void => {
+  // Handle taking items from receptacle
+  eventProcessor.registerHandler('if.event.taken', (event: ISemanticEvent): ISemanticEvent[] => {
     const data = event.data as Record<string, any> | undefined;
-    if (!data) return;
+    if (!data) return [];
 
     const itemId = data.entityId as string | undefined;
-    if (!itemId) return;
+    if (!itemId) return [];
 
     // Check if this was the burning object in the receptacle
-    const balloonState = getBalloonState(w);
-    if (!balloonState) return;
+    const balloonState = getBalloonState(world);
+    if (!balloonState) return [];
 
     if (balloonState.burningObject === itemId) {
       // Clear the burning object
       balloonState.burningObject = null;
-      w.setStateValue(BALLOON_BURNING_OBJECT_KEY, null);
+      world.setStateValue(BALLOON_BURNING_OBJECT_KEY, null);
 
       // Check if balloon should deflate
-      const receptacle = w.getEntity(receptacleEntityId!);
+      const receptacle = world.getEntity(receptacleEntityId!);
       if (receptacle) {
-        const contents = w.getContents(receptacleEntityId!);
+        const contents = world.getContents(receptacleEntityId!);
         const stillHasBurning = contents.some(e => (e as any).isBurning === true);
 
         if (!stillHasBurning) {
-          w.setStateValue(BALLOON_INFLATED_KEY, false);
-          updateClothBagState(w, false);
-          w.setStateValue('dungeo.balloon.just_deflated', true);
+          world.setStateValue(BALLOON_INFLATED_KEY, false);
+          updateClothBagState(world, false);
+          world.setStateValue('dungeo.balloon.just_deflated', true);
         }
       }
     }
+
+    return [];
   });
 }
 

@@ -13,6 +13,8 @@ export {
 export {
   IScoringService,
   ScoringService,
+  ScoringServiceConfig,
+  ScoringDefinition,
   ScoreEntry,
   RankDefinition,
   DEFAULT_RANKS,

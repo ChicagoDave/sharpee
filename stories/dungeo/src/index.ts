@@ -123,8 +123,7 @@ export class DungeoStory implements Story {
     // Create scoring service
     this.scoringService = new DungeoScoringService(world);
 
-    // Register trophy case scoring handler
-    this.registerTrophyCaseHandler(world);
+    // Note: Trophy case handler is registered in onEngineReady() using EventProcessor
 
     // Register reality altered handler (ADR-078 hidden max points)
     registerRealityAlteredHandler(world);
@@ -194,10 +193,7 @@ export class DungeoStory implements Story {
     createTempleObjects(world, this.templeIds);
     this.balloonIds = createVolcanoRegionObjects(world, this.volcanoIds);
 
-    // Register balloon PUT handler (tracks burning objects in receptacle)
-    if (this.balloonIds) {
-      registerBalloonPutHandler(world, this.balloonIds.balloonId, this.balloonIds.receptacleId);
-    }
+    // Balloon PUT handler is registered in onEngineReady() using EventProcessor
 
     createBankObjects(world, this.bankIds);
     createWellRoomObjects(world, this.wellRoomIds);
@@ -1500,43 +1496,46 @@ export class DungeoStory implements Story {
   }
 
   /**
-   * Register the trophy case event handler for treasure scoring
+   * Register the trophy case event handler for treasure scoring (ADR-085)
    *
-   * Note: world.registerEventHandler returns void, so we can't emit events.
-   * We just update the score directly - players can check with SCORE command.
+   * Uses EventProcessor.registerHandler for proper event dispatch.
+   * Returns empty effects array since scoring updates capability directly.
    */
-  private registerTrophyCaseHandler(world: WorldModel): void {
+  private registerTrophyCaseHandler(engine: GameEngine): void {
     const TROPHY_CASE_NAME = 'trophy case';
     const scoringService = this.scoringService;
+    const world = this.world;
 
-    world.registerEventHandler('if.event.put_in', (event: ISemanticEvent, w): void => {
+    engine.getEventProcessor().registerHandler('if.event.put_in', (event) => {
       const data = event.data as Record<string, any> | undefined;
       const targetId = data?.targetId as string | undefined;
-      if (!targetId) return;
+      if (!targetId) return [];
 
       // Check if target is the trophy case
-      const targetEntity = w.getEntity(targetId);
-      if (!targetEntity) return;
+      const targetEntity = world.getEntity(targetId);
+      if (!targetEntity) return [];
 
       const identity = targetEntity.get('identity') as { name?: string } | undefined;
-      if (identity?.name !== TROPHY_CASE_NAME) return;
+      if (identity?.name !== TROPHY_CASE_NAME) return [];
 
       // Get the item being placed
       const itemId = data?.itemId as string | undefined;
-      if (!itemId) return;
+      if (!itemId) return [];
 
-      const item = w.getEntity(itemId);
-      if (!item) return;
+      const item = world.getEntity(itemId);
+      if (!item) return [];
 
       // Check if item is a treasure
       const isTreasure = (item as any).isTreasure;
-      if (!isTreasure) return;
+      if (!isTreasure) return [];
 
       const treasureValue = (item as any).treasureValue || 0;
       const treasureId = (item as any).treasureId || item.id;
 
       // Score the treasure (prevents double-scoring)
       scoringService.scoreTreasure(treasureId, treasureValue);
+
+      return [];
     });
   }
 
@@ -1755,6 +1754,14 @@ export class DungeoStory implements Story {
       const eventProcessor = engine.getEventProcessor();
       const mirrorHandler = createMirrorTouchHandler(this.mirrorConfig);
       eventProcessor.registerHandler('if.event.touched', mirrorHandler);
+    }
+
+    // Register trophy case scoring handler (ADR-085)
+    this.registerTrophyCaseHandler(engine);
+
+    // Register balloon PUT handler (tracks burning objects in receptacle)
+    if (this.balloonIds) {
+      registerBalloonPutHandler(engine, this.world, this.balloonIds.balloonId, this.balloonIds.receptacleId);
     }
   }
 }
