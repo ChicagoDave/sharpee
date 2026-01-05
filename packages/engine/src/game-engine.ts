@@ -217,7 +217,10 @@ export class GameEngine {
     const newPlayer = story.createPlayer(this.world);
     this.context.player = newPlayer;
     this.world.setPlayer(newPlayer.id);
-    
+
+    // Configure language provider with narrative settings (ADR-089)
+    this.configureLanguageProviderNarrative(newPlayer);
+
     // Update metadata
     this.context.metadata.title = story.config.title;
     this.context.metadata.author = Array.isArray(story.config.author) 
@@ -829,6 +832,44 @@ export class GameEngine {
    */
   getNarrativeSettings(): NarrativeSettings {
     return this.narrativeSettings;
+  }
+
+  /**
+   * Configure language provider with narrative settings (ADR-089)
+   *
+   * Sets up the language provider for perspective-aware message resolution.
+   * For 3rd person narratives, extracts player pronouns from ActorTrait.
+   */
+  private configureLanguageProviderNarrative(player: IFEntity): void {
+    // Check if language provider supports narrative settings
+    if (!this.languageProvider || !('setNarrativeSettings' in this.languageProvider)) {
+      return;
+    }
+
+    // Build narrative context for language provider
+    const narrativeContext: { perspective: '1st' | '2nd' | '3rd'; playerPronouns?: any } = {
+      perspective: this.narrativeSettings.perspective,
+    };
+
+    // For 3rd person, get player pronouns from ActorTrait or story config
+    if (this.narrativeSettings.perspective === '3rd') {
+      // First try story config
+      if (this.narrativeSettings.playerPronouns) {
+        narrativeContext.playerPronouns = this.narrativeSettings.playerPronouns;
+      } else {
+        // Fall back to player entity's ActorTrait
+        const actorTrait = player.get<any>('actor');
+        if (actorTrait?.pronouns) {
+          // Handle both single PronounSet and array of PronounSets
+          narrativeContext.playerPronouns = Array.isArray(actorTrait.pronouns)
+            ? actorTrait.pronouns[0]
+            : actorTrait.pronouns;
+        }
+      }
+    }
+
+    // Configure language provider
+    (this.languageProvider as any).setNarrativeSettings(narrativeContext);
   }
 
   /**
