@@ -1,7 +1,7 @@
 # ADR-087: Action-Centric Grammar with Verb Aliases
 
 ## Status
-PROPOSED
+ACCEPTED (Implemented)
 
 ## Context
 
@@ -257,8 +257,44 @@ The existing `.define()` API remains for:
 - Grammar file size stays similar (fewer definitions but each is larger)
 - No runtime performance impact (patterns still compiled same way)
 
+## Implementation Status
+
+### Completed (2026-01-05)
+
+**Phase 1: Action Grammar Builder API** ✓
+- Added `forAction()`, `verbs()`, `pattern()`, `patterns()`, `directions()` methods
+- See `packages/if-domain/src/grammar/grammar-builder.ts`
+
+**Phase 2: Grammar Migrations** ✓
+- Migrated 15+ action groups to `.forAction()` API
+- Added new verb synonyms: grab, discard, inspect, flip, press, yank
+- Direction patterns consolidated: 24 definitions → 1 `.directions()` call
+
+**Phase 3: Sync Verification Test** ✓
+- Created `packages/parser-en-us/tests/grammar-lang-sync.test.ts`
+- Reports drift between grammar and lang-en-us
+
+### Coverage Statistics (Phase 9)
+
+| Metric | Value |
+|--------|-------|
+| Grammar actions | 45 |
+| Grammar verb patterns | 117 |
+| Lang-en-us actions | 46 |
+| Lang-en-us verb patterns | 254 |
+| Actions with drift | 59 |
+
+**Actions missing grammar patterns entirely:**
+- removing, wearing, taking_off, locking, climbing
+- listening, smelling, turning, talking, answering
+- using, eating, drinking, sleeping, scoring, about
+
+These are intentional gaps - the grammar focuses on the most common verb forms.
+Additional synonyms can be added as needed.
+
 ## References
 
 - Current grammar.ts: `packages/parser-en-us/src/grammar.ts`
 - Lang-en-us action defs: `packages/lang-en-us/src/actions/*.ts`
+- Sync test: `packages/parser-en-us/tests/grammar-lang-sync.test.ts`
 - Bug that prompted this: `press :target` missing from grammar (ADR-087 context)

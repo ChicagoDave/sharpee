@@ -1,7 +1,7 @@
 # ADR-088: Grammar Engine Refactoring
 
 ## Status
-PROPOSED
+ACCEPTED (Partially Implemented)
 
 ## Context
 
@@ -280,9 +280,42 @@ export class VocabularySlotConsumer implements SlotConsumer {
 - No API changes to external consumers
 - No performance impact
 
+## Implementation Status
+
+### Completed (2026-01-05)
+
+**Phase 1-4: Slot Consumer Extraction** ✓
+- Created `packages/parser-en-us/src/slot-consumers/` directory
+- Extracted consumers:
+  - `entity-slot-consumer.ts` - ENTITY, INSTRUMENT slots
+  - `text-slot-consumer.ts` - TEXT, TEXT_GREEDY, QUOTED, TOPIC slots
+  - `typed-slot-consumer.ts` - NUMBER, ORDINAL, TIME, DIRECTION slots
+  - `vocabulary-slot-consumer.ts` - ADJECTIVE, NOUN, VOCABULARY, MANNER slots
+- Created `slot-consumer-registry.ts` for strategy dispatch
+
+**Phase 5: Cleanup** ✓
+- Grammar engine now delegates to slot consumer registry
+- Added unit tests for each consumer
+
+### Metrics
+
+| File | Lines Before | Lines After |
+|------|-------------|-------------|
+| english-grammar-engine.ts | 1355 | ~500 |
+| entity-slot-consumer.ts | - | ~350 |
+| text-slot-consumer.ts | - | ~150 |
+| typed-slot-consumer.ts | - | ~250 |
+| vocabulary-slot-consumer.ts | - | ~150 |
+
+### Remaining Work
+
+- Additional unit test coverage for edge cases
+- Consider further extraction of pattern matching logic
+
 ## References
 
-- Current file: `packages/parser-en-us/src/english-grammar-engine.ts` (1355 lines)
+- Grammar engine: `packages/parser-en-us/src/english-grammar-engine.ts`
+- Slot consumers: `packages/parser-en-us/src/slot-consumers/`
 - ADR-080: Grammar Enhancements (multi-object parsing)
 - ADR-082: Typed Value Slots
-- ADR-087: Action-Centric Grammar (will benefit from this refactor)
+- ADR-087: Action-Centric Grammar (implemented in parallel)
