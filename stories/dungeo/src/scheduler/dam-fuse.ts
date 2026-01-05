@@ -44,6 +44,7 @@ export interface DamState {
   // Flooding state (blue button)
   floodingLevel: number;   // 0 = not flooding, 1-16 = flooding, >16 = flooded
   isFlooded: boolean;      // Room permanently flooded
+  floodingJustStarted?: boolean;  // Skip daemon on button press turn
 }
 
 // Flooding constants
@@ -315,6 +316,7 @@ export function startFlooding(
 
   // Start flooding (RVMNT = 1)
   damState.floodingLevel = 1;
+  damState.floodingJustStarted = true;  // Skip daemon on button press turn
 
   // Make leak visible if it exists
   if (leakId) {
@@ -336,6 +338,12 @@ export function startFlooding(
     run: (ctx: SchedulerContext): ISemanticEvent[] => {
       const state = ctx.world.getCapability(DAM_STATE_KEY) as DamState | null;
       if (!state || state.floodingLevel === 0) {
+        return [];
+      }
+
+      // Skip first daemon run (button press turn)
+      if (state.floodingJustStarted) {
+        state.floodingJustStarted = false;
         return [];
       }
 
@@ -361,8 +369,8 @@ export function startFlooding(
         });
       }
 
-      // Increment water level
-      state.floodingLevel++;
+      // Increment water level by 2 (matches FORTRAN RVMNT progression)
+      state.floodingLevel += 2;
 
       // Check for drowning (level > 16)
       if (state.floodingLevel > FLOOD_MAX_LEVEL) {
