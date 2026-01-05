@@ -47,6 +47,7 @@ import { defineGrammar } from './grammar';
 import { scope, GrammarBuilder } from '@sharpee/if-domain';
 import { parseDirection } from './direction-mappings';
 import { analyzeBestFailure } from './parse-failure';
+import { PronounContextManager, setPronounContextManager } from './pronoun-context';
 
 // Type alias for clarity
 type CommandResult<T, E> = Result<T, E>;
@@ -122,15 +123,21 @@ export class EnglishParser implements Parser {
     actorId: string;
     currentLocation: string;
   } | null = null;
+  /** Pronoun context manager for "it", "them", "him", "her" resolution (ADR-089) */
+  private pronounContext: PronounContextManager;
 
   constructor(language: ParserLanguageProvider, options: ParserOptions = {}) {
     this.language = language;
     this.options = { ...DEFAULT_OPTIONS, ...options };
-    
+
     // Initialize grammar engine
     this.grammarEngine = new EnglishGrammarEngine();
     const grammar = this.grammarEngine.createBuilder();
     defineGrammar(grammar);
+
+    // Initialize pronoun context (ADR-089)
+    this.pronounContext = new PronounContextManager();
+    setPronounContextManager(this.pronounContext);
 
     this.initializeVocabulary();
   }
@@ -1390,6 +1397,58 @@ export class EnglishParser implements Parser {
       failedWord: context.noun || context.verb,
       slot: context.slot
     };
+  }
+
+  // ============================================
+  // Pronoun Context Methods (ADR-089 Phase B)
+  // ============================================
+
+  /**
+   * Update pronoun context after a successful parse
+   * Called by the engine after command execution succeeds
+   * @param command The successfully parsed and executed command
+   * @param turnNumber Current turn number
+   */
+  updatePronounContext(command: IParsedCommand, turnNumber: number): void {
+    if (this.worldContext?.world) {
+      this.pronounContext.updateFromCommand(command, this.worldContext.world, turnNumber);
+    }
+  }
+
+  /**
+   * Register an entity that was mentioned in context
+   * Used when entities are referenced outside of standard parsing
+   * @param entityId The entity's ID
+   * @param text How the player referred to it
+   * @param turnNumber Current turn number
+   */
+  registerPronounEntity(entityId: string, text: string, turnNumber: number): void {
+    if (this.worldContext?.world) {
+      this.pronounContext.registerEntity(entityId, text, this.worldContext.world, turnNumber);
+    }
+  }
+
+  /**
+   * Reset the pronoun context
+   * Called on game restart or when context should be cleared
+   */
+  resetPronounContext(): void {
+    this.pronounContext.reset();
+  }
+
+  /**
+   * Get the last successfully parsed command
+   * Used for "again" / "g" command support
+   */
+  getLastCommand(): IParsedCommand | null {
+    return this.pronounContext.getLastCommand();
+  }
+
+  /**
+   * Get the pronoun context manager (for testing/debugging)
+   */
+  getPronounContextManager(): PronounContextManager {
+    return this.pronounContext;
   }
 }
 

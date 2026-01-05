@@ -1,0 +1,23 @@
+title: Hidden Max Score Test
+story: dungeo
+description: Verifies ADR-078 - when thief dies, max score changes from 616 to 650
+
+---
+
+# Setup: Use GDT to check initial max score
+> GDT
+[OK: contains "GDT"]
+
+# Check initial score - should show /616
+> DA
+[OK: contains "Score: 0/616"]
+
+# Kill the thief using GDT KL command
+> KL thief
+[OK: contains "Killed"]
+[OK: contains "thief"]
+
+# After thief dies, check score - should now show /650
+> DA
+[OK: contains "/650"]
+

@@ -15,18 +15,21 @@ export const PlatformEventType = {
   RESTORE_REQUESTED: 'platform.restore_requested',
   QUIT_REQUESTED: 'platform.quit_requested',
   RESTART_REQUESTED: 'platform.restart_requested',
-  
+  UNDO_REQUESTED: 'platform.undo_requested',
+
   // Completion events - emitted by engine after processing
   SAVE_COMPLETED: 'platform.save_completed',
   RESTORE_COMPLETED: 'platform.restore_completed',
   QUIT_CONFIRMED: 'platform.quit_confirmed',
   RESTART_COMPLETED: 'platform.restart_completed',
-  
+  UNDO_COMPLETED: 'platform.undo_completed',
+
   // Error events
   SAVE_FAILED: 'platform.save_failed',
   RESTORE_FAILED: 'platform.restore_failed',
   QUIT_CANCELLED: 'platform.quit_cancelled',
-  RESTART_CANCELLED: 'platform.restart_cancelled'
+  RESTART_CANCELLED: 'platform.restart_cancelled',
+  UNDO_FAILED: 'platform.undo_failed'
 } as const;
 
 export type PlatformEventTypeValue = typeof PlatformEventType[keyof typeof PlatformEventType];
@@ -142,7 +145,8 @@ export function isPlatformRequestEvent(event: ISemanticEvent): boolean {
     event.type === PlatformEventType.SAVE_REQUESTED ||
     event.type === PlatformEventType.RESTORE_REQUESTED ||
     event.type === PlatformEventType.QUIT_REQUESTED ||
-    event.type === PlatformEventType.RESTART_REQUESTED
+    event.type === PlatformEventType.RESTART_REQUESTED ||
+    event.type === PlatformEventType.UNDO_REQUESTED
   );
 }
 
@@ -152,10 +156,12 @@ export function isPlatformCompletionEvent(event: ISemanticEvent): boolean {
     event.type === PlatformEventType.RESTORE_COMPLETED ||
     event.type === PlatformEventType.QUIT_CONFIRMED ||
     event.type === PlatformEventType.RESTART_COMPLETED ||
+    event.type === PlatformEventType.UNDO_COMPLETED ||
     event.type === PlatformEventType.SAVE_FAILED ||
     event.type === PlatformEventType.RESTORE_FAILED ||
     event.type === PlatformEventType.QUIT_CANCELLED ||
-    event.type === PlatformEventType.RESTART_CANCELLED
+    event.type === PlatformEventType.RESTART_CANCELLED ||
+    event.type === PlatformEventType.UNDO_FAILED
   );
 }
 
@@ -228,5 +234,27 @@ export function createRestartCompletedEvent(success: boolean): IPlatformEvent {
     success ? PlatformEventType.RESTART_COMPLETED : PlatformEventType.RESTART_CANCELLED,
     undefined,
     { success }
+  );
+}
+
+/**
+ * Context for undo operations
+ */
+export interface IUndoContext {
+  /**
+   * Number of turns to undo (default 1)
+   */
+  turns?: number;
+}
+
+export function createUndoRequestedEvent(context?: IUndoContext): IPlatformEvent {
+  return createPlatformEvent(PlatformEventType.UNDO_REQUESTED, context);
+}
+
+export function createUndoCompletedEvent(success: boolean, restoredToTurn?: number, error?: string): IPlatformEvent {
+  return createPlatformEvent(
+    success ? PlatformEventType.UNDO_COMPLETED : PlatformEventType.UNDO_FAILED,
+    undefined,
+    { success, restoredToTurn, error }
   );
 }

@@ -25,6 +25,9 @@ export * from './actions';
 // Export NPC language definitions (ADR-070)
 export * from './npc';
 
+// Export perspective placeholder resolution (ADR-089)
+export * from './perspective';
+
 // Export vocabulary data for parser use (ADR-082)
 export {
   cardinalNumbers,

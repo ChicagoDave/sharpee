@@ -12,10 +12,11 @@ export { IPerceptionService, Sense } from '@sharpee/stdlib';
 
 /**
  * Basic game event (before sequencing)
+ * Note: data is optional to support ISemanticEvent compatibility
  */
 export interface GameEvent {
   type: string;
-  data: any;
+  data?: any;
 }
 
 /**
@@ -154,6 +155,12 @@ export interface EngineConfig {
    * Debug mode - shows more detailed output
    */
   debug?: boolean;
+
+  /**
+   * Maximum undo snapshots to keep (default 10)
+   * Set to 0 to disable undo
+   */
+  maxUndoSnapshots?: number;
 }
 
 /**

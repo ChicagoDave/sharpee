@@ -16,14 +16,14 @@ export const takingLanguage = {
   
   messages: {
     'no_target': "Take what?",
-    'cant_take_self': "You can't take yourself.",
-    'already_have': "You already have {item}.",
-    'cant_take_room': "You can't take {item}.",
+    'cant_take_self': "{You} {can't} take {yourself}.",
+    'already_have': "{You} already {have} {item}.",
+    'cant_take_room': "{You} {can't} take {item}.",
     'fixed_in_place': "{item} is fixed in place.",
-    'container_full': "You're carrying too much already.",
+    'container_full': "{You're} carrying too much already.",
     'too_heavy': "{item} is too heavy to carry.",
     'taken': "Taken.",
-    'taken_from': "You take {item} from {container}."
+    'taken_from': "{You} {take} {item} from {container}."
   },
   
   help: {

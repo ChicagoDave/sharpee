@@ -14,9 +14,9 @@ export const closingLanguage = {
     'no_target': "Close what?",
     'not_closable': "{item} can't be closed.",
     'already_closed': "{item} is already closed.",
-    'closed': "You close {item}.",
-    'cant_reach': "You can't reach {item}.",
-    'prevents_closing': "You can't close {item} while {obstacle} is in the way."
+    'closed': "{You} {close} {item}.",
+    'cant_reach': "{You} {can't} reach {item}.",
+    'prevents_closing': "{You} {can't} close {item} while {obstacle} is in the way."
   },
   
   help: {

@@ -1,6 +1,6 @@
 /**
  * English (US) Parser for Sharpee Interactive Fiction Platform
- * 
+ *
  * This package provides English-specific parsing functionality
  * for converting natural language commands into structured commands.
  */
@@ -18,6 +18,16 @@ export type {
   MatchFailureReason
 } from './parse-failure';
 export { analyzeBestFailure } from './parse-failure';
+
+// Export pronoun context types (ADR-089)
+export type { EntityReference, PronounContext, RecognizedPronoun } from './pronoun-context';
+export {
+  PronounContextManager,
+  isRecognizedPronoun,
+  RECOGNIZED_PRONOUNS,
+  INANIMATE_IT,
+  INANIMATE_THEM
+} from './pronoun-context';
 
 /**
  * Package metadata

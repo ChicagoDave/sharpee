@@ -93,7 +93,7 @@ export function registerBalloonPutHandler(
   const eventProcessor = engine.getEventProcessor();
 
   // Handle putting items in the receptacle
-  eventProcessor.registerHandler('if.event.put_in', (event: ISemanticEvent): ISemanticEvent[] => {
+  eventProcessor.registerHandler('if.event.put_in', (event: ISemanticEvent): any[] => {
     const data = event.data as Record<string, any> | undefined;
     if (!data) return [];
 
@@ -132,7 +132,7 @@ export function registerBalloonPutHandler(
   });
 
   // Handle taking items from receptacle
-  eventProcessor.registerHandler('if.event.taken', (event: ISemanticEvent): ISemanticEvent[] => {
+  eventProcessor.registerHandler('if.event.taken', (event: ISemanticEvent): any[] => {
     const data = event.data as Record<string, any> | undefined;
     if (!data) return [];
 

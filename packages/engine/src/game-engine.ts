@@ -31,7 +31,7 @@ import {
 } from '@sharpee/stdlib';
 import { LanguageProvider, IEventProcessorWiring } from '@sharpee/if-domain';
 import { TextService, TextServiceContext, TextOutput } from '@sharpee/if-services';
-import { ISemanticEvent, createSemanticEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, ISerializedSchedulerState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, getUntypedEventData } from '@sharpee/core';
+import { ISemanticEvent, createSemanticEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, ISerializedSchedulerState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, getUntypedEventData } from '@sharpee/core';
 
 import { ISchedulerService, createSchedulerService } from './scheduler';
 import { INpcService, createNpcService, guardBehavior, passiveBehavior } from '@sharpee/stdlib';
@@ -45,6 +45,7 @@ import {
   GameEvent
 } from './types';
 import { Story } from './story';
+import { NarrativeSettings, buildNarrativeSettings } from './narrative';
 
 import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer } from './command-executor';
 import { EventSequenceUtils, eventSequencer } from './event-sequencer';
@@ -95,6 +96,11 @@ export class GameEngine {
   private perceptionService?: IPerceptionService;
   private scheduler: ISchedulerService;
   private npcService: INpcService;
+  private narrativeSettings: NarrativeSettings;
+
+  // Undo system - circular buffer of world snapshots
+  private undoSnapshots: string[] = [];
+  private undoSnapshotTurns: number[] = []; // Track which turn each snapshot is from
 
   constructor(options: {
     world: WorldModel;
@@ -111,6 +117,7 @@ export class GameEngine {
       maxHistory: 100,
       validateEvents: true,
       collectTiming: false,
+      maxUndoSnapshots: 10,
       ...options.config
     };
 
@@ -150,6 +157,7 @@ export class GameEngine {
     this.platformEvents = createSemanticEventSource();
     this.scheduler = createSchedulerService();
     this.npcService = createNpcService();
+    this.narrativeSettings = buildNarrativeSettings(); // Default: 2nd person
 
     // Register standard NPC behaviors (ADR-070)
     this.npcService.registerBehavior(guardBehavior);
@@ -196,9 +204,12 @@ export class GameEngine {
     // Emit story loading event
     const loadingEvent = createStoryLoadingEvent(story.config.id);
     this.emitGameEvent(loadingEvent);
-    
+
     this.story = story;
-    
+
+    // Build narrative settings from story config (ADR-089)
+    this.narrativeSettings = buildNarrativeSettings(story.config.narrative);
+
     // Initialize story-specific world content
     story.initializeWorld(this.world);
     
@@ -206,7 +217,10 @@ export class GameEngine {
     const newPlayer = story.createPlayer(this.world);
     this.context.player = newPlayer;
     this.world.setPlayer(newPlayer.id);
-    
+
+    // Configure language provider with narrative settings (ADR-089)
+    this.configureLanguageProviderNarrative(newPlayer);
+
     // Update metadata
     this.context.metadata.title = story.config.title;
     this.context.metadata.author = Array.isArray(story.config.author) 
@@ -386,6 +400,19 @@ export class GameEngine {
       throw new Error('Engine must have a story set before executing turns');
     }
 
+    // Create undo snapshot BEFORE processing the turn
+    // Skip for meta/info commands that shouldn't create undo points
+    const normalizedForUndo = input.trim().toLowerCase();
+    const nonUndoableCommands = [
+      'undo', 'save', 'restore', 'restart', 'quit',
+      'score', 'version', 'about', 'help',
+      'look', 'l', 'examine', 'x', 'inventory', 'i',
+      'verbose', 'brief', 'superbrief', 'notify'
+    ];
+    if (!nonUndoableCommands.some(cmd => normalizedForUndo === cmd || normalizedForUndo.startsWith(cmd + ' '))) {
+      this.createUndoSnapshot();
+    }
+
     // Handle 'again' / 'g' command substitution
     const normalized = input.trim().toLowerCase();
     if (normalized === 'g' || normalized === 'again') {
@@ -491,12 +518,12 @@ export class GameEngine {
       // Also track in event source for save/restore
       for (const semanticEvent of semanticEvents) {
         this.eventSource.emit(semanticEvent);
-        
+
         // Check if this is a client.query event
         if (semanticEvent.type === 'client.query') {
           // The handleClientQuery will be called by the event listener
         }
-        
+
         // Check if this is a platform request event
         if (isPlatformRequestEvent(semanticEvent)) {
           this.pendingPlatformOps.push(semanticEvent as IPlatformEvent);
@@ -510,6 +537,11 @@ export class GameEngine {
       // Update command history if command was successful and not a meta-command
       if (result.success && !isMeta) {
         this.updateCommandHistory(result, input, turn);
+
+        // Update pronoun context for "it"/"them"/"him"/"her" resolution (ADR-089)
+        if (this.parser && 'updatePronounContext' in this.parser && result.parsedCommand) {
+          (this.parser as any).updatePronounContext(result.parsedCommand, turn);
+        }
       }
 
       // Emit events if configured
@@ -679,6 +711,10 @@ export class GameEngine {
       // Process pending platform operations before text service
       if (this.pendingPlatformOps.length > 0) {
         await this.processPlatformOperations(turn);
+
+        // Update result.events with any platform completion events
+        const allTurnEvents = this.turnEvents.get(turn) || [];
+        result.events = allTurnEvents as any; // Platform ops may have added completion events
       }
 
       // Process text output
@@ -786,6 +822,54 @@ export class GameEngine {
    */
   getWorld(): WorldModel {
     return this.world;
+  }
+
+  /**
+   * Get narrative settings (ADR-089)
+   *
+   * Returns the story's narrative perspective and related settings.
+   * Use this for text rendering that needs to know 1st/2nd/3rd person.
+   */
+  getNarrativeSettings(): NarrativeSettings {
+    return this.narrativeSettings;
+  }
+
+  /**
+   * Configure language provider with narrative settings (ADR-089)
+   *
+   * Sets up the language provider for perspective-aware message resolution.
+   * For 3rd person narratives, extracts player pronouns from ActorTrait.
+   */
+  private configureLanguageProviderNarrative(player: IFEntity): void {
+    // Check if language provider supports narrative settings
+    if (!this.languageProvider || !('setNarrativeSettings' in this.languageProvider)) {
+      return;
+    }
+
+    // Build narrative context for language provider
+    const narrativeContext: { perspective: '1st' | '2nd' | '3rd'; playerPronouns?: any } = {
+      perspective: this.narrativeSettings.perspective,
+    };
+
+    // For 3rd person, get player pronouns from ActorTrait or story config
+    if (this.narrativeSettings.perspective === '3rd') {
+      // First try story config
+      if (this.narrativeSettings.playerPronouns) {
+        narrativeContext.playerPronouns = this.narrativeSettings.playerPronouns;
+      } else {
+        // Fall back to player entity's ActorTrait
+        const actorTrait = player.get<any>('actor');
+        if (actorTrait?.pronouns) {
+          // Handle both single PronounSet and array of PronounSets
+          narrativeContext.playerPronouns = Array.isArray(actorTrait.pronouns)
+            ? actorTrait.pronouns[0]
+            : actorTrait.pronouns;
+        }
+      }
+    }
+
+    // Configure language provider
+    (this.languageProvider as any).setNarrativeSettings(narrativeContext);
   }
 
   /**
@@ -897,6 +981,68 @@ export class GameEngine {
   }
 
   /**
+   * Create an undo snapshot of the current world state
+   */
+  private createUndoSnapshot(): void {
+    const maxSnapshots = this.config.maxUndoSnapshots ?? 10;
+    if (maxSnapshots <= 0) return; // Undo disabled
+
+    // Serialize world state
+    const snapshot = this.world.toJSON();
+    const turn = this.context.currentTurn;
+
+    // Add to circular buffer
+    this.undoSnapshots.push(snapshot);
+    this.undoSnapshotTurns.push(turn);
+
+    // Trim if over limit
+    while (this.undoSnapshots.length > maxSnapshots) {
+      this.undoSnapshots.shift();
+      this.undoSnapshotTurns.shift();
+    }
+  }
+
+  /**
+   * Undo to previous turn
+   * @returns true if undo succeeded, false if nothing to undo
+   */
+  undo(): boolean {
+    if (this.undoSnapshots.length === 0) {
+      return false; // Nothing to undo
+    }
+
+    // Pop the most recent snapshot (this is the state BEFORE the last undoable command)
+    const snapshot = this.undoSnapshots.pop()!;
+    const turn = this.undoSnapshotTurns.pop()!;
+
+    // Restore world state
+    this.world.loadJSON(snapshot);
+
+    // Restore turn counter
+    this.context.currentTurn = turn;
+
+    // Update vocabulary for current scope
+    this.updateScopeVocabulary();
+
+    this.emit('state:changed', this.context);
+    return true;
+  }
+
+  /**
+   * Check if undo is available
+   */
+  canUndo(): boolean {
+    return this.undoSnapshots.length > 0;
+  }
+
+  /**
+   * Get number of undo levels available
+   */
+  getUndoLevels(): number {
+    return this.undoSnapshots.length;
+  }
+
+  /**
    * Create save data from current engine state
    */
   private createSaveData(): ISaveData {
@@ -968,6 +1114,11 @@ export class GameEngine {
     // Update context
     this.context.currentTurn = saveData.metadata.turnCount + 1;
     this.context.metadata.lastPlayed = new Date();
+
+    // Reset pronoun context - old references may not be valid (ADR-089)
+    if (this.parser && 'resetPronounContext' in this.parser) {
+      (this.parser as any).resetPronounContext();
+    }
 
     // Update vocabulary for current scope
     this.updateScopeVocabulary();
@@ -1332,6 +1483,10 @@ export class GameEngine {
                   if (this.running) {
                     this.stop();
                   }
+                  // Reset pronoun context (ADR-089)
+                  if (this.parser && 'resetPronounContext' in this.parser) {
+                    (this.parser as any).resetPronounContext();
+                  }
                   await this.setStory(this.story);
                   this.start();
                 }
@@ -1350,12 +1505,16 @@ export class GameEngine {
               this.turnEvents.get(currentTurn)?.push(completionEvent);
               // Also emit through engine's event emitter for tests
               this.emit('event', completionEvent as any);
-              
+
               // Re-initialize the story
               if (this.story) {
                 // Stop first if running
                 if (this.running) {
                   this.stop();
+                }
+                // Reset pronoun context (ADR-089)
+                if (this.parser && 'resetPronounContext' in this.parser) {
+                  (this.parser as any).resetPronounContext();
                 }
                 await this.setStory(this.story);
                 this.start();
@@ -1363,10 +1522,28 @@ export class GameEngine {
             }
             break;
           }
+
+          case PlatformEventType.UNDO_REQUESTED: {
+            const previousTurn = this.context.currentTurn;
+            const success = this.undo();
+
+            if (success) {
+              const completionEvent = createUndoCompletedEvent(true, this.context.currentTurn);
+              this.eventSource.emit(completionEvent);
+              this.turnEvents.get(currentTurn)?.push(completionEvent);
+              this.emit('event', completionEvent as any);
+            } else {
+              const errorEvent = createUndoCompletedEvent(false, undefined, 'Nothing to undo');
+              this.eventSource.emit(errorEvent);
+              this.turnEvents.get(currentTurn)?.push(errorEvent);
+              this.emit('event', errorEvent as any);
+            }
+            break;
+          }
         }
       } catch (error) {
         console.error(`Error processing platform operation ${platformOp.type}:`, error);
-        
+
         // Emit appropriate error event based on operation type
         let errorEvent: IPlatformEvent;
         switch (platformOp.type) {
@@ -1381,6 +1558,9 @@ export class GameEngine {
             break;
           case PlatformEventType.RESTART_REQUESTED:
             errorEvent = createRestartCompletedEvent(false);
+            break;
+          case PlatformEventType.UNDO_REQUESTED:
+            errorEvent = createUndoCompletedEvent(false, undefined, error instanceof Error ? error.message : 'Unknown error');
             break;
           default:
             continue;

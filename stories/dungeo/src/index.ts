@@ -29,11 +29,11 @@ import {
 import { DungeoScoringService } from './scoring';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler } from './actions';
 
 // Import scheduler module
-import { registerScheduledEvents, DungeoSchedulerMessages, registerBalloonPutHandler, BalloonHandlerMessages } from './scheduler';
-import { setSchedulerForGDT } from './actions/gdt/commands';
+import { registerScheduledEvents, DungeoSchedulerMessages, FloodingMessages, registerBalloonPutHandler, BalloonHandlerMessages } from './scheduler';
+import { setSchedulerForGDT, setEngineForKL } from './actions/gdt/commands';
 
 // Import handlers
 import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages, registerGlacierHandler, GlacierMessages } from './handlers';
@@ -349,7 +349,7 @@ export class DungeoStory implements Story {
     // Commands that take one optional argument
     const oneArgCodes = [
       'dr', 'dx', 'do', 'dv', 'dc', 'dh', 'dl', 'df', 'dn', 'dm', 'dt', 'dp', 'd2', 'dz',
-      'ah', 'tk', 'ar', 'af', 'ac', 'aa', 'ax', 'av', 'an', 'az', 'pd'
+      'ah', 'tk', 'ar', 'af', 'ac', 'aa', 'ax', 'av', 'an', 'az', 'pd', 'kl'
     ];
 
     // Commands that take two arguments
@@ -1020,6 +1020,33 @@ export class DungeoStory implements Story {
       .mapsTo(UNTIE_ACTION_ID)
       .withPriority(150)
       .build();
+
+    // Press button patterns (dam maintenance room)
+    grammar
+      .define('press :target')
+      .mapsTo(PRESS_BUTTON_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('push :target')
+      .mapsTo(PRESS_BUTTON_ACTION_ID)
+      .withPriority(145)  // Lower than stdlib pushing
+      .build();
+
+    // Turn bolt patterns (dam)
+    grammar
+      .define('turn :target')
+      .mapsTo(TURN_BOLT_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('turn :target with :instrument')
+      .instrument('instrument')
+      .mapsTo(TURN_BOLT_ACTION_ID)
+      .withPriority(155)
+      .build();
   }
 
   /**
@@ -1068,6 +1095,20 @@ export class DungeoStory implements Story {
     language.addMessage(DungeoSchedulerMessages.DAM_NEARLY_EMPTY, 'The reservoir is nearly empty now.');
     language.addMessage(DungeoSchedulerMessages.DAM_EMPTY, 'The last of the water drains away.');
     language.addMessage(DungeoSchedulerMessages.DAM_TRUNK_REVEALED, 'As the mud settles, a trunk becomes visible in the reservoir bed!');
+
+    // Maintenance room flooding (blue button death trap)
+    language.addMessage(FloodingMessages.LEAK_STARTED, 'There is a rumbling sound, and a stream of water appears to burst from the east wall of the room (apparently, a leak has occurred in a pipe).');
+    language.addMessage(FloodingMessages.WATER_ANKLES, 'The water level is now up to your ankles.');
+    language.addMessage(FloodingMessages.WATER_SHINS, 'The water level is now up to your shins.');
+    language.addMessage(FloodingMessages.WATER_KNEES, 'The water level is now up to your knees.');
+    language.addMessage(FloodingMessages.WATER_HIPS, 'The water level is now up to your hips.');
+    language.addMessage(FloodingMessages.WATER_WAIST, 'The water level is now up to your waist.');
+    language.addMessage(FloodingMessages.WATER_CHEST, 'The water level is now up to your chest.');
+    language.addMessage(FloodingMessages.WATER_NECK, 'The water level is now up to your neck.');
+    language.addMessage(FloodingMessages.WATER_HEAD, 'The water level is now over your head.');
+    language.addMessage(FloodingMessages.ROOM_FLOODED, 'The room is full of water and cannot be entered.');
+    language.addMessage(FloodingMessages.DROWNED, "I'm afraid you have done drowned yourself.");
+    language.addMessage(FloodingMessages.BUTTON_JAMMED, 'The blue button appears to be jammed.');
 
     // Forest ambience
     language.addMessage(DungeoSchedulerMessages.FOREST_BIRD, 'A songbird chirps in the distance.');
@@ -1493,6 +1534,22 @@ export class DungeoStory implements Story {
     language.addMessage(BalloonExitMessages.EXIT_SUCCESS, 'You climb out of the balloon.');
     language.addMessage(BalloonExitMessages.EXIT_BLOCKED_MIDAIR, 'You are too high in the air to exit safely! The balloon is floating in mid-air.');
     language.addMessage(BalloonExitMessages.EXIT_TO_LEDGE, 'You carefully climb out of the balloon onto the ledge.');
+
+    // Dam puzzle - Press button action messages
+    language.addMessage(PressButtonMessages.CLICK, 'Click.');
+    language.addMessage(PressButtonMessages.NOT_A_BUTTON, "That's not a button.");
+    language.addMessage(PressButtonMessages.LIGHTS_ON, 'The lights come on.');
+    language.addMessage(PressButtonMessages.LIGHTS_OFF, 'The lights go out.');
+    language.addMessage(PressButtonMessages.BLUE_JAMMED, 'The blue button appears to be jammed.');
+    language.addMessage(PressButtonMessages.BLUE_LEAK_STARTED, 'There is a rumbling sound from below, and water begins to leak into the room!');
+
+    // Dam puzzle - Turn bolt action messages
+    language.addMessage(TurnBoltMessages.WRONG_TOOL, 'The wrench won\'t fit on that.');
+    language.addMessage(TurnBoltMessages.WONT_TURN, 'The bolt won\'t turn. Perhaps the control panel has something to do with it.');
+    language.addMessage(TurnBoltMessages.GATES_OPEN, 'The sluice gates open and water pours through the dam.');
+    language.addMessage(TurnBoltMessages.GATES_CLOSE, 'The sluice gates close, stopping the flow of water.');
+    language.addMessage(TurnBoltMessages.NOT_A_BOLT, "You can't turn that.");
+    language.addMessage(TurnBoltMessages.NO_TOOL, 'You can\'t turn the bolt with your bare hands.');
   }
 
   /**
@@ -1642,6 +1699,9 @@ export class DungeoStory implements Story {
       // Make scheduler accessible to GDT DC command
       setSchedulerForGDT(this.world, scheduler);
 
+      // Make engine accessible to GDT KL command
+      setEngineForKL(engine);
+
       // Register bat handler for Bat Room (coal mine)
       // Valid drop locations: underground rooms excluding dangerous areas
       const batDropLocations = [
@@ -1693,6 +1753,12 @@ export class DungeoStory implements Story {
 
       // Register Victory handler (Treasury of Zork entry)
       registerVictoryHandler(scheduler, this.endgameIds.treasury);
+
+      // Wire turn bolt action to scheduler (dam puzzle)
+      setTurnBoltScheduler(scheduler, this.damIds.reservoir);
+
+      // Wire press button action to scheduler (flooding)
+      setPressButtonScheduler(scheduler, this.damIds.maintenanceRoom);
     }
 
     // Register Laser Puzzle handler (Small Room / Stone Room)

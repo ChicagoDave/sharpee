@@ -44,6 +44,9 @@ export function createCoalMineObjects(world: WorldModel, roomIds: CoalMineRoomId
 
   // Sooty Room objects
   createRedCrystalSphere(world, roomIds.sootyRoom);
+
+  // Timber Room objects
+  createTimber(world, roomIds.timberRoom);
 }
 
 /**
@@ -214,4 +217,24 @@ function createRedCrystalSphere(world: WorldModel, roomId: string): IFEntity {
 
   world.moveEntity(sphere.id, roomId);
   return sphere;
+}
+
+/**
+ * Timber - Large wooden beam, can be used for various purposes
+ *
+ * Found in Timber Room. Can be used to prop things up or as fuel.
+ */
+function createTimber(world: WorldModel, roomId: string): IFEntity {
+  const timber = world.createEntity('timber', EntityType.ITEM);
+
+  timber.add(new IdentityTrait({
+    name: 'wooden timber',
+    aliases: ['timber', 'beam', 'wooden beam', 'lumber', 'wood'],
+    description: 'A large, sturdy piece of timber. It could be useful for propping things up.',
+    properName: false,
+    article: 'a'
+  }));
+
+  world.moveEntity(timber.id, roomId);
+  return timber;
 }

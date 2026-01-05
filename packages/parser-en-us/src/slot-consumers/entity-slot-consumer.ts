@@ -1,6 +1,7 @@
 /**
  * @file Entity Slot Consumer
  * @description Handles entity resolution slots including multi-object parsing (ADR-088)
+ *              and pronoun resolution (ADR-089)
  */
 
 import {
@@ -13,6 +14,7 @@ import {
 } from '@sharpee/if-domain';
 import { SlotConsumer, SlotConsumerContext, getNextPatternToken, isPatternDelimiter } from './slot-consumer';
 import { ScopeEvaluator } from '../scope-evaluator';
+import { isRecognizedPronoun, getPronounContextManager } from '../pronoun-context';
 
 /**
  * Consumer for entity slots (ENTITY, INSTRUMENT)
@@ -26,10 +28,28 @@ export class EntitySlotConsumer implements SlotConsumer {
     const DEBUG = ctx.DEBUG || false;
     const nextPatternToken = getNextPatternToken(ctx);
 
-    // Check for "all" keyword at start
-    if (DEBUG) {
-      console.log(`consumeEntitySlot: startIndex=${startIndex}, token.word='${tokens[startIndex]?.word}', token.normalized='${tokens[startIndex]?.normalized}'`);
+    // Check for pronoun at start (ADR-089)
+    if (startIndex < tokens.length) {
+      const firstWord = tokens[startIndex].normalized;
+      if (DEBUG) {
+        console.log(`consumeEntitySlot: startIndex=${startIndex}, token.word='${tokens[startIndex]?.word}', token.normalized='${firstWord}'`);
+      }
+
+      // Try to resolve as pronoun first
+      if (isRecognizedPronoun(firstWord)) {
+        const pronounResult = this.tryResolvePronoun(ctx, firstWord, DEBUG);
+        if (pronounResult) {
+          return pronounResult;
+        }
+        // If pronoun resolution failed, fall through to standard entity resolution
+        // This handles cases like "take it" when there's no previous object
+        if (DEBUG) {
+          console.log(`Pronoun '${firstWord}' could not be resolved, trying standard entity resolution`);
+        }
+      }
     }
+
+    // Check for "all" keyword at start
     if (startIndex < tokens.length && tokens[startIndex].normalized === 'all') {
       if (DEBUG) {
         console.log('Detected "all" keyword, calling consumeAllSlot');
@@ -39,6 +59,73 @@ export class EntitySlotConsumer implements SlotConsumer {
 
     // Standard entity consumption with "and" list detection
     return this.consumeEntityWithListDetection(ctx, DEBUG);
+  }
+
+  /**
+   * Try to resolve a pronoun token using the pronoun context (ADR-089)
+   */
+  private tryResolvePronoun(
+    ctx: SlotConsumerContext,
+    pronoun: string,
+    DEBUG: boolean
+  ): SlotMatch | null {
+    const { tokens, startIndex, slotType, context } = ctx;
+    const pronounContext = getPronounContextManager();
+
+    if (!pronounContext) {
+      if (DEBUG) {
+        console.log('No pronoun context manager available');
+      }
+      return null;
+    }
+
+    const resolved = pronounContext.resolve(pronoun);
+    if (!resolved || resolved.length === 0) {
+      if (DEBUG) {
+        console.log(`Pronoun '${pronoun}' did not resolve to any entity`);
+      }
+      return null;
+    }
+
+    if (DEBUG) {
+      console.log(`Pronoun '${pronoun}' resolved to: ${resolved.map(r => r.entityId).join(', ')}`);
+    }
+
+    // Single entity resolution
+    if (resolved.length === 1) {
+      const ref = resolved[0];
+      // Use resolved entity's original text for entity resolution
+      // Store pronoun metadata as extended properties
+      const result: SlotMatch & { entityId?: string; resolvedText?: string; isPronoun?: boolean } = {
+        tokens: [startIndex],
+        text: ref.text, // Use resolved entity text for entity resolution
+        confidence: 1.0,
+        slotType
+      };
+      // Extended properties for pronoun tracking
+      result.entityId = ref.entityId;
+      result.resolvedText = ref.text;
+      result.isPronoun = true;
+      return result;
+    }
+
+    // Multiple entities (e.g., "them" referring to multiple objects)
+    // Use extended type for items with entityId
+    const result: SlotMatch = {
+      tokens: [startIndex],
+      text: pronoun,
+      confidence: 1.0,
+      slotType,
+      isList: true,
+      items: resolved.map(ref => ({
+        tokens: [startIndex],
+        text: ref.text,
+        entityId: ref.entityId
+      } as SlotMatch & { entityId?: string }))
+    };
+    // Mark as pronoun resolution
+    (result as any).isPronoun = true;
+    return result;
   }
 
   /**

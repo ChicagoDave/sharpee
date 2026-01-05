@@ -45,6 +45,10 @@ export function createWhiteHouseObjects(world: WorldModel, roomIds: WhiteHouseRo
   const frontDoor = createFrontDoor(world);
   world.moveEntity(frontDoor.id, roomIds.westOfHouse);
 
+  // Create welcome mat in West of House (front of door)
+  const mat = createWelcomeMat(world);
+  world.moveEntity(mat.id, roomIds.westOfHouse);
+
   // Create window in Behind House
   const window = createWindow(world);
   world.moveEntity(window.id, roomIds.behindHouse);
@@ -153,6 +157,24 @@ function createWindow(world: WorldModel): IFEntity {
   }));
 
   return window;
+}
+
+/**
+ * Welcome Mat - Can be taken, originally part of classic Zork
+ * In the original game, moving the mat reveals a key underneath.
+ */
+function createWelcomeMat(world: WorldModel): IFEntity {
+  const mat = world.createEntity('welcome mat', EntityType.ITEM);
+
+  mat.add(new IdentityTrait({
+    name: 'welcome mat',
+    aliases: ['mat', 'doormat', 'door mat', 'rug'],
+    description: 'A rubber mat saying "Welcome to Zork!"',
+    properName: false,
+    article: 'a'
+  }));
+
+  return mat;
 }
 
 /**

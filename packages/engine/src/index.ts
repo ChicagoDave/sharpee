@@ -11,6 +11,9 @@
 // Types
 export * from './types';
 
+// Narrative settings (ADR-089)
+export * from './narrative';
+
 // Story interface
 export * from './story';
 

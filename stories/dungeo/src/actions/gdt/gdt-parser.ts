@@ -22,7 +22,9 @@ const VALID_CODES = new Set<string>([
   // Puzzle debug
   'PZ',
   // Trivia debug
-  'TQ'
+  'TQ',
+  // Kill entity
+  'KL'
 ]);
 
 /**

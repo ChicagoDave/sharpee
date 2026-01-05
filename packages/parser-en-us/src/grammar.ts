@@ -278,6 +278,12 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .verbs(['quit', 'q'])
     .build();
 
+  grammar
+    .define('undo')
+    .mapsTo('if.action.undoing')
+    .withPriority(100)
+    .build();
+
   // Score and version
   grammar
     .define('score')

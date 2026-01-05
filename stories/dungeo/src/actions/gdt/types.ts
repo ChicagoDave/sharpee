@@ -56,7 +56,9 @@ export type GDTCommandCode =
   // Puzzle debug
   | 'PZ' // Puzzle
   // Trivia debug
-  | 'TQ'; // Trivia Questions
+  | 'TQ' // Trivia Questions
+  // Kill entity
+  | 'KL'; // Kill
 
 /**
  * Parsed GDT command

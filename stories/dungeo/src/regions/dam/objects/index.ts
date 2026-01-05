@@ -30,11 +30,18 @@ export function createDamObjects(world: WorldModel, roomIds: DamRoomIds): void {
 
   // Maintenance Room
   createControlPanel(world, roomIds.maintenanceRoom);
+  createMaintenanceButtons(world, roomIds.maintenanceRoom);
   createWrench(world, roomIds.maintenanceRoom);
   createScrewdriver(world, roomIds.maintenanceRoom);
 
+  // Dam - bolt on control panel
+  createDamBolt(world, roomIds.dam);
+
   // Reservoir (when drained)
   createTrunkOfJewels(world, roomIds.reservoir);
+
+  // Reservoir North
+  createPump(world, roomIds.reservoirNorth);
 
   // Basin Room - ADR-078 ghost ritual
   createStoneBasin(world, roomIds.basinRoom);
@@ -246,4 +253,110 @@ function createPlatinumBar(world: WorldModel, roomId: string): IFEntity {
   return bar;
 }
 
+/**
+ * Hand Pump - Used to inflate/deflate the boat
+ * Found in Reservoir North, necessary for boat travel on Frigid River
+ */
+function createPump(world: WorldModel, roomId: string): IFEntity {
+  const pump = world.createEntity('hand pump', EntityType.ITEM);
+
+  pump.add(new IdentityTrait({
+    name: 'hand pump',
+    aliases: ['pump', 'air pump', 'hand pump', 'rubber pump'],
+    description: 'This is a small hand-held air pump.',
+    properName: false,
+    article: 'a'
+  }));
+
+  world.moveEntity(pump.id, roomId);
+  return pump;
+}
+
+/**
+ * Maintenance Room Buttons - Control panel buttons
+ *
+ * Per FORTRAN source:
+ * - Yellow: Enables bolt (GATEF=TRUE) - "releases gate"
+ * - Brown: Disables bolt (GATEF=FALSE) - "interlocks gate"
+ * - Red: Toggles room lights
+ * - Blue: Starts flooding (death trap)
+ */
+function createMaintenanceButtons(world: WorldModel, roomId: string): void {
+  // Yellow button - enables bolt (the critical one for dam puzzle)
+  const yellowButton = world.createEntity('yellow button', EntityType.ITEM);
+  yellowButton.add(new IdentityTrait({
+    name: 'yellow button',
+    aliases: ['yellow', 'danger button', 'danger'],
+    description: 'A yellow button labeled "DANGER".',
+    properName: false,
+    article: 'a'
+  }));
+  // Note: Don't add SceneryTrait - buttons need to be in parser scope
+  (yellowButton as any).buttonColor = 'yellow';
+  world.moveEntity(yellowButton.id, roomId);
+
+  // Brown button - disables bolt
+  const brownButton = world.createEntity('brown button', EntityType.ITEM);
+  brownButton.add(new IdentityTrait({
+    name: 'brown button',
+    aliases: ['brown'],
+    description: 'A brown button.',
+    properName: false,
+    article: 'a'
+  }));
+  // Note: Don't add SceneryTrait - buttons need to be in parser scope
+  (brownButton as any).buttonColor = 'brown';
+  world.moveEntity(brownButton.id, roomId);
+
+  // Red button - toggles lights
+  const redButton = world.createEntity('red button', EntityType.ITEM);
+  redButton.add(new IdentityTrait({
+    name: 'red button',
+    aliases: ['red'],
+    description: 'A red button.',
+    properName: false,
+    article: 'a'
+  }));
+  // Note: Don't add SceneryTrait - buttons need to be in parser scope
+  (redButton as any).buttonColor = 'red';
+  world.moveEntity(redButton.id, roomId);
+
+  // Blue button - starts flooding (death trap)
+  const blueButton = world.createEntity('blue button', EntityType.ITEM);
+  blueButton.add(new IdentityTrait({
+    name: 'blue button',
+    aliases: ['blue'],
+    description: 'A blue button.',
+    properName: false,
+    article: 'a'
+  }));
+  // Note: Don't add SceneryTrait - buttons need to be in parser scope
+  (blueButton as any).buttonColor = 'blue';
+  world.moveEntity(blueButton.id, roomId);
+}
+
+/**
+ * Dam Bolt - Controls sluice gates
+ *
+ * Per FORTRAN source:
+ * - Requires wrench to turn
+ * - Only turns if yellow button was pressed (GATEF=TRUE)
+ * - Toggles dam open/closed state
+ */
+function createDamBolt(world: WorldModel, roomId: string): IFEntity {
+  const bolt = world.createEntity('bolt', EntityType.ITEM);
+
+  bolt.add(new IdentityTrait({
+    name: 'bolt',
+    aliases: ['large bolt', 'metal bolt'],
+    description: 'A large metal bolt on the control panel. Above it is a small green plastic bubble.',
+    properName: false,
+    article: 'a'
+  }));
+
+  // Note: Don't add SceneryTrait - bolt needs to be in parser scope
+
+  world.moveEntity(bolt.id, roomId);
+  return bolt;
+}
 

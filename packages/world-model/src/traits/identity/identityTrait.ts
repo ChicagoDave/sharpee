@@ -43,7 +43,15 @@ export class IdentityTrait implements ITrait {
   
   /** Size category of the object */
   size?: 'tiny' | 'small' | 'medium' | 'large' | 'huge';
-  
+
+  /**
+   * Grammatical number for inanimate objects (ADR-089).
+   * - 'singular': "it" (default) - "take it", "the lamp"
+   * - 'plural': "them" - "take them", "the coins"
+   * Only used for entities WITHOUT ActorTrait.
+   */
+  grammaticalNumber?: 'singular' | 'plural';
+
   constructor(data?: Partial<IdentityTrait>) {
     if (data) {
       Object.assign(this, data);
