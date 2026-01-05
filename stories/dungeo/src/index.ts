@@ -1022,27 +1022,29 @@ export class DungeoStory implements Story {
       .build();
 
     // Press button patterns (dam maintenance room)
+    // Use "press :target" which won't conflict with stdlib "push" patterns
+    // This handles "press yellow", "press button", "press the yellow button", etc.
     grammar
       .define('press :target')
       .mapsTo(PRESS_BUTTON_ACTION_ID)
       .withPriority(150)
       .build();
 
+    // Turn bolt patterns (dam) - use literal "bolt" to avoid "turn on lantern" conflict
     grammar
-      .define('push :target')
-      .mapsTo(PRESS_BUTTON_ACTION_ID)
-      .withPriority(145)  // Lower than stdlib pushing
-      .build();
-
-    // Turn bolt patterns (dam)
-    grammar
-      .define('turn :target')
+      .define('turn bolt')
       .mapsTo(TURN_BOLT_ACTION_ID)
       .withPriority(150)
       .build();
 
     grammar
-      .define('turn :target with :instrument')
+      .define('turn the bolt')
+      .mapsTo(TURN_BOLT_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('turn bolt with :instrument')
       .instrument('instrument')
       .mapsTo(TURN_BOLT_ACTION_ID)
       .withPriority(155)
