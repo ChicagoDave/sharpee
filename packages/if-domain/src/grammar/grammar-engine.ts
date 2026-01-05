@@ -11,8 +11,11 @@ import {
   CompiledPattern,
   GrammarBuilder,
   PatternBuilder,
+  ActionGrammarBuilder,
   SemanticProperties,
-  SlotType
+  SlotType,
+  Constraint,
+  SlotConstraint
 } from './grammar-builder';
 import { PatternCompiler } from './pattern-compiler';
 
@@ -286,10 +289,153 @@ export abstract class GrammarEngine {
         return builder;
       },
       
+      forAction(actionId: string): ActionGrammarBuilder {
+        // Accumulated configuration
+        const verbList: string[] = [];
+        const patternList: string[] = [];
+        const directionMap: Record<string, string[]> = {};
+        const slotConstraints: Map<string, { constraint: Constraint }[]> = new Map();
+        const slotTypes: Map<string, SlotType> = new Map();
+        let priority = 100;
+        let defaultSemantics: Partial<SemanticProperties> | undefined;
+
+        const actionBuilder: ActionGrammarBuilder = {
+          verbs(verbs: string[]) {
+            verbList.push(...verbs);
+            return actionBuilder;
+          },
+
+          pattern(pattern: string) {
+            patternList.push(pattern);
+            return actionBuilder;
+          },
+
+          patterns(patterns: string[]) {
+            patternList.push(...patterns);
+            return actionBuilder;
+          },
+
+          directions(map: Record<string, string[]>) {
+            Object.assign(directionMap, map);
+            return actionBuilder;
+          },
+
+          where(slot: string, constraint: Constraint) {
+            const existing = slotConstraints.get(slot) || [];
+            existing.push({ constraint });
+            slotConstraints.set(slot, existing);
+            return actionBuilder;
+          },
+
+          withPriority(p: number) {
+            priority = p;
+            return actionBuilder;
+          },
+
+          withDefaultSemantics(defaults: Partial<SemanticProperties>) {
+            defaultSemantics = defaults;
+            return actionBuilder;
+          },
+
+          slotType(slot: string, type: SlotType) {
+            slotTypes.set(slot, type);
+            return actionBuilder;
+          },
+
+          build() {
+            // Generate verb × pattern combinations
+            if (verbList.length > 0 && patternList.length > 0) {
+              for (const verb of verbList) {
+                for (const patternTemplate of patternList) {
+                  // Combine verb with pattern template
+                  const fullPattern = patternTemplate.trim()
+                    ? `${verb} ${patternTemplate}`
+                    : verb;
+
+                  // Create the rule using the existing define() API
+                  let builder = engine.createBuilder().define(fullPattern);
+                  builder = builder.mapsTo(actionId);
+                  builder = builder.withPriority(priority);
+
+                  if (defaultSemantics) {
+                    builder = builder.withDefaultSemantics(defaultSemantics);
+                  }
+
+                  // Apply slot constraints
+                  for (const [slot, constraints] of slotConstraints) {
+                    for (const { constraint } of constraints) {
+                      builder = builder.where(slot, constraint);
+                    }
+                  }
+
+                  // Apply slot types
+                  for (const [slot, type] of slotTypes) {
+                    switch (type) {
+                      case SlotType.TEXT:
+                        builder = builder.text(slot);
+                        break;
+                      case SlotType.INSTRUMENT:
+                        builder = builder.instrument(slot);
+                        break;
+                      case SlotType.NUMBER:
+                        builder = builder.number(slot);
+                        break;
+                      case SlotType.ORDINAL:
+                        builder = builder.ordinal(slot);
+                        break;
+                      case SlotType.TIME:
+                        builder = builder.time(slot);
+                        break;
+                      case SlotType.DIRECTION:
+                        builder = builder.direction(slot);
+                        break;
+                      case SlotType.MANNER:
+                        builder = builder.manner(slot);
+                        break;
+                    }
+                  }
+
+                  builder.build();
+                }
+              }
+            }
+
+            // Generate standalone verb patterns (verb only, no template)
+            if (verbList.length > 0 && patternList.length === 0) {
+              for (const verb of verbList) {
+                let builder = engine.createBuilder().define(verb);
+                builder = builder.mapsTo(actionId);
+                builder = builder.withPriority(priority);
+
+                if (defaultSemantics) {
+                  builder = builder.withDefaultSemantics(defaultSemantics);
+                }
+
+                builder.build();
+              }
+            }
+
+            // Generate direction patterns
+            for (const [canonical, aliases] of Object.entries(directionMap)) {
+              for (const alias of aliases) {
+                let builder = engine.createBuilder().define(alias);
+                builder = builder.mapsTo(actionId);
+                // Lower priority for abbreviations (single character)
+                builder = builder.withPriority(alias.length === 1 ? 90 : priority);
+                builder = builder.withDefaultSemantics({ direction: canonical as any });
+                builder.build();
+              }
+            }
+          }
+        };
+
+        return actionBuilder;
+      },
+
       getRules() {
         return engine.getRules();
       },
-      
+
       clear() {
         engine.clear();
       }

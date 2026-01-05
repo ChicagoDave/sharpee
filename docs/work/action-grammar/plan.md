@@ -209,7 +209,7 @@ packages/parser-en-us/tests/slot-consumers/
 
 ---
 
-## Phase 7: ADR-087 - Action-Centric Grammar Builder
+## Phase 7: ADR-087 - Action-Centric Grammar Builder ✅ COMPLETE
 
 **Goal:** Add new `.forAction()` API to GrammarBuilder.
 
@@ -218,37 +218,40 @@ packages/parser-en-us/tests/slot-consumers/
 packages/if-domain/src/grammar/grammar-builder.ts
 ```
 
-- [ ] Add `forAction(actionId: string): ActionGrammarBuilder` method
-- [ ] Create `ActionGrammarBuilder` interface:
+- [x] Add `forAction(actionId: string): ActionGrammarBuilder` method
+- [x] Create `ActionGrammarBuilder` interface:
   - `verbs(verbs: string[]): this`
   - `pattern(pattern: string): this`
   - `patterns(patterns: string[]): this`
-  - `directions(map: Record<Direction, string[]>): this`
+  - `directions(map: Record<string, string[]>): this`
   - `where(slot, constraint): this`
   - `withPriority(priority): this`
-  - `withSemantics(fn): this`
+  - `withDefaultSemantics(defaults): this`
+  - `slotType(slot, type): this`
   - `build(): void`
 
 ### 7.2 Implement ActionGrammarBuilder
 ```
-packages/parser-en-us/src/action-grammar-builder.ts
+packages/if-domain/src/grammar/grammar-engine.ts (in createBuilder())
 ```
 
-- [ ] Implement `ActionGrammarBuilder` class
-- [ ] Generate multiple patterns from verb list + pattern template
-- [ ] Handle direction aliases specially (attach direction semantics)
-- [ ] Delegate to existing `.define()` API for each generated pattern
+- [x] Implement `ActionGrammarBuilder` in `createBuilder().forAction()`
+- [x] Generate verb × pattern combinations
+- [x] Handle direction aliases with automatic semantics
+- [x] Delegate to existing `.define()` API for each generated pattern
+- [x] Lower priority (90) for single-character abbreviations
 
 ### 7.3 Test New API
 
 ```
-packages/parser-en-us/tests/action-grammar-builder.test.ts
+packages/parser-en-us/tests/action-grammar-builder.test.ts (12 tests)
 ```
 
-- [ ] Test verb alias expansion: `['push', 'press']` + `:target` → 2 patterns
-- [ ] Test multiple patterns: `['push', 'press']` + `[':target', ':target :direction']` → 4 patterns
-- [ ] Test direction aliases: `{ NORTH: ['north', 'n'] }` → 2 patterns with direction semantics
-- [ ] Test constraints applied to all generated patterns
+- [x] Test verb alias expansion: `['push', 'press']` + `:target` → 2 patterns
+- [x] Test multiple patterns: `['push', 'press']` + `[':target', ':target :direction']` → 4 patterns
+- [x] Test direction aliases: `{ 'north': ['north', 'n'] }` → 2 patterns with direction semantics
+- [x] Test constraints applied to all generated patterns
+- [x] Integration tests with pattern matching
 
 **Checkpoint:** New API works, existing `.define()` API unchanged.
 
