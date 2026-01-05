@@ -45,6 +45,10 @@ export function createTempleObjects(world: WorldModel, roomIds: TempleRoomIds): 
   // Dreary Room objects
   createBlueCrystalSphere(world, roomIds.drearyRoom);
 
+  // Tiny Room objects - key puzzle
+  createTinyRoomDoor(world, roomIds.tinyRoom, roomIds.drearyRoom);
+  createSmallKey(world, roomIds.tinyRoom);
+
   // Tomb objects - crypt door
   createCryptDoor(world, roomIds.tomb, roomIds.crypt);
 }
@@ -333,6 +337,85 @@ function createBlueCrystalSphere(world: WorldModel, roomId: string): IFEntity {
 
   world.moveEntity(sphere.id, roomId);
   return sphere;
+}
+
+/**
+ * Tiny Room Door - Small locked door between Tiny Room and Dreary Room
+ *
+ * Classic IF puzzle: key is in the lock on the other side.
+ * Player must slide mat under door, push key with screwdriver,
+ * key falls on mat, pull mat to get key.
+ *
+ * States tracked on door:
+ * - isLocked: true until player uses key
+ * - keyInLock: true initially, false after screwdriver pushes it out
+ * - matUnderDoor: true when mat is placed
+ * - keyOnMat: true when key falls after being pushed
+ */
+function createTinyRoomDoor(world: WorldModel, tinyRoomId: string, drearyRoomId: string): IFEntity {
+  const door = world.createEntity('small door', EntityType.DOOR);
+
+  door.add(new IdentityTrait({
+    name: 'small door',
+    aliases: ['door', 'north door', 'wooden door', 'tiny door'],
+    description: 'A small wooden door leads north. There is a keyhole at eye level.',
+    properName: false,
+    article: 'a'
+  }));
+
+  door.add(new OpenableTrait({
+    isOpen: false
+  }));
+
+  door.add(new SceneryTrait());
+
+  // Door state for puzzle
+  (door as any).isLocked = true;
+  (door as any).keyInLock = true;       // Key starts in lock on Dreary Room side
+  (door as any).matUnderDoor = false;
+  (door as any).keyOnMat = false;
+
+  // Track connected rooms
+  (door as any).connectsRooms = [tinyRoomId, drearyRoomId];
+  (door as any).blocksDirection = {
+    [tinyRoomId]: 'NORTH',
+    [drearyRoomId]: 'SOUTH'
+  };
+
+  // ID for handler lookup
+  (door as any).isTinyRoomDoor = true;
+
+  world.moveEntity(door.id, tinyRoomId);
+  return door;
+}
+
+/**
+ * Small Key - Key for the Tiny Room door
+ *
+ * Initially "in the lock" on the Dreary Room side (tracked on door).
+ * After screwdriver puzzle, falls onto mat and becomes takeable.
+ * Then spawns in Tiny Room for player to pick up.
+ */
+function createSmallKey(world: WorldModel, roomId: string): IFEntity {
+  const key = world.createEntity('small key', EntityType.ITEM);
+
+  key.add(new IdentityTrait({
+    name: 'small key',
+    aliases: ['key', 'brass key', 'tiny key'],
+    description: 'A small brass key.',
+    properName: false,
+    article: 'a'
+  }));
+
+  // Key starts hidden (in lock on other side) - not in room yet
+  (key as any).isHidden = true;
+  (key as any).isTinyRoomKey = true;
+
+  // Don't place in room yet - it "appears" after the screwdriver puzzle
+  // We'll track it on the world and move it when the puzzle is solved
+  world.moveEntity(key.id, roomId);
+
+  return key;
 }
 
 /**
