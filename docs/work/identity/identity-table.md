@@ -88,8 +88,60 @@ const custom = new ActorTrait({
 });
 ```
 
+## Message Placeholders (Phase D)
+
+Available in message templates for perspective-aware rendering:
+
+| Placeholder | 1st | 2nd | 3rd (she) | 3rd (they) |
+|-------------|-----|-----|-----------|------------|
+| `{You}` | I | You | She | They |
+| `{you}` | i | you | she | they |
+| `{Your}` | My | Your | Her | Their |
+| `{your}` | my | your | her | their |
+| `{Yourself}` | Myself | Yourself | Herself | Themselves |
+| `{yourself}` | myself | yourself | herself | themselves |
+| `{You're}` | I'm | You're | She's | They're |
+| `{verb}` | take | take | takes | take |
+
+**Example:**
+```typescript
+// Message template
+"{You} {can't} take {yourself}."
+
+// 2nd person: "You can't take yourself."
+// 1st person: "I can't take myself."
+// 3rd person (she): "She can't take herself."
+```
+
+## Story Configuration
+
+```typescript
+// stories/my-story/src/index.ts
+export const storyConfig: StoryConfig = {
+  id: 'my-story',
+  title: 'My Story',
+  // Optional - defaults to 2nd person
+  narrative: {
+    perspective: '1st',  // or '3rd'
+    playerPronouns: PRONOUNS.SHE_HER,  // for 3rd person
+  },
+};
+```
+
 ## Related Files
 
 - ADR: `docs/architecture/adrs/adr-089-pronoun-identity-system.md`
-- Implementation: `packages/world-model/src/traits/actor/actorTrait.ts`
-- Tests: `packages/world-model/tests/unit/traits/actor.test.ts`
+- ActorTrait: `packages/world-model/src/traits/actor/actorTrait.ts`
+- NarrativeSettings: `packages/engine/src/narrative/narrative-settings.ts`
+- Pronoun Context: `packages/parser-en-us/src/pronoun-context.ts`
+- Placeholder Resolver: `packages/lang-en-us/src/perspective/placeholder-resolver.ts`
+
+## Implementation Status
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| A | Expand pronoun system (world-model) | Done |
+| B | Pronoun context in parser | Done |
+| C | NarrativeSettings (engine) | Done |
+| D | Message placeholders (lang-en-us) | Done |
+| E | Advanced verb conjugation | Future |

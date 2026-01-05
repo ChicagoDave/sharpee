@@ -1,7 +1,7 @@
 # ADR-089: Pronoun and Identity System
 
 ## Status
-PROPOSED
+ACCEPTED (Phases A-D implemented 2026-01-05)
 
 ## Context
 
