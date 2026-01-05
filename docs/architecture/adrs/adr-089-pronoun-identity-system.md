@@ -60,19 +60,56 @@ Later:
 
 ## Decision
 
-Implement a three-part system:
+Implement a three-part system with clear separation between animate and inanimate entities:
 
-1. **IdentityTrait** (world-model) - Pronouns and gender for any entity
-2. **NarrativeSettings** (engine) - Story-level perspective configuration
-3. **PronounContext** (parser) - Runtime tracking for "it/them" resolution
+1. **IdentityTrait** (world-model) - Naming/description, plus grammatical number for inanimate objects
+2. **ActorTrait** (world-model) - Full pronoun support for animate beings (NPCs, player)
+3. **NarrativeSettings** (engine) - Story-level perspective configuration
+4. **PronounContext** (parser) - Runtime tracking for "it/them" resolution
 
-### Part 1: IdentityTrait
+### Design Principle: Animate vs Inanimate
+
+**Inanimate objects** (lamp, sword, coins) have simple pronoun needs:
+- Default to "it" (singular) or "them" (plural)
+- No honorifics, no identity considerations
+- Grammatical number is all that matters
+
+**Animate beings** (NPCs, player) need full pronoun support:
+- he/him, she/her, they/them, neopronouns
+- Multiple pronoun sets (he/they)
+- Honorifics (Dr., Mx., etc.)
+- verbForm for singular they ("they are" not "they is")
+- grammaticalGender for localization
+
+### Part 1: IdentityTrait (Existing - Minor Addition)
+
+The existing `IdentityTrait` handles naming and descriptions. We add one field for inanimate pronoun resolution:
 
 ```typescript
-// packages/world-model/src/traits/identity/IdentityTrait.ts
+// packages/world-model/src/traits/identity/identityTrait.ts
+
+export class IdentityTrait implements ITrait {
+  // ... existing fields: name, description, aliases, article, properName, etc.
+
+  /**
+   * Grammatical number for inanimate objects.
+   * - 'singular': "it" (default) - "take it", "the lamp"
+   * - 'plural': "them" - "take them", "the coins"
+   * Only used for entities WITHOUT ActorTrait.
+   */
+  grammaticalNumber?: 'singular' | 'plural';
+}
+```
+
+### Part 2: ActorTrait (Existing - Expand Pronouns)
+
+The existing `ActorTrait` already has a `pronouns` field. We expand it with full PronounSet support:
+
+```typescript
+// packages/world-model/src/traits/actor/actorTrait.ts
 
 /**
- * Pronoun set for an entity
+ * Full pronoun set for animate entities
  */
 interface PronounSet {
   /** Nominative case: "he", "she", "they", "xe" */
@@ -90,9 +127,9 @@ interface PronounSet {
 }
 
 /**
- * Standard pronoun sets - Traditional binary
+ * Standard pronoun sets
  */
-const PRONOUNS = {
+export const PRONOUNS = {
   HE_HIM: {
     subject: 'he', object: 'him', possessive: 'his',
     possessiveAdj: 'his', reflexive: 'himself', verbForm: 'singular'
@@ -101,18 +138,11 @@ const PRONOUNS = {
     subject: 'she', object: 'her', possessive: 'hers',
     possessiveAdj: 'her', reflexive: 'herself', verbForm: 'singular'
   },
-  IT: {
-    subject: 'it', object: 'it', possessive: 'its',
-    possessiveAdj: 'its', reflexive: 'itself', verbForm: 'singular'
-  },
-
-  // Gender-neutral and non-binary
   THEY_THEM: {
     subject: 'they', object: 'them', possessive: 'theirs',
-    possessiveAdj: 'their', reflexive: 'themselves', verbForm: 'plural'  // "they are", not "they is"
+    possessiveAdj: 'their', reflexive: 'themselves', verbForm: 'plural'
   },
-
-  // Common neopronouns
+  // Neopronouns
   XE_XEM: {
     subject: 'xe', object: 'xem', possessive: 'xyrs',
     possessiveAdj: 'xyr', reflexive: 'xemself', verbForm: 'singular'
@@ -138,7 +168,7 @@ const PRONOUNS = {
 /**
  * Standard honorifics/titles
  */
-const HONORIFICS = {
+export const HONORIFICS = {
   MR: 'Mr.',
   MRS: 'Mrs.',
   MS: 'Ms.',
@@ -146,49 +176,55 @@ const HONORIFICS = {
   MISS: 'Miss',
   DR: 'Dr.',
   PROF: 'Prof.',
-  // Authors can use any string for custom titles
 } as const;
 
-/**
- * Identity trait for entities with pronouns
- */
-interface IdentityTrait {
+export class ActorTrait implements ITrait {
+  // ... existing fields: isPlayer, isPlayable, state, capacity, etc.
+
   /**
-   * Pronouns for this entity. Can be:
+   * Pronouns for this actor. Can be:
    * - A single PronounSet (most common)
    * - An array of PronounSets for people who use multiple (e.g., he/they)
-   *   First in array is "primary" for parser resolution; all are valid for reference
+   *   First in array is "primary" for parser resolution; all are valid
    */
-  pronouns: PronounSet | PronounSet[];
+  pronouns: PronounSet | PronounSet[] = PRONOUNS.THEY_THEM;  // Default
 
   /**
    * Optional honorific/title: "Mr.", "Ms.", "Mx.", "Dr.", etc.
-   * Used when formally addressing: "Dr. Smith", "Mx. Chen"
    */
   honorific?: string;
 
   /**
-   * Optional semantic gender for grammatical agreement in gendered languages.
-   * IMPORTANT: This is separate from pronouns and identity!
-   * - A person using they/them may specify 'masculine' for French "il" agreement
-   * - A person using she/her may specify 'neuter' for Finnish (no gendered pronouns)
-   * - 'common' is for languages with common gender (Swedish "hen")
+   * Semantic gender for grammatical agreement in gendered languages.
+   * IMPORTANT: Separate from pronouns! A they/them person may specify
+   * 'masculine' for French "il" agreement.
    */
   grammaticalGender?: 'masculine' | 'feminine' | 'neuter' | 'common';
 
   /**
-   * Is this entity animate? Affects default pronoun resolution:
-   * - animate: true → uses identity pronouns for "him/her/them"
-   * - animate: false or undefined → defaults to "it"
-   */
-  animate?: boolean;
-
-  /**
-   * Optional self-description for disambiguation prompts.
-   * If not provided, uses entity name.
+   * Brief description for disambiguation prompts.
    * Example: "the tall woman", "the barista", "your friend Sam"
    */
   briefDescription?: string;
+}
+```
+
+### Parser Resolution Logic
+
+```typescript
+function resolveEntityPronouns(entity: IFEntity): PronounSet {
+  // Actors have full pronoun support
+  const actor = entity.get<ActorTrait>('actor');
+  if (actor?.pronouns) {
+    return Array.isArray(actor.pronouns) ? actor.pronouns[0] : actor.pronouns;
+  }
+
+  // Inanimate objects: "it" or "them" based on grammatical number
+  const identity = entity.get<IdentityTrait>('identity');
+  if (identity?.grammaticalNumber === 'plural') {
+    return INANIMATE_THEM;  // { subject: 'they', object: 'them', ... verbForm: 'plural' }
+  }
+  return INANIMATE_IT;  // { subject: 'it', object: 'it', ... verbForm: 'singular' }
 }
 ```
 
@@ -249,29 +285,42 @@ world.setIdentityOptions({
 ```typescript
 // NPC with she/her pronouns
 const alice = world.createEntity('alice', 'Alice', {
-  identity: { pronouns: PRONOUNS.SHE_HER, animate: true },
-  // ...
+  identity: { name: 'Alice' },
+  actor: { pronouns: PRONOUNS.SHE_HER, honorific: HONORIFICS.MS },
 });
 
 // NPC with they/them pronouns
 const sam = world.createEntity('sam', 'Sam', {
-  identity: { pronouns: PRONOUNS.THEY_THEM, animate: true },
-  // ...
+  identity: { name: 'Sam' },
+  actor: { pronouns: PRONOUNS.THEY_THEM },
 });
 
-// Inanimate object (defaults to "it")
+// NPC with he/they pronouns (multiple sets)
+const alex = world.createEntity('alex', 'Alex', {
+  identity: { name: 'Alex' },
+  actor: { pronouns: [PRONOUNS.HE_HIM, PRONOUNS.THEY_THEM] },
+});
+
+// Inanimate object - singular (defaults to "it")
 const lamp = world.createEntity('lamp', 'brass lamp', {
-  // No identity trait = defaults to IT pronouns
+  identity: { name: 'brass lamp' },
+  // No actor trait → uses "it"
+});
+
+// Inanimate object - plural ("them")
+const coins = world.createEntity('coins', 'gold coins', {
+  identity: { name: 'gold coins', grammaticalNumber: 'plural' },
+  // No actor trait → uses "them"
 });
 
 // Player character
 const player = world.createEntity('player', 'yourself', {
-  identity: { pronouns: PRONOUNS.THEY_THEM, animate: true },
-  actor: { isPlayer: true },
+  identity: { name: 'yourself' },
+  actor: { isPlayer: true, pronouns: PRONOUNS.THEY_THEM },
 });
 ```
 
-### Part 2: NarrativeSettings
+### Part 3: NarrativeSettings
 
 **Approved model**: Set narrative perspective via `StoryConfig` at story definition time. This is immutable after game start.
 
@@ -348,7 +397,7 @@ The `{take}` placeholder conjugates based on perspective/number:
 - 3rd singular: "takes"
 - 3rd plural (they): "take"
 
-### Part 3: PronounContext (Parser)
+### Part 4: PronounContext (Parser)
 
 ```typescript
 // packages/parser-en-us/src/pronoun-context.ts
@@ -415,26 +464,36 @@ updatePronounContext(command: IParsedCommand, context: PronounContext, world: Wo
   const entity = world.getEntity(target.entityId);
   if (!entity) return;
 
-  const identity = entity.get<IdentityTrait>('identity');
   const ref: EntityReference = {
     entityId: entity.id,
     text: target.text,
     turnNumber: world.getTurnNumber(),
   };
 
-  if (!identity?.animate) {
-    // Inanimate → "it"
-    context.it = ref;
-  } else {
+  // Check if this is an actor (animate)
+  const actor = entity.get<ActorTrait>('actor');
+  if (actor?.pronouns) {
     // Animate → store by object pronoun
-    const objectPronoun = identity.pronouns.object;
-    context.animateByPronoun.set(objectPronoun, ref);
+    const pronounSet = Array.isArray(actor.pronouns) ? actor.pronouns[0] : actor.pronouns;
+    context.animateByPronoun.set(pronounSet.object, ref);
 
-    // Also update "it" for animate objects (some players say "pet it")
-    // But animateByPronoun takes precedence in resolution
+    // For multiple pronoun sets, register all object pronouns
+    if (Array.isArray(actor.pronouns)) {
+      for (const ps of actor.pronouns) {
+        context.animateByPronoun.set(ps.object, ref);
+      }
+    }
+  } else {
+    // Inanimate → "it" (or "them" if plural)
+    const identity = entity.get<IdentityTrait>('identity');
+    if (identity?.grammaticalNumber === 'plural') {
+      context.them = [ref];
+    } else {
+      context.it = ref;
+    }
   }
 
-  // Handle lists
+  // Handle explicit lists (e.g., "take all", "take sword and lamp")
   if (command.directObject?.isList && command.directObject.items) {
     context.them = command.directObject.items.map(item => ({
       entityId: item.entityId,
@@ -489,11 +548,11 @@ When NPCs speak about other characters (including the player), they need to use 
 ```typescript
 // In lang layer or story code
 function describeAction(actor: IFEntity, target: IFEntity, verb: string): string {
-  const actorIdentity = actor.get<IdentityTrait>('identity');
-  const targetIdentity = target.get<IdentityTrait>('identity');
+  const actorPronouns = actor.get<ActorTrait>('actor')?.pronouns;
+  const targetPronouns = target.get<ActorTrait>('actor')?.pronouns;
 
-  const actorPronoun = getPrimaryPronoun(actorIdentity);  // First in array
-  const targetPronoun = getPrimaryPronoun(targetIdentity);
+  const actorPronoun = getPrimaryPronoun(actorPronouns);  // First in array, or default
+  const targetPronoun = getPrimaryPronoun(targetPronouns);
 
   // "She gives him the book" or "They give them the book"
   return `${actorPronoun.subject} ${conjugate(verb, actorPronoun)} ${targetPronoun.object} the book.`;
@@ -580,7 +639,7 @@ For languages without gendered pronouns (Finnish, Estonian, Turkish, Hungarian, 
 
 ### For All Stories
 
-1. **Default behavior unchanged** - Stories that don't set identity traits get current behavior (2nd person, "it" for objects)
+1. **Default behavior unchanged** - Stories that don't customize actor pronouns get current behavior (2nd person, they/them default for actors, "it" for objects)
 
 2. **Opt-in complexity** - Authors only engage with pronouns/perspective if they want non-default behavior
 
@@ -615,7 +674,7 @@ For languages without gendered pronouns (Finnish, Estonian, Turkish, Hungarian, 
 
 1. **Text service changes** - Needs to resolve `{You}` placeholders
    - Access to NarrativeSettings
-   - Access to player entity's IdentityTrait
+   - Access to player entity's ActorTrait for pronouns
 
 2. **Turn context** - PronounContext lives in parser, updated each turn
 
@@ -628,17 +687,19 @@ For languages without gendered pronouns (Finnish, Estonian, Turkish, Hungarian, 
 
 ## Implementation Phases
 
-### Phase A: IdentityTrait (world-model)
-- Add IdentityTrait with PronounSet
-- Add standard pronoun constants
-- Default "it" pronouns for entities without trait
-- **No breaking changes** - purely additive
+### Phase A: Trait Updates (world-model)
+- Add `grammaticalNumber` field to IdentityTrait
+- Expand ActorTrait pronouns to full PronounSet interface
+- Add `honorific`, `grammaticalGender`, `briefDescription` to ActorTrait
+- Add PRONOUNS and HONORIFICS constants
+- **No breaking changes** - existing pronouns field is compatible
 
 ### Phase B: PronounContext (parser)
 - Add pronoun tracking after successful parse
 - Resolve "it" to last inanimate direct object
-- Resolve "him/her/them" to animate entities by pronoun
-- **Enables**: "take lamp. light it"
+- Resolve "them" to last plural object or actor using they/them
+- Resolve "him/her/etc" to actors by their object pronoun
+- **Enables**: "take lamp. light it", "talk to Alice. give her the key"
 
 ### Phase C: NarrativeSettings (engine)
 - Add NarrativeSettings to engine config
