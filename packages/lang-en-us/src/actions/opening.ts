@@ -16,10 +16,10 @@ export const openingLanguage = {
     'not_openable': "{item} can't be opened.",
     'already_open': "{item} is already open.",
     'locked': "{item} is locked.",
-    'opened': "You open {item}.",
+    'opened': "{You} {open} {item}.",
     'revealing': "Opening {container} reveals {items}.",
-    'its_empty': "You open {container}, which is empty.",
-    'cant_reach': "You can't reach {item}."
+    'its_empty': "{You} {open} {container}, which is empty.",
+    'cant_reach': "{You} {can't} reach {item}."
   },
   
   help: {

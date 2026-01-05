@@ -9,6 +9,11 @@ import { LanguageProvider, ParserLanguageProvider, ActionHelp, VerbVocabulary, D
 import { englishVerbs } from './data/verbs';
 import { englishWords, irregularPlurals, abbreviations } from './data/words';
 import { standardActionLanguage } from './actions';
+import {
+  NarrativeContext,
+  DEFAULT_NARRATIVE_CONTEXT,
+  resolvePerspectivePlaceholders,
+} from './perspective';
 
 // Types are now imported from @sharpee/if-domain
 
@@ -19,15 +24,37 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
   readonly languageCode = 'en-US';
   readonly languageName = 'English (US)';
   readonly textDirection = 'ltr' as const;
-  
+
   // Message storage
   private messages = new Map<string, string>();
   private customActionPatterns = new Map<string, string[]>();
-  
+
+  // Narrative context for perspective-aware message resolution (ADR-089)
+  private narrativeContext: NarrativeContext = DEFAULT_NARRATIVE_CONTEXT;
+
   constructor() {
     // Load all action messages
     this.loadActionMessages();
     // NPC messages are injected at runtime by the story + engine (ADR-070)
+  }
+
+  /**
+   * Set narrative settings for perspective-aware message resolution (ADR-089)
+   *
+   * This should be called by the engine after loading a story to configure
+   * how {You}, {your}, {take} placeholders are resolved.
+   *
+   * @param settings Narrative settings from story config
+   */
+  setNarrativeSettings(settings: NarrativeContext): void {
+    this.narrativeContext = settings;
+  }
+
+  /**
+   * Get current narrative context
+   */
+  getNarrativeContext(): NarrativeContext {
+    return this.narrativeContext;
   }
   
   /**
@@ -47,25 +74,36 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
 
   /**
    * Get a message by its ID with optional parameter substitution
+   *
+   * Supports two types of placeholders:
+   * 1. Perspective placeholders (ADR-089): {You}, {your}, {take}, etc.
+   *    - Resolved based on narrative context (1st/2nd/3rd person)
+   * 2. Parameter placeholders: {item}, {target}, etc.
+   *    - Replaced with values from params object
+   *
    * @param messageId Full message ID (e.g., 'if.action.taking.taken')
    * @param params Parameters to substitute in the message
    * @returns The resolved message text, or null if not found
    */
   getMessage(messageId: string, params?: Record<string, any>): string {
     let message = this.messages.get(messageId);
-    
+
     if (!message) {
       return messageId; // Return the ID as fallback
     }
-    
-    // Perform parameter substitution
+
+    // Step 1: Resolve perspective placeholders (ADR-089)
+    // This handles {You}, {your}, {take}, etc.
+    message = resolvePerspectivePlaceholders(message, this.narrativeContext);
+
+    // Step 2: Perform parameter substitution
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
         const placeholder = `{${key}}`;
         message = message!.replace(new RegExp(placeholder, 'g'), String(value));
       });
     }
-    
+
     return message;
   }
   
