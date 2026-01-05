@@ -1,0 +1,45 @@
+title: Blue Button Flooding
+story: dungeo
+description: Tests the blue button flooding death trap in Maintenance Room (Phase 2)
+
+---
+
+# Setup: Get to Maintenance Room
+> gdt
+[OK: contains "GDT"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> ah Maintenance Room
+[OK: contains "Maintenance Room"]
+
+> look
+[OK: contains "control panel"]
+[OK: contains "blue button"]
+
+# Press blue button to start flooding (use alias "blue" - multi-word nouns not yet supported)
+> press blue
+[OK: contains "rumbling sound"]
+[OK: contains "leak"]
+
+# Wait and watch water rise - water level should increase each turn
+> wait
+[OK: contains "ankles"]
+
+> wait
+[OK: contains "shins"]
+
+> wait
+[OK: contains "knees"]
+
+# Escape before drowning! (exit is WEST)
+> w
+[OK: contains "Dam Lobby"]
+
+# Press blue button again (back in Maintenance Room via GDT)
+> ah Maintenance Room
+[OK: contains "Maintenance Room"]
+
+> press blue
+[OK: contains "jammed"]

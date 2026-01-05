@@ -41,7 +41,30 @@ export interface DamState {
   isDraining: boolean;
   isDrained: boolean;
   buttonPressed: boolean;  // Yellow button pressed - enables bolt at Dam
+  // Flooding state (blue button)
+  floodingLevel: number;   // 0 = not flooding, 1-16 = flooding, >16 = flooded
+  isFlooded: boolean;      // Room permanently flooded
 }
+
+// Flooding constants
+const FLOODING_DAEMON_ID = 'dungeo.maintenance.flooding';
+const FLOOD_MAX_LEVEL = 16;  // Death occurs when level > 16
+
+// Water level messages (from FORTRAN: message 71 + (level/2))
+export const FloodingMessages = {
+  LEAK_STARTED: 'dungeo.flooding.leak_started',      // Message 233
+  WATER_ANKLES: 'dungeo.flooding.water_ankles',      // Message 71
+  WATER_SHINS: 'dungeo.flooding.water_shins',        // Message 72
+  WATER_KNEES: 'dungeo.flooding.water_knees',        // Message 73
+  WATER_HIPS: 'dungeo.flooding.water_hips',          // Message 74
+  WATER_WAIST: 'dungeo.flooding.water_waist',        // Message 75
+  WATER_CHEST: 'dungeo.flooding.water_chest',        // Message 76
+  WATER_NECK: 'dungeo.flooding.water_neck',          // Message 77
+  WATER_HEAD: 'dungeo.flooding.water_head',          // Message 78
+  ROOM_FLOODED: 'dungeo.flooding.room_flooded',      // Message 80
+  DROWNED: 'dungeo.flooding.drowned',                // Message 81
+  BUTTON_JAMMED: 'dungeo.flooding.button_jammed',    // Message 234
+} as const;
 
 /**
  * Start the dam draining sequence
@@ -57,7 +80,7 @@ export function startDamDraining(
   // Get or create dam state
   let damState = world.getCapability(DAM_STATE_KEY) as DamState | null;
   if (!damState) {
-    damState = { isDraining: false, isDrained: false, buttonPressed: false };
+    damState = { isDraining: false, isDrained: false, buttonPressed: false, floodingLevel: 0, isFlooded: false };
     world.registerCapability(DAM_STATE_KEY, { initialData: damState });
   }
 
@@ -219,6 +242,189 @@ export function isYellowButtonPressed(world: WorldModel): boolean {
 }
 
 /**
+ * Check if flooding has started
+ */
+export function isFloodingStarted(world: WorldModel): boolean {
+  const damState = world.getCapability(DAM_STATE_KEY) as DamState | null;
+  return (damState?.floodingLevel ?? 0) > 0;
+}
+
+/**
+ * Check if the maintenance room is permanently flooded
+ */
+export function isMaintenanceFlooded(world: WorldModel): boolean {
+  const damState = world.getCapability(DAM_STATE_KEY) as DamState | null;
+  return damState?.isFlooded ?? false;
+}
+
+/**
+ * Get the water level message based on flooding level
+ */
+function getWaterLevelMessage(level: number): string {
+  // FORTRAN: message 71 + (RVMNT/2), where 71=ankles, 72=shins, etc.
+  // level starts at 1, so: level 1-2 → ankles, 3-4 → shins, etc.
+  const msgIndex = Math.floor((level - 1) / 2);
+  switch (msgIndex) {
+    case 0: return FloodingMessages.WATER_ANKLES;
+    case 1: return FloodingMessages.WATER_SHINS;
+    case 2: return FloodingMessages.WATER_KNEES;
+    case 3: return FloodingMessages.WATER_HIPS;
+    case 4: return FloodingMessages.WATER_WAIST;
+    case 5: return FloodingMessages.WATER_CHEST;
+    case 6: return FloodingMessages.WATER_NECK;
+    default: return FloodingMessages.WATER_HEAD;
+  }
+}
+
+/**
+ * Start the maintenance room flooding sequence
+ *
+ * Called when the blue button is pressed. Starts a daemon that
+ * raises the water level each turn. Player drowns if they don't escape.
+ *
+ * From FORTRAN source (objects.for line 34400):
+ * - Sets RVMNT=1 (flooding counter)
+ * - Enables CEVMNT daemon with CTICK=-1 (runs every turn)
+ * - Makes leak visible
+ */
+export function startFlooding(
+  scheduler: ISchedulerService,
+  world: WorldModel,
+  maintenanceRoomId: EntityId,
+  leakId?: EntityId
+): ISemanticEvent[] {
+  // Get dam state
+  let damState = world.getCapability(DAM_STATE_KEY) as DamState | null;
+  if (!damState) {
+    damState = { isDraining: false, isDrained: false, buttonPressed: false, floodingLevel: 0, isFlooded: false };
+    world.registerCapability(DAM_STATE_KEY, { initialData: damState });
+  }
+
+  // Already flooding or flooded? Button jammed
+  if (damState.floodingLevel > 0 || damState.isFlooded) {
+    return [{
+      id: `flooding-jammed-${Date.now()}`,
+      type: 'game.message',
+      timestamp: Date.now(),
+      entities: {},
+      data: {
+        messageId: FloodingMessages.BUTTON_JAMMED
+      }
+    }];
+  }
+
+  // Start flooding (RVMNT = 1)
+  damState.floodingLevel = 1;
+
+  // Make leak visible if it exists
+  if (leakId) {
+    const leak = world.getEntity(leakId);
+    if (leak) {
+      const identity = leak.get(IdentityTrait);
+      if (identity) {
+        // Remove hidden flag if any
+        (leak as any).isHidden = false;
+      }
+    }
+  }
+
+  // Start the flooding daemon (runs every turn)
+  scheduler.registerDaemon({
+    id: FLOODING_DAEMON_ID,
+    name: 'Maintenance Room Flooding',
+    priority: 20,  // High priority - death trap!
+    run: (ctx: SchedulerContext): ISemanticEvent[] => {
+      const state = ctx.world.getCapability(DAM_STATE_KEY) as DamState | null;
+      if (!state || state.floodingLevel === 0) {
+        return [];
+      }
+
+      const events: ISemanticEvent[] = [];
+      const player = ctx.world.getPlayer();
+      if (!player) return [];
+      const playerId = player.id;
+      const playerLocation = ctx.world.getLocation(playerId);
+      const inMaintenanceRoom = playerLocation === maintenanceRoomId;
+
+      // Show water level message if player is in the room
+      if (inMaintenanceRoom && state.floodingLevel > 0) {
+        events.push({
+          id: `flooding-level-${ctx.turn}`,
+          type: 'game.message',  // Use game.message so text service renders it
+          timestamp: Date.now(),
+          entities: {},
+          data: {
+            messageId: getWaterLevelMessage(state.floodingLevel),
+            daemonId: FLOODING_DAEMON_ID,
+            floodingLevel: state.floodingLevel
+          }
+        });
+      }
+
+      // Increment water level
+      state.floodingLevel++;
+
+      // Check for drowning (level > 16)
+      if (state.floodingLevel > FLOOD_MAX_LEVEL) {
+        // Disable daemon
+        scheduler.removeDaemon(FLOODING_DAEMON_ID);
+
+        // Mark room as flooded
+        state.isFlooded = true;
+        state.floodingLevel = FLOOD_MAX_LEVEL + 1;
+
+        // Update room description
+        const room = ctx.world.getEntity(maintenanceRoomId);
+        if (room) {
+          const identity = room.get(IdentityTrait);
+          if (identity) {
+            identity.description = 'The room is full of water and cannot be entered.';
+          }
+        }
+
+        // If player is in the room, they drown
+        if (inMaintenanceRoom) {
+          // Show drowning message
+          events.push({
+            id: `flooding-drowned-${ctx.turn}`,
+            type: 'game.message',
+            timestamp: Date.now(),
+            entities: {},
+            data: {
+              messageId: FloodingMessages.DROWNED
+            }
+          });
+          // Then trigger death
+          events.push({
+            id: `flooding-death-${ctx.turn}`,
+            type: 'player.died',
+            timestamp: Date.now(),
+            entities: { actor: playerId },
+            data: {
+              cause: 'drowning',
+              daemonId: FLOODING_DAEMON_ID
+            }
+          });
+        }
+      }
+
+      return events;
+    }
+  });
+
+  // Return the initial leak event
+  return [{
+    id: `flooding-started-${Date.now()}`,
+    type: 'game.message',
+    timestamp: Date.now(),
+    entities: {},
+    data: {
+      messageId: FloodingMessages.LEAK_STARTED
+    }
+  }];
+}
+
+/**
  * Register dam event handlers
  *
  * Correct sequence (matching Mainframe Zork):
@@ -237,7 +443,9 @@ export function registerDamHandlers(
     initialData: {
       isDraining: false,
       isDrained: false,
-      buttonPressed: false
+      buttonPressed: false,
+      floodingLevel: 0,
+      isFlooded: false
     } as DamState
   });
 

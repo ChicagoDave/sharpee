@@ -137,11 +137,11 @@ import { lightAction, LIGHT_ACTION_ID, LightMessages } from './light';
 import { tieAction, TIE_ACTION_ID, TieMessages } from './tie';
 import { untieAction, UNTIE_ACTION_ID, UntieMessages } from './untie';
 import { balloonExitAction, BALLOON_EXIT_ACTION_ID, BalloonExitMessages } from '../handlers/balloon-handler';
-import { pressButtonAction, PRESS_BUTTON_ACTION_ID, PressButtonMessages } from './press-button';
+import { pressButtonAction, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler } from './press-button';
 import { turnBoltAction, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler } from './turn-bolt';
 
 // Re-export press-button and turn-bolt
-export { PRESS_BUTTON_ACTION_ID, PressButtonMessages } from './press-button';
+export { PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler } from './press-button';
 export { TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler } from './turn-bolt';
 
 // Re-export balloon exit for use in index.ts

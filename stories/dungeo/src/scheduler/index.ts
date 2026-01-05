@@ -13,6 +13,10 @@ export {
   startDamDraining,
   isDamDrained,
   isDamDraining,
+  startFlooding,
+  isFloodingStarted,
+  isMaintenanceFlooded,
+  FloodingMessages,
   DAM_STATE_KEY,
   type DamState
 } from './dam-fuse';

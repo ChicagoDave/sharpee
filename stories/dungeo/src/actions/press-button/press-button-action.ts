@@ -5,14 +5,28 @@
  * - Yellow: Enables bolt (GATEF=TRUE) - emits dungeo.button.yellow.pressed
  * - Brown: Disables bolt (GATEF=FALSE) - emits dungeo.button.brown.pressed
  * - Red: Toggles room lights
- * - Blue: Starts flooding (death trap) - Phase 2
+ * - Blue: Starts flooding (death trap)
  */
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
-import { IdentityTrait, IFEntity, RoomTrait } from '@sharpee/world-model';
+import { IFEntity, RoomTrait } from '@sharpee/world-model';
 import { PRESS_BUTTON_ACTION_ID, PressButtonMessages } from './types';
-import { DAM_STATE_KEY, DamState } from '../../scheduler/dam-fuse';
+import { DAM_STATE_KEY, DamState, startFlooding, FloodingMessages } from '../../scheduler/dam-fuse';
+
+// Scheduler reference for flooding
+let schedulerRef: any = null;
+let maintenanceRoomIdRef: string = '';
+let leakIdRef: string | undefined = undefined;
+
+/**
+ * Set the scheduler reference for starting flooding sequence
+ */
+export function setPressButtonScheduler(scheduler: any, maintenanceRoomId: string, leakId?: string): void {
+  schedulerRef = scheduler;
+  maintenanceRoomIdRef = maintenanceRoomId;
+  leakIdRef = leakId;
+}
 
 /**
  * Check if an entity is a button
@@ -73,7 +87,7 @@ export const pressButtonAction: Action = {
     // Get or create dam state
     let damState = world.getCapability(DAM_STATE_KEY) as DamState | null;
     if (!damState) {
-      damState = { isDraining: false, isDrained: false, buttonPressed: false };
+      damState = { isDraining: false, isDrained: false, buttonPressed: false, floodingLevel: 0, isFlooded: false };
       world.registerCapability(DAM_STATE_KEY, { initialData: damState });
     }
 
@@ -109,9 +123,26 @@ export const pressButtonAction: Action = {
         break;
 
       case 'blue':
-        // Phase 2: Flooding - for now just show jammed message
-        // TODO: Implement flooding daemon
-        sharedData.resultMessage = PressButtonMessages.BLUE_JAMMED;
+        // Start flooding (death trap!)
+        if (schedulerRef && maintenanceRoomIdRef) {
+          const floodingEvents = startFlooding(
+            schedulerRef,
+            world as any,
+            maintenanceRoomIdRef,
+            leakIdRef
+          );
+          // Check if flooding started or button was jammed
+          const eventData = floodingEvents[0]?.data as { messageId?: string } | undefined;
+          if (floodingEvents.length > 0 && eventData?.messageId === FloodingMessages.BUTTON_JAMMED) {
+            sharedData.resultMessage = FloodingMessages.BUTTON_JAMMED;
+          } else {
+            sharedData.resultMessage = FloodingMessages.LEAK_STARTED;
+            sharedData.floodingEvents = floodingEvents;
+          }
+        } else {
+          // No scheduler configured, show jammed message
+          sharedData.resultMessage = PressButtonMessages.BLUE_JAMMED;
+        }
         break;
 
       default:

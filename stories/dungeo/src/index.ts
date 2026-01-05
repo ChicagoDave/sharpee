@@ -29,10 +29,10 @@ import {
 import { DungeoScoringService } from './scoring';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler } from './actions';
 
 // Import scheduler module
-import { registerScheduledEvents, DungeoSchedulerMessages, registerBalloonPutHandler, BalloonHandlerMessages } from './scheduler';
+import { registerScheduledEvents, DungeoSchedulerMessages, FloodingMessages, registerBalloonPutHandler, BalloonHandlerMessages } from './scheduler';
 import { setSchedulerForGDT, setEngineForKL } from './actions/gdt/commands';
 
 // Import handlers
@@ -1096,6 +1096,20 @@ export class DungeoStory implements Story {
     language.addMessage(DungeoSchedulerMessages.DAM_EMPTY, 'The last of the water drains away.');
     language.addMessage(DungeoSchedulerMessages.DAM_TRUNK_REVEALED, 'As the mud settles, a trunk becomes visible in the reservoir bed!');
 
+    // Maintenance room flooding (blue button death trap)
+    language.addMessage(FloodingMessages.LEAK_STARTED, 'There is a rumbling sound, and a stream of water appears to burst from the east wall of the room (apparently, a leak has occurred in a pipe).');
+    language.addMessage(FloodingMessages.WATER_ANKLES, 'The water level is now up to your ankles.');
+    language.addMessage(FloodingMessages.WATER_SHINS, 'The water level is now up to your shins.');
+    language.addMessage(FloodingMessages.WATER_KNEES, 'The water level is now up to your knees.');
+    language.addMessage(FloodingMessages.WATER_HIPS, 'The water level is now up to your hips.');
+    language.addMessage(FloodingMessages.WATER_WAIST, 'The water level is now up to your waist.');
+    language.addMessage(FloodingMessages.WATER_CHEST, 'The water level is now up to your chest.');
+    language.addMessage(FloodingMessages.WATER_NECK, 'The water level is now up to your neck.');
+    language.addMessage(FloodingMessages.WATER_HEAD, 'The water level is now over your head.');
+    language.addMessage(FloodingMessages.ROOM_FLOODED, 'The room is full of water and cannot be entered.');
+    language.addMessage(FloodingMessages.DROWNED, "I'm afraid you have done drowned yourself.");
+    language.addMessage(FloodingMessages.BUTTON_JAMMED, 'The blue button appears to be jammed.');
+
     // Forest ambience
     language.addMessage(DungeoSchedulerMessages.FOREST_BIRD, 'A songbird chirps in the distance.');
     language.addMessage(DungeoSchedulerMessages.FOREST_RUSTLE, 'Leaves rustle in the undergrowth.');
@@ -1742,6 +1756,9 @@ export class DungeoStory implements Story {
 
       // Wire turn bolt action to scheduler (dam puzzle)
       setTurnBoltScheduler(scheduler, this.damIds.reservoir);
+
+      // Wire press button action to scheduler (flooding)
+      setPressButtonScheduler(scheduler, this.damIds.maintenanceRoom);
     }
 
     // Register Laser Puzzle handler (Small Room / Stone Room)
