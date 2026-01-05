@@ -29,7 +29,7 @@ import {
 import { DungeoScoringService } from './scoring';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler, PUT_UNDER_ACTION_ID, PutUnderMessages, PUSH_KEY_ACTION_ID, PushKeyMessages, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages } from './actions';
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages, FloodingMessages, registerBalloonPutHandler, BalloonHandlerMessages } from './scheduler';
@@ -60,6 +60,7 @@ import { createEndgameRooms, createEndgameObjects, EndgameRoomIds } from './regi
 import { registerRoyalPuzzleHandler, initializePuzzleState, createPuzzleCommandTransformer, PuzzleHandlerMessages } from './handlers/royal-puzzle';
 import { createRainbowCommandTransformer } from './handlers/rainbow-handler';
 import { createBalloonExitTransformer } from './handlers/balloon-handler';
+import { createTinyRoomDoorTransformer, createTinyRoomMatTransformer, TinyRoomMessages } from './handlers/tiny-room-handler';
 
 // Import NPCs
 import { registerThief, ThiefMessages } from './npcs/thief';
@@ -330,6 +331,11 @@ export class DungeoStory implements Story {
    */
   extendParser(parser: Parser): void {
     const grammar = parser.getStoryGrammar();
+
+    // Register "under" as a preposition for the Tiny Room puzzle
+    // This allows "put X under Y" to be parsed correctly
+    parser.addPreposition('under');
+    parser.addPreposition('beneath');
 
     // GDT entry command
     grammar
@@ -1049,6 +1055,68 @@ export class DungeoStory implements Story {
       .mapsTo(TURN_BOLT_ACTION_ID)
       .withPriority(155)
       .build();
+
+    // Tiny Room puzzle patterns - PUT UNDER
+    grammar
+      .define('put :item under :target')
+      .mapsTo(PUT_UNDER_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    grammar
+      .define('slide :item under :target')
+      .mapsTo(PUT_UNDER_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    grammar
+      .define('put mat under door')
+      .mapsTo(PUT_UNDER_ACTION_ID)
+      .withPriority(165)
+      .build();
+
+    grammar
+      .define('slide mat under door')
+      .mapsTo(PUT_UNDER_ACTION_ID)
+      .withPriority(165)
+      .build();
+
+    // Tiny Room puzzle patterns - PUSH KEY WITH
+    grammar
+      .define('push key with :tool')
+      .mapsTo(PUSH_KEY_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    grammar
+      .define('push key with screwdriver')
+      .mapsTo(PUSH_KEY_ACTION_ID)
+      .withPriority(165)
+      .build();
+
+    grammar
+      .define('use :tool on keyhole')
+      .mapsTo(PUSH_KEY_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    grammar
+      .define('use screwdriver on keyhole')
+      .mapsTo(PUSH_KEY_ACTION_ID)
+      .withPriority(165)
+      .build();
+
+    grammar
+      .define('poke key with :tool')
+      .mapsTo(PUSH_KEY_ACTION_ID)
+      .withPriority(160)
+      .build();
+
+    grammar
+      .define('push key through keyhole')
+      .mapsTo(PUSH_KEY_ACTION_ID)
+      .withPriority(165)
+      .build();
   }
 
   /**
@@ -1552,6 +1620,25 @@ export class DungeoStory implements Story {
     language.addMessage(TurnBoltMessages.GATES_CLOSE, 'The sluice gates close, stopping the flow of water.');
     language.addMessage(TurnBoltMessages.NOT_A_BOLT, "You can't turn that.");
     language.addMessage(TurnBoltMessages.NO_TOOL, 'You can\'t turn the bolt with your bare hands.');
+
+    // Tiny Room puzzle messages
+    language.addMessage(TinyRoomMessages.MAT_PLACED, 'You slide the mat under the door.');
+    language.addMessage(TinyRoomMessages.MAT_NOT_HELD, "You don't have a mat.");
+    language.addMessage(TinyRoomMessages.MAT_ALREADY_PLACED, 'The mat is already under the door.');
+    language.addMessage(TinyRoomMessages.NO_DOOR_HERE, "There's no door here to put anything under.");
+    language.addMessage(TinyRoomMessages.KEY_PUSHED, 'You insert the screwdriver in the keyhole and push. You hear a small clink as the key falls on the other side.');
+    language.addMessage(TinyRoomMessages.KEY_PUSHED_NO_MAT, 'You insert the screwdriver in the keyhole and push. You hear a small clink as the key falls... and then nothing. Without something to catch it, the key has slid away under the door, out of reach.');
+    language.addMessage(TinyRoomMessages.KEY_ALREADY_PUSHED, 'The keyhole is empty.');
+    language.addMessage(TinyRoomMessages.NO_SCREWDRIVER, "You don't have anything suitable to push the key out.");
+    language.addMessage(TinyRoomMessages.MAT_PULLED, 'You pull the mat back from under the door.');
+    language.addMessage(TinyRoomMessages.MAT_PULLED_WITH_KEY, 'You pull the mat back from under the door. A small brass key comes with it!');
+    language.addMessage(TinyRoomMessages.MAT_NOT_UNDER_DOOR, "There's no mat under the door.");
+    language.addMessage(TinyRoomMessages.DOOR_LOCKED, 'The door is locked, and there is no keyhole on this side.');
+    language.addMessage(TinyRoomMessages.DOOR_UNLOCKED, 'The door is now unlocked.');
+    language.addMessage(TinyRoomMessages.WRONG_KEY, "That key doesn't fit this lock.");
+    language.addMessage(TinyRoomMessages.KEYHOLE_BLOCKED, 'Something is blocking the keyhole from the other side.');
+    language.addMessage(PutUnderMessages.GENERIC_FAIL, "You can't put that under there.");
+    language.addMessage(DoorBlockedMessages.DOOR_LOCKED, 'The door is locked, and there is no keyhole on this side.');
   }
 
   /**
@@ -1681,6 +1768,11 @@ export class DungeoStory implements Story {
     // Register Balloon exit transformer
     // Handles exit from balloon at ledge positions vs mid-air
     engine.registerParsedCommandTransformer(createBalloonExitTransformer());
+
+    // Register Tiny Room door transformer
+    // Intercepts "go north" in Tiny Room when door is locked
+    engine.registerParsedCommandTransformer(createTinyRoomDoorTransformer());
+    engine.registerParsedCommandTransformer(createTinyRoomMatTransformer());
 
     // Register scheduler events (ADR-071 Phase 2)
     const scheduler = engine.getScheduler();

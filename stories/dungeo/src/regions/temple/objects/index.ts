@@ -17,6 +17,7 @@ import {
   SceneryTrait,
   LightSourceTrait,
   SwitchableTrait,
+  LockableTrait,
   EntityType
 } from '@sharpee/world-model';
 
@@ -369,8 +370,12 @@ function createTinyRoomDoor(world: WorldModel, tinyRoomId: string, drearyRoomId:
 
   door.add(new SceneryTrait());
 
-  // Door state for puzzle
-  (door as any).isLocked = true;
+  // Door starts locked - use proper LockableTrait
+  door.add(new LockableTrait({
+    isLocked: true
+  }));
+
+  // Additional puzzle state
   (door as any).keyInLock = true;       // Key starts in lock on Dreary Room side
   (door as any).matUnderDoor = false;
   (door as any).keyOnMat = false;

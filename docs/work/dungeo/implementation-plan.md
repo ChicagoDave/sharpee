@@ -433,7 +433,7 @@
 | Puzzle | Solution | Status | Reward |
 |--------|----------|--------|--------|
 | Egg/Canary/Bauble | Thief opens egg, wind canary in forest | ✅ Done | Canary + Bauble |
-| Key (Tiny Room) | Mat under door, screwdriver | ❌ | Blue sphere |
+| Key (Tiny Room) | Mat under door, screwdriver | ✅ Done | Blue sphere |
 | Coffin | Drain reservoir, carry across | ❌ | 10 points |
 | Glacier | Throw torch at ice | ✅ Done | Volcano View access |
 | Rainbow | Wave sceptre at falls | ✅ Done | Pot of gold |
@@ -534,7 +534,6 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 ## Priority Next Steps
 
 1. **Remaining puzzles**:
-   - Key puzzle (Tiny Room) - mat under door, screwdriver through keyhole
    - Coffin transport - drain reservoir, carry coffin across
    - Coal machine - put coal, turn switch → diamond
    - Basket mechanism - lower/raise for mine transport
@@ -546,6 +545,7 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Recently Completed
 
+- ✅ **Tiny Room Key Puzzle** (2026-01-05) - Classic IF "key under door" puzzle. PUT MAT UNDER DOOR, PUSH KEY WITH SCREWDRIVER, TAKE MAT (gets key). 4 new actions (put-under, push-key, pull-mat, door-blocked), 2 command transformers (block north when locked, intercept take mat when under door). Uses LockableTrait properly. All 22 transcript tests pass.
 - ✅ **Grammar Conflict Fixes + Flooding Timing** (2026-01-05) - Fixed 158 test failures from ADR-089 merge. Turn-bolt changed to literal "turn bolt" patterns (was intercepting "turn on lantern"). Press-button changed to "press :target" only (was intercepting "push rug"). Fixed flooding water level progression - daemon now skips button press turn and increments by 2 (matching FORTRAN RVMNT/2 formula). All 699 tests pass.
 - ✅ **ADR-089 Pronoun & Identity System** (2026-01-05) - Complete implementation of pronoun resolution and narrative perspective. Parser resolves "it", "him", "her", "them" etc. Story can configure 1st/2nd/3rd person perspective. Message placeholders {You}, {your}, {take} conjugate automatically.
 - ✅ **Missing Objects Placement** (2026-01-04) - Added 10 missing objects to proper locations: shovel (Small Cave), pump (Reservoir North), welcome mat (West of House), brick+wire (Attic), timber (Timber Room), green paper+3 cakes (Tea Room). Researched FORTRAN source and confirmed there is NO "gold key" - only skeleton key (maze, for grating) and rusty key (endgame). Removed incorrectly-added iron key. All 680 tests pass.

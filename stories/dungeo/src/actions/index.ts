@@ -100,6 +100,18 @@ export * from './press-button';
 // Turn Bolt (Dam puzzle - turn bolt with wrench)
 export * from './turn-bolt';
 
+// Put Under (Tiny Room puzzle - put mat under door)
+export * from './put-under';
+
+// Push Key (Tiny Room puzzle - push key with screwdriver)
+export * from './push-key';
+
+// Door Blocked (Tiny Room puzzle - going north when door locked)
+export * from './door-blocked';
+
+// Pull Mat (Tiny Room puzzle - pull mat from under door, get key)
+export * from './pull-mat';
+
 // Re-export balloon action IDs and messages
 export { LIGHT_ACTION_ID, LightMessages } from './light';
 export { TIE_ACTION_ID, TieMessages } from './tie';
@@ -139,6 +151,10 @@ import { untieAction, UNTIE_ACTION_ID, UntieMessages } from './untie';
 import { balloonExitAction, BALLOON_EXIT_ACTION_ID, BalloonExitMessages } from '../handlers/balloon-handler';
 import { pressButtonAction, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler } from './press-button';
 import { turnBoltAction, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler } from './turn-bolt';
+import { putUnderAction, PUT_UNDER_ACTION_ID, PutUnderMessages } from './put-under';
+import { pushKeyAction, PUSH_KEY_ACTION_ID, PushKeyMessages } from './push-key';
+import { doorBlockedAction, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages } from './door-blocked';
+import { pullMatAction, PULL_MAT_ACTION_ID, PullMatMessages } from './pull-mat';
 
 // Re-export press-button and turn-bolt
 export { PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler } from './press-button';
@@ -154,6 +170,12 @@ export { WIND_ACTION_ID, WindMessages } from './wind';
 export { SEND_ACTION_ID, SendMessages } from './send';
 export { POUR_ACTION_ID, PourMessages } from './pour';
 export { FILL_ACTION_ID, FillMessages } from './fill';
+
+// Re-export tiny room puzzle actions for use in index.ts
+export { PUT_UNDER_ACTION_ID, PutUnderMessages } from './put-under';
+export { PUSH_KEY_ACTION_ID, PushKeyMessages } from './push-key';
+export { DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages } from './door-blocked';
+export { PULL_MAT_ACTION_ID, PullMatMessages } from './pull-mat';
 
 export const customActions = [
   ...gdtActions,
@@ -188,5 +210,9 @@ export const customActions = [
   untieAction,
   balloonExitAction,
   pressButtonAction,
-  turnBoltAction
+  turnBoltAction,
+  putUnderAction,
+  pushKeyAction,
+  doorBlockedAction,
+  pullMatAction
 ];
