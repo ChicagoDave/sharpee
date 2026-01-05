@@ -286,16 +286,121 @@ export interface GrammarBuilder {
    * @param pattern The pattern string (e.g., "put :item in|into :container")
    */
   define(pattern: string): PatternBuilder;
-  
+
+  /**
+   * ADR-087: Define grammar patterns for an action with verb aliases
+   * @param actionId The action identifier to map patterns to
+   * @returns An ActionGrammarBuilder for fluent configuration
+   *
+   * @example
+   * ```typescript
+   * grammar
+   *   .forAction('if.action.pushing')
+   *   .verbs(['push', 'press', 'shove', 'move'])
+   *   .pattern(':target')
+   *   .where('target', scope => scope.touchable())
+   *   .build();
+   * ```
+   */
+  forAction(actionId: string): ActionGrammarBuilder;
+
   /**
    * Get all defined rules
    */
   getRules(): GrammarRule[];
-  
+
   /**
    * Clear all rules
    */
   clear(): void;
+}
+
+/**
+ * ADR-087: Action-centric grammar builder
+ * Allows defining multiple patterns for an action with verb aliases
+ */
+export interface ActionGrammarBuilder {
+  /**
+   * Define verb aliases for this action
+   * Each verb will generate a separate pattern
+   * @param verbs Array of verb strings (e.g., ['push', 'press', 'shove'])
+   */
+  verbs(verbs: string[]): ActionGrammarBuilder;
+
+  /**
+   * Define a pattern template (without verb)
+   * Will be combined with each verb to create full patterns
+   * @param pattern Pattern template (e.g., ':target' becomes 'push :target', 'press :target', etc.)
+   */
+  pattern(pattern: string): ActionGrammarBuilder;
+
+  /**
+   * Define multiple pattern templates
+   * Each pattern will be combined with each verb
+   * @param patterns Array of pattern templates
+   *
+   * @example
+   * ```typescript
+   * grammar
+   *   .forAction('if.action.pushing')
+   *   .verbs(['push', 'press'])
+   *   .patterns([':target', ':target :direction'])
+   *   .build();
+   * // Generates: push :target, press :target, push :target :direction, press :target :direction
+   * ```
+   */
+  patterns(patterns: string[]): ActionGrammarBuilder;
+
+  /**
+   * Define direction patterns with aliases
+   * Creates standalone direction patterns (no verb prefix)
+   * @param directionMap Map of canonical direction to aliases
+   *
+   * @example
+   * ```typescript
+   * grammar
+   *   .forAction('if.action.going')
+   *   .directions({
+   *     'north': ['north', 'n'],
+   *     'south': ['south', 's'],
+   *   })
+   *   .build();
+   * // Generates patterns 'north', 'n', 'south', 's' each with direction semantics
+   * ```
+   */
+  directions(directionMap: Record<string, string[]>): ActionGrammarBuilder;
+
+  /**
+   * Define a constraint for a slot (applies to all generated patterns)
+   * @param slot The slot name from the pattern
+   * @param constraint The constraint to apply
+   */
+  where(slot: string, constraint: Constraint): ActionGrammarBuilder;
+
+  /**
+   * Set priority for all generated patterns
+   * @param priority The priority value (higher = preferred)
+   */
+  withPriority(priority: number): ActionGrammarBuilder;
+
+  /**
+   * Set default semantic properties for all generated patterns
+   * @param defaults Default semantic properties
+   */
+  withDefaultSemantics(defaults: Partial<SemanticProperties>): ActionGrammarBuilder;
+
+  /**
+   * Mark a slot as a specific type (applies to all generated patterns)
+   * @param slot The slot name
+   * @param slotType The slot type
+   */
+  slotType(slot: string, slotType: SlotType): ActionGrammarBuilder;
+
+  /**
+   * Build all patterns and add them to the grammar
+   * Generates patterns from: verbs × patterns combinations
+   */
+  build(): void;
 }
 
 /**

@@ -18,33 +18,21 @@ import { GrammarBuilder, ScopeBuilder } from '@sharpee/if-domain';
  * @param grammar The grammar builder to use
  */
 export function defineGrammar(grammar: GrammarBuilder): void {
-  // Basic verb patterns
+  // Looking (ADR-087: using forAction)
   grammar
-    .define('look')
-    .mapsTo('if.action.looking')
-    .withPriority(100)
+    .forAction('if.action.looking')
+    .verbs(['look', 'l'])
     .build();
 
+  // Examining (ADR-087: using forAction)
   grammar
-    .define('l')
-    .mapsTo('if.action.looking')
-    .withPriority(90)
-    .build(); // Lower priority for abbreviation
-
-  grammar
-    .define('examine :target')
+    .forAction('if.action.examining')
+    .verbs(['examine', 'x', 'inspect'])
+    .pattern(':target')
     .where('target', (scope: ScopeBuilder) => scope.visible())
-    .mapsTo('if.action.examining')
-    .withPriority(100)
     .build();
 
-  grammar
-    .define('x :target')
-    .where('target', (scope: ScopeBuilder) => scope.visible())
-    .mapsTo('if.action.examining')
-    .withPriority(90)
-    .build();
-
+  // "look at" is a phrasal pattern - different structure
   grammar
     .define('look at :target')
     .where('target', (scope: ScopeBuilder) => scope.visible())
@@ -101,21 +89,15 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .withPriority(95)
     .build();
 
-  // Taking and dropping
+  // Taking and dropping (ADR-087: using forAction)
   grammar
-    .define('take :item')
+    .forAction('if.action.taking')
+    .verbs(['take', 'get', 'grab'])
+    .pattern(':item')
     .where('item', (scope: ScopeBuilder) => scope.visible().matching({ portable: true }))
-    .mapsTo('if.action.taking')
-    .withPriority(100)
     .build();
 
-  grammar
-    .define('get :item')
-    .where('item', (scope: ScopeBuilder) => scope.visible().matching({ portable: true }))
-    .mapsTo('if.action.taking')
-    .withPriority(100)
-    .build();
-
+  // "pick up" is a phrasal verb - different pattern structure
   grammar
     .define('pick up :item')
     .where('item', (scope: ScopeBuilder) => scope.visible().matching({ portable: true }))
@@ -124,12 +106,13 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .build();
 
   grammar
-    .define('drop :item')
+    .forAction('if.action.dropping')
+    .verbs(['drop', 'discard'])
+    .pattern(':item')
     .where('item', (scope: ScopeBuilder) => scope.carried())
-    .mapsTo('if.action.dropping')
-    .withPriority(100)
     .build();
 
+  // "put down" is a phrasal verb - different pattern structure
   grammar
     .define('put down :item')
     .where('item', (scope: ScopeBuilder) => scope.carried())
@@ -178,48 +161,21 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .withPriority(110)
     .build(); // Higher priority than generic put
 
-  // Reading
+  // Reading (ADR-087: using forAction)
   grammar
-    .define('read :target')
+    .forAction('if.action.reading')
+    .verbs(['read', 'peruse', 'study'])
+    .pattern(':target')
     .where('target', (scope: ScopeBuilder) => scope.visible())
-    .mapsTo('if.action.reading')
-    .withPriority(100)
     .build();
 
+  // Inventory (ADR-087: using forAction)
   grammar
-    .define('peruse :target')
-    .where('target', (scope: ScopeBuilder) => scope.visible())
-    .mapsTo('if.action.reading')
-    .withPriority(95)
+    .forAction('if.action.inventory')
+    .verbs(['inventory', 'inv', 'i'])
     .build();
 
-  grammar
-    .define('study :target')
-    .where('target', (scope: ScopeBuilder) => scope.visible())
-    .mapsTo('if.action.reading')
-    .withPriority(95)
-    .build();
-
-  // Inventory
-  grammar
-    .define('inventory')
-    .mapsTo('if.action.inventory')
-    .withPriority(100)
-    .build();
-
-  grammar
-    .define('inv')
-    .mapsTo('if.action.inventory')
-    .withPriority(90)
-    .build();
-
-  grammar
-    .define('i')
-    .mapsTo('if.action.inventory')
-    .withPriority(90)
-    .build();
-
-  // Movement
+  // Movement (ADR-087: using forAction with directions)
   grammar
     .define('go :direction')
     .where('direction', { type: 'direction' })
@@ -227,138 +183,23 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .withPriority(100)
     .build();
 
-  // Bare directions
+  // Bare direction commands (ADR-087: consolidated with forAction)
   grammar
-    .define('north')
-    .mapsTo('if.action.going')
-    .withPriority(100)
-    .build();
-
-  grammar
-    .define('south')
-    .mapsTo('if.action.going')
-    .withPriority(100)
-    .build();
-
-  grammar
-    .define('east')
-    .mapsTo('if.action.going')
-    .withPriority(100)
-    .build();
-
-  grammar
-    .define('west')
-    .mapsTo('if.action.going')
-    .withPriority(100)
-    .build();
-
-  grammar
-    .define('northeast')
-    .mapsTo('if.action.going')
-    .withPriority(100)
-    .build();
-
-  grammar
-    .define('northwest')
-    .mapsTo('if.action.going')
-    .withPriority(100)
-    .build();
-
-  grammar
-    .define('southeast')
-    .mapsTo('if.action.going')
-    .withPriority(100)
-    .build();
-
-  grammar
-    .define('southwest')
-    .mapsTo('if.action.going')
-    .withPriority(100)
-    .build();
-
-  grammar
-    .define('up')
-    .mapsTo('if.action.going')
-    .withPriority(100)
-    .build();
-
-  grammar
-    .define('down')
-    .mapsTo('if.action.going')
-    .withPriority(100)
-    .build();
-
-  grammar
-    .define('in')
-    .mapsTo('if.action.going')
-    .withPriority(100)
-    .build();
-
-  grammar
-    .define('out')
-    .mapsTo('if.action.going')
-    .withPriority(100)
-    .build();
-
-  // Direction abbreviations
-  grammar
-    .define('n')
-    .mapsTo('if.action.going')
-    .withPriority(90)
-    .build();
-
-  grammar
-    .define('s')
-    .mapsTo('if.action.going')
-    .withPriority(90)
-    .build();
-
-  grammar
-    .define('e')
-    .mapsTo('if.action.going')
-    .withPriority(90)
-    .build();
-
-  grammar
-    .define('w')
-    .mapsTo('if.action.going')
-    .withPriority(90)
-    .build();
-
-  grammar
-    .define('ne')
-    .mapsTo('if.action.going')
-    .withPriority(90)
-    .build();
-
-  grammar
-    .define('nw')
-    .mapsTo('if.action.going')
-    .withPriority(90)
-    .build();
-
-  grammar
-    .define('se')
-    .mapsTo('if.action.going')
-    .withPriority(90)
-    .build();
-
-  grammar
-    .define('sw')
-    .mapsTo('if.action.going')
-    .withPriority(90)
-    .build();
-
-  grammar
-    .define('u')
-    .mapsTo('if.action.going')
-    .withPriority(90)
-    .build();
-
-  grammar
-    .define('d')
-    .mapsTo('if.action.going')
-    .withPriority(90)
+    .forAction('if.action.going')
+    .directions({
+      'north': ['north', 'n'],
+      'south': ['south', 's'],
+      'east': ['east', 'e'],
+      'west': ['west', 'w'],
+      'northeast': ['northeast', 'ne'],
+      'northwest': ['northwest', 'nw'],
+      'southeast': ['southeast', 'se'],
+      'southwest': ['southwest', 'sw'],
+      'up': ['up', 'u'],
+      'down': ['down', 'd'],
+      'in': ['in'],
+      'out': ['out']
+    })
     .build();
 
   // Opening and closing
@@ -376,82 +217,40 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .withPriority(100)
     .build();
 
-  // Switching on/off
+  // Switching on/off (ADR-087: using forAction)
   grammar
-    .define('turn on :device')
+    .forAction('if.action.switching_on')
+    .verbs(['turn', 'switch', 'flip'])
+    .pattern('on :device')
     .where('device', (scope: ScopeBuilder) => scope.touchable().matching({ switchable: true }))
-    .mapsTo('if.action.switching_on')
-    .withPriority(100)
     .build();
 
   grammar
-    .define('switch on :device')
+    .forAction('if.action.switching_off')
+    .verbs(['turn', 'switch', 'flip'])
+    .pattern('off :device')
     .where('device', (scope: ScopeBuilder) => scope.touchable().matching({ switchable: true }))
-    .mapsTo('if.action.switching_on')
-    .withPriority(100)
     .build();
 
+  // Pushing and pulling (ADR-087: using forAction)
   grammar
-    .define('turn off :device')
-    .where('device', (scope: ScopeBuilder) => scope.touchable().matching({ switchable: true }))
-    .mapsTo('if.action.switching_off')
-    .withPriority(100)
-    .build();
-
-  grammar
-    .define('switch off :device')
-    .where('device', (scope: ScopeBuilder) => scope.touchable().matching({ switchable: true }))
-    .mapsTo('if.action.switching_off')
-    .withPriority(100)
-    .build();
-
-  // Pushing and pulling
-  grammar
-    .define('push :target')
+    .forAction('if.action.pushing')
+    .verbs(['push', 'press', 'shove', 'move'])
+    .pattern(':target')
     .where('target', (scope: ScopeBuilder) => scope.touchable())
-    .mapsTo('if.action.pushing')
-    .withPriority(100)
     .build();
 
   grammar
-    .define('shove :target')
+    .forAction('if.action.pulling')
+    .verbs(['pull', 'drag', 'yank'])
+    .pattern(':target')
     .where('target', (scope: ScopeBuilder) => scope.touchable())
-    .mapsTo('if.action.pushing')
-    .withPriority(95)
     .build();
 
+  // Waiting (ADR-087: using forAction)
   grammar
-    .define('move :target')
-    .where('target', (scope: ScopeBuilder) => scope.touchable())
-    .mapsTo('if.action.pushing')
-    .withPriority(100)
-    .build();
-
-  grammar
-    .define('pull :target')
-    .where('target', (scope: ScopeBuilder) => scope.touchable())
-    .mapsTo('if.action.pulling')
-    .withPriority(100)
-    .build();
-
-  grammar
-    .define('drag :target')
-    .where('target', (scope: ScopeBuilder) => scope.touchable())
-    .mapsTo('if.action.pulling')
-    .withPriority(95)
-    .build();
-
-  // Waiting
-  grammar
-    .define('wait')
-    .mapsTo('if.action.waiting')
-    .withPriority(100)
-    .build();
-
-  grammar
-    .define('z')
-    .mapsTo('if.action.waiting')
-    .withPriority(90)
+    .forAction('if.action.waiting')
+    .verbs(['wait', 'z'])
     .build();
 
   // Meta commands
@@ -473,16 +272,10 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .withPriority(100)
     .build();
 
+  // Quitting (ADR-087: using forAction)
   grammar
-    .define('quit')
-    .mapsTo('if.action.quitting')
-    .withPriority(100)
-    .build();
-
-  grammar
-    .define('q')
-    .mapsTo('if.action.quitting')
-    .withPriority(90)
+    .forAction('if.action.quitting')
+    .verbs(['quit', 'q'])
     .build();
 
   // Score and version
@@ -743,54 +536,12 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .withPriority(100)
     .build();
 
-  // Touching (sensory actions)
+  // Touching/sensory actions (ADR-087: using forAction)
   grammar
-    .define('touch :target')
+    .forAction('if.action.touching')
+    .verbs(['touch', 'rub', 'feel', 'pat', 'stroke', 'poke', 'prod'])
+    .pattern(':target')
     .where('target', (scope: ScopeBuilder) => scope.touchable())
-    .mapsTo('if.action.touching')
-    .withPriority(100)
-    .build();
-
-  grammar
-    .define('rub :target')
-    .where('target', (scope: ScopeBuilder) => scope.touchable())
-    .mapsTo('if.action.touching')
-    .withPriority(100)
-    .build();
-
-  grammar
-    .define('feel :target')
-    .where('target', (scope: ScopeBuilder) => scope.touchable())
-    .mapsTo('if.action.touching')
-    .withPriority(100)
-    .build();
-
-  grammar
-    .define('pat :target')
-    .where('target', (scope: ScopeBuilder) => scope.touchable())
-    .mapsTo('if.action.touching')
-    .withPriority(95)
-    .build();
-
-  grammar
-    .define('stroke :target')
-    .where('target', (scope: ScopeBuilder) => scope.touchable())
-    .mapsTo('if.action.touching')
-    .withPriority(95)
-    .build();
-
-  grammar
-    .define('poke :target')
-    .where('target', (scope: ScopeBuilder) => scope.touchable())
-    .mapsTo('if.action.touching')
-    .withPriority(95)
-    .build();
-
-  grammar
-    .define('prod :target')
-    .where('target', (scope: ScopeBuilder) => scope.touchable())
-    .mapsTo('if.action.touching')
-    .withPriority(95)
     .build();
 
   // ============================================================================

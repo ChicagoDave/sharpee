@@ -34,3 +34,6 @@ export {
   abbreviations,
   irregularPlurals
 } from './data/words';
+
+// Export parser error messages (Phase 1.2 recommendations)
+export { parserErrors, getParserErrorMessage } from './data/messages';
