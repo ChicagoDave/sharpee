@@ -25,12 +25,51 @@ Sharpee is a parser-based Interactive Fiction authoring tool built in Typescript
 
 | Package | Owns | Examples |
 |---------|------|----------|
-| `parser-en-us` | Grammar patterns | `core-grammar.ts`: `search :target`, `look in :target` |
+| `parser-en-us` | Grammar patterns | `grammar.ts`: verb patterns, slot constraints |
 | `lang-en-us` | Messages, help text | `searching.ts`: error messages, action descriptions |
 
-- Add new command patterns to `packages/parser-en-us/src/core-grammar.ts`
+- Add new command patterns to `packages/parser-en-us/src/grammar.ts`
 - Patterns in `lang-en-us` action files are for documentation/help, not parsing
 - Stories can extend grammar for story-specific commands
+
+### Grammar Patterns (ADR-087)
+
+Use the **action-centric** `.forAction()` API for standard verb patterns:
+
+```typescript
+// Preferred: action-centric with verb aliases
+grammar
+  .forAction('if.action.pushing')
+  .verbs(['push', 'press', 'shove', 'move'])
+  .pattern(':target')
+  .where('target', scope => scope.touchable())
+  .build();
+// Generates: push :target, press :target, shove :target, move :target
+
+// Direction commands with aliases
+grammar
+  .forAction('if.action.going')
+  .directions({
+    'north': ['north', 'n'],
+    'south': ['south', 's'],
+    // ...
+  })
+  .build();
+```
+
+Use `.define()` only for:
+- **Phrasal verbs**: `pick up :item`, `put down :item`
+- **Complex patterns**: `unlock :door with :key`
+- **Story-specific commands**: `incant :word`
+
+```typescript
+// Phrasal verb - can't use forAction because verb has space
+grammar
+  .define('pick up :item')
+  .where('item', scope => scope.visible().matching({ portable: true }))
+  .mapsTo('if.action.taking')
+  .build();
+```
 
 ### Logic Location
 Be deliberate about where logic belongs:

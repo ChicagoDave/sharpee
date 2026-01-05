@@ -5,7 +5,7 @@ import { IFEntity } from '../entities/if-entity';
 import { WorldModel } from './WorldModel';
 import { TraitType } from '../traits/trait-types';
 import { SwitchableBehavior } from '../traits/switchable/switchableBehavior';
-import { VehicleTrait } from '../traits/vehicle/VehicleTrait';
+import { VehicleTrait } from '../traits/vehicle/vehicleTrait';
 
 export class VisibilityBehavior extends Behavior {
   static requiredTraits = [];

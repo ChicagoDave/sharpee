@@ -11,6 +11,14 @@ export { EnglishParser as Parser } from './english-parser'; // For convenience
 // Re-export the parser interface for type checking
 export type { Parser as ParserInterface } from '@sharpee/if-domain';
 
+// Export parse failure types for error handling
+export type {
+  PartialMatchFailure,
+  SlotFailure,
+  MatchFailureReason
+} from './parse-failure';
+export { analyzeBestFailure } from './parse-failure';
+
 /**
  * Package metadata
  */
