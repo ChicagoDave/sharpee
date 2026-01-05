@@ -45,6 +45,7 @@ import {
   GameEvent
 } from './types';
 import { Story } from './story';
+import { NarrativeSettings, buildNarrativeSettings } from './narrative';
 
 import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer } from './command-executor';
 import { EventSequenceUtils, eventSequencer } from './event-sequencer';
@@ -95,6 +96,7 @@ export class GameEngine {
   private perceptionService?: IPerceptionService;
   private scheduler: ISchedulerService;
   private npcService: INpcService;
+  private narrativeSettings: NarrativeSettings;
 
   // Undo system - circular buffer of world snapshots
   private undoSnapshots: string[] = [];
@@ -155,6 +157,7 @@ export class GameEngine {
     this.platformEvents = createSemanticEventSource();
     this.scheduler = createSchedulerService();
     this.npcService = createNpcService();
+    this.narrativeSettings = buildNarrativeSettings(); // Default: 2nd person
 
     // Register standard NPC behaviors (ADR-070)
     this.npcService.registerBehavior(guardBehavior);
@@ -201,9 +204,12 @@ export class GameEngine {
     // Emit story loading event
     const loadingEvent = createStoryLoadingEvent(story.config.id);
     this.emitGameEvent(loadingEvent);
-    
+
     this.story = story;
-    
+
+    // Build narrative settings from story config (ADR-089)
+    this.narrativeSettings = buildNarrativeSettings(story.config.narrative);
+
     // Initialize story-specific world content
     story.initializeWorld(this.world);
     
@@ -528,6 +534,11 @@ export class GameEngine {
       // Update command history if command was successful and not a meta-command
       if (result.success && !isMeta) {
         this.updateCommandHistory(result, input, turn);
+
+        // Update pronoun context for "it"/"them"/"him"/"her" resolution (ADR-089)
+        if (this.parser && 'updatePronounContext' in this.parser && result.parsedCommand) {
+          (this.parser as any).updatePronounContext(result.parsedCommand, turn);
+        }
       }
 
       // Emit events if configured
@@ -811,6 +822,16 @@ export class GameEngine {
   }
 
   /**
+   * Get narrative settings (ADR-089)
+   *
+   * Returns the story's narrative perspective and related settings.
+   * Use this for text rendering that needs to know 1st/2nd/3rd person.
+   */
+  getNarrativeSettings(): NarrativeSettings {
+    return this.narrativeSettings;
+  }
+
+  /**
    * Get scheduler service for daemons and fuses (ADR-071)
    */
   getScheduler(): ISchedulerService {
@@ -1052,6 +1073,11 @@ export class GameEngine {
     // Update context
     this.context.currentTurn = saveData.metadata.turnCount + 1;
     this.context.metadata.lastPlayed = new Date();
+
+    // Reset pronoun context - old references may not be valid (ADR-089)
+    if (this.parser && 'resetPronounContext' in this.parser) {
+      (this.parser as any).resetPronounContext();
+    }
 
     // Update vocabulary for current scope
     this.updateScopeVocabulary();
@@ -1416,6 +1442,10 @@ export class GameEngine {
                   if (this.running) {
                     this.stop();
                   }
+                  // Reset pronoun context (ADR-089)
+                  if (this.parser && 'resetPronounContext' in this.parser) {
+                    (this.parser as any).resetPronounContext();
+                  }
                   await this.setStory(this.story);
                   this.start();
                 }
@@ -1434,12 +1464,16 @@ export class GameEngine {
               this.turnEvents.get(currentTurn)?.push(completionEvent);
               // Also emit through engine's event emitter for tests
               this.emit('event', completionEvent as any);
-              
+
               // Re-initialize the story
               if (this.story) {
                 // Stop first if running
                 if (this.running) {
                   this.stop();
+                }
+                // Reset pronoun context (ADR-089)
+                if (this.parser && 'resetPronounContext' in this.parser) {
+                  (this.parser as any).resetPronounContext();
                 }
                 await this.setStory(this.story);
                 this.start();

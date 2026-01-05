@@ -9,6 +9,7 @@ import { Parser } from '@sharpee/stdlib';
 import { EventEmitter } from './events/event-emitter';
 import { ISemanticEvent } from '@sharpee/core';
 import type { GameEngine } from './game-engine';
+import { NarrativeConfig } from './narrative';
 
 /**
  * Story configuration
@@ -74,6 +75,22 @@ export interface StoryConfig {
    * Custom configuration
    */
   custom?: Record<string, any>;
+
+  /**
+   * Narrative settings (perspective, tense)
+   *
+   * ADR-089: Controls how the story narrates player actions.
+   * Defaults to 2nd person present tense ("You take the lamp").
+   *
+   * @example
+   * // 1st person narrative (Anchorhead-style)
+   * narrative: { perspective: '1st' }
+   *
+   * @example
+   * // 3rd person with specific pronouns
+   * narrative: { perspective: '3rd', playerPronouns: PRONOUNS.SHE_HER }
+   */
+  narrative?: NarrativeConfig;
 }
 
 /**
