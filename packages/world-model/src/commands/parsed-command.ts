@@ -193,12 +193,66 @@ export interface IParsedCommand {
 }
 
 /**
+ * Parse error codes
+ *
+ * Error hierarchy (most specific to least):
+ * - NO_VERB: Empty or no verb detected
+ * - UNKNOWN_VERB: First word isn't a known verb
+ * - MISSING_OBJECT: Verb needs a direct object
+ * - MISSING_INDIRECT: Verb needs an indirect object (where/what)
+ * - ENTITY_NOT_FOUND: Object name not recognized
+ * - SCOPE_VIOLATION: Object exists but can't be accessed
+ * - AMBIGUOUS_INPUT: Multiple valid interpretations
+ * - UNKNOWN_COMMAND: Generic fallback (legacy)
+ * - INVALID_SYNTAX: Generic fallback (legacy)
+ */
+export type ParseErrorCode =
+  | 'NO_VERB'           // Empty input or no verb detected
+  | 'UNKNOWN_VERB'      // First word isn't a recognized verb
+  | 'MISSING_OBJECT'    // Verb requires direct object: "What do you want to take?"
+  | 'MISSING_INDIRECT'  // Need more info: "Put the lamp where?"
+  | 'ENTITY_NOT_FOUND'  // "I don't see any 'xyzzy' here"
+  | 'SCOPE_VIOLATION'   // "You can't reach the lamp"
+  | 'AMBIGUOUS_INPUT'   // Multiple interpretations
+  | 'UNKNOWN_COMMAND'   // Legacy: generic unknown
+  | 'INVALID_SYNTAX';   // Legacy: generic syntax error
+
+/**
  * Errors that can occur during parsing
  */
 export interface IParseError {
   type: 'PARSE_ERROR';
-  code: 'UNKNOWN_COMMAND' | 'INVALID_SYNTAX' | 'AMBIGUOUS_INPUT';
+  code: ParseErrorCode;
+
+  /** Message ID for lang layer lookup (e.g., 'parser.error.unknownVerb') */
+  messageId: string;
+
+  /** Fallback message if lang layer lookup fails */
   message: string;
+
+  /** Original input */
   input: string;
+
+  /** Character position of error (if applicable) */
   position?: number;
+
+  // Contextual information for better error messages
+
+  /** Recognized verb (if any) */
+  verb?: string;
+
+  /** The word that failed (for ENTITY_NOT_FOUND, UNKNOWN_VERB) */
+  failedWord?: string;
+
+  /** Which slot failed (directObject, indirectObject) */
+  slot?: string;
+
+  /** Suggestion for correction */
+  suggestion?: string;
+
+  /** For AMBIGUOUS_INPUT: the candidates */
+  candidates?: Array<{
+    entityId: string;
+    label: string;
+  }>;
 }

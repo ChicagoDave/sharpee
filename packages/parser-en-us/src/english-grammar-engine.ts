@@ -17,6 +17,30 @@ import { Token } from '@sharpee/if-domain';
 import { EnglishPatternCompiler } from './english-pattern-compiler';
 import { cardinalNumbers, ordinalNumbers, directionMap } from '@sharpee/lang-en-us';
 import { SlotConsumerRegistry, SlotConsumerContext, createDefaultRegistry } from './slot-consumers';
+import type { PartialMatchFailure, SlotFailure } from './parse-failure';
+
+/**
+ * Result of attempting to match a rule - either success or failure with info
+ */
+export type MatchAttemptResult =
+  | { success: true; match: PatternMatch }
+  | { success: false; failure: PartialMatchFailure };
+
+/**
+ * Extended match options with failure tracking
+ */
+export interface ExtendedMatchOptions extends GrammarMatchOptions {
+  /** If true, collect partial match failures for error reporting */
+  trackFailures?: boolean;
+}
+
+/**
+ * Result of findMatches with optional failure information
+ */
+export interface MatchResult {
+  matches: PatternMatch[];
+  failures?: PartialMatchFailure[];
+}
 
 /**
  * English-specific grammar matching engine
@@ -24,38 +48,58 @@ import { SlotConsumerRegistry, SlotConsumerContext, createDefaultRegistry } from
 export class EnglishGrammarEngine extends GrammarEngine {
   private slotConsumerRegistry: SlotConsumerRegistry;
 
+  /** Last set of partial match failures (for error reporting) */
+  private lastFailures: PartialMatchFailure[] = [];
+
   constructor(slotConsumerRegistry?: SlotConsumerRegistry) {
     super(new EnglishPatternCompiler());
     // Use provided registry or create default with all consumers
     this.slotConsumerRegistry = slotConsumerRegistry || createDefaultRegistry();
   }
-  
+
+  /**
+   * Get the last set of partial match failures (for error reporting)
+   */
+  getLastFailures(): PartialMatchFailure[] {
+    return this.lastFailures;
+  }
+
   /**
    * Find matching grammar rules for tokens
    */
   findMatches(
-    tokens: Token[], 
+    tokens: Token[],
     context: GrammarContext,
     options: GrammarMatchOptions = {}
   ): PatternMatch[] {
     const matches: PatternMatch[] = [];
+    const failures: PartialMatchFailure[] = [];
     const { minConfidence = 0.1, maxMatches = 10 } = options;
-    
+
     // Try each rule
     for (const rule of this.rules) {
       if (!rule.compiledPattern) continue;
-      
-      const match = this.tryMatchRule(rule, tokens, context);
-      if (match && match.confidence >= minConfidence) {
-        matches.push(match);
-        
-        // Stop if we have enough matches
-        if (matches.length >= maxMatches) {
-          break;
+
+      const result = this.tryMatchRuleWithFailure(rule, tokens, context);
+
+      if (result.success) {
+        if (result.match.confidence >= minConfidence) {
+          matches.push(result.match);
+
+          // Stop if we have enough matches
+          if (matches.length >= maxMatches) {
+            break;
+          }
         }
+      } else {
+        // Collect failures for error reporting
+        failures.push(result.failure);
       }
     }
-    
+
+    // Store failures for later retrieval
+    this.lastFailures = failures;
+
     // Sort by confidence descending, then by priority descending
     matches.sort((a, b) => {
       if (b.confidence !== a.confidence) {
@@ -64,7 +108,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
       // If confidence is equal, sort by rule priority
       return b.rule.priority - a.rule.priority;
     });
-    
+
     return matches;
   }
   
@@ -237,7 +281,218 @@ export class EnglishGrammarEngine extends GrammarEngine {
       matchedTokens
     };
   }
-  
+
+  /**
+   * Try to match a single rule against tokens, returning failure info if no match
+   */
+  private tryMatchRuleWithFailure(
+    rule: any, // GrammarRule
+    tokens: Token[],
+    context: GrammarContext
+  ): MatchAttemptResult {
+    const pattern = rule.compiledPattern!;
+    const DEBUG = process.env.PARSER_DEBUG === 'true';
+    const totalPatternTokens = pattern.tokens.length;
+
+    // Quick check: do we have enough tokens?
+    if (tokens.length < pattern.minTokens) {
+      return {
+        success: false,
+        failure: {
+          pattern: rule.pattern,
+          action: rule.action,
+          progress: 0,
+          tokensConsumed: 0,
+          reason: 'NOT_ENOUGH_TOKENS',
+          expected: pattern.tokens[0]?.value
+        }
+      };
+    }
+
+    const slots = new Map<string, SlotMatch>();
+    let tokenIndex = 0;
+    let patternIndex = 0;
+    let confidence = 1.0;
+    let skippedOptionals = 0;
+    const matchedTokens: any = {};
+    let matchedVerb: string | undefined;
+
+    // Try to match each pattern token
+    for (const patternToken of pattern.tokens) {
+      patternIndex++;
+
+      // Check if we have a token to match
+      if (tokenIndex >= tokens.length) {
+        if (patternToken.optional) {
+          continue;
+        }
+        // Not enough tokens for required pattern element
+        return {
+          success: false,
+          failure: {
+            pattern: rule.pattern,
+            action: rule.action,
+            progress: patternIndex / totalPatternTokens,
+            tokensConsumed: tokenIndex,
+            reason: 'NOT_ENOUGH_TOKENS',
+            matchedVerb,
+            expected: patternToken.type === 'slot' ? `:${patternToken.value}` : patternToken.value
+          }
+        };
+      }
+
+      const token = tokens[tokenIndex];
+
+      switch (patternToken.type) {
+        case 'literal':
+          if (token.normalized === patternToken.value) {
+            if (tokenIndex === 0) {
+              matchedTokens.verb = token.normalized;
+              matchedVerb = token.normalized;
+            }
+            tokenIndex++;
+          } else if (patternToken.optional) {
+            skippedOptionals++;
+            continue;
+          } else {
+            // Check if this is verb position for better error
+            const reason = tokenIndex === 0 ? 'VERB_MISMATCH' : 'LITERAL_MISMATCH';
+            return {
+              success: false,
+              failure: {
+                pattern: rule.pattern,
+                action: rule.action,
+                progress: patternIndex / totalPatternTokens,
+                tokensConsumed: tokenIndex,
+                reason,
+                matchedVerb,
+                failedAtToken: token.normalized,
+                expected: patternToken.value
+              }
+            };
+          }
+          break;
+
+        case 'alternates':
+          if (patternToken.alternates!.includes(token.normalized)) {
+            if (tokenIndex === 0) {
+              matchedTokens.verb = token.normalized;
+              matchedVerb = token.normalized;
+            }
+            tokenIndex++;
+          } else if (patternToken.optional) {
+            skippedOptionals++;
+            continue;
+          } else {
+            const reason = tokenIndex === 0 ? 'VERB_MISMATCH' : 'LITERAL_MISMATCH';
+            return {
+              success: false,
+              failure: {
+                pattern: rule.pattern,
+                action: rule.action,
+                progress: patternIndex / totalPatternTokens,
+                tokensConsumed: tokenIndex,
+                reason,
+                matchedVerb,
+                failedAtToken: token.normalized,
+                expected: patternToken.alternates!.join('/')
+              }
+            };
+          }
+          break;
+
+        case 'slot':
+          const slotResult = this.consumeSlot(
+            patternToken.value,
+            tokens,
+            tokenIndex,
+            pattern,
+            rule,
+            context
+          );
+
+          if (!slotResult) {
+            if (patternToken.optional) {
+              skippedOptionals++;
+              continue;
+            }
+            // Required slot couldn't be filled - collect the attempted text
+            const remainingTokens = tokens.slice(tokenIndex);
+            const attemptedText = remainingTokens.map(t => t.word).join(' ');
+
+            return {
+              success: false,
+              failure: {
+                pattern: rule.pattern,
+                action: rule.action,
+                progress: patternIndex / totalPatternTokens,
+                tokensConsumed: tokenIndex,
+                reason: 'SLOT_FAILED',
+                matchedVerb,
+                slotFailure: {
+                  slotName: patternToken.value,
+                  attemptedText: attemptedText || '(nothing)',
+                  reason: 'NO_MATCH',
+                  unknownWord: remainingTokens[0]?.word
+                }
+              }
+            };
+          }
+
+          slots.set(patternToken.value, slotResult);
+
+          if (patternToken.value === 'direction') {
+            matchedTokens.direction = slotResult.text;
+          } else if (patternToken.value === 'preposition') {
+            matchedTokens.preposition = slotResult.text;
+          }
+
+          tokenIndex = slotResult.tokens[slotResult.tokens.length - 1] + 1;
+          confidence *= slotResult.confidence || 0.9;
+          break;
+      }
+    }
+
+    // Check if we consumed all tokens
+    if (tokenIndex !== tokens.length) {
+      return {
+        success: false,
+        failure: {
+          pattern: rule.pattern,
+          action: rule.action,
+          progress: 0.9, // Almost matched but had extra tokens
+          tokensConsumed: tokenIndex,
+          reason: 'LEFTOVER_TOKENS',
+          matchedVerb,
+          failedAtToken: tokens[tokenIndex]?.word
+        }
+      };
+    }
+
+    // Reduce confidence for each skipped optional element
+    confidence *= Math.pow(0.9, skippedOptionals);
+
+    // Apply experimental confidence if set
+    if ((rule as any).experimentalConfidence) {
+      confidence *= (rule as any).experimentalConfidence;
+    }
+
+    // Build semantics from the rule and matched tokens
+    const semantics = this.buildSemantics(rule, matchedTokens);
+
+    return {
+      success: true,
+      match: {
+        rule,
+        confidence,
+        slots,
+        consumed: tokenIndex,
+        semantics,
+        matchedTokens
+      }
+    };
+  }
+
   /**
    * Build semantic properties from rule and matched tokens
    */

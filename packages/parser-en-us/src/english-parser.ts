@@ -28,9 +28,10 @@ import {
   SlotType
 } from '@sharpee/if-domain';
 
-import type { 
+import type {
   IParsedCommand,
   IParseError as CoreParseError,
+  ParseErrorCode,
   IToken,
   ITokenCandidate,
   IVerbPhrase,
@@ -45,6 +46,7 @@ import { EnglishGrammarEngine } from './english-grammar-engine';
 import { defineGrammar } from './grammar';
 import { scope, GrammarBuilder } from '@sharpee/if-domain';
 import { parseDirection } from './direction-mappings';
+import { analyzeBestFailure } from './parse-failure';
 
 // Type alias for clarity
 type CommandResult<T, E> = Result<T, E>;
@@ -333,14 +335,21 @@ export class EnglishParser implements Parser {
     }
     
     if (candidates.length === 0) {
+      // Analyze failures to determine the best error message
+      const failures = this.grammarEngine.getLastFailures();
+      const hadVerb = tokens.some(t => t.partOfSpeech.includes(PartOfSpeech.VERB));
+      const errorAnalysis = analyzeBestFailure(failures, input, hadVerb);
+
       // Emit parse error platform event
       this.emitPlatformEvent('parse_failed', {
         input,
         reason: 'no_matching_patterns',
         tokenCount: tokens.length,
-        hadVerb: tokens.some(t => t.partOfSpeech.includes(PartOfSpeech.VERB))
+        hadVerb,
+        errorCode: errorAnalysis.code,
+        errorContext: errorAnalysis.context
       });
-      
+
       // Emit parse error debug event
       if (this.onDebugEvent) {
         this.onDebugEvent({
@@ -350,24 +359,24 @@ export class EnglishParser implements Parser {
           type: 'parse_error',
           data: {
             input,
-            errorType: 'NO_MATCHES',
+            errorType: errorAnalysis.code,
             errorDetails: {
-              message: 'Could not match input to any command pattern',
+              messageId: errorAnalysis.messageId,
+              context: errorAnalysis.context,
               hadTokens: tokens.length > 0,
-              hadVerb: tokens.some(t => t.partOfSpeech.includes(PartOfSpeech.VERB))
+              hadVerb,
+              failureCount: failures.length
             }
           }
         });
       }
-      
+
+      // Build the detailed error message
+      const error = this.buildParseError(input, errorAnalysis);
+
       return {
         success: false,
-        error: {
-          type: 'PARSE_ERROR',
-          code: 'INVALID_SYNTAX',
-          message: 'Could not match input to any command pattern',
-          input
-        }
+        error
       };
     }
     
@@ -1321,4 +1330,72 @@ export class EnglishParser implements Parser {
       });
     }
   }
+
+  /**
+   * Build a detailed parse error from failure analysis
+   */
+  private buildParseError(
+    input: string,
+    analysis: { code: ParseErrorCode; messageId: string; context: Record<string, any> }
+  ): CoreParseError {
+    const { code, messageId, context } = analysis;
+
+    // Generate fallback message based on error code and context
+    let message: string;
+    switch (code) {
+      case 'NO_VERB':
+        message = "I beg your pardon?";
+        break;
+      case 'UNKNOWN_VERB':
+        message = context.verb
+          ? `I don't know the verb "${context.verb}".`
+          : "I don't understand that sentence.";
+        break;
+      case 'MISSING_OBJECT':
+        message = context.verb
+          ? `What do you want to ${context.verb}?`
+          : "What do you want to do that to?";
+        break;
+      case 'MISSING_INDIRECT':
+        message = context.verb
+          ? `${capitalize(context.verb)} it where?`
+          : "Where do you want to do that?";
+        break;
+      case 'ENTITY_NOT_FOUND':
+        message = context.noun
+          ? `I don't see any "${context.noun}" here.`
+          : "I don't see that here.";
+        break;
+      case 'SCOPE_VIOLATION':
+        message = context.noun
+          ? `You can't reach the ${context.noun}.`
+          : "You can't reach that.";
+        break;
+      case 'AMBIGUOUS_INPUT':
+        message = context.noun
+          ? `Which ${context.noun} do you mean?`
+          : "Which do you mean?";
+        break;
+      default:
+        message = "I don't understand that.";
+    }
+
+    return {
+      type: 'PARSE_ERROR',
+      code,
+      messageId,
+      message,
+      input,
+      verb: context.verb,
+      failedWord: context.noun || context.verb,
+      slot: context.slot
+    };
+  }
+}
+
+/**
+ * Capitalize the first letter of a string
+ */
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
