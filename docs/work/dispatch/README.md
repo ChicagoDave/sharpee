@@ -44,9 +44,9 @@ grammar.forAction('if.action.lowering').verbs(['lower']).pattern(':target').buil
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | Core Infrastructure (world-model) | Not started |
-| 2 | Stdlib Capability-Dispatch Actions | Not started |
-| 3 | Grammar Patterns | Not started |
+| 1 | Core Infrastructure (world-model) | **Complete** |
+| 2 | Stdlib Capability-Dispatch Actions | **Complete** |
+| 3 | Grammar Patterns | **Complete** |
 | 4 | Dungeo Migration (basket elevator) | Not started |
 | 5 | Cleanup and Documentation | Not started |
 
