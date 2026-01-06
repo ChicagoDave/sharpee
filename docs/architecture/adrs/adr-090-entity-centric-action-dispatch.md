@@ -96,6 +96,7 @@ Traits declare capabilities using action IDs:
 class BasketElevatorTrait extends Trait {
   static readonly type = 'dungeo.trait.basket_elevator';
   static readonly capabilities = ['if.action.lowering', 'if.action.raising'];  // Action IDs this trait handles
+  static readonly capabilityPriority = 10;  // Higher priority wins if multiple traits claim same capability
 
   position: 'top' | 'bottom' = 'top';
   topRoomId: string;
@@ -104,42 +105,88 @@ class BasketElevatorTrait extends Trait {
 }
 ```
 
-Behaviors return Effects (ADR-075 pattern):
+Behaviors implement the 4-phase pattern (matching stdlib actions):
 
 ```typescript
 import { IFEvents } from '@sharpee/if-domain';
 
-// Behavior returns Effects - controls what events are emitted
-static lower(entity: IFEntity, world: WorldModel, playerId: string): Effect[] {
+// Phase 1: Validate
+static validate(entity: IFEntity, world: WorldModel, actorId: string): ValidationResult {
+  const trait = entity.get(BasketElevatorTrait);
+  if (trait.position === 'bottom') {
+    return { valid: false, error: 'dungeo.basket.already_down' };
+  }
+  return { valid: true };
+}
+
+// Phase 2: Execute (mutations only, no events)
+static execute(entity: IFEntity, world: WorldModel, actorId: string): void {
   const trait = entity.get(BasketElevatorTrait);
   trait.position = 'bottom';
   world.moveEntity(entity.id, trait.bottomRoomId);
+}
 
+// Phase 3: Report success
+static report(entity: IFEntity, world: WorldModel, actorId: string): Effect[] {
   return [
-    emit(IFEvents.LOWERED, {
-      target: entity.id,
-      messageId: 'dungeo.basket.lowered'
-    })
+    emit(IFEvents.LOWERED, { target: entity.id, messageId: 'dungeo.basket.lowered' })
+  ];
+}
+
+// Phase 4: Report failure
+static blocked(entity: IFEntity, world: WorldModel, actorId: string, error: string): Effect[] {
+  return [
+    emit('action.blocked', { target: entity.id, messageId: error })
   ];
 }
 ```
 
-Stdlib action finds trait by its own action ID and processes effects:
+Stdlib action delegates to behavior's 4-phase pattern:
 
 ```typescript
-// LOWERING action (stdlib)
-execute(context: ActionContext): void {
+// LOWERING action (stdlib) - delegates to capability behavior
+validate(context: ActionContext): ValidationResult {
   const entity = context.command.directObject?.entity;
-  const trait = findTraitWithCapability(entity, this.id);  // 'if.action.lowering'
+  if (!entity) {
+    return { valid: false, error: 'if.lower.no_target' };
+  }
+
+  const trait = findTraitWithCapability(entity, this.id);
+  if (!trait) {
+    return { valid: false, error: 'if.lower.cant_lower_that' };
+  }
+
+  const behavior = getBehaviorForTrait(trait);
+  const result = behavior.validate(entity, context.world, context.player.id);
+
+  if (result.valid) {
+    // Store for execute/report phases - return from validate, not sharedData
+    return { valid: true, data: { trait, behavior, entity } };
+  }
+  return result;
+}
+
+execute(context: ActionContext): void {
+  const { behavior, entity } = context.validationResult.data;
+  behavior.execute(entity, context.world, context.player.id);
+}
+
+report(context: ActionContext): Effect[] {
+  const { behavior, entity } = context.validationResult.data;
+  return behavior.report(entity, context.world, context.player.id);
+}
+
+blocked(context: ActionContext, result: ValidationResult): Effect[] {
+  const entity = context.command.directObject?.entity;
+  const trait = entity ? findTraitWithCapability(entity, this.id) : undefined;
 
   if (trait) {
     const behavior = getBehaviorForTrait(trait);
-    const effects = behavior.lower(entity, context.world, context.player.id);
-    context.sharedData.effects = effects;
-  } else {
-    context.sharedData.blocked = true;
-    context.sharedData.error = 'if.lower.cant_lower_that';
+    return behavior.blocked(entity!, context.world, context.player.id, result.error!);
   }
+
+  // No trait found - use default blocked message
+  return [emit('action.blocked', { messageId: result.error || 'if.lower.cant_lower_that' })];
 }
 ```
 
@@ -174,7 +221,7 @@ export class BasketElevatorTrait extends Trait {
 }
 ```
 
-**Behavior (operations returning Effects):**
+**Behavior (4-phase pattern with action-specific methods):**
 
 ```typescript
 // stories/dungeo/src/behaviors/basket-elevator-behavior.ts
@@ -183,12 +230,15 @@ import { Behavior, ValidationResult } from '@sharpee/world-model';
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { Effect, emit } from '@sharpee/event-processor';
 import { IFEvents } from '@sharpee/if-domain';
+import { CapabilityBehavior } from '@sharpee/world-model';
 import { BasketElevatorTrait } from '../traits/basket-elevator-trait';
 
-export class BasketElevatorBehavior extends Behavior {
-  static requiredTraits = [BasketElevatorTrait.type];
-
-  static canLower(entity: IFEntity, world: WorldModel, playerId: string): ValidationResult {
+/**
+ * Behavior for lowering the basket elevator.
+ * Implements CapabilityBehavior interface (4-phase pattern).
+ */
+export const BasketLoweringBehavior: CapabilityBehavior = {
+  validate(entity: IFEntity, world: WorldModel, actorId: string): ValidationResult {
     const trait = entity.get(BasketElevatorTrait);
 
     if (trait.position === 'bottom') {
@@ -196,77 +246,96 @@ export class BasketElevatorBehavior extends Behavior {
     }
 
     // Can only operate from wheel room or from inside basket
-    const playerLocation = world.getLocation(playerId);
-    const isAtWheel = playerLocation === trait.wheelRoomId;
-    const isInBasket = playerLocation === entity.id;
+    const actorLocation = world.getLocation(actorId);
+    const isAtWheel = actorLocation === trait.wheelRoomId;
+    const isInBasket = actorLocation === entity.id;
 
     if (!isAtWheel && !isInBasket) {
       return { valid: false, error: 'dungeo.basket.cant_reach_wheel' };
     }
 
     return { valid: true };
-  }
+  },
 
-  static lower(entity: IFEntity, world: WorldModel, playerId: string): Effect[] {
+  execute(entity: IFEntity, world: WorldModel, actorId: string): void {
     const trait = entity.get(BasketElevatorTrait);
-    const playerLocation = world.getLocation(playerId);
-    const playerInBasket = playerLocation === entity.id;
-
-    // Mutations
     trait.position = 'bottom';
     world.moveEntity(entity.id, trait.bottomRoomId);
+  },
 
-    // Return effects - behavior controls the event
+  report(entity: IFEntity, world: WorldModel, actorId: string): Effect[] {
+    const trait = entity.get(BasketElevatorTrait);
+    const actorLocation = world.getLocation(actorId);
+    const actorInBasket = actorLocation === entity.id;
+
     return [
       emit(IFEvents.LOWERED, {
         target: entity.id,
-        messageId: playerInBasket
-          ? 'dungeo.basket.lowered_with_player'
+        messageId: actorInBasket
+          ? 'dungeo.basket.lowered_with_actor'
           : 'dungeo.basket.lowered',
-        playerMoved: playerInBasket
+        actorMoved: actorInBasket
       })
     ];
-  }
+  },
 
-  static canRaise(entity: IFEntity, world: WorldModel, playerId: string): ValidationResult {
+  blocked(entity: IFEntity, world: WorldModel, actorId: string, error: string): Effect[] {
+    return [
+      emit('action.blocked', { target: entity.id, messageId: error })
+    ];
+  }
+};
+
+/**
+ * Behavior for raising the basket elevator.
+ */
+export const BasketRaisingBehavior: CapabilityBehavior = {
+  validate(entity: IFEntity, world: WorldModel, actorId: string): ValidationResult {
     const trait = entity.get(BasketElevatorTrait);
 
     if (trait.position === 'top') {
       return { valid: false, error: 'dungeo.basket.already_up' };
     }
 
-    const playerLocation = world.getLocation(playerId);
-    const isAtWheel = playerLocation === trait.wheelRoomId;
-    const isInBasket = playerLocation === entity.id;
+    const actorLocation = world.getLocation(actorId);
+    const isAtWheel = actorLocation === trait.wheelRoomId;
+    const isInBasket = actorLocation === entity.id;
 
     if (!isAtWheel && !isInBasket) {
       return { valid: false, error: 'dungeo.basket.cant_reach_wheel' };
     }
 
     return { valid: true };
-  }
+  },
 
-  static raise(entity: IFEntity, world: WorldModel, playerId: string): Effect[] {
+  execute(entity: IFEntity, world: WorldModel, actorId: string): void {
     const trait = entity.get(BasketElevatorTrait);
-    const playerLocation = world.getLocation(playerId);
-    const playerInBasket = playerLocation === entity.id;
-
-    // Mutations
     trait.position = 'top';
     world.moveEntity(entity.id, trait.topRoomId);
+  },
 
-    // Return effects - behavior controls the event
+  report(entity: IFEntity, world: WorldModel, actorId: string): Effect[] {
+    const trait = entity.get(BasketElevatorTrait);
+    const actorLocation = world.getLocation(actorId);
+    const actorInBasket = actorLocation === entity.id;
+
     return [
       emit(IFEvents.RAISED, {
         target: entity.id,
-        messageId: playerInBasket
-          ? 'dungeo.basket.raised_with_player'
+        messageId: actorInBasket
+          ? 'dungeo.basket.raised_with_actor'
           : 'dungeo.basket.raised',
-        playerMoved: playerInBasket
+        actorMoved: actorInBasket
       })
     ];
+  },
+
+  blocked(entity: IFEntity, world: WorldModel, actorId: string, error: string): Effect[] {
+    return [
+      emit('action.blocked', { target: entity.id, messageId: error })
+    ];
   }
-}
+};
 ```
 
 **Entity creation (minimal):**
@@ -378,37 +447,121 @@ export const loweringAction: Action = {
 
 **Note**: The `report()` method returns empty because the behavior's Effects include the `emit()` calls. The engine's EffectProcessor handles converting those to actual events.
 
-### Capability Registry
+### Capability Registry (Type-Safe)
 
 ```typescript
 // packages/world-model/src/traits/capability-registry.ts
 
-const traitBehaviorMap = new Map<string, BehaviorClass>();
+/**
+ * Standard interface for capability behaviors.
+ * All behaviors that handle capabilities must implement this interface.
+ * Follows the same 4-phase pattern as stdlib actions for consistency.
+ */
+export interface CapabilityBehavior {
+  /** Phase 1: Validate whether the action can be performed */
+  validate(entity: IFEntity, world: WorldModel, actorId: string): ValidationResult;
 
-export function registerTraitBehavior(traitType: string, behavior: BehaviorClass): void {
-  traitBehaviorMap.set(traitType, behavior);
+  /** Phase 2: Execute mutations (no events emitted here) */
+  execute(entity: IFEntity, world: WorldModel, actorId: string): void;
+
+  /** Phase 3: Report success - return effects including emit() for success events */
+  report(entity: IFEntity, world: WorldModel, actorId: string): Effect[];
+
+  /** Phase 4: Report failure - return effects for blocked/failure events */
+  blocked(entity: IFEntity, world: WorldModel, actorId: string, error: string): Effect[];
 }
 
-export function getBehaviorForTrait(trait: Trait): Behavior {
-  const behavior = traitBehaviorMap.get(trait.constructor.type);
-  if (!behavior) {
-    throw new Error(`No behavior registered for trait: ${trait.constructor.type}`);
+/**
+ * Type-safe trait-behavior binding.
+ * Behaviors declare which trait type they work with.
+ */
+export interface TraitBehaviorBinding<T extends Trait = Trait> {
+  traitType: string;
+  behavior: CapabilityBehavior;
+  /** Validate at registration that behavior works with trait */
+  validateBinding?: (trait: T) => boolean;
+}
+
+const traitBehaviorMap = new Map<string, TraitBehaviorBinding>();
+
+/**
+ * Register a behavior for a trait type with validation.
+ */
+export function registerTraitBehavior<T extends Trait>(
+  traitType: string,
+  behavior: CapabilityBehavior,
+  options?: { validateBinding?: (trait: T) => boolean }
+): void {
+  traitBehaviorMap.set(traitType, {
+    traitType,
+    behavior,
+    validateBinding: options?.validateBinding
+  });
+}
+
+/**
+ * Get behavior for a trait with runtime validation.
+ */
+export function getBehaviorForTrait(trait: Trait): CapabilityBehavior {
+  const traitType = (trait.constructor as typeof Trait).type;
+  const binding = traitBehaviorMap.get(traitType);
+
+  if (!binding) {
+    throw new Error(`No behavior registered for trait: ${traitType}`);
   }
-  return behavior;
+
+  // Runtime validation if provided
+  if (binding.validateBinding && !binding.validateBinding(trait)) {
+    throw new Error(`Behavior validation failed for trait: ${traitType}`);
+  }
+
+  return binding.behavior;
 }
 
 /**
  * Find a trait on the entity that declares capability for the given action ID.
- * Capabilities are action IDs like 'if.action.lowering', 'if.action.raising'.
+ *
+ * If multiple traits declare the same capability, uses priority ordering:
+ * 1. Traits with explicit `capabilityPriority` (higher = first)
+ * 2. Order of trait attachment (first added = first checked)
  */
 export function findTraitWithCapability(entity: IFEntity, actionId: string): Trait | undefined {
+  // Collect all traits with this capability
+  const candidates: Array<{ trait: Trait; priority: number }> = [];
+
   for (const trait of entity.traits) {
     const traitClass = trait.constructor as typeof Trait;
     if (traitClass.capabilities?.includes(actionId)) {
-      return trait;
+      const priority = traitClass.capabilityPriority ?? 0;
+      candidates.push({ trait, priority });
     }
   }
-  return undefined;
+
+  if (candidates.length === 0) {
+    return undefined;
+  }
+
+  // Sort by priority descending (higher priority first)
+  candidates.sort((a, b) => b.priority - a.priority);
+
+  return candidates[0].trait;
+}
+
+/**
+ * Type guard to check if a trait has a specific capability.
+ */
+export function hasCapability<T extends Trait>(
+  trait: Trait,
+  actionId: string,
+  traitType?: new (...args: any[]) => T
+): trait is T {
+  const traitClass = trait.constructor as typeof Trait;
+  const hasAction = traitClass.capabilities?.includes(actionId) ?? false;
+
+  if (traitType) {
+    return hasAction && trait instanceof traitType;
+  }
+  return hasAction;
 }
 ```
 
