@@ -12,7 +12,7 @@ Implement trait-based capability dispatch where:
 3. Stdlib actions dispatch to trait behaviors
 4. One grammar pattern per verb (no priority conflicts)
 
-## Phase 1: Core Infrastructure (world-model)
+## Phase 1: Core Infrastructure (world-model) ✅ COMPLETE
 
 ### 1.1 Extend ITrait and ITraitConstructor
 
@@ -275,7 +275,7 @@ export * from './entity/entity-builder';
 
 ---
 
-## Phase 2: Stdlib Capability-Dispatch Actions
+## Phase 2: Stdlib Capability-Dispatch Actions ✅ COMPLETE
 
 ### 2.1 Create Generic Capability-Dispatch Action Factory
 
@@ -485,7 +485,7 @@ Add exports and registration for new actions.
 
 ---
 
-## Phase 3: Grammar Patterns
+## Phase 3: Grammar Patterns ✅ COMPLETE
 
 ### 3.1 Add Grammar Patterns
 
