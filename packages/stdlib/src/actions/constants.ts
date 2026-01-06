@@ -87,6 +87,11 @@ export const IFActions = {
   ATTACKING: 'if.action.attacking',
   KISSING: 'if.action.kissing',
   WAVING: 'if.action.waving',
+
+  // Capability-dispatch actions (ADR-090)
+  // These dispatch to trait behaviors instead of having fixed semantics
+  LOWERING: 'if.action.lowering',
+  RAISING: 'if.action.raising',
   
   // Using actions
   // USING: 'if.action.using', // Removed - USE is not idiomatic IF

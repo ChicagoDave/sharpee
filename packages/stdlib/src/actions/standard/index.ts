@@ -52,6 +52,10 @@ export * from './pulling';
 // export * from './turning'; // Removed - TURNABLE trait doesn't exist
 // export * from './using'; // Removed - USE is not idiomatic IF
 
+// Capability-dispatch actions (ADR-090)
+export * from './lowering';
+export * from './raising';
+
 // Wearing and taking_off share some event types
 export { wearingAction } from './wearing';
 export { takingOffAction } from './taking_off';
@@ -107,6 +111,10 @@ import { pushingAction } from './pushing';
 import { pullingAction } from './pulling';
 // import { turningAction } from './turning'; // Removed - TURNABLE trait doesn't exist
 // import { usingAction } from './using'; // Removed - USE is not idiomatic IF
+
+// Capability-dispatch actions (ADR-090)
+import { loweringAction } from './lowering';
+import { raisingAction } from './raising';
 import { wearingAction } from './wearing';
 import { takingOffAction } from './taking_off';
 import { eatingAction } from './eating';
@@ -162,6 +170,9 @@ export const standardActions = [
   pullingAction,
   // turningAction, // Removed - TURNABLE trait doesn't exist
   // usingAction, // Removed - USE is not idiomatic IF
+  // Capability-dispatch actions (ADR-090)
+  loweringAction,
+  raisingAction,
   wearingAction,
   takingOffAction,
   eatingAction,
