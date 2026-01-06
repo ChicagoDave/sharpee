@@ -20,6 +20,8 @@ export interface ITrait {
 export interface ITraitConstructor<T extends ITrait = ITrait> {
   new (data?: any): T;
   readonly type: TraitType | string;
+  /** Action IDs this trait handles via capability dispatch (ADR-090) */
+  readonly capabilities?: readonly string[];
 }
 
 /**
