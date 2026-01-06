@@ -712,18 +712,109 @@ One LOWER action that switches on entity type internally.
    - Fully extensible for custom traits+behaviors
    - IDE autocomplete and discoverability
 
+## Capability Dispatch Verbs
+
+Stdlib verbs fall into two categories based on whether they have standard semantics:
+
+### Fixed Semantics (NO capability dispatch)
+
+These verbs have a universal meaning - the mutation is the same regardless of entity:
+
+| Verb | Standard Mutation |
+|------|------------------|
+| TAKE | Move to inventory |
+| DROP | Move to location |
+| OPEN/CLOSE | Change `isOpen` state |
+| LOCK/UNLOCK | Change `isLocked` state |
+| WEAR/REMOVE | Change `worn` state |
+| SWITCH ON/OFF | Change `isOn` state |
+| EAT/DRINK | Consume item |
+| ENTER/EXIT | Change player location |
+| PUT IN/ON | Change containment |
+
+Traits determine *if* the action can happen; stdlib determines *what* happens.
+
+### No Standard Semantics (USE capability dispatch)
+
+These verbs have entity-specific meaning - the entity determines what the verb does:
+
+| Verb | Why Capability Dispatch? | Examples |
+|------|--------------------------|----------|
+| LOWER | Entity-specific mutation | Basket elevator, mirror pole, drawbridge |
+| RAISE/LIFT | Entity-specific mutation | Basket elevator, mirror pole |
+| TURN | "Turn X" varies by entity | Wheel, dial, crank, key-in-lock |
+| WAVE | Entity-specific effect | Sceptre → rainbow, wand → spell |
+| RING | Entity-specific effect | Bell → exorcism, phone → call |
+| WIND | Entity-specific effect | Music box, canary, clock |
+| RUB | Entity-specific effect | Lamp → genie, crystal ball |
+| PLAY | Instrument-specific | Piano, flute, horn |
+| BLOW | Entity-specific effect | Horn → sound, candle → extinguish |
+
+### Edge Cases (Standard + Special)
+
+Some verbs have standard semantics but special uses:
+
+| Verb | Standard Use | Special Use |
+|------|--------------|-------------|
+| PUSH | Move object (exert force) | Push button/lever (activation) |
+| PULL | Move object (exert force) | Pull lever/rope (activation) |
+
+For these, the standard action handles the common case. Entities needing special behavior use capability traits.
+
+## Extension Vectors
+
+Capability dispatch aligns across all extension points:
+
+### Stdlib (Curated Platform)
+
+Stdlib is a **curated** set of Traits, Behaviors, and Actions for most IF development.
+
+- Provides capability-dispatch actions for common verbs with no standard semantics
+- Example: `if.action.lowering` dispatches to any trait claiming that capability
+- Story authors use these without modification
+
+### Story (e.g., Dungeo)
+
+Stories create traits that claim stdlib capabilities:
+
+```typescript
+// Story creates trait
+class BasketElevatorTrait extends Trait {
+  static readonly capabilities = ['if.action.lowering', 'if.action.raising'];
+  // ...
+}
+
+// Story creates behavior
+export const BasketLoweringBehavior: CapabilityBehavior = { /* ... */ };
+
+// Story registers binding
+registerTraitBehavior(BasketElevatorTrait.type, BasketLoweringBehavior);
+```
+
+For story-specific verbs (SAY "odysseus", INCANT), stories create full actions.
+
+### Third-Party Extensions
+
+Same pattern as stories:
+
+1. Create traits claiming stdlib capabilities
+2. Or create entirely new verbs as full actions if stdlib doesn't have them
+
+### The Key Principle
+
+**Stdlib owns the verbs. Extensions own the behaviors.**
+
+- Stdlib provides `if.action.lowering` (the dispatch mechanism)
+- Story provides `BasketElevatorTrait` + `BasketLoweringBehavior` (the entity-specific logic)
+- No story-specific action files needed for stdlib verbs
+
 ## Open Questions
 
-1. **Multiple traits with same capability**: What if entity has two traits declaring the same action ID?
-   - Recommendation: First match wins, document that this is undefined behavior
+1. **Priority implementation**: How is `capabilityPriority` surfaced in the trait base class?
 
-2. **Stdlib verbs**: Which verbs get capability-dispatching actions?
-   - Clear candidates: lowering, raising, turning, waving, ringing
-   - Verbs with standard semantics stay as-is: taking, dropping, opening, closing
+2. **Debugging support**: Should capability dispatch log which trait handled an action?
 
-3. **Validation vs Execution method naming**: Should behavior methods be named `canLower/lower` or use a more generic pattern like `validate/execute`?
-   - Current: verb-specific names for clarity
-   - Alternative: generic interface `{ validate(), execute() }` for all capabilities
+3. **Before/after hooks**: How do `if.action.lowering.before` event handlers interact with capability dispatch?
 
 ## References
 
