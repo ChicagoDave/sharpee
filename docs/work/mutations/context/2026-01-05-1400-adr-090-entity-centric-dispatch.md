@@ -95,15 +95,56 @@ When player types "lower basket", the parser correctly resolves the entity but r
 | Type flags | `isBasketElevator`, etc. | None |
 | Logic location | Scattered | Co-located with trait |
 
-## Open Questions
+## Assessment Feedback Addressed
 
-1. Multiple traits with same capability - first match wins?
-2. Which verbs get capability-dispatching actions?
-3. Validation method naming - `canLower()` or generic `validate()`?
+Based on `docs/work/mutations/ADR-090-assessment.md`, the following concerns were addressed:
+
+### Type Safety
+- **CapabilityBehavior interface**: Standard 4-phase pattern (validate/execute/report/blocked)
+- **TraitBehaviorBinding**: Type-safe registration with optional runtime validation
+- **hasCapability()**: Type guard for safe trait checking
+
+### Capability Conflict Resolution
+- **capabilityPriority**: Static field on traits (higher number = higher priority)
+- **Explicit resolution**: Priority-based sorting instead of "first match wins"
+
+### Consistency with Action Pattern
+- **4-phase behavior**: `validate()`, `execute()`, `report()`, `blocked()` matching stdlib
+- **ValidationResult.data**: Returns trait/behavior from validate, avoiding sharedData pollution
+- **actorId parameter**: Supports both player and NPC actions
+
+### Code Changes
+
+```typescript
+// CapabilityBehavior interface (4-phase)
+interface CapabilityBehavior {
+  validate(entity, world, actorId): ValidationResult;
+  execute(entity, world, actorId): void;
+  report(entity, world, actorId): Effect[];
+  blocked(entity, world, actorId, error): Effect[];
+}
+
+// Trait with priority
+class BasketElevatorTrait extends Trait {
+  static readonly capabilities = ['if.action.lowering', 'if.action.raising'];
+  static readonly capabilityPriority = 10;  // Higher wins
+}
+
+// Separate behaviors per action
+export const BasketLoweringBehavior: CapabilityBehavior = { ... };
+export const BasketRaisingBehavior: CapabilityBehavior = { ... };
+```
+
+## Remaining Open Questions
+
+1. Which verbs get capability-dispatching actions? (lowering, raising, turning, waving, ringing)
+2. Before/after event hooks - how do they interact with capability dispatch?
+3. Debugging support - log which trait handled a capability
 
 ## Next Steps
 
-1. Review ADR with stakeholders
-2. Implement Phase 1 infrastructure
+1. Review updated ADR with stakeholders
+2. Implement Phase 1 infrastructure (capability registry, trait base class updates)
 3. Create lowering/raising actions in stdlib
 4. Migrate basket and pole in Dungeo as proof of concept
+5. Add documentation for which verbs use capability dispatch
