@@ -45,6 +45,10 @@ export * from './pushing';
 export * from './pulling';
 export * from './turning';
 
+// Capability-dispatch actions (ADR-090)
+export * from './lowering';
+export * from './raising';
+
 // Social actions
 export * from './giving';
 export * from './showing';
@@ -99,6 +103,9 @@ import { switchingOffLanguage } from './switching-off';
 import { pushingLanguage } from './pushing';
 import { pullingLanguage } from './pulling';
 import { turningLanguage } from './turning';
+// Capability-dispatch actions (ADR-090)
+import { loweringLanguage } from './lowering';
+import { raisingLanguage } from './raising';
 import { givingLanguage } from './giving';
 import { showingLanguage } from './showing';
 import { talkingLanguage } from './talking';
@@ -164,7 +171,11 @@ export const standardActionLanguage = [
   pushingLanguage,
   pullingLanguage,
   turningLanguage,
-  
+
+  // Capability-dispatch actions (ADR-090)
+  loweringLanguage,
+  raisingLanguage,
+
   // Social actions
   givingLanguage,
   showingLanguage,

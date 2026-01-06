@@ -247,6 +247,21 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .where('target', (scope: ScopeBuilder) => scope.touchable())
     .build();
 
+  // Lowering and raising (ADR-090: capability dispatch)
+  grammar
+    .forAction('if.action.lowering')
+    .verbs(['lower'])
+    .pattern(':target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .build();
+
+  grammar
+    .forAction('if.action.raising')
+    .verbs(['raise', 'lift'])
+    .pattern(':target')
+    .where('target', (scope: ScopeBuilder) => scope.touchable())
+    .build();
+
   // Waiting (ADR-087: using forAction)
   grammar
     .forAction('if.action.waiting')
