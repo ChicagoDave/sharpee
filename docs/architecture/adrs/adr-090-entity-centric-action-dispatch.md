@@ -1,6 +1,6 @@
 # ADR-090: Entity-Centric Action Dispatch via Trait Capabilities
 
-## Status: PROPOSED
+## Status: ACCEPTED
 
 ## Date: 2026-01-05
 
@@ -96,7 +96,6 @@ Traits declare capabilities using action IDs:
 class BasketElevatorTrait extends Trait {
   static readonly type = 'dungeo.trait.basket_elevator';
   static readonly capabilities = ['if.action.lowering', 'if.action.raising'];  // Action IDs this trait handles
-  static readonly capabilityPriority = 10;  // Higher priority wins if multiple traits claim same capability
 
   position: 'top' | 'bottom' = 'top';
   topRoomId: string;
@@ -392,6 +391,8 @@ grammar
 ```typescript
 // packages/stdlib/src/actions/standard/lowering/lowering.ts
 
+import { findTraitWithCapability, getBehaviorForTrait } from '@sharpee/world-model';
+
 export const loweringAction: Action = {
   id: 'if.action.lowering',
 
@@ -407,45 +408,41 @@ export const loweringAction: Action = {
       return { valid: false, error: 'if.lower.cant_lower_that' };
     }
 
-    // Get behavior and validate
+    // Get behavior and delegate validation
     const behavior = getBehaviorForTrait(trait);
-    if (behavior.canLower) {
-      const result = behavior.canLower(entity, context.world, context.player.id);
-      if (!result.valid) {
-        return result;
-      }
+    const behaviorResult = behavior.validate(entity, context.world, context.player.id);
+
+    if (!behaviorResult.valid) {
+      return behaviorResult;
     }
 
-    context.sharedData.lowerTrait = trait;
-    context.sharedData.lowerBehavior = behavior;
-    return { valid: true };
+    // Pass data via ValidationResult.data (not sharedData)
+    return { valid: true, data: { trait, behavior, entity } };
   },
 
   execute(context: ActionContext): void {
-    const entity = context.command.directObject!.entity!;
-    const behavior = context.sharedData.lowerBehavior;
-
-    // Behavior returns Effects - it controls what events are emitted
-    const effects = behavior.lower(entity, context.world, context.player.id);
-    context.sharedData.effects = effects;
+    const { behavior, entity } = context.validationResult.data;
+    behavior.execute(entity, context.world, context.player.id);
   },
 
-  report(context: ActionContext): ISemanticEvent[] {
-    // Effects are processed by the engine's effect processor
-    // The behavior already specified what events to emit via emit() effects
-    // This method can return empty - effects handle the events
-    return [];
+  report(context: ActionContext): Effect[] {
+    const { behavior, entity } = context.validationResult.data;
+    return behavior.report(entity, context.world, context.player.id);
   },
 
-  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      messageId: result.error || 'if.lower.cant_lower_that'
-    })];
+  blocked(context: ActionContext, result: ValidationResult): Effect[] {
+    const entity = context.command.directObject?.entity;
+    const trait = entity ? findTraitWithCapability(entity, this.id) : undefined;
+
+    if (trait) {
+      const behavior = getBehaviorForTrait(trait);
+      return behavior.blocked(entity!, context.world, context.player.id, result.error!);
+    }
+
+    return [emit('action.blocked', { messageId: result.error || 'if.lower.cant_lower_that' })];
   }
 };
 ```
-
-**Note**: The `report()` method returns empty because the behavior's Effects include the `emit()` calls. The engine's EffectProcessor handles converting those to actual events.
 
 ### Capability Registry (Type-Safe)
 
@@ -521,30 +518,24 @@ export function getBehaviorForTrait(trait: Trait): CapabilityBehavior {
 /**
  * Find a trait on the entity that declares capability for the given action ID.
  *
- * If multiple traits declare the same capability, uses priority ordering:
- * 1. Traits with explicit `capabilityPriority` (higher = first)
- * 2. Order of trait attachment (first added = first checked)
+ * Entity resolution (which entity "lower X" refers to) is handled by the parser
+ * using scope math - the same rules that resolve noun ambiguity:
+ * - Held items beat items in the room
+ * - Recently referred items win ties
+ * - More specific scope constraints win
+ *
+ * Once the parser resolves to a specific entity, that entity should have exactly
+ * one trait claiming the capability. If multiple traits claim it, returns the
+ * first found (authoring error - should be rare).
  */
 export function findTraitWithCapability(entity: IFEntity, actionId: string): Trait | undefined {
-  // Collect all traits with this capability
-  const candidates: Array<{ trait: Trait; priority: number }> = [];
-
   for (const trait of entity.traits) {
     const traitClass = trait.constructor as typeof Trait;
     if (traitClass.capabilities?.includes(actionId)) {
-      const priority = traitClass.capabilityPriority ?? 0;
-      candidates.push({ trait, priority });
+      return trait;
     }
   }
-
-  if (candidates.length === 0) {
-    return undefined;
-  }
-
-  // Sort by priority descending (higher priority first)
-  candidates.sort((a, b) => b.priority - a.priority);
-
-  return candidates[0].trait;
+  return undefined;
 }
 
 /**
@@ -578,13 +569,141 @@ import { BasketElevatorBehavior } from './behaviors/basket-elevator-behavior';
 registerTraitBehavior(BasketElevatorTrait.type, BasketElevatorBehavior);
 ```
 
+### Type-Safe Entity Builder (Compile-Time Capability Enforcement)
+
+To catch duplicate capability declarations at compile time (not runtime), use a builder pattern with phantom types:
+
+```typescript
+// packages/world-model/src/entity/entity-builder.ts
+
+/**
+ * Extract capability strings from a trait class as a union type.
+ */
+type TraitCapabilities<T extends Trait> =
+  T extends { constructor: { capabilities: readonly (infer C)[] } }
+    ? C
+    : never;
+
+/**
+ * Type-level check for overlapping string unions.
+ * Returns `never` if no overlap, otherwise returns the overlapping strings.
+ */
+type Overlap<A, B> = A & B;
+
+/**
+ * Error brand for compile-time capability conflicts.
+ */
+type CapabilityConflictError<Cap extends string> = {
+  readonly __error: 'DUPLICATE_CAPABILITY';
+  readonly capability: Cap;
+};
+
+/**
+ * Type-safe entity builder that tracks claimed capabilities.
+ * Produces compile errors when adding traits with overlapping capabilities.
+ */
+class EntityBuilder<ClaimedCapabilities extends string = never> {
+  private entity: IFEntity;
+
+  constructor(entity: IFEntity) {
+    this.entity = entity;
+  }
+
+  /**
+   * Add a trait to the entity.
+   * Compile error if trait's capabilities overlap with already-claimed capabilities.
+   */
+  add<T extends Trait, TCaps extends string = TraitCapabilities<T>>(
+    trait: T
+  ): Overlap<ClaimedCapabilities, TCaps> extends never
+      ? EntityBuilder<ClaimedCapabilities | TCaps>
+      : CapabilityConflictError<Overlap<ClaimedCapabilities, TCaps> & string> {
+
+    // Runtime check as backup (for JS consumers or type system edge cases)
+    const traitClass = trait.constructor as typeof Trait;
+    const newCaps = traitClass.capabilities ?? [];
+
+    for (const cap of newCaps) {
+      const existing = this.entity.traits.find(t => {
+        const tClass = t.constructor as typeof Trait;
+        return tClass.capabilities?.includes(cap);
+      });
+      if (existing) {
+        throw new Error(
+          `Entity "${this.entity.id}": capability "${cap}" already claimed by ${existing.constructor.name}`
+        );
+      }
+    }
+
+    this.entity.add(trait);
+    return this as any;
+  }
+
+  build(): IFEntity {
+    return this.entity;
+  }
+}
+
+/**
+ * Create an entity with type-safe capability tracking.
+ */
+function createEntity(world: WorldModel, id: string, type: EntityType): EntityBuilder {
+  const entity = world.createEntity(id, type);
+  return new EntityBuilder(entity);
+}
+```
+
+**Usage - Compile-time errors on duplicate capabilities:**
+
+```typescript
+// ✅ Valid - no overlapping capabilities
+const basket = createEntity(world, 'basket', EntityType.CONTAINER)
+  .add(new IdentityTrait({ name: 'basket' }))
+  .add(new ContainerTrait())
+  .add(new BasketElevatorTrait({ /* ... */ }))  // claims: lowering, raising
+  .build();
+
+// ❌ Compile error - duplicate 'if.action.lowering' capability
+const badEntity = createEntity(world, 'bad', EntityType.OBJECT)
+  .add(new BasketElevatorTrait({ /* ... */ }))  // claims: lowering, raising
+  .add(new MirrorPoleTrait({ /* ... */ }))      // also claims: lowering, raising
+  //    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  //    Type error: CapabilityConflictError<'if.action.lowering' | 'if.action.raising'>
+  .build();
+```
+
+**Trait capability declaration for type inference:**
+
+```typescript
+// Traits must declare capabilities as const for type inference
+class BasketElevatorTrait extends Trait {
+  static readonly type = 'dungeo.trait.basket_elevator';
+
+  // `as const` enables type-level capability tracking
+  static readonly capabilities = ['if.action.lowering', 'if.action.raising'] as const;
+
+  // ... rest of trait
+}
+```
+
+**Benefits:**
+
+| Aspect | Without Builder | With Type-Safe Builder |
+|--------|-----------------|------------------------|
+| Error detection | Runtime (story init) | Compile time (red squiggles) |
+| IDE feedback | None | Immediate type error |
+| Refactoring | Manual capability audit | Compiler catches conflicts |
+| JS consumers | Silent "first wins" | Runtime throws |
+
 ## Implementation
 
 ### Phase 1: Core Infrastructure (world-model)
 
-1. Add `static capabilities: string[]` to Trait base class
+1. Add `static capabilities: readonly string[]` to Trait base class (with `as const` support)
 2. Add `findTraitWithCapability(entity, capability)` helper
 3. Add trait-behavior registry with `registerTraitBehavior()` and `getBehaviorForTrait()`
+4. Add type-safe `EntityBuilder` with compile-time capability conflict detection
+5. Add runtime capability conflict check as backup for JS consumers
 
 ### Phase 2: Stdlib Actions
 
@@ -808,13 +927,87 @@ Same pattern as stories:
 - Story provides `BasketElevatorTrait` + `BasketLoweringBehavior` (the entity-specific logic)
 - No story-specific action files needed for stdlib verbs
 
-## Open Questions
+## Capability Conflict Resolution: Scope Math
 
-1. **Priority implementation**: How is `capabilityPriority` surfaced in the trait base class?
+When "lower X" could apply to multiple entities, the parser's existing scope resolution handles it:
 
-2. **Debugging support**: Should capability dispatch log which trait handled an action?
+### Parser Scope Math (Already Exists)
 
-3. **Before/after hooks**: How do `if.action.lowering.before` event handlers interact with capability dispatch?
+The parser uses scope ranking to resolve noun ambiguity:
+
+1. **Proximity**: Held items > items in room > visible but not touchable
+2. **Recency**: Most recently referred-to entity wins ties
+3. **Specificity**: More specific scope constraints in grammar win
+
+Example: Player is holding a lever and there's a lever on the wall.
+- "pull lever" → parser picks held lever (proximity wins)
+- "pull lever on wall" → parser picks wall lever (specificity wins)
+
+### Applied to Capability Dispatch
+
+The same math applies to capability dispatch:
+
+```
+> lower basket      (basket and pole both in scope)
+
+Parser scope resolution:
+1. "basket" matches basket entity (score: in room)
+2. "basket" doesn't match pole entity
+→ Resolves to basket entity
+
+Capability dispatch:
+1. Basket has BasketElevatorTrait claiming 'if.action.lowering'
+→ Dispatches to BasketLoweringBehavior
+```
+
+```
+> lower pole        (basket and pole both in scope)
+
+Parser scope resolution:
+1. "pole" matches pole entity (score: in room)
+2. "pole" doesn't match basket entity
+→ Resolves to pole entity
+
+Capability dispatch:
+1. Pole has MirrorPoleTrait claiming 'if.action.lowering'
+→ Dispatches to MirrorPoleBehavior
+```
+
+### Edge Case: Multiple Traits on Same Entity
+
+If one entity has multiple traits claiming the same capability (rare authoring scenario), first-found wins. This is an authoring error - entities should have one trait per capability.
+
+### Benefits of Scope-Based Resolution
+
+| Aspect | Priority Numbers | Scope Math |
+|--------|------------------|------------|
+| Based on | Hardcoded trait values | Actual game state |
+| Coordination | Authors must coordinate | Automatic |
+| Predictability | Arbitrary | Matches noun resolution |
+| Player intuition | Opaque | "Same rules as noun picking" |
+
+## Design Decisions
+
+### Debugging Support
+
+When debug mode is enabled, capability dispatch fires a debug event:
+
+```typescript
+if (context.debug) {
+  emit('debug.capability.dispatched', {
+    actionId: this.id,
+    entityId: entity.id,
+    traitType: (trait.constructor as typeof Trait).type,
+    behaviorType: behavior.constructor?.name ?? 'anonymous'
+  });
+}
+```
+
+This helps authors troubleshoot "why did X happen when I typed Y" scenarios.
+
+### Before/After Hooks
+
+**Deferred.** The existing event handler system (ADR-052) already supports before/after patterns at the action level. Whether capability dispatch needs its own hook points is unclear - may not be necessary if action-level hooks suffice. Revisit if real use cases emerge during Dungeo implementation.
 
 ## References
 

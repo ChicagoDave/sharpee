@@ -190,16 +190,16 @@ The ADR focuses on player actions. What happens when an NPC "lowers the basket"?
 
 Recommendations
 Must Address Before Implementation
-Type-safe trait→behavior binding - Add compile-time or runtime validation
-Multiple capability conflict resolution - Define explicit behavior, not "first match"
-Standard behavior interface - Avoid verb-specific method names in the generic dispatch
+~~Type-safe trait→behavior binding - Add compile-time or runtime validation~~ ✅ RESOLVED: `TraitBehaviorBinding<T>` interface with `validateBinding` + type-safe `EntityBuilder` with compile-time capability conflict detection
+~~Multiple capability conflict resolution - Define explicit behavior, not "first match"~~ ✅ RESOLVED: Scope math handles entity resolution; parser picks which entity before capability dispatch runs
+~~Standard behavior interface - Avoid verb-specific method names in the generic dispatch~~ ✅ RESOLVED: `CapabilityBehavior` interface with standard 4-phase pattern (validate/execute/report/blocked)
 Should Address
-Document which verbs use capability dispatch - Clear guidance for story authors
-Clarify event handler interaction - How do before/after hooks work with capability dispatch?
-Reduce sharedData usage - Return capability metadata from validate, not via context pollution
+~~Document which verbs use capability dispatch - Clear guidance for story authors~~ ✅ RESOLVED: "Capability Dispatch Verbs" section with tables for Fixed Semantics vs No Standard Semantics
+~~Clarify event handler interaction - How do before/after hooks work with capability dispatch?~~ ⏸️ DEFERRED: Action-level hooks (ADR-052) may suffice; revisit if real use cases emerge
+~~Reduce sharedData usage - Return capability metadata from validate, not via context pollution~~ ✅ RESOLVED: Stdlib action example uses `ValidationResult.data` pattern
 Nice to Have
-NPC action dispatch - Ensure the pattern works for NPC-initiated actions
-Debugging support - Log which trait handled a capability for easier troubleshooting
+~~NPC action dispatch - Ensure the pattern works for NPC-initiated actions~~ ✅ RESOLVED: `actorId` parameter in all behavior methods supports both player and NPC actions
+~~Debugging support - Log which trait handled a capability for easier troubleshooting~~ ✅ RESOLVED: Debug event `debug.capability.dispatched` fired when debug mode enabled
 Verdict
 The core pattern is sound and should be accepted. Entity-centric dispatch via trait capabilities is the right architectural direction for handling verbs with no standard semantics. The pattern:
 
