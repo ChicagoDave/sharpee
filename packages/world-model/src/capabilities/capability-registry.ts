@@ -72,7 +72,7 @@ export function registerCapabilityBehavior<T extends ITrait>(
     traitType,
     capability,
     behavior,
-    validateBinding: options?.validateBinding
+    validateBinding: options?.validateBinding as ((trait: ITrait) => boolean) | undefined
   });
 }
 

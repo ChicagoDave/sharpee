@@ -25,7 +25,8 @@ import {
   StandardCapabilities,
   IWorldModel,
   IParsedCommand,
-  registerCapabilityBehavior
+  registerCapabilityBehavior,
+  hasCapabilityBehavior
 } from '@sharpee/world-model';
 import { DungeoScoringService } from './scoring';
 
@@ -137,16 +138,21 @@ export class DungeoStory implements Story {
 
     // Register capability behaviors (ADR-090)
     // Basket elevator uses lowering/raising capability dispatch
-    registerCapabilityBehavior(
-      BasketElevatorTrait.type,
-      'if.action.lowering',
-      BasketLoweringBehavior
-    );
-    registerCapabilityBehavior(
-      BasketElevatorTrait.type,
-      'if.action.raising',
-      BasketRaisingBehavior
-    );
+    // Check first to avoid duplicate registration (global registry persists across test runs)
+    if (!hasCapabilityBehavior(BasketElevatorTrait.type, 'if.action.lowering')) {
+      registerCapabilityBehavior(
+        BasketElevatorTrait.type,
+        'if.action.lowering',
+        BasketLoweringBehavior
+      );
+    }
+    if (!hasCapabilityBehavior(BasketElevatorTrait.type, 'if.action.raising')) {
+      registerCapabilityBehavior(
+        BasketElevatorTrait.type,
+        'if.action.raising',
+        BasketRaisingBehavior
+      );
+    }
 
     // Register reality altered handler (ADR-078 hidden max points)
     registerRealityAlteredHandler(world);

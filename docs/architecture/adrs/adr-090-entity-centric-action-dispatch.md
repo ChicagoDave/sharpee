@@ -1009,6 +1009,126 @@ This helps authors troubleshoot "why did X happen when I typed Y" scenarios.
 
 **Deferred.** The existing event handler system (ADR-052) already supports before/after patterns at the action level. Whether capability dispatch needs its own hook points is unclear - may not be necessary if action-level hooks suffice. Revisit if real use cases emerge during Dungeo implementation.
 
+## Real Implementation: Dungeo Basket Elevator
+
+The basket elevator in Project Dungeo demonstrates capability dispatch in action. Here's the actual implementation:
+
+### Trait Declaration (`stories/dungeo/src/traits/basket-elevator-trait.ts`)
+
+```typescript
+import { ITrait, ITraitConstructor } from '@sharpee/world-model';
+
+export type BasketPosition = 'top' | 'bottom';
+
+export class BasketElevatorTrait implements ITrait {
+  static readonly type = 'dungeo.trait.basket_elevator' as const;
+  static readonly capabilities = ['if.action.lowering', 'if.action.raising'] as const;
+
+  readonly type = BasketElevatorTrait.type;
+
+  position: BasketPosition;
+  topRoomId: string;
+  bottomRoomId: string;
+
+  constructor(config: { topRoomId: string; bottomRoomId: string; initialPosition?: BasketPosition }) {
+    this.topRoomId = config.topRoomId;
+    this.bottomRoomId = config.bottomRoomId;
+    this.position = config.initialPosition ?? 'top';
+  }
+}
+```
+
+### Behavior Implementation (`stories/dungeo/src/traits/basket-elevator-behaviors.ts`)
+
+```typescript
+import {
+  CapabilityBehavior,
+  CapabilityValidationResult,
+  CapabilityEffect,
+  createEffect,
+  IFEntity,
+  WorldModel
+} from '@sharpee/world-model';
+import { BasketElevatorTrait } from './basket-elevator-trait';
+
+export const BasketLoweringBehavior: CapabilityBehavior = {
+  validate(entity: IFEntity, world: WorldModel, actorId: string): CapabilityValidationResult {
+    const trait = entity.get(BasketElevatorTrait);
+    if (!trait) {
+      return { valid: false, error: 'if.lower.cant_lower_that' };
+    }
+    if (trait.position === 'bottom') {
+      return { valid: false, error: 'if.lower.already_down' };
+    }
+    return { valid: true };
+  },
+
+  execute(entity: IFEntity, world: WorldModel, actorId: string): void {
+    const trait = entity.get(BasketElevatorTrait);
+    if (!trait) return;
+    trait.position = 'bottom';
+  },
+
+  report(entity: IFEntity, world: WorldModel, actorId: string): CapabilityEffect[] {
+    return [
+      createEffect('if.event.lowered', {
+        messageId: 'if.lower.lowered',
+        targetId: entity.id,
+        targetName: entity.name
+      }),
+      createEffect('action.success', {
+        actionId: 'if.action.lowering',
+        messageId: 'if.lower.lowered',
+        params: { target: entity.name }
+      })
+    ];
+  },
+
+  blocked(entity: IFEntity, world: WorldModel, actorId: string, error: string): CapabilityEffect[] {
+    return [
+      createEffect('action.blocked', {
+        actionId: 'if.action.lowering',
+        messageId: error,
+        params: { target: entity.name }
+      })
+    ];
+  }
+};
+```
+
+### Story Registration (`stories/dungeo/src/index.ts`)
+
+```typescript
+import { registerCapabilityBehavior, hasCapabilityBehavior } from '@sharpee/world-model';
+import { BasketElevatorTrait, BasketLoweringBehavior, BasketRaisingBehavior } from './traits';
+
+// In initializeWorld():
+if (!hasCapabilityBehavior(BasketElevatorTrait.type, 'if.action.lowering')) {
+  registerCapabilityBehavior(
+    BasketElevatorTrait.type,
+    'if.action.lowering',
+    BasketLoweringBehavior
+  );
+}
+if (!hasCapabilityBehavior(BasketElevatorTrait.type, 'if.action.raising')) {
+  registerCapabilityBehavior(
+    BasketElevatorTrait.type,
+    'if.action.raising',
+    BasketRaisingBehavior
+  );
+}
+```
+
+### Key Implementation Notes
+
+1. **Use `hasCapabilityBehavior` before registering** - The capability registry is global, so check before registering to avoid errors in test runs.
+
+2. **Emit `action.success` with `params`** - The language layer uses `params.target` to interpolate messages like "You lower {target}."
+
+3. **Standard message IDs** - Use stdlib message IDs (`if.lower.lowered`, `if.raise.already_up`) for lang-en-us compatibility.
+
+4. **`workspace:*` dependencies** - Stories must use `workspace:*` in package.json (not `file:`) to ensure module deduplication. Otherwise, the story and stdlib may have separate registries.
+
 ## References
 
 - ADR-052: Event Handlers for Custom Logic

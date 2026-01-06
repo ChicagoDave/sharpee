@@ -12,58 +12,46 @@ import {
   CapabilityEffect,
   createEffect,
   IFEntity,
-  WorldModel,
-  ContainerTrait
+  WorldModel
 } from '@sharpee/world-model';
 
 import { BasketElevatorTrait } from './basket-elevator-trait';
 
 /**
  * Message IDs for basket elevator
+ * Uses standard if.lower/if.raise messages from lang-en-us
  */
 export const BasketElevatorMessages = {
-  // Lowering messages
-  LOWERED: 'dungeo.basket.lowered',
-  ALREADY_DOWN: 'dungeo.basket.already_down',
+  // Lowering messages (standard)
+  LOWERED: 'if.lower.lowered',
+  ALREADY_DOWN: 'if.lower.already_down',
 
-  // Raising messages
-  RAISED: 'dungeo.basket.raised',
-  ALREADY_UP: 'dungeo.basket.already_up',
+  // Raising messages (standard)
+  RAISED: 'if.raise.raised',
+  ALREADY_UP: 'if.raise.already_up',
 
   // Common messages
   PLAYER_TRANSPORTED: 'dungeo.basket.player_transported'
 } as const;
 
 /**
- * Move the basket and all its contents to a new room.
- * If the player is in the basket, they move too.
+ * Check if player is in the basket and transport them if so.
+ * The basket entity itself stays in the Shaft Room (it's operated by wheel).
+ * Only the player (and contents) are transported when they're inside.
  */
-function moveBasketToRoom(
+function transportPlayerIfInBasket(
   basket: IFEntity,
   world: WorldModel,
   destinationRoomId: string
 ): boolean {
-  // Move the basket itself
-  world.moveEntity(basket.id, destinationRoomId);
-
-  // Get contents of the basket
-  const container = basket.get(ContainerTrait);
-  if (container) {
-    const contents = world.getContents(basket.id);
-    for (const item of contents) {
-      // Items stay in basket (their location is already basket.id)
-      // But if player is "in" the basket, they should be moved too
-    }
-  }
-
   // Check if player is in the basket (location is basket.id)
   const player = world.getPlayer();
   if (player) {
     const playerLocation = world.getLocation(player.id);
     if (playerLocation === basket.id) {
-      // Player is inside basket - they move with it
-      // Actually, since player's location IS the basket, and basket moved,
-      // the player automatically moves with it. Just need to trigger look.
+      // Player is inside basket - move them to the destination room
+      // Move player to destination room (they exit the basket)
+      world.moveEntity(player.id, destinationRoomId);
       return true; // Player was transported
     }
   }
@@ -106,8 +94,8 @@ export const BasketLoweringBehavior: CapabilityBehavior = {
     // Update position
     trait.position = 'bottom';
 
-    // Move basket to bottom room
-    const playerTransported = moveBasketToRoom(entity, world, trait.bottomRoomId);
+    // Transport player if they're in the basket
+    const playerTransported = transportPlayerIfInBasket(entity, world, trait.bottomRoomId);
 
     // Store whether player was transported for reporting
     (entity as any)._lastMoveTransportedPlayer = playerTransported;
@@ -125,7 +113,17 @@ export const BasketLoweringBehavior: CapabilityBehavior = {
     effects.push(
       createEffect('if.event.lowered', {
         messageId: BasketElevatorMessages.LOWERED,
-        targetId: entity.id
+        targetId: entity.id,
+        targetName: entity.name
+      })
+    );
+
+    // Emit action.success for language rendering
+    effects.push(
+      createEffect('action.success', {
+        actionId: 'if.action.lowering',
+        messageId: BasketElevatorMessages.LOWERED,
+        params: { target: entity.name }
       })
     );
 
@@ -160,7 +158,9 @@ export const BasketLoweringBehavior: CapabilityBehavior = {
   ): CapabilityEffect[] {
     return [
       createEffect('action.blocked', {
-        messageId: error
+        actionId: 'if.action.lowering',
+        messageId: error,
+        params: { target: entity.name }
       })
     ];
   }
@@ -201,8 +201,8 @@ export const BasketRaisingBehavior: CapabilityBehavior = {
     // Update position
     trait.position = 'top';
 
-    // Move basket to top room
-    const playerTransported = moveBasketToRoom(entity, world, trait.topRoomId);
+    // Transport player if they're in the basket
+    const playerTransported = transportPlayerIfInBasket(entity, world, trait.topRoomId);
 
     // Store whether player was transported for reporting
     (entity as any)._lastMoveTransportedPlayer = playerTransported;
@@ -220,7 +220,17 @@ export const BasketRaisingBehavior: CapabilityBehavior = {
     effects.push(
       createEffect('if.event.raised', {
         messageId: BasketElevatorMessages.RAISED,
-        targetId: entity.id
+        targetId: entity.id,
+        targetName: entity.name
+      })
+    );
+
+    // Emit action.success for language rendering
+    effects.push(
+      createEffect('action.success', {
+        actionId: 'if.action.raising',
+        messageId: BasketElevatorMessages.RAISED,
+        params: { target: entity.name }
       })
     );
 
@@ -255,7 +265,9 @@ export const BasketRaisingBehavior: CapabilityBehavior = {
   ): CapabilityEffect[] {
     return [
       createEffect('action.blocked', {
-        messageId: error
+        actionId: 'if.action.raising',
+        messageId: error,
+        params: { target: entity.name }
       })
     ];
   }

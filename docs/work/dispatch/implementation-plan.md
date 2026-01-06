@@ -746,26 +746,31 @@ export const basketMessages = {
 
 ---
 
-## Phase 5: Cleanup and Documentation
+## Phase 5: Cleanup and Documentation ✅ COMPLETE
 
 ### 5.1 Remove Old Action Files
 
-After migration verified working:
-- Remove story-specific action files (if any)
-- Remove conflicting grammar patterns
-- Remove type flags (`isBasketElevator`, etc.)
+Not applicable - no old action files existed for basket elevator.
 
 ### 5.2 Update Documentation
 
-- [ ] Update core-concepts.md with capability dispatch pattern
-- [ ] Add examples to ADR-090
+- [x] Update core-concepts.md with capability dispatch pattern
+- [x] Add real implementation example to ADR-090
 
-### 5.3 Final Acceptance Criteria
+### 5.3 Fixes Made During Implementation
 
-- [ ] All existing tests pass
-- [ ] No priority conflicts in grammar
-- [ ] Basket elevator works via capability dispatch
-- [ ] Build succeeds with no TypeScript errors
+- [x] Fixed `workspace:*` dependencies in dungeo package.json (was `file:`)
+- [x] Fixed type error in capability-registry.ts (type assertion for validateBinding)
+- [x] Added `hasCapabilityBehavior()` check before registration (global registry)
+- [x] Added `if.lower.already_down` and `if.raise.already_up` messages to lang-en-us
+- [x] Updated build scripts for Ubuntu/native Linux environments
+
+### 5.4 Final Acceptance Criteria
+
+- [x] All 13 basket-elevator transcript tests pass
+- [x] No priority conflicts in grammar
+- [x] Basket elevator works via capability dispatch
+- [x] Build succeeds with no TypeScript errors
 
 ---
 

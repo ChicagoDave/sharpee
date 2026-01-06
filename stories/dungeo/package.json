@@ -23,14 +23,14 @@
     "play": "node dist/run.js"
   },
   "dependencies": {
-    "@sharpee/core": "file:../../packages/core",
-    "@sharpee/engine": "file:../../packages/engine",
-    "@sharpee/event-processor": "file:../../packages/event-processor",
-    "@sharpee/stdlib": "file:../../packages/stdlib",
-    "@sharpee/world-model": "file:../../packages/world-model",
-    "@sharpee/lang-en-us": "file:../../packages/lang-en-us",
-    "@sharpee/parser-en-us": "file:../../packages/parser-en-us",
-    "@sharpee/text-services": "file:../../packages/text-services"
+    "@sharpee/core": "workspace:*",
+    "@sharpee/engine": "workspace:*",
+    "@sharpee/event-processor": "workspace:*",
+    "@sharpee/stdlib": "workspace:*",
+    "@sharpee/world-model": "workspace:*",
+    "@sharpee/lang-en-us": "workspace:*",
+    "@sharpee/parser-en-us": "workspace:*",
+    "@sharpee/text-services": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.11.19",

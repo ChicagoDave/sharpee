@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build all Sharpee packages + dungeo + bundle
+# Build all Sharpee packages + dungeo + bundle (Ubuntu/native Linux)
 # Stops on first failure
 
 set -e  # Exit on first error
@@ -23,7 +23,13 @@ build_package() {
     fi
 }
 
-echo "=== Building All Packages + Dungeo ==="
+echo "=== Building All Packages + Dungeo (Ubuntu) ==="
+echo ""
+
+# Clean and reinstall to fix symlinks
+echo "[pnpm install] "
+npx pnpm install > /dev/null 2>&1
+echo "✓"
 echo ""
 
 # Build order based on dependencies
