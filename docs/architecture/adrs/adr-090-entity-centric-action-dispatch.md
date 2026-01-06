@@ -1129,6 +1129,65 @@ if (!hasCapabilityBehavior(BasketElevatorTrait.type, 'if.action.raising')) {
 
 4. **`workspace:*` dependencies** - Stories must use `workspace:*` in package.json (not `file:`) to ensure module deduplication. Otherwise, the story and stdlib may have separate registries.
 
+## Infrastructure Requirements
+
+### ValidationResult.data (TODO)
+
+The pseudocode examples in this ADR show validation data flowing via `ValidationResult.data`:
+
+```typescript
+// In validate():
+return { valid: true, data: { trait, behavior, entity } };
+
+// In execute/report():
+const { behavior, entity } = context.validationResult.data;
+```
+
+This requires two additions to the platform:
+
+1. **Add `data` to `ValidationResult`** (stdlib/enhanced-types.ts):
+   ```typescript
+   export interface ValidationResult {
+     valid: boolean;
+     error?: string;
+     params?: Record<string, any>;
+     messageId?: string;
+     data?: Record<string, any>;  // NEW
+   }
+   ```
+
+2. **Add `validationResult` to `ActionContext`** (stdlib/enhanced-types.ts):
+   ```typescript
+   export interface ActionContext {
+     // ... existing properties
+     readonly validationResult?: ValidationResult;  // NEW
+   }
+   ```
+
+3. **Thread validation result through engine** (engine/command-executor.ts):
+   After `action.validate()`, include the result in the context passed to `execute()` and `report()`.
+
+### Current Implementation (Workaround)
+
+Until the above infrastructure is implemented, `capability-dispatch.ts` uses `context.sharedData` to pass data between phases:
+
+```typescript
+// In validate() - stores as side effect
+const sharedData = context.sharedData as CapabilityDispatchSharedData;
+sharedData.trait = trait;
+sharedData.behavior = behavior;
+
+// In execute/report() - retrieves from sharedData
+const { behavior, entity } = context.sharedData;
+```
+
+This works but has drawbacks:
+- Side-effect mutation in validate() (should be query-like)
+- Implicit coupling through mutable shared state
+- Data flow is not explicit or traceable
+
+The `ValidationResult.data` approach is preferred and should be implemented.
+
 ## References
 
 - ADR-052: Event Handlers for Custom Logic
