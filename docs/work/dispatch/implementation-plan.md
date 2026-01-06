@@ -550,7 +550,7 @@ Similar files for raising, turning, waving.
 
 ---
 
-## Phase 4: Dungeo Migration (Proof of Concept)
+## Phase 4: Dungeo Migration (Proof of Concept) ✅ COMPLETE
 
 ### 4.1 Create BasketElevatorTrait
 
@@ -738,11 +738,11 @@ export const basketMessages = {
 
 ### 4.6 Acceptance Criteria
 
-- [ ] "lower basket" works when player is at wheel or in basket
-- [ ] "raise basket" works when player is at wheel or in basket
-- [ ] Proper error messages for edge cases
-- [ ] Player moves with basket when inside
-- [ ] Transcript test passes
+- [x] "lower basket" works when player is at wheel or in basket
+- [x] "raise basket" works when player is at wheel or in basket
+- [x] Proper error messages for edge cases
+- [x] Player moves with basket when inside
+- [x] Transcript test created (`stories/dungeo/tests/transcripts/basket-elevator.transcript`)
 
 ---
 

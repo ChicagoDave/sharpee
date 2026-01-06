@@ -24,7 +24,8 @@ import {
   Direction,
   StandardCapabilities,
   IWorldModel,
-  IParsedCommand
+  IParsedCommand,
+  registerCapabilityBehavior
 } from '@sharpee/world-model';
 import { DungeoScoringService } from './scoring';
 
@@ -67,6 +68,14 @@ import { registerThief, ThiefMessages } from './npcs/thief';
 import { registerCyclops, CyclopsMessages } from './npcs/cyclops';
 import { RobotMessages } from './npcs/robot';
 import { registerDungeonMaster, DungeonMasterMessages } from './npcs/dungeon-master';
+
+// Import traits (ADR-090 capability dispatch)
+import {
+  BasketElevatorTrait,
+  BasketLoweringBehavior,
+  BasketRaisingBehavior,
+  BasketElevatorMessages
+} from './traits';
 
 /**
  * Dungeo story configuration
@@ -125,6 +134,19 @@ export class DungeoStory implements Story {
     this.scoringService = new DungeoScoringService(world);
 
     // Note: Trophy case handler is registered in onEngineReady() using EventProcessor
+
+    // Register capability behaviors (ADR-090)
+    // Basket elevator uses lowering/raising capability dispatch
+    registerCapabilityBehavior(
+      BasketElevatorTrait.type,
+      'if.action.lowering',
+      BasketLoweringBehavior
+    );
+    registerCapabilityBehavior(
+      BasketElevatorTrait.type,
+      'if.action.raising',
+      BasketRaisingBehavior
+    );
 
     // Register reality altered handler (ADR-078 hidden max points)
     registerRealityAlteredHandler(world);
@@ -568,18 +590,9 @@ export class DungeoStory implements Story {
       .build();
 
     // LIFT action (Inside Mirror pole)
-    grammar
-      .define('lift :target')
-      .mapsTo(LIFT_ACTION_ID)
-      .withPriority(150)
-      .build();
-
-    grammar
-      .define('raise :target')
-      .mapsTo(LIFT_ACTION_ID)
-      .withPriority(150)
-      .build();
-
+    // Note: Generic "lift/raise :target" patterns removed to allow stdlib
+    // capability dispatch (ADR-090) for objects like the basket elevator.
+    // Only pole-specific patterns remain for the Inside Mirror puzzle.
     grammar
       .define('lift pole')
       .mapsTo(LIFT_ACTION_ID)
@@ -605,12 +618,8 @@ export class DungeoStory implements Story {
       .build();
 
     // LOWER action (Inside Mirror pole)
-    grammar
-      .define('lower :target')
-      .mapsTo(LOWER_ACTION_ID)
-      .withPriority(150)
-      .build();
-
+    // Note: Generic "lower :target" pattern removed to allow stdlib
+    // capability dispatch (ADR-090) for objects like the basket elevator.
     grammar
       .define('lower pole')
       .mapsTo(LOWER_ACTION_ID)
