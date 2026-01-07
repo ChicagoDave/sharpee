@@ -115,6 +115,12 @@ export * from './door-blocked';
 // Pull Mat (Tiny Room puzzle - pull mat from under door, get key)
 export * from './pull-mat';
 
+// Inflate (Boat puzzle - inflate boat with pump)
+export * from './inflate';
+
+// Deflate (Boat puzzle - deflate boat by opening valve)
+export * from './deflate';
+
 // Re-export balloon action IDs and messages
 export { LIGHT_ACTION_ID, LightMessages } from './light';
 export { TIE_ACTION_ID, TieMessages } from './tie';
@@ -159,6 +165,8 @@ import { putUnderAction, PUT_UNDER_ACTION_ID, PutUnderMessages } from './put-und
 import { pushKeyAction, PUSH_KEY_ACTION_ID, PushKeyMessages } from './push-key';
 import { doorBlockedAction, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages } from './door-blocked';
 import { pullMatAction, PULL_MAT_ACTION_ID, PullMatMessages } from './pull-mat';
+import { inflateAction, INFLATE_ACTION_ID, InflateMessages } from './inflate';
+import { deflateAction, DEFLATE_ACTION_ID, DeflateMessages } from './deflate';
 
 // Re-export press-button, turn-bolt, and turn-switch
 export { PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler } from './press-button';
@@ -181,6 +189,10 @@ export { PUT_UNDER_ACTION_ID, PutUnderMessages } from './put-under';
 export { PUSH_KEY_ACTION_ID, PushKeyMessages } from './push-key';
 export { DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages } from './door-blocked';
 export { PULL_MAT_ACTION_ID, PullMatMessages } from './pull-mat';
+
+// Re-export boat puzzle actions for use in index.ts
+export { INFLATE_ACTION_ID, InflateMessages } from './inflate';
+export { DEFLATE_ACTION_ID, DeflateMessages } from './deflate';
 
 export const customActions = [
   ...gdtActions,
@@ -220,5 +232,7 @@ export const customActions = [
   putUnderAction,
   pushKeyAction,
   doorBlockedAction,
-  pullMatAction
+  pullMatAction,
+  inflateAction,
+  deflateAction
 ];

@@ -454,7 +454,7 @@
 | NPC basics | ✅ Done | ADR-070 implemented |
 | Vehicle trait | ✅ Done | Boat navigation, bucket |
 | Weight/capacity system | ✅ Done | Player maxWeight=100, all objects have weight property |
-| INFLATE/DEFLATE actions | ❌ | Boat |
+| INFLATE/DEFLATE actions | ✅ Done | Boat (2026-01-07) |
 | WAVE action | ✅ Done | Sceptre/rainbow (2026-01-02) |
 | Water current | ❌ | River auto-movement |
 | RING action | ✅ Done | Bell |
@@ -535,13 +535,13 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 ## Priority Next Steps
 
 1. **Missing systems**:
-   - INFLATE/DEFLATE actions (boat)
    - Water current (river auto-movement)
    - Robot commands ("tell robot 'X'" syntax)
 2. **Cleanup** - Remove obsolete `event-handler-migration-plan.md` (ADR-086 fixed all handlers)
 
 ## Recently Completed
 
+- ✅ **INFLATE/DEFLATE Actions** (2026-01-07) - Implemented boat inflate/deflate mechanics. Boat starts deflated as "pile of plastic" with valve description. Requires hand pump to inflate. Grammar patterns: inflate/deflate :target, pump :target, pump up :target, open valve. Boat description changes between deflated (folded plastic with valve) and inflated (seaworthy craft with oars). Created boat-inflate-deflate.transcript with 23 tests. All 825 tests pass (51 transcripts).
 - ✅ **Weight/Capacity System** (2026-01-07) - Added weight property to all portable objects across 14 files. Player already had maxWeight=100 configured. Platform ContainerBehavior.checkCapacity() enforces weight limits. Values sourced from Fortran dindx.dat: chalices 40, axe/keys 25, painting/portrait/bar/timber 20, sword/coffin/coal 10, standard items 5, small items 2-4. Added weight-capacity.transcript test. All 802 tests pass (50 transcripts).
 - ✅ **PRAY Action Fix & Basin Ritual Correction** (2026-01-07) - Fixed PRAY action to correctly teleport from Altar to Forest Path 1 (per Fortran sverbs.for V79). Removed incorrect Basin Room logic from PRAY - the ghost ritual now works with incense-only disarm: BURN INCENSE sets basinState='disarmed', DROP FRAME PIECE triggers ghost ritual while incense burns. Added pray-altar-teleport.transcript with 10 tests. All 787 tests pass (49 transcripts).
 - ✅ **Coffin Puzzle & Weight Research** (2026-01-07) - Parsed Fortran dindx.dat to extract object weights/capacities. Key finding: COFFIN weight=10, player MXLOAD=100 - coffin is easily portable (10% of capacity). Created transcript test verifying coffin+sceptre can be taken and stored in trophy case (14 points). Also discovered PRAY action incorrectly implements Basin Room logic instead of Altar→Forest teleportation per Fortran source. Added weights-capacities.md reference doc.

@@ -31,7 +31,7 @@ import {
 import { DungeoScoringService } from './scoring';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler, TURN_SWITCH_ACTION_ID, TurnSwitchMessages, PUT_UNDER_ACTION_ID, PutUnderMessages, PUSH_KEY_ACTION_ID, PushKeyMessages, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler, TURN_SWITCH_ACTION_ID, TurnSwitchMessages, PUT_UNDER_ACTION_ID, PutUnderMessages, PUSH_KEY_ACTION_ID, PushKeyMessages, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages, INFLATE_ACTION_ID, InflateMessages, DEFLATE_ACTION_ID, DeflateMessages } from './actions';
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages, FloodingMessages, registerBalloonPutHandler, BalloonHandlerMessages } from './scheduler';
@@ -1180,6 +1180,50 @@ export class DungeoStory implements Story {
       .mapsTo(PUSH_KEY_ACTION_ID)
       .withPriority(165)
       .build();
+
+    // INFLATE action (Boat puzzle - inflate boat with pump)
+    grammar
+      .define('inflate :target')
+      .mapsTo(INFLATE_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('inflate :target with :tool')
+      .mapsTo(INFLATE_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('pump :target')
+      .mapsTo(INFLATE_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('pump up :target')
+      .mapsTo(INFLATE_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    // DEFLATE action (Boat puzzle - deflate boat by opening valve)
+    grammar
+      .define('deflate :target')
+      .mapsTo(DEFLATE_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('open valve')
+      .mapsTo(DEFLATE_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('let air out of :target')
+      .mapsTo(DEFLATE_ACTION_ID)
+      .withPriority(155)
+      .build();
   }
 
   /**
@@ -1705,6 +1749,18 @@ export class DungeoStory implements Story {
     language.addMessage(TinyRoomMessages.KEYHOLE_BLOCKED, 'Something is blocking the keyhole from the other side.');
     language.addMessage(PutUnderMessages.GENERIC_FAIL, "You can't put that under there.");
     language.addMessage(DoorBlockedMessages.DOOR_LOCKED, 'The door is locked, and there is no keyhole on this side.');
+
+    // Inflate/Deflate boat messages
+    language.addMessage(InflateMessages.SUCCESS, 'The boat inflates and rises to its full size.');
+    language.addMessage(InflateMessages.NO_PUMP, "You don't have anything to inflate it with.");
+    language.addMessage(InflateMessages.ALREADY_INFLATED, 'The boat is already inflated.');
+    language.addMessage(InflateMessages.NOT_INFLATABLE, "That can't be inflated.");
+    language.addMessage(InflateMessages.CANT_REACH, "You can't reach the boat from here.");
+
+    language.addMessage(DeflateMessages.SUCCESS, 'The boat deflates.');
+    language.addMessage(DeflateMessages.ALREADY_DEFLATED, 'The boat is already deflated.');
+    language.addMessage(DeflateMessages.NOT_DEFLATABLE, "That can't be deflated.");
+    language.addMessage(DeflateMessages.CANT_REACH, "You can't reach the boat from here.");
   }
 
   /**

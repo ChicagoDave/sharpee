@@ -132,20 +132,20 @@ function createWaterfall(world: WorldModel, roomId: string): IFEntity {
 }
 
 function createInflatableBoat(world: WorldModel, roomId: string): IFEntity {
-  const boat = world.createEntity('inflatable boat', EntityType.ITEM);
+  const boat = world.createEntity('pile of plastic', EntityType.ITEM);
   boat.add(new IdentityTrait({
-    name: 'inflatable boat',
-    aliases: ['boat', 'rubber boat', 'raft', 'inflatable raft'],
-    description: 'A serviceable inflatable boat, suitable for navigating the Frigid River. A pair of oars is attached.',
+    name: 'pile of plastic',
+    aliases: ['boat', 'rubber boat', 'raft', 'inflatable boat', 'inflatable raft', 'plastic', 'pile'],
+    description: 'There is a folded pile of plastic here which has a small valve attached.',
     properName: false,
-    article: 'an',
+    article: 'a',
     weight: 2
   }));
   boat.add(new ContainerTrait({
     capacity: { maxItems: 10, maxWeight: 100 }
   }));
-  // Boat state
-  (boat as any).isInflated = true;
+  // Boat state - starts deflated
+  (boat as any).isInflated = false;
   world.moveEntity(boat.id, roomId);
   return boat;
 }
