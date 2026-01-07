@@ -17,7 +17,7 @@
  */
 
 import { WorldModel, IWorldModel, IdentityTrait, ContainerTrait, VehicleTrait, EntityType, IFEntity, IParsedCommand } from '@sharpee/world-model';
-import { ISemanticEvent, ParsedCommandTransformer } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import { ActionContext, ValidationResult } from '@sharpee/stdlib';
 
 // Action IDs
@@ -219,9 +219,12 @@ export function initializeBasketHandler(
     // Add VehicleTrait to make basket enterable
     if (!basket.get(VehicleTrait)) {
       basket.add(new VehicleTrait({
-        vehicleType: 'basket',
-        enterable: true,
-        exitDirection: 'out'
+        vehicleType: 'cable',  // Basket is raised/lowered by mechanism
+        currentPosition: 'top',
+        positionRooms: {
+          'top': shaftRoomId,
+          'bottom': bottomOfShaftId
+        }
       }));
     }
   }

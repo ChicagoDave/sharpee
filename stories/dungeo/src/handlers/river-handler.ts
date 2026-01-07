@@ -81,6 +81,20 @@ function getDirection(parsed: IParsedCommand): string | null {
 }
 
 /**
+ * Check if player is on the rainbow (can walk to/from water rooms)
+ */
+function isPlayerOnRainbow(world: WorldModel): boolean {
+  const player = world.getPlayer();
+  if (!player) return false;
+
+  const containingRoom = world.getContainingRoom(player.id);
+  if (!containingRoom) return false;
+
+  // Rainbow rooms have special marker
+  return (containingRoom as any).isRainbowRoom === true;
+}
+
+/**
  * Create command transformer for river entry blocking
  *
  * Intercepts GO commands and blocks entry to water rooms without boat.
@@ -105,9 +119,14 @@ export function createRiverEntryTransformer(): ParsedCommandTransformer {
       return parsed;
     }
 
-    // Check if player is in boat
+    // Allow if player is in boat
     if (isPlayerInBoat(world)) {
-      return parsed; // Allow movement
+      return parsed;
+    }
+
+    // Allow if player is on rainbow (magic bridge to falls)
+    if (isPlayerOnRainbow(world)) {
+      return parsed;
     }
 
     // Block movement - redirect to river blocked action

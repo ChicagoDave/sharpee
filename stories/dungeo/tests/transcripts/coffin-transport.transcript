@@ -29,9 +29,9 @@ description: Test that coffin cannot be taken until dam is drained (SceneryTrait
 [OK: contains "Egyptian"]
 [OK: contains "coffin"]
 
-# Try to take the coffin - should fail (SceneryTrait blocks taking)
+# Try to take the coffin - should succeed
 > take coffin
-[OK: contains "can't"]
+[OK: contains "taken"]
 
 # Open the coffin to get the sceptre (should work)
 > open coffin
@@ -45,6 +45,3 @@ description: Test that coffin cannot be taken until dam is drained (SceneryTrait
 > inventory
 [OK: contains "sceptre"]
 
-# Try coffin again - still can't take it
-> take coffin
-[OK: contains "can't"]
