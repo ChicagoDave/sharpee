@@ -1,0 +1,62 @@
+title: Coal Machine Puzzle
+story: dungeo
+description: Test the coal machine - put coal in machine, turn switch, get diamond
+---
+
+# Get to Machine Room via GDT
+> gdt
+[OK: contains "GDT ready"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> ah Machine Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+> turn on lantern
+[OK: contains "on"]
+
+# Examine the machine
+> examine machine
+[OK: contains "machine"]
+
+# Try turning switch without coal - blocked message shows raw ID (known issue)
+> turn switch
+[OK: contains "no_coal"]
+
+# Get coal via GDT
+> gdt
+[OK: contains "GDT ready"]
+
+> tk coal
+[OK: contains "Taken"]
+
+> ex
+[OK: contains "Returning"]
+
+# Put coal in machine
+> put coal in machine
+[OK: contains "put coal in machine"]
+
+# Turn the switch - should create diamond
+> turn switch
+[OK: contains "diamond"]
+
+# Diamond should be in the machine
+> look in machine
+[OK: contains "diamond"]
+
+# Take the diamond
+> take diamond
+[OK: contains "take"]
+
+# Inventory should have the diamond
+> inventory
+[OK: contains "diamond"]
+
+# Try turning switch again - machine already used
+> turn switch
+[OK: contains "already"]

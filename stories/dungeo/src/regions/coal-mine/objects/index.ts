@@ -18,7 +18,8 @@ import {
   ActorTrait,
   NpcTrait,
   EntityType,
-  EnterableTrait
+  EnterableTrait,
+  OpenableTrait
 } from '@sharpee/world-model';
 
 import { CoalMineRoomIds } from '../index';
@@ -110,24 +111,36 @@ function createCoal(world: WorldModel, roomId: string): IFEntity {
 }
 
 /**
- * Machine - Coal-powered machine that sharpens things
+ * Machine - Coal-powered machine that converts coal to diamond
+ *
+ * In classic Zork, you PUT COAL IN MACHINE then TURN SWITCH.
+ * The machine uses extreme pressure to convert coal to diamond.
  */
 function createMachine(world: WorldModel, roomId: string): IFEntity {
-  const machine = world.createEntity('machine', EntityType.SCENERY);
+  const machine = world.createEntity('machine', EntityType.CONTAINER);
 
   machine.add(new IdentityTrait({
-    name: 'coal-powered machine',
-    aliases: ['machine', 'coal machine', 'big machine'],
-    description: 'This is a massive coal-powered machine with a prominent slot on one side and what appears to be a grinding wheel inside. There is a hopper for fuel on top.',
+    name: 'machine',
+    aliases: ['machine', 'coal machine', 'big machine', 'coal-powered machine'],
+    description: 'This is a massive machine with a lid on top and a switch on the side. The lid is open, revealing a small compartment inside. It looks like it could exert enormous pressure.',
     properName: false,
     article: 'a'
+  }));
+
+  // Machine is a container (for coal) - always open
+  machine.add(new ContainerTrait({
+    capacity: { maxItems: 1, maxWeight: 10 }
+  }));
+
+  // Openable but starts open (lid)
+  machine.add(new OpenableTrait({
+    isOpen: true
   }));
 
   machine.add(new SceneryTrait());
 
   // Machine state
-  (machine as any).isPowered = false;
-  (machine as any).hasCoal = false;
+  (machine as any).machineActivated = false;
 
   world.moveEntity(machine.id, roomId);
   return machine;

@@ -100,6 +100,9 @@ export * from './press-button';
 // Turn Bolt (Dam puzzle - turn bolt with wrench)
 export * from './turn-bolt';
 
+// Turn Switch (Coal machine puzzle - turn switch to make diamond)
+export * from './turn-switch';
+
 // Put Under (Tiny Room puzzle - put mat under door)
 export * from './put-under';
 
@@ -151,14 +154,16 @@ import { untieAction, UNTIE_ACTION_ID, UntieMessages } from './untie';
 import { balloonExitAction, BALLOON_EXIT_ACTION_ID, BalloonExitMessages } from '../handlers/balloon-handler';
 import { pressButtonAction, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler } from './press-button';
 import { turnBoltAction, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler } from './turn-bolt';
+import { turnSwitchAction, TURN_SWITCH_ACTION_ID, TurnSwitchMessages } from './turn-switch';
 import { putUnderAction, PUT_UNDER_ACTION_ID, PutUnderMessages } from './put-under';
 import { pushKeyAction, PUSH_KEY_ACTION_ID, PushKeyMessages } from './push-key';
 import { doorBlockedAction, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages } from './door-blocked';
 import { pullMatAction, PULL_MAT_ACTION_ID, PullMatMessages } from './pull-mat';
 
-// Re-export press-button and turn-bolt
+// Re-export press-button, turn-bolt, and turn-switch
 export { PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler } from './press-button';
 export { TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler } from './turn-bolt';
+export { TURN_SWITCH_ACTION_ID, TurnSwitchMessages } from './turn-switch';
 
 // Re-export balloon exit for use in index.ts
 export { BALLOON_EXIT_ACTION_ID, BalloonExitMessages } from '../handlers/balloon-handler';
@@ -211,6 +216,7 @@ export const customActions = [
   balloonExitAction,
   pressButtonAction,
   turnBoltAction,
+  turnSwitchAction,
   putUnderAction,
   pushKeyAction,
   doorBlockedAction,

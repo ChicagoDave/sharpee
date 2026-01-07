@@ -139,6 +139,152 @@ Read `/docs/reference/core-concepts.md` at the start of each session for:
 - Event system and handlers
 - Reporting is done after a turn completes by a customized report service
 
+## Capability Dispatch, Actions, and Event Handlers (ADR-090)
+
+**CRITICAL**: Understand when to use each pattern before implementing new puzzles/mechanics.
+
+### Pattern Decision Tree
+
+```
+Is this a new verb/command that doesn't exist in stdlib?
+├── YES → Create a **Story-Specific Action** (e.g., SAY, INCANT, RING)
+└── NO → Does the verb have standard semantics (same mutation for all entities)?
+    ├── YES (TAKE, DROP, OPEN, PUT) → Use **stdlib action** + traits
+    └── NO (LOWER, TURN, WAVE) → Use **Capability Dispatch**
+        └── Create Trait + Behavior, register with stdlib action
+```
+
+### Verbs with Standard Semantics (DON'T use capability dispatch)
+
+These verbs do the same thing regardless of entity - stdlib handles them:
+
+| Verb | Standard Mutation | Trait Needed |
+|------|-------------------|--------------|
+| TAKE/GET | Move to inventory | PortableTrait |
+| DROP | Move to location | (any portable) |
+| OPEN/CLOSE | Change isOpen | OpenableTrait |
+| LOCK/UNLOCK | Change isLocked | LockableTrait |
+| PUT IN/ON | Change containment | ContainerTrait/SupporterTrait |
+| ENTER/EXIT | Change player location | EnterableTrait |
+| SWITCH ON/OFF | Change isOn | SwitchableTrait |
+
+**Example**: "PUT COAL IN MACHINE" - Use stdlib putting action. Machine needs ContainerTrait.
+
+### Verbs with NO Standard Semantics (USE capability dispatch)
+
+These verbs mean different things for different entities:
+
+| Verb | Entity-Specific Examples |
+|------|-------------------------|
+| LOWER | Basket elevator (move basket), mirror pole (lower pole height) |
+| RAISE/LIFT | Same - entity decides what "raise" means |
+| TURN | Wheel (rotate), dial (set number), crank (activate) |
+| WAVE | Sceptre (rainbow), wand (spell) |
+| WIND | Canary (sing), music box (play) |
+
+**Pattern**: Trait declares capabilities, Behavior implements 4-phase logic.
+
+```typescript
+// 1. Trait declares which verbs it responds to
+class BasketElevatorTrait implements ITrait {
+  static readonly type = 'dungeo.trait.basket_elevator';
+  static readonly capabilities = ['if.action.lowering', 'if.action.raising'] as const;
+  position: 'top' | 'bottom';
+  // ...
+}
+
+// 2. Behavior implements 4-phase pattern (matching stdlib actions)
+const BasketLoweringBehavior: CapabilityBehavior = {
+  validate(entity, world, actorId, sharedData) { /* can we lower? */ },
+  execute(entity, world, actorId, sharedData) { /* do the lowering */ },
+  report(entity, world, actorId, sharedData) { /* return effects */ },
+  blocked(entity, world, actorId, error, sharedData) { /* return blocked effects */ }
+};
+
+// 3. Register in story's initializeWorld()
+registerCapabilityBehavior(BasketElevatorTrait.type, 'if.action.lowering', BasketLoweringBehavior);
+```
+
+### Story-Specific Actions (for new verbs)
+
+When stdlib doesn't have the verb at all, create a full action:
+
+```typescript
+// stories/dungeo/src/actions/say/say-action.ts
+export const sayAction: Action = {
+  id: 'dungeo.action.say',
+  group: 'communication',
+  validate(context) { /* ... */ },
+  execute(context) { /* ... */ },
+  report(context) { /* ... */ },
+  blocked(context, result) { /* ... */ }
+};
+```
+
+**Examples**: SAY (speech), INCANT (cheat code), RING (bell), PRAY (blessing)
+
+### Event Handlers (for reacting to existing actions)
+
+When you need custom logic AFTER a stdlib action succeeds:
+
+```typescript
+// Listen for if.event.put_in and react
+world.registerEventHandler('if.event.put_in', (event, world) => {
+  if (event.data.targetId === machineId && isCoal(event.data.itemId)) {
+    // Coal was put in machine - update machine state
+    (machine as any).hasCoal = true;
+  }
+});
+```
+
+**Examples**: Glacier handler (react to THROW), trophy case scoring (react to PUT IN)
+
+### Story Grammar Extension
+
+Stories extend grammar in `extendParser()`:
+
+```typescript
+extendParser(parser: Parser): void {
+  const grammar = parser.getStoryGrammar();
+
+  // Literal patterns for story-specific verbs
+  grammar
+    .define('turn switch')
+    .mapsTo(TURN_SWITCH_ACTION_ID)
+    .withPriority(150)
+    .build();
+
+  // Patterns with slots
+  grammar
+    .define('say :arg')
+    .mapsTo(SAY_ACTION_ID)
+    .withPriority(150)
+    .build();
+}
+```
+
+**Key points**:
+- Use `.define()` for literal patterns or phrasal verbs
+- Higher priority (150+) for story-specific patterns
+- Stdlib grammar uses `.forAction()` - stories usually don't need this
+
+### Coal Machine Example (CORRECT approach)
+
+The coal machine puzzle requires:
+1. PUT COAL IN MACHINE - stdlib putting action (machine is ContainerTrait)
+2. TURN SWITCH - story action (new verb) or event handler
+
+**Option A**: Event handler for "turn switch on machine" (listens for switching_on)
+**Option B**: Story action for "turn switch" as a puzzle-specific command
+
+Since "turn switch" is puzzle-specific (not a generic IF verb), Option B is correct.
+
+### References
+
+- ADR-090: Entity-Centric Action Dispatch (full details on capability system)
+- ADR-087: Action-Centric Grammar
+- ADR-052: Event Handlers for Custom Logic
+
 ## Testing Commands
 
 - **DO NOT** use `2>&1` with pnpm commands - they don't work together properly

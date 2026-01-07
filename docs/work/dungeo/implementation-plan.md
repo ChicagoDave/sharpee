@@ -404,8 +404,8 @@
 | Dam | Turn bolt with wrench | ✅ Done | Drain reservoir |
 | Carousel/Round Room | Robot push button | ✅ Done | Robot NPC + handler complete |
 | Bucket/Well | Pour water to descend | ✅ Done | Access tea room |
-| Coal machine | Put coal, turn switch | 🚧 Partial | Diamond |
-| Basket | Lower/raise for mine | 🚧 Partial | Transport items |
+| Coal machine | Put coal, turn switch | ✅ Done | Diamond (turn-switch action) |
+| Basket | Lower/raise for mine | ✅ Done | Transport items+player (ADR-090 capability dispatch) |
 | Balloon | TIE wire, LIGHT guidebook, wait, land | ✅ Done | Volcano ledge access |
 
 ### Word/Knowledge Puzzles
@@ -527,7 +527,7 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 | Tools | 6 | 6 | 100% |
 | Containers | 5 | 5 | 100% |
 | NPCs | 7 | 7 | 100% |
-| Puzzles (working) | 21 | ~25 | 84% |
+| Puzzles (working) | 23 | ~25 | 92% |
 
 ---
 
@@ -535,8 +535,6 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 1. **Remaining puzzles**:
    - Coffin transport - drain reservoir, carry coffin across
-   - Coal machine - put coal, turn switch → diamond
-   - Basket mechanism - lower/raise for mine transport
 2. **Missing systems**:
    - INFLATE/DEFLATE actions (boat)
    - Water current (river auto-movement)

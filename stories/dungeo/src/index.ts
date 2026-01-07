@@ -31,7 +31,7 @@ import {
 import { DungeoScoringService } from './scoring';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler, PUT_UNDER_ACTION_ID, PutUnderMessages, PUSH_KEY_ACTION_ID, PushKeyMessages, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler, TURN_SWITCH_ACTION_ID, TurnSwitchMessages, PUT_UNDER_ACTION_ID, PutUnderMessages, PUSH_KEY_ACTION_ID, PushKeyMessages, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages } from './actions';
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages, FloodingMessages, registerBalloonPutHandler, BalloonHandlerMessages } from './scheduler';
@@ -1071,6 +1071,43 @@ export class DungeoStory implements Story {
       .withPriority(155)
       .build();
 
+    // Turn switch patterns (coal machine)
+    grammar
+      .define('turn switch')
+      .mapsTo(TURN_SWITCH_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('turn the switch')
+      .mapsTo(TURN_SWITCH_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('flip switch')
+      .mapsTo(TURN_SWITCH_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('flip the switch')
+      .mapsTo(TURN_SWITCH_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('activate machine')
+      .mapsTo(TURN_SWITCH_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('activate the machine')
+      .mapsTo(TURN_SWITCH_ACTION_ID)
+      .withPriority(150)
+      .build();
+
     // Tiny Room puzzle patterns - PUT UNDER
     grammar
       .define('put :item under :target')
@@ -1635,6 +1672,12 @@ export class DungeoStory implements Story {
     language.addMessage(TurnBoltMessages.GATES_CLOSE, 'The sluice gates close, stopping the flow of water.');
     language.addMessage(TurnBoltMessages.NOT_A_BOLT, "You can't turn that.");
     language.addMessage(TurnBoltMessages.NO_TOOL, 'You can\'t turn the bolt with your bare hands.');
+
+    // Coal machine puzzle - Turn switch action messages
+    language.addMessage(TurnSwitchMessages.NO_SWITCH, "There's no switch here.");
+    language.addMessage(TurnSwitchMessages.NO_COAL, 'The machine makes a grinding noise, but nothing happens. Perhaps it needs fuel.');
+    language.addMessage(TurnSwitchMessages.ALREADY_USED, 'The machine has already been used.');
+    language.addMessage(TurnSwitchMessages.SUCCESS, 'The machine comes to life with a deafening roar! The lid slams shut, and the sounds of immense pressure fill the room. After a moment, the lid opens to reveal that the coal has been transformed into a huge diamond!');
 
     // Tiny Room puzzle messages
     language.addMessage(TinyRoomMessages.MAT_PLACED, 'You slide the mat under the door.');
