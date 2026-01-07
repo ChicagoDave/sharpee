@@ -121,6 +121,12 @@ export * from './inflate';
 // Deflate (Boat puzzle - deflate boat by opening valve)
 export * from './deflate';
 
+// River Blocked (entering river without boat)
+export * from './river-blocked';
+
+// Falls Death (any action except LOOK at Aragain Falls)
+export * from './falls-death';
+
 // Re-export balloon action IDs and messages
 export { LIGHT_ACTION_ID, LightMessages } from './light';
 export { TIE_ACTION_ID, TieMessages } from './tie';
@@ -167,6 +173,8 @@ import { doorBlockedAction, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages } from '
 import { pullMatAction, PULL_MAT_ACTION_ID, PullMatMessages } from './pull-mat';
 import { inflateAction, INFLATE_ACTION_ID, InflateMessages } from './inflate';
 import { deflateAction, DEFLATE_ACTION_ID, DeflateMessages } from './deflate';
+import { riverBlockedAction, RIVER_BLOCKED_ACTION_ID, RiverBlockedMessages } from './river-blocked';
+import { fallsDeathAction, FALLS_DEATH_ACTION_ID, FallsDeathMessages } from './falls-death';
 
 // Re-export press-button, turn-bolt, and turn-switch
 export { PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler } from './press-button';
@@ -193,6 +201,10 @@ export { PULL_MAT_ACTION_ID, PullMatMessages } from './pull-mat';
 // Re-export boat puzzle actions for use in index.ts
 export { INFLATE_ACTION_ID, InflateMessages } from './inflate';
 export { DEFLATE_ACTION_ID, DeflateMessages } from './deflate';
+
+// Re-export river navigation actions for use in index.ts
+export { RIVER_BLOCKED_ACTION_ID, RiverBlockedMessages } from './river-blocked';
+export { FALLS_DEATH_ACTION_ID, FallsDeathMessages } from './falls-death';
 
 export const customActions = [
   ...gdtActions,
@@ -234,5 +246,7 @@ export const customActions = [
   doorBlockedAction,
   pullMatAction,
   inflateAction,
-  deflateAction
+  deflateAction,
+  riverBlockedAction,
+  fallsDeathAction
 ];

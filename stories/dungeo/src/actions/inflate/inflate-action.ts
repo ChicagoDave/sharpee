@@ -9,7 +9,7 @@
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
-import { IdentityTrait, IFEntity } from '@sharpee/world-model';
+import { IdentityTrait, IFEntity, VehicleTrait, EnterableTrait, TraitType } from '@sharpee/world-model';
 import { INFLATE_ACTION_ID, InflateMessages } from './types';
 
 /**
@@ -121,6 +121,23 @@ export const inflateAction: Action = {
       identity.name = 'magic boat';
       identity.article = 'a';
       identity.description = 'The boat is a seaworthy craft approximately eight feet long. A pair of oars is affixed to the side.';
+    }
+
+    // Add EnterableTrait so player can BOARD/ENTER the boat
+    if (!boat.has(TraitType.ENTERABLE)) {
+      boat.add(new EnterableTrait({ preposition: 'in' }));
+    }
+
+    // Add VehicleTrait for watercraft behavior
+    // blocksWalkingMovement: false allows GO commands while in boat
+    if (!boat.has(TraitType.VEHICLE)) {
+      boat.add(new VehicleTrait({
+        vehicleType: 'watercraft',
+        blocksWalkingMovement: false,
+        requiresExitBeforeLeaving: false,
+        isOperational: true,
+        transparent: true
+      }));
     }
   },
 

@@ -9,7 +9,7 @@
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
-import { IdentityTrait, IFEntity } from '@sharpee/world-model';
+import { IdentityTrait, IFEntity, TraitType } from '@sharpee/world-model';
 import { DEFLATE_ACTION_ID, DeflateMessages } from './types';
 
 /**
@@ -40,8 +40,14 @@ function findBoat(context: ActionContext): IFEntity | undefined {
   const boatInInventory = inventory.find(item => isBoat(item));
   if (boatInInventory) return boatInInventory;
 
-  // Check room
+  // Check if player is inside the boat
   if (playerLocation) {
+    const locationEntity = world.getEntity(playerLocation);
+    if (locationEntity && isBoat(locationEntity)) {
+      return locationEntity;
+    }
+
+    // Check room contents (sibling items)
     const roomContents = world.getContents(playerLocation);
     const boatInRoom = roomContents.find(item => isBoat(item));
     if (boatInRoom) return boatInRoom;
@@ -77,8 +83,18 @@ export const deflateAction: Action = {
   },
 
   execute(context: ActionContext): void {
-    const { sharedData } = context;
+    const { sharedData, world, player } = context;
     const boat = sharedData.boat as IFEntity;
+
+    // Eject player if inside the boat before deflating
+    const playerLocation = world.getLocation(player.id);
+    if (playerLocation === boat.id) {
+      const boatLocation = world.getLocation(boat.id);
+      if (boatLocation) {
+        world.moveEntity(player.id, boatLocation);
+        sharedData.wasEjected = true;
+      }
+    }
 
     // Deflate the boat
     (boat as any).isInflated = false;
@@ -89,6 +105,14 @@ export const deflateAction: Action = {
       identity.name = 'pile of plastic';
       identity.article = 'a';
       identity.description = 'There is a folded pile of plastic here which has a small valve attached.';
+    }
+
+    // Remove traits when deflating - boat is no longer enterable/vehicle
+    if (boat.has(TraitType.ENTERABLE)) {
+      boat.remove(TraitType.ENTERABLE);
+    }
+    if (boat.has(TraitType.VEHICLE)) {
+      boat.remove(TraitType.VEHICLE);
     }
   },
 

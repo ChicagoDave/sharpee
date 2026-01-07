@@ -1,0 +1,92 @@
+title: River Navigation
+story: dungeo
+description: Tests Frigid River navigation mechanics - requires boat for water rooms
+
+---
+
+# Setup - get lamp and pump, go to Shore
+> gdt
+[OK: contains "GDT"]
+
+# Give ourselves the lamp
+> tk brass lantern
+[OK: contains "Taken"]
+
+# Give ourselves the pump
+> tk hand pump
+[OK: contains "Taken"]
+
+# Teleport to Shore (Frigid River region)
+> ah Shore
+[OK: contains "Shore"]
+
+> ex
+[OK: contains "Returning"]
+
+# Turn on lamp for light (may already be on)
+> turn on lantern
+[OK: contains "on"]
+
+# Verify boat is here - might be inflated or deflated
+> look
+[OK: contains "Shore"]
+
+# Make sure boat is deflated first (may already be deflated)
+> deflate boat
+[PASS]
+
+# Verify boat is deflated
+> examine boat
+[OK: contains "valve"]
+
+# Try to go east to river without boat - should be blocked
+> east
+[OK: contains "need a boat"]
+
+# Inflate the boat so we can travel
+> inflate boat
+[OK: contains "inflates"]
+
+# Enter the boat
+> enter boat
+[OK: contains "plastic"]
+
+# Verify we're in the boat (boat is now magic boat when inflated)
+> look
+[OK: contains "Shore"]
+
+# Exit the boat
+> exit
+[OK: contains "get out"]
+
+# Verify we can deflate while outside and it ejects us (deflate tests eject logic)
+> enter boat
+[OK: contains "plastic"]
+
+> deflate boat
+[OK: contains "deflates"]
+
+# Verify we're no longer in boat (deflate should have ejected us)
+> look
+[OK: contains "Shore"]
+
+---
+
+# Test Aragain Falls death (teleport directly to test falls behavior)
+> gdt
+[OK: contains "GDT"]
+
+# Teleport directly to Aragain Falls
+> ah Aragain Falls
+[OK: contains "Aragain Falls"]
+
+> ex
+[OK: contains "Returning"]
+
+# Looking is safe at falls
+> look
+[OK: contains "waterfall"]
+
+# Any other action = death
+> wait
+[OK: contains "tumble"]

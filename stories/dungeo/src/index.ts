@@ -62,6 +62,8 @@ import { createEndgameRooms, createEndgameObjects, EndgameRoomIds } from './regi
 import { registerRoyalPuzzleHandler, initializePuzzleState, createPuzzleCommandTransformer, PuzzleHandlerMessages } from './handlers/royal-puzzle';
 import { createRainbowCommandTransformer } from './handlers/rainbow-handler';
 import { createBalloonExitTransformer } from './handlers/balloon-handler';
+import { createRiverEntryTransformer, registerBoatMovementHandler, RiverMessages } from './handlers/river-handler';
+import { createFallsDeathTransformer, registerFallsRoom, FallsDeathMessages } from './handlers/falls-death-handler';
 import { createTinyRoomDoorTransformer, createTinyRoomMatTransformer, TinyRoomMessages } from './handlers/tiny-room-handler';
 
 // Import NPCs
@@ -1224,6 +1226,37 @@ export class DungeoStory implements Story {
       .mapsTo(DEFLATE_ACTION_ID)
       .withPriority(155)
       .build();
+
+    // BOARD/DISEMBARK aliases for ENTER/EXIT (boat navigation)
+    grammar
+      .define('board :target')
+      .mapsTo('if.action.entering')
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('board boat')
+      .mapsTo('if.action.entering')
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('disembark')
+      .mapsTo('if.action.exiting')
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('leave boat')
+      .mapsTo('if.action.exiting')
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('get out of boat')
+      .mapsTo('if.action.exiting')
+      .withPriority(155)
+      .build();
   }
 
   /**
@@ -1761,6 +1794,12 @@ export class DungeoStory implements Story {
     language.addMessage(DeflateMessages.ALREADY_DEFLATED, 'The boat is already deflated.');
     language.addMessage(DeflateMessages.NOT_DEFLATABLE, "That can't be deflated.");
     language.addMessage(DeflateMessages.CANT_REACH, "You can't reach the boat from here.");
+
+    // River navigation messages
+    language.addMessage(RiverMessages.NO_BOAT, 'The water is too cold and the current too strong to swim. You need a boat.');
+
+    // Aragain Falls death message
+    language.addMessage(FallsDeathMessages.DEATH, 'You tumble over Aragain Falls, plunging hundreds of feet to your doom in the mist below.\n\n    **** You have died ****');
   }
 
   /**
@@ -1895,6 +1934,19 @@ export class DungeoStory implements Story {
     // Intercepts "go north" in Tiny Room when door is locked
     engine.registerParsedCommandTransformer(createTinyRoomDoorTransformer());
     engine.registerParsedCommandTransformer(createTinyRoomMatTransformer());
+
+    // Register River entry transformer
+    // Blocks entry to water rooms without inflated boat
+    engine.registerParsedCommandTransformer(createRiverEntryTransformer());
+
+    // Register Falls death transformer
+    // Any action except LOOK at Aragain Falls = death
+    registerFallsRoom(this.frigidRiverIds.aragainFalls);
+    engine.registerParsedCommandTransformer(createFallsDeathTransformer());
+
+    // Register boat movement handler
+    // Moves boat with player when navigating river
+    registerBoatMovementHandler(engine, this.world);
 
     // Register scheduler events (ADR-071 Phase 2)
     const scheduler = engine.getScheduler();
