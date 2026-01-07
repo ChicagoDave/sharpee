@@ -20,7 +20,8 @@ import {
   isYellowButtonPressed,
   isDamDrained,
   isDamDraining,
-  startDamDraining
+  startDamDraining,
+  closeDamGate
 } from '../../scheduler/dam-fuse';
 
 // Scheduler reference for starting draining sequence
@@ -131,8 +132,17 @@ export const turnBoltAction: Action = {
     const alreadyDrained = sharedData.alreadyDrained as boolean;
     const currentlyDraining = sharedData.currentlyDraining as boolean;
 
-    // If already drained or draining, bolt turns but nothing happens
-    if (alreadyDrained || currentlyDraining) {
+    // If currently draining, bolt turns but nothing happens
+    if (currentlyDraining) {
+      sharedData.startedDraining = false;
+      sharedData.closedDam = false;
+      return;
+    }
+
+    // If already drained, close the dam (refill reservoir)
+    if (alreadyDrained) {
+      closeDamGate(world as WorldModel);
+      sharedData.closedDam = true;
       sharedData.startedDraining = false;
       return;
     }
@@ -142,9 +152,11 @@ export const turnBoltAction: Action = {
       const events = startDamDraining(schedulerRef, world as WorldModel, reservoirIdRef);
       sharedData.drainingEvents = events;
       sharedData.startedDraining = true;
+      sharedData.closedDam = false;
     } else {
       // No scheduler configured - just report success without draining
       sharedData.startedDraining = true;
+      sharedData.closedDam = false;
     }
   },
 
@@ -158,14 +170,20 @@ export const turnBoltAction: Action = {
 
   report(context: ActionContext): ISemanticEvent[] {
     const { sharedData } = context;
-    const alreadyDrained = sharedData.alreadyDrained as boolean;
     const currentlyDraining = sharedData.currentlyDraining as boolean;
     const startedDraining = sharedData.startedDraining as boolean;
+    const closedDam = sharedData.closedDam as boolean;
 
-    // Choose appropriate message
+    const events: ISemanticEvent[] = [];
+
+    // Choose appropriate message and emit state change event
     let messageId: string;
-    if (alreadyDrained) {
-      messageId = TurnBoltMessages.DAM_ALREADY_OPEN;
+    if (closedDam) {
+      messageId = TurnBoltMessages.DAM_CLOSED;
+      // Emit event for dam-handler to re-block reservoir exits
+      events.push(context.event('dungeo.dam.closed', {
+        actionId: TURN_BOLT_ACTION_ID
+      }));
     } else if (currentlyDraining) {
       messageId = TurnBoltMessages.DAM_OPENED; // Bolt turns but draining already in progress
     } else if (startedDraining) {
@@ -174,8 +192,10 @@ export const turnBoltAction: Action = {
       messageId = TurnBoltMessages.DAM_OPENED;
     }
 
-    return [context.event('game.message', {
+    events.push(context.event('game.message', {
       messageId
-    })];
+    }));
+
+    return events;
   }
 };

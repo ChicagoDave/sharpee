@@ -221,4 +221,10 @@ export function registerReservoirExitHandler(
       updateReservoirDescriptions(w, true);
     }
   });
+
+  // Listen for dam closed event (player turned bolt to close)
+  world.registerEventHandler('dungeo.dam.closed', (event: ISemanticEvent, w: IWorldModel): void => {
+    // Dam closed - re-block reservoir exits and update descriptions
+    closeDam(w);
+  });
 }
