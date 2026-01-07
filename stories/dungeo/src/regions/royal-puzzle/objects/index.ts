@@ -32,7 +32,8 @@ export function createGoldCard(world: WorldModel): IFEntity {
     aliases: ['card', 'royal card', 'gold', 'golden card'],
     description: 'This is an ornate gold card, beautifully embossed with the royal crest of the Great Underground Empire.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 2
   }));
 
   // Mark as treasure
@@ -58,7 +59,8 @@ export function createWarningNote(world: WorldModel, puzzleRoomId: string): IFEn
     aliases: ['note', 'warning', 'small note'],
     description: 'This is a small yellowed note with faded writing.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 2
   }));
 
   note.add(new ReadableTrait({

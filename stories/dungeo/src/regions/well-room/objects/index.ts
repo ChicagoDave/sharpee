@@ -84,7 +84,8 @@ function createBucket(
     aliases: ['wooden bucket', 'pail'],
     description: 'A wooden bucket attached to a rope wound around a windlass.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
 
   // Container for holding items
@@ -122,7 +123,8 @@ function createSilverChalice(world: WorldModel, roomId: string): IFEntity {
     aliases: ['chalice', 'silver cup', 'cup', 'goblet'],
     description: 'A beautiful silver chalice, tarnished with age but still valuable. It bears an inscription in an ancient language.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 40
   }));
   (chalice as any).isTreasure = true;
   (chalice as any).treasureId = 'silver-chalice';
@@ -166,7 +168,8 @@ function createPearl(world: WorldModel, roomId: string): IFEntity {
     aliases: ['large pearl', 'giant pearl', 'white pearl'],
     description: 'A magnificent pearl of extraordinary size. It gleams with a soft, lustrous light.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
   (pearl as any).isTreasure = true;
   (pearl as any).treasureId = 'pearl';
@@ -279,7 +282,8 @@ function createWhiteCrystalSphere(world: WorldModel, roomId: string): IFEntity {
     aliases: ['sphere', 'crystal sphere', 'white sphere', 'crystal ball', 'crystal'],
     description: 'A perfectly smooth sphere of white crystal. It glows with an inner light.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
 
   // Treasure scoring
@@ -303,7 +307,8 @@ function createGreenPaper(world: WorldModel, roomId: string): IFEntity {
     aliases: ['paper', 'green paper', 'note', 'piece of green paper'],
     description: 'A small piece of green paper with some writing on it.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 2
   }));
 
   // Readable text - FROBOZZ MAGIC BOAT COMPANY
@@ -344,7 +349,8 @@ function createCakes(world: WorldModel, roomId: string): void {
     aliases: ['eat me', 'eat-me', 'eat me cake', 'white cake'],
     description: 'A small cake with "Eat Me" written on it in frosting.',
     properName: false,
-    article: 'an'
+    article: 'an',
+    weight: 5
   }));
   // Eating this makes you grow large
   (eatMeCake as any).isEdible = true;
@@ -358,7 +364,8 @@ function createCakes(world: WorldModel, roomId: string): void {
     aliases: ['drink me', 'drink-me', 'drink me cake', 'blue cake'],
     description: 'A small blue cake with "Drink Me" written on it.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
   // Eating this makes you shrink
   (drinkMeCake as any).isEdible = true;
@@ -372,7 +379,8 @@ function createCakes(world: WorldModel, roomId: string): void {
     aliases: ['orange', 'orange colored cake', 'cake'],
     description: 'A small orange-colored cake. It looks delicious.',
     properName: false,
-    article: 'an'
+    article: 'an',
+    weight: 5
   }));
   (orangeCake as any).isEdible = true;
   world.moveEntity(orangeCake.id, roomId);

@@ -41,7 +41,8 @@ function createPotOfGold(world: WorldModel, roomId: string): IFEntity {
     aliases: ['pot', 'gold', 'gold coins', 'treasure pot'],
     description: 'A small iron pot filled to the brim with gold coins. It is surprisingly heavy for its size.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
   (pot as any).isTreasure = true;
   (pot as any).treasureId = 'pot-of-gold';
@@ -57,7 +58,8 @@ function createTrident(world: WorldModel, roomId: string): IFEntity {
     aliases: ['crystal trident', 'poseidon trident', 'three-pronged spear'],
     description: 'A magnificent crystal trident, clearly of Atlantean origin. Its three prongs gleam with an otherworldly light.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
   (trident as any).isTreasure = true;
   (trident as any).treasureId = 'trident';
@@ -73,7 +75,8 @@ function createBuoy(world: WorldModel, roomId: string): IFEntity {
     aliases: ['red buoy', 'floating buoy'],
     description: 'A red buoy that has washed up on the beach. It rattles when shaken - there appears to be something inside!',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 10
   }));
   buoy.add(new ContainerTrait({
     capacity: { maxItems: 1, maxWeight: 5 }
@@ -87,7 +90,8 @@ function createBuoy(world: WorldModel, roomId: string): IFEntity {
     aliases: ['green gem', 'green emerald', 'gem'],
     description: 'A beautiful green emerald of exceptional clarity.',
     properName: false,
-    article: 'an'
+    article: 'an',
+    weight: 5
   }));
   (emerald as any).isTreasure = true;
   (emerald as any).treasureId = 'buoy-emerald';
@@ -134,7 +138,8 @@ function createInflatableBoat(world: WorldModel, roomId: string): IFEntity {
     aliases: ['boat', 'rubber boat', 'raft', 'inflatable raft'],
     description: 'A serviceable inflatable boat, suitable for navigating the Frigid River. A pair of oars is attached.',
     properName: false,
-    article: 'an'
+    article: 'an',
+    weight: 2
   }));
   boat.add(new ContainerTrait({
     capacity: { maxItems: 10, maxWeight: 100 }
@@ -152,7 +157,8 @@ function createShovel(world: WorldModel, roomId: string): IFEntity {
     aliases: ['spade', 'digging tool'],
     description: 'A sturdy shovel, suitable for digging in sand or soft earth.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
   world.moveEntity(shovel.id, roomId);
   return shovel;
@@ -165,7 +171,8 @@ function createStatue(world: WorldModel, roomId: string): IFEntity {
     aliases: ['statue', 'sculpture', 'figure', 'figurine'],
     description: 'A beautiful statue of an ancient adventurer, carved from a single piece of white marble. The craftsmanship is exquisite.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 2
   }));
   (statue as any).isTreasure = true;
   (statue as any).treasureId = 'statue';

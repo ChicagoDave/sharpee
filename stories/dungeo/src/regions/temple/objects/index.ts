@@ -85,7 +85,8 @@ function createBell(world: WorldModel, roomId: string): IFEntity {
     aliases: ['bell', 'brass', 'small bell'],
     description: 'A brass bell with strange symbols engraved around its rim.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
 
   // Used in exorcism ritual
@@ -107,7 +108,8 @@ function createBlackBook(world: WorldModel, roomId: string): IFEntity {
     aliases: ['book', 'ancient book', 'leather book'],
     description: 'An ancient book bound in black leather. Strange symbols cover the cover.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
 
   book.add(new ReadableTrait({
@@ -138,7 +140,8 @@ function createCandles(world: WorldModel, roomId: string): IFEntity {
     aliases: ['candles', 'candle', 'white candles'],
     description: 'A pair of white wax candles.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 20
   }));
 
   candles.add(new LightSourceTrait({
@@ -177,7 +180,8 @@ function createGoldCoffin(world: WorldModel, roomId: string): IFEntity {
     aliases: ['coffin', 'golden coffin', 'sarcophagus'],
     description: 'An ornate gold coffin covered with Egyptian hieroglyphics. It appears to be a royal sarcophagus.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 10
   }));
 
   coffin.add(new ContainerTrait({
@@ -218,7 +222,8 @@ function createSceptre(world: WorldModel): IFEntity {
     aliases: ['scepter', 'royal sceptre', 'jeweled sceptre'],
     description: 'A beautiful sceptre, encrusted with sapphires and rubies. It seems to shimmer with magical energy.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 10
   }));
 
   // Treasure
@@ -243,7 +248,8 @@ function createIvoryTorch(world: WorldModel, roomId: string): IFEntity {
     aliases: ['torch', 'ivory', 'white torch'],
     description: 'A beautiful torch made of polished ivory. It is not currently lit.',
     properName: false,
-    article: 'an'
+    article: 'an',
+    weight: 5
   }));
 
   torch.add(new LightSourceTrait({
@@ -278,7 +284,8 @@ function createCrystalSkull(world: WorldModel, roomId: string): IFEntity {
     aliases: ['skull', 'crystal', 'glass skull'],
     description: 'A skull carved from flawless crystal. Its empty eye sockets seem to stare at you.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
 
   // Treasure
@@ -301,7 +308,8 @@ function createChalice(world: WorldModel, roomId: string): IFEntity {
     aliases: ['cup', 'goblet', 'golden chalice'],
     description: 'A golden chalice encrusted with precious gems. It radiates an aura of holiness.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 40
   }));
 
   // Treasure
@@ -327,7 +335,8 @@ function createBlueCrystalSphere(world: WorldModel, roomId: string): IFEntity {
     aliases: ['sphere', 'crystal sphere', 'blue sphere', 'crystal', 'blue crystal', 'ball'],
     description: 'A beautiful sphere of blue crystal. It seems to glow with an inner light.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
 
   // Treasure - 10 take + 5 case = 15 total
@@ -409,7 +418,8 @@ function createSmallKey(world: WorldModel, roomId: string): IFEntity {
     aliases: ['key', 'brass key', 'tiny key'],
     description: 'A small brass key.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 25
   }));
 
   // Key starts hidden (in lock on other side) - not in room yet

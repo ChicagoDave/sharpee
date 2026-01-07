@@ -103,7 +103,8 @@ function createCoal(world: WorldModel, roomId: string): IFEntity {
     aliases: ['coal', 'black coal', 'lump of coal'],
     description: 'A pile of black coal. It would make excellent fuel for a machine.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 10
   }));
 
   world.moveEntity(coal.id, roomId);
@@ -188,7 +189,8 @@ function createJadeFigurine(world: WorldModel, roomId: string): IFEntity {
     aliases: ['figurine', 'jade', 'statue', 'jade statue'],
     description: 'A beautiful jade figurine of an oriental dragon. It is exquisitely carved.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
 
   // Treasure scoring
@@ -211,7 +213,8 @@ function createSapphireBracelet(world: WorldModel, roomId: string): IFEntity {
     aliases: ['bracelet', 'sapphire', 'blue bracelet'],
     description: 'A delicate bracelet set with brilliant blue sapphires.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
 
   // Treasure scoring
@@ -234,7 +237,8 @@ function createRedCrystalSphere(world: WorldModel, roomId: string): IFEntity {
     aliases: ['sphere', 'crystal sphere', 'red sphere', 'crystal', 'red crystal', 'ball'],
     description: 'A beautiful sphere of red crystal. It seems to glow with an inner light.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
 
   // Treasure scoring
@@ -260,7 +264,8 @@ function createTimber(world: WorldModel, roomId: string): IFEntity {
     aliases: ['timber', 'beam', 'wooden beam', 'lumber', 'wood'],
     description: 'A large, sturdy piece of timber. It could be useful for propping things up.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 20
   }));
 
   world.moveEntity(timber.id, roomId);
