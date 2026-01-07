@@ -457,7 +457,7 @@
 | WAVE action | ✅ Done | Sceptre/rainbow (2026-01-02) |
 | Water current | ❌ | River auto-movement |
 | RING action | ✅ Done | Bell |
-| PRAY action | 🚧 Partial | Altar→Forest teleport needed (current Basin Room logic incorrect) |
+| PRAY action | ✅ Done | Altar→Forest teleport (Basin Room logic removed, incense-only disarm) |
 | BURN action | ✅ Done | ADR-078 incense (3-turn timer) |
 | Exorcism sequence | ✅ Done | Bell/book/candle |
 | DIG action | ✅ Done | Shovel/beach (2026-01-02) |
@@ -533,15 +533,15 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Priority Next Steps
 
-1. **PRAY action fix**: Implement Altar→Forest teleportation (current Basin Room logic is incorrect per Fortran source)
-2. **Missing systems**:
+1. **Missing systems**:
    - INFLATE/DEFLATE actions (boat)
    - Water current (river auto-movement)
    - Robot commands ("tell robot 'X'" syntax)
-3. **Cleanup** - Remove obsolete `event-handler-migration-plan.md` (ADR-086 fixed all handlers)
+2. **Cleanup** - Remove obsolete `event-handler-migration-plan.md` (ADR-086 fixed all handlers)
 
 ## Recently Completed
 
+- ✅ **PRAY Action Fix & Basin Ritual Correction** (2026-01-07) - Fixed PRAY action to correctly teleport from Altar to Forest Path 1 (per Fortran sverbs.for V79). Removed incorrect Basin Room logic from PRAY - the ghost ritual now works with incense-only disarm: BURN INCENSE sets basinState='disarmed', DROP FRAME PIECE triggers ghost ritual while incense burns. Added pray-altar-teleport.transcript with 10 tests. All 787 tests pass (49 transcripts).
 - ✅ **Coffin Puzzle & Weight Research** (2026-01-07) - Parsed Fortran dindx.dat to extract object weights/capacities. Key finding: COFFIN weight=10, player MXLOAD=100 - coffin is easily portable (10% of capacity). Created transcript test verifying coffin+sceptre can be taken and stored in trophy case (14 points). Also discovered PRAY action incorrectly implements Basin Room logic instead of Altar→Forest teleportation per Fortran source. Added weights-capacities.md reference doc.
 - ✅ **Dam Puzzle Bidirectional Toggle & Map Fix** (2026-01-07) - Fixed map bug where `connectTempleToDam()` overwrote Reservoir South→Dam exit with Temple connection. Temple is correctly accessed via Glacier Room→Egyptian Room and Grail Room paths. Added bidirectional dam toggle: turn bolt when drained closes dam and re-blocks reservoir exits. Handler listens for `dungeo.dam.closed` event. All 761 tests pass (5 expected failures).
 - ✅ **Coal Machine Puzzle** (2026-01-07) - Turn switch on machine converts coal to diamond. Story action `turn-switch-action.ts` with ContainerTrait on machine. 16 transcript tests pass.

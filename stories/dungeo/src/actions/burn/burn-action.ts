@@ -177,6 +177,17 @@ export const burnAction: Action = {
     world.setStateValue('dungeo.incense.burning_id', target.id);
 
     sharedData.incenseId = target.id;
+
+    // If incense is being burned in the Basin Room, disarm the trap
+    const playerLocation = world.getLocation(context.player.id);
+    if (playerLocation) {
+      const room = world.getEntity(playerLocation);
+      const roomIdentity = room?.get(IdentityTrait);
+      if (roomIdentity?.name === 'Basin Room') {
+        (room as any).basinState = 'disarmed';
+        sharedData.basinDisarmed = true;
+      }
+    }
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {

@@ -1,7 +1,9 @@
 /**
  * Pray Action Types - Story-specific action for praying
  *
- * Used in the Basin Room for the ghost ritual puzzle.
+ * Per Fortran source (sverbs.for V79):
+ * - At Altar: Teleport to Forest
+ * - Elsewhere: Generic joke response
  */
 
 // Action ID
@@ -9,9 +11,6 @@ export const PRAY_ACTION_ID = 'DUNGEO_PRAY' as const;
 
 // Message IDs
 export const PrayMessages = {
-  PRAY_GENERIC: 'dungeo.pray.generic',
-  PRAY_DISARMED: 'dungeo.pray.disarmed',
-  PRAY_BLESSED: 'dungeo.pray.blessed',
-  PRAY_ALREADY_BLESSED: 'dungeo.pray.already_blessed',
-  NOT_IN_BASIN_ROOM: 'dungeo.pray.not_in_basin_room',
+  PRAY_GENERIC: 'dungeo.pray.generic',    // Generic prayer response
+  PRAY_TELEPORT: 'dungeo.pray.teleport',  // Teleport from Altar to Forest
 } as const;

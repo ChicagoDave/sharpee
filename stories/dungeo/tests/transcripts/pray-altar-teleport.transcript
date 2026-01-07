@@ -1,0 +1,49 @@
+title: Pray at Altar Teleportation
+story: dungeo
+description: Tests PRAY action at Altar teleports to Forest Path 1 (per Fortran sverbs.for V79)
+
+---
+
+# Setup: Get lamp and go to Altar using GDT
+> gdt
+[OK: contains "GDT"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> ah Altar
+[OK: contains "Altar"]
+
+# Turn on lamp so we can see
+> turn on lantern
+[OK: contains "on"]
+
+# Verify we're at the Altar
+> look
+[OK: contains "Altar"]
+[OK: contains "stone altar"]
+
+# Pray at the Altar - should teleport to Forest
+> pray
+[OK: contains "prayer"]
+[OK: contains "answered"]
+
+# Verify we're now in Forest Path (teleported)
+> look
+[OK: contains "Forest Path"]
+[OK: contains "winding through"]
+[OK: contains "tree"]
+
+---
+
+# Test that PRAY elsewhere gives generic response
+> ah Living Room
+[OK: contains "Living Room"]
+
+# Pray in Living Room - should give generic response (not teleport)
+> pray
+[OK: contains "pray hard enough"]
+
+# Verify we're still in Living Room (not teleported)
+> look
+[OK: contains "Living Room"]

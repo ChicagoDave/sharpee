@@ -1427,17 +1427,14 @@ export class DungeoStory implements Story {
     language.addMessage(DungeoSchedulerMessages.INCENSE_BURNS_OUT, 'The incense sputters and burns out completely, leaving only ash.');
 
     // Pray action messages
-    language.addMessage(PrayMessages.PRAY_GENERIC, 'You offer a prayer, but nothing special happens.');
-    language.addMessage(PrayMessages.PRAY_DISARMED, 'The fragrant smoke seems to calm the evil presence in the room. The basin begins to glow faintly.');
-    language.addMessage(PrayMessages.PRAY_BLESSED, 'As you pray, the water shimmers with an ethereal light. It has been blessed.');
-    language.addMessage(PrayMessages.PRAY_ALREADY_BLESSED, 'The water is already blessed.');
-    language.addMessage(PrayMessages.NOT_IN_BASIN_ROOM, 'There is nothing special to pray to here.');
+    language.addMessage(PrayMessages.PRAY_GENERIC, 'If you pray hard enough, your prayers may be answered.');
+    language.addMessage(PrayMessages.PRAY_TELEPORT, 'In a shocking development, your prayer is answered!');
 
     // Ghost ritual messages
-    language.addMessage(GhostRitualMessages.GHOST_APPEARS, 'The blessed water glows intensely. A spectral figure rises from the basin - the ghost of the thief! Dressed in adventurer\'s robes, he gestures toward the Gallery and speaks: "Well done, my friend. You are nearing the end game. Look to the Gallery for your reward." Then he fades away...');
+    language.addMessage(GhostRitualMessages.GHOST_APPEARS, 'The fragrant smoke swirls around the basin. A spectral figure rises - the ghost of the thief! Dressed in adventurer\'s robes, he gestures toward the Gallery and speaks: "Well done, my friend. You are nearing the end game. Look to the Gallery for your reward." Then he fades away...');
     language.addMessage(GhostRitualMessages.CANVAS_SPAWNS, 'A magnificent rolled up canvas has appeared in the Gallery!');
     language.addMessage(GhostRitualMessages.WRONG_ITEM, 'The spirit laughs mockingly: "As we said, you have no rights here!" The item vanishes.');
-    language.addMessage(GhostRitualMessages.NOT_BLESSED, 'Nothing happens. The water remains still.');
+    language.addMessage(GhostRitualMessages.NOT_BLESSED, 'Nothing happens. The basin remains still.');
 
     // ADR-078: Hidden max points system
     language.addMessage(RealityAlteredMessages.REALITY_ALTERED, 'The death of the thief seems to alter reality in some subtle way...');

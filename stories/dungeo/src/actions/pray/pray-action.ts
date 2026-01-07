@@ -1,79 +1,36 @@
 /**
  * Pray Action - Story-specific action for praying
  *
- * Used in the Basin Room to progress the ghost ritual puzzle (ADR-078).
+ * Per Fortran source (sverbs.for V79, label 10000):
+ * - At Altar (TEMP2): Teleport player to Forest Path 1 (FORE1)
+ * - Elsewhere: Show generic joke message
  *
- * Basin state machine:
- * - 'normal': Default, prayer has generic effect
- * - 'disarmed': Incense is burning, prayer blesses the water
- * - 'blessed': Water is blessed, ready for frame piece drop
- *
- * Pattern: "pray", "pray at basin"
+ * Pattern: "pray"
  */
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
-import { IFEntity, IdentityTrait } from '@sharpee/world-model';
+import { IdentityTrait, RoomTrait } from '@sharpee/world-model';
 import { PRAY_ACTION_ID, PrayMessages } from './types';
 
 /**
- * Check if the player is in the Basin Room
+ * Check if the player is at the Altar
  */
-function isInBasinRoom(context: ActionContext): boolean {
-  const { world, player } = context;
-  const playerLocation = world.getLocation(player.id);
-  if (!playerLocation) return false;
-
-  const room = world.getEntity(playerLocation);
-  if (!room) return false;
-
-  const identity = room.get(IdentityTrait);
-  return identity?.name === 'Basin Room';
+function isAtAltar(context: ActionContext): boolean {
+  const identity = context.currentLocation.get(IdentityTrait);
+  return identity?.name === 'Altar';
 }
 
 /**
- * Get the Basin Room entity
+ * Find Forest Path 1 (FORE1) - the teleport destination
  */
-function getBasinRoom(context: ActionContext): IFEntity | undefined {
-  const { world, player } = context;
-  const playerLocation = world.getLocation(player.id);
-  if (!playerLocation) return undefined;
-
-  const room = world.getEntity(playerLocation);
-  if (!room) return undefined;
-
-  const identity = room.get(IdentityTrait);
-  if (identity?.name === 'Basin Room') {
-    return room;
-  }
-  return undefined;
-}
-
-/**
- * Check if incense is burning in the room
- */
-function isIncenseBurning(context: ActionContext): boolean {
-  const { world, player } = context;
-  const playerLocation = world.getLocation(player.id);
-  if (!playerLocation) return false;
-
-  // Check room contents for burning incense
-  const contents = world.getContents(playerLocation);
-  for (const item of contents) {
-    if ((item as any).isIncense && (item as any).isBurning) {
-      return true;
-    }
-  }
-
-  // Also check player inventory (if holding burning incense)
-  const inventory = world.getContents(player.id);
-  for (const item of inventory) {
-    if ((item as any).isIncense && (item as any).isBurning) {
-      return true;
-    }
-  }
-
-  return false;
+function findForestPath1(context: ActionContext): string | undefined {
+  const forest = context.world.getAllEntities().find(e => {
+    const identity = e.get(IdentityTrait);
+    return identity?.name === 'Forest Path' &&
+           identity?.aliases?.includes('forest path 1');
+  });
+  return forest?.id;
 }
 
 /**
@@ -84,63 +41,48 @@ export const prayAction: Action = {
   group: 'communication',
 
   validate(context: ActionContext): ValidationResult {
-    // Prayer only has special effect in Basin Room
-    // But we allow praying anywhere (with generic response)
-    const inBasinRoom = isInBasinRoom(context);
-    context.sharedData.inBasinRoom = inBasinRoom;
+    // Prayer is always valid
+    const atAltar = isAtAltar(context);
+    context.sharedData.atAltar = atAltar;
 
-    if (inBasinRoom) {
-      const basinRoom = getBasinRoom(context);
-      context.sharedData.basinRoom = basinRoom;
-      context.sharedData.basinState = (basinRoom as any)?.basinState || 'normal';
+    if (atAltar) {
+      // Find the forest destination
+      const forestId = findForestPath1(context);
+      if (!forestId) {
+        // Forest not found - can't teleport, but prayer still valid
+        context.sharedData.forestNotFound = true;
+      } else {
+        context.sharedData.forestId = forestId;
+      }
     }
 
     return { valid: true };
   },
 
   execute(context: ActionContext): void {
-    const { sharedData } = context;
+    const { world, player, sharedData } = context;
 
-    if (!sharedData.inBasinRoom) {
-      // Generic prayer outside Basin Room - no state change
+    if (!sharedData.atAltar) {
+      // Generic prayer - no effect
       sharedData.resultMessage = PrayMessages.PRAY_GENERIC;
       return;
     }
 
-    const basinRoom = sharedData.basinRoom as IFEntity;
-    const currentState = sharedData.basinState as string;
-
-    if (currentState === 'blessed') {
-      // Already blessed
-      sharedData.resultMessage = PrayMessages.PRAY_ALREADY_BLESSED;
+    if (sharedData.forestNotFound) {
+      // Edge case: Altar exists but Forest doesn't
+      sharedData.resultMessage = PrayMessages.PRAY_GENERIC;
       return;
     }
 
-    // Check if incense is burning
-    const incenseBurning = isIncenseBurning(context);
-
-    if (currentState === 'normal' && incenseBurning) {
-      // Incense burning disarms the trap, prayer can now work
-      (basinRoom as any).basinState = 'disarmed';
-      sharedData.resultMessage = PrayMessages.PRAY_DISARMED;
-      sharedData.newState = 'disarmed';
-      return;
-    }
-
-    if (currentState === 'disarmed') {
-      // Second prayer blesses the water
-      (basinRoom as any).basinState = 'blessed';
-      sharedData.resultMessage = PrayMessages.PRAY_BLESSED;
-      sharedData.newState = 'blessed';
-      return;
-    }
-
-    // Normal state without incense - generic response
-    sharedData.resultMessage = PrayMessages.PRAY_GENERIC;
+    // Teleport player to Forest Path 1
+    const forestId = sharedData.forestId as string;
+    world.moveEntity(player.id, forestId);
+    sharedData.teleported = true;
+    sharedData.resultMessage = PrayMessages.PRAY_TELEPORT;
   },
 
-  blocked(_context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    // Prayer is never blocked (always valid)
+  blocked(_context: ActionContext, _result: ValidationResult): ISemanticEvent[] {
+    // Prayer is never blocked
     return [];
   },
 
@@ -152,9 +94,17 @@ export const prayAction: Action = {
 
     events.push(context.event('game.message', {
       messageId,
-      inBasinRoom: sharedData.inBasinRoom,
-      basinState: sharedData.newState || sharedData.basinState
+      teleported: sharedData.teleported || false
     }));
+
+    // If teleported, also describe the new location
+    if (sharedData.teleported && sharedData.forestId) {
+      events.push(context.event('player.teleported', {
+        actionId: PRAY_ACTION_ID,
+        destination: sharedData.forestId,
+        messageId: PrayMessages.PRAY_TELEPORT
+      }));
+    }
 
     return events;
   }
