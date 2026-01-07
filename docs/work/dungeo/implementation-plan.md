@@ -453,6 +453,7 @@
 | Timed events (daemons) | ✅ Done | ADR-071 complete (lantern, candles, dam, forest) |
 | NPC basics | ✅ Done | ADR-070 implemented |
 | Vehicle trait | ✅ Done | Boat navigation, bucket |
+| Weight/capacity system | ✅ Done | Player maxWeight=100, all objects have weight property |
 | INFLATE/DEFLATE actions | ❌ | Boat |
 | WAVE action | ✅ Done | Sceptre/rainbow (2026-01-02) |
 | Water current | ❌ | River auto-movement |
@@ -541,6 +542,7 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Recently Completed
 
+- ✅ **Weight/Capacity System** (2026-01-07) - Added weight property to all portable objects across 14 files. Player already had maxWeight=100 configured. Platform ContainerBehavior.checkCapacity() enforces weight limits. Values sourced from Fortran dindx.dat: chalices 40, axe/keys 25, painting/portrait/bar/timber 20, sword/coffin/coal 10, standard items 5, small items 2-4. Added weight-capacity.transcript test. All 802 tests pass (50 transcripts).
 - ✅ **PRAY Action Fix & Basin Ritual Correction** (2026-01-07) - Fixed PRAY action to correctly teleport from Altar to Forest Path 1 (per Fortran sverbs.for V79). Removed incorrect Basin Room logic from PRAY - the ghost ritual now works with incense-only disarm: BURN INCENSE sets basinState='disarmed', DROP FRAME PIECE triggers ghost ritual while incense burns. Added pray-altar-teleport.transcript with 10 tests. All 787 tests pass (49 transcripts).
 - ✅ **Coffin Puzzle & Weight Research** (2026-01-07) - Parsed Fortran dindx.dat to extract object weights/capacities. Key finding: COFFIN weight=10, player MXLOAD=100 - coffin is easily portable (10% of capacity). Created transcript test verifying coffin+sceptre can be taken and stored in trophy case (14 points). Also discovered PRAY action incorrectly implements Basin Room logic instead of Altar→Forest teleportation per Fortran source. Added weights-capacities.md reference doc.
 - ✅ **Dam Puzzle Bidirectional Toggle & Map Fix** (2026-01-07) - Fixed map bug where `connectTempleToDam()` overwrote Reservoir South→Dam exit with Temple connection. Temple is correctly accessed via Glacier Room→Egyptian Room and Grail Room paths. Added bidirectional dam toggle: turn bolt when drained closes dam and re-blocks reservoir exits. Handler listens for `dungeo.dam.closed` event. All 761 tests pass (5 expected failures).
