@@ -4,7 +4,7 @@
 
 set -e  # Exit on first error
 
-REPO_ROOT="/mnt/c/repotemp/sharpee"
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
 # Function to build a package
@@ -13,12 +13,12 @@ build_package() {
     local name=$2
 
     echo -n "[$name] "
-    if pnpm --filter "$package" build > /dev/null 2>&1; then
+    if npx pnpm --filter "$package" build > /dev/null 2>&1; then
         echo "✓"
     else
         echo "✗ FAILED"
         # Show the error
-        pnpm --filter "$package" build 2>&1 | tail -20
+        npx pnpm --filter "$package" build 2>&1 | tail -20
         exit 1
     fi
 }

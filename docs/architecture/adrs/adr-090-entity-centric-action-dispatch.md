@@ -1,0 +1,1181 @@
+# ADR-090: Entity-Centric Action Dispatch via Trait Capabilities
+
+## Status: ACCEPTED
+
+## Date: 2026-01-05
+
+## Context
+
+### The Problem
+
+When a player types "lower basket", the parser correctly:
+1. Identifies verb: "lower"
+2. Resolves directObject: basket entity (in scope)
+
+But the system routes to the wrong action (Inside Mirror pole logic instead of basket elevator logic).
+
+**Root cause**: Action selection is grammar-based via priority ordering. Multiple patterns compete:
+```typescript
+grammar.define('lower :target').mapsTo(DUNGEO_LOWER).withPriority(150)  // Mirror pole
+grammar.define('lower :target').mapsTo(LOWER_BASKET).withPriority(160)  // Basket
+```
+
+This leads to:
+- Proliferation of action IDs per entity type
+- Priority conflicts in grammar
+- Type flags scattered on entities (`isBasketElevator`, `poleType`)
+- 100+ lines of boilerplate per entity-specific action
+
+### Two Categories of Actions
+
+The key insight is distinguishing **common mutations** from **custom mutations**:
+
+#### Common Mutations (Stdlib Handles Completely)
+
+Actions like TAKE, DROP, OPEN have **standard semantics**:
+
+```typescript
+// TAKE: Same mutation for ALL portable things
+world.moveEntity(item.id, player.inventory);
+
+// OPEN: Same mutation for ALL openable things
+const openable = entity.get(OpenableTrait);
+openable.isOpen = true;
+```
+
+- Entity has standard trait (PortableTrait, OpenableTrait)
+- Stdlib behavior performs standard mutation
+- No story-specific logic needed
+
+#### Custom Mutations (Story Provides)
+
+Actions like LOWER, TURN, WAVE have **no standard semantics**:
+
+```typescript
+// LOWER basket: Story-specific mutation
+trait.position = 'bottom';
+world.moveEntity(basket.id, draftyRoomId);
+// Also move player if inside, check wheel accessibility...
+
+// LOWER pole: Completely different story-specific mutation
+mirrorState.polePosition = 0;
+// Affects mirror rotation, room visibility...
+```
+
+- Each entity defines what the verb means for it
+- No generalized behavior possible
+- Story must provide the logic
+
+### How Inform Handles This
+
+Inform 7 uses rules that match on specific nouns:
+```inform7
+Instead of lowering the basket:
+    [basket-specific logic]
+
+Instead of lowering the short pole:
+    [pole-specific logic]
+```
+
+One action, rules dispatch based on the noun.
+
+## Decision
+
+Implement **trait-based capability dispatch** where:
+
+1. **Traits declare capabilities** - what verbs/actions they respond to
+2. **Behaviors implement operations** - the actual mutation logic
+3. **Stdlib actions dispatch** - find trait with capability, delegate to behavior
+4. **One grammar pattern per verb** - no priority conflicts
+
+### The Pattern
+
+Traits declare capabilities using action IDs:
+
+```typescript
+class BasketElevatorTrait extends Trait {
+  static readonly type = 'dungeo.trait.basket_elevator';
+  static readonly capabilities = ['if.action.lowering', 'if.action.raising'];  // Action IDs this trait handles
+
+  position: 'top' | 'bottom' = 'top';
+  topRoomId: string;
+  bottomRoomId: string;
+  wheelRoomId: string;
+}
+```
+
+Behaviors implement the 4-phase pattern (matching stdlib actions):
+
+```typescript
+import { IFEvents } from '@sharpee/if-domain';
+
+// Phase 1: Validate
+static validate(entity: IFEntity, world: WorldModel, actorId: string): ValidationResult {
+  const trait = entity.get(BasketElevatorTrait);
+  if (trait.position === 'bottom') {
+    return { valid: false, error: 'dungeo.basket.already_down' };
+  }
+  return { valid: true };
+}
+
+// Phase 2: Execute (mutations only, no events)
+static execute(entity: IFEntity, world: WorldModel, actorId: string): void {
+  const trait = entity.get(BasketElevatorTrait);
+  trait.position = 'bottom';
+  world.moveEntity(entity.id, trait.bottomRoomId);
+}
+
+// Phase 3: Report success
+static report(entity: IFEntity, world: WorldModel, actorId: string): Effect[] {
+  return [
+    emit(IFEvents.LOWERED, { target: entity.id, messageId: 'dungeo.basket.lowered' })
+  ];
+}
+
+// Phase 4: Report failure
+static blocked(entity: IFEntity, world: WorldModel, actorId: string, error: string): Effect[] {
+  return [
+    emit('action.blocked', { target: entity.id, messageId: error })
+  ];
+}
+```
+
+Stdlib action delegates to behavior's 4-phase pattern:
+
+```typescript
+// LOWERING action (stdlib) - delegates to capability behavior
+validate(context: ActionContext): ValidationResult {
+  const entity = context.command.directObject?.entity;
+  if (!entity) {
+    return { valid: false, error: 'if.lower.no_target' };
+  }
+
+  const trait = findTraitWithCapability(entity, this.id);
+  if (!trait) {
+    return { valid: false, error: 'if.lower.cant_lower_that' };
+  }
+
+  const behavior = getBehaviorForTrait(trait);
+  const result = behavior.validate(entity, context.world, context.player.id);
+
+  if (result.valid) {
+    // Store for execute/report phases - return from validate, not sharedData
+    return { valid: true, data: { trait, behavior, entity } };
+  }
+  return result;
+}
+
+execute(context: ActionContext): void {
+  const { behavior, entity } = context.validationResult.data;
+  behavior.execute(entity, context.world, context.player.id);
+}
+
+report(context: ActionContext): Effect[] {
+  const { behavior, entity } = context.validationResult.data;
+  return behavior.report(entity, context.world, context.player.id);
+}
+
+blocked(context: ActionContext, result: ValidationResult): Effect[] {
+  const entity = context.command.directObject?.entity;
+  const trait = entity ? findTraitWithCapability(entity, this.id) : undefined;
+
+  if (trait) {
+    const behavior = getBehaviorForTrait(trait);
+    return behavior.blocked(entity!, context.world, context.player.id, result.error!);
+  }
+
+  // No trait found - use default blocked message
+  return [emit('action.blocked', { messageId: result.error || 'if.lower.cant_lower_that' })];
+}
+```
+
+### Complete Basket Example
+
+**Trait (state + capability declaration):**
+
+```typescript
+// stories/dungeo/src/traits/basket-elevator-trait.ts
+
+import { Trait } from '@sharpee/world-model';
+
+export class BasketElevatorTrait extends Trait {
+  static readonly type = 'dungeo.trait.basket_elevator';
+  static readonly capabilities = ['if.action.lowering', 'if.action.raising'];  // Action IDs
+
+  position: 'top' | 'bottom' = 'top';
+  topRoomId: string;
+  bottomRoomId: string;
+  wheelRoomId: string;
+
+  constructor(config: {
+    topRoomId: string;
+    bottomRoomId: string;
+    wheelRoomId: string;
+  }) {
+    super();
+    this.topRoomId = config.topRoomId;
+    this.bottomRoomId = config.bottomRoomId;
+    this.wheelRoomId = config.wheelRoomId;
+  }
+}
+```
+
+**Behavior (4-phase pattern with action-specific methods):**
+
+```typescript
+// stories/dungeo/src/behaviors/basket-elevator-behavior.ts
+
+import { Behavior, ValidationResult } from '@sharpee/world-model';
+import { WorldModel, IFEntity } from '@sharpee/world-model';
+import { Effect, emit } from '@sharpee/event-processor';
+import { IFEvents } from '@sharpee/if-domain';
+import { CapabilityBehavior } from '@sharpee/world-model';
+import { BasketElevatorTrait } from '../traits/basket-elevator-trait';
+
+/**
+ * Behavior for lowering the basket elevator.
+ * Implements CapabilityBehavior interface (4-phase pattern).
+ */
+export const BasketLoweringBehavior: CapabilityBehavior = {
+  validate(entity: IFEntity, world: WorldModel, actorId: string): ValidationResult {
+    const trait = entity.get(BasketElevatorTrait);
+
+    if (trait.position === 'bottom') {
+      return { valid: false, error: 'dungeo.basket.already_down' };
+    }
+
+    // Can only operate from wheel room or from inside basket
+    const actorLocation = world.getLocation(actorId);
+    const isAtWheel = actorLocation === trait.wheelRoomId;
+    const isInBasket = actorLocation === entity.id;
+
+    if (!isAtWheel && !isInBasket) {
+      return { valid: false, error: 'dungeo.basket.cant_reach_wheel' };
+    }
+
+    return { valid: true };
+  },
+
+  execute(entity: IFEntity, world: WorldModel, actorId: string): void {
+    const trait = entity.get(BasketElevatorTrait);
+    trait.position = 'bottom';
+    world.moveEntity(entity.id, trait.bottomRoomId);
+  },
+
+  report(entity: IFEntity, world: WorldModel, actorId: string): Effect[] {
+    const trait = entity.get(BasketElevatorTrait);
+    const actorLocation = world.getLocation(actorId);
+    const actorInBasket = actorLocation === entity.id;
+
+    return [
+      emit(IFEvents.LOWERED, {
+        target: entity.id,
+        messageId: actorInBasket
+          ? 'dungeo.basket.lowered_with_actor'
+          : 'dungeo.basket.lowered',
+        actorMoved: actorInBasket
+      })
+    ];
+  },
+
+  blocked(entity: IFEntity, world: WorldModel, actorId: string, error: string): Effect[] {
+    return [
+      emit('action.blocked', { target: entity.id, messageId: error })
+    ];
+  }
+};
+
+/**
+ * Behavior for raising the basket elevator.
+ */
+export const BasketRaisingBehavior: CapabilityBehavior = {
+  validate(entity: IFEntity, world: WorldModel, actorId: string): ValidationResult {
+    const trait = entity.get(BasketElevatorTrait);
+
+    if (trait.position === 'top') {
+      return { valid: false, error: 'dungeo.basket.already_up' };
+    }
+
+    const actorLocation = world.getLocation(actorId);
+    const isAtWheel = actorLocation === trait.wheelRoomId;
+    const isInBasket = actorLocation === entity.id;
+
+    if (!isAtWheel && !isInBasket) {
+      return { valid: false, error: 'dungeo.basket.cant_reach_wheel' };
+    }
+
+    return { valid: true };
+  },
+
+  execute(entity: IFEntity, world: WorldModel, actorId: string): void {
+    const trait = entity.get(BasketElevatorTrait);
+    trait.position = 'top';
+    world.moveEntity(entity.id, trait.topRoomId);
+  },
+
+  report(entity: IFEntity, world: WorldModel, actorId: string): Effect[] {
+    const trait = entity.get(BasketElevatorTrait);
+    const actorLocation = world.getLocation(actorId);
+    const actorInBasket = actorLocation === entity.id;
+
+    return [
+      emit(IFEvents.RAISED, {
+        target: entity.id,
+        messageId: actorInBasket
+          ? 'dungeo.basket.raised_with_actor'
+          : 'dungeo.basket.raised',
+        actorMoved: actorInBasket
+      })
+    ];
+  },
+
+  blocked(entity: IFEntity, world: WorldModel, actorId: string, error: string): Effect[] {
+    return [
+      emit('action.blocked', { target: entity.id, messageId: error })
+    ];
+  }
+};
+```
+
+**Entity creation (minimal):**
+
+```typescript
+// stories/dungeo/src/regions/coal-mine/objects/index.ts
+
+function createBasket(world: WorldModel, shaftRoomId: string, draftyRoomId: string): IFEntity {
+  const basket = world.createEntity('basket', EntityType.CONTAINER);
+
+  basket.add(new IdentityTrait({
+    name: 'rusty iron basket',
+    aliases: ['basket', 'iron basket', 'rusty basket'],
+    description: 'A rusty iron basket hangs from a sturdy chain.',
+    article: 'a'
+  }));
+
+  basket.add(new ContainerTrait({ capacity: { maxItems: 10, maxWeight: 100 } }));
+  basket.add(new SceneryTrait());
+
+  // This one line declares the basket responds to lower/raise
+  basket.add(new BasketElevatorTrait({
+    topRoomId: shaftRoomId,
+    bottomRoomId: draftyRoomId,
+    wheelRoomId: shaftRoomId
+  }));
+
+  world.moveEntity(basket.id, shaftRoomId);
+  return basket;
+}
+```
+
+**Grammar (one pattern per verb):**
+
+```typescript
+// In stdlib or parser - no story-specific patterns needed
+grammar
+  .forAction('if.action.lowering')
+  .verbs(['lower'])
+  .pattern(':target')
+  .where('target', scope => scope.touchable())
+  .build();
+
+grammar
+  .forAction('if.action.raising')
+  .verbs(['raise', 'lift'])
+  .pattern(':target')
+  .where('target', scope => scope.touchable())
+  .build();
+```
+
+### Stdlib Action Implementation
+
+```typescript
+// packages/stdlib/src/actions/standard/lowering/lowering.ts
+
+import { findTraitWithCapability, getBehaviorForTrait } from '@sharpee/world-model';
+
+export const loweringAction: Action = {
+  id: 'if.action.lowering',
+
+  validate(context: ActionContext): ValidationResult {
+    const entity = context.command.directObject?.entity;
+    if (!entity) {
+      return { valid: false, error: 'if.lower.no_target' };
+    }
+
+    // Find trait that handles this action ID
+    const trait = findTraitWithCapability(entity, this.id);  // 'if.action.lowering'
+    if (!trait) {
+      return { valid: false, error: 'if.lower.cant_lower_that' };
+    }
+
+    // Get behavior and delegate validation
+    const behavior = getBehaviorForTrait(trait);
+    const behaviorResult = behavior.validate(entity, context.world, context.player.id);
+
+    if (!behaviorResult.valid) {
+      return behaviorResult;
+    }
+
+    // Pass data via ValidationResult.data (not sharedData)
+    return { valid: true, data: { trait, behavior, entity } };
+  },
+
+  execute(context: ActionContext): void {
+    const { behavior, entity } = context.validationResult.data;
+    behavior.execute(entity, context.world, context.player.id);
+  },
+
+  report(context: ActionContext): Effect[] {
+    const { behavior, entity } = context.validationResult.data;
+    return behavior.report(entity, context.world, context.player.id);
+  },
+
+  blocked(context: ActionContext, result: ValidationResult): Effect[] {
+    const entity = context.command.directObject?.entity;
+    const trait = entity ? findTraitWithCapability(entity, this.id) : undefined;
+
+    if (trait) {
+      const behavior = getBehaviorForTrait(trait);
+      return behavior.blocked(entity!, context.world, context.player.id, result.error!);
+    }
+
+    return [emit('action.blocked', { messageId: result.error || 'if.lower.cant_lower_that' })];
+  }
+};
+```
+
+### Capability Registry (Type-Safe)
+
+```typescript
+// packages/world-model/src/traits/capability-registry.ts
+
+/**
+ * Standard interface for capability behaviors.
+ * All behaviors that handle capabilities must implement this interface.
+ * Follows the same 4-phase pattern as stdlib actions for consistency.
+ */
+export interface CapabilityBehavior {
+  /** Phase 1: Validate whether the action can be performed */
+  validate(entity: IFEntity, world: WorldModel, actorId: string): ValidationResult;
+
+  /** Phase 2: Execute mutations (no events emitted here) */
+  execute(entity: IFEntity, world: WorldModel, actorId: string): void;
+
+  /** Phase 3: Report success - return effects including emit() for success events */
+  report(entity: IFEntity, world: WorldModel, actorId: string): Effect[];
+
+  /** Phase 4: Report failure - return effects for blocked/failure events */
+  blocked(entity: IFEntity, world: WorldModel, actorId: string, error: string): Effect[];
+}
+
+/**
+ * Type-safe trait-behavior binding.
+ * Behaviors declare which trait type they work with.
+ */
+export interface TraitBehaviorBinding<T extends Trait = Trait> {
+  traitType: string;
+  behavior: CapabilityBehavior;
+  /** Validate at registration that behavior works with trait */
+  validateBinding?: (trait: T) => boolean;
+}
+
+const traitBehaviorMap = new Map<string, TraitBehaviorBinding>();
+
+/**
+ * Register a behavior for a trait type with validation.
+ */
+export function registerTraitBehavior<T extends Trait>(
+  traitType: string,
+  behavior: CapabilityBehavior,
+  options?: { validateBinding?: (trait: T) => boolean }
+): void {
+  traitBehaviorMap.set(traitType, {
+    traitType,
+    behavior,
+    validateBinding: options?.validateBinding
+  });
+}
+
+/**
+ * Get behavior for a trait with runtime validation.
+ */
+export function getBehaviorForTrait(trait: Trait): CapabilityBehavior {
+  const traitType = (trait.constructor as typeof Trait).type;
+  const binding = traitBehaviorMap.get(traitType);
+
+  if (!binding) {
+    throw new Error(`No behavior registered for trait: ${traitType}`);
+  }
+
+  // Runtime validation if provided
+  if (binding.validateBinding && !binding.validateBinding(trait)) {
+    throw new Error(`Behavior validation failed for trait: ${traitType}`);
+  }
+
+  return binding.behavior;
+}
+
+/**
+ * Find a trait on the entity that declares capability for the given action ID.
+ *
+ * Entity resolution (which entity "lower X" refers to) is handled by the parser
+ * using scope math - the same rules that resolve noun ambiguity:
+ * - Held items beat items in the room
+ * - Recently referred items win ties
+ * - More specific scope constraints win
+ *
+ * Once the parser resolves to a specific entity, that entity should have exactly
+ * one trait claiming the capability. If multiple traits claim it, returns the
+ * first found (authoring error - should be rare).
+ */
+export function findTraitWithCapability(entity: IFEntity, actionId: string): Trait | undefined {
+  for (const trait of entity.traits) {
+    const traitClass = trait.constructor as typeof Trait;
+    if (traitClass.capabilities?.includes(actionId)) {
+      return trait;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Type guard to check if a trait has a specific capability.
+ */
+export function hasCapability<T extends Trait>(
+  trait: Trait,
+  actionId: string,
+  traitType?: new (...args: any[]) => T
+): trait is T {
+  const traitClass = trait.constructor as typeof Trait;
+  const hasAction = traitClass.capabilities?.includes(actionId) ?? false;
+
+  if (traitType) {
+    return hasAction && trait instanceof traitType;
+  }
+  return hasAction;
+}
+```
+
+**Story registration:**
+
+```typescript
+// stories/dungeo/src/index.ts
+
+import { registerTraitBehavior } from '@sharpee/world-model';
+import { BasketElevatorTrait } from './traits/basket-elevator-trait';
+import { BasketElevatorBehavior } from './behaviors/basket-elevator-behavior';
+
+// Register behavior for trait
+registerTraitBehavior(BasketElevatorTrait.type, BasketElevatorBehavior);
+```
+
+### Type-Safe Entity Builder (Compile-Time Capability Enforcement)
+
+To catch duplicate capability declarations at compile time (not runtime), use a builder pattern with phantom types:
+
+```typescript
+// packages/world-model/src/entity/entity-builder.ts
+
+/**
+ * Extract capability strings from a trait class as a union type.
+ */
+type TraitCapabilities<T extends Trait> =
+  T extends { constructor: { capabilities: readonly (infer C)[] } }
+    ? C
+    : never;
+
+/**
+ * Type-level check for overlapping string unions.
+ * Returns `never` if no overlap, otherwise returns the overlapping strings.
+ */
+type Overlap<A, B> = A & B;
+
+/**
+ * Error brand for compile-time capability conflicts.
+ */
+type CapabilityConflictError<Cap extends string> = {
+  readonly __error: 'DUPLICATE_CAPABILITY';
+  readonly capability: Cap;
+};
+
+/**
+ * Type-safe entity builder that tracks claimed capabilities.
+ * Produces compile errors when adding traits with overlapping capabilities.
+ */
+class EntityBuilder<ClaimedCapabilities extends string = never> {
+  private entity: IFEntity;
+
+  constructor(entity: IFEntity) {
+    this.entity = entity;
+  }
+
+  /**
+   * Add a trait to the entity.
+   * Compile error if trait's capabilities overlap with already-claimed capabilities.
+   */
+  add<T extends Trait, TCaps extends string = TraitCapabilities<T>>(
+    trait: T
+  ): Overlap<ClaimedCapabilities, TCaps> extends never
+      ? EntityBuilder<ClaimedCapabilities | TCaps>
+      : CapabilityConflictError<Overlap<ClaimedCapabilities, TCaps> & string> {
+
+    // Runtime check as backup (for JS consumers or type system edge cases)
+    const traitClass = trait.constructor as typeof Trait;
+    const newCaps = traitClass.capabilities ?? [];
+
+    for (const cap of newCaps) {
+      const existing = this.entity.traits.find(t => {
+        const tClass = t.constructor as typeof Trait;
+        return tClass.capabilities?.includes(cap);
+      });
+      if (existing) {
+        throw new Error(
+          `Entity "${this.entity.id}": capability "${cap}" already claimed by ${existing.constructor.name}`
+        );
+      }
+    }
+
+    this.entity.add(trait);
+    return this as any;
+  }
+
+  build(): IFEntity {
+    return this.entity;
+  }
+}
+
+/**
+ * Create an entity with type-safe capability tracking.
+ */
+function createEntity(world: WorldModel, id: string, type: EntityType): EntityBuilder {
+  const entity = world.createEntity(id, type);
+  return new EntityBuilder(entity);
+}
+```
+
+**Usage - Compile-time errors on duplicate capabilities:**
+
+```typescript
+// ✅ Valid - no overlapping capabilities
+const basket = createEntity(world, 'basket', EntityType.CONTAINER)
+  .add(new IdentityTrait({ name: 'basket' }))
+  .add(new ContainerTrait())
+  .add(new BasketElevatorTrait({ /* ... */ }))  // claims: lowering, raising
+  .build();
+
+// ❌ Compile error - duplicate 'if.action.lowering' capability
+const badEntity = createEntity(world, 'bad', EntityType.OBJECT)
+  .add(new BasketElevatorTrait({ /* ... */ }))  // claims: lowering, raising
+  .add(new MirrorPoleTrait({ /* ... */ }))      // also claims: lowering, raising
+  //    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  //    Type error: CapabilityConflictError<'if.action.lowering' | 'if.action.raising'>
+  .build();
+```
+
+**Trait capability declaration for type inference:**
+
+```typescript
+// Traits must declare capabilities as const for type inference
+class BasketElevatorTrait extends Trait {
+  static readonly type = 'dungeo.trait.basket_elevator';
+
+  // `as const` enables type-level capability tracking
+  static readonly capabilities = ['if.action.lowering', 'if.action.raising'] as const;
+
+  // ... rest of trait
+}
+```
+
+**Benefits:**
+
+| Aspect | Without Builder | With Type-Safe Builder |
+|--------|-----------------|------------------------|
+| Error detection | Runtime (story init) | Compile time (red squiggles) |
+| IDE feedback | None | Immediate type error |
+| Refactoring | Manual capability audit | Compiler catches conflicts |
+| JS consumers | Silent "first wins" | Runtime throws |
+
+## Implementation
+
+### Phase 1: Core Infrastructure (world-model)
+
+1. Add `static capabilities: readonly string[]` to Trait base class (with `as const` support)
+2. Add `findTraitWithCapability(entity, capability)` helper
+3. Add trait-behavior registry with `registerTraitBehavior()` and `getBehaviorForTrait()`
+4. Add type-safe `EntityBuilder` with compile-time capability conflict detection
+5. Add runtime capability conflict check as backup for JS consumers
+
+### Phase 2: Stdlib Actions
+
+Create capability-dispatching actions for verbs without standard semantics:
+- `if.action.lowering` (lower)
+- `if.action.raising` (raise, lift)
+- `if.action.turning` (turn)
+- `if.action.waving` (wave)
+
+These actions:
+1. Find trait with matching capability
+2. Validate via behavior's `canX()` method
+3. Execute via behavior's `x()` method
+4. Report success/failure
+
+Default behavior when no trait found: "You can't [verb] that."
+
+### Phase 3: Dungeo Migration
+
+1. Create `BasketElevatorTrait` + `BasketElevatorBehavior`
+2. Create `MirrorPoleTrait` + `MirrorPoleBehavior`
+3. Remove story-specific action files (lower-basket-action.ts, etc.)
+4. Remove conflicting grammar patterns
+5. Remove type flags (`isBasketElevator`, `poleType`)
+
+## Consequences
+
+### Positive
+
+- **One grammar pattern per verb** - no priority conflicts
+- **Follows existing patterns** - trait + behavior is "the Sharpee way"
+- **Logic lives with entity** - trait/behavior defined alongside entity
+- **No type flags** - capability declared via trait, not ad-hoc properties
+- **Composable** - entity can have multiple capability-providing traits
+- **Discoverable** - entity's capabilities are explicit in its traits
+
+### Negative
+
+- **Registry pattern** - need to register trait-behavior mappings
+- **New infrastructure** - capability lookup and behavior dispatch
+- **Migration effort** - existing entity-specific actions need refactoring
+
+### Comparison: Before and After
+
+| Aspect | Current | Proposed |
+|--------|---------|----------|
+| Action files per entity type | 2 files (action + types), 100+ lines | 0 (use stdlib action) |
+| Trait/behavior files | 0 | 2 files, ~100 lines total |
+| Grammar patterns | Multiple with priority conflicts | 1 per verb |
+| Type flags | `isBasketElevator`, `poleType` | None |
+| Entity creation | Add flags, register grammar | Add trait |
+| Logic location | Scattered across action/handler | Co-located with trait |
+
+**Net result**: Similar total code, but better organized. Logic moves from action layer to trait/behavior layer where it belongs.
+
+## Alternatives Considered
+
+### A. Entity Event Handlers
+
+Entities provide `on` handlers: `basket.on['if.event.lowering.try'] = handler`
+
+**Rejected**: Doesn't use existing trait/behavior pattern. Handler logic not co-located with trait state.
+
+### B. Scope Constraints in Grammar
+
+Fix `.where()` to reliably match entity properties.
+
+**Rejected**: Still requires separate action IDs per entity type. Doesn't solve proliferation problem.
+
+### C. Single Action with Type Switch
+
+One LOWER action that switches on entity type internally.
+
+**Rejected**: Centralizes knowledge about all entity types. Stories can't extend without modifying stdlib.
+
+## Design Decisions Made
+
+1. **Behavior method signatures**: Behaviors return `Effect[]` (ADR-075 pattern)
+   - `canLower()` returns `ValidationResult`
+   - `lower()` returns `Effect[]` including `emit()` for events
+   - Behavior controls what events are emitted
+
+2. **Capability naming**: Capabilities use action IDs, not words
+   - `static capabilities = ['if.action.lowering', 'if.action.raising']`
+   - Consistent with how actions are identified throughout the system
+   - Action can find trait by checking for its own ID
+
+3. **Event naming and extensibility**: Events should use constants with namespaced IDs
+
+   **Core events** (defined in if-domain, used by stdlib):
+   ```typescript
+   // packages/if-domain/src/events.ts
+   export const IFEvents = {
+     LOWERED: 'if.event.lowered',
+     RAISED: 'if.event.raised',
+     OPENED: 'if.event.opened',
+     CLOSED: 'if.event.closed',
+     // ... standard IF events
+   } as const;
+   ```
+
+   **Story-specific events** (defined by author, fully extensible):
+   ```typescript
+   // stories/dungeo/src/events.ts
+   export const DungeoEvents = {
+     BASKET_LOWERED: 'dungeo.event.basket_lowered',
+     POLE_RAISED: 'dungeo.event.pole_raised',
+     MACHINE_ACTIVATED: 'dungeo.event.machine_activated',
+     // ... story-specific events
+   } as const;
+   ```
+
+   **Usage in behaviors**:
+   ```typescript
+   // Standard capability → use IFEvents
+   return [emit(IFEvents.LOWERED, { target: entity.id })];
+
+   // Story-specific behavior → use story events
+   return [emit(DungeoEvents.MACHINE_ACTIVATED, { coal: coalId })];
+   ```
+
+   Benefits:
+   - Typos caught at compile time
+   - Consistent pattern: `namespace.event.name`
+   - Fully extensible for custom traits+behaviors
+   - IDE autocomplete and discoverability
+
+## Capability Dispatch Verbs
+
+Stdlib verbs fall into two categories based on whether they have standard semantics:
+
+### Fixed Semantics (NO capability dispatch)
+
+These verbs have a universal meaning - the mutation is the same regardless of entity:
+
+| Verb | Standard Mutation |
+|------|------------------|
+| TAKE | Move to inventory |
+| DROP | Move to location |
+| OPEN/CLOSE | Change `isOpen` state |
+| LOCK/UNLOCK | Change `isLocked` state |
+| WEAR/REMOVE | Change `worn` state |
+| SWITCH ON/OFF | Change `isOn` state |
+| EAT/DRINK | Consume item |
+| ENTER/EXIT | Change player location |
+| PUT IN/ON | Change containment |
+
+Traits determine *if* the action can happen; stdlib determines *what* happens.
+
+### No Standard Semantics (USE capability dispatch)
+
+These verbs have entity-specific meaning - the entity determines what the verb does:
+
+| Verb | Why Capability Dispatch? | Examples |
+|------|--------------------------|----------|
+| LOWER | Entity-specific mutation | Basket elevator, mirror pole, drawbridge |
+| RAISE/LIFT | Entity-specific mutation | Basket elevator, mirror pole |
+| TURN | "Turn X" varies by entity | Wheel, dial, crank, key-in-lock |
+| WAVE | Entity-specific effect | Sceptre → rainbow, wand → spell |
+| RING | Entity-specific effect | Bell → exorcism, phone → call |
+| WIND | Entity-specific effect | Music box, canary, clock |
+| RUB | Entity-specific effect | Lamp → genie, crystal ball |
+| PLAY | Instrument-specific | Piano, flute, horn |
+| BLOW | Entity-specific effect | Horn → sound, candle → extinguish |
+
+### Edge Cases (Standard + Special)
+
+Some verbs have standard semantics but special uses:
+
+| Verb | Standard Use | Special Use |
+|------|--------------|-------------|
+| PUSH | Move object (exert force) | Push button/lever (activation) |
+| PULL | Move object (exert force) | Pull lever/rope (activation) |
+
+For these, the standard action handles the common case. Entities needing special behavior use capability traits.
+
+## Extension Vectors
+
+Capability dispatch aligns across all extension points:
+
+### Stdlib (Curated Platform)
+
+Stdlib is a **curated** set of Traits, Behaviors, and Actions for most IF development.
+
+- Provides capability-dispatch actions for common verbs with no standard semantics
+- Example: `if.action.lowering` dispatches to any trait claiming that capability
+- Story authors use these without modification
+
+### Story (e.g., Dungeo)
+
+Stories create traits that claim stdlib capabilities:
+
+```typescript
+// Story creates trait
+class BasketElevatorTrait extends Trait {
+  static readonly capabilities = ['if.action.lowering', 'if.action.raising'];
+  // ...
+}
+
+// Story creates behavior
+export const BasketLoweringBehavior: CapabilityBehavior = { /* ... */ };
+
+// Story registers binding
+registerTraitBehavior(BasketElevatorTrait.type, BasketLoweringBehavior);
+```
+
+For story-specific verbs (SAY "odysseus", INCANT), stories create full actions.
+
+### Third-Party Extensions
+
+Same pattern as stories:
+
+1. Create traits claiming stdlib capabilities
+2. Or create entirely new verbs as full actions if stdlib doesn't have them
+
+### The Key Principle
+
+**Stdlib owns the verbs. Extensions own the behaviors.**
+
+- Stdlib provides `if.action.lowering` (the dispatch mechanism)
+- Story provides `BasketElevatorTrait` + `BasketLoweringBehavior` (the entity-specific logic)
+- No story-specific action files needed for stdlib verbs
+
+## Capability Conflict Resolution: Scope Math
+
+When "lower X" could apply to multiple entities, the parser's existing scope resolution handles it:
+
+### Parser Scope Math (Already Exists)
+
+The parser uses scope ranking to resolve noun ambiguity:
+
+1. **Proximity**: Held items > items in room > visible but not touchable
+2. **Recency**: Most recently referred-to entity wins ties
+3. **Specificity**: More specific scope constraints in grammar win
+
+Example: Player is holding a lever and there's a lever on the wall.
+- "pull lever" → parser picks held lever (proximity wins)
+- "pull lever on wall" → parser picks wall lever (specificity wins)
+
+### Applied to Capability Dispatch
+
+The same math applies to capability dispatch:
+
+```
+> lower basket      (basket and pole both in scope)
+
+Parser scope resolution:
+1. "basket" matches basket entity (score: in room)
+2. "basket" doesn't match pole entity
+→ Resolves to basket entity
+
+Capability dispatch:
+1. Basket has BasketElevatorTrait claiming 'if.action.lowering'
+→ Dispatches to BasketLoweringBehavior
+```
+
+```
+> lower pole        (basket and pole both in scope)
+
+Parser scope resolution:
+1. "pole" matches pole entity (score: in room)
+2. "pole" doesn't match basket entity
+→ Resolves to pole entity
+
+Capability dispatch:
+1. Pole has MirrorPoleTrait claiming 'if.action.lowering'
+→ Dispatches to MirrorPoleBehavior
+```
+
+### Edge Case: Multiple Traits on Same Entity
+
+If one entity has multiple traits claiming the same capability (rare authoring scenario), first-found wins. This is an authoring error - entities should have one trait per capability.
+
+### Benefits of Scope-Based Resolution
+
+| Aspect | Priority Numbers | Scope Math |
+|--------|------------------|------------|
+| Based on | Hardcoded trait values | Actual game state |
+| Coordination | Authors must coordinate | Automatic |
+| Predictability | Arbitrary | Matches noun resolution |
+| Player intuition | Opaque | "Same rules as noun picking" |
+
+## Design Decisions
+
+### Debugging Support
+
+When debug mode is enabled, capability dispatch fires a debug event:
+
+```typescript
+if (context.debug) {
+  emit('debug.capability.dispatched', {
+    actionId: this.id,
+    entityId: entity.id,
+    traitType: (trait.constructor as typeof Trait).type,
+    behaviorType: behavior.constructor?.name ?? 'anonymous'
+  });
+}
+```
+
+This helps authors troubleshoot "why did X happen when I typed Y" scenarios.
+
+### Before/After Hooks
+
+**Deferred.** The existing event handler system (ADR-052) already supports before/after patterns at the action level. Whether capability dispatch needs its own hook points is unclear - may not be necessary if action-level hooks suffice. Revisit if real use cases emerge during Dungeo implementation.
+
+## Real Implementation: Dungeo Basket Elevator
+
+The basket elevator in Project Dungeo demonstrates capability dispatch in action. Here's the actual implementation:
+
+### Trait Declaration (`stories/dungeo/src/traits/basket-elevator-trait.ts`)
+
+```typescript
+import { ITrait, ITraitConstructor } from '@sharpee/world-model';
+
+export type BasketPosition = 'top' | 'bottom';
+
+export class BasketElevatorTrait implements ITrait {
+  static readonly type = 'dungeo.trait.basket_elevator' as const;
+  static readonly capabilities = ['if.action.lowering', 'if.action.raising'] as const;
+
+  readonly type = BasketElevatorTrait.type;
+
+  position: BasketPosition;
+  topRoomId: string;
+  bottomRoomId: string;
+
+  constructor(config: { topRoomId: string; bottomRoomId: string; initialPosition?: BasketPosition }) {
+    this.topRoomId = config.topRoomId;
+    this.bottomRoomId = config.bottomRoomId;
+    this.position = config.initialPosition ?? 'top';
+  }
+}
+```
+
+### Behavior Implementation (`stories/dungeo/src/traits/basket-elevator-behaviors.ts`)
+
+```typescript
+import {
+  CapabilityBehavior,
+  CapabilityValidationResult,
+  CapabilityEffect,
+  createEffect,
+  IFEntity,
+  WorldModel
+} from '@sharpee/world-model';
+import { BasketElevatorTrait } from './basket-elevator-trait';
+
+export const BasketLoweringBehavior: CapabilityBehavior = {
+  validate(entity: IFEntity, world: WorldModel, actorId: string): CapabilityValidationResult {
+    const trait = entity.get(BasketElevatorTrait);
+    if (!trait) {
+      return { valid: false, error: 'if.lower.cant_lower_that' };
+    }
+    if (trait.position === 'bottom') {
+      return { valid: false, error: 'if.lower.already_down' };
+    }
+    return { valid: true };
+  },
+
+  execute(entity: IFEntity, world: WorldModel, actorId: string): void {
+    const trait = entity.get(BasketElevatorTrait);
+    if (!trait) return;
+    trait.position = 'bottom';
+  },
+
+  report(entity: IFEntity, world: WorldModel, actorId: string): CapabilityEffect[] {
+    return [
+      createEffect('if.event.lowered', {
+        messageId: 'if.lower.lowered',
+        targetId: entity.id,
+        targetName: entity.name
+      }),
+      createEffect('action.success', {
+        actionId: 'if.action.lowering',
+        messageId: 'if.lower.lowered',
+        params: { target: entity.name }
+      })
+    ];
+  },
+
+  blocked(entity: IFEntity, world: WorldModel, actorId: string, error: string): CapabilityEffect[] {
+    return [
+      createEffect('action.blocked', {
+        actionId: 'if.action.lowering',
+        messageId: error,
+        params: { target: entity.name }
+      })
+    ];
+  }
+};
+```
+
+### Story Registration (`stories/dungeo/src/index.ts`)
+
+```typescript
+import { registerCapabilityBehavior, hasCapabilityBehavior } from '@sharpee/world-model';
+import { BasketElevatorTrait, BasketLoweringBehavior, BasketRaisingBehavior } from './traits';
+
+// In initializeWorld():
+if (!hasCapabilityBehavior(BasketElevatorTrait.type, 'if.action.lowering')) {
+  registerCapabilityBehavior(
+    BasketElevatorTrait.type,
+    'if.action.lowering',
+    BasketLoweringBehavior
+  );
+}
+if (!hasCapabilityBehavior(BasketElevatorTrait.type, 'if.action.raising')) {
+  registerCapabilityBehavior(
+    BasketElevatorTrait.type,
+    'if.action.raising',
+    BasketRaisingBehavior
+  );
+}
+```
+
+### Key Implementation Notes
+
+1. **Use `hasCapabilityBehavior` before registering** - The capability registry is global, so check before registering to avoid errors in test runs.
+
+2. **Emit `action.success` with `params`** - The language layer uses `params.target` to interpolate messages like "You lower {target}."
+
+3. **Standard message IDs** - Use stdlib message IDs (`if.lower.lowered`, `if.raise.already_up`) for lang-en-us compatibility.
+
+4. **`workspace:*` dependencies** - Stories must use `workspace:*` in package.json (not `file:`) to ensure module deduplication. Otherwise, the story and stdlib may have separate registries.
+
+## Infrastructure: ValidationResult.data
+
+The validation-to-execution data flow is implemented via `ValidationResult.data`:
+
+```typescript
+// In validate() - return discovered data
+return { valid: true, data: { trait, behavior, entity } };
+
+// In execute/report() - access via context.validationResult
+const { behavior, entity } = context.validationResult!.data!;
+```
+
+**Implementation details:**
+
+1. **`ValidationResult.data`** (stdlib/enhanced-types.ts):
+   ```typescript
+   export interface ValidationResult {
+     valid: boolean;
+     error?: string;
+     params?: Record<string, any>;
+     messageId?: string;
+     data?: Record<string, any>;  // Added for phase data flow
+   }
+   ```
+
+2. **`ActionContext.validationResult`** (stdlib/enhanced-types.ts):
+   ```typescript
+   export interface ActionContext {
+     // ... existing properties
+     validationResult?: ValidationResult;  // Set by engine after validate()
+   }
+   ```
+
+3. **Engine threading** (engine/command-executor.ts):
+   After `action.validate()` returns, the engine sets `context.validationResult` before calling `execute()` or `blocked()`.
+
+**Benefits over sharedData:**
+- Explicit data flow (return value, not side effect)
+- No mutation in validate() (query-like)
+- Type-safe access to validation data
+- Traceable data flow through phases
+
+**Note:** `context.sharedData` is still available for passing data between execute() and report() phases, but validate() discoveries should go via `ValidationResult.data`.
+
+## References
+
+- ADR-052: Event Handlers for Custom Logic
+- ADR-075: Event Handler Consolidation (Effects pattern)
+- ADR-087: Action-Centric Grammar
+- Existing trait/behavior pattern in world-model

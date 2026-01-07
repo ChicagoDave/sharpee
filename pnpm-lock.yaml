@@ -199,6 +199,9 @@ importers:
       '@sharpee/if-domain':
         specifier: workspace:*
         version: link:../if-domain
+      '@sharpee/lang-en-us':
+        specifier: workspace:*
+        version: link:../lang-en-us
       '@sharpee/world-model':
         specifier: workspace:*
         version: link:../world-model
@@ -542,29 +545,29 @@ importers:
   stories/dungeo:
     dependencies:
       '@sharpee/core':
-        specifier: file:../../packages/core
+        specifier: workspace:*
         version: link:../../packages/core
       '@sharpee/engine':
-        specifier: file:../../packages/engine
-        version: file:packages/engine
+        specifier: workspace:*
+        version: link:../../packages/engine
       '@sharpee/event-processor':
-        specifier: file:../../packages/event-processor
-        version: file:packages/event-processor
+        specifier: workspace:*
+        version: link:../../packages/event-processor
       '@sharpee/lang-en-us':
-        specifier: file:../../packages/lang-en-us
-        version: file:packages/lang-en-us
+        specifier: workspace:*
+        version: link:../../packages/lang-en-us
       '@sharpee/parser-en-us':
-        specifier: file:../../packages/parser-en-us
-        version: file:packages/parser-en-us
+        specifier: workspace:*
+        version: link:../../packages/parser-en-us
       '@sharpee/stdlib':
-        specifier: file:../../packages/stdlib
-        version: file:packages/stdlib
+        specifier: workspace:*
+        version: link:../../packages/stdlib
       '@sharpee/text-services':
-        specifier: file:../../packages/text-services
-        version: file:packages/text-services
+        specifier: workspace:*
+        version: link:../../packages/text-services
       '@sharpee/world-model':
-        specifier: file:../../packages/world-model
-        version: file:packages/world-model
+        specifier: workspace:*
+        version: link:../../packages/world-model
     devDependencies:
       '@types/node':
         specifier: ^20.11.19
@@ -1367,9 +1370,6 @@ packages:
   '@sharpee/engine@file:packages/engine':
     resolution: {directory: packages/engine, type: directory}
     engines: {node: '>=18.0.0'}
-
-  '@sharpee/event-processor@file:packages/event-processor':
-    resolution: {directory: packages/event-processor, type: directory}
 
   '@sharpee/lang-en-us@file:packages/lang-en-us':
     resolution: {directory: packages/lang-en-us, type: directory}
@@ -4851,12 +4851,6 @@ snapshots:
       '@sharpee/text-services': link:packages/text-services
       '@sharpee/world-model': link:packages/world-model
 
-  '@sharpee/event-processor@file:packages/event-processor':
-    dependencies:
-      '@sharpee/core': link:packages/core
-      '@sharpee/if-domain': link:packages/if-domain
-      '@sharpee/world-model': link:packages/world-model
-
   '@sharpee/lang-en-us@file:packages/lang-en-us':
     dependencies:
       '@sharpee/core': link:packages/core
@@ -4866,6 +4860,7 @@ snapshots:
     dependencies:
       '@sharpee/core': link:packages/core
       '@sharpee/if-domain': link:packages/if-domain
+      '@sharpee/lang-en-us': link:packages/lang-en-us
       '@sharpee/world-model': link:packages/world-model
 
   '@sharpee/stdlib@file:packages/stdlib':

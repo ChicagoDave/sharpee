@@ -21,13 +21,14 @@ import {
 } from '@sharpee/world-model';
 
 import { CoalMineRoomIds } from '../index';
+import { BasketElevatorTrait } from '../../../traits';
 
 /**
  * Create all objects in the Coal Mine region
  */
 export function createCoalMineObjects(world: WorldModel, roomIds: CoalMineRoomIds): void {
   // Shaft Room objects
-  createBasket(world, roomIds.shaftRoom);
+  createBasket(world, roomIds.shaftRoom, roomIds.bottomOfShaft);
 
   // Coal Mine Dead End objects
   createCoal(world, roomIds.coalMineDeadEnd);
@@ -51,8 +52,15 @@ export function createCoalMineObjects(world: WorldModel, roomIds: CoalMineRoomId
 
 /**
  * Basket - Elevator mechanism for the shaft
+ *
+ * Uses BasketElevatorTrait for capability dispatch (ADR-090).
+ * Responds to "lower basket" and "raise basket" commands.
  */
-function createBasket(world: WorldModel, roomId: string): IFEntity {
+function createBasket(
+  world: WorldModel,
+  topRoomId: string,
+  bottomRoomId: string
+): IFEntity {
   const basket = world.createEntity('basket', EntityType.CONTAINER);
 
   basket.add(new IdentityTrait({
@@ -69,10 +77,14 @@ function createBasket(world: WorldModel, roomId: string): IFEntity {
 
   basket.add(new SceneryTrait());
 
-  // Basket state for elevator mechanics
-  (basket as any).position = 'top';  // 'top' or 'bottom'
+  // Basket elevator trait - handles lowering/raising via capability dispatch
+  basket.add(new BasketElevatorTrait({
+    topRoomId,
+    bottomRoomId,
+    initialPosition: 'top'
+  }));
 
-  world.moveEntity(basket.id, roomId);
+  world.moveEntity(basket.id, topRoomId);
   return basket;
 }
 

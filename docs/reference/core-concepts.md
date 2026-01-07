@@ -447,6 +447,111 @@ case 'if.event.perception.blocked':
 
 **Key Insight**: If your execute phase is complex, you're doing it wrong. Move the logic to a behavior.
 
+## Capability Dispatch (ADR-090)
+
+Capability dispatch allows entities to handle generic actions (like "lower" or "raise") with entity-specific behaviors. Instead of having fixed action semantics, these actions delegate to behaviors registered for specific traits.
+
+### How It Works
+
+1. **Trait declares capabilities**: A trait lists which action IDs it can handle
+2. **Behavior implements 4-phase pattern**: validate/execute/report/blocked
+3. **Story registers behaviors**: Connect trait+capability to behavior
+4. **Stdlib action dispatches**: Finds trait, delegates to behavior
+
+### Example: Basket Elevator
+
+```typescript
+// 1. Trait declares capabilities
+class BasketElevatorTrait implements ITrait {
+  static readonly type = 'dungeo.trait.basket_elevator';
+  static readonly capabilities = ['if.action.lowering', 'if.action.raising'];
+
+  position: 'top' | 'bottom' = 'top';
+  topRoomId: string;
+  bottomRoomId: string;
+}
+
+// 2. Behavior implements the logic
+const BasketLoweringBehavior: CapabilityBehavior = {
+  validate(entity, world, actorId): CapabilityValidationResult {
+    const trait = entity.get(BasketElevatorTrait);
+    if (trait.position === 'bottom') {
+      return { valid: false, error: 'if.lower.already_down' };
+    }
+    return { valid: true };
+  },
+
+  execute(entity, world, actorId): void {
+    const trait = entity.get(BasketElevatorTrait);
+    trait.position = 'bottom';
+  },
+
+  report(entity, world, actorId): CapabilityEffect[] {
+    return [
+      createEffect('if.event.lowered', { targetId: entity.id }),
+      createEffect('action.success', {
+        actionId: 'if.action.lowering',
+        messageId: 'if.lower.lowered',
+        params: { target: entity.name }
+      })
+    ];
+  },
+
+  blocked(entity, world, actorId, error): CapabilityEffect[] {
+    return [
+      createEffect('action.blocked', {
+        actionId: 'if.action.lowering',
+        messageId: error,
+        params: { target: entity.name }
+      })
+    ];
+  }
+};
+
+// 3. Register behavior at story initialization
+import { registerCapabilityBehavior, hasCapabilityBehavior } from '@sharpee/world-model';
+
+if (!hasCapabilityBehavior(BasketElevatorTrait.type, 'if.action.lowering')) {
+  registerCapabilityBehavior(
+    BasketElevatorTrait.type,
+    'if.action.lowering',
+    BasketLoweringBehavior
+  );
+}
+```
+
+### Creating Capability-Dispatch Actions
+
+The stdlib provides `createCapabilityDispatchAction()` for creating these actions:
+
+```typescript
+import { createCapabilityDispatchAction } from '@sharpee/stdlib';
+
+export const loweringAction = createCapabilityDispatchAction({
+  actionId: 'if.action.lowering',
+  group: 'manipulation',
+  noTargetError: 'if.lower.no_target',
+  cantDoThatError: 'if.lower.cant_lower_that'
+});
+```
+
+### When to Use Capability Dispatch
+
+Use capability dispatch when:
+- The same verb can mean different things for different objects (lower basket vs lower blinds)
+- Story-specific objects need custom handling for generic verbs
+- You want to avoid littering stdlib actions with special cases
+
+Don't use when:
+- The action has fixed, universal semantics (taking, dropping)
+- All objects handle the verb the same way
+
+### Key Files
+
+- Registry: `/packages/world-model/src/capabilities/capability-registry.ts`
+- Helpers: `/packages/world-model/src/capabilities/capability-helpers.ts`
+- Dispatch factory: `/packages/stdlib/src/actions/capability-dispatch.ts`
+
 ## Scope System
 
 Determines what entities are perceivable to the player.

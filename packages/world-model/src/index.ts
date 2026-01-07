@@ -58,3 +58,6 @@ export * from './scope';
 
 // Event system types (basic types only - ADR-075 effects moved to event-processor)
 export * from './events/types';
+
+// Capability dispatch system (ADR-090)
+export * from './capabilities';

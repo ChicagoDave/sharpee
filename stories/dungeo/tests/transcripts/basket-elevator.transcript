@@ -1,0 +1,56 @@
+title: Basket Elevator
+story: dungeo
+description: Tests basket elevator lowering/raising via capability dispatch (ADR-090)
+
+---
+
+# Basket Elevator - Capability Dispatch Test (ADR-090)
+# Tests: LOWER BASKET, RAISE BASKET, position tracking
+
+## Setup - get lantern and navigate to Shaft Room
+> gdt
+[OK: contains "GDT ready"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> ah Shaft Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning to game"]
+
+> turn on lantern
+[OK: contains "switches on"]
+
+## Examine the basket - should describe elevator
+> look at basket
+[OK: contains "rusty iron basket"]
+[OK: contains "chain"]
+
+## Lower the basket - it should move to Bottom of Shaft
+> lower basket
+[OK: contains "lower"]
+
+## Try to lower again - should fail (already at bottom)
+> lower basket
+[OK: contains "already"]
+
+## Raise the basket - it should move back to Shaft Room
+> raise basket
+[OK: contains "raise"]
+
+## Try to raise again - should fail (already at top)
+> raise basket
+[OK: contains "already"]
+
+## Test alternate verb: lift basket (same as raise)
+> lower basket
+[OK: contains "lower"]
+
+> lift basket
+[OK: contains "raise"]
+
+## Verify basket is back at top
+> raise basket
+[OK: contains "already"]

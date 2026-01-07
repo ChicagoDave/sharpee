@@ -23,11 +23,11 @@ export const doHandler: GDTCommandHandler = {
       };
     }
 
-    const entity = context.findEntity(args[0]);
+    const entity = context.findEntity(args.join(' '));
     if (!entity) {
       return {
         success: false,
-        output: [`Object not found: ${args[0]}`],
+        output: [`Object not found: ${args.join(' ')}`],
         error: 'NOT_FOUND'
       };
     }

@@ -356,6 +356,9 @@ function createDamBolt(world: WorldModel, roomId: string): IFEntity {
 
   // Note: Don't add SceneryTrait - bolt needs to be in parser scope
 
+  // Mark as turnable for grammar constraint (avoids "turn on lantern" conflict)
+  (bolt as any).turnable = true;
+
   world.moveEntity(bolt.id, roomId);
   return bolt;
 }

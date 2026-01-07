@@ -1,0 +1,101 @@
+title: Tiny Room Key Puzzle
+story: dungeo
+description: Test the classic IF "key under door" puzzle in the Tiny Room
+
+---
+
+# Enter GDT mode to set up the puzzle
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+# Take the brass lantern for light
+> tk brass lantern
+[OK: contains "Taken"]
+
+# Take the welcome mat (from West of House)
+> tk welcome mat
+[OK: contains "Taken"]
+
+# Take the screwdriver (from Maintenance Room)
+> tk screwdriver
+[OK: contains "Taken"]
+
+# Go to Tiny Room
+> ah tiny room
+[OK: contains "Tiny Room"]
+
+# Check room contents
+> dr
+[OK: contains "Tiny Room"]
+
+# Check if door is there
+> do small door
+[OK: contains "door"]
+
+# Exit GDT mode to test the puzzle
+> ex
+[OK: contains "Returning to game"]
+
+# Turn on the lantern so we can see
+> turn on lantern
+[OK: contains "on"]
+
+# Verify we're in Tiny Room
+> look
+[OK: contains "Tiny Room"]
+[OK: contains "door"]
+
+# Try to go north - should be blocked by locked door
+> north
+[OK: contains "locked"]
+[OK: contains "no keyhole"]
+
+# Check inventory
+> inventory
+[OK: contains "welcome mat"]
+[OK: contains "screwdriver"]
+
+# Step 1: Put the mat under the door
+> put mat under door
+[OK: contains "slide the mat under the door"]
+
+# Try again - should say already placed
+> put mat under door
+[OK: contains "already under the door"]
+
+# Step 2: Push the key with the screwdriver
+> push key with screwdriver
+[OK: contains "screwdriver"]
+[OK: contains "keyhole"]
+[OK: contains "clink"]
+
+# Try again - should say keyhole is empty
+> push key with screwdriver
+[OK: contains "empty"]
+
+# Step 3: Pull the mat to get the key
+> take mat
+[OK: contains "mat"]
+[OK: contains "key"]
+
+# Check inventory - should now have the key
+> inventory
+[OK: contains "small key"]
+[OK: contains "welcome mat"]
+
+# Step 4: Unlock the door
+> unlock door with key
+[OK: contains "unlock"]
+
+# Step 5: Open and go through
+> open door
+[OK: contains "open"]
+
+# Step 6: Go north to Dreary Room
+> north
+[OK: contains "Dreary Room"]
+
+# Verify we made it and can see the treasure
+> look
+[OK: contains "Dreary Room"]
+[OK: contains "blue crystal sphere"]

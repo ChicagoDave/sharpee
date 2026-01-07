@@ -73,18 +73,21 @@ export const turnBoltAction: Action = {
   group: 'manipulation',
 
   validate(context: ActionContext): ValidationResult {
-    const { world } = context;
-    const target = context.command.directObject?.entity;
+    const { world, player } = context;
 
-    if (!target) {
+    // Find bolt in current room (literal pattern doesn't pass entity)
+    const playerLocation = world.getLocation(player.id);
+    if (!playerLocation) {
       return {
         valid: false,
         error: TurnBoltMessages.NOT_A_BOLT
       };
     }
 
-    // Check if it's the bolt
-    if (!isBolt(target)) {
+    const roomContents = world.getContents(playerLocation);
+    const target = roomContents.find(e => isBolt(e));
+
+    if (!target) {
       return {
         valid: false,
         error: TurnBoltMessages.NOT_A_BOLT

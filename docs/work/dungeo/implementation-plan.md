@@ -432,12 +432,11 @@
 
 | Puzzle | Solution | Status | Reward |
 |--------|----------|--------|--------|
-| Egg | Let thief steal and open | ❌ | Canary |
-| Key (Tiny Room) | Mat under door, screwdriver | ❌ | Blue sphere |
+| Egg/Canary/Bauble | Thief opens egg, wind canary in forest | ✅ Done | Canary + Bauble |
+| Key (Tiny Room) | Mat under door, screwdriver | ✅ Done | Blue sphere |
 | Coffin | Drain reservoir, carry across | ❌ | 10 points |
 | Glacier | Throw torch at ice | ✅ Done | Volcano View access |
 | Rainbow | Wave sceptre at falls | ✅ Done | Pot of gold |
-| Bauble | Wind canary in forest | ❌ | Bauble (WIND action done, need spawn) |
 | Buried treasure | Dig 4 times with shovel | ✅ Done | Statue |
 | Thief's Canvas (ADR-078) | Kill thief→frame→break→incense→pray→drop piece | ✅ Done | 34 pts canvas |
 
@@ -528,18 +527,27 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 | Tools | 6 | 6 | 100% |
 | Containers | 5 | 5 | 100% |
 | NPCs | 7 | 7 | 100% |
-| Puzzles (working) | 19 | ~25 | 76% |
+| Puzzles (working) | 21 | ~25 | 84% |
 
 ---
 
 ## Priority Next Steps
 
-1. **Remaining puzzles** - Cake size changes, basket mechanism, coffin transport
-2. **Missing systems** - INFLATE/DEFLATE (boat), robot commands
+1. **Remaining puzzles**:
+   - Coffin transport - drain reservoir, carry coffin across
+   - Coal machine - put coal, turn switch → diamond
+   - Basket mechanism - lower/raise for mine transport
+2. **Missing systems**:
+   - INFLATE/DEFLATE actions (boat)
+   - Water current (river auto-movement)
+   - Robot commands ("tell robot 'X'" syntax)
 3. **Cleanup** - Remove obsolete `event-handler-migration-plan.md` (ADR-086 fixed all handlers)
 
 ## Recently Completed
 
+- ✅ **Tiny Room Key Puzzle** (2026-01-05) - Classic IF "key under door" puzzle. PUT MAT UNDER DOOR, PUSH KEY WITH SCREWDRIVER, TAKE MAT (gets key). 4 new actions (put-under, push-key, pull-mat, door-blocked), 2 command transformers (block north when locked, intercept take mat when under door). Uses LockableTrait properly. All 22 transcript tests pass.
+- ✅ **Grammar Conflict Fixes + Flooding Timing** (2026-01-05) - Fixed 158 test failures from ADR-089 merge. Turn-bolt changed to literal "turn bolt" patterns (was intercepting "turn on lantern"). Press-button changed to "press :target" only (was intercepting "push rug"). Fixed flooding water level progression - daemon now skips button press turn and increments by 2 (matching FORTRAN RVMNT/2 formula). All 699 tests pass.
+- ✅ **ADR-089 Pronoun & Identity System** (2026-01-05) - Complete implementation of pronoun resolution and narrative perspective. Parser resolves "it", "him", "her", "them" etc. Story can configure 1st/2nd/3rd person perspective. Message placeholders {You}, {your}, {take} conjugate automatically.
 - ✅ **Missing Objects Placement** (2026-01-04) - Added 10 missing objects to proper locations: shovel (Small Cave), pump (Reservoir North), welcome mat (West of House), brick+wire (Attic), timber (Timber Room), green paper+3 cakes (Tea Room). Researched FORTRAN source and confirmed there is NO "gold key" - only skeleton key (maze, for grating) and rusty key (endgame). Removed incorrectly-added iron key. All 680 tests pass.
 - ✅ **UNDO System** (2026-01-04) - Implemented snapshot-based undo with 5-10 turn buffer. Engine creates snapshots before state-changing commands (not meta/info commands like look, examine, inventory). Platform events: UNDO_REQUESTED/COMPLETED/FAILED. Fixed bugs in command-executor, event-adapter (was stripping requiresClientAction, converting underscores to dots in platform event types). All 680 tests pass.
 - ✅ **ADR-086 Event Handler Unification** (2026-01-04) - Fixed critical bug where `world.registerEventHandler()` handlers were never called. Added `IEventProcessorWiring` interface to if-domain. Engine now wires WorldModel handlers to EventProcessor automatically. All 16 handlers (lantern, candles, exorcism, glacier, ghost ritual, laser, dam, reality altered, balloon, trophy case) now work without code changes.
