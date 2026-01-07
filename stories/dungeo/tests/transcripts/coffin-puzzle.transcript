@@ -1,0 +1,68 @@
+title: Coffin Puzzle - Take and Store
+story: dungeo
+description: Tests taking the gold coffin from Egyptian Room and storing in trophy case (14 points total)
+
+---
+
+# Setup: Get lamp and go to Egyptian Room
+> gdt
+[OK: contains "GDT"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> ah Egyptian Room
+[OK: contains "Egyptian Room"]
+
+# Turn on lamp so we can see
+> turn on lantern
+[OK: contains "on"]
+
+# Verify coffin is here and described
+> look
+[OK: contains "coffin"]
+
+# Open and search the coffin - should contain sceptre
+> open coffin
+[OK: contains "open"]
+
+> search coffin
+[OK: contains "sceptre"]
+
+# Take the sceptre (treasure inside coffin)
+> take sceptre
+[OK: contains "take"]
+
+# Close the coffin
+> close coffin
+[OK: contains "close"]
+
+# Take the coffin itself (it's a portable treasure, weight=10, capacity=100)
+> take coffin
+[OK: contains "Taken"]
+
+# Verify we're carrying the coffin
+> inventory
+[OK: contains "coffin"]
+[OK: contains "sceptre"]
+
+# Use GDT to get to Living Room
+> ah Living Room
+[OK: contains "Living Room"]
+
+# Open trophy case
+> open trophy case
+[OK: contains "open"]
+
+# Put coffin in trophy case - should award points (10 points)
+> put coffin in trophy case
+[OK: contains "put"]
+[EVENT: true, type="if.event.put_in"]
+
+# Put sceptre in trophy case too (4 points)
+> put sceptre in trophy case
+[OK: contains "put"]
+
+# Check score - coffin (10) + sceptre (4) = 14 points
+> score
+[OK: contains "14"]

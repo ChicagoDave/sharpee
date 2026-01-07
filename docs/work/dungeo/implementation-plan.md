@@ -434,7 +434,7 @@
 |--------|----------|--------|--------|
 | Egg/Canary/Bauble | Thief opens egg, wind canary in forest | ✅ Done | Canary + Bauble |
 | Key (Tiny Room) | Mat under door, screwdriver | ✅ Done | Blue sphere |
-| Coffin | Drain reservoir, carry across | 🚧 Partial | 10 points (reservoir blocking done, bidirectional dam toggle, map bug fixed) |
+| Coffin | Drain reservoir, carry across, pray at altar | ✅ Done | 10 points (coffin portable weight=10, dam blocking works, transcript test passing) |
 | Glacier | Throw torch at ice | ✅ Done | Volcano View access |
 | Rainbow | Wave sceptre at falls | ✅ Done | Pot of gold |
 | Buried treasure | Dig 4 times with shovel | ✅ Done | Statue |
@@ -457,7 +457,7 @@
 | WAVE action | ✅ Done | Sceptre/rainbow (2026-01-02) |
 | Water current | ❌ | River auto-movement |
 | RING action | ✅ Done | Bell |
-| PRAY action | ✅ Done | ADR-078 basin blessing |
+| PRAY action | 🚧 Partial | Altar→Forest teleport needed (current Basin Room logic incorrect) |
 | BURN action | ✅ Done | ADR-078 incense (3-turn timer) |
 | Exorcism sequence | ✅ Done | Bell/book/candle |
 | DIG action | ✅ Done | Shovel/beach (2026-01-02) |
@@ -533,8 +533,7 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Priority Next Steps
 
-1. **Remaining puzzles**:
-   - Coffin transport - drain reservoir, carry coffin across
+1. **PRAY action fix**: Implement Altar→Forest teleportation (current Basin Room logic is incorrect per Fortran source)
 2. **Missing systems**:
    - INFLATE/DEFLATE actions (boat)
    - Water current (river auto-movement)
@@ -543,6 +542,7 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Recently Completed
 
+- ✅ **Coffin Puzzle & Weight Research** (2026-01-07) - Parsed Fortran dindx.dat to extract object weights/capacities. Key finding: COFFIN weight=10, player MXLOAD=100 - coffin is easily portable (10% of capacity). Created transcript test verifying coffin+sceptre can be taken and stored in trophy case (14 points). Also discovered PRAY action incorrectly implements Basin Room logic instead of Altar→Forest teleportation per Fortran source. Added weights-capacities.md reference doc.
 - ✅ **Dam Puzzle Bidirectional Toggle & Map Fix** (2026-01-07) - Fixed map bug where `connectTempleToDam()` overwrote Reservoir South→Dam exit with Temple connection. Temple is correctly accessed via Glacier Room→Egyptian Room and Grail Room paths. Added bidirectional dam toggle: turn bolt when drained closes dam and re-blocks reservoir exits. Handler listens for `dungeo.dam.closed` event. All 761 tests pass (5 expected failures).
 - ✅ **Coal Machine Puzzle** (2026-01-07) - Turn switch on machine converts coal to diamond. Story action `turn-switch-action.ts` with ContainerTrait on machine. 16 transcript tests pass.
 - ✅ **Tiny Room Key Puzzle** (2026-01-05) - Classic IF "key under door" puzzle. PUT MAT UNDER DOOR, PUSH KEY WITH SCREWDRIVER, TAKE MAT (gets key). 4 new actions (put-under, push-key, pull-mat, door-blocked), 2 command transformers (block north when locked, intercept take mat when under door). Uses LockableTrait properly. All 22 transcript tests pass.
