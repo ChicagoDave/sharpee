@@ -17,7 +17,8 @@ import {
   OpenableTrait,
   SceneryTrait,
   VehicleTrait,
-  EntityType
+  EntityType,
+  EnterableTrait
 } from '@sharpee/world-model';
 
 /**
@@ -163,9 +164,9 @@ function createBalloon(world: WorldModel, roomIds: BalloonRoomIds): IFEntity {
   }));
 
   balloon.add(new ContainerTrait({
-    capacity: { maxItems: 10, maxWeight: 100 },
-    enterable: true
+    capacity: { maxItems: 10, maxWeight: 100 }
   }));
+  balloon.add(new EnterableTrait());
 
   balloon.add(new VehicleTrait({
     vehicleType: 'aircraft',

@@ -47,27 +47,32 @@ Design doc written to `docs/work/dungeo/enterable-trait.md` with:
 - `docs/work/dispatch/review.md` - marked issues as fixed
 - `docs/work/dungeo/enterable-trait.md` - new design doc
 
-## Next Steps
+## Completed (continued)
 
-1. **Implement EnterableTrait** (platform change - world-model):
-   - Create `src/traits/enterable/enterableTrait.ts`
-   - Add `ENTERABLE` to TraitType enum
-   - Add `enterable` getter to IFEntity
-   - Export from world-model
+### 4. EnterableTrait Implementation
 
-2. **Update entering action** (stdlib):
-   - Check for EnterableTrait first
-   - Fall back to ContainerTrait.enterable for backwards compat
+Implemented the full EnterableTrait:
 
-3. **Update basket and bucket** (dungeo):
-   - Add `EnterableTrait` to both
-   - Test player transport
+**world-model changes:**
+- Created `src/traits/enterable/enterableTrait.ts` with `preposition` config ('in' | 'on')
+- Added `ENTERABLE` to TraitType enum
+- Added `enterable` getter to IFEntity (line 312)
+- Updated `all-traits.ts`, `implementations.ts`, `index.ts` exports
 
-4. **Run all tests**:
-   - `./scripts/build-all-ubuntu.sh`
-   - `node packages/transcript-tester/dist/cli.js stories/dungeo --all`
+**stdlib changes:**
+- Updated `entering.ts` to check EnterableTrait first, then fall back to legacy
+
+**dungeo changes:**
+- Added `EnterableTrait()` to basket
+- Added `EnterableTrait()` to bucket
+- Added `EnterableTrait()` to balloon
+
+**Final Design:** EnterableTrait is the single source of truth for enterability.
+- Removed legacy fallbacks to ContainerTrait.enterable/SupporterTrait.enterable
+- Removed capacity checks from entering action - capacity is author responsibility
+- Clean, simple validation: has EnterableTrait? is open (if openable)? done.
 
 ## Test Status
 
 - Build: passing
-- 45 transcript tests: 739 tests, 734 passed, 5 expected failures
+- 45 transcript tests: 739 tests, 734 passed, 5 expected failures (unchanged)

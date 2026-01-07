@@ -17,7 +17,8 @@ import {
   SceneryTrait,
   ActorTrait,
   NpcTrait,
-  EntityType
+  EntityType,
+  EnterableTrait
 } from '@sharpee/world-model';
 
 import { CoalMineRoomIds } from '../index';
@@ -74,6 +75,8 @@ function createBasket(
   basket.add(new ContainerTrait({
     capacity: { maxItems: 10, maxWeight: 100 }
   }));
+
+  basket.add(new EnterableTrait());
 
   basket.add(new SceneryTrait());
 

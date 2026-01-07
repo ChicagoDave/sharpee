@@ -55,7 +55,8 @@ export const TraitType = {
   NPC: 'npc',
 
   // Transport traits
-  VEHICLE: 'vehicle'
+  VEHICLE: 'vehicle',
+  ENTERABLE: 'enterable'
 } as const;
 
 /**
@@ -126,7 +127,8 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   [TraitType.NPC]: TraitCategory.STANDARD,
 
   // Transport traits
-  [TraitType.VEHICLE]: TraitCategory.INTERACTIVE
+  [TraitType.VEHICLE]: TraitCategory.INTERACTIVE,
+  [TraitType.ENTERABLE]: TraitCategory.INTERACTIVE
 };
 
 /**

@@ -15,11 +15,8 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
-  ContainerTrait,
-  SupporterTrait,
-  ContainerBehavior,
-  SupporterBehavior,
-  OpenableBehavior
+  OpenableBehavior,
+  EnterableTrait
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { EnteredEventData } from './entering-events';
@@ -82,71 +79,26 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Check if it's an enterable container
-    if (target.has(TraitType.CONTAINER)) {
-      const containerTrait = target.get(TraitType.CONTAINER) as ContainerTrait;
-      if (!containerTrait.enterable) {
-        return {
-          valid: false,
-          error: EnteringMessages.NOT_ENTERABLE,
-          params: { place: target.name }
-        };
-      }
-
-      // Check if container needs to be open
-      if (target.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(target)) {
-        return {
-          valid: false,
-          error: EnteringMessages.CONTAINER_CLOSED,
-          params: { container: target.name }
-        };
-      }
-
-      // Check capacity for containers
-      if (!ContainerBehavior.canAccept(target, actor, context.world)) {
-        return {
-          valid: false,
-          error: EnteringMessages.TOO_FULL,
-          params: {
-            place: target.name
-          }
-        };
-      }
-
-      return { valid: true };
+    // Check enterability
+    if (!target.has(TraitType.ENTERABLE)) {
+      return {
+        valid: false,
+        error: EnteringMessages.NOT_ENTERABLE,
+        params: { place: target.name }
+      };
     }
 
-    // Check if it's an enterable supporter
-    if (target.has(TraitType.SUPPORTER)) {
-      const supporterTrait = target.get(TraitType.SUPPORTER) as SupporterTrait;
-      if (!supporterTrait.enterable) {
-        return {
-          valid: false,
-          error: EnteringMessages.NOT_ENTERABLE,
-          params: { place: target.name }
-        };
-      }
-
-      // Check capacity for supporters
-      if (!SupporterBehavior.canAccept(target, actor, context.world)) {
-        return {
-          valid: false,
-          error: EnteringMessages.TOO_FULL,
-          params: {
-            place: target.name
-          }
-        };
-      }
-
-      return { valid: true };
+    // Check if it needs to be open
+    if (target.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(target)) {
+      return {
+        valid: false,
+        error: EnteringMessages.CONTAINER_CLOSED,
+        params: { container: target.name }
+      };
     }
 
-    // Not enterable (not a container or supporter)
-    return {
-      valid: false,
-      error: EnteringMessages.NOT_ENTERABLE,
-      params: { place: target.name }
-    };
+    // Capacity checks are author responsibility via event handlers
+    return { valid: true };
   },
 
   /**
@@ -158,12 +110,9 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
     const target = context.command.directObject!.entity!; // Safe because validate ensures it exists
     const currentLocation = context.world.getLocation(actor.id);
 
-    // Determine preposition based on target type
-    let preposition: 'in' | 'on' = 'in';
-
-    if (target.has(TraitType.SUPPORTER)) {
-      preposition = 'on';
-    }
+    // Get preposition from EnterableTrait (required by validate)
+    const enterableTrait = target.get(TraitType.ENTERABLE) as EnterableTrait;
+    const preposition = enterableTrait.preposition;
 
     // Simply move the actor to the target - that's all!
     context.world.moveEntity(actor.id, target.id);

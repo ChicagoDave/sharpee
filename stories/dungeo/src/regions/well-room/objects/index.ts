@@ -19,7 +19,8 @@ import {
   OpenableTrait,
   ActorTrait,
   NpcTrait,
-  VehicleTrait
+  VehicleTrait,
+  EnterableTrait
 } from '@sharpee/world-model';
 import { WellRoomIds } from '../index';
 
@@ -86,11 +87,11 @@ function createBucket(
     article: 'a'
   }));
 
-  // Container: enterable so player can get in
+  // Container for holding items
   bucket.add(new ContainerTrait({
-    capacity: { maxItems: 5, maxWeight: 20 },
-    enterable: true
+    capacity: { maxItems: 5, maxWeight: 20 }
   }));
+  bucket.add(new EnterableTrait());  // Player can enter
   bucket.add(new OpenableTrait({ isOpen: true })); // Always open container
 
   // Vehicle: counterweight mechanism (water weight moves it)

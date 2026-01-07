@@ -305,6 +305,13 @@ export class IFEntity implements IEntity {
   get isSwitchable(): boolean {
     return this.has(TraitType.SWITCHABLE);
   }
+
+  /**
+   * Check if this can be entered by actors
+   */
+  get enterable(): boolean {
+    return this.has(TraitType.ENTERABLE);
+  }
   
   /**
    * Check if this is switched on

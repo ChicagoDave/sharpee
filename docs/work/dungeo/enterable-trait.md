@@ -123,10 +123,22 @@ if (!entity.has(TraitType.ENTERABLE)) {
 
 ## Migration Path
 
-1. **Phase 1**: Create EnterableTrait, add `enterable` getter to IFEntity
-2. **Phase 2**: Update entering action to check EnterableTrait first
-3. **Phase 3**: Update basket and bucket to use EnterableTrait
+1. **Phase 1**: Create EnterableTrait, add `enterable` getter to IFEntity - DONE
+2. **Phase 2**: Update entering action to check EnterableTrait first - DONE
+3. **Phase 3**: Update basket and bucket to use EnterableTrait - DONE
 4. **Phase 4**: Deprecate `enterable` on ContainerTrait/SupporterTrait (future)
+
+## Implementation Notes (2026-01-07)
+
+**Final Design:** EnterableTrait is the single source of truth for enterability.
+
+The entering action validates:
+1. Entity has EnterableTrait
+2. If openable, it must be open
+
+That's it. **No legacy fallbacks, no capacity checks.**
+
+Capacity is author responsibility via event handlers or custom trait extensions.
 
 ## Files to Change
 

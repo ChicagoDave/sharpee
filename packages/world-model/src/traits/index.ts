@@ -41,6 +41,7 @@ export * from './equipped';
 
 // Transport traits
 export * from './vehicle';
+export * from './enterable';
 
 // NPC traits
 export * from './npc';
