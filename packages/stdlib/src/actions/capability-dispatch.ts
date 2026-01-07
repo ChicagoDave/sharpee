@@ -11,7 +11,8 @@ import { ISemanticEvent } from '@sharpee/core';
 import {
   findTraitWithCapability,
   getBehaviorForCapability,
-  CapabilityEffect
+  CapabilityEffect,
+  CapabilitySharedData
 } from '@sharpee/world-model';
 import { ActionMetadata } from '../validation';
 import { ScopeLevel } from '../scope/types';
@@ -40,6 +41,8 @@ interface CapabilityDispatchData {
   behavior: any;
   entityId: string;
   entityName: string;
+  /** Shared data object passed to all behavior phases */
+  sharedData: CapabilitySharedData;
 }
 
 /**
@@ -123,8 +126,11 @@ export function createCapabilityDispatchAction(
         };
       }
 
+      // Create sharedData for passing data between behavior phases
+      const sharedData: CapabilitySharedData = {};
+
       // Delegate validation to behavior
-      const behaviorResult = behavior.validate(entity, context.world, context.player.id);
+      const behaviorResult = behavior.validate(entity, context.world, context.player.id, sharedData);
 
       if (!behaviorResult.valid) {
         return {
@@ -139,7 +145,8 @@ export function createCapabilityDispatchAction(
         trait,
         behavior,
         entityId: entity.id,
-        entityName: entity.name
+        entityName: entity.name,
+        sharedData
       };
 
       return { valid: true, data };
@@ -154,7 +161,7 @@ export function createCapabilityDispatchAction(
       }
 
       // Delegate execution to behavior
-      data.behavior.execute(entity, context.world, context.player.id);
+      data.behavior.execute(entity, context.world, context.player.id, data.sharedData);
     },
 
     blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
@@ -169,7 +176,8 @@ export function createCapabilityDispatchAction(
           entity,
           context.world,
           context.player.id,
-          result.error || config.cantDoThatError
+          result.error || config.cantDoThatError,
+          data.sharedData
         );
         return effectsToEvents(effects, context);
       }
@@ -196,7 +204,8 @@ export function createCapabilityDispatchAction(
       const effects = data.behavior.report(
         entity,
         context.world,
-        context.player.id
+        context.player.id,
+        data.sharedData
       );
       return effectsToEvents(effects, context);
     }

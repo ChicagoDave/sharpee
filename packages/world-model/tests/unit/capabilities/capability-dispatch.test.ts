@@ -48,7 +48,7 @@ class PlainTrait implements ITrait {
 
 // Test behavior
 const testBehavior: CapabilityBehavior = {
-  validate(entity: IFEntity, world: any, actorId: string): CapabilityValidationResult {
+  validate(entity: IFEntity, world: any, actorId: string, sharedData: any): CapabilityValidationResult {
     const trait = entity.get(TestLowerableTrait) as TestLowerableTrait;
     if (trait?.position === 'down') {
       return { valid: false, error: 'already_down' };
@@ -56,18 +56,18 @@ const testBehavior: CapabilityBehavior = {
     return { valid: true };
   },
 
-  execute(entity: IFEntity, world: any, actorId: string): void {
+  execute(entity: IFEntity, world: any, actorId: string, sharedData: any): void {
     const trait = entity.get(TestLowerableTrait) as TestLowerableTrait;
     if (trait) {
       trait.position = 'down';
     }
   },
 
-  report(entity: IFEntity, world: any, actorId: string): CapabilityEffect[] {
+  report(entity: IFEntity, world: any, actorId: string, sharedData: any): CapabilityEffect[] {
     return [createEffect('if.event.lowered', { target: entity.id })];
   },
 
-  blocked(entity: IFEntity, world: any, actorId: string, error: string): CapabilityEffect[] {
+  blocked(entity: IFEntity, world: any, actorId: string, error: string, sharedData: any): CapabilityEffect[] {
     return [createEffect('action.blocked', { messageId: error })];
   }
 };
@@ -268,7 +268,8 @@ describe('CapabilityBehavior', () => {
   });
 
   it('should validate successfully when preconditions met', () => {
-    const result = testBehavior.validate(entity, null, 'player');
+    const sharedData = {};
+    const result = testBehavior.validate(entity, null, 'player', sharedData);
 
     expect(result.valid).toBe(true);
   });
@@ -277,21 +278,24 @@ describe('CapabilityBehavior', () => {
     const trait = entity.get(TestLowerableTrait) as TestLowerableTrait;
     trait.position = 'down';
 
-    const result = testBehavior.validate(entity, null, 'player');
+    const sharedData = {};
+    const result = testBehavior.validate(entity, null, 'player', sharedData);
 
     expect(result.valid).toBe(false);
     expect(result.error).toBe('already_down');
   });
 
   it('should execute mutations', () => {
-    testBehavior.execute(entity, null, 'player');
+    const sharedData = {};
+    testBehavior.execute(entity, null, 'player', sharedData);
 
     const trait = entity.get(TestLowerableTrait) as TestLowerableTrait;
     expect(trait.position).toBe('down');
   });
 
   it('should report success effects', () => {
-    const effects = testBehavior.report(entity, null, 'player');
+    const sharedData = {};
+    const effects = testBehavior.report(entity, null, 'player', sharedData);
 
     expect(effects).toHaveLength(1);
     expect(effects[0].type).toBe('if.event.lowered');
@@ -299,7 +303,8 @@ describe('CapabilityBehavior', () => {
   });
 
   it('should report blocked effects', () => {
-    const effects = testBehavior.blocked(entity, null, 'player', 'already_down');
+    const sharedData = {};
+    const effects = testBehavior.blocked(entity, null, 'player', 'already_down', sharedData);
 
     expect(effects).toHaveLength(1);
     expect(effects[0].type).toBe('action.blocked');

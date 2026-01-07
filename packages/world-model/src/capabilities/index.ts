@@ -13,7 +13,7 @@ export {
 } from './types';
 
 // Behavior interface
-export { CapabilityBehavior } from './capability-behavior';
+export { CapabilityBehavior, CapabilitySharedData } from './capability-behavior';
 
 // Registry
 export {

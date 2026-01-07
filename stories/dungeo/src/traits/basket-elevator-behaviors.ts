@@ -10,6 +10,7 @@ import {
   CapabilityBehavior,
   CapabilityValidationResult,
   CapabilityEffect,
+  CapabilitySharedData,
   createEffect,
   IFEntity,
   WorldModel
@@ -66,7 +67,8 @@ export const BasketLoweringBehavior: CapabilityBehavior = {
   validate(
     entity: IFEntity,
     world: WorldModel,
-    actorId: string
+    actorId: string,
+    sharedData: CapabilitySharedData
   ): CapabilityValidationResult {
     const trait = entity.get(BasketElevatorTrait);
     if (!trait) {
@@ -87,7 +89,12 @@ export const BasketLoweringBehavior: CapabilityBehavior = {
     return { valid: true };
   },
 
-  execute(entity: IFEntity, world: WorldModel, actorId: string): void {
+  execute(
+    entity: IFEntity,
+    world: WorldModel,
+    actorId: string,
+    sharedData: CapabilitySharedData
+  ): void {
     const trait = entity.get(BasketElevatorTrait);
     if (!trait) return;
 
@@ -98,16 +105,17 @@ export const BasketLoweringBehavior: CapabilityBehavior = {
     const playerTransported = transportPlayerIfInBasket(entity, world, trait.bottomRoomId);
 
     // Store whether player was transported for reporting
-    (entity as any)._lastMoveTransportedPlayer = playerTransported;
+    sharedData.playerTransported = playerTransported;
   },
 
   report(
     entity: IFEntity,
     world: WorldModel,
-    actorId: string
+    actorId: string,
+    sharedData: CapabilitySharedData
   ): CapabilityEffect[] {
     const effects: CapabilityEffect[] = [];
-    const playerTransported = (entity as any)._lastMoveTransportedPlayer;
+    const playerTransported = sharedData.playerTransported;
 
     // Report the lowering
     effects.push(
@@ -144,9 +152,6 @@ export const BasketLoweringBehavior: CapabilityBehavior = {
       );
     }
 
-    // Clean up temp flag
-    delete (entity as any)._lastMoveTransportedPlayer;
-
     return effects;
   },
 
@@ -154,7 +159,8 @@ export const BasketLoweringBehavior: CapabilityBehavior = {
     entity: IFEntity,
     world: WorldModel,
     actorId: string,
-    error: string
+    error: string,
+    sharedData: CapabilitySharedData
   ): CapabilityEffect[] {
     return [
       createEffect('action.blocked', {
@@ -173,7 +179,8 @@ export const BasketRaisingBehavior: CapabilityBehavior = {
   validate(
     entity: IFEntity,
     world: WorldModel,
-    actorId: string
+    actorId: string,
+    sharedData: CapabilitySharedData
   ): CapabilityValidationResult {
     const trait = entity.get(BasketElevatorTrait);
     if (!trait) {
@@ -194,7 +201,12 @@ export const BasketRaisingBehavior: CapabilityBehavior = {
     return { valid: true };
   },
 
-  execute(entity: IFEntity, world: WorldModel, actorId: string): void {
+  execute(
+    entity: IFEntity,
+    world: WorldModel,
+    actorId: string,
+    sharedData: CapabilitySharedData
+  ): void {
     const trait = entity.get(BasketElevatorTrait);
     if (!trait) return;
 
@@ -205,16 +217,17 @@ export const BasketRaisingBehavior: CapabilityBehavior = {
     const playerTransported = transportPlayerIfInBasket(entity, world, trait.topRoomId);
 
     // Store whether player was transported for reporting
-    (entity as any)._lastMoveTransportedPlayer = playerTransported;
+    sharedData.playerTransported = playerTransported;
   },
 
   report(
     entity: IFEntity,
     world: WorldModel,
-    actorId: string
+    actorId: string,
+    sharedData: CapabilitySharedData
   ): CapabilityEffect[] {
     const effects: CapabilityEffect[] = [];
-    const playerTransported = (entity as any)._lastMoveTransportedPlayer;
+    const playerTransported = sharedData.playerTransported;
 
     // Report the raising
     effects.push(
@@ -251,9 +264,6 @@ export const BasketRaisingBehavior: CapabilityBehavior = {
       );
     }
 
-    // Clean up temp flag
-    delete (entity as any)._lastMoveTransportedPlayer;
-
     return effects;
   },
 
@@ -261,7 +271,8 @@ export const BasketRaisingBehavior: CapabilityBehavior = {
     entity: IFEntity,
     world: WorldModel,
     actorId: string,
-    error: string
+    error: string,
+    sharedData: CapabilitySharedData
   ): CapabilityEffect[] {
     return [
       createEffect('action.blocked', {

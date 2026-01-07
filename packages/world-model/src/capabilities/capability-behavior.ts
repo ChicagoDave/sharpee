@@ -10,6 +10,12 @@ import { WorldModel } from '../world';
 import { CapabilityValidationResult, CapabilityEffect } from './types';
 
 /**
+ * Shared data object for passing data between behavior phases.
+ * Mirrors ActionContext.sharedData pattern from stdlib.
+ */
+export type CapabilitySharedData = Record<string, any>;
+
+/**
  * Standard interface for capability behaviors.
  *
  * Behaviors implement this interface to handle specific capabilities
@@ -25,7 +31,7 @@ import { CapabilityValidationResult, CapabilityEffect } from './types';
  * @example
  * ```typescript
  * const BasketLoweringBehavior: CapabilityBehavior = {
- *   validate(entity, world, actorId) {
+ *   validate(entity, world, actorId, sharedData) {
  *     const trait = entity.get(BasketElevatorTrait);
  *     if (trait.position === 'bottom') {
  *       return { valid: false, error: 'dungeo.basket.already_down' };
@@ -33,17 +39,19 @@ import { CapabilityValidationResult, CapabilityEffect } from './types';
  *     return { valid: true };
  *   },
  *
- *   execute(entity, world, actorId) {
+ *   execute(entity, world, actorId, sharedData) {
  *     const trait = entity.get(BasketElevatorTrait);
  *     trait.position = 'bottom';
  *     world.moveEntity(entity.id, trait.bottomRoomId);
+ *     sharedData.playerTransported = true; // Pass data to report()
  *   },
  *
- *   report(entity, world, actorId) {
+ *   report(entity, world, actorId, sharedData) {
+ *     const transported = sharedData.playerTransported;
  *     return [createEffect('if.event.lowered', { target: entity.id })];
  *   },
  *
- *   blocked(entity, world, actorId, error) {
+ *   blocked(entity, world, actorId, error, sharedData) {
  *     return [createEffect('action.blocked', { messageId: error })];
  *   }
  * };
@@ -59,9 +67,10 @@ export interface CapabilityBehavior {
    * @param entity - The entity being acted upon
    * @param world - The world model for querying state
    * @param actorId - ID of the actor performing the action
+   * @param sharedData - Mutable object for passing data between phases
    * @returns Validation result with optional error info
    */
-  validate(entity: IFEntity, world: WorldModel, actorId: string): CapabilityValidationResult;
+  validate(entity: IFEntity, world: WorldModel, actorId: string, sharedData: CapabilitySharedData): CapabilityValidationResult;
 
   /**
    * Phase 2: Execute mutations.
@@ -73,8 +82,9 @@ export interface CapabilityBehavior {
    * @param entity - The entity being acted upon
    * @param world - The world model for mutations
    * @param actorId - ID of the actor performing the action
+   * @param sharedData - Mutable object for passing data between phases
    */
-  execute(entity: IFEntity, world: WorldModel, actorId: string): void;
+  execute(entity: IFEntity, world: WorldModel, actorId: string, sharedData: CapabilitySharedData): void;
 
   /**
    * Phase 3: Report success.
@@ -85,9 +95,10 @@ export interface CapabilityBehavior {
    * @param entity - The entity that was acted upon
    * @param world - The world model (post-mutation state)
    * @param actorId - ID of the actor who performed the action
+   * @param sharedData - Mutable object for passing data between phases
    * @returns Array of effects to emit
    */
-  report(entity: IFEntity, world: WorldModel, actorId: string): CapabilityEffect[];
+  report(entity: IFEntity, world: WorldModel, actorId: string, sharedData: CapabilitySharedData): CapabilityEffect[];
 
   /**
    * Phase 4: Report failure.
@@ -99,7 +110,8 @@ export interface CapabilityBehavior {
    * @param world - The world model
    * @param actorId - ID of the actor who attempted the action
    * @param error - Error code from validation result
+   * @param sharedData - Mutable object for passing data between phases
    * @returns Array of effects to emit
    */
-  blocked(entity: IFEntity, world: WorldModel, actorId: string, error: string): CapabilityEffect[];
+  blocked(entity: IFEntity, world: WorldModel, actorId: string, error: string, sharedData: CapabilitySharedData): CapabilityEffect[];
 }
