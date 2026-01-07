@@ -64,9 +64,12 @@ export function createActionContext(
     command,
     scopeResolver,
     action,
-    
+
     // Shared data for passing information between phases
     sharedData: {},
+
+    // Validation result - set by CommandExecutor after validate() phase
+    validationResult: undefined,
 
     // Scope checking methods (delegate to scopeResolver)
     canSee: (entity: IFEntity) => {

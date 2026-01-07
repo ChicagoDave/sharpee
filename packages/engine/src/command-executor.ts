@@ -148,6 +148,10 @@ export class CommandExecutor {
       // Run action's four phases: validate → execute → report (or blocked)
       const actionValidation = action.validate(actionContext);
 
+      // Thread validation result to later phases via context
+      // This allows actions to access data from validate() in execute/report
+      (actionContext as { validationResult?: typeof actionValidation }).validationResult = actionValidation;
+
       let events: ISemanticEvent[];
 
       if (actionValidation.valid) {

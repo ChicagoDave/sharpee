@@ -764,6 +764,12 @@ Not applicable - no old action files existed for basket elevator.
 - [x] Added `hasCapabilityBehavior()` check before registration (global registry)
 - [x] Added `if.lower.already_down` and `if.raise.already_up` messages to lang-en-us
 - [x] Updated build scripts for Ubuntu/native Linux environments
+- [x] Fixed template interpolation bug (`{target:cap}` not supported)
+- [x] **Implemented ValidationResult.data infrastructure** - clean data flow from validate() to execute/report phases:
+  - Added `data?: Record<string, any>` to `ValidationResult`
+  - Added `validationResult?: ValidationResult` to `ActionContext`
+  - Engine threads validation result to context after validate()
+  - Updated capability-dispatch.ts to use new pattern (no sharedData mutation)
 
 ### 5.4 Final Acceptance Criteria
 

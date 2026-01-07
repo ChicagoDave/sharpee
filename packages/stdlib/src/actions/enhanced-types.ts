@@ -78,18 +78,22 @@ export interface ActionContext {
   
   /**
    * Shared data store for passing information between action phases.
-   * 
+   *
    * This property enables clean data passing from the execute phase to the report phase,
    * eliminating the need for context pollution patterns like `(context as any)._previousLocation`.
-   * 
+   *
    * Data stored here during execute() is available in report() for creating rich events
    * with full context about what changed during the action.
-   * 
+   *
+   * @deprecated Prefer using ValidationResult.data for passing data from validate()
+   * to later phases. sharedData is still useful for passing data between execute()
+   * and report() phases, but validate() discoveries should go in ValidationResult.data.
+   *
    * @example
    * // In execute() phase - capture context before mutations
    * context.sharedData.previousLocation = context.world.getLocation(item.id);
    * context.sharedData.wasWorn = item.has(TraitType.WEARABLE) && item.wearable.worn;
-   * 
+   *
    * // In report() phase - access captured data
    * const { previousLocation, wasWorn } = context.sharedData;
    * if (wasWorn) {
@@ -97,6 +101,23 @@ export interface ActionContext {
    * }
    */
   sharedData: Record<string, any>;
+
+  /**
+   * The validation result from the validate() phase.
+   *
+   * This is set by the engine after validate() returns and before calling
+   * execute() or blocked(). Actions can access data passed from validate()
+   * via validationResult.data.
+   *
+   * @example
+   * // In validate() - return discovered data
+   * return { valid: true, data: { trait, behavior, entity } };
+   *
+   * // In execute() or report() - access the data
+   * const { behavior, entity } = context.validationResult!.data!;
+   * behavior.execute(entity, context.world, context.player.id);
+   */
+  validationResult?: ValidationResult;
   
   // Event creation capabilities
   /**
@@ -156,22 +177,38 @@ export interface ValidationResult {
    * Whether the action can be executed
    */
   valid: boolean;
-  
+
   /**
    * Error code if validation failed
    * Used to look up appropriate error messages
    */
   error?: string;
-  
+
   /**
    * Additional context for error messages
    */
   params?: Record<string, any>;
-  
+
   /**
    * Optional custom message ID to use instead of default
    */
   messageId?: string;
+
+  /**
+   * Data to pass from validate() to execute() and report() phases.
+   *
+   * This enables clean data flow without using sharedData mutations.
+   * When validate() discovers entities, traits, or behaviors, it can
+   * return them in data for later phases to use.
+   *
+   * @example
+   * // In validate() - return discovered data
+   * return { valid: true, data: { trait, behavior, entity } };
+   *
+   * // In execute/report() - access via context.validationResult
+   * const { behavior, entity } = context.validationResult!.data!;
+   */
+  data?: Record<string, any>;
 }
 
 /**

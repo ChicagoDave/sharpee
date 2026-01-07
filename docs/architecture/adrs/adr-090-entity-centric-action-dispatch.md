@@ -1129,64 +1129,49 @@ if (!hasCapabilityBehavior(BasketElevatorTrait.type, 'if.action.raising')) {
 
 4. **`workspace:*` dependencies** - Stories must use `workspace:*` in package.json (not `file:`) to ensure module deduplication. Otherwise, the story and stdlib may have separate registries.
 
-## Infrastructure Requirements
+## Infrastructure: ValidationResult.data
 
-### ValidationResult.data (TODO)
-
-The pseudocode examples in this ADR show validation data flowing via `ValidationResult.data`:
+The validation-to-execution data flow is implemented via `ValidationResult.data`:
 
 ```typescript
-// In validate():
+// In validate() - return discovered data
 return { valid: true, data: { trait, behavior, entity } };
 
-// In execute/report():
-const { behavior, entity } = context.validationResult.data;
+// In execute/report() - access via context.validationResult
+const { behavior, entity } = context.validationResult!.data!;
 ```
 
-This requires two additions to the platform:
+**Implementation details:**
 
-1. **Add `data` to `ValidationResult`** (stdlib/enhanced-types.ts):
+1. **`ValidationResult.data`** (stdlib/enhanced-types.ts):
    ```typescript
    export interface ValidationResult {
      valid: boolean;
      error?: string;
      params?: Record<string, any>;
      messageId?: string;
-     data?: Record<string, any>;  // NEW
+     data?: Record<string, any>;  // Added for phase data flow
    }
    ```
 
-2. **Add `validationResult` to `ActionContext`** (stdlib/enhanced-types.ts):
+2. **`ActionContext.validationResult`** (stdlib/enhanced-types.ts):
    ```typescript
    export interface ActionContext {
      // ... existing properties
-     readonly validationResult?: ValidationResult;  // NEW
+     validationResult?: ValidationResult;  // Set by engine after validate()
    }
    ```
 
-3. **Thread validation result through engine** (engine/command-executor.ts):
-   After `action.validate()`, include the result in the context passed to `execute()` and `report()`.
+3. **Engine threading** (engine/command-executor.ts):
+   After `action.validate()` returns, the engine sets `context.validationResult` before calling `execute()` or `blocked()`.
 
-### Current Implementation (Workaround)
+**Benefits over sharedData:**
+- Explicit data flow (return value, not side effect)
+- No mutation in validate() (query-like)
+- Type-safe access to validation data
+- Traceable data flow through phases
 
-Until the above infrastructure is implemented, `capability-dispatch.ts` uses `context.sharedData` to pass data between phases:
-
-```typescript
-// In validate() - stores as side effect
-const sharedData = context.sharedData as CapabilityDispatchSharedData;
-sharedData.trait = trait;
-sharedData.behavior = behavior;
-
-// In execute/report() - retrieves from sharedData
-const { behavior, entity } = context.sharedData;
-```
-
-This works but has drawbacks:
-- Side-effect mutation in validate() (should be query-like)
-- Implicit coupling through mutable shared state
-- Data flow is not explicit or traceable
-
-The `ValidationResult.data` approach is preferred and should be implemented.
+**Note:** `context.sharedData` is still available for passing data between execute() and report() phases, but validate() discoveries should go via `ValidationResult.data`.
 
 ## References
 

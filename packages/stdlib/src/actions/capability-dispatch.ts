@@ -33,9 +33,9 @@ export interface CapabilityDispatchConfig {
 }
 
 /**
- * Shared data for capability dispatch actions.
+ * Data passed from validate() to execute/report via ValidationResult.data.
  */
-interface CapabilityDispatchSharedData {
+interface CapabilityDispatchData {
   trait: any;
   behavior: any;
   entityId: string;
@@ -123,13 +123,6 @@ export function createCapabilityDispatchAction(
         };
       }
 
-      // Store for later phases
-      const sharedData = context.sharedData as CapabilityDispatchSharedData;
-      sharedData.trait = trait;
-      sharedData.behavior = behavior;
-      sharedData.entityId = entity.id;
-      sharedData.entityName = entity.name;
-
       // Delegate validation to behavior
       const behaviorResult = behavior.validate(entity, context.world, context.player.id);
 
@@ -141,28 +134,38 @@ export function createCapabilityDispatchAction(
         };
       }
 
-      return { valid: true };
+      // Pass discovered data to later phases via ValidationResult.data
+      const data: CapabilityDispatchData = {
+        trait,
+        behavior,
+        entityId: entity.id,
+        entityName: entity.name
+      };
+
+      return { valid: true, data };
     },
 
     execute(context: ActionContext): void {
-      const sharedData = context.sharedData as CapabilityDispatchSharedData;
+      const data = context.validationResult?.data as CapabilityDispatchData | undefined;
       const entity = context.command.directObject?.entity;
 
-      if (!entity || !sharedData.behavior) {
+      if (!entity || !data?.behavior) {
         return;
       }
 
       // Delegate execution to behavior
-      sharedData.behavior.execute(entity, context.world, context.player.id);
+      data.behavior.execute(entity, context.world, context.player.id);
     },
 
     blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-      const sharedData = context.sharedData as CapabilityDispatchSharedData;
+      // For blocked, we need to check both validationResult.data and result.data
+      // because validate() may have stored data before returning a failed behavior validation
+      const data = (context.validationResult?.data ?? result.data) as CapabilityDispatchData | undefined;
       const entity = context.command.directObject?.entity;
 
       // If we have a behavior, let it handle the blocked message
-      if (entity && sharedData.behavior) {
-        const effects = sharedData.behavior.blocked(
+      if (entity && data?.behavior) {
+        const effects = data.behavior.blocked(
           entity,
           context.world,
           context.player.id,
@@ -182,15 +185,15 @@ export function createCapabilityDispatchAction(
     },
 
     report(context: ActionContext): ISemanticEvent[] {
-      const sharedData = context.sharedData as CapabilityDispatchSharedData;
+      const data = context.validationResult?.data as CapabilityDispatchData | undefined;
       const entity = context.command.directObject?.entity;
 
-      if (!entity || !sharedData.behavior) {
+      if (!entity || !data?.behavior) {
         return [];
       }
 
       // Delegate reporting to behavior
-      const effects = sharedData.behavior.report(
+      const effects = data.behavior.report(
         entity,
         context.world,
         context.player.id
