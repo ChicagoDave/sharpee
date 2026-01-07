@@ -38,7 +38,7 @@ import { registerScheduledEvents, DungeoSchedulerMessages, FloodingMessages, reg
 import { setSchedulerForGDT, setEngineForKL } from './actions/gdt/commands';
 
 // Import handlers
-import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages, registerGlacierHandler, GlacierMessages } from './handlers';
+import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages, registerGlacierHandler, GlacierMessages, registerReservoirExitHandler } from './handlers';
 import { initializeMirrorRoom, createMirrorTouchHandler, MirrorRoomConfig, MirrorRoomMessages } from './handlers/mirror-room-handler';
 import { MIRROR_ID } from './regions/underground/objects';
 
@@ -241,6 +241,15 @@ export class DungeoStory implements Story {
 
     // Register glacier handler (throw torch at glacier puzzle)
     registerGlacierHandler(world, this.damIds.glacierRoom, this.volcanoIds.volcanoView);
+
+    // Register reservoir exit handler (dam draining opens reservoir path)
+    registerReservoirExitHandler(world, {
+      dam: this.damIds.dam,
+      maintenanceRoom: this.damIds.maintenanceRoom,
+      reservoirSouth: this.damIds.reservoirSouth,
+      reservoir: this.damIds.reservoir,
+      reservoirNorth: this.damIds.reservoirNorth
+    });
 
     // Set initial player location to West of House
     const player = world.getPlayer();
@@ -1666,12 +1675,12 @@ export class DungeoStory implements Story {
     language.addMessage(PressButtonMessages.BLUE_LEAK_STARTED, 'There is a rumbling sound from below, and water begins to leak into the room!');
 
     // Dam puzzle - Turn bolt action messages
-    language.addMessage(TurnBoltMessages.WRONG_TOOL, 'The wrench won\'t fit on that.');
+    language.addMessage(TurnBoltMessages.NOT_A_BOLT, "You can't turn that.");
     language.addMessage(TurnBoltMessages.WONT_TURN, 'The bolt won\'t turn. Perhaps the control panel has something to do with it.');
+    language.addMessage(TurnBoltMessages.NO_TOOL, 'You can\'t turn the bolt with your bare hands.');
+    language.addMessage(TurnBoltMessages.WRONG_TOOL, 'The wrench won\'t fit on that.');
     language.addMessage(TurnBoltMessages.GATES_OPEN, 'The sluice gates open and water pours through the dam.');
     language.addMessage(TurnBoltMessages.GATES_CLOSE, 'The sluice gates close, stopping the flow of water.');
-    language.addMessage(TurnBoltMessages.NOT_A_BOLT, "You can't turn that.");
-    language.addMessage(TurnBoltMessages.NO_TOOL, 'You can\'t turn the bolt with your bare hands.');
 
     // Coal machine puzzle - Turn switch action messages
     language.addMessage(TurnSwitchMessages.NO_SWITCH, "There's no switch here.");

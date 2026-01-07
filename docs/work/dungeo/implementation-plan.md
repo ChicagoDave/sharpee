@@ -401,7 +401,7 @@
 | Puzzle | Solution | Status | Reward |
 |--------|----------|--------|--------|
 | Trap door | Move rug, open door | ✅ Done | Access underground |
-| Dam | Turn bolt with wrench | ✅ Done | Drain reservoir |
+| Dam | Turn bolt with wrench | ✅ Done | Drain reservoir, reservoir exit blocking |
 | Carousel/Round Room | Robot push button | ✅ Done | Robot NPC + handler complete |
 | Bucket/Well | Pour water to descend | ✅ Done | Access tea room |
 | Coal machine | Put coal, turn switch | ✅ Done | Diamond (turn-switch action) |
@@ -434,7 +434,7 @@
 |--------|----------|--------|--------|
 | Egg/Canary/Bauble | Thief opens egg, wind canary in forest | ✅ Done | Canary + Bauble |
 | Key (Tiny Room) | Mat under door, screwdriver | ✅ Done | Blue sphere |
-| Coffin | Drain reservoir, carry across | ❌ | 10 points |
+| Coffin | Drain reservoir, carry across | 🚧 Partial | 10 points (reservoir blocking done, map bug: Reservoir South S→Temple) |
 | Glacier | Throw torch at ice | ✅ Done | Volcano View access |
 | Rainbow | Wave sceptre at falls | ✅ Done | Pot of gold |
 | Buried treasure | Dig 4 times with shovel | ✅ Done | Statue |
@@ -543,6 +543,8 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Recently Completed
 
+- ✅ **Dam Drain & Reservoir Walkability** (2026-01-07) - Implemented reservoir exit blocking when dam is closed. Added `registerReservoirExitHandler()` that listens for dam draining completion and unblocks exits. Integrated turn-bolt action with dam-fuse scheduler. Discovered map bug: `connectTempleToDam()` overwrites Reservoir South → S exit to Temple instead of Dam. All 760 tests pass (5 expected failures).
+- ✅ **Coal Machine Puzzle** (2026-01-07) - Turn switch on machine converts coal to diamond. Story action `turn-switch-action.ts` with ContainerTrait on machine. 16 transcript tests pass.
 - ✅ **Tiny Room Key Puzzle** (2026-01-05) - Classic IF "key under door" puzzle. PUT MAT UNDER DOOR, PUSH KEY WITH SCREWDRIVER, TAKE MAT (gets key). 4 new actions (put-under, push-key, pull-mat, door-blocked), 2 command transformers (block north when locked, intercept take mat when under door). Uses LockableTrait properly. All 22 transcript tests pass.
 - ✅ **Grammar Conflict Fixes + Flooding Timing** (2026-01-05) - Fixed 158 test failures from ADR-089 merge. Turn-bolt changed to literal "turn bolt" patterns (was intercepting "turn on lantern"). Press-button changed to "press :target" only (was intercepting "push rug"). Fixed flooding water level progression - daemon now skips button press turn and increments by 2 (matching FORTRAN RVMNT/2 formula). All 699 tests pass.
 - ✅ **ADR-089 Pronoun & Identity System** (2026-01-05) - Complete implementation of pronoun resolution and narrative perspective. Parser resolves "it", "him", "her", "them" etc. Story can configure 1st/2nd/3rd person perspective. Message placeholders {You}, {your}, {take} conjugate automatically.

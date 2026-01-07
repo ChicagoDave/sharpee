@@ -1,0 +1,25 @@
+title: Dam Drain and Reservoir Walkability
+story: dungeo
+description: Test reservoir is blocked when dam is closed
+---
+
+# Use GDT to teleport to Dam and verify reservoir exits are blocked
+> gdt
+[OK: contains "GDT ready"]
+
+# Teleport to Dam area
+> ah Dam
+[OK: contains "Teleported"]
+
+# Exit GDT mode
+> ex
+[OK: contains "Returning"]
+
+# Go to Reservoir South
+> north
+[OK: contains "Reservoir South"]
+
+# Try to walk north - should be blocked (reservoir flooded)
+# The "movement_blocked" message is shown when exit is blocked
+> north
+[OK: contains "blocked"]

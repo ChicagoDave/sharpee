@@ -18,3 +18,4 @@ export * from './rainbow-handler';
 export * from './glacier-handler';
 export * from './balloon-handler';
 export * from './tiny-room-handler';
+export * from './dam-handler';
