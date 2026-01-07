@@ -49,7 +49,7 @@ import { createForestRooms, createForestObjects, connectForestToExterior, Forest
 import { createUndergroundRooms, createUndergroundObjects, connectUndergroundToHouse, connectStudioToKitchen, connectUndergroundToDam, connectGrailRoomToTemple, connectCaveToHades, UndergroundRoomIds } from './regions/underground';
 import { createDamRooms, connectDamToUnderground, connectReservoirToAtlantis, connectGlacierToEgyptian, connectTempleSmallCaveToRockyShore, createDamObjects, DamRoomIds } from './regions/dam';
 import { createCoalMineRooms, createCoalMineObjects, CoalMineRoomIds } from './regions/coal-mine';
-import { createTempleRooms, connectTempleToDam, connectTempleToUnderground, createTempleObjects, TempleRoomIds } from './regions/temple';
+import { createTempleRooms, connectTempleToUnderground, createTempleObjects, TempleRoomIds } from './regions/temple';
 import { createVolcanoRooms, connectVolcanoToGlacier, createVolcanoRegionObjects, VolcanoRoomIds, VolcanoObjectIds } from './regions/volcano';
 import { createBankRooms, connectBankToUnderground, createBankObjects, BankRoomIds } from './regions/bank-of-zork';
 import { createWellRoomRooms, connectWellRoomToTemple, createWellRoomObjects, WellRoomIds } from './regions/well-room';
@@ -179,7 +179,9 @@ export class DungeoStory implements Story {
     connectUndergroundToHouse(world, this.undergroundIds, this.houseInteriorIds.livingRoom);
     connectStudioToKitchen(world, this.undergroundIds, this.houseInteriorIds.kitchen);
     connectDamToUnderground(world, this.damIds, this.undergroundIds.roundRoom);
-    connectTempleToDam(world, this.templeIds, this.damIds.reservoirSouth);
+    // Note: Temple is NOT directly connected to Reservoir South. Access is via:
+    // - Glacier Room → Egyptian Room → Temple (connectGlacierToEgyptian)
+    // - Grail Room → Temple (connectGrailRoomToTemple)
     connectTempleToUnderground(world, this.templeIds, this.undergroundIds.rockyCrawl);
     connectReservoirToAtlantis(world, this.damIds, this.undergroundIds.atlantisRoom);
     connectGlacierToEgyptian(world, this.damIds, this.templeIds.egyptianRoom);

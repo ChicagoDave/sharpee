@@ -23,3 +23,7 @@ description: Test reservoir is blocked when dam is closed
 # The "movement_blocked" message is shown when exit is blocked
 > north
 [OK: contains "blocked"]
+
+# Verify south goes back to Dam (bug fix: was incorrectly going to Temple)
+> south
+[OK: contains "Dam"]
