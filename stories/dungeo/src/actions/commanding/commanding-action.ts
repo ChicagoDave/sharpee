@@ -13,26 +13,44 @@
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
-import { IdentityTrait, NpcTrait } from '@sharpee/world-model';
+import { IdentityTrait, NpcTrait, RoomTrait } from '@sharpee/world-model';
 import { CommandingMessages, COMMANDING_ACTION_ID } from './commanding-messages';
 import { RobotMessages } from '../../npcs/robot/robot-messages';
 import { getRobotProps, makeRobotPushButton } from '../../npcs/robot/robot-entity';
 
 /**
- * Verbs the robot can execute (from FORTRAN)
+ * Verbs the robot can execute (from FORTRAN timefnc.for lines 2977-2984)
+ * Robot says "buzz, whirr, click!" then executes action normally.
+ * Note: FOLLOW/STAY are Dungeon Master commands (A3), NOT robot commands.
  */
-const ROBOT_VERBS = [
+const ROBOT_EXECUTABLE_VERBS = [
   'walk', 'go', 'north', 'south', 'east', 'west', 'up', 'down', 'n', 's', 'e', 'w', 'u', 'd',
+  'ne', 'nw', 'se', 'sw', 'northeast', 'northwest', 'southeast', 'southwest',
   'take', 'get', 'pick',
   'drop',
   'put',
   'push', 'press',
   'throw',
   'turn',
-  'leap', 'jump',
-  'follow', 'come',
-  'stay', 'wait'
+  'leap', 'jump'
 ];
+
+/**
+ * Direction aliases for robot WALK command
+ * Maps user input to Direction constants (uppercase)
+ */
+const DIRECTION_MAP: Record<string, string> = {
+  'n': 'NORTH', 'north': 'NORTH',
+  's': 'SOUTH', 'south': 'SOUTH',
+  'e': 'EAST', 'east': 'EAST',
+  'w': 'WEST', 'west': 'WEST',
+  'u': 'UP', 'up': 'UP',
+  'd': 'DOWN', 'down': 'DOWN',
+  'ne': 'NORTHEAST', 'northeast': 'NORTHEAST',
+  'nw': 'NORTHWEST', 'northwest': 'NORTHWEST',
+  'se': 'SOUTHEAST', 'southeast': 'SOUTHEAST',
+  'sw': 'SOUTHWEST', 'southwest': 'SOUTHWEST'
+};
 
 /**
  * Check if a room is the Machine Room (well area with triangular button)
@@ -60,7 +78,175 @@ function findRoundRoom(context: ActionContext): any | null {
 }
 
 /**
+ * Try to move the robot in a direction
+ */
+function executeRobotWalk(
+  context: ActionContext,
+  robot: any,
+  direction: string
+): ISemanticEvent[] {
+  const events: ISemanticEvent[] = [];
+  const robotLocation = context.world.getLocation(robot.id);
+  if (!robotLocation) {
+    events.push(context.event('game.message', {
+      messageId: CommandingMessages.WHIRR_BUZZ_CLICK
+    }));
+    return events;
+  }
+
+  const robotRoom = context.world.getEntity(robotLocation);
+  if (!robotRoom) {
+    events.push(context.event('game.message', {
+      messageId: CommandingMessages.WHIRR_BUZZ_CLICK
+    }));
+    return events;
+  }
+
+  // Get exits from RoomTrait
+  const roomTrait = robotRoom.get(RoomTrait);
+  const exits = roomTrait?.exits || {};
+  const normalizedDir = DIRECTION_MAP[direction];
+  const exitInfo = exits[normalizedDir as keyof typeof exits];
+  const targetRoomId = exitInfo?.destination;
+
+  if (!targetRoomId) {
+    // No exit in that direction - just buzz
+    events.push(context.event('game.message', {
+      messageId: CommandingMessages.WHIRR_BUZZ_CLICK
+    }));
+    return events;
+  }
+
+  // Move the robot
+  context.world.moveEntity(robot.id, targetRoomId);
+
+  events.push(context.event('game.message', {
+    messageId: CommandingMessages.WHIRR_BUZZ_CLICK
+  }));
+
+  // If player is in same room as robot's destination, describe robot arriving
+  const playerLocation = context.world.getLocation(context.player.id);
+  if (playerLocation === targetRoomId) {
+    events.push(context.event('game.message', {
+      messageId: RobotMessages.ARRIVES
+    }));
+  }
+
+  return events;
+}
+
+/**
+ * Try to have robot take an object
+ */
+function executeRobotTake(
+  context: ActionContext,
+  robot: any,
+  objectName: string
+): ISemanticEvent[] {
+  const events: ISemanticEvent[] = [];
+  const robotLocation = context.world.getLocation(robot.id);
+
+  if (!robotLocation) {
+    events.push(context.event('game.message', {
+      messageId: CommandingMessages.WHIRR_BUZZ_CLICK
+    }));
+    return events;
+  }
+
+  // Find object by name in robot's location using getContents
+  const roomContents = context.world.getContents(robotLocation);
+  let targetObject: any = null;
+
+  for (const entity of roomContents) {
+    // Skip the robot itself
+    if (entity.id === robot.id) continue;
+
+    const identity = entity.get(IdentityTrait);
+    if (!identity) continue;
+
+    const name = identity.name?.toLowerCase() || '';
+    const aliases = identity.aliases?.map((a: string) => a.toLowerCase()) || [];
+
+    if (name.includes(objectName) || aliases.some((a: string) => a.includes(objectName))) {
+      targetObject = entity;
+      break;
+    }
+  }
+
+  events.push(context.event('game.message', {
+    messageId: CommandingMessages.WHIRR_BUZZ_CLICK
+  }));
+
+  if (targetObject) {
+    // Check if portable
+    const isPortable = (targetObject as any).portable !== false;
+    if (isPortable) {
+      // Move object to robot (robot "carries" it)
+      context.world.moveEntity(targetObject.id, robot.id);
+      events.push(context.event('game.message', {
+        messageId: RobotMessages.TAKES_OBJECT,
+        objectName: targetObject.get(IdentityTrait)?.name || 'object'
+      }));
+    }
+  }
+
+  return events;
+}
+
+/**
+ * Try to have robot drop an object
+ */
+function executeRobotDrop(
+  context: ActionContext,
+  robot: any,
+  objectName: string
+): ISemanticEvent[] {
+  const events: ISemanticEvent[] = [];
+  const robotLocation = context.world.getLocation(robot.id);
+
+  if (!robotLocation) {
+    events.push(context.event('game.message', {
+      messageId: CommandingMessages.WHIRR_BUZZ_CLICK
+    }));
+    return events;
+  }
+
+  // Find object by name in robot's inventory using getContents
+  const robotContents = context.world.getContents(robot.id);
+  let targetObject: any = null;
+
+  for (const entity of robotContents) {
+    const identity = entity.get(IdentityTrait);
+    if (!identity) continue;
+
+    const name = identity.name?.toLowerCase() || '';
+    const aliases = identity.aliases?.map((a: string) => a.toLowerCase()) || [];
+
+    if (name.includes(objectName) || aliases.some((a: string) => a.includes(objectName))) {
+      targetObject = entity;
+      break;
+    }
+  }
+
+  events.push(context.event('game.message', {
+    messageId: CommandingMessages.WHIRR_BUZZ_CLICK
+  }));
+
+  if (targetObject) {
+    // Move object to robot's location
+    context.world.moveEntity(targetObject.id, robotLocation);
+    events.push(context.event('game.message', {
+      messageId: RobotMessages.DROPS_OBJECT,
+      objectName: targetObject.get(IdentityTrait)?.name || 'object'
+    }));
+  }
+
+  return events;
+}
+
+/**
  * Handle robot-specific commands
+ * Based on FORTRAN timefnc.for lines 954-984 (A2 - Robot handler)
  */
 function handleRobotCommand(
   context: ActionContext,
@@ -79,29 +265,7 @@ function handleRobotCommand(
   const words = command.split(/\s+/);
   const verb = words[0] || '';
 
-  // Follow commands
-  if (verb === 'follow' || verb === 'come') {
-    props.following = true;
-    events.push(context.event('game.message', {
-      npc: robot.id,
-      messageId: CommandingMessages.WHIRR_BUZZ_CLICK,
-      npcName: 'robot'
-    }));
-    return events;
-  }
-
-  // Stay/wait commands
-  if (verb === 'stay' || verb === 'wait') {
-    props.following = false;
-    events.push(context.event('game.message', {
-      npc: robot.id,
-      messageId: RobotMessages.WAITS,
-      npcName: 'robot'
-    }));
-    return events;
-  }
-
-  // Push button command
+  // Push button command (special case - carousel puzzle)
   if ((verb === 'push' || verb === 'press') && command.includes('button')) {
     // Check if already pushed
     if (props.buttonPushed) {
@@ -138,7 +302,6 @@ function handleRobotCommand(
       const buttonEvents = makeRobotPushButton(context.world, robot, roundRoom.id);
       events.push(...buttonEvents);
     } else {
-      // Fallback if round room not found
       events.push(context.event('game.message', {
         npc: robot.id,
         messageId: RobotMessages.PUSHES_BUTTON,
@@ -149,8 +312,47 @@ function handleRobotCommand(
     return events;
   }
 
-  // Known verbs the robot can do (but we only implement follow/stay/push for now)
-  if (ROBOT_VERBS.includes(verb)) {
+  // Direction commands (go north, n, walk south, etc.)
+  if (verb === 'walk' || verb === 'go') {
+    const direction = words[1] || '';
+    if (DIRECTION_MAP[direction]) {
+      return executeRobotWalk(context, robot, direction);
+    }
+  }
+
+  // Bare direction (just "north", "n", etc.)
+  if (DIRECTION_MAP[verb]) {
+    return executeRobotWalk(context, robot, verb);
+  }
+
+  // Take/get commands
+  if (verb === 'take' || verb === 'get' || verb === 'pick') {
+    const objectName = words.slice(verb === 'pick' ? 2 : 1).join(' '); // "pick up X" vs "take X"
+    if (objectName) {
+      return executeRobotTake(context, robot, objectName);
+    }
+    // No object specified - just buzz
+    events.push(context.event('game.message', {
+      messageId: CommandingMessages.WHIRR_BUZZ_CLICK
+    }));
+    return events;
+  }
+
+  // Drop commands
+  if (verb === 'drop') {
+    const objectName = words.slice(1).join(' ');
+    if (objectName) {
+      return executeRobotDrop(context, robot, objectName);
+    }
+    events.push(context.event('game.message', {
+      messageId: CommandingMessages.WHIRR_BUZZ_CLICK
+    }));
+    return events;
+  }
+
+  // Other executable verbs (put, push non-button, throw, turn, leap)
+  // Robot says "buzz" but these don't have specific implementations
+  if (ROBOT_EXECUTABLE_VERBS.includes(verb)) {
     events.push(context.event('game.message', {
       npc: robot.id,
       messageId: CommandingMessages.WHIRR_BUZZ_CLICK,

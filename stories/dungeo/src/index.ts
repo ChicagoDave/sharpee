@@ -1425,6 +1425,9 @@ export class DungeoStory implements Story {
     language.addMessage(RobotMessages.PUSHES_BUTTON, 'The robot extends a thin metal finger and pushes the triangular button.');
     language.addMessage(RobotMessages.NO_BUTTON, 'The robot looks around but sees no button to push.');
     language.addMessage(RobotMessages.ALREADY_PUSHED, 'The robot has already pushed the button.');
+    language.addMessage(RobotMessages.ARRIVES, 'The robot enters.');
+    language.addMessage(RobotMessages.TAKES_OBJECT, 'The robot takes the {objectName}.');
+    language.addMessage(RobotMessages.DROPS_OBJECT, 'The robot drops the {objectName}.');
     language.addMessage(RobotMessages.CAROUSEL_FIXED, 'You hear a grinding noise from somewhere nearby. The carousel mechanism has stopped spinning!');
 
     // Commanding action messages (FORTRAN Zork robot commands)

@@ -456,7 +456,6 @@
 | Weight/capacity system | ✅ Done | Player maxWeight=100, all objects have weight property |
 | INFLATE/DEFLATE actions | ✅ Done | Boat (2026-01-07) |
 | WAVE action | ✅ Done | Sceptre/rainbow (2026-01-02) |
-| Water current | ❌ | River auto-movement |
 | RING action | ✅ Done | Bell |
 | PRAY action | ✅ Done | Altar→Forest teleport (Basin Room logic removed, incense-only disarm) |
 | BURN action | ✅ Done | ADR-078 incense (3-turn timer) |
@@ -534,15 +533,11 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 ## Priority Next Steps
 
-1. **Missing systems**:
-   - Water current (river auto-movement)
-2. **Robot enhancements** (optional):
-   - Robot WALK behavior (following player to adjacent rooms)
-   - Robot inventory management (TAKE/DROP commands)
-3. **Cleanup** - Remove obsolete `event-handler-migration-plan.md` (ADR-086 fixed all handlers)
+1. **Cleanup** - Remove obsolete `event-handler-migration-plan.md` (ADR-086 fixed all handlers)
 
 ## Recently Completed
 
+- ✅ **Robot FORTRAN-Accurate Implementation** (2026-01-07) - Fixed robot to match original FORTRAN timefnc.for behavior. FOLLOW/STAY commands are Dungeon Master only (not robot) - robot now responds "stupid robot". Robot now executes WALK, TAKE, DROP commands: says "Whirr, buzz, click!" then actually moves/manipulates objects. Direction map uses uppercase Direction constants (EAST not east). Uses getContents() for location-based entity lookup.
 - ✅ **Robot Commands Transcript Test** (2026-01-07) - Created comprehensive transcript test for COMMANDING action. Fixed grammar patterns (greedy text capture `:command...` already implies text capture, no `.text()` needed). Changed events from `npc.emoted` to `game.message` for proper text output. Added `@sharpee/if-domain` dependency to dungeo package.json. All 30 tests pass covering: follow/stay commands, push button in Machine Room, unknown commands, and non-commandable NPC blocking.
 - ✅ **Wave-Rainbow & Falls Death Handler Fixes** (2026-01-07) - Fixed falls death handler to correctly allow: LOOK, WAVE, GDT, rainbow-blocked action, and GO directions except SOUTH. Added isRainbowRoom marker to rainbow rooms so river handler allows walking to Aragain Falls. Fixed basket handler build errors (vehicleType 'cable', removed invalid properties). All 857 tests pass (851 passed, 5 expected failures, 1 skipped).
 - ✅ **River Navigation & Falls Death** (2026-01-07) - Implemented river navigation blocking (requires inflated boat for water rooms) and falls death mechanics (any action except LOOK at Aragain Falls kills player per FORTRAN). Created river-blocked and falls-death actions with command transformers. All 825 tests pass.

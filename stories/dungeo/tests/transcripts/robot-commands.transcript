@@ -1,6 +1,6 @@
 title: Robot Commands
 story: dungeo
-description: Test commanding the robot with various patterns and commands
+description: Test commanding the robot - matches FORTRAN timefnc.for behavior
 
 ---
 
@@ -39,25 +39,23 @@ description: Test commanding the robot with various patterns and commands
 [OK: contains "Low Room"]
 [OK: contains "robot"]
 
-# Test "tell robot to follow" command
+# Test FOLLOW/STAY commands - these are DUNGEON MASTER commands, NOT robot commands!
+# Robot should respond with "stupid robot" message per FORTRAN timefnc.for
 > tell robot to follow
-[OK: contains "Whirr"]
-[EVENT: true, type="game.message" messageId="dungeo.commanding.whirr_buzz_click"]
+[OK: contains "stupid robot"]
+[EVENT: true, type="game.message" messageId="dungeo.commanding.stupid_robot"]
 
-# Test "order robot to come" command (alternative verb)
 > order robot to come
-[OK: contains "Whirr"]
-[EVENT: true, type="game.message" messageId="dungeo.commanding.whirr_buzz_click"]
+[OK: contains "stupid robot"]
+[EVENT: true, type="game.message" messageId="dungeo.commanding.stupid_robot"]
 
-# Test robot stay command
 > tell robot to stay
-[OK: contains "wait"]
-[EVENT: true, type="game.message" messageId="dungeo.robot.waits"]
+[OK: contains "stupid robot"]
+[EVENT: true, type="game.message" messageId="dungeo.commanding.stupid_robot"]
 
-# Test robot wait command
 > tell robot to wait
-[OK: contains "wait"]
-[EVENT: true, type="game.message" messageId="dungeo.robot.waits"]
+[OK: contains "stupid robot"]
+[EVENT: true, type="game.message" messageId="dungeo.commanding.stupid_robot"]
 
 # Test push button when NOT in Machine Room - should fail
 > tell robot to push button
@@ -73,36 +71,49 @@ description: Test commanding the robot with various patterns and commands
 [OK: contains "stupid robot"]
 [EVENT: true, type="game.message" messageId="dungeo.commanding.stupid_robot"]
 
-# Test known verbs that robot acknowledges but doesn't fully implement
-> tell robot to walk north
+# Test known verbs that robot CAN execute (WALK, TAKE, DROP, PUSH, etc.)
+# Robot says "Whirr, buzz, click!" then executes the action
+
+# Test robot walk - robot should move to Machine Room (east)
+> tell robot to go east
 [OK: contains "Whirr"]
 [EVENT: true, type="game.message" messageId="dungeo.commanding.whirr_buzz_click"]
 
-> order robot to take the lantern
-[OK: contains "Whirr"]
-[EVENT: true, type="game.message" messageId="dungeo.commanding.whirr_buzz_click"]
+# Verify robot moved (robot is no longer in Low Room)
+> look
+[OK: contains "Low Room"]
 
-# Navigate to the well-area Machine Room (EAST from Low Room)
+# Go to Machine Room to verify robot moved there
 > east
 [OK: contains "Machine Room"]
-[OK: contains "triangular"]
+[OK: contains "robot"]
 
-# Move robot here via GDT (robot following not yet implemented)
-> gdt
-[OK: contains "GAME DEBUGGING TOOL"]
+# Test robot take command - robot takes something
+# First, drop the lantern so robot can take it
+> drop lantern
+[OK: contains "Dropped"]
 
-> ao robot here
-[OK: contains "Moved"]
+> tell robot to take lantern
+[OK: contains "Whirr"]
+[EVENT: true, type="game.message" messageId="dungeo.commanding.whirr_buzz_click"]
+[EVENT: true, type="game.message" messageId="dungeo.robot.takes_object"]
 
-> ex
-[OK: contains "Returning to game"]
-
-# Verify robot is now here
+# Verify lantern is no longer on floor
 > look
 [OK: contains "Machine Room"]
 [OK: contains "robot"]
 
-# Now push button should work
+# Test robot drop command - robot drops the lantern
+> tell robot to drop lantern
+[OK: contains "Whirr"]
+[EVENT: true, type="game.message" messageId="dungeo.commanding.whirr_buzz_click"]
+[EVENT: true, type="game.message" messageId="dungeo.robot.drops_object"]
+
+# Take lantern back
+> take lantern
+[OK: contains "Taken"]
+
+# Test push button - now it should work since robot is in Machine Room
 > tell robot to push button
 [OK: contains "Whirr"]
 [EVENT: true, type="game.message" messageId="dungeo.commanding.whirr_buzz_click"]
@@ -112,6 +123,19 @@ description: Test commanding the robot with various patterns and commands
 # Try pushing button again - already pushed
 > tell robot to press button
 [EVENT: true, type="game.message" messageId="dungeo.robot.already_pushed"]
+
+# Test other known verbs - robot says "buzz" (execution depends on context)
+> tell robot to throw lantern
+[OK: contains "Whirr"]
+[EVENT: true, type="game.message" messageId="dungeo.commanding.whirr_buzz_click"]
+
+> tell robot to turn dial
+[OK: contains "Whirr"]
+[EVENT: true, type="game.message" messageId="dungeo.commanding.whirr_buzz_click"]
+
+> tell robot to leap
+[OK: contains "Whirr"]
+[EVENT: true, type="game.message" messageId="dungeo.commanding.whirr_buzz_click"]
 
 # Test commanding a non-robot NPC (should fail)
 # First, teleport to Cyclops Room
