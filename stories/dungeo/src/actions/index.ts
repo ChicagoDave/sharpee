@@ -127,6 +127,9 @@ export * from './river-blocked';
 // Falls Death (any action except LOOK at Aragain Falls)
 export * from './falls-death';
 
+// Commanding (Robot commands - tell robot to X)
+export * from './commanding';
+
 // Re-export balloon action IDs and messages
 export { LIGHT_ACTION_ID, LightMessages } from './light';
 export { TIE_ACTION_ID, TieMessages } from './tie';
@@ -175,6 +178,7 @@ import { inflateAction, INFLATE_ACTION_ID, InflateMessages } from './inflate';
 import { deflateAction, DEFLATE_ACTION_ID, DeflateMessages } from './deflate';
 import { riverBlockedAction, RIVER_BLOCKED_ACTION_ID, RiverBlockedMessages } from './river-blocked';
 import { fallsDeathAction, FALLS_DEATH_ACTION_ID, FallsDeathMessages } from './falls-death';
+import { commandingAction, COMMANDING_ACTION_ID, CommandingMessages } from './commanding';
 
 // Re-export press-button, turn-bolt, and turn-switch
 export { PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler } from './press-button';
@@ -205,6 +209,9 @@ export { DEFLATE_ACTION_ID, DeflateMessages } from './deflate';
 // Re-export river navigation actions for use in index.ts
 export { RIVER_BLOCKED_ACTION_ID, RiverBlockedMessages } from './river-blocked';
 export { FALLS_DEATH_ACTION_ID, FallsDeathMessages } from './falls-death';
+
+// Re-export commanding action for use in index.ts
+export { COMMANDING_ACTION_ID, CommandingMessages } from './commanding';
 
 export const customActions = [
   ...gdtActions,
@@ -248,5 +255,6 @@ export const customActions = [
   inflateAction,
   deflateAction,
   riverBlockedAction,
-  fallsDeathAction
+  fallsDeathAction,
+  commandingAction
 ];

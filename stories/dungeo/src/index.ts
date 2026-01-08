@@ -9,6 +9,7 @@
 import { Story, StoryConfig, GameEngine } from '@sharpee/engine';
 import type { Parser } from '@sharpee/parser-en-us';
 import type { LanguageProvider } from '@sharpee/lang-en-us';
+import { ScopeBuilder } from '@sharpee/if-domain';
 import { ISemanticEvent } from '@sharpee/core';
 import {
   WorldModel,
@@ -31,7 +32,7 @@ import {
 import { DungeoScoringService } from './scoring';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler, TURN_SWITCH_ACTION_ID, TurnSwitchMessages, PUT_UNDER_ACTION_ID, PutUnderMessages, PUSH_KEY_ACTION_ID, PushKeyMessages, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages, INFLATE_ACTION_ID, InflateMessages, DEFLATE_ACTION_ID, DeflateMessages } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler, TURN_SWITCH_ACTION_ID, TurnSwitchMessages, PUT_UNDER_ACTION_ID, PutUnderMessages, PUSH_KEY_ACTION_ID, PushKeyMessages, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages, INFLATE_ACTION_ID, InflateMessages, DEFLATE_ACTION_ID, DeflateMessages, COMMANDING_ACTION_ID, CommandingMessages } from './actions';
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages, FloodingMessages, registerBalloonPutHandler, BalloonHandlerMessages } from './scheduler';
@@ -514,6 +515,29 @@ export class DungeoStory implements Story {
       .define('say ulysses')
       .mapsTo(SAY_ACTION_ID)
       .withPriority(155)
+      .build();
+
+    // Commanding action (Robot commands - FORTRAN Zork)
+    // "tell robot to push button", "robot, follow me", "order robot to stay"
+    grammar
+      .define('tell :npc to :command...')
+      .where('npc', (scope: ScopeBuilder) => scope.visible().matching({ animate: true }))
+      .mapsTo(COMMANDING_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('order :npc to :command...')
+      .where('npc', (scope: ScopeBuilder) => scope.visible().matching({ animate: true }))
+      .mapsTo(COMMANDING_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define(':npc, :command...')
+      .where('npc', (scope: ScopeBuilder) => scope.visible().matching({ animate: true }))
+      .mapsTo(COMMANDING_ACTION_ID)
+      .withPriority(150)
       .build();
 
     // Ring action (Exorcism bell)
@@ -1405,6 +1429,13 @@ export class DungeoStory implements Story {
     language.addMessage(RobotMessages.NO_BUTTON, 'The robot looks around but sees no button to push.');
     language.addMessage(RobotMessages.ALREADY_PUSHED, 'The robot has already pushed the button.');
     language.addMessage(RobotMessages.CAROUSEL_FIXED, 'You hear a grinding noise from somewhere nearby. The carousel mechanism has stopped spinning!');
+
+    // Commanding action messages (FORTRAN Zork robot commands)
+    language.addMessage(CommandingMessages.NO_TARGET, 'Command whom?');
+    language.addMessage(CommandingMessages.CANT_COMMAND, 'You cannot command that.');
+    language.addMessage(CommandingMessages.CANT_SEE, "You don't see that here.");
+    language.addMessage(CommandingMessages.WHIRR_BUZZ_CLICK, '"Whirr, buzz, click!"');
+    language.addMessage(CommandingMessages.STUPID_ROBOT, '"I am only a stupid robot and cannot perform that command."');
 
     // Say action messages
     language.addMessage(SayMessages.NOTHING_TO_SAY, 'You need to say something.');
