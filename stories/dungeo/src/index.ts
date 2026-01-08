@@ -519,6 +519,7 @@ export class DungeoStory implements Story {
 
     // Commanding action (Robot commands - FORTRAN Zork)
     // "tell robot to push button", "robot, follow me", "order robot to stay"
+    // Note: :command... (greedy syntax) already implies text capture, no .text() needed
     grammar
       .define('tell :npc to :command...')
       .where('npc', (scope: ScopeBuilder) => scope.visible().matching({ animate: true }))
@@ -533,12 +534,8 @@ export class DungeoStory implements Story {
       .withPriority(150)
       .build();
 
-    grammar
-      .define(':npc, :command...')
-      .where('npc', (scope: ScopeBuilder) => scope.visible().matching({ animate: true }))
-      .mapsTo(COMMANDING_ACTION_ID)
-      .withPriority(150)
-      .build();
+    // Note: Pattern ":npc, :command..." removed - patterns can't start with slots
+    // Use "tell robot to X" or "order robot to X" instead
 
     // Ring action (Exorcism bell)
     grammar

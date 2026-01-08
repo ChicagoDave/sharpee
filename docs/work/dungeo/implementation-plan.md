@@ -467,7 +467,7 @@
 | PUSH WALL action | ✅ Done | Royal Puzzle |
 | Puzzle movement intercept | ✅ Done | Royal Puzzle |
 | TAKE CARD intercept | ✅ Done | Royal Puzzle |
-| Robot commands | ❌ | "tell robot 'X'" syntax |
+| Robot commands | ✅ Done | "tell/order robot to X" syntax |
 | Endgame trigger | ✅ Done | Crypt darkness ritual (15 turns) |
 | Victory condition | ✅ Done | Treasury entry triggers victory messages |
 | GDT (debug tool) | 🚧 Partial | Core commands working, DC added |
@@ -536,11 +536,14 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 
 1. **Missing systems**:
    - Water current (river auto-movement)
-   - Robot commands ("tell robot 'X'" syntax)
-2. **Cleanup** - Remove obsolete `event-handler-migration-plan.md` (ADR-086 fixed all handlers)
+2. **Robot enhancements** (optional):
+   - Robot WALK behavior (following player to adjacent rooms)
+   - Robot inventory management (TAKE/DROP commands)
+3. **Cleanup** - Remove obsolete `event-handler-migration-plan.md` (ADR-086 fixed all handlers)
 
 ## Recently Completed
 
+- ✅ **Robot Commands Transcript Test** (2026-01-07) - Created comprehensive transcript test for COMMANDING action. Fixed grammar patterns (greedy text capture `:command...` already implies text capture, no `.text()` needed). Changed events from `npc.emoted` to `game.message` for proper text output. Added `@sharpee/if-domain` dependency to dungeo package.json. All 30 tests pass covering: follow/stay commands, push button in Machine Room, unknown commands, and non-commandable NPC blocking.
 - ✅ **Wave-Rainbow & Falls Death Handler Fixes** (2026-01-07) - Fixed falls death handler to correctly allow: LOOK, WAVE, GDT, rainbow-blocked action, and GO directions except SOUTH. Added isRainbowRoom marker to rainbow rooms so river handler allows walking to Aragain Falls. Fixed basket handler build errors (vehicleType 'cable', removed invalid properties). All 857 tests pass (851 passed, 5 expected failures, 1 skipped).
 - ✅ **River Navigation & Falls Death** (2026-01-07) - Implemented river navigation blocking (requires inflated boat for water rooms) and falls death mechanics (any action except LOOK at Aragain Falls kills player per FORTRAN). Created river-blocked and falls-death actions with command transformers. All 825 tests pass.
 - ✅ **INFLATE/DEFLATE Actions** (2026-01-07) - Implemented boat inflate/deflate mechanics. Boat starts deflated as "pile of plastic" with valve description. Requires hand pump to inflate. Grammar patterns: inflate/deflate :target, pump :target, pump up :target, open valve. Boat description changes between deflated (folded plastic with valve) and inflated (seaworthy craft with oars). Created boat-inflate-deflate.transcript with 23 tests. All 825 tests pass (51 transcripts).

@@ -1,0 +1,130 @@
+title: Robot Commands
+story: dungeo
+description: Test commanding the robot with various patterns and commands
+
+---
+
+# Get lantern from Living Room first (need light for underground areas)
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> west
+[OK: contains "Kitchen"]
+
+> west
+[OK: contains "Living Room"]
+
+> take lantern
+[OK: contains "Taken"]
+
+> switch on lantern
+[OK: contains "on"]
+
+# Get to the Low Room where robot is located
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> ah Low Room
+[OK: contains "Teleported"]
+[OK: contains "Low Room"]
+
+> ex
+[OK: contains "Returning to game"]
+
+# Verify robot is here
+> look
+[OK: contains "Low Room"]
+[OK: contains "robot"]
+
+# Test "tell robot to follow" command
+> tell robot to follow
+[OK: contains "Whirr"]
+[EVENT: true, type="game.message" messageId="dungeo.commanding.whirr_buzz_click"]
+
+# Test "order robot to come" command (alternative verb)
+> order robot to come
+[OK: contains "Whirr"]
+[EVENT: true, type="game.message" messageId="dungeo.commanding.whirr_buzz_click"]
+
+# Test robot stay command
+> tell robot to stay
+[OK: contains "wait"]
+[EVENT: true, type="game.message" messageId="dungeo.robot.waits"]
+
+# Test robot wait command
+> tell robot to wait
+[OK: contains "wait"]
+[EVENT: true, type="game.message" messageId="dungeo.robot.waits"]
+
+# Test push button when NOT in Machine Room - should fail
+> tell robot to push button
+[EVENT: true, type="game.message" messageId="dungeo.robot.no_button"]
+
+# Test unknown command - robot can't do it
+> tell robot to dance
+[OK: contains "stupid robot"]
+[EVENT: true, type="game.message" messageId="dungeo.commanding.stupid_robot"]
+
+# Test another unknown command
+> order robot to sing a song
+[OK: contains "stupid robot"]
+[EVENT: true, type="game.message" messageId="dungeo.commanding.stupid_robot"]
+
+# Test known verbs that robot acknowledges but doesn't fully implement
+> tell robot to walk north
+[OK: contains "Whirr"]
+[EVENT: true, type="game.message" messageId="dungeo.commanding.whirr_buzz_click"]
+
+> order robot to take the lantern
+[OK: contains "Whirr"]
+[EVENT: true, type="game.message" messageId="dungeo.commanding.whirr_buzz_click"]
+
+# Navigate to the well-area Machine Room (EAST from Low Room)
+> east
+[OK: contains "Machine Room"]
+[OK: contains "triangular"]
+
+# Move robot here via GDT (robot following not yet implemented)
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> ao robot here
+[OK: contains "Moved"]
+
+> ex
+[OK: contains "Returning to game"]
+
+# Verify robot is now here
+> look
+[OK: contains "Machine Room"]
+[OK: contains "robot"]
+
+# Now push button should work
+> tell robot to push button
+[OK: contains "Whirr"]
+[EVENT: true, type="game.message" messageId="dungeo.commanding.whirr_buzz_click"]
+[EVENT: true, type="game.message" messageId="dungeo.robot.pushes_button"]
+[EVENT: true, type="game.message" messageId="dungeo.robot.carousel_fixed"]
+
+# Try pushing button again - already pushed
+> tell robot to press button
+[EVENT: true, type="game.message" messageId="dungeo.robot.already_pushed"]
+
+# Test commanding a non-robot NPC (should fail)
+# First, teleport to Cyclops Room
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> ah Cyclops Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning to game"]
+
+# Try to command the cyclops
+> tell cyclops to dance
+[OK: contains "cannot command"]
+[EVENT: true, type="game.message" messageId="dungeo.commanding.cant_command"]

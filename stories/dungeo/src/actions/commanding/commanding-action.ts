@@ -82,7 +82,7 @@ function handleRobotCommand(
   // Follow commands
   if (verb === 'follow' || verb === 'come') {
     props.following = true;
-    events.push(context.event('npc.emoted', {
+    events.push(context.event('game.message', {
       npc: robot.id,
       messageId: CommandingMessages.WHIRR_BUZZ_CLICK,
       npcName: 'robot'
@@ -93,7 +93,7 @@ function handleRobotCommand(
   // Stay/wait commands
   if (verb === 'stay' || verb === 'wait') {
     props.following = false;
-    events.push(context.event('npc.emoted', {
+    events.push(context.event('game.message', {
       npc: robot.id,
       messageId: RobotMessages.WAITS,
       npcName: 'robot'
@@ -105,7 +105,7 @@ function handleRobotCommand(
   if ((verb === 'push' || verb === 'press') && command.includes('button')) {
     // Check if already pushed
     if (props.buttonPushed) {
-      events.push(context.event('npc.emoted', {
+      events.push(context.event('game.message', {
         npc: robot.id,
         messageId: RobotMessages.ALREADY_PUSHED,
         npcName: 'robot'
@@ -118,7 +118,7 @@ function handleRobotCommand(
     const robotRoom = robotLocation ? context.world.getEntity(robotLocation) : null;
 
     if (!isMachineRoom(robotRoom)) {
-      events.push(context.event('npc.emoted', {
+      events.push(context.event('game.message', {
         npc: robot.id,
         messageId: RobotMessages.NO_BUTTON,
         npcName: 'robot'
@@ -127,7 +127,7 @@ function handleRobotCommand(
     }
 
     // Push the button!
-    events.push(context.event('npc.emoted', {
+    events.push(context.event('game.message', {
       npc: robot.id,
       messageId: CommandingMessages.WHIRR_BUZZ_CLICK,
       npcName: 'robot'
@@ -139,7 +139,7 @@ function handleRobotCommand(
       events.push(...buttonEvents);
     } else {
       // Fallback if round room not found
-      events.push(context.event('npc.emoted', {
+      events.push(context.event('game.message', {
         npc: robot.id,
         messageId: RobotMessages.PUSHES_BUTTON,
         npcName: 'robot'
@@ -151,7 +151,7 @@ function handleRobotCommand(
 
   // Known verbs the robot can do (but we only implement follow/stay/push for now)
   if (ROBOT_VERBS.includes(verb)) {
-    events.push(context.event('npc.emoted', {
+    events.push(context.event('game.message', {
       npc: robot.id,
       messageId: CommandingMessages.WHIRR_BUZZ_CLICK,
       npcName: 'robot'
@@ -160,7 +160,7 @@ function handleRobotCommand(
   }
 
   // Unknown command - robot can't do it
-  events.push(context.event('npc.emoted', {
+  events.push(context.event('game.message', {
     npc: robot.id,
     messageId: CommandingMessages.STUPID_ROBOT,
     npcName: 'robot'
@@ -202,10 +202,9 @@ export const commandingAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
+    return [context.event('game.message', {
       actionId: COMMANDING_ACTION_ID,
-      messageId: result.error || CommandingMessages.CANT_COMMAND,
-      reason: result.error
+      messageId: result.error || CommandingMessages.CANT_COMMAND
     })];
   },
 

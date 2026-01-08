@@ -14,6 +14,7 @@ Sharpee is a parser-based Interactive Fiction authoring tool built in Typescript
 ## Architecture Principles
 
 ### Language Layer Separation
+
 **All text output must go through the language layer.** Code in engine/stdlib/world-model emits semantic events with message IDs, not English strings. Actual prose lives in `lang-en-us` (or other language implementations).
 
 - stdlib: Define message IDs in `*-messages.ts` files
@@ -21,12 +22,13 @@ Sharpee is a parser-based Interactive Fiction authoring tool built in Typescript
 - Never hardcode English strings in engine, stdlib, or world-model
 
 ### Parser vs Language Layer
+
 **Parser owns grammar, language layer owns text.**
 
-| Package | Owns | Examples |
-|---------|------|----------|
-| `parser-en-us` | Grammar patterns | `grammar.ts`: verb patterns, slot constraints |
-| `lang-en-us` | Messages, help text | `searching.ts`: error messages, action descriptions |
+| Package        | Owns                | Examples                                            |
+| -------------- | ------------------- | --------------------------------------------------- |
+| `parser-en-us` | Grammar patterns    | `grammar.ts`: verb patterns, slot constraints       |
+| `lang-en-us`   | Messages, help text | `searching.ts`: error messages, action descriptions |
 
 - Add new command patterns to `packages/parser-en-us/src/grammar.ts`
 - Patterns in `lang-en-us` action files are for documentation/help, not parsing
@@ -42,7 +44,7 @@ grammar
   .forAction('if.action.pushing')
   .verbs(['push', 'press', 'shove', 'move'])
   .pattern(':target')
-  .where('target', scope => scope.touchable())
+  .where('target', (scope) => scope.touchable())
   .build();
 // Generates: push :target, press :target, shove :target, move :target
 
@@ -50,14 +52,15 @@ grammar
 grammar
   .forAction('if.action.going')
   .directions({
-    'north': ['north', 'n'],
-    'south': ['south', 's'],
+    north: ['north', 'n'],
+    south: ['south', 's'],
     // ...
   })
   .build();
 ```
 
 Use `.define()` only for:
+
 - **Phrasal verbs**: `pick up :item`, `put down :item`
 - **Complex patterns**: `unlock :door with :key`
 - **Story-specific commands**: `incant :word`
@@ -66,27 +69,29 @@ Use `.define()` only for:
 // Phrasal verb - can't use forAction because verb has space
 grammar
   .define('pick up :item')
-  .where('item', scope => scope.visible().matching({ portable: true }))
+  .where('item', (scope) => scope.visible().matching({ portable: true }))
   .mapsTo('if.action.taking')
   .build();
 ```
 
 ### Logic Location
+
 Be deliberate about where logic belongs:
 
-| Layer | Responsibility | Examples |
-|-------|---------------|----------|
-| **engine** | Turn cycle, command execution, event dispatch | SchedulerService, NPC turn phase |
-| **world-model** | Traits, behaviors, entity state | LightSourceBehavior, ContainerTrait |
-| **stdlib** | Standard actions, common patterns | Opening action, guard behavior |
-| **parser-{locale}** | Grammar patterns, command parsing | `core-grammar.ts`, verb patterns |
-| **lang-{locale}** | All user-facing text | Error messages, descriptions |
-| **story** | Game-specific content and overrides | Custom NPCs, puzzle logic |
-| **client** | UI rendering, input handling | React components, terminal I/O |
+| Layer               | Responsibility                                | Examples                            |
+| ------------------- | --------------------------------------------- | ----------------------------------- |
+| **engine**          | Turn cycle, command execution, event dispatch | SchedulerService, NPC turn phase    |
+| **world-model**     | Traits, behaviors, entity state               | LightSourceBehavior, ContainerTrait |
+| **stdlib**          | Standard actions, common patterns             | Opening action, guard behavior      |
+| **parser-{locale}** | Grammar patterns, command parsing             | `core-grammar.ts`, verb patterns    |
+| **lang-{locale}**   | All user-facing text                          | Error messages, descriptions        |
+| **story**           | Game-specific content and overrides           | Custom NPCs, puzzle logic           |
+| **client**          | UI rendering, input handling                  | React components, terminal I/O      |
 
 Ask: "Where does this belong?" before implementing new features.
 
 ### Story Organization Pattern
+
 Stories are organized by **regions**, with each region as a folder containing:
 
 ```
@@ -102,6 +107,7 @@ stories/{story}/src/regions/{region}/
 ```
 
 **Key patterns:**
+
 - **One room per TypeScript file** in `rooms/` folder
 - Room files export a `createXxxRoom(world: WorldModel): IFEntity` function
 - Region `index.ts` imports all room creators, creates them, and connects exits
@@ -113,6 +119,7 @@ stories/{story}/src/regions/{region}/
 Dog-fooding Sharpee by implementing full Mainframe Zork (~191 rooms).
 
 **Documentation**: See `/docs/work/dungeo/` for:
+
 - `README.md` - Project overview and goals
 - `world-map.md` - All rooms organized by region
 - `objects-inventory.md` - Treasures, tools, NPCs
@@ -120,20 +127,22 @@ Dog-fooding Sharpee by implementing full Mainframe Zork (~191 rooms).
 - `implementation-plan.md` - 10 phases, vertical slices
 
 **Key ADRs for Dungeo**:
+
 - ADR-070: NPC System Architecture
 - ADR-071: Daemons and Fuses (Timed Events)
 
 ### Previous Work: Action Refactoring (Complete)
 
-All 43 stdlib actions now follow three-phase pattern (validate/execute/report):
+All 43 stdlib actions now follow four-phase pattern (validate/execute/report/blocked):
 about, attacking, climbing, drinking, eating, opening, closing, pulling, pushing, taking, dropping, putting, inserting, removing, entering, exiting, going, looking, examining, waiting, locking, unlocking, switching_on, switching_off, wearing, taking_off, giving, throwing, touching, smelling, listening, talking, searching, reading, showing, sleeping, help, inventory, quitting, scoring, restarting, restoring, saving
 
 ## Core Concepts Reference
 
 Read `/docs/reference/core-concepts.md` at the start of each session for:
+
 - Entity system and creation
 - Trait system and usage
-- Three-phase action pattern (validate/execute/report)
+- Four-phase action pattern (validate/execute/report/blocked)
 - ActionContext and sharedData (NOT context pollution!)
 - Behaviors vs Actions (behaviors own mutations, actions coordinate)
 - Event system and handlers
@@ -158,15 +167,15 @@ Is this a new verb/command that doesn't exist in stdlib?
 
 These verbs do the same thing regardless of entity - stdlib handles them:
 
-| Verb | Standard Mutation | Trait Needed |
-|------|-------------------|--------------|
-| TAKE/GET | Move to inventory | PortableTrait |
-| DROP | Move to location | (any portable) |
-| OPEN/CLOSE | Change isOpen | OpenableTrait |
-| LOCK/UNLOCK | Change isLocked | LockableTrait |
-| PUT IN/ON | Change containment | ContainerTrait/SupporterTrait |
-| ENTER/EXIT | Change player location | EnterableTrait |
-| SWITCH ON/OFF | Change isOn | SwitchableTrait |
+| Verb          | Standard Mutation      | Trait Needed                  |
+| ------------- | ---------------------- | ----------------------------- |
+| TAKE/GET      | Move to inventory      | PortableTrait                 |
+| DROP          | Move to location       | (any portable)                |
+| OPEN/CLOSE    | Change isOpen          | OpenableTrait                 |
+| LOCK/UNLOCK   | Change isLocked        | LockableTrait                 |
+| PUT IN/ON     | Change containment     | ContainerTrait/SupporterTrait |
+| ENTER/EXIT    | Change player location | EnterableTrait                |
+| SWITCH ON/OFF | Change isOn            | SwitchableTrait               |
 
 **Example**: "PUT COAL IN MACHINE" - Use stdlib putting action. Machine needs ContainerTrait.
 
@@ -174,13 +183,13 @@ These verbs do the same thing regardless of entity - stdlib handles them:
 
 These verbs mean different things for different entities:
 
-| Verb | Entity-Specific Examples |
-|------|-------------------------|
-| LOWER | Basket elevator (move basket), mirror pole (lower pole height) |
-| RAISE/LIFT | Same - entity decides what "raise" means |
-| TURN | Wheel (rotate), dial (set number), crank (activate) |
-| WAVE | Sceptre (rainbow), wand (spell) |
-| WIND | Canary (sing), music box (play) |
+| Verb       | Entity-Specific Examples                                       |
+| ---------- | -------------------------------------------------------------- |
+| LOWER      | Basket elevator (move basket), mirror pole (lower pole height) |
+| RAISE/LIFT | Same - entity decides what "raise" means                       |
+| TURN       | Wheel (rotate), dial (set number), crank (activate)            |
+| WAVE       | Sceptre (rainbow), wand (spell)                                |
+| WIND       | Canary (sing), music box (play)                                |
 
 **Pattern**: Trait declares capabilities, Behavior implements 4-phase logic.
 
@@ -195,10 +204,18 @@ class BasketElevatorTrait implements ITrait {
 
 // 2. Behavior implements 4-phase pattern (matching stdlib actions)
 const BasketLoweringBehavior: CapabilityBehavior = {
-  validate(entity, world, actorId, sharedData) { /* can we lower? */ },
-  execute(entity, world, actorId, sharedData) { /* do the lowering */ },
-  report(entity, world, actorId, sharedData) { /* return effects */ },
-  blocked(entity, world, actorId, error, sharedData) { /* return blocked effects */ }
+  validate(entity, world, actorId, sharedData) {
+    /* can we lower? */
+  },
+  execute(entity, world, actorId, sharedData) {
+    /* do the lowering */
+  },
+  report(entity, world, actorId, sharedData) {
+    /* return effects */
+  },
+  blocked(entity, world, actorId, error, sharedData) {
+    /* return blocked effects */
+  },
 };
 
 // 3. Register in story's initializeWorld()
@@ -214,10 +231,18 @@ When stdlib doesn't have the verb at all, create a full action:
 export const sayAction: Action = {
   id: 'dungeo.action.say',
   group: 'communication',
-  validate(context) { /* ... */ },
-  execute(context) { /* ... */ },
-  report(context) { /* ... */ },
-  blocked(context, result) { /* ... */ }
+  validate(context) {
+    /* ... */
+  },
+  execute(context) {
+    /* ... */
+  },
+  report(context) {
+    /* ... */
+  },
+  blocked(context, result) {
+    /* ... */
+  },
 };
 ```
 
@@ -264,6 +289,7 @@ extendParser(parser: Parser): void {
 ```
 
 **Key points**:
+
 - Use `.define()` for literal patterns or phrasal verbs
 - Higher priority (150+) for story-specific patterns
 - Stdlib grammar uses `.forAction()` - stories usually don't need this
@@ -271,6 +297,7 @@ extendParser(parser: Parser): void {
 ### Coal Machine Example (CORRECT approach)
 
 The coal machine puzzle requires:
+
 1. PUT COAL IN MACHINE - stdlib putting action (machine is ContainerTrait)
 2. TURN SWITCH - story action (new verb) or event handler
 
@@ -325,7 +352,9 @@ Transcripts live in `stories/{story}/tests/transcripts/*.transcript`
 ## Autonomous Work Flow
 
 ### Context Management
+
 When context usage reaches ~15% remaining:
+
 1. Write work summary to `docs/work/{target}/context/`
 2. Commit and push all changes
 3. Send ntfy: "Context low - work saved, need /compact to continue"
@@ -333,7 +362,9 @@ When context usage reaches ~15% remaining:
 5. After compact, read the work summary back and continue
 
 ### Async Communication (when user is away)
+
 If stuck or have questions during autonomous work:
+
 1. Create GitHub issue with question: `gh issue create --title "Claude Question: [topic]" --body "[details]"`
 2. Send ntfy notification with issue link:
    ```bash
