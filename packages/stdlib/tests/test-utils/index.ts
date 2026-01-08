@@ -413,3 +413,144 @@ export function updateCapability(world: WorldModel, capabilityName: string, data
 
 // Re-export parser helpers for tests that need them
 export { parseCommand, createParserWithWorld } from './parser-helpers';
+
+// ============================================================================
+// World State Verification Helpers
+// ============================================================================
+// These helpers verify that actions actually mutate world state, not just emit events.
+// They were created as part of the stdlib testing mitigation plan after discovering
+// the "dropping bug" where actions appeared to work but didn't change state.
+
+/**
+ * Captures a snapshot of an entity's state for comparison
+ * Useful for debugging test failures or verifying specific state changes
+ */
+export function captureEntityState(world: WorldModel, entityId: string) {
+  const entity = world.getEntity(entityId);
+  if (!entity) {
+    return {
+      exists: false,
+      location: null,
+      traits: null
+    };
+  }
+
+  // Capture all traits as plain objects
+  const traits: Record<string, any> = {};
+  for (const [type, trait] of entity.traits.entries()) {
+    traits[type] = { ...trait };
+  }
+
+  return {
+    exists: true,
+    location: world.getLocation(entityId),
+    traits
+  };
+}
+
+/**
+ * Asserts that an entity's location changed from one place to another
+ * Use this to verify movement actions (taking, dropping, putting, etc.)
+ *
+ * @example
+ * // Before action
+ * expect(world.getLocation(ball.id)).toBe(room.id);
+ * // Execute action...
+ * expectLocationChanged(world, ball.id, room.id, player.id);
+ */
+export function expectLocationChanged(
+  world: WorldModel,
+  entityId: string,
+  from: string,
+  to: string
+) {
+  const location = world.getLocation(entityId);
+  expect(location).not.toBe(from);
+  expect(location).toBe(to);
+}
+
+/**
+ * Asserts that an entity is now at a specific location
+ * Simpler version when you don't care about the previous location
+ *
+ * @example
+ * takingAction.execute(context);
+ * expectLocation(world, ball.id, player.id);
+ */
+export function expectLocation(
+  world: WorldModel,
+  entityId: string,
+  expectedLocation: string
+) {
+  const location = world.getLocation(entityId);
+  expect(location).toBe(expectedLocation);
+}
+
+/**
+ * Asserts that a trait property has a specific value
+ * Use this to verify property mutation actions (opening, locking, switching, etc.)
+ *
+ * @example
+ * openingAction.execute(context);
+ * expectTraitValue(door, TraitType.OPENABLE, 'isOpen', true);
+ */
+export function expectTraitValue<T = any>(
+  entity: IFEntity,
+  traitType: string,
+  property: string,
+  expectedValue: T
+) {
+  const trait = entity.get(traitType) as Record<string, any> | undefined;
+  if (!trait) {
+    throw new Error(`Entity '${entity.name}' does not have trait '${traitType}'`);
+  }
+  expect(trait[property]).toBe(expectedValue);
+}
+
+/**
+ * Asserts that a trait property changed from one value to another
+ * Use when you need to verify both the before and after state
+ *
+ * @example
+ * // Capture before state
+ * const wasOpen = OpenableBehavior.isOpen(door);
+ * expect(wasOpen).toBe(false);
+ * // Execute action...
+ * expectTraitChanged(door, TraitType.OPENABLE, 'isOpen', false, true);
+ */
+export function expectTraitChanged<T = any>(
+  entity: IFEntity,
+  traitType: string,
+  property: string,
+  from: T,
+  to: T
+) {
+  const trait = entity.get(traitType) as Record<string, any> | undefined;
+  if (!trait) {
+    throw new Error(`Entity '${entity.name}' does not have trait '${traitType}'`);
+  }
+  expect(trait[property]).not.toBe(from);
+  expect(trait[property]).toBe(to);
+}
+
+/**
+ * Executes an action using the four-phase pattern and returns events
+ * This is the standard way to execute actions in tests
+ *
+ * @example
+ * const events = executeWithValidation(takingAction, context);
+ * expectEvent(events, 'if.event.taken', { item: 'ball' });
+ */
+export function executeWithValidation(
+  action: Action,
+  context: ActionContext
+): SemanticEvent[] {
+  const validationResult = action.validate(context);
+
+  if (!validationResult.valid) {
+    return action.blocked(context, validationResult);
+  }
+
+  action.execute(context);
+  return action.report(context);
+}

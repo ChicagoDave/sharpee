@@ -646,23 +646,217 @@ describe('Unlocking Action Edge Cases', () => {
         type: TraitType.CONTAINER
       }
     });
-    
+
     const safe = findEntityByName(world, 'empty safe')!;
     // No contents added - container is empty
-    
+
     const context = createRealTestContext(unlockingAction, world,
       createCommand(IFActions.UNLOCKING, {
         entity: safe
       })
     );
-    
+
     const events = unlockingAction.execute(context);
-    
+
     expectEvent(events, 'action.success', {
-      params: { 
+      params: {
         isContainer: true,
         hasContents: false
       }
     });
+  });
+});
+
+/**
+ * World State Mutation Tests
+ *
+ * These tests verify that the unlocking action actually mutates world state,
+ * not just emits events. This catches bugs like the "dropping bug" where
+ * actions appeared to work (good messages) but didn't actually change state.
+ */
+describe('World State Mutations', () => {
+  test('should actually set isLocked to false after unlocking', () => {
+    const { world, player, room } = setupBasicWorld();
+    const box = world.createEntity('small box', 'object');
+    box.add({
+      type: TraitType.LOCKABLE,
+      isLocked: true
+    });
+    world.moveEntity(box.id, room.id);
+
+    // VERIFY PRECONDITION: box is locked
+    const lockableBefore = box.get(TraitType.LOCKABLE) as any;
+    expect(lockableBefore.isLocked).toBe(true);
+
+    const command = createCommand(IFActions.UNLOCKING, {
+      entity: box
+    });
+    const context = createRealTestContext(unlockingAction, world, command);
+
+    const validation = unlockingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    unlockingAction.execute(context);
+
+    // VERIFY POSTCONDITION: box is now unlocked
+    const lockableAfter = box.get(TraitType.LOCKABLE) as any;
+    expect(lockableAfter.isLocked).toBe(false);
+  });
+
+  test('should actually set isLocked to false when using correct key', () => {
+    const { world, player, room } = setupBasicWorld();
+    const chest = world.createEntity('treasure chest', 'object');
+    chest.add({
+      type: TraitType.OPENABLE,
+      isOpen: false
+    });
+    const key = world.createEntity('golden key', 'object');
+    chest.add({
+      type: TraitType.LOCKABLE,
+      isLocked: true,
+      keyId: key.id
+    });
+    world.moveEntity(chest.id, room.id);
+    world.moveEntity(key.id, player.id);
+
+    // VERIFY PRECONDITION: chest is locked
+    const lockableBefore = chest.get(TraitType.LOCKABLE) as any;
+    expect(lockableBefore.isLocked).toBe(true);
+
+    const command = createCommand(IFActions.UNLOCKING, {
+      entity: chest,
+      secondEntity: key,
+      preposition: 'with'
+    });
+    const context = createRealTestContext(unlockingAction, world, command);
+
+    const validation = unlockingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    unlockingAction.execute(context);
+
+    // VERIFY POSTCONDITION: chest is now unlocked
+    const lockableAfter = chest.get(TraitType.LOCKABLE) as any;
+    expect(lockableAfter.isLocked).toBe(false);
+  });
+
+  test('should NOT change isLocked when already unlocked', () => {
+    const { world, player, room } = setupBasicWorld();
+    const safe = world.createEntity('wall safe', 'object');
+    safe.add({
+      type: TraitType.LOCKABLE,
+      isLocked: false // Already unlocked
+    });
+    world.moveEntity(safe.id, room.id);
+
+    // VERIFY PRECONDITION: safe is unlocked
+    const lockableBefore = safe.get(TraitType.LOCKABLE) as any;
+    expect(lockableBefore.isLocked).toBe(false);
+
+    const command = createCommand(IFActions.UNLOCKING, {
+      entity: safe
+    });
+    const context = createRealTestContext(unlockingAction, world, command);
+
+    // Validation should fail
+    const validation = unlockingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('already_unlocked');
+
+    // VERIFY POSTCONDITION: safe is still unlocked (no change)
+    const lockableAfter = safe.get(TraitType.LOCKABLE) as any;
+    expect(lockableAfter.isLocked).toBe(false);
+  });
+
+  test('should NOT change isLocked when wrong key provided', () => {
+    const { world, player, room } = setupBasicWorld();
+    const cabinet = world.createEntity('cabinet', 'object');
+    const correctKey = world.createEntity('cabinet key', 'object');
+    const wrongKey = world.createEntity('desk key', 'object');
+    cabinet.add({
+      type: TraitType.LOCKABLE,
+      isLocked: true,
+      keyId: correctKey.id
+    });
+    world.moveEntity(cabinet.id, room.id);
+    world.moveEntity(wrongKey.id, player.id); // Player has wrong key
+
+    // VERIFY PRECONDITION: cabinet is locked
+    const lockableBefore = cabinet.get(TraitType.LOCKABLE) as any;
+    expect(lockableBefore.isLocked).toBe(true);
+
+    const command = createCommand(IFActions.UNLOCKING, {
+      entity: cabinet,
+      secondEntity: wrongKey,
+      preposition: 'with'
+    });
+    const context = createRealTestContext(unlockingAction, world, command);
+
+    // Validation should fail
+    const validation = unlockingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('wrong_key');
+
+    // VERIFY POSTCONDITION: cabinet is still locked (no change)
+    const lockableAfter = cabinet.get(TraitType.LOCKABLE) as any;
+    expect(lockableAfter.isLocked).toBe(true);
+  });
+
+  test('should NOT change state when target is not lockable', () => {
+    const { world, player, room } = setupBasicWorld();
+    const rock = world.createEntity('solid rock', 'object');
+    // No lockable trait
+    world.moveEntity(rock.id, room.id);
+
+    const command = createCommand(IFActions.UNLOCKING, {
+      entity: rock
+    });
+    const context = createRealTestContext(unlockingAction, world, command);
+
+    // Validation should fail
+    const validation = unlockingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('not_lockable');
+
+    // Object should not have lockable trait at all
+    expect(rock.has(TraitType.LOCKABLE)).toBe(false);
+  });
+
+  test('should actually unlock a door with key', () => {
+    const { world, player, room } = setupBasicWorld();
+    const door = world.createEntity('oak door', 'object');
+    door.add({
+      type: TraitType.OPENABLE,
+      isOpen: false
+    });
+    door.add({
+      type: TraitType.DOOR,
+      connectsTo: 'room2'
+    });
+    const key = world.createEntity('brass key', 'object');
+    door.add({
+      type: TraitType.LOCKABLE,
+      isLocked: true,
+      keyId: key.id
+    });
+    world.moveEntity(door.id, room.id);
+    world.moveEntity(key.id, player.id);
+
+    // VERIFY PRECONDITION: door is locked
+    const lockableBefore = door.get(TraitType.LOCKABLE) as any;
+    expect(lockableBefore.isLocked).toBe(true);
+
+    const command = createCommand(IFActions.UNLOCKING, {
+      entity: door,
+      secondEntity: key,
+      preposition: 'with'
+    });
+    const context = createRealTestContext(unlockingAction, world, command);
+
+    const validation = unlockingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    unlockingAction.execute(context);
+
+    // VERIFY POSTCONDITION: door is now unlocked
+    const lockableAfter = door.get(TraitType.LOCKABLE) as any;
+    expect(lockableAfter.isLocked).toBe(false);
   });
 });

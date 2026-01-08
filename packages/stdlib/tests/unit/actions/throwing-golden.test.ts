@@ -827,7 +827,7 @@ describe('Testing Pattern Examples for Throwing', () => {
       { direction: 'north', hasExit: true, location: 'next room' },
       { breaks: true, location: null }
     ];
-    
+
     outcomes.forEach(outcome => {
       if (outcome.breaks) {
         expect(outcome.location).toBeNull();
@@ -835,5 +835,178 @@ describe('Testing Pattern Examples for Throwing', () => {
         expect(outcome.location).toBeDefined();
       }
     });
+  });
+});
+
+/**
+ * World State Mutation Tests
+ *
+ * These tests verify that the throwing action actually mutates world state,
+ * not just emits events. This catches bugs like the "dropping bug" where
+ * actions appeared to work (good messages) but didn't actually change state.
+ */
+describe('World State Mutations', () => {
+  test('should actually move item to room floor on general throw', () => {
+    const { world, player, room, item: ball } = TestData.withInventoryItem('tennis ball');
+
+    // VERIFY PRECONDITION: ball is in player's inventory
+    expect(world.getLocation(ball.id)).toBe(player.id);
+
+    const command = createCommand(IFActions.THROWING, {
+      entity: ball
+    });
+    const context = createRealTestContext(throwingAction, world, command);
+
+    const validation = throwingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    throwingAction.execute(context);
+
+    // VERIFY POSTCONDITION: ball is now in the room (on the floor)
+    expect(world.getLocation(ball.id)).toBe(room.id);
+  });
+
+  test('should actually move item onto supporter when thrown at it', () => {
+    const { world, player, room, item: coin } = TestData.withInventoryItem('silver coin');
+    const table = world.createEntity('wooden table', 'object');
+    table.add({ type: TraitType.SUPPORTER });
+    world.moveEntity(table.id, room.id);
+
+    // VERIFY PRECONDITION: coin is in player's inventory
+    expect(world.getLocation(coin.id)).toBe(player.id);
+
+    const command = createCommand(IFActions.THROWING, {
+      entity: coin,
+      secondEntity: table,
+      preposition: 'at'
+    });
+    const context = createRealTestContext(throwingAction, world, command);
+
+    // Mock random for hit
+    const originalRandom = Math.random;
+    Math.random = vi.fn(() => 0.5); // Will hit
+
+    const validation = throwingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    throwingAction.execute(context);
+
+    // VERIFY POSTCONDITION: coin is now on the table
+    expect(world.getLocation(coin.id)).toBe(table.id);
+
+    Math.random = originalRandom;
+  });
+
+  test('should actually move item into open container when thrown at it', () => {
+    const { world, player, room, item: ball } = TestData.withInventoryItem('rubber ball');
+    const box = world.createEntity('open box', 'object');
+    box.add({ type: TraitType.CONTAINER });
+    box.add({ type: TraitType.OPENABLE, isOpen: true });
+    world.moveEntity(box.id, room.id);
+
+    // VERIFY PRECONDITION: ball is in player's inventory
+    expect(world.getLocation(ball.id)).toBe(player.id);
+
+    const command = createCommand(IFActions.THROWING, {
+      entity: ball,
+      secondEntity: box,
+      preposition: 'at'
+    });
+    const context = createRealTestContext(throwingAction, world, command);
+
+    // Mock random for hit
+    const originalRandom = Math.random;
+    Math.random = vi.fn(() => 0.5); // Will hit
+
+    const validation = throwingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    throwingAction.execute(context);
+
+    // VERIFY POSTCONDITION: ball is now in the box
+    expect(world.getLocation(ball.id)).toBe(box.id);
+
+    Math.random = originalRandom;
+  });
+
+  test('should move item to floor when bouncing off closed container', () => {
+    const { world, player, room, item: pebble } = TestData.withInventoryItem('small pebble');
+    const chest = world.createEntity('closed chest', 'object');
+    chest.add({ type: TraitType.CONTAINER });
+    chest.add({ type: TraitType.OPENABLE, isOpen: false });
+    world.moveEntity(chest.id, room.id);
+
+    // VERIFY PRECONDITION: pebble is in player's inventory
+    expect(world.getLocation(pebble.id)).toBe(player.id);
+
+    const command = createCommand(IFActions.THROWING, {
+      entity: pebble,
+      secondEntity: chest,
+      preposition: 'at'
+    });
+    const context = createRealTestContext(throwingAction, world, command);
+
+    // Mock random for hit
+    const originalRandom = Math.random;
+    Math.random = vi.fn(() => 0.5); // Will hit
+
+    const validation = throwingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    throwingAction.execute(context);
+
+    // VERIFY POSTCONDITION: pebble bounces to the room floor
+    expect(world.getLocation(pebble.id)).toBe(room.id);
+
+    Math.random = originalRandom;
+  });
+
+  test('should NOT move item when validation fails (too heavy)', () => {
+    const { world, player, room, item: boulder } = TestData.withInventoryItem('massive boulder', {
+      [TraitType.IDENTITY]: {
+        type: TraitType.IDENTITY,
+        name: 'massive boulder',
+        weight: 50
+      }
+    });
+
+    const target = world.createEntity('window', 'object');
+    world.moveEntity(target.id, room.id);
+
+    // VERIFY PRECONDITION: boulder is in player's inventory
+    expect(world.getLocation(boulder.id)).toBe(player.id);
+
+    const command = createCommand(IFActions.THROWING, {
+      entity: boulder,
+      secondEntity: target,
+      preposition: 'at'
+    });
+    const context = createRealTestContext(throwingAction, world, command);
+
+    // Validation should fail
+    const validation = throwingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toBe('too_heavy');
+
+    // VERIFY POSTCONDITION: boulder still in player's inventory (no change)
+    expect(world.getLocation(boulder.id)).toBe(player.id);
+  });
+
+  test('should NOT move item when throwing at self', () => {
+    const { world, player, item: stone } = TestData.withInventoryItem('heavy stone');
+
+    // VERIFY PRECONDITION: stone is in player's inventory
+    expect(world.getLocation(stone.id)).toBe(player.id);
+
+    const command = createCommand(IFActions.THROWING, {
+      entity: stone,
+      secondEntity: player,
+      preposition: 'at'
+    });
+    const context = createRealTestContext(throwingAction, world, command);
+
+    // Validation should fail
+    const validation = throwingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toBe('self');
+
+    // VERIFY POSTCONDITION: stone still in player's inventory (no change)
+    expect(world.getLocation(stone.id)).toBe(player.id);
   });
 });

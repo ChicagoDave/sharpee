@@ -146,11 +146,15 @@ describe('enteringAction (Golden Pattern)', () => {
 
     test('should fail when container is closed', () => {
       const { world, player, room } = setupBasicWorld();
-      
+
       const crate = world.createEntity('wooden crate', EntityType.CONTAINER);
       crate.add({
         type: TraitType.CONTAINER,
         enterable: true
+      });
+      crate.add({
+        type: TraitType.ENTERABLE,
+        preposition: 'in'
       });
       crate.add({
         type: TraitType.OPENABLE,
@@ -204,11 +208,15 @@ describe('enteringAction (Golden Pattern)', () => {
   describe('Successful Entry', () => {
     test('should enter enterable container (car)', () => {
       const { world, player, room } = setupBasicWorld();
-      
+
       const car = world.createEntity('luxury car', EntityType.CONTAINER);
       car.add({
         type: TraitType.CONTAINER,
         enterable: true
+      });
+      car.add({
+        type: TraitType.ENTERABLE,
+        preposition: 'in'
       });
       world.moveEntity(car.id, room.id);
       
@@ -238,12 +246,16 @@ describe('enteringAction (Golden Pattern)', () => {
 
     test('should enter enterable container', () => {
       const { world, player, room } = setupBasicWorld();
-      
+
       const box = world.createEntity('large box', 'container');
       box.add({
         type: TraitType.CONTAINER,
         enterable: true,
         capacity: 100
+      });
+      box.add({
+        type: TraitType.ENTERABLE,
+        preposition: 'in'
       });
       box.add({
         type: TraitType.OPENABLE,
@@ -275,11 +287,15 @@ describe('enteringAction (Golden Pattern)', () => {
 
     test('should enter enterable supporter', () => {
       const { world, player, room } = setupBasicWorld();
-      
+
       const bed = world.createEntity('comfortable bed', 'supporter');
       bed.add({
         type: TraitType.SUPPORTER,
         enterable: true
+      });
+      bed.add({
+        type: TraitType.ENTERABLE,
+        preposition: 'on'
       });
       world.moveEntity(bed.id, room.id);
       
@@ -307,16 +323,20 @@ describe('enteringAction (Golden Pattern)', () => {
 
     test('should check occupancy for containers with actors', () => {
       const { world, player, room } = setupBasicWorld();
-      
+
       const npc = world.createEntity('guard', 'actor');
       npc.add({ type: TraitType.ACTOR });
-      
+
       const booth = world.createEntity('guard booth', 'container');
       booth.add({
         type: TraitType.CONTAINER,
         enterable: true
       });
-      
+      booth.add({
+        type: TraitType.ENTERABLE,
+        preposition: 'in'
+      });
+
       world.moveEntity(booth.id, room.id);
       world.moveEntity(npc.id, booth.id);
       
@@ -363,11 +383,15 @@ describe('enteringAction (Golden Pattern)', () => {
   describe('Event Structure Validation', () => {
     test('should include proper entities in all events', () => {
       const { world, player, room } = setupBasicWorld();
-      
+
       const chair = world.createEntity('office chair', EntityType.SUPPORTER);
       chair.add({
         type: TraitType.SUPPORTER,
         enterable: true
+      });
+      chair.add({
+        type: TraitType.ENTERABLE,
+        preposition: 'on'
       });
       world.moveEntity(chair.id, room.id);
       
@@ -466,5 +490,198 @@ describe('Testing Pattern Examples for Entering', () => {
     // Check that actors are in the lifeboat
     const contents = world.getContents(lifeboat.id);
     expect(contents.length).toBe(3);
+  });
+});
+
+/**
+ * World State Mutation Tests
+ *
+ * These tests verify that the entering action actually mutates world state,
+ * not just emits events. This catches bugs like the "dropping bug" where
+ * actions appeared to work (good messages) but didn't actually change state.
+ */
+describe('World State Mutations', () => {
+  test('should actually move player into enterable container', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const car = world.createEntity('luxury car', EntityType.CONTAINER);
+    car.add({
+      type: TraitType.CONTAINER,
+      enterable: true
+    });
+    car.add({
+      type: TraitType.ENTERABLE,
+      preposition: 'in'
+    });
+    world.moveEntity(car.id, room.id);
+
+    // VERIFY PRECONDITION: player is in the room
+    expect(world.getLocation(player.id)).toBe(room.id);
+
+    const command = createCommand(IFActions.ENTERING, {
+      entity: car
+    });
+    const context = createRealTestContext(enteringAction, world, command);
+
+    const validation = enteringAction.validate(context);
+    expect(validation.valid).toBe(true);
+    enteringAction.execute(context);
+
+    // VERIFY POSTCONDITION: player is now in the car
+    expect(world.getLocation(player.id)).toBe(car.id);
+  });
+
+  test('should actually move player onto enterable supporter', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const bed = world.createEntity('comfortable bed', EntityType.SUPPORTER);
+    bed.add({
+      type: TraitType.SUPPORTER,
+      enterable: true
+    });
+    bed.add({
+      type: TraitType.ENTERABLE,
+      preposition: 'on'
+    });
+    world.moveEntity(bed.id, room.id);
+
+    // VERIFY PRECONDITION: player is in the room
+    expect(world.getLocation(player.id)).toBe(room.id);
+
+    const command = createCommand(IFActions.ENTERING, {
+      entity: bed
+    });
+    const context = createRealTestContext(enteringAction, world, command);
+
+    const validation = enteringAction.validate(context);
+    expect(validation.valid).toBe(true);
+    enteringAction.execute(context);
+
+    // VERIFY POSTCONDITION: player is now on the bed
+    expect(world.getLocation(player.id)).toBe(bed.id);
+  });
+
+  test('should NOT move player when target is not enterable', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const ball = world.createEntity('red ball', 'object');
+    world.moveEntity(ball.id, room.id);
+
+    // VERIFY PRECONDITION: player is in the room
+    expect(world.getLocation(player.id)).toBe(room.id);
+
+    const command = createCommand(IFActions.ENTERING, {
+      entity: ball
+    });
+    const context = createRealTestContext(enteringAction, world, command);
+
+    // Validation should fail
+    const validation = enteringAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('not_enterable');
+
+    // VERIFY POSTCONDITION: player still in the room (no change)
+    expect(world.getLocation(player.id)).toBe(room.id);
+  });
+
+  test('should NOT move player when container is closed', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const crate = world.createEntity('wooden crate', EntityType.CONTAINER);
+    crate.add({
+      type: TraitType.CONTAINER,
+      enterable: true
+    });
+    crate.add({
+      type: TraitType.ENTERABLE,
+      preposition: 'in'
+    });
+    crate.add({
+      type: TraitType.OPENABLE,
+      isOpen: false // Closed
+    });
+    world.moveEntity(crate.id, room.id);
+
+    // VERIFY PRECONDITION: player is in the room
+    expect(world.getLocation(player.id)).toBe(room.id);
+
+    const command = createCommand(IFActions.ENTERING, {
+      entity: crate
+    });
+    const context = createRealTestContext(enteringAction, world, command);
+
+    // Validation should fail
+    const validation = enteringAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('container_closed');
+
+    // VERIFY POSTCONDITION: player still in the room (no change)
+    expect(world.getLocation(player.id)).toBe(room.id);
+  });
+
+  test('should NOT move player when already inside target', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const car = world.createEntity('sports car', EntityType.CONTAINER);
+    car.add({
+      type: TraitType.CONTAINER,
+      enterable: true
+    });
+    car.add({
+      type: TraitType.ENTERABLE,
+      preposition: 'in'
+    });
+    world.moveEntity(car.id, room.id);
+    world.moveEntity(player.id, car.id); // Already in car
+
+    // VERIFY PRECONDITION: player is in the car
+    expect(world.getLocation(player.id)).toBe(car.id);
+
+    const command = createCommand(IFActions.ENTERING, {
+      entity: car
+    });
+    const context = createRealTestContext(enteringAction, world, command);
+
+    // Validation should fail
+    const validation = enteringAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('already_inside');
+
+    // VERIFY POSTCONDITION: player still in the car (no change)
+    expect(world.getLocation(player.id)).toBe(car.id);
+  });
+
+  test('should move player into open container', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const box = world.createEntity('large box', EntityType.CONTAINER);
+    box.add({
+      type: TraitType.CONTAINER,
+      enterable: true
+    });
+    box.add({
+      type: TraitType.ENTERABLE,
+      preposition: 'in'
+    });
+    box.add({
+      type: TraitType.OPENABLE,
+      isOpen: true // Open
+    });
+    world.moveEntity(box.id, room.id);
+
+    // VERIFY PRECONDITION: player is in the room
+    expect(world.getLocation(player.id)).toBe(room.id);
+
+    const command = createCommand(IFActions.ENTERING, {
+      entity: box
+    });
+    const context = createRealTestContext(enteringAction, world, command);
+
+    const validation = enteringAction.validate(context);
+    expect(validation.valid).toBe(true);
+    enteringAction.execute(context);
+
+    // VERIFY POSTCONDITION: player is now in the box
+    expect(world.getLocation(player.id)).toBe(box.id);
   });
 });

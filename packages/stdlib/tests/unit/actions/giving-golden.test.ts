@@ -486,31 +486,226 @@ describe('Giving Action Edge Cases', () => {
 
   test('should handle item without weight when recipient has weight limit', () => {
     const { world, player, room } = setupBasicWorld();
-    
+
     const feather = world.createEntity('light feather', 'object');
     // No identity trait with weight
-    
+
     const bird = world.createEntity('small bird', 'actor');
-    bird.add({ 
+    bird.add({
       type: TraitType.ACTOR,
       inventoryLimit: { maxWeight: 1 }
     });
-    
+
     world.moveEntity(feather.id, player.id);
     world.moveEntity(bird.id, room.id);
-    
+
     const command = createCommand(IFActions.GIVING, {
       entity: feather,
       secondEntity: bird,
       preposition: 'to'
     });
     const context = createRealTestContext(givingAction, world, command);
-    
+
     const events = executeWithValidation(givingAction, context);
-    
+
     // Should succeed - item without weight doesn't count
     expectEvent(events, 'if.event.given', {
       accepted: true
     });
+  });
+});
+
+/**
+ * World State Mutation Tests
+ *
+ * These tests verify that the giving action actually mutates world state,
+ * not just emits events. This catches bugs like the "dropping bug" where
+ * actions appeared to work (good messages) but didn't actually change state.
+ */
+describe('World State Mutations', () => {
+  test('should actually move item from player to recipient', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const coin = world.createEntity('gold coin', 'object');
+    const merchant = world.createEntity('merchant', 'actor');
+    merchant.add({ type: TraitType.ACTOR });
+
+    world.moveEntity(coin.id, player.id);
+    world.moveEntity(merchant.id, room.id);
+
+    // VERIFY PRECONDITION: coin is in player's inventory
+    expect(world.getLocation(coin.id)).toBe(player.id);
+
+    const command = createCommand(IFActions.GIVING, {
+      entity: coin,
+      secondEntity: merchant,
+      preposition: 'to'
+    });
+    const context = createRealTestContext(givingAction, world, command);
+
+    const validation = givingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    givingAction.execute(context);
+
+    // VERIFY POSTCONDITION: coin is now in merchant's inventory
+    expect(world.getLocation(coin.id)).toBe(merchant.id);
+  });
+
+  test('should actually move item to NPC with preferences', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const flower = world.createEntity('beautiful flower', 'object');
+    const maiden = world.createEntity('young maiden', 'actor');
+    maiden.add({
+      type: TraitType.ACTOR,
+      preferences: {
+        likes: ['flower', 'jewelry', 'gift']
+      }
+    });
+
+    world.moveEntity(flower.id, player.id);
+    world.moveEntity(maiden.id, room.id);
+
+    // VERIFY PRECONDITION: flower is in player's inventory
+    expect(world.getLocation(flower.id)).toBe(player.id);
+
+    const command = createCommand(IFActions.GIVING, {
+      entity: flower,
+      secondEntity: maiden,
+      preposition: 'to'
+    });
+    const context = createRealTestContext(givingAction, world, command);
+
+    const validation = givingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    givingAction.execute(context);
+
+    // VERIFY POSTCONDITION: flower is now in maiden's inventory
+    expect(world.getLocation(flower.id)).toBe(maiden.id);
+  });
+
+  test('should NOT move item when recipient inventory is full', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const newBook = world.createEntity('new book', 'object');
+    const librarian = world.createEntity('librarian', 'actor');
+    librarian.add({
+      type: TraitType.ACTOR,
+      inventoryLimit: { maxItems: 2 }
+    });
+
+    // Fill librarian's inventory
+    const book1 = world.createEntity('old book', 'object');
+    const book2 = world.createEntity('ancient book', 'object');
+    world.moveEntity(librarian.id, room.id);
+    world.moveEntity(book1.id, librarian.id);
+    world.moveEntity(book2.id, librarian.id);
+
+    world.moveEntity(newBook.id, player.id);
+
+    // VERIFY PRECONDITION: newBook is in player's inventory
+    expect(world.getLocation(newBook.id)).toBe(player.id);
+
+    const command = createCommand(IFActions.GIVING, {
+      entity: newBook,
+      secondEntity: librarian,
+      preposition: 'to'
+    });
+    const context = createRealTestContext(givingAction, world, command);
+
+    // Validation should fail
+    const validation = givingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toBe('inventory_full');
+
+    // VERIFY POSTCONDITION: newBook still in player's inventory (no change)
+    expect(world.getLocation(newBook.id)).toBe(player.id);
+  });
+
+  test('should NOT move item when recipient refuses it', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const poison = world.createEntity('bottle of poison', 'object');
+    const guard = world.createEntity('cautious guard', 'actor');
+    guard.add({
+      type: TraitType.ACTOR,
+      preferences: {
+        refuses: ['poison', 'weapon', 'explosive']
+      }
+    });
+
+    world.moveEntity(poison.id, player.id);
+    world.moveEntity(guard.id, room.id);
+
+    // VERIFY PRECONDITION: poison is in player's inventory
+    expect(world.getLocation(poison.id)).toBe(player.id);
+
+    const command = createCommand(IFActions.GIVING, {
+      entity: poison,
+      secondEntity: guard,
+      preposition: 'to'
+    });
+    const context = createRealTestContext(givingAction, world, command);
+
+    // Validation should fail
+    const validation = givingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toBe('not_interested');
+
+    // VERIFY POSTCONDITION: poison still in player's inventory (no change)
+    expect(world.getLocation(poison.id)).toBe(player.id);
+  });
+
+  test('should NOT move item when giving to non-actor', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const coin = world.createEntity('gold coin', 'object');
+    const statue = world.createEntity('stone statue', 'object'); // Not an actor
+
+    world.moveEntity(coin.id, player.id);
+    world.moveEntity(statue.id, room.id);
+
+    // VERIFY PRECONDITION: coin is in player's inventory
+    expect(world.getLocation(coin.id)).toBe(player.id);
+
+    const command = createCommand(IFActions.GIVING, {
+      entity: coin,
+      secondEntity: statue,
+      preposition: 'to'
+    });
+    const context = createRealTestContext(givingAction, world, command);
+
+    // Validation should fail
+    const validation = givingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toBe('not_actor');
+
+    // VERIFY POSTCONDITION: coin still in player's inventory (no change)
+    expect(world.getLocation(coin.id)).toBe(player.id);
+  });
+
+  test('should NOT move item when giving to self', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const coin = world.createEntity('gold coin', 'object');
+    world.moveEntity(coin.id, player.id);
+
+    // VERIFY PRECONDITION: coin is in player's inventory
+    expect(world.getLocation(coin.id)).toBe(player.id);
+
+    const command = createCommand(IFActions.GIVING, {
+      entity: coin,
+      secondEntity: player, // Giving to self
+      preposition: 'to'
+    });
+    const context = createRealTestContext(givingAction, world, command);
+
+    // Validation should fail
+    const validation = givingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toBe('self');
+
+    // VERIFY POSTCONDITION: coin still in player's inventory (no change)
+    expect(world.getLocation(coin.id)).toBe(player.id);
   });
 });

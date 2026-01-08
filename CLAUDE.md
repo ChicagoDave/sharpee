@@ -334,6 +334,39 @@ node packages/transcript-tester/dist/cli.js stories/dungeo --all --verbose
 
 Transcripts live in `stories/{story}/tests/transcripts/*.transcript`
 
+### Stdlib Action Testing (World State Verification)
+
+**CRITICAL**: All mutation actions must have tests that verify actual world state changes, not just events.
+
+The "dropping bug" revealed that actions can appear to work (good messages, correct events) while failing to actually change state. This was caused by execute phases that set up data but never called `world.moveEntity()` or behavior mutations.
+
+**Required Test Pattern:**
+```typescript
+test('should actually move item to player inventory', () => {
+  const { world, player, room } = setupBasicWorld();
+  const ball = world.createEntity('ball', 'object');
+  world.moveEntity(ball.id, room.id);
+
+  // PRECONDITION
+  expect(world.getLocation(ball.id)).toBe(room.id);
+
+  const context = createRealTestContext(takingAction, world, command);
+  takingAction.validate(context);
+  takingAction.execute(context);
+
+  // POSTCONDITION - THE CRITICAL ASSERTION
+  expect(world.getLocation(ball.id)).toBe(player.id);
+});
+```
+
+**Helper utilities** in `packages/stdlib/tests/test-utils/index.ts`:
+- `expectLocation(world, entityId, expected)` - Assert current location
+- `expectLocationChanged(world, entityId, from, to)` - Assert location changed
+- `expectTraitValue(entity, traitType, prop, value)` - Assert trait property
+- `captureEntityState(world, entityId)` - Snapshot for debugging
+
+**See**: `docs/work/stdlib-testing/mitigation-plan.md` for full details
+
 ## Project Structure
 
 - Uses pnpm workspace with multiple packages

@@ -658,9 +658,190 @@ describe('Testing Pattern Examples for Switching On', () => {
         purpose: 'showcase'
       }
     ];
-    
+
     timedDevices.forEach(({ autoOffTime }) => {
       expect(autoOffTime).toBeGreaterThan(0);
     });
+  });
+});
+
+/**
+ * World State Mutation Tests
+ *
+ * These tests verify that the switching_on action actually mutates world state,
+ * not just emits events. This catches bugs like the "dropping bug" where
+ * actions appeared to work (good messages) but didn't actually change state.
+ */
+describe('World State Mutations', () => {
+  test('should actually set isOn to true after switching on', () => {
+    const { world, player, room } = setupBasicWorld();
+    const lamp = world.createEntity('desk lamp', 'object');
+    lamp.add({
+      type: TraitType.SWITCHABLE,
+      isOn: false
+    });
+    world.moveEntity(lamp.id, room.id);
+
+    // VERIFY PRECONDITION: lamp is off
+    const switchableBefore = lamp.get(TraitType.SWITCHABLE) as any;
+    expect(switchableBefore.isOn).toBe(false);
+
+    const command = createCommand(IFActions.SWITCHING_ON, {
+      entity: lamp
+    });
+    const context = createRealTestContext(switchingOnAction, world, command);
+
+    const validation = switchingOnAction.validate(context);
+    expect(validation.valid).toBe(true);
+    switchingOnAction.execute(context);
+
+    // VERIFY POSTCONDITION: lamp is now on
+    const switchableAfter = lamp.get(TraitType.SWITCHABLE) as any;
+    expect(switchableAfter.isOn).toBe(true);
+  });
+
+  test('should actually set isOn to true for device with power available', () => {
+    const { world, player, room } = setupBasicWorld();
+    const computer = world.createEntity('desktop computer', 'object');
+    computer.add({
+      type: TraitType.SWITCHABLE,
+      isOn: false,
+      requiresPower: true,
+      hasPower: true
+    });
+    world.moveEntity(computer.id, room.id);
+
+    // VERIFY PRECONDITION: computer is off
+    const switchableBefore = computer.get(TraitType.SWITCHABLE) as any;
+    expect(switchableBefore.isOn).toBe(false);
+    expect(switchableBefore.requiresPower).toBe(true);
+    expect(switchableBefore.hasPower).toBe(true);
+
+    const command = createCommand(IFActions.SWITCHING_ON, {
+      entity: computer
+    });
+    const context = createRealTestContext(switchingOnAction, world, command);
+
+    const validation = switchingOnAction.validate(context);
+    expect(validation.valid).toBe(true);
+    switchingOnAction.execute(context);
+
+    // VERIFY POSTCONDITION: computer is now on
+    const switchableAfter = computer.get(TraitType.SWITCHABLE) as any;
+    expect(switchableAfter.isOn).toBe(true);
+  });
+
+  test('should NOT change isOn when already on', () => {
+    const { world, player, room } = setupBasicWorld();
+    const radio = world.createEntity('portable radio', 'object');
+    radio.add({
+      type: TraitType.SWITCHABLE,
+      isOn: true // Already on
+    });
+    world.moveEntity(radio.id, room.id);
+
+    // VERIFY PRECONDITION: radio is on
+    const switchableBefore = radio.get(TraitType.SWITCHABLE) as any;
+    expect(switchableBefore.isOn).toBe(true);
+
+    const command = createCommand(IFActions.SWITCHING_ON, {
+      entity: radio
+    });
+    const context = createRealTestContext(switchingOnAction, world, command);
+
+    // Validation should fail
+    const validation = switchingOnAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('already_on');
+
+    // VERIFY POSTCONDITION: radio is still on (no change)
+    const switchableAfter = radio.get(TraitType.SWITCHABLE) as any;
+    expect(switchableAfter.isOn).toBe(true);
+  });
+
+  test('should NOT change isOn when no power available', () => {
+    const { world, player, room } = setupBasicWorld();
+    const tv = world.createEntity('television', 'object');
+    tv.add({
+      type: TraitType.SWITCHABLE,
+      isOn: false,
+      requiresPower: true,
+      hasPower: false // No power
+    });
+    world.moveEntity(tv.id, room.id);
+
+    // VERIFY PRECONDITION: tv is off
+    const switchableBefore = tv.get(TraitType.SWITCHABLE) as any;
+    expect(switchableBefore.isOn).toBe(false);
+
+    const command = createCommand(IFActions.SWITCHING_ON, {
+      entity: tv
+    });
+    const context = createRealTestContext(switchingOnAction, world, command);
+
+    // Validation should fail
+    const validation = switchingOnAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('no_power');
+
+    // VERIFY POSTCONDITION: tv is still off (no change)
+    const switchableAfter = tv.get(TraitType.SWITCHABLE) as any;
+    expect(switchableAfter.isOn).toBe(false);
+  });
+
+  test('should NOT change state when target is not switchable', () => {
+    const { world, player, room } = setupBasicWorld();
+    const rock = world.createEntity('solid rock', 'object');
+    // No switchable trait
+    world.moveEntity(rock.id, room.id);
+
+    const command = createCommand(IFActions.SWITCHING_ON, {
+      entity: rock
+    });
+    const context = createRealTestContext(switchingOnAction, world, command);
+
+    // Validation should fail
+    const validation = switchingOnAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('not_switchable');
+
+    // Object should not have switchable trait at all
+    expect(rock.has(TraitType.SWITCHABLE)).toBe(false);
+  });
+
+  test('should actually turn on a light source and coordinate with LightSourceBehavior', () => {
+    const { world, player, room } = setupBasicWorld();
+    const flashlight = world.createEntity('LED flashlight', 'object');
+    flashlight.add({
+      type: TraitType.SWITCHABLE,
+      isOn: false
+    });
+    flashlight.add({
+      type: TraitType.LIGHT_SOURCE,
+      isLit: false,
+      radius: 3
+    });
+    world.moveEntity(flashlight.id, player.id);
+
+    // VERIFY PRECONDITION: flashlight is off and not lit
+    const switchableBefore = flashlight.get(TraitType.SWITCHABLE) as any;
+    const lightSourceBefore = flashlight.get(TraitType.LIGHT_SOURCE) as any;
+    expect(switchableBefore.isOn).toBe(false);
+    expect(lightSourceBefore.isLit).toBe(false);
+
+    const command = createCommand(IFActions.SWITCHING_ON, {
+      entity: flashlight
+    });
+    const context = createRealTestContext(switchingOnAction, world, command);
+
+    const validation = switchingOnAction.validate(context);
+    expect(validation.valid).toBe(true);
+    switchingOnAction.execute(context);
+
+    // VERIFY POSTCONDITION: flashlight is now on AND lit
+    const switchableAfter = flashlight.get(TraitType.SWITCHABLE) as any;
+    const lightSourceAfter = flashlight.get(TraitType.LIGHT_SOURCE) as any;
+    expect(switchableAfter.isOn).toBe(true);
+    expect(lightSourceAfter.isLit).toBe(true);
   });
 });

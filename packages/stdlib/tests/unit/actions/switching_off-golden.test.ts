@@ -643,11 +643,191 @@ describe('Testing Pattern Examples for Switching Off', () => {
         earlyOff: 'cancels scheduled off'
       }
     ];
-    
+
     temporaryDevices.forEach(({ autoOffCounter, earlyOff }) => {
       if (autoOffCounter) {
         expect(earlyOff).toBeDefined();
       }
     });
+  });
+});
+
+/**
+ * World State Mutation Tests
+ *
+ * These tests verify that the switching_off action actually mutates world state,
+ * not just emits events. This catches bugs like the "dropping bug" where
+ * actions appeared to work (good messages) but didn't actually change state.
+ */
+describe('World State Mutations', () => {
+  test('should actually set isOn to false after switching off', () => {
+    const { world, player, room } = setupBasicWorld();
+    const lamp = world.createEntity('desk lamp', 'object');
+    lamp.add({
+      type: TraitType.SWITCHABLE,
+      isOn: true
+    });
+    world.moveEntity(lamp.id, room.id);
+
+    // VERIFY PRECONDITION: lamp is on
+    const switchableBefore = lamp.get(TraitType.SWITCHABLE) as any;
+    expect(switchableBefore.isOn).toBe(true);
+
+    const command = createCommand(IFActions.SWITCHING_OFF, {
+      entity: lamp
+    });
+    const context = createRealTestContext(switchingOffAction, world, command);
+
+    const validation = switchingOffAction.validate(context);
+    expect(validation.valid).toBe(true);
+    switchingOffAction.execute(context);
+
+    // VERIFY POSTCONDITION: lamp is now off
+    const switchableAfter = lamp.get(TraitType.SWITCHABLE) as any;
+    expect(switchableAfter.isOn).toBe(false);
+  });
+
+  test('should actually set isOn to false and clear autoOffCounter', () => {
+    const { world, player, room } = setupBasicWorld();
+    const timer = world.createEntity('kitchen timer', 'object');
+    timer.add({
+      type: TraitType.SWITCHABLE,
+      isOn: true,
+      autoOffCounter: 60 // 60 seconds remaining
+    });
+    world.moveEntity(timer.id, room.id);
+
+    // VERIFY PRECONDITION: timer is on with counter
+    const switchableBefore = timer.get(TraitType.SWITCHABLE) as any;
+    expect(switchableBefore.isOn).toBe(true);
+    expect(switchableBefore.autoOffCounter).toBe(60);
+
+    const command = createCommand(IFActions.SWITCHING_OFF, {
+      entity: timer
+    });
+    const context = createRealTestContext(switchingOffAction, world, command);
+
+    const validation = switchingOffAction.validate(context);
+    expect(validation.valid).toBe(true);
+    switchingOffAction.execute(context);
+
+    // VERIFY POSTCONDITION: timer is now off and counter is cleared
+    const switchableAfter = timer.get(TraitType.SWITCHABLE) as any;
+    expect(switchableAfter.isOn).toBe(false);
+    expect(switchableAfter.autoOffCounter).toBe(0);
+  });
+
+  test('should NOT change isOn when already off', () => {
+    const { world, player, room } = setupBasicWorld();
+    const radio = world.createEntity('portable radio', 'object');
+    radio.add({
+      type: TraitType.SWITCHABLE,
+      isOn: false // Already off
+    });
+    world.moveEntity(radio.id, room.id);
+
+    // VERIFY PRECONDITION: radio is off
+    const switchableBefore = radio.get(TraitType.SWITCHABLE) as any;
+    expect(switchableBefore.isOn).toBe(false);
+
+    const command = createCommand(IFActions.SWITCHING_OFF, {
+      entity: radio
+    });
+    const context = createRealTestContext(switchingOffAction, world, command);
+
+    // Validation should fail
+    const validation = switchingOffAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('already_off');
+
+    // VERIFY POSTCONDITION: radio is still off (no change)
+    const switchableAfter = radio.get(TraitType.SWITCHABLE) as any;
+    expect(switchableAfter.isOn).toBe(false);
+  });
+
+  test('should NOT change state when target is not switchable', () => {
+    const { world, player, room } = setupBasicWorld();
+    const rock = world.createEntity('solid rock', 'object');
+    // No switchable trait
+    world.moveEntity(rock.id, room.id);
+
+    const command = createCommand(IFActions.SWITCHING_OFF, {
+      entity: rock
+    });
+    const context = createRealTestContext(switchingOffAction, world, command);
+
+    // Validation should fail
+    const validation = switchingOffAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('not_switchable');
+
+    // Object should not have switchable trait at all
+    expect(rock.has(TraitType.SWITCHABLE)).toBe(false);
+  });
+
+  test('should actually turn off a light source and coordinate with LightSourceBehavior', () => {
+    const { world, player, room } = setupBasicWorld();
+    const flashlight = world.createEntity('LED flashlight', 'object');
+    flashlight.add({
+      type: TraitType.SWITCHABLE,
+      isOn: true
+    });
+    flashlight.add({
+      type: TraitType.LIGHT_SOURCE,
+      isLit: true,
+      radius: 3
+    });
+    world.moveEntity(flashlight.id, player.id);
+
+    // VERIFY PRECONDITION: flashlight is on and lit
+    const switchableBefore = flashlight.get(TraitType.SWITCHABLE) as any;
+    const lightSourceBefore = flashlight.get(TraitType.LIGHT_SOURCE) as any;
+    expect(switchableBefore.isOn).toBe(true);
+    expect(lightSourceBefore.isLit).toBe(true);
+
+    const command = createCommand(IFActions.SWITCHING_OFF, {
+      entity: flashlight
+    });
+    const context = createRealTestContext(switchingOffAction, world, command);
+
+    const validation = switchingOffAction.validate(context);
+    expect(validation.valid).toBe(true);
+    switchingOffAction.execute(context);
+
+    // VERIFY POSTCONDITION: flashlight is now off AND not lit
+    const switchableAfter = flashlight.get(TraitType.SWITCHABLE) as any;
+    const lightSourceAfter = flashlight.get(TraitType.LIGHT_SOURCE) as any;
+    expect(switchableAfter.isOn).toBe(false);
+    expect(lightSourceAfter.isLit).toBe(false);
+  });
+
+  test('should turn off device with power requirements', () => {
+    const { world, player, room } = setupBasicWorld();
+    const computer = world.createEntity('desktop computer', 'object');
+    computer.add({
+      type: TraitType.SWITCHABLE,
+      isOn: true,
+      requiresPower: true,
+      hasPower: true,
+      powerConsumption: 250
+    });
+    world.moveEntity(computer.id, room.id);
+
+    // VERIFY PRECONDITION: computer is on
+    const switchableBefore = computer.get(TraitType.SWITCHABLE) as any;
+    expect(switchableBefore.isOn).toBe(true);
+
+    const command = createCommand(IFActions.SWITCHING_OFF, {
+      entity: computer
+    });
+    const context = createRealTestContext(switchingOffAction, world, command);
+
+    const validation = switchingOffAction.validate(context);
+    expect(validation.valid).toBe(true);
+    switchingOffAction.execute(context);
+
+    // VERIFY POSTCONDITION: computer is now off
+    const switchableAfter = computer.get(TraitType.SWITCHABLE) as any;
+    expect(switchableAfter.isOn).toBe(false);
   });
 });

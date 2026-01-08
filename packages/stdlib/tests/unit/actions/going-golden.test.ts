@@ -320,7 +320,9 @@ describe('goingAction (Golden Pattern)', () => {
       });
     });
 
-    test('should fail when destination is dark and no light', () => {
+    test('should allow movement to dark room (darkness affects visibility, not movement)', () => {
+      // Note: Per ADR-068, darkness affects visibility (looking), not movement.
+      // This matches traditional IF behavior (e.g., Cloak of Darkness).
       const world = new WorldModel();
       const player = world.createEntity('yourself', 'object');
       player.add({ type: TraitType.ACTOR, isPlayer: true });
@@ -350,10 +352,11 @@ describe('goingAction (Golden Pattern)', () => {
 
       const events = executeAction(goingAction, context);
 
-      // Should fail because the room is dark and player has no light
-      expectEvent(events, 'action.blocked', {
-        messageId: 'too_dark',
-        params: { direction: Direction.DOWN }
+      // Should succeed - darkness affects visibility, not movement
+      expectEvent(events, 'if.event.actor_moved', {
+        direction: Direction.DOWN,
+        fromRoom: room1.id,
+        toRoom: room2.id
       });
     });
   });
@@ -413,14 +416,11 @@ describe('goingAction (Golden Pattern)', () => {
         direction: Direction.SOUTH,  // Opposite direction
         fromRoom: room1.id
       });
-      
-      // Should emit success message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('moved_to'),
-        params: { 
-          direction: Direction.NORTH,
-          destination: 'Library'
-        }
+
+      // Should emit room description (going action emits movement events, not action.success)
+      expectEvent(events, 'if.event.room.description', {
+        roomId: room2.id,
+        roomName: 'Library'
       });
     });
 
@@ -494,14 +494,11 @@ describe('goingAction (Golden Pattern)', () => {
         direction: Direction.UP,
         firstVisit: true
       });
-      
-      // Should use first_visit message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('first_visit'),
-        params: { 
-          direction: Direction.UP,
-          destination: 'Attic'
-        }
+
+      // Should emit room description for destination
+      expectEvent(events, 'if.event.room.description', {
+        roomId: room2.id,
+        roomName: 'Attic'
       });
     });
 

@@ -231,7 +231,7 @@ function executeSingleEntity(
 ): void {
   const actor = context.player;
 
-  // First remove from source using appropriate behavior
+  // First validate removal from source using appropriate behavior
   let removeResult: IRemoveItemResult | IRemoveItemFromSupporterResult | null = null;
 
   if (source.has(TraitType.CONTAINER)) {
@@ -242,9 +242,12 @@ function executeSingleEntity(
 
   result.removeResult = removeResult;
 
-  // Then take the item using ActorBehavior
+  // Validate taking using ActorBehavior
   const takeResult: ITakeItemResult = ActorBehavior.takeItem(actor, item, context.world);
   result.takeResult = takeResult;
+
+  // Perform the actual move - this is the critical mutation!
+  context.world.moveEntity(item.id, actor.id);
 }
 
 /**
@@ -390,7 +393,7 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
     const actor = context.player;
     const item = context.command.directObject!.entity!;
 
-    // First remove from source using appropriate behavior
+    // First validate removal from source using appropriate behavior
     let removeResult: IRemoveItemResult | IRemoveItemFromSupporterResult | null = null;
 
     if (source.has(TraitType.CONTAINER)) {
@@ -402,9 +405,12 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
     // Store results for report phase using sharedData
     sharedData.removeResult = removeResult;
 
-    // Then take the item using ActorBehavior
+    // Validate taking using ActorBehavior
     const takeResult: ITakeItemResult = ActorBehavior.takeItem(actor, item, context.world);
     sharedData.takeResult = takeResult;
+
+    // Perform the actual move - this is the critical mutation!
+    context.world.moveEntity(item.id, actor.id);
   },
 
   /**

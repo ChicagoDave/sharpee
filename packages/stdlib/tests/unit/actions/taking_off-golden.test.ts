@@ -161,8 +161,8 @@ describe('takingOffAction (Golden Pattern)', () => {
       }));
       
       const events = executeWithValidation(takingOffAction, context);
-      
-      expectEvent(events, 'action.error', {
+
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('prevents_removal'),
         params: { blocking: 'leather jacket' }
       });
@@ -178,14 +178,14 @@ describe('takingOffAction (Golden Pattern)', () => {
         cursed: true  // Can't be removed
       });
       world.moveEntity(ring.id, player.id);
-      
+
       const context = createRealTestContext(takingOffAction, world, createCommand(IFActions.TAKING_OFF, {
         entity: ring
       }));
-      
+
       const events = executeWithValidation(takingOffAction, context);
-      
-      expectEvent(events, 'action.error', {
+
+      expectEvent(events, 'action.blocked', {
         messageId: expect.stringContaining('cant_remove'),
         params: { item: 'cursed ring' }
       });
@@ -462,7 +462,7 @@ describe('Testing Pattern Examples for Taking Off', () => {
         errorType: 'cant_remove'
       }
     ];
-    
+
     restrictedItems.forEach(({ name, restriction }) => {
       const item = world.createEntity(name, 'object');
       item.add({
@@ -470,9 +470,210 @@ describe('Testing Pattern Examples for Taking Off', () => {
         worn: true,
         ...restriction
       });
-      
+
       const wearable = item.get(TraitType.WEARABLE) as any;
       expect(wearable.cursed || wearable.locked || wearable.magicallyBound).toBeTruthy();
     });
+  });
+});
+
+/**
+ * World State Mutation Tests
+ *
+ * These tests verify that the taking_off action actually mutates world state,
+ * not just emits events. This catches bugs like the "dropping bug" where
+ * actions appeared to work (good messages) but didn't actually change state.
+ */
+describe('World State Mutations', () => {
+  test('should actually set worn to false after taking off', () => {
+    const { world, player } = setupBasicWorld();
+    const hat = world.createEntity('wool hat', 'object');
+    hat.add({
+      type: TraitType.WEARABLE,
+      worn: true,
+      wornBy: player.id,
+      bodyPart: 'head'
+    });
+    world.moveEntity(hat.id, player.id);
+
+    // VERIFY PRECONDITION: hat is worn
+    const wearableBefore = hat.get(TraitType.WEARABLE) as any;
+    expect(wearableBefore.worn).toBe(true);
+    expect(wearableBefore.wornBy).toBe(player.id);
+
+    const command = createCommand(IFActions.TAKING_OFF, {
+      entity: hat
+    });
+    const context = createRealTestContext(takingOffAction, world, command);
+
+    const validation = takingOffAction.validate(context);
+    expect(validation.valid).toBe(true);
+    takingOffAction.execute(context);
+
+    // VERIFY POSTCONDITION: hat is no longer worn
+    const wearableAfter = hat.get(TraitType.WEARABLE) as any;
+    expect(wearableAfter.worn).toBe(false);
+    expect(wearableAfter.wornBy).toBeUndefined();
+  });
+
+  test('should actually set worn to false with body part preserved', () => {
+    const { world, player } = setupBasicWorld();
+    const gloves = world.createEntity('leather gloves', 'object');
+    gloves.add({
+      type: TraitType.WEARABLE,
+      worn: true,
+      wornBy: player.id,
+      bodyPart: 'hands',
+      layer: 1
+    });
+    world.moveEntity(gloves.id, player.id);
+
+    // VERIFY PRECONDITION: gloves are worn
+    const wearableBefore = gloves.get(TraitType.WEARABLE) as any;
+    expect(wearableBefore.worn).toBe(true);
+    expect(wearableBefore.bodyPart).toBe('hands');
+    expect(wearableBefore.layer).toBe(1);
+
+    const command = createCommand(IFActions.TAKING_OFF, {
+      entity: gloves
+    });
+    const context = createRealTestContext(takingOffAction, world, command);
+
+    const validation = takingOffAction.validate(context);
+    expect(validation.valid).toBe(true);
+    takingOffAction.execute(context);
+
+    // VERIFY POSTCONDITION: gloves are no longer worn, body part and layer preserved
+    const wearableAfter = gloves.get(TraitType.WEARABLE) as any;
+    expect(wearableAfter.worn).toBe(false);
+    expect(wearableAfter.wornBy).toBeUndefined();
+    expect(wearableAfter.bodyPart).toBe('hands');
+    expect(wearableAfter.layer).toBe(1);
+  });
+
+  test('should NOT change worn when not wearing', () => {
+    const { world, player } = setupBasicWorld();
+    const scarf = world.createEntity('silk scarf', 'object');
+    scarf.add({
+      type: TraitType.WEARABLE,
+      worn: false, // Not worn
+      bodyPart: 'neck'
+    });
+    world.moveEntity(scarf.id, player.id);
+
+    // VERIFY PRECONDITION: scarf is not worn
+    const wearableBefore = scarf.get(TraitType.WEARABLE) as any;
+    expect(wearableBefore.worn).toBe(false);
+
+    const command = createCommand(IFActions.TAKING_OFF, {
+      entity: scarf
+    });
+    const context = createRealTestContext(takingOffAction, world, command);
+
+    // Validation should fail
+    const validation = takingOffAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('not_wearing');
+
+    // VERIFY POSTCONDITION: scarf is still not worn (no change)
+    const wearableAfter = scarf.get(TraitType.WEARABLE) as any;
+    expect(wearableAfter.worn).toBe(false);
+  });
+
+  test('should NOT change state when target is not wearable', () => {
+    const { world, player } = setupBasicWorld();
+    const rock = world.createEntity('heavy rock', 'object');
+    // No wearable trait
+    world.moveEntity(rock.id, player.id);
+
+    const command = createCommand(IFActions.TAKING_OFF, {
+      entity: rock
+    });
+    const context = createRealTestContext(takingOffAction, world, command);
+
+    // Validation should fail
+    const validation = takingOffAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('not_wearing');
+
+    // Object should not have wearable trait at all
+    expect(rock.has(TraitType.WEARABLE)).toBe(false);
+  });
+
+  test('should take off outermost layer without affecting inner layers', () => {
+    const { world, player } = setupBasicWorld();
+
+    // Wearing shirt (layer 1) and jacket (layer 2)
+    const shirt = world.createEntity('cotton shirt', 'object');
+    shirt.add({
+      type: TraitType.WEARABLE,
+      worn: true,
+      wornBy: player.id,
+      bodyPart: 'torso',
+      layer: 1
+    });
+    world.moveEntity(shirt.id, player.id);
+
+    const jacket = world.createEntity('leather jacket', 'object');
+    jacket.add({
+      type: TraitType.WEARABLE,
+      worn: true,
+      wornBy: player.id,
+      bodyPart: 'torso',
+      layer: 2
+    });
+    world.moveEntity(jacket.id, player.id);
+
+    // VERIFY PRECONDITION: both are worn
+    expect((shirt.get(TraitType.WEARABLE) as any).worn).toBe(true);
+    expect((jacket.get(TraitType.WEARABLE) as any).worn).toBe(true);
+
+    // Take off the jacket (outermost layer)
+    const command = createCommand(IFActions.TAKING_OFF, {
+      entity: jacket
+    });
+    const context = createRealTestContext(takingOffAction, world, command);
+
+    const validation = takingOffAction.validate(context);
+    expect(validation.valid).toBe(true);
+    takingOffAction.execute(context);
+
+    // VERIFY POSTCONDITION: jacket is no longer worn, shirt still is
+    const jacketAfter = jacket.get(TraitType.WEARABLE) as any;
+    const shirtAfter = shirt.get(TraitType.WEARABLE) as any;
+    expect(jacketAfter.worn).toBe(false);
+    expect(jacketAfter.wornBy).toBeUndefined();
+    expect(shirtAfter.worn).toBe(true);
+    expect(shirtAfter.wornBy).toBe(player.id);
+  });
+
+  test('should take off item without bodyPart specified', () => {
+    const { world, player } = setupBasicWorld();
+    const ring = world.createEntity('gold ring', 'object');
+    ring.add({
+      type: TraitType.WEARABLE,
+      worn: true,
+      wornBy: player.id
+      // No bodyPart
+    });
+    world.moveEntity(ring.id, player.id);
+
+    // VERIFY PRECONDITION: ring is worn
+    const wearableBefore = ring.get(TraitType.WEARABLE) as any;
+    expect(wearableBefore.worn).toBe(true);
+
+    const command = createCommand(IFActions.TAKING_OFF, {
+      entity: ring
+    });
+    const context = createRealTestContext(takingOffAction, world, command);
+
+    const validation = takingOffAction.validate(context);
+    expect(validation.valid).toBe(true);
+    takingOffAction.execute(context);
+
+    // VERIFY POSTCONDITION: ring is no longer worn
+    const wearableAfter = ring.get(TraitType.WEARABLE) as any;
+    expect(wearableAfter.worn).toBe(false);
+    expect(wearableAfter.wornBy).toBeUndefined();
   });
 });

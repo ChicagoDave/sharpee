@@ -417,3 +417,168 @@ describe('Testing Pattern Examples for Exiting', () => {
     // World model event handlers would update occupants list
   });
 });
+
+/**
+ * World State Mutation Tests
+ *
+ * These tests verify that the exiting action actually mutates world state,
+ * not just emits events. This catches bugs like the "dropping bug" where
+ * actions appeared to work (good messages) but didn't actually change state.
+ */
+describe('World State Mutations', () => {
+  test('should actually move player out of container to room', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const box = world.createEntity('cardboard box', EntityType.CONTAINER);
+    box.add({
+      type: TraitType.CONTAINER,
+      enterable: true
+    });
+    world.moveEntity(box.id, room.id);
+    world.moveEntity(player.id, box.id);
+
+    // VERIFY PRECONDITION: player is in the box
+    expect(world.getLocation(player.id)).toBe(box.id);
+
+    const command = createCommand(IFActions.EXITING);
+    const context = createRealTestContext(exitingAction, world, command);
+
+    const validation = exitingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    exitingAction.execute(context);
+
+    // VERIFY POSTCONDITION: player is now in the room
+    expect(world.getLocation(player.id)).toBe(room.id);
+  });
+
+  test('should actually move player off supporter to room', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const platform = world.createEntity('raised platform', EntityType.SUPPORTER);
+    platform.add({
+      type: TraitType.SUPPORTER,
+      enterable: true
+    });
+    world.moveEntity(platform.id, room.id);
+    world.moveEntity(player.id, platform.id);
+
+    // VERIFY PRECONDITION: player is on the platform
+    expect(world.getLocation(player.id)).toBe(platform.id);
+
+    const command = createCommand(IFActions.EXITING);
+    const context = createRealTestContext(exitingAction, world, command);
+
+    const validation = exitingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    exitingAction.execute(context);
+
+    // VERIFY POSTCONDITION: player is now in the room
+    expect(world.getLocation(player.id)).toBe(room.id);
+  });
+
+  test('should NOT move player when already in a room', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    // VERIFY PRECONDITION: player is in the room
+    expect(world.getLocation(player.id)).toBe(room.id);
+
+    const command = createCommand(IFActions.EXITING);
+    const context = createRealTestContext(exitingAction, world, command);
+
+    // Validation should fail
+    const validation = exitingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toBe('already_outside');
+
+    // VERIFY POSTCONDITION: player still in the room (no change)
+    expect(world.getLocation(player.id)).toBe(room.id);
+  });
+
+  test('should NOT move player when container has no parent location', () => {
+    const world = new WorldModel();
+    const player = world.createEntity('yourself', EntityType.ACTOR);
+    player.add({ type: TraitType.ACTOR, isPlayer: true });
+    world.setPlayer(player.id);
+
+    const floatingBox = world.createEntity('floating box', EntityType.CONTAINER);
+    floatingBox.add({ type: TraitType.CONTAINER });
+    world.moveEntity(player.id, floatingBox.id);
+
+    // VERIFY PRECONDITION: player is in the floating box
+    expect(world.getLocation(player.id)).toBe(floatingBox.id);
+
+    const command = createCommand(IFActions.EXITING);
+    const context = createRealTestContext(exitingAction, world, command);
+
+    // Validation should fail
+    const validation = exitingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toBe('nowhere_to_go');
+
+    // VERIFY POSTCONDITION: player still in the floating box (no change)
+    expect(world.getLocation(player.id)).toBe(floatingBox.id);
+  });
+
+  test('should actually move player out of open container', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const trunk = world.createEntity('car trunk', EntityType.CONTAINER);
+    trunk.add({
+      type: TraitType.CONTAINER,
+      enterable: true
+    });
+    trunk.add({
+      type: TraitType.OPENABLE,
+      isOpen: true // Open
+    });
+    world.moveEntity(trunk.id, room.id);
+    world.moveEntity(player.id, trunk.id);
+
+    // VERIFY PRECONDITION: player is in the trunk
+    expect(world.getLocation(player.id)).toBe(trunk.id);
+
+    const command = createCommand(IFActions.EXITING);
+    const context = createRealTestContext(exitingAction, world, command);
+
+    const validation = exitingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    exitingAction.execute(context);
+
+    // VERIFY POSTCONDITION: player is now in the room
+    expect(world.getLocation(player.id)).toBe(room.id);
+  });
+
+  test('should NOT move player when container is closed', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const crate = world.createEntity('shipping crate', EntityType.CONTAINER);
+    crate.add({
+      type: TraitType.CONTAINER,
+      enterable: true
+    });
+    crate.add({
+      type: TraitType.OPENABLE,
+      isOpen: true // Start open so we can put player inside
+    });
+    world.moveEntity(crate.id, room.id);
+    world.moveEntity(player.id, crate.id);
+
+    // Now close the crate
+    const openableTrait = crate.get(TraitType.OPENABLE);
+    (openableTrait as any).isOpen = false;
+
+    // VERIFY PRECONDITION: player is in the crate
+    expect(world.getLocation(player.id)).toBe(crate.id);
+
+    const command = createCommand(IFActions.EXITING);
+    const context = createRealTestContext(exitingAction, world, command);
+
+    // Validation should fail
+    const validation = exitingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('closed');
+
+    // VERIFY POSTCONDITION: player still in the crate (no change)
+    expect(world.getLocation(player.id)).toBe(crate.id);
+  });
+});
