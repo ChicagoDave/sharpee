@@ -1,40 +1,47 @@
 # Session: 2026-01-08 08:43 - Branch: stdlib-testing
 
 ## Goal
-Set up progressive work summary infrastructure with hooks and templates.
+Continue stdlib testing mitigation plan - add world state verification tests.
 
 ## Work Completed
 
+### Session Infrastructure (earlier)
 - Created `.claude/settings.json` with PreCompact and Stop hooks
-- Created `.claude/hooks/check-session-summary.sh` for context size monitoring
+- Created session hook scripts for progressive summaries
 - Created `docs/context/.session-template.md` as the standard template
-- Created this session file demonstrating the naming convention
+
+### Inserting Action Tests (current)
+- Added 5 world state verification tests to `inserting-golden.test.ts`:
+  - Should actually move item into container
+  - Should actually move item into open container with openable trait
+  - Should NOT move item when container is closed
+  - Should NOT move item when container is full
+  - Should move nested container into another container
+- All 20 tests in inserting-golden.test.ts pass
+- Updated mitigation plan progress: inserting ✅
 
 ## Key Decisions
 
-- Session files at project level (`docs/context/`) not story level
-- Naming: `session-YYYYMMDD-HHMM-{branch}.md` for sort order and statistics
-- PreCompact hook reminds to finalize summary before compacting
-- Stop hook monitors transcript size and reminds when context is growing
+- Following same pattern as putting-golden.test.ts for world state tests
+- Tests verify both preconditions and postconditions using `world.getLocation()`
 
 ## Code Changes
 
-- `.claude/settings.json` (new)
-- `.claude/hooks/check-session-summary.sh` (new)
-- `docs/context/.session-template.md` (new)
-- `docs/context/session-20260108-0843-stdlib-testing.md` (new)
+- `packages/stdlib/tests/unit/actions/inserting-golden.test.ts` (modified - +5 tests)
+- `docs/work/stdlib-testing/mitigation-plan.md` (updated progress)
 
 ## Tests
 
-N/A - infrastructure setup
+- inserting-golden.test.ts: 20 tests pass (15 existing + 5 new world state tests)
 
 ## Open Items
 
-- Consider adding a progress-report-generator agent
-- May want to add session summary to CLAUDE.md workflow docs
+- Continue with remaining movement actions: removing, giving, throwing
+- Then player movement: entering, exiting
 
 ## Next Steps
 
-- Start using this pattern in subsequent sessions
-- Build progress report agent when needed
+- Add world state tests to removing-golden.test.ts
+- Add world state tests to giving-golden.test.ts
+- Add world state tests to throwing-golden.test.ts
 

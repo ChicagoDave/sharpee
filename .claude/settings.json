@@ -1,15 +1,33 @@
 {
   "hooks": {
-    "PreCompact": [
+    "SessionStart": [
       {
-        "type": "command",
-        "command": "echo '[IMPORTANT: Update or finalize the session summary in docs/context/ before compacting. Use the work-summary-writer agent or manually update the current session file.]'"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/session-start.sh"
+          }
+        ]
       }
     ],
     "Stop": [
       {
-        "type": "command",
-        "command": "bash .claude/hooks/check-session-summary.sh"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/session-update.sh"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/session-finalize.sh"
+          }
+        ]
       }
     ]
   }
