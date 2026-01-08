@@ -1,8 +1,9 @@
 # Stdlib Testing Mitigation Plan
 
 **Created**: 2026-01-07
-**Status**: Planning
-**Branch**: `stdlib-testing` (to be created)
+**Updated**: 2026-01-08
+**Status**: In Progress
+**Branch**: `stdlib-testing`
 
 ## Problem Statement
 
@@ -185,10 +186,10 @@ You drop the red ball.
 
 ## Implementation Order
 
-1. **Drinking action fix** - Critical, blocking bug
-2. **Taking action tests** - Highest risk after dropping
-3. **Movement actions** (putting, inserting, removing, giving, throwing)
-4. **Player movement** (going, entering, exiting)
+1. ✅ **Drinking action fix** - Critical, blocking bug (COMPLETED 2026-01-08)
+2. ✅ **Taking action tests** - Highest risk after dropping (COMPLETED 2026-01-08)
+3. ⏳ **Movement actions** (putting ✅, inserting, removing, giving, throwing)
+4. ⏳ **Player movement** (going ✅, entering, exiting)
 5. **Property mutations** (opening, closing, locking, unlocking, etc.)
 6. **Test helper infrastructure**
 7. **Documentation updates**
@@ -222,6 +223,24 @@ You drop the red ball.
 ## Decision Points
 
 Before proceeding:
-- [ ] Confirm drinking fix approach (EdibleBehavior.consume vs custom logic)
+- [x] Confirm drinking fix approach (EdibleBehavior.consume vs custom logic) → **Using EdibleBehavior.consume()**
 - [ ] Decide if transcript tester should support state verification directives
-- [ ] Prioritize which actions to fix first based on Dungeo usage
+- [x] Prioritize which actions to fix first based on Dungeo usage → **Following mitigation plan order**
+
+## Progress Log
+
+### 2026-01-08: Phase 1 & 2 Progress
+
+**Drinking Action Fix (Phase 1)** - COMPLETED
+- Added implicit take via `context.world.moveEntity()`
+- Added `EdibleBehavior.consume()` for EdibleTrait items
+- Added `liquidAmount` decrement for containers
+- Added 6 world state verification tests
+
+**World State Tests Added (Phase 2)**
+- `taking-golden.test.ts`: 4 new tests (room/container/supporter to inventory)
+- `putting-golden.test.ts`: 4 new tests (into container/onto supporter)
+- `going-golden.test.ts`: 4 new tests (player movement, visited flag)
+- `drinking-golden.test.ts`: 6 new tests (consume, servings, liquid)
+
+**Commit**: `79152f3` - fix(stdlib): Fix drinking action mutations + add world state tests
