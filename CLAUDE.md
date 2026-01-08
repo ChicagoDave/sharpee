@@ -344,22 +344,39 @@ Transcripts live in `stories/{story}/tests/transcripts/*.transcript`
 ## Work Patterns
 
 - Planning docs: `docs/work/{target}/`
-- Work summaries: `docs/work/{target}/context/`
+- Work summaries: `docs/work/{target}/context/` (detailed, target-specific)
+- Session summaries: `docs/context/` (progressive, project-level)
 - **Plans**: Write plans to the current work target (NOT to ~/.claude/plans/)
 - Logs: `logs/`
 - Current branch `dungeo` → work in `docs/work/dungeo/`
 
 ## Autonomous Work Flow
 
+### Progressive Session Summaries
+
+**At session start**, create a session file:
+- Location: `docs/context/session-YYYYMMDD-HHMM-{branch}.md`
+- Template: `docs/context/.session-template.md`
+- Naming ensures chronological sort order for statistics/progress reports
+
+**During the session**, update the session file progressively:
+- After completing significant chunks of work
+- After key decisions or discoveries
+- After test runs or builds
+
+**Hooks installed** (`.claude/settings.json`):
+- **PreCompact**: Reminds to finalize session summary before compacting
+- **Stop**: Monitors transcript size and reminds when context is growing large
+
 ### Context Management
 
 When context usage reaches ~15% remaining:
 
-1. Write work summary to `docs/work/{target}/context/`
+1. Finalize the current session summary in `docs/context/`
 2. Commit and push all changes
 3. Send ntfy: "Context low - work saved, need /compact to continue"
 4. STOP and wait for user to run `/compact`
-5. After compact, read the work summary back and continue
+5. After compact, read the session summary back and continue
 
 ### Async Communication (when user is away)
 
