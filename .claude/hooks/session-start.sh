@@ -30,13 +30,25 @@ case "$TRIGGER" in
     fi
     ;;
   startup|clear|*)
-    # New session - always create a new file
+    # New session - find previous session before creating new one
+    PREV_SESSION=$(ls -t ${SESSION_DIR}/session-*-${BRANCH}.md 2>/dev/null | head -1)
+
+    # Create new session file
     if [ -f "$TEMPLATE" ]; then
       sed -e "s/{{DATE}}/${TODAY}/g" \
           -e "s/{{BRANCH}}/${BRANCH}/g" \
           -e "s/{{TIMESTAMP}}/${TIMESTAMP}/g" \
           "$TEMPLATE" > "$SESSION_FILE"
       echo "[Created session summary: $SESSION_FILE]"
+
+      # Show previous session for context continuity
+      if [ -n "$PREV_SESSION" ] && [ -f "$PREV_SESSION" ]; then
+        echo ""
+        echo "[Previous session: $PREV_SESSION]"
+        echo "--- Previous Session Summary ---"
+        cat "$PREV_SESSION"
+        echo "--- End Previous Session ---"
+      fi
     else
       echo "[No session template found at $TEMPLATE]"
     fi
