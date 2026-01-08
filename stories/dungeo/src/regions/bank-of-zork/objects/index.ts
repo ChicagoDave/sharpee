@@ -44,7 +44,8 @@ function createPortrait(world: WorldModel, roomId: string): IFEntity {
     aliases: ['painting', 'picture', 'oil painting', 'portrait painting'],
     description: 'A magnificent oil portrait of J. Pierpont Flathead, founder of the Bank of Zork. The ornate gilded frame alone must be worth a fortune.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 20
   }));
   (portrait as any).isTreasure = true;
   (portrait as any).treasureId = 'portrait';
@@ -60,7 +61,8 @@ function createZorkmidBills(world: WorldModel, roomId: string): IFEntity {
     aliases: ['zorkmid bills', 'bills', 'zorkmids', 'stack of bills', 'money', 'currency'],
     description: 'A thick stack of crisp zorkmid bills in various denominations. The bills bear the stern likeness of Lord Dimwit Flathead.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 20
   }));
   (bills as any).isTreasure = true;
   (bills as any).treasureId = 'zorkmid-bills';
@@ -76,7 +78,8 @@ function createZorkmidCoin(world: WorldModel, roomId: string): IFEntity {
     aliases: ['coin', 'zorkmid', 'gold coin'],
     description: 'A large gold zorkmid coin. One side shows a portrait of Lord Dimwit Flathead; the other depicts the great underground dam.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
   (coin as any).isTreasure = true;
   (coin as any).treasureId = 'zorkmid-coin';

@@ -401,11 +401,11 @@
 | Puzzle | Solution | Status | Reward |
 |--------|----------|--------|--------|
 | Trap door | Move rug, open door | ✅ Done | Access underground |
-| Dam | Turn bolt with wrench | ✅ Done | Drain reservoir |
+| Dam | Turn bolt with wrench | ✅ Done | Drain reservoir, reservoir exit blocking |
 | Carousel/Round Room | Robot push button | ✅ Done | Robot NPC + handler complete |
 | Bucket/Well | Pour water to descend | ✅ Done | Access tea room |
-| Coal machine | Put coal, turn switch | 🚧 Partial | Diamond |
-| Basket | Lower/raise for mine | 🚧 Partial | Transport items |
+| Coal machine | Put coal, turn switch | ✅ Done | Diamond (turn-switch action) |
+| Basket | Lower/raise for mine | ✅ Done | Transport items+player (ADR-090 capability dispatch) |
 | Balloon | TIE wire, LIGHT guidebook, wait, land | ✅ Done | Volcano ledge access |
 
 ### Word/Knowledge Puzzles
@@ -434,7 +434,7 @@
 |--------|----------|--------|--------|
 | Egg/Canary/Bauble | Thief opens egg, wind canary in forest | ✅ Done | Canary + Bauble |
 | Key (Tiny Room) | Mat under door, screwdriver | ✅ Done | Blue sphere |
-| Coffin | Drain reservoir, carry across | ❌ | 10 points |
+| Coffin | Drain reservoir, carry across, pray at altar | ✅ Done | 10 points (coffin portable weight=10, dam blocking works, transcript test passing) |
 | Glacier | Throw torch at ice | ✅ Done | Volcano View access |
 | Rainbow | Wave sceptre at falls | ✅ Done | Pot of gold |
 | Buried treasure | Dig 4 times with shovel | ✅ Done | Statue |
@@ -453,11 +453,11 @@
 | Timed events (daemons) | ✅ Done | ADR-071 complete (lantern, candles, dam, forest) |
 | NPC basics | ✅ Done | ADR-070 implemented |
 | Vehicle trait | ✅ Done | Boat navigation, bucket |
-| INFLATE/DEFLATE actions | ❌ | Boat |
+| Weight/capacity system | ✅ Done | Player maxWeight=100, all objects have weight property |
+| INFLATE/DEFLATE actions | ✅ Done | Boat (2026-01-07) |
 | WAVE action | ✅ Done | Sceptre/rainbow (2026-01-02) |
-| Water current | ❌ | River auto-movement |
 | RING action | ✅ Done | Bell |
-| PRAY action | ✅ Done | ADR-078 basin blessing |
+| PRAY action | ✅ Done | Altar→Forest teleport (Basin Room logic removed, incense-only disarm) |
 | BURN action | ✅ Done | ADR-078 incense (3-turn timer) |
 | Exorcism sequence | ✅ Done | Bell/book/candle |
 | DIG action | ✅ Done | Shovel/beach (2026-01-02) |
@@ -466,7 +466,7 @@
 | PUSH WALL action | ✅ Done | Royal Puzzle |
 | Puzzle movement intercept | ✅ Done | Royal Puzzle |
 | TAKE CARD intercept | ✅ Done | Royal Puzzle |
-| Robot commands | ❌ | "tell robot 'X'" syntax |
+| Robot commands | ✅ Done | "tell/order robot to X" syntax |
 | Endgame trigger | ✅ Done | Crypt darkness ritual (15 turns) |
 | Victory condition | ✅ Done | Treasury entry triggers victory messages |
 | GDT (debug tool) | 🚧 Partial | Core commands working, DC added |
@@ -527,24 +527,26 @@ See `docs/work/dungeo/endgame-cheat.md` for full algorithm and Python implementa
 | Tools | 6 | 6 | 100% |
 | Containers | 5 | 5 | 100% |
 | NPCs | 7 | 7 | 100% |
-| Puzzles (working) | 21 | ~25 | 84% |
+| Puzzles (working) | 23 | ~25 | 92% |
 
 ---
 
 ## Priority Next Steps
 
-1. **Remaining puzzles**:
-   - Coffin transport - drain reservoir, carry coffin across
-   - Coal machine - put coal, turn switch → diamond
-   - Basket mechanism - lower/raise for mine transport
-2. **Missing systems**:
-   - INFLATE/DEFLATE actions (boat)
-   - Water current (river auto-movement)
-   - Robot commands ("tell robot 'X'" syntax)
-3. **Cleanup** - Remove obsolete `event-handler-migration-plan.md` (ADR-086 fixed all handlers)
+1. **Cleanup** - Remove obsolete `event-handler-migration-plan.md` (ADR-086 fixed all handlers)
 
 ## Recently Completed
 
+- ✅ **Robot FORTRAN-Accurate Implementation** (2026-01-07) - Fixed robot to match original FORTRAN timefnc.for behavior. FOLLOW/STAY commands are Dungeon Master only (not robot) - robot now responds "stupid robot". Robot now executes WALK, TAKE, DROP commands: says "Whirr, buzz, click!" then actually moves/manipulates objects. Direction map uses uppercase Direction constants (EAST not east). Uses getContents() for location-based entity lookup.
+- ✅ **Robot Commands Transcript Test** (2026-01-07) - Created comprehensive transcript test for COMMANDING action. Fixed grammar patterns (greedy text capture `:command...` already implies text capture, no `.text()` needed). Changed events from `npc.emoted` to `game.message` for proper text output. Added `@sharpee/if-domain` dependency to dungeo package.json. All 30 tests pass covering: follow/stay commands, push button in Machine Room, unknown commands, and non-commandable NPC blocking.
+- ✅ **Wave-Rainbow & Falls Death Handler Fixes** (2026-01-07) - Fixed falls death handler to correctly allow: LOOK, WAVE, GDT, rainbow-blocked action, and GO directions except SOUTH. Added isRainbowRoom marker to rainbow rooms so river handler allows walking to Aragain Falls. Fixed basket handler build errors (vehicleType 'cable', removed invalid properties). All 857 tests pass (851 passed, 5 expected failures, 1 skipped).
+- ✅ **River Navigation & Falls Death** (2026-01-07) - Implemented river navigation blocking (requires inflated boat for water rooms) and falls death mechanics (any action except LOOK at Aragain Falls kills player per FORTRAN). Created river-blocked and falls-death actions with command transformers. All 825 tests pass.
+- ✅ **INFLATE/DEFLATE Actions** (2026-01-07) - Implemented boat inflate/deflate mechanics. Boat starts deflated as "pile of plastic" with valve description. Requires hand pump to inflate. Grammar patterns: inflate/deflate :target, pump :target, pump up :target, open valve. Boat description changes between deflated (folded plastic with valve) and inflated (seaworthy craft with oars). Created boat-inflate-deflate.transcript with 23 tests. All 825 tests pass (51 transcripts).
+- ✅ **Weight/Capacity System** (2026-01-07) - Added weight property to all portable objects across 14 files. Player already had maxWeight=100 configured. Platform ContainerBehavior.checkCapacity() enforces weight limits. Values sourced from Fortran dindx.dat: chalices 40, axe/keys 25, painting/portrait/bar/timber 20, sword/coffin/coal 10, standard items 5, small items 2-4. Added weight-capacity.transcript test. All 802 tests pass (50 transcripts).
+- ✅ **PRAY Action Fix & Basin Ritual Correction** (2026-01-07) - Fixed PRAY action to correctly teleport from Altar to Forest Path 1 (per Fortran sverbs.for V79). Removed incorrect Basin Room logic from PRAY - the ghost ritual now works with incense-only disarm: BURN INCENSE sets basinState='disarmed', DROP FRAME PIECE triggers ghost ritual while incense burns. Added pray-altar-teleport.transcript with 10 tests. All 787 tests pass (49 transcripts).
+- ✅ **Coffin Puzzle & Weight Research** (2026-01-07) - Parsed Fortran dindx.dat to extract object weights/capacities. Key finding: COFFIN weight=10, player MXLOAD=100 - coffin is easily portable (10% of capacity). Created transcript test verifying coffin+sceptre can be taken and stored in trophy case (14 points). Also discovered PRAY action incorrectly implements Basin Room logic instead of Altar→Forest teleportation per Fortran source. Added weights-capacities.md reference doc.
+- ✅ **Dam Puzzle Bidirectional Toggle & Map Fix** (2026-01-07) - Fixed map bug where `connectTempleToDam()` overwrote Reservoir South→Dam exit with Temple connection. Temple is correctly accessed via Glacier Room→Egyptian Room and Grail Room paths. Added bidirectional dam toggle: turn bolt when drained closes dam and re-blocks reservoir exits. Handler listens for `dungeo.dam.closed` event. All 761 tests pass (5 expected failures).
+- ✅ **Coal Machine Puzzle** (2026-01-07) - Turn switch on machine converts coal to diamond. Story action `turn-switch-action.ts` with ContainerTrait on machine. 16 transcript tests pass.
 - ✅ **Tiny Room Key Puzzle** (2026-01-05) - Classic IF "key under door" puzzle. PUT MAT UNDER DOOR, PUSH KEY WITH SCREWDRIVER, TAKE MAT (gets key). 4 new actions (put-under, push-key, pull-mat, door-blocked), 2 command transformers (block north when locked, intercept take mat when under door). Uses LockableTrait properly. All 22 transcript tests pass.
 - ✅ **Grammar Conflict Fixes + Flooding Timing** (2026-01-05) - Fixed 158 test failures from ADR-089 merge. Turn-bolt changed to literal "turn bolt" patterns (was intercepting "turn on lantern"). Press-button changed to "press :target" only (was intercepting "push rug"). Fixed flooding water level progression - daemon now skips button press turn and increments by 2 (matching FORTRAN RVMNT/2 formula). All 699 tests pass.
 - ✅ **ADR-089 Pronoun & Identity System** (2026-01-05) - Complete implementation of pronoun resolution and narrative perspective. Parser resolves "it", "him", "her", "them" etc. Story can configure 1st/2nd/3rd person perspective. Message placeholders {You}, {your}, {take} conjugate automatically.

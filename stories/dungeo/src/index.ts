@@ -9,6 +9,7 @@
 import { Story, StoryConfig, GameEngine } from '@sharpee/engine';
 import type { Parser } from '@sharpee/parser-en-us';
 import type { LanguageProvider } from '@sharpee/lang-en-us';
+import { ScopeBuilder } from '@sharpee/if-domain';
 import { ISemanticEvent } from '@sharpee/core';
 import {
   WorldModel,
@@ -31,14 +32,14 @@ import {
 import { DungeoScoringService } from './scoring';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler, PUT_UNDER_ACTION_ID, PutUnderMessages, PUSH_KEY_ACTION_ID, PushKeyMessages, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler, TURN_SWITCH_ACTION_ID, TurnSwitchMessages, PUT_UNDER_ACTION_ID, PutUnderMessages, PUSH_KEY_ACTION_ID, PushKeyMessages, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages, INFLATE_ACTION_ID, InflateMessages, DEFLATE_ACTION_ID, DeflateMessages, COMMANDING_ACTION_ID, CommandingMessages } from './actions';
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages, FloodingMessages, registerBalloonPutHandler, BalloonHandlerMessages } from './scheduler';
 import { setSchedulerForGDT, setEngineForKL } from './actions/gdt/commands';
 
 // Import handlers
-import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages, registerGlacierHandler, GlacierMessages } from './handlers';
+import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages, registerGlacierHandler, GlacierMessages, registerReservoirExitHandler } from './handlers';
 import { initializeMirrorRoom, createMirrorTouchHandler, MirrorRoomConfig, MirrorRoomMessages } from './handlers/mirror-room-handler';
 import { MIRROR_ID } from './regions/underground/objects';
 
@@ -49,7 +50,7 @@ import { createForestRooms, createForestObjects, connectForestToExterior, Forest
 import { createUndergroundRooms, createUndergroundObjects, connectUndergroundToHouse, connectStudioToKitchen, connectUndergroundToDam, connectGrailRoomToTemple, connectCaveToHades, UndergroundRoomIds } from './regions/underground';
 import { createDamRooms, connectDamToUnderground, connectReservoirToAtlantis, connectGlacierToEgyptian, connectTempleSmallCaveToRockyShore, createDamObjects, DamRoomIds } from './regions/dam';
 import { createCoalMineRooms, createCoalMineObjects, CoalMineRoomIds } from './regions/coal-mine';
-import { createTempleRooms, connectTempleToDam, connectTempleToUnderground, createTempleObjects, TempleRoomIds } from './regions/temple';
+import { createTempleRooms, connectTempleToUnderground, createTempleObjects, TempleRoomIds } from './regions/temple';
 import { createVolcanoRooms, connectVolcanoToGlacier, createVolcanoRegionObjects, VolcanoRoomIds, VolcanoObjectIds } from './regions/volcano';
 import { createBankRooms, connectBankToUnderground, createBankObjects, BankRoomIds } from './regions/bank-of-zork';
 import { createWellRoomRooms, connectWellRoomToTemple, createWellRoomObjects, WellRoomIds } from './regions/well-room';
@@ -62,6 +63,8 @@ import { createEndgameRooms, createEndgameObjects, EndgameRoomIds } from './regi
 import { registerRoyalPuzzleHandler, initializePuzzleState, createPuzzleCommandTransformer, PuzzleHandlerMessages } from './handlers/royal-puzzle';
 import { createRainbowCommandTransformer } from './handlers/rainbow-handler';
 import { createBalloonExitTransformer } from './handlers/balloon-handler';
+import { createRiverEntryTransformer, registerBoatMovementHandler, RiverMessages } from './handlers/river-handler';
+import { createFallsDeathTransformer, registerFallsRoom, FallsDeathMessages } from './handlers/falls-death-handler';
 import { createTinyRoomDoorTransformer, createTinyRoomMatTransformer, TinyRoomMessages } from './handlers/tiny-room-handler';
 
 // Import NPCs
@@ -179,7 +182,9 @@ export class DungeoStory implements Story {
     connectUndergroundToHouse(world, this.undergroundIds, this.houseInteriorIds.livingRoom);
     connectStudioToKitchen(world, this.undergroundIds, this.houseInteriorIds.kitchen);
     connectDamToUnderground(world, this.damIds, this.undergroundIds.roundRoom);
-    connectTempleToDam(world, this.templeIds, this.damIds.reservoirSouth);
+    // Note: Temple is NOT directly connected to Reservoir South. Access is via:
+    // - Glacier Room → Egyptian Room → Temple (connectGlacierToEgyptian)
+    // - Grail Room → Temple (connectGrailRoomToTemple)
     connectTempleToUnderground(world, this.templeIds, this.undergroundIds.rockyCrawl);
     connectReservoirToAtlantis(world, this.damIds, this.undergroundIds.atlantisRoom);
     connectGlacierToEgyptian(world, this.damIds, this.templeIds.egyptianRoom);
@@ -241,6 +246,15 @@ export class DungeoStory implements Story {
 
     // Register glacier handler (throw torch at glacier puzzle)
     registerGlacierHandler(world, this.damIds.glacierRoom, this.volcanoIds.volcanoView);
+
+    // Register reservoir exit handler (dam draining opens reservoir path)
+    registerReservoirExitHandler(world, {
+      dam: this.damIds.dam,
+      maintenanceRoom: this.damIds.maintenanceRoom,
+      reservoirSouth: this.damIds.reservoirSouth,
+      reservoir: this.damIds.reservoir,
+      reservoirNorth: this.damIds.reservoirNorth
+    });
 
     // Set initial player location to West of House
     const player = world.getPlayer();
@@ -502,6 +516,26 @@ export class DungeoStory implements Story {
       .mapsTo(SAY_ACTION_ID)
       .withPriority(155)
       .build();
+
+    // Commanding action (Robot commands - FORTRAN Zork)
+    // "tell robot to push button", "robot, follow me", "order robot to stay"
+    // Note: :command... (greedy syntax) already implies text capture, no .text() needed
+    grammar
+      .define('tell :npc to :command...')
+      .where('npc', (scope: ScopeBuilder) => scope.visible().matching({ animate: true }))
+      .mapsTo(COMMANDING_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('order :npc to :command...')
+      .where('npc', (scope: ScopeBuilder) => scope.visible().matching({ animate: true }))
+      .mapsTo(COMMANDING_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    // Note: Pattern ":npc, :command..." removed - patterns can't start with slots
+    // Use "tell robot to X" or "order robot to X" instead
 
     // Ring action (Exorcism bell)
     grammar
@@ -1071,6 +1105,43 @@ export class DungeoStory implements Story {
       .withPriority(155)
       .build();
 
+    // Turn switch patterns (coal machine)
+    grammar
+      .define('turn switch')
+      .mapsTo(TURN_SWITCH_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('turn the switch')
+      .mapsTo(TURN_SWITCH_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('flip switch')
+      .mapsTo(TURN_SWITCH_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('flip the switch')
+      .mapsTo(TURN_SWITCH_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('activate machine')
+      .mapsTo(TURN_SWITCH_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('activate the machine')
+      .mapsTo(TURN_SWITCH_ACTION_ID)
+      .withPriority(150)
+      .build();
+
     // Tiny Room puzzle patterns - PUT UNDER
     grammar
       .define('put :item under :target')
@@ -1131,6 +1202,81 @@ export class DungeoStory implements Story {
       .define('push key through keyhole')
       .mapsTo(PUSH_KEY_ACTION_ID)
       .withPriority(165)
+      .build();
+
+    // INFLATE action (Boat puzzle - inflate boat with pump)
+    grammar
+      .define('inflate :target')
+      .mapsTo(INFLATE_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('inflate :target with :tool')
+      .mapsTo(INFLATE_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('pump :target')
+      .mapsTo(INFLATE_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('pump up :target')
+      .mapsTo(INFLATE_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    // DEFLATE action (Boat puzzle - deflate boat by opening valve)
+    grammar
+      .define('deflate :target')
+      .mapsTo(DEFLATE_ACTION_ID)
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('open valve')
+      .mapsTo(DEFLATE_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('let air out of :target')
+      .mapsTo(DEFLATE_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    // BOARD/DISEMBARK aliases for ENTER/EXIT (boat navigation)
+    grammar
+      .define('board :target')
+      .mapsTo('if.action.entering')
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('board boat')
+      .mapsTo('if.action.entering')
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('disembark')
+      .mapsTo('if.action.exiting')
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('leave boat')
+      .mapsTo('if.action.exiting')
+      .withPriority(150)
+      .build();
+
+    grammar
+      .define('get out of boat')
+      .mapsTo('if.action.exiting')
+      .withPriority(155)
       .build();
   }
 
@@ -1279,7 +1425,17 @@ export class DungeoStory implements Story {
     language.addMessage(RobotMessages.PUSHES_BUTTON, 'The robot extends a thin metal finger and pushes the triangular button.');
     language.addMessage(RobotMessages.NO_BUTTON, 'The robot looks around but sees no button to push.');
     language.addMessage(RobotMessages.ALREADY_PUSHED, 'The robot has already pushed the button.');
+    language.addMessage(RobotMessages.ARRIVES, 'The robot enters.');
+    language.addMessage(RobotMessages.TAKES_OBJECT, 'The robot takes the {objectName}.');
+    language.addMessage(RobotMessages.DROPS_OBJECT, 'The robot drops the {objectName}.');
     language.addMessage(RobotMessages.CAROUSEL_FIXED, 'You hear a grinding noise from somewhere nearby. The carousel mechanism has stopped spinning!');
+
+    // Commanding action messages (FORTRAN Zork robot commands)
+    language.addMessage(CommandingMessages.NO_TARGET, 'Command whom?');
+    language.addMessage(CommandingMessages.CANT_COMMAND, 'You cannot command that.');
+    language.addMessage(CommandingMessages.CANT_SEE, "You don't see that here.");
+    language.addMessage(CommandingMessages.WHIRR_BUZZ_CLICK, '"Whirr, buzz, click!"');
+    language.addMessage(CommandingMessages.STUPID_ROBOT, '"I am only a stupid robot and cannot perform that command."');
 
     // Say action messages
     language.addMessage(SayMessages.NOTHING_TO_SAY, 'You need to say something.');
@@ -1379,17 +1535,14 @@ export class DungeoStory implements Story {
     language.addMessage(DungeoSchedulerMessages.INCENSE_BURNS_OUT, 'The incense sputters and burns out completely, leaving only ash.');
 
     // Pray action messages
-    language.addMessage(PrayMessages.PRAY_GENERIC, 'You offer a prayer, but nothing special happens.');
-    language.addMessage(PrayMessages.PRAY_DISARMED, 'The fragrant smoke seems to calm the evil presence in the room. The basin begins to glow faintly.');
-    language.addMessage(PrayMessages.PRAY_BLESSED, 'As you pray, the water shimmers with an ethereal light. It has been blessed.');
-    language.addMessage(PrayMessages.PRAY_ALREADY_BLESSED, 'The water is already blessed.');
-    language.addMessage(PrayMessages.NOT_IN_BASIN_ROOM, 'There is nothing special to pray to here.');
+    language.addMessage(PrayMessages.PRAY_GENERIC, 'If you pray hard enough, your prayers may be answered.');
+    language.addMessage(PrayMessages.PRAY_TELEPORT, 'In a shocking development, your prayer is answered!');
 
     // Ghost ritual messages
-    language.addMessage(GhostRitualMessages.GHOST_APPEARS, 'The blessed water glows intensely. A spectral figure rises from the basin - the ghost of the thief! Dressed in adventurer\'s robes, he gestures toward the Gallery and speaks: "Well done, my friend. You are nearing the end game. Look to the Gallery for your reward." Then he fades away...');
+    language.addMessage(GhostRitualMessages.GHOST_APPEARS, 'The fragrant smoke swirls around the basin. A spectral figure rises - the ghost of the thief! Dressed in adventurer\'s robes, he gestures toward the Gallery and speaks: "Well done, my friend. You are nearing the end game. Look to the Gallery for your reward." Then he fades away...');
     language.addMessage(GhostRitualMessages.CANVAS_SPAWNS, 'A magnificent rolled up canvas has appeared in the Gallery!');
     language.addMessage(GhostRitualMessages.WRONG_ITEM, 'The spirit laughs mockingly: "As we said, you have no rights here!" The item vanishes.');
-    language.addMessage(GhostRitualMessages.NOT_BLESSED, 'Nothing happens. The water remains still.');
+    language.addMessage(GhostRitualMessages.NOT_BLESSED, 'Nothing happens. The basin remains still.');
 
     // ADR-078: Hidden max points system
     language.addMessage(RealityAlteredMessages.REALITY_ALTERED, 'The death of the thief seems to alter reality in some subtle way...');
@@ -1629,12 +1782,18 @@ export class DungeoStory implements Story {
     language.addMessage(PressButtonMessages.BLUE_LEAK_STARTED, 'There is a rumbling sound from below, and water begins to leak into the room!');
 
     // Dam puzzle - Turn bolt action messages
-    language.addMessage(TurnBoltMessages.WRONG_TOOL, 'The wrench won\'t fit on that.');
+    language.addMessage(TurnBoltMessages.NOT_A_BOLT, "You can't turn that.");
     language.addMessage(TurnBoltMessages.WONT_TURN, 'The bolt won\'t turn. Perhaps the control panel has something to do with it.');
+    language.addMessage(TurnBoltMessages.NO_TOOL, 'You can\'t turn the bolt with your bare hands.');
+    language.addMessage(TurnBoltMessages.WRONG_TOOL, 'The wrench won\'t fit on that.');
     language.addMessage(TurnBoltMessages.GATES_OPEN, 'The sluice gates open and water pours through the dam.');
     language.addMessage(TurnBoltMessages.GATES_CLOSE, 'The sluice gates close, stopping the flow of water.');
-    language.addMessage(TurnBoltMessages.NOT_A_BOLT, "You can't turn that.");
-    language.addMessage(TurnBoltMessages.NO_TOOL, 'You can\'t turn the bolt with your bare hands.');
+
+    // Coal machine puzzle - Turn switch action messages
+    language.addMessage(TurnSwitchMessages.NO_SWITCH, "There's no switch here.");
+    language.addMessage(TurnSwitchMessages.NO_COAL, 'The machine makes a grinding noise, but nothing happens. Perhaps it needs fuel.');
+    language.addMessage(TurnSwitchMessages.ALREADY_USED, 'The machine has already been used.');
+    language.addMessage(TurnSwitchMessages.SUCCESS, 'The machine comes to life with a deafening roar! The lid slams shut, and the sounds of immense pressure fill the room. After a moment, the lid opens to reveal that the coal has been transformed into a huge diamond!');
 
     // Tiny Room puzzle messages
     language.addMessage(TinyRoomMessages.MAT_PLACED, 'You slide the mat under the door.');
@@ -1654,6 +1813,24 @@ export class DungeoStory implements Story {
     language.addMessage(TinyRoomMessages.KEYHOLE_BLOCKED, 'Something is blocking the keyhole from the other side.');
     language.addMessage(PutUnderMessages.GENERIC_FAIL, "You can't put that under there.");
     language.addMessage(DoorBlockedMessages.DOOR_LOCKED, 'The door is locked, and there is no keyhole on this side.');
+
+    // Inflate/Deflate boat messages
+    language.addMessage(InflateMessages.SUCCESS, 'The boat inflates and rises to its full size.');
+    language.addMessage(InflateMessages.NO_PUMP, "You don't have anything to inflate it with.");
+    language.addMessage(InflateMessages.ALREADY_INFLATED, 'The boat is already inflated.');
+    language.addMessage(InflateMessages.NOT_INFLATABLE, "That can't be inflated.");
+    language.addMessage(InflateMessages.CANT_REACH, "You can't reach the boat from here.");
+
+    language.addMessage(DeflateMessages.SUCCESS, 'The boat deflates.');
+    language.addMessage(DeflateMessages.ALREADY_DEFLATED, 'The boat is already deflated.');
+    language.addMessage(DeflateMessages.NOT_DEFLATABLE, "That can't be deflated.");
+    language.addMessage(DeflateMessages.CANT_REACH, "You can't reach the boat from here.");
+
+    // River navigation messages
+    language.addMessage(RiverMessages.NO_BOAT, 'The water is too cold and the current too strong to swim. You need a boat.');
+
+    // Aragain Falls death message
+    language.addMessage(FallsDeathMessages.DEATH, 'You tumble over Aragain Falls, plunging hundreds of feet to your doom in the mist below.\n\n    **** You have died ****');
   }
 
   /**
@@ -1788,6 +1965,19 @@ export class DungeoStory implements Story {
     // Intercepts "go north" in Tiny Room when door is locked
     engine.registerParsedCommandTransformer(createTinyRoomDoorTransformer());
     engine.registerParsedCommandTransformer(createTinyRoomMatTransformer());
+
+    // Register River entry transformer
+    // Blocks entry to water rooms without inflated boat
+    engine.registerParsedCommandTransformer(createRiverEntryTransformer());
+
+    // Register Falls death transformer
+    // Any action except LOOK at Aragain Falls = death
+    registerFallsRoom(this.frigidRiverIds.aragainFalls);
+    engine.registerParsedCommandTransformer(createFallsDeathTransformer());
+
+    // Register boat movement handler
+    // Moves boat with player when navigating river
+    registerBoatMovementHandler(engine, this.world);
 
     // Register scheduler events (ADR-071 Phase 2)
     const scheduler = engine.getScheduler();

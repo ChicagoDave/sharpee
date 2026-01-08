@@ -48,7 +48,8 @@ function createLargeEmerald(world: WorldModel, roomId: string): IFEntity {
     aliases: ['emerald', 'green gem', 'gem'],
     description: 'A large emerald of exceptional clarity. It glows with an inner green fire.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
   (emerald as any).isTreasure = true;
   (emerald as any).treasureId = 'large-emerald';
@@ -64,7 +65,8 @@ function createRuby(world: WorldModel, roomId: string): IFEntity {
     aliases: ['large ruby', 'red gem', 'gem', 'jewel'],
     description: 'This is an enormous ruby, the size of a robin\'s egg. It sparkles brilliantly in the light.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
   // Treasure - 15 take + 8 case = 23 total
   (ruby as any).isTreasure = true;
@@ -87,7 +89,8 @@ function createPurpleBook(world: WorldModel, roomId: string): IFEntity {
     aliases: ['book', 'purple volume', 'volume'],
     description: 'This is an old book bound in purple leather. The title reads "The History of the Great Underground Empire".',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
   book.add(new ReadableTrait({
     text: `THE HISTORY OF THE GREAT UNDERGROUND EMPIRE
@@ -108,7 +111,8 @@ A stamp falls out of the book as you read it.`
     aliases: ['flathead stamp', 'postage stamp', 'lord dimwit flathead stamp'],
     description: 'This is a rare stamp depicting Lord Dimwit Flathead. It is quite valuable to collectors.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 2
   }));
   // Treasure - 4 take + 10 case = 14 total
   (stamp as any).isTreasure = true;

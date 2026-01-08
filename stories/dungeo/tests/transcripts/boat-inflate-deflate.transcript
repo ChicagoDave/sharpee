@@ -1,0 +1,92 @@
+title: Boat Inflate/Deflate
+story: dungeo
+description: Tests inflating and deflating the rubber boat
+
+---
+
+# Setup - go to Shore where the boat is
+> gdt
+[OK: contains "GDT"]
+
+# Give ourselves the lamp
+> tk brass lantern
+[OK: contains "Taken"]
+
+# Teleport to Shore (Frigid River region)
+> ah Shore
+[OK: contains "Shore"]
+
+> ex
+[OK: contains "Returning"]
+
+# Turn on lamp for light
+> turn on lantern
+[OK: contains "on"]
+
+# Verify we can see the boat (starts deflated as "pile of plastic")
+> look
+[OK: contains "plastic"]
+
+# Boat starts deflated - examine it
+> examine plastic
+[OK: contains "valve"]
+
+# Try to deflate when already deflated - should fail
+> deflate boat
+[OK: contains "already_deflated"]
+
+# Try to inflate without pump - should fail
+> inflate boat
+[OK: contains "no_pump"]
+
+# Get the pump via GDT
+> gdt
+[OK: contains "GDT"]
+
+> tk hand pump
+[OK: contains "Taken"]
+
+> ex
+[OK: contains "Returning"]
+
+# Now inflate the boat with the pump in inventory
+> inflate boat
+[OK: contains "inflates"]
+
+# Verify boat is now inflated - examine shows new description
+> examine boat
+[OK: contains "seaworthy"]
+
+# isInflated should be true
+> examine boat
+[OK: contains "oars"]
+
+# Try to inflate again - should fail
+> inflate boat
+[OK: contains "already_inflated"]
+
+# Deflate the boat
+> deflate boat
+[OK: contains "deflates"]
+
+# Verify it's back to pile of plastic
+> look
+[OK: contains "plastic"]
+
+# Alternative syntax: "open valve" to deflate
+> inflate boat
+[OK: contains "inflates"]
+
+> open valve
+[OK: contains "deflates"]
+
+# Alternative syntax: "pump boat" to inflate
+> pump boat
+[OK: contains "inflates"]
+
+# Alternative syntax: "pump up boat"
+> deflate boat
+[OK: contains "deflates"]
+
+> pump up boat
+[OK: contains "inflates"]

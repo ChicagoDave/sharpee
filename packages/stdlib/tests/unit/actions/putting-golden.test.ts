@@ -628,6 +628,139 @@ describe('puttingAction (Golden Pattern)', () => {
   });
 });
 
+/**
+ * CRITICAL: World State Mutation Verification Tests
+ *
+ * These tests verify that the putting action actually mutates world state,
+ * not just emits events. This catches bugs like the "dropping bug" where
+ * actions appeared to work (good messages) but didn't actually change state.
+ */
+describe('World State Mutations', () => {
+  test('should actually move item into container', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const gem = world.createEntity('ruby', 'object');
+    const box = world.createEntity('jewel box', 'object');
+    box.add({ type: TraitType.CONTAINER });
+
+    world.moveEntity(gem.id, player.id);
+    world.moveEntity(box.id, room.id);
+
+    // VERIFY PRECONDITION: gem is in player's inventory
+    expect(world.getLocation(gem.id)).toBe(player.id);
+
+    const command = createCommand(IFActions.PUTTING, {
+      entity: gem,
+      secondEntity: box,
+      preposition: 'in'
+    });
+    const context = createRealTestContext(puttingAction, world, command);
+
+    const validation = puttingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    puttingAction.execute(context);
+
+    // VERIFY POSTCONDITION: gem is now in the box
+    expect(world.getLocation(gem.id)).toBe(box.id);
+  });
+
+  test('should actually move item onto supporter', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const book = world.createEntity('thick book', 'object');
+    const table = world.createEntity('round table', EntityType.SUPPORTER);
+    table.add({ type: TraitType.SUPPORTER });
+
+    world.moveEntity(book.id, player.id);
+    world.moveEntity(table.id, room.id);
+
+    // VERIFY PRECONDITION: book is in player's inventory
+    expect(world.getLocation(book.id)).toBe(player.id);
+
+    const command = createCommand(IFActions.PUTTING, {
+      entity: book,
+      secondEntity: table,
+      preposition: 'on'
+    });
+    const context = createRealTestContext(puttingAction, world, command);
+
+    const validation = puttingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    puttingAction.execute(context);
+
+    // VERIFY POSTCONDITION: book is now on the table
+    expect(world.getLocation(book.id)).toBe(table.id);
+  });
+
+  test('should NOT move item when container is closed', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const coin = world.createEntity('silver coin', 'object');
+    const chest = world.createEntity('locked chest', 'object');
+    chest.add({ type: TraitType.CONTAINER });
+    chest.add({ type: TraitType.OPENABLE, isOpen: false });
+
+    world.moveEntity(coin.id, player.id);
+    world.moveEntity(chest.id, room.id);
+
+    // VERIFY PRECONDITION: coin is in player's inventory
+    expect(world.getLocation(coin.id)).toBe(player.id);
+
+    const command = createCommand(IFActions.PUTTING, {
+      entity: coin,
+      secondEntity: chest,
+      preposition: 'in'
+    });
+    const context = createRealTestContext(puttingAction, world, command);
+
+    // Validation should fail
+    const validation = puttingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toBe('container_closed');
+
+    // VERIFY POSTCONDITION: coin still in player's inventory (no change)
+    expect(world.getLocation(coin.id)).toBe(player.id);
+  });
+
+  test('should NOT move item when container is full', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const newCoin = world.createEntity('copper coin', 'object');
+    const pouch = world.createEntity('coin pouch', 'object');
+    pouch.add({
+      type: TraitType.CONTAINER,
+      capacity: { maxItems: 2 }
+    });
+
+    // Fill the pouch
+    const coin1 = world.createEntity('coin 1', 'object');
+    const coin2 = world.createEntity('coin 2', 'object');
+    world.moveEntity(coin1.id, pouch.id);
+    world.moveEntity(coin2.id, pouch.id);
+
+    world.moveEntity(newCoin.id, player.id);
+    world.moveEntity(pouch.id, room.id);
+
+    // VERIFY PRECONDITION: newCoin is in player's inventory
+    expect(world.getLocation(newCoin.id)).toBe(player.id);
+
+    const command = createCommand(IFActions.PUTTING, {
+      entity: newCoin,
+      secondEntity: pouch,
+      preposition: 'in'
+    });
+    const context = createRealTestContext(puttingAction, world, command);
+
+    // Validation should fail
+    const validation = puttingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toBe('no_room');
+
+    // VERIFY POSTCONDITION: coin still in player's inventory (no change)
+    expect(world.getLocation(newCoin.id)).toBe(player.id);
+  });
+});
+
 describe('Putting Action Edge Cases', () => {
   test('should handle volume capacity', () => {
     const { world, player, room } = setupBasicWorld();

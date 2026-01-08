@@ -13,7 +13,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, EdibleTrait, ContainerTrait, OpenableBehavior } from '@sharpee/world-model';
+import { TraitType, EdibleTrait, ContainerTrait, OpenableBehavior, EdibleBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { DrunkEventData, ImplicitTakenEventData } from './drinking-events';
 import { ActionMetadata } from '../../../validation';
@@ -251,9 +251,43 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
       item: item.name
     };
 
-    // Determine message based on properties
+    // Capture state BEFORE mutations for determineMessage
+    const servingsBefore = edibleTrait ? EdibleBehavior.getServings(item) : 0;
+
+    // Determine message based on pre-mutation state
     const verb = context.command.parsed.structure.verb?.text.toLowerCase() || 'drink';
     const messageId = determineMessage(verb, edibleTrait, containerTrait, eventData, params);
+
+    // === MUTATIONS (happen after determineMessage reads state) ===
+
+    // MUTATION 1: Perform implicit take if item is not held
+    if (!isHeld) {
+      context.world.moveEntity(item.id, actor.id);
+    }
+
+    // MUTATION 2: Consume the drinkable item if it has EdibleTrait
+    if (edibleTrait) {
+      // Perform consumption (decrements servings, sets consumed flag if empty)
+      EdibleBehavior.consume(item, actor);
+
+      // Update event data with actual post-mutation values
+      const servingsAfter = EdibleBehavior.getServings(item);
+      if (servingsBefore > 1) {
+        eventData.portions = servingsBefore;
+        eventData.portionsRemaining = servingsAfter;
+      }
+    }
+
+    // MUTATION 3: Decrement liquid amount for containers
+    if (containerTrait && (containerTrait as any).liquidAmount !== undefined) {
+      const currentAmount = (containerTrait as any).liquidAmount as number;
+      const newAmount = Math.max(0, currentAmount - 1);
+      (containerTrait as any).liquidAmount = newAmount;
+
+      // Update event data to reflect actual mutated values
+      eventData.liquidAmount = currentAmount;
+      eventData.liquidRemaining = newAmount;
+    }
 
     // Store in sharedData
     sharedData.itemId = item.id;

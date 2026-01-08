@@ -463,7 +463,7 @@ describe('Testing Pattern Examples for Wearing', () => {
       { item: 'socks', bodyPart: 'feet' },
       { item: 'shoes', bodyPart: 'feet' }
     ];
-    
+
     const world = new WorldModel();
     bodyParts.forEach(({ item, bodyPart }) => {
       const wearable = world.createEntity(item, 'object');
@@ -472,11 +472,212 @@ describe('Testing Pattern Examples for Wearing', () => {
         worn: false,
         bodyPart
       });
-      
+
       const trait = wearable.get(TraitType.WEARABLE) as any;
       expect(trait.bodyPart).toBe(bodyPart);
     });
-    
+
     // Note: Multiple items can share the same body part (e.g., socks and shoes on feet)
+  });
+});
+
+/**
+ * World State Mutation Tests
+ *
+ * These tests verify that the wearing action actually mutates world state,
+ * not just emits events. This catches bugs like the "dropping bug" where
+ * actions appeared to work (good messages) but didn't actually change state.
+ */
+describe('World State Mutations', () => {
+  test('should actually set worn to true after wearing', () => {
+    const { world, player } = setupBasicWorld();
+    const hat = world.createEntity('wool hat', 'object');
+    hat.add({
+      type: TraitType.WEARABLE,
+      worn: false,
+      bodyPart: 'head'
+    });
+    world.moveEntity(hat.id, player.id);
+
+    // VERIFY PRECONDITION: hat is not worn
+    const wearableBefore = hat.get(TraitType.WEARABLE) as any;
+    expect(wearableBefore.worn).toBe(false);
+    expect(wearableBefore.wornBy).toBeUndefined();
+
+    const command = createCommand(IFActions.WEARING, {
+      entity: hat
+    });
+    const context = createRealTestContext(wearingAction, world, command);
+
+    const validation = wearingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    wearingAction.execute(context);
+
+    // VERIFY POSTCONDITION: hat is now worn by player
+    const wearableAfter = hat.get(TraitType.WEARABLE) as any;
+    expect(wearableAfter.worn).toBe(true);
+    expect(wearableAfter.wornBy).toBe(player.id);
+  });
+
+  test('should actually set worn to true with body part preserved', () => {
+    const { world, player } = setupBasicWorld();
+    const gloves = world.createEntity('leather gloves', 'object');
+    gloves.add({
+      type: TraitType.WEARABLE,
+      worn: false,
+      bodyPart: 'hands',
+      layer: 1
+    });
+    world.moveEntity(gloves.id, player.id);
+
+    // VERIFY PRECONDITION: gloves are not worn
+    const wearableBefore = gloves.get(TraitType.WEARABLE) as any;
+    expect(wearableBefore.worn).toBe(false);
+    expect(wearableBefore.bodyPart).toBe('hands');
+    expect(wearableBefore.layer).toBe(1);
+
+    const command = createCommand(IFActions.WEARING, {
+      entity: gloves
+    });
+    const context = createRealTestContext(wearingAction, world, command);
+
+    const validation = wearingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    wearingAction.execute(context);
+
+    // VERIFY POSTCONDITION: gloves are now worn, preserving body part and layer
+    const wearableAfter = gloves.get(TraitType.WEARABLE) as any;
+    expect(wearableAfter.worn).toBe(true);
+    expect(wearableAfter.wornBy).toBe(player.id);
+    expect(wearableAfter.bodyPart).toBe('hands');
+    expect(wearableAfter.layer).toBe(1);
+  });
+
+  test('should NOT change worn when already wearing', () => {
+    const { world, player } = setupBasicWorld();
+    const scarf = world.createEntity('silk scarf', 'object');
+    scarf.add({
+      type: TraitType.WEARABLE,
+      worn: true, // Already worn
+      wornBy: player.id,
+      bodyPart: 'neck'
+    });
+    world.moveEntity(scarf.id, player.id);
+
+    // VERIFY PRECONDITION: scarf is worn
+    const wearableBefore = scarf.get(TraitType.WEARABLE) as any;
+    expect(wearableBefore.worn).toBe(true);
+    expect(wearableBefore.wornBy).toBe(player.id);
+
+    const command = createCommand(IFActions.WEARING, {
+      entity: scarf
+    });
+    const context = createRealTestContext(wearingAction, world, command);
+
+    // Validation should fail
+    const validation = wearingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('already_wearing');
+
+    // VERIFY POSTCONDITION: scarf is still worn (no change)
+    const wearableAfter = scarf.get(TraitType.WEARABLE) as any;
+    expect(wearableAfter.worn).toBe(true);
+    expect(wearableAfter.wornBy).toBe(player.id);
+  });
+
+  test('should NOT change state when target is not wearable', () => {
+    const { world, player, room } = setupBasicWorld();
+    const rock = world.createEntity('heavy rock', 'object');
+    // No wearable trait
+    world.moveEntity(rock.id, room.id);
+
+    const command = createCommand(IFActions.WEARING, {
+      entity: rock
+    });
+    const context = createRealTestContext(wearingAction, world, command);
+
+    // Validation should fail
+    const validation = wearingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('not_wearable');
+
+    // Object should not have wearable trait at all
+    expect(rock.has(TraitType.WEARABLE)).toBe(false);
+  });
+
+  test('should wear item with layering system', () => {
+    const { world, player } = setupBasicWorld();
+
+    // Already wearing underwear (layer 0)
+    const underwear = world.createEntity('underwear', 'object');
+    underwear.add({
+      type: TraitType.WEARABLE,
+      worn: true,
+      wornBy: player.id,
+      bodyPart: 'torso',
+      layer: 0
+    });
+    world.moveEntity(underwear.id, player.id);
+
+    // Trying to wear shirt (layer 1)
+    const shirt = world.createEntity('cotton shirt', 'object');
+    shirt.add({
+      type: TraitType.WEARABLE,
+      worn: false,
+      bodyPart: 'torso',
+      layer: 1
+    });
+    world.moveEntity(shirt.id, player.id);
+
+    // VERIFY PRECONDITION: shirt is not worn
+    const shirtBefore = shirt.get(TraitType.WEARABLE) as any;
+    expect(shirtBefore.worn).toBe(false);
+
+    const command = createCommand(IFActions.WEARING, {
+      entity: shirt
+    });
+    const context = createRealTestContext(wearingAction, world, command);
+
+    const validation = wearingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    wearingAction.execute(context);
+
+    // VERIFY POSTCONDITION: shirt is now worn
+    const shirtAfter = shirt.get(TraitType.WEARABLE) as any;
+    expect(shirtAfter.worn).toBe(true);
+    expect(shirtAfter.wornBy).toBe(player.id);
+
+    // Underwear should still be worn
+    const underwearAfter = underwear.get(TraitType.WEARABLE) as any;
+    expect(underwearAfter.worn).toBe(true);
+  });
+
+  test('should wear item without bodyPart specified', () => {
+    const { world, player } = setupBasicWorld();
+    const ring = world.createEntity('gold ring', 'object');
+    ring.add({
+      type: TraitType.WEARABLE,
+      worn: false
+      // No bodyPart
+    });
+    world.moveEntity(ring.id, player.id);
+
+    // VERIFY PRECONDITION: ring is not worn
+    const wearableBefore = ring.get(TraitType.WEARABLE) as any;
+    expect(wearableBefore.worn).toBe(false);
+
+    const command = createCommand(IFActions.WEARING, {
+      entity: ring
+    });
+    const context = createRealTestContext(wearingAction, world, command);
+
+    const validation = wearingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    wearingAction.execute(context);
+
+    // VERIFY POSTCONDITION: ring is now worn
+    const wearableAfter = ring.get(TraitType.WEARABLE) as any;
+    expect(wearableAfter.worn).toBe(true);
+    expect(wearableAfter.wornBy).toBe(player.id);
   });
 });

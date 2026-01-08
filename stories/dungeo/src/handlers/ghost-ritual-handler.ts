@@ -1,8 +1,8 @@
 /**
  * Ghost Ritual Handler - ADR-078 Thief's Canvas Puzzle
  *
- * Listens for DROP events in the Basin Room when the basin is blessed.
- * When the frame piece is dropped in a blessed basin:
+ * Listens for DROP events in the Basin Room when the trap is disarmed.
+ * When the frame piece is dropped while incense is burning:
  * 1. Thief's ghost appears
  * 2. Canvas spawns in Gallery
  * 3. Frame piece is consumed
@@ -87,13 +87,13 @@ export function registerGhostRitualHandler(world: WorldModel): void {
     // Must be the frame piece
     if (!isFramePiece(item)) return;
 
-    // Check if basin is blessed
+    // Check if basin trap is disarmed (incense is burning)
     const basinRoom = world.getEntity(basinRoomId);
     if (!basinRoom) return;
 
     const basinState = (basinRoom as any).basinState;
-    if (basinState !== 'blessed') {
-      // Basin not blessed - the item just sits there
+    if (basinState !== 'disarmed') {
+      // Basin trap not disarmed - the item just sits there
       return;
     }
 

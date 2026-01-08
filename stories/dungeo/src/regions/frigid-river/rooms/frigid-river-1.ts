@@ -15,5 +15,9 @@ export function createFrigidRiver1(world: WorldModel): IFEntity {
     properName: true,
     article: 'the'
   }));
+
+  // Mark as water room - requires boat to enter
+  (room as any).isWaterRoom = true;
+
   return room;
 }

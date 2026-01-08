@@ -169,7 +169,8 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
     aliases: ['axe', 'troll axe', 'bloody weapon'],
     description: 'A large, bloody axe. It looks like it has seen plenty of use.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 25
   }));
   // Place axe in troll's inventory (will drop when killed via dropsInventory)
   world.moveEntity(axe.id, troll.id);
@@ -185,7 +186,8 @@ function createGalleryObjects(world: WorldModel, roomId: string): void {
     aliases: ['painting', 'picture', 'art', 'artwork', 'canvas'],
     description: 'A painting of remarkable beauty, depicting a woodland scene. It is the only painting remaining in the gallery.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 20
   }));
   // Treasure scoring
   (painting as any).isTreasure = true;
@@ -245,7 +247,8 @@ function createGrailRoomObjects(world: WorldModel, roomId: string): void {
     aliases: ['grail', 'holy grail', 'cup', 'goblet', 'sacred grail'],
     description: 'A plain wooden grail, yet it radiates an aura of ancient holiness. Its simple appearance belies its true value.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
   // Treasure scoring
   (grail as any).isTreasure = true;
@@ -265,7 +268,8 @@ function createRoundRoomObjects(world: WorldModel, roomId: string): void {
     aliases: ['box', 'wooden box', 'small box', 'case'],
     description: 'A small wooden box, carefully crafted and latched shut.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
   box.add(new ContainerTrait({
     capacity: { maxItems: 3 }
@@ -280,7 +284,8 @@ function createRoundRoomObjects(world: WorldModel, roomId: string): void {
     aliases: ['violin', 'fancy violin', 'fiddle', 'musical instrument', 'stradivarius'],
     description: 'An exquisitely crafted violin of remarkable beauty. The workmanship is extraordinary, with intricate inlays and a lustrous finish.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
   // Treasure scoring
   (violin as any).isTreasure = true;
@@ -331,7 +336,8 @@ function createSmallCaveObjects(world: WorldModel, roomId: string): void {
     aliases: ['shovel', 'spade'],
     description: 'A sturdy shovel with a wooden handle and metal blade.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
   world.moveEntity(shovel.id, roomId);
 }

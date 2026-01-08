@@ -109,7 +109,8 @@ function createTreeObjects(world: WorldModel, roomId: string): void {
     aliases: ['egg', 'jeweled egg', 'beautiful egg', 'faberge egg'],
     description: 'A beautiful jewel-encrusted egg. It appears to open somehow.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 2
   }));
   egg.add(new ContainerTrait({
     capacity: { maxItems: 1 }
@@ -129,7 +130,8 @@ function createTreeObjects(world: WorldModel, roomId: string): void {
     aliases: ['canary', 'bird', 'clockwork canary', 'golden bird'],
     description: 'A beautiful golden clockwork canary. It sings when wound.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 10
   }));
   // Treasure scoring
   (canary as any).isTreasure = true;

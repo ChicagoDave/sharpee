@@ -227,6 +227,20 @@ export function isDamDrained(world: WorldModel): boolean {
 }
 
 /**
+ * Close the dam gate (refill reservoir)
+ *
+ * Called when player turns the bolt while dam is drained.
+ * Resets isDrained to false so reservoir refills.
+ */
+export function closeDamGate(world: WorldModel): void {
+  const damState = world.getCapability(DAM_STATE_KEY) as DamState | null;
+  if (damState) {
+    damState.isDrained = false;
+    damState.isDraining = false;
+  }
+}
+
+/**
  * Check if the dam is currently draining
  */
 export function isDamDraining(world: WorldModel): boolean {

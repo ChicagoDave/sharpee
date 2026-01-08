@@ -493,31 +493,222 @@ describe('Removing Action Edge Cases', () => {
 
   test('should provide specific error for wrong container', () => {
     const { world, player, room } = setupBasicWorld();
-    
+
     const card = world.createEntity('playing card', 'object');
     const box1 = world.createEntity('red box', 'object');
     box1.add({ type: TraitType.CONTAINER });
     const box2 = world.createEntity('blue box', 'object');
     box2.add({ type: TraitType.CONTAINER });
-    
+
     world.moveEntity(box1.id, room.id);
     world.moveEntity(box2.id, room.id);
     world.moveEntity(card.id, box1.id);  // Card in red box
-    
+
     const context = createRealTestContext(removingAction, world, createCommand(IFActions.REMOVING, {
       entity: card,
       secondEntity: box2,
       preposition: 'from'  // Trying to remove from blue box
     }));
-    
+
     const events = executeAction(removingAction, context);
-    
+
     expectEvent(events, 'action.blocked', {
       messageId: expect.stringContaining('not_in_container'),
-      params: { 
+      params: {
         item: 'playing card',
         container: 'blue box'
       }
     });
+  });
+});
+
+/**
+ * World State Mutation Tests
+ *
+ * These tests verify that the removing action actually mutates world state,
+ * not just emits events. This catches bugs like the "dropping bug" where
+ * actions appeared to work (good messages) but didn't actually change state.
+ */
+describe('World State Mutations', () => {
+  test('should actually move item from container to player inventory', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const gem = world.createEntity('ruby', 'object');
+    const box = world.createEntity('velvet box', 'object');
+    box.add({ type: TraitType.CONTAINER });
+
+    world.moveEntity(box.id, room.id);
+    world.moveEntity(gem.id, box.id);
+
+    // VERIFY PRECONDITION: gem is in the box
+    expect(world.getLocation(gem.id)).toBe(box.id);
+
+    const command = createCommand(IFActions.REMOVING, {
+      entity: gem,
+      secondEntity: box,
+      preposition: 'from'
+    });
+    const context = createRealTestContext(removingAction, world, command);
+
+    const validation = removingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    removingAction.execute(context);
+
+    // VERIFY POSTCONDITION: gem is now in player's inventory
+    expect(world.getLocation(gem.id)).toBe(player.id);
+  });
+
+  test('should actually move item from open container to player inventory', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const coin = world.createEntity('gold doubloon', 'object');
+    const chest = world.createEntity('pirate chest', 'object');
+    chest.add({ type: TraitType.CONTAINER });
+    chest.add({ type: TraitType.OPENABLE, isOpen: true });
+
+    world.moveEntity(chest.id, room.id);
+    world.moveEntity(coin.id, chest.id);
+
+    // VERIFY PRECONDITION: coin is in the chest
+    expect(world.getLocation(coin.id)).toBe(chest.id);
+
+    const command = createCommand(IFActions.REMOVING, {
+      entity: coin,
+      secondEntity: chest,
+      preposition: 'from'
+    });
+    const context = createRealTestContext(removingAction, world, command);
+
+    const validation = removingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    removingAction.execute(context);
+
+    // VERIFY POSTCONDITION: coin is now in player's inventory
+    expect(world.getLocation(coin.id)).toBe(player.id);
+  });
+
+  test('should actually move item from supporter to player inventory', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const lamp = world.createEntity('brass lamp', 'object');
+    const table = world.createEntity('oak table', 'object');
+    table.add({ type: TraitType.SUPPORTER });
+
+    world.moveEntity(table.id, room.id);
+    world.moveEntity(lamp.id, table.id);
+
+    // VERIFY PRECONDITION: lamp is on the table
+    expect(world.getLocation(lamp.id)).toBe(table.id);
+
+    const command = createCommand(IFActions.REMOVING, {
+      entity: lamp,
+      secondEntity: table,
+      preposition: 'from'
+    });
+    const context = createRealTestContext(removingAction, world, command);
+
+    const validation = removingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    removingAction.execute(context);
+
+    // VERIFY POSTCONDITION: lamp is now in player's inventory
+    expect(world.getLocation(lamp.id)).toBe(player.id);
+  });
+
+  test('should NOT move item when container is closed', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const ring = world.createEntity('diamond ring', 'object');
+    const casket = world.createEntity('jewelry casket', 'object');
+    casket.add({ type: TraitType.CONTAINER });
+    casket.add({ type: TraitType.OPENABLE, isOpen: true }); // Start open to place item
+
+    world.moveEntity(casket.id, room.id);
+    world.moveEntity(ring.id, casket.id);
+
+    // Close the casket
+    const openableTrait = casket.get(TraitType.OPENABLE);
+    (openableTrait as any).isOpen = false;
+
+    // VERIFY PRECONDITION: ring is in the casket
+    expect(world.getLocation(ring.id)).toBe(casket.id);
+
+    const command = createCommand(IFActions.REMOVING, {
+      entity: ring,
+      secondEntity: casket,
+      preposition: 'from'
+    });
+    const context = createRealTestContext(removingAction, world, command);
+
+    // Validation should fail
+    const validation = removingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('container_closed');
+
+    // VERIFY POSTCONDITION: ring still in the casket (no change)
+    expect(world.getLocation(ring.id)).toBe(casket.id);
+  });
+
+  test('should NOT move item when item is not in the specified container', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const key = world.createEntity('brass key', 'object');
+    const box1 = world.createEntity('red box', 'object');
+    box1.add({ type: TraitType.CONTAINER });
+    const box2 = world.createEntity('blue box', 'object');
+    box2.add({ type: TraitType.CONTAINER });
+
+    world.moveEntity(box1.id, room.id);
+    world.moveEntity(box2.id, room.id);
+    world.moveEntity(key.id, box1.id); // Key is in red box
+
+    // VERIFY PRECONDITION: key is in box1
+    expect(world.getLocation(key.id)).toBe(box1.id);
+
+    const command = createCommand(IFActions.REMOVING, {
+      entity: key,
+      secondEntity: box2, // Try to remove from wrong box
+      preposition: 'from'
+    });
+    const context = createRealTestContext(removingAction, world, command);
+
+    // Validation should fail
+    const validation = removingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('not_in_container');
+
+    // VERIFY POSTCONDITION: key still in box1 (no change)
+    expect(world.getLocation(key.id)).toBe(box1.id);
+  });
+
+  test('should move item from nested container to player inventory', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const coin = world.createEntity('ancient coin', 'object');
+    const pouch = world.createEntity('leather pouch', 'object');
+    pouch.add({ type: TraitType.CONTAINER });
+    const chest = world.createEntity('treasure chest', 'object');
+    chest.add({ type: TraitType.CONTAINER });
+
+    world.moveEntity(chest.id, room.id);
+    world.moveEntity(pouch.id, chest.id);
+    world.moveEntity(coin.id, pouch.id);
+
+    // VERIFY PRECONDITION: coin is in pouch (which is in chest)
+    expect(world.getLocation(coin.id)).toBe(pouch.id);
+
+    const command = createCommand(IFActions.REMOVING, {
+      entity: coin,
+      secondEntity: pouch,
+      preposition: 'from'
+    });
+    const context = createRealTestContext(removingAction, world, command);
+
+    const validation = removingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    removingAction.execute(context);
+
+    // VERIFY POSTCONDITION: coin is now in player's inventory
+    expect(world.getLocation(coin.id)).toBe(player.id);
   });
 });

@@ -15,5 +15,11 @@ export function createAragainFalls(world: WorldModel): IFEntity {
     properName: true,
     article: ''
   }));
+
+  // Mark as water room - requires boat to enter
+  // Also the deadly falls - any action except LOOK kills player
+  (room as any).isWaterRoom = true;
+  (room as any).isDeadlyFalls = true;
+
   return room;
 }

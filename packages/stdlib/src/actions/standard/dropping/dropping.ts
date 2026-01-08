@@ -146,8 +146,13 @@ function executeSingleEntity(
   const dropLocation = context.world.getLocation(actor.id);
   result.dropLocation = dropLocation;
 
-  // Delegate to ActorBehavior for dropping logic
+  // Delegate to ActorBehavior for dropping validation
   ActorBehavior.dropItem(actor, noun, context.world);
+
+  // Actually move the item to the drop location
+  if (dropLocation) {
+    context.world.moveEntity(noun.id, dropLocation);
+  }
 }
 
 /**
@@ -288,8 +293,14 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     const actor = context.player;
     const noun = context.command.directObject!.entity!;
 
-    // Delegate to ActorBehavior for dropping logic
+    // Delegate to ActorBehavior for dropping validation
     const result: IDropItemResult = ActorBehavior.dropItem(actor, noun, context.world);
+
+    // Actually move the item to the drop location
+    const dropLocation = context.world.getLocation(actor.id);
+    if (dropLocation) {
+      context.world.moveEntity(noun.id, dropLocation);
+    }
 
     // Store result for report phase using sharedData
     sharedData.dropResult = result;

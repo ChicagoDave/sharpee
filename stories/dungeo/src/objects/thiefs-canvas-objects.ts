@@ -28,7 +28,8 @@ export function createEmptyFrame(world: WorldModel): IFEntity {
     aliases: ['frame', 'picture frame', 'ornate frame', 'empty picture frame'],
     description: 'An ornate but empty picture frame. The craftsmanship is exquisite, though the canvas it once held is missing. There appears to be something carved on the back.',
     properName: false,
-    article: 'an'
+    article: 'an',
+    weight: 5
   }));
 
   // Marks for puzzle logic
@@ -51,7 +52,8 @@ export function createFramePiece(world: WorldModel): IFEntity {
     aliases: ['piece', 'carved piece', 'piece of frame', 'frame fragment'],
     description: 'A piece of the broken frame bearing a carved inscription: "Only devotion can reveal my location."',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 2
   }));
 
   // Marks for puzzle logic
@@ -73,7 +75,8 @@ export function createIncense(world: WorldModel): IFEntity {
     aliases: ['incense', 'incense stick', 'stick of incense', 'joss stick'],
     description: 'A stick of ancient incense, still fragrant after all these years. It was clutched in the skeleton\'s bony fingers.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
 
   // State for burning
@@ -97,7 +100,8 @@ export function createThiefsCanvas(world: WorldModel): IFEntity {
     aliases: ['canvas', 'rolled canvas', 'painting', 'thief\'s canvas', 'portrait'],
     description: 'The thief apparently had a superior artistic streak, for this is one of the greatest creations in all of Zork. It is a faithful rendering of The Implementors, the mythical Gods remembered by all inhabitants.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
 
   // Treasure scoring - 10 take + 24 case = 34 total

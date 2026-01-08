@@ -87,7 +87,8 @@ function createKitchenObjects(world: WorldModel, kitchenId: string): void {
     aliases: ['sack', 'brown sack', 'bag', 'brown bag'],
     description: 'A brown sack smelling of hot peppers.',
     properName: false,
-    article: 'an'
+    article: 'an',
+    weight: 5
   }));
   sack.add(new ContainerTrait({
     capacity: { maxItems: 10 }
@@ -102,7 +103,8 @@ function createKitchenObjects(world: WorldModel, kitchenId: string): void {
     aliases: ['food', 'meal', 'provisions'],
     description: 'A hearty lunch.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
   world.moveEntity(lunch.id, sack.id);
 
@@ -113,7 +115,8 @@ function createKitchenObjects(world: WorldModel, kitchenId: string): void {
     aliases: ['garlic', 'clove'],
     description: 'A clove of garlic. Its strong smell might ward off something...',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 3
   }));
   world.moveEntity(garlic.id, sack.id);
 
@@ -124,7 +127,8 @@ function createKitchenObjects(world: WorldModel, kitchenId: string): void {
     aliases: ['bottle', 'clear bottle', 'water bottle'],
     description: 'A clear glass bottle containing water.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
   bottle.add(new ContainerTrait({
     capacity: { maxItems: 1 }
@@ -176,7 +180,8 @@ function createLivingRoomObjects(world: WorldModel, livingRoomId: string, cellar
     aliases: ['sword', 'elvish blade', 'blade', 'antique sword'],
     description: 'An elvish sword of great antiquity. Its blade glows faintly blue.',
     properName: false,
-    article: 'an'
+    article: 'an',
+    weight: 10
   }));
   sword.add(new WeaponTrait({
     damage: 5,              // Good damage
@@ -194,7 +199,8 @@ function createLivingRoomObjects(world: WorldModel, livingRoomId: string, cellar
     aliases: ['lantern', 'lamp', 'battery-powered lantern'],
     description: 'A battery-powered brass lantern.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
   lantern.add(new LightSourceTrait({
     isLit: false,
@@ -318,7 +324,8 @@ function createAtticObjects(world: WorldModel, atticId: string): void {
     aliases: ['rope', 'coil', 'coil of rope'],
     description: 'A large coil of sturdy rope.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
   world.moveEntity(rope.id, atticId);
 
@@ -329,7 +336,8 @@ function createAtticObjects(world: WorldModel, atticId: string): void {
     aliases: ['knife', 'nasty-looking knife', 'blade'],
     description: 'A nasty-looking knife. It appears quite sharp.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 4
   }));
   knife.add(new WeaponTrait({
     damage: 2,              // Less damage than sword
@@ -345,7 +353,8 @@ function createAtticObjects(world: WorldModel, atticId: string): void {
     aliases: ['red brick', 'clay brick', 'explosive'],
     description: 'A square brick of calciumite with some fuse wire wrapped around it.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
   // Mark as explosive/burnable
   (brick as any).isExplosive = true;
@@ -359,7 +368,8 @@ function createAtticObjects(world: WorldModel, atticId: string): void {
     aliases: ['wire', 'thin wire', 'metal wire', 'fuse wire'],
     description: 'A thin piece of shiny wire, suitable as a fuse or for various mechanical uses.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
   world.moveEntity(wire.id, atticId);
 }

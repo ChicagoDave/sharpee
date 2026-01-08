@@ -85,7 +85,8 @@ function createDeadEndObjects(world: WorldModel, roomId: string): void {
     aliases: ['bag', 'leather bag', 'bag of coins', 'coins', 'coin bag'],
     description: 'A leather bag containing a quantity of coins of various denominations.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
   bag.add(new ContainerTrait({
     capacity: { maxItems: 10 }
@@ -104,7 +105,8 @@ function createDeadEndObjects(world: WorldModel, roomId: string): void {
     aliases: ['key', 'skeleton key', 'rusty key', 'old key'],
     description: 'An old skeleton key, probably dropped by the unfortunate adventurer whose remains lie nearby.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 25
   }));
   // Mark the key as being able to unlock the grating
   (key as any).unlocksId = 'metal grating';
@@ -127,7 +129,8 @@ function createTreasureRoomObjects(world: WorldModel, roomId: string): void {
     aliases: ['chalice', 'golden chalice', 'cup', 'goblet', 'ornate chalice'],
     description: 'An ornate golden chalice encrusted with precious gems. It gleams magnificently even in the dim light.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 40
   }));
   // Treasure scoring
   (chalice as any).isTreasure = true;

@@ -522,3 +522,180 @@ describe('Opening Action Edge Cases', () => {
     });
   });
 });
+
+/**
+ * World State Mutation Tests
+ *
+ * These tests verify that the opening action actually mutates world state,
+ * not just emits events. This catches bugs like the "dropping bug" where
+ * actions appeared to work (good messages) but didn't actually change state.
+ */
+describe('World State Mutations', () => {
+  test('should actually set isOpen to true after opening', () => {
+    const { world, object } = TestData.withObject('wooden box', {
+      [TraitType.OPENABLE]: {
+        type: TraitType.OPENABLE,
+        isOpen: false
+      }
+    });
+
+    // VERIFY PRECONDITION: box is closed
+    const openableBefore = object.get(TraitType.OPENABLE) as any;
+    expect(openableBefore.isOpen).toBe(false);
+
+    const command = createCommand(IFActions.OPENING, {
+      entity: object
+    });
+    const context = createRealTestContext(openingAction, world, command);
+
+    const validation = openingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    openingAction.execute(context);
+
+    // VERIFY POSTCONDITION: box is now open
+    const openableAfter = object.get(TraitType.OPENABLE) as any;
+    expect(openableAfter.isOpen).toBe(true);
+  });
+
+  test('should actually set isOpen to true for container', () => {
+    const { world, object } = TestData.withObject('treasure chest', {
+      [TraitType.OPENABLE]: {
+        type: TraitType.OPENABLE,
+        isOpen: false
+      },
+      [TraitType.CONTAINER]: {
+        type: TraitType.CONTAINER
+      }
+    });
+
+    // VERIFY PRECONDITION: chest is closed
+    const openableBefore = object.get(TraitType.OPENABLE) as any;
+    expect(openableBefore.isOpen).toBe(false);
+
+    const command = createCommand(IFActions.OPENING, {
+      entity: object
+    });
+    const context = createRealTestContext(openingAction, world, command);
+
+    const validation = openingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    openingAction.execute(context);
+
+    // VERIFY POSTCONDITION: chest is now open
+    const openableAfter = object.get(TraitType.OPENABLE) as any;
+    expect(openableAfter.isOpen).toBe(true);
+  });
+
+  test('should NOT change isOpen when already open', () => {
+    const { world, object } = TestData.withObject('open box', {
+      [TraitType.OPENABLE]: {
+        type: TraitType.OPENABLE,
+        isOpen: true // Already open
+      }
+    });
+
+    // VERIFY PRECONDITION: box is open
+    const openableBefore = object.get(TraitType.OPENABLE) as any;
+    expect(openableBefore.isOpen).toBe(true);
+
+    const command = createCommand(IFActions.OPENING, {
+      entity: object
+    });
+    const context = createRealTestContext(openingAction, world, command);
+
+    // Validation should fail
+    const validation = openingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('already_open');
+
+    // VERIFY POSTCONDITION: box is still open (no change)
+    const openableAfter = object.get(TraitType.OPENABLE) as any;
+    expect(openableAfter.isOpen).toBe(true);
+  });
+
+  test('should NOT change isOpen when locked', () => {
+    const { world, object } = TestData.withObject('locked chest', {
+      [TraitType.OPENABLE]: {
+        type: TraitType.OPENABLE,
+        isOpen: false
+      },
+      [TraitType.LOCKABLE]: {
+        type: TraitType.LOCKABLE,
+        isLocked: true,
+        keyId: 'golden_key'
+      }
+    });
+
+    // VERIFY PRECONDITION: chest is closed
+    const openableBefore = object.get(TraitType.OPENABLE) as any;
+    expect(openableBefore.isOpen).toBe(false);
+
+    const command = createCommand(IFActions.OPENING, {
+      entity: object
+    });
+    const context = createRealTestContext(openingAction, world, command);
+
+    // Validation should fail
+    const validation = openingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('locked');
+
+    // VERIFY POSTCONDITION: chest is still closed (no change)
+    const openableAfter = object.get(TraitType.OPENABLE) as any;
+    expect(openableAfter.isOpen).toBe(false);
+  });
+
+  test('should NOT change state when target is not openable', () => {
+    const { world, object } = TestData.withObject('solid rock');
+    // No openable trait
+
+    const command = createCommand(IFActions.OPENING, {
+      entity: object
+    });
+    const context = createRealTestContext(openingAction, world, command);
+
+    // Validation should fail
+    const validation = openingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('not_openable');
+
+    // Object should not have openable trait at all
+    expect(object.has(TraitType.OPENABLE)).toBe(false);
+  });
+
+  test('should actually open unlocked but closed container', () => {
+    const { world, object } = TestData.withObject('wall safe', {
+      [TraitType.OPENABLE]: {
+        type: TraitType.OPENABLE,
+        isOpen: false
+      },
+      [TraitType.LOCKABLE]: {
+        type: TraitType.LOCKABLE,
+        isLocked: false, // Unlocked
+        keyId: 'safe_key'
+      },
+      [TraitType.CONTAINER]: {
+        type: TraitType.CONTAINER
+      }
+    });
+
+    // VERIFY PRECONDITION: safe is closed but unlocked
+    const openableBefore = object.get(TraitType.OPENABLE) as any;
+    const lockableBefore = object.get(TraitType.LOCKABLE) as any;
+    expect(openableBefore.isOpen).toBe(false);
+    expect(lockableBefore.isLocked).toBe(false);
+
+    const command = createCommand(IFActions.OPENING, {
+      entity: object
+    });
+    const context = createRealTestContext(openingAction, world, command);
+
+    const validation = openingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    openingAction.execute(context);
+
+    // VERIFY POSTCONDITION: safe is now open
+    const openableAfter = object.get(TraitType.OPENABLE) as any;
+    expect(openableAfter.isOpen).toBe(true);
+  });
+});

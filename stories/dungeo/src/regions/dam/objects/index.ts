@@ -90,7 +90,8 @@ function createMatchbook(world: WorldModel, roomId: string): IFEntity {
     aliases: ['matches', 'book of matches', 'match book'],
     description: 'A matchbook advertising MIT Tech. The cover says "STRADDLING THE CUTTING EDGE OF NOTHING".',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
 
   matchbook.add(new ReadableTrait({
@@ -120,7 +121,8 @@ function createGuidebook(world: WorldModel, roomId: string): IFEntity {
     aliases: ['guide book', 'guide', 'book', 'brochure', 'pamphlet'],
     description: 'This is a guidebook entitled "Flood Control Dam #3" with a picture of the dam on the cover.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
 
   guidebook.add(new ReadableTrait({
@@ -171,7 +173,8 @@ function createWrench(world: WorldModel, roomId: string): IFEntity {
     aliases: ['spanner', 'tool'],
     description: 'This is a heavy wrench, suitable for loosening large bolts.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
 
   world.moveEntity(wrench.id, roomId);
@@ -189,7 +192,8 @@ function createScrewdriver(world: WorldModel, roomId: string): IFEntity {
     aliases: ['screwdriver', 'tool'],
     description: 'This is a large flathead screwdriver.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 10
   }));
 
   world.moveEntity(screwdriver.id, roomId);
@@ -207,7 +211,8 @@ function createTrunkOfJewels(world: WorldModel, roomId: string): IFEntity {
     aliases: ['trunk of jewels', 'treasure trunk', 'chest'],
     description: 'This is an old trunk, covered in mud. It appears to contain a fortune in jewels!',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
 
   trunk.add(new ContainerTrait({
@@ -239,7 +244,8 @@ function createPlatinumBar(world: WorldModel, roomId: string): IFEntity {
     aliases: ['bar', 'platinum', 'ingot', 'metal bar'],
     description: 'This is a large bar of platinum, stamped "FROBOZZ MAGIC COMPANY".',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 20
   }));
 
   // Treasure scoring
@@ -265,7 +271,8 @@ function createPump(world: WorldModel, roomId: string): IFEntity {
     aliases: ['pump', 'air pump', 'hand pump', 'rubber pump'],
     description: 'This is a small hand-held air pump.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
 
   world.moveEntity(pump.id, roomId);

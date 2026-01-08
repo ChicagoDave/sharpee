@@ -5,7 +5,7 @@
  * See README.md for full documentation and connection diagram.
  */
 
-import { WorldModel, RoomTrait, Direction } from '@sharpee/world-model';
+import { WorldModel, RoomTrait, RoomBehavior, Direction } from '@sharpee/world-model';
 
 // Room creators
 import { createLoudRoom } from './rooms/loud-room';
@@ -297,6 +297,30 @@ function connectDamRooms(world: WorldModel, roomIds: DamRoomIds): void {
         [Direction.NORTHWEST]: { destination: roomIds.ancientChasm },
       };
     }
+  }
+
+  // === Block reservoir exits (flooded until dam is drained) ===
+  // When dam is closed (default), reservoir is flooded and impassable on foot
+  // Player must drain the dam to walk across the reservoir bed
+
+  // Block Reservoir South → Reservoir (can't enter flooded reservoir)
+  if (reservoirSouth) {
+    RoomBehavior.blockExit(reservoirSouth, Direction.NORTH,
+      'The reservoir is full of water. You cannot walk that way.');
+  }
+
+  // Block Reservoir → Reservoir North (can't traverse flooded reservoir)
+  if (reservoir) {
+    RoomBehavior.blockExit(reservoir, Direction.NORTH,
+      'The reservoir is full of water. You cannot continue north.');
+    RoomBehavior.blockExit(reservoir, Direction.SOUTH,
+      'The reservoir is full of water. You cannot continue south.');
+  }
+
+  // Block Reservoir North → Reservoir (can't enter flooded reservoir from north)
+  if (reservoirNorth) {
+    RoomBehavior.blockExit(reservoirNorth, Direction.SOUTH,
+      'The reservoir is full of water. You cannot walk that way.');
   }
 }
 

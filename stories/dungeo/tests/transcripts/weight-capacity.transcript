@@ -1,0 +1,66 @@
+title: Weight Capacity Limits
+story: dungeo
+description: Verifies that the player cannot carry more than 100 weight units
+
+---
+
+# Use GDT to give ourselves items directly
+# Player maxWeight = 100
+
+> gdt
+[OK: contains "GDT"]
+
+# Get lamp (weight 5)
+> tk brass lantern
+[OK: contains "Taken"]
+
+# Get sword (weight 10) - total: 15
+> tk elvish sword
+[OK: contains "Taken"]
+
+# Get painting (weight 20) - total: 35
+> tk painting
+[OK: contains "Taken"]
+
+# Get platinum bar (weight 20) - total: 55
+> tk platinum bar
+[OK: contains "Taken"]
+
+# Get axe (weight 25) - total: 80
+> tk bloody axe
+[OK: contains "Taken"]
+
+# Get rope (weight 5) - total: 85
+> tk large coil of rope
+[OK: contains "Taken"]
+
+# Get knife (weight 4) - total: 89
+> tk nasty knife
+[OK: contains "Taken"]
+
+# Get garlic (weight 3) - total: 92
+> tk clove of garlic
+[OK: contains "Taken"]
+
+# Exit GDT to use normal commands
+> ex
+[OK: contains "Returning"]
+
+# Teleport to Egyptian Room
+> gdt
+[OK: contains "GDT"]
+
+> ah Egyptian Room
+[OK: contains "Egyptian Room"]
+
+> ex
+[OK: contains "Returning"]
+
+# Turn on lamp
+> turn on lantern
+[OK: contains "on"]
+
+# Current weight: 92. Coffin weighs 10, would make 102 > 100
+# This should fail because we're over capacity
+> take coffin
+[OK: contains "can't"]

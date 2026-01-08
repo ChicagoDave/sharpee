@@ -100,6 +100,9 @@ export * from './press-button';
 // Turn Bolt (Dam puzzle - turn bolt with wrench)
 export * from './turn-bolt';
 
+// Turn Switch (Coal machine puzzle - turn switch to make diamond)
+export * from './turn-switch';
+
 // Put Under (Tiny Room puzzle - put mat under door)
 export * from './put-under';
 
@@ -111,6 +114,21 @@ export * from './door-blocked';
 
 // Pull Mat (Tiny Room puzzle - pull mat from under door, get key)
 export * from './pull-mat';
+
+// Inflate (Boat puzzle - inflate boat with pump)
+export * from './inflate';
+
+// Deflate (Boat puzzle - deflate boat by opening valve)
+export * from './deflate';
+
+// River Blocked (entering river without boat)
+export * from './river-blocked';
+
+// Falls Death (any action except LOOK at Aragain Falls)
+export * from './falls-death';
+
+// Commanding (Robot commands - tell robot to X)
+export * from './commanding';
 
 // Re-export balloon action IDs and messages
 export { LIGHT_ACTION_ID, LightMessages } from './light';
@@ -151,14 +169,21 @@ import { untieAction, UNTIE_ACTION_ID, UntieMessages } from './untie';
 import { balloonExitAction, BALLOON_EXIT_ACTION_ID, BalloonExitMessages } from '../handlers/balloon-handler';
 import { pressButtonAction, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler } from './press-button';
 import { turnBoltAction, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler } from './turn-bolt';
+import { turnSwitchAction, TURN_SWITCH_ACTION_ID, TurnSwitchMessages } from './turn-switch';
 import { putUnderAction, PUT_UNDER_ACTION_ID, PutUnderMessages } from './put-under';
 import { pushKeyAction, PUSH_KEY_ACTION_ID, PushKeyMessages } from './push-key';
 import { doorBlockedAction, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages } from './door-blocked';
 import { pullMatAction, PULL_MAT_ACTION_ID, PullMatMessages } from './pull-mat';
+import { inflateAction, INFLATE_ACTION_ID, InflateMessages } from './inflate';
+import { deflateAction, DEFLATE_ACTION_ID, DeflateMessages } from './deflate';
+import { riverBlockedAction, RIVER_BLOCKED_ACTION_ID, RiverBlockedMessages } from './river-blocked';
+import { fallsDeathAction, FALLS_DEATH_ACTION_ID, FallsDeathMessages } from './falls-death';
+import { commandingAction, COMMANDING_ACTION_ID, CommandingMessages } from './commanding';
 
-// Re-export press-button and turn-bolt
+// Re-export press-button, turn-bolt, and turn-switch
 export { PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler } from './press-button';
 export { TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler } from './turn-bolt';
+export { TURN_SWITCH_ACTION_ID, TurnSwitchMessages } from './turn-switch';
 
 // Re-export balloon exit for use in index.ts
 export { BALLOON_EXIT_ACTION_ID, BalloonExitMessages } from '../handlers/balloon-handler';
@@ -176,6 +201,17 @@ export { PUT_UNDER_ACTION_ID, PutUnderMessages } from './put-under';
 export { PUSH_KEY_ACTION_ID, PushKeyMessages } from './push-key';
 export { DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages } from './door-blocked';
 export { PULL_MAT_ACTION_ID, PullMatMessages } from './pull-mat';
+
+// Re-export boat puzzle actions for use in index.ts
+export { INFLATE_ACTION_ID, InflateMessages } from './inflate';
+export { DEFLATE_ACTION_ID, DeflateMessages } from './deflate';
+
+// Re-export river navigation actions for use in index.ts
+export { RIVER_BLOCKED_ACTION_ID, RiverBlockedMessages } from './river-blocked';
+export { FALLS_DEATH_ACTION_ID, FallsDeathMessages } from './falls-death';
+
+// Re-export commanding action for use in index.ts
+export { COMMANDING_ACTION_ID, CommandingMessages } from './commanding';
 
 export const customActions = [
   ...gdtActions,
@@ -211,8 +247,14 @@ export const customActions = [
   balloonExitAction,
   pressButtonAction,
   turnBoltAction,
+  turnSwitchAction,
   putUnderAction,
   pushKeyAction,
   doorBlockedAction,
-  pullMatAction
+  pullMatAction,
+  inflateAction,
+  deflateAction,
+  riverBlockedAction,
+  fallsDeathAction,
+  commandingAction
 ];

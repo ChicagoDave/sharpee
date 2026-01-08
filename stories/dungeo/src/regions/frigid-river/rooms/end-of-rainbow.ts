@@ -15,5 +15,9 @@ export function createEndOfRainbow(world: WorldModel): IFEntity {
     properName: true,
     article: 'the'
   }));
+
+  // Mark as rainbow room - can walk to/from water rooms
+  (room as any).isRainbowRoom = true;
+
   return room;
 }

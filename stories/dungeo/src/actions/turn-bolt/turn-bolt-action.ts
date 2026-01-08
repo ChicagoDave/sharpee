@@ -1,43 +1,54 @@
 /**
- * Turn Bolt Action - Story-specific action for dam bolt
+ * Turn Bolt Action - Opens/closes Flood Control Dam #3
+ *
+ * When the player turns the bolt with a wrench:
+ * - If gate not enabled (yellow button not pressed), bolt won't turn
+ * - If player doesn't have wrench, can't turn bolt
+ * - Otherwise, starts dam draining sequence (via dam-fuse)
  *
  * Per FORTRAN source:
- * - Requires wrench to turn
- * - Only turns if yellow button was pressed (GATEF=TRUE)
- * - Toggles dam open/closed (LWTIDF)
+ * - GATEF must be TRUE (yellow button pressed) for bolt to turn
+ * - Wrench required to turn the bolt
  */
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
-import { IdentityTrait, IFEntity } from '@sharpee/world-model';
+import { WorldModel, IdentityTrait, IFEntity } from '@sharpee/world-model';
+import { ISchedulerService } from '@sharpee/engine';
 import { TURN_BOLT_ACTION_ID, TurnBoltMessages } from './types';
-import { DAM_STATE_KEY, DamState, startDamDraining } from '../../scheduler/dam-fuse';
+import {
+  isYellowButtonPressed,
+  isDamDrained,
+  isDamDraining,
+  startDamDraining,
+  closeDamGate
+} from '../../scheduler/dam-fuse';
 
-// We need access to scheduler for starting draining
-let schedulerRef: any = null;
+// Scheduler reference for starting draining sequence
+let schedulerRef: ISchedulerService | null = null;
 let reservoirIdRef: string = '';
 
 /**
  * Set the scheduler reference for starting draining sequence
  */
-export function setTurnBoltScheduler(scheduler: any, reservoirId: string): void {
+export function setTurnBoltScheduler(scheduler: ISchedulerService, reservoirId: string): void {
   schedulerRef = scheduler;
   reservoirIdRef = reservoirId;
 }
 
 /**
- * Check if an entity is the bolt
+ * Check if entity is the bolt
  */
 function isBolt(entity: IFEntity): boolean {
   const identity = entity.get(IdentityTrait);
   if (!identity) return false;
 
   const name = identity.name?.toLowerCase() || '';
-  return name === 'bolt';
+  return name === 'bolt' || name.includes('bolt');
 }
 
 /**
- * Check if an entity is the wrench
+ * Check if entity is a wrench
  */
 function isWrench(entity: IFEntity): boolean {
   const identity = entity.get(IdentityTrait);
@@ -50,19 +61,24 @@ function isWrench(entity: IFEntity): boolean {
 }
 
 /**
- * Find wrench in player inventory
+ * Find bolt in current room
  */
-function findWrenchInInventory(context: ActionContext): IFEntity | undefined {
+function findBoltInRoom(context: ActionContext): IFEntity | undefined {
+  const { world, player } = context;
+  const playerLocation = world.getLocation(player.id);
+  if (!playerLocation) return undefined;
+
+  const roomContents = world.getContents(playerLocation);
+  return roomContents.find(e => isBolt(e));
+}
+
+/**
+ * Check if player has wrench
+ */
+function playerHasWrench(context: ActionContext): boolean {
   const { world, player } = context;
   const inventory = world.getContents(player.id);
-
-  for (const item of inventory) {
-    if (isWrench(item)) {
-      return item;
-    }
-  }
-
-  return undefined;
+  return inventory.some(e => isWrench(e));
 }
 
 /**
@@ -73,125 +89,112 @@ export const turnBoltAction: Action = {
   group: 'manipulation',
 
   validate(context: ActionContext): ValidationResult {
-    const { world, player } = context;
+    // Find bolt in current room
+    const bolt = findBoltInRoom(context);
 
-    // Find bolt in current room (literal pattern doesn't pass entity)
-    const playerLocation = world.getLocation(player.id);
-    if (!playerLocation) {
+    if (!bolt) {
       return {
         valid: false,
-        error: TurnBoltMessages.NOT_A_BOLT
+        error: TurnBoltMessages.NO_BOLT
       };
     }
 
-    const roomContents = world.getContents(playerLocation);
-    const target = roomContents.find(e => isBolt(e));
-
-    if (!target) {
+    // Check if player has wrench
+    if (!playerHasWrench(context)) {
       return {
         valid: false,
-        error: TurnBoltMessages.NOT_A_BOLT
+        error: TurnBoltMessages.NO_WRENCH
       };
     }
 
-    // Check for instrument (with X) - try to find wrench in inventory if not specified
-    let toolEntity: IFEntity | undefined = findWrenchInInventory(context);
-
-    if (!toolEntity) {
+    // Check if gate is enabled (yellow button was pressed)
+    if (!isYellowButtonPressed(context.world as WorldModel)) {
       return {
         valid: false,
-        error: TurnBoltMessages.NO_TOOL
+        error: TurnBoltMessages.GATE_LOCKED
       };
     }
 
-    // Check if tool is the wrench
-    if (!isWrench(toolEntity)) {
-      const toolIdentity = toolEntity.get(IdentityTrait);
-      context.sharedData.wrongTool = toolIdentity?.name || 'that';
-      return {
-        valid: false,
-        error: TurnBoltMessages.WRONG_TOOL
-      };
-    }
+    // Check if dam is already drained or draining
+    const alreadyDrained = isDamDrained(context.world as WorldModel);
+    const currentlyDraining = isDamDraining(context.world as WorldModel);
 
-    // Check if yellow button was pressed (GATEF=TRUE)
-    const damState = world.getCapability(DAM_STATE_KEY) as DamState | null;
-    if (!damState?.buttonPressed) {
-      return {
-        valid: false,
-        error: TurnBoltMessages.WONT_TURN
-      };
-    }
-
-    // Store target for execute phase
-    context.sharedData.boltTarget = target;
-    context.sharedData.damState = damState;
+    // Store for execute phase
+    context.sharedData.bolt = bolt;
+    context.sharedData.alreadyDrained = alreadyDrained;
+    context.sharedData.currentlyDraining = currentlyDraining;
 
     return { valid: true };
   },
 
   execute(context: ActionContext): void {
     const { world, sharedData } = context;
+    const alreadyDrained = sharedData.alreadyDrained as boolean;
+    const currentlyDraining = sharedData.currentlyDraining as boolean;
 
-    const damState = sharedData.damState as DamState;
-    if (!damState) {
+    // If currently draining, bolt turns but nothing happens
+    if (currentlyDraining) {
+      sharedData.startedDraining = false;
+      sharedData.closedDam = false;
       return;
     }
 
-    // Toggle dam state
-    if (damState.isDrained) {
-      // Close dam (refill)
-      damState.isDrained = false;
-      damState.isDraining = false;
-      sharedData.resultMessage = TurnBoltMessages.GATES_CLOSE;
-      // TODO: Handle refilling logic if needed
-    } else if (!damState.isDraining) {
-      // Open dam (start draining)
-      if (schedulerRef && reservoirIdRef) {
-        const events = startDamDraining(schedulerRef, world as any, reservoirIdRef);
-        sharedData.drainingEvents = events;
-      }
-      sharedData.resultMessage = TurnBoltMessages.GATES_OPEN;
+    // If already drained, close the dam (refill reservoir)
+    if (alreadyDrained) {
+      closeDamGate(world as WorldModel);
+      sharedData.closedDam = true;
+      sharedData.startedDraining = false;
+      return;
+    }
+
+    // Start the draining sequence
+    if (schedulerRef && reservoirIdRef) {
+      const events = startDamDraining(schedulerRef, world as WorldModel, reservoirIdRef);
+      sharedData.drainingEvents = events;
+      sharedData.startedDraining = true;
+      sharedData.closedDam = false;
     } else {
-      // Already draining, nothing to do
-      sharedData.resultMessage = TurnBoltMessages.GATES_OPEN;
+      // No scheduler configured - just report success without draining
+      sharedData.startedDraining = true;
+      sharedData.closedDam = false;
     }
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    const { sharedData } = context;
-
-    // Handle wrong tool message with tool name
-    if (result.error === TurnBoltMessages.WRONG_TOOL && sharedData.wrongTool) {
-      return [context.event('action.blocked', {
-        actionId: TURN_BOLT_ACTION_ID,
-        messageId: TurnBoltMessages.WRONG_TOOL,
-        reason: result.error,
-        tool: sharedData.wrongTool
-      })];
-    }
-
     return [context.event('action.blocked', {
       actionId: TURN_BOLT_ACTION_ID,
-      messageId: result.error || TurnBoltMessages.NOT_A_BOLT,
+      messageId: result.error || TurnBoltMessages.NO_BOLT,
       reason: result.error
     })];
   },
 
   report(context: ActionContext): ISemanticEvent[] {
     const { sharedData } = context;
+    const currentlyDraining = sharedData.currentlyDraining as boolean;
+    const startedDraining = sharedData.startedDraining as boolean;
+    const closedDam = sharedData.closedDam as boolean;
+
     const events: ISemanticEvent[] = [];
 
-    const messageId = sharedData.resultMessage || TurnBoltMessages.GATES_OPEN;
+    // Choose appropriate message and emit state change event
+    let messageId: string;
+    if (closedDam) {
+      messageId = TurnBoltMessages.DAM_CLOSED;
+      // Emit event for dam-handler to re-block reservoir exits
+      events.push(context.event('dungeo.dam.closed', {
+        actionId: TURN_BOLT_ACTION_ID
+      }));
+    } else if (currentlyDraining) {
+      messageId = TurnBoltMessages.DAM_OPENED; // Bolt turns but draining already in progress
+    } else if (startedDraining) {
+      messageId = TurnBoltMessages.DAM_OPENED;
+    } else {
+      messageId = TurnBoltMessages.DAM_OPENED;
+    }
 
     events.push(context.event('game.message', {
       messageId
     }));
-
-    // Add any draining events
-    if (sharedData.drainingEvents) {
-      events.push(...(sharedData.drainingEvents as ISemanticEvent[]));
-    }
 
     return events;
   }

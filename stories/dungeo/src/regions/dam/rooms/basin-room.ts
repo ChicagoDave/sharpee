@@ -6,9 +6,10 @@
  * Part of the ghost ritual to obtain Thief's Canvas.
  *
  * Basin states:
- * - 'normal': Default state
- * - 'disarmed': Incense is burning, trap is disarmed
- * - 'blessed': Water has been blessed via PRAY action
+ * - 'normal': Default state, trap active
+ * - 'disarmed': Incense is burning in room, trap disarmed
+ *
+ * Ritual sequence: BURN INCENSE → DROP FRAME PIECE (while incense burns)
  */
 
 import {

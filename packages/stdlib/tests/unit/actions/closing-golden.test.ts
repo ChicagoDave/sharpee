@@ -305,6 +305,187 @@ describe('closingAction (Golden Pattern)', () => {
   });
 });
 
+/**
+ * World State Mutation Tests
+ *
+ * These tests verify that the closing action actually mutates world state,
+ * not just emits events. This catches bugs like the "dropping bug" where
+ * actions appeared to work (good messages) but didn't actually change state.
+ */
+describe('World State Mutations', () => {
+  test('should actually set isOpen to false after closing', () => {
+    const { world, object } = TestData.withObject('wooden box', {
+      [TraitType.OPENABLE]: {
+        type: TraitType.OPENABLE,
+        isOpen: true,
+        canClose: true
+      }
+    });
+
+    // VERIFY PRECONDITION: box is open
+    const openableBefore = object.get(TraitType.OPENABLE) as any;
+    expect(openableBefore.isOpen).toBe(true);
+
+    const command = createCommand(IFActions.CLOSING, {
+      entity: object
+    });
+    const context = createRealTestContext(closingAction, world, command);
+
+    const validation = closingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    closingAction.execute(context);
+
+    // VERIFY POSTCONDITION: box is now closed
+    const openableAfter = object.get(TraitType.OPENABLE) as any;
+    expect(openableAfter.isOpen).toBe(false);
+  });
+
+  test('should actually set isOpen to false for container with contents', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    // Create container with items
+    const box = world.createEntity('treasure chest', EntityType.CONTAINER);
+    box.add({
+      type: TraitType.OPENABLE,
+      isOpen: true,
+      canClose: true
+    });
+    box.add({
+      type: TraitType.CONTAINER
+    });
+    world.moveEntity(box.id, room.id);
+
+    const coin = world.createEntity('gold coin', EntityType.OBJECT);
+    world.moveEntity(coin.id, box.id);
+
+    // VERIFY PRECONDITION: chest is open with contents
+    const openableBefore = box.get(TraitType.OPENABLE) as any;
+    expect(openableBefore.isOpen).toBe(true);
+    expect(world.getContents(box.id)).toHaveLength(1);
+
+    const command = createCommand(IFActions.CLOSING, {
+      entity: box
+    });
+    const context = createRealTestContext(closingAction, world, command);
+
+    const validation = closingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    closingAction.execute(context);
+
+    // VERIFY POSTCONDITION: chest is now closed
+    const openableAfter = box.get(TraitType.OPENABLE) as any;
+    expect(openableAfter.isOpen).toBe(false);
+
+    // Contents should still be there
+    expect(world.getContents(box.id)).toHaveLength(1);
+  });
+
+  test('should NOT change isOpen when already closed', () => {
+    const { world, object } = TestData.withObject('closed box', {
+      [TraitType.OPENABLE]: {
+        type: TraitType.OPENABLE,
+        isOpen: false, // Already closed
+        canClose: true
+      }
+    });
+
+    // VERIFY PRECONDITION: box is closed
+    const openableBefore = object.get(TraitType.OPENABLE) as any;
+    expect(openableBefore.isOpen).toBe(false);
+
+    const command = createCommand(IFActions.CLOSING, {
+      entity: object
+    });
+    const context = createRealTestContext(closingAction, world, command);
+
+    // Validation should fail
+    const validation = closingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('already_closed');
+
+    // VERIFY POSTCONDITION: box is still closed (no change)
+    const openableAfter = object.get(TraitType.OPENABLE) as any;
+    expect(openableAfter.isOpen).toBe(false);
+  });
+
+  test('should NOT change isOpen when canClose is false', () => {
+    const { world, object } = TestData.withObject('open box', {
+      [TraitType.OPENABLE]: {
+        type: TraitType.OPENABLE,
+        isOpen: true,
+        canClose: false // Cannot be closed
+      }
+    });
+
+    // VERIFY PRECONDITION: box is open
+    const openableBefore = object.get(TraitType.OPENABLE) as any;
+    expect(openableBefore.isOpen).toBe(true);
+
+    const command = createCommand(IFActions.CLOSING, {
+      entity: object
+    });
+    const context = createRealTestContext(closingAction, world, command);
+
+    // Validation should fail
+    const validation = closingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('prevents_closing');
+
+    // VERIFY POSTCONDITION: box is still open (no change)
+    const openableAfter = object.get(TraitType.OPENABLE) as any;
+    expect(openableAfter.isOpen).toBe(true);
+  });
+
+  test('should NOT change state when target is not closable', () => {
+    const { world, object } = TestData.withObject('solid rock');
+    // No openable trait
+
+    const command = createCommand(IFActions.CLOSING, {
+      entity: object
+    });
+    const context = createRealTestContext(closingAction, world, command);
+
+    // Validation should fail
+    const validation = closingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toContain('not_closable');
+
+    // Object should not have openable trait at all
+    expect(object.has(TraitType.OPENABLE)).toBe(false);
+  });
+
+  test('should actually close an open door', () => {
+    const { world, object } = TestData.withObject('oak door', {
+      [TraitType.OPENABLE]: {
+        type: TraitType.OPENABLE,
+        isOpen: true,
+        canClose: true
+      },
+      [TraitType.DOOR]: {
+        type: TraitType.DOOR,
+        connectsTo: 'room2'
+      }
+    });
+
+    // VERIFY PRECONDITION: door is open
+    const openableBefore = object.get(TraitType.OPENABLE) as any;
+    expect(openableBefore.isOpen).toBe(true);
+
+    const command = createCommand(IFActions.CLOSING, {
+      entity: object
+    });
+    const context = createRealTestContext(closingAction, world, command);
+
+    const validation = closingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    closingAction.execute(context);
+
+    // VERIFY POSTCONDITION: door is now closed
+    const openableAfter = object.get(TraitType.OPENABLE) as any;
+    expect(openableAfter.isOpen).toBe(false);
+  });
+});
+
 describe('Testing Pattern Examples', () => {
   test('pattern: testing container with various states', () => {
     const world = new WorldModel();

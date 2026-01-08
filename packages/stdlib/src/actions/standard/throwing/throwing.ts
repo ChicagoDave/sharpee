@@ -320,6 +320,17 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     }
 
     sharedData.finalLocation = sharedData.willBreak ? null : finalLocation;
+
+    // Perform the actual move - this is the critical mutation!
+    // Move to final location, or remove from world if destroyed
+    if (sharedData.finalLocation) {
+      context.world.moveEntity(item.id, sharedData.finalLocation);
+    } else if (sharedData.willBreak) {
+      // Item is destroyed - move to limbo/remove from play
+      // For now, we'll mark it as destroyed by setting location to null
+      // The event system will handle actual removal if needed
+      context.world.moveEntity(item.id, ''); // Empty string = nowhere
+    }
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {

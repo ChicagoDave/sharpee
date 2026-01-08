@@ -18,6 +18,11 @@ export const RobotMessages = {
   NO_BUTTON: 'dungeo.robot.no_button',
   ALREADY_PUSHED: 'dungeo.robot.already_pushed',
 
+  // Movement and object manipulation
+  ARRIVES: 'dungeo.robot.arrives',
+  TAKES_OBJECT: 'dungeo.robot.takes_object',
+  DROPS_OBJECT: 'dungeo.robot.drops_object',
+
   // Round Room fix
   CAROUSEL_FIXED: 'dungeo.robot.carousel_fixed',
 } as const;

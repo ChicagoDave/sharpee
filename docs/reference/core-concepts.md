@@ -593,7 +593,7 @@ The scope resolver determines which entities are available for commands based on
 - Mock ActionContext and entities
 - Located in `packages/[package]/tests/unit/`
 
-### Integration Tests  
+### Integration Tests
 - Test complete action execution
 - Use real world model
 - Located in `packages/[package]/tests/integration/`
@@ -602,6 +602,56 @@ The scope resolver determines which entities are available for commands based on
 - Compare action output against expected results
 - Files like `opening-golden.test.ts`
 - Ensure consistent behavior
+
+### World State Verification (CRITICAL)
+
+**Actions must be tested for actual world state changes, not just events.**
+
+The "dropping bug" revealed that actions can appear to work (good messages, correct events) while failing to actually change state. All mutation actions must include tests that verify the world state changed.
+
+**Test Pattern:**
+```typescript
+test('should actually move item to player inventory', () => {
+  const { world, player, room } = setupBasicWorld();
+  const ball = world.createEntity('ball', 'object');
+  world.moveEntity(ball.id, room.id);
+
+  // PRECONDITION: Verify initial state
+  expect(world.getLocation(ball.id)).toBe(room.id);
+
+  const context = createRealTestContext(takingAction, world, command);
+  takingAction.validate(context);
+  takingAction.execute(context);
+
+  // POSTCONDITION: Verify state actually changed
+  expect(world.getLocation(ball.id)).toBe(player.id);
+});
+```
+
+**Helper Utilities** (in `packages/stdlib/tests/test-utils/index.ts`):
+```typescript
+// Location verification
+expectLocation(world, ball.id, player.id);
+expectLocationChanged(world, ball.id, room.id, player.id);
+
+// Trait property verification
+expectTraitValue(door, TraitType.OPENABLE, 'isOpen', true);
+expectTraitChanged(door, TraitType.OPENABLE, 'isOpen', false, true);
+
+// State snapshots for debugging
+const before = captureEntityState(world, item.id);
+action.execute(context);
+const after = captureEntityState(world, item.id);
+```
+
+**Required Tests by Action Type:**
+
+| Action Type | Required Verification |
+|-------------|----------------------|
+| Movement (take, drop, put) | `world.getLocation()` changed |
+| Property (open, lock, switch) | Trait property changed |
+| Consumption (eat, drink) | Servings/amount decremented |
+| Player movement (go, enter, exit) | Player location changed |
 
 ## Common Patterns
 

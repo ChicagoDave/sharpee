@@ -20,7 +20,8 @@ import {
   LockableBehavior,
   VisibilityBehavior,
   Direction,
-  DirectionType
+  DirectionType,
+  canActorWalkInVehicle
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
@@ -99,11 +100,17 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     const currentRoom = context.currentLocation; // This is always the containing room
 
     if (playerDirectLocation !== currentRoom.id) {
-      // Player is inside something (container/supporter) - can't use room exits
-      return {
-        valid: false,
-        error: GoingMessages.NOT_IN_ROOM
-      };
+      // Player is inside something - check if it's a vehicle that allows walking
+      const walkCheck = canActorWalkInVehicle(context.world, actor.id);
+      if (!walkCheck.canWalk) {
+        // In a vehicle that blocks walking (bucket, etc.)
+        return {
+          valid: false,
+          error: GoingMessages.NOT_IN_ROOM,
+          params: { vehicle: walkCheck.vehicle?.name }
+        };
+      }
+      // In a vehicle that allows walking (boat, etc.) - continue with movement
     }
 
     if (!currentRoom.has(TraitType.ROOM)) {

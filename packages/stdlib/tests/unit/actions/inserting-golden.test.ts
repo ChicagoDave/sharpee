@@ -367,30 +367,192 @@ describe('Inserting Action Integration', () => {
 
   test('should handle container within container', () => {
     const { world, player, room } = setupBasicWorld();
-    
+
     const smallBox = world.createEntity('small box', 'container');
     smallBox.add({ type: TraitType.CONTAINER });
-    
+
     const largeBox = world.createEntity('large box', 'container');
-    largeBox.add({ 
+    largeBox.add({
       type: TraitType.CONTAINER,
       capacity: { maxItems: 5 }
     });
-    
+
     world.moveEntity(smallBox.id, player.id);
     world.moveEntity(largeBox.id, room.id);
-    
+
     const command = createCommand(IFActions.INSERTING, {
       entity: smallBox,
       secondEntity: largeBox
     });
     const context = createRealTestContext(insertingAction, world, command);
-    
+
     const events = executeAction(insertingAction, context);
-    
+
     expectEvent(events, 'if.event.put_in', {
       itemId: smallBox.id,
       targetId: largeBox.id
     });
+  });
+});
+
+/**
+ * CRITICAL: World State Mutation Verification Tests
+ *
+ * These tests verify that the inserting action actually mutates world state,
+ * not just emits events. This catches bugs like the "dropping bug" where
+ * actions appeared to work (good messages) but didn't actually change state.
+ */
+describe('World State Mutations', () => {
+  test('should actually move item into container', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const gem = world.createEntity('emerald', 'object');
+    const box = world.createEntity('velvet box', 'container');
+    box.add({ type: TraitType.CONTAINER });
+
+    world.moveEntity(gem.id, player.id);
+    world.moveEntity(box.id, room.id);
+
+    // VERIFY PRECONDITION: gem is in player's inventory
+    expect(world.getLocation(gem.id)).toBe(player.id);
+
+    const command = createCommand(IFActions.INSERTING, {
+      entity: gem,
+      secondEntity: box
+    });
+    const context = createRealTestContext(insertingAction, world, command);
+
+    const validation = insertingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    insertingAction.execute(context);
+
+    // VERIFY POSTCONDITION: gem is now in the box
+    expect(world.getLocation(gem.id)).toBe(box.id);
+  });
+
+  test('should actually move item into open container with openable trait', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const coin = world.createEntity('gold doubloon', 'object');
+    const chest = world.createEntity('pirate chest', 'container');
+    chest.add({ type: TraitType.CONTAINER });
+    chest.add({ type: TraitType.OPENABLE, isOpen: true });
+
+    world.moveEntity(coin.id, player.id);
+    world.moveEntity(chest.id, room.id);
+
+    // VERIFY PRECONDITION: coin is in player's inventory
+    expect(world.getLocation(coin.id)).toBe(player.id);
+
+    const command = createCommand(IFActions.INSERTING, {
+      entity: coin,
+      secondEntity: chest
+    });
+    const context = createRealTestContext(insertingAction, world, command);
+
+    const validation = insertingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    insertingAction.execute(context);
+
+    // VERIFY POSTCONDITION: coin is now in the chest
+    expect(world.getLocation(coin.id)).toBe(chest.id);
+  });
+
+  test('should NOT move item when container is closed', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const ring = world.createEntity('diamond ring', 'object');
+    const casket = world.createEntity('jewelry casket', 'container');
+    casket.add({ type: TraitType.CONTAINER });
+    casket.add({ type: TraitType.OPENABLE, isOpen: false });
+
+    world.moveEntity(ring.id, player.id);
+    world.moveEntity(casket.id, room.id);
+
+    // VERIFY PRECONDITION: ring is in player's inventory
+    expect(world.getLocation(ring.id)).toBe(player.id);
+
+    const command = createCommand(IFActions.INSERTING, {
+      entity: ring,
+      secondEntity: casket
+    });
+    const context = createRealTestContext(insertingAction, world, command);
+
+    // Validation should fail
+    const validation = insertingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toBe('container_closed');
+
+    // VERIFY POSTCONDITION: ring still in player's inventory (no change)
+    expect(world.getLocation(ring.id)).toBe(player.id);
+  });
+
+  test('should NOT move item when container is full', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const newCoin = world.createEntity('platinum coin', 'object');
+    const pouch = world.createEntity('leather pouch', 'container');
+    pouch.add({
+      type: TraitType.CONTAINER,
+      capacity: { maxItems: 2 }
+    });
+
+    // Fill the pouch
+    const coin1 = world.createEntity('copper coin', 'object');
+    const coin2 = world.createEntity('silver coin', 'object');
+    world.moveEntity(coin1.id, pouch.id);
+    world.moveEntity(coin2.id, pouch.id);
+
+    world.moveEntity(newCoin.id, player.id);
+    world.moveEntity(pouch.id, room.id);
+
+    // VERIFY PRECONDITION: newCoin is in player's inventory
+    expect(world.getLocation(newCoin.id)).toBe(player.id);
+
+    const command = createCommand(IFActions.INSERTING, {
+      entity: newCoin,
+      secondEntity: pouch
+    });
+    const context = createRealTestContext(insertingAction, world, command);
+
+    // Validation should fail
+    const validation = insertingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toBe('no_room');
+
+    // VERIFY POSTCONDITION: coin still in player's inventory (no change)
+    expect(world.getLocation(newCoin.id)).toBe(player.id);
+  });
+
+  test('should move nested container into another container', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const innerBox = world.createEntity('small tin box', 'container');
+    innerBox.add({ type: TraitType.CONTAINER });
+
+    const outerBox = world.createEntity('large wooden crate', 'container');
+    outerBox.add({
+      type: TraitType.CONTAINER,
+      capacity: { maxItems: 10 }
+    });
+
+    world.moveEntity(innerBox.id, player.id);
+    world.moveEntity(outerBox.id, room.id);
+
+    // VERIFY PRECONDITION: innerBox is in player's inventory
+    expect(world.getLocation(innerBox.id)).toBe(player.id);
+
+    const command = createCommand(IFActions.INSERTING, {
+      entity: innerBox,
+      secondEntity: outerBox
+    });
+    const context = createRealTestContext(insertingAction, world, command);
+
+    const validation = insertingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    insertingAction.execute(context);
+
+    // VERIFY POSTCONDITION: innerBox is now in outerBox
+    expect(world.getLocation(innerBox.id)).toBe(outerBox.id);
   });
 });

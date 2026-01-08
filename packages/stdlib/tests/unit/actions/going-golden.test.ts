@@ -320,7 +320,9 @@ describe('goingAction (Golden Pattern)', () => {
       });
     });
 
-    test('should fail when destination is dark and no light', () => {
+    test('should allow movement to dark room (darkness affects visibility, not movement)', () => {
+      // Note: Per ADR-068, darkness affects visibility (looking), not movement.
+      // This matches traditional IF behavior (e.g., Cloak of Darkness).
       const world = new WorldModel();
       const player = world.createEntity('yourself', 'object');
       player.add({ type: TraitType.ACTOR, isPlayer: true });
@@ -350,10 +352,11 @@ describe('goingAction (Golden Pattern)', () => {
 
       const events = executeAction(goingAction, context);
 
-      // Should fail because the room is dark and player has no light
-      expectEvent(events, 'action.blocked', {
-        messageId: 'too_dark',
-        params: { direction: Direction.DOWN }
+      // Should succeed - darkness affects visibility, not movement
+      expectEvent(events, 'if.event.actor_moved', {
+        direction: Direction.DOWN,
+        fromRoom: room1.id,
+        toRoom: room2.id
       });
     });
   });
@@ -413,14 +416,11 @@ describe('goingAction (Golden Pattern)', () => {
         direction: Direction.SOUTH,  // Opposite direction
         fromRoom: room1.id
       });
-      
-      // Should emit success message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('moved_to'),
-        params: { 
-          direction: Direction.NORTH,
-          destination: 'Library'
-        }
+
+      // Should emit room description (going action emits movement events, not action.success)
+      expectEvent(events, 'if.event.room.description', {
+        roomId: room2.id,
+        roomName: 'Library'
       });
     });
 
@@ -494,14 +494,11 @@ describe('goingAction (Golden Pattern)', () => {
         direction: Direction.UP,
         firstVisit: true
       });
-      
-      // Should use first_visit message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('first_visit'),
-        params: { 
-          direction: Direction.UP,
-          destination: 'Attic'
-        }
+
+      // Should emit room description for destination
+      expectEvent(events, 'if.event.room.description', {
+        roomId: room2.id,
+        roomName: 'Attic'
       });
     });
 
@@ -715,6 +712,171 @@ describe('goingAction (Golden Pattern)', () => {
         });
       });
     });
+  });
+});
+
+/**
+ * CRITICAL: World State Mutation Verification Tests
+ *
+ * These tests verify that the going action actually mutates world state,
+ * not just emits events. This catches bugs like the "dropping bug" where
+ * actions appeared to work (good messages) but didn't actually change state.
+ */
+describe('World State Mutations', () => {
+  test('should actually move player to destination room', () => {
+    const world = new WorldModel();
+    const player = world.createEntity('yourself', 'object');
+    player.add({ type: TraitType.ACTOR, isPlayer: true });
+    world.setPlayer(player.id);
+
+    const room1 = world.createEntity('Garden', 'object');
+    const room2 = world.createEntity('Library', 'object');
+
+    room1.add({
+      type: TraitType.ROOM,
+      exits: {
+        [Direction.NORTH]: { destination: room2.id }
+      }
+    });
+
+    room2.add({ type: TraitType.ROOM });
+
+    world.moveEntity(player.id, room1.id);
+
+    // VERIFY PRECONDITION: player is in room1
+    expect(world.getLocation(player.id)).toBe(room1.id);
+
+    const command = createCommand(IFActions.GOING);
+    command.parsed.extras = { direction: Direction.NORTH };
+
+    const context = createRealTestContext(goingAction, world, command);
+
+    const validation = goingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    goingAction.execute(context);
+
+    // VERIFY POSTCONDITION: player is now in room2
+    expect(world.getLocation(player.id)).toBe(room2.id);
+  });
+
+  test('should NOT move player when door is closed', () => {
+    const world = new WorldModel();
+    const player = world.createEntity('yourself', 'object');
+    player.add({ type: TraitType.ACTOR, isPlayer: true });
+    world.setPlayer(player.id);
+
+    const door = world.createEntity('wooden door', 'object');
+    door.add({
+      type: TraitType.OPENABLE,
+      isOpen: false  // Closed
+    });
+
+    const room1 = world.createEntity('Hall', 'object');
+    const room2 = world.createEntity('Study', 'object');
+
+    room1.add({
+      type: TraitType.ROOM,
+      exits: {
+        [Direction.WEST]: { destination: room2.id, via: door.id }
+      }
+    });
+
+    room2.add({ type: TraitType.ROOM });
+
+    world.moveEntity(player.id, room1.id);
+
+    // VERIFY PRECONDITION: player is in room1
+    expect(world.getLocation(player.id)).toBe(room1.id);
+
+    const command = createCommand(IFActions.GOING);
+    command.parsed.extras = { direction: Direction.WEST };
+
+    const context = createRealTestContext(goingAction, world, command);
+
+    // Validation should fail
+    const validation = goingAction.validate(context);
+    expect(validation.valid).toBe(false);
+
+    // VERIFY POSTCONDITION: player still in room1 (no change)
+    expect(world.getLocation(player.id)).toBe(room1.id);
+  });
+
+  test('should NOT move player when no exit in direction', () => {
+    const world = new WorldModel();
+    const player = world.createEntity('yourself', 'object');
+    player.add({ type: TraitType.ACTOR, isPlayer: true });
+    world.setPlayer(player.id);
+
+    const room1 = world.createEntity('Room', 'object');
+    const room2 = world.createEntity('Other Room', 'object');
+
+    room1.add({
+      type: TraitType.ROOM,
+      exits: {
+        [Direction.SOUTH]: { destination: room2.id }  // Only south exit
+      }
+    });
+
+    room2.add({ type: TraitType.ROOM });
+
+    world.moveEntity(player.id, room1.id);
+
+    // VERIFY PRECONDITION: player is in room1
+    expect(world.getLocation(player.id)).toBe(room1.id);
+
+    const command = createCommand(IFActions.GOING);
+    command.parsed.extras = { direction: Direction.NORTH };  // Try to go north
+
+    const context = createRealTestContext(goingAction, world, command);
+
+    // Validation should fail
+    const validation = goingAction.validate(context);
+    expect(validation.valid).toBe(false);
+
+    // VERIFY POSTCONDITION: player still in room1 (no change)
+    expect(world.getLocation(player.id)).toBe(room1.id);
+  });
+
+  test('should mark room as visited after first visit', () => {
+    const world = new WorldModel();
+    const player = world.createEntity('yourself', 'object');
+    player.add({ type: TraitType.ACTOR, isPlayer: true });
+    world.setPlayer(player.id);
+
+    const room1 = world.createEntity('Start', 'object');
+    const room2 = world.createEntity('New Room', 'object');
+
+    room1.add({
+      type: TraitType.ROOM,
+      visited: true,
+      exits: {
+        [Direction.EAST]: { destination: room2.id }
+      }
+    });
+
+    room2.add({
+      type: TraitType.ROOM,
+      visited: false  // Never visited
+    });
+
+    world.moveEntity(player.id, room1.id);
+
+    // VERIFY PRECONDITION: room2 is not visited
+    const room2TraitBefore = room2.getTrait(TraitType.ROOM) as any;
+    expect(room2TraitBefore.visited).toBe(false);
+
+    const command = createCommand(IFActions.GOING);
+    command.parsed.extras = { direction: Direction.EAST };
+
+    const context = createRealTestContext(goingAction, world, command);
+
+    const validation = goingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    goingAction.execute(context);
+
+    // VERIFY POSTCONDITION: room2 is now marked as visited
+    const room2TraitAfter = room2.getTrait(TraitType.ROOM) as any;
+    expect(room2TraitAfter.visited).toBe(true);
   });
 });
 

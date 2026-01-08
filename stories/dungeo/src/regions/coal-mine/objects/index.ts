@@ -17,7 +17,9 @@ import {
   SceneryTrait,
   ActorTrait,
   NpcTrait,
-  EntityType
+  EntityType,
+  EnterableTrait,
+  OpenableTrait
 } from '@sharpee/world-model';
 
 import { CoalMineRoomIds } from '../index';
@@ -75,6 +77,8 @@ function createBasket(
     capacity: { maxItems: 10, maxWeight: 100 }
   }));
 
+  basket.add(new EnterableTrait());
+
   basket.add(new SceneryTrait());
 
   // Basket elevator trait - handles lowering/raising via capability dispatch
@@ -99,7 +103,8 @@ function createCoal(world: WorldModel, roomId: string): IFEntity {
     aliases: ['coal', 'black coal', 'lump of coal'],
     description: 'A pile of black coal. It would make excellent fuel for a machine.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 10
   }));
 
   world.moveEntity(coal.id, roomId);
@@ -107,24 +112,36 @@ function createCoal(world: WorldModel, roomId: string): IFEntity {
 }
 
 /**
- * Machine - Coal-powered machine that sharpens things
+ * Machine - Coal-powered machine that converts coal to diamond
+ *
+ * In classic Zork, you PUT COAL IN MACHINE then TURN SWITCH.
+ * The machine uses extreme pressure to convert coal to diamond.
  */
 function createMachine(world: WorldModel, roomId: string): IFEntity {
-  const machine = world.createEntity('machine', EntityType.SCENERY);
+  const machine = world.createEntity('machine', EntityType.CONTAINER);
 
   machine.add(new IdentityTrait({
-    name: 'coal-powered machine',
-    aliases: ['machine', 'coal machine', 'big machine'],
-    description: 'This is a massive coal-powered machine with a prominent slot on one side and what appears to be a grinding wheel inside. There is a hopper for fuel on top.',
+    name: 'machine',
+    aliases: ['machine', 'coal machine', 'big machine', 'coal-powered machine'],
+    description: 'This is a massive machine with a lid on top and a switch on the side. The lid is open, revealing a small compartment inside. It looks like it could exert enormous pressure.',
     properName: false,
     article: 'a'
+  }));
+
+  // Machine is a container (for coal) - always open
+  machine.add(new ContainerTrait({
+    capacity: { maxItems: 1, maxWeight: 10 }
+  }));
+
+  // Openable but starts open (lid)
+  machine.add(new OpenableTrait({
+    isOpen: true
   }));
 
   machine.add(new SceneryTrait());
 
   // Machine state
-  (machine as any).isPowered = false;
-  (machine as any).hasCoal = false;
+  (machine as any).machineActivated = false;
 
   world.moveEntity(machine.id, roomId);
   return machine;
@@ -172,7 +189,8 @@ function createJadeFigurine(world: WorldModel, roomId: string): IFEntity {
     aliases: ['figurine', 'jade', 'statue', 'jade statue'],
     description: 'A beautiful jade figurine of an oriental dragon. It is exquisitely carved.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
 
   // Treasure scoring
@@ -195,7 +213,8 @@ function createSapphireBracelet(world: WorldModel, roomId: string): IFEntity {
     aliases: ['bracelet', 'sapphire', 'blue bracelet'],
     description: 'A delicate bracelet set with brilliant blue sapphires.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
 
   // Treasure scoring
@@ -218,7 +237,8 @@ function createRedCrystalSphere(world: WorldModel, roomId: string): IFEntity {
     aliases: ['sphere', 'crystal sphere', 'red sphere', 'crystal', 'red crystal', 'ball'],
     description: 'A beautiful sphere of red crystal. It seems to glow with an inner light.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
 
   // Treasure scoring
@@ -244,7 +264,8 @@ function createTimber(world: WorldModel, roomId: string): IFEntity {
     aliases: ['timber', 'beam', 'wooden beam', 'lumber', 'wood'],
     description: 'A large, sturdy piece of timber. It could be useful for propping things up.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 20
   }));
 
   world.moveEntity(timber.id, roomId);

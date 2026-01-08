@@ -100,7 +100,8 @@ function createLeaflet(world: WorldModel): IFEntity {
     aliases: ['paper', 'pamphlet', 'advertisement', 'ad'],
     description: 'A small leaflet with some writing on it.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 2
   }));
 
   leaflet.add(new ReadableTrait({
@@ -171,7 +172,8 @@ function createWelcomeMat(world: WorldModel): IFEntity {
     aliases: ['mat', 'doormat', 'door mat', 'rug'],
     description: 'A rubber mat saying "Welcome to Zork!"',
     properName: false,
-    article: 'a'
+    article: 'a',
+    weight: 5
   }));
 
   return mat;

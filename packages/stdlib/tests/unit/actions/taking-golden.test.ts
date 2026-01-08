@@ -470,6 +470,113 @@ describe('takingAction (Golden Pattern)', () => {
   });
 });
 
+/**
+ * CRITICAL: World State Mutation Verification Tests
+ *
+ * These tests verify that the taking action actually mutates world state,
+ * not just emits events. This catches bugs like the "dropping bug" where
+ * actions appeared to work (good messages) but didn't actually change state.
+ */
+describe('World State Mutations', () => {
+  test('should actually move item from room to player inventory', () => {
+    const { world, player, room } = setupBasicWorld();
+    const ball = world.createEntity('red ball', 'object');
+    world.moveEntity(ball.id, room.id);
+
+    // VERIFY PRECONDITION: item is in room
+    expect(world.getLocation(ball.id)).toBe(room.id);
+
+    const context = createRealTestContext(
+      takingAction,
+      world,
+      createCommand(IFActions.TAKING, { entity: ball })
+    );
+
+    // Execute the action
+    const validation = takingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    takingAction.execute(context);
+
+    // VERIFY POSTCONDITION: item is now in player's inventory
+    expect(world.getLocation(ball.id)).toBe(player.id);
+  });
+
+  test('should actually move item from container to player inventory', () => {
+    const { world, player, room } = setupBasicWorld();
+    const box = world.createEntity('wooden box', 'object');
+    box.add({ type: TraitType.CONTAINER });
+    const coin = world.createEntity('gold coin', 'object');
+
+    world.moveEntity(box.id, room.id);
+    world.moveEntity(coin.id, box.id);
+
+    // VERIFY PRECONDITION: coin is in the box
+    expect(world.getLocation(coin.id)).toBe(box.id);
+
+    const context = createRealTestContext(
+      takingAction,
+      world,
+      createCommand(IFActions.TAKING, { entity: coin })
+    );
+
+    const validation = takingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    takingAction.execute(context);
+
+    // VERIFY POSTCONDITION: coin is now in player's inventory
+    expect(world.getLocation(coin.id)).toBe(player.id);
+  });
+
+  test('should actually move item from supporter to player inventory', () => {
+    const { world, player, room } = setupBasicWorld();
+    const table = world.createEntity('wooden table', 'object');
+    table.add({ type: TraitType.SUPPORTER });
+    const book = world.createEntity('old book', 'object');
+
+    world.moveEntity(table.id, room.id);
+    world.moveEntity(book.id, table.id);
+
+    // VERIFY PRECONDITION: book is on the table
+    expect(world.getLocation(book.id)).toBe(table.id);
+
+    const context = createRealTestContext(
+      takingAction,
+      world,
+      createCommand(IFActions.TAKING, { entity: book })
+    );
+
+    const validation = takingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    takingAction.execute(context);
+
+    // VERIFY POSTCONDITION: book is now in player's inventory
+    expect(world.getLocation(book.id)).toBe(player.id);
+  });
+
+  test('should NOT move item when validation fails', () => {
+    const { world, player, room } = setupBasicWorld();
+    const ball = world.createEntity('red ball', 'object');
+    world.moveEntity(ball.id, player.id); // Already in inventory
+
+    // VERIFY PRECONDITION: item is in player's inventory
+    expect(world.getLocation(ball.id)).toBe(player.id);
+
+    const context = createRealTestContext(
+      takingAction,
+      world,
+      createCommand(IFActions.TAKING, { entity: ball })
+    );
+
+    // Validation should fail
+    const validation = takingAction.validate(context);
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toBe('already_have');
+
+    // VERIFY POSTCONDITION: item still in player's inventory (no change)
+    expect(world.getLocation(ball.id)).toBe(player.id);
+  });
+});
+
 describe('Taking Action Edge Cases', () => {
   test('should handle taking from nested containers', () => {
     const { world, player, room } = setupBasicWorld();

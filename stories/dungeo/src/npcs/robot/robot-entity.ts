@@ -98,7 +98,7 @@ export function makeRobotPushButton(
   // Emit success events
   events.push({
     id: `robot-push-button-${Date.now()}`,
-    type: 'npc.emoted',
+    type: 'game.message',
     timestamp: Date.now(),
     entities: { actor: robot.id },
     data: {
