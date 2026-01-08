@@ -721,7 +721,186 @@ describe('drinkingAction (Golden Pattern)', () => {
   });
 });
 
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, EdibleBehavior } from '@sharpee/world-model';
+
+/**
+ * CRITICAL: World State Mutation Verification Tests
+ *
+ * These tests verify that the drinking action actually mutates world state,
+ * not just emits events. This catches bugs like the "dropping bug" where
+ * actions appeared to work (good messages) but didn't actually change state.
+ */
+describe('World State Mutations', () => {
+  test('should actually move item to inventory on implicit take', () => {
+    // Item in room, not held
+    const { world, player, room, object } = TestData.withObject('can of soda', {
+      [TraitType.EDIBLE]: {
+        type: TraitType.EDIBLE,
+        consumed: false,
+        isDrink: true
+      }
+    });
+
+    // VERIFY PRECONDITION: item is in room, not player's inventory
+    expect(world.getLocation(object.id)).toBe(room.id);
+    expect(world.getLocation(object.id)).not.toBe(player.id);
+
+    const command = createCommand(IFActions.DRINKING, {
+      entity: object
+    });
+    const context = createRealTestContext(drinkingAction, world, command);
+
+    // Execute the action
+    const validation = drinkingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    drinkingAction.execute(context);
+
+    // VERIFY POSTCONDITION: item is now in player's inventory
+    expect(world.getLocation(object.id)).toBe(player.id);
+  });
+
+  test('should not move item that is already held', () => {
+    const { world, player, item } = TestData.withInventoryItem('cup of coffee', {
+      [TraitType.EDIBLE]: {
+        type: TraitType.EDIBLE,
+        consumed: false,
+        isDrink: true
+      }
+    });
+
+    // VERIFY PRECONDITION: item is already in player's inventory
+    expect(world.getLocation(item.id)).toBe(player.id);
+
+    const command = createCommand(IFActions.DRINKING, {
+      entity: item
+    });
+    const context = createRealTestContext(drinkingAction, world, command);
+
+    const validation = drinkingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    drinkingAction.execute(context);
+
+    // VERIFY POSTCONDITION: item is still in player's inventory
+    expect(world.getLocation(item.id)).toBe(player.id);
+  });
+
+  test('should actually consume drinkable item (set consumed flag)', () => {
+    const { world, player, item } = TestData.withInventoryItem('glass of water', {
+      [TraitType.EDIBLE]: {
+        type: TraitType.EDIBLE,
+        consumed: false,
+        isDrink: true,
+        servings: 1
+      }
+    });
+
+    // VERIFY PRECONDITION: item is not consumed
+    const edibleBefore = item.getTrait(TraitType.EDIBLE) as any;
+    expect(edibleBefore.consumed).toBe(false);
+    expect(EdibleBehavior.canConsume(item)).toBe(true);
+
+    const command = createCommand(IFActions.DRINKING, {
+      entity: item
+    });
+    const context = createRealTestContext(drinkingAction, world, command);
+
+    const validation = drinkingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    drinkingAction.execute(context);
+
+    // VERIFY POSTCONDITION: item is now consumed
+    const edibleAfter = item.getTrait(TraitType.EDIBLE) as any;
+    expect(edibleAfter.consumed).toBe(true);
+    expect(EdibleBehavior.canConsume(item)).toBe(false);
+  });
+
+  test('should decrement servings when drinking multi-serving item', () => {
+    const { world, player, item } = TestData.withInventoryItem('pot of tea', {
+      [TraitType.EDIBLE]: {
+        type: TraitType.EDIBLE,
+        consumed: false,
+        isDrink: true,
+        servings: 4
+      }
+    });
+
+    // VERIFY PRECONDITION: 4 servings remaining
+    expect(EdibleBehavior.getServings(item)).toBe(4);
+
+    const command = createCommand(IFActions.DRINKING, {
+      entity: item
+    });
+    const context = createRealTestContext(drinkingAction, world, command);
+
+    const validation = drinkingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    drinkingAction.execute(context);
+
+    // VERIFY POSTCONDITION: 3 servings remaining
+    expect(EdibleBehavior.getServings(item)).toBe(3);
+    expect(EdibleBehavior.canConsume(item)).toBe(true); // Still drinkable
+  });
+
+  test('should actually decrement liquidAmount for containers', () => {
+    const { world, player, item } = TestData.withInventoryItem('metal flask', {
+      [TraitType.CONTAINER]: {
+        type: TraitType.CONTAINER,
+        containsLiquid: true,
+        liquidType: 'water',
+        liquidAmount: 5
+      },
+      [TraitType.OPENABLE]: {
+        type: TraitType.OPENABLE,
+        isOpen: true
+      }
+    });
+
+    // VERIFY PRECONDITION: 5 units of liquid
+    const containerBefore = item.getTrait(TraitType.CONTAINER) as any;
+    expect(containerBefore.liquidAmount).toBe(5);
+
+    const command = createCommand(IFActions.DRINKING, {
+      entity: item
+    });
+    const context = createRealTestContext(drinkingAction, world, command);
+
+    const validation = drinkingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    drinkingAction.execute(context);
+
+    // VERIFY POSTCONDITION: 4 units of liquid remaining
+    const containerAfter = item.getTrait(TraitType.CONTAINER) as any;
+    expect(containerAfter.liquidAmount).toBe(4);
+  });
+
+  test('should set liquidAmount to 0 when emptying container', () => {
+    const { world, player, item } = TestData.withInventoryItem('small cup', {
+      [TraitType.CONTAINER]: {
+        type: TraitType.CONTAINER,
+        containsLiquid: true,
+        liquidType: 'tea',
+        liquidAmount: 1  // Last sip
+      }
+    });
+
+    // VERIFY PRECONDITION: 1 unit remaining
+    const containerBefore = item.getTrait(TraitType.CONTAINER) as any;
+    expect(containerBefore.liquidAmount).toBe(1);
+
+    const command = createCommand(IFActions.DRINKING, {
+      entity: item
+    });
+    const context = createRealTestContext(drinkingAction, world, command);
+
+    const validation = drinkingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    drinkingAction.execute(context);
+
+    // VERIFY POSTCONDITION: container is now empty
+    const containerAfter = item.getTrait(TraitType.CONTAINER) as any;
+    expect(containerAfter.liquidAmount).toBe(0);
+  });
+});
 
 describe('Testing Pattern Examples for Drinking', () => {
   test('pattern: complex beverage system with multiple properties', () => {
