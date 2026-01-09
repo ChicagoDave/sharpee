@@ -26,11 +26,12 @@ interface WorldModelLike {
 
 /**
  * Find an entity by name (searches identity.name and aliases)
+ * Prioritizes exact matches and actors/NPCs over rooms
  */
 function findEntityByName(world: WorldModelLike, name: string): any | null {
   const nameLower = name.toLowerCase();
 
-  const entities = world.findWhere((entity: any) => {
+  const allMatches = world.findWhere((entity: any) => {
     const identity = entity.get?.('identity') || entity.traits?.get?.('identity');
     if (!identity) return false;
 
@@ -42,7 +43,30 @@ function findEntityByName(world: WorldModelLike, name: string): any | null {
            aliases.some((a: string) => a === nameLower || a.includes(nameLower));
   });
 
-  return entities[0] || null;
+  if (allMatches.length === 0) return null;
+
+  // Prioritize: 1) exact name match, 2) exact alias match, 3) actors/NPCs, 4) first match
+  const exactNameMatch = allMatches.find((e: any) => {
+    const identity = e.get?.('identity') || e.traits?.get?.('identity');
+    return (identity?.name || '').toLowerCase() === nameLower;
+  });
+  if (exactNameMatch) return exactNameMatch;
+
+  const exactAliasMatch = allMatches.find((e: any) => {
+    const identity = e.get?.('identity') || e.traits?.get?.('identity');
+    const aliases = (identity?.aliases || []).map((a: string) => a.toLowerCase());
+    return aliases.includes(nameLower);
+  });
+  if (exactAliasMatch) return exactAliasMatch;
+
+  // Prefer actors/NPCs/combatants over rooms
+  const actorMatch = allMatches.find((e: any) =>
+    e.get?.('actor') || e.get?.('npc') || e.get?.('combatant') ||
+    e.traits?.get?.('actor') || e.traits?.get?.('npc') || e.traits?.get?.('combatant')
+  );
+  if (actorMatch) return actorMatch;
+
+  return allMatches[0];
 }
 
 /**
@@ -89,20 +113,30 @@ function getRoomName(world: WorldModelLike, roomId: string): string {
 }
 
 /**
- * Check if an entity is "alive" (for NPCs)
+ * Check if an entity is "alive" (for NPCs/Combatants)
  */
 function isEntityAlive(entity: any): boolean {
+  // Check for CombatantTrait (used by troll, thief, etc.)
+  const combatantTrait = entity.get?.('combatant') || entity.traits?.get?.('combatant');
+  if (combatantTrait) {
+    // CombatantTrait uses isAlive (not isDead)
+    if (combatantTrait.isAlive === false) return false;
+    // Check health
+    if (combatantTrait.health !== undefined && combatantTrait.health <= 0) return false;
+  }
+
   // Check for NPC trait with health/alive status
   const npcTrait = entity.get?.('npc') || entity.traits?.get?.('npc');
   if (npcTrait) {
     // Check isDead flag
     if ((entity as any).isDead === true) return false;
     if (npcTrait.isDead === true) return false;
+    if (npcTrait.isAlive === false) return false;
     // Check health
     if (npcTrait.health !== undefined && npcTrait.health <= 0) return false;
   }
 
-  // Default to alive if no NPC trait or death indicators
+  // Default to alive if no NPC/combatant trait or death indicators
   return true;
 }
 
