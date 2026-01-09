@@ -44,21 +44,21 @@ import { initializeMirrorRoom, createMirrorTouchHandler, MirrorRoomConfig, Mirro
 import { MIRROR_ID } from './regions/temple';
 
 // Import room and object creators
-import { createWhiteHouseRooms, createWhiteHouseObjects, WhiteHouseRoomIds } from './regions/white-house';
-import { createHouseInteriorRooms, createHouseInteriorObjects, connectHouseInteriorToExterior, HouseInteriorRoomIds } from './regions/house-interior';
-import { createForestRooms, createForestObjects, connectForestToExterior, ForestRoomIds } from './regions/forest';
+import { createWhiteHouseRegion, createWhiteHouseObjects, WhiteHouseRoomIds } from './regions/white-house';
+import { createHouseInteriorRegion, createHouseInteriorObjects, connectHouseInteriorToExterior, HouseInteriorRoomIds } from './regions/house-interior';
+import { createForestRegion, createForestObjects, connectForestToExterior, ForestRoomIds } from './regions/forest';
 import { createUndergroundRegion, createUndergroundObjects, connectUndergroundToHouse, connectStudioToKitchen, UndergroundRoomIds } from './regions/underground';
 import { createDamRegion, createDamObjects, connectDamToRoundRoom, connectDamToFrigidRiver, connectDamToTemple, DamRoomIds } from './regions/dam';
-import { createCoalMineRooms, createCoalMineObjects, CoalMineRoomIds } from './regions/coal-mine';
+import { createCoalMineRegion, createCoalMineObjects, CoalMineRoomIds } from './regions/coal-mine';
 import { createTempleRegion, createTempleObjects, connectTempleToUnderground, connectTempleToWellRoom, connectTempleToFrigidRiver, TempleRoomIds } from './regions/temple';
 import { createVolcanoRegion, createVolcanoObjects, connectVolcanoToUnderground, VolcanoRoomIds, VolcanoObjectIds } from './regions/volcano';
-import { createBankRooms, connectBankToUnderground, createBankObjects, BankRoomIds } from './regions/bank-of-zork';
+import { createBankRegion, connectBankToUnderground, createBankObjects, BankRoomIds } from './regions/bank-of-zork';
 import { createWellRoomRegion, createWellRoomObjects, connectWellRoomToRoundRoom, connectCaveToHades, WellRoomIds } from './regions/well-room';
 import { createRoundRoomRegion, RoundRoomIds, connectRoundRoomToUnderground, connectRoundRoomToTemple, connectRoundRoomToWellRoom, connectRoundRoomToDam, connectRoundRoomToMaze } from './regions/round-room';
-import { createFrigidRiverRooms, connectFrigidRiverToDam, connectRainbowToCanyon, createFrigidRiverObjects, FrigidRiverRoomIds } from './regions/frigid-river';
-import { createMazeRooms, connectMazeToClearing, connectCyclopsToLivingRoom, connectMazeToTrollRoom, connectMazeToRoundRoom, createMazeObjects, MazeRoomIds } from './regions/maze';
-import { createRoyalPuzzleRooms, connectRoyalPuzzleToTreasureRoom, RoyalPuzzleRoomIds } from './regions/royal-puzzle';
-import { createEndgameRooms, createEndgameObjects, EndgameRoomIds } from './regions/endgame';
+import { createFrigidRiverRegion, connectFrigidRiverToDam, connectRainbowToCanyon, createFrigidRiverObjects, FrigidRiverRoomIds } from './regions/frigid-river';
+import { createMazeRegion, connectMazeToClearing, connectCyclopsToLivingRoom, connectMazeToTrollRoom, connectMazeToRoundRoom, createMazeObjects, MazeRoomIds } from './regions/maze';
+import { createRoyalPuzzleRegion, connectRoyalPuzzleToTreasureRoom, RoyalPuzzleRoomIds } from './regions/royal-puzzle';
+import { createEndgameRegion, createEndgameObjects, EndgameRoomIds } from './regions/endgame';
 
 // Import handlers
 import { registerRoyalPuzzleHandler, initializePuzzleState, createPuzzleCommandTransformer, PuzzleHandlerMessages } from './handlers/royal-puzzle';
@@ -163,20 +163,20 @@ export class DungeoStory implements Story {
     registerRealityAlteredHandler(world);
 
     // Create all rooms
-    this.whiteHouseIds = createWhiteHouseRooms(world);
-    this.houseInteriorIds = createHouseInteriorRooms(world);
-    this.forestIds = createForestRooms(world);
+    this.whiteHouseIds = createWhiteHouseRegion(world);
+    this.houseInteriorIds = createHouseInteriorRegion(world);
+    this.forestIds = createForestRegion(world);
     this.undergroundIds = createUndergroundRegion(world);
     this.damIds = createDamRegion(world);
-    this.coalMineIds = createCoalMineRooms(world);
+    this.coalMineIds = createCoalMineRegion(world);
     this.templeIds = createTempleRegion(world);
     this.volcanoIds = createVolcanoRegion(world);
-    this.bankIds = createBankRooms(world);
+    this.bankIds = createBankRegion(world);
     this.wellRoomIds = createWellRoomRegion(world);
-    this.frigidRiverIds = createFrigidRiverRooms(world);
-    this.mazeIds = createMazeRooms(world);
-    this.royalPuzzleIds = createRoyalPuzzleRooms(world);
-    this.endgameIds = createEndgameRooms(world);
+    this.frigidRiverIds = createFrigidRiverRegion(world);
+    this.mazeIds = createMazeRegion(world);
+    this.royalPuzzleIds = createRoyalPuzzleRegion(world);
+    this.endgameIds = createEndgameRegion(world);
     this.roundRoomIds = createRoundRoomRegion(world);
 
     // Connect regions
