@@ -41,19 +41,20 @@ import { setSchedulerForGDT, setEngineForKL } from './actions/gdt/commands';
 // Import handlers
 import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages, registerGlacierHandler, GlacierMessages, registerReservoirExitHandler } from './handlers';
 import { initializeMirrorRoom, createMirrorTouchHandler, MirrorRoomConfig, MirrorRoomMessages } from './handlers/mirror-room-handler';
-import { MIRROR_ID } from './regions/underground/objects';
+import { MIRROR_ID } from './regions/temple';
 
 // Import room and object creators
 import { createWhiteHouseRooms, createWhiteHouseObjects, WhiteHouseRoomIds } from './regions/white-house';
 import { createHouseInteriorRooms, createHouseInteriorObjects, connectHouseInteriorToExterior, HouseInteriorRoomIds } from './regions/house-interior';
 import { createForestRooms, createForestObjects, connectForestToExterior, ForestRoomIds } from './regions/forest';
-import { createUndergroundRooms, createUndergroundObjects, connectUndergroundToHouse, connectStudioToKitchen, connectUndergroundToDam, connectGrailRoomToTemple, connectCaveToHades, UndergroundRoomIds } from './regions/underground';
-import { createDamRooms, connectDamToUnderground, connectReservoirToAtlantis, connectGlacierToEgyptian, connectTempleSmallCaveToRockyShore, createDamObjects, DamRoomIds } from './regions/dam';
+import { createUndergroundRegion, createUndergroundObjects, connectUndergroundToHouse, connectStudioToKitchen, UndergroundRoomIds } from './regions/underground';
+import { createDamRegion, createDamObjects, connectDamToRoundRoom, connectDamToFrigidRiver, connectDamToTemple, DamRoomIds } from './regions/dam';
 import { createCoalMineRooms, createCoalMineObjects, CoalMineRoomIds } from './regions/coal-mine';
-import { createTempleRooms, connectTempleToUnderground, createTempleObjects, TempleRoomIds } from './regions/temple';
-import { createVolcanoRooms, connectVolcanoToGlacier, createVolcanoRegionObjects, VolcanoRoomIds, VolcanoObjectIds } from './regions/volcano';
+import { createTempleRegion, createTempleObjects, connectTempleToUnderground, connectTempleToWellRoom, connectTempleToFrigidRiver, TempleRoomIds } from './regions/temple';
+import { createVolcanoRegion, createVolcanoObjects, connectVolcanoToUnderground, VolcanoRoomIds, VolcanoObjectIds } from './regions/volcano';
 import { createBankRooms, connectBankToUnderground, createBankObjects, BankRoomIds } from './regions/bank-of-zork';
-import { createWellRoomRooms, connectWellRoomToTemple, createWellRoomObjects, WellRoomIds } from './regions/well-room';
+import { createWellRoomRegion, createWellRoomObjects, connectWellRoomToRoundRoom, connectCaveToHades, WellRoomIds } from './regions/well-room';
+import { createRoundRoomRegion, RoundRoomIds, connectRoundRoomToUnderground, connectRoundRoomToTemple, connectRoundRoomToWellRoom, connectRoundRoomToDam, connectRoundRoomToMaze } from './regions/round-room';
 import { createFrigidRiverRooms, connectFrigidRiverToDam, connectRainbowToCanyon, createFrigidRiverObjects, FrigidRiverRoomIds } from './regions/frigid-river';
 import { createMazeRooms, connectMazeToClearing, connectCyclopsToLivingRoom, connectMazeToTrollRoom, connectMazeToRoundRoom, createMazeObjects, MazeRoomIds } from './regions/maze';
 import { createRoyalPuzzleRooms, connectRoyalPuzzleToTreasureRoom, RoyalPuzzleRoomIds } from './regions/royal-puzzle';
@@ -114,6 +115,7 @@ export class DungeoStory implements Story {
   private mazeIds: MazeRoomIds = {} as MazeRoomIds;
   private royalPuzzleIds: RoyalPuzzleRoomIds = {} as RoyalPuzzleRoomIds;
   private endgameIds: EndgameRoomIds = {} as EndgameRoomIds;
+  private roundRoomIds: RoundRoomIds = {} as RoundRoomIds;
   private balloonIds: VolcanoObjectIds | null = null;
   private mirrorConfig: MirrorRoomConfig | null = null;
 
@@ -164,46 +166,62 @@ export class DungeoStory implements Story {
     this.whiteHouseIds = createWhiteHouseRooms(world);
     this.houseInteriorIds = createHouseInteriorRooms(world);
     this.forestIds = createForestRooms(world);
-    this.undergroundIds = createUndergroundRooms(world);
-    this.damIds = createDamRooms(world);
+    this.undergroundIds = createUndergroundRegion(world);
+    this.damIds = createDamRegion(world);
     this.coalMineIds = createCoalMineRooms(world);
-    this.templeIds = createTempleRooms(world);
-    this.volcanoIds = createVolcanoRooms(world);
+    this.templeIds = createTempleRegion(world);
+    this.volcanoIds = createVolcanoRegion(world);
     this.bankIds = createBankRooms(world);
-    this.wellRoomIds = createWellRoomRooms(world);
+    this.wellRoomIds = createWellRoomRegion(world);
     this.frigidRiverIds = createFrigidRiverRooms(world);
     this.mazeIds = createMazeRooms(world);
     this.royalPuzzleIds = createRoyalPuzzleRooms(world);
     this.endgameIds = createEndgameRooms(world);
+    this.roundRoomIds = createRoundRoomRegion(world);
 
     // Connect regions
     connectHouseInteriorToExterior(world, this.houseInteriorIds, this.whiteHouseIds.behindHouse);
     connectForestToExterior(world, this.forestIds, this.whiteHouseIds.northOfHouse, this.whiteHouseIds.behindHouse);
     connectUndergroundToHouse(world, this.undergroundIds, this.houseInteriorIds.livingRoom);
     connectStudioToKitchen(world, this.undergroundIds, this.houseInteriorIds.kitchen);
-    connectDamToUnderground(world, this.damIds, this.undergroundIds.roundRoom);
-    // Note: Temple is NOT directly connected to Reservoir South. Access is via:
-    // - Glacier Room → Egyptian Room → Temple (connectGlacierToEgyptian)
-    // - Grail Room → Temple (connectGrailRoomToTemple)
-    connectTempleToUnderground(world, this.templeIds, {
-      rockyCrawlId: this.undergroundIds.rockyCrawl,
-      narrowPassageId: this.undergroundIds.narrowPassage
+
+    // Round Room is the central hub - connect to all surrounding regions
+    connectRoundRoomToUnderground(world, this.roundRoomIds, this.undergroundIds.eastWestPassage);
+    connectRoundRoomToTemple(world, this.roundRoomIds, {
+      northSouthPassage: this.templeIds.northSouthPassage,
+      grailRoom: this.templeIds.grailRoom,
+      windingPassage: this.templeIds.windingPassage
     });
-    connectReservoirToAtlantis(world, this.damIds, this.undergroundIds.atlantisRoom);
-    connectGlacierToEgyptian(world, this.damIds, this.templeIds.egyptianRoom);
-    connectVolcanoToGlacier(world, this.volcanoIds, this.damIds.glacierRoom);
-    connectBankToUnderground(world, this.bankIds, this.undergroundIds.cellar, this.undergroundIds.gallery, this.undergroundIds.narrowPassage);
+    connectRoundRoomToWellRoom(world, this.roundRoomIds, this.wellRoomIds.engravingsCave);
+    connectRoundRoomToDam(world, this.roundRoomIds, this.damIds.deepCanyon);
+    connectRoundRoomToMaze(world, this.roundRoomIds, this.mazeIds.maze1);
+
+    // Temple connections
+    connectTempleToUnderground(world, this.templeIds, this.undergroundIds.chasm);
+    connectTempleToWellRoom(world, this.templeIds, this.wellRoomIds.cave);
+    connectTempleToFrigidRiver(world, this.templeIds, this.frigidRiverIds.rockyShore);
+
+    // Volcano connects to Underground via rocky crawl
+    connectVolcanoToUnderground(world, this.volcanoIds, this.undergroundIds.rockyCrawl);
+
+    // Dam connections
+    connectDamToFrigidRiver(world, this.damIds, this.frigidRiverIds.shore);
+
+    // Bank connects to Underground
+    connectBankToUnderground(world, this.bankIds, this.undergroundIds.cellar, this.undergroundIds.gallery, this.undergroundIds.northSouthCrawlway);
 
     // Store bank room IDs in world state for walk-through action
     world.setStateValue('dungeo.bank.roomIds', this.bankIds);
-    connectWellRoomToTemple(world, this.wellRoomIds, this.templeIds.torchRoom);
+
+    // Frigid River connections
     connectFrigidRiverToDam(world, this.frigidRiverIds, this.damIds.damBase);
-    connectTempleSmallCaveToRockyShore(world, this.damIds, this.frigidRiverIds.rockyShore);
     connectRainbowToCanyon(world, this.frigidRiverIds, this.forestIds.canyonBottom);
+
+    // Maze connections
     connectMazeToClearing(world, this.mazeIds, this.forestIds.clearing);
     connectCyclopsToLivingRoom(world, this.mazeIds, this.houseInteriorIds.livingRoom);
     connectMazeToTrollRoom(world, this.mazeIds, this.undergroundIds.trollRoom);
-    connectMazeToRoundRoom(world, this.mazeIds, this.undergroundIds.roundRoom);
+    connectMazeToRoundRoom(world, this.mazeIds, this.roundRoomIds.roundRoom);
 
     // Connect Royal Puzzle to Treasure Room
     connectRoyalPuzzleToTreasureRoom(world, this.royalPuzzleIds, this.mazeIds.treasureRoom);
@@ -211,14 +229,8 @@ export class DungeoStory implements Story {
     // Initialize puzzle state in world
     initializePuzzleState(world, this.royalPuzzleIds);
 
-    // Connect Round Room hub area to Dam region (N/S Passage, Damp Cave, Loud Room)
-    connectUndergroundToDam(world, this.undergroundIds, this.damIds.loudRoom);
-
-    // Connect Grail Room to Temple
-    connectGrailRoomToTemple(world, this.undergroundIds, this.templeIds.temple);
-
-    // Connect Cave to Entry to Hades (default connection - mirror puzzle)
-    connectCaveToHades(world, this.undergroundIds, this.templeIds.entryToHades);
+    // Connect Well Room Cave to Entry to Hades (default connection - mirror puzzle)
+    connectCaveToHades(world, this.wellRoomIds, this.endgameIds.entryToHades);
 
     // Create all objects and place them in rooms
     createWhiteHouseObjects(world, this.whiteHouseIds);
@@ -228,7 +240,7 @@ export class DungeoStory implements Story {
     createDamObjects(world, this.damIds);
     createCoalMineObjects(world, this.coalMineIds);
     createTempleObjects(world, this.templeIds);
-    this.balloonIds = createVolcanoRegionObjects(world, this.volcanoIds);
+    this.balloonIds = createVolcanoObjects(world, this.volcanoIds);
 
     // Balloon PUT handler is registered in onEngineReady() using EventProcessor
 
@@ -248,7 +260,7 @@ export class DungeoStory implements Story {
     this.initializeMirrorRoomHandler(world);
 
     // Register glacier handler (throw torch at glacier puzzle)
-    registerGlacierHandler(world, this.damIds.glacierRoom, this.volcanoIds.volcanoView);
+    registerGlacierHandler(world, this.volcanoIds.glacierRoom, this.volcanoIds.volcanoView);
 
     // Register reservoir exit handler (dam draining opens reservoir path)
     registerReservoirExitHandler(world, {
@@ -272,10 +284,10 @@ export class DungeoStory implements Story {
    */
   private initializeMirrorRoomHandler(world: WorldModel): void {
     // Find the mirror entity by scanning Mirror Room contents
-    const mirrorRoom = world.getEntity(this.undergroundIds.mirrorRoom);
+    const mirrorRoom = world.getEntity(this.templeIds.mirrorRoom);
     if (!mirrorRoom) return;
 
-    const contents = world.getContents(this.undergroundIds.mirrorRoom);
+    const contents = world.getContents(this.templeIds.mirrorRoom);
     const mirror = contents.find(e => {
       const identity = e.get('identity') as { aliases?: string[] } | undefined;
       return identity?.aliases?.includes('mirror');
@@ -288,21 +300,21 @@ export class DungeoStory implements Story {
 
     // Create mirror config
     this.mirrorConfig = {
-      mirrorRoomId: this.undergroundIds.mirrorRoom,
+      mirrorRoomId: this.templeIds.mirrorRoom,
       mirrorId: mirror.id,
 
       // State A destinations (Grail Room/Hades)
       stateA: {
-        north: this.undergroundIds.narrowCrawlway,
-        west: this.undergroundIds.windingPassage,
-        east: this.undergroundIds.cave  // Leads down to Hades
+        north: this.templeIds.narrowCrawlway,
+        west: this.templeIds.windingPassage,
+        east: this.wellRoomIds.cave  // Leads down to Hades
       },
 
       // State B destinations (Coal Mine)
       stateB: {
         north: this.coalMineIds.steepCrawlway,
         west: this.coalMineIds.coldPassage,
-        east: this.undergroundIds.smallCave  // Leads down to Atlantis
+        east: this.templeIds.smallCave  // Leads down to Atlantis
       }
     };
 
@@ -2043,12 +2055,12 @@ export class DungeoStory implements Story {
         this.undergroundIds.cellar,
         this.undergroundIds.trollRoom,
         this.undergroundIds.eastWestPassage,
-        this.undergroundIds.roundRoom,
-        this.undergroundIds.narrowPassage,
+        this.roundRoomIds.roundRoom,
+        this.undergroundIds.northSouthCrawlway,
         this.undergroundIds.gallery,
         this.undergroundIds.studio,
         this.templeIds.temple,
-        this.templeIds.narrowCorridor,
+        this.endgameIds.narrowCorridor,
         this.damIds.damLobby,
         this.damIds.dam,
         // Maze rooms (some of them)
@@ -2062,12 +2074,12 @@ export class DungeoStory implements Story {
       registerExorcismHandler(
         scheduler,
         this.world,
-        this.templeIds.entryToHades,
-        this.templeIds.landOfDead
+        this.endgameIds.entryToHades,
+        this.endgameIds.landOfDead
       );
 
       // Register Round Room randomization handler (carousel room)
-      registerRoundRoomHandler(scheduler, this.undergroundIds.roundRoom);
+      registerRoundRoomHandler(scheduler, this.roundRoomIds.roundRoom);
 
       // Register Royal Puzzle handler (sliding block puzzle)
       registerRoyalPuzzleHandler(scheduler, this.royalPuzzleIds);
@@ -2078,11 +2090,11 @@ export class DungeoStory implements Story {
       // Register Reality Altered daemon (ADR-078 hidden max points)
       registerRealityAlteredDaemon(scheduler);
 
-      // Register Endgame Trigger handler (Crypt darkness ritual)
+      // Register Endgame Trigger handler (Tomb darkness ritual)
       registerEndgameTriggerHandler(
         scheduler,
         this.world,
-        this.templeIds.crypt,
+        this.endgameIds.tomb,
         this.endgameIds.topOfStairs
       );
 

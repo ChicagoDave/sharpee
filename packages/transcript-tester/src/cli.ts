@@ -30,6 +30,7 @@ interface CliOptions {
   verbose: boolean;
   stopOnFailure: boolean;
   all: boolean;
+  chain: boolean;
   outputDir: string | null;
 }
 
@@ -43,6 +44,7 @@ function parseArgs(args: string[]): CliOptions {
     verbose: false,
     stopOnFailure: false,
     all: false,
+    chain: false,
     outputDir: null
   };
 
@@ -56,6 +58,8 @@ function parseArgs(args: string[]): CliOptions {
       options.stopOnFailure = true;
     } else if (arg === '--all' || arg === '-a') {
       options.all = true;
+    } else if (arg === '--chain' || arg === '-c') {
+      options.chain = true;
     } else if (arg === '--output-dir' || arg === '-o') {
       i++;
       if (i < args.length) {
@@ -94,6 +98,7 @@ Arguments:
 
 Options:
   -a, --all              Run all transcripts in the story's tests/ directory
+  -c, --chain            Chain transcripts (don't reset game state between them)
   -v, --verbose          Show detailed output for each command
   -s, --stop-on-failure  Stop on first failure
   -o, --output-dir <dir> Write timestamped results to directory (JSON + text report)
@@ -104,6 +109,7 @@ Examples:
   transcript-test stories/dungeo --all
   transcript-test stories/dungeo tests/*.transcript --verbose
   transcript-test stories/dungeo --all -o test-results
+  transcript-test stories/dungeo --chain tests/setup.transcript tests/puzzle.transcript
 `);
 }
 
@@ -163,6 +169,9 @@ async function main(): Promise<void> {
   }
 
   console.log(`Found ${transcriptPaths.length} transcript(s) to run`);
+  if (options.chain) {
+    console.log(`Chain mode: Game state will persist between transcripts`);
+  }
 
   // Run all transcripts
   const results: TranscriptResult[] = [];
@@ -181,8 +190,10 @@ async function main(): Promise<void> {
       continue;
     }
 
-    // Reload story for each transcript to reset state
-    game = await loadStory(options.storyPath);
+    // Reload story for each transcript to reset state (unless chaining)
+    if (!options.chain) {
+      game = await loadStory(options.storyPath);
+    }
 
     // Run the transcript
     const result = await runTranscript(transcript, game, {

@@ -26,6 +26,9 @@ import { createEastWestCorridor } from './rooms/east-west-corridor';
 import { createParapet } from './rooms/parapet';
 import { createPrisonCell } from './rooms/prison-cell';
 import { createTreasury } from './rooms/treasury';
+import { createEntryToHades } from './rooms/entry-to-hades';
+import { createLandOfDead } from './rooms/land-of-dead';
+import { createTomb } from './rooms/tomb';
 
 export interface EndgameRoomIds {
   topOfStairs: string;
@@ -39,6 +42,9 @@ export interface EndgameRoomIds {
   parapet: string;
   prisonCell: string;
   treasury: string;
+  entryToHades: string;
+  landOfDead: string;
+  tomb: string;
 }
 
 /**
@@ -56,6 +62,9 @@ export function createEndgameRooms(world: WorldModel): EndgameRoomIds {
   const parapet = createParapet(world);
   const prisonCell = createPrisonCell(world);
   const treasury = createTreasury(world);
+  const entryToHades = createEntryToHades(world);
+  const landOfDead = createLandOfDead(world);
+  const tomb = createTomb(world);
 
   const roomIds: EndgameRoomIds = {
     topOfStairs: topOfStairs.id,
@@ -68,7 +77,10 @@ export function createEndgameRooms(world: WorldModel): EndgameRoomIds {
     eastWestCorridor: eastWestCorridor.id,
     parapet: parapet.id,
     prisonCell: prisonCell.id,
-    treasury: treasury.id
+    treasury: treasury.id,
+    entryToHades: entryToHades.id,
+    landOfDead: landOfDead.id,
+    tomb: tomb.id
   };
 
   // Store room IDs for INCANT teleport

@@ -17,7 +17,7 @@ import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity, RoomTrait, Direction } from '@sharpee/world-model';
 import { TIE_ACTION_ID, TieMessages } from './types';
-import { BalloonState, isLedgePosition } from '../../regions/volcano/objects/balloon-objects';
+import { BalloonState, isLedgePosition } from '../../regions/volcano';
 
 /**
  * Check if entity is the braided wire (FORTRAN calls it BROPE but game text says "wire")

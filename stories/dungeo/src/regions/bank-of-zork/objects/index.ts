@@ -41,7 +41,7 @@ function createPortrait(world: WorldModel, roomId: string): IFEntity {
   const portrait = world.createEntity('portrait', EntityType.ITEM);
   portrait.add(new IdentityTrait({
     name: 'portrait',
-    aliases: ['painting', 'picture', 'oil painting', 'portrait painting'],
+    aliases: ['portrait', 'flathead portrait'],
     description: 'A magnificent oil portrait of J. Pierpont Flathead, founder of the Bank of Zork. The ornate gilded frame alone must be worth a fortune.',
     properName: false,
     article: 'a',

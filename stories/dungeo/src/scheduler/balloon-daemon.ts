@@ -28,7 +28,7 @@ import {
   nextPositionDown,
   isMidairPosition,
   isLedgePosition
-} from '../regions/volcano/objects/balloon-objects';
+} from '../regions/volcano';
 
 // Daemon ID
 const BALLOON_DAEMON_ID = 'dungeo.balloon.movement';

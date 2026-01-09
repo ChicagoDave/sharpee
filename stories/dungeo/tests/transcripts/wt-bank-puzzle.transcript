@@ -1,0 +1,76 @@
+title: Bank of Zork Walkthrough
+story: dungeo
+description: Get portrait and zorkmid bills from Bank. Chains after wt-get-torch-early (starts at Gallery).
+---
+
+# Start at Gallery (from torch transcript)
+# Path to Bank: Gallery → W → Bank Entrance
+
+# Navigate to Bank Entrance
+> west
+[OK: contains "Bank Entrance"]
+
+# First get portrait from Chairman's Office
+> northeast
+[OK: contains "East Teller"]
+
+> south
+[OK: contains "Chairman"]
+
+> take portrait
+[OK: matches /(Taken|take)/i]
+
+# Now navigate to Safety Depository for the wall-walk puzzle
+> north
+[OK: contains "East Teller"]
+
+> west
+[OK: contains "West Teller"]
+
+> west
+[OK: contains "Safety Depository"]
+
+# Wall-walk puzzle sequence:
+# 1. Curtain → Small Room
+# 2. South wall → Safety Depository (unlocks curtain to Viewing Room)
+# 3. North wall → Vault (get zorkmid bills)
+# 4. North wall → Safety Depository
+# 5. Curtain → Viewing Room (escape)
+
+> walk through curtain
+[OK: contains "disoriented"]
+[OK: contains "Small Room"]
+
+> walk through south wall
+[OK: contains "disoriented"]
+[OK: contains "Safety Depository"]
+
+> walk through north wall
+[OK: contains "disoriented"]
+[OK: contains "Vault"]
+
+> take zorkmid bills
+[OK: matches /(Taken|take)/i]
+
+> walk through north wall
+[OK: contains "disoriented"]
+[OK: contains "Safety Depository"]
+
+# Curtain now leads to Viewing Room (set by south wall walk earlier)
+> walk through curtain
+[OK: contains "disoriented"]
+[OK: contains "Viewing Room"]
+
+# Exit via Bank Entrance
+> south
+[OK: contains "Bank Entrance"]
+
+# Return to Gallery
+> east
+[OK: contains "Gallery"]
+
+# Verify we have both treasures
+> inventory
+[OK: contains "portrait"]
+[OK: contains "zorkmid"]
+[OK: contains "torch"]
