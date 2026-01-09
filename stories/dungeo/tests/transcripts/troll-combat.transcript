@@ -78,7 +78,11 @@ description: Test defeating the troll with the sword and gaining score
 [OK: matches /./]
 
 # After 10 attacks, troll should definitely be dead
-# Verify we can go north (passage unblocked after troll death)
+# We verify mutation via:
+# 1. Going north works (exit unblocked = RoomBehavior.unblockExit called)
+# 2. Score shows 10 points (scoring mutation happened)
+# Note: Can't assert on if.event.death here because we don't know which attack killed troll
+
 > north
 [OK: contains "East-West Passage"]
 [EVENT: true, type="if.event.actor_moved"]

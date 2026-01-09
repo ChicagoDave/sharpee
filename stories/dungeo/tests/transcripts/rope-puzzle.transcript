@@ -1,0 +1,75 @@
+title: Rope Puzzle
+story: dungeo
+description: Test tying rope to railing in Dome Room to access Torch Room
+---
+
+# Get rope from Attic and lantern from Living Room
+> gdt
+[OK: contains "GDT"]
+
+> ah Living Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+> take lantern
+[OK: matches /(Taken|take)/i]
+
+> switch on lantern
+[OK: matches /(on|lit|light|switches|banishing)/i]
+
+> gdt
+[OK: contains "GDT"]
+
+> ah Attic
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+> take rope
+[OK: matches /(Taken|take)/i]
+
+# Now teleport to Dome Room
+> gdt
+[OK: contains "GDT"]
+
+> ah Dome Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+# We should be in Dome Room with light
+> look
+[OK: contains "Dome Room"]
+
+# Test the rope puzzle
+> examine railing
+[OK: matches /(railing|shaft|iron|sturdy)/i]
+
+# Try to go down without rope tied - should fail
+> down
+[OK: matches /(no_exit|can't|cannot)/i]
+
+# Now tie the rope
+> tie rope to railing
+[OK: matches /(rope|tied|railing|securely|fastened)/i]
+
+# NOW down should work
+> down
+[OK: contains "Torch Room"]
+
+> look
+[OK: contains "Torch Room"]
+
+> take torch
+[OK: matches /(Taken|take)/i]
+
+# Can go back up via rope
+> up
+[OK: contains "Dome Room"]
+
+> score
+[OK: matches /[0-9]+.*points|scored/i]
