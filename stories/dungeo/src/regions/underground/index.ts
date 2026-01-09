@@ -282,15 +282,15 @@ function connectUndergroundRooms(world: WorldModel, roomIds: UndergroundRoomIds)
     }
   }
 
-  // Rocky Crawl: E→Deep Ravine (per map-connections.md)
-  // W→Dome Room, NW→Egyptian Room - connected externally by temple region
+  // Rocky Crawl: W→Deep Ravine (per map-connections.md)
+  // E→Dome Room, NW→Egyptian Room - connected externally by temple region
   const rockyCrawl = world.getEntity(roomIds.rockyCrawl);
   if (rockyCrawl) {
     const roomTrait = rockyCrawl.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
-        [Direction.EAST]: { destination: roomIds.deepRavine },
-        // W→Dome Room - connected externally
+        [Direction.WEST]: { destination: roomIds.deepRavine },
+        // E→Dome Room - connected externally
         // NW→Egyptian Room - connected externally
       };
     }

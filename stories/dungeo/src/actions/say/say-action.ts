@@ -28,6 +28,12 @@ function extractSpokenWords(context: ActionContext): string | undefined {
   // Check raw input for text after "say"
   const rawInput = command.parsed?.rawInput?.toLowerCase() || '';
 
+  // Handle bare magic words (mainframe Zork style)
+  const bareMagicWords = ['echo', 'ulysses', 'odysseus', 'xyzzy'];
+  if (bareMagicWords.includes(rawInput)) {
+    return rawInput;
+  }
+
   // Try to extract text after "say " or "say to"
   const sayMatch = rawInput.match(/^say\s+(?:to\s+\w+\s+)?["']?(.+?)["']?$/);
   if (sayMatch) {

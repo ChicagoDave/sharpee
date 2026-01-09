@@ -121,15 +121,17 @@ function connectTempleRooms(world: WorldModel, roomIds: TempleRoomIds): void {
   }
 
   // Torch Room - contains ivory torch
-  // Per map-connections.md: W → Tiny Room, D → North/South Passage (external)
-  // Note: Current S → Dome Room is kept for now; map shows D → Torch Room from Dome
+  // Per map-connections.md: W → Tiny Room, U → Dome Room, D → North/South Passage
+  // UP exit is always available (climbing the rope back up)
+  // DOWN → North/South Passage is connected externally
   const torchRoom = world.getEntity(roomIds.torchRoom);
   if (torchRoom) {
     const roomTrait = torchRoom.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
         [Direction.WEST]: { destination: roomIds.tinyRoom },
-        [Direction.SOUTH]: { destination: roomIds.domeRoom }
+        [Direction.UP]: { destination: roomIds.domeRoom }
+        // DOWN → North/South Passage is set by connectTorchRoomToUnderground()
       };
     }
   }
@@ -160,15 +162,18 @@ function connectTempleRooms(world: WorldModel, roomIds: TempleRoomIds): void {
   }
 
   // Dome Room - high ceiling, rope puzzle
+  // Per map-connections.md: E → Rocky Crawl (connected externally), D → Torch Room (via rope)
   const domeRoom = world.getEntity(roomIds.domeRoom);
   if (domeRoom) {
     const roomTrait = domeRoom.get(RoomTrait);
     if (roomTrait) {
       roomTrait.exits = {
-        [Direction.NORTH]: { destination: roomIds.torchRoom }
-        // DOWN requires rope to be tied
+        // EAST → Rocky Crawl is set by connectTempleToUnderground()
+        // DOWN → Torch Room requires rope to be tied - enabled by tie action
       };
     }
+    // Store torch room ID for tie action to enable DOWN exit
+    (domeRoom as any).torchRoomId = roomIds.torchRoom;
   }
 
   // Narrow Corridor - connects altar to Hades
@@ -236,23 +241,23 @@ function connectTempleRooms(world: WorldModel, roomIds: TempleRoomIds): void {
 }
 
 /**
- * Connect Temple region to Underground (Rocky Crawl → Dome Room, Egyptian Room)
+ * Connect Temple region to Underground
  * Per map-connections.md:
- * - Dome Room E → Rocky Crawl
- * - Egyptian Room E → Rocky Crawl
- * - Rocky Crawl W → Dome Room, NW → Egyptian Room
+ * - Rocky Crawl E → Dome Room, Dome Room E → Rocky Crawl
+ * - Rocky Crawl NW → Egyptian Room, Egyptian Room E → Rocky Crawl
+ * - Torch Room D → North/South Crawlway (narrowPassage in code)
  */
 export function connectTempleToUnderground(
   world: WorldModel,
   templeIds: TempleRoomIds,
-  rockyCrawlId: string
+  undergroundIds: { rockyCrawlId: string; narrowPassageId: string }
 ): void {
   // Dome Room E → Rocky Crawl
   const domeRoom = world.getEntity(templeIds.domeRoom);
   if (domeRoom) {
     const roomTrait = domeRoom.get(RoomTrait);
     if (roomTrait) {
-      roomTrait.exits[Direction.EAST] = { destination: rockyCrawlId };
+      roomTrait.exits[Direction.EAST] = { destination: undergroundIds.rockyCrawlId };
     }
   }
 
@@ -261,17 +266,35 @@ export function connectTempleToUnderground(
   if (egyptianRoom) {
     const roomTrait = egyptianRoom.get(RoomTrait);
     if (roomTrait) {
-      roomTrait.exits[Direction.EAST] = { destination: rockyCrawlId };
+      roomTrait.exits[Direction.EAST] = { destination: undergroundIds.rockyCrawlId };
     }
   }
 
-  // Rocky Crawl W → Dome Room, NW → Egyptian Room
-  const rockyCrawl = world.getEntity(rockyCrawlId);
+  // Rocky Crawl E → Dome Room, NW → Egyptian Room
+  const rockyCrawl = world.getEntity(undergroundIds.rockyCrawlId);
   if (rockyCrawl) {
     const roomTrait = rockyCrawl.get(RoomTrait);
     if (roomTrait) {
-      roomTrait.exits[Direction.WEST] = { destination: templeIds.domeRoom };
+      roomTrait.exits[Direction.EAST] = { destination: templeIds.domeRoom };
       roomTrait.exits[Direction.NORTHWEST] = { destination: templeIds.egyptianRoom };
+    }
+  }
+
+  // Torch Room D → North/South Crawlway (narrowPassage in code)
+  const torchRoom = world.getEntity(templeIds.torchRoom);
+  if (torchRoom) {
+    const roomTrait = torchRoom.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits[Direction.DOWN] = { destination: undergroundIds.narrowPassageId };
+    }
+  }
+
+  // North/South Crawlway U → Torch Room (reverse connection)
+  const narrowPassage = world.getEntity(undergroundIds.narrowPassageId);
+  if (narrowPassage) {
+    const roomTrait = narrowPassage.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits[Direction.UP] = { destination: templeIds.torchRoom };
     }
   }
 }

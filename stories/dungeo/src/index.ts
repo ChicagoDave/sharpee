@@ -185,7 +185,10 @@ export class DungeoStory implements Story {
     // Note: Temple is NOT directly connected to Reservoir South. Access is via:
     // - Glacier Room → Egyptian Room → Temple (connectGlacierToEgyptian)
     // - Grail Room → Temple (connectGrailRoomToTemple)
-    connectTempleToUnderground(world, this.templeIds, this.undergroundIds.rockyCrawl);
+    connectTempleToUnderground(world, this.templeIds, {
+      rockyCrawlId: this.undergroundIds.rockyCrawl,
+      narrowPassageId: this.undergroundIds.narrowPassage
+    });
     connectReservoirToAtlantis(world, this.damIds, this.undergroundIds.atlantisRoom);
     connectGlacierToEgyptian(world, this.damIds, this.templeIds.egyptianRoom);
     connectVolcanoToGlacier(world, this.volcanoIds, this.damIds.glacierRoom);
@@ -513,6 +516,34 @@ export class DungeoStory implements Story {
 
     grammar
       .define('say ulysses')
+      .mapsTo(SAY_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    // Bare magic words (mainframe Zork style - no "say" prefix needed)
+    // echo - Loud Room puzzle
+    grammar
+      .define('echo')
+      .mapsTo(SAY_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    // ulysses/odysseus - Cyclops puzzle
+    grammar
+      .define('ulysses')
+      .mapsTo(SAY_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    grammar
+      .define('odysseus')
+      .mapsTo(SAY_ACTION_ID)
+      .withPriority(155)
+      .build();
+
+    // xyzzy - classic Adventure reference (does nothing in Zork)
+    grammar
+      .define('xyzzy')
       .mapsTo(SAY_ACTION_ID)
       .withPriority(155)
       .build();
@@ -1744,6 +1775,11 @@ export class DungeoStory implements Story {
     language.addMessage(TieMessages.ALREADY_TIED, 'The rope is already tied to a hook.');
     language.addMessage(TieMessages.NO_HOOK, 'There is no hook to tie the rope to.');
     language.addMessage(TieMessages.NOT_IN_BALLOON, "You're not in the balloon.");
+    // Tie action messages (Dome Room rope puzzle)
+    language.addMessage(TieMessages.ROPE_TIED_TO_RAILING, 'The rope is now securely fastened to the railing, dangling down into the darkness below.');
+    language.addMessage(TieMessages.ROPE_ALREADY_TIED, 'The rope is already tied to the railing.');
+    language.addMessage(TieMessages.NO_RAILING, 'There is nothing here to tie the rope to.');
+    language.addMessage(TieMessages.NEED_ROPE, "You don't have any rope.");
 
     // Untie action messages (Balloon puzzle - releasing tether)
     language.addMessage(UntieMessages.SUCCESS, 'You untie the rope.');

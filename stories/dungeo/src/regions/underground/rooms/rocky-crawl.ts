@@ -2,7 +2,7 @@
  * Rocky Crawl
  *
  * A narrow rocky passage connecting Deep Ravine to the Dome Room area.
- * Per map-connections.md: E→Deep Ravine, W→Dome Room, NW→Egyptian Room
+ * Per map-connections.md: W→Deep Ravine, E→Dome Room, NW→Egyptian Room
  */
 
 import {

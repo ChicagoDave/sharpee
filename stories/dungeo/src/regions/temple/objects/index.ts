@@ -39,6 +39,9 @@ export function createTempleObjects(world: WorldModel, roomIds: TempleRoomIds): 
   // Torch Room objects
   createIvoryTorch(world, roomIds.torchRoom);
 
+  // Dome Room objects - railing for rope puzzle
+  createRailing(world, roomIds.domeRoom);
+
   // Land of Dead objects
   createCrystalSkull(world, roomIds.landOfDead);
   createChalice(world, roomIds.landOfDead);
@@ -52,6 +55,28 @@ export function createTempleObjects(world: WorldModel, roomIds: TempleRoomIds): 
 
   // Tomb objects - crypt door
   createCryptDoor(world, roomIds.tomb, roomIds.crypt);
+}
+
+/**
+ * Railing - Scenery in Dome Room for rope puzzle
+ *
+ * Player can tie rope to railing to enable descent to Torch Room.
+ */
+function createRailing(world: WorldModel, roomId: string): IFEntity {
+  const railing = world.createEntity('railing', EntityType.SCENERY);
+
+  railing.add(new IdentityTrait({
+    name: 'railing',
+    aliases: ['rail', 'iron railing', 'sturdy railing'],
+    description: 'A sturdy iron railing surrounds a deep shaft in the center of the room. Looking down, you can see only darkness.',
+    properName: false,
+    article: 'a'
+  }));
+
+  railing.add(new SceneryTrait());
+
+  world.moveEntity(railing.id, roomId);
+  return railing;
 }
 
 /**
