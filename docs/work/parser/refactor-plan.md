@@ -37,9 +37,21 @@ grammar
 **Parser automatically handles:**
 1. Find all entities with required trait
 2. Filter by visibility (from `world.getVisibleEntities()`)
-3. Filter by reachability if action requires touch
-4. Handle implicit takes if needed (player says "eat apple" but apple is on table)
-5. Disambiguate if multiple matches ("Do you mean the red boat or the blue boat?")
+3. Filter by reachability if action requires touch (from `world.getTouchableEntities()`)
+4. **Scope validation**: If entity is visible but not reachable, fail with appropriate message
+5. Handle implicit takes if needed (player says "eat apple" but apple is on table)
+6. Disambiguate if multiple matches ("Do you mean the red boat or the blue boat?")
+
+**Scope Levels by Action Type:**
+| Scope Level | Actions | Check |
+|-------------|---------|-------|
+| VISIBLE | examine, look at, read (from distance) | `world.getVisibleEntities()` |
+| REACHABLE | take, push, board, open, close, touch | `world.getTouchableEntities()` |
+| CARRIED | drop, eat, wear, insert, give | inventory check |
+
+**Scope Failure Messages:**
+- Visible but not reachable: "The boat is too far away to board."
+- Not visible: "You don't see any boat here."
 
 ---
 
@@ -161,16 +173,38 @@ static getEntitiesInScope(constraint: ScopeConstraint, context: GrammarContext):
 }
 ```
 
-### Phase 3: Make Visibility Implicit
+### Phase 3: Make Scope Implicit Based on Action
 
-**Key Change**: Parser should automatically filter by visibility without grammar declaring it.
+**Key Change**: Parser determines scope requirements from action metadata, not grammar patterns.
+
+**Scope determination flow:**
+1. Look up action's required scope level (VISIBLE, REACHABLE, or CARRIED)
+2. Get candidates from appropriate world method
+3. Apply trait filters
+4. **Validate scope**: If entity visible but action requires reachable, check reachability
+5. Return appropriate failure message if scope validation fails
+
+**Action metadata** (could be in action definition or registry):
+```typescript
+const actionScopeRequirements: Record<string, ScopeLevel> = {
+  'if.action.examining': 'visible',
+  'if.action.taking': 'reachable',
+  'if.action.entering': 'reachable',  // board boat
+  'if.action.pushing': 'reachable',
+  'if.action.dropping': 'carried',
+  'if.action.eating': 'carried',
+  // ...
+};
+```
 
 **Changes to `packages/parser-en-us/src/slot-consumers/entity-slot-consumer.ts`:**
 
 When evaluating slot constraints:
-1. If grammar provides explicit scope base (`.touchable()`, `.carried()`), use it
-2. If grammar only provides trait filters, default to `'visible'` scope
-3. Always apply trait filters after scope filtering
+1. Get action ID from context
+2. Look up required scope level for action
+3. Get entities from appropriate scope (visible/touchable/carried)
+4. Apply trait filters
+5. If entity found but wrong scope level, generate appropriate error
 
 ```typescript
 private evaluateSlotConstraints(...) {
