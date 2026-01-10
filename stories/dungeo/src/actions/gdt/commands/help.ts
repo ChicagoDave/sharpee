@@ -19,6 +19,7 @@ export const helpHandler: GDTCommandHandler = {
       '  DA  Display Adventurer    - Show player state',
       '  DR  Display Room          - Show room properties',
       '  DO  Display Object        - Show object properties',
+      '  DE  Describe Entity       - Full entity inspection',
       '  DS  Display State         - Show game state',
       '  DX  Display Exits         - Show room exits',
       '  DC  Display Clock         - Show timer events',

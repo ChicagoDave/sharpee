@@ -15,6 +15,7 @@ export type GDTCommandCode =
   | 'DA' // Display Adventurer
   | 'DR' // Display Room
   | 'DO' // Display Object
+  | 'DE' // Describe Entity (full inspection)
   | 'DC' // Display Clock events
   | 'DX' // Display Exits
   | 'DH' // Display Hacks

@@ -12,6 +12,7 @@ import { exitHandler } from './exit';
 import { daHandler } from './da';
 import { drHandler } from './dr';
 import { doHandler } from './do';
+import { deHandler } from './de';
 import { dsHandler } from './ds';
 import { dxHandler } from './dx';
 // Phase 2 - Alter handlers
@@ -50,6 +51,7 @@ handlers.set('EX', exitHandler);
 handlers.set('DA', daHandler);
 handlers.set('DR', drHandler);
 handlers.set('DO', doHandler);
+handlers.set('DE', deHandler);
 handlers.set('DS', dsHandler);
 handlers.set('DX', dxHandler);
 
@@ -138,6 +140,7 @@ export { exitHandler } from './exit';
 export { daHandler } from './da';
 export { drHandler } from './dr';
 export { doHandler } from './do';
+export { deHandler } from './de';
 export { dsHandler } from './ds';
 export { dxHandler } from './dx';
 export { ahHandler } from './ah';

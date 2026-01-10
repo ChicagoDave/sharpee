@@ -195,6 +195,9 @@ export function createDamObjects(world: WorldModel, roomIds: DamRoomIds): void {
 
   // Reservoir North objects (hand pump)
   createReservoirNorthObjects(world, roomIds.reservoirNorth);
+
+  // Dam Base objects (inflatable boat)
+  createDamBaseObjects(world, roomIds.damBase);
 }
 
 // ============= Dam Lobby Objects =============
@@ -384,4 +387,22 @@ function createReservoirNorthObjects(world: WorldModel, roomId: string): void {
     weight: 5
   }));
   world.moveEntity(pump.id, roomId);
+}
+
+// ============= Dam Base Objects =============
+
+function createDamBaseObjects(world: WorldModel, roomId: string): void {
+  // Inflatable boat (pile of plastic) - inflate with pump to use on river
+  const boat = world.createEntity('pile of plastic', EntityType.ITEM);
+  boat.add(new IdentityTrait({
+    name: 'pile of plastic',
+    aliases: ['boat', 'rubber boat', 'raft', 'inflatable boat', 'inflatable raft', 'plastic', 'pile'],
+    description: 'There is a folded pile of plastic here which has a small valve attached.',
+    properName: false,
+    article: 'a',
+    weight: 2
+  }));
+  boat.add(new ContainerTrait({ capacity: { maxItems: 10, maxWeight: 100 } }));
+  (boat as any).isInflated = false;
+  world.moveEntity(boat.id, roomId);
 }

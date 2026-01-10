@@ -279,8 +279,7 @@ export function createFrigidRiverObjects(world: WorldModel, roomIds: FrigidRiver
   createRainbow(world, roomIds.aragainFalls);
   createWaterfall(world, roomIds.aragainFalls);
 
-  // Vehicle
-  createInflatableBoat(world, roomIds.shore);
+  // Note: Boat is placed at Dam Base, not here (see dam.ts)
 }
 
 // ============= End of Rainbow Objects =============
@@ -418,20 +417,3 @@ function createWaterfall(world: WorldModel, roomId: string): IFEntity {
   return waterfall;
 }
 
-// ============= Shore Objects =============
-
-function createInflatableBoat(world: WorldModel, roomId: string): IFEntity {
-  const boat = world.createEntity('pile of plastic', EntityType.ITEM);
-  boat.add(new IdentityTrait({
-    name: 'pile of plastic',
-    aliases: ['boat', 'rubber boat', 'raft', 'inflatable boat', 'inflatable raft', 'plastic', 'pile'],
-    description: 'There is a folded pile of plastic here which has a small valve attached.',
-    properName: false,
-    article: 'a',
-    weight: 2
-  }));
-  boat.add(new ContainerTrait({ capacity: { maxItems: 10, maxWeight: 100 } }));
-  (boat as any).isInflated = false;
-  world.moveEntity(boat.id, roomId);
-  return boat;
-}

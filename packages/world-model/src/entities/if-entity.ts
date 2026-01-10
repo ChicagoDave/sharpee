@@ -308,9 +308,10 @@ export class IFEntity implements IEntity {
 
   /**
    * Check if this can be entered by actors
+   * Vehicles are inherently enterable (boats, baskets, etc.)
    */
   get enterable(): boolean {
-    return this.has(TraitType.ENTERABLE);
+    return this.has(TraitType.ENTERABLE) || this.has(TraitType.VEHICLE);
   }
   
   /**

@@ -205,7 +205,7 @@ export class DungeoStory implements Story {
     connectVolcanoToUnderground(world, this.volcanoIds, this.undergroundIds.rockyCrawl);
 
     // Dam connections
-    connectDamToFrigidRiver(world, this.damIds, this.frigidRiverIds.shore);
+    connectDamToFrigidRiver(world, this.damIds, this.frigidRiverIds.frigidRiver1);
 
     // Bank connects to Underground
     connectBankToUnderground(world, this.bankIds, this.undergroundIds.cellar, this.undergroundIds.gallery, this.undergroundIds.northSouthCrawlway);
@@ -411,7 +411,7 @@ export class DungeoStory implements Story {
 
     // Commands that take one optional argument
     const oneArgCodes = [
-      'dr', 'dx', 'do', 'dv', 'dc', 'dh', 'dl', 'df', 'dn', 'dm', 'dt', 'dp', 'd2', 'dz',
+      'dr', 'dx', 'do', 'de', 'dv', 'dc', 'dh', 'dl', 'df', 'dn', 'dm', 'dt', 'dp', 'd2', 'dz',
       'ah', 'tk', 'ar', 'af', 'ac', 'aa', 'ax', 'av', 'an', 'az', 'pd', 'kl'
     ];
 
@@ -428,7 +428,7 @@ export class DungeoStory implements Story {
     }
 
     // Register one-arg commands (both standalone and with :arg)
-    // Using :arg instead of :target to avoid entity resolution constraints
+    // Using :arg with .topic() to capture text without entity resolution
     for (const code of oneArgCodes) {
       // Standalone version
       grammar
@@ -437,9 +437,10 @@ export class DungeoStory implements Story {
         .withPriority(250)
         .build();
 
-      // With one argument - use :arg to capture any following text without entity resolution
+      // With one argument - use .topic() to avoid entity resolution
       grammar
         .define(`${code} :arg`)
+        .topic('arg')
         .mapsTo(GDT_COMMAND_ACTION_ID)
         .withPriority(251)
         .build();
@@ -455,12 +456,15 @@ export class DungeoStory implements Story {
 
       grammar
         .define(`${code} :arg`)
+        .topic('arg')
         .mapsTo(GDT_COMMAND_ACTION_ID)
         .withPriority(251)
         .build();
 
       grammar
         .define(`${code} :arg1 :arg2`)
+        .topic('arg1')
+        .topic('arg2')
         .mapsTo(GDT_COMMAND_ACTION_ID)
         .withPriority(252)
         .build();

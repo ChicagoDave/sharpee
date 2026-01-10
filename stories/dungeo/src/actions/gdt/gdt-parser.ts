@@ -12,7 +12,7 @@ import { GDTCommand, GDTCommandCode } from './types';
  */
 const VALID_CODES = new Set<string>([
   // Display commands
-  'DA', 'DR', 'DO', 'DC', 'DX', 'DH', 'DL', 'DV', 'DF', 'DS', 'DN', 'DM', 'DT', 'DP', 'D2', 'DZ',
+  'DA', 'DR', 'DO', 'DE', 'DC', 'DX', 'DH', 'DL', 'DV', 'DF', 'DS', 'DN', 'DM', 'DT', 'DP', 'D2', 'DZ',
   // Alter commands
   'AH', 'AO', 'AR', 'AF', 'AC', 'AA', 'AX', 'AV', 'AN', 'AZ',
   // Toggle commands
