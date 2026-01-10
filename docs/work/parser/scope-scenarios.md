@@ -4,10 +4,10 @@ These scenarios test the visibility/reachability distinction to ensure the parse
 
 ## Scope Matrix
 
-|  | Visible | Not Visible |
-|--|---------|-------------|
-| **Reachable** | Normal case | Dark room, closed container |
-| **Not Reachable** | Across chasm, behind glass | Doesn't exist in scope |
+|                   | Visible                    | Not Visible                 |
+| ----------------- | -------------------------- | --------------------------- |
+| **Reachable**     | Normal case                | Dark room, closed container |
+| **Not Reachable** | Across chasm, behind glass | Doesn't exist in scope      |
 
 ---
 
@@ -16,10 +16,12 @@ These scenarios test the visibility/reachability distinction to ensure the parse
 **Setup**: Player is at one end of a soccer pitch. Ball is at the far end.
 
 **State**:
+
 - Ball is VISIBLE (can see it across the field)
 - Ball is NOT REACHABLE (too far away)
 
 **Commands & Expected Responses**:
+
 ```
 > look at ball
 You see a soccer ball at the far end of the pitch.
@@ -32,6 +34,7 @@ The ball is too far away to kick.
 ```
 
 **Parser Behavior**:
+
 1. "look at ball" - EXAMINE requires VISIBLE scope → succeeds
 2. "take ball" - TAKE requires REACHABLE scope → finds ball (visible) but fails reachability check
 3. "kick ball" - KICK requires REACHABLE scope → same failure
@@ -43,10 +46,12 @@ The ball is too far away to kick.
 **Setup**: Player is next to a closed cardboard box. A kitten is inside.
 
 **State**:
+
 - Kitten is NOT VISIBLE (box is opaque and closed)
 - Kitten is REACHABLE (can reach into box blindly)
 
 **Commands & Expected Responses**:
+
 ```
 > look in box
 The box is closed.
@@ -63,11 +68,14 @@ You open the cardboard box, revealing a kitten inside.
 ```
 
 **Parser Behavior**:
+
 1. Before opening: kitten not in visible scope, most commands fail
 2. "feel around" - special action that uses REACHABLE without VISIBLE
 3. After opening: kitten becomes visible, normal commands work
 
 **Design Question**: How do we handle "feel" or "fumble" actions that work on reachable-but-not-visible entities?
+
+'if.events.felt' + data + message
 
 ---
 
@@ -76,10 +84,12 @@ You open the cardboard box, revealing a kitten inside.
 **Setup**: Museum room with a glass display case containing an antique key.
 
 **State**:
+
 - Key is VISIBLE (glass is transparent)
 - Key is NOT REACHABLE (case is locked)
 
 **Commands & Expected Responses**:
+
 ```
 > examine key
 An ornate brass key, probably centuries old.
@@ -95,6 +105,7 @@ You carefully pick the lock. The case swings open.
 ```
 
 **Parser Behavior**:
+
 1. EXAMINE works (visible)
 2. TAKE fails with contextual message about the barrier
 3. Breaking/unlocking changes reachability state
@@ -106,10 +117,12 @@ You carefully pick the lock. The case swings open.
 **Setup**: Player is in a pitch-dark cellar. A rope hangs from the ceiling.
 
 **State**:
+
 - Rope is NOT VISIBLE (no light)
 - Rope is REACHABLE (it's right there, player just can't see)
 
 **Commands & Expected Responses**:
+
 ```
 > look
 It's pitch dark. You can't see a thing.
@@ -132,12 +145,15 @@ The cellar is illuminated. You can see a rope hanging from the ceiling.
 ```
 
 **Parser Behavior**:
+
 1. Without light, visible scope is empty
 2. "feel around" or similar discovers reachable items
 3. Discovered items might go into a "known but not visible" state
 4. With light, normal visibility rules apply
 
 **Design Question**: Should there be a "discovered" or "known" state for items found by touch?
+
+Good question, but do we make this systemic or author-driven? This sounds like a puzzle but it could just be a natural world thing. We also have the perception service that probably should handle this.
 
 ---
 
@@ -146,10 +162,12 @@ The cellar is illuminated. You can see a rope hanging from the ceiling.
 **Setup**: A farmer is holding an apple.
 
 **State**:
+
 - Apple is VISIBLE (you can see the farmer holding it)
 - Apple is NOT REACHABLE (it's in someone else's possession)
 
 **Commands & Expected Responses**:
+
 ```
 > examine apple
 The farmer is holding a ripe red apple.
@@ -165,6 +183,7 @@ That belongs to the farmer. Perhaps you could ask for it?
 ```
 
 **Parser Behavior**:
+
 1. EXAMINE works (visible)
 2. TAKE fails - item is held by another actor
 3. Social action (ASK FOR) can transfer ownership
@@ -177,10 +196,12 @@ That belongs to the farmer. Perhaps you could ask for it?
 **Setup**: Library with a book on a high shelf, out of reach.
 
 **State**:
+
 - Book is VISIBLE (can see it up there)
 - Book is NOT REACHABLE (too high)
 
 **Commands & Expected Responses**:
+
 ```
 > examine book
 You see a dusty tome on the top shelf, well out of reach.
@@ -199,6 +220,7 @@ You stand on the chair, bringing the top shelf within reach.
 ```
 
 **Parser Behavior**:
+
 1. EXAMINE works (visible)
 2. TAKE fails - contextual message about height
 3. Standing on something changes player's reach
@@ -211,10 +233,12 @@ You stand on the chair, bringing the top shelf within reach.
 **Setup**: Large aquarium with fish swimming inside.
 
 **State**:
+
 - Fish is VISIBLE (through glass)
 - Fish is NOT REACHABLE (underwater, behind glass)
 
 **Commands & Expected Responses**:
+
 ```
 > look at fish
 A colorful tropical fish swims lazily in the aquarium.
@@ -230,6 +254,7 @@ You scoop up the fish with the net.
 ```
 
 **Parser Behavior**:
+
 1. EXAMINE works
 2. TAKE fails - barrier (glass + water)
 3. Some actions might partially work (hand in water)
@@ -242,11 +267,13 @@ You scoop up the fish with the net.
 **Setup**: Player hears someone talking in the next room.
 
 **State**:
+
 - Person is NOT VISIBLE (in another room)
 - Person is NOT REACHABLE (in another room)
 - Person is AUDIBLE (can hear them)
 
 **Commands & Expected Responses**:
+
 ```
 > listen
 You hear someone talking in the next room.
@@ -262,11 +289,14 @@ There's no one here to talk to. The voice is coming from the north.
 ```
 
 **Parser Behavior**:
+
 1. LISTEN uses AUDIBLE scope (different from visible/reachable)
 2. EXAMINE/TALK fail - person not in visible scope
 3. SHOUT might work across rooms (special case)
 
 **Design Question**: Do we need an AUDIBLE scope level?
+
+We did this in Shadow in the Cathedral when Wren has to put a glass against a door to hear the Cardinal and Shadowy Figure speak.
 
 ---
 
@@ -275,10 +305,12 @@ There's no one here to talk to. The voice is coming from the north.
 **Setup**: Player has a key in their pocket. An NPC wants to know if player has a key.
 
 **State** (from NPC's perspective):
+
 - Key is NOT VISIBLE to NPC (in player's pocket)
 - Key is NOT REACHABLE by NPC (player's possession)
 
 **Commands & Expected Responses**:
+
 ```
 > show key to guard
 You show the guard your key. "Ah, you may pass," he says.
@@ -288,6 +320,7 @@ The guard reaches for your pocket but you step back.
 ```
 
 **Parser Behavior**:
+
 1. Player's inventory is visible to player, not to NPCs
 2. SHOW action makes item temporarily "visible" to target
 3. NPCs can't TAKE from player inventory without special circumstances
@@ -299,10 +332,12 @@ The guard reaches for your pocket but you step back.
 **Setup**: A glittering treasure is visible through a waterfall.
 
 **State**:
+
 - Treasure is VISIBLE (can see the glitter through water)
 - Treasure is PARTIALLY REACHABLE (can reach through, but water is obstacle)
 
 **Commands & Expected Responses**:
+
 ```
 > examine treasure
 Through the cascading water, you glimpse something glittering.
@@ -318,6 +353,7 @@ You pick up the glittering treasure.
 ```
 
 **Parser Behavior**:
+
 1. EXAMINE works (partial visibility)
 2. TAKE fails - obstacle (not a hard barrier, but still blocks)
 3. Movement action overcomes obstacle
@@ -328,12 +364,14 @@ You pick up the glittering treasure.
 ## Summary of Scope Considerations
 
 ### Scope Levels Needed
+
 1. **VISIBLE** - Can see the entity
 2. **REACHABLE** - Can physically touch/interact
 3. **CARRIED** - In actor's inventory
 4. **AUDIBLE** - Can hear (maybe future feature)
 
 ### Barriers That Affect Scope
+
 - **Distance** (across pitch, high shelf)
 - **Containers** (closed box, locked case)
 - **Transparency** (glass - visible but not reachable)
@@ -343,7 +381,9 @@ You pick up the glittering treasure.
 - **Obstacles** (waterfall, bars, grate)
 
 ### Failure Message Requirements
+
 The parser needs contextual failure messages:
+
 - "The X is too far away."
 - "The X is inside the locked Y."
 - "You can't see any X here." (not visible)
@@ -352,6 +392,7 @@ The parser needs contextual failure messages:
 - "The X is out of reach." (generic reachability)
 
 ### Edge Cases to Handle
+
 1. **Discovered items** - Found by touch in darkness, now "known"
 2. **Partial visibility** - Through water, fog, dirty glass
 3. **Changing reachability** - Standing on chair, using tools
@@ -362,7 +403,32 @@ The parser needs contextual failure messages:
 ## Open Questions
 
 1. Should "feel around" / "fumble" bypass visibility requirements?
+
+As long as the directObject is reachable, yes.
+
 2. Do we need a "discovered/known" state separate from visible?
+
+Use perception service, but I'd say yes. (could go either way System vs Author, but I think we can build this in)
+
 3. Should AUDIBLE be a scope level, or handled differently?
+
+Yes. But lower priority for now.
+
 4. How do tools affect reachability? (net catches fish, pole retrieves item)
+
+We might need an "awareness" scope.
+
 5. How does player position affect reach? (standing on chair, climbing)
+
+Author sets scope. Say there's a box on a shelf.
+
+> take box
+> You can't reach the top shelf.
+
+> stand on chair
+> Standing on the chair brings the top shelf into reach.
+
+author: box.setInScope(box);
+
+> take box
+> Taken.

@@ -42,16 +42,35 @@ grammar
 5. Handle implicit takes if needed (player says "eat apple" but apple is on table)
 6. Disambiguate if multiple matches ("Do you mean the red boat or the blue boat?")
 
-**Scope Levels by Action Type:**
-| Scope Level | Actions | Check |
-|-------------|---------|-------|
-| VISIBLE | examine, look at, read (from distance) | `world.getVisibleEntities()` |
-| REACHABLE | take, push, board, open, close, touch | `world.getTouchableEntities()` |
-| CARRIED | drop, eat, wear, insert, give | inventory check |
+**Scope Levels (4 tiers):**
+| Scope Level | What It Means | Example Actions | Check |
+|-------------|---------------|-----------------|-------|
+| AWARE | Player knows entity exists | think about, remember, ask about | `world.getEntitiesInScope()` |
+| VISIBLE | Player can see it | examine, look at, read | `world.getVisibleEntities()` |
+| REACHABLE | Player can touch it | take, push, board, open, touch | `world.getTouchableEntities()` |
+| CARRIED | In player's inventory | drop, eat, wear, insert, give | inventory check |
+
+**Key Insight**: Author can put *anything* in scope (AWARE), but visibility and reachability still apply separately. Player always knows the statue exists and can "think about statue", but can't examine it until visible or take it until reachable.
+
+**Example:**
+```
+> think about statue
+You remember seeing a magnificent statue in the town square.
+
+> examine statue
+You can't see any statue here.
+
+> go to town square
+...
+
+> examine statue
+A towering marble statue of the founder.
+```
 
 **Scope Failure Messages:**
-- Visible but not reachable: "The boat is too far away to board."
-- Not visible: "You don't see any boat here."
+- Aware but not visible: "You can't see any X here." (but command parsed - player knows X exists)
+- Visible but not reachable: "The X is too far away."
+- Not aware: Parser fails to resolve entity - "I don't know what X you mean."
 
 ---
 
@@ -184,16 +203,42 @@ static getEntitiesInScope(constraint: ScopeConstraint, context: GrammarContext):
 4. **Validate scope**: If entity visible but action requires reachable, check reachability
 5. Return appropriate failure message if scope validation fails
 
+**Scope level enum:**
+```typescript
+enum ScopeLevel {
+  AWARE = 'aware',         // Player knows it exists (think about, ask about)
+  VISIBLE = 'visible',     // Player can see it (examine, look at)
+  REACHABLE = 'reachable', // Player can touch it (take, push, board)
+  CARRIED = 'carried',     // In player's inventory (drop, eat, wear)
+}
+```
+
 **Action metadata** (could be in action definition or registry):
 ```typescript
 const actionScopeRequirements: Record<string, ScopeLevel> = {
+  // AWARE - mental/social actions
+  'if.action.thinking_about': 'aware',
+  'if.action.remembering': 'aware',
+  'if.action.asking_about': 'aware',
+
+  // VISIBLE - perception actions
   'if.action.examining': 'visible',
+  'if.action.looking_at': 'visible',
+  'if.action.reading': 'visible',
+
+  // REACHABLE - physical interaction
   'if.action.taking': 'reachable',
   'if.action.entering': 'reachable',  // board boat
   'if.action.pushing': 'reachable',
+  'if.action.opening': 'reachable',
+  'if.action.touching': 'reachable',
+
+  // CARRIED - inventory actions
   'if.action.dropping': 'carried',
   'if.action.eating': 'carried',
-  // ...
+  'if.action.wearing': 'carried',
+  'if.action.inserting': 'carried',
+  'if.action.giving': 'carried',
 };
 ```
 
