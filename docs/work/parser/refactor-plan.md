@@ -67,10 +67,29 @@ You can't see any statue here.
 A towering marble statue of the founder.
 ```
 
-**Scope Failure Messages:**
-- Aware but not visible: "You can't see any X here." (but command parsed - player knows X exists)
+**Scope Failure Handling:**
+
+Scope failures are handled in the action's `blocked()` phase, not the parser:
+
+1. Parser resolves entity from AWARE scope (player can refer to it)
+2. Action's `validate()` checks required scope level (VISIBLE/REACHABLE/CARRIED)
+3. If scope check fails, `validate()` returns error with scope context
+4. Action's `blocked()` generates contextual message
+
+**Failure Messages (from blocked phase):**
+- Aware but not visible: "You can't see any X here."
 - Visible but not reachable: "The X is too far away."
-- Not aware: Parser fails to resolve entity - "I don't know what X you mean."
+- Not carried: "You don't have the X."
+- Not aware: Parser fails to resolve - "I don't understand what you mean by X."
+
+**Entity-specific messages**: Authors can customize in blocked():
+```typescript
+blocked(context, error) {
+  if (error.code === 'SCOPE_NOT_REACHABLE') {
+    return effects.say("The boat is beached too far up the shore to reach.");
+  }
+}
+```
 
 ---
 
@@ -310,10 +329,25 @@ grammar
 
 ### Phase 5: Add Disambiguation Support
 
-**Goal**: When multiple entities match, ask user to clarify.
+**Goal**: When multiple entities match, auto-select by score or prompt user.
 
-**New type in `packages/if-domain/src/grammar/grammar-builder.ts`:**
+**Author-controlled scoring:**
+```typescript
+// Authors set disambiguation preference per action
+apple.scope('if.action.eating', 150);      // prefer real apple
+waxApple.scope('if.action.eating', 50);    // deprioritize wax apple
+```
 
+Higher score = more likely to be auto-selected. If scores are close or equal, prompt user.
+
+**Disambiguation flow:**
+1. Multiple entities match after trait + scope filtering
+2. Sort by `entity.scope(actionId)` score (higher first)
+3. If top score significantly higher than second → auto-select
+4. Otherwise, prompt user: "Do you mean the red apple or the wax apple?"
+5. User selects, re-parse with explicit entity
+
+**DisambiguationNeeded result type:**
 ```typescript
 export interface DisambiguationNeeded {
   type: 'disambiguation';
@@ -321,17 +355,12 @@ export interface DisambiguationNeeded {
   options: Array<{
     entityId: string;
     displayName: string;
+    score: number;
   }>;
   originalInput: string;
   slotName: string;
 }
 ```
-
-**Changes to entity resolution flow:**
-1. If multiple entities match after trait + visibility filtering
-2. Try auto-disambiguation (adjectives, context)
-3. If still ambiguous, return `DisambiguationNeeded` result
-4. Engine/client prompts user, re-parses with selection
 
 ### Phase 6: Add Implicit Takes
 
@@ -428,9 +457,13 @@ The apple is stuck to the table.
 
 ### Q3: How does disambiguation work?
 
-**Decision**: Return special result type, prompt user.
+**Decision**: Author-controlled scoring, then prompt if needed.
 
-**Rationale**: Parser returns `DisambiguationNeeded` when multiple matches. Engine/client shows options. User types number or name. Re-parse with explicit entity.
+**Rationale**:
+1. Authors set scores via `entity.scope(actionId, score)`
+2. Higher scores auto-selected when significantly higher than alternatives
+3. Close scores trigger user prompt: "Do you mean X or Y?"
+4. User selects, re-parse with explicit entity
 
 ### Q4: What about `.isCarried()` constraint?
 
