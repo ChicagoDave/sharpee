@@ -19,7 +19,9 @@ export const lookingLanguage = {
     'room_dark': "It's pitch dark, and you can't see a thing.",
     'exits': "Exits: {exits}",
     'you_see': "You can see {items} here.",
-    'nothing_special': "You see nothing special."
+    'nothing_special': "You see nothing special.",
+    'container_contents': "In {container} you see {items}.",
+    'surface_contents': "On {surface} you see {items}."
   },
   
   help: {

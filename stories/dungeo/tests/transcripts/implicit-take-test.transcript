@@ -1,0 +1,24 @@
+title: Implicit Take Test
+story: dungeo
+description: Test implicit take when reading/putting items not in inventory
+
+---
+
+# Start at West of House - mailbox with leaflet is here
+
+> look
+[OK: contains "House"]
+[OK: contains "mailbox"]
+
+# Open the mailbox to reveal leaflet
+> open mailbox
+[OK: matches /(open|leaflet)/i]
+
+# Try to read the leaflet WITHOUT taking it first
+# This should either implicitly take it, or read it in place
+> read leaflet
+[OK: matches /(ZORK|welcome|leaflet)/i]
+
+# Check if leaflet was implicitly taken
+> i
+[OK: matches /(leaflet|carrying)/i]

@@ -116,6 +116,17 @@ export const buildRoomDescriptionData: ActionDataBuilder<Record<string, unknown>
 };
 
 /**
+ * Container/supporter contents info for text rendering
+ */
+export interface ContainerContentsInfo {
+  containerId: string;
+  containerName: string;
+  preposition: 'in' | 'on';
+  itemIds: string[];
+  itemNames: string[];
+}
+
+/**
  * Build list contents event data
  */
 export const buildListContentsData: ActionDataBuilder<Record<string, unknown>> = (
@@ -142,15 +153,58 @@ export const buildListContentsData: ActionDataBuilder<Record<string, unknown>> =
   const roomSnapshot = captureRoomSnapshot(location, context.world, false);
   const visibleSnapshots = captureEntitySnapshots(visible, context.world);
 
-  // Group visible items by type
-  const npcs = visible.filter(e => e.hasTrait(TraitType.ACTOR));
-  const containers = visible.filter(e => e.hasTrait(TraitType.CONTAINER) && !e.hasTrait(TraitType.ACTOR));
-  const supporters = visible.filter(e => e.hasTrait(TraitType.SUPPORTER) && !e.hasTrait(TraitType.CONTAINER));
-  const otherItems = visible.filter(e =>
+  // Separate items directly in room from items in containers/supporters
+  const directInRoom = visible.filter(e => {
+    const itemLocation = context.world.getLocation(e.id);
+    return itemLocation === location.id;
+  });
+
+  // Group direct room items by type
+  const npcs = directInRoom.filter(e => e.hasTrait(TraitType.ACTOR));
+  const containers = directInRoom.filter(e => e.hasTrait(TraitType.CONTAINER) && !e.hasTrait(TraitType.ACTOR));
+  const supporters = directInRoom.filter(e => e.hasTrait(TraitType.SUPPORTER) && !e.hasTrait(TraitType.CONTAINER));
+  const otherItems = directInRoom.filter(e =>
     !e.hasTrait(TraitType.ACTOR) &&
     !e.hasTrait(TraitType.CONTAINER) &&
     !e.hasTrait(TraitType.SUPPORTER)
   );
+
+  // Build container/supporter contents info for separate rendering
+  const openContainerContents: ContainerContentsInfo[] = [];
+
+  // Check each container for visible contents
+  for (const container of containers) {
+    // Skip if container is closed
+    if (container.hasTrait(TraitType.OPENABLE)) {
+      const { OpenableBehavior } = require('@sharpee/world-model');
+      if (!OpenableBehavior.isOpen(container)) continue;
+    }
+
+    const contents = context.world.getContents(container.id);
+    if (contents.length > 0) {
+      openContainerContents.push({
+        containerId: container.id,
+        containerName: container.name,
+        preposition: 'in',
+        itemIds: contents.map(e => e.id),
+        itemNames: contents.map(e => e.name)
+      });
+    }
+  }
+
+  // Check each supporter for visible contents
+  for (const supporter of supporters) {
+    const contents = context.world.getContents(supporter.id);
+    if (contents.length > 0) {
+      openContainerContents.push({
+        containerId: supporter.id,
+        containerName: supporter.name,
+        preposition: 'on',
+        itemIds: contents.map(e => e.id),
+        itemNames: contents.map(e => e.name)
+      });
+    }
+  }
 
   return {
     // New atomic structure (full snapshots)
@@ -158,10 +212,15 @@ export const buildListContentsData: ActionDataBuilder<Record<string, unknown>> =
     location: roomSnapshot,
     // Backward compatibility fields (just IDs as before)
     items: visible.map(e => e.id),
+    // Direct room items (not inside containers)
+    directItems: directInRoom.map(e => e.id),
+    directItemNames: directInRoom.map(e => e.name),
     npcs: npcs.map(e => e.id),
     containers: containers.map(e => e.id),
     supporters: supporters.map(e => e.id),
     other: otherItems.map(e => e.id),
+    // Container/supporter contents for separate rendering
+    openContainerContents,
     context: 'room',
     locationName: location.name,
     timestamp: Date.now()
@@ -240,14 +299,20 @@ export function determineLookingMessage(
     return { messageId: 'examine_surroundings', params };
   }
 
-  // If there are visible items, use contents_list
-  if (visible.length > 0) {
-    const itemList = visible.map(e => e.name).join(', ');
+  // Get items directly in the room (not inside containers)
+  const directInRoom = visible.filter(e => {
+    const itemLocation = context.world.getLocation(e.id);
+    return itemLocation === location.id;
+  });
+
+  // If there are direct room items, use contents_list
+  if (directInRoom.length > 0) {
+    const itemList = directInRoom.map(e => e.name).join(', ');
     return {
       messageId: 'contents_list',
       params: {
         items: itemList,
-        count: visible.length,
+        count: directInRoom.length,
         ...params
       }
     };

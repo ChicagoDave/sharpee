@@ -140,21 +140,33 @@ export const buildExaminingData: ActionDataBuilder<Record<string, unknown>> = (
 };
 
 /**
+ * Result of building message parameters for examining
+ */
+export interface ExaminingMessageResult {
+  messageId: string;
+  params: Record<string, any>;
+  /** Additional message for container/supporter contents */
+  contentsMessage?: { messageId: string; params: Record<string, any> };
+}
+
+/**
  * Build message parameters for examining action
- * 
+ *
  * Creates the parameters needed for text generation based on
- * the entity's traits and state.
+ * the entity's traits and state. Also returns an optional
+ * contentsMessage for containers/supporters with visible items.
  */
 export function buildExaminingMessageParams(
   eventData: Record<string, unknown>,
   noun: IFEntity
-): { messageId: string; params: Record<string, any> } {
+): ExaminingMessageResult {
   const params: Record<string, any> = {};
   let messageId = eventData.self ? 'examined_self' : 'examined';
-  
+  let contentsMessage: ExaminingMessageResult['contentsMessage'] = undefined;
+
   if (!eventData.self && noun) {
     // Add trait-specific parameters
-    
+
     // Add description text if available
     if (eventData.hasDescription && noun.has(TraitType.IDENTITY)) {
       const identityTrait = noun.get(TraitType.IDENTITY);
@@ -162,24 +174,50 @@ export function buildExaminingMessageParams(
         params.description = (identityTrait as any).description;
       }
     }
-    
+
     // Container-specific message
     if (eventData.isContainer) {
       messageId = 'examined_container';
       params.isOpen = eventData.isOpen;
+
+      // Add contents message if container is open and has contents
+      if (eventData.isOpen && eventData.hasContents && eventData.contents) {
+        const contents = eventData.contents as Array<{ id: string; name: string }>;
+        const itemNames = contents.map(c => c.name).join(', ');
+        contentsMessage = {
+          messageId: 'container_contents',
+          params: {
+            container: noun.name,
+            items: itemNames
+          }
+        };
+      }
     }
-    
+
     // Supporter-specific message (only if not also a container)
     else if (eventData.isSupporter) {
       messageId = 'examined_supporter';
+
+      // Add contents message if supporter has contents
+      if (eventData.hasContents && eventData.contents) {
+        const contents = eventData.contents as Array<{ id: string; name: string }>;
+        const itemNames = contents.map(c => c.name).join(', ');
+        contentsMessage = {
+          messageId: 'surface_contents',
+          params: {
+            surface: noun.name,
+            items: itemNames
+          }
+        };
+      }
     }
-    
+
     // Switchable-specific message
     else if (eventData.isSwitchable) {
       messageId = 'examined_switchable';
       params.isOn = eventData.isOn;
     }
-    
+
     // Readable-specific message
     else if (eventData.isReadable && eventData.hasText && noun.has(TraitType.READABLE)) {
       const readableTrait = noun.get(TraitType.READABLE);
@@ -188,13 +226,13 @@ export function buildExaminingMessageParams(
         messageId = 'examined_readable';
       }
     }
-    
+
     // Wearable-specific message
     else if (eventData.isWearable) {
       messageId = 'examined_wearable';
       params.isWorn = eventData.isWorn;
     }
-    
+
     // Door-specific message
     else if (eventData.isDoor) {
       messageId = 'examined_door';
@@ -202,14 +240,14 @@ export function buildExaminingMessageParams(
         params.isLocked = eventData.isLocked;
       }
     }
-    
+
     // Default parameters for basic examined message
     else if (messageId === 'examined') {
       params.target = noun.name;
     }
   }
-  
-  return { messageId, params };
+
+  return { messageId, params, contentsMessage };
 }
 
 /**
