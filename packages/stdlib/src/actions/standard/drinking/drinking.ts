@@ -142,6 +142,12 @@ function determineMessage(
 
 export const drinkingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.DRINKING,
+
+  // Default scope requirements for this action's slots
+  defaultScope: {
+    item: ScopeLevel.REACHABLE
+  },
+
   group: "interaction",
 
   metadata: {
@@ -184,6 +190,12 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
     // Must have an item to drink
     if (!item) {
       return { valid: false, error: 'no_item' };
+    }
+
+    // Check scope - must be able to reach the item
+    const scopeCheck = context.requireScope(item, ScopeLevel.REACHABLE);
+    if (!scopeCheck.ok) {
+      return scopeCheck.error!;
     }
 
     // Check if item is drinkable

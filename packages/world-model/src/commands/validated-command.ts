@@ -56,7 +56,7 @@ export interface IValidatedCommand {
  */
 export interface IValidationError {
   type: 'VALIDATION_ERROR';
-  code: 'ENTITY_NOT_FOUND' | 'ENTITY_NOT_VISIBLE' | 'ACTION_NOT_AVAILABLE' | 'PRECONDITION_FAILED';
+  code: 'ENTITY_NOT_FOUND' | 'ENTITY_NOT_VISIBLE' | 'ACTION_NOT_AVAILABLE' | 'PRECONDITION_FAILED' | 'AMBIGUOUS_ENTITY';
   parsed: IParsedCommand;
   details?: Record<string, any>;
 }

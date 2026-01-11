@@ -45,6 +45,12 @@ import { ScopeLevel } from '../../../scope/types';
 
 export const enteringAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.ENTERING,
+
+  // Default scope requirements for this action's slots
+  defaultScope: {
+    target: ScopeLevel.REACHABLE
+  },
+
   requiredMessages: [
     'no_target',
     'not_enterable',
@@ -67,6 +73,12 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
         valid: false,
         error: EnteringMessages.NO_TARGET
       };
+    }
+
+    // Check scope - must be able to reach the target
+    const scopeCheck = context.requireScope(target, ScopeLevel.REACHABLE);
+    if (!scopeCheck.ok) {
+      return scopeCheck.error!;
     }
 
     // Check if already inside the target

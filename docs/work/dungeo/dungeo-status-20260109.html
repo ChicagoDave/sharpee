@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Dungeo: Porting Mainframe Zork to Sharpee</title>
+    <style>
+        :root {
+            --bg-dark: #1a1a2e;
+            --bg-card: #16213e;
+            --accent-gold: #f4d03f;
+            --accent-green: #2ecc71;
+            --accent-blue: #3498db;
+            --accent-purple: #9b59b6;
+            --accent-red: #e74c3c;
+            --accent-orange: #e67e22;
+            --text-light: #ecf0f1;
+            --text-muted: #95a5a6;
+            --border-color: #2c3e50;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #0f0f23 100%);
+            color: var(--text-light);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+        .back-nav {
+            margin-bottom: 1rem;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.95rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--text-light);
+            border-color: var(--accent-blue);
+            background: rgba(52, 152, 219, 0.1);
+        }
+
+        .back-link svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        header {
+            text-align: center;
+            padding: 3rem 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-size: 3rem;
+            background: linear-gradient(90deg, var(--accent-gold), var(--accent-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle { font-size: 1.3rem; color: var(--text-muted); font-weight: 300; }
+
+        .timeline-badge {
+            display: inline-block;
+            background: var(--bg-card);
+            padding: 0.5rem 1.5rem;
+            border-radius: 2rem;
+            margin-top: 1rem;
+            border: 1px solid var(--accent-blue);
+            font-size: 0.9rem;
+        }
+
+        .milestone-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--accent-green), #27ae60);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            margin: 0.5rem 0.25rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .milestone-badge.gold {
+            background: linear-gradient(135deg, var(--accent-gold), var(--accent-orange));
+        }
+
+        .milestone-badge.new {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--accent-gold);
+            margin: 2.5rem 0 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        h3 { font-size: 1.3rem; color: var(--accent-green); margin: 1.5rem 0 1rem; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .stat-card:hover { transform: translateY(-5px); border-color: var(--accent-blue); }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-number.gold {
+            background: linear-gradient(135deg, var(--accent-gold), var(--accent-orange));
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        .stat-label { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem; }
+
+        .progress-bar {
+            background: var(--border-color);
+            border-radius: 1rem;
+            height: 1.5rem;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .progress-rooms { background: linear-gradient(90deg, var(--accent-green), #27ae60); }
+        .progress-treasure { background: linear-gradient(90deg, var(--accent-gold), #e67e22); }
+        .progress-puzzles { background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple)); }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border: 1px solid var(--border-color);
+        }
+
+        .card-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+
+        .card-icon {
+            width: 3rem; height: 3rem;
+            border-radius: 0.5rem;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .icon-npc { background: linear-gradient(135deg, var(--accent-red), #c0392b); }
+        .icon-puzzle { background: linear-gradient(135deg, var(--accent-green), #27ae60); }
+        .icon-test { background: linear-gradient(135deg, var(--accent-purple), #8e44ad); }
+        .icon-victory { background: linear-gradient(135deg, var(--accent-gold), var(--accent-orange)); }
+        .icon-fix { background: linear-gradient(135deg, var(--accent-blue), #2980b9); }
+
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: rgba(52, 152, 219, 0.2);
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-done { background: rgba(46, 204, 113, 0.2); color: var(--accent-green); }
+        .badge-partial { background: rgba(241, 196, 15, 0.2); color: var(--accent-gold); }
+        .badge-pending { background: rgba(149, 165, 166, 0.2); color: var(--text-muted); }
+        .badge-new { background: rgba(52, 152, 219, 0.2); color: var(--accent-blue); }
+
+        code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.25rem;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            color: var(--accent-gold);
+        }
+
+        pre {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            border-left: 3px solid var(--accent-blue);
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.1), rgba(155, 89, 182, 0.1));
+            border: 1px solid var(--accent-blue);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .success-box {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.1), rgba(39, 174, 96, 0.1));
+            border: 1px solid var(--accent-green);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .victory-box {
+            background: linear-gradient(135deg, rgba(244, 208, 63, 0.15), rgba(230, 126, 34, 0.15));
+            border: 2px solid var(--accent-gold);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .region-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .region-card {
+            background: var(--bg-card);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .region-name { font-weight: 600; color: var(--accent-gold); margin-bottom: 0.5rem; }
+        .region-stats { font-size: 0.85rem; color: var(--text-muted); }
+
+        .adr-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .adr-item {
+            background: var(--bg-card);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border-left: 3px solid var(--accent-purple);
+        }
+
+        .adr-number { font-weight: bold; color: var(--accent-purple); }
+
+        .timeline { position: relative; padding-left: 2rem; }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0.5rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border-color);
+        }
+
+        .timeline-item { position: relative; padding-bottom: 1.5rem; }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -1.65rem;
+            top: 0.5rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            border: 2px solid var(--bg-dark);
+        }
+
+        .timeline-item.milestone::before {
+            background: var(--accent-green);
+            width: 16px;
+            height: 16px;
+            left: -1.75rem;
+        }
+
+        .timeline-item.victory::before {
+            background: var(--accent-gold);
+            width: 18px;
+            height: 18px;
+            left: -1.85rem;
+        }
+
+        .timeline-date { font-size: 0.85rem; color: var(--accent-blue); font-weight: 600; }
+
+        .lesson-box {
+            background: rgba(46, 204, 113, 0.1);
+            border: 1px solid var(--accent-green);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .lesson-title { color: var(--accent-green); font-weight: 600; margin-bottom: 0.5rem; }
+
+        .package-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.75rem;
+            margin: 1rem 0;
+        }
+
+        .package-card {
+            background: var(--bg-card);
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; }
+            .container { padding: 1rem; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+
+            .back-nav {
+                text-align: center;
+                margin-bottom: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="back-nav">
+            <a href="/" class="back-link">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to Projects
+            </a>
+        </nav>
+
+        <header>
+            <h1>Project Dungeo</h1>
+            <p class="subtitle">Porting Mainframe Zork to the Sharpee Interactive Fiction Engine</p>
+            <div class="timeline-badge">December 27, 2025 - January 9, 2026 | 14 Days of Development</div>
+            <div style="margin-top: 1rem;">
+                <span class="milestone-badge gold">169 Rooms Complete</span>
+                <span class="milestone-badge gold">650/650 Points (100%)</span>
+                <span class="milestone-badge">Published to npm</span>
+                <span class="milestone-badge new">25+ Puzzles Working</span>
+                <span class="milestone-badge new">61 Transcript Tests</span>
+            </div>
+        </header>
+
+        <section>
+            <h2>Project Overview</h2>
+            <p>Project Dungeo is an ambitious effort to port the complete <strong>Mainframe Zork</strong> (also known as "Dungeon") to Sharpee, a modern interactive fiction engine. The project is feature-complete with all 169 rooms, 33 treasures (650 points), and continues to expand puzzle mechanics and infrastructure improvements.</p>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number gold">169</div>
+                    <div class="stat-label">Rooms (100%)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number gold">33</div>
+                    <div class="stat-label">Treasures (100%)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number gold">650</div>
+                    <div class="stat-label">Max Score (100%)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">7</div>
+                    <div class="stat-label">NPCs Active</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">25+</div>
+                    <div class="stat-label">Puzzles Working</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">61</div>
+                    <div class="stat-label">Transcript Tests</div>
+                </div>
+            </div>
+
+            <h3>Progress Meters</h3>
+            <p style="margin-bottom: 0.25rem;"><strong>Rooms:</strong> 169 / 169</p>
+            <div class="progress-bar">
+                <div class="progress-fill progress-rooms" style="width: 100%;">100%</div>
+            </div>
+
+            <p style="margin-bottom: 0.25rem; margin-top: 1rem;"><strong>Treasures:</strong> 650 / 650 points</p>
+            <div class="progress-bar">
+                <div class="progress-fill progress-treasure" style="width: 100%;">100%</div>
+            </div>
+
+            <p style="margin-bottom: 0.25rem; margin-top: 1rem;"><strong>Core Puzzles:</strong> 25+ implemented</p>
+            <div class="progress-bar">
+                <div class="progress-fill progress-puzzles" style="width: 100%;">100%</div>
+            </div>
+        </section>
+
+        <section>
+            <h2>What's New Since January 3</h2>
+
+            <div class="highlight-box">
+                <h3 style="color: var(--accent-blue); margin-top: 0;">Key Accomplishments (Jan 4-9)</h3>
+                <ul style="margin-top: 1rem; margin-left: 1.5rem;">
+                    <li><strong>Stdlib Bug Fixes:</strong> Fixed critical dropping and drinking action mutations</li>
+                    <li><strong>World State Tests:</strong> Added golden tests to verify actual world mutations</li>
+                    <li><strong>6 New Puzzles:</strong> Balloon, Coal Machine, Coffin Transport, Basket, Tiny Room, Rope</li>
+                    <li><strong>River Navigation:</strong> Boat mechanics with vehicle traits, Aragain Falls death</li>
+                    <li><strong>Robot Commands:</strong> TELL ROBOT TO X pattern implemented</li>
+                    <li><strong>8 New ADRs:</strong> Grammar, scoring, events, transcript directives (085-092)</li>
+                    <li><strong>Region Consolidation:</strong> 6 regions consolidated into single files for cleaner architecture</li>
+                    <li><strong>25 More Transcripts:</strong> From 36 to 61 test transcripts</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon icon-fix">🔧</div>
+                    <div>
+                        <h3 style="margin: 0;">Critical Stdlib Fixes</h3>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">World state verification discovered silent failures</p>
+                    </div>
+                </div>
+                <p>The "dropping bug" revealed that stdlib actions could appear to work (emit events, show messages) while failing to actually mutate world state. This pattern was also found in the drinking action. Both are now fixed with comprehensive world state verification tests.</p>
+                <pre style="margin-top: 1rem;">
+// New golden test pattern ensures actual mutations
+expect(world.getLocation(ball.id)).toBe(room.id);  // Precondition
+executeAction(droppingAction, context);
+expect(world.getLocation(ball.id)).toBe(player.id); // CRITICAL - verify mutation</pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>New Puzzles Implemented</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Puzzle</th>
+                        <th>Mechanic</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Balloon Flight</td>
+                        <td>Inflate/deflate, TIE wire to railing, daemon-controlled flight</td>
+                        <td><span class="badge badge-new">New Jan 4</span></td>
+                    </tr>
+                    <tr>
+                        <td>Coal Machine</td>
+                        <td>PUT COAL IN MACHINE, TURN ON SWITCH creates diamond</td>
+                        <td><span class="badge badge-new">New Jan 5</span></td>
+                    </tr>
+                    <tr>
+                        <td>Coffin Transport</td>
+                        <td>Gold coffin becomes takeable after dam drains reservoir</td>
+                        <td><span class="badge badge-new">New Jan 5</span></td>
+                    </tr>
+                    <tr>
+                        <td>Basket Elevator</td>
+                        <td>LOWER/RAISE basket via capability dispatch pattern</td>
+                        <td><span class="badge badge-new">New Jan 5</span></td>
+                    </tr>
+                    <tr>
+                        <td>Tiny Room/Pool</td>
+                        <td>Size-based access to tiny room via pool</td>
+                        <td><span class="badge badge-new">New Jan 5</span></td>
+                    </tr>
+                    <tr>
+                        <td>Rope Puzzle</td>
+                        <td>TIE ROPE TO RAILING in Dome Room for descent</td>
+                        <td><span class="badge badge-new">New Jan 9</span></td>
+                    </tr>
+                    <tr>
+                        <td>River Navigation</td>
+                        <td>Boat as vehicle, river entry blocked without boat</td>
+                        <td><span class="badge badge-new">New Jan 7</span></td>
+                    </tr>
+                    <tr>
+                        <td>Dam Flooding</td>
+                        <td>Dam controls flood/drain reservoir over time</td>
+                        <td><span class="badge badge-new">New Jan 4</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>Robot NPC Commanding</h2>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon icon-npc">🤖</div>
+                    <div>
+                        <h3 style="margin: 0;">TELL ROBOT TO Command System</h3>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">Natural language commands for robot NPC</p>
+                    </div>
+                </div>
+                <p>Implemented comprehensive robot command system matching Mainframe Zork FORTRAN source:</p>
+                <pre style="margin-top: 1rem;">
+> tell robot to follow
+"Whirr, buzz, click!"
+
+> robot, push button
+The robot presses the button...
+[Carousel mechanism activates]
+
+> order robot to dance
+"I am only a stupid robot and cannot perform that command."</pre>
+                <p style="margin-top: 1rem;">Robot recognizes: FOLLOW, STAY, PUSH BUTTON, WALK, TAKE, DROP, PUT, THROW, TURN, LEAP</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Architecture Decisions (ADRs 085-092)</h2>
+
+            <div class="adr-list">
+                <div class="adr-item">
+                    <span class="adr-number">ADR-085</span>
+                    <p>Scoring System - Event-based scoring to solve handler collision</p>
+                </div>
+                <div class="adr-item">
+                    <span class="adr-number">ADR-086</span>
+                    <p>Event Handler Unification - Multiple handlers per event type</p>
+                </div>
+                <div class="adr-item">
+                    <span class="adr-number">ADR-087</span>
+                    <p>Action-Centric Grammar - .forAction() API for verb patterns</p>
+                </div>
+                <div class="adr-item">
+                    <span class="adr-number">ADR-088</span>
+                    <p>Grammar Engine Refactor - Cleaner pattern matching</p>
+                </div>
+                <div class="adr-item">
+                    <span class="adr-number">ADR-089</span>
+                    <p>Pronoun Identity System - IT/THEM/HIM/HER resolution</p>
+                </div>
+                <div class="adr-item">
+                    <span class="adr-number">ADR-090</span>
+                    <p>Entity-Centric Action Dispatch - Capability behaviors</p>
+                </div>
+                <div class="adr-item">
+                    <span class="adr-number">ADR-091</span>
+                    <p>Text Decorations - Styled text output support</p>
+                </div>
+                <div class="adr-item">
+                    <span class="adr-number">ADR-092</span>
+                    <p>Smart Transcript Directives - Enhanced test assertions</p>
+                </div>
+            </div>
+
+            <p style="margin-top: 1.5rem; color: var(--text-muted);">Total ADRs: 99 (92 in main documentation)</p>
+        </section>
+
+        <section>
+            <h2>Development Timeline</h2>
+
+            <div class="timeline">
+                <div class="timeline-item victory">
+                    <div class="timeline-date">January 3, 2026</div>
+                    <p><strong>Feature Complete - 650/650 Points!</strong></p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">
+                        Egg/Canary/Bauble puzzle. Mail Order system. All 33 treasures. 636 tests.
+                    </p>
+                </div>
+
+                <div class="timeline-item milestone">
+                    <div class="timeline-date">January 4, 2026</div>
+                    <p><strong>Balloon Puzzle & Scoring ADR</strong></p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">
+                        3-phase balloon implementation. Braided wire fix. ADR-085 scoring system.
+                        Dam flooding mechanics. Undo system. GDT KL command.
+                    </p>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-date">January 5, 2026</div>
+                    <p><strong>Advanced Puzzles & Grammar Fixes</strong></p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">
+                        Coal machine, coffin transport, basket elevator, tiny room puzzles.
+                        Grammar conflict resolution. ADR-087 action-centric grammar.
+                    </p>
+                </div>
+
+                <div class="timeline-item milestone">
+                    <div class="timeline-date">January 7, 2026</div>
+                    <p><strong>Critical Bug Fixes & Robot Commands</strong></p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">
+                        Dropping action fix (missing moveEntity). Robot COMMANDING action.
+                        River navigation with boat mechanics. Wave/rainbow puzzle fix.
+                        Stdlib test review analysis reveals drinking bug.
+                    </p>
+                </div>
+
+                <div class="timeline-item milestone">
+                    <div class="timeline-date">January 8, 2026</div>
+                    <p><strong>Stdlib Testing Initiative</strong></p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">
+                        Drinking action fix. World state verification tests (golden tests).
+                        stdlib-testing branch merged. 24 new mutation verification tests.
+                    </p>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-date">January 9, 2026</div>
+                    <p><strong>Region Consolidation & Rope Puzzle</strong></p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">
+                        6 regions consolidated into single files. Dome Room rope puzzle.
+                        Magic word system. Walkthrough chain fixes. 61 transcript tests.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Testing Infrastructure</h2>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon icon-test">🧪</div>
+                    <div>
+                        <h3 style="margin: 0;">World State Verification</h3>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">Golden tests ensure actions actually mutate state</p>
+                    </div>
+                </div>
+                <p>After discovering the dropping/drinking bug pattern, we established "golden tests" that verify:</p>
+                <ul style="margin-top: 0.5rem; margin-left: 1.5rem;">
+                    <li><strong>Precondition:</strong> Assert initial state before action</li>
+                    <li><strong>Execute:</strong> Run the action</li>
+                    <li><strong>Postcondition:</strong> Verify actual world state changed</li>
+                </ul>
+                <p style="margin-top: 1rem;">Coverage: taking, dropping, putting, going, drinking, inserting, removing, entering, exiting</p>
+            </div>
+
+            <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+                <div class="stat-card">
+                    <div class="stat-number">61</div>
+                    <div class="stat-label">Transcript Files</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">208</div>
+                    <div class="stat-label">Test Files</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">99</div>
+                    <div class="stat-label">ADRs Total</div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Key Lessons Learned</h2>
+
+            <div class="lesson-box">
+                <div class="lesson-title">Events Are Not Mutations</div>
+                <p>An action can emit perfect events with perfect messages while failing to change world state. Always verify both events AND actual mutations.</p>
+            </div>
+
+            <div class="lesson-box">
+                <div class="lesson-title">Capability Dispatch Pattern</div>
+                <p>ADR-090 established when to use capability dispatch (LOWER, RAISE, TURN) vs stdlib actions (TAKE, DROP, OPEN). Entity-specific behaviors implement 4-phase pattern.</p>
+            </div>
+
+            <div class="lesson-box">
+                <div class="lesson-title">Region Consolidation</div>
+                <p>Single-file regions are easier to maintain than scattered room/object files. Index.ts exports all creators and handles connections.</p>
+            </div>
+
+            <div class="lesson-box">
+                <div class="lesson-title">Story-Specific vs Stdlib Actions</div>
+                <p>New verbs (SAY, INCANT, RING, COMMANDING) are story actions. Standard verbs with entity-specific behavior use capability dispatch.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Future Work</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Items</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Vehicle Polish</td>
+                        <td>Boat travel along full river, balloon landing variations</td>
+                    </tr>
+                    <tr>
+                        <td>Testing</td>
+                        <td>Full walkthrough transcript, edge case coverage</td>
+                    </tr>
+                    <tr>
+                        <td>Documentation</td>
+                        <td>Update CLAUDE.md with golden test patterns</td>
+                    </tr>
+                    <tr>
+                        <td>Polish</td>
+                        <td>Message refinements, additional room descriptions</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="victory-box" style="margin-top: 1.5rem;">
+                <p style="font-size: 1.1rem; text-align: center;">
+                    <strong>All core gameplay is complete!</strong><br>
+                    <span style="color: var(--text-muted);">Players can explore all 169 rooms, collect all 33 treasures (650 points), and achieve victory.</span>
+                </p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Recent Git Activity</h2>
+
+            <div class="card" style="background: #000; font-family: monospace;">
+                <pre style="color: #0f0; background: transparent; border: none; padding: 0;">
+a322cfb refactor(dungeo): Complete region consolidation, fix walkthrough chain
+050ba0f refactor(dungeo): Consolidate 6 regions into single files, fix aliases
+d476618 docs: Add session summaries and room catalog
+1ba9b3b test(dungeo): Add transcripts for rope puzzle and walkthrough goals
+389f8eb feat(dungeo): Add Dome Room rope puzzle and magic words
+7442dfd fix(transcript-tester): Improve entity resolution and isAlive check
+3df7014 feat(transcript-tester): Implement ADR-092 smart transcript directives
+cf51e9c Merge pull request #48 from ChicagoDave/stdlib-testing
+30bb4e6 fix(stdlib): Complete stdlib testing mitigation plan
+79152f3 fix(stdlib): Fix drinking action mutations + add world state tests
+b55834c fix(stdlib): Fix dropping action missing moveEntity</pre>
+            </div>
+        </section>
+
+        <footer>
+            <p><strong>Project Dungeo</strong> | Sharpee Interactive Fiction Engine</p>
+            <p style="font-size: 0.9rem; margin-top: 0.5rem;">
+                <code>npm install @sharpee/sharpee@beta</code>
+            </p>
+            <p style="font-size: 0.85rem; margin-top: 0.5rem;">
+                Original Mainframe Zork by Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling (1977-1979)
+            </p>
+            <p style="font-size: 0.85rem;">
+                Report generated January 9, 2026
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

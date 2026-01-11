@@ -54,6 +54,12 @@ function getSwitchingOnSharedData(context: ActionContext): SwitchingOnSharedData
 
 export const switchingOnAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.SWITCHING_ON,
+
+  // Default scope requirements for this action's slots
+  defaultScope: {
+    target: ScopeLevel.REACHABLE
+  },
+
   requiredMessages: [
     'no_target',
     'not_visible',
@@ -75,6 +81,12 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
 
     if (!noun) {
       return { valid: false, error: MESSAGES.NO_TARGET };
+    }
+
+    // Check scope - must be able to reach the target
+    const scopeCheck = context.requireScope(noun, ScopeLevel.REACHABLE);
+    if (!scopeCheck.ok) {
+      return scopeCheck.error!;
     }
 
     if (!noun.has(TraitType.SWITCHABLE)) {

@@ -18,6 +18,7 @@ export class ScopeBuilderImpl implements ScopeBuilder {
   private constraint: ScopeConstraint = {
     base: 'all',
     filters: [],
+    traitFilters: [],
     explicitEntities: [],
     includeRules: []
   };
@@ -61,7 +62,12 @@ export class ScopeBuilderImpl implements ScopeBuilder {
     this.constraint.includeRules.push(ruleId);
     return this;
   }
-  
+
+  hasTrait(traitType: string): ScopeBuilder {
+    this.constraint.traitFilters.push(traitType);
+    return this;
+  }
+
   build(): ScopeConstraint {
     return { ...this.constraint };
   }

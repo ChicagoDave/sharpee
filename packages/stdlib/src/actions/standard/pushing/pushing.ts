@@ -53,6 +53,12 @@ function getPushingSharedData(context: ActionContext): PushingSharedData {
 
 export const pushingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.PUSHING,
+
+  // Default scope requirements for this action's slots
+  defaultScope: {
+    target: ScopeLevel.REACHABLE
+  },
+
   requiredMessages: [
     'no_target',
     'not_visible',
@@ -87,6 +93,12 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
         valid: false,
         error: 'no_target'
       };
+    }
+
+    // Check scope - must be able to reach the target
+    const scopeCheck = context.requireScope(target, ScopeLevel.REACHABLE);
+    if (!scopeCheck.ok) {
+      return scopeCheck.error!;
     }
 
     // Can't push worn items

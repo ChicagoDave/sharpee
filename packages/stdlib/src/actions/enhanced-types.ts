@@ -8,8 +8,82 @@
 
 import { ISemanticEvent } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
-import { ScopeResolver } from '../scope/types';
+import { ScopeResolver, ScopeLevel } from '../scope/types';
 import { ValidatedCommand } from '../validation/types';
+
+/**
+ * Result of a scope requirement check.
+ *
+ * Used by ActionContext.requireScope() to indicate whether an entity
+ * meets the required scope level.
+ */
+export interface ScopeCheckResult {
+  /** Whether the scope requirement was met */
+  ok: boolean;
+
+  /**
+   * If ok is false, contains the error to return from validate().
+   * Can be spread directly into a ValidationResult.
+   */
+  error?: {
+    valid: false;
+    error: string;
+    params?: Record<string, any>;
+  };
+
+  /** The actual scope level of the entity (for debugging/logging) */
+  actualScope?: ScopeLevel;
+}
+
+/**
+ * Standard error codes for scope failures.
+ * These map to message IDs in the language layer.
+ */
+export const ScopeErrors = {
+  /** Entity is completely unknown to the player */
+  NOT_KNOWN: 'scope.not_known',
+
+  /** Entity is known but not currently visible */
+  NOT_VISIBLE: 'scope.not_visible',
+
+  /** Entity is visible but not physically reachable */
+  NOT_REACHABLE: 'scope.not_reachable',
+
+  /** Entity must be carried but is not in inventory */
+  NOT_CARRIED: 'scope.not_carried',
+
+  /** Generic scope failure */
+  OUT_OF_SCOPE: 'scope.out_of_scope'
+} as const;
+
+/**
+ * Result from an implicit take attempt.
+ *
+ * Used by ActionContext.requireCarriedOrImplicitTake() to indicate
+ * whether the entity is now carried (either was already, or was
+ * successfully taken implicitly).
+ */
+export interface ImplicitTakeResult {
+  /** Whether the entity is now carried */
+  ok: boolean;
+
+  /**
+   * If ok is false, contains the error to return from validate().
+   * This could be a scope error (can't reach) or a take error (scenery, etc.)
+   */
+  error?: {
+    valid: false;
+    error: string;
+    params?: Record<string, any>;
+  };
+
+  /**
+   * Events from the implicit take action, if one was performed.
+   * Should be prepended to the main action's report events.
+   * Includes the "if.event.implicit_take" event for "(first taking the X)".
+   */
+  implicitTakeEvents?: ISemanticEvent[];
+}
 
 /**
  * Unified action context interface
@@ -75,7 +149,120 @@ export interface ActionContext {
    * Get all entities in scope for the player
    */
   getInScope(): IFEntity[];
-  
+
+  // =========================================================================
+  // Scope validation methods (Phase 4 parser refactor)
+  // =========================================================================
+
+  /**
+   * Get the scope level for an entity.
+   *
+   * Returns the current scope level of the entity relative to the player,
+   * using the ScopeResolver. This is the low-level method for custom
+   * scope logic.
+   *
+   * @param entity The entity to check
+   * @returns The scope level (UNAWARE through CARRIED)
+   *
+   * @example
+   * const scope = context.getEntityScope(target);
+   * if (scope >= ScopeLevel.VISIBLE) {
+   *   // Can see it, maybe interact with it
+   * }
+   */
+  getEntityScope(entity: IFEntity): ScopeLevel;
+
+  /**
+   * Get the scope level for an entity in a command slot.
+   *
+   * Convenience method that gets the entity from the command slot
+   * and returns its scope level.
+   *
+   * @param slot The slot name ('target', 'item', 'container', etc.)
+   * @returns The scope level, or UNAWARE if no entity in slot
+   *
+   * @example
+   * const scope = context.getSlotScope('target');
+   */
+  getSlotScope(slot: string): ScopeLevel;
+
+  /**
+   * Check if an entity meets a required scope level.
+   *
+   * This is the high-level helper for scope validation in actions.
+   * Returns a result that can be used directly in validate():
+   *
+   * @param entity The entity to check
+   * @param required The minimum scope level required
+   * @returns ScopeCheckResult with ok=true or error details
+   *
+   * @example
+   * // Simple scope check in validate()
+   * const scopeCheck = context.requireScope(target, ScopeLevel.REACHABLE);
+   * if (!scopeCheck.ok) return scopeCheck.error;
+   *
+   * @example
+   * // Dynamic scope based on entity traits
+   * const effectiveScope = target.has(TraitType.REMOTE_CONTROLLABLE)
+   *   ? ScopeLevel.VISIBLE
+   *   : ScopeLevel.REACHABLE;
+   * const scopeCheck = context.requireScope(target, effectiveScope);
+   * if (!scopeCheck.ok) return scopeCheck.error;
+   */
+  requireScope(entity: IFEntity, required: ScopeLevel): ScopeCheckResult;
+
+  /**
+   * Check if a command slot entity meets a required scope level.
+   *
+   * Convenience method that combines getting the entity from a slot
+   * and checking its scope. Returns an error if no entity in slot
+   * or if scope check fails.
+   *
+   * @param slot The slot name ('target', 'item', 'container', etc.)
+   * @param required The minimum scope level required
+   * @returns ScopeCheckResult with ok=true or error details
+   *
+   * @example
+   * const scopeCheck = context.requireSlotScope('target', ScopeLevel.REACHABLE);
+   * if (!scopeCheck.ok) return scopeCheck.error;
+   */
+  requireSlotScope(slot: string, required: ScopeLevel): ScopeCheckResult;
+
+  /**
+   * Check if an entity is carried, attempting an implicit take if needed.
+   *
+   * This is the preferred method for actions that require a CARRIED item
+   * but should support implicit takes (e.g., "put apple in box" when apple
+   * is on the ground).
+   *
+   * Logic:
+   * 1. If entity is already carried → return success
+   * 2. If entity is reachable and takeable → attempt implicit take
+   * 3. If implicit take succeeds → return success with events to prepend
+   * 4. If implicit take fails → return the take's error
+   * 5. If entity is not reachable → return scope error
+   *
+   * The implicit take events should be prepended to the action's report
+   * events via sharedData.implicitTakeEvents.
+   *
+   * @param entity The entity that needs to be carried
+   * @returns ImplicitTakeResult with ok=true or error details
+   *
+   * @example
+   * // In validate():
+   * const carryCheck = context.requireCarriedOrImplicitTake(item);
+   * if (!carryCheck.ok) return carryCheck.error;
+   * // Events stored in sharedData.implicitTakeEvents for report phase
+   *
+   * // In report():
+   * const events: ISemanticEvent[] = [];
+   * if (context.sharedData.implicitTakeEvents) {
+   *   events.push(...context.sharedData.implicitTakeEvents);
+   * }
+   * // ... add main action events
+   */
+  requireCarriedOrImplicitTake(entity: IFEntity): ImplicitTakeResult;
+
   /**
    * Shared data store for passing information between action phases.
    *
@@ -231,12 +418,59 @@ export interface ValidationResult {
  * - Old: validate + execute (returns events) - CommandExecutor creates error events
  * - New: validate + execute (void) + report - Action creates ALL events
  */
+/**
+ * Scope requirements for action slots.
+ *
+ * Maps slot names (e.g., 'target', 'item', 'recipient') to their
+ * required scope level. This documents the default requirements
+ * and can be used by the parser for entity resolution hints.
+ *
+ * Actions can override these dynamically in validate() using
+ * context.requireScope() for more complex scenarios.
+ *
+ * @example
+ * // Taking requires the target to be reachable
+ * defaultScope: { target: ScopeLevel.REACHABLE }
+ *
+ * @example
+ * // Giving requires item carried and recipient visible
+ * defaultScope: {
+ *   item: ScopeLevel.CARRIED,
+ *   recipient: ScopeLevel.VISIBLE
+ * }
+ */
+export type ActionScopeRequirements = Record<string, ScopeLevel>;
+
 export interface Action {
   /**
    * Unique identifier for this action
    */
   id: string;
-  
+
+  /**
+   * Default scope requirements for this action's slots.
+   *
+   * Documents what scope level each slot requires by default.
+   * Used for:
+   * - Parser hints during entity resolution
+   * - Default scope validation in validate()
+   * - Documentation of action requirements
+   *
+   * Actions can perform dynamic scope checking in validate() using
+   * context.requireScope() for complex scenarios where requirements
+   * depend on entity traits or world state.
+   *
+   * @example
+   * defaultScope: { target: ScopeLevel.REACHABLE }
+   *
+   * @example
+   * defaultScope: {
+   *   item: ScopeLevel.CARRIED,
+   *   container: ScopeLevel.REACHABLE
+   * }
+   */
+  defaultScope?: ActionScopeRequirements;
+
   /**
    * List of message IDs this action requires
    * Used for documentation and validation

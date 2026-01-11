@@ -16,7 +16,7 @@ import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, WearableTrait, WearableBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
-import { WornEventData, ImplicitTakenEventData } from './wearing-events';
+import { WornEventData } from './wearing-events';
 import {
   analyzeWearableContext,
   checkWearingConflicts,
@@ -32,7 +32,6 @@ interface WearingSharedData {
   itemName: string;
   bodyPart?: string;
   layer?: number;
-  implicitTake?: boolean;
   params: Record<string, any>;
   messageId: string;
   // In case of failure
@@ -48,6 +47,12 @@ function getWearingSharedData(context: ActionContext): WearingSharedData {
 
 export const wearingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.WEARING,
+
+  // Default scope requirements for this action's slots
+  defaultScope: {
+    item: ScopeLevel.REACHABLE
+  },
+
   requiredMessages: [
     'no_target',
     'not_wearable',
@@ -69,6 +74,13 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
 
     if (!item.has(TraitType.WEARABLE)) {
       return { valid: false, error: 'not_wearable' };
+    }
+
+    // Item must be carried (or implicitly takeable)
+    // This enables "wear hat" when hat is on the ground
+    const carryCheck = context.requireCarriedOrImplicitTake(item);
+    if (!carryCheck.ok) {
+      return carryCheck.error!;
     }
 
     if (!WearableBehavior.canWear(item, actor)) {
@@ -98,12 +110,6 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
     // Store body part and layer
     sharedData.bodyPart = wearableTrait.bodyPart;
     sharedData.layer = wearableTrait.layer;
-
-    // Check if actor is holding the item
-    const itemLocation = context.world.getLocation?.(item.id);
-    if (itemLocation !== actor.id) {
-      sharedData.implicitTake = true;
-    }
 
     // Check for wearing conflicts using shared helper
     const conflictingItem = checkWearingConflicts(wearableContext);
@@ -161,13 +167,9 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
       })];
     }
 
-    // Add implicit TAKEN event if needed
-    if (sharedData.implicitTake) {
-      const implicitTakenData: ImplicitTakenEventData = {
-        implicit: true,
-        item: sharedData.itemName
-      };
-      events.push(context.event('if.event.taken', implicitTakenData));
+    // Prepend any implicit take events (from requireCarriedOrImplicitTake)
+    if (context.sharedData.implicitTakeEvents) {
+      events.push(...context.sharedData.implicitTakeEvents);
     }
 
     // Create WORN event for world model updates

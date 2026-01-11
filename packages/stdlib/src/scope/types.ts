@@ -5,27 +5,43 @@
 import { IFEntity } from '@sharpee/world-model';
 
 /**
- * Levels of scope indicating how an entity can be perceived
+ * Levels of scope indicating how an entity can be perceived.
+ *
+ * Ordered from least accessible (UNAWARE=0) to most accessible (CARRIED=4).
+ * Higher values imply all lower levels are also satisfied.
+ * Use numeric comparisons: if (entityScope >= requiredScope) { ... }
+ *
+ * For actions that check scope, use ActionContext.requireScope() which
+ * returns appropriate error messages for scope failures.
  */
 export enum ScopeLevel {
-  /** In actor's inventory - always accessible */
-  CARRIED = 'carried',
-  
-  /** Can physically touch/manipulate */
-  REACHABLE = 'reachable',
-  
-  /** Can see with eyes */
-  VISIBLE = 'visible',
-  
-  /** Can hear */
-  AUDIBLE = 'audible',
-  
-  /** Can smell or otherwise sense */
-  DETECTABLE = 'detectable',
-  
-  /** Cannot perceive at all */
-  OUT_OF_SCOPE = 'out_of_scope'
+  /** Entity not known to player at all */
+  UNAWARE = 0,
+
+  /** Player knows entity exists (can think about, ask about, remember) */
+  AWARE = 1,
+
+  /** Can see with eyes (examine, look at, read) */
+  VISIBLE = 2,
+
+  /** Can physically touch/manipulate (take, push, open, touch) */
+  REACHABLE = 3,
+
+  /** In actor's inventory - always accessible (drop, eat, wear, insert) */
+  CARRIED = 4
 }
+
+/**
+ * @deprecated Use ScopeLevel instead. These string values are for backwards compatibility.
+ */
+export const ScopeLevelStrings = {
+  CARRIED: 'carried',
+  REACHABLE: 'reachable',
+  VISIBLE: 'visible',
+  AUDIBLE: 'audible',
+  DETECTABLE: 'detectable',
+  OUT_OF_SCOPE: 'out_of_scope'
+} as const;
 
 /**
  * Types of sensory perception

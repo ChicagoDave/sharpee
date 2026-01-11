@@ -323,6 +323,13 @@ function reportSingleBlocked(
 
 export const removingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.REMOVING,
+
+  // Default scope requirements for this action's slots
+  defaultScope: {
+    item: ScopeLevel.REACHABLE,
+    source: ScopeLevel.REACHABLE
+  },
+
   requiredMessages: [
     'no_target',
     'no_source',

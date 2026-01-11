@@ -15,15 +15,42 @@ export class StandardScopeResolver implements ScopeResolver {
   constructor(private world: WorldModel) {}
 
   /**
-   * Get the highest level of scope for a target entity
+   * Get the highest level of scope for a target entity.
+   *
+   * Returns numeric ScopeLevel values for easy comparison:
+   * - CARRIED (4) > REACHABLE (3) > VISIBLE (2) > AWARE (1) > UNAWARE (0)
+   *
+   * Note: AUDIBLE and DETECTABLE (smell) map to AWARE for the numeric hierarchy,
+   * since being able to hear or smell something means you're aware of it but
+   * may not be able to see or touch it.
+   *
+   * This method also considers author-set minimum scope levels via
+   * entity.setMinimumScope(). The returned scope is the maximum of the
+   * physical scope and the minimum scope (additive only).
    */
   getScope(actor: IFEntity, target: IFEntity): ScopeLevel {
+    // Calculate physical scope first
+    const physicalScope = this.calculatePhysicalScope(actor, target);
+
+    // Check for author-set minimum scope
+    const actorRoom = this.getContainingRoom(actor.id);
+    const minimumScope = target.getMinimumScope(actorRoom?.id ?? null) as ScopeLevel;
+
+    // Return the higher of the two (minimum scope is additive only)
+    return Math.max(physicalScope, minimumScope) as ScopeLevel;
+  }
+
+  /**
+   * Calculate physical scope based on spatial relationships and perception.
+   * This is the "natural" scope without author overrides.
+   */
+  private calculatePhysicalScope(actor: IFEntity, target: IFEntity): ScopeLevel {
     // Carried items are always in scope
     if (this.isCarried(actor, target)) {
       return ScopeLevel.CARRIED;
     }
 
-    // Check physical reachability first (most restrictive)
+    // Check physical reachability
     if (this.canReach(actor, target)) {
       return ScopeLevel.REACHABLE;
     }
@@ -33,17 +60,14 @@ export class StandardScopeResolver implements ScopeResolver {
       return ScopeLevel.VISIBLE;
     }
 
-    // Check hearing
-    if (this.canHear(actor, target)) {
-      return ScopeLevel.AUDIBLE;
+    // Hearing and smell provide awareness but not visibility
+    if (this.canHear(actor, target) || this.canSmell(actor, target)) {
+      return ScopeLevel.AWARE;
     }
 
-    // Check smell
-    if (this.canSmell(actor, target)) {
-      return ScopeLevel.DETECTABLE;
-    }
-
-    return ScopeLevel.OUT_OF_SCOPE;
+    // TODO: Check witness system for things player has seen before
+    // For now, things out of perception are UNAWARE
+    return ScopeLevel.UNAWARE;
   }
 
   /**
@@ -234,14 +258,26 @@ export class StandardScopeResolver implements ScopeResolver {
   }
 
   /**
-   * Get all entities visible to the actor
+   * Get all entities visible to the actor.
+   * Includes entities with minimum scope >= VISIBLE.
    */
   getVisible(actor: IFEntity): IFEntity[] {
     const visible: IFEntity[] = [];
     const entities = this.world.getAllEntities();
+    const actorRoom = this.getContainingRoom(actor.id);
 
     for (const entity of entities) {
-      if (entity.id !== actor.id && this.canSee(actor, entity)) {
+      if (entity.id === actor.id) continue;
+
+      // Check physical visibility
+      if (this.canSee(actor, entity)) {
+        visible.push(entity);
+        continue;
+      }
+
+      // Check for author-set minimum scope >= VISIBLE
+      const minimumScope = entity.getMinimumScope(actorRoom?.id ?? null);
+      if (minimumScope >= ScopeLevel.VISIBLE) {
         visible.push(entity);
       }
     }
@@ -250,14 +286,26 @@ export class StandardScopeResolver implements ScopeResolver {
   }
 
   /**
-   * Get all entities reachable by the actor
+   * Get all entities reachable by the actor.
+   * Includes entities with minimum scope >= REACHABLE.
    */
   getReachable(actor: IFEntity): IFEntity[] {
     const reachable: IFEntity[] = [];
     const entities = this.world.getAllEntities();
+    const actorRoom = this.getContainingRoom(actor.id);
 
     for (const entity of entities) {
-      if (entity.id !== actor.id && this.canReach(actor, entity)) {
+      if (entity.id === actor.id) continue;
+
+      // Check physical reachability
+      if (this.canReach(actor, entity)) {
+        reachable.push(entity);
+        continue;
+      }
+
+      // Check for author-set minimum scope >= REACHABLE
+      const minimumScope = entity.getMinimumScope(actorRoom?.id ?? null);
+      if (minimumScope >= ScopeLevel.REACHABLE) {
         reachable.push(entity);
       }
     }
@@ -266,14 +314,26 @@ export class StandardScopeResolver implements ScopeResolver {
   }
 
   /**
-   * Get all entities the actor can hear
+   * Get all entities the actor can hear.
+   * Includes entities with minimum scope >= AWARE.
    */
   getAudible(actor: IFEntity): IFEntity[] {
     const audible: IFEntity[] = [];
     const entities = this.world.getAllEntities();
+    const actorRoom = this.getContainingRoom(actor.id);
 
     for (const entity of entities) {
-      if (entity.id !== actor.id && this.canHear(actor, entity)) {
+      if (entity.id === actor.id) continue;
+
+      // Check physical hearing
+      if (this.canHear(actor, entity)) {
+        audible.push(entity);
+        continue;
+      }
+
+      // Check for author-set minimum scope >= AWARE
+      const minimumScope = entity.getMinimumScope(actorRoom?.id ?? null);
+      if (minimumScope >= ScopeLevel.AWARE) {
         audible.push(entity);
       }
     }

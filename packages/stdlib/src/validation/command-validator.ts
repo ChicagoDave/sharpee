@@ -59,6 +59,16 @@ interface ResolutionContext {
 
 
 /**
+ * Slot types that can have entity selections
+ */
+export type EntitySlot = 'directObject' | 'indirectObject' | 'instrument';
+
+/**
+ * Entity selections for disambiguation resolution
+ */
+export type EntitySelections = Partial<Record<EntitySlot, string>>;
+
+/**
  * Validator interface - resolves entities and checks preconditions
  */
 export interface CommandValidator {
@@ -68,6 +78,25 @@ export interface CommandValidator {
    * @returns Validated command or validation error
    */
   validate(command: IParsedCommand): Result<ValidatedCommand, IValidationError>;
+
+  /**
+   * Re-validate a command with explicit entity selections
+   * Used after AMBIGUOUS_ENTITY error when user selects from disambiguation choices
+   *
+   * @param command Original parsed command
+   * @param selections Map of slot to selected entity ID
+   * @returns Validated command or validation error
+   *
+   * @example
+   * // After receiving AMBIGUOUS_ENTITY for "take apple"
+   * const result = validator.resolveWithSelection(command, {
+   *   directObject: 'red-apple-001'  // User selected the red apple
+   * });
+   */
+  resolveWithSelection(
+    command: IParsedCommand,
+    selections: EntitySelections
+  ): Result<ValidatedCommand, IValidationError>;
 }
 
 /**
@@ -79,6 +108,8 @@ export class CommandValidator implements CommandValidator {
   private scopeResolver: ScopeResolver;
   private resolutionContext: ResolutionContext;
   private systemEvents?: IGenericEventSource<ISystemEvent>;
+  /** Current action ID being validated (for disambiguation scoring) */
+  private currentActionId?: string;
 
   constructor(world: WorldModel, actionRegistry: ActionRegistry, scopeResolver?: ScopeResolver) {
     this.world = world;
@@ -127,6 +158,9 @@ export class CommandValidator implements CommandValidator {
         }
       };
     }
+
+    // Store current action ID for disambiguation scoring
+    this.currentActionId = actionHandler.id;
 
     // 2. Resolve direct object if present in parsed command
     let directObject: IValidatedObjectReference | undefined;
@@ -294,6 +328,276 @@ export class CommandValidator implements CommandValidator {
   }
 
   /**
+   * Re-validate a command with explicit entity selections
+   * Used after AMBIGUOUS_ENTITY error when user selects from disambiguation choices
+   */
+  resolveWithSelection(
+    command: IParsedCommand,
+    selections: EntitySelections
+  ): Result<ValidatedCommand, IValidationError> {
+    const startTime = Date.now();
+    const warnings: string[] = [];
+
+    // 1. Validate action exists
+    let actionHandler = this.actionRegistry.get(command.action);
+    if (!actionHandler) {
+      const verb = command.structure?.verb?.text || command.action;
+      const matches = this.actionRegistry.findByPattern(verb);
+      if (matches.length > 0) {
+        actionHandler = matches[0];
+      }
+    }
+
+    if (!actionHandler) {
+      return {
+        success: false,
+        error: {
+          type: 'VALIDATION_ERROR',
+          code: 'ACTION_NOT_AVAILABLE',
+          parsed: command,
+          details: { action: command.action }
+        }
+      };
+    }
+
+    this.currentActionId = actionHandler.id;
+
+    // 2. Resolve direct object - use selection if provided
+    let directObject: IValidatedObjectReference | undefined;
+    if (command.structure?.directObject) {
+      if (selections.directObject) {
+        // Use explicit selection
+        const entity = this.world.getEntity(selections.directObject);
+        if (!entity) {
+          return {
+            success: false,
+            error: {
+              type: 'VALIDATION_ERROR',
+              code: 'ENTITY_NOT_FOUND',
+              parsed: command,
+              details: {
+                slot: 'directObject',
+                selectedId: selections.directObject,
+                reason: 'Selected entity no longer exists'
+              }
+            }
+          };
+        }
+        directObject = {
+          entity,
+          parsed: command.structure.directObject
+        };
+      } else {
+        // Normal resolution
+        const metadata = this.getActionMetadata(actionHandler);
+        const scope = metadata.directObjectScope || ScopeLevel.VISIBLE;
+        const resolved = this.resolveEntity(command.structure.directObject, 'direct', scope, command);
+        if (!resolved.success) {
+          return resolved;
+        }
+        directObject = resolved.value;
+      }
+    }
+
+    // 3. Resolve indirect object - use selection if provided
+    let indirectObject: IValidatedObjectReference | undefined;
+    if (command.structure?.indirectObject) {
+      if (selections.indirectObject) {
+        const entity = this.world.getEntity(selections.indirectObject);
+        if (!entity) {
+          return {
+            success: false,
+            error: {
+              type: 'VALIDATION_ERROR',
+              code: 'ENTITY_NOT_FOUND',
+              parsed: command,
+              details: {
+                slot: 'indirectObject',
+                selectedId: selections.indirectObject,
+                reason: 'Selected entity no longer exists'
+              }
+            }
+          };
+        }
+        indirectObject = {
+          entity,
+          parsed: command.structure.indirectObject
+        };
+      } else {
+        const metadata = this.getActionMetadata(actionHandler);
+        const scope = metadata.indirectObjectScope || ScopeLevel.VISIBLE;
+        const resolved = this.resolveEntity(command.structure.indirectObject, 'indirect', scope, command);
+        if (!resolved.success) {
+          return resolved;
+        }
+        indirectObject = resolved.value;
+      }
+    }
+
+    // 3b. Resolve instrument - use selection if provided
+    let instrument: IValidatedObjectReference | undefined;
+    if (command.instrument) {
+      if (selections.instrument) {
+        const entity = this.world.getEntity(selections.instrument);
+        if (!entity) {
+          return {
+            success: false,
+            error: {
+              type: 'VALIDATION_ERROR',
+              code: 'ENTITY_NOT_FOUND',
+              parsed: command,
+              details: {
+                slot: 'instrument',
+                selectedId: selections.instrument,
+                reason: 'Selected entity no longer exists'
+              }
+            }
+          };
+        }
+        instrument = {
+          entity,
+          parsed: command.instrument
+        };
+      } else {
+        const resolved = this.resolveEntity(command.instrument, 'instrument', ScopeLevel.REACHABLE, command);
+        if (!resolved.success) {
+          return resolved;
+        }
+        instrument = resolved.value;
+      }
+    }
+
+    // 4. Check scope constraints based on action metadata
+    const metadata = this.getActionMetadata(actionHandler);
+
+    if (directObject && metadata.directObjectScope) {
+      const scopeCheck = this.checkEntityScope(
+        directObject.entity as IFEntity,
+        metadata.directObjectScope,
+        directObject.parsed.text
+      );
+      if (!scopeCheck.success) {
+        return {
+          success: false,
+          error: {
+            type: 'VALIDATION_ERROR',
+            code: 'ENTITY_NOT_VISIBLE',
+            parsed: command,
+            details: {
+              entity: directObject.entity.id,
+              entityName: directObject.parsed.text,
+              scopeCode: scopeCheck.code
+            }
+          }
+        };
+      }
+    }
+
+    if (indirectObject && metadata.indirectObjectScope) {
+      const scopeCheck = this.checkEntityScope(
+        indirectObject.entity as IFEntity,
+        metadata.indirectObjectScope,
+        indirectObject.parsed.text
+      );
+      if (!scopeCheck.success) {
+        return {
+          success: false,
+          error: {
+            type: 'VALIDATION_ERROR',
+            code: 'ENTITY_NOT_VISIBLE',
+            parsed: command,
+            details: {
+              entity: indirectObject.entity.id,
+              entityName: indirectObject.parsed.text,
+              scopeCode: scopeCheck.code
+            }
+          }
+        };
+      }
+    }
+
+    // 5. Check action-specific preconditions
+    const preconditionCheck = this.checkActionPreconditions(
+      actionHandler,
+      directObject?.entity as IFEntity | undefined,
+      indirectObject?.entity as IFEntity | undefined
+    );
+
+    if (!preconditionCheck.success) {
+      return {
+        success: false,
+        error: {
+          type: 'VALIDATION_ERROR',
+          code: 'PRECONDITION_FAILED',
+          parsed: command,
+          details: preconditionCheck.details
+        }
+      };
+    }
+
+    // Success - build validated command with scope info
+    const validationTime = Date.now() - startTime;
+    const scopeInfo: ValidatedCommand['scopeInfo'] = {};
+
+    if (directObject) {
+      const player = this.world.getPlayer()!;
+      const entityScope = this.scopeResolver.getScope(player, directObject.entity as IFEntity);
+      const perceivedBy = this.getPerceivedSenses(player, directObject.entity as IFEntity);
+
+      scopeInfo.directObject = {
+        level: entityScope,
+        perceivedBy
+      };
+    }
+
+    if (indirectObject) {
+      const player = this.world.getPlayer()!;
+      const entityScope = this.scopeResolver.getScope(player, indirectObject.entity as IFEntity);
+      const perceivedBy = this.getPerceivedSenses(player, indirectObject.entity as IFEntity);
+
+      scopeInfo.indirectObject = {
+        level: entityScope,
+        perceivedBy
+      };
+    }
+
+    if (instrument) {
+      const player = this.world.getPlayer()!;
+      const entityScope = this.scopeResolver.getScope(player, instrument.entity as IFEntity);
+      const perceivedBy = this.getPerceivedSenses(player, instrument.entity as IFEntity);
+
+      scopeInfo.instrument = {
+        level: entityScope,
+        perceivedBy
+      };
+    }
+
+    const validatedCommand: ValidatedCommand = {
+      parsed: command,
+      actionId: actionHandler.id,
+      directObject,
+      indirectObject,
+      instrument,
+      metadata: {
+        validationTime,
+        warnings: warnings.length > 0 ? warnings : undefined
+      },
+      ...(Object.keys(scopeInfo).length > 0 && { scopeInfo })
+    };
+
+    this.emitDebugEvent('entity_resolution', command, {
+      method: 'resolveWithSelection',
+      selections,
+      success: true
+    });
+
+    return {
+      success: true,
+      value: validatedCommand
+    };
+  }
+
+  /**
    * Resolve an entity reference with full matching logic
    */
   private resolveEntity(
@@ -338,10 +642,9 @@ export class CommandValidator implements CommandValidator {
     const searchTerm = ref.head || ref.text;
     let candidates: IFEntity[] = [];
 
-    // For AUDIBLE and DETECTABLE scopes, we need to search more broadly
+    // For AWARE scope (hearing/smelling), we need to search more broadly
     // because entities might be in other rooms
-    const needsBroadSearch = requiredScope === ScopeLevel.AUDIBLE ||
-      requiredScope === ScopeLevel.DETECTABLE;
+    const needsBroadSearch = requiredScope === ScopeLevel.AWARE;
 
     if (needsBroadSearch) {
       // For audible/detectable, search all entities (except rooms/player)
@@ -468,22 +771,79 @@ export class CommandValidator implements CommandValidator {
         };
       }
 
-      // Still ambiguous - return error with choices
+      // Phase 5: If user specified modifiers (adjectives) but NO candidate matches them,
+      // this is ENTITY_NOT_FOUND (the specific entity doesn't exist), not AMBIGUOUS_ENTITY.
+      // Example: "green ball" when only red and blue balls exist -> ENTITY_NOT_FOUND
+      //
+      // Note: The parser may not always populate modifiers, so we also extract them
+      // by comparing text to head (e.g., "green ball" vs "ball" -> modifier "green")
+      let modifiers = ref.modifiers || [];
+      if (modifiers.length === 0 && ref.text && ref.head) {
+        const head = ref.head.toLowerCase();
+        const words = ref.text.toLowerCase().split(/\s+/).filter(w => w !== head);
+        // Filter out common articles/determiners that aren't adjectives
+        const nonModifiers = ['the', 'a', 'an', 'all', 'some', 'every', 'any', 'my'];
+        modifiers = words.filter(w => !nonModifiers.includes(w));
+      }
+
+      if (modifiers.length > 0) {
+        const anyModifierMatch = viableMatches.some(m =>
+          m.matchReasons.some(r => r.startsWith('modifier_match_'))
+        );
+        if (!anyModifierMatch) {
+          // User asked for specific adjective(s) that no entity has
+          this.emitDebugEvent('entity_resolution', command, {
+            objectType,
+            resolved: false,
+            reason: 'modifiers_not_matched',
+            searchText: ref.text,
+            specifiedModifiers: modifiers
+          });
+
+          return {
+            success: false,
+            error: {
+              type: 'VALIDATION_ERROR',
+              code: 'ENTITY_NOT_FOUND',
+              parsed: command,
+              details: {
+                searchText: ref.text,
+                modifiers,
+                nearMatches: viableMatches.slice(0, 3).map(m => this.getEntityName(m.entity))
+              }
+            }
+          };
+        }
+      }
+
+      // Still ambiguous - return error with choices for disambiguation prompt
+      // Phase 5: Include entity IDs so caller can re-resolve after user selection
       const choices = viableMatches.slice(0, 5).map(m => ({
+        id: m.entity.id,
         name: this.getEntityName(m.entity),
-        description: this.getEntityDescription(m.entity)
+        description: this.getEntityDescription(m.entity),
+        score: m.score,
+        matchReasons: m.matchReasons
       }));
+
+      this.emitDebugEvent('disambiguation_required', command, {
+        objectType,
+        searchText: ref.text,
+        candidateCount: viableMatches.length,
+        topCandidates: choices
+      });
 
       return {
         success: false,
         error: {
           type: 'VALIDATION_ERROR',
-          code: 'ENTITY_NOT_FOUND',
+          code: 'AMBIGUOUS_ENTITY',  // Distinct from ENTITY_NOT_FOUND
           parsed: command,
           details: {
             ambiguousEntities: choices,
             searchText: ref.text,
-            matchCount: viableMatches.length
+            matchCount: viableMatches.length,
+            objectType  // 'direct', 'indirect', or 'instrument'
           }
         }
       };
@@ -570,14 +930,14 @@ export class CommandValidator implements CommandValidator {
           return entityScope === ScopeLevel.CARRIED ||
             entityScope === ScopeLevel.REACHABLE ||
             entityScope === ScopeLevel.VISIBLE;
-        case ScopeLevel.AUDIBLE:
-          // For audible, check if we can actually hear it
-          return this.scopeResolver.canHear && this.scopeResolver.canHear(player, entity);
-        case ScopeLevel.DETECTABLE:
-          // For detectable, check if we can actually smell it
-          return this.scopeResolver.canSmell && this.scopeResolver.canSmell(player, entity);
+        case ScopeLevel.AWARE:
+          // For aware, check if we can hear or smell it
+          const canHear = this.scopeResolver.canHear && this.scopeResolver.canHear(player, entity);
+          const canSmell = this.scopeResolver.canSmell && this.scopeResolver.canSmell(player, entity);
+          return canHear || canSmell || entityScope >= ScopeLevel.AWARE;
         default:
-          return entityScope !== ScopeLevel.OUT_OF_SCOPE;
+          // Use numeric comparison for other scope levels
+          return entityScope >= scope;
       }
     });
   }
@@ -590,7 +950,16 @@ export class CommandValidator implements CommandValidator {
 
     const scored: ScoredEntityMatch[] = [];
     const searchTerm = (ref.head || ref.text).toLowerCase();
-    const modifiers = ref.modifiers || [];
+
+    // Extract modifiers from ref, or infer from text vs head if not set
+    // (The parser may not always populate the modifiers field)
+    let modifiers = ref.modifiers || [];
+    if (modifiers.length === 0 && ref.text && ref.head) {
+      const head = ref.head.toLowerCase();
+      const words = ref.text.toLowerCase().split(/\s+/).filter(w => w !== head);
+      const nonModifiers = ['the', 'a', 'an', 'all', 'some', 'every', 'any', 'my'];
+      modifiers = words.filter(w => !nonModifiers.includes(w));
+    }
 
     for (const entity of entities) {
       let score = 0;
@@ -652,6 +1021,19 @@ export class CommandValidator implements CommandValidator {
       if (this.isInPlayerInventory(entity)) {
         score += 2;
         matchReasons.push('in_inventory');
+      }
+
+      // Author-controlled scope priority (Phase 5 disambiguation)
+      // entity.scope(actionId) returns priority (default 100)
+      // We scale it to add reasonable bonus/penalty (100 = neutral, 150 = +5, 50 = -5)
+      const actionId = this.currentActionId;
+      if (actionId && typeof entity.scope === 'function') {
+        const priority = entity.scope(actionId);
+        const priorityBonus = Math.round((priority - 100) / 10);  // 150 -> +5, 50 -> -5
+        if (priorityBonus !== 0) {
+          score += priorityBonus;
+          matchReasons.push(`scope_priority_${priority}`);
+        }
       }
 
       if (score > 0) {
@@ -739,6 +1121,21 @@ export class CommandValidator implements CommandValidator {
     });
 
     return null;
+  }
+
+  /**
+   * Resolve an entity directly by ID
+   * Used after disambiguation when user selects a specific entity
+   */
+  resolveEntityById(entityId: string, parsed: INounPhrase): IValidatedObjectReference | null {
+    const entity = this.world.getEntity(entityId);
+    if (!entity) {
+      return null;
+    }
+    return {
+      entity: entity as unknown as IValidatedObjectReference['entity'],
+      parsed
+    };
   }
 
   /**
@@ -857,9 +1254,7 @@ export class CommandValidator implements CommandValidator {
         break;
 
       case ScopeLevel.VISIBLE:
-        if (entityScope === ScopeLevel.AUDIBLE ||
-          entityScope === ScopeLevel.DETECTABLE ||
-          entityScope === ScopeLevel.OUT_OF_SCOPE) {
+        if (entityScope < ScopeLevel.VISIBLE) {
           return {
             success: false,
             code: 'NOT_VISIBLE'
@@ -867,20 +1262,11 @@ export class CommandValidator implements CommandValidator {
         }
         break;
 
-      case ScopeLevel.AUDIBLE:
-        if (entityScope === ScopeLevel.OUT_OF_SCOPE) {
+      case ScopeLevel.AWARE:
+        if (entityScope === ScopeLevel.UNAWARE) {
           return {
             success: false,
-            code: 'NOT_AUDIBLE'
-          };
-        }
-        break;
-
-      case ScopeLevel.DETECTABLE:
-        if (entityScope === ScopeLevel.OUT_OF_SCOPE) {
-          return {
-            success: false,
-            code: 'NOT_DETECTABLE'
+            code: 'NOT_AWARE'
           };
         }
         break;
@@ -1026,7 +1412,7 @@ export class CommandValidator implements CommandValidator {
    * Emit a debug event
    */
   private emitDebugEvent(
-    debugType: 'entity_resolution' | 'entity_search' | 'scope_check' | 'ambiguity_resolution' | 'validation_error',
+    debugType: 'entity_resolution' | 'entity_search' | 'scope_check' | 'ambiguity_resolution' | 'validation_error' | 'disambiguation_required',
     command: IParsedCommand,
     data: any
   ): void {

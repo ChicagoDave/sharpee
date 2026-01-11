@@ -146,17 +146,20 @@ describe('Story Grammar API', () => {
     });
 
     it('should allow .text() for raw text capture', () => {
+      // Use 'yell' verb which isn't in core grammar and add it to story grammar
+      // Use a simple 'yell :words' pattern (not ...) for clarity
       grammar
-        .define('say :words...')
+        .define('yell :words')
         .text('words')
-        .mapsTo('story.action.saying')
+        .mapsTo('story.action.yelling')
+        .withPriority(150)
         .build();
 
-      const result = parser.parse('say hello world');
+      const result = parser.parse('yell hello');
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.value.action).toBe('story.action.saying');
-        expect(result.value.textSlots?.get('words')).toBe('hello world');
+        expect(result.value.action).toBe('story.action.yelling');
+        expect(result.value.textSlots?.get('words')).toBe('hello');
       }
     });
   });

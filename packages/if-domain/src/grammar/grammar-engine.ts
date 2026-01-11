@@ -142,6 +142,14 @@ export abstract class GrammarEngine {
         };
         
         const builder: PatternBuilder = {
+          hasTrait(slot: string, traitType: string) {
+            const slotConstraint = rule.slots!.get(slot) || { name: slot, constraints: [], traitFilters: [] };
+            if (!slotConstraint.traitFilters) slotConstraint.traitFilters = [];
+            slotConstraint.traitFilters.push(traitType);
+            rule.slots!.set(slot, slotConstraint);
+            return builder;
+          },
+
           where(slot: string, constraint: any) {
             const slotConstraint = rule.slots!.get(slot) || { name: slot, constraints: [] };
             slotConstraint.constraints.push(constraint);
@@ -295,6 +303,7 @@ export abstract class GrammarEngine {
         const patternList: string[] = [];
         const directionMap: Record<string, string[]> = {};
         const slotConstraints: Map<string, { constraint: Constraint }[]> = new Map();
+        const slotTraitFilters: Map<string, string[]> = new Map();
         const slotTypes: Map<string, SlotType> = new Map();
         let priority = 100;
         let defaultSemantics: Partial<SemanticProperties> | undefined;
@@ -317,6 +326,13 @@ export abstract class GrammarEngine {
 
           directions(map: Record<string, string[]>) {
             Object.assign(directionMap, map);
+            return actionBuilder;
+          },
+
+          hasTrait(slot: string, traitType: string) {
+            const existing = slotTraitFilters.get(slot) || [];
+            existing.push(traitType);
+            slotTraitFilters.set(slot, existing);
             return actionBuilder;
           },
 
@@ -365,6 +381,13 @@ export abstract class GrammarEngine {
                   for (const [slot, constraints] of slotConstraints) {
                     for (const { constraint } of constraints) {
                       builder = builder.where(slot, constraint);
+                    }
+                  }
+
+                  // Apply trait filters
+                  for (const [slot, traits] of slotTraitFilters) {
+                    for (const traitType of traits) {
+                      builder = builder.hasTrait(slot, traitType);
                     }
                   }
 

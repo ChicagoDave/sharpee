@@ -110,7 +110,7 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
 
   // Deprecated traits - these are handled differently now:
   // LOCATION - tracked by world model internally
-  // PORTABLE - objects are takeable by default
+  // PORTABLE - objects are takeable by default unless they have SceneryTrait
   // FIXED - replaced by SCENERY
 };
 

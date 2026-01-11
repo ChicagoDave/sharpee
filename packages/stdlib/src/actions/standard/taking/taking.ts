@@ -43,6 +43,12 @@ import { isMultiObjectCommand, expandMultiObject } from '../../../helpers/multi-
 function validateSingleEntity(context: ActionContext, noun: IFEntity): ValidationResult {
   const actor = context.player;
 
+  // Check scope - must be able to reach the item
+  const scopeCheck = context.requireScope(noun, ScopeLevel.REACHABLE);
+  if (!scopeCheck.ok) {
+    return scopeCheck.error!;
+  }
+
   // Can't take yourself
   if (noun.id === actor.id) {
     return { valid: false, error: TakingMessages.CANT_TAKE_SELF };
@@ -248,6 +254,12 @@ function reportSingleBlocked(
 
 export const takingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.TAKING,
+
+  // Default scope requirements for this action's slots
+  defaultScope: {
+    target: ScopeLevel.REACHABLE
+  },
+
   requiredMessages: [
     'no_target',
     'cant_take_self',

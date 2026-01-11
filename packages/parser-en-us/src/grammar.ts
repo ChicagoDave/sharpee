@@ -3,7 +3,7 @@
  * @description Standard grammar patterns for English interactive fiction
  *
  * Rule Priority Guidelines:
- * - 100+: Semantic rules with constraints (e.g., .matching({ enterable: true }))
+ * - 100+: Semantic rules with trait constraints (e.g., .hasTrait(TraitType.ENTERABLE))
  * - 100: Standard patterns
  * - 95: Synonyms/alternatives
  * - 90: Abbreviations
@@ -11,7 +11,8 @@
  * Semantic rules should come first to match before fallback patterns.
  */
 
-import { GrammarBuilder, ScopeBuilder } from '@sharpee/if-domain';
+import { GrammarBuilder } from '@sharpee/if-domain';
+import { TraitType } from '@sharpee/world-model';
 
 /**
  * Define English grammar rules
@@ -25,17 +26,16 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .build();
 
   // Examining (ADR-087: using forAction)
+  // Scope handled by action validation - tries see/feel/hear/smell cascade
   grammar
     .forAction('if.action.examining')
     .verbs(['examine', 'x', 'inspect'])
     .pattern(':target')
-    .where('target', (scope: ScopeBuilder) => scope.visible())
     .build();
 
   // "look at" is a phrasal pattern - different structure
   grammar
     .define('look at :target')
-    .where('target', (scope: ScopeBuilder) => scope.visible())
     .mapsTo('if.action.examining')
     .withPriority(95)
     .build();
@@ -43,7 +43,6 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Looking with optional adverbs
   grammar
     .define('look [carefully] at :target')
-    .where('target', (scope: ScopeBuilder) => scope.visible())
     .mapsTo('if.action.examining_carefully')
     .withPriority(96)
     .build(); // Slightly higher priority, but confidence penalty for skipped optionals
@@ -63,59 +62,53 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Searching with target
   grammar
     .define('search :target')
-    .where('target', (scope: ScopeBuilder) => scope.visible())
     .mapsTo('if.action.searching')
     .withPriority(100)
     .build();
 
   grammar
     .define('look in|inside :target')
-    .where('target', (scope: ScopeBuilder) => scope.visible())
     .mapsTo('if.action.searching')
     .withPriority(100)
     .build();
 
   grammar
     .define('look through :target')
-    .where('target', (scope: ScopeBuilder) => scope.visible())
     .mapsTo('if.action.searching')
     .withPriority(100)
     .build();
 
   grammar
     .define('rummage in|through :target')
-    .where('target', (scope: ScopeBuilder) => scope.visible())
     .mapsTo('if.action.searching')
     .withPriority(95)
     .build();
 
   // Taking and dropping (ADR-087: using forAction)
+  // Scope handled by action validation; SceneryTrait blocks non-portable items
   grammar
     .forAction('if.action.taking')
     .verbs(['take', 'get', 'grab'])
     .pattern(':item')
-    .where('item', (scope: ScopeBuilder) => scope.visible().matching({ portable: true }))
     .build();
 
   // "pick up" is a phrasal verb - different pattern structure
   grammar
     .define('pick up :item')
-    .where('item', (scope: ScopeBuilder) => scope.visible().matching({ portable: true }))
     .mapsTo('if.action.taking')
     .withPriority(100)
     .build();
 
+  // Scope (carried) handled by action validation
   grammar
     .forAction('if.action.dropping')
     .verbs(['drop', 'discard'])
     .pattern(':item')
-    .where('item', (scope: ScopeBuilder) => scope.carried())
     .build();
 
   // "put down" is a phrasal verb - different pattern structure
   grammar
     .define('put down :item')
-    .where('item', (scope: ScopeBuilder) => scope.carried())
     .mapsTo('if.action.dropping')
     .withPriority(100)
     .build();
@@ -128,18 +121,17 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // - "take all but sword" matches "take :item", parser detects exclusion
 
   // Container operations
+  // Scope handled by action validation; traits declare semantic constraints only
   grammar
     .define('put :item in|into|inside :container')
-    .where('item', (scope: ScopeBuilder) => scope.carried())
-    .where('container', (scope: ScopeBuilder) => scope.touchable().matching({ container: true }))
+    .hasTrait('container', TraitType.CONTAINER)
     .mapsTo('if.action.inserting')
     .withPriority(100)
     .build();
 
   grammar
     .define('insert :item in|into :container')
-    .where('item', (scope: ScopeBuilder) => scope.carried())
-    .where('container', (scope: ScopeBuilder) => scope.touchable().matching({ container: true }))
+    .hasTrait('container', TraitType.CONTAINER)
     .mapsTo('if.action.inserting')
     .withPriority(100)
     .build();
@@ -147,16 +139,13 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Supporter operations (including hanging!)
   grammar
     .define('put :item on|onto :supporter')
-    .where('item', (scope: ScopeBuilder) => scope.carried())
-    .where('supporter', (scope: ScopeBuilder) => scope.touchable().matching({ supporter: true }))
+    .hasTrait('supporter', TraitType.SUPPORTER)
     .mapsTo('if.action.putting')
     .withPriority(100)
     .build();
 
   grammar
     .define('hang :item on :hook')
-    .where('item', (scope: ScopeBuilder) => scope.carried())
-    .where('hook', (scope: ScopeBuilder) => scope.touchable())
     .mapsTo('if.action.putting')
     .withPriority(110)
     .build(); // Higher priority than generic put
@@ -166,7 +155,6 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .forAction('if.action.reading')
     .verbs(['read', 'peruse', 'study'])
     .pattern(':target')
-    .where('target', (scope: ScopeBuilder) => scope.visible())
     .build();
 
   // Inventory (ADR-087: using forAction)
@@ -203,16 +191,17 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .build();
 
   // Opening and closing
+  // Scope handled by action validation; traits declare semantic constraints only
   grammar
     .define('open :door')
-    .where('door', (scope: ScopeBuilder) => scope.touchable().matching({ openable: true }))
+    .hasTrait('door', TraitType.OPENABLE)
     .mapsTo('if.action.opening')
     .withPriority(100)
     .build();
 
   grammar
     .define('close :door')
-    .where('door', (scope: ScopeBuilder) => scope.touchable().matching({ openable: true }))
+    .hasTrait('door', TraitType.OPENABLE)
     .mapsTo('if.action.closing')
     .withPriority(100)
     .build();
@@ -222,29 +211,28 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .forAction('if.action.switching_on')
     .verbs(['turn', 'switch', 'flip'])
     .pattern('on :device')
-    .where('device', (scope: ScopeBuilder) => scope.touchable().matching({ switchable: true }))
+    .hasTrait('device', TraitType.SWITCHABLE)
     .build();
 
   grammar
     .forAction('if.action.switching_off')
     .verbs(['turn', 'switch', 'flip'])
     .pattern('off :device')
-    .where('device', (scope: ScopeBuilder) => scope.touchable().matching({ switchable: true }))
+    .hasTrait('device', TraitType.SWITCHABLE)
     .build();
 
   // Pushing and pulling (ADR-087: using forAction)
+  // Scope handled by action validation
   grammar
     .forAction('if.action.pushing')
     .verbs(['push', 'press', 'shove', 'move'])
     .pattern(':target')
-    .where('target', (scope: ScopeBuilder) => scope.touchable())
     .build();
 
   grammar
     .forAction('if.action.pulling')
     .verbs(['pull', 'drag', 'yank'])
     .pattern(':target')
-    .where('target', (scope: ScopeBuilder) => scope.touchable())
     .build();
 
   // Lowering and raising (ADR-090: capability dispatch)
@@ -252,14 +240,12 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .forAction('if.action.lowering')
     .verbs(['lower'])
     .pattern(':target')
-    .where('target', (scope: ScopeBuilder) => scope.touchable())
     .build();
 
   grammar
     .forAction('if.action.raising')
     .verbs(['raise', 'lift'])
     .pattern(':target')
-    .where('target', (scope: ScopeBuilder) => scope.touchable())
     .build();
 
   // Waiting (ADR-087: using forAction)
@@ -388,27 +374,26 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .build();
 
   // VERB_NOUN_NOUN patterns (Phase 2)
+  // Scope handled by action validation; traits declare semantic constraints only
+
   // Giving
   grammar
     .define('give :item to :recipient')
-    .where('item', (scope: ScopeBuilder) => scope.carried())
-    .where('recipient', (scope: ScopeBuilder) => scope.visible().matching({ animate: true }))
+    .hasTrait('recipient', TraitType.ACTOR)
     .mapsTo('if.action.giving')
     .withPriority(100)
     .build();
 
   grammar
     .define('give :recipient :item')
-    .where('item', (scope: ScopeBuilder) => scope.carried())
-    .where('recipient', (scope: ScopeBuilder) => scope.visible().matching({ animate: true }))
+    .hasTrait('recipient', TraitType.ACTOR)
     .mapsTo('if.action.giving')
     .withPriority(95)
     .build(); // Slightly lower priority than explicit "to"
 
   grammar
     .define('offer :item to :recipient')
-    .where('item', (scope: ScopeBuilder) => scope.carried())
-    .where('recipient', (scope: ScopeBuilder) => scope.visible().matching({ animate: true }))
+    .hasTrait('recipient', TraitType.ACTOR)
     .mapsTo('if.action.giving')
     .withPriority(100)
     .build();
@@ -416,16 +401,14 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Showing
   grammar
     .define('show :item to :recipient')
-    .where('item', (scope: ScopeBuilder) => scope.carried())
-    .where('recipient', (scope: ScopeBuilder) => scope.visible().matching({ animate: true }))
+    .hasTrait('recipient', TraitType.ACTOR)
     .mapsTo('if.action.showing')
     .withPriority(100)
     .build();
 
   grammar
     .define('show :recipient :item')
-    .where('item', (scope: ScopeBuilder) => scope.carried())
-    .where('recipient', (scope: ScopeBuilder) => scope.visible().matching({ animate: true }))
+    .hasTrait('recipient', TraitType.ACTOR)
     .mapsTo('if.action.showing')
     .withPriority(95)
     .build();
@@ -433,27 +416,22 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Throwing
   grammar
     .define('throw :item at :target')
-    .where('item', (scope: ScopeBuilder) => scope.carried())
-    .where('target', (scope: ScopeBuilder) => scope.visible())
     .mapsTo('if.action.throwing')
     .withPriority(100)
     .build();
 
   grammar
     .define('throw :item to :recipient')
-    .where('item', (scope: ScopeBuilder) => scope.carried())
-    .where('recipient', (scope: ScopeBuilder) => scope.visible())
     .mapsTo('if.action.throwing')
     .withPriority(100)
     .build();
 
   // Multiple preposition patterns (Phase 2.1)
+  // Scope handled by action validation; state checks (locked, open) in action validate()
+
   // Taking from container with tool
   grammar
     .define('take :item from :container with :tool')
-    .where('item', (scope: ScopeBuilder) => scope.visible().matching({ portable: true }))
-    .where('container', (scope: ScopeBuilder) => scope.visible())
-    .where('tool', (scope: ScopeBuilder) => scope.carried())
     .mapsTo('if.action.taking_with')
     .withPriority(110)
     .build(); // Higher priority than simple take
@@ -461,8 +439,6 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Unlocking with key
   grammar
     .define('unlock :door with :key')
-    .where('door', (scope: ScopeBuilder) => scope.touchable().matching({ locked: true }))
-    .where('key', (scope: ScopeBuilder) => scope.carried())
     .mapsTo('if.action.unlocking')
     .withPriority(110)
     .build(); // Higher priority than simple unlock
@@ -470,8 +446,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Opening with tool
   grammar
     .define('open :container with :tool')
-    .where('container', (scope: ScopeBuilder) => scope.touchable().matching({ openable: true, open: false }))
-    .where('tool', (scope: ScopeBuilder) => scope.carried())
+    .hasTrait('container', TraitType.OPENABLE)
     .mapsTo('if.action.opening_with')
     .withPriority(110)
     .build(); // Higher priority than simple open
@@ -479,8 +454,6 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Cutting with tool
   grammar
     .define('cut :object with :tool')
-    .where('object', (scope: ScopeBuilder) => scope.visible())
-    .where('tool', (scope: ScopeBuilder) => scope.carried())
     .mapsTo('if.action.cutting')
     .withPriority(110)
     .build(); // Higher priority than simple cut
@@ -488,8 +461,6 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Attacking with weapon
   grammar
     .define('attack :target with :weapon')
-    .where('target', (scope: ScopeBuilder) => scope.visible())
-    .where('weapon', (scope: ScopeBuilder) => scope.carried())
     .mapsTo('if.action.attacking')
     .withPriority(110)
     .build(); // Higher priority than simple attack
@@ -497,13 +468,12 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Digging with tool
   grammar
     .define('dig :location with :tool')
-    .where('location', (scope: ScopeBuilder) => scope.visible())
-    .where('tool', (scope: ScopeBuilder) => scope.carried())
     .mapsTo('if.action.digging')
     .withPriority(110)
     .build(); // Higher priority than simple dig
 
   // Communication patterns with quoted strings
+  // Scope handled by action validation; traits declare semantic constraints only
   grammar
     .define('say :message')
     .mapsTo('if.action.saying')
@@ -512,7 +482,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
 
   grammar
     .define('say :message to :recipient')
-    .where('recipient', (scope: ScopeBuilder) => scope.visible().matching({ animate: true }))
+    .hasTrait('recipient', TraitType.ACTOR)
     .mapsTo('if.action.saying_to')
     .withPriority(105)
     .build();
@@ -525,7 +495,6 @@ export function defineGrammar(grammar: GrammarBuilder): void {
 
   grammar
     .define('write :message on :surface')
-    .where('surface', (scope: ScopeBuilder) => scope.visible())
     .mapsTo('if.action.writing_on')
     .withPriority(105)
     .build();
@@ -538,84 +507,84 @@ export function defineGrammar(grammar: GrammarBuilder): void {
 
   grammar
     .define('whisper :message to :recipient')
-    .where('recipient', (scope: ScopeBuilder) => scope.visible().matching({ animate: true }))
+    .hasTrait('recipient', TraitType.ACTOR)
     .mapsTo('if.action.whispering')
     .withPriority(100)
     .build();
 
   grammar
     .define('tell :recipient about :topic')
-    .where('recipient', (scope: ScopeBuilder) => scope.visible().matching({ animate: true }))
+    .hasTrait('recipient', TraitType.ACTOR)
     .mapsTo('if.action.telling')
     .withPriority(100)
     .build();
 
   grammar
     .define('ask :recipient about :topic')
-    .where('recipient', (scope: ScopeBuilder) => scope.visible().matching({ animate: true }))
+    .hasTrait('recipient', TraitType.ACTOR)
     .mapsTo('if.action.asking')
     .withPriority(100)
     .build();
 
   // Touching/sensory actions (ADR-087: using forAction)
+  // Scope handled by action validation
   grammar
     .forAction('if.action.touching')
     .verbs(['touch', 'rub', 'feel', 'pat', 'stroke', 'poke', 'prod'])
     .pattern(':target')
-    .where('target', (scope: ScopeBuilder) => scope.touchable())
     .build();
 
   // ============================================================================
   // ENTERING AND EXITING
-  // Semantic rules (with constraints) have higher priority than simple fallbacks
+  // Scope handled by action validation; traits declare semantic constraints only
   // ============================================================================
 
   // Semantic: enter specific enterable thing (priority 100)
   grammar
     .define('enter :portal')
-    .where('portal', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .hasTrait('portal', TraitType.ENTERABLE)
     .mapsTo('if.action.entering')
     .withPriority(100)
     .build();
 
   grammar
     .define('get in :portal')
-    .where('portal', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .hasTrait('portal', TraitType.ENTERABLE)
     .mapsTo('if.action.entering')
     .withPriority(100)
     .build();
 
   grammar
     .define('get into :portal')
-    .where('portal', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .hasTrait('portal', TraitType.ENTERABLE)
     .mapsTo('if.action.entering')
     .withPriority(100)
     .build();
 
   grammar
     .define('climb in :portal')
-    .where('portal', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .hasTrait('portal', TraitType.ENTERABLE)
     .mapsTo('if.action.entering')
     .withPriority(100)
     .build();
 
   grammar
     .define('climb into :portal')
-    .where('portal', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .hasTrait('portal', TraitType.ENTERABLE)
     .mapsTo('if.action.entering')
     .withPriority(100)
     .build();
 
   grammar
     .define('go in :portal')
-    .where('portal', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .hasTrait('portal', TraitType.ENTERABLE)
     .mapsTo('if.action.entering')
     .withPriority(100)
     .build();
 
   grammar
     .define('go into :portal')
-    .where('portal', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .hasTrait('portal', TraitType.ENTERABLE)
     .mapsTo('if.action.entering')
     .withPriority(100)
     .build();
@@ -648,14 +617,14 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Vehicle-specific synonyms (map to entering/exiting actions)
   grammar
     .define('board :vehicle')
-    .where('vehicle', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .hasTrait('vehicle', TraitType.ENTERABLE)
     .mapsTo('if.action.entering')
     .withPriority(100)
     .build();
 
   grammar
     .define('get on :vehicle')
-    .where('vehicle', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .hasTrait('vehicle', TraitType.ENTERABLE)
     .mapsTo('if.action.entering')
     .withPriority(100)
     .build();
@@ -663,7 +632,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Exiting with a target (exit specific container/vehicle)
   grammar
     .define('exit :container')
-    .where('container', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .hasTrait('container', TraitType.ENTERABLE)
     .mapsTo('if.action.exiting')
     .withPriority(100)
     .build();
@@ -676,14 +645,14 @@ export function defineGrammar(grammar: GrammarBuilder): void {
 
   grammar
     .define('disembark :vehicle')
-    .where('vehicle', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .hasTrait('vehicle', TraitType.ENTERABLE)
     .mapsTo('if.action.exiting')
     .withPriority(100)
     .build();
 
   grammar
     .define('get off :vehicle')
-    .where('vehicle', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
+    .hasTrait('vehicle', TraitType.ENTERABLE)
     .mapsTo('if.action.exiting')
     .withPriority(100)
     .build();

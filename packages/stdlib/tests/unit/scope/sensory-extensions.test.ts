@@ -80,7 +80,7 @@ describe('Sensory Extensions', () => {
 
       expect(resolver.canHear(player, npc)).toBe(true);
       expect(resolver.canSee(player, npc)).toBe(false); // Can't see through doorway
-      expect(resolver.getScope(player, npc)).toBe(ScopeLevel.AUDIBLE);
+      expect(resolver.getScope(player, npc)).toBe(ScopeLevel.AWARE);
     });
 
     test('should hear through closed doors (muffled)', () => {
@@ -101,7 +101,7 @@ describe('Sensory Extensions', () => {
       author.moveEntity(npc.id, hallway.id);
 
       expect(resolver.canHear(player, npc)).toBe(true);
-      expect(resolver.getScope(player, npc)).toBe(ScopeLevel.AUDIBLE);
+      expect(resolver.getScope(player, npc)).toBe(ScopeLevel.AWARE);
     });
 
     test('should not hear in unconnected rooms', () => {
@@ -113,7 +113,7 @@ describe('Sensory Extensions', () => {
       author.moveEntity(npc.id, basement.id);
 
       expect(resolver.canHear(player, npc)).toBe(false);
-      expect(resolver.getScope(player, npc)).toBe(ScopeLevel.OUT_OF_SCOPE);
+      expect(resolver.getScope(player, npc)).toBe(ScopeLevel.UNAWARE);
     });
 
     test('should get all audible entities', () => {
@@ -198,7 +198,7 @@ describe('Sensory Extensions', () => {
 
       expect(resolver.canSmell(player, bread)).toBe(true);
       // Bread can be both heard and smelled - hearing takes priority in getScope
-      expect(resolver.getScope(player, bread)).toBe(ScopeLevel.AUDIBLE);
+      expect(resolver.getScope(player, bread)).toBe(ScopeLevel.AWARE);
     });
 
     test('should not smell through closed doors', () => {
@@ -242,7 +242,7 @@ describe('Sensory Extensions', () => {
 
       expect(resolver.canSee(player, ball)).toBe(false);
       expect(resolver.canHear(player, ball)).toBe(true); // Can still hear
-      expect(resolver.getScope(player, ball)).toBe(ScopeLevel.AUDIBLE);
+      expect(resolver.getScope(player, ball)).toBe(ScopeLevel.AWARE);
     });
 
     test('should see in dark rooms with carried light source', () => {

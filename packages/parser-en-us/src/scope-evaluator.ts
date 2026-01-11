@@ -55,6 +55,15 @@ export class ScopeEvaluator {
       entities = entities.filter(entity => this.matchesFilter(entity, filter, context));
     }
 
+    // Apply trait filters
+    if (constraint.traitFilters && constraint.traitFilters.length > 0) {
+      entities = entities.filter(entity =>
+        constraint.traitFilters!.every(traitType =>
+          this.entityHasTrait(entity, traitType)
+        )
+      );
+    }
+
     // Add explicit entities
     if (constraint.explicitEntities.length > 0) {
       const additionalEntities = constraint.explicitEntities
@@ -154,6 +163,25 @@ export class ScopeEvaluator {
       }
       return true;
     }
+  }
+
+  /**
+   * Check if entity has a specific trait
+   * Supports both entity.has() method and entity.get() method patterns
+   */
+  private static entityHasTrait(entity: IEntity, traitType: string): boolean {
+    // Check for .has() method (trait system standard)
+    if (typeof (entity as any).has === 'function') {
+      return (entity as any).has(traitType);
+    }
+
+    // Check for .get() method returning truthy value (alternate pattern)
+    if (typeof (entity as any).get === 'function') {
+      const trait = (entity as any).get(traitType);
+      return trait !== undefined && trait !== null;
+    }
+
+    return false;
   }
 
   /**

@@ -1,8 +1,8 @@
 # Parser Refactor Plan: Trait-Based Semantic Constraints
 
 **Date**: 2026-01-10
-**Status**: Draft
-**Branch**: dungeo
+**Status**: In Progress
+**Branch**: parser-refactor
 
 ## Problem Statement
 
@@ -26,23 +26,89 @@ This is wrong because:
 
 ## Desired Architecture
 
-**Grammar declares only semantic constraints:**
+### Core Principle: Separation of Concerns
+
+**CRITICAL**: Grammar and parser handle pattern matching and semantic constraints. Scope (AWARE/VISIBLE/REACHABLE/CARRIED) is ALWAYS handled by action validation.
+
+| Layer | Responsibility | Examples |
+|-------|---------------|----------|
+| **Grammar** | Pattern → Action mapping | `board :target` → `if.action.entering` |
+| **Grammar** | Semantic constraints (traits) | `.hasTrait(TraitType.CONTAINER)` |
+| **Parser** | Entity resolution, disambiguation | Find entities matching traits |
+| **Action validate()** | Scope validation (dynamic) | Check VISIBLE/REACHABLE/CARRIED |
+| **Action blocked()** | Scope failure messages | "You can't see that" / "Too far away" |
+
+**Grammar NEVER declares:**
+- `.visible()` - handled by action validation
+- `.touchable()` / `.reachable()` - handled by action validation
+- `.carried()` - handled by action validation
+- `.matching({ portable: true })` - SceneryTrait handles acquisition blocking
+
+### Scope Handling in Actions (Design Decision)
+
+**Key Insight**: Scope requirements can be **dynamic** based on context (instruments, magic, environmental conditions). A static declarative approach is too limiting for a dynamic world model.
+
+**Solution**: `defaultScope` metadata + dynamic override in `validate()`:
+
 ```typescript
-grammar
-  .define('board :target')
-  .hasTrait(TraitType.VEHICLE)
-  .mapsTo('if.action.entering')
+const switchingOnAction: Action = {
+  id: 'if.action.switching_on',
+
+  // Default scope - documents intent, used for parser hints
+  defaultScope: {
+    target: ScopeLevel.REACHABLE
+  },
+
+  validate(context) {
+    // Can compute effective scope dynamically
+    const effectiveScope = context.target.has(TraitType.REMOTE_CONTROLLABLE)
+      ? ScopeLevel.VISIBLE
+      : ScopeLevel.REACHABLE;
+
+    // Helper returns scope error if check fails
+    const scopeCheck = context.requireScope('target', effectiveScope);
+    if (!scopeCheck.ok) return scopeCheck.error;
+
+    // Action-specific validation
+    if (!context.target.has(TraitType.SWITCHABLE)) {
+      return error('NOT_SWITCHABLE');
+    }
+
+    return success();
+  },
+
+  blocked(context, error) {
+    // Handles both scope errors and action-specific errors
+    if (error.type === 'SCOPE_NOT_VISIBLE') {
+      return effects.say("You can't see any such thing.");
+    }
+    if (error.type === 'SCOPE_NOT_REACHABLE') {
+      return effects.say("That's too far away.");
+    }
+    // ... action-specific errors
+  }
+}
 ```
 
-**Parser automatically handles:**
-1. Find all entities with required trait
-2. Filter by visibility (from `world.getVisibleEntities()`)
-3. Filter by reachability if action requires touch (from `world.getTouchableEntities()`)
-4. **Scope validation**: If entity is visible but not reachable, fail with appropriate message
-5. Handle implicit takes if needed (player says "eat apple" but apple is on table)
-6. Disambiguate if multiple matches ("Do you mean the red boat or the blue boat?")
+**Dynamic scope scenarios this supports:**
 
-**Scope Levels (4 tiers):**
+| Scenario | Normal Scope | Dynamic Scope | Trigger |
+|----------|--------------|---------------|---------|
+| Remote control | REACHABLE | VISIBLE | Target has RemoteControllableTrait |
+| Pole/hook tool | REACHABLE | VISIBLE | Using instrument |
+| Ranged weapon | REACHABLE | VISIBLE | Weapon type |
+| Telepathy | REACHABLE | AWARE | Player has telepathy |
+| Darkness | VISIBLE | REACHABLE (touch) | Room is dark |
+
+**Benefits:**
+- `defaultScope` documents intent and helps parser with entity resolution
+- `validate()` has full control to compute effective scope dynamically
+- `context.requireScope()` helper keeps scope checks clean and consistent
+- `blocked()` handles all failure cases uniformly
+- No new phase needed - stays 4-phase pattern
+
+### Scope Levels (4 tiers)
+
 | Scope Level | What It Means | Example Actions | Check |
 |-------------|---------------|-----------------|-------|
 | AWARE | Player knows entity exists | think about, remember, ask about | `world.getEntitiesInScope()` |
@@ -50,457 +116,361 @@ grammar
 | REACHABLE | Player can touch it | take, push, board, open, touch | `world.getTouchableEntities()` |
 | CARRIED | In player's inventory | drop, eat, wear, insert, give | inventory check |
 
-**Key Insight**: Author can put *anything* in scope (AWARE), but visibility and reachability still apply separately. Player always knows the statue exists and can "think about statue", but can't examine it until visible or take it until reachable.
+### SceneryTrait: Core Platform Mechanism
 
-**Example:**
-```
-> think about statue
-You remember seeing a magnificent statue in the town square.
+Objects are **portable by default**. SceneryTrait marks objects as NOT acquirable:
 
-> examine statue
-You can't see any statue here.
-
-> go to town square
-...
-
-> examine statue
-A towering marble statue of the founder.
-```
-
-**Scope Failure Handling:**
-
-Scope failures are handled in the action's `blocked()` phase, not the parser:
-
-1. Parser resolves entity from AWARE scope (player can refer to it)
-2. Action's `validate()` checks required scope level (VISIBLE/REACHABLE/CARRIED)
-3. If scope check fails, `validate()` returns error with scope context
-4. Action's `blocked()` generates contextual message
-
-**Failure Messages (from blocked phase):**
-- Aware but not visible: "You can't see any X here."
-- Visible but not reachable: "The X is too far away."
-- Not carried: "You don't have the X."
-- Not aware: Parser fails to resolve - "I don't understand what you mean by X."
-
-**Entity-specific messages**: Authors can customize in blocked():
 ```typescript
-blocked(context, error) {
-  if (error.code === 'SCOPE_NOT_REACHABLE') {
-    return effects.say("The boat is beached too far up the shore to reach.");
+// SceneryTrait blocking is checked in action validate(), not grammar
+takingAction.validate(context) {
+  const scopeCheck = context.requireScope('target', ScopeLevel.REACHABLE);
+  if (!scopeCheck.ok) return scopeCheck.error;
+
+  if (target.has(TraitType.SCENERY)) {
+    return error('SCENERY_BLOCKED');
   }
+  // ... other validation
 }
 ```
 
 ---
 
-## Current Architecture Analysis
+## Implementation Progress
 
-### Grammar Pattern Flow
-```
-grammar.ts defines pattern
-    -> PatternBuilder.where(slot, scopeConstraint)
-    -> ScopeBuilderImpl builds ScopeConstraint
-    -> entity-slot-consumer evaluates constraints
-    -> ScopeEvaluator.findEntitiesByName() filters entities
-```
+### ✅ Phase 1: Add `.hasTrait()` to Grammar API (COMPLETE)
 
-### Key Files
-| File | Current Role |
-|------|--------------|
-| `packages/if-domain/src/grammar/grammar-builder.ts` | PatternBuilder, ScopeBuilder interfaces |
-| `packages/if-domain/src/grammar/scope-builder.ts` | ScopeBuilderImpl with `.visible()`, `.matching()` |
-| `packages/parser-en-us/src/scope-evaluator.ts` | Evaluates scope constraints against world |
-| `packages/parser-en-us/src/slot-consumers/entity-slot-consumer.ts` | Resolves entity slots during parsing |
-| `packages/parser-en-us/src/grammar.ts` | All grammar pattern definitions |
+**Added direct `.hasTrait(slot, traitType)` method to builders:**
+- Added `hasTrait(slot: string, traitType: string): PatternBuilder` to PatternBuilder interface
+- Added `hasTrait(slot: string, traitType: string): ActionGrammarBuilder` to ActionGrammarBuilder interface
+- Added `traitFilters?: string[]` to SlotConstraint interface
+- Implemented in `packages/if-domain/src/grammar/grammar-engine.ts`
 
-### Current Scope Methods
-- `.visible()` - sets base to visible entities
-- `.touchable()` - sets base to touchable entities
-- `.carried()` - sets base to carried items
-- `.matching({ prop: value })` - filters by entity property (NOT trait)
-
-### The `.matching()` Problem
-
-In `scope-evaluator.ts:149-156`:
+**New simplified grammar syntax:**
 ```typescript
-// Property constraint - checks entity[key] === value
-for (const [key, value] of Object.entries(filter)) {
-  const entityValue = (entity as any)[key];
-  if (entityValue !== value) {
-    return false;
-  }
-}
-```
+// Before (callback-based)
+grammar.define('open :door')
+  .where('door', (scope) => scope.hasTrait(TraitType.OPENABLE))
+  .mapsTo('if.action.opening')
+  .build();
 
-This checks `entity.enterable`, but traits don't expose themselves as direct properties. The boat has:
-- `boat.has(TraitType.VEHICLE)` = true
-- `boat.enterable` = undefined (unless getter exists)
-
----
-
-## Implementation Plan
-
-### Phase 1: Add `.hasTrait()` to Grammar API
-
-**Goal**: Allow grammar to declare trait requirements cleanly.
-
-**Changes to `packages/if-domain/src/grammar/grammar-builder.ts`:**
-
-```typescript
-// Add to PatternBuilder interface
-export interface PatternBuilder {
-  // ... existing methods ...
-
-  /**
-   * Require matched entity to have a trait
-   * @param traitType TraitType constant (e.g., TraitType.VEHICLE)
-   */
-  hasTrait(traitType: string): PatternBuilder;
-
-  /**
-   * Require matched entity for a specific slot to have a trait
-   * @param slotName The slot name from pattern
-   * @param traitType TraitType constant
-   */
-  hasTrait(slotName: string, traitType: string): PatternBuilder;
-}
-```
-
-**Changes to `packages/if-domain/src/grammar/scope-builder.ts`:**
-
-```typescript
-// Add to ScopeConstraint
-export interface ScopeConstraint {
-  base: 'visible' | 'touchable' | 'carried' | 'nearby' | 'all';
-  filters: Array<PropertyConstraint | FunctionConstraint>;
-  traitFilters: string[];  // NEW: required trait types
-  explicitEntities: string[];
-  includeRules: string[];
-}
-
-// Add to ScopeBuilderImpl
-hasTrait(traitType: string): ScopeBuilder {
-  this.constraint.traitFilters.push(traitType);
-  return this;
-}
-```
-
-### Phase 2: Update ScopeEvaluator for Trait Filtering
-
-**Changes to `packages/parser-en-us/src/scope-evaluator.ts`:**
-
-```typescript
-static getEntitiesInScope(constraint: ScopeConstraint, context: GrammarContext): IEntity[] {
-  // ... existing base scope logic ...
-
-  // Apply property filters (existing)
-  for (const filter of constraint.filters) {
-    entities = entities.filter(entity => this.matchesFilter(entity, filter, context));
-  }
-
-  // NEW: Apply trait filters
-  if (constraint.traitFilters?.length > 0) {
-    entities = entities.filter(entity =>
-      constraint.traitFilters.every(traitType =>
-        typeof entity.has === 'function' && entity.has(traitType)
-      )
-    );
-  }
-
-  // ... rest of method ...
-}
-```
-
-### Phase 3: Make Scope Implicit Based on Action
-
-**Key Change**: Parser determines scope requirements from action metadata, not grammar patterns.
-
-**Scope determination flow:**
-1. Look up action's required scope level (VISIBLE, REACHABLE, or CARRIED)
-2. Get candidates from appropriate world method
-3. Apply trait filters
-4. **Validate scope**: If entity visible but action requires reachable, check reachability
-5. Return appropriate failure message if scope validation fails
-
-**Scope level enum:**
-```typescript
-enum ScopeLevel {
-  AWARE = 'aware',         // Player knows it exists (think about, ask about)
-  VISIBLE = 'visible',     // Player can see it (examine, look at)
-  REACHABLE = 'reachable', // Player can touch it (take, push, board)
-  CARRIED = 'carried',     // In player's inventory (drop, eat, wear)
-}
-```
-
-**Action metadata** (could be in action definition or registry):
-```typescript
-const actionScopeRequirements: Record<string, ScopeLevel> = {
-  // AWARE - mental/social actions
-  'if.action.thinking_about': 'aware',
-  'if.action.remembering': 'aware',
-  'if.action.asking_about': 'aware',
-
-  // VISIBLE - perception actions
-  'if.action.examining': 'visible',
-  'if.action.looking_at': 'visible',
-  'if.action.reading': 'visible',
-
-  // REACHABLE - physical interaction
-  'if.action.taking': 'reachable',
-  'if.action.entering': 'reachable',  // board boat
-  'if.action.pushing': 'reachable',
-  'if.action.opening': 'reachable',
-  'if.action.touching': 'reachable',
-
-  // CARRIED - inventory actions
-  'if.action.dropping': 'carried',
-  'if.action.eating': 'carried',
-  'if.action.wearing': 'carried',
-  'if.action.inserting': 'carried',
-  'if.action.giving': 'carried',
-};
-```
-
-**Changes to `packages/parser-en-us/src/slot-consumers/entity-slot-consumer.ts`:**
-
-When evaluating slot constraints:
-1. Get action ID from context
-2. Look up required scope level for action
-3. Get entities from appropriate scope (visible/touchable/carried)
-4. Apply trait filters
-5. If entity found but wrong scope level, generate appropriate error
-
-```typescript
-private evaluateSlotConstraints(...) {
-  // Build scope constraint
-  const scopeConstraint = scope.build();
-
-  // Default to visible if no explicit base and we have trait filters
-  if (scopeConstraint.base === 'all' && scopeConstraint.traitFilters?.length > 0) {
-    scopeConstraint.base = 'visible';
-  }
-
-  // Find matching entities
-  const matchingEntities = ScopeEvaluator.findEntitiesByName(
-    slotText, scopeConstraint, context
-  );
-
-  // ... rest of method ...
-}
-```
-
-### Phase 4: Update Grammar Patterns
-
-**Changes to `packages/parser-en-us/src/grammar.ts`:**
-
-Replace all `.matching({ property: true })` with `.hasTrait()`:
-
-| Before | After |
-|--------|-------|
-| `.matching({ enterable: true })` | `.hasTrait(TraitType.ENTERABLE)` or `.hasTrait(TraitType.VEHICLE)` |
-| `.matching({ portable: true })` | `.hasTrait(TraitType.PORTABLE)` |
-| `.matching({ openable: true })` | `.hasTrait(TraitType.OPENABLE)` |
-| `.matching({ switchable: true })` | `.hasTrait(TraitType.SWITCHABLE)` |
-| `.matching({ container: true })` | `.hasTrait(TraitType.CONTAINER)` |
-| `.matching({ supporter: true })` | `.hasTrait(TraitType.SUPPORTER)` |
-| `.matching({ animate: true })` | `.hasTrait(TraitType.ACTOR)` or `.hasTrait(TraitType.NPC)` |
-
-**Example migration:**
-
-Before:
-```typescript
-grammar
-  .define('board :vehicle')
-  .where('vehicle', (scope: ScopeBuilder) => scope.visible().matching({ enterable: true }))
-  .mapsTo('if.action.entering')
-  .withPriority(100)
+// After (direct API)
+grammar.define('open :door')
+  .hasTrait('door', TraitType.OPENABLE)
+  .mapsTo('if.action.opening')
   .build();
 ```
 
-After:
+### ✅ Phase 2: Update ScopeEvaluator for Trait Filtering (COMPLETE)
+
+- Added trait filtering logic to `packages/parser-en-us/src/scope-evaluator.ts`
+- Added `entityHasTrait()` helper method
+
+### ✅ Phase 3: Remove Scope Filters from Grammar (COMPLETE)
+
+**Removed from `packages/parser-en-us/src/grammar.ts`:**
+- `.visible()` - removed from ~25 patterns
+- `.touchable()` - removed from ~15 patterns
+- `.carried()` - removed from ~10 patterns
+- `.matching({ portable: true })` - removed from 3 patterns
+- Removed `ScopeBuilder` import (no longer needed)
+- `.matching({ locked: true })` - removed (state check)
+- `.matching({ open: false })` - removed (state check)
+
+**Kept trait constraints:**
+- `.hasTrait(TraitType.CONTAINER)`
+- `.hasTrait(TraitType.SUPPORTER)`
+- `.hasTrait(TraitType.OPENABLE)`
+- `.hasTrait(TraitType.SWITCHABLE)`
+- `.hasTrait(TraitType.ENTERABLE)`
+- `.hasTrait(TraitType.ACTOR)`
+
+### ✅ Phase 4: Add Scope Checking to Actions (COMPLETE)
+
+**Goal**: Add `defaultScope` and `context.requireScope()` to action framework.
+
+**Completed:**
+1. Updated `ScopeLevel` enum to use ordered numeric values:
+   - `UNAWARE = 0` - Entity not known to player
+   - `AWARE = 1` - Player knows it exists (can hear/smell)
+   - `VISIBLE = 2` - Player can see it
+   - `REACHABLE = 3` - Player can touch it
+   - `CARRIED = 4` - In player's inventory
+2. Added `ScopeCheckResult` type and `ScopeErrors` constants
+3. Added `defaultScope` property to `Action` interface
+4. Added scope methods to `ActionContext`:
+   - `getEntityScope(entity)` - returns ScopeLevel
+   - `getSlotScope(slot)` - returns ScopeLevel for entity in command slot
+   - `requireScope(entity, required)` - returns ScopeCheckResult
+   - `requireSlotScope(slot, required)` - convenience method for slots
+5. Updated `taking` action as test case with scope checking
+6. Updated all tests and actions that used old scope values
+7. **Updated all stdlib actions with `defaultScope` and `requireScope()` in validate()**
+
+**Actions updated (24 total):**
+- VISIBLE scope: examining, reading
+- REACHABLE scope: opening, closing, entering, pushing, pulling, touching, searching, locking, unlocking, switching_on, switching_off, eating, drinking, wearing
+- CARRIED scope: dropping, taking_off, inserting, putting, giving, showing, throwing
+- Two-slot actions: inserting (item: CARRIED, container: REACHABLE), putting (item: CARRIED, target: REACHABLE), removing (item: REACHABLE, source: REACHABLE), locking/unlocking (target: REACHABLE, key: CARRIED), giving (item: CARRIED, recipient: REACHABLE), showing (item: CARRIED, viewer: VISIBLE), throwing (item: CARRIED, target: VISIBLE)
+
+**Files modified:**
+- `packages/stdlib/src/scope/types.ts` - Updated ScopeLevel enum
+- `packages/stdlib/src/scope/scope-resolver.ts` - Updated to return numeric values
+- `packages/stdlib/src/actions/enhanced-types.ts` - Added types and defaultScope
+- `packages/stdlib/src/actions/enhanced-context.ts` - Added scope methods
+- `packages/stdlib/src/actions/standard/*/` - All 24 actions updated with defaultScope and requireScope
+- `packages/stdlib/src/validation/command-validator.ts` - Updated for new ScopeLevel
+
+**Remaining (future work):**
+- Add scope error messages to lang-en-us (Phase 5 will address localized messages)
+
+**Scope requirements by action:**
+
 ```typescript
-grammar
-  .define('board :target')
-  .hasTrait('target', TraitType.VEHICLE)
-  .mapsTo('if.action.entering')
-  .withPriority(100)
-  .build();
+// AWARE - mental/social actions
+'if.action.thinking_about': { target: ScopeLevel.AWARE }
+'if.action.remembering': { target: ScopeLevel.AWARE }
+
+// VISIBLE - perception actions
+'if.action.examining': { target: ScopeLevel.VISIBLE }
+'if.action.reading': { target: ScopeLevel.VISIBLE }
+
+// REACHABLE - physical interaction
+'if.action.taking': { target: ScopeLevel.REACHABLE }
+'if.action.entering': { target: ScopeLevel.REACHABLE }
+'if.action.pushing': { target: ScopeLevel.REACHABLE }
+'if.action.opening': { target: ScopeLevel.REACHABLE }
+'if.action.touching': { target: ScopeLevel.REACHABLE }
+
+// CARRIED - inventory actions
+'if.action.dropping': { item: ScopeLevel.CARRIED }
+'if.action.eating': { item: ScopeLevel.CARRIED }
+'if.action.wearing': { item: ScopeLevel.CARRIED }
+'if.action.inserting': { item: ScopeLevel.CARRIED }
+'if.action.giving': { item: ScopeLevel.CARRIED }
 ```
 
-### Phase 5: Add Disambiguation Support
+### ✅ Phase 5: Add Disambiguation Support (COMPLETE)
 
 **Goal**: When multiple entities match, auto-select by score or prompt user.
 
+**Completed:**
+1. ✅ Added `entity.scope(actionId, priority?)` method to IFEntity
+   - Default priority is 100
+   - Higher = preferred, lower = deprioritized
+   - Persisted in toJSON/fromJSON
+2. ✅ Updated CommandValidator scoring to use scope priorities
+   - Reads `entity.scope(actionId)` during entity scoring
+   - Converts to bonus: (priority - 100) / 10 (so 150 → +5, 50 → -5)
+3. ✅ Added `AMBIGUOUS_ENTITY` error code for multiple matches
+   - Distinct from `ENTITY_NOT_FOUND`
+   - Includes list of candidate entities for disambiguation prompt
+4. ✅ Fixed modifier extraction from parser output
+   - Parser wasn't populating `modifiers` field
+   - Added fallback: extract modifiers by comparing text to head noun
+5. ✅ Smart disambiguation: ENTITY_NOT_FOUND when modifier doesn't match any entity
+6. ✅ Added `disambiguation_required` debug event (emitted when multiple matches)
+7. ✅ Implemented `resolveWithSelection()` for re-resolving after user selection
+   - Takes command + entity selections map (slot -> entityId)
+   - Bypasses normal resolution for specified slots
+   - Still validates scope constraints on selected entities
+8. ✅ Added 11 tests for `entity.scope()` disambiguation priority
+9. ✅ Added 6 tests for `resolveWithSelection()` method
+
 **Author-controlled scoring:**
 ```typescript
-// Authors set disambiguation preference per action
 apple.scope('if.action.eating', 150);      // prefer real apple
 waxApple.scope('if.action.eating', 50);    // deprioritize wax apple
 ```
 
-Higher score = more likely to be auto-selected. If scores are close or equal, prompt user.
-
-**Disambiguation flow:**
-1. Multiple entities match after trait + scope filtering
-2. Sort by `entity.scope(actionId)` score (higher first)
-3. If top score significantly higher than second → auto-select
-4. Otherwise, prompt user: "Do you mean the red apple or the wax apple?"
-5. User selects, re-parse with explicit entity
-
-**DisambiguationNeeded result type:**
+**Disambiguation API:**
 ```typescript
-export interface DisambiguationNeeded {
-  type: 'disambiguation';
-  question: string;
-  options: Array<{
-    entityId: string;
-    displayName: string;
-    score: number;
-  }>;
-  originalInput: string;
-  slotName: string;
+// When validate() returns AMBIGUOUS_ENTITY error with choices:
+const result = validator.validate(command);
+if (!result.success && result.error.code === 'AMBIGUOUS_ENTITY') {
+  // UI presents choices to user
+  const choices = result.error.details.ambiguousEntities;
+  // User selects one...
+
+  // Re-resolve with explicit selection
+  const selectedId = choices[userChoice].id;
+  const finalResult = validator.resolveWithSelection(command, {
+    directObject: selectedId
+  });
 }
 ```
 
-### Phase 6: Add Implicit Takes
+### ✅ Author-Controlled Scope Additions (COMPLETE)
+
+Allow authors to add entities to scope regardless of spatial location:
+
+```typescript
+// Always visible everywhere
+sky.setMinimumScope(ScopeLevel.VISIBLE);
+
+// Visible only from specific rooms
+mountain.setMinimumScope(ScopeLevel.VISIBLE, ['overlook', 'trail']);
+
+// Butterfly fluttering in garden area - reachable but may escape
+butterfly.setMinimumScope(ScopeLevel.REACHABLE, ['garden', 'meadow']);
+
+// Ambient sound - always audible
+ticking.setMinimumScope(ScopeLevel.AWARE, ['hallway', 'study']);
+```
+
+**Implementation (Complete):**
+1. ✅ Added `minimumScopes: Map<string, number>` to IFEntity ('*' for all rooms)
+2. ✅ Added `setMinimumScope(level, rooms?)` and `clearMinimumScope(rooms?)` methods
+3. ✅ Added `getMinimumScope(roomId)` for ScopeResolver to use
+4. ✅ Updated `ScopeResolver.getScope()` to return max(physical, minimum)
+5. ✅ Updated `getVisible()`, `getReachable()`, `getAudible()` to include minimum scope entities
+6. ✅ Serialize/deserialize in clone/toJSON/fromJSON
+
+**Use cases:**
+- Ambient scenery (sky, floor, walls)
+- Distant visible objects (mountains, towers)
+- Roaming creatures (butterfly, cat)
+- Sounds and smells
+- Player body parts
+
+**Disambiguation flow:**
+1. Multiple entities match after trait filtering
+2. Sort by `entity.scope(actionId)` score (higher first)
+3. If top score significantly higher than second → auto-select
+4. Otherwise, return `AMBIGUOUS_ENTITY` error with choices
+5. UI can prompt user: "Do you mean the red apple or the wax apple?"
+6. Re-resolve with explicit entity ID
+
+### ✅ Phase 6: Add Implicit Takes (COMPLETE)
 
 **Goal**: Auto-take items when needed for an action.
 
-**Implementation location**: Engine turn cycle or action validation phase.
+**Event**: `if.event.implicit_take` (distinct from regular `if.event.taken`)
 
-**Event**: `if.events.implicit-take` (distinct from regular `if.events.take`)
+**Implementation:**
 
-**Logic:**
-1. Action declares if it requires carried item (e.g., `EAT`, `INSERT`, `WEAR`)
-2. If referenced entity is not carried but is takeable and reachable
-3. Attempt implicit TAKE with `if.events.implicit-take`
-4. TAKE goes through full validate/blocked phases
-5. If TAKE succeeds: report "(first taking the X)" then proceed with main action
-6. If TAKE blocked: report the TAKE's blocked message, main action never executes
+1. ✅ Added `ImplicitTakeResult` type to enhanced-types.ts
+2. ✅ Added `requireCarriedOrImplicitTake(entity)` method to ActionContext interface
+3. ✅ Implemented in enhanced-context.ts:
+   - If already carried → success, no implicit take
+   - If not reachable → return scope error
+   - If scenery/room → return fixed_in_place error
+   - If reachable and takeable → run taking action internally
+   - If take succeeds → return success with events
+   - If take fails → return take's error
+4. ✅ Added `ImplicitTakeEventData` type and registered `if.event.implicit_take` event
+5. ✅ Added 12 tests for implicit take functionality
+6. ✅ Updated `putting` action to use `requireCarriedOrImplicitTake`
 
-**Success Example:**
+**Usage:**
+```typescript
+// In action's validate():
+const carryCheck = context.requireCarriedOrImplicitTake(item);
+if (!carryCheck.ok) {
+  return carryCheck.error!;
+}
+// If implicit take happened, events are stored in context.sharedData.implicitTakeEvents
+
+// In action's report():
+const events: ISemanticEvent[] = [];
+if (context.sharedData.implicitTakeEvents) {
+  events.push(...context.sharedData.implicitTakeEvents);
+}
+// ... add main action events
 ```
-> eat apple
-(first taking the apple)
-You eat the apple. Delicious!
-```
 
-**Failure Examples:**
-```
-> eat apple
-You reached for the apple, but a small gnome slashes at your hand, leaving you hungry and desperate.
+**Actions that support implicit takes:**
+- ✅ `putting` - reference implementation (single-object path)
+- ✅ `inserting` - fixed context forwarding to preserve implicit take events from putting
+- ✅ `giving` - added requireCarriedOrImplicitTake check
+- ✅ `showing` - added requireCarriedOrImplicitTake check
+- ✅ `throwing` - added requireCarriedOrImplicitTake check
+- ✅ `wearing` - replaced incomplete implicit take logic with proper implementation
 
-> eat apple
-The apple is stuck to the table.
-```
-
-**Key Points:**
-- Implicit take is a real action attempt with full blocked-phase semantics
-- The blocked message comes from whatever prevented the take (authored or generic)
-- Authors can hook into `if.events.implicit-take` specifically (e.g., gnome only attacks on implicit takes, not explicit TAKE commands)
-- The original action's failure doesn't need separate reporting - the blocked take IS the response
-
----
-
-## Patterns to Migrate
-
-### Entering/Exiting (Lines 570-690)
-- `enter :portal` - `.hasTrait(TraitType.ENTERABLE)`
-- `get in :portal` - `.hasTrait(TraitType.ENTERABLE)`
-- `board :vehicle` - `.hasTrait(TraitType.VEHICLE)`
-- `get on :vehicle` - `.hasTrait(TraitType.VEHICLE)`
-- `exit :container` - `.hasTrait(TraitType.ENTERABLE)`
-- `disembark :vehicle` - `.hasTrait(TraitType.VEHICLE)`
-
-### Container Operations (Lines 130-160)
-- `put :item in :container` - item: `.hasTrait(TraitType.PORTABLE)`, container: `.hasTrait(TraitType.CONTAINER)`
-- `put :item on :supporter` - item: `.hasTrait(TraitType.PORTABLE)`, supporter: `.hasTrait(TraitType.SUPPORTER)`
-
-### Taking/Dropping (Lines 90-130)
-- `take :item` - `.hasTrait(TraitType.PORTABLE)`
-- `pick up :item` - `.hasTrait(TraitType.PORTABLE)`
-
-### Opening/Closing (Lines 205-220)
-- `open :door` - `.hasTrait(TraitType.OPENABLE)`
-- `close :door` - `.hasTrait(TraitType.OPENABLE)`
-
-### Switching (Lines 220-235)
-- `turn on :device` - `.hasTrait(TraitType.SWITCHABLE)`
-- `switch off :device` - `.hasTrait(TraitType.SWITCHABLE)`
-
-### Communication (Lines 390-430)
-- `give :item to :recipient` - recipient: `.hasTrait(TraitType.ACTOR)`
-- `show :item to :recipient` - recipient: `.hasTrait(TraitType.ACTOR)`
+**Files modified:**
+- `packages/stdlib/src/actions/enhanced-types.ts` - Added ImplicitTakeResult type
+- `packages/stdlib/src/actions/enhanced-context.ts` - Implemented requireCarriedOrImplicitTake
+- `packages/stdlib/src/actions/context.ts` - Added stub for deprecated class
+- `packages/stdlib/src/events/event-registry.ts` - Added ImplicitTakeEventData type
+- `packages/stdlib/src/actions/standard/putting/putting.ts` - Uses requireCarriedOrImplicitTake
+- `packages/stdlib/src/actions/standard/inserting/inserting.ts` - Fixed context forwarding for implicit takes
+- `packages/stdlib/src/actions/standard/giving/giving.ts` - Added implicit take support
+- `packages/stdlib/src/actions/standard/showing/showing.ts` - Added implicit take support
+- `packages/stdlib/src/actions/standard/throwing/throwing.ts` - Added implicit take support
+- `packages/stdlib/src/actions/standard/wearing/wearing.ts` - Replaced incomplete implicit take with proper implementation
+- `packages/stdlib/tests/unit/actions/implicit-take.test.ts` - 12 new tests
+- `packages/stdlib/tests/unit/actions/wearing-golden.test.ts` - Updated test for new event format
 
 ---
 
 ## Design Decisions
 
-### Q1: Remove `.visible()`, `.touchable()` from grammar API?
+### Q1: Separate scope() phase vs scope in validate()?
 
-**Decision**: Keep as optional overrides.
-
-**Rationale**: Default behavior should be implicit visibility, but some actions need explicit scope:
-- `DROP` requires `.carried()` - can only drop what you're holding
-- `SMELL` might work across rooms - `.nearby()` override
-
-### Q2: Where do implicit takes happen?
-
-**Decision**: Engine turn cycle or action validation phase.
-
-**Rationale**: Parser's job is to understand intent. Engine handles action sequencing. When an action requires a carried item and the item isn't carried:
-1. Attempt implicit take with `if.events.implicit-take`
-2. Full validate/blocked phases execute
-3. If blocked, report the take's blocked message (authored or generic)
-4. If successful, report "(first taking the X)" and proceed with main action
-5. Authors can hook `if.events.implicit-take` for special behavior
-
-### Q3: How does disambiguation work?
-
-**Decision**: Author-controlled scoring, then prompt if needed.
+**Decision**: No separate phase. Use `defaultScope` metadata + dynamic check in `validate()`.
 
 **Rationale**:
-1. Authors set scores via `entity.scope(actionId, score)`
-2. Higher scores auto-selected when significantly higher than alternatives
-3. Close scores trigger user prompt: "Do you mean X or Y?"
-4. User selects, re-parse with explicit entity
+- Scope requirements can be dynamic (instruments, magic, environmental conditions)
+- Static declarative-only approach is too limiting for dynamic world model
+- `validate()` already checks preconditions - scope is just another precondition
+- `context.requireScope()` helper keeps code clean and consistent
 
-### Q4: What about `.isCarried()` constraint?
+### Q2: Should ENTERABLE and VEHICLE be separate traits?
 
-**Decision**: No - being carried is location, not trait.
+**Decision**: VehicleTrait inherently includes enterable capability.
 
-**Rationale**: Use `requiresScope(ScopeLevel.CARRIED)` on PatternBuilder for actions requiring carried items.
+**Rationale**: User confirmed vehicles are enterable by definition. No need for separate EnterableTrait on vehicles.
+
+### Q3: How should "examine" work - visible or touchable scope?
+
+**Decision**: VISIBLE by default, with sensory cascade fallback.
+
+**Rationale**: User specified examine should try: see → feel → hear → smell → fail. This is handled in action validate() with dynamic scope.
+
+### Q4: Should disambiguation limit to N options?
+
+**Decision**: No limit - author's responsibility.
+
+**Rationale**: User stated "if an author is dumb enough to make you sift through 99 shades of red balloons, that's on them."
 
 ---
 
-## Verification
+## Files Modified (Complete)
 
-### Test Cases
+| File | Change |
+|------|--------|
+| `packages/if-domain/src/grammar/grammar-builder.ts` | Added hasTrait() to ScopeBuilder |
+| `packages/if-domain/src/grammar/scope-builder.ts` | Added traitFilters, implemented hasTrait() |
+| `packages/parser-en-us/src/scope-evaluator.ts` | Added trait filtering logic |
+| `packages/parser-en-us/src/grammar.ts` | Removed all scope filters (~50 patterns) |
+| `packages/parser-en-us/tests/grammar-scope.test.ts` | Updated for new architecture |
+| `packages/parser-en-us/tests/grammar-scope-cross-location.test.ts` | Updated for new architecture |
 
-1. **"board boat"** - Should parse when boat has VehicleTrait and is visible
-2. **"board boat"** - Should fail with "no vehicle here" when boat not visible
-3. **"board boat"** - Should disambiguate when multiple vehicles present
-4. **"eat apple"** - Should implicit-take apple from table, then eat
-5. **"take lamp"** - Should work with PortableTrait
+## Files to Modify (Phase 4)
 
-### Transcript Tests
+| File | Changes |
+|------|---------|
+| `packages/stdlib/src/actions/action-types.ts` | Add `defaultScope` to Action interface |
+| `packages/stdlib/src/actions/action-context.ts` | Add `requireScope()` helper |
+| `packages/stdlib/src/actions/standard/*` | Update validate() methods |
+| `packages/world-model/src/scope/scope-level.ts` | Add ScopeLevel enum |
 
-```
-> board boat
-You board the inflatable boat.
+---
 
-> board
-What do you want to board?
+## Test Results
 
-> board statue
-You can't board that.
-```
+**Parser tests:** 266 passed, 4 skipped
+**stdlib tests:** Pre-existing failures (21 failures unrelated to grammar changes)
 
-### Running Tests
+---
+
+## Running Tests
 
 ```bash
-# Unit tests
+# Parser unit tests
 pnpm --filter '@sharpee/parser-en-us' test
+
+# stdlib tests
+pnpm --filter '@sharpee/stdlib' test
 
 # Integration tests
 node packages/transcript-tester/dist/cli.js stories/dungeo --all
@@ -508,50 +478,3 @@ node packages/transcript-tester/dist/cli.js stories/dungeo --all
 # Interactive testing
 ./scripts/play-dungeo.sh
 ```
-
----
-
-## Migration Strategy
-
-### Stage 1: Non-Breaking Additions
-1. Add `hasTrait()` to PatternBuilder interface
-2. Add `traitFilters` to ScopeConstraint
-3. Update ScopeEvaluator to handle trait filters
-4. **All existing patterns continue working**
-
-### Stage 2: Migrate Patterns
-1. Update patterns one-by-one to use `hasTrait()`
-2. Remove `.visible()` from patterns that don't need explicit scope
-3. Keep `.matching()` working for backward compatibility
-
-### Stage 3: Add Features
-1. Implement disambiguation flow
-2. Implement implicit takes
-3. Add comprehensive tests
-
-### Stage 4: Cleanup
-1. Remove deprecated `.matching({ property: true })` patterns
-2. Update documentation
-3. Consider deprecation warnings for old API
-
----
-
-## Files to Modify
-
-| File | Changes |
-|------|---------|
-| `packages/if-domain/src/grammar/grammar-builder.ts` | Add `hasTrait()` to PatternBuilder |
-| `packages/if-domain/src/grammar/scope-builder.ts` | Add `traitFilters`, implement `hasTrait()` |
-| `packages/parser-en-us/src/scope-evaluator.ts` | Add trait filtering logic |
-| `packages/parser-en-us/src/slot-consumers/entity-slot-consumer.ts` | Default to visible scope |
-| `packages/parser-en-us/src/grammar.ts` | Migrate ~30 patterns |
-| `packages/stdlib/src/validation/command-validator.ts` | Disambiguation, implicit takes |
-| `packages/engine/src/turn-cycle/` | Execute implicit takes |
-
----
-
-## Open Questions
-
-1. Should ENTERABLE and VEHICLE be separate traits, or should vehicles automatically be enterable?
-2. How should "examine" work - visible or touchable scope?
-3. Should disambiguation limit to N options (e.g., 5)?

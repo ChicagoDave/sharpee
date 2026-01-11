@@ -155,7 +155,7 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
   metadata: {
     requiresDirectObject: true,
     requiresIndirectObject: false,
-    directObjectScope: ScopeLevel.DETECTABLE
+    directObjectScope: ScopeLevel.AWARE
   },
   
   validate(context: ActionContext): ValidationResult {
