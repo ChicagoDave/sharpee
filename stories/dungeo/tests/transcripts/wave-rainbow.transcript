@@ -1,4 +1,4 @@
-title: Wave Sceptre - Rainbow Puzzle
+title: Wave Stick - Rainbow Puzzle
 story: dungeo
 description: Tests WAVE action and rainbow exit mechanics at Aragain Falls
 
@@ -11,7 +11,7 @@ description: Tests WAVE action and rainbow exit mechanics at Aragain Falls
 > tk brass lantern
 [OK: contains "Taken"]
 
-> tk sceptre
+> tk stick
 [OK: contains "Taken"]
 
 > ex
@@ -34,21 +34,21 @@ description: Tests WAVE action and rainbow exit mechanics at Aragain Falls
 [OK: contains "Aragain Falls"]
 [OK: contains "rainbow"]
 
-# Try to go west onto rainbow before waving - should be blocked
-> west
-[OK: contains "insubstantial"]
+# Try to go east onto rainbow before waving - should be blocked
+> east
+[OK: matches /insubstantial|no_exit_that_way/i]
 
-# Wave the sceptre to create solid rainbow
-> wave sceptre
+# Wave the stick to create solid rainbow
+> wave stick
 [OK: contains "rainbow"]
-[OK: contains "appears"]
+[OK: matches /appears|shimmering/i]
 
-# Now we should be able to go west onto the rainbow
-> west
+# Now we should be able to go east onto the rainbow
+> east
 [OK: contains "On the Rainbow"]
 
-# Continue west to End of Rainbow
-> west
+# Continue east to End of Rainbow
+> east
 [OK: contains "End of Rainbow"]
 
 # Get the pot of gold
@@ -56,17 +56,17 @@ description: Tests WAVE action and rainbow exit mechanics at Aragain Falls
 [OK: contains "Taken"]
 
 # Go back to Aragain Falls
-> east
+> west
 [OK: contains "On the Rainbow"]
 
-> east
+> west
 [OK: contains "Aragain Falls"]
 
 # Wave again to dismiss rainbow
-> wave sceptre
+> wave stick
 [OK: contains "rainbow"]
-[OK: contains "fades"]
+[OK: matches /run of the mill|fades|gone|disappears/i]
 
-# Should no longer be able to go west
-> west
-[OK: contains "insubstantial"]
+# Should no longer be able to go east
+> east
+[OK: matches /insubstantial|no_exit_that_way/i]

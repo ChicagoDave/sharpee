@@ -438,13 +438,11 @@ Good luck!`
   }));
   world.moveEntity(label.id, boat.id);
 
-  // Sharp stick (broken sceptre) - punctures boat if carried into it
-  // This is the broken sceptre needed to solidify the rainbow at Aragain Falls
+  // Sharp stick - punctures boat if carried into it, also creates rainbow when waved at falls
   const stick = world.createEntity('sharp stick', EntityType.ITEM);
   stick.add(new IdentityTrait({
     name: 'sharp stick',
-    aliases: ['stick', 'broken stick', 'sharp stick', 'broken sharp stick', 'pointed stick',
-              'sceptre', 'scepter', 'broken sceptre', 'broken scepter'],
+    aliases: ['stick', 'broken stick', 'sharp stick', 'broken sharp stick', 'pointed stick'],
     description: 'A sharp stick, which appears to have been broken at one end, is here.',
     properName: false,
     article: 'a',
@@ -452,7 +450,7 @@ Good luck!`
   }));
   (stick as any).isPointy = true;
   (stick as any).puncturesBoat = true;
-  (stick as any).isSceptre = true;
+  (stick as any).isSceptre = true;  // Flag used by wave-action to identify rainbow item
   world.moveEntity(stick.id, roomId);
 
   // Water/River scenery at Dam Base

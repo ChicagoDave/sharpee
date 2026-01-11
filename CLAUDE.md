@@ -15,6 +15,10 @@ CLAUDE CODE BUG: ESC Interupt is currently broken so you need to STOP at any dec
 
 ## Architecture Principles
 
+### Item Portability
+
+**Items are portable by default.** There is no `PortableTrait` - all items can be taken unless explicitly blocked. To make something non-portable, use `SceneryTrait` or handle it in the taking action's validation.
+
 ### Language Layer Separation
 
 **All text output must go through the language layer.** Code in engine/stdlib/world-model emits semantic events with message IDs, not English strings. Actual prose lives in `lang-en-us` (or other language implementations).
@@ -115,6 +119,7 @@ stories/{story}/src/regions/{region}/
 - Region `index.ts` imports all room creators, creates them, and connects exits
 - Objects are created in `objects/index.ts` and placed in their rooms
 - NPCs go in `stories/{story}/src/npcs/{npc-name}/` with entity, behavior, and messages files
+- **AuthorModel for setup**: When placing objects inside closed containers during world initialization, use `AuthorModel` (wraps WorldModel) to skip validation. Normal WorldModel operations enforce game rules (can't put items in closed containers), but setup code needs to bypass this.
 
 ## Current Work: Project Dungeo (Dec 2025)
 
@@ -318,6 +323,26 @@ Since "turn switch" is puzzle-specific (not a generic IF verb), Option B is corr
 
 - **DO NOT** use `2>&1` with pnpm commands - they don't work together properly
 - Preferred format: `pnpm --filter '@sharpee/stdlib' test <test-name>`
+
+### Build Scripts (Use These!)
+
+**IMPORTANT**: Use these scripts instead of manual `pnpm build` commands to avoid WSL permission issues:
+
+```bash
+# Full build of all dungeo dependencies (use when packages change)
+./scripts/build-all-dungeo.sh
+
+# Bundle everything into single sharpee.js (fast rebuilds)
+./scripts/bundle-sharpee.sh
+
+# Fast transcript testing (uses bundled sharpee.js)
+./scripts/fast-transcript-test.sh stories/dungeo/tests/transcripts/navigation.transcript
+```
+
+**Workflow**:
+1. After changing platform packages, run `./scripts/build-all-dungeo.sh`
+2. For story-only changes, run `./scripts/bundle-sharpee.sh`
+3. Test with `./scripts/fast-transcript-test.sh <transcript-file>`
 
 ### Transcript Testing (ADR-073)
 

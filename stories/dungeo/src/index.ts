@@ -1725,8 +1725,8 @@ export class DungeoStory implements Story {
 
     // Wave action messages (Rainbow puzzle)
     language.addMessage(WaveMessages.SUCCESS, 'You wave the {target}.');
-    language.addMessage(WaveMessages.RAINBOW_APPEARS, 'As you wave the sceptre, a shimmering rainbow appears, bridging the falls! You can now cross to the other side.');
-    language.addMessage(WaveMessages.RAINBOW_GONE, 'The rainbow shimmers and fades away.');
+    language.addMessage(WaveMessages.RAINBOW_APPEARS, 'Suddenly, the rainbow appears to become solid and, I venture, walkable (I think the giveaway was the stairs and bannister).');
+    language.addMessage(WaveMessages.RAINBOW_GONE, 'The rainbow seems to have become somewhat run of the mill.');
     language.addMessage(WaveMessages.NO_EFFECT, 'You wave the {target}, but nothing happens.');
     language.addMessage(WaveMessages.NO_TARGET, 'Wave what?');
     language.addMessage(WaveMessages.NOT_HOLDING, "You're not holding that.");

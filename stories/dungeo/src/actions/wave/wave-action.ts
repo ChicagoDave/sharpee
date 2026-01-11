@@ -1,8 +1,8 @@
 /**
  * Wave Action - Wave items to produce effects
  *
- * Primary use: Wave the sceptre at Aragain Falls to create/dismiss rainbow
- * Pattern: "wave sceptre", "wave :target"
+ * Primary use: Wave the sharp stick at Aragain Falls to create/dismiss rainbow
+ * Pattern: "wave stick", "wave :target"
  */
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
@@ -10,21 +10,23 @@ import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity, RoomTrait, Direction } from '@sharpee/world-model';
 import { WAVE_ACTION_ID, WaveMessages } from './types';
 
-// Room name patterns where waving the sceptre has effect
+// Room name patterns where waving the stick has effect
 const FALLS_ROOM_PATTERNS = ['aragain falls', 'on the rainbow', 'end of rainbow', 'rainbow'];
 
 /**
- * Check if entity is the sceptre
+ * Check if entity is the sharp stick (rainbow item)
+ * The stick has isSceptre flag set in dam.ts for this purpose
  */
-function isSceptre(entity: IFEntity): boolean {
+function isRainbowStick(entity: IFEntity): boolean {
+  // Check the flag first (set in dam.ts)
+  if ((entity as any).isSceptre) return true;
+
+  // Fallback: check name/aliases
   const identity = entity.get(IdentityTrait);
   if (!identity) return false;
 
   const name = identity.name?.toLowerCase() || '';
-  const aliases = identity.aliases || [];
-
-  return name.includes('sceptre') || name.includes('scepter') ||
-    aliases.some((a: string) => a.toLowerCase().includes('sceptre') || a.toLowerCase().includes('scepter'));
+  return name.includes('stick') || name.includes('sharp stick');
 }
 
 /**
@@ -84,7 +86,7 @@ export const waveAction: Action = {
     }
 
     context.sharedData.waveTarget = target;
-    context.sharedData.isSceptre = isSceptre(target);
+    context.sharedData.isStick = isRainbowStick(target);
     return { valid: true };
   },
 
@@ -92,7 +94,7 @@ export const waveAction: Action = {
     const { world, player, sharedData } = context;
 
     const target = sharedData.waveTarget as IFEntity;
-    const isSceptreTarget = sharedData.isSceptre as boolean;
+    const isStickTarget = sharedData.isStick as boolean;
 
     const playerLocation = world.getLocation(player.id) || '';
     sharedData.playerLocation = playerLocation;
@@ -105,8 +107,8 @@ export const waveAction: Action = {
       roomName.includes(pattern) || playerLocation.toLowerCase().includes(pattern.replace(/\s+/g, '-'))
     );
 
-    // Check if waving sceptre at falls
-    if (isSceptreTarget && isAtFalls) {
+    // Check if waving stick at falls
+    if (isStickTarget && isAtFalls) {
       // Toggle rainbow state
       const rainbowActive = (world.getStateValue('dungeo.rainbow.active') as boolean) || false;
 
@@ -183,8 +185,8 @@ export const waveAction: Action = {
         messageId: WaveMessages.RAINBOW_GONE,
         params: { target: targetName }
       }));
-    } else if (sharedData.isSceptre) {
-      // Waved sceptre but not at falls
+    } else if (sharedData.isStick) {
+      // Waved stick but not at falls
       events.push(context.event('game.message', {
         messageId: WaveMessages.NO_EFFECT,
         params: { target: targetName }

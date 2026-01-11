@@ -267,7 +267,7 @@ export interface VolcanoObjectIds {
  * Create all objects in the Volcano region
  */
 export function createVolcanoObjects(world: WorldModel, roomIds: VolcanoRoomIds): VolcanoObjectIds {
-  // Egyptian Room objects (gold coffin with sceptre)
+  // Egyptian Room objects (gold coffin treasure)
   createEgyptianRoomObjects(world, roomIds.egyptianRoom);
 
   // Glacier Room objects (glacier blocks north passage)
@@ -289,45 +289,20 @@ export function createVolcanoObjects(world: WorldModel, roomIds: VolcanoRoomIds)
 // ============= Egyptian Room Objects =============
 
 function createEgyptianRoomObjects(world: WorldModel, roomId: string): void {
-  // Gold coffin - treasure, container for sceptre
-  const coffin = world.createEntity('gold coffin', EntityType.CONTAINER);
+  // Gold coffin - treasure (not a container in mainframe Zork)
+  const coffin = world.createEntity('gold coffin', EntityType.ITEM);
   coffin.add(new IdentityTrait({
     name: 'gold coffin',
-    aliases: ['coffin', 'golden coffin', 'sarcophagus'],
-    description: 'An ornate gold coffin covered with Egyptian hieroglyphics. It appears to be a royal sarcophagus.',
+    aliases: ['coffin', 'golden coffin', 'sarcophagus', 'casket'],
+    description: 'The solid gold coffin used for the burial of Ramses II is here.',
     properName: false,
     article: 'a',
     weight: 10
   }));
-  coffin.add(new ContainerTrait({ capacity: { maxItems: 5 } }));
-  coffin.add(new OpenableTrait({ isOpen: false }));
   (coffin as any).isTreasure = true;
   (coffin as any).treasureId = 'gold-coffin';
   (coffin as any).treasureValue = 10;
   world.moveEntity(coffin.id, roomId);
-
-  // Sceptre - treasure inside coffin, used for rainbow puzzle
-  const sceptre = world.createEntity('sceptre', EntityType.ITEM);
-  sceptre.add(new IdentityTrait({
-    name: 'sceptre',
-    aliases: ['scepter', 'royal sceptre', 'jeweled sceptre'],
-    description: 'A beautiful sceptre, encrusted with sapphires and rubies. It seems to shimmer with magical energy.',
-    properName: false,
-    article: 'a',
-    weight: 10
-  }));
-  (sceptre as any).isTreasure = true;
-  (sceptre as any).treasureId = 'sceptre';
-  (sceptre as any).treasureValue = 4;
-  (sceptre as any).isMagical = true;
-
-  // Place sceptre inside coffin
-  const coffinOpenable = coffin.get(OpenableTrait);
-  if (coffinOpenable) {
-    coffinOpenable.isOpen = true;
-    world.moveEntity(sceptre.id, coffin.id);
-    coffinOpenable.isOpen = false;
-  }
 }
 
 // ============= Glacier Room Objects =============
