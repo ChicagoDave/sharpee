@@ -23,6 +23,7 @@ import {
   SceneryTrait,
   EntityType,
   Direction,
+  TraitType,
   StandardCapabilities,
   IWorldModel,
   IParsedCommand,
@@ -32,14 +33,14 @@ import {
 import { DungeoScoringService } from './scoring';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler, TURN_SWITCH_ACTION_ID, TurnSwitchMessages, PUT_UNDER_ACTION_ID, PutUnderMessages, PUSH_KEY_ACTION_ID, PushKeyMessages, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages, INFLATE_ACTION_ID, InflateMessages, DEFLATE_ACTION_ID, DeflateMessages, COMMANDING_ACTION_ID, CommandingMessages } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler, TURN_SWITCH_ACTION_ID, TurnSwitchMessages, PUT_UNDER_ACTION_ID, PutUnderMessages, PUSH_KEY_ACTION_ID, PushKeyMessages, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages, INFLATE_ACTION_ID, InflateMessages, DEFLATE_ACTION_ID, DeflateMessages, COMMANDING_ACTION_ID, CommandingMessages, LAUNCH_ACTION_ID, LaunchMessages } from './actions';
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages, FloodingMessages, registerBalloonPutHandler, BalloonHandlerMessages } from './scheduler';
 import { setSchedulerForGDT, setEngineForKL } from './actions/gdt/commands';
 
 // Import handlers
-import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages, registerGlacierHandler, GlacierMessages, registerReservoirExitHandler } from './handlers';
+import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages, registerGlacierHandler, GlacierMessages, registerReservoirExitHandler, registerBoatPunctureHandler, BoatPunctureMessages } from './handlers';
 import { initializeMirrorRoom, createMirrorTouchHandler, MirrorRoomConfig, MirrorRoomMessages } from './handlers/mirror-room-handler';
 import { MIRROR_ID } from './regions/temple';
 
@@ -261,6 +262,9 @@ export class DungeoStory implements Story {
 
     // Register glacier handler (throw torch at glacier puzzle)
     registerGlacierHandler(world, this.volcanoIds.glacierRoom, this.volcanoIds.volcanoView);
+
+    // Register boat puncture handler (carrying sharp stick into boat deflates it)
+    registerBoatPunctureHandler(world);
 
     // Register reservoir exit handler (dam draining opens reservoir path)
     registerReservoirExitHandler(world, {
@@ -1296,16 +1300,12 @@ export class DungeoStory implements Story {
       .build();
 
     // BOARD/DISEMBARK aliases for ENTER/EXIT (boat navigation)
+    // Use hasTrait to ensure only enterable targets are matched
     grammar
       .define('board :target')
+      .hasTrait('target', TraitType.ENTERABLE)
       .mapsTo('if.action.entering')
       .withPriority(150)
-      .build();
-
-    grammar
-      .define('board boat')
-      .mapsTo('if.action.entering')
-      .withPriority(155)
       .build();
 
     grammar
@@ -1324,6 +1324,13 @@ export class DungeoStory implements Story {
       .define('get out of boat')
       .mapsTo('if.action.exiting')
       .withPriority(155)
+      .build();
+
+    // LAUNCH action (enter river from shore while in boat)
+    grammar
+      .define('launch')
+      .mapsTo(LAUNCH_ACTION_ID)
+      .withPriority(150)
       .build();
   }
 
@@ -1877,6 +1884,17 @@ export class DungeoStory implements Story {
     language.addMessage(DeflateMessages.ALREADY_DEFLATED, 'The boat is already deflated.');
     language.addMessage(DeflateMessages.NOT_DEFLATABLE, "That can't be deflated.");
     language.addMessage(DeflateMessages.CANT_REACH, "You can't reach the boat from here.");
+
+    // Boat puncture messages (carrying sharp object into boat)
+    language.addMessage(BoatPunctureMessages.PUNCTURED, 'The sharp object you are carrying punctures the boat! The air rushes out and the boat deflates beneath you.');
+    language.addMessage(BoatPunctureMessages.STICK_POKES, 'The {item} punctures the boat! With a loud hiss, the boat deflates.');
+
+    // Launch boat messages
+    language.addMessage(LaunchMessages.SUCCESS, 'You are now on the river.');
+    language.addMessage(LaunchMessages.NOT_IN_BOAT, "You're not in a boat.");
+    language.addMessage(LaunchMessages.NOT_AT_SHORE, "There's no water here to launch into.");
+    language.addMessage(LaunchMessages.BOAT_NOT_INFLATED, 'The boat must be inflated first.');
+    language.addMessage(LaunchMessages.ALREADY_ON_RIVER, "You're already on the river.");
 
     // River navigation messages
     language.addMessage(RiverMessages.NO_BOAT, 'The water is too cold and the current too strong to swim. You need a boat.');

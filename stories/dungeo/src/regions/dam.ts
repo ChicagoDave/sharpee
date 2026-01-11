@@ -405,4 +405,66 @@ function createDamBaseObjects(world: WorldModel, roomId: string): void {
   boat.add(new ContainerTrait({ capacity: { maxItems: 10, maxWeight: 100 } }));
   (boat as any).isInflated = false;
   world.moveEntity(boat.id, roomId);
+
+  // Tan label - instructions for the boat (inside boat when inflated)
+  const label = world.createEntity('tan label', EntityType.ITEM);
+  label.add(new IdentityTrait({
+    name: 'tan label',
+    aliases: ['label', 'tan label', 'instructions'],
+    description: 'A tan label attached to the boat.',
+    properName: false,
+    article: 'a',
+    weight: 0
+  }));
+  label.add(new ReadableTrait({
+    text: `    !!!! FROBOZZ MAGIC BOAT COMPANY !!!!
+
+Hello, sailor!
+
+Instructions for use:
+
+To get into the boat, say "BOARD"
+To leave the boat, say "DISEMBARK"
+To get into a body of water, say "LAUNCH"
+To get to shore, say "LAND"
+
+Warranty:
+
+This boat is guaranteed against all defects in parts and workmanship for a period of 76 milliseconds from date of purchase or until first used, whichever comes first.
+
+Warning: This boat is made of plastic.
+
+Good luck!`
+  }));
+  world.moveEntity(label.id, boat.id);
+
+  // Sharp stick (broken sceptre) - punctures boat if carried into it
+  // This is the broken sceptre needed to solidify the rainbow at Aragain Falls
+  const stick = world.createEntity('sharp stick', EntityType.ITEM);
+  stick.add(new IdentityTrait({
+    name: 'sharp stick',
+    aliases: ['stick', 'broken stick', 'sharp stick', 'broken sharp stick', 'pointed stick',
+              'sceptre', 'scepter', 'broken sceptre', 'broken scepter'],
+    description: 'A sharp stick, which appears to have been broken at one end, is here.',
+    properName: false,
+    article: 'a',
+    weight: 5
+  }));
+  (stick as any).isPointy = true;
+  (stick as any).puncturesBoat = true;
+  (stick as any).isSceptre = true;
+  world.moveEntity(stick.id, roomId);
+
+  // Water/River scenery at Dam Base
+  const river = world.createEntity('river-dam-base', EntityType.ITEM);
+  river.add(new IdentityTrait({
+    name: 'Frigid River',
+    aliases: ['river', 'water', 'frigid river', 'stream'],
+    description: 'The Frigid River is flowing by here. Across the river are the White Cliffs, which seem to form a giant wall stretching from north to south along the east shore of the river as it winds its way downstream.',
+    properName: true,
+    article: 'the'
+  }));
+  river.add(new SceneryTrait());
+  (river as any).isWaterBody = true;
+  world.moveEntity(river.id, roomId);
 }

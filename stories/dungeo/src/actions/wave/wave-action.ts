@@ -125,29 +125,29 @@ export const waveAction: Action = {
         world.setStateValue('dungeo.rainbow.active', false);
         sharedData.rainbowDismissed = true;
 
-        // Remove exit from Aragain Falls to rainbow
+        // Remove exit from Aragain Falls to rainbow (EAST direction)
         if (aragainFalls) {
           const roomTrait = aragainFalls.get(RoomTrait);
           if (roomTrait) {
-            delete roomTrait.exits[Direction.WEST];
+            delete roomTrait.exits[Direction.EAST];
             // Restore blocked message
             if (!roomTrait.blockedExits) roomTrait.blockedExits = {};
-            roomTrait.blockedExits[Direction.WEST] = 'The rainbow is beautiful, but it looks far too insubstantial to walk on.';
+            roomTrait.blockedExits[Direction.EAST] = 'The rainbow is beautiful, but it looks far too insubstantial to walk on.';
           }
         }
       } else {
-        // Create the rainbow
+        // Create the rainbow - solidify it so player can walk on it
         world.setStateValue('dungeo.rainbow.active', true);
         sharedData.rainbowCreated = true;
 
-        // Add exit from Aragain Falls to On the Rainbow
+        // Add exit from Aragain Falls to On the Rainbow (EAST direction)
         if (aragainFalls && onTheRainbow) {
           const roomTrait = aragainFalls.get(RoomTrait);
           if (roomTrait) {
-            roomTrait.exits[Direction.WEST] = { destination: onTheRainbow.id };
+            roomTrait.exits[Direction.EAST] = { destination: onTheRainbow.id };
             // Remove blocked message since exit is now open
             if (roomTrait.blockedExits) {
-              delete roomTrait.blockedExits[Direction.WEST];
+              delete roomTrait.blockedExits[Direction.EAST];
             }
           }
         }

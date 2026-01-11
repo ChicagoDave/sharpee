@@ -48,6 +48,7 @@ export interface GoingSharedData {
   previousLocation?: string;  // Room we came from
   currentLocation?: string;   // Room we're now in
   direction?: DirectionType;
+  vehicleId?: string;         // If player is in a walkable vehicle, the vehicle ID
 }
 
 export function getGoingSharedData(context: ActionContext): GoingSharedData {
@@ -95,13 +96,12 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Check if player is contained (can't move through exits while contained)
-    const playerDirectLocation = context.world.getLocation(actor.id);
-    const currentRoom = context.currentLocation; // This is always the containing room
+    // Check if player is in a vehicle
+    const walkCheck = canActorWalkInVehicle(context.world, actor.id);
+    let currentRoom = context.currentLocation;
 
-    if (playerDirectLocation !== currentRoom.id) {
-      // Player is inside something - check if it's a vehicle that allows walking
-      const walkCheck = canActorWalkInVehicle(context.world, actor.id);
+    if (walkCheck.vehicle) {
+      // Player is in a vehicle - check if walking is allowed
       if (!walkCheck.canWalk) {
         // In a vehicle that blocks walking (bucket, etc.)
         return {
@@ -110,11 +110,18 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
           params: { vehicle: walkCheck.vehicle?.name }
         };
       }
-      // In a vehicle that allows walking (boat, etc.) - continue with movement
+      // In a vehicle that allows walking (boat, etc.) - get the containing room
+      const containingRoom = context.world.getContainingRoom(actor.id);
+      if (containingRoom) {
+        currentRoom = containingRoom;
+        // Store vehicle ID so execute() can move the vehicle instead of the player
+        const sharedData = getGoingSharedData(context);
+        sharedData.vehicleId = context.world.getLocation(actor.id);
+      }
     }
 
     if (!currentRoom.has(TraitType.ROOM)) {
-      // Shouldn't happen since currentLocation should always be a room
+      // Player is in a container that's not in a room
       return {
         valid: false,
         error: GoingMessages.NOT_IN_ROOM
@@ -203,7 +210,16 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
   execute(context: ActionContext): void {
     // Only perform the movement mutation
     const actor = context.player;
-    const sourceRoom = context.currentLocation;
+    const sharedData = getGoingSharedData(context);
+
+    // Get the source room - if in a vehicle, use containing room
+    let sourceRoom = context.currentLocation;
+    if (sharedData.vehicleId) {
+      const containingRoom = context.world.getContainingRoom(actor.id);
+      if (containingRoom) {
+        sourceRoom = containingRoom;
+      }
+    }
 
     // Get direction from parsed command (should already be a Direction constant)
     // Direction can come from extras or from directObject name
@@ -225,15 +241,18 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     // Check if this is the first time entering the destination
     const isFirstVisit = !RoomBehavior.hasBeenVisited(destination);
 
-    // Store locations and state for report phase using sharedData
-    const sharedData = getGoingSharedData(context);
+    // Store locations and state for report phase
     sharedData.isFirstVisit = isFirstVisit;
     sharedData.previousLocation = sourceRoom.id;
     sharedData.currentLocation = destination.id;
     sharedData.direction = direction;
 
-    // Actually move the player!
-    context.world.moveEntity(actor.id, destination.id);
+    // Move to destination - if in a vehicle, move the vehicle (player stays inside)
+    if (sharedData.vehicleId) {
+      context.world.moveEntity(sharedData.vehicleId, destination.id);
+    } else {
+      context.world.moveEntity(actor.id, destination.id);
+    }
 
     // Mark the destination room as visited
     if (isFirstVisit) {

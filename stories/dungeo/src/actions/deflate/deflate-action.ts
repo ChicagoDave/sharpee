@@ -107,6 +107,9 @@ export const deflateAction: Action = {
       identity.description = 'There is a folded pile of plastic here which has a small valve attached.';
     }
 
+    // Also update displayName attribute (used by entity.name getter)
+    (boat as any).attributes.displayName = 'pile of plastic';
+
     // Remove traits when deflating - boat is no longer enterable/vehicle
     if (boat.has(TraitType.ENTERABLE)) {
       boat.remove(TraitType.ENTERABLE);

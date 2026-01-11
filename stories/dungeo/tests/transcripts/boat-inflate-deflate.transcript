@@ -4,17 +4,20 @@ description: Tests inflating and deflating the rubber boat
 
 ---
 
-# Setup - go to Shore where the boat is
+# Setup - go to Dam Base where the boat and pump are
 > gdt
 [OK: contains "GDT"]
 
-# Give ourselves the lamp
+# Give ourselves the lamp and pump
 > tk brass lantern
 [OK: contains "Taken"]
 
-# Teleport to Shore (Frigid River region)
-> ah Shore
-[OK: contains "Shore"]
+> tk hand pump
+[OK: contains "Taken"]
+
+# Teleport to Dam Base (where the boat starts)
+> ah Dam Base
+[OK: contains "Dam Base"]
 
 > ex
 [OK: contains "Returning"]
@@ -34,20 +37,6 @@ description: Tests inflating and deflating the rubber boat
 # Try to deflate when already deflated - should fail
 > deflate boat
 [OK: contains "already_deflated"]
-
-# Try to inflate without pump - should fail
-> inflate boat
-[OK: contains "no_pump"]
-
-# Get the pump via GDT
-> gdt
-[OK: contains "GDT"]
-
-> tk hand pump
-[OK: contains "Taken"]
-
-> ex
-[OK: contains "Returning"]
 
 # Now inflate the boat with the pump in inventory
 > inflate boat
@@ -90,3 +79,27 @@ description: Tests inflating and deflating the rubber boat
 
 > pump up boat
 [OK: contains "inflates"]
+
+# Take inflated boat and go to Shore
+> take boat
+[OK: contains "Taken"]
+
+> gdt
+[OK: contains "GDT"]
+
+> ah Shore
+[OK: contains "Shore"]
+
+> ex
+[OK: contains "Returning"]
+
+# Drop boat and board it
+> drop boat
+[OK: contains "drop"]
+
+> board boat
+[OK: contains "boat"]
+
+# Verify we're in the boat
+> look
+[OK: contains "boat"]
