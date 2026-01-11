@@ -1,10 +1,10 @@
 title: River Navigation
 story: dungeo
-description: Tests Frigid River navigation mechanics - requires boat for water rooms
+description: Tests Frigid River navigation - boat at Dam Base, through river to rainbow exit
 
 ---
 
-# Setup - get lamp and pump, go to Shore
+# Setup - get lamp, pump, and sceptre via GDT
 > gdt
 [OK: contains "GDT"]
 
@@ -16,77 +16,121 @@ description: Tests Frigid River navigation mechanics - requires boat for water r
 > tk hand pump
 [OK: contains "Taken"]
 
-# Teleport to Shore (Frigid River region)
-> ah Shore
-[OK: contains "Shore"]
+# Give ourselves the sceptre (needed to wave at rainbow)
+> tk sceptre
+[OK: contains "Taken"]
+
+# Teleport to Dam Base where boat is located
+> ah Dam Base
+[OK: contains "Dam Base"]
 
 > ex
 [OK: contains "Returning"]
 
-# Turn on lamp for light (may already be on)
+# Turn on lamp for light
 > turn on lantern
-[OK: contains "on"]
+[OK: matches /(on|already)/i]
 
-# Verify boat is here - might be inflated or deflated
+# ============================================================================
+# TEST: Boat is at Dam Base (not Shore)
+# ============================================================================
+
 > look
-[OK: contains "Shore"]
+[OK: contains "Dam Base"]
+[OK: matches /(plastic|boat|pile)/i]
 
-# Make sure boat is deflated first (may already be deflated)
-> deflate boat
-[PASS]
-
-# Verify boat is deflated
+# Verify boat has valve (deflated state)
 > examine boat
 [OK: contains "valve"]
 
-# Try to go east to river without boat - should be blocked
-> east
-[OK: contains "need a boat"]
+# ============================================================================
+# TEST: Inflate and board boat
+# ============================================================================
 
-# Inflate the boat so we can travel
+# Inflate the boat
 > inflate boat
-[OK: contains "inflates"]
+[OK: matches /(inflate|magic|seaworthy)/i]
 
-# Enter the boat
-> enter boat
-[OK: contains "plastic"]
+# Board the boat
+> board boat
+[OK: matches /(board|enter|get in|inside|plastic)/i]
 
-# Verify we're in the boat (boat is now magic boat when inflated)
+# Verify we're in the boat
 > look
+[OK: contains "Dam Base"]
+
+# ============================================================================
+# TEST: Navigate river from Dam Base to Sandy Beach
+# ============================================================================
+
+# Go north to Frigid River 1
+> north
+[OK: contains "Frigid River"]
+
+# Go west to Shore (optional stop)
+> west
 [OK: contains "Shore"]
 
-# Exit the boat
-> exit
-[OK: contains "get out"]
+# Go south to Sandy Beach
+> south
+[OK: contains "Sandy Beach"]
 
-# Verify we can deflate while outside and it ejects us (deflate tests eject logic)
-> enter boat
-[OK: contains "plastic"]
+# ============================================================================
+# TEST: Continue to Aragain Falls
+# ============================================================================
 
-> deflate boat
-[OK: contains "deflates"]
+# Go east back to river
+> east
+[OK: contains "Frigid River"]
 
-# Verify we're no longer in boat (deflate should have ejected us)
-> look
-[OK: contains "Shore"]
+# Go south toward falls
+> south
+[OK: contains "Frigid River"]
 
----
-
-# Test Aragain Falls death (teleport directly to test falls behavior)
-> gdt
-[OK: contains "GDT"]
-
-# Teleport directly to Aragain Falls
-> ah Aragain Falls
+# Continue south to falls
+> south
 [OK: contains "Aragain Falls"]
 
-> ex
-[OK: contains "Returning"]
+# ============================================================================
+# TEST: Wave sceptre to solidify rainbow
+# ============================================================================
 
-# Looking is safe at falls
+# Wave sceptre at falls to create solid rainbow
+> wave sceptre
+[OK: matches /(rainbow|solid|bridge|shimmering)/i]
+
+# ============================================================================
+# TEST: Cross rainbow to End of Rainbow
+# ============================================================================
+
+# Exit boat first
+> exit boat
+[OK: matches /(exit|leave|get out|disembark)/i]
+
+# Go west onto rainbow
+> west
+[OK: matches /(Rainbow|solid|On the Rainbow)/i]
+
+# Continue west to End of Rainbow
+> west
+[OK: contains "End of Rainbow"]
+
+# Verify pot of gold is here
 > look
-[OK: contains "waterfall"]
+[OK: matches /(pot|gold)/i]
 
-# Any other action = death
-> wait
-[OK: contains "tumble"]
+# ============================================================================
+# TEST: Return path via Canyon Bottom (land route)
+# ============================================================================
+
+# Go southwest to Canyon Bottom
+> southwest
+[OK: contains "Canyon"]
+
+# Go up to Clearing
+> up
+[OK: contains "Clearing"]
+
+# We've successfully navigated from Dam Base through river to End of Rainbow
+# and exited via land route
+

@@ -35,6 +35,12 @@ function getTouchingSharedData(context: ActionContext): TouchingSharedData {
 
 export const touchingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.TOUCHING,
+
+  // Default scope requirements for this action's slots
+  defaultScope: {
+    target: ScopeLevel.REACHABLE
+  },
+
   requiredMessages: [
     'no_target',
     'not_visible',
@@ -76,7 +82,12 @@ export const touchingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Scope validation is handled by CommandValidator
+    // Check scope - must be able to reach the target
+    const scopeCheck = context.requireScope(target, ScopeLevel.REACHABLE);
+    if (!scopeCheck.ok) {
+      return scopeCheck.error!;
+    }
+
     // Tactile property computation happens in execute phase
     return { valid: true };
   },

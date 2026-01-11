@@ -1,0 +1,48 @@
+title: Smart Directives Basic Test
+story: dungeo
+description: Tests ADR-092 smart transcript directives (IF/WHILE/NAVIGATE/GOAL)
+
+---
+
+# Basic navigation test - start in West of House, navigate to Kitchen
+
+> look
+[OK: contains "West of House"]
+
+# Test NAVIGATE directive
+[NAVIGATE TO: "Kitchen"]
+
+> look
+[OK: contains "Kitchen"]
+
+# Test IF directive (should execute because we're in Kitchen)
+[IF: location = "Kitchen"]
+> examine sack
+[OK: contains "sack"]
+[END IF]
+
+# Test IF directive (should NOT execute because we're not in Cellar)
+[IF: location = "Cellar"]
+> look
+[OK: contains "Cellar"]
+[END IF]
+
+# Navigate to Living Room
+[NAVIGATE TO: "Living Room"]
+
+> look
+[OK: contains "Living Room"]
+
+# Test GOAL with REQUIRES/ENSURES
+[GOAL: Take the sword]
+[REQUIRES: location = "Living Room"]
+[ENSURES: inventory contains "sword"]
+
+> take sword
+[OK: contains "Taken"]
+
+[END GOAL]
+
+# Verify sword is in inventory
+> inventory
+[OK: contains "sword"]

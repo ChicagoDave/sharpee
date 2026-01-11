@@ -149,7 +149,7 @@ export const listeningAction: Action & { metadata: ActionMetadata } = {
   metadata: {
     requiresDirectObject: false,
     requiresIndirectObject: false,
-    directObjectScope: ScopeLevel.AUDIBLE
+    directObjectScope: ScopeLevel.AWARE
   },
   
   validate(context: ActionContext): ValidationResult {

@@ -11,7 +11,7 @@ import { WorldModel, IWorldModel, IdentityTrait, OpenableTrait, ContainerTrait, 
 import { ISemanticEvent } from '@sharpee/core';
 import { ISchedulerService, Daemon, Fuse, SchedulerContext, GameEngine } from '@sharpee/engine';
 import { DungeoSchedulerMessages } from '../scheduler/scheduler-messages';
-import { BalloonState, isLedgePosition, isMidairPosition } from '../regions/volcano/objects/balloon-objects';
+import { BalloonState, isLedgePosition, isMidairPosition } from '../regions/volcano';
 
 // State keys
 const BALLOON_BURNING_OBJECT_KEY = 'dungeo.balloon.burningObject';

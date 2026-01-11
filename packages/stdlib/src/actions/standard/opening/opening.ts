@@ -27,6 +27,12 @@ import { openedDataConfig } from './opening-data';
 
 export const openingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.OPENING,
+
+  // Default scope requirements for this action's slots
+  defaultScope: {
+    target: ScopeLevel.REACHABLE
+  },
+
   requiredMessages: [
     'no_target',
     'not_openable',
@@ -50,6 +56,12 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
     // Validate we have a target
     if (!noun) {
       return { valid: false, error: OpeningMessages.NO_TARGET };
+    }
+
+    // Check scope - must be able to reach the target
+    const scopeCheck = context.requireScope(noun, ScopeLevel.REACHABLE);
+    if (!scopeCheck.ok) {
+      return scopeCheck.error!;
     }
 
     // Check if it's openable

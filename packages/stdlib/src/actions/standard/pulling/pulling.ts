@@ -35,6 +35,12 @@ function getPullingSharedData(context: ActionContext): PullingSharedData {
 
 export const pullingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.PULLING,
+
+  // Default scope requirements for this action's slots
+  defaultScope: {
+    target: ScopeLevel.REACHABLE
+  },
+
   group: "interaction",
 
   metadata: {
@@ -60,6 +66,12 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
     // Must have something to pull
     if (!target) {
       return { valid: false, error: 'no_target' };
+    }
+
+    // Check scope - must be able to reach the target
+    const scopeCheck = context.requireScope(target, ScopeLevel.REACHABLE);
+    if (!scopeCheck.ok) {
+      return scopeCheck.error!;
     }
 
     // Check if object is pullable

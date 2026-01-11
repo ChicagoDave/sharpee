@@ -38,6 +38,13 @@ function getGivingSharedData(context: ActionContext): GivingSharedData {
 
 export const givingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.GIVING,
+
+  // Default scope requirements for this action's slots
+  defaultScope: {
+    item: ScopeLevel.CARRIED,
+    recipient: ScopeLevel.REACHABLE
+  },
+
   requiredMessages: [
     'no_item',
     'no_recipient',
@@ -83,6 +90,13 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
         error: 'no_recipient',
         params: {}
       };
+    }
+
+    // Item must be carried (or implicitly takeable)
+    // This enables "give apple to bob" when apple is on the ground
+    const carryCheck = context.requireCarriedOrImplicitTake(item);
+    if (!carryCheck.ok) {
+      return carryCheck.error!;
     }
 
     // Check if recipient is an actor (can receive items)
@@ -231,6 +245,12 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
 
   report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getGivingSharedData(context);
+    const events: ISemanticEvent[] = [];
+
+    // Prepend any implicit take events (from requireCarriedOrImplicitTake)
+    if (context.sharedData.implicitTakeEvents) {
+      events.push(...context.sharedData.implicitTakeEvents);
+    }
 
     // Build event data
     const eventData: GivingEventMap['if.event.given'] = {
@@ -242,14 +262,14 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
     };
 
     // Create events
-    return [
-      context.event('if.event.given', eventData),
-      context.event('action.success', {
-        actionId: this.id,
-        messageId: sharedData.messageId,
-        params: sharedData.params
-      })
-    ];
+    events.push(context.event('if.event.given', eventData));
+    events.push(context.event('action.success', {
+      actionId: this.id,
+      messageId: sharedData.messageId,
+      params: sharedData.params
+    }));
+
+    return events;
   },
 
   group: "social"

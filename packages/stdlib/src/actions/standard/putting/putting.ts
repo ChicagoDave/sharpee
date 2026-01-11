@@ -294,6 +294,13 @@ function reportSingleBlocked(
 
 export const puttingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.PUTTING,
+
+  // Default scope requirements for this action's slots
+  defaultScope: {
+    item: ScopeLevel.CARRIED,
+    target: ScopeLevel.REACHABLE
+  },
+
   requiredMessages: [
     'no_target',
     'no_destination',
@@ -344,6 +351,13 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
+    // Item must be carried (or implicitly takeable)
+    // This enables "put apple in box" when apple is on the ground
+    const carryCheck = context.requireCarriedOrImplicitTake(item);
+    if (!carryCheck.ok) {
+      return carryCheck.error!;
+    }
+
     return validateSingleEntity(context, item, target, preposition);
   },
 
@@ -391,10 +405,15 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
   report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getPuttingSharedData(context);
     const target = context.command.indirectObject!.entity!;
+    const events: ISemanticEvent[] = [];
+
+    // Prepend any implicit take events (from requireCarriedOrImplicitTake)
+    if (context.sharedData.implicitTakeEvents) {
+      events.push(...context.sharedData.implicitTakeEvents);
+    }
 
     // Check for multi-object command
     if (sharedData.multiObjectResults) {
-      const events: ISemanticEvent[] = [];
       // Generate events for each item (success and failure)
       for (const result of sharedData.multiObjectResults) {
         if (result.success) {
@@ -409,7 +428,6 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
     // Single object report
     const item = context.command.directObject!.entity!;
     const targetPreposition = sharedData.targetPreposition as 'in' | 'on';
-    const events: ISemanticEvent[] = [];
 
     if (targetPreposition === 'in') {
       events.push(context.event('if.event.put_in', {

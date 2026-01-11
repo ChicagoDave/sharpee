@@ -1,0 +1,1152 @@
+title: Full Walkthrough - 650 Points Victory
+story: dungeo
+description: Complete playthrough using NAVIGATE TO for robust pathfinding through Round Room carousel and other random elements.
+---
+
+# ============================================================================
+# PHASE 0: SURFACE COLLECTION (No light needed)
+# ============================================================================
+
+[GOAL: Collect surface items and open cellar access]
+[ENSURES: inventory contains "lantern"]
+[ENSURES: inventory contains "sword"]
+[ENSURES: inventory contains "rope"]
+[ENSURES: inventory contains "knife"]
+[ENSURES: inventory contains "garlic"]
+[ENSURES: inventory contains "bottle"]
+
+# Start: West of House
+> look
+[OK: contains "West of House"]
+
+> open mailbox
+[OK: matches /(open|Opening)/i]
+
+> take leaflet
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Behind House"]
+
+> open window
+[OK: matches /(open|Opening)/i]
+
+[NAVIGATE TO: "Kitchen"]
+
+> take sack
+[OK: matches /(Taken|take)/i]
+
+> open sack
+[OK: matches /(open|Opening|already)/i]
+
+> take garlic
+[OK: matches /(Taken|take)/i]
+
+> take bottle
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Living Room"]
+
+> take lantern
+[OK: matches /(Taken|take)/i]
+
+> take sword
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Attic"]
+
+> take rope
+[OK: matches /(Taken|take)/i]
+
+> take knife
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Living Room"]
+
+> move rug
+[OK: matches /(trapdoor|rug|moved)/i]
+
+> open trapdoor
+[OK: matches /(open|Opening)/i]
+
+[END GOAL]
+
+# ============================================================================
+# Get egg from tree before going underground
+# ============================================================================
+
+[GOAL: Get the jewel-encrusted egg]
+[ENSURES: inventory contains "egg"]
+
+[NAVIGATE TO: "Up a Tree"]
+
+> take egg
+[OK: matches /(Taken|take)/i]
+
+[END GOAL]
+
+# ============================================================================
+# PHASE 1: ENTER CELLAR AND KILL TROLL
+# ============================================================================
+
+[GOAL: Enter the cellar and kill the troll]
+[REQUIRES: inventory contains "lantern"]
+[REQUIRES: inventory contains "sword"]
+[ENSURES: not entity "troll" alive]
+
+[NAVIGATE TO: "Living Room"]
+
+> turn on lantern
+[OK: matches /(on|lit|light)/i]
+
+> down
+[OK: contains "Cellar"]
+
+[NAVIGATE TO: "Troll Room"]
+
+[WHILE: entity "troll" alive]
+> attack troll with sword
+[OK: matches /(attack|hit|miss|swing|blow|strike|kill|defeat|dead|parr|slash|disarm|slain)/i]
+[END WHILE]
+
+[END GOAL]
+
+# ============================================================================
+# PHASE 2: GET TORCH (Minimize lantern use)
+# ============================================================================
+
+[GOAL: Get the torch]
+[ENSURES: inventory contains "torch"]
+[ENSURES: inventory contains "rope"]
+
+[NAVIGATE TO: "Dome Room"]
+
+> tie rope to railing
+[OK: matches /(tie|rope|railing|already)/i]
+
+> down
+[OK: contains "Torch Room"]
+
+> take torch
+[OK: matches /(Taken|take)/i]
+
+> turn on torch
+[OK: matches /(on|lit|light)/i]
+
+> turn off lantern
+[OK: matches /(off|extinguish)/i]
+
+[END GOAL]
+
+# ============================================================================
+# PHASE 3: DAM AREA (Get matchbook, tools, drain dam)
+# ============================================================================
+
+[GOAL: Get dam area items and drain the dam]
+[ENSURES: inventory contains "matchbook"]
+[ENSURES: inventory contains "wrench"]
+[ENSURES: inventory contains "screwdriver"]
+
+[NAVIGATE TO: "Loud Room"]
+
+# MUST take bar FIRST, then echo - otherwise death!
+> take platinum bar
+[OK: matches /(Taken|take)/i]
+
+> echo
+[OK: matches /(echo|reverb|quiet)/i]
+
+[NAVIGATE TO: "Dam Lobby"]
+
+> take matchbook
+[OK: matches /(Taken|take)/i]
+
+> take guidebook
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Maintenance Room"]
+
+> take wrench
+[OK: matches /(Taken|take)/i]
+
+> take screwdriver
+[OK: matches /(Taken|take)/i]
+
+> press yellow button
+[OK: matches /(button|press|click)/i]
+
+[NAVIGATE TO: "Dam"]
+
+> turn bolt with wrench
+[OK: matches /(turn|bolt|drain|water)/i]
+
+[END GOAL]
+
+# ============================================================================
+# PHASE 4: Get boat, pump, trunk, emerald, trident
+# ============================================================================
+
+[GOAL: Get river treasures]
+[ENSURES: inventory contains "emerald"]
+[ENSURES: inventory contains "trunk"]
+[ENSURES: inventory contains "trident"]
+
+[NAVIGATE TO: "Dam Base"]
+
+> take boat
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Reservoir North"]
+
+> take pump
+[OK: matches /(Taken|take)/i]
+
+> inflate boat with pump
+[OK: matches /(inflate|boat|air)/i]
+
+[NAVIGATE TO: "Reservoir South"]
+
+> take trunk
+[OK: matches /(Taken|take)/i]
+
+# River navigation for emerald
+[NAVIGATE TO: "Shore"]
+
+> board boat
+[OK: matches /(board|enter|boat)/i]
+
+> launch
+[OK: matches /(launch|river|frigid)/i]
+
+> take buoy
+[OK: matches /(Taken|take)/i]
+
+> open buoy
+[OK: matches /(open|Opening)/i]
+
+> take emerald
+[OK: matches /(Taken|take)/i]
+
+# Navigate to Atlantis for trident
+> land
+[OK: matches /(land|shore|beach)/i]
+
+> exit boat
+[OK: matches /(exit|leave|disembark)/i]
+
+[NAVIGATE TO: "Atlantis"]
+
+> take trident
+[OK: matches /(Taken|take)/i]
+
+[END GOAL]
+
+# ============================================================================
+# PHASE 5: EXORCISM (Need matchbook for candles)
+# ============================================================================
+
+[GOAL: Get exorcism items and perform ritual]
+[REQUIRES: inventory contains "matchbook"]
+[ENSURES: inventory contains "skull"]
+
+[NAVIGATE TO: "Altar"]
+
+> take bell
+[OK: matches /(Taken|take)/i]
+
+> take book
+[OK: matches /(Taken|take)/i]
+
+> take candles
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Egyptian Room"]
+
+> take coffin
+[OK: matches /(Taken|take)/i]
+
+> open coffin
+[OK: matches /(open|Opening)/i]
+
+> take sceptre
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Entry to Hades"]
+
+> ring bell
+[OK: matches /(ring|bell|toll|clang)/i]
+
+> light candles with match
+[OK: matches /(light|candle|flame|lit)/i]
+
+> read book
+[OK: matches /(read|spirits|banish|exorcism)/i]
+
+[NAVIGATE TO: "Land of the Dead"]
+
+> take skull
+[OK: matches /(Taken|take)/i]
+
+[END GOAL]
+
+# ============================================================================
+# First trip to Living Room - deposit heavy treasures
+# ============================================================================
+
+[GOAL: Deposit first batch of treasures]
+
+[NAVIGATE TO: "Living Room"]
+
+> open trophy case
+[OK: matches /(open|Opening|already)/i]
+
+> put trunk in trophy case
+[OK: matches /(put|place)/i]
+
+> put platinum bar in trophy case
+[OK: matches /(put|place)/i]
+
+> put emerald in trophy case
+[OK: matches /(put|place)/i]
+
+> put trident in trophy case
+[OK: matches /(put|place)/i]
+
+> put skull in trophy case
+[OK: matches /(put|place)/i]
+
+> put coffin in trophy case
+[OK: matches /(put|place)/i]
+
+> put sceptre in trophy case
+[OK: matches /(put|place)/i]
+
+> score
+[OK: matches /[0-9]+/]
+
+[END GOAL]
+
+# ============================================================================
+# Rainbow puzzle - wave sceptre at Aragain Falls
+# ============================================================================
+
+[GOAL: Get pot of gold via rainbow]
+[ENSURES: inventory contains "pot of gold"]
+
+> take sceptre from trophy case
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Aragain Falls"]
+
+> wave sceptre
+[OK: matches /(wave|rainbow|solidif)/i]
+
+> cross rainbow
+[OK: matches /(Rainbow|End)/i]
+
+> take pot of gold
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Living Room"]
+
+> put pot of gold in trophy case
+[OK: matches /(put|place)/i]
+
+> put sceptre in trophy case
+[OK: matches /(put|place)/i]
+
+[END GOAL]
+
+# ============================================================================
+# PHASE 6: MAZE - coins, key, cyclops, chalice
+# ============================================================================
+
+[GOAL: Get maze treasures]
+[ENSURES: inventory contains "chalice"]
+[ENSURES: inventory contains "bag of coins"]
+
+[NAVIGATE TO: "Dead End"]
+
+> take bag of coins
+[OK: matches /(Taken|take)/i]
+
+> take skeleton key
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Cyclops Room"]
+
+> say odysseus
+[OK: matches /(odysseus|ulysses|flee|run|opens|scared)/i]
+
+[NAVIGATE TO: "Treasure Room"]
+
+> take chalice
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Living Room"]
+
+> put chalice in trophy case
+[OK: matches /(put|place)/i]
+
+> put bag of coins in trophy case
+[OK: matches /(put|place)/i]
+
+[END GOAL]
+
+# ============================================================================
+# PHASE 7: GAS ROOM (MUST switch to lantern!)
+# ============================================================================
+
+[GOAL: Get mine treasures]
+[REQUIRES: inventory contains "garlic"]
+[ENSURES: inventory contains "jade figurine"]
+[ENSURES: inventory contains "sapphire bracelet"]
+[ENSURES: inventory contains "diamond"]
+
+[NAVIGATE TO: "Bat Room"]
+
+> take jade figurine
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Gas Room"]
+
+# CRITICAL: Switch to lantern before going further!
+> turn off torch
+[OK: matches /(off|extinguish)/i]
+
+> turn on lantern
+[OK: matches /(on|lit|light)/i]
+
+> take sapphire bracelet
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Coal Mine Dead End"]
+
+> take coal
+[OK: matches /(Taken|take)/i]
+
+# Use basket to go down to machine room
+[NAVIGATE TO: "Shaft Room"]
+
+> enter basket
+[OK: matches /(enter|basket)/i]
+
+> lower basket
+[OK: matches /(lower|descend|basket)/i]
+
+> exit basket
+[OK: matches /(exit|leave|basket)/i]
+
+[NAVIGATE TO: "Machine Room"]
+
+> put coal in machine
+[OK: matches /(put|place|coal)/i]
+
+> turn switch
+[OK: matches /(turn|switch|diamond)/i]
+
+> take diamond
+[OK: matches /(Taken|take)/i]
+
+[END GOAL]
+
+# ============================================================================
+# PHASE 8: GLACIER & VOLCANO (Throw torch - destroys it!)
+# ============================================================================
+
+[GOAL: Melt glacier and get volcano treasures]
+[ENSURES: inventory contains "crown"]
+[ENSURES: inventory contains "ruby"]
+
+# Turn torch back on for glacier
+[NAVIGATE TO: "Shaft Room"]
+
+> enter basket
+[OK: matches /(enter|basket)/i]
+
+> raise basket
+[OK: matches /(raise|ascend|basket)/i]
+
+> exit basket
+[OK: matches /(exit|leave|basket)/i]
+
+> turn on torch
+[OK: matches /(on|lit|light)/i]
+
+> turn off lantern
+[OK: matches /(off|extinguish)/i]
+
+[NAVIGATE TO: "Glacier Room"]
+
+# THROW TORCH AT GLACIER (this destroys the torch!)
+> throw torch at glacier
+[OK: matches /(throw|torch|glacier|melt)/i]
+
+# Torch is GONE - switch to lantern
+> turn on lantern
+[OK: matches /(on|lit|light)/i]
+
+[NAVIGATE TO: "Volcano Bottom"]
+
+> take receptacle
+[OK: matches /(Taken|receptacle|basket)/i]
+
+# Balloon flight sequence
+> enter basket
+[OK: matches /(enter|basket)/i]
+
+> tie braided wire to hook
+[OK: matches /(tie|wire|hook)/i]
+
+> light receptacle
+[OK: matches /(light|flame)/i]
+
+# Balloon rises - wait for ledges
+> wait
+[OK: matches /(wait|time|rise|balloon)/i]
+
+> exit
+[OK: matches /(exit|Ledge)/i]
+
+> take crown
+[OK: matches /(Taken|take)/i]
+
+> enter basket
+[OK: matches /(enter|basket)/i]
+
+> wait
+[OK: matches /(wait|time|rise|balloon)/i]
+
+> exit
+[OK: matches /(exit|Library|Ledge)/i]
+
+> take purple book
+[OK: matches /(Taken|take)/i]
+
+> open book
+[OK: matches /(open|Opening)/i]
+
+> take stamp
+[OK: matches /(Taken|take)/i]
+
+> enter basket
+[OK: matches /(enter|basket)/i]
+
+> wait
+[OK: matches /(wait|time|rise|balloon)/i]
+
+> exit
+[OK: matches /(exit|Ledge)/i]
+
+> take coin
+[OK: matches /(Taken|take)/i]
+
+> enter basket
+[OK: matches /(enter|basket)/i]
+
+> wait
+[OK: matches /(wait|time|rise|balloon)/i]
+
+> exit
+[OK: matches /(exit|Ruby Room|Ledge)/i]
+
+> take ruby
+[OK: matches /(Taken|take)/i]
+
+[END GOAL]
+
+# ============================================================================
+# Return to Living Room with volcano treasures
+# ============================================================================
+
+[GOAL: Deposit volcano and mine treasures]
+
+[NAVIGATE TO: "Living Room"]
+
+> put crown in trophy case
+[OK: matches /(put|place)/i]
+
+> put stamp in trophy case
+[OK: matches /(put|place)/i]
+
+> put coin in trophy case
+[OK: matches /(put|place)/i]
+
+> put ruby in trophy case
+[OK: matches /(put|place)/i]
+
+> put diamond in trophy case
+[OK: matches /(put|place)/i]
+
+> put bracelet in trophy case
+[OK: matches /(put|place)/i]
+
+> put jade figurine in trophy case
+[OK: matches /(put|place)/i]
+
+[END GOAL]
+
+# ============================================================================
+# PHASE 9: Remaining treasures
+# ============================================================================
+
+[GOAL: Get gallery painting]
+[ENSURES: inventory contains "painting"]
+
+[NAVIGATE TO: "Gallery"]
+
+> take painting
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Living Room"]
+
+> put painting in trophy case
+[OK: matches /(put|place)/i]
+
+[END GOAL]
+
+# ============================================================================
+# Bank puzzle - portrait, zorkmid bills
+# ============================================================================
+
+[GOAL: Get bank treasures]
+[ENSURES: inventory contains "portrait"]
+[ENSURES: inventory contains "zorkmid bills"]
+
+[NAVIGATE TO: "East Teller"]
+
+> walk through south wall
+[OK: matches /(Small Room|wall|disoriented)/i]
+
+> w
+[OK: matches /(Vault)/i]
+
+> take zorkmid bills
+[OK: matches /(Taken|take)/i]
+
+> e
+[OK: matches /(Small Room)/i]
+
+> n
+[OK: matches /(Chairman|Office)/i]
+
+> take portrait
+[OK: matches /(Taken|take)/i]
+
+# Exit bank
+> s
+[OK: matches /(Teller|Small)/i]
+
+> walk through north wall
+[OK: matches /(East Teller|wall|disoriented)/i]
+
+[NAVIGATE TO: "Living Room"]
+
+> put portrait in trophy case
+[OK: matches /(put|place)/i]
+
+> put zorkmid bills in trophy case
+[OK: matches /(put|place)/i]
+
+[END GOAL]
+
+# ============================================================================
+# Royal Puzzle - gold card
+# ============================================================================
+
+[GOAL: Get gold card from puzzle]
+[ENSURES: inventory contains "gold card"]
+
+[NAVIGATE TO: "Square Room"]
+
+> d
+[OK: matches /(Puzzle Room)/i]
+
+> enter hole
+[OK: matches /(Room in a Puzzle)/i]
+
+# Push walls to navigate to card
+> push south wall
+[OK: matches /(push|wall)/i]
+
+> s
+[OK: matches /(Room in a Puzzle)/i]
+
+> push west wall
+[OK: matches /(push|wall)/i]
+
+> w
+[OK: matches /(Room in a Puzzle)/i]
+
+> push west wall
+[OK: matches /(push|wall)/i]
+
+> w
+[OK: matches /(Room in a Puzzle)/i]
+
+> take gold card
+[OK: matches /(Taken|take)/i]
+
+# Exit puzzle
+> push north wall
+[OK: matches /(push|wall)/i]
+
+> n
+[OK: matches /(Room in a Puzzle)/i]
+
+> n
+[OK: matches /(Room in a Puzzle)/i]
+
+> u
+[OK: matches /(Puzzle Room)/i]
+
+> u
+[OK: matches /(Square Room)/i]
+
+[NAVIGATE TO: "Living Room"]
+
+> put gold card in trophy case
+[OK: matches /(put|place)/i]
+
+[END GOAL]
+
+# ============================================================================
+# Well/Tea Room treasures - spices, necklace, violin, white sphere, grail
+# ============================================================================
+
+[GOAL: Get well area treasures]
+[ENSURES: inventory contains "spices"]
+[ENSURES: inventory contains "necklace"]
+[ENSURES: inventory contains "violin"]
+[ENSURES: inventory contains "white sphere"]
+[ENSURES: inventory contains "grail"]
+
+[NAVIGATE TO: "Round Room"]
+
+> open box
+[OK: matches /(open|Opening)/i]
+
+> take violin
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Top of Well"]
+
+> enter bucket
+[OK: matches /(enter|bucket)/i]
+
+> pour water
+[OK: matches /(pour|descend|lower|rises)/i]
+
+> exit bucket
+[OK: matches /(exit|leave)/i]
+
+[NAVIGATE TO: "Pool Room"]
+
+> take spices
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Riddle Room"]
+
+> answer well
+[OK: matches /(answer|well|door|opens)/i]
+
+[NAVIGATE TO: "Pearl Room"]
+
+> take necklace
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Dingy Closet"]
+
+> take white sphere
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Grail Room"]
+
+> take grail
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Living Room"]
+
+> put violin in trophy case
+[OK: matches /(put|place)/i]
+
+> put spices in trophy case
+[OK: matches /(put|place)/i]
+
+> put necklace in trophy case
+[OK: matches /(put|place)/i]
+
+> put white sphere in trophy case
+[OK: matches /(put|place)/i]
+
+> put grail in trophy case
+[OK: matches /(put|place)/i]
+
+[END GOAL]
+
+# ============================================================================
+# Blue crystal sphere (Tiny Room key puzzle)
+# ============================================================================
+
+[GOAL: Get blue crystal sphere]
+[REQUIRES: inventory contains "screwdriver"]
+[ENSURES: inventory contains "blue sphere"]
+
+[NAVIGATE TO: "Tiny Room"]
+
+> put mat under door
+[OK: matches /(put|mat|door)/i]
+
+> push key with screwdriver
+[OK: matches /(push|key|falls|screwdriver)/i]
+
+> take mat
+[OK: matches /(Taken|take)/i]
+
+> take key
+[OK: matches /(Taken|take)/i]
+
+> unlock door with key
+[OK: matches /(unlock|door)/i]
+
+> open door
+[OK: matches /(open|Opening)/i]
+
+> n
+[OK: matches /(Dreary Room)/i]
+
+> take blue sphere
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Living Room"]
+
+> put blue sphere in trophy case
+[OK: matches /(put|place)/i]
+
+[END GOAL]
+
+# ============================================================================
+# Sandy Beach - dig for statue (need shovel)
+# ============================================================================
+
+[GOAL: Get statue from sandy beach]
+[ENSURES: inventory contains "statue"]
+
+[NAVIGATE TO: "Dam Base"]
+
+> take shovel
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Sandy Beach"]
+
+> dig
+[OK: matches /(dig|sand)/i]
+
+> dig
+[OK: matches /(dig|sand)/i]
+
+> dig
+[OK: matches /(dig|sand)/i]
+
+> dig
+[OK: matches /(dig|sand|statue)/i]
+
+> take statue
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Living Room"]
+
+> put statue in trophy case
+[OK: matches /(put|place)/i]
+
+[END GOAL]
+
+# ============================================================================
+# Mail order stamp
+# ============================================================================
+
+[GOAL: Get stamp from mail order]
+[REQUIRES: inventory contains "matchbook"]
+[ENSURES: inventory contains "stamp"]
+
+> read matchbook
+[OK: matches /(read|SEND|BROCHURE|matchbook)/i]
+
+> send for brochure
+[OK: matches /(send|brochure|mail)/i]
+
+# Brochure arrives after some turns
+> wait
+[OK: matches /(wait|time)/i]
+
+> wait
+[OK: matches /(wait|time)/i]
+
+[NAVIGATE TO: "West of House"]
+
+> open mailbox
+[OK: matches /(open|Opening|brochure)/i]
+
+> take brochure
+[OK: matches /(Taken|take)/i]
+
+> open brochure
+[OK: matches /(open|Opening|stamp)/i]
+
+> take stamp
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Living Room"]
+
+> put stamp in trophy case
+[OK: matches /(put|place)/i]
+
+[END GOAL]
+
+# ============================================================================
+# Egg/Canary/Bauble - kill thief to open egg
+# ============================================================================
+
+[GOAL: Kill thief and get canary treasures]
+[REQUIRES: inventory contains "knife"]
+[ENSURES: inventory contains "canary"]
+[ENSURES: inventory contains "bauble"]
+
+[NAVIGATE TO: "Treasure Room"]
+
+# Kill thief with knife (combat loop)
+[WHILE: entity "thief" alive]
+> attack thief with knife
+[OK: matches /(attack|hit|miss|swing|thief|kill|dead|parr|slash|stab)/i]
+[END WHILE]
+
+# After thief dies, take treasures from room
+> take egg
+[OK: matches /(Taken|take)/i]
+
+> open egg
+[OK: matches /(open|Opening)/i]
+
+> take canary
+[OK: matches /(Taken|take)/i]
+
+# Wind canary in forest for bauble
+[NAVIGATE TO: "Forest Path"]
+
+> wind canary
+[OK: matches /(wind|sing|song|bauble)/i]
+
+> take bauble
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Living Room"]
+
+> put canary in trophy case
+[OK: matches /(put|place)/i]
+
+> put bauble in trophy case
+[OK: matches /(put|place)/i]
+
+> put egg in trophy case
+[OK: matches /(put|place)/i]
+
+[END GOAL]
+
+# ============================================================================
+# Thief's Canvas (Ghost ritual)
+# ============================================================================
+
+[GOAL: Get thief canvas via ghost ritual]
+[ENSURES: inventory contains "canvas"]
+
+[NAVIGATE TO: "Treasure Room"]
+
+> take empty frame
+[OK: matches /(Taken|take)/i]
+
+# Get incense from maze skeleton
+[NAVIGATE TO: "Dead End"]
+
+> take incense
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Basin Room"]
+
+> burn incense
+[OK: matches /(burn|light|incense)/i]
+
+> break frame
+[OK: matches /(break|frame|piece)/i]
+
+> drop frame piece
+[OK: matches /(drop|Dropped|ghost|canvas)/i]
+
+[NAVIGATE TO: "Gallery"]
+
+> take canvas
+[OK: matches /(Taken|take)/i]
+
+[NAVIGATE TO: "Living Room"]
+
+> put canvas in trophy case
+[OK: matches /(put|place)/i]
+
+[END GOAL]
+
+# ============================================================================
+# FINAL SCORE CHECK - Should be 650 points!
+# ============================================================================
+
+[GOAL: Verify 650 points]
+
+> score
+[OK: contains "650"]
+
+[END GOAL]
+
+# ============================================================================
+# ENDGAME (Bonus - complete victory)
+# ============================================================================
+
+[GOAL: Complete endgame]
+
+# Navigate to Crypt for 15-turn darkness ritual
+[NAVIGATE TO: "Crypt"]
+
+> close door
+[OK: matches /(close|door)/i]
+
+> turn off lantern
+[OK: matches /(off|extinguish)/i]
+
+# Wait 15 turns in darkness
+> wait
+[OK: matches /(wait|dark|time)/i]
+
+> wait
+[OK: matches /(wait|dark|time)/i]
+
+> wait
+[OK: matches /(wait|dark|time)/i]
+
+> wait
+[OK: matches /(wait|dark|time)/i]
+
+> wait
+[OK: matches /(wait|dark|time)/i]
+
+> wait
+[OK: matches /(wait|dark|time)/i]
+
+> wait
+[OK: matches /(wait|dark|time)/i]
+
+> wait
+[OK: matches /(wait|dark|time)/i]
+
+> wait
+[OK: matches /(wait|dark|time)/i]
+
+> wait
+[OK: matches /(wait|dark|time)/i]
+
+> wait
+[OK: matches /(wait|dark|time)/i]
+
+> wait
+[OK: matches /(wait|dark|time)/i]
+
+> wait
+[OK: matches /(wait|dark|time)/i]
+
+> wait
+[OK: matches /(wait|dark|time)/i]
+
+> wait
+[OK: matches /(wait|dark|endgame|Top of Stairs|time)/i]
+
+# Endgame should begin!
+> turn on lantern
+[OK: matches /(on|lit|light)/i]
+
+> look
+[OK: matches /(Top of Stairs)/i]
+
+# Navigate endgame
+> d
+[OK: matches /(Stone Room)/i]
+
+> push button
+[OK: matches /(push|button)/i]
+
+> e
+[OK: matches /(Small Room)/i]
+
+> e
+[OK: matches /(Hallway)/i]
+
+> enter mirror
+[OK: matches /(Inside Mirror)/i]
+
+# Inside Mirror puzzle - push poles and panels
+> push short pole
+[OK: matches /(push|pole)/i]
+
+> push pine panel
+[OK: matches /(push|panel)/i]
+
+> n
+[OK: matches /(Inside Mirror)/i]
+
+> push mahogany panel
+[OK: matches /(push|panel)/i]
+
+> w
+[OK: matches /(Inside Mirror)/i]
+
+> exit
+[OK: matches /(Hallway|exit)/i]
+
+> e
+[OK: matches /(Dungeon Entrance)/i]
+
+# Dungeon Master trivia - answers may vary
+> answer zork
+[OK: matches /(answer|correct|wrong)/i]
+
+> answer infocom
+[OK: matches /(answer|correct|wrong)/i]
+
+> answer advent
+[OK: matches /(answer|correct|wrong)/i]
+
+# After 3 correct, door opens
+> n
+[OK: matches /(Narrow Corridor)/i]
+
+> e
+[OK: matches /(East-West Corridor)/i]
+
+> e
+[OK: matches /(Parapet)/i]
+
+# Dial puzzle
+> set dial to 4
+[OK: matches /(set|dial)/i]
+
+> push button
+[OK: matches /(push|button)/i]
+
+> d
+[OK: matches /(Prison Cell)/i]
+
+> s
+[OK: matches /(Treasury|Victory)/i]
+
+# VICTORY!
+> look
+[OK: matches /(Treasury|Victory|Congratulations)/i]
+
+> score
+[OK: matches /(7[0-9][0-9]|points)/]
+
+[END GOAL]

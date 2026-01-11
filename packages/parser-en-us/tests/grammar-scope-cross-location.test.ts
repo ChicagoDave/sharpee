@@ -1,6 +1,10 @@
 /**
  * @file Cross-Location Scope Tests
- * @description Tests for scope constraints across different locations
+ * @description Tests for grammar patterns across different locations.
+ *
+ * NOTE: Grammar no longer enforces scope (visible/touchable/carried).
+ * Scope validation happens in action validate() phase.
+ * Grammar only declares semantic constraints (traits).
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -193,33 +197,43 @@ describe('Cross-Location Scope Constraints', () => {
     world = new MockWorldModelWithLocations();
   });
 
-  describe('visible() scope in different locations', () => {
-    it('should only see entities in current location', () => {
+  describe('grammar parses regardless of location (scope in action)', () => {
+    // NOTE: Grammar no longer enforces visibility by location.
+    // These tests verify grammar parses - action validate() checks scope.
+
+    it('should parse examine for entities in current location', () => {
       parser.setWorldContext(world, 'player', 'living_room');
-      
-      // Should see couch in living room
+
+      // Should parse examine couch in living room
       const result1 = parser.parse('examine couch');
       expect(result1.success).toBe(true);
-      
-      // Should not see stove in kitchen
+
+      // Grammar parses even for entities in other locations
+      // Action validate() will check visibility
       const result2 = parser.parse('examine stove');
-      expect(result2.success).toBe(false);
+      expect(result2.success).toBe(true);
+      if (result2.success) {
+        expect(result2.value.action).toBe('if.action.examining');
+      }
     });
 
-    it('should see different entities when location changes', () => {
+    it('should parse examine regardless of player location', () => {
       // Start in living room
       parser.setWorldContext(world, 'player', 'living_room');
       const result1 = parser.parse('examine couch');
       expect(result1.success).toBe(true);
-      
+
       // Move to kitchen
       parser.setWorldContext(world, 'player', 'kitchen');
       const result2 = parser.parse('examine stove');
       expect(result2.success).toBe(true);
-      
-      // Can no longer see couch
+
+      // Grammar still parses couch - action validate() checks visibility
       const result3 = parser.parse('examine couch');
-      expect(result3.success).toBe(false);
+      expect(result3.success).toBe(true);
+      if (result3.success) {
+        expect(result3.value.action).toBe('if.action.examining');
+      }
     });
   });
 

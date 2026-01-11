@@ -7,6 +7,12 @@
 import {
   Transcript,
   TranscriptCommand,
+  TranscriptItem,
+  Directive,
+  GoalDefinition,
+  GoalResult,
+  ConditionResult,
+  NavigateResult,
   Assertion,
   CommandResult,
   AssertionResult,
@@ -14,6 +20,8 @@ import {
   RunnerOptions,
   TestEventInfo
 } from './types';
+import { evaluateCondition } from './condition-evaluator';
+import { executeNavigate } from './navigator';
 
 /**
  * Interface for the game engine
@@ -34,17 +42,50 @@ interface WorldModel {
   findEntityByName?(name: string): any;
   getAllEntities?(): any[];
   getLocation?(entityId: string): string | undefined;
-  getContents?(containerId: string): any[];
+  getContents?(containerId: string, options?: { includeWorn?: boolean }): any[];
+  findWhere?(predicate: (entity: any) => boolean): any[];
+  findByTrait?(traitType: string): any[];
+  findPath?(fromRoomId: string, toRoomId: string): string[] | null;
+  getPlayer?(): any;
+}
+
+// Constants for directive execution
+const MAX_WHILE_ITERATIONS = 100;
+const MAX_BLOCK_DEPTH = 10;
+
+/**
+ * Block state for control flow
+ */
+interface BlockState {
+  type: 'if' | 'while' | 'goal';
+  condition?: string;
+  startIndex: number;    // For WHILE loop-back
+  active: boolean;       // Whether to execute commands
+  iterations: number;    // For WHILE loop safety
+  goalName?: string;     // For GOAL blocks
+  ensures?: string[];    // For GOAL blocks
 }
 
 /**
  * Run a single transcript against an engine
+ *
+ * If transcript has items (with directives), use the smart runner.
+ * Otherwise, fall back to legacy command-only execution.
  */
 export async function runTranscript(
   transcript: Transcript,
   engine: GameEngine,
   options: RunnerOptions = {}
 ): Promise<TranscriptResult> {
+  // Use smart runner if we have items with directives
+  if (transcript.items && transcript.items.length > 0) {
+    const hasDirectives = transcript.items.some(i => i.type === 'directive');
+    if (hasDirectives) {
+      return runSmartTranscript(transcript, engine, options);
+    }
+  }
+
+  // Legacy: command-only execution
   const startTime = Date.now();
   const results: CommandResult[] = [];
 
@@ -70,6 +111,427 @@ export async function runTranscript(
     expectedFailures,
     skipped,
     duration: Date.now() - startTime
+  };
+}
+
+/**
+ * Run a transcript with smart directives (IF/WHILE/NAVIGATE/GOAL)
+ */
+async function runSmartTranscript(
+  transcript: Transcript,
+  engine: GameEngine,
+  options: RunnerOptions = {}
+): Promise<TranscriptResult> {
+  const startTime = Date.now();
+  const results: CommandResult[] = [];
+  const items = transcript.items!;
+
+  // Get player ID for condition evaluation
+  const playerId = getPlayerId(engine);
+
+  // Block state stack for control flow
+  const blockStack: BlockState[] = [];
+
+  // Main execution loop
+  let i = 0;
+  while (i < items.length) {
+    const item = items[i];
+
+    // Check if we should skip this item due to inactive block
+    if (blockStack.length > 0 && !blockStack[blockStack.length - 1].active) {
+      // Skip this item, but process END directives to close blocks
+      if (item.type === 'directive') {
+        const handled = await handleEndDirective(item.directive!, blockStack, i, items, engine, playerId, options);
+        if (handled.consumed) {
+          i = handled.nextIndex;
+          continue;
+        }
+      }
+      i++;
+      continue;
+    }
+
+    if (item.type === 'command') {
+      // Execute command
+      const result = await runCommand(item.command!, engine, options);
+      results.push(result);
+
+      if (options.stopOnFailure && !result.passed && !result.expectedFailure && !result.skipped) {
+        break;
+      }
+      i++;
+    } else if (item.type === 'directive') {
+      const directive = item.directive!;
+      const directiveResult = await handleDirective(
+        directive, blockStack, i, items, engine, playerId, options
+      );
+
+      if (directiveResult.error && options.stopOnFailure) {
+        // Create a synthetic failed result for the directive
+        results.push(createDirectiveFailResult(directive, directiveResult.error));
+        break;
+      }
+
+      // Add any command results from directive execution (e.g., NAVIGATE)
+      if (directiveResult.commandResults) {
+        results.push(...directiveResult.commandResults);
+      }
+
+      i = directiveResult.nextIndex;
+    } else {
+      i++;
+    }
+  }
+
+  const passed = results.filter(r => r.passed && !r.skipped).length;
+  const failed = results.filter(r => !r.passed && !r.expectedFailure && !r.skipped).length;
+  const expectedFailures = results.filter(r => r.expectedFailure).length;
+  const skipped = results.filter(r => r.skipped).length;
+
+  return {
+    transcript,
+    commands: results,
+    passed,
+    failed,
+    expectedFailures,
+    skipped,
+    duration: Date.now() - startTime
+  };
+}
+
+/**
+ * Get player entity ID from engine
+ */
+function getPlayerId(engine: GameEngine): string {
+  if (engine.world?.getPlayer) {
+    const player = engine.world.getPlayer();
+    return player?.id || 'player';
+  }
+  return 'player';
+}
+
+/**
+ * Handle a directive (control flow, navigation, goals)
+ */
+async function handleDirective(
+  directive: Directive,
+  blockStack: BlockState[],
+  currentIndex: number,
+  items: TranscriptItem[],
+  engine: GameEngine,
+  playerId: string,
+  options: RunnerOptions
+): Promise<{ nextIndex: number; error?: string; commandResults?: CommandResult[] }> {
+  const world = engine.world;
+  const verbose = options.verbose || false;
+
+  switch (directive.type) {
+    case 'goal': {
+      // Start a goal block
+      if (blockStack.length >= MAX_BLOCK_DEPTH) {
+        return { nextIndex: currentIndex + 1, error: 'Max block depth exceeded' };
+      }
+
+      // Find REQUIRES and ENSURES for this goal
+      const requires: string[] = [];
+      const ensures: string[] = [];
+      let j = currentIndex + 1;
+      while (j < items.length) {
+        const nextItem = items[j];
+        if (nextItem.type !== 'directive') break;
+        const nextDir = nextItem.directive!;
+        if (nextDir.type === 'requires' && nextDir.condition) {
+          requires.push(nextDir.condition);
+          j++;
+        } else if (nextDir.type === 'ensures' && nextDir.condition) {
+          ensures.push(nextDir.condition);
+          j++;
+        } else {
+          break;
+        }
+      }
+
+      // Check REQUIRES preconditions
+      let allRequiresMet = true;
+      if (world) {
+        for (const req of requires) {
+          const result = evaluateCondition(req, world as any, playerId);
+          if (verbose) {
+            console.log(`  [GOAL "${directive.goalName}"] REQUIRES: ${req} -> ${result.met ? 'OK' : 'FAILED'}`);
+          }
+          if (!result.met) {
+            allRequiresMet = false;
+            break;
+          }
+        }
+      }
+
+      if (!allRequiresMet) {
+        return {
+          nextIndex: currentIndex + 1,
+          error: `Goal "${directive.goalName}" preconditions not met`
+        };
+      }
+
+      if (verbose) {
+        console.log(`[GOAL: ${directive.goalName}]`);
+      }
+
+      blockStack.push({
+        type: 'goal',
+        startIndex: j,  // Skip past REQUIRES/ENSURES
+        active: true,
+        iterations: 0,
+        goalName: directive.goalName,
+        ensures
+      });
+
+      return { nextIndex: j };
+    }
+
+    case 'end_goal': {
+      // End goal block and check ENSURES
+      const block = blockStack.pop();
+      if (!block || block.type !== 'goal') {
+        return { nextIndex: currentIndex + 1, error: 'END GOAL without matching GOAL' };
+      }
+
+      // Check ENSURES postconditions
+      if (world && block.ensures) {
+        for (const ens of block.ensures) {
+          const result = evaluateCondition(ens, world as any, playerId);
+          if (verbose) {
+            console.log(`  [END GOAL "${block.goalName}"] ENSURES: ${ens} -> ${result.met ? 'OK' : 'FAILED'}`);
+          }
+          if (!result.met) {
+            return {
+              nextIndex: currentIndex + 1,
+              error: `Goal "${block.goalName}" postcondition failed: ${ens}`
+            };
+          }
+        }
+      }
+
+      if (verbose) {
+        console.log(`[END GOAL: ${block.goalName}] - Success`);
+      }
+
+      return { nextIndex: currentIndex + 1 };
+    }
+
+    case 'requires':
+    case 'ensures':
+      // These are handled as part of GOAL processing
+      return { nextIndex: currentIndex + 1 };
+
+    case 'if': {
+      if (blockStack.length >= MAX_BLOCK_DEPTH) {
+        return { nextIndex: currentIndex + 1, error: 'Max block depth exceeded' };
+      }
+
+      let conditionMet = true;
+      if (world && directive.condition) {
+        const result = evaluateCondition(directive.condition, world as any, playerId);
+        conditionMet = result.met;
+        if (verbose) {
+          console.log(`  [IF: ${directive.condition}] -> ${conditionMet ? 'TRUE' : 'FALSE'} (${result.reason})`);
+        }
+      }
+
+      blockStack.push({
+        type: 'if',
+        condition: directive.condition,
+        startIndex: currentIndex,
+        active: conditionMet,
+        iterations: 0
+      });
+
+      return { nextIndex: currentIndex + 1 };
+    }
+
+    case 'end_if': {
+      const block = blockStack.pop();
+      if (!block || block.type !== 'if') {
+        return { nextIndex: currentIndex + 1, error: 'END IF without matching IF' };
+      }
+      return { nextIndex: currentIndex + 1 };
+    }
+
+    case 'while': {
+      if (blockStack.length >= MAX_BLOCK_DEPTH) {
+        return { nextIndex: currentIndex + 1, error: 'Max block depth exceeded' };
+      }
+
+      let conditionMet = true;
+      if (world && directive.condition) {
+        const result = evaluateCondition(directive.condition, world as any, playerId);
+        conditionMet = result.met;
+        if (verbose) {
+          console.log(`  [WHILE: ${directive.condition}] -> ${conditionMet ? 'TRUE (entering loop)' : 'FALSE (skipping loop)'}`);
+        }
+      }
+
+      blockStack.push({
+        type: 'while',
+        condition: directive.condition,
+        startIndex: currentIndex,
+        active: conditionMet,
+        iterations: 0
+      });
+
+      return { nextIndex: currentIndex + 1 };
+    }
+
+    case 'end_while': {
+      const block = blockStack[blockStack.length - 1];
+      if (!block || block.type !== 'while') {
+        blockStack.pop();
+        return { nextIndex: currentIndex + 1, error: 'END WHILE without matching WHILE' };
+      }
+
+      block.iterations++;
+      if (block.iterations >= MAX_WHILE_ITERATIONS) {
+        blockStack.pop();
+        return { nextIndex: currentIndex + 1, error: `WHILE loop exceeded ${MAX_WHILE_ITERATIONS} iterations` };
+      }
+
+      // Re-evaluate condition
+      let conditionMet = false;
+      if (world && block.condition) {
+        const result = evaluateCondition(block.condition, world as any, playerId);
+        conditionMet = result.met;
+        if (verbose) {
+          console.log(`  [END WHILE iteration ${block.iterations}] ${block.condition} -> ${conditionMet ? 'TRUE (continue)' : 'FALSE (exit loop)'}`);
+        }
+      }
+
+      if (conditionMet) {
+        // Loop back to after WHILE directive
+        return { nextIndex: block.startIndex + 1 };
+      } else {
+        // Exit loop
+        blockStack.pop();
+        return { nextIndex: currentIndex + 1 };
+      }
+    }
+
+    case 'navigate': {
+      if (!world || !directive.target) {
+        return { nextIndex: currentIndex + 1, error: 'NAVIGATE requires world model and target' };
+      }
+
+      if (verbose) {
+        console.log(`[NAVIGATE TO: "${directive.target}"]`);
+      }
+
+      const navResult = await executeNavigate(
+        directive.target,
+        world as any,
+        engine,
+        playerId,
+        verbose
+      );
+
+      if (!navResult.success) {
+        return {
+          nextIndex: currentIndex + 1,
+          error: navResult.error || `Navigation to "${directive.target}" failed`
+        };
+      }
+
+      // Create synthetic command results for the navigation commands
+      const commandResults: CommandResult[] = navResult.commands.map((cmd, idx) => ({
+        command: {
+          lineNumber: directive.lineNumber,
+          input: cmd,
+          expectedOutput: [],
+          assertions: []
+        },
+        actualOutput: `(navigated: ${navResult.path[idx] || '?'} -> ${navResult.path[idx + 1] || directive.target})`,
+        actualEvents: [],
+        passed: true,
+        expectedFailure: false,
+        skipped: false,
+        assertionResults: []
+      }));
+
+      return { nextIndex: currentIndex + 1, commandResults };
+    }
+
+    default:
+      return { nextIndex: currentIndex + 1 };
+  }
+}
+
+/**
+ * Handle END directives when in inactive block (for proper nesting)
+ */
+async function handleEndDirective(
+  directive: Directive,
+  blockStack: BlockState[],
+  currentIndex: number,
+  items: TranscriptItem[],
+  engine: GameEngine,
+  playerId: string,
+  options: RunnerOptions
+): Promise<{ consumed: boolean; nextIndex: number }> {
+  switch (directive.type) {
+    case 'end_if':
+      if (blockStack.length > 0 && blockStack[blockStack.length - 1].type === 'if') {
+        blockStack.pop();
+        return { consumed: true, nextIndex: currentIndex + 1 };
+      }
+      break;
+
+    case 'end_while':
+      if (blockStack.length > 0 && blockStack[blockStack.length - 1].type === 'while') {
+        blockStack.pop();
+        return { consumed: true, nextIndex: currentIndex + 1 };
+      }
+      break;
+
+    case 'end_goal':
+      if (blockStack.length > 0 && blockStack[blockStack.length - 1].type === 'goal') {
+        blockStack.pop();
+        return { consumed: true, nextIndex: currentIndex + 1 };
+      }
+      break;
+
+    // Handle nested block starts within inactive blocks
+    case 'if':
+    case 'while':
+    case 'goal':
+      // Push inactive block to maintain proper nesting
+      blockStack.push({
+        type: directive.type === 'goal' ? 'goal' : directive.type,
+        startIndex: currentIndex,
+        active: false,
+        iterations: 0
+      });
+      return { consumed: true, nextIndex: currentIndex + 1 };
+  }
+
+  return { consumed: false, nextIndex: currentIndex + 1 };
+}
+
+/**
+ * Create a synthetic failed result for a directive error
+ */
+function createDirectiveFailResult(directive: Directive, error: string): CommandResult {
+  return {
+    command: {
+      lineNumber: directive.lineNumber,
+      input: `[${directive.type.toUpperCase()}${directive.condition ? ': ' + directive.condition : ''}${directive.target ? ': "' + directive.target + '"' : ''}]`,
+      expectedOutput: [],
+      assertions: []
+    },
+    actualOutput: '',
+    actualEvents: [],
+    passed: false,
+    expectedFailure: false,
+    skipped: false,
+    assertionResults: [],
+    error
   };
 }
 

@@ -1,6 +1,10 @@
 /**
  * @file Grammar Scope Tests
- * @description Tests for scope constraint evaluation in the grammar engine
+ * @description Tests for grammar patterns and trait constraints.
+ *
+ * NOTE: Grammar no longer enforces scope (visible/touchable/carried).
+ * Scope validation happens in action validate() phase.
+ * Grammar only declares semantic constraints (traits).
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -30,7 +34,9 @@ class MockWorldModel {
       attributes: { name: 'guard' },
       visible: true,
       portable: false,
-      animate: true
+      animate: true,
+      // Support trait checking for hasTrait() in grammar
+      has: (traitType: string) => traitType === 'actor'
     } as any;
     
     const ball: Entity = {
@@ -172,10 +178,13 @@ describe('Grammar Scope Constraints', () => {
     parser.setWorldContext(world, 'player', 'room');
   });
 
-  describe('visible() scope constraint', () => {
+  describe('grammar parses regardless of scope', () => {
+    // NOTE: Grammar no longer enforces scope. These tests verify that
+    // grammar parses successfully - scope validation happens in action validate().
+
     it('should match visible entities in take command', () => {
       const result = parser.parse('take sword');
-      
+
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.taking');
@@ -183,19 +192,23 @@ describe('Grammar Scope Constraints', () => {
       }
     });
 
-    it('should not match invisible entities in take command', () => {
+    it('should parse take command even for invisible entities (scope checked in action)', () => {
       const result = parser.parse('take key');
-      
-      // Should fail because 'key' is not visible
-      expect(result.success).toBe(false);
+
+      // Grammar parses successfully - action validate() will check visibility
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value.action).toBe('if.action.taking');
+        expect(result.value.structure.directObject?.text).toBe('key');
+      }
     });
 
-    it('should match give command with carried item to visible animate recipient', () => {
+    it('should match give command with animate recipient (trait constraint)', () => {
       // Move sword to inventory first
       world.moveToInventory('sword', 'player');
-      
+
       const result = parser.parse('give guard sword');
-      
+
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.giving');
@@ -205,22 +218,27 @@ describe('Grammar Scope Constraints', () => {
     });
   });
 
-  describe('carried() scope constraint', () => {
-    it('should fail give command when item is not carried', () => {
+  describe('grammar parses regardless of carried status', () => {
+    // NOTE: Grammar no longer checks .carried() - action validate() does.
+
+    it('should parse give command even when item not carried (scope checked in action)', () => {
       // Don't move sword to inventory - it's just visible in the room
-      
+
       const result = parser.parse('give guard sword');
-      
-      // Should fail because sword is not carried
-      expect(result.success).toBe(false);
+
+      // Grammar parses successfully - action validate() will check carried
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value.action).toBe('if.action.giving');
+      }
     });
 
-    it('should succeed give command when item is carried', () => {
+    it('should parse give command when item is carried', () => {
       // Move sword to inventory
       world.moveToInventory('sword', 'player');
-      
+
       const result = parser.parse('give guard sword');
-      
+
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.giving');
@@ -228,14 +246,20 @@ describe('Grammar Scope Constraints', () => {
     });
   });
 
-  describe('portable property constraint', () => {
-    it('should only allow taking portable items', () => {
+  describe('grammar parses regardless of portable status', () => {
+    // NOTE: Grammar no longer checks .matching({ portable: true }).
+    // SceneryTrait blocking is handled in action validate().
+
+    it('should parse take command for any entity (portability checked in action)', () => {
       const result1 = parser.parse('take sword');
       expect(result1.success).toBe(true);
-      
+
       const result2 = parser.parse('take guard');
-      // Should fail because guard is not portable
-      expect(result2.success).toBe(false);
+      // Grammar parses successfully - action validate() checks SceneryTrait
+      expect(result2.success).toBe(true);
+      if (result2.success) {
+        expect(result2.value.action).toBe('if.action.taking');
+      }
     });
   });
 

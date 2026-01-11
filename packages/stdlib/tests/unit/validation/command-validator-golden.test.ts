@@ -601,4 +601,222 @@ describe('CommandValidator (Golden Pattern)', () => {
       }
     });
   });
+
+  describe('resolveWithSelection (Disambiguation)', () => {
+    let redApple: IFEntity;
+    let greenApple: IFEntity;
+
+    beforeEach(() => {
+      // Create two apples that would be ambiguous
+      redApple = author.createEntity('red apple', EntityType.OBJECT);
+      redApple.add({
+        type: TraitType.IDENTITY,
+        name: 'apple',
+        adjectives: ['red']
+      });
+      author.moveEntity(redApple.id, room.id);
+
+      greenApple = author.createEntity('green apple', EntityType.OBJECT);
+      greenApple.add({
+        type: TraitType.IDENTITY,
+        name: 'apple',
+        adjectives: ['green']
+      });
+      author.moveEntity(greenApple.id, room.id);
+    });
+
+    test('should resolve with explicit directObject selection', () => {
+      const command = createCommand('if.action.taking');
+      command.parsed.structure = {
+        verb: { tokens: [0], text: 'take', head: 'take' },
+        directObject: {
+          tokens: [1],
+          text: 'apple',
+          head: 'apple',
+          modifiers: [],
+          articles: [],
+          determiners: [],
+          candidates: ['apple']
+        }
+      };
+
+      // First validate - would normally be ambiguous
+      // Now re-resolve with explicit selection
+      const result = validator.resolveWithSelection(command.parsed, {
+        directObject: redApple.id
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value.directObject?.entity.id).toBe(redApple.id);
+      }
+    });
+
+    test('should resolve with different explicit selection', () => {
+      const command = createCommand('if.action.taking');
+      command.parsed.structure = {
+        verb: { tokens: [0], text: 'take', head: 'take' },
+        directObject: {
+          tokens: [1],
+          text: 'apple',
+          head: 'apple',
+          modifiers: [],
+          articles: [],
+          determiners: [],
+          candidates: ['apple']
+        }
+      };
+
+      const result = validator.resolveWithSelection(command.parsed, {
+        directObject: greenApple.id
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value.directObject?.entity.id).toBe(greenApple.id);
+      }
+    });
+
+    test('should fail if selected entity no longer exists', () => {
+      const command = createCommand('if.action.taking');
+      command.parsed.structure = {
+        verb: { tokens: [0], text: 'take', head: 'take' },
+        directObject: {
+          tokens: [1],
+          text: 'apple',
+          head: 'apple',
+          modifiers: [],
+          articles: [],
+          determiners: [],
+          candidates: ['apple']
+        }
+      };
+
+      const result = validator.resolveWithSelection(command.parsed, {
+        directObject: 'non-existent-entity-id'
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.code).toBe('ENTITY_NOT_FOUND');
+        expect(result.error.details).toHaveProperty('slot', 'directObject');
+        expect(result.error.details).toHaveProperty('selectedId', 'non-existent-entity-id');
+      }
+    });
+
+    test('should resolve indirectObject with explicit selection', () => {
+      // Create a box for putting
+      const box = author.createEntity('box', EntityType.CONTAINER);
+      box.add({ type: TraitType.IDENTITY, name: 'box' });
+      box.add({ type: TraitType.CONTAINER });
+      box.add({ type: TraitType.OPENABLE, isOpen: true });
+      author.moveEntity(box.id, room.id);
+
+      // Move one apple to inventory so we can put it
+      author.moveEntity(redApple.id, player.id);
+
+      const command = createCommand('if.action.putting');
+      command.parsed.structure = {
+        verb: { tokens: [0], text: 'put', head: 'put' },
+        directObject: {
+          tokens: [1],
+          text: 'apple',
+          head: 'apple',
+          modifiers: [],
+          articles: [],
+          determiners: [],
+          candidates: ['apple']
+        },
+        preposition: { tokens: [2], text: 'in' },
+        indirectObject: {
+          tokens: [3],
+          text: 'box',
+          head: 'box',
+          modifiers: [],
+          articles: [],
+          determiners: [],
+          candidates: ['box']
+        }
+      };
+
+      const result = validator.resolveWithSelection(command.parsed, {
+        directObject: redApple.id,
+        indirectObject: box.id
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value.directObject?.entity.id).toBe(redApple.id);
+        expect(result.value.indirectObject?.entity.id).toBe(box.id);
+      }
+    });
+
+    test('should use normal resolution for unspecified slots', () => {
+      // This test verifies that when only some slots are specified in the selection,
+      // the other slots still get resolved normally.
+      // We'll only test that directObject is correctly set to the explicitly selected entity.
+      // Testing indirectObject normal resolution would require complex setup that belongs
+      // in the general validation tests, not here.
+
+      const command = createCommand('if.action.taking');
+      command.parsed.structure = {
+        verb: { tokens: [0], text: 'take', head: 'take' },
+        directObject: {
+          tokens: [1],
+          text: 'apple',
+          head: 'apple',
+          modifiers: [],
+          articles: [],
+          determiners: [],
+          candidates: ['apple']
+        }
+      };
+
+      // Explicitly select the red apple
+      const result = validator.resolveWithSelection(command.parsed, {
+        directObject: redApple.id
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value.directObject?.entity.id).toBe(redApple.id);
+        expect(result.value.actionId).toBe('if.action.taking');
+      }
+    });
+
+    test('should still check scope constraints on selected entities', () => {
+      // Create an entity in another room (not reachable)
+      const otherRoom = author.createEntity('Other Room', EntityType.ROOM);
+      otherRoom.add({ type: TraitType.ROOM });
+
+      const distantApple = author.createEntity('distant apple', EntityType.OBJECT);
+      distantApple.add({ type: TraitType.IDENTITY, name: 'apple', adjectives: ['distant'] });
+      author.moveEntity(distantApple.id, otherRoom.id);
+
+      const command = createCommand('if.action.taking');
+      command.parsed.structure = {
+        verb: { tokens: [0], text: 'take', head: 'take' },
+        directObject: {
+          tokens: [1],
+          text: 'apple',
+          head: 'apple',
+          modifiers: [],
+          articles: [],
+          determiners: [],
+          candidates: ['apple']
+        }
+      };
+
+      // Try to select the distant apple - should fail scope check
+      const result = validator.resolveWithSelection(command.parsed, {
+        directObject: distantApple.id
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        // Should fail with scope error, not entity not found
+        expect(result.error.code).toBe('ENTITY_NOT_VISIBLE');
+      }
+    });
+  });
 });

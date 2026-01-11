@@ -59,6 +59,13 @@ function createModifiedCommand(context: ActionContext) {
 
 export const insertingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.INSERTING,
+
+  // Default scope requirements for this action's slots
+  defaultScope: {
+    item: ScopeLevel.CARRIED,
+    container: ScopeLevel.REACHABLE
+  },
+
   requiredMessages: [
     'no_target',
     'no_destination',
@@ -116,7 +123,12 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       modifiedCommand
     );
 
+    // Store modified context for execute/report phases (preserves implicit take events)
+    const sharedData = getInsertingSharedData(context);
+    sharedData.modifiedContext = modifiedContext;
+
     // Delegate validation to putting action
+    // This includes implicit take check - events stored in modifiedContext.sharedData
     const puttingValidation = puttingAction.validate(modifiedContext);
 
     if (!puttingValidation.valid) {
@@ -127,23 +139,23 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
   },
 
   execute(context: ActionContext): void {
-    // Create modified command with 'in' preposition for delegation to putting
-    const modifiedCommand = createModifiedCommand(context);
-
-    // Create a new context for the putting action with the modified command
-    const modifiedContext = createActionContext(
-      context.world,
-      context.player,
-      puttingAction,
-      modifiedCommand
-    );
-
-    // Store modified context for report phase using sharedData
+    // Reuse the modified context from validate (preserves implicit take events)
     const sharedData = getInsertingSharedData(context);
-    sharedData.modifiedContext = modifiedContext;
+    const modifiedContext = sharedData.modifiedContext;
+
+    if (!modifiedContext) {
+      // Shouldn't happen, but create one defensively
+      const modifiedCommand = createModifiedCommand(context);
+      sharedData.modifiedContext = createActionContext(
+        context.world,
+        context.player,
+        puttingAction,
+        modifiedCommand
+      );
+    }
 
     // Execute putting action
-    puttingAction.execute(modifiedContext);
+    puttingAction.execute(sharedData.modifiedContext!);
   },
 
   /**

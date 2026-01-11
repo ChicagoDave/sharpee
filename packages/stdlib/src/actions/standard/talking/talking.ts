@@ -222,6 +222,6 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
   metadata: {
     requiresDirectObject: true,
     requiresIndirectObject: false,
-    directObjectScope: ScopeLevel.AUDIBLE
+    directObjectScope: ScopeLevel.AWARE
   }
 };

@@ -239,6 +239,12 @@ function reportSingleBlocked(
 
 export const droppingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.DROPPING,
+
+  // Default scope requirements for this action's slots
+  defaultScope: {
+    item: ScopeLevel.CARRIED
+  },
+
   requiredMessages: [
     'no_target',
     'not_held',

@@ -28,6 +28,12 @@ function extractSpokenWords(context: ActionContext): string | undefined {
   // Check raw input for text after "say"
   const rawInput = command.parsed?.rawInput?.toLowerCase() || '';
 
+  // Handle bare magic words (mainframe Zork style)
+  const bareMagicWords = ['echo', 'ulysses', 'odysseus', 'xyzzy'];
+  if (bareMagicWords.includes(rawInput)) {
+    return rawInput;
+  }
+
   // Try to extract text after "say " or "say to"
   const sayMatch = rawInput.match(/^say\s+(?:to\s+\w+\s+)?["']?(.+?)["']?$/);
   if (sayMatch) {
@@ -94,8 +100,10 @@ function hasPlatinumBar(context: ActionContext): boolean {
 
 /**
  * Handle saying "echo" in the Loud Room
- * - Without platinum bar: DEATH
- * - With platinum bar: Safe, puzzle solved
+ *
+ * Mainframe Zork behavior:
+ * - Say "echo" WITHOUT platinum bar → Safe, room stops echoing, can take bar
+ * - Say "echo" WITH platinum bar → DEATH (bar amplifies reverberations)
  */
 function handleLoudRoomEcho(context: ActionContext): ISemanticEvent[] {
   const events: ISemanticEvent[] = [];
@@ -112,18 +120,18 @@ function handleLoudRoomEcho(context: ActionContext): ISemanticEvent[] {
 
   // Check if player has the platinum bar
   if (hasPlatinumBar(context)) {
-    // Safe! The bar absorbs the sound
-    room.echoSolved = true;
-    events.push(context.event('action.success', {
-      actionId: SAY_ACTION_ID,
-      messageId: SayMessages.LOUD_ROOM_ECHO_SAFE,
-    }));
-  } else {
-    // DEATH! The echo reverberations kill the player
+    // DEATH! The bar amplifies the echo reverberations
     events.push(context.event('player.died', {
       actionId: SAY_ACTION_ID,
       messageId: SayMessages.LOUD_ROOM_ECHO_DEATH,
       cause: 'echo_reverberations',
+    }));
+  } else {
+    // Safe! Without the bar, the echo dissipates harmlessly
+    room.echoSolved = true;
+    events.push(context.event('action.success', {
+      actionId: SAY_ACTION_ID,
+      messageId: SayMessages.LOUD_ROOM_ECHO_SAFE,
     }));
   }
 

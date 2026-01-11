@@ -38,13 +38,14 @@ export interface ValidatedCommand extends CoreValidatedCommand {
 /**
  * Extended validation error codes
  */
-export type ValidationErrorCode = 
-  | 'ENTITY_NOT_FOUND' 
-  | 'ENTITY_NOT_VISIBLE' 
+export type ValidationErrorCode =
+  | 'ENTITY_NOT_FOUND'
+  | 'ENTITY_NOT_VISIBLE'
   | 'ENTITY_NOT_REACHABLE'
   | 'ENTITY_NOT_AUDIBLE'
   | 'ENTITY_NOT_DETECTABLE'
   | 'NOT_CARRIED'
-  | 'ACTION_NOT_AVAILABLE' 
+  | 'ACTION_NOT_AVAILABLE'
   | 'PRECONDITION_FAILED'
-  | 'NO_PLAYER';
+  | 'NO_PLAYER'
+  | 'AMBIGUOUS_ENTITY';  // Phase 5: Multiple entities match, disambiguation needed

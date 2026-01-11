@@ -43,6 +43,12 @@ function getSearchingSharedData(context: ActionContext): SearchingSharedData {
 
 export const searchingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.SEARCHING,
+
+  // Default scope requirements for this action's slots
+  defaultScope: {
+    target: ScopeLevel.REACHABLE
+  },
+
   requiredMessages: [
     'not_visible',
     'not_reachable',

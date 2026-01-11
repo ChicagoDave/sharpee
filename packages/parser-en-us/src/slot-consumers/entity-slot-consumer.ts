@@ -370,6 +370,13 @@ export class EntitySlotConsumer implements SlotConsumer {
     const slotConstraints = rule.slots.get(slotName);
     let confidence = 1.0;
 
+    if (DEBUG) {
+      console.log(`Checking constraints for slot '${slotName}':`);
+      console.log(`  slotConstraints exists: ${!!slotConstraints}`);
+      console.log(`  constraints count: ${slotConstraints?.constraints?.length ?? 0}`);
+      console.log(`  context.world exists: ${!!context.world}`);
+    }
+
     if (slotConstraints && slotConstraints.constraints.length > 0 && context.world) {
       // For lists, check constraints on each item
       for (const item of items) {
@@ -440,7 +447,24 @@ export class EntitySlotConsumer implements SlotConsumer {
           );
 
           if (process.env.PARSER_DEBUG === 'true') {
-            console.log(`Found ${matchingEntities.length} matching entities`);
+            console.log(`Found ${matchingEntities.length} matching entities for "${slotText}"`);
+            // Show scope details
+            console.log(`  Scope base: ${scopeConstraint.base}, filters: ${scopeConstraint.filters.length}`);
+            // Show what entities are in scope before filtering
+            const allInScope = ScopeEvaluator.getEntitiesInScope(
+              { ...scopeConstraint, filters: [] }, // Without filters
+              context
+            );
+            console.log(`  Entities in ${scopeConstraint.base} scope: ${allInScope.length}`);
+            for (const e of allInScope.slice(0, 5)) {
+              const identity = (e as any).get?.('identity') as any;
+              const name = identity?.name || e.id;
+              const enterable = (e as any).enterable;
+              console.log(`    - ${name} (enterable=${enterable})`);
+            }
+            if (allInScope.length > 5) {
+              console.log(`    ... and ${allInScope.length - 5} more`);
+            }
           }
 
           if (matchingEntities.length > 0) {

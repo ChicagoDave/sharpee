@@ -37,6 +37,12 @@ function getClosingSharedData(context: ActionContext): ClosingSharedData {
 
 export const closingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.CLOSING,
+
+  // Default scope requirements for this action's slots
+  defaultScope: {
+    target: ScopeLevel.REACHABLE
+  },
+
   requiredMessages: [
     'no_target',
     'not_closable',
@@ -65,6 +71,12 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
         valid: false,
         error: ClosingMessages.NO_TARGET
       };
+    }
+
+    // Check scope - must be able to reach the target
+    const scopeCheck = context.requireScope(noun, ScopeLevel.REACHABLE);
+    if (!scopeCheck.ok) {
+      return scopeCheck.error!;
     }
 
     // Check if it's openable (things that can open can also close)

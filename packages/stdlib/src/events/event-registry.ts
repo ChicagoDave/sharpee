@@ -78,6 +78,17 @@ export interface ClosedEventData {
   targetName: string;
 }
 
+/**
+ * Implicit take event data
+ *
+ * Emitted when an action requires a carried item and the item
+ * is automatically taken first. Used for "(first taking the X)" messages.
+ */
+export interface ImplicitTakeEventData {
+  item: EntityId;
+  itemName: string;
+}
+
 // ============================================================
 // Declaration Merging - Extend Core Registry
 // ============================================================
@@ -89,6 +100,7 @@ declare module '@sharpee/core' {
     // --------------------------------------------------------
     'if.event.taken': TakenEventData;
     'if.event.dropped': DroppedEventData;
+    'if.event.implicit_take': ImplicitTakeEventData;
 
     // --------------------------------------------------------
     // Looking / Examining

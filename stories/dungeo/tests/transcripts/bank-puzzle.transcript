@@ -57,5 +57,47 @@ description: Tests room navigation, stone cube, walk-through action, and alarm s
 [OK: contains "Small Room"]
 
 # Walk through south wall to return to Safety Depository
+# This sets the curtain to lead to Viewing Room next time
 > walk through south wall
 [OK: contains "disoriented"]
+[OK: contains "Safety Depository"]
+
+# Now walk through north wall to get to Vault
+> walk through north wall
+[OK: contains "disoriented"]
+[OK: contains "Vault"]
+
+# Get the zorkmid bills
+> take zorkmid bills
+[OK: matches /(Taken|take)/i]
+
+# Walk through north wall to return to Safety Depository
+> walk through north wall
+[OK: contains "disoriented"]
+[OK: contains "Safety Depository"]
+
+# Now the curtain leads to Viewing Room (was set by walking through south wall earlier)
+> walk through curtain
+[OK: contains "disoriented"]
+[OK: contains "Viewing Room"]
+
+# From Viewing Room, go south to Bank Entrance
+> south
+[OK: contains "Bank Entrance"]
+
+# Go to East Teller
+> northeast
+[OK: contains "East Teller"]
+
+# Go to Chairman's Office for the portrait
+> south
+[OK: contains "Chairman"]
+
+# Get the portrait
+> take portrait
+[OK: matches /(Taken|take)/i]
+
+# Verify we have both treasures
+> inventory
+[OK: contains "zorkmid"]
+[OK: contains "portrait"]

@@ -4,6 +4,90 @@
  * Defines the structure of parsed transcripts and test results.
  */
 
+// ============================================================================
+// Directive Types (ADR-092: Smart Transcript Directives)
+// ============================================================================
+
+/**
+ * Types of control flow directives
+ */
+export type DirectiveType =
+  | 'goal'        // [GOAL: name]
+  | 'end_goal'    // [END GOAL]
+  | 'requires'    // [REQUIRES: condition]
+  | 'ensures'     // [ENSURES: condition]
+  | 'if'          // [IF: condition]
+  | 'end_if'      // [END IF]
+  | 'while'       // [WHILE: condition]
+  | 'end_while'   // [END WHILE]
+  | 'navigate';   // [NAVIGATE TO: "Room Name"]
+
+/**
+ * A control flow directive in the transcript
+ */
+export interface Directive {
+  type: DirectiveType;
+  lineNumber: number;
+  condition?: string;   // For IF/WHILE/REQUIRES/ENSURES: the condition expression
+  target?: string;      // For NAVIGATE: the target room name
+  goalName?: string;    // For GOAL: the goal name
+}
+
+/**
+ * A goal segment with its preconditions, postconditions, and content
+ */
+export interface GoalDefinition {
+  name: string;
+  lineNumber: number;
+  requires: string[];   // Precondition expressions
+  ensures: string[];    // Postcondition expressions
+  startIndex: number;   // Index in items array where goal content starts
+  endIndex: number;     // Index in items array where goal ends
+}
+
+/**
+ * Result of executing a goal
+ */
+export interface GoalResult {
+  name: string;
+  success: boolean;
+  requiresResults: ConditionResult[];
+  ensuresResults: ConditionResult[];
+  commandsExecuted: number;
+  error?: string;
+}
+
+/**
+ * Result of evaluating a condition
+ */
+export interface ConditionResult {
+  met: boolean;
+  reason: string;  // Human-readable explanation
+}
+
+/**
+ * Result of executing a NAVIGATE directive
+ */
+export interface NavigateResult {
+  success: boolean;
+  path: string[];       // Room names traversed
+  commands: string[];   // GO commands executed
+  error?: string;
+}
+
+/**
+ * A transcript item - either a command or a directive
+ */
+export interface TranscriptItem {
+  type: 'command' | 'directive';
+  command?: TranscriptCommand;
+  directive?: Directive;
+}
+
+// ============================================================================
+// Original Types
+// ============================================================================
+
 /**
  * Header metadata from a transcript file
  */
@@ -52,7 +136,9 @@ export interface TranscriptCommand {
 export interface Transcript {
   filePath: string;
   header: TranscriptHeader;
-  commands: TranscriptCommand[];
+  commands: TranscriptCommand[];         // Legacy: just commands (for backwards compat)
+  items?: TranscriptItem[];              // New: commands + directives in order
+  goals?: GoalDefinition[];              // Parsed goal segments
   comments: string[];
 }
 

@@ -25,7 +25,8 @@ export default defineConfig({
     alias: {
       '@sharpee/core': resolve(__dirname, '../core/src'),
       '@sharpee/if-domain': resolve(__dirname, '../if-domain/src'),
-      '@sharpee/lang-en-us': resolve(__dirname, '../lang-en-us/src')
+      '@sharpee/lang-en-us': resolve(__dirname, '../lang-en-us/src'),
+      '@sharpee/world-model': resolve(__dirname, '../world-model/src')
     }
   }
 })

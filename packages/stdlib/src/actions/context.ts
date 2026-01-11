@@ -5,9 +5,9 @@
  */
 
 import { IFEntity, WorldModel, ICapabilityData, IValidatedCommand } from '@sharpee/world-model';
-import { ActionContext, Action } from './enhanced-types';
+import { ActionContext, Action, ScopeCheckResult, ImplicitTakeResult } from './enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
-import { ScopeResolver } from '../scope/types';
+import { ScopeResolver, ScopeLevel } from '../scope/types';
 
 /**
  * @deprecated Use createActionContext from enhanced-context.ts instead
@@ -177,5 +177,131 @@ export class ReadOnlyActionContext implements ActionContext {
    */
   event(type: string, data: any): ISemanticEvent {
     throw new Error('ReadOnlyActionContext does not support event creation. Use createActionContext from enhanced-context.ts instead.');
+  }
+
+  // =========================================================================
+  // Scope validation methods (Phase 4 - stub implementations for deprecated class)
+  // =========================================================================
+
+  /**
+   * Get the scope level for an entity.
+   * @deprecated This implementation returns basic scope levels - use createActionContext instead
+   */
+  getEntityScope(entity: IFEntity): ScopeLevel {
+    // Basic implementation for deprecated class
+    const entityLocation = this.world.getLocation(entity.id);
+
+    // Carried - in player's inventory
+    if (entityLocation === this.player.id) {
+      return ScopeLevel.CARRIED;
+    }
+
+    // Reachable - in same location
+    if (entityLocation === this.currentLocation.id || this.canReach(entity)) {
+      return ScopeLevel.REACHABLE;
+    }
+
+    // Visible - can see but not reach
+    if (this.canSee(entity)) {
+      return ScopeLevel.VISIBLE;
+    }
+
+    // Not in scope
+    return ScopeLevel.UNAWARE;
+  }
+
+  /**
+   * Get the scope level for an entity in a command slot.
+   * @deprecated This implementation returns basic scope levels - use createActionContext instead
+   */
+  getSlotScope(slot: string): ScopeLevel {
+    const slotMap: Record<string, 'directObject' | 'indirectObject'> = {
+      target: 'directObject',
+      item: 'directObject',
+      container: 'indirectObject',
+      recipient: 'indirectObject'
+    };
+
+    const commandSlot = slotMap[slot] || slot as 'directObject' | 'indirectObject';
+    const ref = this.command[commandSlot];
+    const entity = ref?.entity;
+
+    if (!entity) {
+      return ScopeLevel.UNAWARE;
+    }
+
+    return this.getEntityScope(entity);
+  }
+
+  /**
+   * Check if an entity meets a required scope level.
+   * @deprecated This implementation is basic - use createActionContext instead
+   */
+  requireScope(entity: IFEntity, required: ScopeLevel): ScopeCheckResult {
+    const actualScope = this.getEntityScope(entity);
+
+    if (actualScope >= required) {
+      return { ok: true, actualScope };
+    }
+
+    // Return appropriate error based on what's missing
+    let errorCode: string;
+    if (required === ScopeLevel.CARRIED) {
+      errorCode = 'scope.not_carried';
+    } else if (required === ScopeLevel.REACHABLE) {
+      errorCode = 'scope.not_reachable';
+    } else if (required === ScopeLevel.VISIBLE) {
+      errorCode = 'scope.not_visible';
+    } else {
+      errorCode = 'scope.out_of_scope';
+    }
+
+    return {
+      ok: false,
+      actualScope,
+      error: {
+        valid: false,
+        error: errorCode,
+        params: { entityId: entity.id, entityName: entity.name, required, actual: actualScope }
+      }
+    };
+  }
+
+  /**
+   * Check if a command slot entity meets a required scope level.
+   * @deprecated This implementation is basic - use createActionContext instead
+   */
+  requireSlotScope(slot: string, required: ScopeLevel): ScopeCheckResult {
+    const slotMap: Record<string, 'directObject' | 'indirectObject'> = {
+      target: 'directObject',
+      item: 'directObject',
+      container: 'indirectObject',
+      recipient: 'indirectObject'
+    };
+
+    const commandSlot = slotMap[slot] || slot as 'directObject' | 'indirectObject';
+    const ref = this.command[commandSlot];
+    const entity = ref?.entity;
+
+    if (!entity) {
+      return {
+        ok: false,
+        error: {
+          valid: false,
+          error: 'scope.not_found',
+          params: { slot }
+        }
+      };
+    }
+
+    return this.requireScope(entity, required);
+  }
+
+  /**
+   * Check if an entity is carried, attempting implicit take if needed.
+   * @deprecated This implementation throws an error - use createActionContext instead
+   */
+  requireCarriedOrImplicitTake(_entity: IFEntity): ImplicitTakeResult {
+    throw new Error('ReadOnlyActionContext does not support implicit takes. Use createActionContext from enhanced-context.ts instead.');
   }
 }

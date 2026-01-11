@@ -6,6 +6,8 @@ Sharpee is a parser-based Interactive Fiction authoring tool built in Typescript
 
 ## MAJOR DIRECTIONS
 
+CLAUDE CODE BUG: ESC Interupt is currently broken so you need to STOP at any decision point.
+
 - Never delete files without confirmation. Not even "to get a build working" or "to get the other tests working".
 - Never use batch scripts (sed/awk/grep) to modify multiple files. One file at a time.
 - We never care about backward compatibility, but discuss code smells or design flaws before changing.
@@ -341,6 +343,7 @@ Transcripts live in `stories/{story}/tests/transcripts/*.transcript`
 The "dropping bug" revealed that actions can appear to work (good messages, correct events) while failing to actually change state. This was caused by execute phases that set up data but never called `world.moveEntity()` or behavior mutations.
 
 **Required Test Pattern:**
+
 ```typescript
 test('should actually move item to player inventory', () => {
   const { world, player, room } = setupBasicWorld();
@@ -360,6 +363,7 @@ test('should actually move item to player inventory', () => {
 ```
 
 **Helper utilities** in `packages/stdlib/tests/test-utils/index.ts`:
+
 - `expectLocation(world, entityId, expected)` - Assert current location
 - `expectLocationChanged(world, entityId, from, to)` - Assert location changed
 - `expectTraitValue(entity, traitType, prop, value)` - Assert trait property
@@ -388,16 +392,19 @@ test('should actually move item to player inventory', () => {
 ### Progressive Session Summaries
 
 **At session start**, create a session file:
+
 - Location: `docs/context/session-YYYYMMDD-HHMM-{branch}.md`
 - Template: `docs/context/.session-template.md`
 - Naming ensures chronological sort order for statistics/progress reports
 
 **During the session**, update the session file progressively:
+
 - After completing significant chunks of work
 - After key decisions or discoveries
 - After test runs or builds
 
 **Hooks installed** (`.claude/settings.json`):
+
 - **PreCompact**: Reminds to finalize session summary before compacting
 - **Stop**: Monitors transcript size and reminds when context is growing large
 

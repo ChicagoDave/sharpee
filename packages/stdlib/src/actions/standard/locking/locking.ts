@@ -44,6 +44,13 @@ function getLockingSharedData(context: ActionContext): LockingSharedData {
 
 export const lockingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.LOCKING,
+
+  // Default scope requirements for this action's slots
+  defaultScope: {
+    target: ScopeLevel.REACHABLE,
+    key: ScopeLevel.CARRIED
+  },
+
   requiredMessages: [
     'no_target',
     'not_lockable',
@@ -73,6 +80,12 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
         valid: false,
         error: MESSAGES.NO_TARGET
       };
+    }
+
+    // Check scope - must be able to reach the target
+    const scopeCheck = context.requireScope(noun, ScopeLevel.REACHABLE);
+    if (!scopeCheck.ok) {
+      return scopeCheck.error!;
     }
 
     // Check if it's lockable

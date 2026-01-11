@@ -87,6 +87,13 @@ function getThrowingSharedData(context: ActionContext): ThrowingSharedData {
 
 export const throwingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.THROWING,
+
+  // Default scope requirements for this action's slots
+  defaultScope: {
+    item: ScopeLevel.CARRIED,
+    target: ScopeLevel.VISIBLE
+  },
+
   requiredMessages: [
     'no_item',
     'not_holding',
@@ -129,6 +136,13 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
 
     if (!item) {
       return { valid: false, error: 'no_item' };
+    }
+
+    // Item must be carried (or implicitly takeable)
+    // This enables "throw apple at bob" when apple is on the ground
+    const carryCheck = context.requireCarriedOrImplicitTake(item);
+    if (!carryCheck.ok) {
+      return carryCheck.error!;
     }
 
     if (target) {
@@ -345,6 +359,11 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
   report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getThrowingSharedData(context);
     const events: ISemanticEvent[] = [];
+
+    // Prepend any implicit take events (from requireCarriedOrImplicitTake)
+    if (context.sharedData.implicitTakeEvents) {
+      events.push(...context.sharedData.implicitTakeEvents);
+    }
 
     // Build event data
     const eventData: ThrowingEventMap['if.event.thrown'] = {

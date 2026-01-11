@@ -35,6 +35,12 @@ function getEatingSharedData(context: ActionContext): EatingSharedData {
 
 export const eatingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.EATING,
+
+  // Default scope requirements for this action's slots
+  defaultScope: {
+    item: ScopeLevel.REACHABLE
+  },
+
   requiredMessages: [
     'no_item',
     'not_visible',
@@ -70,13 +76,10 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Defensive reachability check (Option A)
-    if (!context.canReach(item)) {
-      return {
-        valid: false,
-        error: 'not_reachable',
-        params: { item: item.name }
-      };
+    // Check scope - must be able to reach the item
+    const scopeCheck = context.requireScope(item, ScopeLevel.REACHABLE);
+    if (!scopeCheck.ok) {
+      return scopeCheck.error!;
     }
 
     // Check if item is edible

@@ -40,8 +40,15 @@ function getReadingSharedData(context: ActionContext): ReadingSharedData {
  * - Language/ability requirements
  * - Tracking what has been read
  */
+import { ScopeLevel } from '../../../scope/types';
+
 export const reading: Action = {
   id: 'if.action.reading',
+
+  // Default scope requirements for this action's slots
+  defaultScope: {
+    target: ScopeLevel.VISIBLE
+  },
 
   validate(context: ActionContext) {
     const { directObject } = context.command;
@@ -55,6 +62,12 @@ export const reading: Action = {
     }
 
     const target = directObject.entity;
+
+    // Check scope - must be able to see the target
+    const scopeCheck = context.requireScope(target, ScopeLevel.VISIBLE);
+    if (!scopeCheck.ok) {
+      return scopeCheck.error!;
+    }
 
     // Check if entity has readable trait
     const readable = target.get(TraitType.READABLE);

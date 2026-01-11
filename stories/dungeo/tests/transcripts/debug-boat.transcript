@@ -1,0 +1,89 @@
+title: Debug Boat Mechanics
+story: dungeo
+description: Test boat inflate, enter, and navigation. Chain after wt-04.
+---
+
+# ============================================================================
+# Starting state after wt-04: Living Room with torch, lantern
+# Need to get pump from Reservoir North, go to Dam Base, test boat
+# ============================================================================
+
+> inventory
+[OK: contains "torch"]
+[OK: contains "lantern"]
+
+# Navigate to Reservoir North for pump (reservoir already drained in wt-04)
+> down
+[OK: contains "Cellar"]
+
+> east
+[OK: contains "Troll Room"]
+
+> north
+[OK: contains "Passage"]
+
+> east
+[OK: contains "Round Room"]
+
+> northwest
+[OK: contains "Canyon"]
+
+> north
+[OK: contains "Dam Lobby"]
+
+> north
+[OK: contains "Dam"]
+
+> north
+[OK: contains "Reservoir"]
+
+> north
+[OK: contains "Reservoir"]
+
+> north
+[OK: contains "Reservoir North"]
+
+> take pump
+[OK: matches /(Taken|take)/i]
+
+# Navigate back to Dam Base where boat is
+> south
+[OK: contains "Reservoir"]
+
+> south
+[OK: contains "Reservoir"]
+
+> south
+[OK: contains "Dam"]
+
+> down
+[OK: contains "Dam Base"]
+
+# The pile of plastic (boat) should be here
+> look
+[OK: matches /(plastic|pile|boat)/i]
+
+# Inflate the boat
+> inflate boat
+[OK: matches /(inflate|magic|seaworthy)/i]
+
+# After inflation, boat should be named "magic boat"
+> look
+[OK: contains "boat"]
+
+# ============================================================================
+# TEST: Enter the boat
+# ============================================================================
+
+# Try "enter boat"
+> enter boat
+[OK: matches /(enter|board|in|You are|inside)/i]
+
+# Are we in the boat now? Look should show we're in the boat
+> look
+[OK: matches /(boat|Dam Base)/i]
+
+# Try moving south while in boat (should go to Frigid River)
+> south
+[OK: matches /(Frigid|River|water)/i]
+

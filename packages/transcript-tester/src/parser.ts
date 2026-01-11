@@ -10,6 +10,9 @@ import {
   Transcript,
   TranscriptHeader,
   TranscriptCommand,
+  TranscriptItem,
+  Directive,
+  GoalDefinition,
   Assertion
 } from './types';
 
@@ -30,6 +33,8 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
     filePath,
     header: {},
     commands: [],
+    items: [],
+    goals: [],
     comments: []
   };
 
@@ -77,6 +82,7 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
       if (currentCommand) {
         finalizeCommand(currentCommand);
         transcript.commands.push(currentCommand);
+        transcript.items!.push({ type: 'command', command: currentCommand });
       }
 
       currentCommand = {
@@ -88,8 +94,23 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
       continue;
     }
 
-    // Assertion tags
+    // Directive or assertion tags (both use [ ])
     if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      // Try to parse as directive first
+      const directive = parseDirective(trimmed, lineNumber);
+      if (directive) {
+        // Save any pending command first
+        if (currentCommand) {
+          finalizeCommand(currentCommand);
+          transcript.commands.push(currentCommand);
+          transcript.items!.push({ type: 'command', command: currentCommand });
+          currentCommand = null;
+        }
+        transcript.items!.push({ type: 'directive', directive });
+        continue;
+      }
+
+      // Not a directive - try as assertion (must be attached to a command)
       if (currentCommand) {
         const assertion = parseAssertion(trimmed);
         if (assertion) {
@@ -109,9 +130,143 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
   if (currentCommand) {
     finalizeCommand(currentCommand);
     transcript.commands.push(currentCommand);
+    transcript.items!.push({ type: 'command', command: currentCommand });
   }
 
+  // Parse goal segments from items
+  transcript.goals = parseGoals(transcript.items!);
+
   return transcript;
+}
+
+/**
+ * Parse a directive tag like [GOAL: name], [IF: condition], [NAVIGATE TO: "Room"]
+ */
+function parseDirective(tag: string, lineNumber: number): Directive | null {
+  const inner = tag.slice(1, -1).trim();  // Remove [ ]
+
+  // [GOAL: name]
+  const goalMatch = inner.match(/^GOAL:\s*(.+)$/i);
+  if (goalMatch) {
+    return { type: 'goal', lineNumber, goalName: goalMatch[1].trim() };
+  }
+
+  // [END GOAL]
+  if (inner.toUpperCase() === 'END GOAL') {
+    return { type: 'end_goal', lineNumber };
+  }
+
+  // [REQUIRES: condition]
+  const requiresMatch = inner.match(/^REQUIRES:\s*(.+)$/i);
+  if (requiresMatch) {
+    return { type: 'requires', lineNumber, condition: requiresMatch[1].trim() };
+  }
+
+  // [ENSURES: condition]
+  const ensuresMatch = inner.match(/^ENSURES:\s*(.+)$/i);
+  if (ensuresMatch) {
+    return { type: 'ensures', lineNumber, condition: ensuresMatch[1].trim() };
+  }
+
+  // [IF: condition]
+  const ifMatch = inner.match(/^IF:\s*(.+)$/i);
+  if (ifMatch) {
+    return { type: 'if', lineNumber, condition: ifMatch[1].trim() };
+  }
+
+  // [END IF]
+  if (inner.toUpperCase() === 'END IF') {
+    return { type: 'end_if', lineNumber };
+  }
+
+  // [WHILE: condition]
+  const whileMatch = inner.match(/^WHILE:\s*(.+)$/i);
+  if (whileMatch) {
+    return { type: 'while', lineNumber, condition: whileMatch[1].trim() };
+  }
+
+  // [END WHILE]
+  if (inner.toUpperCase() === 'END WHILE') {
+    return { type: 'end_while', lineNumber };
+  }
+
+  // [NAVIGATE TO: "Room Name"]
+  const navigateMatch = inner.match(/^NAVIGATE\s+TO:\s*"([^"]+)"$/i);
+  if (navigateMatch) {
+    return { type: 'navigate', lineNumber, target: navigateMatch[1] };
+  }
+
+  // Not a directive
+  return null;
+}
+
+/**
+ * Parse goal segments from items array
+ */
+function parseGoals(items: TranscriptItem[]): GoalDefinition[] {
+  const goals: GoalDefinition[] = [];
+  let currentGoal: Partial<GoalDefinition> | null = null;
+  let goalStartIndex = -1;
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (item.type !== 'directive') continue;
+
+    const directive = item.directive!;
+
+    switch (directive.type) {
+      case 'goal':
+        if (currentGoal) {
+          console.warn(`Line ${directive.lineNumber}: Nested goals not allowed. Closing previous goal.`);
+          goals.push({
+            ...currentGoal,
+            endIndex: i - 1
+          } as GoalDefinition);
+        }
+        currentGoal = {
+          name: directive.goalName!,
+          lineNumber: directive.lineNumber,
+          requires: [],
+          ensures: [],
+          startIndex: i + 1
+        };
+        goalStartIndex = i;
+        break;
+
+      case 'requires':
+        if (currentGoal && directive.condition) {
+          currentGoal.requires!.push(directive.condition);
+        }
+        break;
+
+      case 'ensures':
+        if (currentGoal && directive.condition) {
+          currentGoal.ensures!.push(directive.condition);
+        }
+        break;
+
+      case 'end_goal':
+        if (currentGoal) {
+          goals.push({
+            ...currentGoal,
+            endIndex: i
+          } as GoalDefinition);
+          currentGoal = null;
+        }
+        break;
+    }
+  }
+
+  // Handle unclosed goal
+  if (currentGoal) {
+    console.warn(`Unclosed goal: ${currentGoal.name}`);
+    goals.push({
+      ...currentGoal,
+      endIndex: items.length - 1
+    } as GoalDefinition);
+  }
+
+  return goals;
 }
 
 /**

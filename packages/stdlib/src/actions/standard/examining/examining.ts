@@ -25,6 +25,12 @@ import { ExaminingMessages } from './examining-messages';
 
 export const examiningAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.EXAMINING,
+
+  // Default scope requirements for this action's slots
+  defaultScope: {
+    target: ScopeLevel.VISIBLE
+  },
+
   requiredMessages: [
     'no_target',
     'not_visible',
@@ -53,13 +59,12 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Check if visible (unless examining yourself)
-    if (noun.id !== actor.id && !context.canSee(noun)) {
-      return {
-        valid: false,
-        error: ExaminingMessages.NOT_VISIBLE,
-        params: { target: noun.name }
-      };
+    // Check scope - must be able to see the target (unless examining yourself)
+    if (noun.id !== actor.id) {
+      const scopeCheck = context.requireScope(noun, ScopeLevel.VISIBLE);
+      if (!scopeCheck.ok) {
+        return scopeCheck.error!;
+      }
     }
 
     // Valid - all event data will be built in report()

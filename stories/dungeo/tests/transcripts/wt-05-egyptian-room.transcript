@@ -1,0 +1,141 @@
+title: Egyptian Room (Coffin and Sceptre)
+story: dungeo
+description: Get gold coffin and sceptre from Egyptian Room. Chain after dam-reservoir.
+---
+
+# ============================================================================
+# Starting state: Living Room with torch + lantern (25 weight)
+# Items in Living Room: incense, skeleton key
+# Treasures in trophy case: portrait, painting, zorkmid bills, trunk, platinum bar
+# ============================================================================
+
+# Already have lantern from wt-04, verify inventory
+> inventory
+[OK: contains "lantern"]
+[OK: contains "torch"]
+
+# ============================================================================
+# GOAL: Navigate to Egyptian Room
+# Path: Living Room → Cellar → Troll Room → E/W Passage → Deep Ravine
+#       → Rocky Crawl → NW → Egyptian Room
+# ============================================================================
+
+[GOAL: Get to Egyptian Room]
+
+> down
+[OK: contains "Cellar"]
+
+> east
+[OK: contains "Troll Room"]
+
+# Troll was killed in wt-01, passage should be clear
+> north
+[OK: contains "Passage"]
+
+> north
+[OK: contains "Ravine"]
+
+> west
+[OK: contains "Rocky"]
+
+> northwest
+[OK: contains "Egyptian"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Get coffin and sceptre
+# Coffin is a container with sceptre inside, need to open it
+# ============================================================================
+
+[GOAL: Get coffin and sceptre]
+[ENSURES: inventory contains "coffin"]
+[ENSURES: inventory contains "sceptre"]
+
+> look
+[OK: contains "coffin"]
+
+> open coffin
+[OK: matches /(open|Opening)/i]
+
+> look in coffin
+[OK: contains "sceptre"]
+
+> take sceptre
+[OK: matches /(Taken|take)/i]
+
+> take coffin
+[OK: matches /(Taken|take)/i]
+
+> inventory
+[OK: contains "coffin"]
+[OK: contains "sceptre"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Return to Living Room
+# Path: Egyptian Room → SE → Rocky Crawl → E → Deep Ravine → S → E/W Passage
+#       → S → Troll Room → W → Cellar → UP → Living Room
+# ============================================================================
+
+[GOAL: Return to Living Room]
+
+> southeast
+[OK: contains "Rocky"]
+
+> east
+[OK: contains "Ravine"]
+
+> south
+[OK: contains "Passage"]
+
+> south
+[OK: contains "Troll Room"]
+
+> west
+[OK: contains "Cellar"]
+
+> up
+[OK: contains "Living Room"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Store treasures and setup for next segment
+# Keep sceptre - needed for rainbow puzzle at Aragain Falls
+# Store coffin in trophy case
+# ============================================================================
+
+[GOAL: Store coffin in trophy case]
+
+> open trophy case
+[OK: matches /(open|Opening|already)/i]
+
+> put coffin in trophy case
+[OK: matches /(put|Done|place)/i]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Verify final state
+# Keep: torch (light/treasure), lantern (backup), sceptre (rainbow puzzle)
+# ============================================================================
+
+[GOAL: Verify inventory for next segment]
+
+> inventory
+[OK: contains "torch"]
+[OK: contains "lantern"]
+[OK: contains "sceptre"]
+
+> look
+[OK: contains "Living Room"]
+[OK: contains "trophy case"]
+
+[END GOAL]
+
+# SUCCESS! Egyptian Room complete
+# Treasures stored: coffin (+ previous 5)
+# Player in Living Room with torch + lantern + sceptre
+# Ready for next segment (River & Falls - need sceptre for rainbow)

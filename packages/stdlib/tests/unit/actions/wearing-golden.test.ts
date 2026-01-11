@@ -263,26 +263,28 @@ describe('wearingAction (Golden Pattern)', () => {
       );
       
       const events = executeWithValidation(wearingAction, context);
-      
-      // Should emit implicit TAKEN event first
-      expectEvent(events, 'if.event.taken', {
-        implicit: true,
-        item: 'silk scarf'
+
+      // Should emit implicit take event first (from requireCarriedOrImplicitTake)
+      expectEvent(events, 'if.event.implicit_take', {
+        item: scarf.id,
+        itemName: 'silk scarf'
       });
-      
+
       // Should emit WORN event
       expectEvent(events, 'if.event.worn', {
         itemId: scarf.id,
         bodyPart: 'neck'
       });
-      
-      // Should emit success message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('worn'),
-        params: { 
-          item: 'silk scarf',
-          bodyPart: 'neck'
-        }
+
+      // Should emit success message for wearing (not the implicit take success)
+      // Find the wearing success event specifically (after the implicit take success)
+      const wearingSuccess = events.filter(e => e.type === 'action.success')
+        .find(e => (e.data as any).messageId === 'worn' ||
+                   ((e.data as any).messageId && (e.data as any).messageId.includes('worn')));
+      expect(wearingSuccess).toBeDefined();
+      expect((wearingSuccess!.data as any).params).toMatchObject({
+        item: 'silk scarf',
+        bodyPart: 'neck'
       });
     });
 

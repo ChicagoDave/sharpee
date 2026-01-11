@@ -48,6 +48,12 @@ function getTakingOffSharedData(context: ActionContext): TakingOffSharedData {
 
 export const takingOffAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.TAKING_OFF,
+
+  // Default scope requirements for this action's slots
+  defaultScope: {
+    item: ScopeLevel.CARRIED  // Must be wearing the item (which implies possession)
+  },
+
   requiredMessages: [
     'no_target',
     'not_wearing',

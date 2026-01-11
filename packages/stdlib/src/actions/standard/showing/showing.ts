@@ -118,6 +118,13 @@ function analyzeShowAction(context: ActionContext): ShowAnalysis | null {
 
 export const showingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.SHOWING,
+
+  // Default scope requirements for this action's slots
+  defaultScope: {
+    item: ScopeLevel.CARRIED,
+    viewer: ScopeLevel.VISIBLE
+  },
+
   requiredMessages: [
     'no_item',
     'no_viewer',
@@ -146,7 +153,7 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
     const actor = context.player;
     const item = context.command.directObject?.entity;
     const viewer = context.command.indirectObject?.entity;
-    
+
     // Validate we have both item and viewer
     if (!item) {
       return {
@@ -155,7 +162,7 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
         params: {}
       };
     }
-    
+
     if (!viewer) {
       return {
         valid: false,
@@ -163,7 +170,14 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
         params: {}
       };
     }
-    
+
+    // Item must be carried (or implicitly takeable)
+    // This enables "show apple to bob" when apple is on the ground
+    const carryCheck = context.requireCarriedOrImplicitTake(item);
+    if (!carryCheck.ok) {
+      return carryCheck.error!;
+    }
+
     // Check if viewer is close enough to see
     const viewerLocation = context.world.getLocation?.(viewer.id);
     const actorLocation = context.world.getLocation?.(actor.id);
@@ -221,6 +235,11 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
   report(context: ActionContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
     const sharedData = getShowingSharedData(context);
+
+    // Prepend any implicit take events (from requireCarriedOrImplicitTake)
+    if (context.sharedData.implicitTakeEvents) {
+      events.push(...context.sharedData.implicitTakeEvents);
+    }
 
     // Emit shown event for world model
     if (sharedData.eventData) {
