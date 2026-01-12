@@ -21,8 +21,8 @@ TIMESTAMP=$(date +%H:%M:%S)
 case "$TOOL_NAME" in
   Edit)
     FILE_PATH=$(echo "$TOOL_INPUT" | jq -r '.file_path // ""')
-    SUCCESS=$(echo "$TOOL_RESPONSE" | jq -r '.success // false')
-    if [ "$SUCCESS" = "true" ] && [ -n "$FILE_PATH" ]; then
+    # Log all edits - response structure varies
+    if [ -n "$FILE_PATH" ]; then
       # Get relative path for cleaner logs
       REL_PATH="${FILE_PATH#$(pwd)/}"
       echo "[$TIMESTAMP] EDIT: $REL_PATH" >> "$WORK_LOG"
@@ -31,8 +31,8 @@ case "$TOOL_NAME" in
 
   Write)
     FILE_PATH=$(echo "$TOOL_INPUT" | jq -r '.file_path // ""')
-    SUCCESS=$(echo "$TOOL_RESPONSE" | jq -r '.success // false')
-    if [ "$SUCCESS" = "true" ] && [ -n "$FILE_PATH" ]; then
+    # Log all writes - response structure varies
+    if [ -n "$FILE_PATH" ]; then
       REL_PATH="${FILE_PATH#$(pwd)/}"
       echo "[$TIMESTAMP] WRITE: $REL_PATH" >> "$WORK_LOG"
     fi
