@@ -73,11 +73,11 @@ function createDiamond(context: ActionContext, machineId: string): IFEntity {
     article: 'a'
   }));
 
-  // Treasure scoring (6 take + 10 case = 16 total) - DIAMO in 1981 MDL
+  // Treasure scoring (10 take + 6 case = 16 total) - DIAMO in mdlzork_810722
   (diamond as any).isTreasure = true;
   (diamond as any).treasureId = 'huge-diamond';
-  (diamond as any).treasureValue = 6;     // OTVAL from 1981 MDL
-  (diamond as any).trophyCaseValue = 10;  // OFVAL from 1981 MDL
+  (diamond as any).treasureValue = 10;    // OFVAL from mdlzork_810722
+  (diamond as any).trophyCaseValue = 6;   // OTVAL from mdlzork_810722
 
   // Place diamond in machine (player will need to take it)
   world.moveEntity(diamond.id, machineId);

@@ -330,8 +330,8 @@ function createGrailRoomObjects(world: WorldModel, roomId: string): void {
   }));
   (grail as any).isTreasure = true;
   (grail as any).treasureId = 'grail';
-  (grail as any).treasureValue = 5;       // OTVAL from 1981 MDL
-  (grail as any).trophyCaseValue = 2;     // OFVAL from 1981 MDL
+  (grail as any).treasureValue = 2;        // OFVAL from mdlzork_810722
+  (grail as any).trophyCaseValue = 5;      // OTVAL from mdlzork_810722
   world.moveEntity(grail.id, roomId);
 }
 
@@ -400,7 +400,7 @@ function createLoudRoomObjects(world: WorldModel, roomId: string): void {
   }));
   (bar as any).isTreasure = true;
   (bar as any).treasureId = 'platinum-bar';
-  (bar as any).treasureValue = 10;        // OTVAL from 1981 MDL
-  (bar as any).trophyCaseValue = 12;      // OFVAL from 1981 MDL
+  (bar as any).treasureValue = 12;         // OFVAL from mdlzork_810722
+  (bar as any).trophyCaseValue = 10;       // OTVAL from mdlzork_810722
   world.moveEntity(bar.id, roomId);
 }

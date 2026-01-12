@@ -602,8 +602,8 @@ function createSapphireBracelet(world: WorldModel, roomId: string): IFEntity {
 
   (bracelet as any).isTreasure = true;
   (bracelet as any).treasureId = 'sapphire-bracelet';
-  (bracelet as any).treasureValue = 3;    // OTVAL from 1981 MDL
-  (bracelet as any).trophyCaseValue = 5;  // OFVAL from 1981 MDL
+  (bracelet as any).treasureValue = 5;     // OFVAL from mdlzork_810722
+  (bracelet as any).trophyCaseValue = 3;   // OTVAL from mdlzork_810722
 
   world.moveEntity(bracelet.id, roomId);
   return bracelet;
@@ -625,8 +625,8 @@ function createRedCrystalSphere(world: WorldModel, roomId: string): IFEntity {
 
   (sphere as any).isTreasure = true;
   (sphere as any).treasureId = 'red-crystal-sphere';
-  (sphere as any).treasureValue = 5;      // OTVAL from 1981 MDL
-  (sphere as any).trophyCaseValue = 10;   // OFVAL from 1981 MDL
+  (sphere as any).treasureValue = 10;      // OFVAL from mdlzork_810722
+  (sphere as any).trophyCaseValue = 5;     // OTVAL from mdlzork_810722
 
   world.moveEntity(sphere.id, roomId);
   return sphere;

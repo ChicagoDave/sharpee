@@ -101,7 +101,7 @@ Ask: "Where does this belong?" before implementing new features.
 Stories are organized by **regions**, with each region as a folder containing:
 
 ```
-stories/{story}/src/regions/{region}/
+stories/{story}/src/regions/{region}.ts
 ├── index.ts           # Exports room creators, connection function, region IDs
 ├── rooms/
 │   ├── room-one.ts    # One file per room
@@ -116,14 +116,17 @@ stories/{story}/src/regions/{region}/
 
 - **One room per TypeScript file** in `rooms/` folder
 - Room files export a `createXxxRoom(world: WorldModel): IFEntity` function
-- Region `index.ts` imports all room creators, creates them, and connects exits
-- Objects are created in `objects/index.ts` and placed in their rooms
+- Region `{region-name}.ts` contains everything in that region (rooms, objects, etc)
 - NPCs go in `stories/{story}/src/npcs/{npc-name}/` with entity, behavior, and messages files
 - **AuthorModel for setup**: When placing objects inside closed containers during world initialization, use `AuthorModel` (wraps WorldModel) to skip validation. Normal WorldModel operations enforce game rules (can't put items in closed containers), but setup code needs to bypass this.
 
 ## Current Work: Project Dungeo (Dec 2025)
 
 Dog-fooding Sharpee by implementing full Mainframe Zork (~191 rooms).
+
+**Canonical Source**: `docs/dungeon-81/mdlzork_810722/` is the authoritative reference for all game data (treasure values, room connections, puzzle mechanics). When referencing treasure values:
+- `OFVAL` (object find value) → `treasureValue` (points for taking)
+- `OTVAL` (object trophy value) → `trophyCaseValue` (points for putting in trophy case)
 
 **Documentation**: See `/docs/work/dungeo/` for:
 
@@ -340,6 +343,7 @@ Since "turn switch" is puzzle-specific (not a generic IF verb), Option B is corr
 ```
 
 **Workflow**:
+
 1. After changing platform packages, run `./scripts/build-all-dungeo.sh`
 2. For story-only changes, run `./scripts/bundle-sharpee.sh`
 3. Test with `./scripts/fast-transcript-test.sh <transcript-file>`
@@ -380,7 +384,7 @@ node packages/transcript-tester/dist/cli.js stories/dungeo --play
 | `--play` | `-p` | Interactive play mode (REPL) |
 | `--output-dir <dir>` | `-o` | Write timestamped results to directory |
 
-**Important**: Walkthrough transcripts (wt-*) must be run with `--chain` flag to preserve game state.
+**Important**: Walkthrough transcripts (wt-\*) must be run with `--chain` flag to preserve game state.
 
 Transcripts live in `stories/{story}/tests/transcripts/*.transcript`
 

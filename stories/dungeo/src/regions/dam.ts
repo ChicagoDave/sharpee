@@ -372,8 +372,8 @@ function createReservoirObjects(world: WorldModel, roomId: string): void {
   trunk.add(new OpenableTrait({ isOpen: true }));
   (trunk as any).isTreasure = true;
   (trunk as any).treasureId = 'trunk-of-jewels';
-  (trunk as any).treasureValue = 8;       // OTVAL from 1981 MDL
-  (trunk as any).trophyCaseValue = 15;    // OFVAL from 1981 MDL
+  (trunk as any).treasureValue = 15;       // OFVAL from mdlzork_810722
+  (trunk as any).trophyCaseValue = 8;      // OTVAL from mdlzork_810722
   world.moveEntity(trunk.id, roomId);
 }
 
@@ -486,8 +486,8 @@ function createAtlantisRoomObjects(world: WorldModel, roomId: string): void {
   }));
   (trident as any).isTreasure = true;
   (trident as any).treasureId = 'crystal-trident';
-  (trident as any).treasureValue = 11;    // OTVAL from 1981 MDL
-  (trident as any).trophyCaseValue = 4;   // OFVAL from 1981 MDL
+  (trident as any).treasureValue = 4;      // OFVAL from mdlzork_810722
+  (trident as any).trophyCaseValue = 11;   // OTVAL from mdlzork_810722
   world.moveEntity(trident.id, roomId);
 
   // Tin of rare spices (Saffron) - treasure (5 take + 5 case = 10 pts)
@@ -503,7 +503,7 @@ function createAtlantisRoomObjects(world: WorldModel, roomId: string): void {
   }));
   (saffron as any).isTreasure = true;
   (saffron as any).treasureId = 'saffron';
-  (saffron as any).treasureValue = 5;     // OTVAL from 1981 MDL
-  (saffron as any).trophyCaseValue = 5;   // OFVAL from 1981 MDL
+  (saffron as any).treasureValue = 5;      // OFVAL from mdlzork_810722
+  (saffron as any).trophyCaseValue = 5;    // OTVAL from mdlzork_810722
   world.moveEntity(saffron.id, roomId);
 }

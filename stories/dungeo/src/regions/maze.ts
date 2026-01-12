@@ -577,8 +577,8 @@ function createMaze5Objects(world: WorldModel, roomId: string): void {
   // Mark as treasure
   (bag as any).isTreasure = true;
   (bag as any).treasureId = 'bag-of-coins';
-  (bag as any).treasureValue = 5;         // OTVAL from 1981 MDL
-  (bag as any).trophyCaseValue = 10;      // OFVAL from 1981 MDL
+  (bag as any).treasureValue = 10;        // OFVAL from mdlzork_810722
+  (bag as any).trophyCaseValue = 5;       // OTVAL from mdlzork_810722
   world.moveEntity(bag.id, roomId);
 
   // Skeleton key (tool for unlocking grating) - KEYS in MDL

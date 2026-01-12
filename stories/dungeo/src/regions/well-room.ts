@@ -300,8 +300,8 @@ function createPearl(world: WorldModel, roomId: string): IFEntity {
   }));
   (pearl as any).isTreasure = true;
   (pearl as any).treasureId = 'pearl';
-  (pearl as any).treasureValue = 5;       // OTVAL from 1981 MDL
-  (pearl as any).trophyCaseValue = 9;     // OFVAL from 1981 MDL
+  (pearl as any).treasureValue = 9;        // OFVAL from mdlzork_810722
+  (pearl as any).trophyCaseValue = 5;      // OTVAL from mdlzork_810722
   world.moveEntity(pearl.id, roomId);
   return pearl;
 }

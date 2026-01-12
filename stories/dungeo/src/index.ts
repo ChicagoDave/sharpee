@@ -128,7 +128,7 @@ export class DungeoStory implements Story {
   initializeWorld(world: WorldModel): void {
     this.world = world;
 
-    // Register scoring capability (Zork max score is 616)
+    // Register scoring capability (Zork max score is 616, includes treasures + room entry points)
     world.registerCapability(StandardCapabilities.SCORING, {
       initialData: {
         scoreValue: 0,
@@ -287,6 +287,22 @@ export class DungeoStory implements Story {
       reservoir: this.damIds.reservoir,
       reservoirNorth: this.damIds.reservoirNorth
     });
+
+    // Register room entry scoring (RVAL) - points for first visiting certain rooms
+    // From 1981 MDL source: 13 rooms worth 215 total points
+    this.scoringProcessor.registerRoomVisit(this.houseInteriorIds.kitchen, 10);      // KITCH
+    this.scoringProcessor.registerRoomVisit(this.undergroundIds.cellar, 25);         // CELLA
+    this.scoringProcessor.registerRoomVisit(this.volcanoIds.volcanoBottom, 10);      // BLROO (Balloon Room)
+    this.scoringProcessor.registerRoomVisit(this.mazeIds.treasureRoom, 25);          // TREAS (Trophy Room)
+    this.scoringProcessor.registerRoomVisit(this.endgameIds.narrowCorridor, 5);      // PASS1 (Narrow Passage)
+    this.scoringProcessor.registerRoomVisit(this.endgameIds.landOfDead, 30);         // LLD2 (Land of Living Dead)
+    this.scoringProcessor.registerRoomVisit(this.wellRoomIds.topOfWell, 10);         // TWELL (Temple Well)
+    this.scoringProcessor.registerRoomVisit(this.endgameIds.insideMirror, 15);       // INMIR (Inside Mirror)
+    this.scoringProcessor.registerRoomVisit(this.endgameIds.tomb, 5);                // CRYPT
+    this.scoringProcessor.registerRoomVisit(this.undergroundIds.torchRoom, 10);      // TSTRS (Torch Room Stairs)
+    this.scoringProcessor.registerRoomVisit(this.endgameIds.dungeonEntrance, 20);    // BDOOR (Behind Dungeon Door)
+    this.scoringProcessor.registerRoomVisit(this.endgameIds.hallway, 15);            // FDOOR (Front Door/Hallway)
+    this.scoringProcessor.registerRoomVisit(this.endgameIds.treasury, 35);           // NIRVA (Nirvana/Treasury)
 
     // Set initial player location to West of House
     const player = world.getPlayer();
