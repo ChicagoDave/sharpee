@@ -18,10 +18,22 @@ import { ScoringService, IScoringService, RankDefinition, ScoringServiceConfig, 
  * Extended scoring service interface for Dungeo
  */
 export interface IDungeoScoringService extends IScoringService {
-  /** Score a treasure (returns false if already scored) */
+  /** Score treasure take points (returns false if already scored) */
+  scoreTreasureTake(treasureId: string, points: number): boolean;
+
+  /** Check if treasure take points have been scored */
+  isTreasureTakeScored(treasureId: string): boolean;
+
+  /** Score treasure case points (returns false if already scored) */
+  scoreTreasureCase(treasureId: string, points: number): boolean;
+
+  /** Check if treasure case points have been scored */
+  isTreasureCaseScored(treasureId: string): boolean;
+
+  /** @deprecated Use scoreTreasureCase instead */
   scoreTreasure(treasureId: string, points: number): boolean;
 
-  /** Check if a treasure has been scored */
+  /** @deprecated Use isTreasureCaseScored instead */
   isTreasureScored(treasureId: string): boolean;
 
   /** Add an achievement (returns false if already earned) */
@@ -74,20 +86,53 @@ export class DungeoScoringService extends ScoringService implements IDungeoScori
   }
 
   /**
-   * Score a treasure placed in the trophy case
-   *
-   * Treasures can only be scored once. Removing and re-adding
-   * a treasure doesn't give more points (matching original Zork).
+   * Score treasure take points (awarded when first picking up a treasure)
    *
    * @param treasureId - Unique identifier for the treasure
-   * @param points - Point value of the treasure
+   * @param points - Point value for taking (treasureValue)
    * @returns true if points were awarded, false if already scored
    */
-  scoreTreasure(treasureId: string, points: number): boolean {
+  scoreTreasureTake(treasureId: string, points: number): boolean {
     const scoring = this.getScoringData();
     if (!scoring) return false;
 
-    // Initialize scoredTreasures if needed
+    // Initialize takenTreasures if needed
+    if (!scoring.takenTreasures) {
+      scoring.takenTreasures = [];
+    }
+
+    // Check if already scored
+    if (scoring.takenTreasures.includes(treasureId)) {
+      return false;
+    }
+
+    // Mark as scored and add points
+    scoring.takenTreasures.push(treasureId);
+    this.addPoints(points, `Took ${treasureId}`);
+
+    return true;
+  }
+
+  /**
+   * Check if treasure take points have been scored
+   */
+  isTreasureTakeScored(treasureId: string): boolean {
+    const scoring = this.getScoringData();
+    return scoring?.takenTreasures?.includes(treasureId) ?? false;
+  }
+
+  /**
+   * Score treasure case points (awarded when placing in trophy case)
+   *
+   * @param treasureId - Unique identifier for the treasure
+   * @param points - Point value for placing in case (trophyCaseValue)
+   * @returns true if points were awarded, false if already scored
+   */
+  scoreTreasureCase(treasureId: string, points: number): boolean {
+    const scoring = this.getScoringData();
+    if (!scoring) return false;
+
+    // Initialize scoredTreasures if needed (legacy name for case scoring)
     if (!scoring.scoredTreasures) {
       scoring.scoredTreasures = [];
     }
@@ -105,11 +150,25 @@ export class DungeoScoringService extends ScoringService implements IDungeoScori
   }
 
   /**
-   * Check if a treasure has already been scored
+   * Check if treasure case points have been scored
    */
-  isTreasureScored(treasureId: string): boolean {
+  isTreasureCaseScored(treasureId: string): boolean {
     const scoring = this.getScoringData();
     return scoring?.scoredTreasures?.includes(treasureId) ?? false;
+  }
+
+  /**
+   * @deprecated Use scoreTreasureCase instead
+   */
+  scoreTreasure(treasureId: string, points: number): boolean {
+    return this.scoreTreasureCase(treasureId, points);
+  }
+
+  /**
+   * @deprecated Use isTreasureCaseScored instead
+   */
+  isTreasureScored(treasureId: string): boolean {
+    return this.isTreasureCaseScored(treasureId);
   }
 
   /**
