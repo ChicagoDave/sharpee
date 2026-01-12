@@ -355,9 +355,32 @@ node packages/transcript-tester/dist/cli.js stories/dungeo --all
 # Run specific transcript
 node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/transcripts/navigation.transcript
 
-# Verbose output
+# Chain multiple transcripts (game state persists between them)
+node packages/transcript-tester/dist/cli.js stories/dungeo --chain \
+  stories/dungeo/tests/transcripts/wt-01-get-torch-early.transcript \
+  stories/dungeo/tests/transcripts/wt-02-bank-puzzle.transcript
+
+# Verbose output (show all output and events)
 node packages/transcript-tester/dist/cli.js stories/dungeo --all --verbose
+
+# Stop on first failure
+node packages/transcript-tester/dist/cli.js stories/dungeo --all --stop-on-failure
+
+# Interactive play mode (REPL)
+node packages/transcript-tester/dist/cli.js stories/dungeo --play
 ```
+
+**CLI Flags:**
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--all` | `-a` | Run all transcripts in story's tests/ directory |
+| `--chain` | `-c` | Chain transcripts (don't reset game state between them) |
+| `--verbose` | `-v` | Show detailed output for each command |
+| `--stop-on-failure` | `-s` | Stop on first failure |
+| `--play` | `-p` | Interactive play mode (REPL) |
+| `--output-dir <dir>` | `-o` | Write timestamped results to directory |
+
+**Important**: Walkthrough transcripts (wt-*) must be run with `--chain` flag to preserve game state.
 
 Transcripts live in `stories/{story}/tests/transcripts/*.transcript`
 
