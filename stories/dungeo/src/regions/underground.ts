@@ -174,10 +174,14 @@ export function createUndergroundRegion(world: WorldModel): UndergroundRoomIds {
   setExits(torchRoom, {
     [Direction.UP]: domeRoom.id,
     [Direction.DOWN]: northSouthCrawlway.id,
+    [Direction.WEST]: tinyRoom.id,
   });
 
-  setExits(tinyRoom, { [Direction.EAST]: drearyRoom.id });
-  setExits(drearyRoom, { [Direction.WEST]: tinyRoom.id });
+  setExits(tinyRoom, {
+    [Direction.EAST]: torchRoom.id,
+    [Direction.NORTH]: drearyRoom.id,  // Blocked by locked door
+  });
+  setExits(drearyRoom, { [Direction.SOUTH]: tinyRoom.id });
 
   // West of Chasm connections handled by Bank region
 

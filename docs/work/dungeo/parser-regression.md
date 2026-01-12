@@ -66,7 +66,7 @@ Last updated: 2026-01-12 00:15
 | dig-statue.transcript         | [x] PASS | Digging for statue (15/15)                    |
 | mirror-room-toggle.transcript | [x] PASS | Fixed: "mirror" not "enormous mirror" (26/26) |
 | rope-puzzle.transcript        | [x] PASS | Dome/rope puzzle (21/21)                      |
-| tiny-room-puzzle.transcript   | [ ] FAIL | Complex puzzle mechanics                      |
+| tiny-room-puzzle.transcript   | [x] PASS | Fixed: room connections N/S not E/W (22/22)   |
 
 ### NPCs
 
