@@ -22,3 +22,4 @@ export * from './dam-handler';
 export * from './river-handler';
 export * from './falls-death-handler';
 export * from './boat-puncture-handler';
+export * from './death-penalty-handler';

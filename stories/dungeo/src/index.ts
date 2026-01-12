@@ -42,7 +42,7 @@ import { registerScheduledEvents, DungeoSchedulerMessages, FloodingMessages, reg
 import { setSchedulerForGDT, setEngineForKL } from './actions/gdt/commands';
 
 // Import handlers
-import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages, registerGlacierHandler, GlacierMessages, registerReservoirExitHandler, registerBoatPunctureHandler, BoatPunctureMessages } from './handlers';
+import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages, registerGlacierHandler, GlacierMessages, registerReservoirExitHandler, registerBoatPunctureHandler, BoatPunctureMessages, createDeathPenaltyHandler, DeathPenaltyMessages } from './handlers';
 import { initializeMirrorRoom, createMirrorTouchHandler, MirrorRoomConfig, MirrorRoomMessages } from './handlers/mirror-room-handler';
 import { MIRROR_ID } from './regions/temple';
 
@@ -135,6 +135,7 @@ export class DungeoStory implements Story {
         scoreValue: 0,
         maxScore: 616,
         moves: 0,
+        deaths: 0,  // Track death count for -10 penalty per death
         achievements: [],
         scoredTreasures: []
       }
@@ -1931,6 +1932,11 @@ export class DungeoStory implements Story {
 
     // Aragain Falls death message
     language.addMessage(FallsDeathMessages.DEATH, 'You tumble over Aragain Falls, plunging hundreds of feet to your doom in the mist below.\n\n    **** You have died ****');
+
+    // Death penalty messages (from FORTRAN source - 10 pts per death, game over after 2)
+    language.addMessage(DeathPenaltyMessages.PENALTY, 'You have lost 10 points for dying.');
+    language.addMessage(DeathPenaltyMessages.GAME_OVER, 'You have died too many times. The Great Underground Empire claims another victim.\n\n    **** GAME OVER ****');
+    language.addMessage(DeathPenaltyMessages.DEATH_COUNT, 'Deaths: {deaths}');
   }
 
   /**
@@ -2203,6 +2209,11 @@ export class DungeoStory implements Story {
 
       return [];
     });
+
+    // Death penalty handler - deduct 10 points per death, game over after 2 deaths
+    // From FORTRAN source (subr.f): CALL SCRUPD(-10), IF(DEATHS.GE.2) GO TO 1000
+    eventProcessor.registerHandler('game.player_death',
+      createDeathPenaltyHandler(this.world as WorldModel, this.scoringService));
 
     // Register balloon PUT handler (tracks burning objects in receptacle)
     if (this.balloonIds) {

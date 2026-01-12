@@ -143,7 +143,8 @@ Points awarded for first entering certain rooms (NOT IMPLEMENTED):
 | Achievement | Points | Implemented? |
 |-------------|--------|--------------|
 | LIGHT-SHAFT | 10 | ✅ YES (event handler in onEngineReady) |
-| Death penalty | -10 per death | ? |
+| Death penalty | -10 per death | ✅ YES (death-penalty-handler.ts) |
+| Game over after 2 deaths | N/A | ✅ YES (sets dungeo.game_over state) |
 
 ---
 
@@ -263,5 +264,7 @@ Our config shows `maxScore: 616` which needs verification.
 3. ✅ Add missing treasures (crown, violin, saffron) (commit ca192b8)
 4. ✅ Implement room entry scoring (RVAL) - 215 points (commit e360b34)
 5. ✅ Implement LIGHT-SHAFT achievement - 10 points (2026-01-12)
-6. ❓ Verify death penalty implementation
+6. ✅ Implement death penalty: -10 per death, game over after 2 (2026-01-12)
 7. ✅ Max score verified: 616 main + 34 thief bonus + 100 endgame = 750 total
+
+**SCORING AUDIT COMPLETE** - All scoring mechanics from FORTRAN/MDL source implemented.
