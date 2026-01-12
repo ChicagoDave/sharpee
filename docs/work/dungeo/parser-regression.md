@@ -1,16 +1,16 @@
 # Dungeo Transcript Test Regression Tracking
 
-Last updated: 2026-01-12 00:15
+Last updated: 2026-01-12 10:30
 
 ## Summary
 
 - Total transcripts: 65 (deleted full-walkthrough.transcript - using wt-\* segments instead)
 - Total test assertions: ~1200
-- Passing: ~1100 (92%)
-- Failing: ~100 (8%)
-- Expected failures: 5
+- Passing: ~1120 (94%)
+- Failing: ~80 (6%)
+- Expected failures: 3
 
-**Recent fixes**: wt-02 through wt-05 now pass with `--chain` flag; wt-05 fixed (removed non-existent sceptre)
+**Recent fixes**: Maze and coal mine connections fixed to match 1981 MDL source; maze transcripts updated (maze-loops now 50 tests, maze-navigation now 40 tests)
 
 ## Recent Session (2026-01-11 12:30)
 
@@ -82,10 +82,16 @@ Last updated: 2026-01-12 00:15
 
 ### Maze
 
-| Test                       | Status   | Notes                       |
-| -------------------------- | -------- | --------------------------- |
-| maze-loops.transcript      | [x] PASS | Maze loop detection (39/39) |
-| maze-navigation.transcript | [x] PASS | Maze traversal (28/28)      |
+| Test                       | Status   | Notes                                                   |
+| -------------------------- | -------- | ------------------------------------------------------- |
+| maze-loops.transcript      | [x] PASS | Self-loops and dead ends per 1981 MDL (50/50)           |
+| maze-navigation.transcript | [x] PASS | Maze traversal per 1981 MDL (40/40)                     |
+
+**Note**: Maze connections were completely rewritten 2026-01-12 to match 1981 MDL source (`docs/dungeon-81/mdlzork_810722`). Key changes:
+- 5 self-loops (MAZE1→N, MAZE6→W, MAZE8→W, MAZE9→NW, MAZ14→NW)
+- 4 dead ends (not 5)
+- Items (skeleton, coins, key, knife) in MAZE5 (not Dead End 1)
+- Coal mine maze also fixed
 
 ### Balloon
 
@@ -157,7 +163,7 @@ Last updated: 2026-01-12 00:15
 | ---------------------------------- | --------- | -------------------------------------------- |
 | wt-01-get-torch-early.transcript   | [x] PASS  | Early torch acquisition (38/38)              |
 | wt-02-bank-puzzle.transcript       | [x] PASS  | Bank of Zork puzzle (16/16) - needs chain    |
-| wt-03-maze-cyclops-goal.transcript | [x] PASS  | Maze/Cyclops/Gallery (30/30) - needs chain   |
+| wt-03-maze-cyclops-goal.transcript | [x] PASS  | Maze/Cyclops/Gallery (28/28) - updated for 1981 MDL maze |
 | wt-04-dam-reservoir.transcript     | [x] PASS  | Dam/Reservoir/Trunk (52/52) - needs chain    |
 | wt-05-egyptian-room.transcript     | [x] PASS  | Gold coffin (20/20) - fixed sceptre removal  |
 | full-walkthrough.transcript        | [DELETED] | Using wt-\* segmented tests instead          |

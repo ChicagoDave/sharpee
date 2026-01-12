@@ -279,56 +279,66 @@ export function createCoalMineRegion(world: WorldModel): CoalMineRoomIds {
 
   setExits(gasRoom, { [Direction.UP]: smellyRoom.id });
 
-  // Mine maze connections
+  // Mine maze connections - per 1981 MDL source: docs/dungeon-81/mdlzork_810722/original_source/dung.355
+  // MINE1: N→MINE4, SW→MINE2, E→TUNNE
   setExits(mineMaze1, {
-    [Direction.EAST]: woodenTunnel.id,
     [Direction.NORTH]: mineMaze4.id,
     [Direction.SOUTHWEST]: mineMaze2.id,
+    [Direction.EAST]: woodenTunnel.id,
   });
 
+  // MINE2: S→MINE1, W→MINE5, UP→MINE3, NE→MINE4
   setExits(mineMaze2, {
     [Direction.SOUTH]: mineMaze1.id,
     [Direction.WEST]: mineMaze5.id,
     [Direction.UP]: mineMaze3.id,
+    [Direction.NORTHEAST]: mineMaze4.id,
   });
 
+  // MINE3: W→MINE2, NE→MINE5, E→MINE5
   setExits(mineMaze3, {
     [Direction.WEST]: mineMaze2.id,
     [Direction.NORTHEAST]: mineMaze5.id,
     [Direction.EAST]: mineMaze5.id,
   });
 
+  // MINE4: UP→MINE5, NE→MINE6, S→MINE1, W→MINE2
   setExits(mineMaze4, {
-    [Direction.SOUTH]: mineMaze1.id,
-    [Direction.NORTHEAST]: mineMaze7.id,
     [Direction.UP]: mineMaze5.id,
+    [Direction.NORTHEAST]: mineMaze6.id,
+    [Direction.SOUTH]: mineMaze1.id,
+    [Direction.WEST]: mineMaze2.id,
   });
 
+  // MINE5: DOWN→MINE6, N→MINE7, W→MINE2, S→MINE3, UP→MINE3, E→MINE4
   setExits(mineMaze5, {
+    [Direction.DOWN]: mineMaze6.id,
+    [Direction.NORTH]: mineMaze7.id,
     [Direction.WEST]: mineMaze2.id,
-    [Direction.NORTHEAST]: mineMaze3.id,
     [Direction.SOUTH]: mineMaze3.id,
-    [Direction.DOWN]: mineMaze7.id,
-    [Direction.NORTH]: mineMaze6.id,
+    [Direction.UP]: mineMaze3.id,
     [Direction.EAST]: mineMaze4.id,
   });
 
+  // MINE6: SE→MINE4, UP→MINE5, NW→MINE7
   setExits(mineMaze6, {
-    [Direction.WEST]: mineMaze5.id,
-    [Direction.SOUTH]: mineMaze7.id,
-    [Direction.DOWN]: ladderTop.id,
-    [Direction.EAST]: mineMaze1.id,
+    [Direction.SOUTHEAST]: mineMaze4.id,
+    [Direction.UP]: mineMaze5.id,
+    [Direction.NORTHWEST]: mineMaze7.id,
   });
 
+  // MINE7: E→MINE1, W→MINE5, DOWN→TLADD, S→MINE6
   setExits(mineMaze7, {
-    [Direction.UP]: mineMaze5.id,
-    [Direction.SOUTHEAST]: mineMaze4.id,
-    [Direction.NORTHWEST]: mineMaze6.id,
+    [Direction.EAST]: mineMaze1.id,
+    [Direction.WEST]: mineMaze5.id,
+    [Direction.DOWN]: ladderTop.id,
+    [Direction.SOUTH]: mineMaze6.id,
   });
 
   // Deep mine connections
+  // TLADD (Ladder Top) connects UP to MINE7 (since MINE7 has DOWN→TLADD)
   setExits(ladderTop, {
-    [Direction.UP]: mineMaze6.id,
+    [Direction.UP]: mineMaze7.id,
     [Direction.DOWN]: ladderBottom.id,
   });
 
