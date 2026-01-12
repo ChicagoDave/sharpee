@@ -86,10 +86,11 @@ Enclosed please find a valuable collector's stamp as a FREE gift!
     article: 'a'
   }));
 
-  // Treasure scoring
+  // Treasure scoring (0 take + 1 case = 1 point)
   (stamp as any).isTreasure = true;
   (stamp as any).treasureId = 'don-woods-stamp';
-  (stamp as any).treasureValue = 1;
+  (stamp as any).treasureValue = 0;
+  (stamp as any).trophyCaseValue = 1;
 
   // Place stamp inside brochure
   world.moveEntity(stamp.id, brochure.id);

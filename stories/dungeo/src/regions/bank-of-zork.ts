@@ -249,6 +249,7 @@ function createPortrait(world: WorldModel, roomId: string): IFEntity {
   (portrait as any).isTreasure = true;
   (portrait as any).treasureId = 'portrait';
   (portrait as any).treasureValue = 10;
+  (portrait as any).trophyCaseValue = 5;
   world.moveEntity(portrait.id, roomId);
   return portrait;
 }
@@ -265,7 +266,8 @@ function createZorkmidBills(world: WorldModel, roomId: string): IFEntity {
   }));
   (bills as any).isTreasure = true;
   (bills as any).treasureId = 'zorkmid-bills';
-  (bills as any).treasureValue = 15;
+  (bills as any).treasureValue = 10;
+  (bills as any).trophyCaseValue = 15;
   world.moveEntity(bills.id, roomId);
   return bills;
 }
@@ -282,7 +284,8 @@ function createZorkmidCoin(world: WorldModel, roomId: string): IFEntity {
   }));
   (coin as any).isTreasure = true;
   (coin as any).treasureId = 'zorkmid-coin';
-  (coin as any).treasureValue = 5;
+  (coin as any).treasureValue = 10;
+  (coin as any).trophyCaseValue = 12;
   world.moveEntity(coin.id, roomId);
   return coin;
 }

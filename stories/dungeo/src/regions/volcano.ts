@@ -301,7 +301,8 @@ function createEgyptianRoomObjects(world: WorldModel, roomId: string): void {
   }));
   (coffin as any).isTreasure = true;
   (coffin as any).treasureId = 'gold-coffin';
-  (coffin as any).treasureValue = 10;
+  (coffin as any).treasureValue = 3;
+  (coffin as any).trophyCaseValue = 7;
   world.moveEntity(coffin.id, roomId);
 }
 
@@ -338,6 +339,7 @@ function createDustyRoomObjects(world: WorldModel, roomId: string): void {
   (emerald as any).isTreasure = true;
   (emerald as any).treasureId = 'large-emerald';
   (emerald as any).treasureValue = 5;
+  (emerald as any).trophyCaseValue = 10;
   world.moveEntity(emerald.id, roomId);
 }
 

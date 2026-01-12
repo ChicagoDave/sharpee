@@ -299,7 +299,8 @@ function createPearl(world: WorldModel, roomId: string): IFEntity {
   }));
   (pearl as any).isTreasure = true;
   (pearl as any).treasureId = 'pearl';
-  (pearl as any).treasureValue = 15;
+  (pearl as any).treasureValue = 9;
+  (pearl as any).trophyCaseValue = 5;
   world.moveEntity(pearl.id, roomId);
   return pearl;
 }

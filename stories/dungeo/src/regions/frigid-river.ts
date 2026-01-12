@@ -377,6 +377,7 @@ function createPotOfGold(world: WorldModel, roomId: string): IFEntity {
   (pot as any).isTreasure = true;
   (pot as any).treasureId = 'pot-of-gold';
   (pot as any).treasureValue = 10;
+  (pot as any).trophyCaseValue = 10;
   world.moveEntity(pot.id, roomId);
   return pot;
 }
@@ -409,6 +410,7 @@ function createBuoy(world: WorldModel, roomId: string): IFEntity {
   (emerald as any).isTreasure = true;
   (emerald as any).treasureId = 'buoy-emerald';
   (emerald as any).treasureValue = 5;
+  (emerald as any).trophyCaseValue = 10;
 
   // Use AuthorModel to place emerald in closed buoy (bypasses validation)
   const author = new AuthorModel(world.getDataStore(), world);

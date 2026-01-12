@@ -570,6 +570,7 @@ function createJadeFigurine(world: WorldModel, roomId: string): IFEntity {
   (figurine as any).isTreasure = true;
   (figurine as any).treasureId = 'jade-figurine';
   (figurine as any).treasureValue = 5;
+  (figurine as any).trophyCaseValue = 5;
 
   world.moveEntity(figurine.id, roomId);
   return figurine;
@@ -592,6 +593,7 @@ function createSapphireBracelet(world: WorldModel, roomId: string): IFEntity {
   (bracelet as any).isTreasure = true;
   (bracelet as any).treasureId = 'sapphire-bracelet';
   (bracelet as any).treasureValue = 5;
+  (bracelet as any).trophyCaseValue = 3;
 
   world.moveEntity(bracelet.id, roomId);
   return bracelet;

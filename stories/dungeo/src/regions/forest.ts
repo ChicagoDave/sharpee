@@ -290,6 +290,7 @@ function createTreeObjects(world: WorldModel, roomId: string): void {
   (egg as any).isTreasure = true;
   (egg as any).treasureId = 'jewel-encrusted-egg';
   (egg as any).treasureValue = 5;
+  (egg as any).trophyCaseValue = 5;
   world.moveEntity(egg.id, nest.id);
 
   const canary = world.createEntity('golden canary', EntityType.ITEM);
@@ -304,6 +305,7 @@ function createTreeObjects(world: WorldModel, roomId: string): void {
   (canary as any).isTreasure = true;
   (canary as any).treasureId = 'clockwork-canary';
   (canary as any).treasureValue = 6;
+  (canary as any).trophyCaseValue = 2;
 
   const eggOpenable = egg.get(OpenableTrait);
   if (eggOpenable) {

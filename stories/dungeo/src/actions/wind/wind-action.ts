@@ -153,10 +153,11 @@ export const windAction: Action = {
           properName: false,
           article: 'a'
         }));
-        // Treasure scoring (2 points)
+        // Treasure scoring (1 take + 1 case = 2 points)
         (bauble as any).isTreasure = true;
         (bauble as any).treasureId = 'brass-bauble';
-        (bauble as any).treasureValue = 2;
+        (bauble as any).treasureValue = 1;
+        (bauble as any).trophyCaseValue = 1;
         world.moveEntity(bauble.id, playerLocation);
       }
     }

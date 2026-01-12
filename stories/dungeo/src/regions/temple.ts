@@ -402,6 +402,7 @@ function createLoudRoomObjects(world: WorldModel, roomId: string): void {
   }));
   (bar as any).isTreasure = true;
   (bar as any).treasureId = 'platinum-bar';
-  (bar as any).treasureValue = 10;
+  (bar as any).treasureValue = 12;
+  (bar as any).trophyCaseValue = 10;
   world.moveEntity(bar.id, roomId);
 }

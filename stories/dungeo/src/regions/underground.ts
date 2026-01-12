@@ -428,7 +428,8 @@ function createTorchRoomObjects(world: WorldModel, roomId: string): void {
   torch.add(new SwitchableTrait({ isOn: false }));
   (torch as any).isTreasure = true;
   (torch as any).treasureId = 'ivory-torch';
-  (torch as any).treasureValue = 6;
+  (torch as any).treasureValue = 14;
+  (torch as any).trophyCaseValue = 6;
   world.moveEntity(torch.id, roomId);
 }
 

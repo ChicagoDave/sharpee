@@ -198,6 +198,9 @@ export function createDamObjects(world: WorldModel, roomIds: DamRoomIds): void {
 
   // Dam Base objects (inflatable boat)
   createDamBaseObjects(world, roomIds.damBase);
+
+  // Atlantis Room objects (crystal trident)
+  createAtlantisRoomObjects(world, roomIds.atlantisRoom);
 }
 
 // ============= Dam Lobby Objects =============
@@ -370,6 +373,7 @@ function createReservoirObjects(world: WorldModel, roomId: string): void {
   (trunk as any).isTreasure = true;
   (trunk as any).treasureId = 'trunk-of-jewels';
   (trunk as any).treasureValue = 15;
+  (trunk as any).trophyCaseValue = 8;
   world.moveEntity(trunk.id, roomId);
 }
 
@@ -465,4 +469,24 @@ Good luck!`
   river.add(new SceneryTrait());
   (river as any).isWaterBody = true;
   world.moveEntity(river.id, roomId);
+}
+
+// ============= Atlantis Room Objects =============
+
+function createAtlantisRoomObjects(world: WorldModel, roomId: string): void {
+  // Crystal Trident - treasure (4 take + 11 case = 15 pts)
+  const trident = world.createEntity('crystal trident', EntityType.ITEM);
+  trident.add(new IdentityTrait({
+    name: 'crystal trident',
+    aliases: ['trident', 'poseidon trident', 'poseidons trident', 'crystal'],
+    description: 'On the shore lies Poseidon\'s own crystal trident.',
+    properName: false,
+    article: 'a',
+    weight: 5
+  }));
+  (trident as any).isTreasure = true;
+  (trident as any).treasureId = 'crystal-trident';
+  (trident as any).treasureValue = 4;
+  (trident as any).trophyCaseValue = 11;
+  world.moveEntity(trident.id, roomId);
 }
