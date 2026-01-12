@@ -577,8 +577,8 @@ function createMaze5Objects(world: WorldModel, roomId: string): void {
   // Mark as treasure
   (bag as any).isTreasure = true;
   (bag as any).treasureId = 'bag-of-coins';
-  (bag as any).treasureValue = 10;        // Take value
-  (bag as any).trophyCaseValue = 5;       // Additional case value
+  (bag as any).treasureValue = 5;         // OTVAL from 1981 MDL
+  (bag as any).trophyCaseValue = 10;      // OFVAL from 1981 MDL
   world.moveEntity(bag.id, roomId);
 
   // Skeleton key (tool for unlocking grating) - KEYS in MDL
@@ -616,21 +616,11 @@ function createMaze5Objects(world: WorldModel, roomId: string): void {
 // ============= Treasure Room Objects =============
 
 function createTreasureRoomObjects(world: WorldModel, roomId: string): void {
-  // Chalice (treasure - 10 take + 10 case = 20 total)
-  // This is the thief's lair, where he stashes his stolen treasures
-  const chalice = world.createEntity('chalice', EntityType.ITEM);
-  chalice.add(new IdentityTrait({
-    name: 'chalice',
-    aliases: ['chalice', 'golden chalice', 'cup', 'goblet', 'ornate chalice'],
-    description: 'An ornate golden chalice encrusted with precious gems. It gleams magnificently even in the dim light.',
-    properName: false,
-    article: 'a',
-    weight: 40
-  }));
-  // Treasure scoring
-  (chalice as any).isTreasure = true;
-  (chalice as any).treasureId = 'chalice';
-  (chalice as any).treasureValue = 10;  // Take value
-  (chalice as any).trophyCaseValue = 10;  // Additional case value
-  world.moveEntity(chalice.id, roomId);
+  // NOTE: In 1981 MDL, the Treasure Room is the thief's lair where he stashes
+  // stolen items. There is NO "golden chalice" hardcoded here.
+  // The only chalice in the game is the SILVER chalice (CHALI) from the well.
+  // The thief can steal it and bring it here dynamically.
+  //
+  // Previously we had a "golden chalice" here which was incorrect.
+  // The Treasure Room starts empty - items appear here when the thief steals them.
 }

@@ -115,11 +115,11 @@ export function createDiamond(world: WorldModel, roomId: string): void {
     article: 'a'
   }));
 
-  // Treasure scoring - 10 take + 6 case = 16 points
+  // Treasure scoring - 6 take + 10 case = 16 points (DIAMO in 1981 MDL)
   (diamond as any).isTreasure = true;
   (diamond as any).treasureId = 'huge-diamond';
-  (diamond as any).treasureValue = 10;
-  (diamond as any).trophyCaseValue = 6;
+  (diamond as any).treasureValue = 6;     // OTVAL from 1981 MDL
+  (diamond as any).trophyCaseValue = 10;  // OFVAL from 1981 MDL
 
   world.moveEntity(diamond.id, roomId);
 }

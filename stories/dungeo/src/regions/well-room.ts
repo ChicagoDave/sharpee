@@ -280,7 +280,8 @@ function createSilverChalice(world: WorldModel, roomId: string): IFEntity {
   }));
   (chalice as any).isTreasure = true;
   (chalice as any).treasureId = 'silver-chalice';
-  (chalice as any).treasureValue = 10;
+  (chalice as any).treasureValue = 10;    // OTVAL from 1981 MDL
+  (chalice as any).trophyCaseValue = 10;  // OFVAL from 1981 MDL
   world.moveEntity(chalice.id, roomId);
   return chalice;
 }
@@ -299,8 +300,8 @@ function createPearl(world: WorldModel, roomId: string): IFEntity {
   }));
   (pearl as any).isTreasure = true;
   (pearl as any).treasureId = 'pearl';
-  (pearl as any).treasureValue = 9;
-  (pearl as any).trophyCaseValue = 5;
+  (pearl as any).treasureValue = 5;       // OTVAL from 1981 MDL
+  (pearl as any).trophyCaseValue = 9;     // OFVAL from 1981 MDL
   world.moveEntity(pearl.id, roomId);
   return pearl;
 }

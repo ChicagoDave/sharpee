@@ -56,7 +56,7 @@ import { createTempleRegion, createTempleObjects, connectTempleToUnderground, co
 import { createVolcanoRegion, createVolcanoObjects, connectVolcanoToUnderground, VolcanoRoomIds, VolcanoObjectIds } from './regions/volcano';
 import { createBankRegion, connectBankToUnderground, createBankObjects, BankRoomIds } from './regions/bank-of-zork';
 import { createWellRoomRegion, createWellRoomObjects, connectWellRoomToRoundRoom, connectCaveToHades, WellRoomIds } from './regions/well-room';
-import { createRoundRoomRegion, RoundRoomIds, connectRoundRoomToUnderground, connectRoundRoomToTemple, connectRoundRoomToWellRoom, connectRoundRoomToDam, connectRoundRoomToMaze } from './regions/round-room';
+import { createRoundRoomRegion, createRoundRoomObjects, RoundRoomIds, connectRoundRoomToUnderground, connectRoundRoomToTemple, connectRoundRoomToWellRoom, connectRoundRoomToDam, connectRoundRoomToMaze } from './regions/round-room';
 import { createFrigidRiverRegion, connectFrigidRiverToDam, connectRainbowToCanyon, createFrigidRiverObjects, FrigidRiverRoomIds } from './regions/frigid-river';
 import { createMazeRegion, connectMazeToClearing, connectCyclopsToLivingRoom, connectMazeToTrollRoom, connectMazeToRoundRoom, createMazeObjects, MazeRoomIds } from './regions/maze';
 import { createRoyalPuzzleRegion, connectRoyalPuzzleToTreasureRoom, RoyalPuzzleRoomIds } from './regions/royal-puzzle';
@@ -261,6 +261,7 @@ export class DungeoStory implements Story {
     createWellRoomObjects(world, this.wellRoomIds);
     createFrigidRiverObjects(world, this.frigidRiverIds);
     createMazeObjects(world, this.mazeIds);
+    createRoundRoomObjects(world, this.roundRoomIds);
     createEndgameObjects(world, {
       smallRoom: this.endgameIds.smallRoom,
       stoneRoom: this.endgameIds.stoneRoom,

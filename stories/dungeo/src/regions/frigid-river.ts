@@ -409,8 +409,8 @@ function createBuoy(world: WorldModel, roomId: string): IFEntity {
   }));
   (emerald as any).isTreasure = true;
   (emerald as any).treasureId = 'buoy-emerald';
-  (emerald as any).treasureValue = 5;
-  (emerald as any).trophyCaseValue = 10;
+  (emerald as any).treasureValue = 10;    // OTVAL from 1981 MDL
+  (emerald as any).trophyCaseValue = 5;   // OFVAL from 1981 MDL
 
   // Use AuthorModel to place emerald in closed buoy (bypasses validation)
   const author = new AuthorModel(world.getDataStore(), world);
@@ -433,8 +433,8 @@ function createStatue(world: WorldModel, roomId: string): IFEntity {
   }));
   (statue as any).isTreasure = true;
   (statue as any).treasureId = 'statue';
-  (statue as any).treasureValue = 10;
-  (statue as any).trophyCaseValue = 13;
+  (statue as any).treasureValue = 13;     // OTVAL from 1981 MDL
+  (statue as any).trophyCaseValue = 10;   // OFVAL from 1981 MDL
   (statue as any).isBuried = true;
   (statue as any).isVisible = false;
   world.setStateValue('dungeo.statue.locationId', roomId);

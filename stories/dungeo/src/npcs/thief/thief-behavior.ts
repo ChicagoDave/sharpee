@@ -535,7 +535,7 @@ function checkEggOpening(context: NpcContext, props: ThiefCustomProperties): Npc
                 article: 'a'
               }));
               (canary as any).isTreasure = true;
-              (canary as any).treasureValue = 6;
+              (canary as any).treasureValue = 2;  // OTVAL from 1981 MDL
             }
 
             // Drop canary in thief's current room

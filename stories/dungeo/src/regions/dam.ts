@@ -372,8 +372,8 @@ function createReservoirObjects(world: WorldModel, roomId: string): void {
   trunk.add(new OpenableTrait({ isOpen: true }));
   (trunk as any).isTreasure = true;
   (trunk as any).treasureId = 'trunk-of-jewels';
-  (trunk as any).treasureValue = 15;
-  (trunk as any).trophyCaseValue = 8;
+  (trunk as any).treasureValue = 8;       // OTVAL from 1981 MDL
+  (trunk as any).trophyCaseValue = 15;    // OFVAL from 1981 MDL
   world.moveEntity(trunk.id, roomId);
 }
 
@@ -474,7 +474,7 @@ Good luck!`
 // ============= Atlantis Room Objects =============
 
 function createAtlantisRoomObjects(world: WorldModel, roomId: string): void {
-  // Crystal Trident - treasure (4 take + 11 case = 15 pts)
+  // Crystal Trident - treasure (11 take + 4 case = 15 pts)
   const trident = world.createEntity('crystal trident', EntityType.ITEM);
   trident.add(new IdentityTrait({
     name: 'crystal trident',
@@ -486,7 +486,24 @@ function createAtlantisRoomObjects(world: WorldModel, roomId: string): void {
   }));
   (trident as any).isTreasure = true;
   (trident as any).treasureId = 'crystal-trident';
-  (trident as any).treasureValue = 4;
-  (trident as any).trophyCaseValue = 11;
+  (trident as any).treasureValue = 11;    // OTVAL from 1981 MDL
+  (trident as any).trophyCaseValue = 4;   // OFVAL from 1981 MDL
   world.moveEntity(trident.id, roomId);
+
+  // Tin of rare spices (Saffron) - treasure (5 take + 5 case = 10 pts)
+  // In 1981 MDL: SAFFR object in ALITR (Atlantis Room)
+  const saffron = world.createEntity('tin of spices', EntityType.ITEM);
+  saffron.add(new IdentityTrait({
+    name: 'tin of spices',
+    aliases: ['tin', 'spices', 'saffron', 'rare spices', 'tin of rare spices'],
+    description: 'A tin of rare spices. The aroma is exotic and enticing.',
+    properName: false,
+    article: 'a',
+    weight: 8
+  }));
+  (saffron as any).isTreasure = true;
+  (saffron as any).treasureId = 'saffron';
+  (saffron as any).treasureValue = 5;     // OTVAL from 1981 MDL
+  (saffron as any).trophyCaseValue = 5;   // OFVAL from 1981 MDL
+  world.moveEntity(saffron.id, roomId);
 }

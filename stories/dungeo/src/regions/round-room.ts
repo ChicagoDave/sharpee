@@ -2,7 +2,17 @@
  * Round Room Region - The Carousel Room (single room hub)
  */
 
-import { WorldModel, IFEntity, IdentityTrait, RoomTrait, EntityType, Direction } from '@sharpee/world-model';
+import {
+  WorldModel,
+  IFEntity,
+  IdentityTrait,
+  RoomTrait,
+  EntityType,
+  Direction,
+  ContainerTrait,
+  OpenableTrait
+} from '@sharpee/world-model';
+import { AuthorModel } from '@sharpee/engine';
 
 export interface RoundRoomIds {
   roundRoom: string;
@@ -21,6 +31,47 @@ export function createRoundRoomRegion(world: WorldModel): RoundRoomIds {
   (room as any).isFixed = true; // Spinning state - false = randomized exits
 
   return { roundRoom: room.id };
+}
+
+// === Objects ===
+
+/**
+ * Create objects in the Round Room
+ * In 1981 MDL: IRBOX (dented steel box) containing STRAD (Stradivarius violin)
+ */
+export function createRoundRoomObjects(world: WorldModel, roomIds: RoundRoomIds): void {
+  // Dented steel box - container that holds the Stradivarius
+  const box = world.createEntity('steel box', EntityType.ITEM);
+  box.add(new IdentityTrait({
+    name: 'steel box',
+    aliases: ['box', 'steel box', 'dented box', 'dented steel box'],
+    description: 'A dented steel box. It appears to have survived quite a fall.',
+    properName: false,
+    article: 'a',
+    weight: 40
+  }));
+  box.add(new ContainerTrait({ capacity: { maxItems: 5 } }));
+  box.add(new OpenableTrait({ isOpen: false }));
+  world.moveEntity(box.id, roomIds.roundRoom);
+
+  // Stradivarius violin - treasure inside the steel box
+  const violin = world.createEntity('violin', EntityType.ITEM);
+  violin.add(new IdentityTrait({
+    name: 'violin',
+    aliases: ['violin', 'stradivarius', 'strad', 'fancy violin'],
+    description: 'A Stradivarius! This exquisite instrument is in perfect condition despite its surroundings. It must be worth a fortune.',
+    properName: false,
+    article: 'a',
+    weight: 10
+  }));
+  (violin as any).isTreasure = true;
+  (violin as any).treasureId = 'stradivarius';
+  (violin as any).treasureValue = 10;     // OTVAL from 1981 MDL
+  (violin as any).trophyCaseValue = 10;   // OFVAL from 1981 MDL
+
+  // Use AuthorModel to place violin in closed box (bypasses validation)
+  const author = new AuthorModel(world.getDataStore(), world);
+  author.moveEntity(violin.id, box.id);
 }
 
 // === External connectors ===

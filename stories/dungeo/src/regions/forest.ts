@@ -304,8 +304,8 @@ function createTreeObjects(world: WorldModel, roomId: string): void {
   }));
   (canary as any).isTreasure = true;
   (canary as any).treasureId = 'clockwork-canary';
-  (canary as any).treasureValue = 6;
-  (canary as any).trophyCaseValue = 2;
+  (canary as any).treasureValue = 2;      // OTVAL from 1981 MDL
+  (canary as any).trophyCaseValue = 6;    // OFVAL from 1981 MDL
 
   const eggOpenable = egg.get(OpenableTrait);
   if (eggOpenable) {

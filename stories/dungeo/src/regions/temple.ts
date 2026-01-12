@@ -279,7 +279,8 @@ Only then shall the gates of Hades be opened to the living."`
   (book as any).exorcismRole = 'book';
   world.moveEntity(book.id, roomId);
 
-  // Candles - exorcism item, light source when lit, treasure (5 pts)
+  // Candles - exorcism item, light source when lit
+  // NOT a treasure in 1981 MDL - just a tool
   const candles = world.createEntity('pair of candles', EntityType.ITEM);
   candles.add(new IdentityTrait({
     name: 'pair of candles',
@@ -299,9 +300,6 @@ Only then shall the gates of Hades be opened to the living."`
   candles.add(new SwitchableTrait({ isOn: false }));
   (candles as any).isExorcismItem = true;
   (candles as any).exorcismRole = 'candles';
-  (candles as any).isTreasure = true;
-  (candles as any).treasureId = 'candles';
-  (candles as any).treasureValue = 5;
   world.moveEntity(candles.id, roomId);
 }
 
@@ -332,8 +330,8 @@ function createGrailRoomObjects(world: WorldModel, roomId: string): void {
   }));
   (grail as any).isTreasure = true;
   (grail as any).treasureId = 'grail';
-  (grail as any).treasureValue = 2;
-  (grail as any).trophyCaseValue = 5;
+  (grail as any).treasureValue = 5;       // OTVAL from 1981 MDL
+  (grail as any).trophyCaseValue = 2;     // OFVAL from 1981 MDL
   world.moveEntity(grail.id, roomId);
 }
 
@@ -402,7 +400,7 @@ function createLoudRoomObjects(world: WorldModel, roomId: string): void {
   }));
   (bar as any).isTreasure = true;
   (bar as any).treasureId = 'platinum-bar';
-  (bar as any).treasureValue = 12;
-  (bar as any).trophyCaseValue = 10;
+  (bar as any).treasureValue = 10;        // OTVAL from 1981 MDL
+  (bar as any).trophyCaseValue = 12;      // OFVAL from 1981 MDL
   world.moveEntity(bar.id, roomId);
 }
