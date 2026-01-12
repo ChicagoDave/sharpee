@@ -5,7 +5,8 @@
 ## Goals
 - Add simplified `.hasTrait(slot, traitType)` API directly on PatternBuilder and ActionGrammarBuilder
 - Update grammar.ts to use new simplified syntax
-- Prepare PR for parser refactor branch
+- Create PR, merge, and update dungeo branch
+- Test dungeo transcripts
 
 ## Completed
 
@@ -27,6 +28,33 @@
 - Removed `ScopeBuilder` import (no longer needed)
 - ~22 patterns updated to use simplified syntax
 
+### 5. Fixed Engine ActionContext
+- Implemented missing scope methods in `action-context-factory.ts`:
+  - `getEntityScope(entity)`
+  - `getSlotScope(slot)`
+  - `requireScope(entity, required)`
+  - `requireSlotScope(slot, required)`
+  - `requireCarriedOrImplicitTake(entity)`
+- Fixed `ScopeLevel.OUT_OF_SCOPE` → `ScopeLevel.UNAWARE`
+
+### 6. PR and Merge
+- Created PR #49: parser-refactor branch
+- Merged to main
+- Updated dungeo branch with merged changes
+
+### 7. Dungeo Testing
+- Navigation transcript: 9/9 passed
+- Balloon flight: 10/10 passed
+- Bank puzzle: 24/24 passed
+- Basket elevator: 13/13 passed
+- Bucket/well: 20/20 passed
+- Boat inflate/deflate: 20/20 passed (after fixing setup)
+
+### 8. Frigid River Puzzle (In Progress)
+- Added Frigid River scenery to Shore and Sandy Beach locations
+- Updated boat transcript to test boarding
+- Boat/river navigation not yet complete
+
 ## Key Decisions
 - `.hasTrait()` is the primary/preferred API; `.where()` kept for advanced use cases
 - Grammar now declares only semantic constraints (traits), not scope (visibility/reachability)
@@ -35,13 +63,21 @@
 ## Files Modified
 | File | Change |
 |------|--------|
-| `packages/if-domain/src/grammar/grammar-builder.ts` | Added `.hasTrait()` to PatternBuilder and ActionGrammarBuilder interfaces, added `traitFilters` to SlotConstraint |
+| `packages/if-domain/src/grammar/grammar-builder.ts` | Added `.hasTrait()` to interfaces, added `traitFilters` to SlotConstraint |
 | `packages/if-domain/src/grammar/grammar-engine.ts` | Implemented `.hasTrait()` for both builder types |
-| `packages/parser-en-us/src/grammar.ts` | Converted all patterns to use `.hasTrait()`, removed ScopeBuilder import |
-| `docs/work/parser/refactor-plan.md` | Updated Phase 1 documentation with correct API |
+| `packages/parser-en-us/src/grammar.ts` | Converted all patterns to use `.hasTrait()` |
+| `packages/engine/src/action-context-factory.ts` | Implemented scope validation methods |
+| `stories/dungeo/src/regions/frigid-river.ts` | Added river scenery |
+| `stories/dungeo/tests/transcripts/boat-inflate-deflate.transcript` | Fixed setup, added boarding tests |
+| `docs/work/parser/refactor-plan.md` | Updated Phase 1 documentation |
+
+## Commits
+- `d3356b5` - feat(grammar): Add direct .hasTrait() API to PatternBuilder and ActionGrammarBuilder
+- `44966ee` - fix(engine): Implement new scope methods in ActionContext factory
 
 ## Test Results
 - Parser tests: 266 passed, 4 skipped
+- Dungeo transcripts: 96/96 passed (6 transcripts tested)
 
 ## Example: Before/After
 
@@ -60,6 +96,10 @@ grammar.define('put :item in :container')
   .mapsTo('if.action.inserting')
   .build();
 ```
+
+## Open Items
+- Frigid River boat/river navigation needs completion
+- "board boat" after dropping inflated boat not fully tested
 
 ## Notes
 - Session discovered that Phase 1 was marked complete but the agreed-upon API wasn't implemented
