@@ -31,6 +31,7 @@ import {
   hasCapabilityBehavior
 } from '@sharpee/world-model';
 import { DungeoScoringService } from './scoring';
+import { ScoringEventProcessor } from '@sharpee/stdlib';
 
 // Import custom actions
 import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler, TURN_SWITCH_ACTION_ID, TurnSwitchMessages, PUT_UNDER_ACTION_ID, PutUnderMessages, PUSH_KEY_ACTION_ID, PushKeyMessages, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages, INFLATE_ACTION_ID, InflateMessages, DEFLATE_ACTION_ID, DeflateMessages, COMMANDING_ACTION_ID, CommandingMessages, LAUNCH_ACTION_ID, LaunchMessages } from './actions';
@@ -102,6 +103,7 @@ export class DungeoStory implements Story {
 
   private world!: WorldModel;
   private scoringService!: DungeoScoringService;
+  private scoringProcessor!: ScoringEventProcessor;
   private whiteHouseIds: WhiteHouseRoomIds = {} as WhiteHouseRoomIds;
   private houseInteriorIds: HouseInteriorRoomIds = {} as HouseInteriorRoomIds;
   private forestIds: ForestRoomIds = {} as ForestRoomIds;
@@ -140,8 +142,17 @@ export class DungeoStory implements Story {
     // Create scoring service
     this.scoringService = new DungeoScoringService(world);
 
-    // Register treasure scoring handlers (take points and trophy case bonus)
-    this.registerTreasureScoringHandlers();
+    // Create scoring event processor with dynamic treasure detection
+    // Uses entity properties (isTreasure, treasureValue, trophyCaseValue) instead of explicit registration
+    // NOTE: initializeHandlers() must be called in onEngineReady(), not here!
+    this.scoringProcessor = new ScoringEventProcessor(this.scoringService, world)
+      .enableDynamicTreasures('trophy case')
+      .setTreasureTakeCallback((treasureId: string, points: number) => {
+        this.scoringService.scoreTreasureTake(treasureId, points);
+      })
+      .setTreasurePlaceCallback((treasureId: string, points: number) => {
+        this.scoringService.scoreTreasureCase(treasureId, points);
+      });
 
     // Register capability behaviors (ADR-090)
     // Basket elevator uses lowering/raising capability dispatch
@@ -1905,74 +1916,6 @@ export class DungeoStory implements Story {
   }
 
   /**
-   * Register treasure scoring handlers (ADR-085)
-   *
-   * Two handlers:
-   * 1. if.event.taken - Awards treasureValue when first picking up a treasure
-   * 2. if.event.put_in - Awards trophyCaseValue when placing treasure in trophy case
-   */
-  private registerTreasureScoringHandlers(): void {
-    const TROPHY_CASE_NAME = 'trophy case';
-    const scoringService = this.scoringService;
-    const world = this.world;
-
-    // Handler for treasure take points (using world.registerEventHandler like other handlers)
-    world.registerEventHandler('if.event.taken', (event, w) => {
-      const data = event.data as Record<string, any> | undefined;
-      const itemId = data?.itemId as string | undefined;
-      if (!itemId) return;
-
-      const item = w.getEntity(itemId);
-      if (!item) return;
-
-      // Check if item is a treasure
-      const isTreasure = (item as any).isTreasure;
-      if (!isTreasure) return;
-
-      const treasureValue = (item as any).treasureValue || 0;
-      const treasureId = (item as any).treasureId || item.id;
-
-      // Score the treasure take points (prevents double-scoring)
-      if (treasureValue > 0) {
-        scoringService.scoreTreasureTake(treasureId, treasureValue);
-      }
-    });
-
-    // Handler for trophy case points (using world.registerEventHandler)
-    world.registerEventHandler('if.event.put_in', (event, w) => {
-      const data = event.data as Record<string, any> | undefined;
-      const targetId = data?.targetId as string | undefined;
-      if (!targetId) return;
-
-      // Check if target is the trophy case
-      const targetEntity = w.getEntity(targetId);
-      if (!targetEntity) return;
-
-      const identity = targetEntity.get('identity') as { name?: string } | undefined;
-      if (identity?.name !== TROPHY_CASE_NAME) return;
-
-      // Get the item being placed
-      const itemId = data?.itemId as string | undefined;
-      if (!itemId) return;
-
-      const item = w.getEntity(itemId);
-      if (!item) return;
-
-      // Check if item is a treasure
-      const isTreasure = (item as any).isTreasure;
-      if (!isTreasure) return;
-
-      const trophyCaseValue = (item as any).trophyCaseValue || 0;
-      const treasureId = (item as any).treasureId || item.id;
-
-      // Score the treasure case bonus (prevents double-scoring)
-      if (trophyCaseValue > 0) {
-        scoringService.scoreTreasureCase(treasureId, trophyCaseValue);
-      }
-    });
-  }
-
-  /**
    * Get custom actions for this story
    */
   getCustomActions(): any[] {
@@ -2210,11 +2153,15 @@ export class DungeoStory implements Story {
     }
 
     // Register Mirror Room handler (ADR-075)
+    const eventProcessor = engine.getEventProcessor();
     if (this.mirrorConfig) {
-      const eventProcessor = engine.getEventProcessor();
       const mirrorHandler = createMirrorTouchHandler(this.mirrorConfig);
       eventProcessor.registerHandler('if.event.touched', mirrorHandler);
     }
+
+    // Initialize scoring event processor handlers (must be done in onEngineReady)
+    // This registers handlers for if.event.taken and if.event.put_in to score treasures
+    this.scoringProcessor.initializeHandlers(eventProcessor);
 
     // Register balloon PUT handler (tracks burning objects in receptacle)
     if (this.balloonIds) {
