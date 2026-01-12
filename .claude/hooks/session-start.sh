@@ -10,7 +10,8 @@ SESSION_FILE="${SESSION_DIR}/session-${TODAY}-${TIME}-${BRANCH}.md"
 TEMPLATE="${SESSION_DIR}/.session-template.md"
 
 # Determine trigger type from stdin (SessionStart provides JSON input)
-TRIGGER=$(cat | jq -r '.type // "startup"' 2>/dev/null || echo "startup")
+# The field is "source" not "type" per Claude Code hook documentation
+TRIGGER=$(cat | jq -r '.source // "startup"' 2>/dev/null || echo "startup")
 
 case "$TRIGGER" in
   resume|continue)
