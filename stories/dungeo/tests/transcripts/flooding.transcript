@@ -14,6 +14,12 @@ description: Tests the blue button flooding death trap in Maintenance Room (Phas
 > ah Maintenance Room
 [OK: contains "Maintenance Room"]
 
+> ex
+[OK: contains "Returning"]
+
+> turn on lantern
+[OK: contains "on"]
+
 > look
 [OK: contains "control panel"]
 [OK: contains "blue button"]
@@ -38,8 +44,14 @@ description: Tests the blue button flooding death trap in Maintenance Room (Phas
 [OK: contains "Dam Lobby"]
 
 # Press blue button again (back in Maintenance Room via GDT)
+> gdt
+[OK: contains "GDT"]
+
 > ah Maintenance Room
 [OK: contains "Maintenance Room"]
+
+> ex
+[OK: contains "Returning"]
 
 > press blue
 [OK: contains "jammed"]

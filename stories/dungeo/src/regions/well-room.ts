@@ -81,7 +81,7 @@ and all the king's horses can't draw it up?'
     'This is a low room with passages leading in several directions.');
 
   const machineRoom = createRoom(world, 'Machine Room',
-    'This is a large room filled with strange machinery. A passage leads west.');
+    'This is a large room filled with strange machinery. A small triangular button is set into the wall. A passage leads west.');
 
   const dingyCloset = createRoom(world, 'Dingy Closet',
     'This is a small, dingy closet. A door leads south.');

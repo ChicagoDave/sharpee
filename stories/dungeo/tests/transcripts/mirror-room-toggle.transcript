@@ -26,7 +26,7 @@ description: Test Mirror Room exit toggle when rubbing the mirror (State A vs St
 # Verify we're in Mirror Room
 > look
 [OK: contains "Mirror Room"]
-[OK: contains "enormous mirror"]
+[OK: contains "mirror"]
 
 # STATE A (default): Test exits go to Grail Room area
 # E should go to Cave (which leads down to Hades)

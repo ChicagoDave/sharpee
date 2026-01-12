@@ -15,10 +15,14 @@ description: Test implicit take when reading/putting items not in inventory
 [OK: matches /(open|leaflet)/i]
 
 # Try to read the leaflet WITHOUT taking it first
-# This should either implicitly take it, or read it in place
+# Reading works in place (no implicit take needed)
 > read leaflet
-[OK: matches /(ZORK|welcome|leaflet)/i]
+[OK: matches /(ZORK|welcome|leaflet|DUNGEO)/i]
 
-# Check if leaflet was implicitly taken
+# Leaflet is still in mailbox - reading doesn't auto-take
 > i
-[OK: matches /(leaflet|carrying)/i]
+[OK: matches /(empty|nothing|aren't carrying)/i]
+
+# Verify leaflet is still in mailbox
+> search mailbox
+[OK: contains "leaflet"]

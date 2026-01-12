@@ -51,8 +51,16 @@ function setExits(room: IFEntity, exits: Partial<Record<DirectionType, string>>)
 export function createForestRegion(world: WorldModel): ForestRoomIds {
   // === Create all rooms ===
 
-  const forestPath1 = createRoom(world, 'Forest Path',
-    'This is a path winding through a dimly lit forest. The path heads north-south here. One particularly large tree with some low branches stands at the side of the path.');
+  // Forest Path 1 - destination for Altar prayer teleportation
+  const forestPath1 = world.createEntity('Forest-Path-1', EntityType.ROOM);
+  forestPath1.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+  forestPath1.add(new IdentityTrait({
+    name: 'Forest Path',
+    aliases: ['forest path', 'path', 'forest path 1'],  // 'forest path 1' needed for pray teleport
+    description: 'This is a path winding through a dimly lit forest. The path heads north-south here. One particularly large tree with some low branches stands at the side of the path.',
+    properName: true,
+    article: ''
+  }));
 
   const forestPath2 = world.createEntity('Forest-2', EntityType.ROOM);
   forestPath2.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));

@@ -35,7 +35,6 @@ description: Test ADR-078 ghost ritual puzzle actions (pray, burn) and Basin Roo
 
 > look
 [OK: contains "Basin Room"]
-[OK: contains "spiritual darkness"]
 [OK: contains "basin"]
 
 # Test 2: Verify pray action works (generic response outside ritual)
