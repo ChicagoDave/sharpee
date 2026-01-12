@@ -28,7 +28,8 @@ import {
   IWorldModel,
   IParsedCommand,
   registerCapabilityBehavior,
-  hasCapabilityBehavior
+  hasCapabilityBehavior,
+  VisibilityBehavior
 } from '@sharpee/world-model';
 import { DungeoScoringService } from './scoring';
 import { ScoringEventProcessor } from '@sharpee/stdlib';
@@ -2179,6 +2180,29 @@ export class DungeoStory implements Story {
     // Initialize scoring event processor handlers (must be done in onEngineReady)
     // This registers handlers for if.event.taken and if.event.put_in to score treasures
     this.scoringProcessor.initializeHandlers(eventProcessor);
+
+    // LIGHT-SHAFT achievement (10 pts) - awarded when player enters Bottom of Shaft while lit
+    // From 1981 MDL source (act2.92): <COND (<AND <==? ,HERE "BSHAF"> <LIT? ,HERE>> <SCORE-UPD ,LIGHT-SHAFT>)>
+    const bottomOfShaftId = this.coalMineIds.bottomOfShaft;
+    eventProcessor.registerHandler('if.event.actor_moved', (event: ISemanticEvent) => {
+      const data = event.data as { actorId?: string; toRoomId?: string } | undefined;
+      if (!data?.toRoomId || data.toRoomId !== bottomOfShaftId) return [];
+
+      // Check if player (not NPC)
+      const player = this.world.getPlayer();
+      if (!player || data.actorId !== player.id) return [];
+
+      // Check if the room is lit (not dark)
+      const room = this.world.getEntity(bottomOfShaftId);
+      if (!room) return [];
+
+      const isLit = !VisibilityBehavior.isDark(room, this.world as WorldModel);
+      if (isLit) {
+        this.scoringProcessor.awardOnce('light-shaft', 10, 'LIGHT-SHAFT achievement');
+      }
+
+      return [];
+    });
 
     // Register balloon PUT handler (tracks burning objects in receptacle)
     if (this.balloonIds) {

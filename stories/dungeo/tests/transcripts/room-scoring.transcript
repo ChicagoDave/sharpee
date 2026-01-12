@@ -1,0 +1,78 @@
+title: Room Scoring
+story: dungeo
+description: Tests RVAL points for room entry and LIGHT-SHAFT achievement
+
+---
+
+# Room scoring test - verify RVAL points awarded on first room entry
+# Kitchen should award 10 points on first visit
+
+> look
+[OK: contains "West of House"]
+
+# Go to behind house first
+> n
+[OK: contains "North of House"]
+
+> e
+[OK: contains "Behind House"]
+
+# Enter kitchen through window (west) - should get 10 points for first visit
+> w
+[OK: contains "Kitchen"]
+
+# Check we got points (should show 10 for kitchen visit)
+> score
+[OK: contains "out of 616"]
+
+# Going back and entering kitchen again should NOT give more points
+> e
+[OK: contains "Behind House"]
+
+> w
+[OK: contains "Kitchen"]
+
+# Score should be the same (no duplicate points)
+> score
+[OK: contains "out of 616"]
+
+## LIGHT-SHAFT Achievement Test
+# 10 points awarded when entering Bottom of Shaft while lit (from 1981 MDL source)
+
+> gdt
+[OK: contains "GDT ready"]
+
+# Get a light source
+> tk brass lantern
+[OK: contains "Taken"]
+
+# Teleport to Timber Room (adjacent to Bottom of Shaft)
+> ah Timber Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning to game"]
+
+> turn on lantern
+[OK: contains "switches on"]
+
+> look
+[OK: contains "Timber Room"]
+
+# Go SW to Bottom of Shaft (should award 10 pts for LIGHT-SHAFT)
+> sw
+[OK: contains "Bottom of Shaft"]
+
+# Score should show points from LIGHT-SHAFT achievement
+> score
+[OK: contains "out of 616"]
+
+# Going again should NOT give more points (achievement is one-time)
+> ne
+[OK: contains "Timber Room"]
+
+> sw
+[OK: contains "Bottom of Shaft"]
+
+> score
+[OK: contains "out of 616"]

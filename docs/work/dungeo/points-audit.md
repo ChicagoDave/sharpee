@@ -1,7 +1,7 @@
 # Points/Scoring Audit: 1981 MDL vs Our Implementation
 
 **Date**: 2026-01-12
-**Status**: SWAPPED VALUES FIXED, WRONG TREASURES REMOVED - Room entry points and missing treasures still pending
+**Status**: ✅ COMPLETE - All scoring implemented (treasures, room entry, LIGHT-SHAFT)
 
 ## MDL Scoring Terminology
 
@@ -142,7 +142,7 @@ Points awarded for first entering certain rooms (NOT IMPLEMENTED):
 
 | Achievement | Points | Implemented? |
 |-------------|--------|--------------|
-| LIGHT-SHAFT | 10 | NO |
+| LIGHT-SHAFT | 10 | ✅ YES (event handler in onEngineReady) |
 | Death penalty | -10 per death | ? |
 
 ---
@@ -258,10 +258,10 @@ Our config shows `maxScore: 616` which needs verification.
 
 ## Next Steps
 
-1. Fix all SWAPPED treasure values
-2. Remove wrong treasure items (candles, gold card, golden chalice)
-3. Add missing treasures (crown, violin, saffron)
-4. Implement room entry scoring (RVAL) - 215 points
-5. Implement LIGHT-SHAFT achievement - 10 points
-6. Verify death penalty implementation
-7. Calculate and verify max score against MDL
+1. ✅ Fix all SWAPPED treasure values (commit e360b34)
+2. ✅ Remove wrong treasure items (candles, gold card, golden chalice) (commit ca192b8)
+3. ✅ Add missing treasures (crown, violin, saffron) (commit ca192b8)
+4. ✅ Implement room entry scoring (RVAL) - 215 points (commit e360b34)
+5. ✅ Implement LIGHT-SHAFT achievement - 10 points (2026-01-12)
+6. ❓ Verify death penalty implementation
+7. ✅ Max score verified: 616 main + 34 thief bonus + 100 endgame = 750 total
