@@ -321,7 +321,8 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
   const yellowButton = world.createEntity('yellow button', EntityType.ITEM);
   yellowButton.add(new IdentityTrait({
     name: 'yellow button',
-    aliases: ['yellow', 'danger button', 'danger', 'button'],
+    aliases: ['danger button', 'danger', 'button'],
+    adjectives: ['yellow'],
     description: 'A yellow button labeled "DANGER".',
     properName: false,
     article: 'a'
@@ -332,7 +333,8 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
   const brownButton = world.createEntity('brown button', EntityType.ITEM);
   brownButton.add(new IdentityTrait({
     name: 'brown button',
-    aliases: ['brown', 'button'],
+    aliases: ['button'],
+    adjectives: ['brown'],
     description: 'A brown button.',
     properName: false,
     article: 'a'
@@ -343,7 +345,8 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
   const redButton = world.createEntity('red button', EntityType.ITEM);
   redButton.add(new IdentityTrait({
     name: 'red button',
-    aliases: ['red', 'button'],
+    aliases: ['button'],
+    adjectives: ['red'],
     description: 'A red button.',
     properName: false,
     article: 'a'
@@ -354,7 +357,8 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
   const blueButton = world.createEntity('blue button', EntityType.ITEM);
   blueButton.add(new IdentityTrait({
     name: 'blue button',
-    aliases: ['blue', 'button'],
+    aliases: ['button'],
+    adjectives: ['blue'],
     description: 'A blue button.',
     properName: false,
     article: 'a'

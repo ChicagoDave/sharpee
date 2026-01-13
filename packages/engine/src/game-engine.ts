@@ -1200,7 +1200,7 @@ export class GameEngine {
       vocabularyRegistry.registerEntity({
         entityId: entity.id,
         nouns: nouns,
-        adjectives: [],
+        adjectives: identity.adjectives || [],
         inScope
       });
     }

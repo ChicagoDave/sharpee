@@ -1,6 +1,6 @@
-# ADR-093: I18N-Aware Entity Vocabulary and Adjective Disambiguation
+# ADR-093: Entity Vocabulary and Adjective Disambiguation
 
-## Status: DRAFT
+## Status: IMPLEMENTED (Phase 1) / DEFERRED (Phase 2)
 
 ## Date: 2026-01-12
 
@@ -8,163 +8,205 @@
 
 ### The Problem
 
-When parsing "press yellow button", the system cannot disambiguate between multiple buttons because:
+When parsing "press yellow button", the system cannot disambiguate between multiple buttons. The dam maintenance room has four buttons (yellow, brown, red, blue) but "press yellow button" returns ENTITY_NOT_FOUND.
 
-1. **IdentityTrait has no `adjectives` field** - entities can only define `name` and `aliases`
-2. **Parser doesn't extract modifiers** - "yellow button" becomes `{text: "yellow button", head: "button", modifiers: []}`
-3. **VocabularyRegistry registers empty adjectives** - `updateEntityVocabulary()` hard-codes `adjectives: []`
-4. **CommandValidator looks for non-existent field** - `getEntityAdjectives()` reads `identity.adjectives` which doesn't exist
+### Pipeline Analysis
 
-### The Deeper Problem: Language Coupling
+We traced the full grammar → vocab → command → action pipeline:
 
-Current entity definitions bake English strings directly into traits:
-
-```typescript
-// WRONG: English strings in entity definition
-yellowButton.add(new IdentityTrait({
-  name: 'yellow button',           // English
-  aliases: ['button', 'danger button'],  // English
-}));
+```
+User Input: "press yellow button"
+           ↓
+┌──────────────────────────────────────────────────────────────┐
+│ EnglishParser.tokenizeRich()                                 │
+│   - Lookup each word in VocabularyRegistry                   │
+│   - "press" → VERB, "yellow" → UNKNOWN, "button" → UNKNOWN   │
+└──────────────────────────────────────────────────────────────┘
+           ↓
+┌──────────────────────────────────────────────────────────────┐
+│ GrammarEngine.findMatches()                                  │
+│   - Pattern "press :target" matches                          │
+│   - EntitySlotConsumer consumes "yellow button" for :target  │
+│   - Returns: { text: "yellow button", head: "button",        │
+│               modifiers: [] }  ← GAP: modifiers empty!       │
+└──────────────────────────────────────────────────────────────┘
+           ↓
+┌──────────────────────────────────────────────────────────────┐
+│ CommandValidator.resolveEntity()                             │
+│   - Find candidates by name "button" → [yellow, brown, red,  │
+│     blue]                                                    │
+│   - scoreEntities() tries to use modifiers for disambiguation│
+│   - getEntityAdjectives() reads identity.adjectives          │
+│     → returns [] because field doesn't exist! ← GAP          │
+│   - All 4 buttons score equally → AMBIGUOUS or NOT_FOUND     │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-This means:
-- Stories must be rewritten for each language
-- Parser vocabulary and entity definitions are duplicated
-- No separation between semantic identity and localized text
+### Identified Gaps
 
-### What Should Happen
+| Component | Gap | Fix |
+|-----------|-----|-----|
+| IdentityTrait | No `adjectives` field | Add `adjectives: string[]` |
+| GameEngine | `updateEntityVocabulary()` hard-codes `adjectives: []` | Read from `identity.adjectives` |
+| EntitySlotConsumer | Doesn't populate `modifiers` | Extract adjectives from noun phrase |
+| CommandValidator | `getEntityAdjectives()` returns `[]` | Read from trait properly |
 
-Entity definitions should be **language-agnostic**. The language layer should provide all localized text:
+### Note on lang-en-us/commonAdjectives
 
-```typescript
-// Entity defines SEMANTIC properties (no English)
-yellowButton.add(new IdentityTrait({
-  semanticId: 'maintenance-room.yellow-button',
-  adjectives: ['color:yellow'],  // Semantic categories
-  nouns: ['button'],             // Semantic categories
-}));
+The `commonAdjectives` list in `lang-en-us/src/data/words.ts` was never wired up. It's aspirational code that predates this fix.
 
-// lang-en-us provides localized vocabulary
-vocabulary.register({
-  entityId: 'maintenance-room.yellow-button',
-  words: [
-    { word: 'yellow', category: 'color:yellow', partOfSpeech: 'adjective' },
-    { word: 'button', category: 'button', partOfSpeech: 'noun' },
-    { word: 'danger button', partOfSpeech: 'noun' }
-  ],
-  displayName: 'yellow button',
-  article: 'a'
-});
+**Decision:** Stories own their vocabulary. Each entity declares its adjectives in IdentityTrait. The platform doesn't need a master list of "common" adjectives - that's the story author's responsibility. The `commonAdjectives` list in lang-en-us can be removed or marked as reference-only.
 
-// lang-es provides Spanish vocabulary
-vocabulary.register({
-  entityId: 'maintenance-room.yellow-button',
-  words: [
-    { word: 'amarillo', category: 'color:yellow', partOfSpeech: 'adjective' },
-    { word: 'boton', category: 'button', partOfSpeech: 'noun' },
-  ],
-  displayName: 'boton amarillo',
-  article: 'el'
-});
-```
+### Architectural Insight: Syntax vs Semantics
+
+**SlotConsumer** handles noun phrase **syntax**:
+- "all" / "all but X" / "X and Y" parsing
+- Grouping and exclusion
+- Returns structured noun phrase, NOT resolved entities
+
+**CommandValidator/EntityResolver** handles **semantics**:
+- Adjective extraction from noun phrase text
+- Vocabulary lookup and matching
+- Scope filtering and disambiguation
+- Returns resolved entity IDs
+
+This separation is correct. SlotConsumer should NOT do entity resolution - it should capture the noun phrase structure and let the resolver handle matching.
+
+### I18N Consideration (Deferred)
+
+For future multi-language support, entity vocabulary should be language-agnostic:
+
+| Aspect | English | Spanish |
+|--------|---------|---------|
+| Nouns | "lamp" | "lámpara" |
+| Adjectives | "brass" | "de latón" |
+| Word order | "brass lamp" | "lámpara de latón" |
+| Articles | "a/the" (no gender) | "una/la" (feminine) |
+
+This would require vocabulary to live in language packages, not IdentityTrait. However, this is significant architectural work that we defer until an actual need arises (e.g., author requests localization).
 
 ## Decision
 
-### Phase 1: Add Adjectives to Current System (Immediate Fix)
+### Phase 1: Adjective Disambiguation (APPROVED - Implement Now)
 
-Minimal changes to unblock button disambiguation:
+Minimal changes to unblock Dungeo:
 
-1. **Add `adjectives` field to IdentityTrait**
-   ```typescript
-   export class IdentityTrait {
-     adjectives: string[] = [];  // NEW
-   }
-   ```
+#### 1. Add `adjectives` field to IdentityTrait
 
-2. **Update `updateEntityVocabulary()` to read adjectives**
-   ```typescript
-   vocabularyRegistry.registerEntity({
-     entityId: entity.id,
-     nouns: nouns,
-     adjectives: identity.adjectives || [],  // READ FROM TRAIT
-     inScope
-   });
-   ```
+**File:** `packages/world-model/src/traits/identity/identityTrait.ts`
 
-3. **Parser extracts modifiers from noun phrases**
-   - "yellow button" → `{head: "button", modifiers: ["yellow"]}`
-   - CommandValidator matches modifiers against entity adjectives
+```typescript
+export class IdentityTrait implements ITrait {
+  // ... existing fields ...
 
-### Phase 2: Semantic Entity Vocabulary (Future)
+  /** Adjectives that can be used to refer to this entity */
+  adjectives: string[] = [];
+}
+```
 
-Full i18n-aware architecture:
+#### 2. Parser extracts modifiers from noun phrases
+
+**File:** `packages/parser-en-us/src/slot-consumers/entity-slot-consumer.ts`
+
+When building INounPhrase, extract words before the head noun as modifiers:
+
+```typescript
+// "yellow button" → { head: "button", modifiers: ["yellow"], text: "yellow button" }
+// "big red ball" → { head: "ball", modifiers: ["big", "red"], text: "big red ball" }
+```
+
+Algorithm:
+1. Identify head noun (last content word, or known entity noun)
+2. Words before head that aren't articles/determiners are modifiers
+3. Store in `INounPhrase.modifiers`
+
+#### 3. CommandValidator uses modifiers for scoring
+
+**File:** `packages/stdlib/src/validation/command-validator.ts`
+
+`scoreEntities()` already has modifier matching logic:
+```typescript
+for (const modifier of modifiers) {
+  if (adjectives.includes(modifier)) {
+    score += 5;  // modifier_match
+  }
+}
+```
+
+Fix `getEntityAdjectives()` to read from the new field:
+```typescript
+private getEntityAdjectives(entity: IFEntity): string[] {
+  const identity = entity.get(TraitType.IDENTITY) as IdentityTrait | undefined;
+  return identity?.adjectives ?? [];
+}
+```
+
+#### 4. Story entities declare adjectives
+
+**File:** `stories/dungeo/src/regions/dam.ts` (example)
+
+```typescript
+const yellowButton = world.createEntity('yellow-button', 'object');
+yellowButton.set(IdentityTrait, {
+  name: 'yellow button',
+  aliases: ['button'],
+  adjectives: ['yellow'],  // NEW
+});
+```
+
+### Phase 2: I18N-Aware Vocabulary (DEFERRED)
+
+Full internationalization architecture for when/if needed:
 
 1. **IdentityTrait becomes language-agnostic**
-   ```typescript
-   export class IdentityTrait {
-     semanticId: string;           // Unique identifier for language lookup
-     semanticNouns: string[];      // Category tags: ['button', 'control']
-     semanticAdjectives: string[]; // Category tags: ['color:yellow', 'material:metal']
-   }
-   ```
+   - Remove `name`, `aliases`, `article` (English strings)
+   - Add `semanticId` for language layer lookup
+   - Adjectives become semantic categories: `['color:yellow']`
 
-2. **Language layer provides all text**
-   - Display names, articles, descriptions
-   - Vocabulary words mapped to semantic categories
-   - Parser uses language-specific vocabulary
+2. **Vocabulary lives in language packages**
+   - `lang-en-us` provides English vocabulary per entity
+   - `lang-es` provides Spanish vocabulary
+   - Parser reads from language-specific vocabulary
 
-3. **VocabularyRegistry bridges semantic → localized**
-   - Registers localized words that map to semantic categories
-   - Parser matches input against localized vocabulary
-   - Resolution uses semantic categories for disambiguation
+3. **No new packages needed**
+   - Vocabulary logic stays in `parser-en-us` (or `parser-es`)
+   - Vocabulary data can be in `lang-*` packages
+   - Story translation files map semantic IDs to localized text
 
-## Flow After Implementation
+This is significant work. We'll tackle it when an author actually needs multi-language support.
 
-```
-Input: "press yellow button"
-    ↓
-Parser tokenizes → ["press", "yellow", "button"]
-    ↓
-VocabularyRegistry lookup:
-  - "press" → verb
-  - "yellow" → adjective, mapsTo entity i0p (via category 'color:yellow')
-  - "button" → noun, mapsTo entities [i0p, i0q, i0r, i0s]
-    ↓
-EntitySlotConsumer:
-  - Consumes "yellow button"
-  - Sets head="button", modifiers=["yellow"]
-  - Or directly resolves via vocabulary registry
-    ↓
-CommandValidator:
-  - Finds entities with noun "button": [yellowBtn, brownBtn, redBtn, blueBtn]
-  - Scores by adjective match: "yellow" matches yellowBtn.adjectives
-  - Returns yellowBtn as resolved entity
-```
+## Implementation Checklist (Phase 1) - COMPLETED 2026-01-12
+
+**Platform changes (packages/):**
+- [x] Add `adjectives: string[]` to IdentityTrait (`packages/world-model`)
+- [x] Fix GameEngine.updateEntityVocabulary() to read `identity.adjectives` (`packages/engine`)
+- [x] Verify EntitySlotConsumer - not needed, CommandValidator has fallback modifier extraction
+- [x] Verify CommandValidator.getEntityAdjectives() - already reads from trait correctly
+- [x] Verify CommandValidator.scoreEntities() - already uses modifiers for scoring (+5 per match)
+
+**Story changes (stories/dungeo):**
+- [x] Update dam buttons with adjectives: yellow, brown, red, blue
+
+**Testing:**
+- [x] Test: "press yellow button" resolves to yellow button
+- [x] Run dam-drain.transcript - all 20 tests pass
 
 ## Consequences
 
 ### Positive
-- Disambiguation works for "yellow button", "red ball", etc.
-- Stories can be localized without rewriting entity definitions
-- Parser vocabulary and entity vocabulary are unified
-- Clear separation: entities define semantics, language defines words
+- Disambiguation works for "yellow button", "brass lamp", etc.
+- Minimal changes - three files modified
+- Backward compatible - `adjectives` defaults to `[]`
+- Clear path to i18n when needed
 
 ### Negative
-- Breaking change to IdentityTrait (Phase 1)
-- Significant refactor for full i18n (Phase 2)
-- Existing stories need migration
+- English strings still in IdentityTrait (i18n debt)
+- Stories need to add `adjectives` to entities that need disambiguation
 
-### Migration Path
-
-**Phase 1 (backward compatible):**
-- `adjectives` field is optional, defaults to `[]`
+### Migration
+- No migration needed for Phase 1
 - Existing stories work unchanged
-- New stories can use adjectives for disambiguation
-
-**Phase 2 (breaking):**
-- Provide migration script to extract English from IdentityTrait
-- Generate lang-en-us vocabulary from existing entity definitions
-- Update IdentityTrait to semantic-only fields
+- New entities can optionally add `adjectives`
 
 ## Related ADRs
 
@@ -173,9 +215,12 @@ CommandValidator:
 - ADR-038: Language-Agnostic Actions
 - ADR-044: Parser Vocabulary Gaps
 - ADR-048: Static Language Architecture
+- ADR-087: Action-Centric Grammar
+- ADR-089: Pronoun Resolution
 
-## Open Questions
+## Open Questions (for Phase 2)
 
-1. Should semantic adjectives use a taxonomy (color:yellow) or flat strings (yellow)?
-2. How do we handle adjectives that vary by entity (a "small" elephant vs "small" ant)?
-3. Should vocabulary registration be automatic from IdentityTrait or explicit?
+1. Should semantic adjectives use taxonomy (`color:yellow`) or flat strings?
+2. How to handle relative adjectives ("small" elephant vs "small" ant)?
+3. Where do translation files live - in story or separate package?
+4. How does parser handle different word orders (adj-noun vs noun-adj)?
