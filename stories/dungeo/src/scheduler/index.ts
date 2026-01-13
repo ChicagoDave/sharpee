@@ -9,17 +9,23 @@ export { DungeoSchedulerMessages, type DungeoSchedulerMessageId } from './schedu
 export { registerLanternFuse, getLanternBatteryRemaining } from './lantern-fuse';
 export { registerCandleFuse, getCandleBurnRemaining } from './candle-fuse';
 export {
-  registerDamHandlers,
-  startDamDraining,
+  initializeDamState,
   isDamDrained,
-  isDamDraining,
+  setDamDrained,
+  isYellowButtonPressed,
+  setYellowButtonPressed,
+  registerYellowButtonHandler,
+  DAM_STATE_KEY,
+  type DamState
+} from './dam-state';
+export {
   startFlooding,
   isFloodingStarted,
   isMaintenanceFlooded,
   FloodingMessages,
-  DAM_STATE_KEY,
-  type DamState
-} from './dam-fuse';
+  FLOODING_STATE_KEY,
+  type FloodingState
+} from './maintenance-room-fuse';
 export { registerForestAmbienceDaemon, isForestAmbienceActive } from './forest-daemon';
 export { registerBankAlarmDaemon, isBankAlarmActive } from './bank-alarm-daemon';
 export { registerIncenseFuse, getIncenseBurnRemaining } from './incense-fuse';
@@ -30,7 +36,7 @@ import { WorldModel } from '@sharpee/world-model';
 import { ISchedulerService } from '@sharpee/engine';
 import { registerLanternFuse } from './lantern-fuse';
 import { registerCandleFuse } from './candle-fuse';
-import { registerDamHandlers } from './dam-fuse';
+import { initializeDamState, registerYellowButtonHandler } from './dam-state';
 import { registerForestAmbienceDaemon } from './forest-daemon';
 import { registerBankAlarmDaemon } from './bank-alarm-daemon';
 import { registerIncenseFuse } from './incense-fuse';
@@ -71,8 +77,9 @@ export function registerScheduledEvents(
   registerLanternFuse(scheduler, world);
   registerCandleFuse(scheduler, world);
 
-  // Register dam draining sequence
-  registerDamHandlers(scheduler, world, damRoomIds.reservoir);
+  // Initialize dam state and yellow button handler
+  initializeDamState(world);
+  registerYellowButtonHandler(world);
 
   // Register ambience daemons
   const forestRooms = Object.values(forestRoomIds);
@@ -94,6 +101,4 @@ export function registerScheduledEvents(
 
   // Note: Crypt trigger daemon is registered via registerEndgameTriggerHandler
   // in src/handlers/endgame-trigger-handler.ts
-
-  console.log('Dungeo scheduler: Registered all daemons and fuses');
 }
