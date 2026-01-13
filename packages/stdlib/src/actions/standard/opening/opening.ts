@@ -16,7 +16,7 @@ import { ISemanticEvent, EntityId } from '@sharpee/core';
 import { TraitType, OpenableBehavior, LockableBehavior, IOpenResult } from '@sharpee/world-model';
 import { buildEventData } from '../../data-builder-types';
 import { IFActions } from '../../constants';
-import { OpenedEventData, RevealedEventData, ExitRevealedEventData } from './opening-events';
+import { OpenedEventData, ExitRevealedEventData } from './opening-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { OpeningSharedData } from './opening-types';
@@ -132,21 +132,10 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       targetName: noun.name
     }));
 
-    // 3. Revealed events - one per item if this is a container
-    if (noun.has(TraitType.CONTAINER)) {
-      const contents = context.world.getContents(noun.id);
-      for (const item of contents) {
-        const revealedData: RevealedEventData = {
-          itemId: item.id,
-          itemName: item.name,
-          containerId: noun.id,
-          containerName: noun.name
-        };
-        events.push(context.event('if.event.revealed', revealedData));
-      }
-    }
+    // Note: if.event.revealed is emitted by the opened event handler in stdlib
+    // This ensures revealed events fire regardless of what action opened the container
 
-    // 4. Success event with appropriate message
+    // 3. Success event with appropriate message
     const isContainer = noun.has(TraitType.CONTAINER);
     const contents = isContainer ? context.world.getContents(noun.id) : [];
 
