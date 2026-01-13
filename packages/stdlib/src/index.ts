@@ -26,3 +26,4 @@ export * from './scope';
 export * from './services';
 export * from './npc';
 export * from './combat';
+export * from './chains';

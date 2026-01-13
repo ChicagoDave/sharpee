@@ -123,6 +123,9 @@ export const inflateAction: Action = {
       identity.description = 'The boat is a seaworthy craft approximately eight feet long. A pair of oars is affixed to the side.';
     }
 
+    // Also update displayName attribute (used by entity.name getter)
+    (boat as any).attributes.displayName = 'magic boat';
+
     // Add EnterableTrait so player can BOARD/ENTER the boat
     if (!boat.has(TraitType.ENTERABLE)) {
       boat.add(new EnterableTrait({ preposition: 'in' }));

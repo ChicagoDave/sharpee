@@ -86,53 +86,71 @@ export function createDamRegion(world: WorldModel): DamRoomIds {
     'This is a large room with a vaulted ceiling. Ancient murals depicting undersea life cover the walls.');
 
   // === Set up connections ===
+  // Per canonical map-connections.md
 
-  setExits(deepCanyon, { [Direction.NORTH]: damLobby.id });
-  // SE → Round Room connected externally
+  // Deep Canyon: NW→Reservoir South, E→Dam, SE→Round Room (external)
+  setExits(deepCanyon, {
+    [Direction.NORTHWEST]: reservoirSouth.id,
+    [Direction.EAST]: dam.id,
+    // SE → Round Room connected externally
+  });
 
+  // Dam Lobby: S→Dam, N→Maintenance Room, E→Maintenance Room
   setExits(damLobby, {
-    [Direction.SOUTH]: deepCanyon.id,
-    [Direction.NORTH]: dam.id,
+    [Direction.SOUTH]: dam.id,
+    [Direction.NORTH]: maintenanceRoom.id,
     [Direction.EAST]: maintenanceRoom.id,
   });
 
+  // Dam (Flood Control Dam #3): S→Deep Canyon, N→Dam Lobby, D→Dam Base
   setExits(dam, {
-    [Direction.SOUTH]: damLobby.id,
-    [Direction.NORTH]: reservoirSouth.id,
+    [Direction.SOUTH]: deepCanyon.id,
+    [Direction.NORTH]: damLobby.id,
     [Direction.DOWN]: damBase.id,
   });
 
+  // Dam Base: U→Dam, N→Frigid River (external)
   setExits(damBase, { [Direction.UP]: dam.id });
   // N → Frigid River connected externally
 
-  setExits(maintenanceRoom, { [Direction.WEST]: damLobby.id });
-
-  setExits(reservoirSouth, {
-    [Direction.SOUTH]: dam.id,
-    [Direction.NORTH]: reservoir.id,
-    // W → Temple connected externally
+  // Maintenance Room: S→Dam Lobby, W→Dam Lobby
+  setExits(maintenanceRoom, {
+    [Direction.SOUTH]: damLobby.id,
+    [Direction.WEST]: damLobby.id,
   });
 
+  // Reservoir South: UP→Deep Canyon, N→Reservoir, W→Stream View
+  setExits(reservoirSouth, {
+    [Direction.UP]: deepCanyon.id,
+    [Direction.NORTH]: reservoir.id,
+    [Direction.WEST]: streamView.id,
+  });
+
+  // Reservoir: S→Reservoir South, N→Reservoir North
   setExits(reservoir, {
     [Direction.SOUTH]: reservoirSouth.id,
     [Direction.NORTH]: reservoirNorth.id,
   });
 
+  // Reservoir North: S→Reservoir, N→Atlantis Room
   setExits(reservoirNorth, {
     [Direction.SOUTH]: reservoir.id,
-    [Direction.NORTH]: streamView.id,
-    [Direction.SOUTHEAST]: atlantisRoom.id,
+    [Direction.NORTH]: atlantisRoom.id,
   });
 
+  // Atlantis Room: SE→Reservoir North, U→Small Cave
   setExits(atlantisRoom, {
-    [Direction.NORTHWEST]: reservoirNorth.id,
+    [Direction.SOUTHEAST]: reservoirNorth.id,
     [Direction.UP]: smallCave.id,
   });
 
+  // Small Cave: D→Atlantis Room, E→Mirror Room (coal mine state, external)
   setExits(smallCave, { [Direction.DOWN]: atlantisRoom.id });
   // E → Mirror Room (coal mine state) connected externally
 
-  setExits(streamView, { [Direction.SOUTH]: reservoirNorth.id });
+  // Stream View: E→Reservoir South, S→Glacier Room (external)
+  setExits(streamView, { [Direction.EAST]: reservoirSouth.id });
+  // S → Glacier Room connected externally
 
   return {
     deepCanyon: deepCanyon.id,
@@ -163,9 +181,15 @@ export function connectDamToFrigidRiver(world: WorldModel, ids: DamRoomIds, frig
   if (db) db.get(RoomTrait)!.exits[Direction.NORTH] = { destination: frigidRiverId };
 }
 
-export function connectDamToTemple(world: WorldModel, ids: DamRoomIds, templeId: string): void {
-  const rs = world.getEntity(ids.reservoirSouth);
-  if (rs) rs.get(RoomTrait)!.exits[Direction.WEST] = { destination: templeId };
+/**
+ * Connect Stream View to Glacier Room (volcano region)
+ * Stream View: S→Glacier Room, Glacier Room: N→Stream View
+ */
+export function connectStreamViewToGlacier(world: WorldModel, ids: DamRoomIds, glacierRoomId: string): void {
+  const sv = world.getEntity(ids.streamView);
+  const gr = world.getEntity(glacierRoomId);
+  if (sv) sv.get(RoomTrait)!.exits[Direction.SOUTH] = { destination: glacierRoomId };
+  if (gr) gr.get(RoomTrait)!.exits[Direction.NORTH] = { destination: ids.streamView };
 }
 
 export function connectSmallCaveToMirrorRoom(world: WorldModel, ids: DamRoomIds, mirrorRoomId: string): void {
@@ -198,6 +222,9 @@ export function createDamObjects(world: WorldModel, roomIds: DamRoomIds): void {
 
   // Dam Base objects (inflatable boat)
   createDamBaseObjects(world, roomIds.damBase);
+
+  // Atlantis Room objects (crystal trident)
+  createAtlantisRoomObjects(world, roomIds.atlantisRoom);
 }
 
 // ============= Dam Lobby Objects =============
@@ -289,10 +316,13 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
   world.moveEntity(screwdriver.id, roomId);
 
   // Buttons - yellow (danger), brown, red, blue
+  // NOTE: 'button' alias is required for CommandValidator - it searches by head noun ("button")
+  // then disambiguates by modifiers ("yellow")
   const yellowButton = world.createEntity('yellow button', EntityType.ITEM);
   yellowButton.add(new IdentityTrait({
     name: 'yellow button',
-    aliases: ['yellow', 'danger button', 'danger'],
+    aliases: ['danger button', 'danger', 'button'],
+    adjectives: ['yellow'],
     description: 'A yellow button labeled "DANGER".',
     properName: false,
     article: 'a'
@@ -303,7 +333,8 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
   const brownButton = world.createEntity('brown button', EntityType.ITEM);
   brownButton.add(new IdentityTrait({
     name: 'brown button',
-    aliases: ['brown'],
+    aliases: ['button'],
+    adjectives: ['brown'],
     description: 'A brown button.',
     properName: false,
     article: 'a'
@@ -314,7 +345,8 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
   const redButton = world.createEntity('red button', EntityType.ITEM);
   redButton.add(new IdentityTrait({
     name: 'red button',
-    aliases: ['red'],
+    aliases: ['button'],
+    adjectives: ['red'],
     description: 'A red button.',
     properName: false,
     article: 'a'
@@ -325,7 +357,8 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
   const blueButton = world.createEntity('blue button', EntityType.ITEM);
   blueButton.add(new IdentityTrait({
     name: 'blue button',
-    aliases: ['blue'],
+    aliases: ['button'],
+    adjectives: ['blue'],
     description: 'A blue button.',
     properName: false,
     article: 'a'
@@ -369,7 +402,8 @@ function createReservoirObjects(world: WorldModel, roomId: string): void {
   trunk.add(new OpenableTrait({ isOpen: true }));
   (trunk as any).isTreasure = true;
   (trunk as any).treasureId = 'trunk-of-jewels';
-  (trunk as any).treasureValue = 15;
+  (trunk as any).treasureValue = 15;       // OFVAL from mdlzork_810722
+  (trunk as any).trophyCaseValue = 8;      // OTVAL from mdlzork_810722
   world.moveEntity(trunk.id, roomId);
 }
 
@@ -405,4 +439,101 @@ function createDamBaseObjects(world: WorldModel, roomId: string): void {
   boat.add(new ContainerTrait({ capacity: { maxItems: 10, maxWeight: 100 } }));
   (boat as any).isInflated = false;
   world.moveEntity(boat.id, roomId);
+
+  // Tan label - instructions for the boat (inside boat when inflated)
+  const label = world.createEntity('tan label', EntityType.ITEM);
+  label.add(new IdentityTrait({
+    name: 'tan label',
+    aliases: ['label', 'tan label', 'instructions'],
+    description: 'A tan label attached to the boat.',
+    properName: false,
+    article: 'a',
+    weight: 0
+  }));
+  label.add(new ReadableTrait({
+    text: `    !!!! FROBOZZ MAGIC BOAT COMPANY !!!!
+
+Hello, sailor!
+
+Instructions for use:
+
+To get into the boat, say "BOARD"
+To leave the boat, say "DISEMBARK"
+To get into a body of water, say "LAUNCH"
+To get to shore, say "LAND"
+
+Warranty:
+
+This boat is guaranteed against all defects in parts and workmanship for a period of 76 milliseconds from date of purchase or until first used, whichever comes first.
+
+Warning: This boat is made of plastic.
+
+Good luck!`
+  }));
+  world.moveEntity(label.id, boat.id);
+
+  // Sharp stick - punctures boat if carried into it, also creates rainbow when waved at falls
+  const stick = world.createEntity('sharp stick', EntityType.ITEM);
+  stick.add(new IdentityTrait({
+    name: 'sharp stick',
+    aliases: ['stick', 'broken stick', 'sharp stick', 'broken sharp stick', 'pointed stick'],
+    description: 'A sharp stick, which appears to have been broken at one end, is here.',
+    properName: false,
+    article: 'a',
+    weight: 5
+  }));
+  (stick as any).isPointy = true;
+  (stick as any).puncturesBoat = true;
+  (stick as any).isSceptre = true;  // Flag used by wave-action to identify rainbow item
+  world.moveEntity(stick.id, roomId);
+
+  // Water/River scenery at Dam Base
+  const river = world.createEntity('river-dam-base', EntityType.ITEM);
+  river.add(new IdentityTrait({
+    name: 'Frigid River',
+    aliases: ['river', 'water', 'frigid river', 'stream'],
+    description: 'The Frigid River is flowing by here. Across the river are the White Cliffs, which seem to form a giant wall stretching from north to south along the east shore of the river as it winds its way downstream.',
+    properName: true,
+    article: 'the'
+  }));
+  river.add(new SceneryTrait());
+  (river as any).isWaterBody = true;
+  world.moveEntity(river.id, roomId);
+}
+
+// ============= Atlantis Room Objects =============
+
+function createAtlantisRoomObjects(world: WorldModel, roomId: string): void {
+  // Crystal Trident - treasure (11 take + 4 case = 15 pts)
+  const trident = world.createEntity('crystal trident', EntityType.ITEM);
+  trident.add(new IdentityTrait({
+    name: 'crystal trident',
+    aliases: ['trident', 'poseidon trident', 'poseidons trident', 'crystal'],
+    description: 'On the shore lies Poseidon\'s own crystal trident.',
+    properName: false,
+    article: 'a',
+    weight: 5
+  }));
+  (trident as any).isTreasure = true;
+  (trident as any).treasureId = 'crystal-trident';
+  (trident as any).treasureValue = 4;      // OFVAL from mdlzork_810722
+  (trident as any).trophyCaseValue = 11;   // OTVAL from mdlzork_810722
+  world.moveEntity(trident.id, roomId);
+
+  // Tin of rare spices (Saffron) - treasure (5 take + 5 case = 10 pts)
+  // In 1981 MDL: SAFFR object in ALITR (Atlantis Room)
+  const saffron = world.createEntity('tin of spices', EntityType.ITEM);
+  saffron.add(new IdentityTrait({
+    name: 'tin of spices',
+    aliases: ['tin', 'spices', 'saffron', 'rare spices', 'tin of rare spices'],
+    description: 'A tin of rare spices. The aroma is exotic and enticing.',
+    properName: false,
+    article: 'a',
+    weight: 8
+  }));
+  (saffron as any).isTreasure = true;
+  (saffron as any).treasureId = 'saffron';
+  (saffron as any).treasureValue = 5;      // OFVAL from mdlzork_810722
+  (saffron as any).trophyCaseValue = 5;    // OTVAL from mdlzork_810722
+  world.moveEntity(saffron.id, roomId);
 }

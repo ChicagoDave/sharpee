@@ -1,6 +1,6 @@
-title: Maze Dead Ends
+title: Maze Self-Loops and Dead Ends
 story: dungeo
-description: Test maze dead end rooms and their connections
+description: Test maze self-loops and dead end connections per 1981 MDL source
 
 ---
 
@@ -18,8 +18,11 @@ description: Test maze dead end rooms and their connections
 > turn on lantern
 [OK: contains "lantern"]
 
-# Test Dead End-1 (from Maze-2)
-# First navigate to Maze-2 via Troll Room → Maze-1 → E
+# ============================================================================
+# TEST SELF-LOOPS (5 in original maze)
+# ============================================================================
+
+# Self-loop 1: MAZE1 N → MAZE1
 > gdt
 [OK: contains "GAME DEBUGGING TOOL"]
 
@@ -29,146 +32,181 @@ description: Test maze dead end rooms and their connections
 > ex
 [OK: contains "Returning to game"]
 
-# South to Maze-1 (per map-connections.md)
+# South to Maze-1
 > south
 [OK: contains "maze"]
 [EVENT: true, type="if.event.actor_moved"]
 
-# East to Maze-2
+# North from Maze-1 should loop back to Maze-1 (self-loop)
+> north
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# Go east to verify we're still in Maze-1 (should reach Maze-4)
 > east
 [OK: contains "maze"]
 [EVENT: true, type="if.event.actor_moved"]
 
-# East from Maze-2 to Dead End-1
-> east
-[OK: contains "Dead End"]
-[EVENT: true, type="if.event.actor_moved"]
-
-# South from Dead End-1 back to Maze-2
-> south
-[OK: contains "maze"]
-[EVENT: true, type="if.event.actor_moved"]
-
-# Test Dead End-3 (central junction dead end)
+# Self-loop 2: MAZE6 W → MAZE6
 > gdt
 [OK: contains "GAME DEBUGGING TOOL"]
 
-> ah dead end 3
+> ah maze 6
 [OK: contains "Teleported to"]
 
 > ex
 [OK: contains "Returning to game"]
 
-> look
-[OK: contains "Dead End"]
-
-# Dead End-3 has multiple exits: W, NE, E, S, U
-# West to Maze-15
+# West from Maze-6 should loop back to Maze-6
 > west
 [OK: contains "maze"]
 [EVENT: true, type="if.event.actor_moved"]
 
-# Back to Dead End-3 via east
-> east
-[OK: contains "Dead End"]
-[EVENT: true, type="if.event.actor_moved"]
-
-# Up to Maze-8
-> up
-[OK: contains "maze"]
-[EVENT: true, type="if.event.actor_moved"]
-
-# South from Maze-8 leads back to Dead End-3
-> south
-[OK: contains "Dead End"]
-[EVENT: true, type="if.event.actor_moved"]
-
-# East to Maze-5
+# Verify by going east to Maze-7
 > east
 [OK: contains "maze"]
 [EVENT: true, type="if.event.actor_moved"]
 
-# Test Dead End-4 (from Maze-5)
-# Southeast to Dead End-4
-> southeast
-[OK: contains "Dead End"]
-[EVENT: true, type="if.event.actor_moved"]
-
-# North back to Maze-5
-> north
-[OK: contains "maze"]
-[EVENT: true, type="if.event.actor_moved"]
-
-# Test Dead End-5 (from Maze-10)
-# Navigate: Maze-5 NE → Dead End-3 W → Maze-15 → ... too complex
-# Use GDT to teleport nearby instead
+# Self-loop 3: MAZE8 W → MAZE8
 > gdt
 [OK: contains "GAME DEBUGGING TOOL"]
 
-> ah dead end 5
+> ah maze 8
 [OK: contains "Teleported to"]
 
 > ex
 [OK: contains "Returning to game"]
 
-# Verify we're at Dead End-5
-> look
-[OK: contains "Dead End"]
-
-# South from Dead End-5 to Maze-10
-> south
+# West from Maze-8 should loop back to Maze-8
+> west
 [OK: contains "maze"]
 [EVENT: true, type="if.event.actor_moved"]
 
-# North from Maze-10 back to Dead End-5
-> north
-[OK: contains "Dead End"]
+# Verify by going northeast to Maze-7
+> northeast
+[OK: contains "maze"]
 [EVENT: true, type="if.event.actor_moved"]
 
-# Test Maze-7 (only has W exit to Maze-6)
-# Navigate from Maze-15: Maze-15 SW → Maze-6 E → Maze-7
+# Self-loop 4: MAZE9 NW → MAZE9
 > gdt
 [OK: contains "GAME DEBUGGING TOOL"]
 
-# Teleport to Grating Room and navigate from there
-> ah grating room
+> ah maze 9
 [OK: contains "Teleported to"]
 
 > ex
 [OK: contains "Returning to game"]
 
-# Navigate to Maze-7: SW to Maze-12, NW to Maze-14, D to Maze-10,
-# W to Maze-15, SW to Maze-6, E to Maze-7
-> southwest
-[OK: contains "maze"]
-[EVENT: true, type="if.event.actor_moved"]
-
+# Northwest from Maze-9 should loop back to Maze-9
 > northwest
 [OK: contains "maze"]
 [EVENT: true, type="if.event.actor_moved"]
 
-> down
-[OK: contains "maze"]
-[EVENT: true, type="if.event.actor_moved"]
-
-> west
-[OK: contains "maze"]
-[EVENT: true, type="if.event.actor_moved"]
-
-> southwest
-[OK: contains "maze"]
-[EVENT: true, type="if.event.actor_moved"]
-
+# Verify by going east to Maze-11
 > east
 [OK: contains "maze"]
 [EVENT: true, type="if.event.actor_moved"]
 
-# Now in Maze-7, west goes back to Maze-6
+# Self-loop 5: MAZ14 NW → MAZ14
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> ah maze 14
+[OK: contains "Teleported to"]
+
+> ex
+[OK: contains "Returning to game"]
+
+# Northwest from Maze-14 should loop back to Maze-14
+> northwest
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# Verify by going west to Maze-15
 > west
 [OK: contains "maze"]
 [EVENT: true, type="if.event.actor_moved"]
 
-# East from Maze-6 back to Maze-7
+# ============================================================================
+# TEST DEAD ENDS (4 in 1981 MDL: DEAD1-4)
+# ============================================================================
+
+# Dead End-1: Accessed via MAZE4 E, exits S to MAZE4
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> ah maze 4
+[OK: contains "Teleported to"]
+
+> ex
+[OK: contains "Returning to game"]
+
+# East from Maze-4 to Dead End-1
 > east
+[OK: contains "Dead End"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# South from Dead End-1 back to Maze-4
+> south
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# Dead End-2: Accessed via MAZE5 E, exits W to MAZE5
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> ah maze 5
+[OK: contains "Teleported to"]
+
+> ex
+[OK: contains "Returning to game"]
+
+# East from Maze-5 to Dead End-2
+> east
+[OK: contains "Dead End"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# West from Dead End-2 back to Maze-5
+> west
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# Dead End-3: Accessed via MAZE8 SE, exits N to MAZE8
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> ah maze 8
+[OK: contains "Teleported to"]
+
+> ex
+[OK: contains "Returning to game"]
+
+# Southeast from Maze-8 to Dead End-3
+> southeast
+[OK: contains "Dead End"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# North from Dead End-3 back to Maze-8
+> north
+[OK: contains "maze"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# Dead End-4: Accessed via MAZ12 N, exits S to MAZ12
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> ah maze 12
+[OK: contains "Teleported to"]
+
+> ex
+[OK: contains "Returning to game"]
+
+# North from Maze-12 to Dead End-4
+> north
+[OK: contains "Dead End"]
+[EVENT: true, type="if.event.actor_moved"]
+
+# South from Dead End-4 back to Maze-12
+> south
 [OK: contains "maze"]
 [EVENT: true, type="if.event.actor_moved"]

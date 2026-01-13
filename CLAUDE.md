@@ -15,6 +15,10 @@ CLAUDE CODE BUG: ESC Interupt is currently broken so you need to STOP at any dec
 
 ## Architecture Principles
 
+### Item Portability
+
+**Items are portable by default.** There is no `PortableTrait` - all items can be taken unless explicitly blocked. To make something non-portable, use `SceneryTrait` or handle it in the taking action's validation.
+
 ### Language Layer Separation
 
 **All text output must go through the language layer.** Code in engine/stdlib/world-model emits semantic events with message IDs, not English strings. Actual prose lives in `lang-en-us` (or other language implementations).
@@ -97,7 +101,7 @@ Ask: "Where does this belong?" before implementing new features.
 Stories are organized by **regions**, with each region as a folder containing:
 
 ```
-stories/{story}/src/regions/{region}/
+stories/{story}/src/regions/{region}.ts
 ├── index.ts           # Exports room creators, connection function, region IDs
 ├── rooms/
 │   ├── room-one.ts    # One file per room
@@ -112,13 +116,17 @@ stories/{story}/src/regions/{region}/
 
 - **One room per TypeScript file** in `rooms/` folder
 - Room files export a `createXxxRoom(world: WorldModel): IFEntity` function
-- Region `index.ts` imports all room creators, creates them, and connects exits
-- Objects are created in `objects/index.ts` and placed in their rooms
+- Region `{region-name}.ts` contains everything in that region (rooms, objects, etc)
 - NPCs go in `stories/{story}/src/npcs/{npc-name}/` with entity, behavior, and messages files
+- **AuthorModel for setup**: When placing objects inside closed containers during world initialization, use `AuthorModel` (wraps WorldModel) to skip validation. Normal WorldModel operations enforce game rules (can't put items in closed containers), but setup code needs to bypass this.
 
 ## Current Work: Project Dungeo (Dec 2025)
 
 Dog-fooding Sharpee by implementing full Mainframe Zork (~191 rooms).
+
+**Canonical Source**: `docs/dungeon-81/mdlzork_810722/` is the authoritative reference for all game data (treasure values, room connections, puzzle mechanics). When referencing treasure values:
+- `OFVAL` (object find value) → `treasureValue` (points for taking)
+- `OTVAL` (object trophy value) → `trophyCaseValue` (points for putting in trophy case)
 
 **Documentation**: See `/docs/work/dungeo/` for:
 
@@ -319,6 +327,27 @@ Since "turn switch" is puzzle-specific (not a generic IF verb), Option B is corr
 - **DO NOT** use `2>&1` with pnpm commands - they don't work together properly
 - Preferred format: `pnpm --filter '@sharpee/stdlib' test <test-name>`
 
+### Build Scripts (Use These!)
+
+**IMPORTANT**: Use these scripts instead of manual `pnpm build` commands to avoid WSL permission issues:
+
+```bash
+# Full build of all dungeo dependencies (use when packages change)
+./scripts/build-all-dungeo.sh
+
+# Bundle everything into single sharpee.js (fast rebuilds)
+./scripts/bundle-sharpee.sh
+
+# Fast transcript testing (uses bundled sharpee.js)
+./scripts/fast-transcript-test.sh stories/dungeo/tests/transcripts/navigation.transcript
+```
+
+**Workflow**:
+
+1. After changing platform packages, run `./scripts/build-all-dungeo.sh`
+2. For story-only changes, run `./scripts/bundle-sharpee.sh`
+3. Test with `./scripts/fast-transcript-test.sh <transcript-file>`
+
 ### Transcript Testing (ADR-073)
 
 Story integration tests use `.transcript` files run by `@sharpee/transcript-tester`:
@@ -330,9 +359,32 @@ node packages/transcript-tester/dist/cli.js stories/dungeo --all
 # Run specific transcript
 node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/transcripts/navigation.transcript
 
-# Verbose output
+# Chain multiple transcripts (game state persists between them)
+node packages/transcript-tester/dist/cli.js stories/dungeo --chain \
+  stories/dungeo/tests/transcripts/wt-01-get-torch-early.transcript \
+  stories/dungeo/tests/transcripts/wt-02-bank-puzzle.transcript
+
+# Verbose output (show all output and events)
 node packages/transcript-tester/dist/cli.js stories/dungeo --all --verbose
+
+# Stop on first failure
+node packages/transcript-tester/dist/cli.js stories/dungeo --all --stop-on-failure
+
+# Interactive play mode (REPL)
+node packages/transcript-tester/dist/cli.js stories/dungeo --play
 ```
+
+**CLI Flags:**
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--all` | `-a` | Run all transcripts in story's tests/ directory |
+| `--chain` | `-c` | Chain transcripts (don't reset game state between them) |
+| `--verbose` | `-v` | Show detailed output for each command |
+| `--stop-on-failure` | `-s` | Stop on first failure |
+| `--play` | `-p` | Interactive play mode (REPL) |
+| `--output-dir <dir>` | `-o` | Write timestamped results to directory |
+
+**Important**: Walkthrough transcripts (wt-\*) must be run with `--chain` flag to preserve game state.
 
 Transcripts live in `stories/{story}/tests/transcripts/*.transcript`
 

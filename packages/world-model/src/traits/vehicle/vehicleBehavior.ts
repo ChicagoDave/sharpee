@@ -140,6 +140,10 @@ export function canActorLeaveLocation(
 /**
  * Check if an actor in a vehicle can use GO/walk commands.
  * Some vehicles block walking movement entirely.
+ *
+ * Returns:
+ * - canWalk: true if actor can use GO commands (not in vehicle, or in walkable vehicle)
+ * - vehicle: the vehicle entity if actor is in one (undefined if not in a vehicle)
  */
 export function canActorWalkInVehicle(
   world: WorldModel,
@@ -153,12 +157,14 @@ export function canActorWalkInVehicle(
 
   const vehicleTrait = vehicle.get(TraitType.VEHICLE) as VehicleTrait | undefined;
   if (!vehicleTrait) {
-    return { canWalk: true };
+    // In something with no VehicleTrait - treat as blocking container
+    return { canWalk: false, vehicle };
   }
 
   if (vehicleTrait.blocksWalkingMovement) {
     return { canWalk: false, vehicle };
   }
 
-  return { canWalk: true };
+  // In a walkable vehicle - return the vehicle so caller knows player is in one
+  return { canWalk: true, vehicle };
 }

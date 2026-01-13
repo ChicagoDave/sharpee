@@ -27,27 +27,35 @@ description: Get painting from Gallery, skeleton key from maze, solve cyclops. C
 
 # ============================================================================
 # GOAL: Navigate maze to get skeleton key and incense
-# Path: S → Maze-1 → E → Maze-2 → E → Dead End-1 (get key + incense)
+# Path per 1981 MDL: S → MAZE1 → E → MAZE4 → W → MAZE3 → UP → MAZE5 (get items)
+# Items are in MAZE5 (not Dead End per old implementation)
 # ============================================================================
 
 [GOAL: Get skeleton key and incense from maze]
 [ENSURES: inventory contains "key"]
 [ENSURES: inventory contains "incense"]
 
+# South to Maze-1
 > south
 [OK: contains "Maze"]
 
+# East to Maze-4
 > east
 [OK: contains "Maze"]
 
-> east
-[OK: contains "Dead End"]
+# West to Maze-3
+> west
+[OK: contains "Maze"]
+
+# Up to Maze-5 (where skeleton, coins, key, knife are per 1981 MDL)
+> up
+[OK: contains "Maze"]
 
 # Get the incense first (thief doesn't care about it)
 > take incense
 [OK: matches /(Taken|take)/i]
 
-# Get the skeleton key - now we have room after dropping sword
+# Get the skeleton key
 > take key
 [OK: matches /(Taken|take)/i]
 
@@ -55,30 +63,24 @@ description: Get painting from Gallery, skeleton key from maze, solve cyclops. C
 
 # ============================================================================
 # GOAL: Navigate maze to Cyclops Room
-# Path: S → Maze-2 → W → Maze-4 → U → Maze-15 → E → Dead End-3 →
-#       U → Maze-8 → W → Maze-9 → NE → Cyclops Room
+# Path per 1981 MDL: MAZE5 SW → MAZE6 E → MAZE7 S → MAZ15 NE → CYCLO
 # ============================================================================
 
 [GOAL: Get to Cyclops Room]
 
+# Southwest to Maze-6
+> southwest
+[OK: contains "Maze"]
+
+# East to Maze-7
+> east
+[OK: contains "Maze"]
+
+# South to Maze-15
 > south
 [OK: contains "Maze"]
 
-> west
-[OK: contains "Maze"]
-
-> up
-[OK: contains "Maze"]
-
-> east
-[OK: contains "Dead End"]
-
-> up
-[OK: contains "Maze"]
-
-> west
-[OK: contains "Maze"]
-
+# Northeast to Cyclops Room
 > northeast
 [OK: contains "Cyclops Room"]
 

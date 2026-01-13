@@ -1,12 +1,12 @@
 /**
  * Dam Puzzle Handler - Reservoir Exit Management
  *
- * Integrates with dam-fuse.ts to handle reservoir walkability:
+ * Integrates with dam-state.ts to handle reservoir walkability:
  * - When dam is drained → reservoir exits unblocked
  * - When dam is closed → reservoir exits blocked
  *
- * The press-button and turn-bolt actions use dam-fuse.ts state (DAM_STATE_KEY).
- * This handler adds the reservoir exit blocking/unblocking logic.
+ * Dam draining is INSTANT per FORTRAN source. This handler listens for
+ * dungeo.dam.opened/closed events from turn-bolt action.
  */
 
 import {
@@ -17,7 +17,7 @@ import {
   IdentityTrait
 } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
-import { DAM_STATE_KEY, DamState, isYellowButtonPressed, isDamDrained } from '../scheduler/dam-fuse';
+import { isYellowButtonPressed, isDamDrained } from '../scheduler/dam-state';
 
 // Message IDs for dam puzzle
 export const DamMessages = {
@@ -209,22 +209,16 @@ export function registerReservoirExitHandler(
   reservoirId = roomIds.reservoir;
   reservoirNorthId = roomIds.reservoirNorth;
 
-  // Listen for fuse triggered events to catch dam draining completion
-  world.registerEventHandler('scheduler.fuse.triggered', (event: ISemanticEvent, w: IWorldModel): void => {
-    const data = event.data as Record<string, any> | undefined;
-    if (!data) return;
+  // Block reservoir exits initially (dam closed = flooded)
+  blockReservoirExits(world);
 
-    // Check if this is the trunk revealed event (dam fully drained)
-    if (data.trunkRevealed === true) {
-      // Dam is fully drained - unblock reservoir exits
-      unblockReservoirExits(w);
-      updateReservoirDescriptions(w, true);
-    }
+  // Listen for dam opened event (instant draining)
+  world.registerEventHandler('dungeo.dam.opened', (event: ISemanticEvent, w: IWorldModel): void => {
+    openDam(w);
   });
 
   // Listen for dam closed event (player turned bolt to close)
   world.registerEventHandler('dungeo.dam.closed', (event: ISemanticEvent, w: IWorldModel): void => {
-    // Dam closed - re-block reservoir exits and update descriptions
     closeDam(w);
   });
 }

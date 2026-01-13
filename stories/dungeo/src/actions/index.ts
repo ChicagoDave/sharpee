@@ -124,6 +124,9 @@ export * from './deflate';
 // River Blocked (entering river without boat)
 export * from './river-blocked';
 
+// Launch (launch boat into river)
+export * from './launch';
+
 // Falls Death (any action except LOOK at Aragain Falls)
 export * from './falls-death';
 
@@ -168,7 +171,7 @@ import { tieAction, TIE_ACTION_ID, TieMessages } from './tie';
 import { untieAction, UNTIE_ACTION_ID, UntieMessages } from './untie';
 import { balloonExitAction, BALLOON_EXIT_ACTION_ID, BalloonExitMessages } from '../handlers/balloon-handler';
 import { pressButtonAction, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler } from './press-button';
-import { turnBoltAction, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler } from './turn-bolt';
+import { turnBoltAction, TURN_BOLT_ACTION_ID, TurnBoltMessages } from './turn-bolt';
 import { turnSwitchAction, TURN_SWITCH_ACTION_ID, TurnSwitchMessages } from './turn-switch';
 import { putUnderAction, PUT_UNDER_ACTION_ID, PutUnderMessages } from './put-under';
 import { pushKeyAction, PUSH_KEY_ACTION_ID, PushKeyMessages } from './push-key';
@@ -179,10 +182,11 @@ import { deflateAction, DEFLATE_ACTION_ID, DeflateMessages } from './deflate';
 import { riverBlockedAction, RIVER_BLOCKED_ACTION_ID, RiverBlockedMessages } from './river-blocked';
 import { fallsDeathAction, FALLS_DEATH_ACTION_ID, FallsDeathMessages } from './falls-death';
 import { commandingAction, COMMANDING_ACTION_ID, CommandingMessages } from './commanding';
+import { launchAction, LAUNCH_ACTION_ID, LaunchMessages } from './launch';
 
 // Re-export press-button, turn-bolt, and turn-switch
 export { PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler } from './press-button';
-export { TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler } from './turn-bolt';
+export { TURN_BOLT_ACTION_ID, TurnBoltMessages } from './turn-bolt';
 export { TURN_SWITCH_ACTION_ID, TurnSwitchMessages } from './turn-switch';
 
 // Re-export balloon exit for use in index.ts
@@ -209,6 +213,7 @@ export { DEFLATE_ACTION_ID, DeflateMessages } from './deflate';
 // Re-export river navigation actions for use in index.ts
 export { RIVER_BLOCKED_ACTION_ID, RiverBlockedMessages } from './river-blocked';
 export { FALLS_DEATH_ACTION_ID, FallsDeathMessages } from './falls-death';
+export { LAUNCH_ACTION_ID, LaunchMessages } from './launch';
 
 // Re-export commanding action for use in index.ts
 export { COMMANDING_ACTION_ID, CommandingMessages } from './commanding';
@@ -256,5 +261,6 @@ export const customActions = [
   deflateAction,
   riverBlockedAction,
   fallsDeathAction,
-  commandingAction
+  commandingAction,
+  launchAction
 ];

@@ -20,7 +20,10 @@ import {
   DirectionType,
   SceneryTrait,
   OpenableTrait,
-  ReadableTrait
+  ReadableTrait,
+  ContainerTrait,
+  LockableTrait,
+  AuthorModel
 } from '@sharpee/world-model';
 
 export interface BankRoomIds {
@@ -219,6 +222,7 @@ export function createBankObjects(world: WorldModel, roomIds: BankRoomIds): void
   createPortrait(world, roomIds.chairmansOffice);
   createZorkmidBills(world, roomIds.vault);
   createZorkmidCoin(world, roomIds.smallRoom);
+  createSafe(world, roomIds.chairmansOffice);  // Safe with Crown inside
 
   // Scenery
   createStoneCube(world, roomIds.safetyDeposit);
@@ -248,7 +252,8 @@ function createPortrait(world: WorldModel, roomId: string): IFEntity {
   }));
   (portrait as any).isTreasure = true;
   (portrait as any).treasureId = 'portrait';
-  (portrait as any).treasureValue = 10;
+  (portrait as any).treasureValue = 10;    // OFVAL from mdlzork_810722
+  (portrait as any).trophyCaseValue = 5;   // OTVAL from mdlzork_810722
   world.moveEntity(portrait.id, roomId);
   return portrait;
 }
@@ -265,7 +270,8 @@ function createZorkmidBills(world: WorldModel, roomId: string): IFEntity {
   }));
   (bills as any).isTreasure = true;
   (bills as any).treasureId = 'zorkmid-bills';
-  (bills as any).treasureValue = 15;
+  (bills as any).treasureValue = 10;       // OFVAL from mdlzork_810722
+  (bills as any).trophyCaseValue = 15;     // OTVAL from mdlzork_810722
   world.moveEntity(bills.id, roomId);
   return bills;
 }
@@ -282,9 +288,52 @@ function createZorkmidCoin(world: WorldModel, roomId: string): IFEntity {
   }));
   (coin as any).isTreasure = true;
   (coin as any).treasureId = 'zorkmid-coin';
-  (coin as any).treasureValue = 5;
+  (coin as any).treasureValue = 10;        // OFVAL from mdlzork_810722
+  (coin as any).trophyCaseValue = 12;      // OTVAL from mdlzork_810722
   world.moveEntity(coin.id, roomId);
   return coin;
+}
+
+/**
+ * Create the safe containing Lord Dimwit's Crown
+ * In 1981 MDL: SAFE object contains CROWN and CARD (warning note)
+ */
+function createSafe(world: WorldModel, roomId: string): IFEntity {
+  // Steel safe - container that holds the crown
+  const safe = world.createEntity('safe', EntityType.ITEM);
+  safe.add(new IdentityTrait({
+    name: 'safe',
+    aliases: ['safe', 'steel safe', 'box', 'steel box'],
+    description: 'A massive steel safe, the kind used to store valuable items. It has a complex combination lock.',
+    properName: false,
+    article: 'a'
+  }));
+  safe.add(new ContainerTrait({ capacity: { maxItems: 5 } }));
+  safe.add(new OpenableTrait({ isOpen: false }));
+  safe.add(new LockableTrait({ isLocked: true }));
+  safe.add(new SceneryTrait());  // Too heavy to take
+  world.moveEntity(safe.id, roomId);
+
+  // Lord Dimwit Flathead's Crown - treasure inside the safe
+  const crown = world.createEntity('crown', EntityType.ITEM);
+  crown.add(new IdentityTrait({
+    name: 'crown',
+    aliases: ['crown', 'gaudy crown', "lord dimwit's crown", 'flathead crown'],
+    description: "The excessively gaudy crown of Lord Dimwit Flathead. It is encrusted with diamonds, rubies, and other precious gems, all in questionable taste.",
+    properName: false,
+    article: 'a',
+    weight: 10
+  }));
+  (crown as any).isTreasure = true;
+  (crown as any).treasureId = 'crown';
+  (crown as any).treasureValue = 15;       // OFVAL from mdlzork_810722
+  (crown as any).trophyCaseValue = 10;     // OTVAL from mdlzork_810722
+
+  // Use AuthorModel to place crown in closed safe (bypasses validation)
+  const author = new AuthorModel(world.getDataStore(), world);
+  author.moveEntity(crown.id, safe.id);
+
+  return safe;
 }
 
 // ============= Scenery =============

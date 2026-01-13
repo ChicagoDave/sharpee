@@ -174,10 +174,14 @@ export function createUndergroundRegion(world: WorldModel): UndergroundRoomIds {
   setExits(torchRoom, {
     [Direction.UP]: domeRoom.id,
     [Direction.DOWN]: northSouthCrawlway.id,
+    [Direction.WEST]: tinyRoom.id,
   });
 
-  setExits(tinyRoom, { [Direction.EAST]: drearyRoom.id });
-  setExits(drearyRoom, { [Direction.WEST]: tinyRoom.id });
+  setExits(tinyRoom, {
+    [Direction.EAST]: torchRoom.id,
+    [Direction.NORTH]: drearyRoom.id,  // Blocked by locked door
+  });
+  setExits(drearyRoom, { [Direction.SOUTH]: tinyRoom.id });
 
   // West of Chasm connections handled by Bank region
 
@@ -356,8 +360,8 @@ function createGalleryObjects(world: WorldModel, roomId: string): void {
   }));
   (painting as any).isTreasure = true;
   (painting as any).treasureId = 'painting';
-  (painting as any).treasureValue = 4;
-  (painting as any).trophyCaseValue = 7;
+  (painting as any).treasureValue = 4;     // OFVAL from mdlzork_810722
+  (painting as any).trophyCaseValue = 7;   // OTVAL from mdlzork_810722
   world.moveEntity(painting.id, roomId);
 }
 
@@ -428,7 +432,8 @@ function createTorchRoomObjects(world: WorldModel, roomId: string): void {
   torch.add(new SwitchableTrait({ isOn: false }));
   (torch as any).isTreasure = true;
   (torch as any).treasureId = 'ivory-torch';
-  (torch as any).treasureValue = 6;
+  (torch as any).treasureValue = 14;       // OFVAL from mdlzork_810722
+  (torch as any).trophyCaseValue = 6;      // OTVAL from mdlzork_810722
   world.moveEntity(torch.id, roomId);
 }
 
@@ -488,7 +493,7 @@ function createDrearyRoomObjects(world: WorldModel, roomId: string): void {
   }));
   (sphere as any).isTreasure = true;
   (sphere as any).treasureId = 'blue-crystal-sphere';
-  (sphere as any).treasureValue = 10;
-  (sphere as any).trophyCaseValue = 5;
+  (sphere as any).treasureValue = 10;      // OFVAL from mdlzork_810722
+  (sphere as any).trophyCaseValue = 5;     // OTVAL from mdlzork_810722
   world.moveEntity(sphere.id, roomId);
 }

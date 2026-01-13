@@ -546,6 +546,10 @@ export function connectRoyalPuzzleToTreasureRoom(
 // ============================================================================
 
 function createGoldCard(world: WorldModel): IFEntity {
+  // NOTE: This "gold card" does NOT exist in 1981 MDL.
+  // In MDL, the CARD is a warning note about explosives (not a treasure).
+  // The treasure in the safe is the CROWN (Lord Dimwit's crown).
+  // Keeping this as a non-treasure item for now.
   const card = world.createEntity('gold card', EntityType.ITEM);
 
   card.add(new IdentityTrait({
@@ -557,11 +561,8 @@ function createGoldCard(world: WorldModel): IFEntity {
     weight: 2
   }));
 
-  // Mark as treasure
-  (card as any).isTreasure = true;
-  (card as any).treasureId = 'gold-card';
-  (card as any).treasureValue = 10;      // Points for taking
-  (card as any).trophyCaseValue = 15;    // Additional points in trophy case
+  // NOT a treasure - this item doesn't exist in 1981 MDL
+  // TODO: Replace with Crown treasure from MDL
 
   return card;
 }

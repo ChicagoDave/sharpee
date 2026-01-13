@@ -23,22 +23,22 @@ export interface OpenedEventData {
 
 /**
  * Data for the 'if.event.revealed' event
- * 
- * Emitted for each item that becomes accessible when a container is opened.
- * One event per item to maintain atomicity.
+ *
+ * Emitted when a container is opened to list all revealed contents.
+ * Items can be any entity type (objects, scenery, etc.)
  */
 export interface RevealedEventData {
-  /** ID of the item that was revealed */
-  itemId: EntityId;
-  
-  /** Name of the item that was revealed */
-  itemName: string;
-  
-  /** ID of the container that was opened to reveal this item */
+  /** ID of the container that was opened */
   containerId: EntityId;
-  
+
   /** Name of the container (for context) */
   containerName: string;
+
+  /** List of revealed items with their message IDs for display */
+  items: Array<{
+    entityId: EntityId;
+    messageId: string;
+  }>;
 }
 
 /**

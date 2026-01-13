@@ -1,0 +1,70 @@
+title: Coffin and Trident Treasure Retrieval
+story: dungeo
+description: Retrieve gold coffin and crystal trident treasures using GDT teleport
+
+---
+
+# Get coffin and trident treasures, put in trophy case
+
+## Setup
+> gdt
+[OK: contains "GDT ready"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+## Get coffin from Egyptian Room
+> ah egyptian room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning to game"]
+
+> turn on lantern
+[OK: contains "switches on"]
+
+> look
+[OK: contains "coffin"]
+
+> get coffin
+[OK: contains "Taken"]
+
+## Get trident from Atlantis Room
+> gdt
+[OK: contains "GDT ready"]
+
+> ah atlantis room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning to game"]
+
+> look
+[OK: contains "trident"]
+
+> get trident
+[OK: contains "Taken"]
+
+## Put treasures in trophy case
+> gdt
+[OK: contains "GDT ready"]
+
+> ah living room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning to game"]
+
+> open trophy case
+[OK: contains "open"]
+
+> put coffin in trophy case
+[OK: contains "put"]
+[OK: contains "coffin"]
+
+> put trident in trophy case
+[OK: contains "put"]
+[OK: contains "trident"]
+
+> score
+[OK: contains "7"]

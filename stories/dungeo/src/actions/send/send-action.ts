@@ -86,10 +86,11 @@ Enclosed please find a valuable collector's stamp as a FREE gift!
     article: 'a'
   }));
 
-  // Treasure scoring
+  // Treasure scoring (1 take + 0 case = 1 point) - DSTMP in 1981 MDL
   (stamp as any).isTreasure = true;
   (stamp as any).treasureId = 'don-woods-stamp';
-  (stamp as any).treasureValue = 1;
+  (stamp as any).treasureValue = 1;       // OTVAL from 1981 MDL
+  (stamp as any).trophyCaseValue = 0;     // OFVAL from 1981 MDL
 
   // Place stamp inside brochure
   world.moveEntity(stamp.id, brochure.id);

@@ -19,7 +19,8 @@ import {
   lookingEventDataConfig,
   roomDescriptionDataConfig,
   listContentsDataConfig,
-  determineLookingMessage
+  determineLookingMessage,
+  ContainerContentsInfo
 } from './looking-data';
 import { LookingMessages } from './looking-messages';
 
@@ -96,7 +97,27 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
       messageId,
       params
     }));
-    
+
+    // Add messages for container/supporter contents
+    const openContainerContents = listData.openContainerContents as ContainerContentsInfo[] | undefined;
+    if (openContainerContents && openContainerContents.length > 0) {
+      for (const containerInfo of openContainerContents) {
+        const contentsMessageId = containerInfo.preposition === 'in'
+          ? 'container_contents'
+          : 'surface_contents';
+        const containerKey = containerInfo.preposition === 'in' ? 'container' : 'surface';
+
+        events.push(context.event('action.success', {
+          actionId: context.action.id,
+          messageId: contentsMessageId,
+          params: {
+            [containerKey]: containerInfo.containerName,
+            items: containerInfo.itemNames.join(', ')
+          }
+        }));
+      }
+    }
+
     return events;
   },
 

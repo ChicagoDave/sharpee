@@ -1,6 +1,6 @@
-title: Tomb and Crypt Navigation
+title: Tomb Navigation (Entry to Hades Area)
 story: dungeo
-description: Test navigation to Tomb and Crypt (endgame entry rooms)
+description: Test navigation from Land of the Dead to Tomb of Unknown Implementer
 
 ---
 
@@ -11,49 +11,35 @@ description: Test navigation to Tomb and Crypt (endgame entry rooms)
 > tk brass lantern
 [OK: contains "taken"]
 
+> ah Land of the Dead
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
 > turn on lantern
 [OK: contains "on"]
 
-# Teleport to Land of the Dead
-> gdt
-[OK: contains "GDT"]
-
-> ah Land of the Dead
-[OK: contains "Teleported"]
-[EVENT: true, type="action.success"]
-
 > look
-[OK: contains "Land of the Dead"]
-[OK: contains "ghostly"]
+[OK: contains "Land"]
+[OK: contains "Dead"]
 
-# Go south to Tomb
-> south
+# Go EAST to Tomb (per map-connections.md: Land of Living Dead → E → Tomb)
+> east
 [OK: contains "Tomb"]
-[OK: contains "Unknown Implementer"]
+[OK: contains "Implementer"]
 
-# Examine the crypt door
-> examine door
-[OK: contains "heavy"]
-[OK: contains "marble"]
-
-# Open the crypt door
-> open door
-[OK: contains "open"]
-
-# Go north into Crypt
-> north
+# Examine the tomb - should mention the Crypt within its description
+> look
+[OK: contains "Tomb"]
 [OK: contains "Crypt"]
-[OK: contains "empty"]
 [OK: contains "Feel Free"]
 
-# Go back south to Tomb
-> south
-[OK: contains "Tomb"]
+# Go back WEST to Land of the Dead
+> west
+[OK: contains "Land"]
+[OK: contains "Dead"]
 
-# Close the door from Tomb side
-> close door
-[OK: contains "close"]
-
-# Verify we can still open it
-> open door
-[OK: contains "open"]
+# Go WEST again to Entry to Hades
+> west
+[OK: contains "Hades"]

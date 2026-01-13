@@ -297,7 +297,7 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
 
   // Default scope requirements for this action's slots
   defaultScope: {
-    item: ScopeLevel.CARRIED,
+    item: ScopeLevel.REACHABLE,  // REACHABLE allows implicit take
     target: ScopeLevel.REACHABLE
   },
 
@@ -322,7 +322,7 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
   metadata: {
     requiresDirectObject: true,
     requiresIndirectObject: true,
-    directObjectScope: ScopeLevel.CARRIED,
+    directObjectScope: ScopeLevel.REACHABLE,  // REACHABLE allows implicit take
     indirectObjectScope: ScopeLevel.REACHABLE
   },
 

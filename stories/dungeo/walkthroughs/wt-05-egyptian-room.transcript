@@ -1,6 +1,6 @@
-title: Egyptian Room (Coffin and Sceptre)
+title: Egyptian Room (Gold Coffin)
 story: dungeo
-description: Get gold coffin and sceptre from Egyptian Room. Chain after dam-reservoir.
+description: Get gold coffin from Egyptian Room. Chain after dam-reservoir.
 ---
 
 # ============================================================================
@@ -44,32 +44,21 @@ description: Get gold coffin and sceptre from Egyptian Room. Chain after dam-res
 [END GOAL]
 
 # ============================================================================
-# GOAL: Get coffin and sceptre
-# Coffin is a container with sceptre inside, need to open it
+# GOAL: Get gold coffin
+# In mainframe Zork, the coffin is the treasure (not a container with sceptre)
 # ============================================================================
 
-[GOAL: Get coffin and sceptre]
+[GOAL: Get gold coffin]
 [ENSURES: inventory contains "coffin"]
-[ENSURES: inventory contains "sceptre"]
 
 > look
 [OK: contains "coffin"]
-
-> open coffin
-[OK: matches /(open|Opening)/i]
-
-> look in coffin
-[OK: contains "sceptre"]
-
-> take sceptre
-[OK: matches /(Taken|take)/i]
 
 > take coffin
 [OK: matches /(Taken|take)/i]
 
 > inventory
 [OK: contains "coffin"]
-[OK: contains "sceptre"]
 
 [END GOAL]
 
@@ -102,9 +91,7 @@ description: Get gold coffin and sceptre from Egyptian Room. Chain after dam-res
 [END GOAL]
 
 # ============================================================================
-# GOAL: Store treasures and setup for next segment
-# Keep sceptre - needed for rainbow puzzle at Aragain Falls
-# Store coffin in trophy case
+# GOAL: Store treasure in trophy case
 # ============================================================================
 
 [GOAL: Store coffin in trophy case]
@@ -119,7 +106,6 @@ description: Get gold coffin and sceptre from Egyptian Room. Chain after dam-res
 
 # ============================================================================
 # GOAL: Verify final state
-# Keep: torch (light/treasure), lantern (backup), sceptre (rainbow puzzle)
 # ============================================================================
 
 [GOAL: Verify inventory for next segment]
@@ -127,7 +113,6 @@ description: Get gold coffin and sceptre from Egyptian Room. Chain after dam-res
 > inventory
 [OK: contains "torch"]
 [OK: contains "lantern"]
-[OK: contains "sceptre"]
 
 > look
 [OK: contains "Living Room"]
@@ -137,5 +122,5 @@ description: Get gold coffin and sceptre from Egyptian Room. Chain after dam-res
 
 # SUCCESS! Egyptian Room complete
 # Treasures stored: coffin (+ previous 5)
-# Player in Living Room with torch + lantern + sceptre
-# Ready for next segment (River & Falls - need sceptre for rainbow)
+# Player in Living Room with torch + lantern
+# Ready for next segment

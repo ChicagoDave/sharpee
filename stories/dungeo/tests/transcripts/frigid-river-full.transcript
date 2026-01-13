@@ -1,0 +1,264 @@
+title: Frigid River Full Navigation
+story: dungeo
+description: Full Frigid River test - boat from Dam Base to End of Rainbow via dig and wave
+
+---
+
+# Setup - get lamp and pump via GDT
+> gdt
+[OK: contains "GDT"]
+
+# Give ourselves the lamp
+> tk brass lantern
+[OK: contains "Taken"]
+
+# Give ourselves the pump
+> tk hand pump
+[OK: contains "Taken"]
+
+# Teleport to Dam Base where boat is located
+> ah Dam Base
+[OK: contains "Dam Base"]
+
+> ex
+[OK: contains "Returning"]
+
+# Turn on lamp for light
+> turn on lantern
+[OK: matches /(on|already)/i]
+
+# ============================================================================
+# TEST: Verify boat, stick, and water scenery at Dam Base
+# ============================================================================
+
+> look
+[OK: contains "Dam Base"]
+[OK: matches /(plastic|boat|pile)/i]
+[OK: contains "stick"]
+
+# Examine the water scenery
+> x water
+[OK: matches /(Frigid River|river|cliffs)/i]
+
+# ============================================================================
+# TEST: Inflate boat and put stick in it (not carry!)
+# ============================================================================
+
+> inflate boat
+[OK: matches /(inflate|seaworthy)/i]
+
+# Take stick then put in boat BEFORE boarding (carrying it would puncture the boat)
+# Note: Implicit take not working - explicit take required
+> get stick
+[OK: contains "Taken"]
+
+> put stick in boat
+[OK: matches /(Done|put|boat)/i]
+
+# Board the boat
+> board boat
+[OK: matches /(board|enter|get in|boat)/i]
+
+# ============================================================================
+# TEST: Launch and navigate downstream
+# ============================================================================
+
+# Launch into the river
+> launch
+[OK: matches /(river|launch|Frigid)/i]
+
+# Verify we're on Frigid River 1
+> look
+[OK: contains "Frigid River"]
+[OK: matches /dam|landing/i]
+
+# Go downstream (D) to FR2 - buoy is here
+> d
+[OK: contains "Frigid River"]
+[OK: matches /cliffs|rocks/i]
+
+# Get the buoy
+> get buoy
+[OK: matches /(Taken|buoy)/i]
+
+# Open the buoy to get emerald
+> open buoy
+[OK: matches /(open|buoy)/i]
+
+# Get the emerald
+> get emerald
+[OK: matches /(Taken|emerald)/i]
+
+# Drop the buoy (goes into boat since we're in it)
+> drop buoy
+[OK: matches /(Done|drop|put|boat)/i]
+
+# ============================================================================
+# TEST: Land at Rocky Shore and get shovel from Small Cave
+# ============================================================================
+
+# Go downstream to FR3 - has landings E/W (Rocky Shore west)
+> d
+[OK: contains "Frigid River"]
+[OK: matches /beach|shore/i]
+
+# Land west at Rocky Shore
+> w
+[OK: contains "Rocky Shore"]
+
+# Disembark
+> disembark
+[OK: matches /(exit|leave|feet|disembark|get out)/i]
+
+# Go NW to Small Cave
+> nw
+[OK: contains "Small Cave"]
+
+# Get the shovel
+> get shovel
+[OK: contains "Taken"]
+
+# Go back S to Rocky Shore
+> s
+[OK: contains "Rocky Shore"]
+
+# Board boat again
+> board boat
+[OK: matches /(board|enter|get in|boat)/i]
+
+# ============================================================================
+# TEST: Navigate to Sandy Beach and dig for statue
+# ============================================================================
+
+# Go downstream (east exit from Rocky Shore leads to FR3, but we need to launch)
+> launch
+[OK: matches /(river|launch|Frigid)/i]
+
+# Go downstream to FR4 - Sandy Beach is west
+> d
+[OK: contains "Frigid River"]
+[OK: matches /sandy|beach/i]
+
+# Land west at Sandy Beach
+> w
+[OK: contains "Sandy Beach"]
+
+# Disembark
+> disembark
+[OK: matches /(exit|leave|feet|disembark|get out)/i]
+
+# Dig for the statue (buried at Sandy Beach)
+> dig
+[OK: matches /(dig|hole)/i]
+
+> dig
+[OK: matches /(dig|hole|deeper)/i]
+
+> dig
+[OK: matches /(dig|wall|sand)/i]
+
+> dig
+[OK: matches /(statue|see)/i]
+
+# Get the statue
+> get statue
+[OK: contains "Taken"]
+
+# Get the stick from the boat (we put it there earlier)
+> get stick
+[OK: matches /(Taken|stick)/i]
+
+# ============================================================================
+# TEST: Navigate to Aragain Falls and wave stick
+# ============================================================================
+
+# Go south to Shore
+> s
+[OK: contains "Shore"]
+
+# Go south to Aragain Falls
+> s
+[OK: contains "Aragain Falls"]
+
+# Wave the stick to solidify rainbow (we got stick from boat at Sandy Beach)
+> wave stick
+[OK: matches /(rainbow|solid|shimmering)/i]
+
+# ============================================================================
+# TEST: Cross rainbow to End of Rainbow and get pot of gold
+# ============================================================================
+
+# Go east onto rainbow
+> e
+[OK: matches /(Rainbow|solid)/i]
+
+# Continue east to End of Rainbow
+> e
+[OK: contains "End of Rainbow"]
+
+# Get the pot of gold
+> get pot
+[OK: matches /(Taken|pot|gold)/i]
+
+# ============================================================================
+# TEST: Return via land route
+# ============================================================================
+
+# Go southeast to Canyon Bottom
+> se
+[OK: matches /(Canyon|climbable)/i]
+
+# Go up to Rocky Ledge
+> u
+[OK: matches /(Ledge|Canyon)/i]
+
+# Go up to Canyon View
+> u
+[OK: matches /(Canyon|forest)/i]
+
+# Go west to Forest Path 3
+> w
+[OK: matches /(forest|path)/i]
+
+# Go west to Forest Path 2
+> w
+[OK: matches /(forest|path|clearing)/i]
+
+# Go west to Clearing
+> w
+[OK: matches /(clearing|forest)/i]
+
+# Go south to Forest Path 1
+> s
+[OK: matches /(forest|path)/i]
+
+# Go south to North of House
+> s
+[OK: matches /(House|north)/i]
+
+# Go east to Behind House
+> e
+[OK: matches /(Behind|House)/i]
+
+# Go west to Kitchen
+> w
+[OK: matches /(Kitchen|window)/i]
+
+# Go west to Living Room
+> w
+[OK: matches /(Living Room|trophy)/i]
+
+# Open trophy case
+> open trophy case
+[OK: matches /(Opened|open|trophy)/i]
+
+# Put treasures in trophy case
+> put emerald in trophy case
+[OK: matches /(Done|put)/i]
+
+> put statue in trophy case
+[OK: matches /(Done|put)/i]
+
+# We made it from Dam Base to Living Room with treasures!
+> look
+[OK: contains "Living Room"]

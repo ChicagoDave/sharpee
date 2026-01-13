@@ -27,9 +27,9 @@ description: Tests LIGHT, TIE, UNTIE grammar patterns and basic action flow
 > look at balloon
 [OK: contains "braided wire"]
 
-## Try tie without being in balloon - should fail
+## Try tie without being in balloon - should fail (no railing to tie to)
 > tie wire
-[OK: contains "not_in_balloon"]
+[OK: contains "no_railing"]
 
 ## Enter the balloon
 > enter balloon

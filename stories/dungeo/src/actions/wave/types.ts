@@ -1,7 +1,7 @@
 /**
  * Wave Action Types
  *
- * Used for waving items, primarily the sceptre at Aragain Falls
+ * Used for waving items, primarily the sharp stick at Aragain Falls
  * to create a rainbow bridge to the pot of gold.
  */
 

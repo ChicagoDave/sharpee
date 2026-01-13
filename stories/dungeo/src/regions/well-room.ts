@@ -81,7 +81,7 @@ and all the king's horses can't draw it up?'
     'This is a low room with passages leading in several directions.');
 
   const machineRoom = createRoom(world, 'Machine Room',
-    'This is a large room filled with strange machinery. A passage leads west.');
+    'This is a large room filled with strange machinery. A small triangular button is set into the wall. A passage leads west.');
 
   const dingyCloset = createRoom(world, 'Dingy Closet',
     'This is a small, dingy closet. A door leads south.');
@@ -280,7 +280,8 @@ function createSilverChalice(world: WorldModel, roomId: string): IFEntity {
   }));
   (chalice as any).isTreasure = true;
   (chalice as any).treasureId = 'silver-chalice';
-  (chalice as any).treasureValue = 10;
+  (chalice as any).treasureValue = 10;    // OTVAL from 1981 MDL
+  (chalice as any).trophyCaseValue = 10;  // OFVAL from 1981 MDL
   world.moveEntity(chalice.id, roomId);
   return chalice;
 }
@@ -299,7 +300,8 @@ function createPearl(world: WorldModel, roomId: string): IFEntity {
   }));
   (pearl as any).isTreasure = true;
   (pearl as any).treasureId = 'pearl';
-  (pearl as any).treasureValue = 15;
+  (pearl as any).treasureValue = 9;        // OFVAL from mdlzork_810722
+  (pearl as any).trophyCaseValue = 5;      // OTVAL from mdlzork_810722
   world.moveEntity(pearl.id, roomId);
   return pearl;
 }

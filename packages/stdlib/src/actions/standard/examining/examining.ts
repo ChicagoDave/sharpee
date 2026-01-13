@@ -83,10 +83,10 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
     const eventData = buildEventData(examiningDataConfig, context);
 
     // Get message parameters from the data
-    const { messageId, params } = buildExaminingMessageParams(eventData, noun);
+    const { messageId, params, contentsMessage } = buildExaminingMessageParams(eventData, noun);
 
-    // Return both the domain event and success message
-    return [
+    // Build events array
+    const events: ISemanticEvent[] = [
       context.event('if.event.examined', eventData),
       context.event('action.success', {
         actionId: context.action.id,
@@ -94,6 +94,17 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
         params: params
       })
     ];
+
+    // Add contents message for containers/supporters with visible items
+    if (contentsMessage) {
+      events.push(context.event('action.success', {
+        actionId: context.action.id,
+        messageId: contentsMessage.messageId,
+        params: contentsMessage.params
+      }));
+    }
+
+    return events;
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {

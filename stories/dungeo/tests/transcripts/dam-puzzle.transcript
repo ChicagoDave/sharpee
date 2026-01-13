@@ -4,26 +4,51 @@ description: Tests the button/bolt mechanism for draining the reservoir
 
 ---
 
-# Setup: Get to Dam with wrench
+# Setup: Get lantern and wrench via GDT
 > gdt
 [OK: contains "GDT"]
+
 > tk brass lantern
 [OK: contains "Taken"]
+
 > tk wrench
 [OK: contains "Taken"]
 
-# Go to maintenance room and press yellow button using just "yellow"
+# Go to maintenance room
 > ah Maintenance Room
 [OK: contains "Maintenance Room"]
+
+> ex
+[OK: contains "Returning"]
+
+# Turn on lantern so we can see
+> turn on lantern
+[OK: contains "on"]
+
+# Verify we're in the maintenance room
 > look
+[OK: contains "Maintenance Room"]
 [OK: contains "panel"]
+
+# Press yellow button
 > press yellow
 [OK: contains "Click"]
 
-# Go to Dam and turn bolt - test just "turn bolt" first
-> ah Dam
-[OK: contains "Dam"]
+# Go to Dam via GDT
+> gdt
+[OK: contains "GDT"]
+
+> ah Flood Control Dam #3
+[OK: contains "Flood Control Dam"]
+
+> ex
+[OK: contains "Returning"]
+
+# Verify dam is visible
 > look
+[OK: contains "Flood Control Dam"]
 [OK: contains "bolt"]
+
+# Turn the bolt to open sluice gates
 > turn bolt
 [OK: contains "sluice gates"]

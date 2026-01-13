@@ -52,6 +52,13 @@ export class IdentityTrait implements ITrait {
    */
   grammaticalNumber?: 'singular' | 'plural';
 
+  /**
+   * Adjectives that can be used to refer to this entity (ADR-093).
+   * Used for disambiguation when multiple entities share a noun.
+   * Example: ['yellow'] for "yellow button" vs ['red'] for "red button"
+   */
+  adjectives: string[] = [];
+
   constructor(data?: Partial<IdentityTrait>) {
     if (data) {
       Object.assign(this, data);

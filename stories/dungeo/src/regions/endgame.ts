@@ -192,6 +192,15 @@ export function createEndgameRegion(world: WorldModel): EndgameRoomIds {
 
   setExits(parapet, { [Direction.SOUTH]: eastWestCorridor.id });
 
+  // Entry to Hades area connections (per map-connections.md)
+  setExits(entryToHades, { [Direction.EAST]: landOfDead.id });
+  setExits(landOfDead, {
+    [Direction.WEST]: entryToHades.id,
+    [Direction.EAST]: tomb.id,
+  });
+  setExits(tomb, { [Direction.WEST]: landOfDead.id });
+  // Note: Crypt is described within Tomb but not a separate room in mainframe Zork
+
   // prisonCell - exits handled dynamically by dial puzzle
   // treasury - no exits, game ends on entry
 
