@@ -27,7 +27,8 @@ import {
   CommandHistoryEntry,
   IFActions,
   MetaCommandRegistry,
-  IPerceptionService
+  IPerceptionService,
+  registerStandardChains
 } from '@sharpee/stdlib';
 import { LanguageProvider, IEventProcessorWiring } from '@sharpee/if-domain';
 import { TextService, TextServiceContext, TextOutput } from '@sharpee/if-services';
@@ -153,6 +154,10 @@ export class GameEngine {
       }
     };
     this.world.connectEventProcessor(wiring);
+
+    // Register standard event chains (ADR-094)
+    // Must happen after EventProcessor is connected so chains are wired
+    registerStandardChains(this.world);
 
     this.platformEvents = createSemanticEventSource();
     this.scheduler = createSchedulerService();

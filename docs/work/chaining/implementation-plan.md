@@ -167,90 +167,60 @@ Add exports for new types.
 - Test chain depth limit
 - Test metadata propagation
 
-## Phase 2: Standard Chains in Stdlib
+## Phase 2: Standard Chains in Stdlib ✅ COMPLETE
+
+**Completed**: 2026-01-13
+**Tests**: 15 passing
+
+**Implementation Notes**:
+- Chain key is `stdlib.chain.opened-revealed` (not `stdlib.opened.reveal`)
+- Entities use standard fields: `target` for container, `others` for items (ISemanticEvent constraint)
+- Registration happens in GameEngine constructor after `connectEventProcessor()`
+- Test file: `packages/stdlib/tests/unit/chains/opened-revealed.test.ts`
 
 ### 2.1 Create Opened→Revealed Chain
 
 **File:** `packages/stdlib/src/chains/opened-revealed.ts`
 
-```typescript
-import { ISemanticEvent, IWorldModel } from '@sharpee/world-model';
-import { TraitType } from '@sharpee/world-model';
-
-export const OPENED_REVEALED_CHAIN_KEY = 'stdlib.opened.reveal';
-
-export function createOpenedRevealedChain() {
-  return (event: ISemanticEvent, world: IWorldModel): ISemanticEvent | null => {
-    const { targetId, targetName } = event.data as { targetId: string; targetName: string };
-
-    const target = world.getEntity(targetId);
-    if (!target?.has(TraitType.CONTAINER)) {
-      return null;
-    }
-
-    const contents = world.getContents(targetId);
-    if (contents.length === 0) {
-      return null;
-    }
-
-    return {
-      id: `revealed-${Date.now()}`,
-      type: 'if.event.revealed',
-      timestamp: Date.now(),
-      entities: { container: targetId },
-      data: {
-        containerId: targetId,
-        containerName: targetName,
-        items: contents.map(item => ({
-          entityId: item.id,
-          messageId: item.name // TODO: proper message ID resolution
-        }))
-      }
-    };
-  };
-}
-```
+- Created `createOpenedRevealedChain()` factory function
+- Checks if target is a container with contents
+- Returns `null` for non-containers or empty containers
+- Generates `if.event.revealed` with `RevealedEventData`
+- Uses `entities.target` for container ID, `entities.others` for item IDs
 
 ### 2.2 Register Standard Chains
 
 **File:** `packages/stdlib/src/chains/index.ts`
 
-```typescript
-import { WorldModel } from '@sharpee/world-model';
-import { createOpenedRevealedChain, OPENED_REVEALED_CHAIN_KEY } from './opened-revealed';
-
-export function registerStandardChains(world: WorldModel): void {
-  world.chainEvent(
-    'if.event.opened',
-    createOpenedRevealedChain(),
-    { key: OPENED_REVEALED_CHAIN_KEY, priority: 100 }
-  );
-}
-
-export { OPENED_REVEALED_CHAIN_KEY };
-```
+- Created `registerStandardChains(world)` function
+- Registers opened→revealed chain with priority 100
+- Exports chain key for story overrides
 
 ### 2.3 Wire Registration into Engine
 
 **File:** `packages/engine/src/game-engine.ts`
 
-In `setStory()` or initialization, call `registerStandardChains(world)`.
+- Added import for `registerStandardChains`
+- Called in constructor after `world.connectEventProcessor(wiring)`
+- Comment explains dependency on EventProcessor connection
 
-### 2.4 Update Opening Action
+### 2.4 Export from Stdlib
 
-**File:** `packages/stdlib/src/actions/standard/opening/opening.ts`
+**File:** `packages/stdlib/src/index.ts`
 
-Remove the inline revealed event emission (already done in this session).
-Add comment pointing to chain.
+- Added `export * from './chains';`
 
 ### 2.5 Tests
 
-**File:** `packages/stdlib/tests/chains/opened-revealed.test.ts`
+**File:** `packages/stdlib/tests/unit/chains/opened-revealed.test.ts`
 
-- Test revealed event emitted when container opened
-- Test no event for non-containers
-- Test no event for empty containers
-- Test items array populated correctly
+15 tests covering:
+- Basic behavior (container with contents, non-containers, empty containers)
+- Multiple items handling
+- Event data structure (entities, id, type, timestamp)
+- Item messageId resolution (name fallback to id)
+- Chain key constant
+- Container name fallback from world
 
 ## Phase 3: Language Layer Support
 
@@ -295,19 +265,24 @@ world.getRegisteredChains(): Map<string, { key?: string; priority: number }[]>
 
 ## File Changes Summary
 
-### New Files
-- `packages/stdlib/src/chains/opened-revealed.ts`
-- `packages/stdlib/src/chains/index.ts`
-- `packages/lang-en-us/src/events/revealed.ts`
-- `packages/world-model/tests/event-chaining.test.ts`
-- `packages/stdlib/tests/chains/opened-revealed.test.ts`
+### New Files (Phase 1)
+- `packages/world-model/tests/unit/world/event-chaining.test.ts` ✅
 
-### Modified Files
-- `packages/world-model/src/world/WorldModel.ts` - Add chainEvent API
-- `packages/world-model/src/index.ts` - Export new types
-- `packages/engine/src/game-engine.ts` - Register standard chains
-- `packages/stdlib/src/actions/standard/opening/opening.ts` - Already updated
-- `packages/stdlib/src/index.ts` - Export chains module
+### New Files (Phase 2)
+- `packages/stdlib/src/chains/opened-revealed.ts` ✅
+- `packages/stdlib/src/chains/index.ts` ✅
+- `packages/stdlib/tests/unit/chains/opened-revealed.test.ts` ✅
+
+### New Files (Phase 3 - pending)
+- `packages/lang-en-us/src/events/revealed.ts`
+
+### Modified Files (Phase 1)
+- `packages/world-model/src/world/WorldModel.ts` - Add chainEvent API ✅
+- `packages/world-model/src/world/index.ts` - Export new types ✅
+
+### Modified Files (Phase 2)
+- `packages/engine/src/game-engine.ts` - Register standard chains ✅
+- `packages/stdlib/src/index.ts` - Export chains module ✅
 
 ## Testing Strategy
 
