@@ -38,6 +38,49 @@ export type EventHandler = (event: ISemanticEvent, world: IWorldModel) => void;
 export type EventValidator = (event: ISemanticEvent, world: IWorldModel) => boolean;
 export type EventPreviewer = (event: ISemanticEvent, world: IWorldModel) => WorldChange[];
 
+// Event chaining types (ADR-094)
+/**
+ * Chain handler - returns events to emit (or null/empty to skip).
+ * Unlike regular event handlers, chain handlers produce new events.
+ */
+export type EventChainHandler = (
+  event: ISemanticEvent,
+  world: IWorldModel
+) => ISemanticEvent | ISemanticEvent[] | null | undefined | void;
+
+/**
+ * Options for chain registration
+ */
+export interface ChainEventOptions {
+  /**
+   * How to handle existing chains for this trigger:
+   * - 'cascade' (default): Add to existing chains, all fire
+   * - 'override': Replace ALL existing chains for this trigger
+   */
+  mode?: 'cascade' | 'override';
+
+  /**
+   * Unique key for this chain. Chains with same key replace each other.
+   * Useful for stdlib to define replaceable defaults.
+   */
+  key?: string;
+
+  /**
+   * Priority for ordering when multiple chains fire (lower = earlier)
+   * Default: 100
+   */
+  priority?: number;
+}
+
+/**
+ * Internal chain registration record
+ */
+interface ChainRegistration {
+  handler: EventChainHandler;
+  key?: string;
+  priority: number;
+}
+
 // Re-export domain types for backward compatibility
 export {
   WorldState,
@@ -118,6 +161,21 @@ export interface IWorldModel {
    */
   connectEventProcessor(wiring: IEventProcessorWiring): void;
 
+  /**
+   * Register an event chain handler (ADR-094).
+   * Chain handlers produce new events when a trigger event occurs.
+   * Unlike regular handlers, chains return events to be emitted.
+   *
+   * @param triggerType - The event type that triggers this chain
+   * @param handler - Function that receives the trigger event and returns new events
+   * @param options - Chain registration options (mode, key, priority)
+   */
+  chainEvent(
+    triggerType: string,
+    handler: EventChainHandler,
+    options?: ChainEventOptions
+  ): void;
+
   applyEvent(event: ISemanticEvent): void;
   canApplyEvent(event: ISemanticEvent): boolean;
   previewEvent(event: ISemanticEvent): WorldChange[];
@@ -168,6 +226,9 @@ export class WorldModel implements IWorldModel {
   private appliedEvents: ISemanticEvent[] = [];
   private eventProcessorWiring: IEventProcessorWiring | null = null;
   private maxEventHistory = 1000; // Configurable limit
+
+  // Event chaining support (ADR-094)
+  private eventChains = new Map<string, ChainRegistration[]>();
 
   private platformEvents?: ISemanticEventSource;
 
@@ -862,6 +923,7 @@ export class WorldModel implements IWorldModel {
     this.idCounters.clear();
     this.capabilities = {};
     this.grammarVocabularyProvider.clear();
+    this.eventChains.clear();
   }
 
   // Event Sourcing Implementation
@@ -890,7 +952,7 @@ export class WorldModel implements IWorldModel {
 
   /**
    * Connect this WorldModel to the engine's EventProcessor (ADR-086).
-   * Wires all existing handlers and enables automatic wiring for future handlers.
+   * Wires all existing handlers and chains, and enables automatic wiring for future ones.
    */
   connectEventProcessor(wiring: IEventProcessorWiring): void {
     this.eventProcessorWiring = wiring;
@@ -898,6 +960,11 @@ export class WorldModel implements IWorldModel {
     // Wire all existing handlers
     for (const [eventType, handler] of this.eventHandlers) {
       this.wireHandlerToProcessor(eventType, handler);
+    }
+
+    // Wire all existing chains (ADR-094)
+    for (const triggerType of this.eventChains.keys()) {
+      this.wireChainToProcessor(triggerType);
     }
   }
 
@@ -914,6 +981,113 @@ export class WorldModel implements IWorldModel {
     };
 
     this.eventProcessorWiring.registerHandler(eventType, adaptedHandler);
+  }
+
+  /**
+   * Register an event chain handler (ADR-094).
+   * Chain handlers produce new events when a trigger event occurs.
+   */
+  chainEvent(
+    triggerType: string,
+    handler: EventChainHandler,
+    options: ChainEventOptions = {}
+  ): void {
+    const { mode = 'cascade', key, priority = 100 } = options;
+
+    const registration: ChainRegistration = { handler, key, priority };
+
+    if (!this.eventChains.has(triggerType)) {
+      this.eventChains.set(triggerType, []);
+    }
+
+    const chains = this.eventChains.get(triggerType)!;
+
+    if (mode === 'override') {
+      // Replace all existing chains
+      this.eventChains.set(triggerType, [registration]);
+    } else if (key) {
+      // Replace chain with same key, or add
+      const existingIndex = chains.findIndex(c => c.key === key);
+      if (existingIndex >= 0) {
+        chains[existingIndex] = registration;
+      } else {
+        chains.push(registration);
+      }
+    } else {
+      // Cascade - just add
+      chains.push(registration);
+    }
+
+    // Sort by priority (lower = earlier)
+    chains.sort((a, b) => a.priority - b.priority);
+
+    // Wire to EventProcessor if connected
+    if (this.eventProcessorWiring) {
+      this.wireChainToProcessor(triggerType);
+    }
+  }
+
+  /**
+   * Wire chains for a trigger type to the EventProcessor.
+   * Chain handlers return events to be emitted.
+   */
+  private wireChainToProcessor(triggerType: string): void {
+    if (!this.eventProcessorWiring) return;
+
+    // Register a handler that invokes all chains and returns their events
+    this.eventProcessorWiring.registerHandler(triggerType, (event) => {
+      return this.executeChains(triggerType, event);
+    });
+  }
+
+  /**
+   * Execute all chains for a trigger type and collect their events.
+   */
+  private executeChains(triggerType: string, event: ISemanticEvent): ISemanticEvent[] {
+    const chains = this.eventChains.get(triggerType) || [];
+    const results: ISemanticEvent[] = [];
+
+    // Get current chain depth from trigger event's data
+    const triggerData = (event.data || {}) as Record<string, unknown>;
+    const currentDepth = (triggerData._chainDepth as number) || 0;
+
+    for (const chain of chains) {
+      const chainedEvents = chain.handler(event, this);
+
+      if (chainedEvents) {
+        const eventsArray = Array.isArray(chainedEvents) ? chainedEvents : [chainedEvents];
+
+        // Add chain metadata to each event
+        for (const chainedEvent of eventsArray) {
+          const newDepth = currentDepth + 1;
+
+          // Safety: prevent infinite loops (max depth 10)
+          if (newDepth > 10) {
+            console.warn(`Chain depth exceeded for ${chainedEvent.type}, skipping`);
+            continue;
+          }
+
+          // Ensure the event has required fields and add chain metadata to data
+          const existingData = (chainedEvent.data || {}) as Record<string, unknown>;
+          const enrichedEvent: ISemanticEvent = {
+            id: chainedEvent.id || `chain-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            type: chainedEvent.type,
+            timestamp: chainedEvent.timestamp || Date.now(),
+            entities: chainedEvent.entities || {},
+            data: {
+              ...existingData,
+              _chainedFrom: event.type,
+              _chainSourceId: event.id,
+              _chainDepth: newDepth
+            }
+          };
+
+          results.push(enrichedEvent);
+        }
+      }
+    }
+
+    return results;
   }
 
   applyEvent(event: ISemanticEvent): void {

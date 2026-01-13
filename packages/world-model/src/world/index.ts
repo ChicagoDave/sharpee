@@ -10,7 +10,10 @@ export {
   WorldChange,
   EventHandler,
   EventValidator,
-  EventPreviewer
+  EventPreviewer,
+  // Event chaining types (ADR-094)
+  EventChainHandler,
+  ChainEventOptions
 } from './WorldModel';
 
 // Re-export grammar vocabulary types from if-domain for convenience

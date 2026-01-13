@@ -10,7 +10,15 @@ Enable authors to define event chains where one event automatically triggers rel
 - `if.event.opened` → `if.event.revealed` (container contents)
 - Story-specific chains (traps, machines, puzzles)
 
-## Phase 1: Core API in WorldModel
+## Phase 1: Core API in WorldModel ✅ COMPLETE
+
+**Completed**: 2026-01-13
+**Tests**: 23 passing
+
+**Implementation Notes**:
+- Chain metadata stored in `data._chainedFrom`, `data._chainSourceId`, `data._chainDepth` (not `meta` - ISemanticEvent doesn't have that field)
+- Types exported from `packages/world-model/src/world/index.ts`
+- Test file: `packages/world-model/tests/unit/world/event-chaining.test.ts`
 
 ### 1.1 Add Types
 
