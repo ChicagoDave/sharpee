@@ -1,23 +1,34 @@
 /**
  * Text Service
  *
- * Single text service that:
- * - Receives semantic events
- * - Resolves templates via LanguageProvider
- * - Parses decorations into structured tree
- * - Outputs ITextBlock[]
+ * Orchestrates the text output pipeline:
+ * 1. Filter - remove system events
+ * 2. Sort - order events for prose (ADR-094)
+ * 3. Process - route to handlers
+ * 4. Assemble - create ITextBlock with decorations
  *
  * Inspired by FyreVM channel I/O (2009).
  *
  * @see ADR-096 Text Service Architecture
  */
 
-import type { ITextBlock, TextContent } from '@sharpee/text-blocks';
+import type { ITextBlock } from '@sharpee/text-blocks';
 import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { TextServiceContext } from '@sharpee/if-services';
 import type { LanguageProvider } from '@sharpee/if-domain';
 import type { ISemanticEvent } from '@sharpee/core';
-import { parseDecorations, hasDecorations } from './decoration-parser';
+
+// Pipeline stages
+import { filterEvents } from './stages/filter.js';
+import { sortEventsForProse } from './stages/sort.js';
+import { createBlock } from './stages/assemble.js';
+
+// Event handlers
+import type { HandlerContext } from './handlers/types.js';
+import { handleRoomDescription } from './handlers/room.js';
+import { handleActionSuccess, handleActionFailure } from './handlers/action.js';
+import { handleRevealed } from './handlers/revealed.js';
+import { handleGameMessage, handleGenericEvent } from './handlers/generic.js';
 
 /**
  * Text service interface
@@ -50,45 +61,22 @@ export interface ITextService {
 }
 
 /**
- * Event data interfaces
+ * State change events that don't produce text output.
+ * The corresponding action.success event provides the message.
  */
-interface RoomDescriptionData {
-  roomId?: string;
-  verbose?: boolean;
-  room?: {
-    id: string;
-    name: string;
-    description?: string;
-  };
-  roomName?: string;
-  roomDescription?: string;
-}
-
-interface ActionSuccessData {
-  actionId: string;
-  messageId: string;
-  params?: Record<string, unknown>;
-  message?: string;
-  text?: string;
-}
-
-interface ActionFailureData {
-  actionId?: string;
-  messageId?: string;
-  params?: Record<string, unknown>;
-  reason?: string;
-  message?: string;
-}
-
-interface GameMessageData {
-  text?: string;
-  message?: string;
-  messageId?: string;
-  params?: Record<string, unknown>;
-}
+const STATE_CHANGE_EVENTS = new Set([
+  'if.event.opened',
+  'if.event.closed',
+  'if.event.locked',
+  'if.event.unlocked',
+  'if.event.switched_on',
+  'if.event.switched_off',
+]);
 
 /**
  * TextService implementation
+ *
+ * Orchestrates the pipeline: filter → sort → process → assemble
  */
 export class TextService implements ITextService {
   private context?: TextServiceContext;
@@ -108,14 +96,22 @@ export class TextService implements ITextService {
 
   processTurn(): ITextBlock[] {
     if (!this.context) {
-      return [this.createBlock(BLOCK_KEYS.ERROR, '[ERROR] No context initialized')];
+      return [createBlock(BLOCK_KEYS.ERROR, '[ERROR] No context initialized')];
     }
 
+    // Pipeline: filter → sort → process
     const events = this.context.getCurrentTurnEvents();
-    const blocks: ITextBlock[] = [];
+    const filtered = filterEvents(events);
+    const sorted = sortEventsForProse(filtered);
 
-    for (const event of events) {
-      const eventBlocks = this.processEvent(event);
+    // Process each event through handlers
+    const handlerContext: HandlerContext = {
+      languageProvider: this.languageProvider,
+    };
+
+    const blocks: ITextBlock[] = [];
+    for (const event of sorted) {
+      const eventBlocks = this.routeToHandler(event, handlerContext);
       blocks.push(...eventBlocks);
     }
 
@@ -127,170 +123,35 @@ export class TextService implements ITextService {
   }
 
   /**
-   * Process a single event into TextBlocks
+   * Route event to appropriate handler
    */
-  private processEvent(event: ISemanticEvent): ITextBlock[] {
-    // Skip system events
-    if (event.type.startsWith('system.')) {
+  private routeToHandler(event: ISemanticEvent, context: HandlerContext): ITextBlock[] {
+    // Skip state change events (action.success provides the message)
+    if (STATE_CHANGE_EVENTS.has(event.type)) {
       return [];
     }
 
     switch (event.type) {
       case 'if.event.room_description':
       case 'if.event.room.description':
-        return this.processRoomDescription(event);
+        return handleRoomDescription(event, context);
 
       case 'action.success':
-        return this.processActionSuccess(event);
+        return handleActionSuccess(event, context);
 
       case 'action.failure':
       case 'action.blocked':
-        return this.processActionFailure(event);
+        return handleActionFailure(event, context);
 
       case 'game.message':
-        return this.processGameMessage(event);
+        return handleGameMessage(event, context);
+
+      case 'if.event.revealed':
+        return handleRevealed(event, context);
 
       default:
-        // Skip unknown events
-        return [];
+        return handleGenericEvent(event, context);
     }
-  }
-
-  /**
-   * Process room description event
-   */
-  private processRoomDescription(event: ISemanticEvent): ITextBlock[] {
-    const data = event.data as RoomDescriptionData;
-    const blocks: ITextBlock[] = [];
-
-    // Room name (if verbose)
-    if (data.verbose) {
-      const name = data.room?.name ?? data.roomName;
-      if (name) {
-        const resolvedName = this.extractValue(name);
-        if (resolvedName) {
-          blocks.push(this.createBlock(BLOCK_KEYS.ROOM_NAME, resolvedName));
-        }
-      }
-    }
-
-    // Room description
-    const description = data.room?.description ?? data.roomDescription;
-    if (description) {
-      const resolvedDesc = this.extractValue(description);
-      if (resolvedDesc) {
-        blocks.push(this.createBlock(BLOCK_KEYS.ROOM_DESCRIPTION, resolvedDesc));
-      }
-    }
-
-    return blocks;
-  }
-
-  /**
-   * Process action success event
-   */
-  private processActionSuccess(event: ISemanticEvent): ITextBlock[] {
-    const data = event.data as ActionSuccessData;
-
-    // Try to get message from language provider
-    if (data.messageId && this.languageProvider) {
-      const fullMessageId = data.actionId
-        ? `${data.actionId}.${data.messageId}`
-        : data.messageId;
-
-      let message = this.languageProvider.getMessage(fullMessageId, data.params);
-
-      // Fallback to just messageId
-      if (message === fullMessageId && data.messageId) {
-        message = this.languageProvider.getMessage(data.messageId, data.params);
-      }
-
-      if (message !== data.messageId && message !== fullMessageId) {
-        return [this.createBlock(BLOCK_KEYS.ACTION_RESULT, message)];
-      }
-    }
-
-    // Fallback to data in event
-    const text = data.message ?? data.text;
-    if (text) {
-      return [this.createBlock(BLOCK_KEYS.ACTION_RESULT, text)];
-    }
-
-    return [];
-  }
-
-  /**
-   * Process action failure event
-   */
-  private processActionFailure(event: ISemanticEvent): ITextBlock[] {
-    const data = event.data as ActionFailureData;
-
-    // Try language provider
-    if (data.messageId && this.languageProvider) {
-      const fullMessageId = data.actionId
-        ? `${data.actionId}.${data.messageId}`
-        : data.messageId;
-
-      const message = this.languageProvider.getMessage(fullMessageId, data.params);
-
-      if (message !== data.messageId && message !== fullMessageId) {
-        return [this.createBlock(BLOCK_KEYS.ACTION_BLOCKED, message)];
-      }
-    }
-
-    // Fallback
-    const text = (data.params as { reason?: string })?.reason ?? data.reason ?? data.message ?? "You can't do that.";
-    return [this.createBlock(BLOCK_KEYS.ACTION_BLOCKED, text)];
-  }
-
-  /**
-   * Process game message event
-   */
-  private processGameMessage(event: ISemanticEvent): ITextBlock[] {
-    const data = event.data as GameMessageData;
-
-    // Try language provider
-    if (data.messageId && this.languageProvider) {
-      const message = this.languageProvider.getMessage(data.messageId, data.params);
-      if (message && message !== data.messageId) {
-        return [this.createBlock(BLOCK_KEYS.GAME_MESSAGE, message)];
-      }
-    }
-
-    const text = data.text ?? data.message;
-    if (text) {
-      return [this.createBlock(BLOCK_KEYS.GAME_MESSAGE, text)];
-    }
-
-    return [];
-  }
-
-  /**
-   * Create a TextBlock, parsing decorations if present
-   */
-  private createBlock(key: string, text: string): ITextBlock {
-    // Parse decorations if present
-    const content: TextContent[] = hasDecorations(text)
-      ? parseDecorations(text)
-      : [text];
-
-    return { key, content };
-  }
-
-  /**
-   * Extract value from provider function or direct value
-   */
-  private extractValue(value: unknown): string | null {
-    if (typeof value === 'function') {
-      try {
-        const result = value();
-        return result ? String(result) : null;
-      } catch {
-        return null;
-      }
-    }
-
-    return value ? String(value) : null;
   }
 }
 

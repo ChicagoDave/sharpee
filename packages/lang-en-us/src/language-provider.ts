@@ -14,6 +14,13 @@ import {
   DEFAULT_NARRATIVE_CONTEXT,
   resolvePerspectivePlaceholders,
 } from './perspective';
+import {
+  createFormatterRegistry,
+  formatMessage as formatWithFormatters,
+  FormatterRegistry,
+  FormatterContext,
+  EntityInfo,
+} from './formatters';
 
 // Types are now imported from @sharpee/if-domain
 
@@ -32,7 +39,15 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
   // Narrative context for perspective-aware message resolution (ADR-089)
   private narrativeContext: NarrativeContext = DEFAULT_NARRATIVE_CONTEXT;
 
+  // Formatter registry for {a:item}, {items:list}, etc. (ADR-095)
+  private formatterRegistry: FormatterRegistry;
+
+  // Entity lookup function for formatters (set by engine)
+  private entityLookup?: (id: string) => EntityInfo | undefined;
+
   constructor() {
+    // Initialize formatter registry
+    this.formatterRegistry = createFormatterRegistry();
     // Load all action messages
     this.loadActionMessages();
     // NPC messages are injected at runtime by the story + engine (ADR-070)
@@ -75,10 +90,12 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
   /**
    * Get a message by its ID with optional parameter substitution
    *
-   * Supports two types of placeholders:
+   * Supports three types of placeholders:
    * 1. Perspective placeholders (ADR-089): {You}, {your}, {take}, etc.
    *    - Resolved based on narrative context (1st/2nd/3rd person)
-   * 2. Parameter placeholders: {item}, {target}, etc.
+   * 2. Formatted placeholders (ADR-095): {a:item}, {items:list}, etc.
+   *    - Applies formatters before substitution
+   * 3. Simple placeholders: {item}, {target}, etc.
    *    - Replaced with values from params object
    *
    * @param messageId Full message ID (e.g., 'if.action.taking.taken')
@@ -96,15 +113,49 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     // This handles {You}, {your}, {take}, etc.
     message = resolvePerspectivePlaceholders(message, this.narrativeContext);
 
-    // Step 2: Perform parameter substitution
+    // Step 2: Apply formatters and substitute parameters (ADR-095)
     if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        const placeholder = `{${key}}`;
-        message = message!.replace(new RegExp(placeholder, 'g'), String(value));
-      });
+      const context: FormatterContext = {
+        getEntity: this.entityLookup,
+      };
+      message = formatWithFormatters(message, params, this.formatterRegistry, context);
     }
 
     return message;
+  }
+
+  /**
+   * Set entity lookup function for formatters (ADR-095)
+   *
+   * This allows formatters to look up entity info (nounType, etc.)
+   * for proper article selection.
+   *
+   * @param lookup Function that returns EntityInfo for an entity ID
+   */
+  setEntityLookup(lookup: (id: string) => EntityInfo | undefined): void {
+    this.entityLookup = lookup;
+  }
+
+  /**
+   * Register a custom formatter (ADR-095)
+   *
+   * Stories can register custom formatters for special formatting needs.
+   *
+   * @param name Formatter name (used in templates as {name:placeholder})
+   * @param formatter Formatter function
+   */
+  registerFormatter(
+    name: string,
+    formatter: (value: any, context: FormatterContext) => string
+  ): void {
+    this.formatterRegistry.set(name, formatter);
+  }
+
+  /**
+   * Get the formatter registry (for testing or advanced use)
+   */
+  getFormatterRegistry(): FormatterRegistry {
+    return this.formatterRegistry;
   }
   
   /**
