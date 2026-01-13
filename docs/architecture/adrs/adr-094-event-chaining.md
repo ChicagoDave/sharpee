@@ -346,6 +346,47 @@ chainedEvent.meta = {
 - Multiple chains on same event type are processed in registration order
 - Chained events can themselves trigger chains (up to depth limit)
 
+## Event Metadata
+
+All events within a single player action share a `transactionId`. This enables:
+- Grouping related events for prose rendering
+- Correct ordering (action result before consequences)
+- Debugging/tracing event flow
+
+### Metadata Fields
+
+```typescript
+interface EventMeta {
+  /** Groups all events from one player action */
+  transactionId: string;
+
+  /** The event type that triggered this chain (if chained) */
+  chainedFrom?: string;
+
+  /** How deep in the chain (0 = original, 1 = first chain, etc.) */
+  chainDepth: number;
+}
+```
+
+### Transaction Flow
+
+```
+Player: "open chest"
+
+Transaction: txn-abc-123
+├── action.success    { transactionId: 'txn-abc-123', chainDepth: 0 }
+├── if.event.opened   { transactionId: 'txn-abc-123', chainDepth: 0 }
+└── if.event.revealed { transactionId: 'txn-abc-123', chainDepth: 1, chainedFrom: 'if.event.opened' }
+```
+
+### Engine Responsibility
+
+Engine assigns `transactionId` at the start of each player action. All events
+emitted during that action (including chained events) inherit the same ID.
+
+TextService uses `transactionId` to group events and `chainDepth` to sort them
+for correct prose ordering (see ADR-096).
+
 ## Examples
 
 ### Story: Trap Triggered by Movement

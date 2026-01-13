@@ -135,56 +135,83 @@ React client routes `status.*` blocks to designated slots.
 
 Single service implementation replacing fragmented packages.
 
+### Engine Integration
+
+**The Engine calls TextService** - it does not listen for events.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         ENGINE                               │
+│                                                              │
+│  1. Player command processed                                 │
+│  2. Actions emit events → EventSource accumulates            │
+│  3. Event chains fire → more events accumulate               │
+│  4. Turn completes                                           │
+│  5. Engine calls textService.processTurn(events)             │
+│  6. TextService returns ITextBlock[]                         │
+│  7. Engine emits 'turn-complete' with blocks to Client       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+This push model means:
+- TextService is a stateless transformer
+- Engine owns event accumulation and ordering
+- Chained events are already interleaved when TextService processes them
+- TextService just maps events → TextBlocks in order
+
 ### Interface
 
 ```typescript
 export interface ITextService {
   /**
-   * Initialize with game context
+   * Process turn events and produce TextBlocks.
+   * Called by Engine after turn completes.
+   *
+   * @param events - All events from this turn (including chained events)
+   * @returns TextBlocks for client rendering
    */
-  initialize(context: TextServiceContext): void;
-
-  /**
-   * Set the language provider for template resolution
-   */
-  setLanguageProvider(provider: LanguageProvider): void;
-
-  /**
-   * Process current turn events and produce TextBlocks
-   */
-  processTurn(): ITextBlock[];
+  processTurn(events: ISemanticEvent[]): ITextBlock[];
 }
+
+/**
+ * Create a TextService with the given LanguageProvider.
+ * LanguageProvider supplies templates (standard + story-registered).
+ */
+export function createTextService(languageProvider: LanguageProvider): ITextService;
 ```
+
+### Dependencies
+
+TextService depends only on `LanguageProvider`:
+- No context object needed
+- LanguageProvider supplies templates via `formatMessage(key, data)`
+- Templates come from stdlib (standard) and story (author-registered)
 
 ### Processing Pipeline
 
+For each event in the input array:
+
 ```
-Semantic Events
+ISemanticEvent
     │
     ▼
 ┌─────────────────────────────────────────┐
 │ 1. Event Filtering                      │
 │    Skip system.* events                 │
-│    Group by type                        │
+│    Skip events with no template         │
 └─────────────────────────────────────────┘
     │
     ▼
 ┌─────────────────────────────────────────┐
-│ 2. Template Lookup                      │
-│    event.messageId → template           │
-│    Use LanguageProvider.getTemplate()   │
+│ 2. Template Lookup + Formatter Resolution│
+│    key = event.type (e.g., 'if.event.revealed')
+│    text = languageProvider.formatMessage(key, event.data)
+│    Returns text with decoration markers │
 └─────────────────────────────────────────┘
     │
     ▼
 ┌─────────────────────────────────────────┐
-│ 3. Formatter Resolution                 │
-│    {a:item} → "a sword"                 │
-│    Decorations markers preserved        │
-└─────────────────────────────────────────┘
-    │
-    ▼
-┌─────────────────────────────────────────┐
-│ 4. Decoration Parsing                   │
+│ 3. Decoration Parsing                   │
 │    [item:sword] → IDecoration           │
 │    *emphasis* → IDecoration             │
 │    Build content tree                   │
@@ -192,14 +219,18 @@ Semantic Events
     │
     ▼
 ┌─────────────────────────────────────────┐
-│ 5. Block Assembly                       │
+│ 4. Block Assembly                       │
 │    Assign key based on event type       │
+│    (see Event to Key Mapping below)     │
 │    Create ITextBlock                    │
 └─────────────────────────────────────────┘
     │
     ▼
-ITextBlock[]
+ITextBlock (appended to output)
 ```
+
+**Note**: Steps 2 (template lookup + formatters) happen in `LanguageProvider.formatMessage()`.
+TextService only handles steps 1, 3, and 4. See ADR-095 for formatter details.
 
 ### Decoration Parser
 
@@ -243,17 +274,25 @@ Handles:
 
 ### Event-Based Model
 
-Engine emits one event per turn with all blocks:
+After processing, Engine emits blocks to Client:
 
 ```typescript
-// Engine side
+// Inside Engine (simplified)
+const blocks = textService.processTurn(events);
+this.emit('turn-complete', blocks);
+
+// Client side
 engine.on('turn-complete', (blocks: ITextBlock[]) => {
   // All blocks for this turn - commands, daemons, NPCs, everything
+  // Includes results from chained events in correct order
 });
 
 // Submit command
 engine.submitCommand(input: string): void;
 ```
+
+**Key point**: Client receives blocks from Engine, not from TextService directly.
+This keeps TextService as a pure transformer with no client coupling.
 
 ### One Stream, Many Channels
 
@@ -268,6 +307,79 @@ function handleTurnComplete(blocks: ITextBlock[]) {
   appendToTranscript(transcriptBlocks);
 }
 ```
+
+## Event Chaining Integration (ADR-094)
+
+Event chains produce events that TextService renders as prose.
+
+### Example: Opening a Container
+
+```
+Player: "open chest"
+
+Events accumulated by Engine (emission order):
+1. if.event.opened      { meta: { transactionId: 'txn-1', chainDepth: 0 } }
+2. if.event.revealed    { meta: { transactionId: 'txn-1', chainDepth: 1, chainedFrom: 'if.event.opened' } }
+3. action.success       { meta: { transactionId: 'txn-1', chainDepth: 0 } }
+
+TextService sorts for prose order:
+1. action.success       → "You open the wooden chest."
+2. if.event.opened      → (no template, state event)
+3. if.event.revealed    → "Inside the wooden chest you see a sword and a key."
+
+TextService.processTurn(events) produces:
+[
+  { key: 'action.result', content: ['You open the wooden chest.'] },
+  { key: 'action.result', content: ['Inside the wooden chest you see a sword and a key.'] }
+]
+
+Client renders:
+> You open the wooden chest. Inside the wooden chest you see a sword and a key.
+```
+
+### Chained Event Templates
+
+Chained events use their `event.type` as the template key:
+
+| Event Type | Template Key | Template (from lang-en-us) |
+|------------|--------------|----------------------------|
+| `if.event.revealed` | `if.event.revealed` | `'Inside the {container} you see {a:items:list}.'` |
+| `if.event.hidden` | `if.event.hidden` | `'The contents of the {container} are no longer visible.'` |
+| `dungeo.trap.triggered` | `dungeo.trap.triggered` | Story-registered template |
+
+### Event Sorting for Prose Order
+
+Events arrive from Engine in emission order, but prose requires a different order:
+- Action result first ("You open the chest.")
+- Then consequences ("Inside you see...")
+
+TextService sorts events within each transaction for correct prose:
+
+```typescript
+private sortEventsForProse(events: ISemanticEvent[]): ISemanticEvent[] {
+  // Stable sort preserving order across different transactions
+  return [...events].sort((a, b) => {
+    // Different transactions: maintain original order
+    if (a.meta?.transactionId !== b.meta?.transactionId) return 0;
+
+    // Same transaction: action.* first
+    const aIsAction = a.type.startsWith('action.');
+    const bIsAction = b.type.startsWith('action.');
+    if (aIsAction && !bIsAction) return -1;
+    if (!aIsAction && bIsAction) return 1;
+
+    // Then by chain depth (lower depth first)
+    return (a.meta?.chainDepth ?? 0) - (b.meta?.chainDepth ?? 0);
+  });
+}
+```
+
+**Sort order within a transaction:**
+1. `action.*` events (success/blocked) - the main action result
+2. Depth 0 events (direct state changes)
+3. Depth 1+ events (chained consequences)
+
+See ADR-094 for `transactionId` and `chainDepth` metadata details.
 
 ## CLI Renderer
 
@@ -378,6 +490,7 @@ These packages are archived (not deleted):
 | ADR | Relationship |
 |-----|--------------|
 | ADR-091 | Defines decoration syntax this service parses |
+| ADR-094 | Event chaining - produces events TextService renders |
 | ADR-095 | Defines formatter syntax for template resolution |
 | ADR-097 | React client that consumes ITextBlock[] |
 | ADR-099 | Future GLK client |

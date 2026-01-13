@@ -1047,9 +1047,10 @@ export class WorldModel implements IWorldModel {
     const chains = this.eventChains.get(triggerType) || [];
     const results: ISemanticEvent[] = [];
 
-    // Get current chain depth from trigger event's data
+    // Get chain metadata from trigger event's data (ADR-094)
     const triggerData = (event.data || {}) as Record<string, unknown>;
     const currentDepth = (triggerData._chainDepth as number) || 0;
+    const transactionId = triggerData._transactionId as string | undefined;
 
     for (const chain of chains) {
       const chainedEvents = chain.handler(event, this);
@@ -1078,7 +1079,10 @@ export class WorldModel implements IWorldModel {
               ...existingData,
               _chainedFrom: event.type,
               _chainSourceId: event.id,
-              _chainDepth: newDepth
+              _chainDepth: newDepth,
+              // Pass through transactionId from trigger event (ADR-094)
+              // Engine assigns this at action start; chained events inherit it
+              ...(transactionId ? { _transactionId: transactionId } : {})
             }
           };
 

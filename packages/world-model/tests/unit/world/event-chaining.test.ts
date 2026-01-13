@@ -294,6 +294,36 @@ describe('Event Chaining (ADR-094)', () => {
 
       expect((chainedEvents[0].data as any)._chainDepth).toBe(4);
     });
+
+    it('should pass through _transactionId from trigger event (ADR-094)', () => {
+      world.chainEvent('if.event.opened', (event) => ({
+        type: 'if.event.revealed',
+        data: {}
+      }));
+
+      world.connectEventProcessor(mockWiring);
+
+      // Trigger event has a transactionId (assigned by Engine)
+      const triggerEvent = createTestEvent('if.event.opened', { _transactionId: 'txn-abc-123' });
+      const chainedEvents = invokeHandlers('if.event.opened', triggerEvent);
+
+      expect((chainedEvents[0].data as any)._transactionId).toBe('txn-abc-123');
+    });
+
+    it('should not add _transactionId if trigger event lacks it', () => {
+      world.chainEvent('if.event.opened', (event) => ({
+        type: 'if.event.revealed',
+        data: {}
+      }));
+
+      world.connectEventProcessor(mockWiring);
+
+      // Trigger event without transactionId
+      const triggerEvent = createTestEvent('if.event.opened', {});
+      const chainedEvents = invokeHandlers('if.event.opened', triggerEvent);
+
+      expect((chainedEvents[0].data as any)._transactionId).toBeUndefined();
+    });
   });
 
   describe('chain depth limit', () => {
