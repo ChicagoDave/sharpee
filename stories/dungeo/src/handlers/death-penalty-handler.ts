@@ -12,7 +12,7 @@
  * 3. Triggers game over after 2 deaths
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { Effect, WorldQuery, IGameEvent } from '@sharpee/event-processor';
 import { WorldModel, StandardCapabilities } from '@sharpee/world-model';
 import { IDungeoScoringService } from '../scoring';
 
@@ -28,62 +28,79 @@ export const DeathPenaltyMessages = {
 } as const;
 
 /**
- * Get current death count from scoring capability
- */
-function getDeathCount(world: WorldModel): number {
-  const scoring = world.getCapability(StandardCapabilities.SCORING);
-  return scoring?.deaths ?? 0;
-}
-
-/**
- * Set death count in scoring capability
- */
-function setDeathCount(world: WorldModel, count: number): void {
-  const scoring = world.getCapability(StandardCapabilities.SCORING);
-  if (scoring) {
-    scoring.deaths = count;
-  }
-}
-
-/**
  * Create death penalty handler for event processor
  *
- * @param world - World model
+ * @param world - World model (for reading current state)
  * @param scoringService - Dungeo scoring service for point deduction
  */
 export function createDeathPenaltyHandler(
   world: WorldModel,
   scoringService: IDungeoScoringService
-): (event: ISemanticEvent) => ISemanticEvent[] {
-  return (event: ISemanticEvent): ISemanticEvent[] => {
-    const events: ISemanticEvent[] = [];
+): (event: IGameEvent, query: WorldQuery) => Effect[] {
+  return (_event: IGameEvent, _query: WorldQuery): Effect[] => {
+    const effects: Effect[] = [];
 
-    // Get current death count and increment
-    const deaths = getDeathCount(world) + 1;
-    setDeathCount(world, deaths);
+    // Get current death count from scoring capability
+    const scoring = world.getCapability(StandardCapabilities.SCORING);
+    const currentDeaths = scoring?.deaths ?? 0;
+    const deaths = currentDeaths + 1;
 
-    // Apply -10 point penalty
+    // Update death count (direct mutation since scoring service handles this)
+    if (scoring) {
+      scoring.deaths = deaths;
+    }
+
+    // Apply -10 point penalty via scoring service
     scoringService.addPoints(-DEATH_PENALTY_POINTS, 'Death penalty');
+
+    // Emit score effect for transparency
+    effects.push({
+      type: 'score',
+      points: -DEATH_PENALTY_POINTS,
+      reason: 'Death penalty'
+    });
 
     // Check for game over (2+ deaths)
     if (deaths >= MAX_DEATHS) {
       // Set game over state
-      world.setStateValue('dungeo.game_over', true);
-      world.setStateValue('dungeo.game_over_reason', 'too_many_deaths');
+      effects.push({
+        type: 'set_state',
+        key: 'dungeo.game_over',
+        value: true
+      });
+      effects.push({
+        type: 'set_state',
+        key: 'dungeo.game_over_reason',
+        value: 'too_many_deaths'
+      });
 
-      // Emit game over event
-      events.push({
-        id: `death-game-over-${Date.now()}`,
-        type: 'game.over',
-        timestamp: Date.now(),
+      // Emit game over message
+      effects.push({
+        type: 'message',
+        id: DeathPenaltyMessages.GAME_OVER,
         data: {
-          messageId: DeathPenaltyMessages.GAME_OVER,
           reason: 'too_many_deaths',
           deaths: deaths
         }
       });
+
+      // Emit game over event
+      effects.push({
+        type: 'emit',
+        event: {
+          id: `death-game-over-${Date.now()}`,
+          type: 'game.over',
+          timestamp: Date.now(),
+          entities: {},
+          data: {
+            messageId: DeathPenaltyMessages.GAME_OVER,
+            reason: 'too_many_deaths',
+            deaths: deaths
+          }
+        }
+      });
     }
 
-    return events;
+    return effects;
   };
 }

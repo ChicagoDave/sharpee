@@ -86,53 +86,71 @@ export function createDamRegion(world: WorldModel): DamRoomIds {
     'This is a large room with a vaulted ceiling. Ancient murals depicting undersea life cover the walls.');
 
   // === Set up connections ===
+  // Per canonical map-connections.md
 
-  setExits(deepCanyon, { [Direction.NORTH]: damLobby.id });
-  // SE → Round Room connected externally
+  // Deep Canyon: NW→Reservoir South, E→Dam, SE→Round Room (external)
+  setExits(deepCanyon, {
+    [Direction.NORTHWEST]: reservoirSouth.id,
+    [Direction.EAST]: dam.id,
+    // SE → Round Room connected externally
+  });
 
+  // Dam Lobby: S→Dam, N→Maintenance Room, E→Maintenance Room
   setExits(damLobby, {
-    [Direction.SOUTH]: deepCanyon.id,
-    [Direction.NORTH]: dam.id,
+    [Direction.SOUTH]: dam.id,
+    [Direction.NORTH]: maintenanceRoom.id,
     [Direction.EAST]: maintenanceRoom.id,
   });
 
+  // Dam (Flood Control Dam #3): S→Deep Canyon, N→Dam Lobby, D→Dam Base
   setExits(dam, {
-    [Direction.SOUTH]: damLobby.id,
-    [Direction.NORTH]: reservoirSouth.id,
+    [Direction.SOUTH]: deepCanyon.id,
+    [Direction.NORTH]: damLobby.id,
     [Direction.DOWN]: damBase.id,
   });
 
+  // Dam Base: U→Dam, N→Frigid River (external)
   setExits(damBase, { [Direction.UP]: dam.id });
   // N → Frigid River connected externally
 
-  setExits(maintenanceRoom, { [Direction.WEST]: damLobby.id });
-
-  setExits(reservoirSouth, {
-    [Direction.SOUTH]: dam.id,
-    [Direction.NORTH]: reservoir.id,
-    // W → Temple connected externally
+  // Maintenance Room: S→Dam Lobby, W→Dam Lobby
+  setExits(maintenanceRoom, {
+    [Direction.SOUTH]: damLobby.id,
+    [Direction.WEST]: damLobby.id,
   });
 
+  // Reservoir South: UP→Deep Canyon, N→Reservoir, W→Stream View
+  setExits(reservoirSouth, {
+    [Direction.UP]: deepCanyon.id,
+    [Direction.NORTH]: reservoir.id,
+    [Direction.WEST]: streamView.id,
+  });
+
+  // Reservoir: S→Reservoir South, N→Reservoir North
   setExits(reservoir, {
     [Direction.SOUTH]: reservoirSouth.id,
     [Direction.NORTH]: reservoirNorth.id,
   });
 
+  // Reservoir North: S→Reservoir, N→Atlantis Room
   setExits(reservoirNorth, {
     [Direction.SOUTH]: reservoir.id,
-    [Direction.NORTH]: streamView.id,
-    [Direction.SOUTHEAST]: atlantisRoom.id,
+    [Direction.NORTH]: atlantisRoom.id,
   });
 
+  // Atlantis Room: SE→Reservoir North, U→Small Cave
   setExits(atlantisRoom, {
-    [Direction.NORTHWEST]: reservoirNorth.id,
+    [Direction.SOUTHEAST]: reservoirNorth.id,
     [Direction.UP]: smallCave.id,
   });
 
+  // Small Cave: D→Atlantis Room, E→Mirror Room (coal mine state, external)
   setExits(smallCave, { [Direction.DOWN]: atlantisRoom.id });
   // E → Mirror Room (coal mine state) connected externally
 
-  setExits(streamView, { [Direction.SOUTH]: reservoirNorth.id });
+  // Stream View: E→Reservoir South, S→Glacier Room (external)
+  setExits(streamView, { [Direction.EAST]: reservoirSouth.id });
+  // S → Glacier Room connected externally
 
   return {
     deepCanyon: deepCanyon.id,
@@ -163,9 +181,15 @@ export function connectDamToFrigidRiver(world: WorldModel, ids: DamRoomIds, frig
   if (db) db.get(RoomTrait)!.exits[Direction.NORTH] = { destination: frigidRiverId };
 }
 
-export function connectDamToTemple(world: WorldModel, ids: DamRoomIds, templeId: string): void {
-  const rs = world.getEntity(ids.reservoirSouth);
-  if (rs) rs.get(RoomTrait)!.exits[Direction.WEST] = { destination: templeId };
+/**
+ * Connect Stream View to Glacier Room (volcano region)
+ * Stream View: S→Glacier Room, Glacier Room: N→Stream View
+ */
+export function connectStreamViewToGlacier(world: WorldModel, ids: DamRoomIds, glacierRoomId: string): void {
+  const sv = world.getEntity(ids.streamView);
+  const gr = world.getEntity(glacierRoomId);
+  if (sv) sv.get(RoomTrait)!.exits[Direction.SOUTH] = { destination: glacierRoomId };
+  if (gr) gr.get(RoomTrait)!.exits[Direction.NORTH] = { destination: ids.streamView };
 }
 
 export function connectSmallCaveToMirrorRoom(world: WorldModel, ids: DamRoomIds, mirrorRoomId: string): void {
@@ -292,10 +316,12 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
   world.moveEntity(screwdriver.id, roomId);
 
   // Buttons - yellow (danger), brown, red, blue
+  // NOTE: 'button' alias is required for CommandValidator - it searches by head noun ("button")
+  // then disambiguates by modifiers ("yellow")
   const yellowButton = world.createEntity('yellow button', EntityType.ITEM);
   yellowButton.add(new IdentityTrait({
     name: 'yellow button',
-    aliases: ['yellow', 'danger button', 'danger'],
+    aliases: ['yellow', 'danger button', 'danger', 'button'],
     description: 'A yellow button labeled "DANGER".',
     properName: false,
     article: 'a'
@@ -306,7 +332,7 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
   const brownButton = world.createEntity('brown button', EntityType.ITEM);
   brownButton.add(new IdentityTrait({
     name: 'brown button',
-    aliases: ['brown'],
+    aliases: ['brown', 'button'],
     description: 'A brown button.',
     properName: false,
     article: 'a'
@@ -317,7 +343,7 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
   const redButton = world.createEntity('red button', EntityType.ITEM);
   redButton.add(new IdentityTrait({
     name: 'red button',
-    aliases: ['red'],
+    aliases: ['red', 'button'],
     description: 'A red button.',
     properName: false,
     article: 'a'
@@ -328,7 +354,7 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
   const blueButton = world.createEntity('blue button', EntityType.ITEM);
   blueButton.add(new IdentityTrait({
     name: 'blue button',
-    aliases: ['blue'],
+    aliases: ['blue', 'button'],
     description: 'A blue button.',
     properName: false,
     article: 'a'

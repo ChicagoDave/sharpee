@@ -10,9 +10,9 @@ import {
   EntityType,
   Direction,
   ContainerTrait,
-  OpenableTrait
+  OpenableTrait,
+  AuthorModel
 } from '@sharpee/world-model';
-import { AuthorModel } from '@sharpee/engine';
 
 export interface RoundRoomIds {
   roundRoom: string;

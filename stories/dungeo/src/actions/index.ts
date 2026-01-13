@@ -171,7 +171,7 @@ import { tieAction, TIE_ACTION_ID, TieMessages } from './tie';
 import { untieAction, UNTIE_ACTION_ID, UntieMessages } from './untie';
 import { balloonExitAction, BALLOON_EXIT_ACTION_ID, BalloonExitMessages } from '../handlers/balloon-handler';
 import { pressButtonAction, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler } from './press-button';
-import { turnBoltAction, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler } from './turn-bolt';
+import { turnBoltAction, TURN_BOLT_ACTION_ID, TurnBoltMessages } from './turn-bolt';
 import { turnSwitchAction, TURN_SWITCH_ACTION_ID, TurnSwitchMessages } from './turn-switch';
 import { putUnderAction, PUT_UNDER_ACTION_ID, PutUnderMessages } from './put-under';
 import { pushKeyAction, PUSH_KEY_ACTION_ID, PushKeyMessages } from './push-key';
@@ -186,7 +186,7 @@ import { launchAction, LAUNCH_ACTION_ID, LaunchMessages } from './launch';
 
 // Re-export press-button, turn-bolt, and turn-switch
 export { PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler } from './press-button';
-export { TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltScheduler } from './turn-bolt';
+export { TURN_BOLT_ACTION_ID, TurnBoltMessages } from './turn-bolt';
 export { TURN_SWITCH_ACTION_ID, TurnSwitchMessages } from './turn-switch';
 
 // Re-export balloon exit for use in index.ts

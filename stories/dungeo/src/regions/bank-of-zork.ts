@@ -22,9 +22,9 @@ import {
   OpenableTrait,
   ReadableTrait,
   ContainerTrait,
-  LockableTrait
+  LockableTrait,
+  AuthorModel
 } from '@sharpee/world-model';
-import { AuthorModel } from '@sharpee/engine';
 
 export interface BankRoomIds {
   eastOfChasm: string;
