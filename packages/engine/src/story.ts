@@ -4,7 +4,6 @@
 
 import { WorldModel, IFEntity, IGameEvent, SimpleEventHandler } from '@sharpee/world-model';
 import { LanguageProvider } from '@sharpee/if-domain';
-import { TextService } from '@sharpee/if-services';
 import { Parser } from '@sharpee/stdlib';
 import { EventEmitter } from './events/event-emitter';
 import { ISemanticEvent } from '@sharpee/core';

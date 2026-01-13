@@ -11,8 +11,6 @@ import { Parser } from '@sharpee/parser-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
 // @ts-ignore
 import { LanguageProvider } from '@sharpee/lang-en-us';
-// @ts-ignore
-import { TextService } from '@sharpee/text-services';
 
 /**
  * Interface for a story module
@@ -77,11 +75,9 @@ export function createTestableGame(story: any): TestableGame {
   const player = world.createEntity('player', EntityType.ACTOR);
   world.setPlayer(player.id);
 
-  // Create parser, language, and text service
+  // Create parser and language
   const language = new LanguageProvider();
   const parser = new Parser(language);
-  const textService = new TextService();
-  textService.setLanguageProvider(language);
 
   // Extend parser and language with story-specific vocabulary
   if (story.extendParser) {
@@ -94,14 +90,13 @@ export function createTestableGame(story: any): TestableGame {
   // Create perception service
   const perceptionService = new PerceptionService();
 
-  // Create engine
+  // Create engine (TextService created internally from language provider)
   const engine = new GameEngine({
     world,
     player,
     parser,
     language,
-    textService,
-    perceptionService
+    perceptionService,
   });
 
   // Set the story and start
@@ -155,7 +150,7 @@ export function createTestableGame(story: any): TestableGame {
       testableGame.lastEvents = lastEvents;
       testableGame.lastTurnResult = lastTurnResult;
       return lastOutput;
-    }
+    },
   };
 
   return testableGame;

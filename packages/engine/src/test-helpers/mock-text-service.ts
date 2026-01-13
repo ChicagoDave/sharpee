@@ -2,57 +2,47 @@
  * Mock text service for testing
  */
 
-import { TextService, TextServiceContext, TextOutput } from '@sharpee/if-services';
-import { LanguageProvider } from '@sharpee/if-domain';
+import type { ITextService } from '@sharpee/text-service';
+import type { ITextBlock } from '@sharpee/text-blocks';
+import type { ISemanticEvent } from '@sharpee/core';
 
-export class MockTextService implements TextService {
-  private context?: TextServiceContext;
-  private languageProvider: LanguageProvider | null = null;
+export class MockTextService implements ITextService {
+  processTurn(events: ISemanticEvent[]): ITextBlock[] {
+    const blocks: ITextBlock[] = [];
 
-  initialize(context: TextServiceContext): void {
-    this.context = context;
-  }
-
-  setLanguageProvider(provider: LanguageProvider): void {
-    this.languageProvider = provider;
-  }
-
-  getLanguageProvider(): LanguageProvider | null {
-    return this.languageProvider;
-  }
-
-  processTurn(): TextOutput {
-    if (!this.context) {
-      throw new Error('Text service not initialized');
-    }
-
-    // Get events for this turn
-    const events = this.context.getCurrentTurnEvents();
-    
-    // Simple output generation for testing
-    const messages: string[] = [];
-    
     // Process events
     for (const event of events) {
       const data = event.data as Record<string, any>;
       if (event.type === 'action.error') {
-        messages.push(String(data?.message || 'Error occurred'));
+        blocks.push({
+          key: 'error',
+          content: [String(data?.message || 'Error occurred')],
+        });
       } else if (event.type === 'action.success') {
-        messages.push(`Action completed: ${String(data?.action || 'unknown')}`);
+        blocks.push({
+          key: 'action.result',
+          content: [`Action completed: ${String(data?.action || 'unknown')}`],
+        });
       } else if (event.type === 'room.described') {
-        messages.push(String(data?.description || 'You are in a room.'));
+        blocks.push({
+          key: 'room.description',
+          content: [String(data?.description || 'You are in a room.')],
+        });
       }
     }
 
     // Default message if no events
-    if (messages.length === 0) {
-      messages.push('Nothing happened.');
+    if (blocks.length === 0) {
+      blocks.push({
+        key: 'game.message',
+        content: ['Nothing happened.'],
+      });
     }
 
-    return messages.join('\n');
+    return blocks;
   }
 }
 
-export function createMockTextService(): TextService {
+export function createMockTextService(): ITextService {
   return new MockTextService();
 }

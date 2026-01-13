@@ -7,21 +7,19 @@
  * 3. Process - route to handlers
  * 4. Assemble - create ITextBlock with decorations
  *
+ * Stateless transformer: events in, TextBlocks out.
  * Inspired by FyreVM channel I/O (2009).
  *
  * @see ADR-096 Text Service Architecture
  */
 
 import type { ITextBlock } from '@sharpee/text-blocks';
-import { BLOCK_KEYS } from '@sharpee/text-blocks';
-import type { TextServiceContext } from '@sharpee/if-services';
 import type { LanguageProvider } from '@sharpee/if-domain';
 import type { ISemanticEvent } from '@sharpee/core';
 
 // Pipeline stages
 import { filterEvents } from './stages/filter.js';
 import { sortEventsForProse } from './stages/sort.js';
-import { createBlock } from './stages/assemble.js';
 
 // Event handlers
 import type { HandlerContext } from './handlers/types.js';
@@ -31,33 +29,20 @@ import { handleRevealed } from './handlers/revealed.js';
 import { handleGameMessage, handleGenericEvent } from './handlers/generic.js';
 
 /**
- * Text service interface
+ * Text service interface (ADR-096)
+ *
+ * Stateless transformer: takes events, returns TextBlocks.
+ * Engine calls processTurn() after each turn completes.
  */
 export interface ITextService {
   /**
-   * Initialize with game context
+   * Process turn events and produce TextBlocks.
+   * Called by Engine after turn completes.
+   *
+   * @param events - All events from this turn (including chained events)
+   * @returns TextBlocks for client rendering
    */
-  initialize(context: TextServiceContext): void;
-
-  /**
-   * Set the language provider for template resolution
-   */
-  setLanguageProvider(provider: LanguageProvider): void;
-
-  /**
-   * Get the language provider
-   */
-  getLanguageProvider(): LanguageProvider | null;
-
-  /**
-   * Process current turn events and produce TextBlocks
-   */
-  processTurn(): ITextBlock[];
-
-  /**
-   * Reset the service
-   */
-  reset(): void;
+  processTurn(events: ISemanticEvent[]): ITextBlock[];
 }
 
 /**
@@ -79,28 +64,14 @@ const STATE_CHANGE_EVENTS = new Set([
  * Orchestrates the pipeline: filter → sort → process → assemble
  */
 export class TextService implements ITextService {
-  private context?: TextServiceContext;
-  private languageProvider?: LanguageProvider;
+  private readonly languageProvider: LanguageProvider;
 
-  initialize(context: TextServiceContext): void {
-    this.context = context;
+  constructor(languageProvider: LanguageProvider) {
+    this.languageProvider = languageProvider;
   }
 
-  setLanguageProvider(provider: LanguageProvider): void {
-    this.languageProvider = provider;
-  }
-
-  getLanguageProvider(): LanguageProvider | null {
-    return this.languageProvider ?? null;
-  }
-
-  processTurn(): ITextBlock[] {
-    if (!this.context) {
-      return [createBlock(BLOCK_KEYS.ERROR, '[ERROR] No context initialized')];
-    }
-
+  processTurn(events: ISemanticEvent[]): ITextBlock[] {
     // Pipeline: filter → sort → process
-    const events = this.context.getCurrentTurnEvents();
     const filtered = filterEvents(events);
     const sorted = sortEventsForProse(filtered);
 
@@ -116,10 +87,6 @@ export class TextService implements ITextService {
     }
 
     return blocks;
-  }
-
-  reset(): void {
-    this.context = undefined;
   }
 
   /**
@@ -156,8 +123,12 @@ export class TextService implements ITextService {
 }
 
 /**
- * Create a new TextService instance
+ * Create a TextService with the given LanguageProvider.
+ * LanguageProvider supplies templates (standard + story-registered).
+ *
+ * @param languageProvider - Provider for template resolution
+ * @returns Configured TextService instance
  */
-export function createTextService(): ITextService {
-  return new TextService();
+export function createTextService(languageProvider: LanguageProvider): ITextService {
+  return new TextService(languageProvider);
 }

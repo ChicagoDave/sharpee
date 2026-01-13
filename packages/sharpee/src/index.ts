@@ -56,8 +56,13 @@ export { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 // Parser support
 export { EnglishParser } from '@sharpee/parser-en-us';
 
-// Text services
-export { TextService } from '@sharpee/text-services';
+// Text services (ADR-096)
+export {
+  type ITextService,
+  createTextService,
+  renderToString,
+  renderStatusLine,
+} from '@sharpee/text-service';
 
-// Note: Specific re-exports removed to avoid conflicts
-// Users should get types from the wildcard exports above
+// Text blocks (ADR-096)
+export type { ITextBlock, IDecoration, TextContent } from '@sharpee/text-blocks';
