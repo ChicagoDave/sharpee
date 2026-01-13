@@ -1,8 +1,8 @@
 # ADR-091: Text Decorations in Message Templates
 
-## Status: PROPOSED
+## Status: ACCEPTED
 
-## Date: 2026-01-06
+## Date: 2026-01-06 (Proposed), 2026-01-13 (Accepted)
 
 ## Context
 
@@ -27,95 +27,177 @@ An attempt was made to use `{target:cap}` for capitalization, but this was never
 2. **Client rendering**: CLI renders as ANSI, web as HTML/CSS, screen readers as semantic cues
 3. **Graceful degradation**: Plain text fallback when decorations unsupported
 4. **No collision**: Decoration syntax must not conflict with existing `{param}` substitution
+5. **Extensibility**: Authors can define story-specific decoration types (e.g., Photopia colors)
 
 ### Use Cases
 
 ```
 // Emphasis on important words
-"You can't go that direction."  →  "You *can't* go that direction."
+"You *can't* go that direction."
 
 // Item/room names distinguished
-"You take the brass lantern."  →  "You take the [item:brass lantern]."
+"You take the [item:brass lantern]."
 
-// Capitalization at sentence start
-"{target} is locked."  →  "[cap:{target}] is locked."  →  "The door is locked."
+// Combined: decoration wrapping a placeholder
+"You take [item:{the:item}]."
 
-// Combined
-"The {item} glows brightly."  →  "The [item:{item}] glows *brightly*."
+// Story-defined colors (Photopia pattern)
+"[photopia.red:The light was red, like always.]"
 ```
-
-## Options Considered
-
-### Option A: Markdown-style Inline
-
-Use familiar Markdown syntax:
-
-```
-*emphasis* **strong** `code/item` _underline_
-```
-
-**Pros**: Familiar, readable, well-understood
-**Cons**: Conflicts with prose ("I can't *believe* it"), ambiguous asterisks
-
-### Option B: Custom Tag Syntax
-
-Use square brackets with type prefixes:
-
-```
-[em:text] [strong:text] [item:name] [room:name] [cap:text]
-```
-
-**Pros**: Unambiguous, extensible, semantic
-**Cons**: Verbose, less readable in templates
-
-### Option C: Modifier Syntax on Placeholders
-
-Extend `{param}` with modifiers:
-
-```
-{target:cap} {item:em} {room:strong}
-```
-
-**Pros**: Compact, extends existing syntax
-**Cons**: Only works on placeholders, not literal text
-
-### Option D: Hybrid Approach
-
-- Markdown for inline prose decorations (`*emphasis*`, `**strong**`)
-- Modifiers for placeholder transformations (`{target:cap}`)
-- Semantic tags for special types (`[item:brass lantern]`)
 
 ## Decision
 
-TBD - Awaiting discussion.
+**Option D: Hybrid Approach** - Use distinct syntaxes for distinct purposes.
 
-## Considerations
+### Syntax Specification
 
-### Client Rendering
+| Syntax | Purpose | Example |
+|--------|---------|---------|
+| `{formatter:placeholder}` | Transformations | `{a:item}` → "a sword" |
+| `[type:content]` | Semantic decorations | `[item:sword]` |
+| `*text*` | Emphasis | `*brightly*` |
+| `**text**` | Strong emphasis | `**WARNING**` |
 
-| Decoration | CLI (ANSI) | Web (HTML) | Plain Text |
-|------------|------------|------------|------------|
-| emphasis | italic | `<em>` | *text* |
-| strong | bold | `<strong>` | **text** |
-| item | cyan | `<span class="item">` | text |
-| room | yellow | `<span class="room">` | text |
-| cap | capitalize | capitalize | capitalize |
+### Key Design Principles
 
-### Implementation Layers
+1. **Formatters transform, decorations annotate** - Different operations, different syntax
+2. **Decoration types are open strings** - Not an enum, supports story extensions
+3. **Decorations can wrap placeholders** - `[item:{a:item}]` resolves then decorates
+4. **Client-agnostic** - Templates specify intent, clients decide rendering
+
+### Decoration Types
+
+#### Core Types (Platform-defined)
+
+| Type | Purpose | CLI Rendering | Web Rendering |
+|------|---------|---------------|---------------|
+| `em` | Emphasis | ANSI italic | `<em>` |
+| `strong` | Strong emphasis | ANSI bold | `<strong>` |
+| `item` | Item name | ANSI cyan | `<span class="item">` |
+| `room` | Room name | ANSI yellow | `<span class="room">` |
+| `npc` | Character name | ANSI magenta | `<span class="npc">` |
+| `command` | Suggested command | ANSI green | `<span class="command">` |
+| `direction` | Exit direction | ANSI white | `<span class="direction">` |
+
+#### Presentational Types
+
+| Type | Purpose |
+|------|---------|
+| `underline` | Underlined text |
+| `strikethrough` | Struck-through text |
+| `super` | Superscript |
+| `sub` | Subscript |
+
+#### Story-defined Types (Photopia Pattern)
+
+Authors define custom decoration types in story configuration:
+
+```typescript
+// stories/photopia/src/config.ts
+export const storyColors = {
+  'photopia.red': '#cc0000',     // Alley's scenes
+  'photopia.blue': '#0066cc',    // Fantasy scenes
+  'photopia.purple': '#660099',  // Transition
+  'photopia.gold': '#ccaa00',    // Memory
+};
+```
+
+Templates use story-defined types:
+
+```
+'[photopia.red:The light was red, like always.]'
+```
+
+Clients look up the mapping and render appropriately:
+- Web: CSS color
+- CLI: ANSI approximation
+- Screen reader: Announces "red text" or ignores
+
+### Examples
+
+```
+// Simple emphasis
+'You *cannot* do that.'
+
+// Semantic item decoration
+'You take the [item:brass lantern].'
+
+// Decoration wrapping placeholder with formatter
+'Inside the chest you see [item:{a:items:list}].'
+
+// Story-defined color
+'[photopia.blue:You are flying through clouds.]'
+
+// Nested decorations
+'[item:*glowing* lantern]'
+
+// Multiple decorations
+'The [npc:thief] takes the [item:jeweled egg] and runs [direction:north].'
+```
+
+## Implementation
+
+### Data Structure
+
+Decorations are parsed into a structured tree (see ADR-096):
+
+```typescript
+interface IDecoration {
+  type: string;              // Open - 'em', 'item', 'photopia.red'
+  content: TextContent[];    // Can nest
+}
+
+type TextContent = string | IDecoration;
+```
+
+### Processing Pipeline
 
 1. **Template definition** (lang-en-us): Author writes decorated templates
-2. **Message resolution** (LanguageProvider): Substitutes params, preserves decoration markers
-3. **Text service**: Converts decoration markers to client-specific format
-4. **Client rendering**: Displays formatted output
+2. **Placeholder resolution** (LanguageProvider): Substitutes `{params}`, preserves decoration markers
+3. **Decoration parsing** (TextService): Converts markers to `IDecoration` tree
+4. **Client rendering**: Maps decoration types to platform-specific output
+
+### Escaping
+
+To include literal `*`, `[`, or `]` in output:
+
+```
+'The price is \*50 gold\*.'     → "The price is *50 gold*."
+'Use \[brackets\] carefully.'   → "Use [brackets] carefully."
+```
 
 ### Edge Cases
 
-- Nested decorations: `[item:*glowing* lantern]`
-- Decorations spanning placeholders: `*the {item}*`
-- Escaping: How to show literal `*` or `[`
+| Case | Handling |
+|------|----------|
+| Unclosed `*` | Treat as literal asterisk |
+| Unclosed `[` | Treat as literal bracket |
+| Unknown decoration type | Render content without decoration |
+| Empty decoration `[item:]` | Render nothing |
+
+## Consequences
+
+### Positive
+
+- Clear separation: formatters transform, decorations annotate
+- Extensible: stories can define custom decoration types
+- Client-agnostic: same templates work for CLI, web, screen reader
+- Familiar: Markdown-style `*emphasis*` is intuitive
+
+### Negative
+
+- Three syntaxes to learn (`{}`, `[]`, `*`)
+- Escaping needed for literal brackets/asterisks
+- More complex parsing than plain templates
+
+### Neutral
+
+- Requires text service refactoring to support decoration parsing
+- Clients need decoration type → rendering mappings
 
 ## References
 
 - ADR-089: Pronoun and Identity System (perspective placeholders)
-- lang-en-us message templates
-- Text service architecture
+- ADR-095: Message Templates with Formatters (placeholder syntax)
+- ADR-096: Text Service Architecture (parsing, TextBlocks)
+- FyreVM Channel I/O (2009) - inspiration for semantic output model

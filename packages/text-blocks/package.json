@@ -1,0 +1,58 @@
+{
+  "name": "@sharpee/text-blocks",
+  "version": "0.1.0",
+  "description": "TextBlock interfaces for Sharpee text output - the contract between text service and clients",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest",
+    "test:ci": "vitest run",
+    "lint": "eslint src --ext .ts",
+    "clean": "rimraf dist"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.59.0",
+    "@typescript-eslint/parser": "^5.59.0",
+    "eslint": "^8.38.0",
+    "rimraf": "^5.0.0",
+    "typescript": "^5.0.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "interactive-fiction",
+    "if",
+    "text-adventure",
+    "sharpee",
+    "text-blocks",
+    "fyrevm"
+  ],
+  "author": "Sharpee Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ChicagoDave/sharpee.git",
+    "directory": "packages/text-blocks"
+  },
+  "homepage": "https://github.com/ChicagoDave/sharpee#readme",
+  "bugs": {
+    "url": "https://github.com/ChicagoDave/sharpee/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
