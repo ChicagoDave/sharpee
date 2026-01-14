@@ -114,30 +114,46 @@ xverb "inventory", "i", "inv"
 Sharpee uses a **fluent builder API** with action-centric organization:
 
 ```typescript
-// Action-centric definition (preferred)
+// Action-centric definition (preferred) - ADR-087
 grammar
-  .forAction('if.action.putting_on')
-  .verbs(['put', 'place', 'set'])
-  .pattern(':item on :supporter')
-  .where('supporter', scope => scope.visible().hasTrait('supporter'))
+  .forAction('if.action.pushing')
+  .verbs(['push', 'press', 'shove', 'move'])
+  .pattern(':target')
   .build();
 
-// Phrasal verb definition (for complex patterns)
+// Phrasal patterns with semantic trait constraints
 grammar
   .define('put :item on :supporter')
-  .mapsTo('if.action.putting_on')
-  .where('supporter', scope => scope.visible())
   .hasTrait('supporter', TraitType.SUPPORTER)
+  .mapsTo('if.action.putting')
+  .withPriority(100)
+  .build();
+
+// Container operations
+grammar
+  .define('put :item in|into|inside :container')
+  .hasTrait('container', TraitType.CONTAINER)
+  .mapsTo('if.action.inserting')
+  .withPriority(100)
+  .build();
+
+// Direction slots use type constraint, not trait
+grammar
+  .define('go :direction')
+  .where('direction', { type: 'direction' })
+  .mapsTo('if.action.going')
+  .withPriority(100)
   .build();
 ```
 
 **Characteristics:**
 - TypeScript fluent API with IDE autocompletion
 - Action ID is the organizing principle (not the verb)
-- Verb synonyms declared once per action
-- Scope constraints are runtime functions, not grammar tokens
-- Traits are semantic constraints, separate from scope
-- Grammar defines SYNTAX only—scope resolved at runtime
+- Verb synonyms declared once per action via `.verbs([...])`
+- `.hasTrait()` declares semantic constraints (entity must have trait)
+- **NO scope/visibility in grammar** — scope resolved at runtime by action
+- Grammar defines SYNTAX + semantic constraints only
+- Comments explicitly note: "Scope handled by action validation"
 
 ### Comparison Table: Grammar
 
@@ -145,7 +161,8 @@ grammar
 |--------|--------|----------|----------|------|---------|
 | Syntax style | VerbRule classes | Verb directives | Natural language | verb declarations | Fluent builder API |
 | Synonym handling | Inheritance | Verb header list | Multiple Understand | Verb header list | `.verbs([...])` array |
-| Scope in grammar | Implied by slot types | Token types (held/noun) | Token hints | object/xobject | Separate layer |
+| Scope in grammar | Implied by slot types | Token types (held/noun) | Token hints | object/xobject | None (action validates) |
+| Semantic constraints | Slot types | Token types | Token descriptions | Slot types | `.hasTrait()` |
 | Multi-object | dobjList/multiexcept | multi/multiexcept | [things] | multi | Handled by parser |
 | Action binding | VerbRule → Action | Pattern → routine | Understand → action | Pattern → routine | Pattern → action ID |
 
