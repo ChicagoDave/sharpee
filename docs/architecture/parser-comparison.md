@@ -121,18 +121,19 @@ grammar
   .pattern(':target')
   .build();
 
-// Phrasal patterns with semantic trait constraints
+// Phrasal patterns with slot-specific trait constraints
+// .hasTrait(slotName, traitType) - constrains which entities match that slot
 grammar
   .define('put :item on :supporter')
-  .hasTrait('supporter', TraitType.SUPPORTER)
+  .hasTrait('supporter', TraitType.SUPPORTER)  // :supporter slot must have SUPPORTER trait
   .mapsTo('if.action.putting')
   .withPriority(100)
   .build();
 
-// Container operations
+// Container operations - same pattern
 grammar
   .define('put :item in|into|inside :container')
-  .hasTrait('container', TraitType.CONTAINER)
+  .hasTrait('container', TraitType.CONTAINER)  // :container slot must have CONTAINER trait
   .mapsTo('if.action.inserting')
   .withPriority(100)
   .build();
@@ -150,10 +151,12 @@ grammar
 - TypeScript fluent API with IDE autocompletion
 - Action ID is the organizing principle (not the verb)
 - Verb synonyms declared once per action via `.verbs([...])`
-- `.hasTrait()` declares semantic constraints (entity must have trait)
+- `.hasTrait(slotName, traitType)` — slot-specific semantic constraint
+  - First arg: which slot (`:container`, `:supporter`, etc.)
+  - Second arg: required trait (`TraitType.CONTAINER`, etc.)
 - **NO scope/visibility in grammar** — scope resolved at runtime by action
 - Grammar defines SYNTAX + semantic constraints only
-- Comments explicitly note: "Scope handled by action validation"
+- Comments in grammar.ts explicitly note: "Scope handled by action validation"
 
 ### Comparison Table: Grammar
 
@@ -162,7 +165,7 @@ grammar
 | Syntax style | VerbRule classes | Verb directives | Natural language | verb declarations | Fluent builder API |
 | Synonym handling | Inheritance | Verb header list | Multiple Understand | Verb header list | `.verbs([...])` array |
 | Scope in grammar | Implied by slot types | Token types (held/noun) | Token hints | object/xobject | None (action validates) |
-| Semantic constraints | Slot types | Token types | Token descriptions | Slot types | `.hasTrait()` |
+| Semantic constraints | Slot types | Token types | Token descriptions | Slot types | `.hasTrait(slot, trait)` |
 | Multi-object | dobjList/multiexcept | multi/multiexcept | [things] | multi | Handled by parser |
 | Action binding | VerbRule → Action | Pattern → routine | Understand → action | Pattern → routine | Pattern → action ID |
 
