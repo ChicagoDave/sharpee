@@ -705,7 +705,26 @@ export class CommandValidator implements CommandValidator {
     }
 
     // Now filter by scope
-    const entitiesInScope = this.filterByScope(candidates, requiredScope);
+    let entitiesInScope = this.filterByScope(candidates, requiredScope);
+
+    // Second adjective fallback: if scope filtering eliminated all candidates,
+    // try adjective search and filter those by scope
+    if (entitiesInScope.length === 0 && candidates.length > 0) {
+      const byAdjective = this.getEntitiesByAdjective(searchTerm);
+      if (byAdjective.length > 0) {
+        const adjectiveInScope = this.filterByScope(byAdjective, requiredScope);
+        if (adjectiveInScope.length > 0) {
+          candidates = byAdjective;
+          entitiesInScope = adjectiveInScope;
+          this.emitDebugEvent('entity_search', command, {
+            searchTerm,
+            byAdjective: byAdjective.length,
+            adjectiveInScope: adjectiveInScope.length,
+            fallbackAfterScope: true
+          });
+        }
+      }
+    }
 
     // Get detailed scope information for all candidates
     const candidateScopes: any[] = [];

@@ -12,7 +12,7 @@
  * All event creation is now owned by the components themselves.
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { ISemanticEvent, ISystemEvent, IGenericEventSource } from '@sharpee/core';
 import { IParser, IValidatedCommand, IParsedCommand } from '@sharpee/world-model';
 import { WorldModel } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
@@ -54,7 +54,8 @@ export class CommandExecutor {
     world: WorldModel,
     actionRegistry: ActionRegistry,
     eventProcessor: EventProcessor,
-    parser: IParser
+    parser: IParser,
+    systemEvents?: IGenericEventSource<ISystemEvent>
   ) {
     if (!world) throw new Error('World model is required');
     if (!actionRegistry) throw new Error('Action registry is required');
@@ -63,6 +64,9 @@ export class CommandExecutor {
 
     this.parser = parser;
     this.validator = new CommandValidator(world, actionRegistry);
+    if (systemEvents) {
+      this.validator.setSystemEventSource(systemEvents);
+    }
     this.actionRegistry = actionRegistry;
     this.eventProcessor = eventProcessor;
   }
@@ -265,7 +269,8 @@ export function createCommandExecutor(
   world: WorldModel,
   actionRegistry: ActionRegistry,
   eventProcessor: EventProcessor,
-  parser: IParser
+  parser: IParser,
+  systemEvents?: IGenericEventSource<ISystemEvent>
 ): CommandExecutor {
-  return new CommandExecutor(world, actionRegistry, eventProcessor, parser);
+  return new CommandExecutor(world, actionRegistry, eventProcessor, parser, systemEvents);
 }

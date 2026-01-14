@@ -32,7 +32,7 @@ import {
 } from '@sharpee/stdlib';
 import { LanguageProvider, IEventProcessorWiring } from '@sharpee/if-domain';
 import { ITextService, createTextService, renderToString } from '@sharpee/text-service';
-import { ISemanticEvent, createSemanticEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, ISerializedSchedulerState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, getUntypedEventData } from '@sharpee/core';
+import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, ISerializedSchedulerState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, getUntypedEventData } from '@sharpee/core';
 
 import { ISchedulerService, createSchedulerService } from './scheduler';
 import { INpcService, createNpcService, guardBehavior, passiveBehavior } from '@sharpee/stdlib';
@@ -92,7 +92,7 @@ export class GameEngine {
   private eventListeners = new Map<GameEngineEventName, Set<Function>>();
   private saveRestoreHooks?: ISaveRestoreHooks;
   private eventSource = createSemanticEventSource();
-  private systemEventSource?: any; // GenericEventSource<SystemEvent>
+  private systemEventSource: IGenericEventSource<ISystemEvent>;
   private pendingPlatformOps: IPlatformEvent[] = [];
   private perceptionService?: IPerceptionService;
   private scheduler: ISchedulerService;
@@ -159,6 +159,23 @@ export class GameEngine {
     registerStandardChains(this.world);
 
     this.platformEvents = createSemanticEventSource();
+
+    // Initialize system event source for debug/validation events
+    this.systemEventSource = createGenericEventSource<ISystemEvent>();
+
+    // Route system events to the engine's event emitter
+    this.systemEventSource.subscribe((event: ISystemEvent) => {
+      this.emit('event', {
+        id: event.id,
+        timestamp: new Date(event.timestamp),
+        type: `system.${event.type}`,
+        data: event.data,
+        sequence: 0,
+        turn: this.context.currentTurn,
+        scope: 'global'
+      } as SequencedEvent);
+    });
+
     this.scheduler = createSchedulerService();
     this.npcService = createNpcService();
     this.narrativeSettings = buildNarrativeSettings(); // Default: 2nd person
@@ -187,7 +204,8 @@ export class GameEngine {
       this.world,
       this.actionRegistry,
       this.eventProcessor,
-      this.parser
+      this.parser,
+      this.systemEventSource
     );
     
     // Query handling is now managed by the platform layer

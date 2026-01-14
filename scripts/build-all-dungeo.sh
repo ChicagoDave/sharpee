@@ -1,16 +1,41 @@
 #!/bin/bash
 # Build all Sharpee packages + dungeo + bundle
 # Stops on first failure
+#
+# Usage:
+#   ./build-all-dungeo.sh              # Build everything
+#   ./build-all-dungeo.sh --skip engine  # Skip to engine and build from there
 
 set -e  # Exit on first error
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
+# Parse arguments
+SKIP_TO=""
+if [ "$1" = "--skip" ] && [ -n "$2" ]; then
+    SKIP_TO="$2"
+fi
+
+SKIPPING=true
+if [ -z "$SKIP_TO" ]; then
+    SKIPPING=false
+fi
+
 # Function to build a package
 build_package() {
     local package=$1
     local name=$2
+
+    # Check if we should skip this package
+    if [ "$SKIPPING" = true ]; then
+        if [ "$name" = "$SKIP_TO" ]; then
+            SKIPPING=false
+        else
+            echo "[$name] skipped"
+            return
+        fi
+    fi
 
     echo -n "[$name] "
     if npx pnpm --filter "$package" build > /dev/null 2>&1; then
@@ -24,6 +49,9 @@ build_package() {
 }
 
 echo "=== Building All Packages + Dungeo ==="
+if [ -n "$SKIP_TO" ]; then
+    echo "(skipping to: $SKIP_TO)"
+fi
 echo ""
 
 # Build order based on dependencies
