@@ -56,10 +56,10 @@ export function createHouseInteriorRegion(world: WorldModel): HouseInteriorRoomI
   // === Create all rooms ===
 
   const kitchen = createRoom(world, 'Kitchen',
-    'You are in the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west, and a dark staircase can be seen leading upward. To the east is a small window which is open.');
+    'This is the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west, and a dark staircase can be seen leading upward. To the east is a small window which is open.');
 
   const livingRoom = createRoom(world, 'Living Room',
-    'You are in the living room. There is a doorway to the east, a wooden door with strange gothic lettering to the west, which appears to be nailed shut, a trophy case, and a large oriental rug in the center of the room.');
+    'This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut.');
 
   const attic = createRoom(world, 'Attic',
     'This is the attic. The only exit is a stairway leading down. A large coil of rope is lying in the corner. On a table is a nasty-looking knife.');

@@ -65,7 +65,7 @@ export function createUndergroundRegion(world: WorldModel): UndergroundRoomIds {
   // === Create all rooms ===
 
   const cellar = createRoom(world, 'Cellar',
-    'You are in a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. On the west is the bottom of a steep metal ramp which is unclimbable.');
+    'This is a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. To the west is the bottom of a steep metal ramp which is unclimbable.');
 
   const westOfChasm = createRoom(world, 'West of Chasm',
     'You are on the west edge of a chasm, the walls of which are too steep to climb. A passage leads north.');

@@ -103,7 +103,7 @@ export function createForestRegion(world: WorldModel): ForestRoomIds {
   }));
 
   const upATree = createRoom(world, 'Up a Tree',
-    'You are about 10 feet above the ground nestled among some large branches. The nearest branch above you is above your reach. Beside you on the branch is a small bird\'s nest.');
+    'You are about ten feet above the ground nestled among some large branches. The nearest branch above you is beyond your reach.');
 
   const canyonView = createRoom(world, 'Canyon View',
     'You are at the top of the Great Canyon, on its west wall. From here there is a marvelous view of the canyon and parts of the Frigid River upstream. Across the canyon, the walls of the White Cliffs join the mighty ramparts of the Flathead Mountains to the east. Following the Canyon, you can see a small path at the bottom of the canyon. There is a path here which goes west into the forest.');

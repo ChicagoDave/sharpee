@@ -1370,6 +1370,9 @@ export class DungeoStory implements Story {
    * Extend the language provider with custom messages for this story
    */
   extendLanguage(language: LanguageProvider): void {
+    // Window opening
+    language.addMessage('dungeo.window.opened', 'With great effort, you open the window far enough to allow entry.');
+
     // Rug/trapdoor puzzle
     language.addMessage('dungeo.rug.moved.reveal_trapdoor', 'Moving the rug reveals a trap door.');
     language.addMessage('dungeo.trapdoor.opened', 'The door reluctantly opens to reveal a rickety staircase descending into darkness.');
