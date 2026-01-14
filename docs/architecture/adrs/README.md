@@ -1,6 +1,6 @@
 # Architecture Decision Records (ADRs)
 
-> ⚠️ **ALPHA DOCUMENTATION**: These ADRs document an evolving architecture. Some decisions may be superseded, and implementations may differ from documented designs.
+> **BETA DOCUMENTATION**: These ADRs document the Sharpee architecture. Some early decisions have been superseded — check status fields for current approaches.
 
 This directory contains all Architecture Decision Records (ADRs) for the Sharpee Interactive Fiction Platform. ADRs document significant architectural decisions made during development, helping future developers understand the rationale behind design choices.
 
