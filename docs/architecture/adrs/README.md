@@ -130,6 +130,16 @@ An Architecture Decision Record captures important architectural decisions along
 - [ADR-075: Effects-Based Handler Pattern](./adr-075-event-handler-consolidation.md) - Effect-returning event handlers
 - [ADR-077: Release Build System](./adr-077-release-build-system.md) - **[Research]** Bundled distribution for authors
 
+### Grammar & Actions (ADRs 80, 87, 90)
+
+- [ADR-080: Multi-Object Command Support](./adr-080-multi-object-commands.md) - "take all", "drop knife and lamp"
+- [ADR-087: Action-Centric Grammar](./adr-087-action-centric-grammar.md) - `.forAction()` builder pattern
+- [ADR-090: Entity-Centric Action Dispatch](./adr-090-entity-centric-action-dispatch.md) - Capability dispatch for entity-specific verbs
+
+### Client Architecture (ADR 101)
+
+- [ADR-101: Graphical Client Architecture](./adr-101-graphical-client-architecture.md) - Author-controlled multimedia (images, sound, music, animations)
+
 ### Special ADRs
 
 - [ADR-00X: Action Event Emission Pattern](./adr-00X-action-event-emission-pattern.md) - Experimental pattern (to be numbered)
@@ -210,4 +220,4 @@ What other options were evaluated?
 
 ---
 
-*Last updated: December 2025 | Total ADRs: 77*
+*Last updated: January 2026 | Total ADRs: 81*
