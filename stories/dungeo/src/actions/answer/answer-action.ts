@@ -1,11 +1,13 @@
 /**
- * Answer Action - Story-specific action for answering trivia questions
+ * Answer Action - Story-specific action for answering questions
  *
- * Used at the Dungeon Entrance to answer the Dungeon Master's trivia.
+ * Two uses:
+ * 1. Riddle Room puzzle - "ANSWER well" to solve the riddle and open east door
+ * 2. Dungeon Entrance trivia - "ANSWER X" to answer the Dungeon Master's questions
  *
- * Pattern: "answer <text>", "say <text>" (when trivia is active)
+ * Pattern: "answer <text>"
  *
- * The answer is captured as greedy text and checked against the trivia system.
+ * The answer is captured as greedy text and checked against the appropriate system.
  */
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
@@ -23,6 +25,7 @@ import {
   setDungeonMasterState,
   DungeonMasterCustomProperties
 } from '../../npcs/dungeon-master/dungeon-master-entity';
+import { SayMessages } from '../say/types';
 
 /**
  * Check if the player is at the Dungeon Entrance
@@ -37,6 +40,22 @@ function isAtDungeonEntrance(context: ActionContext): boolean {
 
   const identity = room.get(IdentityTrait);
   return identity?.name === 'Dungeon Entrance';
+}
+
+/**
+ * Check if the player is in the Riddle Room
+ */
+function isInRiddleRoom(context: ActionContext): boolean {
+  const identity = context.currentLocation.get(IdentityTrait);
+  if (!identity) return false;
+  return identity.name?.toLowerCase().includes('riddle room') || false;
+}
+
+/**
+ * Check if the riddle has already been solved
+ */
+function isRiddleSolved(context: ActionContext): boolean {
+  return (context.currentLocation as any).riddleSolved === true;
 }
 
 /**
@@ -142,10 +161,7 @@ export const answerAction: Action = {
   group: 'communication',
 
   validate(context: ActionContext): ValidationResult {
-    const atDungeonEntrance = isAtDungeonEntrance(context);
-    context.sharedData.atDungeonEntrance = atDungeonEntrance;
-
-    // Extract the answer text
+    // Extract the answer text first
     const answerText = extractAnswer(context);
     context.sharedData.answerText = answerText;
 
@@ -155,6 +171,20 @@ export const answerAction: Action = {
         error: AnswerMessages.NO_ANSWER_GIVEN
       };
     }
+
+    // Check if we're in the Riddle Room (priority over trivia)
+    const inRiddleRoom = isInRiddleRoom(context);
+    context.sharedData.inRiddleRoom = inRiddleRoom;
+
+    if (inRiddleRoom) {
+      // Riddle Room puzzle - always valid if we have an answer
+      context.sharedData.riddleAlreadySolved = isRiddleSolved(context);
+      return { valid: true };
+    }
+
+    // Fall back to Dungeon Master trivia check
+    const atDungeonEntrance = isAtDungeonEntrance(context);
+    context.sharedData.atDungeonEntrance = atDungeonEntrance;
 
     // Get trivia state
     const triviaState = getTriviaState(context);
@@ -187,9 +217,52 @@ export const answerAction: Action = {
 
   execute(context: ActionContext): void {
     const { sharedData, world } = context;
-
-    const triviaState = sharedData.triviaState as TriviaState;
     const answerText = sharedData.answerText as string;
+
+    // Handle Riddle Room puzzle
+    if (sharedData.inRiddleRoom) {
+      // Already solved?
+      if (sharedData.riddleAlreadySolved) {
+        sharedData.resultMessage = SayMessages.RIDDLE_ALREADY_SOLVED;
+        return;
+      }
+
+      // Check the answer - strip quotes and normalize
+      let answer = answerText.toLowerCase().trim();
+      answer = answer.replace(/^["']|["']$/g, '');
+
+      if (answer === 'well' || answer === 'a well') {
+        // Correct! Mark riddle as solved
+        (context.currentLocation as any).riddleSolved = true;
+
+        // Open the east exit to the Pearl Room (Broom Closet)
+        const roomTrait = context.currentLocation.get(RoomTrait);
+        if (roomTrait) {
+          // Find the Pearl Room / Broom Closet
+          const allEntities = world.getAllEntities();
+          const pearlRoom = allEntities.find(e => {
+            const ident = e.get(IdentityTrait);
+            const name = ident?.name?.toLowerCase() || '';
+            return name.includes('pearl') || name.includes('broom closet');
+          });
+
+          if (pearlRoom) {
+            roomTrait.exits[Direction.EAST] = { destination: pearlRoom.id };
+          }
+        }
+
+        sharedData.riddleCorrect = true;
+        sharedData.resultMessage = SayMessages.RIDDLE_CORRECT;
+      } else {
+        // Wrong answer
+        sharedData.riddleCorrect = false;
+        sharedData.resultMessage = SayMessages.RIDDLE_WRONG;
+      }
+      return;
+    }
+
+    // Handle Dungeon Master trivia
+    const triviaState = sharedData.triviaState as TriviaState;
 
     // Process the answer
     const result = processAnswer(triviaState, answerText);
@@ -243,6 +316,16 @@ export const answerAction: Action = {
 
     const messageId = sharedData.resultMessage as string;
 
+    // Handle Riddle Room results
+    if (sharedData.inRiddleRoom) {
+      events.push(context.event('action.success', {
+        actionId: ANSWER_ACTION_ID,
+        messageId,
+      }));
+      return events;
+    }
+
+    // Handle Trivia results
     // Result message (correct/wrong/passed/failed)
     events.push(context.event('game.message', {
       messageId,
