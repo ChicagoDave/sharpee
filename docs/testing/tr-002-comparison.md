@@ -531,12 +531,12 @@ When revisiting a room:
 14. ✅ Torch Room description - dome/pedestal detail (FIXED - verified from 1981 MDL dung.355:317-322)
 15. ⚠️ Gallery description - missing south exit mention
 
-### P3 - Low (Minor Text)
-16. ⚠️ "This is" vs "You are in" consistency
-17. ⚠️ Window opening custom message
-18. ⚠️ "barred" vs "boarded up" windows
-19. ⚠️ Welcome mat "Dungeon" vs "Zork"
-20. ⚠️ Up Tree "beyond" vs "above" reach
+### P3 - Low (Minor Text) - **ALL FIXED**
+16. ✅ "This is" vs "You are in" - Fixed in West of House, Kitchen, Living Room, Cellar
+17. ✅ Window opening custom message - "With great effort, you open the window..."
+18. ✅ "barred" vs "boarded up" windows - North/South of House now say "barred"
+19. ✅ Welcome mat "Dungeon" vs "Zork" - Now says "Welcome to Dungeon!"
+20. ✅ Up Tree "beyond" vs "above" reach - Now says "beyond your reach"
 
 ---
 
