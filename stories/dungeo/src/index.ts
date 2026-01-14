@@ -42,7 +42,7 @@ import { registerScheduledEvents, DungeoSchedulerMessages, FloodingMessages, reg
 import { setSchedulerForGDT, setEngineForKL } from './actions/gdt/commands';
 
 // Import handlers
-import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages, registerGlacierHandler, GlacierMessages, registerReservoirExitHandler, registerBoatPunctureHandler, BoatPunctureMessages, createDeathPenaltyHandler, DeathPenaltyMessages } from './handlers';
+import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerGhostRitualHandler, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages, registerGlacierHandler, GlacierMessages, registerReservoirExitHandler, registerBoatPunctureHandler, BoatPunctureMessages, createDeathPenaltyHandler, DeathPenaltyMessages, registerTrapdoorHandler, TrapdoorMessages } from './handlers';
 import { initializeMirrorRoom, createMirrorTouchHandler, MirrorRoomConfig, MirrorRoomMessages } from './handlers/mirror-room-handler';
 import { MIRROR_ID } from './regions/temple';
 
@@ -1373,6 +1373,7 @@ export class DungeoStory implements Story {
     // Rug/trapdoor puzzle
     language.addMessage('dungeo.rug.moved.reveal_trapdoor', 'Moving the rug reveals a trap door.');
     language.addMessage('dungeo.trapdoor.opened', 'The door reluctantly opens to reveal a rickety staircase descending into darkness.');
+    language.addMessage(TrapdoorMessages.SLAMS_SHUT, 'The door crashes shut, and you hear someone barring it.');
 
     // Troll combat
     language.addMessage('dungeo.troll.death.passage_clear', 'With the troll dispatched, the passage to the north is now clear.');
@@ -2095,6 +2096,9 @@ export class DungeoStory implements Story {
 
       // Register Round Room randomization handler (carousel room)
       registerRoundRoomHandler(scheduler, this.roundRoomIds.roundRoom);
+
+      // Register Trapdoor auto-close handler (Living Room to Cellar)
+      registerTrapdoorHandler(scheduler, this.houseInteriorIds.livingRoom, this.undergroundIds.cellar);
 
       // Register Royal Puzzle handler (sliding block puzzle)
       registerRoyalPuzzleHandler(scheduler, this.royalPuzzleIds);
