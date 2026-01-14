@@ -365,7 +365,7 @@ This document compares the real Mainframe Zork transcript (tr-002.txt) against o
 **Canonical (line 114-115):**
 > The door crashes shut, and you hear someone barring it.
 
-**Status:** ❌ **NOT IMPLEMENTED** - Trap door should auto-close after descending!
+**Status:** ✅ Implemented - trapdoor-handler.ts daemon triggers on Living Room → Cellar movement
 
 ### Combat
 **Canonical (line 131-140):**
@@ -381,7 +381,7 @@ This document compares the real Mainframe Zork transcript (tr-002.txt) against o
 **Canonical (line 158):**
 > The rope drops over the side and comes within ten feet of the floor.
 
-**Status:** ❌ **NOT IMPLEMENTED** - Need TIE action
+**Status:** ✅ Implemented - tie-action.ts handles railing in Dome Room
 
 ### Rope visible from below
 **Canonical (line 162):**
@@ -393,14 +393,14 @@ This document compares the real Mainframe Zork transcript (tr-002.txt) against o
 **Canonical (line 250):**
 > There is a clap of thunder, and the east door opens.
 
-**Status:** ❌ **NOT IMPLEMENTED** - Need ANSWER action
+**Status:** ✅ Implemented - answer-action.ts handles Riddle Room puzzle
 
 ### PRAY (Temple Teleport)
 **Canonical (line 295-296):**
 (From Temple Altar, pray teleports to forest)
 > This is a forest, with trees in all directions around you.
 
-**Status:** ❌ **NOT IMPLEMENTED** - Need PRAY action
+**Status:** ✅ Implemented - pray-action.ts teleports from Altar to Forest Path 1
 
 ### Already off
 **Canonical (line 299):**
@@ -509,11 +509,11 @@ When revisiting a room:
 
 ## Priority Fix List
 
-### P0 - Critical (Blocks Gameplay)
-1. ❌ `TIE ROPE TO` action - Required for dome/torch room puzzle
-2. ❌ `ANSWER "X"` action - Required for riddle puzzle
-3. ❌ `PRAY` action - Temple teleport puzzle
-4. ❌ Trap door auto-close - Player can't return the easy way
+### P0 - Critical (Blocks Gameplay) - **ALL FIXED**
+1. ✅ `TIE ROPE TO` action - Dome/torch room puzzle works
+2. ✅ `ANSWER "X"` action - Riddle puzzle works ("a well" opens east door)
+3. ✅ `PRAY` action - Temple teleport to forest works
+4. ✅ Trap door auto-close - Door slams shut and bars after descending
 
 ### P1 - High (Wrong Content) - **ALL FIXED**
 5. ✅ Dome Room description - AT TOP not at base (verified from 1981 MDL dung.355:324-327)
