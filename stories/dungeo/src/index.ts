@@ -1371,7 +1371,8 @@ export class DungeoStory implements Story {
    */
   extendLanguage(language: LanguageProvider): void {
     // Rug/trapdoor puzzle
-    language.addMessage('dungeo.rug.moved.reveal_trapdoor', 'Moving the rug reveals a trapdoor.');
+    language.addMessage('dungeo.rug.moved.reveal_trapdoor', 'Moving the rug reveals a trap door.');
+    language.addMessage('dungeo.trapdoor.opened', 'The door reluctantly opens to reveal a rickety staircase descending into darkness.');
 
     // Troll combat
     language.addMessage('dungeo.troll.death.passage_clear', 'With the troll dispatched, the passage to the north is now clear.');

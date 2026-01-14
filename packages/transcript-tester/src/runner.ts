@@ -570,12 +570,14 @@ async function runCommand(
     const result = await engine.executeCommand(command.input);
     actualOutput = typeof result === 'string' ? result : (engine.getOutput?.() || '');
 
-    // Capture events from the engine
+    // Capture events from the engine (filter out system.* debug events)
     if (engine.lastEvents) {
-      actualEvents = engine.lastEvents.map(e => ({
-        type: e.type,
-        data: e.data || {}
-      }));
+      actualEvents = engine.lastEvents
+        .filter(e => !e.type.startsWith('system.'))
+        .map(e => ({
+          type: e.type,
+          data: e.data || {}
+        }));
     }
   } catch (e) {
     actualOutput = '';

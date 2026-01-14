@@ -250,16 +250,45 @@ function createLivingRoomObjects(world: WorldModel, livingRoomId: string, cellar
   lantern.add(new SwitchableTrait({ isOn: false }));
   world.moveEntity(lantern.id, livingRoomId);
 
-  const trapdoor = world.createEntity('trapdoor', EntityType.SCENERY);
+  const trapdoor = world.createEntity('trap door', EntityType.SCENERY);
   trapdoor.add(new IdentityTrait({
-    name: 'trapdoor',
-    aliases: ['trap door', 'door', 'trap'],
-    description: 'A closed trapdoor leading down into darkness.',
+    name: 'trap door',
+    aliases: ['trapdoor', 'door'],
+    adjectives: ['trap'],
+    description: 'The dusty cover of a closed trap door.',
     properName: false,
     article: 'a'
   }));
   trapdoor.add(new OpenableTrait({ isOpen: false }));
   trapdoor.add(new SceneryTrait());
+
+  // Handle trap door opening - update description and provide custom message
+  trapdoor.on = {
+    'if.event.opened': (event: IGameEvent) => {
+      // Update description to reflect open state
+      const identity = trapdoor.get(IdentityTrait);
+      if (identity) {
+        identity.description = 'The trap door is open, revealing a rickety staircase descending into darkness.';
+      }
+      // Return custom message for opening
+      return [{
+        id: generateEventId(),
+        type: 'game.message',
+        entities: { actor: event.entities.actor, target: trapdoor.id },
+        data: { messageId: 'dungeo.trapdoor.opened' },
+        timestamp: Date.now(),
+        narrate: true
+      }];
+    },
+    'if.event.closed': (event: IGameEvent) => {
+      // Update description back to closed state
+      const identity = trapdoor.get(IdentityTrait);
+      if (identity) {
+        identity.description = 'The dusty cover of a closed trap door.';
+      }
+      return [];
+    }
+  };
 
   const rug = world.createEntity('oriental rug', EntityType.SCENERY);
   rug.add(new IdentityTrait({
@@ -283,6 +312,11 @@ function createLivingRoomObjects(world: WorldModel, livingRoomId: string, cellar
         const livingRoom = world.getEntity(livingRoomId);
         if (livingRoom) {
           RoomBehavior.setExit(livingRoom, Direction.DOWN, cellarId, trapdoor.id);
+        }
+        // Also set the UP exit from Cellar to Living Room via trapdoor
+        const cellar = world.getEntity(cellarId);
+        if (cellar) {
+          RoomBehavior.setExit(cellar, Direction.UP, livingRoomId, trapdoor.id);
         }
       }
       if (pushable) {

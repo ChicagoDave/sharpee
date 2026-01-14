@@ -206,11 +206,9 @@ export function createUndergroundRegion(world: WorldModel): UndergroundRoomIds {
 // === External connectors ===
 
 export function connectUndergroundToHouse(world: WorldModel, ids: UndergroundRoomIds, livingRoomId: string): void {
-  const cellar = world.getEntity(ids.cellar);
-  if (cellar) {
-    const trait = cellar.get(RoomTrait);
-    if (trait) trait.exits[Direction.UP] = { destination: livingRoomId, via: 'trapdoor' };
-  }
+  // Note: The UP exit from Cellar to Living Room is set dynamically when the rug is pushed
+  // and the trap door is revealed. See house-interior.ts rug.on['if.event.pushed'] handler.
+  // This function now only stores the living room ID for reference if needed.
 }
 
 export function connectStudioToKitchen(world: WorldModel, ids: UndergroundRoomIds, kitchenId: string): void {

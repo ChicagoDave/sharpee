@@ -1,0 +1,48 @@
+> tk lamp
+Taken: brass lantern (i09)
+
+> ah Cellar
+Teleported to: Cellar (r0h)
+
+> turn on lamp
+brass lantern switches on, banishing the darkness.
+
+$ TURN LAMP ON should also work
+
+> l
+You can see metal ramp here.
+
+Cellar
+
+You are in a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. On the west is the bottom of a steep metal ramp which is unclimbable.
+
+> u
+Living Room
+
+You are in the living room. There is a doorway to the east, a wooden door with strange gothic lettering to the west, which appears to be nailed shut, a trophy case, and a large oriental rug in the center of the room.
+
+$ This connection should not work with the trap door closed
+
+> d
+You can't go that way.
+
+> move rug
+You give oriental rug a push, but it doesn't move far.
+
+Moving the rug reveals a trapdoor.
+
+> open trap door
+
+$ the action doesn't succeed - see tr-001-open-trap-door.txt
+
+> l
+You can see trophy case, elvish sword, trapdoor, oriental rug, wooden door here.
+
+Living Room
+
+You are in the living room. There is a doorway to the east, a wooden door with strange gothic lettering to the west, which appears to be nailed shut, a trophy case, and a large oriental rug in the center of the room.
+
+> d
+The trapdoor is closed.
+
+> ex

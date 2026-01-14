@@ -332,8 +332,12 @@ Since "turn switch" is puzzle-specific (not a generic IF verb), Option B is corr
 **IMPORTANT**: Use these scripts instead of manual `pnpm build` commands to avoid WSL permission issues:
 
 ```bash
-# Full build of all dungeo dependencies (use when packages change)
+# Full build of all dungeo dependencies (use when ALL packages change)
 ./scripts/build-all-dungeo.sh
+
+# PREFERRED: Skip to specific package (much faster!)
+./scripts/build-all-dungeo.sh --skip text-service  # Rebuild from text-service onward
+./scripts/build-all-dungeo.sh --skip dungeo        # Only rebuild dungeo + bundle
 
 # Bundle everything into single sharpee.js (fast rebuilds)
 ./scripts/bundle-sharpee.sh
@@ -344,9 +348,30 @@ Since "turn switch" is puzzle-specific (not a generic IF verb), Option B is corr
 
 **Workflow**:
 
-1. After changing platform packages, run `./scripts/build-all-dungeo.sh`
-2. For story-only changes, run `./scripts/bundle-sharpee.sh`
-3. Test with `./scripts/fast-transcript-test.sh <transcript-file>`
+1. After changing platform packages, run `./scripts/build-all-dungeo.sh --skip <first-changed-package>`
+2. For story-only changes, run `./scripts/build-all-dungeo.sh --skip dungeo`
+3. Test with bundled sharpee.js (see below)
+
+**IMPORTANT**:
+- Always use `--skip` when possible to avoid slow full rebuilds
+- Always use the bundled `dist/sharpee.js` for testing - it's much faster than loading individual packages
+
+### Fast Testing (Use This!)
+
+After building, use the bundle for all testing:
+
+```bash
+# Interactive play (uses bundle)
+node dist/sharpee.js --play
+
+# Run specific transcript
+node dist/sharpee.js --test stories/dungeo/tests/transcripts/rug-trapdoor.transcript
+
+# Or use transcript-tester directly (slower, loads packages)
+node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/transcripts/rug-trapdoor.transcript
+```
+
+**Prefer**: `node dist/sharpee.js` over `node packages/transcript-tester/dist/cli.js`
 
 ### Transcript Testing (ADR-073)
 
