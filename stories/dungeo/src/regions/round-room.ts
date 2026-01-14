@@ -24,11 +24,13 @@ export function createRoundRoomRegion(world: WorldModel): RoundRoomIds {
   room.add(new IdentityTrait({
     name: 'Round Room',
     aliases: ['round room', 'circular room'],
-    description: 'This is a circular stone room with passages in all directions. Several of them have unfortunately been blocked by cave-ins.',
+    description: 'You are in a circular room with passages off in eight directions.',
     properName: true,
     article: 'the'
   }));
-  (room as any).isFixed = true; // Spinning state - false = randomized exits
+  (room as any).isFixed = false; // Spinning state - false = randomized exits (until robot fixes it)
+  // Compass message "Your compass needle spins wildly, and you can't get your bearings."
+  // is added dynamically by the room handler when isFixed is false
 
   return { roundRoom: room.id };
 }

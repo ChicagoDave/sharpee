@@ -68,8 +68,8 @@ and all the king's horses can't draw it up?'
 (Reply via 'ANSWER "answer"')`);
   (riddleRoom as any).riddleSolved = false;
 
-  const pearlRoom = createRoom(world, 'Pearl Room',
-    'This is a small room with walls of pearl. A passage leads west.');
+  const pearlRoom = createRoom(world, 'Broom Closet',
+    'This is a former broom closet. The exits are to the east and west.');
 
   const wellBottom = createRoom(world, 'Well Bottom',
     'You are at the bottom of a well. The walls are too smooth to climb.');
@@ -193,8 +193,8 @@ export function createWellRoomObjects(world: WorldModel, roomIds: WellRoomIds): 
   // Pool Room treasure
   createSilverChalice(world, roomIds.poolRoom);
 
-  // Pearl Room treasure
-  createPearl(world, roomIds.pearlRoom);
+  // Broom Closet treasure (pearl necklace)
+  createPearlNecklace(world, roomIds.pearlRoom);
 
   // Riddle Room scenery
   createRiddleInscription(world, roomIds.riddleRoom);
@@ -288,22 +288,22 @@ function createSilverChalice(world: WorldModel, roomId: string): IFEntity {
 
 // ============= Pearl Room Objects =============
 
-function createPearl(world: WorldModel, roomId: string): IFEntity {
-  const pearl = world.createEntity('pearl', EntityType.ITEM);
-  pearl.add(new IdentityTrait({
-    name: 'pearl',
-    aliases: ['large pearl', 'giant pearl', 'white pearl'],
-    description: 'A magnificent pearl of extraordinary size. It gleams with a soft, lustrous light.',
+function createPearlNecklace(world: WorldModel, roomId: string): IFEntity {
+  const necklace = world.createEntity('pearl necklace', EntityType.ITEM);
+  necklace.add(new IdentityTrait({
+    name: 'pearl necklace',
+    aliases: ['necklace', 'pearls', 'string of pearls'],
+    description: 'A pearl necklace with hundreds of large pearls. It must be worth a fortune.',
     properName: false,
     article: 'a',
     weight: 5
   }));
-  (pearl as any).isTreasure = true;
-  (pearl as any).treasureId = 'pearl';
-  (pearl as any).treasureValue = 9;        // OFVAL from mdlzork_810722
-  (pearl as any).trophyCaseValue = 5;      // OTVAL from mdlzork_810722
-  world.moveEntity(pearl.id, roomId);
-  return pearl;
+  (necklace as any).isTreasure = true;
+  (necklace as any).treasureId = 'pearl-necklace';
+  (necklace as any).treasureValue = 9;        // OFVAL from mdlzork_810722
+  (necklace as any).trophyCaseValue = 5;      // OTVAL from mdlzork_810722
+  world.moveEntity(necklace.id, roomId);
+  return necklace;
 }
 
 // ============= Riddle Room Objects =============

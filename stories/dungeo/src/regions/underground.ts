@@ -77,7 +77,7 @@ export function createUndergroundRegion(world: WorldModel): UndergroundRoomIds {
     'This is a north-south crawlway; a passage also goes to the east. There is a hole above, but it provides no opportunities for climbing.');
 
   const trollRoom = createRoom(world, 'Troll Room',
-    'This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by straying adventurers) mar the walls.');
+    'This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.');
 
   const eastWestPassage = createRoom(world, 'East/West Passage',
     'This is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.');
@@ -89,7 +89,7 @@ export function createUndergroundRegion(world: WorldModel): UndergroundRoomIds {
     'This is a crawlway with a low ceiling. A passage goes to the east, and a narrow opening leads west.');
 
   const domeRoom = createRoom(world, 'Dome Room',
-    'You are at the base of a large dome. A passage leads south. High above you is a narrow ledge.');
+    'This is the periphery of a large dome, which forms the ceiling of another room below. Protecting you from a precipitous drop is a wooden railing which circles the dome.');
   (domeRoom as any).ropeAttached = false;
   (domeRoom as any).hasRailing = true;
 
@@ -106,7 +106,7 @@ export function createUndergroundRegion(world: WorldModel): UndergroundRoomIds {
     'This appears to have been an artist\'s studio. The walls are covered with sketches of mountains. A stairway leads down. The only other exit is to the northwest.');
 
   const torchRoom = createRoom(world, 'Torch Room',
-    'This is a large room with a prominent doorway leading to a down staircase. To the west is a narrow passage. Above you is a narrow ledge.');
+    'This is a large room with a prominent doorway leading to a down staircase. To the west is a narrow twisting tunnel, covered with a thin layer of dust. Above you is a large dome painted with scenes depicting elfin hacking rites. Up around the edge of the dome (20 feet up) is a wooden railing. In the center of the room there is a white marble pedestal.');
 
   // Link Dome Room to Torch Room for rope puzzle
   (domeRoom as any).torchRoomId = torchRoom.id;
