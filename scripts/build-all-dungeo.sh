@@ -34,7 +34,8 @@ build_package "@sharpee/event-processor" "event-processor"
 build_package "@sharpee/lang-en-us" "lang-en-us"
 build_package "@sharpee/parser-en-us" "parser-en-us"
 build_package "@sharpee/if-services" "if-services"
-build_package "@sharpee/text-services" "text-services"
+build_package "@sharpee/text-blocks" "text-blocks"
+build_package "@sharpee/text-service" "text-service"
 build_package "@sharpee/stdlib" "stdlib"
 build_package "@sharpee/engine" "engine"
 build_package "@sharpee/sharpee" "sharpee"
@@ -76,7 +77,8 @@ export * from '../packages/engine/dist/index';
 export * from '../packages/parser-en-us/dist/index';
 export * from '../packages/lang-en-us/dist/index';
 export * from '../packages/event-processor/dist/index';
-export * from '../packages/text-services/dist/index';
+export * from '../packages/text-blocks/dist/index';
+export * from '../packages/text-service/dist/index';
 EOF
 
 # Measure bundle size

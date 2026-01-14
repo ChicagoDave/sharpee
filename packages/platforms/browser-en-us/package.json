@@ -9,8 +9,7 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
-    "@sharpee/sharpee": "workspace:*",
-    "@sharpee/text-service-browser": "workspace:*"
+    "@sharpee/sharpee": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.0.0"

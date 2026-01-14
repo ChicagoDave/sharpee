@@ -107,6 +107,13 @@ export class CommandExecutor {
     let executionTime = 0;
 
     try {
+      // Set world context for parser entity resolution
+      const player = world.getPlayer();
+      if (player && 'setWorldContext' in this.parser) {
+        const playerLocation = world.getLocation(player.id) || '';
+        (this.parser as any).setWorldContext(world, player.id, playerLocation);
+      }
+
       // Phase 1: Parse
       const parseStart = config?.collectTiming ? Date.now() : 0;
       const parseResult = this.parser.parse(input);

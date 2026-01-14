@@ -20,7 +20,7 @@
     "@sharpee/stdlib": "workspace:*",
     "@sharpee/lang-en-us": "workspace:*",
     "@sharpee/parser-en-us": "workspace:*",
-    "@sharpee/text-services": "workspace:*",
+    "@sharpee/text-service": "workspace:*",
     "chalk": "^4.1.2",
     "glob": "^10.3.10"
   },

@@ -17,7 +17,7 @@
     "@sharpee/stdlib": "workspace:*",
     "@sharpee/lang-en-us": "workspace:*",
     "@sharpee/parser-en-us": "workspace:*",
-    "@sharpee/text-services": "workspace:*",
+    "@sharpee/text-service": "workspace:*",
     "@sharpee/event-processor": "workspace:*"
   },
   "devDependencies": {

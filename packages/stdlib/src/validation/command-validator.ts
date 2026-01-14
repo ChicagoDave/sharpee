@@ -685,10 +685,23 @@ export class CommandValidator implements CommandValidator {
       });
 
       // Remove duplicates
-      const uniqueIds = new Set(candidates.map(e => e.id));
       candidates = candidates.filter((e, i, arr) =>
         arr.findIndex(x => x.id === e.id) === i
       );
+
+      // Fallback: If no candidates found by name/type/synonym, try adjective search
+      // This handles "press yellow" when yellow is an adjective on "yellow button"
+      if (candidates.length === 0) {
+        const byAdjective = this.getEntitiesByAdjective(searchTerm);
+        if (byAdjective.length > 0) {
+          candidates = byAdjective;
+          this.emitDebugEvent('entity_search', command, {
+            searchTerm,
+            byAdjective: byAdjective.length,
+            fallback: true
+          });
+        }
+      }
     }
 
     // Now filter by scope
@@ -911,6 +924,23 @@ export class CommandValidator implements CommandValidator {
   }
 
   /**
+   * Get entities by adjective (fallback for "press yellow" style commands)
+   * When no name/alias match exists, find entities where the search term is an adjective
+   */
+  private getEntitiesByAdjective(adjective: string): IFEntity[] {
+    const normalizedAdjective = adjective.toLowerCase();
+    return this.world.findWhere(entity => {
+      // Skip rooms and player
+      if (entity.type === 'room' || entity.id === this.world.getPlayer()?.id) {
+        return false;
+      }
+
+      const adjectives = this.getEntityAdjectives(entity).map(a => a.toLowerCase());
+      return adjectives.includes(normalizedAdjective);
+    });
+  }
+
+  /**
    * Filter entities by scope level
    */
   private filterByScope(entities: IFEntity[], scope: ScopeLevel): IFEntity[] {
@@ -981,6 +1011,10 @@ export class CommandValidator implements CommandValidator {
       } else if (synonyms.includes(searchTerm)) {
         score += 6;
         matchReasons.push('synonym_match');
+      } else if (adjectives.includes(searchTerm)) {
+        // Adjective fallback: "press yellow" finds "yellow button"
+        score += 4;
+        matchReasons.push('adjective_match');
       }
 
       // Modifier matching - this is key for disambiguation
