@@ -73,12 +73,14 @@ export function parsePlaceholder(placeholder: string): {
  * @returns Formatted string
  */
 export function applyFormatters(
-  value: string | string[] | EntityInfo | EntityInfo[],
+  value: string | number | boolean | string[] | EntityInfo | EntityInfo[],
   formatters: string[],
   registry: FormatterRegistry,
   context: FormatterContext
 ): string {
-  let result: string | string[] | EntityInfo | EntityInfo[] = value;
+  // Convert numbers/booleans to strings first
+  let result: string | string[] | EntityInfo | EntityInfo[] =
+    (typeof value === 'number' || typeof value === 'boolean') ? String(value) : value;
 
   for (const formatterName of formatters) {
     const formatter = registry.get(formatterName);
@@ -115,7 +117,7 @@ export function applyFormatters(
  */
 export function formatMessage(
   template: string,
-  params: Record<string, string | string[] | EntityInfo | EntityInfo[]>,
+  params: Record<string, string | number | boolean | string[] | EntityInfo | EntityInfo[]>,
   registry: FormatterRegistry,
   context: FormatterContext = {}
 ): string {
@@ -142,6 +144,9 @@ export function formatMessage(
     }
     if (typeof value === 'string') {
       return value;
+    }
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
     }
     return value.name;
   });

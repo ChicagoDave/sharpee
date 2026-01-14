@@ -22,35 +22,35 @@ export const throwingLanguage = {
   messages: {
     // Error messages
     'no_item': "Throw what?",
-    'not_holding': "You aren't holding {item}.",
-    'target_not_visible': "You can't see {target}.",
+    'not_holding': "{You} aren't holding {item}.",
+    'target_not_visible': "{You} {can't} see {target}.",
     'target_not_here': "{target} isn't here.",
     'no_exit': "There's no exit {direction}.",
     'too_heavy': "{item} is too heavy to throw far (weighs {weight}kg).",
-    'self': "You can't throw things at yourself.",
-    
+    'self': "{You} {can't} throw things at {yourself}.",
+
     // Success messages - general throw
-    'thrown': "You throw {item}.",
-    'thrown_down': "You toss {item} to the ground.",
-    'thrown_gently': "You gently toss {item}.",
-    
+    'thrown': "{You} {throw} {item}.",
+    'thrown_down': "{You} {toss} {item} to the ground.",
+    'thrown_gently': "{You} gently {toss} {item}.",
+
     // Success messages - at target
-    'thrown_at': "You throw {item} at {target}.",
-    'hits_target': "You throw {item} at {target}. It hits!",
-    'misses_target': "You throw {item} at {target}, but miss.",
+    'thrown_at': "{You} {throw} {item} at {target}.",
+    'hits_target': "{You} {throw} {item} at {target}. It hits!",
+    'misses_target': "{You} {throw} {item} at {target}, but miss.",
     'bounces_off': "{item} bounces off {target}.",
     'lands_on': "{item} lands on {target}.",
     'lands_in': "{item} lands in {target}.",
-    
+
     // Success messages - directional
-    'thrown_direction': "You throw {item} {direction}.",
+    'thrown_direction': "{You} {throw} {item} {direction}.",
     'sails_through': "{item} sails through the exit to the {direction}.",
-    
+
     // Breaking messages
     'breaks_on_impact': "{item} shatters on impact!",
     'breaks_against': "{item} smashes against {target}!",
     'fragile_breaks': "The fragile {item} breaks into pieces.",
-    
+
     // Target reactions
     'target_ducks': "{target} ducks out of the way.",
     'target_catches': "{target} catches {item}!",

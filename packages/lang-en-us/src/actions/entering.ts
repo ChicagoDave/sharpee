@@ -29,15 +29,15 @@ export const enteringLanguage = {
   
   messages: {
     'no_target': "Enter what?",
-    'not_enterable': "You can't enter {place}.",
-    'already_inside': "You're already in {place}.",
+    'not_enterable': "{You} {can't} enter {place}.",
+    'already_inside': "{You're} already in {place}.",
     'container_closed': "{container} is closed.",
     'too_full': "{place} is full (maximum {max} occupants).",
-    'entered': "You get into {place}.",
-    'entered_on': "You get onto {place}.",
-    'cant_enter': "You can't enter {place}: {reason}.",
-    'not_here': "You don't see {place} here.",
-    'too_small': "{place} is too small for you to enter.",
+    'entered': "{You} {get} into {place}.",
+    'entered_on': "{You} {get} onto {place}.",
+    'cant_enter': "{You} {can't} enter {place}: {reason}.",
+    'not_here': "{You} {don't} see {place} here.",
+    'too_small': "{place} is too small for {you} to enter.",
     'occupied': "{place} is already occupied."
   },
   

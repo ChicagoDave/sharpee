@@ -15,14 +15,15 @@ export const goingLanguage = {
   ],
   
   messages: {
-    'no_exit': "You can't go that way.",
+    'no_exit': "{You} {can't} go that way.",
+    'no_exit_that_way': "{You} {can't} go that way.",
     'door_closed': "The {door} is closed.",
     'door_locked': "The {door} is locked.",
     'too_dark': "It's too dark to navigate safely.",
-    'moved': "You go {direction}.",
-    'cant_go_through': "You can't go through {obstacle}.",
-    'already_there': "You're already there.",
-    'nowhere_to_go': "You'll have to say which compass direction to go in."
+    'moved': "{You} {go} {direction}.",
+    'cant_go_through': "{You} {can't} go through {obstacle}.",
+    'already_there': "{You're} already there.",
+    'nowhere_to_go': "{You}'ll have to say which compass direction to go in."
   },
   
   help: {

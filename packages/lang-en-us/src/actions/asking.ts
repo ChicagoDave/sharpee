@@ -17,9 +17,9 @@ export const askingLanguage = {
     // Error messages
     'no_target': "Ask whom?",
     'no_topic': "Ask about what?",
-    'not_visible': "You can't see {target}.",
+    'not_visible': "{You} {can't} see {target}.",
     'too_far': "{target} is too far away.",
-    'not_actor': "You can only ask questions of people.",
+    'not_actor': "{You} can only ask questions of people.",
     
     // Success messages - unknown topic
     'unknown_topic': "{target} says, \"I don't know anything about that.\"",

@@ -16,11 +16,11 @@ export const raisingLanguage = {
   messages: {
     // Error messages (used by capability dispatch)
     'if.raise.no_target': "Raise what?",
-    'if.raise.cant_raise_that': "You can't raise {target}.",
+    'if.raise.cant_raise_that': "{You} {can't} raise {target}.",
     'if.raise.already_up': "That's already raised.",
 
     // Generic success message (specific behaviors override)
-    'if.raise.raised': "You raise {target}."
+    'if.raise.raised': "{You} {raise} {target}."
   },
 
   help: {

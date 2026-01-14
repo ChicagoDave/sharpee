@@ -18,19 +18,19 @@ export const searchingLanguage = {
   
   messages: {
     // Error messages
-    'not_visible': "You can't see {target} to search it.",
-    'not_reachable': "You can't reach {target} to search it.",
+    'not_visible': "{You} {can't} see {target} to search it.",
+    'not_reachable': "{You} {can't} reach {target} to search it.",
     'container_closed': "{target} is closed.",
-    
+
     // Success messages
-    'nothing_special': "You find nothing of interest.",
-    'found_items': "You discover: {items}.",
+    'nothing_special': "{You} {find} nothing of interest.",
+    'found_items': "{You} {discover}: {items}.",
     'empty_container': "{target} is empty.",
-    'container_contents': "In {target} you see: {items}.",
-    'supporter_contents': "On {target} you see: {items}.",
-    'searched_location': "You search around carefully.",
-    'searched_object': "You search {target} thoroughly.",
-    'found_concealed': "Hidden {where}, you discover: {items}."
+    'container_contents': "In {target} {you} {see}: {items}.",
+    'supporter_contents': "On {target} {you} {see}: {items}.",
+    'searched_location': "{You} {search} around carefully.",
+    'searched_object': "{You} {search} {target} thoroughly.",
+    'found_concealed': "Hidden {where}, {you} {discover}: {items}."
   },
   
   help: {
