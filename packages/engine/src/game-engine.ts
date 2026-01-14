@@ -31,7 +31,7 @@ import {
   registerStandardChains
 } from '@sharpee/stdlib';
 import { LanguageProvider, IEventProcessorWiring } from '@sharpee/if-domain';
-import { TextService, TextServiceContext, TextOutput } from '@sharpee/if-services';
+import { ITextService, createTextService, renderToString } from '@sharpee/text-service';
 import { ISemanticEvent, createSemanticEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, ISerializedSchedulerState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, getUntypedEventData } from '@sharpee/core';
 
 import { ISchedulerService, createSchedulerService } from './scheduler';
@@ -83,7 +83,7 @@ export class GameEngine {
   private eventProcessor: EventProcessor;
   private platformEvents: ISemanticEventSource;
   private actionRegistry: StandardActionRegistry;
-  private textService?: TextService;
+  private textService?: ITextService;
   private turnEvents = new Map<number, ISemanticEvent[]>();
   private running = false;
   private story?: Story;
@@ -108,7 +108,6 @@ export class GameEngine {
     player: IFEntity;
     parser: Parser;
     language: LanguageProvider;
-    textService: TextService;
     perceptionService?: IPerceptionService;
     config?: EngineConfig;
   }) {
@@ -171,7 +170,7 @@ export class GameEngine {
     // Set provided dependencies
     this.languageProvider = options.language;
     this.parser = options.parser;
-    this.textService = options.textService;
+    this.textService = createTextService(this.languageProvider);
     
     // Update action registry with language provider
     this.actionRegistry.setLanguageProvider(this.languageProvider);
@@ -722,68 +721,13 @@ export class GameEngine {
         result.events = allTurnEvents as any; // Platform ops may have added completion events
       }
 
-      // Process text output
+      // Process text output (ADR-096)
       if (this.textService) {
-        // Create context for text service
-        const textContext: TextServiceContext = {
-          currentTurn: turn,
-          getCurrentTurnEvents: () => this.turnEvents.get(turn) || [],
-          getEventsByType: (type: string) => {
-            const events = this.turnEvents.get(turn) || [];
-            return events.filter(e => e.type === type);
-          },
-          getAllEvents: () => {
-            const allEvents: ISemanticEvent[] = [];
-            for (const [, events] of this.turnEvents) {
-              allEvents.push(...events);
-            }
-            return allEvents;
-          },
-          world: this.world,
-          getPlayer: () => this.context.player,
-          getContents: (locationId: string) => this.world.getContents(locationId),
-          getLocation: (entityId: string) => {
-            const entity = this.world.getEntity(entityId);
-            if (!entity) return null;
-            return this.world.getLocation(entityId) || null;
-          },
-          getPlatformEvents: () => {
-            // Get platform events for the current turn only
-            // Filter by turn number in the event data
-            const currentTurn = turn;
-            return this.platformEvents.getAllEvents()
-              .filter((e: ISemanticEvent) => {
-                if (!e.tags?.includes('platform')) return false;
-                // Check if event has turn data
-                const eventData = getUntypedEventData(e);
-                const eventTurn = eventData?.turn;
-                // If no turn data, assume it's from initialization (turn 0)
-                return eventTurn === undefined ? currentTurn === 1 : eventTurn === currentTurn;
-              });
-          }
-        };
-        
-        // Initialize text service with context
-        this.textService.initialize(textContext);
-        
-        // Process turn and get output
-        const output = this.textService.processTurn();
-        
-        // Emit appropriate output based on type
-        if (typeof output === 'string') {
+        const turnEvents = this.turnEvents.get(turn) || [];
+        const blocks = this.textService.processTurn(turnEvents);
+        const output = renderToString(blocks);
+        if (output) {
           this.emit('text:output', output, turn);
-        } else if (output.type === 'json') {
-          this.emit('text:output', JSON.stringify(output, null, 2), turn);
-        } else if (output.type === 'channeled') {
-          // Emit each channel separately
-          for (const [channel, text] of output.channels) {
-            this.emit('text:channel', channel, text, turn);
-          }
-          // Also emit the main channel as text:output
-          const mainText = output.channels.get('main');
-          if (mainText) {
-            this.emit('text:output', mainText, turn);
-          }
         }
       }
 
@@ -901,20 +845,15 @@ export class GameEngine {
   /**
    * Get the text service
    */
-  getTextService(): TextService | undefined {
+  getTextService(): ITextService | undefined {
     return this.textService;
   }
-  
+
   /**
    * Set a custom text service
    */
-  setTextService(service: TextService): void {
+  setTextService(service: ITextService): void {
     this.textService = service;
-    
-    // Set language provider if we have one
-    if (this.languageProvider) {
-      this.textService.setLanguageProvider(this.languageProvider);
-    }
   }
 
   /**

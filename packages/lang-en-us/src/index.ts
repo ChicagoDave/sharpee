@@ -28,6 +28,9 @@ export * from './npc';
 // Export perspective placeholder resolution (ADR-089)
 export * from './perspective';
 
+// Export formatter system (ADR-095)
+export * from './formatters';
+
 // Export vocabulary data for parser use (ADR-082)
 export {
   cardinalNumbers,

@@ -59,6 +59,18 @@ export class IdentityTrait implements ITrait {
    */
   adjectives: string[] = [];
 
+  /**
+   * Noun type for article/formatter selection (ADR-095).
+   * - 'common': Regular countable noun (a sword, the sword)
+   * - 'proper': Proper name (John, not "a John")
+   * - 'mass': Uncountable noun (water, not "a water" - use "some water")
+   * - 'unique': One-of-a-kind (the sun, not "a sun")
+   * - 'plural': Inherently plural (scissors, pants)
+   *
+   * If not set, formatters use `properName` and `grammaticalNumber` as fallback.
+   */
+  nounType?: 'common' | 'proper' | 'mass' | 'unique' | 'plural';
+
   constructor(data?: Partial<IdentityTrait>) {
     if (data) {
       Object.assign(this, data);

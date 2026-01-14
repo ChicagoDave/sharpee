@@ -5,11 +5,9 @@
 import { GameEngine } from '../../src/game-engine';
 import { WorldModel, EntityType } from '@sharpee/world-model';
 import { registerStandardCapabilities } from '@sharpee/stdlib';
-import { createMockTextService } from '../../src/test-helpers/mock-text-service';
 import { Story } from '../../src/story';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '@sharpee/parser-en-us';
-import { TextService } from '@sharpee/if-services';
 
 export interface TestEngineOptions {
   includeCapabilities?: boolean;
@@ -26,26 +24,25 @@ export function setupTestEngine(options: TestEngineOptions = {}): {
   player: any;
   languageProvider: EnglishLanguageProvider;
   parser: EnglishParser;
-  textService: TextService;
 } {
   const { includeCapabilities = true, includeObjects = false } = options;
-  
+
   // Create world model
   const world = new WorldModel();
-  
+
   // Register capabilities if requested
   if (includeCapabilities) {
     registerStandardCapabilities(world);
   }
-  
+
   // Create player
   const player = world.createEntity('You', EntityType.ACTOR);
   world.setPlayer(player.id);
-  
+
   // Create test room
   const room = world.createEntity('Test Room', EntityType.ROOM);
   world.moveEntity(player.id, room.id);
-  
+
   // Add test objects if requested
   if (includeObjects) {
     const lamp = world.createEntity('brass lamp', EntityType.OBJECT);
@@ -53,22 +50,20 @@ export function setupTestEngine(options: TestEngineOptions = {}): {
     world.moveEntity(lamp.id, room.id);
     world.moveEntity(box.id, room.id);
   }
-  
+
   // Create services
   const languageProvider = new EnglishLanguageProvider();
   const parser = new EnglishParser(languageProvider, { world });
-  const textService = createMockTextService();
-  
-  // Create engine with static dependencies
+
+  // Create engine (TextService created internally from language provider)
   const engine = new GameEngine({
     world,
     player,
     parser,
     language: languageProvider,
-    textService
   });
-  
-  return { engine, world, player, languageProvider, parser, textService };
+
+  return { engine, world, player, languageProvider, parser };
 }
 
 /**
@@ -80,16 +75,16 @@ export function createMinimalStory(): Story {
       id: 'test-story',
       title: 'Test Story',
       author: 'Test Author',
-      version: '1.0.0'
+      version: '1.0.0',
     },
-    
+
     createPlayer: (world: WorldModel) => {
       return world.createEntity('You', EntityType.ACTOR);
     },
-    
+
     initializeWorld: (world: WorldModel) => {
       // Minimal initialization
       const room = world.createEntity('Test Room', EntityType.ROOM);
-    }
+    },
   };
 }

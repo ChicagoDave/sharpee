@@ -302,6 +302,12 @@ export function resolvePerspectivePlaceholders(
       /^(see|hear|feel|find|know|think|say|tell|ask|answer)$/i,
       /^(be|have|do|can|can't|will|won't|would|could|should|must|may|might)$/i,
       /^[a-z]+'t$/i, // Contractions like "can't", "don't"
+      // Additional verbs for action templates
+      /^(respond|greet|introduce|swing|graze|land|punch|kick|smash|destroy|strike)$/i,
+      /^(quaff|gulp|sip|nibble|taste|devour|munch|doze|fall|enjoy)$/i,
+      /^(sniff|detect|discover|insert|adjust|lower|raise|tug|drag|press)$/i,
+      /^(inform|grow|toss|poke|prod|pat|stroke|crank|rotate|spin)$/i,
+      /^(toggle|apply|activate|greet|acknowledge)$/i,
     ];
 
     const isVerb = verbPatterns.some(pattern => pattern.test(lowerVerb));

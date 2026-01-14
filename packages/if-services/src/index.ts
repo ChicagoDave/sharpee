@@ -5,8 +5,5 @@
  * the world model, separating them from the pure domain package.
  */
 
-// Text service interfaces
-export * from './text-service';
-
 // Perception service interfaces
 export * from './perception-service';

@@ -16,11 +16,11 @@ export const insertingLanguage = {
   messages: {
     'no_target': "Insert what?",
     'no_destination': "Insert {item} into what?",
-    'not_held': "You need to be holding {item} first.",
+    'not_held': "{You} {need} to be holding {item} first.",
     'not_insertable': "{item} can't be inserted into things.",
-    'not_container': "You can't insert things into {destination}.",
+    'not_container': "{You} {can't} insert things into {destination}.",
     'already_there': "{item} is already in {destination}.",
-    'inserted': "You insert {item} into {container}.",
+    'inserted': "{You} {insert} {item} into {container}.",
     'wont_fit': "{item} won't fit in {container}.",
     'container_closed': "{container} is closed."
   },

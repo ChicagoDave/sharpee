@@ -14,10 +14,10 @@ export const takingOffLanguage = {
   
   messages: {
     'no_target': "Take off what?",
-    'not_wearing': "You aren't wearing {item}.",
-    'removed': "You take off {item}.",
-    'cant_remove': "You can't take off {item}.",
-    'prevents_removal': "You'll need to take off {blocking} first."
+    'not_wearing': "{You} aren't wearing {item}.",
+    'removed': "{You} {take} off {item}.",
+    'cant_remove': "{You} {can't} take off {item}.",
+    'prevents_removal': "{You}'ll need to take off {blocking} first."
   },
   
   help: {

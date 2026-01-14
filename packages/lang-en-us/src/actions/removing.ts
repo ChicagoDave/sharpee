@@ -20,10 +20,10 @@ export const removingLanguage = {
     'not_in_container': "{item} isn't in {container}.",
     'not_on_surface': "{item} isn't on {surface}.",
     'container_closed': "{container} is closed.",
-    'removed_from': "You take {item} from {container}.",
-    'removed_from_surface': "You take {item} from {surface}.",
-    'cant_reach': "You can't reach {item}.",
-    'already_have': "You already have {item}."
+    'removed_from': "{You} {take} {item} from {container}.",
+    'removed_from_surface': "{You} {take} {item} from {surface}.",
+    'cant_reach': "{You} {can't} reach {item}.",
+    'already_have': "{You} already {have} {item}."
   },
   
   help: {

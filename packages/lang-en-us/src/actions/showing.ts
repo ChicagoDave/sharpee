@@ -17,20 +17,20 @@ export const showingLanguage = {
     // Error messages
     'no_item': "Show what?",
     'no_viewer': "Show it to whom?",
-    'not_carrying': "You aren't carrying {item}.",
-    'viewer_not_visible': "You can't see {viewer}.",
+    'not_carrying': "{You} aren't carrying {item}.",
+    'viewer_not_visible': "{You} {can't} see {viewer}.",
     'viewer_too_far': "{viewer} is too far away to see clearly.",
-    'not_actor': "You can only show things to people.",
-    'self': "You examine {item} closely.",
-    
+    'not_actor': "{You} can only show things to people.",
+    'self': "{You} {examine} {item} closely.",
+
     // Success messages
-    'shown': "You show {item} to {viewer}.",
+    'shown': "{You} {show} {item} to {viewer}.",
     'viewer_examines': "{viewer} examines {item} carefully.",
     'viewer_nods': "{viewer} nods.",
     'viewer_impressed': "{viewer} looks impressed.",
     'viewer_unimpressed': "{viewer} seems unimpressed.",
     'viewer_recognizes': "{viewer} recognizes {item}!",
-    'wearing_shown': "You show {viewer} that you're wearing {item}."
+    'wearing_shown': "{You} {show} {viewer} that {you're} wearing {item}."
   },
   
   help: {

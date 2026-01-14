@@ -19,18 +19,18 @@ export const switchingOffLanguage = {
   messages: {
     // Error messages
     'no_target': "Switch off what?",
-    'not_visible': "You can't see {target}.",
-    'not_reachable': "You can't reach {target}.",
-    'not_switchable': "{target} isn't something you can switch off.",
+    'not_visible': "{You} {can't} see {target}.",
+    'not_reachable': "{You} {can't} reach {target}.",
+    'not_switchable': "{target} isn't something {you} can switch off.",
     'already_off': "{target} is already off.",
-    
+
     // Success messages
-    'switched_off': "You switch off {target}.",
-    'light_off': "You switch off {target}, plunging the area into darkness.",
-    'light_off_still_lit': "You switch off {target}.",
+    'switched_off': "{You} {switch} off {target}.",
+    'light_off': "{You} {switch} off {target}, plunging the area into darkness.",
+    'light_off_still_lit': "{You} {switch} off {target}.",
     'device_stops': "{target} powers down with a soft whir.",
-    'silence_falls': "You switch off {target}. Silence falls.",
-    'with_sound': "You switch off {target}. {sound}",
+    'silence_falls': "{You} {switch} off {target}. Silence falls.",
+    'with_sound': "{You} {switch} off {target}. {sound}",
     'door_closes': "{target} switches off and closes.",
     'was_temporary': "{target} switches off (it had {remainingTime} seconds left)."
   },

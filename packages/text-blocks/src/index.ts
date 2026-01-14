@@ -1,23 +1,27 @@
 /**
  * @sharpee/text-blocks
  *
- * TextBlock interfaces for Sharpee's text output system.
+ * Pure interfaces for structured text output in Sharpee IF platform.
  *
- * This package defines the contract between:
- * - TextService (produces ITextBlock[])
- * - Clients (consume ITextBlock[] and render)
+ * This package contains only TypeScript interfaces and type guards -
+ * no runtime dependencies. It defines the contract between TextService
+ * and clients (CLI, React, etc.).
  *
- * Inspired by FyreVM channel I/O (2009).
- *
- * @see ADR-096 Text Service Architecture
- * @see ADR-091 Text Decorations
+ * @packageDocumentation
+ * @see ADR-096: Text Service Architecture
+ * @see ADR-091: Text Decorations
  */
 
-// Types
-export type { TextContent, IDecoration, ITextBlock } from './types';
-export { CORE_DECORATION_TYPES, BLOCK_KEY_PREFIXES, BLOCK_KEYS } from './types';
+// Core types
+export type { TextContent, IDecoration, ITextBlock } from './types.js';
 
-// Type guards
+// Constants
+export { CORE_DECORATION_TYPES, CORE_BLOCK_KEYS } from './types.js';
+
+// Alias for text-service compatibility
+export { CORE_BLOCK_KEYS as BLOCK_KEYS } from './types.js';
+
+// Type guards and utilities
 export {
   isDecoration,
   isTextBlock,
@@ -26,4 +30,11 @@ export {
   isRoomBlock,
   isActionBlock,
   extractPlainText,
-} from './guards';
+} from './guards.js';
+
+// Block key prefixes for routing
+export const BLOCK_KEY_PREFIXES = {
+  STATUS: 'status.',
+  ROOM: 'room.',
+  ACTION: 'action.',
+} as const;

@@ -14,12 +14,12 @@ export const wearingLanguage = {
   
   messages: {
     'no_target': "Wear what?",
-    'not_wearable': "You can't wear {item}.",
-    'not_held': "You need to be holding {item} first.",
-    'already_wearing': "You're already wearing {item}.",
-    'worn': "You put on {item}.",
-    'cant_wear_that': "You can't wear {item}.",
-    'hands_full': "You need to have your hands free to put that on."
+    'not_wearable': "{You} {can't} wear {item}.",
+    'not_held': "{You} {need} to be holding {item} first.",
+    'already_wearing': "{You're} already wearing {item}.",
+    'worn': "{You} {put} on {item}.",
+    'cant_wear_that': "{You} {can't} wear {item}.",
+    'hands_full': "{You} {need} to have {your} hands free to put that on."
   },
   
   help: {

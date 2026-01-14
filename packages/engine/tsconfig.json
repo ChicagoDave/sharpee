@@ -17,7 +17,8 @@
     { "path": "../lang-en-us" },
     { "path": "../parser-en-us" },
     { "path": "../stdlib" },
-    { "path": "../text-services" },
+    { "path": "../text-service" },
+    { "path": "../text-blocks" },
     { "path": "../world-model" }
   ]
 }

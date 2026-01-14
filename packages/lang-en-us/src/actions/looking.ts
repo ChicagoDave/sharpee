@@ -16,12 +16,13 @@ export const lookingLanguage = {
   
   messages: {
     'room_description': "{name}\n{description}",
-    'room_dark': "It's pitch dark, and you can't see a thing.",
+    'room_dark': "It's pitch dark, and {you} {can't} see a thing.",
     'exits': "Exits: {exits}",
-    'you_see': "You can see {items} here.",
-    'nothing_special': "You see nothing special.",
-    'container_contents': "In {container} you see {items}.",
-    'surface_contents': "On {surface} you see {items}."
+    'you_see': "{You} can {see} {items} here.",
+    'contents_list': "{You} can {see} {items} here.",
+    'nothing_special': "{You} {see} nothing special.",
+    'container_contents': "In {container} {you} {see} {items}.",
+    'surface_contents': "On {surface} {you} {see} {items}."
   },
   
   help: {

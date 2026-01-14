@@ -18,27 +18,27 @@ export const scoringLanguage = {
     'scoring_not_enabled': "There is no score in this game.",
 
     // Score display messages
-    'score_display': "You have scored {score} out of a possible {maxScore}, in {moves} turns.",
-    'score_simple': "Your score is {score} points.",
-    'score_with_rank': "You have scored {score} out of {maxScore}, earning you the rank of {rank}.",
-    'perfect_score': "You have achieved a perfect score of {maxScore} points!",
+    'score_display': "{You} {have} scored {score} out of a possible {maxScore}, in {moves} turns.",
+    'score_simple': "{Your} score is {score} points.",
+    'score_with_rank': "{You} {have} scored {score} out of {maxScore}, earning {you} the rank of {rank}.",
+    'perfect_score': "{You} {have} achieved a perfect score of {maxScore} points!",
 
     // Rank-specific messages (legacy - now use message IDs)
-    'rank_novice': "You are ranked as a Novice adventurer.",
-    'rank_amateur': "You are ranked as an Amateur adventurer.",
-    'rank_proficient': "You are ranked as a Proficient adventurer.",
-    'rank_expert': "You are ranked as an Expert adventurer.",
-    'rank_master': "You are ranked as a Master adventurer!",
+    'rank_novice': "{You} {are} ranked as a Novice adventurer.",
+    'rank_amateur': "{You} {are} ranked as an Amateur adventurer.",
+    'rank_proficient': "{You} {are} ranked as a Proficient adventurer.",
+    'rank_expert': "{You} {are} ranked as an Expert adventurer.",
+    'rank_master': "{You} {are} ranked as a Master adventurer!",
 
     // Achievement messages
-    'with_achievements': "You have earned the following achievements: {achievements}.",
-    'no_achievements': "You haven't earned any special achievements yet.",
+    'with_achievements': "{You} {have} earned the following achievements: {achievements}.",
+    'no_achievements': "{You} {have}n't earned any special achievements yet.",
 
     // Progress messages
-    'early_game': "You're just getting started!",
-    'mid_game': "You're making good progress.",
-    'late_game': "You're nearing the end of your adventure.",
-    'game_complete': "You have completed the game!"
+    'early_game': "{You're} just getting started!",
+    'mid_game': "{You're} making good progress.",
+    'late_game': "{You're} nearing the end of {your} adventure.",
+    'game_complete': "{You} {have} completed the game!"
   },
 
   help: {
@@ -59,9 +59,9 @@ export const scoringLanguage = {
  */
 export const scoringSystemMessages: Record<string, string> = {
   // Score change messages (use {points} placeholder)
-  'if.score.gained': 'Your score just increased by {points} points.',
-  'if.score.lost': 'You just lost {points} points!',
-  'if.score.display': 'You have scored {score} out of {maxScore}, earning you the rank of {rank}.',
+  'if.score.gained': '{Your} score just increased by {points} points.',
+  'if.score.lost': '{You} just lost {points} points!',
+  'if.score.display': '{You} {have} scored {score} out of {maxScore}, earning {you} the rank of {rank}.',
 
   // No-scoring response
   'if.score.no_scoring': "This isn't that kind of game.",
