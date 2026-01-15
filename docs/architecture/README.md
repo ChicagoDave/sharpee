@@ -1,6 +1,6 @@
 # Architecture Documentation
 
-> ⚠️ **ALPHA DOCUMENTATION**: This documentation is for alpha software and may contain errors, outdated information, or broken links. We're actively improving the documentation.
+> **BETA** (v0.9.2): Architecture is stable with 100+ ADRs documenting design decisions. The platform is actively used to implement a full Mainframe Zork port.
 
 This directory contains all architectural documentation for the Sharpee Interactive Fiction Framework.
 

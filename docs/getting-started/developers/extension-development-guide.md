@@ -1,6 +1,6 @@
 # Extension Development Guide
 
-> ⚠️ **ALPHA DOCUMENTATION**: The extension API is still evolving. This guide may contain outdated examples or reference features that are not yet implemented.
+> **BETA** (v0.9.2): The extension API is stable. Create story extensions with custom actions, traits, and behaviors.
 
 This guide covers creating extensions for the Sharpee platform, from basic concepts to publishing your extension.
 

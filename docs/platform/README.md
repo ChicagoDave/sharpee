@@ -1,6 +1,6 @@
 # Platform Development Guide
 
-> ⚠️ **ALPHA SOFTWARE**: The platform is under active development. APIs are subject to change, and this documentation may not reflect the latest implementation.
+> **BETA** (v0.9.2): The platform is stable with 100+ ADRs documenting architecture decisions. See CONTRIBUTING.md for contribution guidelines.
 
 Welcome to Sharpee platform development! This guide covers contributing to the core engine, world model, and standard library.
 

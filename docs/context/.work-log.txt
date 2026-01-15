@@ -49,3 +49,22 @@ docs: Add ADRs 101-103 for graphical client and sto
 [18:09:26] GIT: git commit -m "$(cat <<'EOF'
 docs: Add session summaries, reference docs, and wo
 [18:09:35] GIT: git push
+[18:10:05] GIT: git add docs/context/.work-log.txt && git commit -m "docs: Update work log" && g
+[18:18:52] WRITE: docs/README.md
+[18:18:58] EDIT: README.md
+[18:19:03] EDIT: README.md
+[18:19:26] EDIT: packages/stdlib/README.md
+[18:19:34] EDIT: packages/stdlib/README.md
+[18:19:48] EDIT: docs/reference/core-concepts.md
+[18:19:53] EDIT: docs/reference/core-concepts.md
+[18:19:58] EDIT: docs/reference/core-concepts.md
+[18:20:20] EDIT: docs/architecture/README.md
+[18:20:33] EDIT: CONTRIBUTING.md
+[18:21:12] EDIT: docs/actions/README.md
+[18:21:13] EDIT: docs/api/README.md
+[18:21:14] EDIT: docs/development/README.md
+[18:21:14] EDIT: docs/extensions/README.md
+[18:21:31] EDIT: docs/features/README.md
+[18:21:32] EDIT: docs/getting-started/authors/README.md
+[18:21:32] EDIT: docs/getting-started/developers/extension-development-guide.md
+[18:21:33] EDIT: docs/platform/README.md

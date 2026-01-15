@@ -1,80 +1,105 @@
 # Sharpee Documentation
 
-> ⚠️ **ALPHA SOFTWARE DOCUMENTATION**: Sharpee is in alpha. Documentation may be incomplete, contain errors, or reference features that are planned but not yet implemented. We're actively improving the documentation.
+> **BETA SOFTWARE** (v0.9.2): Sharpee is feature-complete for story development. The platform is stable and actively used to implement a full Mainframe Zork port (~191 rooms). Documentation is being expanded.
 
-Welcome to the Sharpee Interactive Fiction Framework documentation. This guide will help you navigate the various documentation resources available.
+Welcome to the Sharpee Interactive Fiction Framework documentation.
 
-## Quick Links
+## Quick Start
 
-- [Architecture & Design](./architecture/) - System architecture, ADRs, and design patterns
-- [Development Guide](./development/) - Setup, standards, and development guides
-- [API Documentation](./api/) - Complete API reference for all packages
-- [Package Documentation](./packages/) - Detailed documentation for each package
-- [Features](./features/) - Feature proposals and enhancement documentation
-- [Maintenance](./maintenance/) - Cleanup tasks, fixes, and migration guides
+If you're new to Sharpee:
 
-## Getting Started
-
-If you're new to Sharpee, start here:
-
-1. **[Quick Start Guide](./development/setup/quick-start.md)** - Get up and running quickly
-2. **[Architecture Overview](./architecture/overview.md)** - Understand the system design
-3. **[Core Concepts](./architecture/patterns/core-concepts.md)** - Learn the fundamental concepts
+1. **[Core Concepts](./reference/core-concepts.md)** - Essential reading: entities, traits, actions, events
+2. **[Creating Stories](./guides/creating-stories.md)** - Start building your first IF game
+3. **[Architecture Overview](./architecture/README.md)** - Understand the system design
 
 ## For Story Authors
 
-- [Story Development Guide](./stories/) - How to create interactive fiction with Sharpee
-- [Standard Library Actions](./stdlib/) - Available actions for your stories
-- [Language & Parser](./packages/parser-en-us/) - Understanding natural language processing
+| Guide | Description |
+|-------|-------------|
+| [Core Concepts](./reference/core-concepts.md) | Entity system, traits, actions, and events |
+| [Creating Stories](./guides/creating-stories.md) | Complete guide to building IF games |
+| [Event Handlers](./guides/event-handlers.md) | React to game events with custom logic |
+| [Transcript Testing](./reference/transcript-testing.md) | Test your story with transcript files |
 
 ## For Developers
 
-- [Contributing Guide](./development/guides/contributing.md)** - How to contribute to Sharpee
-- [Testing Guide](./development/guides/testing.md)** - Writing and running tests
-- [Code Standards](./development/standards/coding.md)** - Coding conventions and standards
-- [Build System](./development/setup/build.md)** - Understanding the build process
+| Guide | Description |
+|-------|-------------|
+| [Development Setup](./development/setup/setup-guide.md) | Set up your development environment |
+| [Coding Standards](./development/standards/coding.md) | Conventions and best practices |
+| [Architecture Decisions](./architecture/adrs/) | 100+ ADRs documenting design rationale |
 
-## Package Overview
+## Package Documentation
 
-Sharpee is organized into several core packages:
+Sharpee is organized into focused packages:
 
-| Package | Description | Documentation |
-|---------|-------------|---------------|
-| `@sharpee/core` | Core utilities and types | [View Docs](./packages/core/) |
-| `@sharpee/engine` | Game engine and runtime | [View Docs](./packages/engine/) |
-| `@sharpee/world-model` | Entity and world modeling | [View Docs](./packages/world-model/) |
-| `@sharpee/stdlib` | Standard library of actions | [View Docs](./packages/stdlib/) |
-| `@sharpee/parser-en-us` | English language parser | [View Docs](./packages/parser-en-us/) |
-| `@sharpee/lang-en-us` | English language provider | [View Docs](./packages/lang-en-us/) |
-| `@sharpee/text-services` | Text formatting and output | [View Docs](./packages/text-services/) |
-| `@sharpee/if-services` | Interactive fiction services | [View Docs](./packages/if-services/) |
+### Core Platform
 
-## Architecture Decision Records (ADRs)
+| Package | Description |
+|---------|-------------|
+| [@sharpee/core](./packages/core/) | Event system, types, utilities |
+| [@sharpee/world-model](./packages/world-model/) | Entity system with traits and behaviors |
+| [@sharpee/engine](./packages/engine/) | Game runtime and command processor |
+| [@sharpee/stdlib](./packages/stdlib/) | 43 standard IF actions |
 
-Important architectural decisions are documented in ADRs:
+### Language & Parser
 
-- [View All ADRs](./architecture/adrs/)
-- [Core System ADRs](./architecture/adrs/core-systems/)
-- [Recent ADRs](./architecture/adrs/recent.md)
+| Package | Description |
+|---------|-------------|
+| [@sharpee/parser-en-us](./packages/parser-en-us/) | English natural language parser |
+| [@sharpee/lang-en-us](./packages/lang-en-us/) | English language messages |
+| [@sharpee/if-domain](./packages/if-domain/) | Grammar builder interfaces |
 
-## Legacy Documentation
+### Services & Tools
 
-- [stdlib/](stdlib/) - Standard library scope, perception, and witness system docs
-- [platform/](platform/) - Platform documentation
-- [extensions/](extensions/) - Extension system documentation
-- [design/](design/) - Design documents
-- [api/](api/) - API documentation
-- [ADRs](../decisions/) - Architecture Decision Records
+| Package | Description |
+|---------|-------------|
+| [@sharpee/text-services](./packages/text-services/) | Text formatting and output |
+| [@sharpee/if-services](./packages/if-services/) | Service interfaces |
+| [@sharpee/transcript-tester](./packages/transcript-tester/) | Test stories via transcript files |
+| [@sharpee/forge](./packages/forge/) | Story scaffolding and build tools |
 
-## Implementation Guides
-- [actions/](actions/) - Action system documentation
-- [stories/](stories/) - Story development guides
-- [tutorials/](tutorials/) - Tutorial documentation
+## Architecture
 
-## Recent Work
-- [world-model-test-triage.md](world-model-test-triage.md) - Analysis of world-model test failures
-- [world-model-implementation-plan.md](world-model-implementation-plan.md) - Plan for fixing scope/visibility separation
-- [scope-systems-clarification.md](scope-systems-clarification.md) - Clarification of parser vs perception scope
+### Key Principles
 
-## Archived
-- [archived/](archived/) - Older documentation kept for reference
+1. **Actions emit semantic events, not text** - The language layer converts message IDs to prose
+2. **Behaviors own mutations** - Actions coordinate, behaviors perform state changes
+3. **Traits compose entity capabilities** - Add container, lockable, wearable, etc.
+4. **Language layer separation** - All user-facing text goes through localizable message IDs
+
+### Architecture Decision Records
+
+Over 100 ADRs document the design rationale:
+
+- [ADR Index](./architecture/adrs/README.md) - Complete list of decisions
+- [ADR-051: Four-Phase Action Pattern](./architecture/adrs/adr-051-four-phase-action-pattern.md) - validate/execute/report/blocked
+- [ADR-070: NPC System](./architecture/adrs/adr-070-npc-system.md) - Autonomous characters
+- [ADR-087: Action-Centric Grammar](./architecture/adrs/adr-087-action-centric-grammar.md) - Grammar builder API
+- [ADR-090: Capability Dispatch](./architecture/adrs/adr-090-capability-dispatch.md) - Entity-specific verb handling
+
+## Example Stories
+
+| Story | Description |
+|-------|-------------|
+| [cloak-of-darkness](../stories/cloak-of-darkness/) | Classic IF demo - simple introduction |
+| [dungeo](../stories/dungeo/) | Mainframe Zork implementation (~191 rooms) |
+| [secretletter2025](../stories/secretletter2025/) | Mystery adventure with NPCs |
+| [reflections](../stories/reflections/) | Atmospheric puzzle game |
+
+## Testing
+
+- [Transcript Testing Guide](./reference/transcript-testing.md) - Write and run transcript tests
+- [TR-002 Comparison](./testing/tr-002-comparison.md) - Canonical Zork vs Dungeo verification
+
+## Reference
+
+- [Core Concepts](./reference/core-concepts.md) - Essential concepts reference
+- [Naming Conventions](./architecture/naming-conventions.md) - ID and naming patterns
+- [Parser Comparison](./reference/parser-comparison.md) - How Sharpee compares to other IF systems
+
+## Additional Resources
+
+- [Features](./features/) - Feature documentation and proposals
+- [Extensions](./extensions/) - Extension system documentation
+- [Archived](./archived/) - Historical documentation

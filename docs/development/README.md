@@ -1,6 +1,6 @@
 # Development Documentation
 
-> ⚠️ **ALPHA DOCUMENTATION**: Development processes and APIs are evolving. This documentation may be incomplete or outdated in places.
+> **BETA** (v0.9.2): Development processes are established. See CONTRIBUTING.md for contribution guidelines.
 
 This directory contains all development-related documentation for contributing to and working with the Sharpee framework.
 
