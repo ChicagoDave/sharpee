@@ -1,0 +1,112 @@
+title: P0 Simple Test - TIE ROPE and PRAY
+story: dungeo
+
+---
+
+# === TEST 1: TIE ROPE TO RAILING ===
+
+# First get lantern from Living Room
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> open window
+[SKIP]
+
+> west
+[OK: contains "Kitchen"]
+
+> west
+[OK: contains "Living Room"]
+
+> take lantern
+[OK: contains "Taken"]
+
+> turn on lantern
+[OK: contains "on"]
+
+# Now get rope from attic
+> east
+[OK: contains "Kitchen"]
+
+> up
+[OK: contains "Attic"]
+
+> take rope
+[OK: contains "Taken"]
+
+> inventory
+[OK: contains "rope"]
+[OK: contains "lantern"]
+
+> down
+[OK: contains "Kitchen"]
+
+> west
+[OK: contains "Living Room"]
+
+# Reveal trap door
+> move rug
+[OK: contains "trap door"]
+
+> open trap door
+[OK: contains "rickety"]
+
+> down
+[OK: contains "Cellar"]
+
+# Navigate to Dome Room
+# Cellar → E → Troll Room → E → N/S Crawlway → UP → Torch Room → UP → Dome Room
+> east
+[OK: contains "Troll Room"]
+
+# East to North-South Crawlway
+> east
+[OK: contains "Crawlway"]
+
+# Up to Torch Room
+> up
+[OK: contains "Torch Room"]
+
+# Up to Dome Room
+> up
+[OK: contains "Dome Room"]
+
+# Verify we're at the right place
+> look
+[OK: contains "periphery"]
+[OK: contains "railing"]
+
+# TIE rope to railing - this is the P0 test
+> tie rope to railing
+[OK: contains "fastened"]
+[OK: contains "railing"]
+
+# Verify DOWN is now available (rope enables descent)
+> down
+[OK: contains "Torch Room"]
+
+# === TEST 2: PRAY at Altar ===
+
+# Use GDT to teleport to Altar for faster testing
+> gdt
+[OK: contains "GDT"]
+
+> AH Altar
+[OK: contains "Teleported"]
+
+> EX
+[OK: contains "Returning"]
+
+> look
+[OK: contains "Altar"]
+
+# Test PRAY teleport - this is the P0 test
+> pray
+[OK: contains "answered"]
+
+# Should be in Forest after prayer teleport
+> look
+[OK: contains "forest"]

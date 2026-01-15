@@ -22,6 +22,8 @@ export const DungeoSchedulerMessages = {
   MATCH_OUT: 'dungeo.match.out',
 
   // Dam draining sequence
+  DAM_GATES_OPEN: 'dungeo.dam.gates_open',
+  DAM_GATES_CLOSE: 'dungeo.dam.gates_close',
   DAM_DRAINING: 'dungeo.dam.draining',
   DAM_NEARLY_EMPTY: 'dungeo.dam.nearly_empty',
   DAM_EMPTY: 'dungeo.dam.empty',

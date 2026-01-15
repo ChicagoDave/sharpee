@@ -9,8 +9,6 @@ echo "=== Bundling Sharpee ==="
 # Ensure packages are built first (only @sharpee/* packages, not stories)
 echo "Building Sharpee packages..."
 pnpm --filter '@sharpee/*' \
-  --filter '!@sharpee/text-service-browser' \
-  --filter '!@sharpee/text-service-template' \
   --filter '!@sharpee/story-*' \
   --filter '!@sharpee/platform-*' \
   build
@@ -44,7 +42,8 @@ export * from '../packages/engine/dist/index';
 export * from '../packages/parser-en-us/dist/index';
 export * from '../packages/lang-en-us/dist/index';
 export * from '../packages/event-processor/dist/index';
-export * from '../packages/text-services/dist/index';
+export * from '../packages/text-blocks/dist/index';
+export * from '../packages/text-service/dist/index';
 EOF
 
 # Measure bundle size

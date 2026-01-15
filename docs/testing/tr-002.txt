@@ -1,0 +1,463 @@
+Welcome to Dungeon.            This version created 1-Oct-94.
+
+This is an open field west of a white house with a boarded front door.
+There is a small mailbox here.
+A rubber mat saying "Welcome to Dungeon!" lies by the door.
+
+>open mailbox
+Opening the mailbox reveals:
+  A leaflet.
+
+>get leaflet
+Taken.
+
+>n
+You are facing the north side of a white house. There is no door here, and all the windows are barred.
+
+>e
+You are behind the white house. In one corner of the house there is a small window which is slightly ajar.
+
+>open window
+With great effort, you open the window far enough to allow entry.
+
+>w
+This is the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west, and a dark staircase can be seen leading upward. To the east is a small window which is open.
+On the table is an elongated brown sack, smelling of hot peppers.
+A bottle is sitting on the table.
+The glass bottle contains:
+  A quantity of water.
+
+>get all
+brown sack: Taken.
+glass bottle: Taken.
+
+>w
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut.
+In the center of the room is a large oriental rug.
+There is a trophy case here.
+On hooks above the mantelpiece hangs an elvish sword of great antiquity.
+A battery-powered brass lantern is on the trophy case.
+There is an issue of US NEWS & DUNGEON REPORT here.
+
+>get lamp
+Taken.
+
+>e
+Kitchen
+
+>u
+It is pitch black. You are likely to be eaten by a grue.
+
+>turn on lamp
+The lamp is now on.
+This is the attic. The only exit is stairs that lead down.
+A large coil of rope is lying in the corner.
+On a table is a nasty-looking knife.
+There is a square brick here which feels like clay.
+
+>get brick and rope
+brick: Taken.
+rope: Taken.
+
+>turn lamp off
+The lamp is now off.
+It is now pitch black.
+
+>d
+Kitchen
+
+>w
+Living Room
+There is a trophy case here.
+On hooks above the mantelpiece hangs an elvish sword of great antiquity.
+There is an issue of US NEWS & DUNGEON REPORT here.
+
+>drop all but lamp
+brown sack: Dropped.
+glass bottle: Dropped.
+rope: Dropped.
+leaflet: Dropped.
+brick: Dropped.
+
+>get rope
+Taken.
+
+>get sword
+Taken.
+
+>save
+Saved.
+
+>d
+The trap door is closed.
+
+>open trap door
+I can't see any trap door here.
+
+>move rug
+With a great effort, the rug is moved to one side of the room. With the rug moved, the dusty cover of a closed trap door appears.
+
+>open trap door
+The door reluctantly opens to reveal a rickety staircase descending into darkness.
+
+>save
+Saved.
+
+>d
+It is pitch black. You are likely to be eaten by a grue.
+Your sword is glowing with a faint blue glow.
+
+>turn on lamp
+The lamp is now on.
+This is a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. To the west is the bottom of a steep metal ramp which is unclimbable.
+Above you is an open trap door.
+The door crashes shut, and you hear someone barring it.
+
+>l
+This is a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. To the west is the bottom of a steep metal ramp which is unclimbable.
+
+>i
+You are carrying:
+  A rope.
+  A sword.
+  A lamp.
+
+>e
+This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.
+A nasty-looking troll, brandishing a bloody axe, blocks all passages out of the room.
+Your sword has begun to glow very brightly.
+
+>kill troll with sword
+Clang! Crash! The troll parries.
+The axe gets you right in the side. Ouch!
+
+>kill troll with sword
+The troll is battered into unconsciousness.
+
+>kill troll with sword
+The unconscious troll cannot defend himself: he dies.
+Almost as soon as the troll breathes his last, a cloud of sinister black smoke envelops him, and when the fog lifts, the carcass has disappeared.
+Your sword is no longer glowing.
+
+>save
+Saved.
+
+>n
+This is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.
+
+>n
+This is a deep ravine at a crossing with an east-west crawlway. Some stone steps are at the south of the ravine, and a steep staircase descends.
+
+>w
+This is a crawlway with a three foot high ceiling. Your footing is very unsure here due to the assortment of rocks underfoot. Passages can be seen in the east, west, and northwest corners of the crawlway.
+
+>e
+This is the periphery of a large dome, which forms the ceiling of another room below. Protecting you from a precipitous drop is a wooden railing which circles the dome.
+
+>tie rope to railing
+The rope drops over the side and comes within ten feet of the floor.
+
+>d
+This is a large room with a prominent doorway leading to a down staircase. To the west is a narrow twisting tunnel, covered with a thin layer of dust. Above you is a large dome painted with scenes depicting elfin hacking rites. Up around the edge of the dome (20 feet up) is a wooden railing. In the center of the room there is a white marble pedestal.
+A large piece of rope descends from the railing above, ending some five feet above your head.
+Sitting on the pedestal is a flaming torch, made of ivory.
+
+>turn lamp off
+The lamp is now off.
+
+>get torch
+Taken.
+
+>save
+Saved.
+
+>d
+This is a north-south crawlway; a passage also goes to the east. There is a hole above, but it provides no opportunities for climbing.
+
+>s
+This is what appears to have been an artist's studio. The walls and floors are splattered with paints of 69 different colors. Strangely enough, nothing of value is hanging here. At the north and northwest of the room are open doors (also covered with paint). An extremely dark and narrow chimney leads up from a fireplace. Although you might be able to get up the chimney, it seems unlikely that you could get back down.
+
+>nw
+This is an art gallery. Most of the paintings which were here have been stolen by vandals with exceptional taste. The vandals left through the north, south, or west exits.
+Fortunately, there is still one chance for you to be a vandal, for on the far wall is a work of unparalleled beauty.
+
+>get painting
+Taken.
+
+>s
+Studio
+
+>n
+This is a north-south crawlway; a passage also goes to the east. There is a hole above, but it provides no opportunities for climbing.
+
+>e
+Troll Room
+
+>n
+East-West Passage
+
+>e
+This is a circular room with passages off in eight directions.
+Your compass needle spins wildly, and you cannot get your bearings.
+
+>e
+Unfortunately, it is impossible to tell directions in here.
+This is part of a maze of twisty little passages, all alike.
+
+>w
+Troll Room
+
+>e
+North-South Crawlway
+
+>e
+This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.
+
+>n
+This is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.
+
+>e
+Round Room
+
+>e
+Unfortunately, it is impossible to tell directions in here.
+This is part of a maze of twisty little passages, all alike.
+
+>w
+Troll Room
+
+>n
+East-West Passage
+
+>e
+Round Room
+
+>e
+Unfortunately, it is impossible to tell directions in here.
+You have entered a cave with passages leading north and southeast.
+There are old engravings on the walls here.
+
+>se
+This is a room which is bare on all sides. There is an exit down. To the east is a great door made of stone. Above the door, the following words are written: "No man shall enter this room without solving this riddle --
+
+    What is tall as a house,
+    Round as a cup,
+    And all the king's horses can't draw it up?".
+
+(Reply via 'ANSWER "answer"'.)
+
+>answer "well"
+There is a clap of thunder, and the east door opens.
+
+>e
+This is a former broom closet. The exits are to the east and west.
+There is a pearl necklace here with hundreds of large pearls.
+
+>get pearl
+I don't understand "pearl".
+
+>get necklace
+Taken.
+
+>w
+This is a room which is bare on all sides. There is an exit down. To the east is a great door made of stone. Above the door, the following words are written: "No man shall enter this room without solving this riddle --
+
+    What is tall as a house,
+    Round as a cup,
+    And all the king's horses can't draw it up?".
+
+(Reply via 'ANSWER "answer"'.)
+
+>d
+Engravings Cave
+There are old engravings on the walls here.
+
+>n
+Round Room
+
+>e
+Unfortunately, it is impossible to tell directions in here.
+You are standing in a small circular room with a pedestal. A set of stairs leads up, and passages leave to the east and west.
+There is an extremely valuable (perhaps original) grail here.
+
+>get grail
+Taken.
+
+>u
+This is the west end of a large temple. On the south wall is an ancient inscription, probably a prayer in a long-forgotten language. The north wall is solid granite. The entrance at the west end of the room is through huge marble pillars.
+Lying in the corner of the room is a small brass bell.
+
+>e
+This is the east end of a large temple. In front of you is what appears to be an altar.
+On the altar is a large black book, open to page 569.
+On the two ends of the altar are burning candles.
+
+>pray
+This is a forest, with trees in all directions around you.
+
+>turn lamp off
+It is already off.
+
+>n
+Forest
+
+>n
+Forest
+
+>n
+Forest
+
+>e
+This is a dimly lit forest, with large trees all around. One particularly large tree with some low branches stands here.
+
+>u
+You are about ten feet above the ground nestled among some large branches. The nearest branch above you is beyond your reach.
+On the branch is a small birds nest.
+In the bird's nest is a large egg encrusted with precious jewels, apparently scavenged somewhere by a childless songbird. The egg is covered with fine gold inlay and ornamented in lapis lazuli and mother-of-pearl. Unlike most eggs, this one is hinged and has a delicate looking clasp holding it closed. The egg appears extremely fragile.
+
+>get egg
+Your load is too heavy. You will have to leave something behind.
+You hear in the distance the chirping of a song bird.
+
+>d
+Forest
+
+>w
+North of House
+
+>e
+Behind House
+
+>w
+Kitchen
+
+>w
+Living Room
+A brown sack is here.
+There is a trophy case here.
+A clear glass bottle is here.
+There is an issue of US NEWS & DUNGEON REPORT here.
+There is a small leaflet here.
+There is a square brick here which feels like clay.
+The glass bottle contains:
+  A quantity of water.
+
+>i
+You are carrying:
+  A sword.
+  A lamp.
+  A pearl necklace.
+  A torch.
+  A grail.
+  A painting.
+
+>put necklace, grail, and painting in trophy case
+pearl necklace: I can't reach inside.
+grail: I can't reach inside.
+painting: I can't reach inside.
+
+>open trophy case
+Opened.
+
+>put necklace, grail, and painting in trophy case
+pearl necklace: Done.
+grail: Done.
+painting: Done.
+
+>save
+Saved.
+
+>i
+You are carrying:
+  A sword.
+  A lamp.
+  A torch.
+
+>drop sword and lamp
+sword: Dropped.
+lamp: Dropped.
+
+>l
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut.
+In the center of the room is a closed trap door.
+A brown sack is here.
+There is a trophy case here.
+A clear glass bottle is here.
+There is an elvish sword here.
+There is a brass lantern (battery-powered) here.
+There is an issue of US NEWS & DUNGEON REPORT here.
+There is a small leaflet here.
+There is a square brick here which feels like clay.
+Your collection of treasures consists of:
+  A pearl necklace.
+  A grail.
+  A painting.
+The glass bottle contains:
+  A quantity of water.
+
+>e
+Kitchen
+
+>e
+You are behind the white house. In one corner of the house there is a small window which is open.
+
+>w
+Kitchen
+
+>e
+Behind House
+
+>n
+North of House
+
+>w
+West of House
+There is a small mailbox here.
+A rubber mat saying "Welcome to Dungeon!" lies by the door.
+
+>get matt
+I don't understand "matt".
+
+>get mat
+Taken.
+
+>n
+You are facing the north side of a white house. There is no door here, and all the windows are barred.
+
+>e
+Behind House
+
+>w
+Kitchen
+
+>w
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut.
+In the center of the room is a closed trap door.
+A brown sack is here.
+There is a trophy case here.
+A clear glass bottle is here.
+There is an elvish sword here.
+There is a brass lantern (battery-powered) here.
+There is an issue of US NEWS & DUNGEON REPORT here.
+There is a small leaflet here.
+There is a square brick here which feels like clay.
+Your collection of treasures consists of:
+  A pearl necklace.
+  A grail.
+  A painting.
+The glass bottle contains:
+  A quantity of water.
+
+>save
+Saved.
+
+>open trap door
+The door reluctantly opens to reveal a rickety staircase descending into darkness.
+
+>d
+Cellar
+
+>e
+Troll Room
+
+>

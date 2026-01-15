@@ -1,16 +1,41 @@
 #!/bin/bash
 # Build all Sharpee packages + dungeo + bundle
 # Stops on first failure
+#
+# Usage:
+#   ./build-all-dungeo.sh              # Build everything
+#   ./build-all-dungeo.sh --skip engine  # Skip to engine and build from there
 
 set -e  # Exit on first error
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
+# Parse arguments
+SKIP_TO=""
+if [ "$1" = "--skip" ] && [ -n "$2" ]; then
+    SKIP_TO="$2"
+fi
+
+SKIPPING=true
+if [ -z "$SKIP_TO" ]; then
+    SKIPPING=false
+fi
+
 # Function to build a package
 build_package() {
     local package=$1
     local name=$2
+
+    # Check if we should skip this package
+    if [ "$SKIPPING" = true ]; then
+        if [ "$name" = "$SKIP_TO" ]; then
+            SKIPPING=false
+        else
+            echo "[$name] skipped"
+            return
+        fi
+    fi
 
     echo -n "[$name] "
     if npx pnpm --filter "$package" build > /dev/null 2>&1; then
@@ -24,6 +49,9 @@ build_package() {
 }
 
 echo "=== Building All Packages + Dungeo ==="
+if [ -n "$SKIP_TO" ]; then
+    echo "(skipping to: $SKIP_TO)"
+fi
 echo ""
 
 # Build order based on dependencies
@@ -34,7 +62,8 @@ build_package "@sharpee/event-processor" "event-processor"
 build_package "@sharpee/lang-en-us" "lang-en-us"
 build_package "@sharpee/parser-en-us" "parser-en-us"
 build_package "@sharpee/if-services" "if-services"
-build_package "@sharpee/text-services" "text-services"
+build_package "@sharpee/text-blocks" "text-blocks"
+build_package "@sharpee/text-service" "text-service"
 build_package "@sharpee/stdlib" "stdlib"
 build_package "@sharpee/engine" "engine"
 build_package "@sharpee/sharpee" "sharpee"
@@ -76,7 +105,8 @@ export * from '../packages/engine/dist/index';
 export * from '../packages/parser-en-us/dist/index';
 export * from '../packages/lang-en-us/dist/index';
 export * from '../packages/event-processor/dist/index';
-export * from '../packages/text-services/dist/index';
+export * from '../packages/text-blocks/dist/index';
+export * from '../packages/text-service/dist/index';
 EOF
 
 # Measure bundle size

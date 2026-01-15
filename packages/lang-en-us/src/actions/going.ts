@@ -23,7 +23,16 @@ export const goingLanguage = {
     'moved': "{You} {go} {direction}.",
     'cant_go_through': "{You} {can't} go through {obstacle}.",
     'already_there': "{You're} already there.",
-    'nowhere_to_go': "{You}'ll have to say which compass direction to go in."
+    'nowhere_to_go': "{You}'ll have to say which compass direction to go in.",
+    'no_direction': "{You}'ll have to say which direction to go.",
+    'not_in_room': "{You're} not in a place where {you} can go anywhere.",
+    'no_exits': "There are no obvious exits.",
+    'movement_blocked': "{You} {can't} go that way.",
+    'destination_not_found': "{You} {can't} go that way.",
+    'need_light': "It's too dark to go that way safely.",
+    'went': "{You} {go} {direction}.",
+    'arrived': "{You} {arrive}.",
+    'cant_go': "{You} {can't} go that way."
   },
   
   help: {

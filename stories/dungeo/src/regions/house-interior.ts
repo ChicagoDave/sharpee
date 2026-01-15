@@ -56,13 +56,13 @@ export function createHouseInteriorRegion(world: WorldModel): HouseInteriorRoomI
   // === Create all rooms ===
 
   const kitchen = createRoom(world, 'Kitchen',
-    'You are in the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west, and a dark staircase can be seen leading upward. To the east is a small window which is open.');
+    'This is the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west, and a dark staircase can be seen leading upward. To the east is a small window which is open.');
 
   const livingRoom = createRoom(world, 'Living Room',
-    'You are in the living room. There is a doorway to the east, a wooden door with strange gothic lettering to the west, which appears to be nailed shut, a trophy case, and a large oriental rug in the center of the room.');
+    'This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut.');
 
   const attic = createRoom(world, 'Attic',
-    'This is the attic. The only exit is a stairway leading down. A large coil of rope is lying in the corner. On a table is a nasty-looking knife.');
+    'This is the attic. The only exit is stairs that lead down.');
 
   // === Set up connections ===
 
@@ -250,16 +250,45 @@ function createLivingRoomObjects(world: WorldModel, livingRoomId: string, cellar
   lantern.add(new SwitchableTrait({ isOn: false }));
   world.moveEntity(lantern.id, livingRoomId);
 
-  const trapdoor = world.createEntity('trapdoor', EntityType.SCENERY);
+  const trapdoor = world.createEntity('trap door', EntityType.SCENERY);
   trapdoor.add(new IdentityTrait({
-    name: 'trapdoor',
-    aliases: ['trap door', 'door', 'trap'],
-    description: 'A closed trapdoor leading down into darkness.',
+    name: 'trap door',
+    aliases: ['trapdoor', 'door'],
+    adjectives: ['trap'],
+    description: 'The dusty cover of a closed trap door.',
     properName: false,
     article: 'a'
   }));
   trapdoor.add(new OpenableTrait({ isOpen: false }));
   trapdoor.add(new SceneryTrait());
+
+  // Handle trap door opening - update description and provide custom message
+  trapdoor.on = {
+    'if.event.opened': (event: IGameEvent) => {
+      // Update description to reflect open state
+      const identity = trapdoor.get(IdentityTrait);
+      if (identity) {
+        identity.description = 'The trap door is open, revealing a rickety staircase descending into darkness.';
+      }
+      // Return custom message for opening
+      return [{
+        id: generateEventId(),
+        type: 'game.message',
+        entities: { actor: event.entities.actor, target: trapdoor.id },
+        data: { messageId: 'dungeo.trapdoor.opened' },
+        timestamp: Date.now(),
+        narrate: true
+      }];
+    },
+    'if.event.closed': (event: IGameEvent) => {
+      // Update description back to closed state
+      const identity = trapdoor.get(IdentityTrait);
+      if (identity) {
+        identity.description = 'The dusty cover of a closed trap door.';
+      }
+      return [];
+    }
+  };
 
   const rug = world.createEntity('oriental rug', EntityType.SCENERY);
   rug.add(new IdentityTrait({
@@ -283,6 +312,11 @@ function createLivingRoomObjects(world: WorldModel, livingRoomId: string, cellar
         const livingRoom = world.getEntity(livingRoomId);
         if (livingRoom) {
           RoomBehavior.setExit(livingRoom, Direction.DOWN, cellarId, trapdoor.id);
+        }
+        // Also set the UP exit from Cellar to Living Room via trapdoor
+        const cellar = world.getEntity(cellarId);
+        if (cellar) {
+          RoomBehavior.setExit(cellar, Direction.UP, livingRoomId, trapdoor.id);
         }
       }
       if (pushable) {
@@ -332,6 +366,7 @@ function createAtticObjects(world: WorldModel, atticId: string): void {
     name: 'large coil of rope',
     aliases: ['rope', 'coil', 'coil of rope'],
     description: 'A large coil of sturdy rope.',
+    brief: 'A large coil of rope is lying in the corner.',
     properName: false,
     article: 'a',
     weight: 5
@@ -343,6 +378,7 @@ function createAtticObjects(world: WorldModel, atticId: string): void {
     name: 'nasty knife',
     aliases: ['knife', 'nasty-looking knife', 'blade'],
     description: 'A nasty-looking knife. It appears quite sharp.',
+    brief: 'On a table is a nasty-looking knife.',
     properName: false,
     article: 'a',
     weight: 4
@@ -355,6 +391,7 @@ function createAtticObjects(world: WorldModel, atticId: string): void {
     name: 'brick',
     aliases: ['red brick', 'clay brick', 'explosive'],
     description: 'A square brick of calciumite with some fuse wire wrapped around it.',
+    brief: 'There is a square brick here which feels like clay.',
     properName: false,
     article: 'a',
     weight: 5

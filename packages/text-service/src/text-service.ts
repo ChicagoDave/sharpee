@@ -14,12 +14,14 @@
  */
 
 import type { ITextBlock } from '@sharpee/text-blocks';
+import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { LanguageProvider } from '@sharpee/if-domain';
 import type { ISemanticEvent } from '@sharpee/core';
 
 // Pipeline stages
 import { filterEvents } from './stages/filter.js';
 import { sortEventsForProse } from './stages/sort.js';
+import { createBlock } from './stages/assemble.js';
 
 // Event handlers
 import type { HandlerContext } from './handlers/types.js';
@@ -116,9 +118,48 @@ export class TextService implements ITextService {
       case 'if.event.revealed':
         return handleRevealed(event, context);
 
+      case 'command.failed':
+        return this.handleCommandFailed(event, context);
+
       default:
         return handleGenericEvent(event, context);
     }
+  }
+
+  /**
+   * Handle command.failed events
+   * These occur when parsing or entity resolution fails
+   */
+  private handleCommandFailed(event: ISemanticEvent, context: HandlerContext): ITextBlock[] {
+    const data = event.data as { reason?: string; input?: string };
+
+    // Try to get a user-friendly message based on the reason
+    if (data.reason) {
+      // Check for specific failure reasons
+      if (data.reason.includes('ENTITY_NOT_FOUND') || data.reason.includes('modifiers_not_matched')) {
+        // Entity resolution failed - player referred to something that doesn't exist or can't be found
+        const message = context.languageProvider?.getMessage('core.entity_not_found')
+          ?? "I don't see that here.";
+        return [createBlock(BLOCK_KEYS.ERROR, message)];
+      }
+
+      if (data.reason.includes('AMBIGUOUS')) {
+        const message = context.languageProvider?.getMessage('core.ambiguous_reference')
+          ?? "Which one do you mean?";
+        return [createBlock(BLOCK_KEYS.ERROR, message)];
+      }
+
+      if (data.reason.includes('NO_MATCH') || data.reason.includes('parse')) {
+        const message = context.languageProvider?.getMessage('core.command_not_understood')
+          ?? "I don't understand that.";
+        return [createBlock(BLOCK_KEYS.ERROR, message)];
+      }
+    }
+
+    // Generic fallback
+    const message = context.languageProvider?.getMessage('core.command_failed')
+      ?? "I don't understand that.";
+    return [createBlock(BLOCK_KEYS.ERROR, message)];
   }
 }
 

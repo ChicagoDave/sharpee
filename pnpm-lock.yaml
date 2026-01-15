@@ -274,6 +274,9 @@ importers:
       '@sharpee/stdlib':
         specifier: workspace:*
         version: link:../../stdlib
+      '@sharpee/text-service':
+        specifier: workspace:*
+        version: link:../../text-service
       '@sharpee/world-model':
         specifier: workspace:*
         version: link:../../world-model
@@ -446,6 +449,9 @@ importers:
       '@sharpee/stdlib':
         specifier: workspace:*
         version: link:../stdlib
+      '@sharpee/text-service':
+        specifier: workspace:*
+        version: link:../text-service
       '@sharpee/world-model':
         specifier: workspace:*
         version: link:../world-model
@@ -517,6 +523,9 @@ importers:
       '@sharpee/stdlib':
         specifier: file:../../packages/stdlib
         version: file:packages/stdlib
+      '@sharpee/text-service':
+        specifier: workspace:*
+        version: link:../../packages/text-service
       '@sharpee/world-model':
         specifier: file:../../packages/world-model
         version: file:packages/world-model
@@ -554,6 +563,9 @@ importers:
       '@sharpee/stdlib':
         specifier: workspace:*
         version: link:../../packages/stdlib
+      '@sharpee/text-service':
+        specifier: workspace:*
+        version: link:../../packages/text-service
       '@sharpee/world-model':
         specifier: workspace:*
         version: link:../../packages/world-model
@@ -591,6 +603,9 @@ importers:
       '@sharpee/stdlib':
         specifier: workspace:*
         version: link:../../packages/stdlib
+      '@sharpee/text-service':
+        specifier: workspace:*
+        version: link:../../packages/text-service
       '@sharpee/world-model':
         specifier: workspace:*
         version: link:../../packages/world-model

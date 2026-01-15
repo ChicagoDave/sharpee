@@ -14,7 +14,7 @@
     "@sharpee/world-model": "workspace:*",
     "@sharpee/parser-en-us": "workspace:*",
     "@sharpee/lang-en-us": "workspace:*",
-    "@sharpee/text-services": "workspace:*",
+    "@sharpee/text-service": "workspace:*",
     "@sharpee/stdlib": "workspace:*"
   },
   "devDependencies": {

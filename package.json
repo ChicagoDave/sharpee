@@ -14,9 +14,8 @@
     "packages/sharpee",
     "packages/lang-en-us",
     "packages/parser-en-us",
-    "packages/text-services",
     "packages/text-service",
-    "packages/text-service-basic",
+    "packages/text-blocks",
     "packages/forge",
     "packages/client-core",
     "packages/clients/*",
@@ -32,7 +31,7 @@
     "clean": "turbo run clean",
     "build": "turbo run build",
     "build:clean": "pnpm run clean",
-    "build:all": "pnpm --filter '@sharpee/core' run build && pnpm --filter '@sharpee/if-domain' run build && pnpm --filter '@sharpee/world-model' run build && pnpm --filter '@sharpee/text-services' run build && pnpm --filter '@sharpee/lang-en-us' run build && pnpm --filter '@sharpee/parser-en-us' run build && pnpm --filter '@sharpee/stdlib' run build && pnpm --filter '@sharpee/event-processor' run build && pnpm --filter '@sharpee/if-services' run build && pnpm --filter '@sharpee/engine' run build && pnpm --filter '@sharpee/sharpee' run build",
+    "build:all": "pnpm --filter '@sharpee/core' run build && pnpm --filter '@sharpee/if-domain' run build && pnpm --filter '@sharpee/world-model' run build && pnpm --filter '@sharpee/text-blocks' run build && pnpm --filter '@sharpee/text-service' run build && pnpm --filter '@sharpee/lang-en-us' run build && pnpm --filter '@sharpee/parser-en-us' run build && pnpm --filter '@sharpee/stdlib' run build && pnpm --filter '@sharpee/event-processor' run build && pnpm --filter '@sharpee/if-services' run build && pnpm --filter '@sharpee/engine' run build && pnpm --filter '@sharpee/sharpee' run build",
     "build:core": "turbo run build --filter='...@sharpee/platform-cli-en-us'",
     "build:packages": "turbo run build --filter='./packages/**'",
     "build:platforms": "turbo run build --filter='./packages/platforms/**'",
@@ -52,7 +51,7 @@
     "watch": "pnpm -r --parallel run watch",
     "watch:cli-en": "pnpm --filter '@sharpee/platform-cli-en-us' run watch",
     "sharpee": "node packages/sharpee/dist/cli/index.js",
-    "publish:beta": "pnpm --filter @sharpee/core publish --access public --tag beta && pnpm --filter @sharpee/if-domain publish --access public --tag beta && pnpm --filter @sharpee/world-model publish --access public --tag beta && pnpm --filter @sharpee/if-services publish --access public --tag beta && pnpm --filter @sharpee/text-services publish --access public --tag beta && pnpm --filter @sharpee/lang-en-us publish --access public --tag beta && pnpm --filter @sharpee/parser-en-us publish --access public --tag beta && pnpm --filter @sharpee/event-processor publish --access public --tag beta && pnpm --filter @sharpee/stdlib publish --access public --tag beta && pnpm --filter @sharpee/engine publish --access public --tag beta && pnpm --filter @sharpee/sharpee publish --access public --tag beta"
+    "publish:beta": "pnpm --filter @sharpee/core publish --access public --tag beta && pnpm --filter @sharpee/if-domain publish --access public --tag beta && pnpm --filter @sharpee/world-model publish --access public --tag beta && pnpm --filter @sharpee/if-services publish --access public --tag beta && pnpm --filter @sharpee/text-blocks publish --access public --tag beta && pnpm --filter @sharpee/text-service publish --access public --tag beta && pnpm --filter @sharpee/lang-en-us publish --access public --tag beta && pnpm --filter @sharpee/parser-en-us publish --access public --tag beta && pnpm --filter @sharpee/event-processor publish --access public --tag beta && pnpm --filter @sharpee/stdlib publish --access public --tag beta && pnpm --filter @sharpee/engine publish --access public --tag beta && pnpm --filter @sharpee/sharpee publish --access public --tag beta"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.2.4",

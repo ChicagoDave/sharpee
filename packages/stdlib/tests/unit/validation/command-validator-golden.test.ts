@@ -20,6 +20,7 @@ import type {
 import { takingAction } from '../../../src/actions/standard/taking';
 import { examiningAction } from '../../../src/actions/standard/examining';
 import { puttingAction } from '../../../src/actions/standard/putting';
+import { pushingAction } from '../../../src/actions/standard/pushing';
 
 // Mock event source for testing debug events
 class TestEventSource implements GenericEventSource<SystemEvent> {
@@ -83,15 +84,16 @@ describe('CommandValidator (Golden Pattern)', () => {
         return patterns[actionId];
       },
       getActionHelp: () => undefined,
-      getSupportedActions: () => ['if.action.taking', 'if.action.examining', 'if.action.putting']
+      getSupportedActions: () => ['if.action.taking', 'if.action.examining', 'if.action.putting', 'if.action.pushing']
     };
-    
+
     registry.setLanguageProvider(mockLanguageProvider as any);
-    
+
     // Register real actions
     registry.register(takingAction);
     registry.register(examiningAction);
     registry.register(puttingAction);
+    registry.register(pushingAction);
     
     validator = new CommandValidator(world, registry);
     eventSource = new TestEventSource();
@@ -264,10 +266,46 @@ describe('CommandValidator (Golden Pattern)', () => {
       expect(parsed).not.toBeNull();
 
       const result = validator.validate(parsed!);
-      
+
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.code).toBe('ENTITY_NOT_FOUND');
+      }
+    });
+
+    test('adjective fallback: "press yellow" finds "yellow button"', () => {
+      // This tests the scenario where the adjective IS the head noun
+      // "press yellow" should find "yellow button" via adjective fallback
+      const yellowButton = author.createEntity('yellow button', EntityType.OBJECT);
+      yellowButton.add({
+        type: TraitType.IDENTITY,
+        name: 'yellow button',
+        aliases: ['danger button', 'danger', 'button'],
+        adjectives: ['yellow']
+      });
+      author.moveEntity(yellowButton.id, room.id);
+
+      // Create command where "yellow" is the head noun (not a modifier)
+      const command = createCommand('if.action.pushing');
+      command.parsed.structure = {
+        verb: { tokens: [0], text: 'press', head: 'press' },
+        directObject: {
+          tokens: [1],
+          text: 'yellow',
+          head: 'yellow',  // "yellow" is the head noun itself
+          modifiers: [],   // No modifiers - it's a bare adjective
+          articles: [],
+          determiners: [],
+          candidates: ['yellow']
+        }
+      };
+
+      const result = validator.validate(command.parsed);
+
+      // Should succeed - adjective fallback should find the yellow button
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value.directObject?.entity.id).toBe(yellowButton.id);
       }
     });
   });

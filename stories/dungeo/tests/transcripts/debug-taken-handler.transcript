@@ -1,0 +1,31 @@
+title: Debug Taken Handler
+story: dungeo
+description: Debug test for treasure take scoring
+
+---
+
+# Navigate to tree and take egg
+> n
+[OK: contains "North"]
+
+> n
+[OK: contains "Forest"]
+
+> u
+[OK: contains "Tree"]
+
+> take egg
+[OK: contains "egg"]
+
+# Check debug state using GDT
+> gdt
+[OK: contains "GDT"]
+
+> $sh debug.taken.counter
+[OK]
+
+> $sh debug.taken.lastEvent
+[OK]
+
+> $sh debug.taken.lastEntity
+[OK]

@@ -16,6 +16,7 @@ module.exports = {
   ...require('../packages/parser-en-us/dist/index.js'),
   ...require('../packages/lang-en-us/dist/index.js'),
   ...require('../packages/event-processor/dist/index.js'),
-  ...require('../packages/text-services/dist/index.js'),
+  ...require('../packages/text-blocks/dist/index.js'),
+  ...require('../packages/text-service/dist/index.js'),
   ...require('../packages/if-services/dist/index.js')
 };

@@ -248,7 +248,9 @@ export function determineLookingMessage(
     };
   }
 
-  // Always include location name initially
+  // Include name and description for room_description template
+  params.name = location.name;
+  params.description = location.description;
   params.location = location.name;
 
   // If we're in an immediate container (but can see the room), note it

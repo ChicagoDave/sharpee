@@ -1,6 +1,6 @@
 # Architecture Decision Records (ADRs)
 
-> ⚠️ **ALPHA DOCUMENTATION**: These ADRs document an evolving architecture. Some decisions may be superseded, and implementations may differ from documented designs.
+> **BETA DOCUMENTATION**: These ADRs document the Sharpee architecture. Some early decisions have been superseded — check status fields for current approaches.
 
 This directory contains all Architecture Decision Records (ADRs) for the Sharpee Interactive Fiction Platform. ADRs document significant architectural decisions made during development, helping future developers understand the rationale behind design choices.
 
@@ -12,7 +12,7 @@ An Architecture Decision Record captures important architectural decisions along
 - **Impact assessment** - Consequences of the decision
 - **Evolution tracking** - How the architecture has changed over time
 
-## Complete ADR Index (56 ADRs)
+## Complete ADR Index (58 ADRs)
 
 ### Parser & Language Processing (ADRs 1-4, 21, 25-28, 36-37, 44, 54)
 
@@ -130,6 +130,18 @@ An Architecture Decision Record captures important architectural decisions along
 - [ADR-075: Effects-Based Handler Pattern](./adr-075-event-handler-consolidation.md) - Effect-returning event handlers
 - [ADR-077: Release Build System](./adr-077-release-build-system.md) - **[Research]** Bundled distribution for authors
 
+### Grammar & Actions (ADRs 80, 87, 90)
+
+- [ADR-080: Multi-Object Command Support](./adr-080-multi-object-commands.md) - "take all", "drop knife and lamp"
+- [ADR-087: Action-Centric Grammar](./adr-087-action-centric-grammar.md) - `.forAction()` builder pattern
+- [ADR-090: Entity-Centric Action Dispatch](./adr-090-entity-centric-action-dispatch.md) - Capability dispatch for entity-specific verbs
+
+### Interaction Paradigms & Clients (ADRs 101-103)
+
+- [ADR-101: Graphical Client Architecture](./adr-101-graphical-client-architecture.md) - Author-controlled multimedia (images, sound, music, animations)
+- [ADR-102: Dialogue Extension Architecture](./adr-102-dialogue-extension-architecture.md) - Extension point for NPC conversation systems (ASK/TELL, menus, quips)
+- [ADR-103: Choice-Based Story Architecture](./adr-103-choice-based-story-architecture.md) - CYOA-style stories with type-safe state, testing, and static analysis
+
 ### Special ADRs
 
 - [ADR-00X: Action Event Emission Pattern](./adr-00X-action-event-emission-pattern.md) - Experimental pattern (to be numbered)
@@ -210,4 +222,4 @@ What other options were evaluated?
 
 ---
 
-*Last updated: December 2025 | Total ADRs: 77*
+*Last updated: January 2026 | Total ADRs: 83*

@@ -1,7 +1,7 @@
 title: Rug and Trapdoor Puzzle
 story: dungeo
 author: Sharpee Team
-description: Test moving the rug to reveal the trapdoor and descending to the Cellar
+description: Test moving the rug to reveal the trap door and descending to the Cellar
 
 ---
 
@@ -22,25 +22,25 @@ description: Test moving the rug to reveal the trapdoor and descending to the Ce
 [OK: contains "Living Room"]
 [OK: contains "rug"]
 
-# Move the rug to reveal trapdoor
+# Move the rug to reveal trap door
 > push rug
-[OK: contains "Moving the rug reveals a trapdoor"]
+[OK: contains "Moving the rug reveals a trap door"]
 [EVENT: true, 1, type="if.event.pushed"]
 [EVENT: true, 2, type="action.success" messageId="pushed_nudged"]
 [EVENT: true, 3, type="game.message" messageId="dungeo.rug.moved.reveal_trapdoor"]
 [EVENT: false, type="if.event.destroyed"]
-[STATE: true, trapdoor.location = r06]
+[STATE: true, y08.location = r06]
 
 # Trapdoor should now be visible
-> examine trapdoor
-[OK: contains "trapdoor"]
+> examine trap door
+[OK: contains "trap door"]
 
-# Try to go down without opening trapdoor
+# Try to go down without opening trap door
 > down
 [OK: contains "closed"]
 
-# Open the trapdoor
-> open trapdoor
+# Open the trap door
+> open trap door
 [OK: contains "open"]
 
 # Get the lantern first (it's dark in the Cellar)
@@ -50,10 +50,10 @@ description: Test moving the rug to reveal the trapdoor and descending to the Ce
 > switch on lantern
 [OK: contains "on"]
 
-# Now descend through the trapdoor
+# Now descend through the trap door
 > down
 [OK: contains "Cellar"]
 
-# Can go back up through open trapdoor
+# Can go back up through open trap door
 > up
 [OK: contains "Living Room"]

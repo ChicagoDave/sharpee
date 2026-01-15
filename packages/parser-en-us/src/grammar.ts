@@ -221,6 +221,19 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .hasTrait('device', TraitType.SWITCHABLE)
     .build();
 
+  // Alternative phrasal verb order: "turn lamp on" / "turn lamp off"
+  grammar
+    .define('turn :device on')
+    .hasTrait('device', TraitType.SWITCHABLE)
+    .mapsTo('if.action.switching_on')
+    .build();
+
+  grammar
+    .define('turn :device off')
+    .hasTrait('device', TraitType.SWITCHABLE)
+    .mapsTo('if.action.switching_off')
+    .build();
+
   // Pushing and pulling (ADR-087: using forAction)
   // Scope handled by action validation
   grammar

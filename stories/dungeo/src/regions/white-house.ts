@@ -17,8 +17,15 @@ import {
   ContainerTrait,
   OpenableTrait,
   ReadableTrait,
-  SceneryTrait
+  SceneryTrait,
+  IGameEvent
 } from '@sharpee/world-model';
+
+// Simple ID generator for events
+let eventCounter = 0;
+function generateEventId(): string {
+  return `evt-${Date.now()}-${++eventCounter}`;
+}
 
 export interface WhiteHouseRoomIds {
   westOfHouse: string;
@@ -55,19 +62,19 @@ export function createWhiteHouseRegion(world: WorldModel): WhiteHouseRoomIds {
   // === Create all rooms ===
 
   const westOfHouse = createRoom(world, 'West of House',
-    'You are standing in an open field west of a white house, with a boarded front door.',
+    'This is an open field west of a white house with a boarded front door.',
     ['west of house', 'field', 'open field']);
 
   const northOfHouse = createRoom(world, 'North of House',
-    'You are facing the north side of a white house. There is no door here, and all the windows are boarded up. To the north a narrow path winds through the trees.',
+    'You are facing the north side of a white house. There is no door here, and all the windows are barred.',
     ['north of house', 'north side']);
 
   const southOfHouse = createRoom(world, 'South of House',
-    'You are facing the south side of a white house. There is no door here, and all the windows are boarded.',
+    'You are facing the south side of a white house. There is no door here, and all the windows are barred.',
     ['south of house', 'south side']);
 
   const behindHouse = createRoom(world, 'Behind House',
-    'You are behind the white house. A path leads into the forest to the east. In one corner of the house there is a small window which is slightly ajar.',
+    'You are behind the white house. In one corner of the house there is a small window which is slightly ajar.',
     ['behind house', 'back of house', 'east of house']);
 
   const roomIds: WhiteHouseRoomIds = {
@@ -267,6 +274,26 @@ function createWindow(world: WorldModel): IFEntity {
     isOpen: false  // Starts "slightly ajar" but not fully open
   }));
 
+  // Handle window opening - custom message
+  window.on = {
+    'if.event.opened': (event: IGameEvent) => {
+      // Update description to reflect open state
+      const identity = window.get(IdentityTrait);
+      if (identity) {
+        identity.description = 'The window is open.';
+      }
+      // Return custom message for opening
+      return [{
+        id: generateEventId(),
+        type: 'game.message',
+        entities: { actor: event.entities.actor, target: window.id },
+        data: { messageId: 'dungeo.window.opened' },
+        timestamp: Date.now(),
+        narrate: true
+      }];
+    }
+  };
+
   return window;
 }
 
@@ -280,7 +307,7 @@ function createWelcomeMat(world: WorldModel): IFEntity {
   mat.add(new IdentityTrait({
     name: 'welcome mat',
     aliases: ['mat', 'doormat', 'door mat', 'rug'],
-    description: 'A rubber mat saying "Welcome to Zork!"',
+    description: 'A rubber mat saying "Welcome to Dungeon!"',
     properName: false,
     article: 'a',
     weight: 5
