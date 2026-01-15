@@ -47,74 +47,63 @@ The Puzzle Room is an 8x8 sliding block puzzle. The goal is to push the **ladder
 
 Push the ladder (`L`, value `-2`) to position 11, then type `UP` to exit.
 
-## Solution
-
-The puzzle requires pushing sandstone walls out of the way to create a path for the ladder.
-
-### Step-by-Step Solution
-
-```
-1.  PUSH SOUTH WALL    (pushes wall from 18 to 26)
-2.  SOUTH
-3.  PUSH SOUTH WALL    (pushes wall from 26 to 34... but 34 has bad ladder!)
-    -- Actually need different approach --
-```
-
-### Optimal Solution (74 moves)
-
-Here's a working solution sequence:
+## Solution (42 commands)
 
 ```
 PUSH EAST WALL
-EAST
-PUSH EAST WALL
+S
+S
+SE
 PUSH SOUTH WALL
-SOUTH
-SOUTH
+N
+NE
+PUSH SOUTH WALL
+TAKE BOOK
+PUSH SOUTH WALL
+E
+NE
 PUSH WEST WALL
-WEST
+SW
+NW
+NE
 PUSH SOUTH WALL
-SOUTH
+SW
+PUSH EAST WALL
+NE
 PUSH SOUTH WALL
+NW
+N
+N
+N
+PUSH EAST WALL
+SW
+S
+SE
+NE
+N
+PUSH WEST WALL
+NW
+PUSH SOUTH WALL
+PUSH SOUTH WALL
+W
+NW
+NW
+PUSH SOUTH WALL
+SE
+SE
+SE
+NE
 PUSH WEST WALL
 PUSH WEST WALL
-WEST
-NORTH
+SW
 PUSH NORTH WALL
 PUSH NORTH WALL
-NORTH
-PUSH EAST WALL
-PUSH EAST WALL
-EAST
-PUSH SOUTH WALL
-SOUTH
-EAST
-PUSH EAST WALL
-EAST
 PUSH NORTH WALL
-PUSH NORTH WALL
-NORTH
-PUSH WEST WALL
-NORTH
-PUSH NORTH WALL
-PUSH WEST WALL
-WEST
-PUSH SOUTH WALL
-SOUTH
-PUSH WEST WALL
-WEST
-PUSH NORTH WALL
-NORTH
-NORTH
-PUSH EAST WALL
-EAST
-PUSH SOUTH WALL
-PUSH SOUTH WALL
-PUSH EAST WALL
-PUSH EAST WALL
-PUSH NORTH WALL
+NW
 UP
 ```
+
+**Note:** `AGAIN` can be used to repeat the previous command, so `PUSH SOUTH WALL. AGAIN.` pushes twice.
 
 ## Mechanics
 
@@ -136,10 +125,11 @@ UP
 
 ## Tips
 
-1. The **bad ladder** (X) at position 34 is a red herring - it cannot be used to exit
-2. You need to clear a path from the ladder's starting position (22) to the exit (11)
-3. Push walls into the southern/eastern areas to make room
-4. The narrow corridor (row 7, cols 4-6) can be useful for "parking" walls
+1. The **bad ladder** (X) at position 34 is a red herring - it's "firmly attached to the wall" and cannot be used to exit
+2. You need to clear a path from the ladder's starting position to the exit
+3. The solution picks up the **book** along the way (a treasure)
+4. The puzzle uses diagonal movement (NE, NW, SE, SW) which is key to the solution
+5. Sandstone walls (SS) can be pushed; marble walls (MM) cannot
 
 ## Source
 
