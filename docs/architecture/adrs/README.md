@@ -12,7 +12,7 @@ An Architecture Decision Record captures important architectural decisions along
 - **Impact assessment** - Consequences of the decision
 - **Evolution tracking** - How the architecture has changed over time
 
-## Complete ADR Index (56 ADRs)
+## Complete ADR Index (58 ADRs)
 
 ### Parser & Language Processing (ADRs 1-4, 21, 25-28, 36-37, 44, 54)
 
@@ -136,9 +136,11 @@ An Architecture Decision Record captures important architectural decisions along
 - [ADR-087: Action-Centric Grammar](./adr-087-action-centric-grammar.md) - `.forAction()` builder pattern
 - [ADR-090: Entity-Centric Action Dispatch](./adr-090-entity-centric-action-dispatch.md) - Capability dispatch for entity-specific verbs
 
-### Client Architecture (ADR 101)
+### Interaction Paradigms & Clients (ADRs 101-103)
 
 - [ADR-101: Graphical Client Architecture](./adr-101-graphical-client-architecture.md) - Author-controlled multimedia (images, sound, music, animations)
+- [ADR-102: Dialogue Extension Architecture](./adr-102-dialogue-extension-architecture.md) - Extension point for NPC conversation systems (ASK/TELL, menus, quips)
+- [ADR-103: Choice-Based Story Architecture](./adr-103-choice-based-story-architecture.md) - CYOA-style stories with type-safe state, testing, and static analysis
 
 ### Special ADRs
 
@@ -220,4 +222,4 @@ What other options were evaluated?
 
 ---
 
-*Last updated: January 2026 | Total ADRs: 81*
+*Last updated: January 2026 | Total ADRs: 83*

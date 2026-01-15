@@ -1,4 +1,4 @@
-# ADR-091: Graphical Client Architecture
+# ADR-101: Graphical Client Architecture
 
 ## Status
 
@@ -18,6 +18,7 @@ Sharpee currently outputs semantic events that a language layer converts to text
 - **Twine/ChoiceScript** — Fully graphical web-based presentation
 
 We want to enable graphical clients for Sharpee that support:
+
 - Images (room illustrations, object icons, portraits)
 - Sound effects
 - Background music/ambient audio
@@ -71,30 +72,30 @@ At session start, client declares its capabilities:
 ```typescript
 interface ClientCapabilities {
   // Display
-  text: true;                    // Always true
-  images: boolean;               // Static images
-  animations: boolean;           // Animated images, sprites
-  video: boolean;                // Video playback
+  text: true; // Always true
+  images: boolean; // Static images
+  animations: boolean; // Animated images, sprites
+  video: boolean; // Video playback
 
   // Audio
-  sound: boolean;                // Sound effects
-  music: boolean;                // Background music
-  speech: boolean;               // Text-to-speech or recorded speech
+  sound: boolean; // Sound effects
+  music: boolean; // Background music
+  speech: boolean; // Text-to-speech or recorded speech
 
   // Layout
-  splitPane: boolean;            // Multiple text/image panes
-  statusBar: boolean;            // Fixed status area
-  sidebar: boolean;              // Inventory/map sidebar
+  splitPane: boolean; // Multiple text/image panes
+  statusBar: boolean; // Fixed status area
+  sidebar: boolean; // Inventory/map sidebar
 
   // Input
-  clickableText: boolean;        // Hyperlinks in prose
-  clickableImage: boolean;       // Image hotspots
-  dragDrop: boolean;             // Drag and drop interactions
+  clickableText: boolean; // Hyperlinks in prose
+  clickableImage: boolean; // Image hotspots
+  dragDrop: boolean; // Drag and drop interactions
 
   // Advanced
-  transitions: boolean;          // Fade, dissolve, etc.
-  layers: boolean;               // Multiple image layers
-  customFonts: boolean;          // Font embedding
+  transitions: boolean; // Fade, dissolve, etc.
+  layers: boolean; // Multiple image layers
+  customFonts: boolean; // Font embedding
 
   // Dimensions (for layout decisions)
   screenWidth?: number;
@@ -278,6 +279,7 @@ story/
 ```
 
 Asset paths in events are relative to `assets/`:
+
 ```typescript
 emit('media.image.show', { src: 'images/rooms/cave-entrance.png', ... });
 ```
@@ -294,6 +296,7 @@ Clients supporting graphical features MUST:
 6. **Manage audio channels** — Stop previous sound on same channel unless layered
 
 Clients MAY:
+
 - Substitute higher-resolution assets
 - Adapt layout to screen size
 - Provide audio/graphics toggle for player preference
@@ -322,27 +325,33 @@ function onEnterCave(context: ActionContext): ISemanticEvent[] {
   const events: ISemanticEvent[] = [];
 
   // Always emit semantic event (for text clients, history, etc.)
-  events.push(context.event('if.event.entered_room', {
-    roomId: 'cave',
-    roomName: 'Dark Cave'
-  }));
+  events.push(
+    context.event('if.event.entered_room', {
+      roomId: 'cave',
+      roomName: 'Dark Cave',
+    })
+  );
 
   // Emit media if client supports it
   if (context.client.supports('images')) {
-    events.push(context.event('media.image.show', {
-      src: 'images/rooms/cave-entrance.png',
-      layer: 'main',
-      transition: { type: 'fade', duration: 500 }
-    }));
+    events.push(
+      context.event('media.image.show', {
+        src: 'images/rooms/cave-entrance.png',
+        layer: 'main',
+        transition: { type: 'fade', duration: 500 },
+      })
+    );
   }
 
   if (context.client.supports('ambient')) {
-    events.push(context.event('media.ambient.play', {
-      src: 'audio/ambient/cave-drips.mp3',
-      channel: 'environment',
-      loop: true,
-      volume: 0.3
-    }));
+    events.push(
+      context.event('media.ambient.play', {
+        src: 'audio/ambient/cave-drips.mp3',
+        channel: 'environment',
+        loop: true,
+        volume: 0.3,
+      })
+    );
   }
 
   return events;
@@ -354,20 +363,24 @@ function onEnterCave(context: ActionContext): ISemanticEvent[] {
 ```typescript
 // Combination lock with clickable interface
 if (context.client.supports('clickableImage')) {
-  events.push(context.event('media.image.show', {
-    src: 'images/puzzles/combination-lock.png',
-    layer: 'overlay',
-    hotspots: [
-      { id: 'dial1', bounds: { x: 10, y: 50, w: 30, h: 30 }, action: 'turn dial 1' },
-      { id: 'dial2', bounds: { x: 50, y: 50, w: 30, h: 30 }, action: 'turn dial 2' },
-      { id: 'dial3', bounds: { x: 90, y: 50, w: 30, h: 30 }, action: 'turn dial 3' },
-    ]
-  }));
+  events.push(
+    context.event('media.image.show', {
+      src: 'images/puzzles/combination-lock.png',
+      layer: 'overlay',
+      hotspots: [
+        { id: 'dial1', bounds: { x: 10, y: 50, w: 30, h: 30 }, action: 'turn dial 1' },
+        { id: 'dial2', bounds: { x: 50, y: 50, w: 30, h: 30 }, action: 'turn dial 2' },
+        { id: 'dial3', bounds: { x: 90, y: 50, w: 30, h: 30 }, action: 'turn dial 3' },
+      ],
+    })
+  );
 } else {
   // Text fallback
-  events.push(context.event('if.message', {
-    id: 'combination_lock_description'
-  }));
+  events.push(
+    context.event('if.message', {
+      id: 'combination_lock_description',
+    })
+  );
 }
 ```
 
@@ -399,12 +412,14 @@ if (context.client.supports('clickableImage')) {
 ## Implementation Plan
 
 ### Phase 1: Foundation
+
 - Define event type schemas (TypeScript interfaces)
 - Add `ClientCapabilities` to engine context
 - Implement capability checking in `ActionContext`
 - Update event pipeline to pass media events through unchanged
 
 ### Phase 2: Reference Client
+
 - Build web client (React) supporting core features:
   - Images (show/hide/transition)
   - Sound effects
@@ -413,11 +428,13 @@ if (context.client.supports('clickableImage')) {
 - Terminal client: log and ignore media events
 
 ### Phase 3: Story Tooling
+
 - Asset bundling in build pipeline
 - Preload hints for performance
 - Development mode: hot-reload assets
 
 ### Phase 4: Advanced Features
+
 - Animations
 - Video
 - Complex layouts
