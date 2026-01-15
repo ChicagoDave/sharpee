@@ -1,54 +1,3 @@
-[11:30:31] WRITE: docs/context/session-20260114-1153-dungeo.md
-[11:30:58] GIT: git commit -m "$(cat <<'EOF'
-feat(dungeo): Fix ANSWER action for Riddle Room puz
-[11:31:07] GIT: git push origin dungeo
-[12:08:47] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo /tmp/riddle-test.tran
-[12:18:42] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/world-model' build 2>&1 | tail -20
-[12:41:03] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo /tmp/riddle-test.tran
-[12:42:41] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[12:49:36] WRITE: stories/dungeo/src/handlers/trapdoor-handler.ts
-[12:49:43] EDIT: stories/dungeo/src/handlers/index.ts
-[12:50:24] EDIT: stories/dungeo/src/index.ts
-[12:50:30] EDIT: stories/dungeo/src/index.ts
-[12:50:43] EDIT: stories/dungeo/src/index.ts
-[12:52:22] WRITE: docs/architecture/parser-comparison.md
-[12:52:41] GIT: git add docs/architecture/parser-comparison.md && git commit -m "$(cat <<'EOF'
-d
-[12:57:20] EDIT: docs/architecture/parser-comparison.md
-[12:57:29] EDIT: docs/architecture/parser-comparison.md
-[12:58:02] GIT: git add docs/architecture/parser-comparison.md && git commit -m "$(cat <<'EOF'
-d
-[13:00:26] EDIT: docs/architecture/parser-comparison.md
-[13:00:36] EDIT: docs/architecture/parser-comparison.md
-[13:00:43] EDIT: docs/architecture/parser-comparison.md
-[13:00:59] GIT: git add docs/architecture/parser-comparison.md && git commit -m "$(cat <<'EOF'
-d
-[13:25:06] WRITE: docs/context/session-20260114-1153-dungeo.md
-[15:35:02] GIT: git commit -m "$(cat <<'EOF'
-feat(dungeo): Add trap door auto-close handler
-
-Whe
-[17:08:14] EDIT: docs/testing/tr-002-comparison.md
-[17:08:21] EDIT: docs/testing/tr-002-comparison.md
-[17:08:26] EDIT: docs/testing/tr-002-comparison.md
-[17:08:33] EDIT: docs/testing/tr-002-comparison.md
-[17:08:40] EDIT: docs/testing/tr-002-comparison.md
-[17:08:51] GIT: git add docs/testing/tr-002-comparison.md && git commit -m "$(cat <<'EOF'
-docs: 
-[17:10:31] EDIT: stories/dungeo/src/regions/white-house.ts
-[17:10:31] EDIT: stories/dungeo/src/regions/white-house.ts
-[17:10:32] EDIT: stories/dungeo/src/regions/white-house.ts
-[17:10:33] EDIT: stories/dungeo/src/regions/white-house.ts
-[17:10:49] EDIT: stories/dungeo/src/regions/house-interior.ts
-[17:10:50] EDIT: stories/dungeo/src/regions/house-interior.ts
-[17:11:02] EDIT: stories/dungeo/src/regions/underground.ts
-[17:11:19] EDIT: stories/dungeo/src/regions/forest.ts
-[17:11:50] EDIT: stories/dungeo/src/regions/white-house.ts
-[17:11:58] EDIT: stories/dungeo/src/regions/white-house.ts
-[17:12:09] EDIT: stories/dungeo/src/index.ts
-[17:13:42] GIT: git commit -m "$(cat <<'EOF'
-fix(dungeo): Match room descriptions exactly to 198
-[17:14:35] EDIT: docs/testing/tr-002-comparison.md
 [17:14:47] GIT: git add docs/testing/tr-002-comparison.md && git commit -m "$(cat <<'EOF'
 docs: 
 [17:18:04] WRITE: docs/architecture/adrs/adr-091-graphical-client-architecture.md
@@ -97,3 +46,6 @@ fix(dungeo): Update TR-002 and fix text accuracy is
 [18:08:28] GIT: git commit -m "$(cat <<'EOF'
 docs: Add ADRs 101-103 for graphical client and sto
 [18:08:37] GIT: git push
+[18:09:26] GIT: git commit -m "$(cat <<'EOF'
+docs: Add session summaries, reference docs, and wo
+[18:09:35] GIT: git push
