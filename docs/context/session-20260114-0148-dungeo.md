@@ -83,10 +83,20 @@ Skips packages until the specified one, then builds from there. Useful when you 
 
 ## Open Items
 
+### Discovered Issues (End of Session)
+
+Testing after the dam puzzle revealed two text service issues:
+
+1. **Template placeholders not substituted**: Reservoir South room shows `{name}` and `{description}` literally instead of filled-in values
+2. **Raw message ID displayed**: Going north shows `movement_blocked` instead of actual prose like "You can't go that way"
+
+These are text service/templating issues, likely in the room description or movement blocked message handling. Needs investigation in next session.
+
 ### Short Term
 - Test the adjective fallback fix with more edge cases
 - Consider adding debug events for the adjective fallback path itself
 - Document the two-stage resolution in CommandValidator comments
+- **Fix text templating issues in Reservoir South room**
 
 ### Long Term
 - Consider more sophisticated entity resolution using scoring/ranking

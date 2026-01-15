@@ -1,0 +1,106 @@
+title: P0 Testing - Critical Puzzle Mechanics
+story: dungeo
+
+---
+
+# P0 Testing - Verify critical puzzle mechanics
+
+# === Test 1: TIE ROPE TO RAILING (Dome Room) ===
+
+# Get rope from attic
+> n
+> n
+> open window
+> w
+> u
+> take rope
+> d
+> w
+
+# Go down through trap door
+> move rug
+> open trap door
+> turn on lantern
+> d
+
+# Navigate to Dome Room
+> e
+> n
+> e
+> e
+> w
+> w
+
+# Should be at Dome Room
+> look
+%% periphery
+
+# Verify we have rope
+> i
+%% rope
+
+# TIE rope to railing
+> tie rope to railing
+%% securely|tied|railing
+
+# Verify DOWN is now available
+> d
+%% Torch Room
+
+# === Test 2: PRAY at Altar (Temple Teleport) ===
+
+# Navigate to Temple from Torch Room
+> d
+> s
+> sw
+> s
+> n
+> n
+> e
+
+# Should be at Altar
+> look
+%% Altar
+
+# Test PRAY teleport
+> pray
+%% prayer|answered
+
+# Should be in Forest
+> look
+%% forest|Forest
+
+# === Test 3: ANSWER in Riddle Room ===
+
+# Get back underground and to riddle room
+# First go back to house
+> s
+> e
+> e
+> open window
+> w
+> d
+> move rug
+> open trap door
+> d
+
+# Navigate to Riddle Room via Round Room
+# (This path depends on exact room connections)
+> e
+> e
+> e
+> se
+> e
+> e
+
+# Now at Riddle Room
+> look
+%% Riddle|riddle
+
+# Test ANSWER with the correct answer
+> answer "well"
+%% thunder|opens|door
+
+# Verify east exit is now open
+> e
+%% closet|broom

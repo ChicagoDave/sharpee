@@ -1,0 +1,48 @@
+title: Debug Trapdoor
+story: dungeo
+
+---
+
+# Get lantern
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> open window
+[OK: contains "effort"]
+
+> west
+[OK: contains "Kitchen"]
+
+> west
+[OK: contains "Living Room"]
+
+# Check lantern
+> take lantern
+[OK: contains "Taken"]
+
+> turn on lantern
+[OK: contains "on"]
+
+# Check rug state
+> look
+[OK: contains "Living Room"]
+[OK: contains "rug"]
+
+# Move rug
+> move rug
+[OK: contains "trap door"]
+
+# Open trap door
+> open trap door
+[OK: contains "rickety"]
+
+# Check room state
+> look
+[OK: contains "trap door"]
+
+# Try to go down
+> down
+[OK: contains "Cellar"]
