@@ -74,7 +74,7 @@ export function createWhiteHouseRegion(world: WorldModel): WhiteHouseRoomIds {
     ['south of house', 'south side']);
 
   const behindHouse = createRoom(world, 'Behind House',
-    'You are behind the white house. A path leads into the forest to the east. In one corner of the house there is a small window which is slightly ajar.',
+    'You are behind the white house. In one corner of the house there is a small window which is slightly ajar.',
     ['behind house', 'back of house', 'east of house']);
 
   const roomIds: WhiteHouseRoomIds = {

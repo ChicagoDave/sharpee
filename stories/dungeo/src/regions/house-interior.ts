@@ -62,7 +62,7 @@ export function createHouseInteriorRegion(world: WorldModel): HouseInteriorRoomI
     'This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut.');
 
   const attic = createRoom(world, 'Attic',
-    'This is the attic. The only exit is a stairway leading down. A large coil of rope is lying in the corner. On a table is a nasty-looking knife.');
+    'This is the attic. The only exit is stairs that lead down.');
 
   // === Set up connections ===
 
@@ -366,6 +366,7 @@ function createAtticObjects(world: WorldModel, atticId: string): void {
     name: 'large coil of rope',
     aliases: ['rope', 'coil', 'coil of rope'],
     description: 'A large coil of sturdy rope.',
+    brief: 'A large coil of rope is lying in the corner.',
     properName: false,
     article: 'a',
     weight: 5
@@ -377,6 +378,7 @@ function createAtticObjects(world: WorldModel, atticId: string): void {
     name: 'nasty knife',
     aliases: ['knife', 'nasty-looking knife', 'blade'],
     description: 'A nasty-looking knife. It appears quite sharp.',
+    brief: 'On a table is a nasty-looking knife.',
     properName: false,
     article: 'a',
     weight: 4
@@ -389,6 +391,7 @@ function createAtticObjects(world: WorldModel, atticId: string): void {
     name: 'brick',
     aliases: ['red brick', 'clay brick', 'explosive'],
     description: 'A square brick of calciumite with some fuse wire wrapped around it.',
+    brief: 'There is a square brick here which feels like clay.',
     properName: false,
     article: 'a',
     weight: 5
