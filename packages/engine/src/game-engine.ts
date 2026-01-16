@@ -109,6 +109,9 @@ export class GameEngine {
   private turnEventProcessor: TurnEventProcessor;
   private platformOpHandler?: PlatformOperationHandler;
 
+  // Phase 5: Track if initialized event has been emitted
+  private hasEmittedInitialized = false;
+
   constructor(options: {
     world: WorldModel;
     player: IFEntity;
@@ -223,13 +226,9 @@ export class GameEngine {
     
     // Query handling is now managed by the platform layer
     // Platform owns the QueryManager and handles all queries
-    
-    // Emit initialized event now that engine is set up
-    // We'll defer this slightly to ensure all listeners are attached
-    setTimeout(() => {
-      const initializedEvent = createGameInitializedEvent();
-      this.emitGameEvent(initializedEvent);
-    }, 0);
+
+    // Note: game.initialized event is emitted in start() to avoid race condition
+    // (Phase 5 remediation - removed setTimeout)
   }
 
   /**
@@ -347,6 +346,13 @@ export class GameEngine {
 
     if (!this.commandExecutor) {
       throw new Error('Engine must have a command executor before starting');
+    }
+
+    // Emit initialized event once (Phase 5 - moved from constructor to avoid race condition)
+    if (!this.hasEmittedInitialized) {
+      const initializedEvent = createGameInitializedEvent();
+      this.emitGameEvent(initializedEvent);
+      this.hasEmittedInitialized = true;
     }
 
     // Emit game starting event
