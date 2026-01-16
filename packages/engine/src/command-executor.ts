@@ -1,15 +1,13 @@
 /**
- * Command Executor - Thin Orchestrator (~100 lines)
- * 
- * Phase 3.5: Refactored to be a simple orchestrator that delegates all
- * responsibilities to the appropriate components (parser, validator, actions).
- * 
+ * Command Executor - Orchestrates command pipeline
+ *
  * Responsibilities:
- * - Orchestrate the three-phase pattern (validate → execute → report)
+ * - Orchestrate the four-phase pattern (validate → execute → report/blocked)
+ * - Handle implicit inference (ADR-104) when validation fails with pronouns
  * - Pass results between phases
  * - Return the final TurnResult
- * 
- * All event creation is now owned by the components themselves.
+ *
+ * All event creation is owned by the action components themselves.
  */
 
 import { ISemanticEvent, ISystemEvent, IGenericEventSource } from '@sharpee/core';

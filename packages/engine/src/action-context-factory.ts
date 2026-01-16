@@ -4,7 +4,7 @@
 
 import { ActionContext, Action, ScopeResolver, ValidatedCommand, ScopeLevel, ScopeCheckResult, ScopeErrors, ImplicitTakeResult, takingAction } from '@sharpee/stdlib';
 import { WorldModel, IFEntity, TraitType } from '@sharpee/world-model';
-import { ISemanticEvent, createSemanticEventSource, createEvent as coreCreateEvent } from '@sharpee/core';
+import { ISemanticEvent, createEvent as coreCreateEvent } from '@sharpee/core';
 import { GameContext } from './types';
 
 /**
@@ -62,12 +62,9 @@ export function createActionContext(
   scopeResolver: ScopeResolver
 ): ActionContext {
   const player = gameContext.player;
-  const currentLocation = world.getLocation(player.id) 
-    ? world.getEntity(world.getLocation(player.id)!) 
+  const currentLocation = world.getLocation(player.id)
+    ? world.getEntity(world.getLocation(player.id)!)
     : player;
-
-  // Create event source for this action
-  const eventSource = createSemanticEventSource();
 
   // Create sharedData object separately so it can be referenced in closures
   const sharedData: Record<string, any> = {};

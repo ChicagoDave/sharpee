@@ -177,35 +177,3 @@ export interface EngineConfig {
    */
   maxUndoSnapshots?: number;
 }
-
-/**
- * Game state that can be saved/loaded
- */
-export interface GameState {
-  /**
-   * Engine version
-   */
-  version: string;
-  
-  /**
-   * Current turn
-   */
-  turn: number;
-  
-  /**
-   * World model state
-   */
-  world: unknown; // Serialized world state
-  
-  /**
-   * Game context
-   */
-  context: GameContext;
-  
-  /**
-   * Timestamp
-   */
-  saved: Date;
-}
-
-

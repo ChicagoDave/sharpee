@@ -41,7 +41,6 @@ import {
   GameContext,
   TurnResult,
   EngineConfig,
-  GameState,
   SequencedEvent,
   GameEvent
 } from './types';
@@ -544,11 +543,6 @@ export class GameEngine {
       for (const semanticEvent of semanticEvents) {
         this.eventSource.emit(semanticEvent);
 
-        // Check if this is a client.query event
-        if (semanticEvent.type === 'client.query') {
-          // The handleClientQuery will be called by the event listener
-        }
-
         // Check if this is a platform request event
         if (isPlatformRequestEvent(semanticEvent)) {
           this.pendingPlatformOps.push(semanticEvent as IPlatformEvent);
@@ -768,7 +762,7 @@ export class GameEngine {
         // Stories could provide more detail about the type of ending
         this.stop('victory', {
           reason: 'Story completed',
-          score: 0  // TODO: Get score from story or scoring capability
+          score: 0
         });
       }
 
@@ -1087,38 +1081,6 @@ export class GameEngine {
 
     // Update vocabulary for current scope
     this.updateScopeVocabulary();
-
-    this.emit('state:changed', this.context);
-  }
-
-  /**
-   * @deprecated Use save() instead
-   */
-  saveState(): GameState {
-    return {
-      version: '1.0.0',
-      turn: this.context.currentTurn,
-      world: this.serializeWorld(),
-      context: this.context,
-      saved: new Date()
-    };
-  }
-
-  /**
-   * @deprecated Use restore() instead
-   */
-  loadState(state: GameState): void {
-    // Validate version
-    if (state.version !== '1.0.0') {
-      throw new Error(`Unsupported save version: ${state.version}`);
-    }
-
-    // Restore world
-    this.deserializeWorld(state.world);
-
-    // Restore context
-    this.context = state.context;
-    this.context.metadata.lastPlayed = new Date();
 
     this.emit('state:changed', this.context);
   }
@@ -1652,27 +1614,6 @@ export class GameEngine {
   }
 
   /**
-   * Serialize world state
-   */
-  private serializeWorld(): unknown {
-    // Simple implementation - override for better serialization
-    return {
-      entities: this.world.getAllEntities().map((e: IFEntity) => ({
-        id: e.id,
-        traits: Array.from(e.traits.entries())
-      }))
-    };
-  }
-
-  /**
-   * Deserialize world state
-   */
-  private deserializeWorld(data: unknown): void {
-    // Simple implementation - override for better deserialization
-    console.warn('World deserialization not fully implemented');
-  }
-
-  /**
    * Serialize event source
    */
   private serializeEventSource(): ISerializedEvent[] {
@@ -1811,9 +1752,7 @@ export class GameEngine {
         connections: this.extractConnections(location)
       };
     }
-    
-    // TODO: Serialize other relationships
-    
+
     return { entities, locations, relationships };
   }
 
