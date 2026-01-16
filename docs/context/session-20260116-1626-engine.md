@@ -81,11 +81,24 @@ The ~200 line `processPlatformOperations` method was not delegated to PlatformOp
 - `packages/engine/src/index.ts`
   - Added exports for new services
 
-## Open Items
+## Phase 5: Fix Race Condition (Complete)
 
-### Short Term
-- Phase 5: Fix Race Condition (remove setTimeout in constructor)
-- Phase 6: Cleanup MetaCommand Handling (use MetaCommandRegistry consistently)
+Removed setTimeout from constructor that caused race condition.
+
+- Added `hasEmittedInitialized` flag to track emission state
+- Removed `setTimeout(() => emitGameEvent(...), 0)` from constructor
+- Emit `game.initialized` event synchronously at start of `start()` method
+
+## Phase 6: Cleanup MetaCommand Handling (Complete)
+
+Replaced hardcoded list with centralized MetaCommandRegistry.
+
+- Added `isNonUndoable(input)` method to MetaCommandRegistry
+- Added `nonUndoableVerbs` set covering meta-commands + info commands
+- Updated game-engine.ts to use `MetaCommandRegistry.isNonUndoable()`
+- Removed 10-line hardcoded list from `executeTurn()`
+
+## Open Items
 
 ### Future Improvements
 - Delegate `processPlatformOperations` to PlatformOperationHandler
