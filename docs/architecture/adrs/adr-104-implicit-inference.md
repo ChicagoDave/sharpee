@@ -1,7 +1,7 @@
 # ADR-104: Implicit Inference and Implicit Actions
 
 ## Status
-ACCEPTED (Phases 1-3 implemented)
+ACCEPTED (All phases implemented)
 
 ## Context
 
@@ -348,32 +348,66 @@ The leaflet is stuck to the mailbox and won't come loose.
 
 ## Configuration
 
-Authors should be able to disable implicit behavior:
+Authors can disable implicit behavior at multiple levels:
+
+### Story-Level Config
 
 ```typescript
-// Story config
-storyConfig: {
+// In StoryConfig
+const config: StoryConfig = {
+  id: 'my-story',
+  // ... other config
+
   implicitActions: {
-    inference: true,      // Find valid target when explicit fails
-    implicitTake: true,   // Auto-take when action requires holding
-    maxDepth: 1,          // Max nested implicit actions
+    inference: true,      // Find valid target when pronoun fails (default: true)
+    implicitTake: true,   // Auto-take when action requires holding (default: true)
   }
-}
-
-// Per-action override
-const readingAction: Action = {
-  allowImplicitInference: true,   // default: true
-  allowImplicitTake: true,        // default: based on requiresHolding
 };
-
-// Per-entity override
-const inscription = world.createEntity('inscription', 'object', {
-  identity: { name: 'ancient inscription' },
-  readable: { text: '...' },
-  // Don't auto-take inscriptions
-  implicitTake: false,  // or use SceneryTrait
-});
 ```
+
+### Per-Action Override
+
+```typescript
+const readingAction: Action = {
+  id: 'if.action.reading',
+
+  // Declare requirements for inference
+  targetRequirements: {
+    trait: 'if.trait.readable',
+    description: 'readable thing',
+  },
+
+  // Documentation flag
+  requiresHolding: true,
+
+  // Control implicit behavior for this action
+  allowImplicitInference: true,   // default: true
+  allowImplicitTake: true,        // default: true
+};
+```
+
+### Per-Entity Override (via Traits)
+
+```typescript
+// Use SceneryTrait to prevent implicit take
+const inscription = world.createEntity('inscription', 'object');
+inscription.addTrait(TraitType.SCENERY);
+inscription.addTrait(TraitType.READABLE, { text: 'Ancient runes...' });
+// Inscription is readable but can't be taken (fixed in place)
+```
+
+### Configuration Priority
+
+1. **Story-level** (`StoryConfig.implicitActions`) - Global defaults
+2. **Action-level** (`Action.allowImplicitInference`, `Action.allowImplicitTake`) - Per-action override
+3. **Entity-level** (`SceneryTrait`, `TraitType.ROOM`, `TraitType.DOOR`) - Per-entity override
+
+If any level disables the behavior, it's disabled. The checks are:
+- `gameContext.implicitActions?.inference === false` → skip inference
+- `action.allowImplicitInference === false` → skip inference for this action
+- `gameContext.implicitActions?.implicitTake === false` → skip implicit take
+- `action.allowImplicitTake === false` → skip implicit take for this action
+- Entity has SceneryTrait/RoomTrait/DoorTrait → implicit take returns "fixed_in_place" error
 
 ## Testing
 
@@ -416,10 +450,11 @@ story: test-story
 - Updated eating action to support implicit take
 - Events flow through `context.sharedData.implicitTakeEvents`
 
-### Phase 4: Configuration (Future)
-- Story-level config for enabling/disabling
-- Per-action overrides
-- Per-entity overrides (SceneryTrait already handles this)
+### Phase 4: Configuration ✓ COMPLETE
+- Story-level config: `StoryConfig.implicitActions.inference` and `implicitActions.implicitTake`
+- Per-action overrides: `Action.allowImplicitInference` and `Action.allowImplicitTake`
+- Per-entity overrides: SceneryTrait prevents implicit take for fixed items
+- Config flows through `GameContext.implicitActions` to engine components
 
 ## Alternatives Considered
 

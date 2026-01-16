@@ -126,6 +126,15 @@ export interface GameContext {
    * Custom game state
    */
   customState?: Record<string, unknown>;
+
+  /**
+   * Implicit actions configuration (ADR-104)
+   * Populated from StoryConfig.implicitActions
+   */
+  implicitActions?: {
+    inference?: boolean;
+    implicitTake?: boolean;
+  };
 }
 
 /**

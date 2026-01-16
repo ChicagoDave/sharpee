@@ -245,11 +245,14 @@ export class GameEngine {
 
     // Update metadata
     this.context.metadata.title = story.config.title;
-    this.context.metadata.author = Array.isArray(story.config.author) 
-      ? story.config.author.join(', ') 
+    this.context.metadata.author = Array.isArray(story.config.author)
+      ? story.config.author.join(', ')
       : story.config.author;
     this.context.metadata.version = story.config.version;
-    
+
+    // Copy implicit actions config to context (ADR-104)
+    this.context.implicitActions = story.config.implicitActions;
+
     // Register any custom actions
     if (story.getCustomActions) {
       const customActions = story.getCustomActions();

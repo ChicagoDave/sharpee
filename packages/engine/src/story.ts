@@ -90,6 +90,36 @@ export interface StoryConfig {
    * narrative: { perspective: '3rd', playerPronouns: PRONOUNS.SHE_HER }
    */
   narrative?: NarrativeConfig;
+
+  /**
+   * Implicit action settings (ADR-104)
+   *
+   * Controls automatic inference and implicit actions like "first taking".
+   * All default to true.
+   *
+   * @example
+   * // Disable all implicit behavior (strict mode)
+   * implicitActions: { inference: false, implicitTake: false }
+   *
+   * @example
+   * // Allow inference but disable implicit take
+   * implicitActions: { implicitTake: false }
+   */
+  implicitActions?: {
+    /**
+     * Whether to infer alternative targets when pronouns fail requirements.
+     * Example: "read it" (it=mailbox) infers leaflet if only readable thing.
+     * Default: true
+     */
+    inference?: boolean;
+
+    /**
+     * Whether to automatically take items when actions require holding them.
+     * Example: "read leaflet" auto-takes if not held.
+     * Default: true
+     */
+    implicitTake?: boolean;
+  };
 }
 
 /**

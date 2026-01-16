@@ -206,6 +206,23 @@ export function createActionContext(
       }
 
       // Case 3: Reachable but not carried - attempt implicit take
+
+      // Check if implicit take is disabled at story level (ADR-104)
+      if (gameContext.implicitActions?.implicitTake === false) {
+        return {
+          ok: false,
+          error: { valid: false, error: ScopeErrors.NOT_CARRIED, params: { item: entity.name } }
+        };
+      }
+
+      // Check if implicit take is disabled at action level (ADR-104)
+      if (action.allowImplicitTake === false) {
+        return {
+          ok: false,
+          error: { valid: false, error: ScopeErrors.NOT_CARRIED, params: { item: entity.name } }
+        };
+      }
+
       // Check if entity can be taken (not scenery, room, door)
       if (entity.has(TraitType.SCENERY) || entity.has(TraitType.ROOM) || entity.has(TraitType.DOOR)) {
         return {

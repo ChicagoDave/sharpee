@@ -164,7 +164,9 @@ export class CommandExecutor {
 
       // ADR-104: Implicit inference - if validation fails and pronoun was used,
       // try to find a valid alternative target
-      if (!actionValidation.valid && action.targetRequirements) {
+      // Check story-level config first
+      const inferenceEnabled = context.implicitActions?.inference !== false;
+      if (!actionValidation.valid && action.targetRequirements && inferenceEnabled) {
         const directObject = command.directObject;
         // Check if pronoun was used (INounPhrase has wasPronoun, cast is safe)
         const parsedNounPhrase = directObject?.parsed as { wasPronoun?: boolean } | undefined;
