@@ -1,88 +1,89 @@
-[17:14:47] GIT: git add docs/testing/tr-002-comparison.md && git commit -m "$(cat <<'EOF'
-docs: 
-[17:18:04] WRITE: docs/architecture/adrs/adr-091-graphical-client-architecture.md
-[17:18:21] GIT: git add docs/architecture/adrs/adr-091-graphical-client-architecture.md && git c
-[17:19:10] WRITE: docs/context/session-20260114-1718-dungeo.md
-[17:19:32] GIT: git add docs/context/session-20260114-1718-dungeo.md && git commit -m "$(cat <<'
-[17:21:16] EDIT: docs/architecture/adrs/README.md
-[17:21:24] EDIT: docs/architecture/adrs/README.md
-[17:21:39] GIT: git add docs/architecture/adrs/README.md && git commit -m "$(cat <<'EOF'
-docs: U
-[17:23:30] EDIT: docs/architecture/adrs/README.md
-[17:23:46] GIT: git add docs/architecture/adrs/README.md && git commit -m "docs: Update ADR stat
-[17:37:55] WRITE: docs/architecture/adrs/adr-092-dialogue-extension-architecture.md
-[17:39:36] EDIT: docs/architecture/adrs/adr-102-dialogue-extension-architecture.md
-[17:53:27] WRITE: docs/architecture/adrs/adr-103-choice-based-story-architecture.md
-[17:54:03] EDIT: docs/testing/tr-002-comparison.md
-[17:54:04] EDIT: docs/testing/tr-002-comparison.md
-[17:54:04] EDIT: docs/testing/tr-002-comparison.md
-[17:54:05] EDIT: docs/testing/tr-002-comparison.md
-[17:54:05] EDIT: docs/testing/tr-002-comparison.md
-[17:54:06] EDIT: docs/testing/tr-002-comparison.md
-[17:54:06] EDIT: docs/testing/tr-002-comparison.md
-[17:54:07] EDIT: docs/testing/tr-002-comparison.md
-[17:54:08] EDIT: docs/testing/tr-002-comparison.md
-[17:54:08] EDIT: docs/testing/tr-002-comparison.md
-[17:54:09] EDIT: docs/testing/tr-002-comparison.md
-[17:54:10] EDIT: docs/testing/tr-002-comparison.md
-[17:54:10] EDIT: docs/testing/tr-002-comparison.md
-[17:54:11] EDIT: docs/testing/tr-002-comparison.md
-[17:54:12] EDIT: docs/testing/tr-002-comparison.md
-[18:00:05] EDIT: stories/dungeo/src/regions/white-house.ts
-[18:00:11] EDIT: docs/testing/tr-002-comparison.md
-[18:01:30] EDIT: docs/architecture/adrs/README.md
-[18:01:35] EDIT: docs/architecture/adrs/README.md
-[18:01:40] EDIT: docs/architecture/adrs/README.md
-[18:02:46] EDIT: stories/dungeo/src/regions/house-interior.ts
-[18:03:02] EDIT: docs/context/session-20260114-1726-dungeo.md
-[18:03:52] EDIT: stories/dungeo/src/regions/house-interior.ts
-[18:03:59] EDIT: stories/dungeo/src/regions/house-interior.ts
-[18:04:06] EDIT: stories/dungeo/src/regions/house-interior.ts
-[18:04:17] EDIT: docs/testing/tr-002-comparison.md
-[18:05:30] WRITE: docs/context/session-20260114-1727-dungeo.md
-[18:05:54] GIT: git commit -m "$(cat <<'EOF'
-fix(dungeo): Update TR-002 and fix text accuracy is
-[18:06:01] GIT: git push
-[18:08:28] GIT: git commit -m "$(cat <<'EOF'
-docs: Add ADRs 101-103 for graphical client and sto
-[18:08:37] GIT: git push
-[18:09:26] GIT: git commit -m "$(cat <<'EOF'
-docs: Add session summaries, reference docs, and wo
-[18:09:35] GIT: git push
-[18:10:05] GIT: git add docs/context/.work-log.txt && git commit -m "docs: Update work log" && g
-[18:18:52] WRITE: docs/README.md
-[18:18:58] EDIT: README.md
-[18:19:03] EDIT: README.md
-[18:19:26] EDIT: packages/stdlib/README.md
-[18:19:34] EDIT: packages/stdlib/README.md
-[18:19:48] EDIT: docs/reference/core-concepts.md
-[18:19:53] EDIT: docs/reference/core-concepts.md
-[18:19:58] EDIT: docs/reference/core-concepts.md
-[18:20:20] EDIT: docs/architecture/README.md
-[18:20:33] EDIT: CONTRIBUTING.md
-[18:21:12] EDIT: docs/actions/README.md
-[18:21:13] EDIT: docs/api/README.md
-[18:21:14] EDIT: docs/development/README.md
-[18:21:14] EDIT: docs/extensions/README.md
-[18:21:31] EDIT: docs/features/README.md
-[18:21:32] EDIT: docs/getting-started/authors/README.md
-[18:21:32] EDIT: docs/getting-started/developers/extension-development-guide.md
-[18:21:33] EDIT: docs/platform/README.md
-[18:22:20] GIT: git add -A && git commit -m "$(cat <<'EOF'
-docs: Update all documentation for BE
-[18:22:29] GIT: git push
-[18:23:06] WRITE: docs/context/session-20260114-1727-dungeo.md
-[18:23:21] GIT: git add docs/context/session-20260114-1727-dungeo.md && git commit -m "docs: Upd
-[23:54:19] WRITE: docs/work/dungeo/twisty-maze.md
-[23:54:34] GIT: git add docs/work/dungeo/twisty-maze.md && git commit -m "docs: Add twisty maze 
-[00:05:18] WRITE: docs/work/dungeo/puzzle-room-solution.md
-[00:05:35] GIT: git add docs/work/dungeo/puzzle-room-solution.md && git commit -m "docs: Add puz
-[00:14:09] EDIT: docs/work/dungeo/puzzle-room-solution.md
-[00:14:15] EDIT: docs/work/dungeo/puzzle-room-solution.md
-[00:14:26] EDIT: docs/work/dungeo/puzzle-room-solution.md
-[00:14:41] GIT: git add docs/work/dungeo/puzzle-room-solution.md && git commit -m "fix: Correct 
-[08:13:53] WRITE: docs/testing/tr-003.txt
-[08:15:30] WRITE: docs/context/session-20260115-0026-dungeo.md
-[08:15:58] GIT: git commit -m "$(cat <<'EOF'
-docs: Add TR-003 gap analysis from 1994 Dungeon pla
-[08:16:06] GIT: git push
+[02:04:35] GIT: git push
+[02:05:32] WRITE: docs/context/session-20260116-0115-dungeo.md
+[02:09:22] WRITE: docs/work/infer/implementation-plan.md
+[02:12:50] EDIT: docs/work/infer/implementation-plan.md
+[02:13:05] EDIT: docs/work/infer/implementation-plan.md
+[02:13:16] EDIT: docs/work/infer/implementation-plan.md
+[02:14:15] EDIT: docs/work/infer/implementation-plan.md
+[02:14:20] EDIT: docs/work/infer/implementation-plan.md
+[02:15:14] EDIT: packages/stdlib/src/actions/enhanced-types.ts
+[02:15:25] EDIT: packages/world-model/src/commands/parsed-command.ts
+[02:16:12] EDIT: packages/parser-en-us/src/english-parser.ts
+[02:16:53] EDIT: packages/stdlib/src/actions/standard/reading/reading.ts
+[02:17:19] EDIT: packages/stdlib/src/actions/standard/eating/eating.ts
+[02:17:49] EDIT: packages/stdlib/src/actions/standard/opening/opening.ts
+[02:18:09] EDIT: packages/stdlib/src/actions/standard/closing/closing.ts
+[02:24:23] EDIT: docs/work/infer/implementation-plan.md
+[02:26:09] WRITE: packages/stdlib/src/inference/implicit-inference.ts
+[02:26:15] WRITE: packages/stdlib/src/inference/index.ts
+[02:26:58] EDIT: packages/engine/src/command-executor.ts
+[02:27:17] EDIT: packages/engine/src/command-executor.ts
+[02:27:30] EDIT: packages/engine/src/command-executor.ts
+[02:28:13] EDIT: packages/stdlib/src/index.ts
+[02:28:47] EDIT: packages/engine/src/command-executor.ts
+[02:31:12] EDIT: packages/engine/src/command-executor.ts
+[02:31:21] EDIT: packages/engine/src/command-executor.ts
+[02:35:28] WRITE: stories/dungeo/tests/transcripts/implicit-inference.transcript
+[02:37:10] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[02:37:48] EDIT: stories/dungeo/tests/transcripts/implicit-inference.transcript
+[02:38:56] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[02:39:24] EDIT: docs/work/infer/implementation-plan.md
+[02:41:25] WRITE: docs/context/session-20260116-0206-dungeo.md
+[02:42:33] GIT: git commit -m "$(cat <<'EOF'
+feat: Implement implicit inference for pronoun comm
+[02:42:48] GIT: git push -u origin infer
+[02:45:23] WRITE: packages/stdlib/src/inference/implicit-take.ts
+[02:45:32] EDIT: packages/stdlib/src/inference/index.ts
+[02:45:53] EDIT: packages/engine/src/command-executor.ts
+[02:51:38] EDIT: packages/stdlib/src/actions/standard/reading/reading.ts
+[02:51:46] EDIT: packages/stdlib/src/actions/standard/reading/reading.ts
+[02:52:06] EDIT: packages/stdlib/src/actions/standard/eating/eating.ts
+[02:52:17] EDIT: packages/stdlib/src/actions/standard/eating/eating.ts
+[02:52:24] EDIT: packages/stdlib/src/actions/standard/eating/eating.ts
+[02:52:45] EDIT: docs/architecture/adrs/adr-104-implicit-inference.md
+[02:53:04] EDIT: docs/architecture/adrs/adr-104-implicit-inference.md
+[02:53:15] EDIT: docs/architecture/adrs/adr-104-implicit-inference.md
+[02:53:38] EDIT: packages/engine/src/command-executor.ts
+[02:53:46] EDIT: packages/stdlib/src/inference/index.ts
+[02:57:57] EDIT: stories/dungeo/tests/transcripts/implicit-inference.transcript
+[02:59:21] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[03:09:49] EDIT: packages/engine/src/command-executor.ts
+[11:33:39] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[11:34:07] EDIT: packages/engine/src/command-executor.ts
+[11:36:13] TRANSCRIPT FAIL: ./scripts/build-all-dungeo.sh --skip engine 2>&1 | tail -5 && node packages/tran
+[11:39:42] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[11:40:14] EDIT: packages/engine/src/command-executor.ts
+[11:42:22] TRANSCRIPT FAIL: ./scripts/build-all-dungeo.sh --skip engine 2>&1 | tail -3 && node packages/tran
+[11:46:15] EDIT: packages/stdlib/src/actions/enhanced-context.ts
+[11:48:24] TRANSCRIPT FAIL: ./scripts/build-all-dungeo.sh --skip stdlib 2>&1 | tail -3 && node packages/tran
+[11:51:42] EDIT: packages/stdlib/src/actions/enhanced-context.ts
+[11:53:51] TRANSCRIPT FAIL: ./scripts/build-all-dungeo.sh --skip stdlib 2>&1 | tail -3 && node packages/tran
+[11:57:27] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[11:58:48] EDIT: packages/engine/src/command-executor.ts
+[11:58:57] EDIT: packages/stdlib/src/actions/enhanced-context.ts
+[11:59:07] EDIT: packages/stdlib/src/actions/enhanced-context.ts
+[12:00:02] WRITE: docs/context/session-20260116-0243-infer.md
+[12:02:21] EDIT: packages/engine/src/action-context-factory.ts
+[12:02:47] EDIT: packages/engine/src/action-context-factory.ts
+[12:03:09] EDIT: packages/engine/src/action-context-factory.ts
+[12:03:16] EDIT: packages/engine/src/action-context-factory.ts
+[12:03:24] EDIT: packages/engine/src/action-context-factory.ts
+[12:08:49] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[12:10:19] EDIT: packages/text-service/src/text-service.ts
+[12:10:27] EDIT: packages/text-service/src/text-service.ts
+[12:11:13] EDIT: packages/engine/src/action-context-factory.ts
+[12:11:29] EDIT: packages/text-service/src/text-service.ts
+[12:12:22] EDIT: packages/text-service/src/text-service.ts
+[12:16:43] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[12:24:32] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --play <<EOF
+open mai
+[12:25:49] EDIT: packages/text-service/src/text-service.ts
+[12:29:04] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[12:29:16] EDIT: packages/text-service/src/text-service.ts
+[12:32:51] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[12:34:27] EDIT: packages/text-service/src/text-service.ts
+[12:34:35] EDIT: packages/text-service/src/text-service.ts
+[12:34:46] EDIT: packages/text-service/src/text-service.ts
+[12:39:29] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[12:43:39] WRITE: docs/context/session-20260116-1242-infer.md
+[12:44:51] EDIT: docs/work/infer/implementation-plan.md

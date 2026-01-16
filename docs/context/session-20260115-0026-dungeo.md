@@ -1,79 +1,104 @@
-# Session Summary: 20260115 - dungeo
+# Session Summary: 20260116 - dungeo
 
-## Status: Completed
+## Status: In Progress
 
 ## Goals
 - Compare 1994 Dungeon playthrough against dungeo implementation
-- Identify missing features and puzzles
-- Create test report for implementation gaps
+- Identify and fix platform bugs found during playtesting
+- Create TR-003 gap analysis for missing features
 
 ## Completed
 
-### 1. Analyzed 1994 Dungeon Playthrough
-Reviewed `docs/work/dungeo/play-output-5.md` (2812 lines) covering:
-- Full game exploration from West of House through Well/Tea Room area
-- All major puzzles: dam, cyclops, prison door, Chinese puzzle, well/bucket
-- Thief interactions and treasure collection
-- Eat-me cake shrinking puzzle (new discovery)
+### 1. Created TR-003 Gap Analysis
+Compared `docs/work/dungeo/play-output-5.md` (1994 Dungeon transcript) against our implementation.
 
-### 2. Created TR-003 Test Report
-Created `docs/testing/tr-003.txt` documenting missing implementations:
+**File**: `docs/testing/tr-003.txt`
 
-**Priority 1: Eat-Me Cake / Shrinking Puzzle**
-- 4 cake objects (Eat-Me + 3 colored death traps)
-- Player shrinking state mechanic
-- 2 new rooms (Posts Room, Pool Room)
-- Flask treasure in Pool Room
+Key gaps identified:
+- P1: Eat-Me Cake / Shrinking Puzzle (2 rooms, 4 objects, new mechanic)
+- P2: Cage Trap in Dingy Closet (robot must get white sphere)
+- P3: Trunk underwater visibility toggle
+- P4: Thief "vanishes treasures" mechanic
+- P5: Thief opens egg (timed behavior)
+- P6: Poison flask in Pool Room
 
-**Priority 2: Cage Trap / White Crystal Sphere**
-- Dingy Closet cage trap when reaching for sphere
-- Robot must retrieve sphere for player
-- Death by poisonous gas if player tries directly
+### 2. Fixed Container Placeholder Bug
+**File**: `packages/stdlib/src/actions/standard/taking/taking.ts`
 
-**Priority 3: Trunk Underwater Visibility**
-- Trunk should be invisible when reservoir flooded
-- Toggle visibility with dam state changes
+**Issue**: "You take leaflet from {container}" - placeholder not substituted
 
-**Priority 4: Thief Treasure Vanishing**
-- "gestures mysteriously" mechanic in Treasure Room
-- Treasures hidden until thief killed
+**Fix**: Added `container` name to `takenData` object in `reportSingleSuccess()`
 
-**Priority 5: Thief Opens Egg**
-- Safe way to get canary (timed behavior)
-- Player forcing egg open damages canary
+**Result**: Now shows "You take leaflet from small mailbox" ✅
 
-**Priority 6: Flask with Poison**
-- Blocked by P1 (in shrunk area)
+### 3. Fixed Opening Reveals Contents Bug
+**Files**:
+- `packages/world-model/src/world/WorldModel.ts`
+- `packages/event-processor/src/effects/types.ts`
+- `packages/event-processor/src/effects/effect-processor.ts`
+- `packages/event-processor/src/processor.ts`
 
-### 3. Answered User Questions
-- How to open metal door in Side Room (gold card in slot)
-- No points for opening metal door (confirmed)
-- Trunk doesn't permanently sink (reappears when dam drained)
-- Thief mechanics for recovering stolen items
+**Issue**: "open mailbox" didn't show contents, only "look" did
 
-## Key Decisions
+**Root Cause**: Event chains were returning `ISemanticEvent[]` but event processor expected `Effect[]`. Chain events were processed but not added to turn events.
 
-### 1. Shrinking Puzzle is Biggest Gap
-The eat-me cake puzzle requires a new player state mechanic plus 2 rooms and multiple objects. This is the most complex missing feature.
+**Fix**:
+1. `wireChainToProcessor()` now wraps chained events as `EmitEffect` objects
+2. `EffectProcessor.process()` now collects and returns `emittedEvents`
+3. `EventProcessor.invokeEntityHandlers()` adds emitted events to reactions
 
-### 2. TR-003 Format
-Used plain text format (.txt) for test report, organized by priority with canonical source references.
+**Result**: Now shows "Inside the small mailbox you see leaflet." ✅
+
+### 4. Attempted Pronoun "it" Fix (Incomplete)
+**File**: `packages/parser-en-us/src/pronoun-context.ts`
+
+**Issue**: "read it" returns "core.entity_not_found"
+
+**Changes Made**:
+- Enhanced `extractEntityId()` to search entities by name via `getAllEntities()`
+- Added alias matching for identity traits
+
+**Status**: Still not working - needs further investigation
 
 ## Open Items
-- Implement P1-P6 from TR-003
-- Verify cage trap implementation status
-- Verify thief egg-opening behavior
+
+### Pronoun Resolution (Not Working)
+The pronoun "it" still doesn't resolve to the last mentioned entity. Possible causes:
+1. `updatePronounContext` may not be finding the entity ID
+2. The noun phrase text may not match entity name exactly
+3. The pronoun context may not be getting set at all
+
+Need to add debug logging to trace the flow.
+
+### Bugs to Fix
+- Pronoun "it"/"them" resolution
 
 ## Files Modified
 
-### New Files
-- `docs/testing/tr-003.txt` - Missing implementations test report
+### Platform Changes
+- `packages/stdlib/src/actions/standard/taking/taking.ts` - container placeholder fix
+- `packages/world-model/src/world/WorldModel.ts` - wrap chain events as EmitEffect
+- `packages/event-processor/src/effects/types.ts` - add emittedEvents to EffectResult
+- `packages/event-processor/src/effects/effect-processor.ts` - collect emitted events
+- `packages/event-processor/src/processor.ts` - add emitted events to reactions
+- `packages/parser-en-us/src/pronoun-context.ts` - entity lookup by name
 
-### Referenced Files
-- `docs/work/dungeo/play-output-5.md` - 1994 Dungeon playthrough transcript
+### Documentation
+- `docs/testing/tr-003.txt` - gap analysis from 1994 playthrough
+- `docs/work/dungeo/play-output-5.md` - 1994 Dungeon transcript
+
+### Build Scripts
+- `scripts/bundle-entry.js` - restored (accidentally deleted)
+- `scripts/use-bundle.js` - restored (accidentally deleted)
+- `.dungeo-entry.js` - fixed text-service path (text-services → text-service)
+
+## Commits
+1. `7afdc8a` - docs: Add TR-003 gap analysis from 1994 Dungeon playthrough
+2. `07be119` - chore: Remove obsolete scripts from repo cleanup
+3. `<pending>` - Platform fixes for container placeholder and revealed events
 
 ## Notes
 - Session started: 2026-01-15 00:26
-- Session completed: 2026-01-15
-- Shrinking puzzle is the only truly new mechanic needed
-- Most other gaps are state toggles or behavior refinements
+- Two of three bugs fixed, one still in progress
+- The reveal fix required changes across 4 platform packages
+- Build scripts were accidentally deleted in cleanup and restored

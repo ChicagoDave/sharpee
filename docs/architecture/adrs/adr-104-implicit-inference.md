@@ -1,7 +1,7 @@
 # ADR-104: Implicit Inference and Implicit Actions
 
 ## Status
-PROPOSED
+ACCEPTED (Phases 1-3 implemented)
 
 ## Context
 
@@ -226,6 +226,69 @@ CommandValidator gains inference capability.
 
 **Recommendation**: Option A - adds clarity and keeps actions simple.
 
+## Implementation Decision: Per-Action vs Command-Level
+
+### The Two Approaches
+
+For **implicit object inference** (Part 1), we implemented command-level logic in the
+CommandExecutor. This makes sense because inference involves replacing the target entity
+before the action even runs.
+
+For **implicit take** (Part 2), we had two options:
+
+#### Option A: Command-Level (Declarative)
+The CommandExecutor checks `action.requiresHolding` and automatically performs implicit
+take before calling `action.execute()`.
+
+**Pros:**
+- Truly declarative: set `requiresHolding: true` and it just works
+- No boilerplate in actions
+- Consistent behavior guaranteed
+- Actions stay simpler
+
+**Cons:**
+- Less flexibility for edge cases (e.g., scenery that's readable but not takeable)
+- Action can't control the order of implicit take vs other validation checks
+- Harder to customize per-action behavior
+- Creates two implicit take mechanisms if per-action already exists
+
+#### Option B: Per-Action (What We Chose)
+Each action that needs implicit take calls `context.requireCarriedOrImplicitTake(entity)`
+in its validate phase and prepends `context.sharedData.implicitTakeEvents` in report.
+
+**Pros:**
+- Already implemented and working for 7+ actions (wearing, giving, throwing, etc.)
+- Action has full control over when/how implicit take happens
+- Can customize behavior (e.g., skip implicit take for scenery items)
+- Action decides whether to check before or after other validations
+- Events naturally flow through the action's report phase
+
+**Cons:**
+- Every action that needs it must remember to call it
+- Duplicated pattern across actions (boilerplate)
+- `requiresHolding` flag becomes documentation rather than enforcement
+- New actions might forget to implement it
+
+### Decision
+
+We chose **Option B (Per-Action)** because:
+1. Infrastructure already exists (`requireCarriedOrImplicitTake`, events, tests)
+2. Allows handling edge cases like reading inscriptions (scenery = no take)
+3. Avoids creating two competing mechanisms
+
+The `requiresHolding` flag remains on the Action interface for documentation purposes
+and potential future use.
+
+### Future Consideration
+
+If the per-action boilerplate becomes burdensome, a future enhancement could:
+1. Add a `@implicitTake` decorator or mixin
+2. Implement command-level implicit take that respects SceneryTrait
+3. Make `requiresHolding: true` actually enforce implicit take at command level
+
+The declarative approach would reduce action complexity but requires careful handling
+of edge cases that per-action logic currently handles naturally.
+
 ## Output Messages
 
 Implicit actions should be communicated to the player:
@@ -337,22 +400,23 @@ story: test-story
 
 ## Implementation Phases
 
-### Phase 1: Action Requirements Declaration
-- Add `targetRequirements` and `requiresHolding` to Action interface
-- Update stdlib actions to declare requirements
-- No behavior change yet
+### Phase 1: Action Requirements Declaration ✓ COMPLETE
+- Added `targetRequirements` and `requiresHolding` to Action interface
+- Added `wasPronoun` flag to `INounPhrase` for pronoun detection
+- Updated stdlib actions to declare requirements (reading, eating, opening, closing)
 
-### Phase 2: Implicit Object Inference
-- Add inference phase to command pipeline
-- Find valid alternative when target fails requirements
-- Output inference message
+### Phase 2: Implicit Object Inference ✓ COMPLETE
+- Implemented `tryInferTarget()` in `packages/stdlib/src/inference/implicit-inference.ts`
+- Integrated into CommandExecutor - only triggers when pronoun was used
+- Inference only happens for pronouns ("read it"), not explicit nouns ("read mailbox")
 
-### Phase 3: Implicit Take
-- Check if inferred/explicit target needs to be taken first
-- Execute implicit take before main action
-- Output "(first taking...)" message
+### Phase 3: Implicit Take ✓ COMPLETE
+- Used existing `requireCarriedOrImplicitTake()` infrastructure (per-action approach)
+- Updated reading action to support implicit take (skips for scenery items)
+- Updated eating action to support implicit take
+- Events flow through `context.sharedData.implicitTakeEvents`
 
-### Phase 4: Configuration
+### Phase 4: Configuration (Future)
 - Story-level config for enabling/disabling
 - Per-action overrides
 - Per-entity overrides (SceneryTrait already handles this)

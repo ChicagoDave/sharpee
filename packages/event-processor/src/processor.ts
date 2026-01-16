@@ -300,6 +300,10 @@ export class EventProcessor {
       if (!result.success) {
         console.error('Effect processing failed:', result.errors);
       }
+      // Add emitted events to reactions so they appear in turn events
+      if (result.emittedEvents && result.emittedEvents.length > 0) {
+        legacyReactions.push(...result.emittedEvents);
+      }
     }
 
     // Return legacy reactions for backward compatibility

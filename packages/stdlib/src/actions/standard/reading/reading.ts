@@ -7,6 +7,9 @@
  * 3. blocked: Generate events when validation fails
  * 4. report: Generate success events
  *
+ * Supports implicit take for portable readable items (books, notes).
+ * Scenery items (inscriptions, signs) can be read without taking.
+ *
  * @module
  */
 
@@ -39,6 +42,7 @@ function getReadingSharedData(context: ActionContext): ReadingSharedData {
  * - Multi-page books
  * - Language/ability requirements
  * - Tracking what has been read
+ * - Implicit take for portable items
  */
 import { ScopeLevel } from '../../../scope/types';
 
@@ -47,7 +51,7 @@ export const reading: Action = {
 
   // Default scope requirements for this action's slots
   defaultScope: {
-    target: ScopeLevel.VISIBLE
+    target: ScopeLevel.REACHABLE  // REACHABLE allows implicit take
   },
 
   // ADR-104: Implicit inference requirements
@@ -57,7 +61,7 @@ export const reading: Action = {
   },
 
   // Reading typically requires holding the item (books, notes, etc.)
-  // Inscriptions/signs don't need taking - they're scenery
+  // Inscriptions/signs don't need taking - they're scenery (handled in validate)
   requiresHolding: true,
 
   validate(context: ActionContext) {
@@ -99,6 +103,15 @@ export const reading: Action = {
           reason: (readable as any).cannotReadMessage || 'cannot_read_now'
         }
       };
+    }
+
+    // Implicit take for portable items (not scenery)
+    // Scenery items (inscriptions, signs on walls) can be read without taking
+    if (!target.has(TraitType.SCENERY)) {
+      const carryCheck = context.requireCarriedOrImplicitTake(target);
+      if (!carryCheck.ok) {
+        return carryCheck.error!;
+      }
     }
 
     // Check ability requirements
@@ -177,6 +190,11 @@ export const reading: Action = {
   report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getReadingSharedData(context);
     const events: ISemanticEvent[] = [];
+
+    // Prepend any implicit take events (from requireCarriedOrImplicitTake)
+    if (context.sharedData.implicitTakeEvents) {
+      events.push(...context.sharedData.implicitTakeEvents);
+    }
 
     // Emit read event
     if (sharedData.readEvent) {

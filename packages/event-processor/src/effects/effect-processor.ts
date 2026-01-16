@@ -35,6 +35,9 @@ export class EffectProcessor {
     private emitEvents?: EventEmitCallback
   ) {}
 
+  // Collect emitted events during processing
+  private pendingEmittedEvents: ISemanticEvent[] = [];
+
   /**
    * Process effects with two-phase atomic processing
    *
@@ -42,6 +45,9 @@ export class EffectProcessor {
    * Phase 2: Apply all effects (atomic - all or nothing)
    */
   process(effects: Effect[]): EffectResult {
+    // Reset emitted events collector
+    this.pendingEmittedEvents = [];
+
     // Phase 1: Validate ALL effects before applying any
     const errors = this.validateAll(effects);
     if (errors.length > 0) {
@@ -53,7 +59,13 @@ export class EffectProcessor {
       this.apply(effect);
     }
 
-    return { success: true, errors: [], applied: effects };
+    // Collect emitted events to return
+    const emittedEvents = this.pendingEmittedEvents.length > 0
+      ? [...this.pendingEmittedEvents]
+      : undefined;
+    this.pendingEmittedEvents = [];
+
+    return { success: true, errors: [], applied: effects, emittedEvents };
   }
 
   /**
@@ -246,6 +258,9 @@ export class EffectProcessor {
   }
 
   private applyEmitEffect(effect: EmitEffect): void {
+    // Collect emitted events to return (instead of immediate callback)
+    this.pendingEmittedEvents.push(effect.event);
+    // Also call callback for backward compatibility
     if (this.emitEvents) {
       this.emitEvents([effect.event]);
     }

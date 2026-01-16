@@ -1,7 +1,10 @@
 /**
  * Inference module (ADR-104)
  *
- * Provides implicit inference and implicit take functionality
+ * Provides implicit object inference functionality.
+ *
+ * Note: Implicit take is handled per-action via context.requireCarriedOrImplicitTake()
+ * rather than at the command level. See ADR-104 for rationale.
  */
 
 export {

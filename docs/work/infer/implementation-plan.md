@@ -269,11 +269,16 @@ stories/dungeo/tests/transcripts/implicit-inference.transcript
   - "read it" (it=mailbox) → infers leaflet, reads successfully
   - "read mailbox" (explicit) → fails with action.blocked (no inference)
 
-### Phase 3: Implicit Take
-- [ ] Core implicit take logic
-- [ ] Pipeline integration
-- [ ] Lang messages
-- [ ] Tests
+### Phase 3: Implicit Take ✓ COMPLETE
+- [x] Core implicit take logic (in `action-context-factory.ts`)
+- [x] Pipeline integration via `requireCarriedOrImplicitTake`
+- [x] Text service handler for `if.event.implicit.take` → "(first taking the X)"
+- [x] Tests pass: all 7 assertions in `implicit-inference.transcript`
+  - "read it" (it=mailbox) → infers leaflet, takes implicitly, reads
+  - "read leaflet" (dropped) → takes implicitly, reads
+  - "read leaflet" (already held) → no implicit take
+- [x] Suppressed redundant `action.success` events from implicit take
+- [x] Added `if.event.taken` and `if.event.dropped` to STATE_CHANGE_EVENTS
 
 ### Phase 4: Configuration
 - [ ] Story config

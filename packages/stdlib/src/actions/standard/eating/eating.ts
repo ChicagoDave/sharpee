@@ -9,6 +9,9 @@
  * 2. execute: Delegate to EdibleBehavior for consumption
  * 3. blocked: Generate events when validation fails
  * 4. report: Generate success events
+ *
+ * Supports implicit take - "eat apple" when apple is on ground will
+ * automatically take it first.
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -116,6 +119,12 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
         error: 'already_consumed',
         params: { item: item.name }
       };
+    }
+
+    // Implicit take - "eat apple" when apple is on ground
+    const carryCheck = context.requireCarriedOrImplicitTake(item);
+    if (!carryCheck.ok) {
+      return carryCheck.error!;
     }
 
     return { valid: true };
@@ -233,6 +242,11 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
   report(context: ActionContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
     const sharedData = getEatingSharedData(context);
+
+    // Prepend any implicit take events (from requireCarriedOrImplicitTake)
+    if (context.sharedData.implicitTakeEvents) {
+      events.push(...context.sharedData.implicitTakeEvents);
+    }
 
     // Emit the EATEN event
     events.push(context.event('if.event.eaten', sharedData.eventData));
