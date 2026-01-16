@@ -155,7 +155,7 @@ export class MetaCommandRegistry {
   
   /**
    * Check if registry has any custom (non-default) meta-commands
-   * 
+   *
    * @returns true if any non-default commands are registered
    */
   static hasCustomCommands(): boolean {
@@ -165,12 +165,56 @@ export class MetaCommandRegistry {
       'if.action.again', 'transcript', 'transcript_on', 'transcript_off',
       'undo', 'verbose', 'brief', 'superbrief', 'notify'
     ]);
-    
+
     for (const cmd of this.metaCommands) {
       if (!defaults.has(cmd)) {
         return true;
       }
     }
     return false;
+  }
+
+  /**
+   * Common verb strings for non-undoable commands.
+   *
+   * Used for early detection before parsing (when action ID is not yet available).
+   * Includes both meta-commands and info commands that don't change game state.
+   *
+   * @internal Used by game engine for undo snapshot decisions
+   */
+  private static nonUndoableVerbs = new Set([
+    // Meta-commands (match MetaCommandRegistry)
+    'undo', 'save', 'restore', 'restart', 'quit',
+    'score', 'version', 'about', 'help',
+    'verbose', 'brief', 'superbrief', 'notify',
+    'again', 'g',
+    // Info commands (don't change game state)
+    'look', 'l',
+    'examine', 'x',
+    'inventory', 'i'
+  ]);
+
+  /**
+   * Check if a raw input string is a non-undoable command.
+   *
+   * Used for early detection before parsing when we don't have an action ID yet.
+   * This covers:
+   * - Meta-commands (save, restore, quit, restart, undo, etc.)
+   * - Info commands (look, examine, inventory)
+   *
+   * @param input Raw command input string
+   * @returns true if this command should not create an undo snapshot
+   *
+   * @example
+   * ```typescript
+   * if (!MetaCommandRegistry.isNonUndoable(input)) {
+   *   createUndoSnapshot();
+   * }
+   * ```
+   */
+  static isNonUndoable(input: string): boolean {
+    const normalized = input.trim().toLowerCase();
+    const firstWord = normalized.split(/\s+/)[0];
+    return this.nonUndoableVerbs.has(firstWord);
   }
 }

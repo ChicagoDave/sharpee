@@ -446,14 +446,8 @@ export class GameEngine {
 
     // Create undo snapshot BEFORE processing the turn
     // Skip for meta/info commands that shouldn't create undo points
-    const normalizedForUndo = input.trim().toLowerCase();
-    const nonUndoableCommands = [
-      'undo', 'save', 'restore', 'restart', 'quit',
-      'score', 'version', 'about', 'help',
-      'look', 'l', 'examine', 'x', 'inventory', 'i',
-      'verbose', 'brief', 'superbrief', 'notify'
-    ];
-    if (!nonUndoableCommands.some(cmd => normalizedForUndo === cmd || normalizedForUndo.startsWith(cmd + ' '))) {
+    // (Phase 6 remediation - use MetaCommandRegistry instead of hardcoded list)
+    if (!MetaCommandRegistry.isNonUndoable(input)) {
       this.createUndoSnapshot();
     }
 
