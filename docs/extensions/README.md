@@ -1,6 +1,6 @@
 # Extension Development Guide
 
-> ⚠️ **ALPHA DOCUMENTATION**: The extension system is under development. APIs and patterns shown here may change as the platform evolves.
+> **BETA** (v0.9.2): The extension system is functional. Create story extensions with custom actions, traits, and behaviors.
 
 Create reusable packages that extend Sharpee's functionality with new actions, capabilities, and behaviors.
 

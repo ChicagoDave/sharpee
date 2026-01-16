@@ -48,13 +48,6 @@ interface ScoredEntityMatch {
   matchReasons: string[];
 }
 
-/**
- * Resolution context for tracking state
- */
-interface ResolutionContext {
-  recentEntities: Map<string, IFEntity>;
-  lastInteractedEntity?: IFEntity;
-}
 
 
 
@@ -106,7 +99,6 @@ export class CommandValidator implements CommandValidator {
   private world: WorldModel;
   private actionRegistry: ActionRegistry;
   private scopeResolver: ScopeResolver;
-  private resolutionContext: ResolutionContext;
   private systemEvents?: IGenericEventSource<ISystemEvent>;
   /** Current action ID being validated (for disambiguation scoring) */
   private currentActionId?: string;
@@ -115,9 +107,6 @@ export class CommandValidator implements CommandValidator {
     this.world = world;
     this.actionRegistry = actionRegistry;
     this.scopeResolver = scopeResolver || new StandardScopeResolver(world);
-    this.resolutionContext = {
-      recentEntities: new Map()
-    };
   }
 
   /**
@@ -617,24 +606,18 @@ export class CommandValidator implements CommandValidator {
       startTime: Date.now()
     });
 
-    // Handle pronoun resolution
-    if (this.isPronoun(ref.text)) {
-      const pronounEntity = this.resolvePronoun(ref.text);
-      if (pronounEntity) {
+    // ADR-089: Handle pre-resolved entity ID (from pronoun resolution in parser)
+    if (ref.entityId) {
+      const resolved = this.resolveEntityById(ref.entityId, ref);
+      if (resolved) {
         this.emitDebugEvent('entity_resolution', command, {
           objectType,
-          resolvedPronoun: ref.text,
-          entity: pronounEntity.id
+          preResolvedEntityId: ref.entityId,
+          entity: resolved.entity.id
         });
-
-        return {
-          success: true,
-          value: {
-            entity: pronounEntity,
-            parsed: ref
-          }
-        };
+        return { success: true, value: resolved };
       }
+      // Entity ID was set but entity not found - fall through to error
     }
 
     // Find candidate entities by head noun (e.g., "box" from "wooden box")
@@ -1064,12 +1047,6 @@ export class CommandValidator implements CommandValidator {
         matchReasons.push('reachable');
       }
 
-      // Recent interaction bonus
-      if (this.resolutionContext.lastInteractedEntity?.id === entity.id) {
-        score += 3;
-        matchReasons.push('recently_interacted');
-      }
-
       // In inventory bonus
       if (this.isInPlayerInventory(entity)) {
         score += 2;
@@ -1189,41 +1166,6 @@ export class CommandValidator implements CommandValidator {
       entity: entity as unknown as IValidatedObjectReference['entity'],
       parsed
     };
-  }
-
-  /**
-   * Check if text is a pronoun
-   */
-  private isPronoun(text: string): boolean {
-    const pronouns = ['it', 'them', 'him', 'her', 'this', 'that', 'these', 'those'];
-    return pronouns.includes(text.toLowerCase());
-  }
-
-  /**
-   * Resolve a pronoun to an entity
-   */
-  private resolvePronoun(pronoun: string): IFEntity | undefined {
-    const normalized = pronoun.toLowerCase();
-
-    // Simple pronoun resolution using recent entities
-    if (normalized === 'it' || normalized === 'that') {
-      return this.resolutionContext.recentEntities.get('it');
-    }
-
-    if (normalized === 'them' || normalized === 'these' || normalized === 'those') {
-      return this.resolutionContext.recentEntities.get('them');
-    }
-
-    // Check for gendered pronouns if we track NPCs
-    if (normalized === 'him') {
-      return this.resolutionContext.recentEntities.get('him');
-    }
-
-    if (normalized === 'her') {
-      return this.resolutionContext.recentEntities.get('her');
-    }
-
-    return this.resolutionContext.lastInteractedEntity;
   }
 
   /**

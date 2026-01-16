@@ -18,7 +18,7 @@ const { GameEngine } = require('./packages/engine/dist/index.js');
 const { WorldModel, EntityType } = require('./packages/world-model/dist/index.js');
 const { Parser } = require('./packages/parser-en-us/dist/index.js');
 const { LanguageProvider } = require('./packages/lang-en-us/dist/index.js');
-const { TextService } = require('./packages/text-services/dist/index.js');
+const { TextService } = require('./packages/text-service/dist/index.js');
 const { PerceptionService } = require('./packages/stdlib/dist/index.js');
 
 async function main() {
@@ -30,8 +30,7 @@ async function main() {
   // Create parser, language, and text service
   const language = new LanguageProvider();
   const parser = new Parser(language);
-  const textService = new TextService();
-  textService.setLanguageProvider(language);
+  const textService = new TextService(language);
 
   // Extend parser with story-specific vocabulary
   if (story.extendParser) story.extendParser(parser);

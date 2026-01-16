@@ -245,11 +245,14 @@ export class GameEngine {
 
     // Update metadata
     this.context.metadata.title = story.config.title;
-    this.context.metadata.author = Array.isArray(story.config.author) 
-      ? story.config.author.join(', ') 
+    this.context.metadata.author = Array.isArray(story.config.author)
+      ? story.config.author.join(', ')
       : story.config.author;
     this.context.metadata.version = story.config.version;
-    
+
+    // Copy implicit actions config to context (ADR-104)
+    this.context.implicitActions = story.config.implicitActions;
+
     // Register any custom actions
     if (story.getCustomActions) {
       const customActions = story.getCustomActions();
@@ -561,8 +564,8 @@ export class GameEngine {
         this.updateCommandHistory(result, input, turn);
 
         // Update pronoun context for "it"/"them"/"him"/"her" resolution (ADR-089)
-        if (this.parser && 'updatePronounContext' in this.parser && result.parsedCommand) {
-          (this.parser as any).updatePronounContext(result.parsedCommand, turn);
+        if (this.parser && 'updatePronounContext' in this.parser && result.validatedCommand) {
+          (this.parser as any).updatePronounContext(result.validatedCommand, turn);
         }
       }
 

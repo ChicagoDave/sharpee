@@ -1,8 +1,6 @@
 # @sharpee/stdlib
 
-![Coverage](https://img.shields.io/badge/coverage-0%25-red)
-
-Standard library for the Sharpee IF Platform - parser, validator, actions, and language interfaces.
+Standard library for the Sharpee IF Platform - 43 standard IF actions with four-phase pattern (validate/execute/report/blocked).
 
 ## Overview
 
@@ -102,14 +100,18 @@ interface Action {
 }
 ```
 
-### Available Actions
+### Available Actions (43 Total)
 
-- **Taking** - Pick up objects
-- **Dropping** - Put down objects  
-- **Examining** - Look at objects closely
-- **Going** - Move between rooms
-- **Opening** - Open containers/doors
-- More coming soon...
+**Movement**: going, entering, exiting
+**Manipulation**: taking, dropping, putting, inserting, removing, giving, throwing
+**Containers/Doors**: opening, closing, locking, unlocking
+**Examination**: looking, examining, searching, reading
+**Interaction**: talking, showing, attacking
+**Devices**: switching on/off, pushing, pulling, raising, lowering
+**Wearables**: wearing, taking off
+**Consumables**: eating, drinking
+**Senses**: touching, smelling, listening
+**Meta**: inventory, score, help, save, restore, restart, quit, undo, wait, about, sleep
 
 ## Language System
 

@@ -565,6 +565,80 @@ export interface Action {
    * Default is 0
    */
   priority?: number;
+
+  // =========================================================================
+  // Implicit inference requirements (ADR-104)
+  // =========================================================================
+
+  /**
+   * Requirements the target must meet for this action to succeed.
+   *
+   * Used by implicit inference to find a valid alternative when the
+   * player uses a pronoun that resolved to something that doesn't
+   * meet the requirements.
+   *
+   * Inference ONLY triggers when pronouns are used ("read it"), not
+   * when the player explicitly names an entity ("read mailbox").
+   *
+   * @example
+   * // Reading requires ReadableTrait
+   * targetRequirements: {
+   *   trait: 'ReadableTrait',
+   *   description: 'readable'
+   * }
+   *
+   * @example
+   * // Opening requires OpenableTrait and NOT already open
+   * targetRequirements: {
+   *   trait: 'OpenableTrait',
+   *   condition: 'not_open',
+   *   description: 'openable'
+   * }
+   */
+  targetRequirements?: {
+    /** Trait the target must have (e.g., 'ReadableTrait', 'OpenableTrait') */
+    trait?: string;
+    /** Additional condition (e.g., 'not_open', 'not_locked') */
+    condition?: string;
+    /** Human-readable description for messages (e.g., 'readable', 'openable') */
+    description: string;
+  };
+
+  /**
+   * Whether the target must be held (in inventory) for this action.
+   *
+   * When true and the target isn't held, an implicit take will be
+   * attempted before executing the main action.
+   *
+   * Unlike inference, implicit take works for BOTH pronouns and
+   * explicit nouns ("read leaflet" still auto-takes the leaflet).
+   *
+   * @example
+   * // Reading requires holding the item
+   * requiresHolding: true
+   */
+  requiresHolding?: boolean;
+
+  /**
+   * Whether to allow implicit inference for this action.
+   *
+   * When true (default), if the target doesn't meet targetRequirements
+   * and a pronoun was used, the system will try to find a valid
+   * alternative in scope.
+   *
+   * Set to false to disable inference for this action.
+   */
+  allowImplicitInference?: boolean;
+
+  /**
+   * Whether to allow implicit take for this action.
+   *
+   * When true (default if requiresHolding is true), if the target
+   * isn't held, the system will try to take it first.
+   *
+   * Set to false to disable implicit take even if requiresHolding is true.
+   */
+  allowImplicitTake?: boolean;
 }
 
 /**

@@ -1,0 +1,193 @@
+# TR-003: Missing Implementations from 1994 Dungeon Playthrough
+# Source: docs/work/dungeo/play-output-5.md
+# Date: 2026-01-15
+
+==============================================================================
+PRIORITY 1: EAT-ME CAKE / SHRINKING PUZZLE
+==============================================================================
+
+Location: Tea Room → Pool Room (via tiny hole)
+
+Transcript lines: 2770-2810
+
+MISSING COMPONENTS:
+
+1. Eat-Me Cake Object
+   - Location: Tea Room (on table)
+   - Description: "a piece of cake with the words 'Eat-Me' on it"
+   - Effect: Eating shrinks the player
+
+2. Colored Cakes (3 death traps + 1 safe)
+   - Orange cake: Explosion death ("blasted to smithereens")
+   - Blue cake: Player grows, crushed by walls
+   - Red cake: Safe ("hit the spot") - does nothing special
+   - All in Tea Room
+
+3. Shrunk Player State
+   - Player becomes tiny after eating Eat-Me cake
+   - Can enter "tiny hole" (4 inches) in east wall of Tea Room
+   - Room descriptions change (everything appears enormous)
+
+4. Posts Room (shrunk area)
+   - Description: "enormous room...four wooden posts...wooden roof...
+     objects appear abnormally large"
+   - Exits: East to Pool Room, West/NW blocked by chasm
+   - Chasm: "too wide to jump across" (need to grow back?)
+
+5. Pool Room (shrunk area)
+   - Description: "large room, one half depressed...large leak...
+     brown colored goop falling...pool of sewage"
+   - Contains: Flask with skull-and-crossbones (poison/acid)
+   - Flask is a treasure (OFVAL 5)
+
+6. Growing Back Mechanic
+   - Unknown trigger - possibly another cake or leaving area?
+   - Need to research canonical source
+
+CANONICAL REFERENCE: act3.199 ALICE-* functions
+
+==============================================================================
+PRIORITY 2: CAGE TRAP / WHITE CRYSTAL SPHERE
+==============================================================================
+
+Location: Dingy Closet (south of Machine Room)
+
+Transcript lines: 2596-2603
+
+MISSING COMPONENTS:
+
+1. Cage Trap Mechanic
+   - Trigger: Player reaches for white crystal sphere
+   - Effect: Steel cage falls from ceiling
+   - Death: Poisonous gas fills room, player dies
+
+2. White Crystal Sphere
+   - Location: Dingy Closet
+   - Treasure value: Need to check (likely 5-10 pts)
+   - Acquisition: Must use robot to get it
+
+3. Robot Solution
+   - Command: TELL ROBOT "GET SPHERE" or similar
+   - Robot is immune to cage trap
+   - Robot can hand sphere to player outside closet
+
+4. Alarm Company Sticker (flavor text)
+   - "Protected by FROBOZZ Magic Alarm Company (Hello, footpad!)"
+
+CANONICAL REFERENCE: dung.355 WCRYS object, act1.254 CLOS-ROOM
+
+==============================================================================
+PRIORITY 3: TRUNK UNDERWATER VISIBILITY
+==============================================================================
+
+Location: Reservoir (when dam is closed)
+
+Transcript lines: 2370-2398
+
+ISSUE:
+- Trunk should be INVISIBLE when reservoir is flooded
+- Currently may always be visible (needs verification)
+
+CANONICAL BEHAVIOR (act1.254 BOLT-FUNCTION):
+- Dam closed (flooded): TRZ .TRUNK ,OVISON (clear visible bit)
+- Dam open (drained): TRO .TRUNK ,OVISON (set visible bit)
+
+IMPLEMENTATION:
+- Add trunk visibility toggle to dam-handler.ts
+- When dam closes: Hide trunk (move to limbo or set hidden flag)
+- When dam opens: Show trunk in reservoir
+
+==============================================================================
+PRIORITY 4: THIEF TREASURE VANISHING
+==============================================================================
+
+Location: Treasure Room
+
+Transcript lines: 2243-2252
+
+OBSERVED BEHAVIOR IN 1994:
+> "The thief gestures mysteriously, and the treasures in the room
+>  suddenly vanish."
+
+EXPECTED MECHANIC:
+1. When player enters Treasure Room with thief present
+2. Thief "vanishes" visible treasures (hides them)
+3. Treasures either:
+   a) Go into thief's inventory, OR
+   b) Become invisible in room until thief killed
+
+4. Killing thief reveals all treasures
+
+VERIFICATION NEEDED:
+- Check if our thief-behavior.ts implements this
+- May need TREASURE_ROOM_ENTERED event handler
+
+==============================================================================
+PRIORITY 5: THIEF OPENS EGG
+==============================================================================
+
+Location: Thief's behavior when holding egg
+
+Transcript lines: 2247-2248
+
+OBSERVED BEHAVIOR IN 1994:
+- Player gave egg to thief (line 1128)
+- Later, egg is open with canary inside (line 2247)
+
+EXPECTED MECHANIC:
+1. Thief eventually opens egg without breaking canary
+2. This is the SAFE way to open the egg (full points)
+3. Player forcing egg open damages canary (reduced points)
+
+VERIFICATION NEEDED:
+- Check thief-behavior.ts for egg-opening logic
+- May need fuse/daemon for timed opening
+
+==============================================================================
+PRIORITY 6: FLASK WITH POISON (Pool Room)
+==============================================================================
+
+Location: Pool Room (shrunk area)
+
+Transcript line: 2779-2783
+
+OBJECT: Flask with skull-and-crossbones
+- Description: "stoppered glass flask with skull-and-crossbones
+  markings...filled with some clear liquid"
+- Contains: Poison or acid
+- Likely treasure (need to verify OFVAL/OTVAL)
+
+BLOCKED BY: Priority 1 (shrinking puzzle)
+
+==============================================================================
+PARSER/MECHANICS VERIFICATION
+==============================================================================
+
+NEED TO VERIFY:
+1. "drop all but X" - Does our parser handle exclusion?
+2. "look at X through Y" - Magnification through bottle (line 2619)
+3. Death/restore cycle - Player death and resurrection mechanics
+4. Inventory weight limits - "Your load is too heavy" (working)
+
+==============================================================================
+SUMMARY
+==============================================================================
+
+CRITICAL (blocks content):
+- P1: Eat-Me Cake / Shrinking - New mechanic + 2 rooms + objects
+
+IMPORTANT (missing puzzles):
+- P2: Cage Trap - Robot puzzle solution
+- P3: Trunk visibility - Dam state integration
+- P4: Thief vanishing - Treasure Room behavior
+
+MINOR (polish):
+- P5: Thief opens egg - Timing/fuse
+- P6: Poison flask - Object only (blocked by P1)
+
+ESTIMATED NEW CONTENT:
+- 2 new rooms (Posts Room, Pool Room)
+- 5 new objects (4 cakes, flask)
+- 1 new mechanic (shrinking state)
+- 1 trap handler (cage)
+- 2 state toggles (trunk visibility, thief vanishing)

@@ -1,6 +1,6 @@
 # Getting Started with Sharpee for Authors
 
-> ⚠️ **ALPHA SOFTWARE**: Sharpee is currently in alpha. Features may change, and this documentation may contain outdated information or examples that need updating.
+> **BETA** (v0.9.2): Sharpee is feature-complete for story development. Currently being used to implement a full Mainframe Zork port.
 
 Welcome to Sharpee! This guide will help you create your first interactive fiction story.
 

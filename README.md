@@ -12,7 +12,7 @@ A modern, TypeScript-based platform for creating parser-based interactive fictio
 npm install @sharpee/sharpee@beta
 ```
 
-> **Beta Release**: The platform is feature-complete for story development. Documentation is being expanded.
+> **Beta Release (v0.9.2)**: The platform is feature-complete and stable. Currently being used to implement a full Mainframe Zork port (~191 rooms). Documentation is being expanded.
 
 ## What's Included
 
@@ -62,7 +62,7 @@ The repository includes several example stories:
 | `cloak-of-darkness` | Classic IF demo game - simple introduction |
 | `secretletter2025` | Mystery adventure with NPCs |
 | `reflections` | Atmospheric puzzle game |
-| `dungeo` | Mainframe Zork implementation (~191 rooms, in progress) |
+| `dungeo` | Mainframe Zork implementation (~191 rooms) - P0/P1 complete |
 
 ## Architecture
 

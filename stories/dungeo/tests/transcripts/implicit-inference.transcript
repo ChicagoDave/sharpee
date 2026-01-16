@@ -1,0 +1,42 @@
+title: Implicit Inference and Implicit Take (ADR-104)
+story: dungeo
+description: Test implicit inference and implicit take for reading action
+
+---
+
+# Open the mailbox to set pronoun context
+> open mailbox
+[OK: contains "open"]
+[EVENT: true, type="if.event.opened"]
+
+# "read it" where "it" = mailbox (not readable)
+# Should infer the leaflet (only readable thing in scope)
+# AND do implicit take (leaflet is in mailbox, not held)
+> read it
+[OK: contains "first taking"]
+[OK: contains "DUNGEO"]
+[EVENT: true, type="if.event.implicit_take"]
+[EVENT: true, type="action.success"]
+
+# Verify pronoun still refers to mailbox (inference doesn't change pronoun context)
+> examine it
+[OK: contains "mailbox"]
+
+# Explicit "read mailbox" should NOT infer - should fail
+> read mailbox
+[EVENT: true, type="action.blocked"]
+
+# Drop the leaflet to test implicit take with explicit noun
+> drop leaflet
+[OK: contains "Dropped"]
+
+# Explicit "read leaflet" should do implicit take (no inference needed)
+> read leaflet
+[OK: contains "first taking"]
+[OK: contains "DUNGEO"]
+[EVENT: true, type="if.event.implicit_take"]
+
+# Reading again should NOT do implicit take (already holding)
+> read leaflet
+[OK: contains "DUNGEO"]
+[EVENT: false, type="if.event.implicit_take"]

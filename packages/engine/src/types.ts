@@ -5,7 +5,7 @@
  */
 
 import { ISemanticEvent } from '@sharpee/core';
-import { IParsedCommand, IFEntity } from '@sharpee/world-model';
+import { IParsedCommand, IValidatedCommand, IFEntity } from '@sharpee/world-model';
 
 // Re-export perception types from stdlib for convenience
 export { IPerceptionService, Sense } from '@sharpee/stdlib';
@@ -84,6 +84,12 @@ export interface TurnResult {
    * The parsed command (if successfully parsed)
    */
   parsedCommand?: any;
+
+  /**
+   * The validated command with resolved entity IDs (if successfully validated)
+   * Used for pronoun resolution (ADR-089)
+   */
+  validatedCommand?: IValidatedCommand;
 }
 
 /**
@@ -120,6 +126,15 @@ export interface GameContext {
    * Custom game state
    */
   customState?: Record<string, unknown>;
+
+  /**
+   * Implicit actions configuration (ADR-104)
+   * Populated from StoryConfig.implicitActions
+   */
+  implicitActions?: {
+    inference?: boolean;
+    implicitTake?: boolean;
+  };
 }
 
 /**

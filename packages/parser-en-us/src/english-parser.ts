@@ -30,6 +30,7 @@ import {
 
 import type {
   IParsedCommand,
+  IValidatedCommand,
   IParseError as CoreParseError,
   ParseErrorCode,
   IToken,
@@ -889,8 +890,19 @@ export class EnglishParser implements Parser {
           modifiers: [],
           articles: [],
           determiners: [],
-          candidates: [item.text]
+          candidates: [item.text],
+          entityId: item.entityId // ADR-089: preserve pre-resolved entity ID
         }));
+      }
+
+      // ADR-089: Copy pre-resolved entity ID from pronoun resolution
+      if (slotDataAny.entityId) {
+        phrase.entityId = slotDataAny.entityId;
+      }
+
+      // ADR-104: Mark if this was a pronoun (for implicit inference)
+      if (slotDataAny.isPronoun) {
+        phrase.wasPronoun = true;
       }
 
       // Handle instrument slots
@@ -1404,12 +1416,12 @@ export class EnglishParser implements Parser {
   // ============================================
 
   /**
-   * Update pronoun context after a successful parse
+   * Update pronoun context after a successful command execution
    * Called by the engine after command execution succeeds
-   * @param command The successfully parsed and executed command
+   * @param command The validated command with resolved entity IDs
    * @param turnNumber Current turn number
    */
-  updatePronounContext(command: IParsedCommand, turnNumber: number): void {
+  updatePronounContext(command: IValidatedCommand, turnNumber: number): void {
     if (this.worldContext?.world) {
       this.pronounContext.updateFromCommand(command, this.worldContext.world, turnNumber);
     }

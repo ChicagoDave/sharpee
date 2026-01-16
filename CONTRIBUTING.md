@@ -411,7 +411,7 @@ Focus areas:
 - Common traits
 
 Guidelines:
-- Follow validate/execute pattern
+- Follow four-phase pattern (validate/execute/report/blocked)
 - Comprehensive error messages
 - Extensive testing
 

@@ -1,6 +1,6 @@
 # Feature Documentation
 
-> ⚠️ **ALPHA FEATURES**: Features described here may be experimental, partially implemented, or subject to change. Some documentation may be aspirational rather than reflecting current implementation.
+> **BETA** (v0.9.2): Core features are stable. Some advanced features documented here may be experimental or in development.
 
 This directory contains feature proposals, enhancements, and feature-specific documentation for the Sharpee framework.
 

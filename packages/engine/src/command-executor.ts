@@ -21,7 +21,8 @@ import {
   ActionRegistry,
   Action,
   ScopeResolver,
-  createScopeResolver
+  createScopeResolver,
+  tryInferTarget
 } from '@sharpee/stdlib';
 
 import { GameContext, TurnResult, EngineConfig } from './types';
@@ -157,23 +158,91 @@ export class CommandExecutor {
       const actionContext = createActionContext(world, context, command, action, this.scopeResolver);
 
       // Run action's four phases: validate → execute → report (or blocked)
-      const actionValidation = action.validate(actionContext);
+      let actionValidation = action.validate(actionContext);
+      let currentCommand = command;
+      let currentContext = actionContext;
+
+      // ADR-104: Implicit inference - if validation fails and pronoun was used,
+      // try to find a valid alternative target
+      // Check story-level config first
+      const inferenceEnabled = context.implicitActions?.inference !== false;
+      if (!actionValidation.valid && action.targetRequirements && inferenceEnabled) {
+        const directObject = command.directObject;
+        // Check if pronoun was used (INounPhrase has wasPronoun, cast is safe)
+        const parsedNounPhrase = directObject?.parsed as { wasPronoun?: boolean } | undefined;
+        const wasPronoun = parsedNounPhrase?.wasPronoun === true;
+
+        if (wasPronoun && directObject?.entity) {
+          // Note: directObject.parsed is typed as IParsedObjectReference but at runtime
+          // it's actually an INounPhrase (command-validator sets it from the noun phrase)
+          // Get entities in scope for inference (visible entities)
+          const scopeEntities = this.scopeResolver!.getVisible(world.getPlayer()!);
+
+          // Try to infer a different target
+          const inferenceResult = tryInferTarget(
+            directObject.entity,
+            wasPronoun,
+            action,
+            scopeEntities,
+            world
+          );
+
+          if (inferenceResult.inferred && inferenceResult.inferredTarget) {
+            // Create a modified command with the inferred target
+            const inferredCommand = {
+              ...command,
+              directObject: {
+                entity: inferenceResult.inferredTarget,
+                parsed: {
+                  ...directObject.parsed,
+                  // Update text to reflect inferred entity
+                  text: inferenceResult.inferredTarget.name
+                }
+              }
+            };
+
+            // Create new context with inferred command
+            const inferredContext = createActionContext(
+              world,
+              context,
+              inferredCommand,
+              action,
+              this.scopeResolver!
+            );
+
+            // Mark that inference occurred (for "(the leaflet)" message)
+            (inferredContext.sharedData as any).inferencePerformed = true;
+            (inferredContext.sharedData as any).originalTarget = directObject.entity;
+            (inferredContext.sharedData as any).inferredTarget = inferenceResult.inferredTarget;
+
+            // Re-validate with inferred target
+            const retryValidation = action.validate(inferredContext);
+
+            if (retryValidation.valid) {
+              // Inference succeeded - use the inferred command
+              actionValidation = retryValidation;
+              currentCommand = inferredCommand;
+              currentContext = inferredContext;
+            }
+          }
+        }
+      }
 
       // Thread validation result to later phases via context
       // This allows actions to access data from validate() in execute/report
-      (actionContext as { validationResult?: typeof actionValidation }).validationResult = actionValidation;
+      (currentContext as { validationResult?: typeof actionValidation }).validationResult = actionValidation;
 
       let events: ISemanticEvent[];
 
       if (actionValidation.valid) {
         // Execute mutations
-        const executeResult = action.execute(actionContext);
+        const executeResult = action.execute(currentContext);
 
         // Check pattern (new vs old)
         if (executeResult === undefined || executeResult === null) {
           // New pattern: use report() for success events only
           if (action.report) {
-            events = action.report(actionContext);
+            events = action.report(currentContext);
           } else {
             throw new Error(`Action ${action.id} uses new pattern but lacks report()`);
           }
@@ -184,7 +253,7 @@ export class CommandExecutor {
       } else {
         // Validation failed - use blocked() for error events
         if (action.blocked) {
-          events = action.blocked(actionContext, actionValidation);
+          events = action.blocked(currentContext, actionValidation);
         } else {
           // Fallback for unmigrated actions
           events = [{
@@ -224,7 +293,8 @@ export class CommandExecutor {
         success: !events.some(e => e.type === 'action.error'),
         events: sequenced,
         actionId: command.actionId,
-        parsedCommand: command.parsed
+        parsedCommand: command.parsed,
+        validatedCommand: command
       };
 
       // Add timing data if requested

@@ -1034,9 +1034,12 @@ export class WorldModel implements IWorldModel {
   private wireChainToProcessor(triggerType: string): void {
     if (!this.eventProcessorWiring) return;
 
-    // Register a handler that invokes all chains and returns their events
+    // Register a handler that invokes all chains and returns EmitEffect objects
+    // The event processor expects Effect[] not ISemanticEvent[]
     this.eventProcessorWiring.registerHandler(triggerType, (event) => {
-      return this.executeChains(triggerType, event);
+      const chainedEvents = this.executeChains(triggerType, event);
+      // Wrap each event as an EmitEffect
+      return chainedEvents.map(e => ({ type: 'emit' as const, event: e }));
     });
   }
 

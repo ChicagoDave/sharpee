@@ -137,4 +137,6 @@ export interface EffectResult {
   success: boolean;
   errors: EffectError[];
   applied: Effect[];
+  /** Events emitted via EmitEffect (for adding to turn events) */
+  emittedEvents?: ISemanticEvent[];
 }

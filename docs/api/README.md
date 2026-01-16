@@ -1,6 +1,6 @@
 # API Reference Documentation
 
-> ⚠️ **ALPHA DOCUMENTATION**: This API documentation is for alpha software. APIs may change without notice, and documentation may be incomplete or contain errors.
+> **BETA** (v0.9.2): APIs are stable. Documentation is being expanded.
 
 This directory contains comprehensive API reference documentation for all Sharpee packages.
 

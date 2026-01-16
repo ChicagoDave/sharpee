@@ -1,0 +1,14 @@
+title: Test pronoun resolution
+story: dungeo
+description: Test that "it" resolves to the last mentioned entity
+
+---
+
+> open mailbox
+[OK: contains "open"]
+
+> take leaflet
+[OK: contains "take"]
+
+> read it
+[OK: contains "WELCOME TO DUNGEO"]

@@ -206,22 +206,26 @@ function reportSingleSuccess(
     }));
   }
 
+  // Determine if taken from a container/supporter
+  const previousLocation = result.previousLocation;
+  const isFromContainerOrSupporter = previousLocation &&
+    previousLocation !== context.world.getLocation(actor.id);
+
+  // Get container name for message
+  const containerEntity = previousLocation ? context.world.getEntity(previousLocation) : null;
+
   // Build event data for this item
   const takenData = {
     item: noun.name,
     itemId: noun.id,
     actor: actor.name,
     actorId: actor.id,
-    previousLocation: result.previousLocation
+    previousLocation: result.previousLocation,
+    container: containerEntity?.name || ''
   };
 
   // Add the taken event
   events.push(context.event('if.event.taken', takenData));
-
-  // Determine success message based on where it was taken from
-  const previousLocation = result.previousLocation;
-  const isFromContainerOrSupporter = previousLocation &&
-    previousLocation !== context.world.getLocation(actor.id);
   const messageId = isFromContainerOrSupporter ? TakingMessages.TAKEN_FROM : TakingMessages.TAKEN;
 
   // Add success event

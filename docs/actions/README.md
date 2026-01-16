@@ -1,6 +1,6 @@
 # @sharpee/actions
 
-> ⚠️ **ALPHA DOCUMENTATION**: The action system architecture is evolving. This documentation may not reflect the current implementation.
+> **BETA** (v0.9.2): The action system is stable with 43 standard actions following the four-phase pattern (validate/execute/report/blocked).
 
 Event-driven action system for the Sharpee IF Platform.
 

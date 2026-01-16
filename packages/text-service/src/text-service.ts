@@ -58,6 +58,8 @@ const STATE_CHANGE_EVENTS = new Set([
   'if.event.unlocked',
   'if.event.switched_on',
   'if.event.switched_off',
+  'if.event.taken',       // State change - action.success provides message
+  'if.event.dropped',     // State change - action.success provides message
 ]);
 
 /**
@@ -118,12 +120,25 @@ export class TextService implements ITextService {
       case 'if.event.revealed':
         return handleRevealed(event, context);
 
+      case 'if.event.implicit.take':
+        return this.handleImplicitTake(event, context);
+
       case 'command.failed':
         return this.handleCommandFailed(event, context);
 
       default:
         return handleGenericEvent(event, context);
     }
+  }
+
+  /**
+   * Handle if.event.implicit.take events
+   * Produces "(first taking the X)" message
+   */
+  private handleImplicitTake(event: ISemanticEvent, _context: HandlerContext): ITextBlock[] {
+    const data = event.data as { itemName?: string };
+    const itemName = data.itemName || 'something';
+    return [createBlock(BLOCK_KEYS.ACTION_RESULT, `(first taking the ${itemName})`)];
   }
 
   /**

@@ -1,7 +1,15 @@
 # ADR-089: Pronoun and Identity System
 
 ## Status
-ACCEPTED (Phases A-D implemented 2026-01-05)
+ACCEPTED (Phases A-D implemented 2026-01-05, Part 4 corrected 2026-01-16)
+
+### Implementation Notes (2026-01-16)
+
+Part 4 (PronounContext) was corrected to reflect the actual implementation:
+- Pronoun resolution happens ONLY in the parser (PronounContextManager)
+- Validator receives pre-resolved entity IDs via `INounPhrase.entityId`
+- Dead pronoun resolution code was removed from CommandValidator
+- `updatePronounContext` receives `IValidatedCommand` (not `IParsedCommand`)
 
 ## Context
 
@@ -399,6 +407,29 @@ The `{take}` placeholder conjugates based on perspective/number:
 
 ### Part 4: PronounContext (Parser)
 
+The pronoun system has a single source of truth: the parser's `PronounContextManager`. The validator does NOT do pronoun resolution - it receives pre-resolved entity IDs from the parser.
+
+**Data Flow:**
+
+```
+1. PARSE PHASE
+   - EntitySlotConsumer sees pronoun token ("it")
+   - Calls PronounContextManager.resolve("it") → { entityId: "lamp-01", text: "lamp" }
+   - Creates INounPhrase { text: "it", entityId: "lamp-01" }  ← entityId preserved!
+
+2. VALIDATE PHASE
+   - CommandValidator sees ref.entityId = "lamp-01"
+   - Calls resolveEntityById("lamp-01") → entity directly
+   - No pronoun resolution in validator
+
+3. POST-TURN UPDATE
+   - GameEngine calls parser.updatePronounContext(validatedCommand)
+   - PronounContextManager extracts entity IDs from validatedCommand
+   - Updates context for next turn's pronoun resolution
+```
+
+**Key Types:**
+
 ```typescript
 // packages/parser-en-us/src/pronoun-context.ts
 
@@ -418,35 +449,44 @@ interface PronounContext {
   // Animate by pronoun - keyed by object pronoun
   // "him" → entity using he/him
   // "her" → entity using she/her
-  // Note: "them" for animate singular handled specially
   animateByPronoun: Map<string, EntityReference>;
 
   // Last successful command (for "again"/"g")
   lastCommand: IParsedCommand | null;
 }
+
+// packages/world-model/src/commands/parsed-command.ts
+interface INounPhrase {
+  text: string;
+  head: string;
+  // ... other fields ...
+
+  /** Pre-resolved entity ID (from pronoun resolution in parser) */
+  entityId?: string;  // ← Added for pronoun support
+}
 ```
 
-**Resolution logic:**
+**Resolution during parsing:**
 
 ```typescript
-resolvePronouns(token: string, context: PronounContext, world: WorldModel): EntityReference[] | null {
-  switch (token.toLowerCase()) {
+// Called by EntitySlotConsumer when it sees a pronoun token
+resolve(pronoun: string): EntityReference[] | null {
+  switch (pronoun.toLowerCase()) {
     case 'it':
-      return context.it ? [context.it] : null;
+      return this.context.it ? [this.context.it] : null;
 
     case 'them':
-      // Could be plural OR singular they/them
-      if (context.them) return context.them;
-      const themEntity = context.animateByPronoun.get('them');
+      if (this.context.them) return this.context.them;
+      const themEntity = this.context.animateByPronoun.get('them');
       return themEntity ? [themEntity] : null;
 
     case 'him':
-      const himEntity = context.animateByPronoun.get('him');
-      return himEntity ? [himEntity] : null;
+      return this.context.animateByPronoun.get('him')
+        ? [this.context.animateByPronoun.get('him')!] : null;
 
     case 'her':
-      const herEntity = context.animateByPronoun.get('her');
-      return herEntity ? [herEntity] : null;
+      return this.context.animateByPronoun.get('her')
+        ? [this.context.animateByPronoun.get('her')!] : null;
 
     default:
       return null;
@@ -454,52 +494,38 @@ resolvePronouns(token: string, context: PronounContext, world: WorldModel): Enti
 }
 ```
 
-**Updating context after successful parse:**
+**Updating context after command execution:**
+
+The context is updated with the VALIDATED command (which has resolved entity IDs), not the parsed command:
 
 ```typescript
-updatePronounContext(command: IParsedCommand, context: PronounContext, world: WorldModel): void {
-  const target = command.directObject;
-  if (!target) return;
-
-  const entity = world.getEntity(target.entityId);
-  if (!entity) return;
-
-  const ref: EntityReference = {
-    entityId: entity.id,
-    text: target.text,
-    turnNumber: world.getTurnNumber(),
-  };
-
-  // Check if this is an actor (animate)
-  const actor = entity.get<ActorTrait>('actor');
-  if (actor?.pronouns) {
-    // Animate → store by object pronoun
-    const pronounSet = Array.isArray(actor.pronouns) ? actor.pronouns[0] : actor.pronouns;
-    context.animateByPronoun.set(pronounSet.object, ref);
-
-    // For multiple pronoun sets, register all object pronouns
-    if (Array.isArray(actor.pronouns)) {
-      for (const ps of actor.pronouns) {
-        context.animateByPronoun.set(ps.object, ref);
-      }
-    }
-  } else {
-    // Inanimate → "it" (or "them" if plural)
-    const identity = entity.get<IdentityTrait>('identity');
-    if (identity?.grammaticalNumber === 'plural') {
-      context.them = [ref];
-    } else {
-      context.it = ref;
-    }
+// Called by GameEngine after command execution
+updateFromCommand(command: IValidatedCommand, turnNumber: number): void {
+  // Process direct object
+  if (command.directObject) {
+    this.processValidatedReference(command.directObject, turnNumber);
   }
 
-  // Handle explicit lists (e.g., "take all", "take sword and lamp")
-  if (command.directObject?.isList && command.directObject.items) {
-    context.them = command.directObject.items.map(item => ({
-      entityId: item.entityId,
-      text: item.text,
-      turnNumber: world.getTurnNumber(),
-    }));
+  // Process indirect object
+  if (command.indirectObject) {
+    this.processValidatedReference(command.indirectObject, turnNumber);
+  }
+}
+
+private processValidatedReference(ref: IValidatedObjectReference, turnNumber: number): void {
+  const entityId = ref.entity.id;  // ← Entity ID comes from validated command
+  const text = ref.parsed.text;
+
+  const entityRef: EntityReference = { entityId, text, turnNumber };
+
+  // Check if animate (has ActorTrait with pronouns)
+  const actor = ref.entity.get?.('actor');
+  if (actor?.pronouns) {
+    const pronounSet = Array.isArray(actor.pronouns) ? actor.pronouns[0] : actor.pronouns;
+    this.context.animateByPronoun.set(pronounSet.object, entityRef);
+  } else {
+    // Inanimate → store as "it"
+    this.context.it = entityRef;
   }
 }
 ```
@@ -676,7 +702,18 @@ For languages without gendered pronouns (Finnish, Estonian, Turkish, Hungarian, 
    - Access to NarrativeSettings
    - Access to player entity's ActorTrait for pronouns
 
-2. **Turn context** - PronounContext lives in parser, updated each turn
+2. **Pronoun context updates** - After each successful command:
+   - Engine passes `validatedCommand` to parser's `updatePronounContext()`
+   - Validated command contains resolved entity IDs
+   - Parser stores entity references for next turn's pronoun resolution
+
+3. **TurnResult includes validatedCommand** - So engine can pass it to parser:
+   ```typescript
+   interface TurnResult {
+     validatedCommand?: IValidatedCommand;  // For pronoun context update
+     // ... other fields
+   }
+   ```
 
 ### For Clients
 

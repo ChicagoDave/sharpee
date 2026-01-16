@@ -1,7 +1,7 @@
 # Sharpee Core Concepts Quick Reference
 
 ## Overview
-Sharpee is an interactive fiction (IF) engine that uses a trait-based entity system, event-driven architecture, and a three-phase action pattern for handling player commands.
+Sharpee is an interactive fiction (IF) engine that uses a trait-based entity system, event-driven architecture, and a four-phase action pattern (validate/execute/report/blocked) for handling player commands.
 
 ## Entity System
 
@@ -76,9 +76,9 @@ entity.add(new ContainerTrait({ capacity: 10 }))
 entity.remove(TraitType.WEARABLE)
 ```
 
-## Action System (Three-Phase Pattern)
+## Action System (Four-Phase Pattern)
 
-Actions follow a strict three-phase pattern as defined in ADR-051/052:
+Actions follow a strict four-phase pattern as defined in ADR-051/052:
 
 ### Phase 1: Validate
 Check if the action can be performed.
@@ -795,7 +795,7 @@ This pattern enables maximum flexibility - the action just signals intent, allow
 
 ## Important Notes
 
-- Actions MUST follow the three-phase pattern
+- Actions MUST follow the four-phase pattern (validate/execute/report/blocked)
 - World mutations ONLY in execute phase
 - Event generation ONLY in report phase
 - Use `context.sharedData` to pass data between phases
