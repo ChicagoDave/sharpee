@@ -900,6 +900,11 @@ export class EnglishParser implements Parser {
         phrase.entityId = slotDataAny.entityId;
       }
 
+      // ADR-104: Mark if this was a pronoun (for implicit inference)
+      if (slotDataAny.isPronoun) {
+        phrase.wasPronoun = true;
+      }
+
       // Handle instrument slots
       if (slotType === SlotType.INSTRUMENT) {
         instrument = phrase;

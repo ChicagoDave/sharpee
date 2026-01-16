@@ -43,6 +43,16 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
     target: ScopeLevel.REACHABLE
   },
 
+  // ADR-104: Implicit inference requirements
+  targetRequirements: {
+    trait: TraitType.OPENABLE,
+    condition: 'is_open',
+    description: 'closable'
+  },
+
+  // Closing doesn't require holding the target
+  requiresHolding: false,
+
   requiredMessages: [
     'no_target',
     'not_closable',

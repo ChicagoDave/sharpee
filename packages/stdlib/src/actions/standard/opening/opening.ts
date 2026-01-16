@@ -33,6 +33,16 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
     target: ScopeLevel.REACHABLE
   },
 
+  // ADR-104: Implicit inference requirements
+  targetRequirements: {
+    trait: TraitType.OPENABLE,
+    condition: 'not_open',
+    description: 'openable'
+  },
+
+  // Opening doesn't require holding the target
+  requiresHolding: false,
+
   requiredMessages: [
     'no_target',
     'not_openable',

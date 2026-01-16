@@ -50,6 +50,16 @@ export const reading: Action = {
     target: ScopeLevel.VISIBLE
   },
 
+  // ADR-104: Implicit inference requirements
+  targetRequirements: {
+    trait: TraitType.READABLE,
+    description: 'readable'
+  },
+
+  // Reading typically requires holding the item (books, notes, etc.)
+  // Inscriptions/signs don't need taking - they're scenery
+  requiresHolding: true,
+
   validate(context: ActionContext) {
     const { directObject } = context.command;
 

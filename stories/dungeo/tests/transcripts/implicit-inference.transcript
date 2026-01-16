@@ -1,0 +1,24 @@
+title: Implicit Inference (ADR-104)
+story: dungeo
+description: Test implicit inference - "read it" when "it" = mailbox should infer leaflet
+
+---
+
+# Open the mailbox to set pronoun context
+> open mailbox
+[OK: contains "open"]
+[EVENT: true, type="if.event.opened"]
+
+# "read it" where "it" = mailbox (not readable)
+# Should infer the leaflet (only readable thing in scope) and read it
+> read it
+[OK: contains "DUNGEO"]
+[EVENT: true, type="action.success"]
+
+# Verify pronoun still refers to mailbox (inference doesn't change pronoun context)
+> examine it
+[OK: contains "mailbox"]
+
+# Explicit "read mailbox" should NOT infer - should fail
+> read mailbox
+[EVENT: true, type="action.blocked"]

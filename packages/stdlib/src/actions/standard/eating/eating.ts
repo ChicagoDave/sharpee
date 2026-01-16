@@ -41,6 +41,15 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
     item: ScopeLevel.REACHABLE
   },
 
+  // ADR-104: Implicit inference requirements
+  targetRequirements: {
+    trait: TraitType.EDIBLE,
+    description: 'edible'
+  },
+
+  // Eating requires holding the food
+  requiresHolding: true,
+
   requiredMessages: [
     'no_item',
     'not_visible',

@@ -27,3 +27,4 @@ export * from './services';
 export * from './npc';
 export * from './combat';
 export * from './chains';
+export * from './inference';
