@@ -50,6 +50,7 @@ import { NarrativeSettings, buildNarrativeSettings } from './narrative';
 import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer } from './command-executor';
 import { EventSequenceUtils, eventSequencer } from './event-sequencer';
 import { toSequencedEvent, toSemanticEvent, processEvent } from './event-adapter';
+import { IEngineAwareParser, hasPronounContext, hasPlatformEventEmitter } from './parser-interface';
 
 /**
  * Game engine events
@@ -192,8 +193,8 @@ export class GameEngine {
     this.actionRegistry.setLanguageProvider(this.languageProvider);
     
     // Wire parser with platform events if supported
-    if (this.parser && 'setPlatformEventEmitter' in this.parser) {
-      (this.parser as any).setPlatformEventEmitter((event: any) => {
+    if (this.parser && hasPlatformEventEmitter(this.parser)) {
+      this.parser.setPlatformEventEmitter((event) => {
         this.platformEvents.addEvent(event);
       });
     }
@@ -558,8 +559,8 @@ export class GameEngine {
         this.updateCommandHistory(result, input, turn);
 
         // Update pronoun context for "it"/"them"/"him"/"her" resolution (ADR-089)
-        if (this.parser && 'updatePronounContext' in this.parser && result.validatedCommand) {
-          (this.parser as any).updatePronounContext(result.validatedCommand, turn);
+        if (this.parser && hasPronounContext(this.parser) && result.validatedCommand) {
+          this.parser.updatePronounContext(result.validatedCommand, turn);
         }
       }
 
@@ -585,9 +586,10 @@ export class GameEngine {
         // (we're still processing the turn)
         if (event.type === 'story.victory') {
           victoryDetected = true;
+          const data = event.data as { reason?: string; score?: number } | undefined;
           victoryDetails = {
-            reason: event.data?.reason || 'Story completed',
-            score: event.data?.score || 0
+            reason: data?.reason || 'Story completed',
+            score: data?.score || 0
           };
         }
       }
@@ -1075,8 +1077,8 @@ export class GameEngine {
     this.context.metadata.lastPlayed = new Date();
 
     // Reset pronoun context - old references may not be valid (ADR-089)
-    if (this.parser && 'resetPronounContext' in this.parser) {
-      (this.parser as any).resetPronounContext();
+    if (this.parser && hasPronounContext(this.parser)) {
+      this.parser.resetPronounContext();
     }
 
     // Update vocabulary for current scope
@@ -1227,8 +1229,8 @@ export class GameEngine {
     // If we have a full parsed command structure, use it
     if (result.parsedCommand) {
       const parsed = result.parsedCommand;
-      
-      // Handle new ParsedCommand structure
+
+      // Handle new ParsedCommand structure (has structure property)
       if (parsed.structure) {
         parsedCommand = {
           verb: parsed.structure.verb?.text || parsed.action,
@@ -1237,14 +1239,18 @@ export class GameEngine {
           indirectObject: parsed.structure.indirectObject?.text
         };
       }
-      // Handle old ParsedCommandV1 structure
-      else if (parsed.directObject || parsed.indirectObject) {
-        parsedCommand = {
-          verb: parsed.action,
-          directObject: parsed.directObject?.text,
-          preposition: parsed.preposition,
-          indirectObject: parsed.indirectObject?.text
-        };
+      // Handle old ParsedCommandV1 structure (directObject at top level)
+      // Use type assertion for backward compatibility
+      else {
+        const v1 = parsed as unknown as { directObject?: { text?: string }; indirectObject?: { text?: string }; preposition?: string };
+        if (v1.directObject || v1.indirectObject) {
+          parsedCommand = {
+            verb: parsed.action,
+            directObject: v1.directObject?.text,
+            preposition: v1.preposition,
+            indirectObject: v1.indirectObject?.text
+          };
+        }
       }
     }
 
@@ -1411,8 +1417,8 @@ export class GameEngine {
                     this.stop();
                   }
                   // Reset pronoun context (ADR-089)
-                  if (this.parser && 'resetPronounContext' in this.parser) {
-                    (this.parser as any).resetPronounContext();
+                  if (this.parser && hasPronounContext(this.parser)) {
+                    this.parser.resetPronounContext();
                   }
                   await this.setStory(this.story);
                   this.start();
@@ -1440,8 +1446,8 @@ export class GameEngine {
                   this.stop();
                 }
                 // Reset pronoun context (ADR-089)
-                if (this.parser && 'resetPronounContext' in this.parser) {
-                  (this.parser as any).resetPronounContext();
+                if (this.parser && hasPronounContext(this.parser)) {
+                  this.parser.resetPronounContext();
                 }
                 await this.setStory(this.story);
                 this.start();
@@ -1530,8 +1536,9 @@ export class GameEngine {
     
     // Store in turn events if we're in a turn (as SemanticEvent for compatibility)
     if (this.context.currentTurn > 0) {
+      const eventData = gameEvent.data as { id?: string } | undefined;
       const semanticEvent: ISemanticEvent = {
-        id: event.id || gameEvent.data?.id as string,
+        id: event.id || eventData?.id as string,
         type: event.type,
         timestamp: event.timestamp || Date.now(),
         entities: event.entities || {},

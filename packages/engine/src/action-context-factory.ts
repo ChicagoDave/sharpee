@@ -6,6 +6,7 @@ import { ActionContext, Action, ScopeResolver, ValidatedCommand, ScopeLevel, Sco
 import { WorldModel, IFEntity, TraitType } from '@sharpee/world-model';
 import { ISemanticEvent, createEvent as coreCreateEvent } from '@sharpee/core';
 import { GameContext } from './types';
+import { SharedDataKeys, EngineSharedData } from './shared-data-keys';
 
 /**
  * Helper to get entity from command slot
@@ -67,7 +68,7 @@ export function createActionContext(
     : player;
 
   // Create sharedData object separately so it can be referenced in closures
-  const sharedData: Record<string, any> = {};
+  const sharedData: EngineSharedData = {};
 
   // Create the event method
   const event = (type: string, data: Record<string, any>): ISemanticEvent => {
@@ -295,10 +296,8 @@ export function createActionContext(
       const implicitTakeEvents = [implicitTakeEvent, ...filteredTakeEvents];
 
       // Store in sharedData for the report phase to access
-      if (!sharedData.implicitTakeEvents) {
-        sharedData.implicitTakeEvents = [];
-      }
-      sharedData.implicitTakeEvents.push(...implicitTakeEvents);
+      const existingEvents = sharedData[SharedDataKeys.IMPLICIT_TAKE_EVENTS] ?? [];
+      sharedData[SharedDataKeys.IMPLICIT_TAKE_EVENTS] = [...existingEvents, ...implicitTakeEvents];
 
       return {
         ok: true,

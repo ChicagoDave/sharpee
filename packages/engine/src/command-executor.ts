@@ -12,6 +12,8 @@
 
 import { ISemanticEvent, ISystemEvent, IGenericEventSource } from '@sharpee/core';
 import { IParser, IValidatedCommand, IParsedCommand } from '@sharpee/world-model';
+import { hasWorldContext } from './parser-interface';
+import { SharedDataKeys, EngineSharedData } from './shared-data-keys';
 import { WorldModel } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import {
@@ -112,9 +114,9 @@ export class CommandExecutor {
     try {
       // Set world context for parser entity resolution
       const player = world.getPlayer();
-      if (player && 'setWorldContext' in this.parser) {
+      if (player && hasWorldContext(this.parser)) {
         const playerLocation = world.getLocation(player.id) || '';
-        (this.parser as any).setWorldContext(world, player.id, playerLocation);
+        this.parser.setWorldContext(world, player.id, playerLocation);
       }
 
       // Phase 1: Parse
@@ -209,9 +211,10 @@ export class CommandExecutor {
             );
 
             // Mark that inference occurred (for "(the leaflet)" message)
-            (inferredContext.sharedData as any).inferencePerformed = true;
-            (inferredContext.sharedData as any).originalTarget = directObject.entity;
-            (inferredContext.sharedData as any).inferredTarget = inferenceResult.inferredTarget;
+            const sharedData = inferredContext.sharedData as EngineSharedData;
+            sharedData[SharedDataKeys.INFERENCE_PERFORMED] = true;
+            sharedData[SharedDataKeys.ORIGINAL_TARGET] = directObject.entity;
+            sharedData[SharedDataKeys.INFERRED_TARGET] = inferenceResult.inferredTarget;
 
             // Re-validate with inferred target
             const retryValidation = action.validate(inferredContext);

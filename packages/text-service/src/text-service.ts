@@ -120,7 +120,7 @@ export class TextService implements ITextService {
       case 'if.event.revealed':
         return handleRevealed(event, context);
 
-      case 'if.event.implicit.take':
+      case 'if.event.implicit_take':
         return this.handleImplicitTake(event, context);
 
       case 'command.failed':
@@ -132,7 +132,7 @@ export class TextService implements ITextService {
   }
 
   /**
-   * Handle if.event.implicit.take events
+   * Handle if.event.implicit_take events
    * Produces "(first taking the X)" message
    */
   private handleImplicitTake(event: ISemanticEvent, _context: HandlerContext): ITextBlock[] {

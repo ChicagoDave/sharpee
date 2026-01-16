@@ -23,6 +23,12 @@ export * from './event-sequencer';
 // Command execution
 export * from './command-executor';
 
+// Parser interface for engine integration
+export * from './parser-interface';
+
+// Shared data keys for typed action communication
+export * from './shared-data-keys';
+
 // Main engine
 export * from './game-engine';
 

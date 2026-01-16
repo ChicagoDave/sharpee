@@ -1,7 +1,11 @@
 /**
  * Room description event handler
  *
- * Handles: if.event.room_description, if.event.room.description
+ * Handles: if.event.room.description (standard format)
+ * Also handles: if.event.room_description (legacy/alternate)
+ *
+ * Note: room.description uses a deliberate dot separator, unlike most
+ * events which use underscores for compound words (e.g., actor_moved).
  *
  * @see ADR-096 Text Service Architecture
  */
