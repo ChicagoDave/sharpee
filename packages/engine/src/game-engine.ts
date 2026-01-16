@@ -561,8 +561,8 @@ export class GameEngine {
         this.updateCommandHistory(result, input, turn);
 
         // Update pronoun context for "it"/"them"/"him"/"her" resolution (ADR-089)
-        if (this.parser && 'updatePronounContext' in this.parser && result.parsedCommand) {
-          (this.parser as any).updatePronounContext(result.parsedCommand, turn);
+        if (this.parser && 'updatePronounContext' in this.parser && result.validatedCommand) {
+          (this.parser as any).updatePronounContext(result.validatedCommand, turn);
         }
       }
 

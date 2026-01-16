@@ -8,7 +8,7 @@
  * - "take all. drop them" → "them" = all items taken
  */
 
-import type { IParsedCommand, INounPhrase } from '@sharpee/world-model';
+import type { IParsedCommand, INounPhrase, IValidatedCommand, IValidatedObjectReference } from '@sharpee/world-model';
 import type { PronounSet } from '@sharpee/world-model';
 
 /**
@@ -158,6 +158,11 @@ export class PronounContextManager {
   resolve(pronoun: string): EntityReference[] | null {
     const normalized = pronoun.toLowerCase();
 
+    // DEBUG: Verify pronoun resolution
+    if (process.env.DEBUG_PRONOUNS) {
+      console.log(`[PronounContext] resolve("${pronoun}") context.it=${this.context.it?.entityId}`);
+    }
+
     switch (normalized) {
       case 'it':
         return this.context.it ? [this.context.it] : null;
@@ -189,144 +194,86 @@ export class PronounContextManager {
   }
 
   /**
-   * Update pronoun context after a successful parse
-   * @param command The successfully parsed command
+   * Update pronoun context after a successful command execution
+   * @param command The validated command with resolved entity IDs
    * @param world The world model (for entity lookup)
    * @param turnNumber Current turn number
    */
   updateFromCommand(
-    command: IParsedCommand,
+    command: IValidatedCommand,
     world: any, // WorldModel
     turnNumber: number
   ): void {
-    // Store last command for "again" support
-    this.context.lastCommand = command;
-
-    // Process direct object
-    if (command.structure.directObject) {
-      this.processNounPhrase(command.structure.directObject, world, turnNumber);
+    // DEBUG: Verify pronoun context is being updated
+    if (process.env.DEBUG_PRONOUNS) {
+      console.log(`[PronounContext] updateFromCommand turn=${turnNumber} directObject=${command.directObject?.entity?.id}`);
     }
 
-    // Process indirect object
-    if (command.structure.indirectObject) {
-      this.processNounPhrase(command.structure.indirectObject, world, turnNumber);
+    // Store last command for "again" support
+    this.context.lastCommand = command.parsed;
+
+    // Process direct object - use validated entity directly
+    if (command.directObject) {
+      this.processValidatedReference(command.directObject, world, turnNumber);
+    }
+
+    // Process indirect object - use validated entity directly
+    if (command.indirectObject) {
+      this.processValidatedReference(command.indirectObject, world, turnNumber);
+    }
+
+    // Process instrument if present
+    if (command.instrument) {
+      this.processValidatedReference(command.instrument, world, turnNumber);
     }
   }
 
   /**
-   * Process a noun phrase and update context
+   * Process a validated object reference and update context
+   * Uses the already-resolved entity ID from validation
    */
-  private processNounPhrase(
-    nounPhrase: INounPhrase,
+  private processValidatedReference(
+    ref: IValidatedObjectReference,
     world: any,
     turnNumber: number
   ): void {
-    // Handle "all" or list results
-    if (nounPhrase.isAll || nounPhrase.isList) {
-      if (nounPhrase.items && nounPhrase.items.length > 0) {
-        const refs = this.nounPhraseItemsToRefs(nounPhrase.items, world, turnNumber);
-        if (refs.length > 0) {
-          this.context.them = refs;
-        }
-      }
-      return;
-    }
-
-    // Get entity ID - it may be in various places depending on resolution state
-    const entityId = this.extractEntityId(nounPhrase, world);
-    if (!entityId) {
-      return; // Can't update without entity ID
-    }
-
-    const entity = world.getEntity(entityId);
+    const entity = ref.entity;
     if (!entity) {
       return;
     }
 
-    const ref: EntityReference = {
-      entityId,
-      text: nounPhrase.text,
+    const entityRef: EntityReference = {
+      entityId: entity.id,
+      text: ref.parsed?.text || entity.id,
       turnNumber
     };
 
     // Check if this is an actor (animate)
-    const actorTrait = entity.get('actor');
+    // Use 'any' cast since parser-en-us doesn't have trait type definitions
+    const actorTrait = entity.get('actor') as any;
     if (actorTrait?.pronouns) {
       // Animate entity - store by object pronoun
       const pronounSet = Array.isArray(actorTrait.pronouns)
         ? actorTrait.pronouns[0]
         : actorTrait.pronouns;
 
-      this.context.animateByPronoun.set(pronounSet.object, ref);
+      this.context.animateByPronoun.set(pronounSet.object, entityRef);
 
       // For multiple pronoun sets, register all object pronouns
       if (Array.isArray(actorTrait.pronouns)) {
         for (const ps of actorTrait.pronouns) {
-          this.context.animateByPronoun.set(ps.object, ref);
+          this.context.animateByPronoun.set(ps.object, entityRef);
         }
       }
     } else {
       // Inanimate entity - check grammatical number
-      const identityTrait = entity.get('identity');
+      const identityTrait = entity.get('identity') as any;
       if (identityTrait?.grammaticalNumber === 'plural') {
-        this.context.them = [ref];
+        this.context.them = [entityRef];
       } else {
-        this.context.it = ref;
+        this.context.it = entityRef;
       }
     }
-  }
-
-  /**
-   * Extract entity ID from a noun phrase
-   */
-  private extractEntityId(nounPhrase: INounPhrase, world: any): string | null {
-    // Check for resolved entity ID (set by scope evaluator)
-    if ((nounPhrase as any).entityId) {
-      return (nounPhrase as any).entityId;
-    }
-
-    // Try to find entity by name
-    if (nounPhrase.text && world.findEntityByName) {
-      const entity = world.findEntityByName(nounPhrase.text);
-      if (entity) {
-        return entity.id;
-      }
-    }
-
-    // Check candidates array (old format)
-    if (nounPhrase.candidates && nounPhrase.candidates.length === 1) {
-      // If there's exactly one candidate and it looks like an entity ID
-      const candidate = nounPhrase.candidates[0];
-      if (typeof candidate === 'string' && !candidate.includes(' ')) {
-        return candidate;
-      }
-    }
-
-    return null;
-  }
-
-  /**
-   * Convert noun phrase items to entity references
-   */
-  private nounPhraseItemsToRefs(
-    items: INounPhrase[],
-    world: any,
-    turnNumber: number
-  ): EntityReference[] {
-    const refs: EntityReference[] = [];
-
-    for (const item of items) {
-      const entityId = this.extractEntityId(item, world);
-      if (entityId) {
-        refs.push({
-          entityId,
-          text: item.text,
-          turnNumber
-        });
-      }
-    }
-
-    return refs;
   }
 
   /**

@@ -224,7 +224,8 @@ export class CommandExecutor {
         success: !events.some(e => e.type === 'action.error'),
         events: sequenced,
         actionId: command.actionId,
-        parsedCommand: command.parsed
+        parsedCommand: command.parsed,
+        validatedCommand: command
       };
 
       // Add timing data if requested

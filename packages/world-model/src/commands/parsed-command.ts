@@ -123,6 +123,10 @@ export interface INounPhrase {
   isList?: boolean;
   /** Individual items when isList is true */
   items?: INounPhrase[];
+
+  // ADR-089 pronoun resolution
+  /** Pre-resolved entity ID (e.g., when "it" was resolved during parsing) */
+  entityId?: string;
 }
 
 /**
