@@ -148,11 +148,11 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
 
     // Check if exit is blocked
     if (RoomBehavior.isExitBlocked(currentRoom, direction)) {
-      const blockedMessage = RoomBehavior.getBlockedMessage(currentRoom, direction);
+      const blockedMessage = RoomBehavior.getBlockedMessage(currentRoom, direction) || "You can't go that way.";
       return {
         valid: false,
         error: GoingMessages.MOVEMENT_BLOCKED,
-        params: { direction: direction }
+        params: { direction: direction, message: blockedMessage }
       };
     }
 

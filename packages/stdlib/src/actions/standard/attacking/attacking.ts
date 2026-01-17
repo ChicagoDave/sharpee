@@ -191,8 +191,8 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
         random: createSimpleRandom()
       });
 
-      // Apply combat result to target
-      applyCombatResult(target, combatResult, context.world);
+      // Apply combat result to target (handles health, death, inventory dropping)
+      const combatApplyResult = applyCombatResult(target, combatResult, context.world);
 
       // Convert to AttackResult type for consistency
       const attackResult: AttackResult = {
@@ -205,7 +205,7 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
         targetDestroyed: false,
         targetKilled: combatResult.targetKilled,
         targetKnockedOut: combatResult.targetKnockedOut,
-        itemsDropped: []
+        itemsDropped: combatApplyResult.droppedItems
       };
 
       // Store result for report phase

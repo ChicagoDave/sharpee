@@ -27,7 +27,7 @@ export const goingLanguage = {
     'no_direction': "{You}'ll have to say which direction to go.",
     'not_in_room': "{You're} not in a place where {you} can go anywhere.",
     'no_exits': "There are no obvious exits.",
-    'movement_blocked': "{You} {can't} go that way.",
+    'movement_blocked': "{message}",
     'destination_not_found': "{You} {can't} go that way.",
     'need_light': "It's too dark to go that way safely.",
     'went': "{You} {go} {direction}.",

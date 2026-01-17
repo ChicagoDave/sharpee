@@ -149,10 +149,121 @@ body {
 
   #game-container {
     max-width: 100%;
+    padding: 0;
   }
 
   #status-line {
     font-size: 12px;
+    padding: 6px 12px;
+    /* Safe area for notched phones */
+    padding-top: max(6px, env(safe-area-inset-top));
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+
+  #main-window {
+    padding: 12px;
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+
+  #input-area {
+    padding: 8px 12px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+    /* Larger touch target */
+    min-height: 48px;
+  }
+
+  #command-input {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+    padding: 8px 0;
+  }
+
+  .prompt {
+    font-size: 16px;
+  }
+}
+
+/* Small phones */
+@media (max-width: 380px) {
+  body {
+    font-size: 13px;
+  }
+
+  #status-line {
+    font-size: 11px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  #location-name {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+
+  #score-turns {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+}
+
+/* Landscape phone */
+@media (max-height: 500px) and (orientation: landscape) {
+  body {
+    font-size: 13px;
+    line-height: 1.3;
+  }
+
+  #status-line {
+    padding: 2px 8px;
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+  }
+
+  #main-window {
+    padding: 4px 8px;
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+  }
+
+  #text-content p {
+    margin-bottom: 0.5em;
+  }
+
+  #input-area {
+    padding: 4px 8px;
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+    min-height: 36px;
+  }
+}
+
+/* When virtual keyboard is likely open - use dvh for dynamic viewport */
+@supports (height: 100dvh) {
+  #game-container {
+    height: 100dvh;
+  }
+}
+
+/* Touch-specific: larger tap targets, no hover effects */
+@media (pointer: coarse) {
+  #command-input {
+    padding: 12px 0;
+  }
+
+  #input-area {
+    min-height: 52px;
+  }
+
+  /* Ensure scrollbar is visible on touch */
+  #main-window {
+    scrollbar-width: auto;
+  }
+
+  #main-window::-webkit-scrollbar {
+    width: 12px;
   }
 }
 

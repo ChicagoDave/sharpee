@@ -8,6 +8,7 @@
 
 import { NpcBehavior, NpcContext, NpcAction, Direction } from './types';
 import { NpcMessages } from './npc-messages';
+import { TraitType, CombatantTrait } from '@sharpee/world-model';
 
 /**
  * Guard behavior - stationary NPC that blocks passage and fights back
@@ -15,18 +16,38 @@ import { NpcMessages } from './npc-messages';
  * Guards:
  * - Don't move on their own
  * - Emit a blocking message when player enters
+ * - Attack player each turn if hostile and engaged
  * - Counterattack when attacked
  */
 export const guardBehavior: NpcBehavior = {
   id: 'guard',
   name: 'Guard Behavior',
 
-  onTurn(_context: NpcContext): NpcAction[] {
-    // Guards don't act on their own
+  onTurn(context: NpcContext): NpcAction[] {
+    // Check if NPC is alive and conscious
+    const combatant = context.npc.get(TraitType.COMBATANT) as CombatantTrait | undefined;
+    if (combatant && (!combatant.isAlive || !combatant.isConscious)) {
+      return [];
+    }
+
+    // If hostile and player is visible, attack!
+    if (combatant?.hostile && context.playerVisible) {
+      const player = context.world.getPlayer();
+      if (player) {
+        return [{ type: 'attack', target: player.id }];
+      }
+    }
+
     return [];
   },
 
   onPlayerEnters(context: NpcContext): NpcAction[] {
+    // Check if NPC is alive and conscious
+    const combatant = context.npc.get(TraitType.COMBATANT) as CombatantTrait | undefined;
+    if (combatant && (!combatant.isAlive || !combatant.isConscious)) {
+      return [];
+    }
+
     // Growl or block when player enters
     return [
       {
@@ -38,6 +59,12 @@ export const guardBehavior: NpcBehavior = {
   },
 
   onAttacked(context: NpcContext, attacker): NpcAction[] {
+    // Check if NPC is alive and conscious
+    const combatant = context.npc.get(TraitType.COMBATANT) as CombatantTrait | undefined;
+    if (combatant && (!combatant.isAlive || !combatant.isConscious)) {
+      return [];
+    }
+
     // Counterattack
     return [{ type: 'attack', target: attacker.id }];
   },

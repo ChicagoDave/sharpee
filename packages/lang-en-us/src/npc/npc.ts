@@ -24,12 +24,20 @@ export const npcLanguage = {
     'npc.guard.attacks': "{npcName} attacks you!",
     'npc.guard.defeated': "{npcName} is no longer a threat.",
 
-    // Combat messages
+    // Combat messages (basic)
     'npc.attacks': "{npcName} attacks you!",
     'npc.misses': "{npcName} swings at you but misses!",
     'npc.hits': "{npcName} hits you for {damage} damage!",
     'npc.killed': "{npcName} has been slain.",
     'npc.unconscious': "{npcName} collapses, unconscious.",
+
+    // NPC combat attack outcomes (canonical Zork troll messages from MDL source)
+    'npc.combat.attack.missed': "The troll swings his axe, but it misses.",
+    'npc.combat.attack.hit': "The axe gets you right in the side. Ouch!",
+    'npc.combat.attack.hit_light': "The flat of the troll's axe skins across your forearm.",
+    'npc.combat.attack.hit_heavy': "The troll hits you with a glancing blow, and you are momentarily stunned.",
+    'npc.combat.attack.knocked_out': "The flat of the troll's axe hits you delicately on the head, knocking you out.",
+    'npc.combat.attack.killed': "The troll lands a killing blow. You are dead.",
 
     // Speech messages
     'npc.speaks': "{npcName} says, \"{text}\"",

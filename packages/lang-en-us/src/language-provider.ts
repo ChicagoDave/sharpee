@@ -9,6 +9,7 @@ import { LanguageProvider, ParserLanguageProvider, ActionHelp, VerbVocabulary, D
 import { englishVerbs } from './data/verbs';
 import { englishWords, irregularPlurals, abbreviations } from './data/words';
 import { standardActionLanguage } from './actions';
+import { npcLanguage } from './npc';
 import {
   NarrativeContext,
   DEFAULT_NARRATIVE_CONTEXT,
@@ -52,7 +53,8 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     this.loadCoreMessages();
     // Load all action messages
     this.loadActionMessages();
-    // NPC messages are injected at runtime by the story + engine (ADR-070)
+    // Load NPC messages (ADR-070)
+    this.loadNpcMessages();
   }
 
   /**
@@ -102,6 +104,17 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
           const fullKey = `${actionLang.actionId}.${key}`;
           this.messages.set(fullKey, value);
         });
+      }
+    }
+  }
+
+  /**
+   * Load NPC messages (ADR-070)
+   */
+  private loadNpcMessages(): void {
+    if (npcLanguage.messages) {
+      for (const [key, value] of Object.entries(npcLanguage.messages)) {
+        this.messages.set(key, value);
       }
     }
   }

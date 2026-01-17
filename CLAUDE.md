@@ -96,6 +96,26 @@ Be deliberate about where logic belongs:
 
 Ask: "Where does this belong?" before implementing new features.
 
+### Always Trust the Architecture
+
+When implementing new features, **extend existing patterns rather than inventing workarounds**.
+
+**Example:** When the troll's axe needed to block taking with a custom "white-hot" message, the wrong approach was to propose hacks like:
+- Ad-hoc properties (`(axe as any).cannotTake = true`)
+- Moving items to "limbo" locations
+- Pre-action event hooks (new platform concept)
+- Story-specific action overrides
+
+The right approach: Sharpee already has **Capability Dispatch (ADR-090)** where traits register behaviors for actions. Standard actions just need to check `findTraitWithCapability()` before running their logic. Story creates a clean `TrollAxeTrait` with a behavior that blocks taking while the guardian is alive.
+
+**Checklist before proposing platform changes:**
+1. Does an existing trait/behavior pattern handle this?
+2. Can the capability dispatch system be extended?
+3. Can event handlers react to the action?
+4. Is there an ADR that addresses this pattern?
+
+If all four are "no," then discuss a platform change. Usually the architecture already supports what you need.
+
 ### Story Organization Pattern
 
 Stories are organized by **regions**, with each region as a folder containing:

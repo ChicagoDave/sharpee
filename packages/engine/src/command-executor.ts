@@ -28,6 +28,13 @@ import {
 import { GameContext, TurnResult, EngineConfig } from './types';
 import { eventSequencer } from './event-sequencer';
 import { createActionContext } from './action-context-factory';
+import {
+  checkCapabilityDispatch,
+  executeCapabilityValidate,
+  executeCapabilityExecute,
+  executeCapabilityReport,
+  executeCapabilityBlocked
+} from './capability-dispatch-helper';
 
 /**
  * Transformer function for parsed commands.
@@ -157,10 +164,21 @@ export class CommandExecutor {
       }
       const actionContext = createActionContext(world, context, command, action, this.scopeResolver);
 
+      // Universal Capability Dispatch: Check if target entity has a capability for this action
+      // If so, the entity's behavior handles the action instead of the stdlib default
+      const capabilityCheck = checkCapabilityDispatch(
+        command.actionId,
+        command.directObject?.entity
+      );
+
       // Run action's four phases: validate → execute → report (or blocked)
-      let actionValidation = action.validate(actionContext);
+      // If capability dispatch applies, use capability behavior; otherwise use action
+      let actionValidation = capabilityCheck.shouldDispatch
+        ? executeCapabilityValidate(capabilityCheck, actionContext)
+        : action.validate(actionContext);
       let currentCommand = command;
       let currentContext = actionContext;
+      let useCapabilityDispatch = capabilityCheck.shouldDispatch;
 
       // ADR-104: Implicit inference - if validation fails and pronoun was used,
       // try to find a valid alternative target
@@ -216,14 +234,23 @@ export class CommandExecutor {
             sharedData[SharedDataKeys.ORIGINAL_TARGET] = directObject.entity;
             sharedData[SharedDataKeys.INFERRED_TARGET] = inferenceResult.inferredTarget;
 
-            // Re-validate with inferred target
-            const retryValidation = action.validate(inferredContext);
+            // Re-check capability dispatch for inferred target
+            const inferredCapabilityCheck = checkCapabilityDispatch(
+              command.actionId,
+              inferenceResult.inferredTarget
+            );
+
+            // Re-validate with inferred target (using capability dispatch if applicable)
+            const retryValidation = inferredCapabilityCheck.shouldDispatch
+              ? executeCapabilityValidate(inferredCapabilityCheck, inferredContext)
+              : action.validate(inferredContext);
 
             if (retryValidation.valid) {
               // Inference succeeded - use the inferred command
               actionValidation = retryValidation;
               currentCommand = inferredCommand;
               currentContext = inferredContext;
+              useCapabilityDispatch = inferredCapabilityCheck.shouldDispatch;
             }
           }
         }
@@ -236,24 +263,33 @@ export class CommandExecutor {
       let events: ISemanticEvent[];
 
       if (actionValidation.valid) {
-        // Execute mutations
-        const executeResult = action.execute(currentContext);
-
-        // Check pattern (new vs old)
-        if (executeResult === undefined || executeResult === null) {
-          // New pattern: use report() for success events only
-          if (action.report) {
-            events = action.report(currentContext);
-          } else {
-            throw new Error(`Action ${action.id} uses new pattern but lacks report()`);
-          }
+        if (useCapabilityDispatch) {
+          // Capability dispatch: use behavior phases
+          executeCapabilityExecute(currentContext);
+          events = executeCapabilityReport(currentContext);
         } else {
-          // Old pattern: events from execute()
-          events = executeResult as ISemanticEvent[];
+          // Standard action: use action phases
+          const executeResult = action.execute(currentContext);
+
+          // Check pattern (new vs old)
+          if (executeResult === undefined || executeResult === null) {
+            // New pattern: use report() for success events only
+            if (action.report) {
+              events = action.report(currentContext);
+            } else {
+              throw new Error(`Action ${action.id} uses new pattern but lacks report()`);
+            }
+          } else {
+            // Old pattern: events from execute()
+            events = executeResult as ISemanticEvent[];
+          }
         }
       } else {
         // Validation failed - use blocked() for error events
-        if (action.blocked) {
+        if (useCapabilityDispatch) {
+          // Capability dispatch: use behavior's blocked phase
+          events = executeCapabilityBlocked(currentContext, actionValidation, command.actionId);
+        } else if (action.blocked) {
           events = action.blocked(currentContext, actionValidation);
         } else {
           // Fallback for unmigrated actions

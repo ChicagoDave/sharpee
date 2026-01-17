@@ -11,6 +11,7 @@ import {
   IFEntity,
   IdentityTrait,
   RoomTrait,
+  RoomBehavior,
   EntityType,
   Direction,
   DirectionType,
@@ -140,8 +141,9 @@ function connectWhiteHouseRooms(world: WorldModel, roomIds: WhiteHouseRoomIds): 
 
 /**
  * Create all objects in the White House region
+ * @param kitchenId - Kitchen ID needed for window exit wiring
  */
-export function createWhiteHouseObjects(world: WorldModel, roomIds: WhiteHouseRoomIds): void {
+export function createWhiteHouseObjects(world: WorldModel, roomIds: WhiteHouseRoomIds, kitchenId?: string): void {
   // Create mailbox and leaflet in West of House
   const mailbox = createMailbox(world);
   const leaflet = createLeaflet(world);
@@ -169,6 +171,16 @@ export function createWhiteHouseObjects(world: WorldModel, roomIds: WhiteHouseRo
   // Create window in Behind House
   const window = createWindow(world);
   world.moveEntity(window.id, roomIds.behindHouse);
+
+  // Wire exits through the window - going action checks if window is open
+  if (kitchenId) {
+    const behindHouse = world.getEntity(roomIds.behindHouse);
+    const kitchen = world.getEntity(kitchenId);
+    if (behindHouse && kitchen) {
+      RoomBehavior.setExit(behindHouse, Direction.WEST, kitchenId, window.id);
+      RoomBehavior.setExit(kitchen, Direction.EAST, roomIds.behindHouse, window.id);
+    }
+  }
 
   // Create house scenery visible from all outdoor areas
   createHouseScenery(world, roomIds);
@@ -255,7 +267,8 @@ function createFrontDoor(world: WorldModel): IFEntity {
 
 /**
  * Window - starts slightly ajar, can be opened fully
- * This will eventually be the entrance to the Kitchen
+ * Passage through window is controlled by exit `via` property - going action
+ * automatically checks if window is open before allowing passage.
  */
 function createWindow(world: WorldModel): IFEntity {
   const window = world.createEntity('window', EntityType.SCENERY);
@@ -274,15 +287,13 @@ function createWindow(world: WorldModel): IFEntity {
     isOpen: false  // Starts "slightly ajar" but not fully open
   }));
 
-  // Handle window opening - custom message
+  // Update description when opened/closed
   window.on = {
     'if.event.opened': (event: IGameEvent) => {
-      // Update description to reflect open state
       const identity = window.get(IdentityTrait);
       if (identity) {
         identity.description = 'The window is open.';
       }
-      // Return custom message for opening
       return [{
         id: generateEventId(),
         type: 'game.message',
@@ -291,6 +302,13 @@ function createWindow(world: WorldModel): IFEntity {
         timestamp: Date.now(),
         narrate: true
       }];
+    },
+    'if.event.closed': (event: IGameEvent) => {
+      const identity = window.get(IdentityTrait);
+      if (identity) {
+        identity.description = 'The window is slightly ajar, but not enough to allow entry.';
+      }
+      return [];
     }
   };
 
@@ -306,7 +324,7 @@ function createWelcomeMat(world: WorldModel): IFEntity {
 
   mat.add(new IdentityTrait({
     name: 'welcome mat',
-    aliases: ['mat', 'doormat', 'door mat', 'rug'],
+    aliases: ['mat', 'rubber mat'],  // MDL: ["MAT"] + ["WELCO" "RUBBE"]
     description: 'A rubber mat saying "Welcome to Dungeon!"',
     properName: false,
     article: 'a',
