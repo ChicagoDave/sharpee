@@ -23,6 +23,9 @@ export * from './event-sequencer';
 // Command execution
 export * from './command-executor';
 
+// Universal capability dispatch (ADR-090 extension)
+export * from './capability-dispatch-helper';
+
 // Parser interface for engine integration
 export * from './parser-interface';
 

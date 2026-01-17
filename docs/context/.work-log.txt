@@ -30,3 +30,29 @@
 [01:06:25] EDIT: packages/lang-en-us/src/language-provider.ts
 [01:32:06] EDIT: packages/lang-en-us/src/npc/npc.ts
 [01:36:42] WRITE: docs/work/dungeo/context/2026-01-17-troll-combat-messages.md
+[01:39:06] GIT: git reset HEAD stories/dungeo/test-blocking.js && git commit -m "$(cat <<'EOF'
+f
+[01:39:17] GIT: git push origin dungeo
+[01:49:22] EDIT: packages/stdlib/src/combat/combat-service.ts
+[01:49:33] EDIT: packages/stdlib/src/combat/index.ts
+[01:49:47] EDIT: packages/stdlib/src/actions/standard/attacking/attacking.ts
+[01:52:51] WRITE: docs/work/dungeo/troll-logic.md
+[02:08:07] EDIT: docs/work/dungeo/troll-logic.md
+[02:19:22] EDIT: docs/work/dungeo/troll-logic.md
+[02:19:42] EDIT: docs/work/dungeo/troll-logic.md
+[02:19:57] EDIT: docs/work/dungeo/troll-logic.md
+[02:20:26] EDIT: CLAUDE.md
+[02:44:44] WRITE: docs/design/sharpee-dispatch-wp.md
+[02:48:53] WRITE: docs/context/session-20260117-0139-dungeo.md
+[02:49:34] GIT: git commit -m "$(cat <<'EOF'
+feat: Add inventory dropping on NPC death and capab
+[02:49:43] GIT: git push
+[03:00:24] WRITE: packages/engine/src/capability-dispatch-helper.ts
+[03:00:42] EDIT: packages/engine/src/command-executor.ts
+[03:00:51] EDIT: packages/engine/src/command-executor.ts
+[03:01:08] EDIT: packages/engine/src/command-executor.ts
+[03:01:22] EDIT: packages/engine/src/command-executor.ts
+[03:01:38] EDIT: packages/engine/src/index.ts
+[03:07:03] WRITE: packages/engine/tests/universal-capability-dispatch.test.ts
+[03:08:08] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/engine' test universal-capability-dispatch 2>&1 | head -
+[03:28:54] WRITE: docs/context/session-20260117-0324-unidispatch.md
