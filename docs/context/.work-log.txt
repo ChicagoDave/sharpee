@@ -79,3 +79,9 @@ fix: Platform issues discovered in fi
 [21:27:00] EDIT: docs/work/issues/issues-list.md
 [21:27:12] EDIT: docs/work/issues/issues-list.md
 [21:29:12] WRITE: docs/context/session-20260116-2036-engine.md
+[21:30:06] GIT: git commit -m "$(cat <<'EOF'
+feat: Add browser client with Infocom DOS styling
+
+
+[21:30:16] GIT: git push
+[21:34:32] EDIT: docs/work/engine/remediation-plan.md

@@ -1,8 +1,22 @@
 # Engine Remediation Plan
 
 **Date**: 2026-01-16
+**Status**: ✅ COMPLETE (2026-01-16)
 **Scope**: Internal refactoring only - no changes to public API
 **Risk**: Low - engine is a leaf node for lower packages
+
+## Completion Summary
+
+| Phase | Status | Description |
+|-------|--------|-------------|
+| 1. Dead Code Removal | ✅ Complete | Removed deprecated methods, empty code paths |
+| 2. Type Safety | ✅ Complete | Added IEngineAwareParser, SharedDataKeys, typed events |
+| 3. event-adapter Cleanup | ✅ Complete | Removed legacy migration, standardized event types |
+| 4. Extract Services | ✅ Complete | VocabularyManager, SaveRestoreService, TurnEventProcessor, PlatformOperationHandler |
+| 5. Fix Race Condition | ✅ Complete | Moved setTimeout to start() with guard flag |
+| 6. MetaCommand Cleanup | ✅ Complete | Centralized in MetaCommandRegistry.isNonUndoable() |
+
+**Results**: GameEngine reduced 2010 → 1583 lines (-21%), 4 services extracted, zero regressions. See `context/phases-4-5-6-complete.md` for details.
 
 ---
 
