@@ -58,3 +58,24 @@ refac
 [18:55:39] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
 [18:57:02] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&1 | tail -20
 [20:23:10] WRITE: docs/context/session-20260116-2022-engine.md
+[20:24:51] GIT: git add -A && git commit -m "$(cat <<'EOF'
+fix: Platform issues discovered in fi
+[20:25:01] GIT: git push
+[20:45:53] WRITE: docs/work/thinweb/README.md
+[20:47:39] WRITE: scripts/bundle-browser.sh
+[20:47:39] WRITE: templates/browser/index.html
+[20:47:39] WRITE: templates/browser/infocom.css
+[20:48:52] WRITE: stories/dungeo/src/browser-entry.ts
+[20:54:30] EDIT: packages/core/src/ifid/ifid.ts
+[20:54:35] EDIT: packages/core/src/ifid/ifid.ts
+[21:03:21] EDIT: stories/dungeo/src/browser-entry.ts
+[21:08:17] EDIT: stories/dungeo/src/browser-entry.ts
+[21:10:34] EDIT: scripts/bundle-browser.sh
+[21:12:08] EDIT: stories/dungeo/src/browser-entry.ts
+[21:12:18] EDIT: stories/dungeo/src/browser-entry.ts
+[21:18:17] WRITE: docs/work/issues/browser-testing-2026-01-16.md
+[21:19:34] EDIT: docs/work/issues/issues-list.md
+[21:19:50] EDIT: docs/work/issues/issues-list.md
+[21:27:00] EDIT: docs/work/issues/issues-list.md
+[21:27:12] EDIT: docs/work/issues/issues-list.md
+[21:29:12] WRITE: docs/context/session-20260116-2036-engine.md

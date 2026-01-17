@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{TITLE}}</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="game-container">
+    <div id="status-line">
+      <span id="location-name"></span>
+      <span id="score-turns">Score: 0 | Turns: 0</span>
+    </div>
+    <div id="main-window">
+      <div id="text-content"></div>
+    </div>
+    <div id="input-area">
+      <span class="prompt">&gt;</span>
+      <input id="command-input" type="text"
+             autocomplete="off" autocapitalize="none"
+             spellcheck="false" autofocus>
+    </div>
+  </div>
+  <script src="{{TITLE}}.js"></script>
+</body>
+</html>

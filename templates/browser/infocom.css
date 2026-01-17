@@ -1,0 +1,167 @@
+/* Infocom DOS-era styling for Sharpee IF games */
+
+/* DOS Color Palette */
+:root {
+  --dos-blue: #0000aa;
+  --dos-cyan: #00aaaa;
+  --dos-white: #aaaaaa;
+  --dos-bright-white: #ffffff;
+  --dos-black: #000000;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--dos-blue);
+  color: var(--dos-bright-white);
+  font-family: "Perfect DOS VGA 437", "Consolas", "Courier New", monospace;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+#game-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 80ch;
+  margin: 0 auto;
+  padding: 0;
+}
+
+/* Status Line - Cyan background, black text */
+#status-line {
+  background: var(--dos-cyan);
+  color: var(--dos-black);
+  padding: 4px 8px;
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+#location-name {
+  text-transform: uppercase;
+}
+
+/* Main Text Window */
+#main-window {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  padding-bottom: 1em;
+}
+
+#text-content p {
+  margin-bottom: 0.8em;
+}
+
+#text-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Command echo styling */
+.command-echo {
+  color: var(--dos-white);
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+/* Input Area */
+#input-area {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-top: 2px solid var(--dos-cyan);
+  flex-shrink: 0;
+  background: var(--dos-blue);
+}
+
+.prompt {
+  color: var(--dos-bright-white);
+  margin-right: 4px;
+}
+
+#command-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--dos-bright-white);
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  outline: none;
+  caret-color: var(--dos-bright-white);
+}
+
+#command-input::placeholder {
+  color: var(--dos-white);
+  opacity: 0.5;
+}
+
+/* Hide scrollbar but allow scrolling (Webkit) */
+#main-window::-webkit-scrollbar {
+  width: 8px;
+}
+
+#main-window::-webkit-scrollbar-track {
+  background: var(--dos-blue);
+}
+
+#main-window::-webkit-scrollbar-thumb {
+  background: var(--dos-cyan);
+}
+
+/* Firefox scrollbar */
+#main-window {
+  scrollbar-width: thin;
+  scrollbar-color: var(--dos-cyan) var(--dos-blue);
+}
+
+/* System messages */
+.system-message {
+  color: var(--dos-cyan);
+}
+
+/* Game over / victory */
+.game-status {
+  color: var(--dos-bright-white);
+  text-align: center;
+  font-weight: bold;
+  margin: 1em 0;
+  padding: 0.5em;
+  border: 1px solid var(--dos-cyan);
+}
+
+/* Mobile adjustments */
+@media (max-width: 600px) {
+  body {
+    font-size: 14px;
+  }
+
+  #game-container {
+    max-width: 100%;
+  }
+
+  #status-line {
+    font-size: 12px;
+  }
+}
+
+/* Blinking cursor effect */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+#command-input:focus {
+  caret-color: var(--dos-bright-white);
+}
