@@ -6,6 +6,13 @@ import { WorldModel } from './WorldModel';
 import { TraitType } from '../traits/trait-types';
 import { SwitchableBehavior } from '../traits/switchable/switchableBehavior';
 import { VehicleTrait } from '../traits/vehicle/vehicleTrait';
+import { findTraitWithCapability, getBehaviorForCapability } from '../capabilities';
+
+/**
+ * Standard capability ID for visibility control.
+ * Entities can claim this capability to control their own visibility.
+ */
+export const VISIBILITY_CAPABILITY = 'if.scope.visible';
 
 export class VisibilityBehavior extends Behavior {
   static requiredTraits = [];
@@ -63,10 +70,22 @@ export class VisibilityBehavior extends Behavior {
     // Can always see self
     if (observer.id === target.id) return true;
 
-    // Check if target is invisible
+    // Check if target is invisible via SceneryTrait
     const targetScenery = target.getTrait(TraitType.SCENERY);
     if (targetScenery && (targetScenery as any).visible === false) {
       return false;
+    }
+
+    // Check if target has visibility capability that blocks being seen
+    const visibilityTrait = findTraitWithCapability(target, VISIBILITY_CAPABILITY);
+    if (visibilityTrait) {
+      const behavior = getBehaviorForCapability(visibilityTrait, VISIBILITY_CAPABILITY);
+      if (behavior) {
+        const result = behavior.validate(target, world, observer.id, {});
+        if (!result.valid) {
+          return false; // Entity blocks visibility via capability
+        }
+      }
     }
 
     // Get rooms
@@ -165,12 +184,24 @@ export class VisibilityBehavior extends Behavior {
     // Add visible entities in the room
     for (const entity of roomContents) {
       if (entity.id !== observer.id && !seen.has(entity.id)) {
-        // Check if entity is visible
+        // Check if entity is visible via SceneryTrait
         const scenery = entity.getTrait(TraitType.SCENERY);
         if (scenery && (scenery as any).visible === false) {
           continue;
         }
-        
+
+        // Check if entity has visibility capability that blocks being seen
+        const visibilityTrait = findTraitWithCapability(entity, VISIBILITY_CAPABILITY);
+        if (visibilityTrait) {
+          const behavior = getBehaviorForCapability(visibilityTrait, VISIBILITY_CAPABILITY);
+          if (behavior) {
+            const result = behavior.validate(entity, world, observer.id, {});
+            if (!result.valid) {
+              continue; // Entity blocks visibility via capability
+            }
+          }
+        }
+
         visible.push(entity);
         seen.add(entity.id);
         
@@ -228,12 +259,25 @@ export class VisibilityBehavior extends Behavior {
     
     for (const entity of contents) {
       if (!seen.has(entity.id)) {
-        // Check if entity is visible
+        // Check if entity is visible via SceneryTrait
         const scenery = entity.getTrait(TraitType.SCENERY);
         if (scenery && (scenery as any).visible === false) {
           continue;
         }
-        
+
+        // Check if entity has visibility capability that blocks being seen
+        const visibilityTrait = findTraitWithCapability(entity, VISIBILITY_CAPABILITY);
+        if (visibilityTrait) {
+          const behavior = getBehaviorForCapability(visibilityTrait, VISIBILITY_CAPABILITY);
+          if (behavior) {
+            // Note: We don't have a direct observer here, use container's id as proxy
+            const result = behavior.validate(entity, world, container.id, {});
+            if (!result.valid) {
+              continue; // Entity blocks visibility via capability
+            }
+          }
+        }
+
         visible.push(entity);
         seen.add(entity.id);
         
@@ -389,10 +433,23 @@ export class VisibilityBehavior extends Behavior {
    * (used for filtering queries)
    */
   static isVisible(entity: IFEntity, world: WorldModel): boolean {
-    // Check if explicitly invisible
+    // Check if explicitly invisible via SceneryTrait
     const scenery = entity.getTrait(TraitType.SCENERY);
     if (scenery && (scenery as any).visible === false) {
       return false;
+    }
+
+    // Check if entity has visibility capability that blocks being seen
+    // Note: For isVisible we don't have an observer, so we pass empty string
+    const visibilityTrait = findTraitWithCapability(entity, VISIBILITY_CAPABILITY);
+    if (visibilityTrait) {
+      const behavior = getBehaviorForCapability(visibilityTrait, VISIBILITY_CAPABILITY);
+      if (behavior) {
+        const result = behavior.validate(entity, world, '', {});
+        if (!result.valid) {
+          return false; // Entity blocks visibility via capability
+        }
+      }
     }
 
     // Check containment path for closed opaque containers

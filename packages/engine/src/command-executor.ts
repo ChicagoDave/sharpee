@@ -30,6 +30,7 @@ import { eventSequencer } from './event-sequencer';
 import { createActionContext } from './action-context-factory';
 import {
   checkCapabilityDispatch,
+  checkCapabilityDispatchMulti,
   executeCapabilityValidate,
   executeCapabilityExecute,
   executeCapabilityReport,
@@ -164,11 +165,16 @@ export class CommandExecutor {
       }
       const actionContext = createActionContext(world, context, command, action, this.scopeResolver);
 
-      // Universal Capability Dispatch: Check if target entity has a capability for this action
+      // Universal Capability Dispatch: Check if any involved entity has a capability for this action
       // If so, the entity's behavior handles the action instead of the stdlib default
-      const capabilityCheck = checkCapabilityDispatch(
+      // Check all entities: directObject, indirectObject, and any others
+      const involvedEntities = [
+        command.directObject?.entity,
+        command.indirectObject?.entity
+      ];
+      const capabilityCheck = checkCapabilityDispatchMulti(
         command.actionId,
-        command.directObject?.entity
+        involvedEntities
       );
 
       // Run action's four phases: validate → execute → report (or blocked)
@@ -235,9 +241,13 @@ export class CommandExecutor {
             sharedData[SharedDataKeys.INFERRED_TARGET] = inferenceResult.inferredTarget;
 
             // Re-check capability dispatch for inferred target
-            const inferredCapabilityCheck = checkCapabilityDispatch(
+            const inferredInvolvedEntities = [
+              inferenceResult.inferredTarget,
+              command.indirectObject?.entity
+            ];
+            const inferredCapabilityCheck = checkCapabilityDispatchMulti(
               command.actionId,
-              inferenceResult.inferredTarget
+              inferredInvolvedEntities
             );
 
             // Re-validate with inferred target (using capability dispatch if applicable)

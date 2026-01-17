@@ -18,13 +18,27 @@ export { CapabilityBehavior, CapabilitySharedData } from './capability-behavior'
 // Registry
 export {
   TraitBehaviorBinding,
+  BehaviorRegistrationOptions,
   registerCapabilityBehavior,
   getBehaviorForCapability,
+  getBehaviorBinding,
   hasCapabilityBehavior,
   unregisterCapabilityBehavior,
   clearCapabilityRegistry,
   getAllCapabilityBindings
 } from './capability-registry';
+
+// Defaults and configuration
+export {
+  CapabilityResolution,
+  CapabilityMode,
+  CapabilityConfig,
+  defineCapabilityDefaults,
+  getCapabilityConfig,
+  hasCapabilityDefaults,
+  clearCapabilityDefaults,
+  getAllCapabilityDefaults
+} from './capability-defaults';
 
 // Helpers
 export {

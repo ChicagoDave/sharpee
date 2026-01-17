@@ -7,6 +7,21 @@
 
 import { ITrait, ITraitConstructor } from '../traits/trait';
 import { CapabilityBehavior } from './capability-behavior';
+import { CapabilityResolution, CapabilityMode } from './capability-defaults';
+
+/**
+ * Options for registering a capability behavior.
+ */
+export interface BehaviorRegistrationOptions<T extends ITrait = ITrait> {
+  /** Priority for resolution (higher = checked first). Default: 0 */
+  priority?: number;
+  /** Override global resolution strategy for this binding */
+  resolution?: CapabilityResolution;
+  /** Override global mode for this binding */
+  mode?: CapabilityMode;
+  /** Optional runtime validation */
+  validateBinding?: (trait: T) => boolean;
+}
 
 /**
  * Binding between a trait type, capability, and behavior.
@@ -18,6 +33,12 @@ export interface TraitBehaviorBinding<T extends ITrait = ITrait> {
   capability: string;
   /** The behavior that handles this trait+capability */
   behavior: CapabilityBehavior;
+  /** Priority for resolution (higher = checked first) */
+  priority: number;
+  /** Override resolution strategy (undefined = use global default) */
+  resolution?: CapabilityResolution;
+  /** Override mode (undefined = use global default) */
+  mode?: CapabilityMode;
   /** Optional runtime validation */
   validateBinding?: (trait: T) => boolean;
 }
@@ -43,14 +64,23 @@ function registryKey(traitType: string, capability: string): string {
  * @param traitType - The trait type identifier (e.g., 'dungeo.trait.basket_elevator')
  * @param capability - The action ID (e.g., 'if.action.lowering')
  * @param behavior - The behavior implementation
- * @param options - Optional configuration
+ * @param options - Optional configuration (priority, resolution override, mode override)
  *
  * @example
  * ```typescript
+ * // Basic registration (uses global defaults)
  * registerCapabilityBehavior(
  *   BasketElevatorTrait.type,
  *   'if.action.lowering',
  *   BasketLoweringBehavior
+ * );
+ *
+ * // With priority and overrides
+ * registerCapabilityBehavior(
+ *   TrollAxeTrait.type,
+ *   'if.action.taking',
+ *   TrollAxeTakingBehavior,
+ *   { priority: 100, resolution: 'any-blocks' }
  * );
  * ```
  */
@@ -58,7 +88,7 @@ export function registerCapabilityBehavior<T extends ITrait>(
   traitType: string,
   capability: string,
   behavior: CapabilityBehavior,
-  options?: { validateBinding?: (trait: T) => boolean }
+  options?: BehaviorRegistrationOptions<T>
 ): void {
   const key = registryKey(traitType, capability);
 
@@ -72,6 +102,9 @@ export function registerCapabilityBehavior<T extends ITrait>(
     traitType,
     capability,
     behavior,
+    priority: options?.priority ?? 0,
+    resolution: options?.resolution,
+    mode: options?.mode,
     validateBinding: options?.validateBinding as ((trait: ITrait) => boolean) | undefined
   });
 }
@@ -89,6 +122,24 @@ export function getBehaviorForCapability(
   trait: ITrait,
   capability: string
 ): CapabilityBehavior | undefined {
+  const binding = getBehaviorBinding(trait, capability);
+  return binding?.behavior;
+}
+
+/**
+ * Get the full binding for a trait instance and capability.
+ *
+ * Includes priority and configuration overrides. Used by dispatch helper
+ * for resolution logic.
+ *
+ * @param trait - The trait instance
+ * @param capability - The action ID
+ * @returns The binding, or undefined if not registered
+ */
+export function getBehaviorBinding(
+  trait: ITrait,
+  capability: string
+): TraitBehaviorBinding | undefined {
   const traitType = (trait.constructor as ITraitConstructor).type;
   const key = registryKey(traitType, capability);
   const binding = behaviorRegistry.get(key);
@@ -104,7 +155,7 @@ export function getBehaviorForCapability(
     );
   }
 
-  return binding.behavior;
+  return binding;
 }
 
 /**
