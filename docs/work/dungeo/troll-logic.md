@@ -427,16 +427,22 @@ Need to verify and potentially add custom message.
 | Wake up daemon (IN!) | ✅ Done | `troll-daemon.ts` counts recovery turns, triggers wake |
 | Re-block exits on wake | ✅ Done | Part of wake up daemon |
 
-### Not Implemented (No Platform Changes Needed)
+### Implemented (Session 2026-01-17 - Remaining Features)
 
-| Feature | Priority | Implementation Pattern |
-|---------|----------|----------------------|
-| **Weapon recovery (75%)** | Medium | Custom TrollBehavior `onTurn()` - check if axe in room, pick up |
-| **Disarmed cowering** | Medium | Same behavior - check inventory before attacking, emit cower message |
-| **THROW/GIVE items to troll** | Medium | Capability dispatch - troll claims `if.action.giving` + `if.action.throwing` |
-| **TAKE/MOVE troll response** | Low | Capability dispatch - troll claims `if.action.taking` on itself |
-| **Unarmed attack response** | Low | Capability dispatch - troll claims `if.action.attacking`, checks attacker weapon |
-| **HELLO to dead/unconscious troll** | Low | Capability dispatch - troll claims `if.action.talking` |
+| Feature | Status | Notes |
+|---------|--------|-------|
+| **Weapon recovery (75%)** | ✅ Done | TrollBehavior `onTurn()` - check WeaponTrait, pick up axe with 75% chance |
+| **Disarmed cowering** | ✅ Done | TrollBehavior emits cowers message when no weapon and can't recover |
+| **THROW/GIVE items to troll** | ✅ Done | Entity event handlers on troll for `if.event.given` and `if.event.thrown` |
+| **TAKE/MOVE troll response** | ⚠️ Partial | TrollTakingBehavior registered but message not rendering (language layer issue) |
+| **Unarmed attack response** | ⚠️ Partial | TrollAttackingBehavior registered but message not rendering (language layer issue) |
+| **HELLO to dead/unconscious troll** | 🚫 N/A | No grammar pattern for TALK/HELLO in parser - would need parser extension |
+
+### Known Issues
+
+**Language Layer Message Resolution**: The capability behaviors generate `action.blocked` events with story-specific messageIds (e.g., `dungeo.troll.spits_at_player`), but the text-service handler constructs a full message ID as `${actionId}.${messageId}` which doesn't match the registered messages. The messages ARE registered in the language layer, but the lookup path is incorrect. Needs investigation.
+
+**No TALK/HELLO Grammar**: The parser doesn't have patterns for "talk to X" or "hello X", so TrollTalkingBehavior can't be tested. Would need parser-en-us grammar extension.
 
 ### Implementation Plan for Remaining Features
 
@@ -507,6 +513,17 @@ None! All features implementable using existing platform capabilities:
 - `stories/dungeo/src/regions/underground.ts` - Added knockout handler, TROLLDESC/TROLLOUT constants
 - `stories/dungeo/src/index.ts` - Register daemon, add English messages
 - `stories/dungeo/tests/transcripts/troll-recovery.transcript` - Test for wake up daemon
+
+**Session 2026-01-17 (remaining troll features):**
+- `stories/dungeo/src/npcs/troll/troll-behavior.ts` - Custom NPC behavior with weapon recovery + cowering
+- `stories/dungeo/src/npcs/troll/troll-messages.ts` - Message IDs for troll interactions
+- `stories/dungeo/src/npcs/troll/index.ts` - Exports and registerTrollBehavior function
+- `stories/dungeo/src/traits/troll-trait.ts` - TrollTrait with action capabilities
+- `stories/dungeo/src/traits/troll-capability-behaviors.ts` - TrollTakingBehavior, TrollAttackingBehavior, TrollTalkingBehavior
+- `stories/dungeo/src/traits/index.ts` - Export new troll trait and behaviors
+- `stories/dungeo/src/regions/underground.ts` - Added TrollTrait, WeaponTrait to axe, event handlers for GIVE/THROW
+- `stories/dungeo/src/index.ts` - Register troll capability behaviors and NPC behavior
+- `stories/dungeo/tests/transcripts/troll-interactions.transcript` - Tests for TAKE/ATTACK troll
 
 ### Test Coverage
 

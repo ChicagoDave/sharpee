@@ -1,0 +1,80 @@
+title: Troll Player Interactions
+story: dungeo
+author: Sharpee Team
+description: Test troll-specific player action interceptions (TAKE TROLL, unarmed ATTACK)
+
+---
+
+# Navigate to house and get equipment (just lantern, no sword)
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> open window
+[OK: contains "open"]
+
+> west
+[OK: contains "Kitchen"]
+
+> west
+[OK: contains "Living Room"]
+
+# Get the lantern (no sword - needed for unarmed attack test)
+> take lantern
+[OK: contains "Taken"]
+
+> switch on lantern
+[OK: contains "on"]
+
+# Go to Troll Room
+> push rug
+[OK: contains "trap door"]
+
+> open trapdoor
+[OK: contains "open"]
+
+> down
+[OK: contains "Cellar"]
+
+> east
+[OK: contains "Troll Room"]
+[OK: contains "troll"]
+
+# Test 1: TAKE TROLL - should be blocked with spitting response
+> take troll
+[OK: contains "spits"]
+[EVENT: true, type="action.blocked"]
+
+# Test 2: ATTACK TROLL without weapon - should be mocked
+> attack troll
+[OK: contains "laughs"]
+[EVENT: true, type="action.blocked"]
+
+# Alternative: kill troll
+> kill troll
+[OK: contains "laughs"]
+[EVENT: true, type="action.blocked"]
+
+# Verify we can still fight with a weapon
+# First let's get the sword
+> west
+[OK: contains "Cellar"]
+
+> up
+[OK: contains "Living Room"]
+
+> take sword
+[OK: contains "Taken"]
+
+> down
+[OK: contains "Cellar"]
+
+> east
+[OK: contains "Troll Room"]
+
+# Now attack should work (combat system takes over, not blocked)
+# We just test that it doesn't say "laughs" anymore
+> attack troll
+[FAIL: contains "laughs"]

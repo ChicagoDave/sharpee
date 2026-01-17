@@ -24,10 +24,12 @@ import {
   LightSourceTrait,
   SwitchableTrait,
   LockableTrait,
-  StandardCapabilities
+  StandardCapabilities,
+  WeaponTrait
 } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
-import { TrollAxeTrait } from '../traits';
+import { TrollAxeTrait, TrollTrait } from '../traits';
+import { TrollMessages } from '../npcs/troll';
 
 export interface UndergroundRoomIds {
   cellar: string;
@@ -284,6 +286,24 @@ const TROLLOUT = 'An unconscious troll is sprawled on the floor. All passages ou
 const TROLL_RECOVERY_TURNS = 5;
 
 function createTrollRoomObjects(world: WorldModel, roomId: string): void {
+  // Bloody axe - create first so we have the ID for troll trait
+  // Uses TrollAxeTrait to block taking while troll is alive (ADR-090 universal dispatch)
+  const axe = world.createEntity('bloody axe', EntityType.ITEM);
+  axe.add(new IdentityTrait({
+    name: 'bloody axe',
+    aliases: ['axe', 'troll axe', 'bloody weapon'],
+    description: 'A large, bloody axe. It looks like it has seen plenty of use.',
+    properName: false,
+    article: 'a',
+    weight: 25
+  }));
+  // Mark axe as a weapon so troll recognizes it
+  axe.add(new WeaponTrait({
+    damage: 5,
+    weaponType: 'blade',
+    attackMessage: 'The troll swings the bloody axe viciously!'
+  }));
+
   // Troll NPC - blocks north passage, can be killed with sword
   const troll = world.createEntity('troll', EntityType.ACTOR);
   troll.add(new IdentityTrait({
@@ -295,7 +315,7 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
   }));
   troll.add(new ActorTrait({ isPlayer: false }));
   troll.add(new NpcTrait({
-    behaviorId: 'guard',
+    behaviorId: 'troll',  // Custom troll behavior (weapon recovery, cowering)
     isHostile: true,
     canMove: false
   }));
@@ -310,12 +330,28 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
     dropsInventory: true,
     deathMessage: 'The troll lets out a final grunt and collapses!'
   }));
+  // TrollTrait for capability dispatch (TAKE TROLL, unarmed ATTACK, TALK when incapacitated)
+  troll.add(new TrollTrait({ roomId, axeId: axe.id }));
   world.moveEntity(troll.id, roomId);
+
+  // Now complete axe setup with guardian reference
+  axe.add(new TrollAxeTrait({ guardianId: troll.id }));
+  world.moveEntity(axe.id, troll.id);
 
   // Get troll room reference for event handlers
   const trollRoom = world.getEntity(roomId);
 
-  // Event handlers for troll state changes
+  // Helper: Check if item is a knife
+  function isKnife(entity: IFEntity | undefined): boolean {
+    if (!entity) return false;
+    const identity = entity.get?.(IdentityTrait);
+    if (!identity) return false;
+    const name = identity.name?.toLowerCase() || '';
+    const aliases = (identity.aliases || []).map((a: string) => a.toLowerCase());
+    return [name, ...aliases].some(n => n.includes('knife') || n.includes('stiletto'));
+  }
+
+  // Event handlers for troll state changes and interactions
   (troll as any).on = {
     // Knocked out handler (OUT!) - MDL act1.254
     // Fires when troll is knocked unconscious via combat
@@ -366,22 +402,112 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
         narrate: true
       });
       return events;
+    },
+
+    // GIVE item TO TROLL - MDL act1.254
+    // Troll catches items: eats non-knife, throws knife back
+    'if.event.given': (event: ISemanticEvent, w: WorldModel): ISemanticEvent[] => {
+      const events: ISemanticEvent[] = [];
+      const data = event.data as { item: string; recipient: string };
+
+      // Only handle items given to this troll
+      if (data.recipient !== troll.id) return events;
+
+      const item = w.getEntity(data.item);
+      if (!item) return events;
+
+      if (isKnife(item)) {
+        // Knife: troll throws it back to the floor
+        w.moveEntity(item.id, roomId);
+        events.push({
+          id: generateEventId(),
+          type: 'game.message',
+          entities: { target: troll.id, instrument: item.id },
+          data: {
+            messageId: TrollMessages.THROWS_KNIFE_BACK,
+            itemName: item.name
+          },
+          timestamp: Date.now(),
+          narrate: true
+        });
+      } else {
+        // Non-knife: troll eats it (destroy the item)
+        // Move to 'limbo' (deleted from game world tracking)
+        (w as any).removeEntity?.(item.id) ?? w.moveEntity(item.id, 'limbo');
+        events.push({
+          id: generateEventId(),
+          type: 'game.message',
+          entities: { target: troll.id, instrument: item.id },
+          data: {
+            messageId: TrollMessages.EATS_ITEM,
+            itemName: item.name
+          },
+          timestamp: Date.now(),
+          narrate: true
+        });
+      }
+
+      return events;
+    },
+
+    // THROW item AT TROLL - MDL act1.254
+    // Same behavior as giving - troll catches items
+    'if.event.thrown': (event: ISemanticEvent, w: WorldModel): ISemanticEvent[] => {
+      const events: ISemanticEvent[] = [];
+      const data = event.data as { item: string; target?: string; throwType: string };
+
+      // Only handle items thrown at this troll
+      if (data.target !== troll.id || data.throwType !== 'at_target') return events;
+
+      const item = w.getEntity(data.item);
+      if (!item) return events;
+
+      // Troll catches it first
+      events.push({
+        id: generateEventId(),
+        type: 'game.message',
+        entities: { target: troll.id, instrument: item.id },
+        data: {
+          messageId: TrollMessages.CATCHES_ITEM,
+          itemName: item.name
+        },
+        timestamp: Date.now(),
+        narrate: true
+      });
+
+      if (isKnife(item)) {
+        // Knife: troll throws it back to the floor
+        w.moveEntity(item.id, roomId);
+        events.push({
+          id: generateEventId(),
+          type: 'game.message',
+          entities: { target: troll.id, instrument: item.id },
+          data: {
+            messageId: TrollMessages.THROWS_KNIFE_BACK,
+            itemName: item.name
+          },
+          timestamp: Date.now(),
+          narrate: true
+        });
+      } else {
+        // Non-knife: troll eats it
+        (w as any).removeEntity?.(item.id) ?? w.moveEntity(item.id, 'limbo');
+        events.push({
+          id: generateEventId(),
+          type: 'game.message',
+          entities: { target: troll.id, instrument: item.id },
+          data: {
+            messageId: TrollMessages.EATS_ITEM,
+            itemName: item.name
+          },
+          timestamp: Date.now(),
+          narrate: true
+        });
+      }
+
+      return events;
     }
   };
-
-  // Bloody axe - in troll's inventory, drops when killed
-  // Uses TrollAxeTrait to block taking while troll is alive (ADR-090 universal dispatch)
-  const axe = world.createEntity('bloody axe', EntityType.ITEM);
-  axe.add(new IdentityTrait({
-    name: 'bloody axe',
-    aliases: ['axe', 'troll axe', 'bloody weapon'],
-    description: 'A large, bloody axe. It looks like it has seen plenty of use.',
-    properName: false,
-    article: 'a',
-    weight: 25
-  }));
-  axe.add(new TrollAxeTrait({ guardianId: troll.id }));
-  world.moveEntity(axe.id, troll.id);
 }
 
 // ============= Gallery Objects =============

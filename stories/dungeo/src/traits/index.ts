@@ -30,3 +30,17 @@ export {
   TrollAxeVisibilityBehavior,
   TrollAxeMessages
 } from './troll-axe-behaviors';
+
+// Troll NPC trait and behaviors
+export {
+  TrollTrait,
+  TrollTraitConfig,
+  TrollTraitConstructor
+} from './troll-trait';
+
+export {
+  TrollTakingBehavior,
+  TrollAttackingBehavior,
+  TrollTalkingBehavior,
+  TrollCapabilityMessages
+} from './troll-capability-behaviors';
