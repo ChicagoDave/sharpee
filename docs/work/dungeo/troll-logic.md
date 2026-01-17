@@ -467,8 +467,8 @@ This extends ADR-090's capability dispatch to work WITH standard actions, not ju
 - [ ] Add capability check to throwing action validate phase
 
 ### Story TODO (Dungeo)
+- [x] Create TrollAxeTrait + TrollAxeTakingBehavior (white-hot)
 - [ ] Create TrollTrait (state, descriptions, room/axe references)
-- [ ] Create TrollAxeTrait + TrollAxeTakingBehavior (white-hot)
 - [ ] Update troll description on unconscious (TROLLOUT)
 - [ ] Update troll description on death
 - [ ] Re-block exit if troll wakes up (IN! handler)
@@ -478,3 +478,55 @@ This extends ADR-090's capability dispatch to work WITH standard actions, not ju
 - [ ] Create TrollGivingBehavior (eats items, knife special case)
 - [ ] Create TrollThrowingBehavior (catches items)
 - [ ] Add all troll messages to lang-en-us
+
+---
+
+## Current Implementation Gap Analysis (2026-01-17)
+
+### Implemented
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Axe "white-hot" blocking | ✅ Done | TrollAxeTrait + TrollAxeTakingBehavior via Universal Capability Dispatch |
+| Death handling | ✅ Done | Exit unblocks, +10 score, inventory drops |
+| Combat with troll | ✅ Done | Guard behavior, combat messages |
+| Exit blocking when alive | ✅ Done | RoomBehavior.blockExit on north exit |
+
+### Not Implemented
+
+| Feature | Priority | Blocking Issue |
+|---------|----------|----------------|
+| **Unconscious state (OUT!)** | High | Need to differentiate knockOut from death |
+| **Axe hidden when unconscious** | High | Needs `isHidden` platform change or limbo workaround |
+| **Dynamic descriptions (TROLLDESC ↔ TROLLOUT)** | High | Need state change handlers |
+| **Wake up daemon (IN!)** | High | Need daemon to count turns and trigger wake |
+| **Re-block exits on wake** | High | Part of IN! handler |
+| **Weapon recovery (75%)** | Medium | Troll NPC behavior tick phase |
+| **Disarmed cowering** | Medium | Check inventory in guard behavior |
+| **THROW/GIVE items to troll** | Medium | Need TrollGivingBehavior + TrollThrowingBehavior |
+| **TAKE/MOVE troll response** | Low | Custom message for attempting to take actor |
+| **Unarmed attack response** | Low | "laughs at puny gesture" when attacking without weapon |
+| **HELLO to dead/unconscious troll** | Low | Custom talking response |
+
+### Platform Changes Still Needed
+
+| Change | Impact | Benefit |
+|--------|--------|---------|
+| Add `isHidden` to IdentityTrait | Small | Hide axe when troll unconscious without moving to limbo |
+| Scope check for `isHidden` flag | Small | Exclude hidden items from parser scope |
+
+### Files Created This Session
+
+- `stories/dungeo/src/traits/troll-axe-trait.ts` - Trait with guardianId config
+- `stories/dungeo/src/traits/troll-axe-behaviors.ts` - Validate/execute/report/blocked phases
+- `stories/dungeo/tests/transcripts/troll-axe.transcript` - Test for white-hot blocking
+
+### Test Coverage
+
+```
+> take axe (troll alive)
+"The troll's axe seems white-hot. You can't hold on to it."  ✅
+
+> take axe (troll dead)
+"Taken."  ✅
+```

@@ -17,3 +17,16 @@ export {
   BasketRaisingBehavior,
   BasketElevatorMessages
 } from './basket-elevator-behaviors';
+
+// Troll Axe (guardian-blocked taking)
+export {
+  TrollAxeTrait,
+  TrollAxeConfig,
+  TrollAxeTraitConstructor
+} from './troll-axe-trait';
+
+export {
+  TrollAxeTakingBehavior,
+  TrollAxeVisibilityBehavior,
+  TrollAxeMessages
+} from './troll-axe-behaviors';

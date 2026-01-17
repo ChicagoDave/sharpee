@@ -1,0 +1,61 @@
+# Test: Troll Axe Visibility via Capability Dispatch
+# Tests that the axe is hidden when troll is unconscious (via if.scope.visible capability)
+#
+# This verifies the generic capability dispatch for visibility works correctly.
+
+# Get to the Troll Room
+> GDT
+[GDT Mode activated]
+
+> AH troll-room
+[Teleported]
+
+> look
+~ Troll Room
+~ bloody axe
+~ troll
+
+# Verify axe is mentioned while troll is conscious
+> examine axe
+~ bloody axe
+
+# Knock out the troll - should hide the axe
+> KO troll
+~ Knocked out
+~ isConscious: false
+
+# Now look again - axe should NOT be visible
+> look
+~ Troll Room
+~ troll
+!~ bloody axe
+
+# Try to take the axe - should fail since it's not visible
+> take axe
+~ can't see
+
+# Wake up the troll - axe should reappear
+> WU troll
+~ Woke up
+~ isConscious: true
+
+# Axe should be visible again
+> look
+~ bloody axe
+
+# But still can't take it (white-hot)
+> take axe
+~ white-hot
+
+# Kill the troll - axe becomes takeable
+> KL troll
+~ Killed
+
+> take axe
+~ Taken
+
+> inventory
+~ bloody axe
+
+> EX
+[Exiting GDT Mode]

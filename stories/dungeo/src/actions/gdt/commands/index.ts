@@ -37,6 +37,9 @@ import { tqHandler } from './tq';
 import { dlHandler } from './dl';
 // Phase 8 - Kill command
 import { klHandler, setEngineForKL } from './kl';
+// Phase 9 - Knock out / Wake up commands
+import { koHandler } from './ko';
+import { wuHandler } from './wu';
 
 /**
  * Registry of all GDT command handlers
@@ -84,6 +87,10 @@ handlers.set('DL', dlHandler);
 
 // Register Phase 8 - Kill command
 handlers.set('KL', klHandler);
+
+// Register Phase 9 - Knock out / Wake up commands
+handlers.set('KO', koHandler);
+handlers.set('WU', wuHandler);
 
 /**
  * Get a command handler by code
@@ -157,3 +164,5 @@ export { pzHandler } from './pz';
 export { tqHandler } from './tq';
 export { dlHandler } from './dl';
 export { klHandler, setEngineForKL } from './kl';
+export { koHandler } from './ko';
+export { wuHandler } from './wu';

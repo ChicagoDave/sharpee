@@ -27,6 +27,7 @@ import {
   StandardCapabilities
 } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
+import { TrollAxeTrait } from '../traits';
 
 export interface UndergroundRoomIds {
   cellar: string;
@@ -331,6 +332,7 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
   };
 
   // Bloody axe - in troll's inventory, drops when killed
+  // Uses TrollAxeTrait to block taking while troll is alive (ADR-090 universal dispatch)
   const axe = world.createEntity('bloody axe', EntityType.ITEM);
   axe.add(new IdentityTrait({
     name: 'bloody axe',
@@ -340,6 +342,7 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
     article: 'a',
     weight: 25
   }));
+  axe.add(new TrollAxeTrait({ guardianId: troll.id }));
   world.moveEntity(axe.id, troll.id);
 }
 

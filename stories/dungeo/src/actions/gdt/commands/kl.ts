@@ -6,7 +6,7 @@
  */
 
 import { GDTCommandHandler, GDTContext, GDTCommandResult } from '../types';
-import { IdentityTrait } from '@sharpee/world-model';
+import { IdentityTrait, CombatantTrait, TraitType } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
 
 // Store engine reference for event processing
@@ -35,16 +35,39 @@ export const klHandler: GDTCommandHandler = {
 
     const targetName = args.join(' ').toLowerCase();
 
-    // Find the entity
+    // Find the entity - prioritize actors/NPCs for KL command
     const allEntities = world.getAllEntities();
     let targetEntity = null;
 
     // First try exact ID match
     targetEntity = allEntities.find(e => e.id.toLowerCase() === targetName);
 
-    // Then try name match
+    // Then try exact name match on actors (NPCs)
     if (!targetEntity) {
       targetEntity = allEntities.find(e => {
+        if (!e.has('actor')) return false;  // Prefer actors
+        const identity = e.get(IdentityTrait);
+        if (!identity) return false;
+        const name = identity.name?.toLowerCase() || '';
+        return name === targetName;
+      });
+    }
+
+    // Then try partial name match on actors
+    if (!targetEntity) {
+      targetEntity = allEntities.find(e => {
+        if (!e.has('actor')) return false;  // Prefer actors
+        const identity = e.get(IdentityTrait);
+        if (!identity) return false;
+        const name = identity.name?.toLowerCase() || '';
+        return name.includes(targetName);
+      });
+    }
+
+    // Fall back to any non-room entity with matching name
+    if (!targetEntity) {
+      const nonRoomEntities = allEntities.filter(e => !e.has('room'));
+      targetEntity = nonRoomEntities.find(e => {
         const identity = e.get(IdentityTrait);
         if (!identity) return false;
         const name = identity.name?.toLowerCase() || '';
@@ -84,6 +107,12 @@ export const klHandler: GDTCommandHandler = {
     // Mark entity as dead
     (targetEntity as any).isDead = true;
     (targetEntity as any).isAlive = false;
+
+    // Also update CombatantTrait if present
+    const combatant = targetEntity.get<CombatantTrait>(TraitType.COMBATANT);
+    if (combatant) {
+      combatant.kill();
+    }
 
     // Process through event processor if engine is available
     if (storedEngine) {

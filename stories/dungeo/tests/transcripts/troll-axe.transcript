@@ -1,0 +1,76 @@
+title: Troll Axe Taking
+story: dungeo
+author: Sharpee Team
+description: Test that the troll's axe cannot be taken while troll is alive (white-hot), but can be taken after troll dies
+
+---
+
+# Navigate to house and get equipment
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> open window
+[OK: contains "open"]
+
+> west
+[OK: contains "Kitchen"]
+
+> west
+[OK: contains "Living Room"]
+
+# Get the lantern, sword, and turn on lantern
+> take lantern
+[OK: contains "Taken"]
+
+> take sword
+[OK: contains "Taken"]
+
+> switch on lantern
+[OK: contains "on"]
+
+# Go to Troll Room
+> push rug
+[OK: contains "trap door"]
+
+> open trapdoor
+[OK: contains "open"]
+
+> down
+[OK: contains "Cellar"]
+
+> east
+[OK: contains "Troll Room"]
+[OK: contains "troll"]
+
+# Try to take the axe while troll is alive - should fail with white-hot message
+# The axe is in the troll's inventory but should be reachable
+> take axe
+[OK: contains "white-hot"]
+[FAIL: contains "Taken"]
+[EVENT: true, type="action.blocked"]
+
+# Use GDT to reliably kill the troll (combat is randomized)
+> gdt
+[OK: contains "GDT"]
+
+> kl troll
+[OK: contains "Killed"]
+
+> ex
+[OK: contains "Returning to game"]
+
+# Check that the axe dropped from troll's inventory
+> look
+[OK: contains "Troll Room"]
+
+# Now try to take the axe - should succeed since troll is dead
+> take axe
+[OK: contains "Taken"]
+[EVENT: true, type="if.event.taken"]
+
+# Verify it's in our inventory
+> i
+[OK: contains "axe"]

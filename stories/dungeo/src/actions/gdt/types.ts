@@ -59,7 +59,10 @@ export type GDTCommandCode =
   // Trivia debug
   | 'TQ' // Trivia Questions
   // Kill entity
-  | 'KL'; // Kill
+  | 'KL' // Kill
+  // Knock out / Wake up
+  | 'KO' // Knock Out (unconscious)
+  | 'WU'; // Wake Up
 
 /**
  * Parsed GDT command

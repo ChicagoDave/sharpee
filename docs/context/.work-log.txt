@@ -1,54 +1,3 @@
-[00:05:20] WRITE: packages/stdlib/src/actions/standard/version/version-events.ts
-[00:05:21] WRITE: packages/stdlib/src/actions/standard/version/version.ts
-[00:05:21] WRITE: packages/stdlib/src/actions/standard/version/index.ts
-[00:05:32] EDIT: packages/stdlib/src/actions/standard/index.ts
-[00:05:39] EDIT: packages/stdlib/src/actions/standard/index.ts
-[00:05:44] EDIT: packages/stdlib/src/actions/standard/index.ts
-[00:06:15] WRITE: packages/lang-en-us/src/actions/version.ts
-[00:06:20] EDIT: packages/lang-en-us/src/actions/index.ts
-[00:06:25] EDIT: packages/lang-en-us/src/actions/index.ts
-[00:06:41] EDIT: packages/lang-en-us/src/actions/index.ts
-[00:08:30] EDIT: packages/stdlib/src/actions/standard/version/version.ts
-[00:08:36] EDIT: packages/stdlib/src/actions/standard/version/version-events.ts
-[00:08:49] WRITE: stories/dungeo/src/version.ts
-[00:09:14] EDIT: scripts/bundle-sharpee.sh
-[00:09:42] EDIT: stories/dungeo/src/index.ts
-[00:09:47] EDIT: stories/dungeo/src/index.ts
-[00:09:58] EDIT: stories/dungeo/src/index.ts
-[00:18:15] WRITE: stories/dungeo/tests/transcripts/version.transcript
-[00:18:55] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[00:20:16] EDIT: stories/dungeo/tests/transcripts/version.transcript
-[00:20:52] EDIT: stories/dungeo/tests/transcripts/version.transcript
-[00:35:34] WRITE: docs/work/dungeo/context/2026-01-17-version-command.md
-[01:02:17] EDIT: stories/dungeo/src/index.ts
-[01:02:23] EDIT: stories/dungeo/src/index.ts
-[01:02:29] EDIT: stories/dungeo/src/index.ts
-[01:04:58] EDIT: packages/stdlib/src/npc/npc-service.ts
-[01:05:08] EDIT: packages/lang-en-us/src/npc/npc.ts
-[01:06:11] EDIT: packages/lang-en-us/src/language-provider.ts
-[01:06:16] EDIT: packages/lang-en-us/src/language-provider.ts
-[01:06:25] EDIT: packages/lang-en-us/src/language-provider.ts
-[01:32:06] EDIT: packages/lang-en-us/src/npc/npc.ts
-[01:36:42] WRITE: docs/work/dungeo/context/2026-01-17-troll-combat-messages.md
-[01:39:06] GIT: git reset HEAD stories/dungeo/test-blocking.js && git commit -m "$(cat <<'EOF'
-f
-[01:39:17] GIT: git push origin dungeo
-[01:49:22] EDIT: packages/stdlib/src/combat/combat-service.ts
-[01:49:33] EDIT: packages/stdlib/src/combat/index.ts
-[01:49:47] EDIT: packages/stdlib/src/actions/standard/attacking/attacking.ts
-[01:52:51] WRITE: docs/work/dungeo/troll-logic.md
-[02:08:07] EDIT: docs/work/dungeo/troll-logic.md
-[02:19:22] EDIT: docs/work/dungeo/troll-logic.md
-[02:19:42] EDIT: docs/work/dungeo/troll-logic.md
-[02:19:57] EDIT: docs/work/dungeo/troll-logic.md
-[02:20:26] EDIT: CLAUDE.md
-[02:44:44] WRITE: docs/design/sharpee-dispatch-wp.md
-[02:48:53] WRITE: docs/context/session-20260117-0139-dungeo.md
-[02:49:34] GIT: git commit -m "$(cat <<'EOF'
-feat: Add inventory dropping on NPC death and capab
-[02:49:43] GIT: git push
-[03:00:24] WRITE: packages/engine/src/capability-dispatch-helper.ts
-[03:00:42] EDIT: packages/engine/src/command-executor.ts
 [03:00:51] EDIT: packages/engine/src/command-executor.ts
 [03:01:08] EDIT: packages/engine/src/command-executor.ts
 [03:01:22] EDIT: packages/engine/src/command-executor.ts
@@ -56,3 +5,74 @@ feat: Add inventory dropping on NPC death and capab
 [03:07:03] WRITE: packages/engine/tests/universal-capability-dispatch.test.ts
 [03:08:08] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/engine' test universal-capability-dispatch 2>&1 | head -
 [03:28:54] WRITE: docs/context/session-20260117-0324-unidispatch.md
+[03:41:01] GIT: git push && git stash drop
+[04:02:02] WRITE: stories/dungeo/src/traits/troll-axe-trait.ts
+[04:03:10] WRITE: stories/dungeo/src/traits/troll-axe-behaviors.ts
+[04:03:46] EDIT: stories/dungeo/src/regions/underground.ts
+[04:03:56] EDIT: stories/dungeo/src/regions/underground.ts
+[04:04:15] EDIT: stories/dungeo/src/traits/index.ts
+[04:04:47] EDIT: stories/dungeo/src/index.ts
+[04:05:21] EDIT: stories/dungeo/src/index.ts
+[04:05:29] EDIT: stories/dungeo/src/index.ts
+[04:08:19] WRITE: stories/dungeo/tests/transcripts/troll-axe.transcript
+[04:09:40] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[04:11:01] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[04:12:22] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[04:16:26] EDIT: stories/dungeo/src/traits/troll-axe-behaviors.ts
+[04:16:34] EDIT: stories/dungeo/src/traits/troll-axe-behaviors.ts
+[04:19:10] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[04:20:26] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[04:21:05] EDIT: stories/dungeo/src/traits/troll-axe-behaviors.ts
+[04:23:54] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[04:24:16] EDIT: stories/dungeo/tests/transcripts/troll-axe.transcript
+[04:25:20] EDIT: stories/dungeo/src/actions/gdt/commands/kl.ts
+[04:25:27] EDIT: stories/dungeo/src/actions/gdt/commands/kl.ts
+[04:25:42] EDIT: stories/dungeo/tests/transcripts/troll-axe.transcript
+[04:28:21] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[04:29:48] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[04:30:24] EDIT: stories/dungeo/src/actions/gdt/commands/kl.ts
+[04:33:04] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[04:33:27] EDIT: stories/dungeo/src/actions/gdt/commands/kl.ts
+[04:36:08] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[04:36:26] EDIT: stories/dungeo/tests/transcripts/troll-axe.transcript
+[04:36:32] EDIT: stories/dungeo/tests/transcripts/troll-axe.transcript
+[04:37:38] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[04:38:51] WRITE: docs/context/session-20260117-0357-dungeo.md
+[12:20:56] EDIT: docs/work/dungeo/troll-logic.md
+[12:36:30] WRITE: docs/work/dungeo/generic-dispatch.md
+[13:19:37] EDIT: docs/work/dungeo/generic-dispatch.md
+[13:21:18] WRITE: packages/world-model/src/capabilities/capability-defaults.ts
+[13:21:28] EDIT: packages/world-model/src/capabilities/capability-registry.ts
+[13:21:37] EDIT: packages/world-model/src/capabilities/capability-registry.ts
+[13:21:50] EDIT: packages/world-model/src/capabilities/capability-registry.ts
+[13:22:01] EDIT: packages/world-model/src/capabilities/capability-registry.ts
+[13:22:13] EDIT: packages/world-model/src/capabilities/index.ts
+[13:22:35] EDIT: packages/engine/src/capability-dispatch-helper.ts
+[13:22:46] EDIT: packages/engine/src/capability-dispatch-helper.ts
+[13:23:03] EDIT: packages/engine/src/capability-dispatch-helper.ts
+[13:23:24] EDIT: packages/engine/src/capability-dispatch-helper.ts
+[13:23:47] EDIT: packages/engine/src/command-executor.ts
+[13:23:55] EDIT: packages/engine/src/command-executor.ts
+[13:24:13] EDIT: packages/engine/src/command-executor.ts
+[13:24:25] EDIT: packages/world-model/src/world/VisibilityBehavior.ts
+[13:24:36] EDIT: packages/world-model/src/world/VisibilityBehavior.ts
+[13:24:45] EDIT: packages/world-model/src/world/VisibilityBehavior.ts
+[13:24:53] EDIT: packages/world-model/src/world/VisibilityBehavior.ts
+[13:25:09] EDIT: packages/world-model/src/world/VisibilityBehavior.ts
+[13:32:44] GIT: git commit -m "$(cat <<'EOF'
+feat: Add generic capability dispatch with declarat
+[13:38:01] GIT: git checkout dungeo && git merge generic-dispatch --no-edit
+[13:38:24] EDIT: stories/dungeo/src/traits/troll-axe-trait.ts
+[13:38:30] EDIT: stories/dungeo/src/traits/troll-axe-trait.ts
+[13:38:46] EDIT: stories/dungeo/src/traits/troll-axe-behaviors.ts
+[13:38:58] EDIT: stories/dungeo/src/traits/index.ts
+[13:39:40] EDIT: stories/dungeo/src/index.ts
+[13:39:53] EDIT: stories/dungeo/src/index.ts
+[13:40:25] WRITE: stories/dungeo/src/actions/gdt/commands/ko.ts
+[13:40:39] WRITE: stories/dungeo/src/actions/gdt/commands/wu.ts
+[13:40:52] EDIT: stories/dungeo/src/actions/gdt/commands/index.ts
+[13:40:59] EDIT: stories/dungeo/src/actions/gdt/commands/index.ts
+[13:41:05] EDIT: stories/dungeo/src/actions/gdt/commands/index.ts
+[13:44:02] EDIT: stories/dungeo/src/actions/gdt/types.ts
+[13:45:43] WRITE: stories/dungeo/tests/transcripts/troll-visibility.transcript
+[13:48:45] WRITE: docs/context/session-20260117-1223-dungeo.md
