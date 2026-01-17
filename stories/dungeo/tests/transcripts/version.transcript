@@ -1,0 +1,13 @@
+title: Version Command Test
+story: dungeo
+description: Test the VERSION meta command
+
+---
+
+# Test the VERSION command
+# Should display story version, engine version, and build date
+
+> version
+[OK: contains "DUNGEO v"]
+[OK: contains "Sharpee Engine v"]
+[OK: contains "Built:"]

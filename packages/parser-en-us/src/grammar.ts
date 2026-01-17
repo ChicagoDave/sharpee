@@ -471,12 +471,37 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .withPriority(110)
     .build(); // Higher priority than simple cut
 
-  // Attacking with weapon
+  // Attacking - simple patterns (ADR-087: using forAction)
+  grammar
+    .forAction('if.action.attacking')
+    .verbs(['attack', 'kill', 'fight', 'slay', 'murder', 'hit', 'strike'])
+    .pattern(':target')
+    .build();
+
+  // Attacking with weapon (higher priority than simple attack)
   grammar
     .define('attack :target with :weapon')
     .mapsTo('if.action.attacking')
     .withPriority(110)
-    .build(); // Higher priority than simple attack
+    .build();
+
+  grammar
+    .define('kill :target with :weapon')
+    .mapsTo('if.action.attacking')
+    .withPriority(110)
+    .build();
+
+  grammar
+    .define('hit :target with :weapon')
+    .mapsTo('if.action.attacking')
+    .withPriority(110)
+    .build();
+
+  grammar
+    .define('strike :target with :weapon')
+    .mapsTo('if.action.attacking')
+    .withPriority(110)
+    .build();
 
   // Digging with tool
   grammar

@@ -71,6 +71,7 @@ export * from './sleeping';
 export * from './scoring';
 export * from './help';
 export * from './about';
+export * from './version';
 export * from './saving';
 export * from './restoring';
 export * from './quitting';
@@ -124,6 +125,7 @@ import { sleepingLanguage } from './sleeping';
 import { scoringLanguage } from './scoring';
 import { helpLanguage } from './help';
 import { aboutLanguage } from './about';
+import { versionLanguage } from './version';
 import { savingLanguage } from './saving';
 import { restoringLanguage } from './restoring';
 import { quittingLanguage } from './quitting';
@@ -200,6 +202,7 @@ export const standardActionLanguage = [
   scoringLanguage,
   helpLanguage,
   aboutLanguage,
+  versionLanguage,
   savingLanguage,
   restoringLanguage,
   quittingLanguage,

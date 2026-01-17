@@ -5,7 +5,7 @@
  */
 
 import { ISemanticEvent, EntityId, SeededRandom } from '@sharpee/core';
-import { IFEntity, WorldModel, TraitType, NpcTrait } from '@sharpee/world-model';
+import { IFEntity, WorldModel, TraitType, NpcTrait, CombatantTrait } from '@sharpee/world-model';
 import {
   NpcBehavior,
   NpcContext,
@@ -13,6 +13,7 @@ import {
   Direction,
 } from './types';
 import { NpcMessages } from './npc-messages';
+import { CombatService, applyCombatResult, findWieldedWeapon, CombatMessages } from '../combat';
 
 /**
  * Context for NPC tick (simplified version of SchedulerContext)
@@ -582,17 +583,76 @@ export class NpcService implements INpcService {
     world: WorldModel,
     random: SeededRandom
   ): ISemanticEvent[] {
-    // Basic attack - combat service will handle detailed logic
-    return [
-      createEvent(
+    const target = world.getEntity(targetId);
+    if (!target) return [];
+
+    const events: ISemanticEvent[] = [];
+
+    // Check if target is a combatant
+    if (target.has(TraitType.COMBATANT)) {
+      // Use CombatService for actual combat resolution
+      const combatService = new CombatService();
+
+      // Find NPC's weapon (if any)
+      const npcInventory = world.getContents(npc.id);
+      const weapon = findWieldedWeapon(npc, world) ||
+        npcInventory.find(item => (item as any).isWeapon);
+
+      const combatResult = combatService.resolveAttack({
+        attacker: npc,
+        target: target,
+        weapon: weapon,
+        world: world,
+        random: random
+      });
+
+      // Apply combat result to target
+      applyCombatResult(target, combatResult, world);
+
+      // Emit attack event with combat result
+      // Use NPC-specific message IDs (prefix with 'npc.')
+      const npcMessageId = combatResult.messageId.replace('combat.attack.', 'npc.combat.attack.');
+      events.push(createEvent(
+        'npc.attacked',
+        {
+          npc: npc.id,
+          npcName: npc.name,
+          target: targetId,
+          targetName: target.name,
+          hit: combatResult.hit,
+          damage: combatResult.damage,
+          messageId: npcMessageId,
+          targetKilled: combatResult.targetKilled,
+          targetKnockedOut: combatResult.targetKnockedOut,
+        },
+        npc.id
+      ));
+
+      // If target was killed, emit death event
+      if (combatResult.targetKilled) {
+        events.push(createEvent(
+          'if.event.death',
+          {
+            target: targetId,
+            targetName: target.name,
+            killedBy: npc.id
+          },
+          npc.id
+        ));
+      }
+    } else {
+      // Non-combatant target - just emit basic attack event
+      events.push(createEvent(
         'npc.attacked',
         {
           npc: npc.id,
           target: targetId,
         },
         npc.id
-      ),
-    ];
+      ));
+    }
+
+    return events;
   }
 }
 

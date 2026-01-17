@@ -91,21 +91,15 @@ export function createHouseInteriorRegion(world: WorldModel): HouseInteriorRoomI
 
 /**
  * Connect House Interior to White House exterior
+ * Note: Kitchen↔Behind House exits are set in createWhiteHouseObjects with
+ * the window as `via` - going action checks if window is open.
  */
 export function connectHouseInteriorToExterior(
-  world: WorldModel,
-  interiorIds: HouseInteriorRoomIds,
-  behindHouseId: string
+  _world: WorldModel,
+  _interiorIds: HouseInteriorRoomIds,
+  _behindHouseId: string
 ): void {
-  const kitchen = world.getEntity(interiorIds.kitchen);
-  if (kitchen) {
-    kitchen.get(RoomTrait)!.exits[Direction.EAST] = { destination: behindHouseId };
-  }
-
-  const behindHouse = world.getEntity(behindHouseId);
-  if (behindHouse) {
-    behindHouse.get(RoomTrait)!.exits[Direction.WEST] = { destination: interiorIds.kitchen };
-  }
+  // Exits now wired through window in createWhiteHouseObjects
 }
 
 // ============================================================================

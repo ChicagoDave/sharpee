@@ -21,6 +21,7 @@ export * from './sleeping';
 export * from './scoring';
 export * from './help';
 export * from './about';
+export * from './version';
 export * from './locking';
 export * from './unlocking';
 export * from './switching_on';
@@ -89,6 +90,7 @@ import { sleepingAction } from './sleeping'; // Now from folder
 import { scoringAction } from './scoring'; // Now from folder
 import { helpAction } from './help'; // Now from folder
 import { aboutAction } from './about'; // Now from folder
+import { versionAction } from './version'; // Now from folder
 import { lockingAction } from './locking'; // Now from folder
 import { unlockingAction } from './unlocking'; // Now from folder
 import { switchingOnAction } from './switching_on'; // Now from folder
@@ -148,6 +150,7 @@ export const standardActions = [
   scoringAction,
   helpAction,
   aboutAction,
+  versionAction,
   lockingAction,
   unlockingAction,
   switchingOnAction,
