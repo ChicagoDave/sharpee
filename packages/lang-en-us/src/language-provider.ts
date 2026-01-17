@@ -48,9 +48,28 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
   constructor() {
     // Initialize formatter registry
     this.formatterRegistry = createFormatterRegistry();
+    // Load core system messages
+    this.loadCoreMessages();
     // Load all action messages
     this.loadActionMessages();
     // NPC messages are injected at runtime by the story + engine (ADR-070)
+  }
+
+  /**
+   * Load core system messages (command failures, etc.)
+   * These are used by text-service for command.failed events
+   */
+  private loadCoreMessages(): void {
+    const coreMessages: Record<string, string> = {
+      'core.entity_not_found': "You can't see any such thing.",
+      'core.ambiguous_reference': "Which do you mean?",
+      'core.command_not_understood': "I don't understand that command.",
+      'core.command_failed': "I don't understand that.",
+    };
+
+    for (const [key, value] of Object.entries(coreMessages)) {
+      this.messages.set(key, value);
+    }
   }
 
   /**

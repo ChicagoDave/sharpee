@@ -1,54 +1,3 @@
-refactor(engine): Phase 1 dead code removal
-
-Remove
-[15:44:47] GIT: git push -u origin engine
-[15:49:05] WRITE: packages/engine/src/parser-interface.ts
-[15:49:32] EDIT: packages/engine/src/command-executor.ts
-[15:49:38] EDIT: packages/engine/src/command-executor.ts
-[15:49:47] EDIT: packages/engine/src/game-engine.ts
-[15:49:57] EDIT: packages/engine/src/parser-interface.ts
-[15:50:03] EDIT: packages/engine/src/game-engine.ts
-[15:50:12] EDIT: packages/engine/src/game-engine.ts
-[15:50:23] EDIT: packages/engine/src/game-engine.ts
-[15:50:32] EDIT: packages/engine/src/game-engine.ts
-[15:50:47] EDIT: packages/engine/src/game-engine.ts
-[15:51:05] EDIT: packages/engine/src/index.ts
-[15:51:48] WRITE: packages/engine/src/shared-data-keys.ts
-[15:51:58] EDIT: packages/engine/src/command-executor.ts
-[15:52:04] EDIT: packages/engine/src/command-executor.ts
-[15:52:16] EDIT: packages/engine/src/action-context-factory.ts
-[15:52:27] EDIT: packages/engine/src/action-context-factory.ts
-[15:52:37] EDIT: packages/engine/src/action-context-factory.ts
-[15:52:43] EDIT: packages/engine/src/index.ts
-[15:52:59] EDIT: packages/engine/src/types.ts
-[15:53:04] EDIT: packages/engine/src/types.ts
-[15:54:33] EDIT: packages/engine/src/action-context-factory.ts
-[15:55:03] EDIT: packages/engine/src/shared-data-keys.ts
-[15:55:15] EDIT: packages/engine/src/game-engine.ts
-[15:56:14] EDIT: packages/engine/src/game-engine.ts
-[15:56:25] EDIT: packages/engine/src/game-engine.ts
-[16:01:16] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all | tail -20
-[16:02:28] WRITE: docs/context/session-20260116-1545-engine.md
-[16:11:28] EDIT: packages/engine/src/event-adapter.ts
-[16:11:43] EDIT: packages/text-service/src/text-service.ts
-[16:11:59] EDIT: packages/text-service/src/handlers/room.ts
-[16:13:46] EDIT: packages/engine/src/event-adapter.ts
-[16:14:04] EDIT: packages/engine/src/event-adapter.ts
-[16:15:29] EDIT: packages/engine/src/event-adapter.ts
-[16:15:37] EDIT: packages/engine/src/event-adapter.ts
-[16:16:42] WRITE: packages/engine/src/event-adapter.ts
-[16:21:13] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all | tail -15
-[16:21:50] WRITE: docs/context/session-20260116-1545-engine.md
-[16:25:10] GIT: git commit -m "$(cat <<'EOF'
-refactor(engine): Phase 2 type safety + Phase 3 eve
-[16:25:20] GIT: git push origin engine
-[16:30:10] WRITE: docs/context/session-20260116-1626-engine.md
-[16:30:32] WRITE: packages/engine/src/vocabulary-manager.ts
-[16:32:04] WRITE: packages/engine/src/save-restore-service.ts
-[16:32:45] WRITE: packages/engine/src/turn-event-processor.ts
-[16:33:33] WRITE: packages/engine/src/platform-operations.ts
-[16:33:57] EDIT: packages/engine/src/game-engine.ts
-[16:34:05] EDIT: packages/engine/src/game-engine.ts
 [16:34:16] EDIT: packages/engine/src/game-engine.ts
 [16:35:12] EDIT: packages/engine/src/game-engine.ts
 [16:35:44] EDIT: packages/engine/src/game-engine.ts
@@ -80,3 +29,32 @@ refac
 [17:43:22] EDIT: docs/context/session-20260116-1626-engine.md
 [17:43:42] GIT: git add docs/context/session-20260116-1626-engine.md && git commit -m "$(cat <<'
 [17:51:57] WRITE: docs/work/engine/context/phases-4-5-6-complete.md
+[17:52:47] GIT: git add docs/work/engine/context/phases-4-5-6-complete.md docs/context/.work-log
+[18:09:46] EDIT: packages/lang-en-us/src/language-provider.ts
+[18:09:57] EDIT: packages/lang-en-us/src/data/templates.ts
+[18:18:03] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[18:19:21] WRITE: packages/lang-en-us/src/actions/reading.ts
+[18:19:28] EDIT: packages/lang-en-us/src/actions/index.ts
+[18:19:34] EDIT: packages/lang-en-us/src/actions/index.ts
+[18:19:39] EDIT: packages/lang-en-us/src/actions/index.ts
+[18:19:49] EDIT: stories/dungeo/tests/transcripts/implicit-take-test.transcript
+[18:25:55] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[18:26:52] EDIT: packages/lang-en-us/src/actions/reading.ts
+[18:27:03] EDIT: packages/text-service/src/text-service.ts
+[18:27:14] EDIT: packages/lang-en-us/src/data/templates.ts
+[18:32:56] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[18:33:31] EDIT: packages/text-service/src/stages/sort.ts
+[18:38:33] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[18:39:44] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[18:43:01] TRANSCRIPT FAIL: echo -e 'read it\nopen mailbox\nread it\ni\nget mat\nread it' > /tmp/test-pronou
+[18:43:11] WRITE: /tmp/test-pronoun.transcript
+[18:44:19] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo /tmp/test-pronoun.tra
+[18:45:49] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&1 | tail -30
+[18:46:52] EDIT: packages/stdlib/src/inference/implicit-inference.ts
+[18:48:50] EDIT: packages/stdlib/src/inference/implicit-inference.ts
+[18:52:42] EDIT: /tmp/test-pronoun.transcript
+[18:52:52] EDIT: /tmp/test-pronoun.transcript
+[18:54:17] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo /tmp/test-pronoun.tra
+[18:55:39] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[18:57:02] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&1 | tail -20
+[20:23:10] WRITE: docs/context/session-20260116-2022-engine.md

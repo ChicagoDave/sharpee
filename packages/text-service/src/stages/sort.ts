@@ -41,6 +41,13 @@ export function sortEventsForProse(events: ISemanticEvent[]): ISemanticEvent[] {
     // Different transactions or no transaction: maintain original order
     if (aTxnId !== bTxnId) return 0;
 
+    // Implicit take events should come first (before the main action result)
+    // "first taking the X" should appear before "X reads:..."
+    const aIsImplicitTake = a.type === 'if.event.implicit_take';
+    const bIsImplicitTake = b.type === 'if.event.implicit_take';
+    if (aIsImplicitTake && !bIsImplicitTake) return -1;
+    if (!aIsImplicitTake && bIsImplicitTake) return 1;
+
     // Same transaction: action.* first
     const aIsAction = a.type.startsWith('action.');
     const bIsAction = b.type.startsWith('action.');

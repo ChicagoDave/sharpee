@@ -37,6 +37,7 @@ export * from './searching';
 export * from './listening';
 export * from './smelling';
 export * from './touching';
+export * from './reading';
 
 // Device actions
 export * from './switching-on';
@@ -98,6 +99,7 @@ import { searchingLanguage } from './searching';
 import { listeningLanguage } from './listening';
 import { smellingLanguage } from './smelling';
 import { touchingLanguage } from './touching';
+import { readingLanguage } from './reading';
 import { switchingOnLanguage } from './switching-on';
 import { switchingOffLanguage } from './switching-off';
 import { pushingLanguage } from './pushing';
@@ -164,6 +166,7 @@ export const standardActionLanguage = [
   listeningLanguage,
   smellingLanguage,
   touchingLanguage,
+  readingLanguage,
   
   // Device actions
   switchingOnLanguage,

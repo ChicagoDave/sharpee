@@ -60,6 +60,7 @@ const STATE_CHANGE_EVENTS = new Set([
   'if.event.switched_off',
   'if.event.taken',       // State change - action.success provides message
   'if.event.dropped',     // State change - action.success provides message
+  'if.event.read',        // State change - action.success provides message
 ]);
 
 /**

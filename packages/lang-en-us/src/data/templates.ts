@@ -52,11 +52,11 @@ export const englishTemplates = {
     'reading.check.what_to_read': 'What do you want to read?',
     'reading.check.not_readable': "There's nothing written on {item}.",
     'reading.check.cannot_read_now': '{reason}',
-    'reading.perform.read_text': '{text}',
-    'reading.perform.read_book': 'The book reads:\n{text}',
-    'reading.perform.read_book_page': 'Page {currentPage} of {totalPages}:\n{text}',
-    'reading.perform.read_sign': 'The sign says:\n{text}',
-    'reading.perform.read_inscription': 'The inscription reads:\n{text}',
+    'reading.perform.read_text': '{cap:item} reads:\n{text}',
+    'reading.perform.read_book': '{cap:item} reads:\n{text}',
+    'reading.perform.read_book_page': '{cap:item} (page {currentPage} of {totalPages}):\n{text}',
+    'reading.perform.read_sign': '{cap:item} says:\n{text}',
+    'reading.perform.read_inscription': '{cap:item} reads:\n{text}',
     
     // Looking action
     'looking.report.room_name': '{name}',
