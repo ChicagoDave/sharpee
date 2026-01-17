@@ -23,11 +23,23 @@ export * from './event-sequencer';
 // Command execution
 export * from './command-executor';
 
+// Parser interface for engine integration
+export * from './parser-interface';
+
+// Shared data keys for typed action communication
+export * from './shared-data-keys';
+
 // Main engine
 export * from './game-engine';
 
 // Scheduler (Daemons and Fuses - ADR-071)
 export * from './scheduler';
+
+// Extracted services (Phase 4 remediation)
+export * from './vocabulary-manager';
+export * from './save-restore-service';
+export * from './turn-event-processor';
+export * from './platform-operations';
 
 // Note: Text service has been moved to @sharpee/text-service package
 

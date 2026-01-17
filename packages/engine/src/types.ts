@@ -14,9 +14,9 @@ export { IPerceptionService, Sense } from '@sharpee/stdlib';
  * Basic game event (before sequencing)
  * Note: data is optional to support ISemanticEvent compatibility
  */
-export interface GameEvent {
+export interface GameEvent<T = unknown> {
   type: string;
-  data?: any;
+  data?: T;
 }
 
 /**
@@ -83,7 +83,7 @@ export interface TurnResult {
   /**
    * The parsed command (if successfully parsed)
    */
-  parsedCommand?: any;
+  parsedCommand?: IParsedCommand;
 
   /**
    * The validated command with resolved entity IDs (if successfully validated)
@@ -177,35 +177,3 @@ export interface EngineConfig {
    */
   maxUndoSnapshots?: number;
 }
-
-/**
- * Game state that can be saved/loaded
- */
-export interface GameState {
-  /**
-   * Engine version
-   */
-  version: string;
-  
-  /**
-   * Current turn
-   */
-  turn: number;
-  
-  /**
-   * World model state
-   */
-  world: unknown; // Serialized world state
-  
-  /**
-   * Game context
-   */
-  context: GameContext;
-  
-  /**
-   * Timestamp
-   */
-  saved: Date;
-}
-
-

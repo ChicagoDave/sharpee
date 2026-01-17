@@ -41,7 +41,6 @@ import {
   GameContext,
   TurnResult,
   EngineConfig,
-  GameState,
   SequencedEvent,
   GameEvent
 } from './types';
@@ -51,6 +50,11 @@ import { NarrativeSettings, buildNarrativeSettings } from './narrative';
 import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer } from './command-executor';
 import { EventSequenceUtils, eventSequencer } from './event-sequencer';
 import { toSequencedEvent, toSemanticEvent, processEvent } from './event-adapter';
+import { IEngineAwareParser, hasPronounContext, hasPlatformEventEmitter } from './parser-interface';
+import { VocabularyManager, createVocabularyManager } from './vocabulary-manager';
+import { SaveRestoreService, createSaveRestoreService, ISaveRestoreStateProvider } from './save-restore-service';
+import { TurnEventProcessor, createTurnEventProcessor, EnrichmentContext } from './turn-event-processor';
+import { PlatformOperationHandler, createPlatformOperationHandler, EngineCallbacks } from './platform-operations';
 
 /**
  * Game engine events
@@ -99,9 +103,14 @@ export class GameEngine {
   private npcService: INpcService;
   private narrativeSettings: NarrativeSettings;
 
-  // Undo system - circular buffer of world snapshots
-  private undoSnapshots: string[] = [];
-  private undoSnapshotTurns: number[] = []; // Track which turn each snapshot is from
+  // Extracted services (Phase 4 remediation)
+  private vocabularyManager: VocabularyManager;
+  private saveRestoreService: SaveRestoreService;
+  private turnEventProcessor: TurnEventProcessor;
+  private platformOpHandler?: PlatformOperationHandler;
+
+  // Phase 5: Track if initialized event has been emitted
+  private hasEmittedInitialized = false;
 
   constructor(options: {
     world: WorldModel;
@@ -180,6 +189,13 @@ export class GameEngine {
     this.npcService = createNpcService();
     this.narrativeSettings = buildNarrativeSettings(); // Default: 2nd person
 
+    // Initialize extracted services (Phase 4 remediation)
+    this.vocabularyManager = createVocabularyManager();
+    this.saveRestoreService = createSaveRestoreService({
+      maxSnapshots: this.config.maxUndoSnapshots ?? 10
+    });
+    this.turnEventProcessor = createTurnEventProcessor(this.perceptionService);
+
     // Register standard NPC behaviors (ADR-070)
     this.npcService.registerBehavior(guardBehavior);
     this.npcService.registerBehavior(passiveBehavior);
@@ -193,8 +209,8 @@ export class GameEngine {
     this.actionRegistry.setLanguageProvider(this.languageProvider);
     
     // Wire parser with platform events if supported
-    if (this.parser && 'setPlatformEventEmitter' in this.parser) {
-      (this.parser as any).setPlatformEventEmitter((event: any) => {
+    if (this.parser && hasPlatformEventEmitter(this.parser)) {
+      this.parser.setPlatformEventEmitter((event) => {
         this.platformEvents.addEvent(event);
       });
     }
@@ -210,13 +226,9 @@ export class GameEngine {
     
     // Query handling is now managed by the platform layer
     // Platform owns the QueryManager and handles all queries
-    
-    // Emit initialized event now that engine is set up
-    // We'll defer this slightly to ensure all listeners are attached
-    setTimeout(() => {
-      const initializedEvent = createGameInitializedEvent();
-      this.emitGameEvent(initializedEvent);
-    }, 0);
+
+    // Note: game.initialized event is emitted in start() to avoid race condition
+    // (Phase 5 remediation - removed setTimeout)
   }
 
   /**
@@ -336,6 +348,13 @@ export class GameEngine {
       throw new Error('Engine must have a command executor before starting');
     }
 
+    // Emit initialized event once (Phase 5 - moved from constructor to avoid race condition)
+    if (!this.hasEmittedInitialized) {
+      const initializedEvent = createGameInitializedEvent();
+      this.emitGameEvent(initializedEvent);
+      this.hasEmittedInitialized = true;
+    }
+
     // Emit game starting event
     const startingEvent = createGameStartingEvent({
       id: this.story?.config.id,
@@ -427,14 +446,8 @@ export class GameEngine {
 
     // Create undo snapshot BEFORE processing the turn
     // Skip for meta/info commands that shouldn't create undo points
-    const normalizedForUndo = input.trim().toLowerCase();
-    const nonUndoableCommands = [
-      'undo', 'save', 'restore', 'restart', 'quit',
-      'score', 'version', 'about', 'help',
-      'look', 'l', 'examine', 'x', 'inventory', 'i',
-      'verbose', 'brief', 'superbrief', 'notify'
-    ];
-    if (!nonUndoableCommands.some(cmd => normalizedForUndo === cmd || normalizedForUndo.startsWith(cmd + ' '))) {
+    // (Phase 6 remediation - use MetaCommandRegistry instead of hardcoded list)
+    if (!MetaCommandRegistry.isNonUndoable(input)) {
       this.createUndoSnapshot();
     }
 
@@ -544,11 +557,6 @@ export class GameEngine {
       for (const semanticEvent of semanticEvents) {
         this.eventSource.emit(semanticEvent);
 
-        // Check if this is a client.query event
-        if (semanticEvent.type === 'client.query') {
-          // The handleClientQuery will be called by the event listener
-        }
-
         // Check if this is a platform request event
         if (isPlatformRequestEvent(semanticEvent)) {
           this.pendingPlatformOps.push(semanticEvent as IPlatformEvent);
@@ -564,8 +572,8 @@ export class GameEngine {
         this.updateCommandHistory(result, input, turn);
 
         // Update pronoun context for "it"/"them"/"him"/"her" resolution (ADR-089)
-        if (this.parser && 'updatePronounContext' in this.parser && result.validatedCommand) {
-          (this.parser as any).updatePronounContext(result.validatedCommand, turn);
+        if (this.parser && hasPronounContext(this.parser) && result.validatedCommand) {
+          this.parser.updatePronounContext(result.validatedCommand, turn);
         }
       }
 
@@ -591,9 +599,10 @@ export class GameEngine {
         // (we're still processing the turn)
         if (event.type === 'story.victory') {
           victoryDetected = true;
+          const data = event.data as { reason?: string; score?: number } | undefined;
           victoryDetails = {
-            reason: event.data?.reason || 'Story completed',
-            score: event.data?.score || 0
+            reason: data?.reason || 'Story completed',
+            score: data?.score || 0
           };
         }
       }
@@ -768,7 +777,7 @@ export class GameEngine {
         // Stories could provide more detail about the type of ending
         this.stop('victory', {
           reason: 'Story completed',
-          score: 0  // TODO: Get score from story or scoring capability
+          score: 0
         });
       }
 
@@ -792,6 +801,20 @@ export class GameEngine {
    */
   getWorld(): WorldModel {
     return this.world;
+  }
+
+  /**
+   * Get the current story
+   */
+  getStory(): Story | undefined {
+    return this.story;
+  }
+
+  /**
+   * Get the event source for save/restore
+   */
+  getEventSource(): ISemanticEventSource {
+    return this.eventSource;
   }
 
   /**
@@ -949,22 +972,7 @@ export class GameEngine {
    * Create an undo snapshot of the current world state
    */
   private createUndoSnapshot(): void {
-    const maxSnapshots = this.config.maxUndoSnapshots ?? 10;
-    if (maxSnapshots <= 0) return; // Undo disabled
-
-    // Serialize world state
-    const snapshot = this.world.toJSON();
-    const turn = this.context.currentTurn;
-
-    // Add to circular buffer
-    this.undoSnapshots.push(snapshot);
-    this.undoSnapshotTurns.push(turn);
-
-    // Trim if over limit
-    while (this.undoSnapshots.length > maxSnapshots) {
-      this.undoSnapshots.shift();
-      this.undoSnapshotTurns.shift();
-    }
+    this.saveRestoreService.createUndoSnapshot(this.world, this.context.currentTurn);
   }
 
   /**
@@ -972,19 +980,13 @@ export class GameEngine {
    * @returns true if undo succeeded, false if nothing to undo
    */
   undo(): boolean {
-    if (this.undoSnapshots.length === 0) {
-      return false; // Nothing to undo
+    const result = this.saveRestoreService.undo(this.world);
+    if (!result) {
+      return false;
     }
 
-    // Pop the most recent snapshot (this is the state BEFORE the last undoable command)
-    const snapshot = this.undoSnapshots.pop()!;
-    const turn = this.undoSnapshotTurns.pop()!;
-
-    // Restore world state
-    this.world.loadJSON(snapshot);
-
     // Restore turn counter
-    this.context.currentTurn = turn;
+    this.context.currentTurn = result.turn;
 
     // Update vocabulary for current scope
     this.updateScopeVocabulary();
@@ -997,128 +999,49 @@ export class GameEngine {
    * Check if undo is available
    */
   canUndo(): boolean {
-    return this.undoSnapshots.length > 0;
+    return this.saveRestoreService.canUndo();
   }
 
   /**
    * Get number of undo levels available
    */
   getUndoLevels(): number {
-    return this.undoSnapshots.length;
+    return this.saveRestoreService.getUndoLevels();
   }
 
   /**
    * Create save data from current engine state
    */
   private createSaveData(): ISaveData {
-    const metadata: ISaveMetadata = {
-      storyId: this.story?.config.id || 'unknown',
-      storyVersion: this.story?.config.version || '0.0.0',
-      turnCount: this.context.currentTurn - 1,
-      playTime: Date.now() - this.context.metadata.started.getTime(),
-      description: `Turn ${this.context.currentTurn - 1}`
-    };
-
-    const engineState: IEngineState = {
-      eventSource: this.serializeEventSource(),
-      spatialIndex: this.serializeSpatialIndex(),
-      turnHistory: this.serializeTurnHistory(),
-      parserState: this.serializeParserState(),
-      schedulerState: this.serializeSchedulerState()
-    };
-
-    return {
-      version: '1.0.0',
-      timestamp: Date.now(),
-      metadata,
-      engineState,
-      storyConfig: {
-        id: this.story?.config.id || 'unknown',
-        version: this.story?.config.version || '0.0.0',
-        title: this.story?.config.title || 'Unknown',
-        author: Array.isArray(this.story?.config.author) 
-          ? this.story.config.author.join(', ') 
-          : (this.story?.config.author || 'Unknown')
-      }
-    };
+    return this.saveRestoreService.createSaveData(this);
   }
 
   /**
    * Load save data into engine
    */
   private loadSaveData(saveData: ISaveData): void {
-    // Validate save compatibility
-    if (saveData.version !== '1.0.0') {
-      throw new Error(`Unsupported save version: ${saveData.version}`);
-    }
+    const result = this.saveRestoreService.loadSaveData(saveData, this);
 
-    if (saveData.storyConfig?.id && this.story?.config.id && 
-        saveData.storyConfig.id !== this.story.config.id) {
-      throw new Error(`Save is for different story: ${saveData.storyConfig.id}`);
-    }
-
-    // Restore event source
-    this.deserializeEventSource(saveData.engineState.eventSource);
-
-    // Restore spatial index (world state)
-    this.deserializeSpatialIndex(saveData.engineState.spatialIndex);
-
-    // Restore turn history
-    this.deserializeTurnHistory(saveData.engineState.turnHistory);
-
-    // Restore parser state if present
-    if (saveData.engineState.parserState) {
-      this.deserializeParserState(saveData.engineState.parserState);
-    }
-
-    // Restore scheduler state if present
-    if (saveData.engineState.schedulerState) {
-      this.deserializeSchedulerState(saveData.engineState.schedulerState);
-    }
+    // Update event source
+    this.eventSource = result.eventSource;
 
     // Update context
-    this.context.currentTurn = saveData.metadata.turnCount + 1;
+    this.context.currentTurn = result.currentTurn;
     this.context.metadata.lastPlayed = new Date();
 
+    // Restore turn history
+    this.context.history = this.saveRestoreService.deserializeTurnHistory(
+      saveData.engineState.turnHistory,
+      this.eventSource
+    );
+
     // Reset pronoun context - old references may not be valid (ADR-089)
-    if (this.parser && 'resetPronounContext' in this.parser) {
-      (this.parser as any).resetPronounContext();
+    if (this.parser && hasPronounContext(this.parser)) {
+      this.parser.resetPronounContext();
     }
 
     // Update vocabulary for current scope
     this.updateScopeVocabulary();
-
-    this.emit('state:changed', this.context);
-  }
-
-  /**
-   * @deprecated Use save() instead
-   */
-  saveState(): GameState {
-    return {
-      version: '1.0.0',
-      turn: this.context.currentTurn,
-      world: this.serializeWorld(),
-      context: this.context,
-      saved: new Date()
-    };
-  }
-
-  /**
-   * @deprecated Use restore() instead
-   */
-  loadState(state: GameState): void {
-    // Validate version
-    if (state.version !== '1.0.0') {
-      throw new Error(`Unsupported save version: ${state.version}`);
-    }
-
-    // Restore world
-    this.deserializeWorld(state.world);
-
-    // Restore context
-    this.context = state.context;
-    this.context.metadata.lastPlayed = new Date();
 
     this.emit('state:changed', this.context);
   }
@@ -1150,42 +1073,14 @@ export class GameEngine {
    * Update vocabulary for an entity
    */
   updateEntityVocabulary(entity: IFEntity, inScope: boolean): void {
-    const identityTrait = entity.get('IDENTITY');
-    if (identityTrait && typeof identityTrait === 'object') {
-      const identity = identityTrait as any;
-      // Build nouns from name and aliases
-      const nouns: string[] = [];
-      if (identity.name) {
-        nouns.push(identity.name.toLowerCase());
-      }
-      if (identity.aliases && Array.isArray(identity.aliases)) {
-        nouns.push(...identity.aliases);
-      }
-      
-      vocabularyRegistry.registerEntity({
-        entityId: entity.id,
-        nouns: nouns,
-        adjectives: identity.adjectives || [],
-        inScope
-      });
-    }
+    this.vocabularyManager.updateEntityVocabulary(entity, inScope);
   }
-  
+
   /**
    * Update vocabulary for all entities in scope
    */
   updateScopeVocabulary(): void {
-    const inScope = this.world.getInScope(this.context.player.id);
-    
-    // Mark all entities as out of scope first
-    for (const entity of this.world.getAllEntities()) {
-      this.updateEntityVocabulary(entity, false);
-    }
-
-    // Mark in-scope entities
-    for (const entity of inScope) {
-      this.updateEntityVocabulary(entity, true);
-    }
+    this.vocabularyManager.updateScopeVocabulary(this.world, this.context.player.id);
   }
 
   /**
@@ -1265,8 +1160,8 @@ export class GameEngine {
     // If we have a full parsed command structure, use it
     if (result.parsedCommand) {
       const parsed = result.parsedCommand;
-      
-      // Handle new ParsedCommand structure
+
+      // Handle new ParsedCommand structure (has structure property)
       if (parsed.structure) {
         parsedCommand = {
           verb: parsed.structure.verb?.text || parsed.action,
@@ -1275,14 +1170,18 @@ export class GameEngine {
           indirectObject: parsed.structure.indirectObject?.text
         };
       }
-      // Handle old ParsedCommandV1 structure
-      else if (parsed.directObject || parsed.indirectObject) {
-        parsedCommand = {
-          verb: parsed.action,
-          directObject: parsed.directObject?.text,
-          preposition: parsed.preposition,
-          indirectObject: parsed.indirectObject?.text
-        };
+      // Handle old ParsedCommandV1 structure (directObject at top level)
+      // Use type assertion for backward compatibility
+      else {
+        const v1 = parsed as unknown as { directObject?: { text?: string }; indirectObject?: { text?: string }; preposition?: string };
+        if (v1.directObject || v1.indirectObject) {
+          parsedCommand = {
+            verb: parsed.action,
+            directObject: v1.directObject?.text,
+            preposition: v1.preposition,
+            indirectObject: v1.indirectObject?.text
+          };
+        }
       }
     }
 
@@ -1449,8 +1348,8 @@ export class GameEngine {
                     this.stop();
                   }
                   // Reset pronoun context (ADR-089)
-                  if (this.parser && 'resetPronounContext' in this.parser) {
-                    (this.parser as any).resetPronounContext();
+                  if (this.parser && hasPronounContext(this.parser)) {
+                    this.parser.resetPronounContext();
                   }
                   await this.setStory(this.story);
                   this.start();
@@ -1478,8 +1377,8 @@ export class GameEngine {
                   this.stop();
                 }
                 // Reset pronoun context (ADR-089)
-                if (this.parser && 'resetPronounContext' in this.parser) {
-                  (this.parser as any).resetPronounContext();
+                if (this.parser && hasPronounContext(this.parser)) {
+                  this.parser.resetPronounContext();
                 }
                 await this.setStory(this.story);
                 this.start();
@@ -1568,8 +1467,9 @@ export class GameEngine {
     
     // Store in turn events if we're in a turn (as SemanticEvent for compatibility)
     if (this.context.currentTurn > 0) {
+      const eventData = gameEvent.data as { id?: string } | undefined;
       const semanticEvent: ISemanticEvent = {
-        id: event.id || gameEvent.data?.id as string,
+        id: event.id || eventData?.id as string,
         type: event.type,
         timestamp: event.timestamp || Date.now(),
         entities: event.entities || {},
@@ -1649,386 +1549,6 @@ export class GameEngine {
     
     // Default: game never ends
     return false;
-  }
-
-  /**
-   * Serialize world state
-   */
-  private serializeWorld(): unknown {
-    // Simple implementation - override for better serialization
-    return {
-      entities: this.world.getAllEntities().map((e: IFEntity) => ({
-        id: e.id,
-        traits: Array.from(e.traits.entries())
-      }))
-    };
-  }
-
-  /**
-   * Deserialize world state
-   */
-  private deserializeWorld(data: unknown): void {
-    // Simple implementation - override for better deserialization
-    console.warn('World deserialization not fully implemented');
-  }
-
-  /**
-   * Serialize event source
-   */
-  private serializeEventSource(): ISerializedEvent[] {
-    const events: ISerializedEvent[] = [];
-    
-    // Get all events from the event source
-    for (const event of this.eventSource.getAllEvents()) {
-      events.push({
-        id: event.id,
-        type: event.type,
-        timestamp: event.timestamp || Date.now(),
-        data: this.serializeEventData(event.data)
-      });
-    }
-    
-    return events;
-  }
-
-  /**
-   * Serialize event data, handling functions and special types
-   */
-  private serializeEventData(data: unknown): Record<string, unknown> {
-    if (!data || typeof data !== 'object') {
-      return (data || {}) as Record<string, unknown>;
-    }
-    
-    const serialized: Record<string, unknown> = {};
-    
-    for (const [key, value] of Object.entries(data)) {
-      if (typeof value === 'function') {
-        // Mark functions for special handling during deserialization
-        // Store function marker instead of the actual function
-        serialized[key] = { __type: 'function', __marker: '[Function]' };
-      } else if (value && typeof value === 'object') {
-        // Recursively serialize nested objects
-        if (Array.isArray(value)) {
-          serialized[key] = value.map(item => 
-            typeof item === 'object' ? this.serializeEventData(item) : item
-          );
-        } else {
-          serialized[key] = this.serializeEventData(value);
-        }
-      } else {
-        // Primitive values can be stored directly
-        serialized[key] = value;
-      }
-    }
-    
-    return serialized;
-  }
-
-  /**
-   * Deserialize event source
-   */
-  private deserializeEventSource(events: ISerializedEvent[]): void {
-    // Clear existing event source
-    this.eventSource = createSemanticEventSource();
-    
-    // Replay events
-    for (const event of events) {
-      this.eventSource.emit({
-        id: event.id,
-        type: event.type,
-        timestamp: event.timestamp,
-        data: this.deserializeEventData(event.data),
-        entities: {}
-      });
-    }
-  }
-
-  /**
-   * Deserialize event data, handling function markers
-   */
-  private deserializeEventData(data: unknown): unknown {
-    if (!data || typeof data !== 'object') {
-      return data;
-    }
-    
-    // Check if this is a function marker
-    if ((data as any).__type === 'function') {
-      // Return a placeholder function that indicates it was serialized
-      // This maintains the shape of the data but won't execute
-      return () => '[Serialized Function]';
-    }
-    
-    if (Array.isArray(data)) {
-      return data.map(item => this.deserializeEventData(item));
-    }
-    
-    const deserialized: Record<string, unknown> = {};
-    
-    for (const [key, value] of Object.entries(data)) {
-      deserialized[key] = this.deserializeEventData(value);
-    }
-    
-    return deserialized;
-  }
-
-  /**
-   * Serialize spatial index (world state)
-   */
-  private serializeSpatialIndex(): ISerializedSpatialIndex {
-    const entities: Record<string, ISerializedEntity> = {};
-    const locations: Record<string, ISerializedLocation> = {};
-    const relationships: Record<string, ISerializedRelationship[]> = {};
-    
-    // Serialize all entities
-    for (const entity of this.world.getAllEntities()) {
-      const traits: Record<string, unknown> = {};
-      
-      // Serialize each trait
-      for (const [name, trait] of entity.traits) {
-        traits[name] = this.serializeTrait(trait);
-      }
-      
-      entities[entity.id] = {
-        id: entity.id,
-        traits,
-        entityType: entity.constructor.name
-      };
-    }
-    
-    // Serialize locations and their contents
-    const allLocations = this.world.getAllEntities().filter(e => 
-      e.type === 'room' || e.type === 'location' || e.has('if.trait.room')
-    );
-    for (const location of allLocations) {
-      const contents = this.world.getContents(location.id);
-      locations[location.id] = {
-        id: location.id,
-        properties: {
-          name: (location.get(TraitType.IDENTITY) as any)?.name || 'Unknown',
-          description: (location.get(TraitType.IDENTITY) as any)?.description || ''
-        },
-        contents: contents.map(e => e.id),
-        connections: this.extractConnections(location)
-      };
-    }
-    
-    // TODO: Serialize other relationships
-    
-    return { entities, locations, relationships };
-  }
-
-  /**
-   * Deserialize spatial index
-   */
-  private deserializeSpatialIndex(index: ISerializedSpatialIndex): void {
-    // Clear existing world
-    this.world = new WorldModel();
-    
-    // Restore entities
-    for (const [id, data] of Object.entries(index.entities)) {
-      const entity = this.world.createEntity(id);
-      
-      // Restore traits
-      for (const [name, traitData] of Object.entries(data.traits as any)) {
-        const trait = this.deserializeTrait(name, traitData);
-        if (trait) {
-          entity.add(trait);
-        }
-      }
-    }
-    
-    // Restore locations and contents
-    for (const [locationId, data] of Object.entries(index.locations)) {
-      // Place entities in their locations
-      for (const entityId of (data as any).contents) {
-        const entity = this.world.getEntity(entityId);
-        if (entity) {
-          this.world.moveEntity(entity.id, locationId);
-        }
-      }
-    }
-    
-    // Restore player reference
-    const playerId = this.context.player.id;
-    const player = this.world.getEntity(playerId);
-    if (player) {
-      this.context.player = player;
-      this.world.setPlayer(playerId);
-    }
-  }
-
-  /**
-   * Serialize turn history
-   */
-  private serializeTurnHistory(): ISerializedTurn[] {
-    const turns: ISerializedTurn[] = [];
-    
-    for (const [turnNumber, result] of this.context.history.entries()) {
-      turns.push({
-        turnNumber: turnNumber + 1,
-        eventIds: result.events.map(e => e.source || `${e.turn}-${e.sequence}`),
-        timestamp: result.events[0]?.timestamp.getTime() || Date.now(),
-        command: result.input
-      });
-    }
-    
-    return turns;
-  }
-
-  /**
-   * Deserialize turn history
-   */
-  private deserializeTurnHistory(turns: ISerializedTurn[]): void {
-    // Clear existing history
-    this.context.history = [];
-    
-    // Restore turn results
-    for (const turn of turns) {
-      // Find the events for this turn
-      const events = this.eventSource.getAllEvents().filter(e => 
-        turn.eventIds.includes(e.id)
-      );
-      
-      // Create a minimal turn result
-      // Convert SemanticEvents to SequencedEvents
-      const sequencedEvents = events.map((event, index) => 
-        toSequencedEvent(event, turn.turnNumber, index)
-      );
-      
-      this.context.history.push({
-        turn: turn.turnNumber,
-        input: turn.command || '',
-        success: true,
-        events: sequencedEvents
-      });
-    }
-  }
-
-  /**
-   * Serialize parser state
-   */
-  private serializeParserState(): ISerializedParserState | undefined {
-    if (!this.parser) {
-      return undefined;
-    }
-    
-    // Parser state serialization is parser-specific
-    // For now, return empty object
-    return {};
-  }
-
-  /**
-   * Deserialize parser state
-   */
-  private deserializeParserState(state: ISerializedParserState): void {
-    // Parser state restoration is parser-specific
-    // For now, do nothing
-  }
-
-  /**
-   * Serialize scheduler state (daemons and fuses)
-   */
-  private serializeSchedulerState(): ISerializedSchedulerState {
-    const state = this.scheduler.getState();
-    return {
-      turn: state.turn,
-      daemons: state.daemons.map(d => ({
-        id: d.id,
-        isPaused: d.isPaused,
-        runCount: d.runCount
-      })),
-      fuses: state.fuses.map(f => ({
-        id: f.id,
-        turnsRemaining: f.turnsRemaining,
-        isPaused: f.isPaused,
-        entityId: f.entityId
-      })),
-      randomSeed: state.randomSeed
-    };
-  }
-
-  /**
-   * Deserialize scheduler state
-   */
-  private deserializeSchedulerState(state: ISerializedSchedulerState): void {
-    this.scheduler.setState({
-      turn: state.turn,
-      daemons: state.daemons.map(d => ({
-        id: d.id,
-        isPaused: d.isPaused,
-        runCount: d.runCount
-      })),
-      fuses: state.fuses.map(f => ({
-        id: f.id,
-        turnsRemaining: f.turnsRemaining,
-        isPaused: f.isPaused,
-        entityId: f.entityId
-      })),
-      randomSeed: state.randomSeed
-    });
-  }
-
-  /**
-   * Serialize a trait
-   */
-  private serializeTrait(trait: unknown): unknown {
-    // Most traits are POJOs and can be serialized directly
-    if (typeof trait === 'object' && trait !== null) {
-      // Handle special cases if needed
-      return { ...trait };
-    }
-    return trait;
-  }
-
-  /**
-   * Deserialize a trait
-   */
-  private deserializeTrait(name: string, data: unknown): ITrait | null {
-    // This would need to reconstruct the proper trait classes
-    // For now, return the data as-is with the type field
-    // In a full implementation, you'd use a trait factory
-    if (data && typeof data === 'object') {
-      return { type: name, ...data } as ITrait;
-    }
-    return null;
-  }
-
-  /**
-   * Extract connections from a location entity
-   */
-  private extractConnections(location: IFEntity): Record<string, string> {
-    const connections: Record<string, string> = {};
-    
-    // Check for ROOM trait with exits
-    const roomTrait = location.get('if.trait.room') as any;
-    if (roomTrait?.exits) {
-      Object.entries(roomTrait.exits).forEach(([direction, exit]: [string, any]) => {
-        if (exit.destination) {
-          connections[direction] = exit.destination;
-        }
-      });
-    }
-    
-    // Check for doors in this location
-    const contents = this.world.getContents(location.id);
-    contents.forEach(entity => {
-      const doorTrait = entity.get('if.trait.door') as any;
-      if (doorTrait) {
-        // Door connects two rooms
-        const otherRoom = doorTrait.room1 === location.id ? doorTrait.room2 : doorTrait.room1;
-        if (otherRoom) {
-          // Try to determine direction from door name or exit trait
-          const name = entity.name?.toLowerCase() || '';
-          if (name.includes('north')) connections.north = otherRoom;
-          else if (name.includes('south')) connections.south = otherRoom;
-          else if (name.includes('east')) connections.east = otherRoom;
-          else if (name.includes('west')) connections.west = otherRoom;
-          else connections.door = otherRoom; // Generic door connection
-        }
-      }
-    });
-    
-    return connections;
   }
 
   /**

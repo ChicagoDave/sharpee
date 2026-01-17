@@ -119,6 +119,15 @@ export function findValidTargets(
  *
  * This is the main entry point for the inference system.
  *
+ * IMPORTANT: If a pronoun successfully resolved to a specific entity from
+ * the pronoun context, we do NOT infer an alternative. The player clearly
+ * intended to reference that entity. For example:
+ *   - "get mat" sets "it" = mat
+ *   - "read it" should fail with "nothing written on mat", NOT infer leaflet
+ *
+ * Inference is only appropriate when the pronoun resolution was ambiguous
+ * or the player had no specific entity in mind.
+ *
  * @param originalTarget The entity originally resolved (e.g., mailbox)
  * @param wasPronoun Whether a pronoun was used ("it", "them")
  * @param action The action being attempted
@@ -149,62 +158,20 @@ export function tryInferTarget(
     };
   }
 
-  // Check if action has requirements to infer against
-  if (!action.targetRequirements) {
-    return {
-      inferred: false,
-      originalTarget,
-      failureReason: 'no_requirements'
-    };
-  }
-
-  // Check if inference is explicitly disabled for this action
-  if (action.allowImplicitInference === false) {
-    return {
-      inferred: false,
-      originalTarget,
-      failureReason: 'no_requirements' // Treated as no requirements
-    };
-  }
-
-  // Check if original target already meets requirements
-  if (meetsActionRequirements(originalTarget, action, world)) {
-    return {
-      inferred: false,
-      originalTarget,
-      failureReason: 'original_valid'
-    };
-  }
-
-  // Find all entities in scope that meet requirements
-  // Exclude the original target from consideration
-  const validTargets = findValidTargets(action, scope, world)
-    .filter(e => e.id !== originalTarget.id);
-
-  // No valid targets - can't infer
-  if (validTargets.length === 0) {
-    return {
-      inferred: false,
-      originalTarget,
-      failureReason: 'no_valid_targets'
-    };
-  }
-
-  // Multiple valid targets - ambiguous, don't infer
-  if (validTargets.length > 1) {
-    return {
-      inferred: false,
-      originalTarget,
-      failureReason: 'multiple_valid_targets'
-    };
-  }
-
-  // Exactly ONE valid target - infer it!
-  const inferredTarget = validTargets[0];
+  // CRITICAL: If the pronoun resolved to a specific entity, respect the player's intent.
+  // Don't override "read it" (where it=mat) with a different readable item.
+  // The player explicitly referenced the mat via pronoun context, so show the
+  // error for the mat ("nothing written on it") rather than inferring an alternative.
+  //
+  // This makes pronouns behave predictably: "get X; read it" always refers to X.
+  //
+  // DESIGN NOTE: This disables ADR-104 inference. If inference is needed in the
+  // future, it should only trigger when the pronoun resolution was truly ambiguous
+  // (e.g., no clear referent from recent context), not when the player clearly
+  // referenced a specific entity.
   return {
-    inferred: true,
+    inferred: false,
     originalTarget,
-    inferredTarget,
-    reason: `only ${action.targetRequirements.description} in scope`
+    failureReason: 'not_pronoun'
   };
 }

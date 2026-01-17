@@ -6,7 +6,7 @@
  * appropriate handlers.
  */
 
-import { EventEmitter } from 'events';
+import EventEmitter from 'eventemitter3';
 import {
   IPendingQuery,
   IQueryResponse,
@@ -31,7 +31,7 @@ export class QueryManager extends EventEmitter {
   
   private handlers = new Map<string, IQueryHandler>();
   private validators = new Map<string, QueryValidator>();
-  private timeouts = new Map<string, NodeJS.Timeout>();
+  private timeouts = new Map<string, ReturnType<typeof setTimeout>>();
   private eventSource: ISemanticEventSource = createSemanticEventSource();
   
   constructor() {

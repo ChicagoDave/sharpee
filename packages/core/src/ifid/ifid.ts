@@ -1,7 +1,7 @@
 // packages/core/src/ifid/ifid.ts
 // IFID (Interactive Fiction Identifier) utilities per Treaty of Babel
 
-import { randomUUID } from 'crypto';
+// Use globalThis.crypto for cross-platform compatibility (Node 19+ and browsers)
 
 /**
  * IFID format requirements (Treaty of Babel):
@@ -20,7 +20,7 @@ const IFID_PATTERN = /^[A-Z0-9-]{8,63}$/;
  * // => "A1B2C3D4-E5F6-7890-ABCD-EF1234567890"
  */
 export function generateIfid(): string {
-  return randomUUID().toUpperCase();
+  return globalThis.crypto.randomUUID().toUpperCase();
 }
 
 /**

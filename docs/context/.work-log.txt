@@ -1,89 +1,87 @@
-[02:04:35] GIT: git push
-[02:05:32] WRITE: docs/context/session-20260116-0115-dungeo.md
-[02:09:22] WRITE: docs/work/infer/implementation-plan.md
-[02:12:50] EDIT: docs/work/infer/implementation-plan.md
-[02:13:05] EDIT: docs/work/infer/implementation-plan.md
-[02:13:16] EDIT: docs/work/infer/implementation-plan.md
-[02:14:15] EDIT: docs/work/infer/implementation-plan.md
-[02:14:20] EDIT: docs/work/infer/implementation-plan.md
-[02:15:14] EDIT: packages/stdlib/src/actions/enhanced-types.ts
-[02:15:25] EDIT: packages/world-model/src/commands/parsed-command.ts
-[02:16:12] EDIT: packages/parser-en-us/src/english-parser.ts
-[02:16:53] EDIT: packages/stdlib/src/actions/standard/reading/reading.ts
-[02:17:19] EDIT: packages/stdlib/src/actions/standard/eating/eating.ts
-[02:17:49] EDIT: packages/stdlib/src/actions/standard/opening/opening.ts
-[02:18:09] EDIT: packages/stdlib/src/actions/standard/closing/closing.ts
-[02:24:23] EDIT: docs/work/infer/implementation-plan.md
-[02:26:09] WRITE: packages/stdlib/src/inference/implicit-inference.ts
-[02:26:15] WRITE: packages/stdlib/src/inference/index.ts
-[02:26:58] EDIT: packages/engine/src/command-executor.ts
-[02:27:17] EDIT: packages/engine/src/command-executor.ts
-[02:27:30] EDIT: packages/engine/src/command-executor.ts
-[02:28:13] EDIT: packages/stdlib/src/index.ts
-[02:28:47] EDIT: packages/engine/src/command-executor.ts
-[02:31:12] EDIT: packages/engine/src/command-executor.ts
-[02:31:21] EDIT: packages/engine/src/command-executor.ts
-[02:35:28] WRITE: stories/dungeo/tests/transcripts/implicit-inference.transcript
-[02:37:10] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[02:37:48] EDIT: stories/dungeo/tests/transcripts/implicit-inference.transcript
-[02:38:56] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[02:39:24] EDIT: docs/work/infer/implementation-plan.md
-[02:41:25] WRITE: docs/context/session-20260116-0206-dungeo.md
-[02:42:33] GIT: git commit -m "$(cat <<'EOF'
-feat: Implement implicit inference for pronoun comm
-[02:42:48] GIT: git push -u origin infer
-[02:45:23] WRITE: packages/stdlib/src/inference/implicit-take.ts
-[02:45:32] EDIT: packages/stdlib/src/inference/index.ts
-[02:45:53] EDIT: packages/engine/src/command-executor.ts
-[02:51:38] EDIT: packages/stdlib/src/actions/standard/reading/reading.ts
-[02:51:46] EDIT: packages/stdlib/src/actions/standard/reading/reading.ts
-[02:52:06] EDIT: packages/stdlib/src/actions/standard/eating/eating.ts
-[02:52:17] EDIT: packages/stdlib/src/actions/standard/eating/eating.ts
-[02:52:24] EDIT: packages/stdlib/src/actions/standard/eating/eating.ts
-[02:52:45] EDIT: docs/architecture/adrs/adr-104-implicit-inference.md
-[02:53:04] EDIT: docs/architecture/adrs/adr-104-implicit-inference.md
-[02:53:15] EDIT: docs/architecture/adrs/adr-104-implicit-inference.md
-[02:53:38] EDIT: packages/engine/src/command-executor.ts
-[02:53:46] EDIT: packages/stdlib/src/inference/index.ts
-[02:57:57] EDIT: stories/dungeo/tests/transcripts/implicit-inference.transcript
-[02:59:21] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[03:09:49] EDIT: packages/engine/src/command-executor.ts
-[11:33:39] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[11:34:07] EDIT: packages/engine/src/command-executor.ts
-[11:36:13] TRANSCRIPT FAIL: ./scripts/build-all-dungeo.sh --skip engine 2>&1 | tail -5 && node packages/tran
-[11:39:42] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[11:40:14] EDIT: packages/engine/src/command-executor.ts
-[11:42:22] TRANSCRIPT FAIL: ./scripts/build-all-dungeo.sh --skip engine 2>&1 | tail -3 && node packages/tran
-[11:46:15] EDIT: packages/stdlib/src/actions/enhanced-context.ts
-[11:48:24] TRANSCRIPT FAIL: ./scripts/build-all-dungeo.sh --skip stdlib 2>&1 | tail -3 && node packages/tran
-[11:51:42] EDIT: packages/stdlib/src/actions/enhanced-context.ts
-[11:53:51] TRANSCRIPT FAIL: ./scripts/build-all-dungeo.sh --skip stdlib 2>&1 | tail -3 && node packages/tran
-[11:57:27] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[11:58:48] EDIT: packages/engine/src/command-executor.ts
-[11:58:57] EDIT: packages/stdlib/src/actions/enhanced-context.ts
-[11:59:07] EDIT: packages/stdlib/src/actions/enhanced-context.ts
-[12:00:02] WRITE: docs/context/session-20260116-0243-infer.md
-[12:02:21] EDIT: packages/engine/src/action-context-factory.ts
-[12:02:47] EDIT: packages/engine/src/action-context-factory.ts
-[12:03:09] EDIT: packages/engine/src/action-context-factory.ts
-[12:03:16] EDIT: packages/engine/src/action-context-factory.ts
-[12:03:24] EDIT: packages/engine/src/action-context-factory.ts
-[12:08:49] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[12:10:19] EDIT: packages/text-service/src/text-service.ts
-[12:10:27] EDIT: packages/text-service/src/text-service.ts
-[12:11:13] EDIT: packages/engine/src/action-context-factory.ts
-[12:11:29] EDIT: packages/text-service/src/text-service.ts
-[12:12:22] EDIT: packages/text-service/src/text-service.ts
-[12:16:43] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[12:24:32] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --play <<EOF
-open mai
-[12:25:49] EDIT: packages/text-service/src/text-service.ts
-[12:29:04] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[12:29:16] EDIT: packages/text-service/src/text-service.ts
-[12:32:51] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[12:34:27] EDIT: packages/text-service/src/text-service.ts
-[12:34:35] EDIT: packages/text-service/src/text-service.ts
-[12:34:46] EDIT: packages/text-service/src/text-service.ts
-[12:39:29] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[12:43:39] WRITE: docs/context/session-20260116-1242-infer.md
-[12:44:51] EDIT: docs/work/infer/implementation-plan.md
+[16:34:16] EDIT: packages/engine/src/game-engine.ts
+[16:35:12] EDIT: packages/engine/src/game-engine.ts
+[16:35:44] EDIT: packages/engine/src/game-engine.ts
+[16:36:13] EDIT: packages/engine/src/game-engine.ts
+[16:36:30] EDIT: packages/engine/src/game-engine.ts
+[16:37:17] EDIT: packages/engine/src/game-engine.ts
+[16:38:04] EDIT: packages/engine/src/index.ts
+[16:38:48] TEST/BUILD FAIL (exit -1): pnpm --filter @sharpee/engine build 2>&1 | head -100
+[16:39:11] EDIT: packages/engine/src/platform-operations.ts
+[16:39:20] EDIT: packages/engine/src/platform-operations.ts
+[16:40:17] WRITE: packages/engine/src/turn-event-processor.ts
+[16:40:56] TEST/BUILD FAIL (exit -1): pnpm --filter @sharpee/engine build 2>&1 | head -50
+[16:45:42] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&1 | tail -30
+[16:46:32] WRITE: docs/context/session-20260116-1626-engine.md
+[16:47:29] GIT: git push
+[16:59:23] WRITE: docs/work/engine/context/phase4-service-extraction-complete.md
+[17:00:14] GIT: git add docs/context/.work-log.txt docs/context/session-20260116-1425-infer.md d
+[17:00:24] GIT: git push
+[17:32:11] EDIT: packages/engine/src/game-engine.ts
+[17:32:18] EDIT: packages/engine/src/game-engine.ts
+[17:32:25] EDIT: packages/engine/src/game-engine.ts
+[17:36:01] GIT: git add packages/engine/src/game-engine.ts && git commit -m "$(cat <<'EOF'
+refac
+[17:36:11] GIT: git push
+[17:38:37] EDIT: packages/stdlib/src/actions/meta-registry.ts
+[17:38:45] EDIT: packages/engine/src/game-engine.ts
+[17:42:58] GIT: git add packages/stdlib/src/actions/meta-registry.ts packages/engine/src/game-en
+[17:43:08] GIT: git push
+[17:43:22] EDIT: docs/context/session-20260116-1626-engine.md
+[17:43:42] GIT: git add docs/context/session-20260116-1626-engine.md && git commit -m "$(cat <<'
+[17:51:57] WRITE: docs/work/engine/context/phases-4-5-6-complete.md
+[17:52:47] GIT: git add docs/work/engine/context/phases-4-5-6-complete.md docs/context/.work-log
+[18:09:46] EDIT: packages/lang-en-us/src/language-provider.ts
+[18:09:57] EDIT: packages/lang-en-us/src/data/templates.ts
+[18:18:03] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[18:19:21] WRITE: packages/lang-en-us/src/actions/reading.ts
+[18:19:28] EDIT: packages/lang-en-us/src/actions/index.ts
+[18:19:34] EDIT: packages/lang-en-us/src/actions/index.ts
+[18:19:39] EDIT: packages/lang-en-us/src/actions/index.ts
+[18:19:49] EDIT: stories/dungeo/tests/transcripts/implicit-take-test.transcript
+[18:25:55] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[18:26:52] EDIT: packages/lang-en-us/src/actions/reading.ts
+[18:27:03] EDIT: packages/text-service/src/text-service.ts
+[18:27:14] EDIT: packages/lang-en-us/src/data/templates.ts
+[18:32:56] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[18:33:31] EDIT: packages/text-service/src/stages/sort.ts
+[18:38:33] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[18:39:44] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[18:43:01] TRANSCRIPT FAIL: echo -e 'read it\nopen mailbox\nread it\ni\nget mat\nread it' > /tmp/test-pronou
+[18:43:11] WRITE: /tmp/test-pronoun.transcript
+[18:44:19] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo /tmp/test-pronoun.tra
+[18:45:49] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&1 | tail -30
+[18:46:52] EDIT: packages/stdlib/src/inference/implicit-inference.ts
+[18:48:50] EDIT: packages/stdlib/src/inference/implicit-inference.ts
+[18:52:42] EDIT: /tmp/test-pronoun.transcript
+[18:52:52] EDIT: /tmp/test-pronoun.transcript
+[18:54:17] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo /tmp/test-pronoun.tra
+[18:55:39] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[18:57:02] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&1 | tail -20
+[20:23:10] WRITE: docs/context/session-20260116-2022-engine.md
+[20:24:51] GIT: git add -A && git commit -m "$(cat <<'EOF'
+fix: Platform issues discovered in fi
+[20:25:01] GIT: git push
+[20:45:53] WRITE: docs/work/thinweb/README.md
+[20:47:39] WRITE: scripts/bundle-browser.sh
+[20:47:39] WRITE: templates/browser/index.html
+[20:47:39] WRITE: templates/browser/infocom.css
+[20:48:52] WRITE: stories/dungeo/src/browser-entry.ts
+[20:54:30] EDIT: packages/core/src/ifid/ifid.ts
+[20:54:35] EDIT: packages/core/src/ifid/ifid.ts
+[21:03:21] EDIT: stories/dungeo/src/browser-entry.ts
+[21:08:17] EDIT: stories/dungeo/src/browser-entry.ts
+[21:10:34] EDIT: scripts/bundle-browser.sh
+[21:12:08] EDIT: stories/dungeo/src/browser-entry.ts
+[21:12:18] EDIT: stories/dungeo/src/browser-entry.ts
+[21:18:17] WRITE: docs/work/issues/browser-testing-2026-01-16.md
+[21:19:34] EDIT: docs/work/issues/issues-list.md
+[21:19:50] EDIT: docs/work/issues/issues-list.md
+[21:27:00] EDIT: docs/work/issues/issues-list.md
+[21:27:12] EDIT: docs/work/issues/issues-list.md
+[21:29:12] WRITE: docs/context/session-20260116-2036-engine.md
+[21:30:06] GIT: git commit -m "$(cat <<'EOF'
+feat: Add browser client with Infocom DOS styling
+
+
+[21:30:16] GIT: git push
+[21:34:32] EDIT: docs/work/engine/remediation-plan.md
