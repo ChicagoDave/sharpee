@@ -92,3 +92,5 @@ feat: Add troll axe visibility via generic capabili
 [14:08:50] EDIT: docs/work/dungeo/troll-logic.md
 [14:10:20] WRITE: docs/context/session-20260117-1409-dungeo.md
 [14:10:51] EDIT: docs/work/dungeo/troll-logic.md
+[14:24:11] EDIT: docs/work/dungeo/troll-logic.md
+[14:25:51] WRITE: docs/context/session-20260117-1424-dungeo.md

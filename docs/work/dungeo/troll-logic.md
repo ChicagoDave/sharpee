@@ -427,23 +427,71 @@ Need to verify and potentially add custom message.
 | Wake up daemon (IN!) | ✅ Done | `troll-daemon.ts` counts recovery turns, triggers wake |
 | Re-block exits on wake | ✅ Done | Part of wake up daemon |
 
-### Not Implemented
+### Not Implemented (No Platform Changes Needed)
 
-| Feature | Priority | Blocking Issue |
-|---------|----------|----------------|
-| **Weapon recovery (75%)** | Medium | Troll NPC behavior tick phase |
-| **Disarmed cowering** | Medium | Check inventory in guard behavior |
-| **THROW/GIVE items to troll** | Medium | Need TrollGivingBehavior + TrollThrowingBehavior |
-| **TAKE/MOVE troll response** | Low | Custom message for attempting to take actor |
-| **Unarmed attack response** | Low | "laughs at puny gesture" when attacking without weapon |
-| **HELLO to dead/unconscious troll** | Low | Custom talking response |
+| Feature | Priority | Implementation Pattern |
+|---------|----------|----------------------|
+| **Weapon recovery (75%)** | Medium | Custom TrollBehavior `onTurn()` - check if axe in room, pick up |
+| **Disarmed cowering** | Medium | Same behavior - check inventory before attacking, emit cower message |
+| **THROW/GIVE items to troll** | Medium | Capability dispatch - troll claims `if.action.giving` + `if.action.throwing` |
+| **TAKE/MOVE troll response** | Low | Capability dispatch - troll claims `if.action.taking` on itself |
+| **Unarmed attack response** | Low | Capability dispatch - troll claims `if.action.attacking`, checks attacker weapon |
+| **HELLO to dead/unconscious troll** | Low | Capability dispatch - troll claims `if.action.talking` |
+
+### Implementation Plan for Remaining Features
+
+**1. Create `TrollBehavior`** (custom NPC behavior, extends guard pattern):
+```typescript
+// stories/dungeo/src/npcs/troll/troll-behavior.ts
+export const trollBehavior: NpcBehavior = {
+  id: 'troll',
+  onTurn(context: NpcContext): NpcAction[] {
+    // Check for weapon recovery (75% chance if axe in room)
+    const hasWeapon = checkInventoryForWeapon(context);
+    if (!hasWeapon) {
+      const axeInRoom = findAxeInRoom(context);
+      if (axeInRoom && context.random.chance(0.75)) {
+        return [{ type: 'take', target: axeInRoom.id }];
+      }
+      // No weapon, cower instead of attack
+      return [{ type: 'emote', messageId: 'dungeo.troll.cowers' }];
+    }
+    // Has weapon - attack like guard
+    return guardBehavior.onTurn(context);
+  }
+};
+```
+
+**2. Create `TrollTrait`** (claims all action capabilities):
+```typescript
+// stories/dungeo/src/traits/troll-trait.ts
+export class TrollTrait implements ITrait {
+  static readonly type = 'dungeo.trait.troll';
+  static readonly capabilities = [
+    'if.action.giving',
+    'if.action.throwing',
+    'if.action.taking',
+    'if.action.attacking',
+    'if.action.talking'
+  ] as const;
+}
+```
+
+**3. Create capability behaviors**:
+- `TrollGivingBehavior` - Catches items, eats non-knife, throws knife back
+- `TrollThrowingBehavior` - Same as giving
+- `TrollTakingBehavior` - "The troll spits in your face..."
+- `TrollAttackingBehavior` - Mocks puny weaponless attacks
+- `TrollTalkingBehavior` - "Unfortunately, the troll can't hear you."
 
 ### Platform Changes Still Needed
 
-None! All high-priority troll features implemented using existing platform capabilities:
+None! All features implementable using existing platform capabilities:
 - Visibility via `if.scope.visible` capability dispatch (no `isHidden` needed)
 - State changes via entity event handlers (`if.event.knocked_out`, `if.event.death`)
 - Recovery via scheduler daemon (ADR-071)
+- Action interception via capability dispatch (ADR-090)
+- Custom NPC behavior via NpcBehavior interface (ADR-070)
 
 ### Files Created/Modified
 
