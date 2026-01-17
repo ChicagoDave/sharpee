@@ -53,6 +53,10 @@ export const DungeoSchedulerMessages = {
   BALLOON_HOOK_VISIBLE: 'dungeo.balloon.hook_visible',
   BALLOON_INFLATING: 'dungeo.balloon.inflating',
   BALLOON_DEFLATING: 'dungeo.balloon.deflating',
+
+  // Troll state changes - MDL act1.254 (OUT!/IN!)
+  TROLL_KNOCKED_OUT: 'dungeo.troll.knocked_out',
+  TROLL_WAKES_UP: 'dungeo.troll.wakes_up',
 } as const;
 
 export type DungeoSchedulerMessageId = typeof DungeoSchedulerMessages[keyof typeof DungeoSchedulerMessages];

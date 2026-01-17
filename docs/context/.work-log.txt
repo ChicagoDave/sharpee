@@ -76,3 +76,19 @@ feat: Add generic capability dispatch with declarat
 [13:44:02] EDIT: stories/dungeo/src/actions/gdt/types.ts
 [13:45:43] WRITE: stories/dungeo/tests/transcripts/troll-visibility.transcript
 [13:48:45] WRITE: docs/context/session-20260117-1223-dungeo.md
+[13:49:33] GIT: git commit -m "$(cat <<'EOF'
+feat: Add troll axe visibility via generic capabili
+[13:49:47] GIT: git push origin dungeo && git push origin generic-dispatch
+[13:56:09] WRITE: stories/dungeo/src/scheduler/troll-daemon.ts
+[13:56:33] EDIT: stories/dungeo/src/scheduler/scheduler-messages.ts
+[13:56:51] EDIT: stories/dungeo/src/scheduler/index.ts
+[13:58:34] EDIT: stories/dungeo/src/regions/underground.ts
+[13:59:09] WRITE: stories/dungeo/src/scheduler/troll-daemon.ts
+[13:59:33] EDIT: stories/dungeo/src/index.ts
+[13:59:46] EDIT: stories/dungeo/src/index.ts
+[14:01:20] EDIT: stories/dungeo/src/index.ts
+[14:03:49] EDIT: stories/dungeo/src/scheduler/troll-daemon.ts
+[14:05:39] WRITE: stories/dungeo/tests/transcripts/troll-recovery.transcript
+[14:08:50] EDIT: docs/work/dungeo/troll-logic.md
+[14:10:20] WRITE: docs/context/session-20260117-1409-dungeo.md
+[14:10:51] EDIT: docs/work/dungeo/troll-logic.md

@@ -276,13 +276,20 @@ function createCellarObjects(world: WorldModel, roomId: string): void {
 
 // ============= Troll Room Objects =============
 
+// Troll descriptions from MDL source (dung.355)
+const TROLLDESC = 'A nasty-looking troll stands here, wielding a bloody axe. He blocks the northern passage.';
+const TROLLOUT = 'An unconscious troll is sprawled on the floor. All passages out of the room are open.';
+
+// Recovery time: ~5 turns (matching original MDL behavior)
+const TROLL_RECOVERY_TURNS = 5;
+
 function createTrollRoomObjects(world: WorldModel, roomId: string): void {
   // Troll NPC - blocks north passage, can be killed with sword
   const troll = world.createEntity('troll', EntityType.ACTOR);
   troll.add(new IdentityTrait({
     name: 'nasty-looking troll',
     aliases: ['troll', 'nasty troll', 'ugly troll'],
-    description: 'A nasty-looking troll stands here, wielding a bloody axe. He blocks the northern passage.',
+    description: TROLLDESC,
     properName: false,
     article: 'a'
   }));
@@ -305,9 +312,40 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
   }));
   world.moveEntity(troll.id, roomId);
 
-  // Death handler - unblock passage and add score
+  // Get troll room reference for event handlers
   const trollRoom = world.getEntity(roomId);
+
+  // Event handlers for troll state changes
   (troll as any).on = {
+    // Knocked out handler (OUT!) - MDL act1.254
+    // Fires when troll is knocked unconscious via combat
+    'if.event.knocked_out': (_event: ISemanticEvent, w: WorldModel): ISemanticEvent[] => {
+      const events: ISemanticEvent[] = [];
+
+      // Update description to TROLLOUT
+      const identity = troll.get(IdentityTrait);
+      if (identity) {
+        identity.description = TROLLOUT;
+      }
+
+      // Unblock north exit
+      if (trollRoom) {
+        RoomBehavior.unblockExit(trollRoom, Direction.NORTH);
+      }
+
+      // Set recovery turns
+      const combatant = troll.get(CombatantTrait);
+      if (combatant) {
+        combatant.recoveryTurns = TROLL_RECOVERY_TURNS;
+      }
+
+      // Note: Axe visibility is handled by TrollAxeVisibilityBehavior
+      // which checks combatant.isAlive && !combatant.isConscious
+
+      return events;
+    },
+
+    // Death handler - unblock passage and add score
     'if.event.death': (_event: ISemanticEvent, w: WorldModel): ISemanticEvent[] => {
       const events: ISemanticEvent[] = [];
       if (trollRoom) {

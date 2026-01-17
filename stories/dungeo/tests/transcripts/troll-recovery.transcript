@@ -1,0 +1,71 @@
+# Test: Troll Recovery Daemon
+# Tests that the troll wakes up after being knocked out, with:
+# - Description change (TROLLDESC <-> TROLLOUT)
+# - Exit blocking/unblocking
+# - Wake up message when player is present
+#
+# From MDL source (act1.254): OUT!/IN! transitions
+# Recovery time: 5 turns
+
+# Get to the Troll Room
+> GDT
+[GDT Mode activated]
+
+> AH troll-room
+[Teleported]
+
+# Verify initial state - exits blocked, conscious troll
+> look
+~ Troll Room
+~ nasty-looking troll
+~ bloody axe
+
+# Examine troll - should show TROLLDESC
+> examine troll
+~ blocks
+~ northern passage
+
+# Try to go north - blocked by troll
+> north
+~ troll blocks
+
+# Knock out the troll
+> KO troll
+~ Knocked out
+~ isConscious: false
+
+# Description should change to TROLLOUT
+> examine troll
+~ unconscious
+~ sprawled
+~ passages.*open
+
+# North passage should now be open
+> north
+~ East-West Passage
+
+# Go back to troll room
+> south
+~ Troll Room
+
+# Wait for recovery (5 turns)
+> z
+> z
+> z
+> z
+> z
+~ troll stirs
+~ fighting stance
+
+# Troll should be conscious again
+> examine troll
+~ blocks
+~ northern passage
+
+# Exit should be blocked again
+> north
+~ troll blocks
+
+# Exit GDT mode
+> EX
+[Exiting GDT Mode]

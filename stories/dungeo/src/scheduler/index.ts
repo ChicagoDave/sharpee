@@ -31,6 +31,7 @@ export { registerBankAlarmDaemon, isBankAlarmActive } from './bank-alarm-daemon'
 export { registerIncenseFuse, getIncenseBurnRemaining } from './incense-fuse';
 export { registerBalloonDaemon, isBalloonDaemonActive, getBalloonPosition, resetBalloonDaemonTimer } from './balloon-daemon';
 export { registerBalloonPutHandler, registerBurnDaemon, isBalloonInflated, getBurningObjectId, BalloonHandlerMessages } from '../handlers/balloon-handler';
+export { registerTrollRecoveryDaemon, isTrollRecoveryActive, getTrollState } from './troll-daemon';
 
 import { WorldModel } from '@sharpee/world-model';
 import { ISchedulerService } from '@sharpee/engine';

@@ -411,76 +411,6 @@ Need to verify and potentially add custom message.
 
 ---
 
-## Platform Changes Needed
-
-### Priority 1: Entity Visibility Toggle
-**Change:** Add `isHidden?: boolean` to IdentityTrait
-**Impact:** Small, non-breaking
-**Benefit:** Enables hiding objects without moving them (axe, secret doors, etc.)
-
-### Priority 2: Capability Check in Standard Actions
-**Change:** Standard stdlib actions check `findTraitWithCapability()` before running
-**Impact:** Small - add ~10 lines to each action's validate phase
-**Benefit:** Stories can register traits that block/intercept any standard action
-
-This extends ADR-090's capability dispatch to work WITH standard actions, not just replace them.
-
----
-
-## Implementation Plan
-
-### Phase 1: Platform Changes (Small)
-1. Add `isHidden` to IdentityTrait + scope check
-2. Add capability check to stdlib taking action
-3. Add capability check to stdlib giving/throwing actions (same pattern)
-
-### Phase 2: Story Implementation
-1. ✅ Inventory drops on death (done)
-2. Create TrollTrait with state management
-3. Create TrollAxeTrait + behavior (white-hot blocking)
-4. Update troll description on unconscious/death
-5. Unblock/reblock exits on state changes
-6. Add troll recovery daemon (wake after N turns)
-7. Add weapon recovery to troll behavior (75% chance)
-8. Add disarmed cowering message
-9. Add throw/give item handling via capability behaviors
-
----
-
-## Sharpee Implementation Status
-
-### Completed
-- [x] Troll entity with CombatantTrait
-- [x] Troll blocks north exit (RoomBehavior.blockExit)
-- [x] Death handler unblocks exit
-- [x] Death handler adds score (+10)
-- [x] Bloody axe in troll inventory
-- [x] Inventory drops when killed (dropsInventory: true, applyCombatResult fixed)
-- [x] NPC combat messages (npc.combat.attack.*)
-- [x] Player has CombatantTrait for combat resolution
-
-### Platform TODO (Small Changes)
-- [ ] Add `isHidden` to IdentityTrait
-- [ ] Add scope check for `isHidden` flag
-- [ ] Add capability check to taking action validate phase
-- [ ] Add capability check to giving action validate phase
-- [ ] Add capability check to throwing action validate phase
-
-### Story TODO (Dungeo)
-- [x] Create TrollAxeTrait + TrollAxeTakingBehavior (white-hot)
-- [ ] Create TrollTrait (state, descriptions, room/axe references)
-- [ ] Update troll description on unconscious (TROLLOUT)
-- [ ] Update troll description on death
-- [ ] Re-block exit if troll wakes up (IN! handler)
-- [ ] Add troll recovery daemon (wake after N turns)
-- [ ] Add weapon recovery to troll behavior (75% chance)
-- [ ] Add disarmed cowering message
-- [ ] Create TrollGivingBehavior (eats items, knife special case)
-- [ ] Create TrollThrowingBehavior (catches items)
-- [ ] Add all troll messages to lang-en-us
-
----
-
 ## Current Implementation Gap Analysis (2026-01-17)
 
 ### Implemented
@@ -491,16 +421,16 @@ This extends ADR-090's capability dispatch to work WITH standard actions, not ju
 | Death handling | ✅ Done | Exit unblocks, +10 score, inventory drops |
 | Combat with troll | ✅ Done | Guard behavior, combat messages |
 | Exit blocking when alive | ✅ Done | RoomBehavior.blockExit on north exit |
+| Axe hidden when unconscious | ✅ Done | TrollAxeVisibilityBehavior via `if.scope.visible` capability |
+| Unconscious state (OUT!) | ✅ Done | `if.event.knocked_out` handler on troll entity |
+| Dynamic descriptions | ✅ Done | TROLLDESC ↔ TROLLOUT on knockout/wakeup |
+| Wake up daemon (IN!) | ✅ Done | `troll-daemon.ts` counts recovery turns, triggers wake |
+| Re-block exits on wake | ✅ Done | Part of wake up daemon |
 
 ### Not Implemented
 
 | Feature | Priority | Blocking Issue |
 |---------|----------|----------------|
-| **Unconscious state (OUT!)** | High | Need to differentiate knockOut from death |
-| **Axe hidden when unconscious** | High | Needs `isHidden` platform change or limbo workaround |
-| **Dynamic descriptions (TROLLDESC ↔ TROLLOUT)** | High | Need state change handlers |
-| **Wake up daemon (IN!)** | High | Need daemon to count turns and trigger wake |
-| **Re-block exits on wake** | High | Part of IN! handler |
 | **Weapon recovery (75%)** | Medium | Troll NPC behavior tick phase |
 | **Disarmed cowering** | Medium | Check inventory in guard behavior |
 | **THROW/GIVE items to troll** | Medium | Need TrollGivingBehavior + TrollThrowingBehavior |
@@ -510,16 +440,25 @@ This extends ADR-090's capability dispatch to work WITH standard actions, not ju
 
 ### Platform Changes Still Needed
 
-| Change | Impact | Benefit |
-|--------|--------|---------|
-| Add `isHidden` to IdentityTrait | Small | Hide axe when troll unconscious without moving to limbo |
-| Scope check for `isHidden` flag | Small | Exclude hidden items from parser scope |
+None! All high-priority troll features implemented using existing platform capabilities:
+- Visibility via `if.scope.visible` capability dispatch (no `isHidden` needed)
+- State changes via entity event handlers (`if.event.knocked_out`, `if.event.death`)
+- Recovery via scheduler daemon (ADR-071)
 
-### Files Created This Session
+### Files Created/Modified
 
-- `stories/dungeo/src/traits/troll-axe-trait.ts` - Trait with guardianId config
-- `stories/dungeo/src/traits/troll-axe-behaviors.ts` - Validate/execute/report/blocked phases
+**Session 2026-01-17 (generic dispatch + visibility):**
+- `stories/dungeo/src/traits/troll-axe-trait.ts` - Trait with guardianId, claims `if.action.taking` + `if.scope.visible`
+- `stories/dungeo/src/traits/troll-axe-behaviors.ts` - TrollAxeTakingBehavior + TrollAxeVisibilityBehavior
 - `stories/dungeo/tests/transcripts/troll-axe.transcript` - Test for white-hot blocking
+- `stories/dungeo/tests/transcripts/troll-visibility.transcript` - Test for axe hidden when unconscious
+
+**Session 2026-01-17 (wake up daemon + dynamic descriptions):**
+- `stories/dungeo/src/scheduler/troll-daemon.ts` - Recovery daemon (5 turn countdown)
+- `stories/dungeo/src/scheduler/scheduler-messages.ts` - Added TROLL_KNOCKED_OUT, TROLL_WAKES_UP
+- `stories/dungeo/src/regions/underground.ts` - Added knockout handler, TROLLDESC/TROLLOUT constants
+- `stories/dungeo/src/index.ts` - Register daemon, add English messages
+- `stories/dungeo/tests/transcripts/troll-recovery.transcript` - Test for wake up daemon
 
 ### Test Coverage
 
@@ -529,4 +468,19 @@ This extends ADR-090's capability dispatch to work WITH standard actions, not ju
 
 > take axe (troll dead)
 "Taken."  ✅
+
+> look (troll unconscious)
+Axe NOT visible  ✅
+
+> examine troll (conscious)
+"blocks the northern passage"  ✅
+
+> examine troll (unconscious)
+"sprawled on the floor... passages open"  ✅
+
+> wait 5 turns (in troll room)
+"The troll stirs, quickly resuming a fighting stance."  ✅
+
+> north (after troll wakes)
+"The troll blocks your way."  ✅
 ```
