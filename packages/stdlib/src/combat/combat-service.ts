@@ -276,17 +276,28 @@ export function createCombatService(): ICombatService {
 }
 
 /**
+ * Result of applying combat damage
+ */
+export interface ApplyCombatResultInfo {
+  /** IDs of items dropped from target's inventory */
+  droppedItems: EntityId[];
+}
+
+/**
  * Apply combat result to the target entity
+ * Handles health updates, consciousness changes, death, and inventory dropping
  */
 export function applyCombatResult(
   target: IFEntity,
   result: CombatResult,
   world: WorldModel
-): void {
-  if (!result.hit) return;
+): ApplyCombatResultInfo {
+  const info: ApplyCombatResultInfo = { droppedItems: [] };
+
+  if (!result.hit) return info;
 
   const combatant = target.get(TraitType.COMBATANT) as CombatantTrait | undefined;
-  if (!combatant) return;
+  if (!combatant) return info;
 
   // Update health
   combatant.health = result.targetNewHealth;
@@ -296,10 +307,24 @@ export function applyCombatResult(
     combatant.knockOut();
   }
 
-  // Update alive status
+  // Update alive status and handle death
   if (result.targetKilled) {
     combatant.kill();
+
+    // Drop inventory if configured
+    if (combatant.dropsInventory) {
+      const location = world.getLocation(target.id);
+      if (location) {
+        const inventory = world.getContents(target.id);
+        for (const item of inventory) {
+          world.moveEntity(item.id, location);
+          info.droppedItems.push(item.id);
+        }
+      }
+    }
   }
+
+  return info;
 }
 
 /**

@@ -17,4 +17,5 @@ export {
   type CombatContext,
   type CombatResult,
   type CombatValidation,
+  type ApplyCombatResultInfo,
 } from './combat-service';
