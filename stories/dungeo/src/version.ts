@@ -6,10 +6,10 @@
  */
 
 /** Story version (auto-incremented on bundle) */
-export const STORY_VERSION = '1.0.0-alpha.2';
+export const STORY_VERSION = '1.0.0-alpha.3';
 
 /** Build timestamp (ISO 8601) */
-export const BUILD_DATE = '2026-01-17T06:21:35Z';
+export const BUILD_DATE = '2026-01-17T22:26:42Z';
 
 /** Engine version at build time */
 export const ENGINE_VERSION = '0.9.3-beta.1';

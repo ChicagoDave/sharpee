@@ -133,6 +133,9 @@ export * from './falls-death';
 // Commanding (Robot commands - tell robot to X)
 export * from './commanding';
 
+// Talk to Troll (minor MDL edge case)
+export * from './talk-to-troll';
+
 // Re-export balloon action IDs and messages
 export { LIGHT_ACTION_ID, LightMessages } from './light';
 export { TIE_ACTION_ID, TieMessages } from './tie';
@@ -183,6 +186,7 @@ import { riverBlockedAction, RIVER_BLOCKED_ACTION_ID, RiverBlockedMessages } fro
 import { fallsDeathAction, FALLS_DEATH_ACTION_ID, FallsDeathMessages } from './falls-death';
 import { commandingAction, COMMANDING_ACTION_ID, CommandingMessages } from './commanding';
 import { launchAction, LAUNCH_ACTION_ID, LaunchMessages } from './launch';
+import { talkToTrollAction, TALK_TO_TROLL_ACTION_ID, TalkToTrollMessages } from './talk-to-troll';
 
 // Re-export press-button, turn-bolt, and turn-switch
 export { PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler } from './press-button';
@@ -217,6 +221,9 @@ export { LAUNCH_ACTION_ID, LaunchMessages } from './launch';
 
 // Re-export commanding action for use in index.ts
 export { COMMANDING_ACTION_ID, CommandingMessages } from './commanding';
+
+// Re-export talk-to-troll action for use in index.ts
+export { TALK_TO_TROLL_ACTION_ID, TalkToTrollMessages } from './talk-to-troll';
 
 export const customActions = [
   ...gdtActions,
@@ -262,5 +269,6 @@ export const customActions = [
   riverBlockedAction,
   fallsDeathAction,
   commandingAction,
-  launchAction
+  launchAction,
+  talkToTrollAction
 ];

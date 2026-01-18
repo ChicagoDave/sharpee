@@ -85,7 +85,14 @@ export function handleActionFailure(
       ? `${data.actionId}.${data.messageId}`
       : data.messageId;
 
-    const message = context.languageProvider.getMessage(fullMessageId, data.params);
+    let message = context.languageProvider.getMessage(fullMessageId, data.params);
+
+    // Fallback to just messageId (matches handleActionSuccess behavior)
+    // This allows capability behaviors to use story-specific messageIds like
+    // 'dungeo.troll.spits_at_player' without needing the action prefix
+    if (message === fullMessageId && data.messageId) {
+      message = context.languageProvider.getMessage(data.messageId, data.params);
+    }
 
     if (message !== data.messageId && message !== fullMessageId) {
       return [createBlock(BLOCK_KEYS.ACTION_BLOCKED, message)];

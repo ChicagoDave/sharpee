@@ -36,7 +36,7 @@ import { DungeoScoringService } from './scoring';
 import { ScoringEventProcessor } from '@sharpee/stdlib';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, TURN_SWITCH_ACTION_ID, TurnSwitchMessages, PUT_UNDER_ACTION_ID, PutUnderMessages, PUSH_KEY_ACTION_ID, PushKeyMessages, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages, INFLATE_ACTION_ID, InflateMessages, DEFLATE_ACTION_ID, DeflateMessages, COMMANDING_ACTION_ID, CommandingMessages, LAUNCH_ACTION_ID, LaunchMessages } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, TURN_SWITCH_ACTION_ID, TurnSwitchMessages, PUT_UNDER_ACTION_ID, PutUnderMessages, PUSH_KEY_ACTION_ID, PushKeyMessages, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages, INFLATE_ACTION_ID, InflateMessages, DEFLATE_ACTION_ID, DeflateMessages, COMMANDING_ACTION_ID, CommandingMessages, LAUNCH_ACTION_ID, LaunchMessages, TALK_TO_TROLL_ACTION_ID, TalkToTrollMessages } from './actions';
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages, FloodingMessages, registerBalloonPutHandler, BalloonHandlerMessages, registerTrollRecoveryDaemon } from './scheduler';
@@ -529,7 +529,7 @@ export class DungeoStory implements Story {
     // Commands that take one optional argument
     const oneArgCodes = [
       'dr', 'dx', 'do', 'de', 'dv', 'dc', 'dh', 'dl', 'df', 'dn', 'dm', 'dt', 'dp', 'd2', 'dz',
-      'ah', 'tk', 'ar', 'af', 'ac', 'aa', 'ax', 'av', 'an', 'az', 'pd', 'kl'
+      'ah', 'tk', 'ar', 'af', 'ac', 'aa', 'ax', 'av', 'an', 'az', 'pd', 'kl', 'ko', 'wu'
     ];
 
     // Commands that take two arguments
@@ -700,6 +700,26 @@ export class DungeoStory implements Story {
 
     // Note: Pattern ":npc, :command..." removed - patterns can't start with slots
     // Use "tell robot to X" or "order robot to X" instead
+
+    // Talk to troll (minor MDL edge case - "Unfortunately, the troll can't hear you")
+    // High priority (200) to beat any stdlib "talk to :npc" patterns
+    grammar
+      .define('talk to troll')
+      .mapsTo(TALK_TO_TROLL_ACTION_ID)
+      .withPriority(200)
+      .build();
+
+    grammar
+      .define('talk to the troll')
+      .mapsTo(TALK_TO_TROLL_ACTION_ID)
+      .withPriority(200)
+      .build();
+
+    grammar
+      .define('hello troll')
+      .mapsTo(TALK_TO_TROLL_ACTION_ID)
+      .withPriority(200)
+      .build();
 
     // Ring action (Exorcism bell)
     grammar
@@ -1480,6 +1500,9 @@ export class DungeoStory implements Story {
     language.addMessage(TrollMessages.SPITS_AT_PLAYER, 'The troll spits in your face, saying "Better luck next time."');
     language.addMessage(TrollMessages.MOCKS_UNARMED_ATTACK, 'The troll laughs at your puny gesture.');
     language.addMessage(TrollMessages.CANT_HEAR_YOU, 'Unfortunately, the troll can\'t hear you.');
+
+    // Talk to troll action (conscious troll response)
+    language.addMessage(TalkToTrollMessages.GROWLS, 'The troll growls menacingly at you.');
 
     // Trophy case scoring
     language.addMessage('dungeo.treasure.scored', 'Your score just went up by {points} points!');

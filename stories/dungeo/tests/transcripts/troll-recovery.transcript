@@ -1,71 +1,81 @@
-# Test: Troll Recovery Daemon
-# Tests that the troll wakes up after being knocked out, with:
-# - Description change (TROLLDESC <-> TROLLOUT)
-# - Exit blocking/unblocking
-# - Wake up message when player is present
-#
+title: Troll Recovery Daemon
+story: dungeo
+author: Sharpee Team
+description: Tests that the troll wakes up after being knocked out, with description change (TROLLDESC -> TROLLOUT), exit blocking/unblocking, and wake up message when player is present.
+
+---
+
 # From MDL source (act1.254): OUT!/IN! transitions
 # Recovery time: 5 turns
 
-# Get to the Troll Room
+# Get to the Troll Room via GDT teleport
 > GDT
-[GDT Mode activated]
+[OK: contains "GDT"]
 
-> AH troll-room
-[Teleported]
+> AH Troll Room
+[OK: contains "Teleported"]
 
 # Verify initial state - exits blocked, conscious troll
 > look
-~ Troll Room
-~ nasty-looking troll
-~ bloody axe
+[OK: contains "Troll Room"]
+[OK: contains "nasty-looking troll"]
+[OK: contains "bloody axe"]
 
-# Examine troll - should show TROLLDESC
+# Examine troll - should show TROLLDESC (blocking northern passage)
 > examine troll
-~ blocks
-~ northern passage
+[OK: contains "blocks"]
+[OK: contains "northern passage"]
 
 # Try to go north - blocked by troll
 > north
-~ troll blocks
+[OK: contains "troll blocks"]
 
-# Knock out the troll
+# Knock out the troll via GDT
 > KO troll
-~ Knocked out
-~ isConscious: false
+[OK: contains "Knocked out"]
+[OK: contains "isConscious: false"]
 
 # Description should change to TROLLOUT
 > examine troll
-~ unconscious
-~ sprawled
-~ passages.*open
+[OK: contains "unconscious"]
+[OK: contains "sprawled"]
+[OK: contains "passages"]
+[OK: contains "open"]
 
 # North passage should now be open
 > north
-~ East-West Passage
+[OK: contains "East-West Passage"]
 
 # Go back to troll room
 > south
-~ Troll Room
+[OK: contains "Troll Room"]
 
 # Wait for recovery (5 turns)
 > z
+[OK]
+
 > z
+[OK]
+
 > z
+[OK]
+
 > z
+[OK]
+
 > z
-~ troll stirs
-~ fighting stance
+[OK: contains "troll stirs"]
+[OK: contains "fighting stance"]
 
 # Troll should be conscious again
 > examine troll
-~ blocks
-~ northern passage
+[OK: contains "blocks"]
+[OK: contains "northern passage"]
 
 # Exit should be blocked again
 > north
-~ troll blocks
+[OK: contains "troll blocks"]
 
 # Exit GDT mode
 > EX
-[Exiting GDT Mode]
+[OK: contains "Returning to game"]

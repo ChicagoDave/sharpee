@@ -434,15 +434,17 @@ Need to verify and potentially add custom message.
 | **Weapon recovery (75%)** | ✅ Done | TrollBehavior `onTurn()` - check WeaponTrait, pick up axe with 75% chance |
 | **Disarmed cowering** | ✅ Done | TrollBehavior emits cowers message when no weapon and can't recover |
 | **THROW/GIVE items to troll** | ✅ Done | Entity event handlers on troll for `if.event.given` and `if.event.thrown` |
-| **TAKE/MOVE troll response** | ⚠️ Partial | TrollTakingBehavior registered but message not rendering (language layer issue) |
-| **Unarmed attack response** | ⚠️ Partial | TrollAttackingBehavior registered but message not rendering (language layer issue) |
+| **TAKE/MOVE troll response** | ✅ Done | TrollTakingBehavior shows "spits in your face" message (language layer bug fixed) |
+| **Unarmed attack response** | ✅ Done | TrollAttackingBehavior shows "laughs at your puny gesture" message (language layer bug fixed) |
 | **HELLO to dead/unconscious troll** | 🚫 N/A | No grammar pattern for TALK/HELLO in parser - would need parser extension |
 
 ### Known Issues
 
-**Language Layer Message Resolution**: The capability behaviors generate `action.blocked` events with story-specific messageIds (e.g., `dungeo.troll.spits_at_player`), but the text-service handler constructs a full message ID as `${actionId}.${messageId}` which doesn't match the registered messages. The messages ARE registered in the language layer, but the lookup path is incorrect. Needs investigation.
+**RESOLVED - Language Layer Message Resolution**: Fixed in session 2026-01-17 (second session). The `handleActionFailure` function in `packages/text-service/src/handlers/action.ts` was missing fallback logic to try just the `messageId` if the full `${actionId}.${messageId}` lookup failed. Added the same fallback that `handleActionSuccess` already had.
 
 **No TALK/HELLO Grammar**: The parser doesn't have patterns for "talk to X" or "hello X", so TrollTalkingBehavior can't be tested. Would need parser-en-us grammar extension.
+
+**GDT KO/WU Commands**: Fixed grammar patterns to include 'ko' and 'wu' in oneArgCodes. Also added to VALID_CODES in gdt-parser.ts.
 
 ### Implementation Plan for Remaining Features
 
@@ -525,6 +527,14 @@ None! All features implementable using existing platform capabilities:
 - `stories/dungeo/src/index.ts` - Register troll capability behaviors and NPC behavior
 - `stories/dungeo/tests/transcripts/troll-interactions.transcript` - Tests for TAKE/ATTACK troll
 
+**Session 2026-01-17 (language layer bug fix):**
+- `packages/text-service/src/handlers/action.ts` - Added fallback messageId lookup in `handleActionFailure` (matches `handleActionSuccess` behavior)
+- `stories/dungeo/src/actions/gdt/gdt-parser.ts` - Added 'KO', 'WU' to VALID_CODES set
+- `stories/dungeo/src/index.ts` - Added 'ko', 'wu' to oneArgCodes for grammar patterns
+- `stories/dungeo/tests/transcripts/troll-interactions.transcript` - Fixed navigation (trapdoor closes), added unarmed attack tests
+- `stories/dungeo/tests/transcripts/troll-recovery.transcript` - Fixed header format, room name for AH command
+- `stories/dungeo/tests/transcripts/troll-visibility.transcript` - Fixed header format, room name for AH command
+
 ### Test Coverage
 
 ```
@@ -548,4 +558,13 @@ Axe NOT visible  ✅
 
 > north (after troll wakes)
 "The troll blocks your way."  ✅
+
+> take troll
+"The troll spits in your face, saying 'Better luck next time.'"  ✅ (FIXED 2026-01-17)
+
+> attack troll (unarmed)
+"The troll laughs at your puny gesture."  ✅ (FIXED 2026-01-17)
+
+> attack troll (with sword)
+(Combat proceeds normally)  ✅
 ```

@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/story-dungeo",
-  "version": "1.0.0-alpha.2",
+  "version": "1.0.0-alpha.3",
   "description": "Dungeo - A Sharpee implementation of Mainframe Zork",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
