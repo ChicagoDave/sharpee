@@ -282,8 +282,8 @@ function createCellarObjects(world: WorldModel, roomId: string): void {
 const TROLLDESC = 'A nasty-looking troll stands here, wielding a bloody axe. He blocks the northern passage.';
 const TROLLOUT = 'An unconscious troll is sprawled on the floor. All passages out of the room are open.';
 
-// Recovery time: ~5 turns (matching original MDL behavior)
-const TROLL_RECOVERY_TURNS = 5;
+// Recovery time: 2 turns (diverging from MDL's ~5 turns for better gameplay)
+const TROLL_RECOVERY_TURNS = 2;
 
 function createTrollRoomObjects(world: WorldModel, roomId: string): void {
   // Bloody axe - create first so we have the ID for troll trait
@@ -381,26 +381,38 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
       return events;
     },
 
-    // Death handler - unblock passage and add score
+    // Death handler - troll disappears in smoke (Zork I commercial behavior)
     'if.event.death': (_event: ISemanticEvent, w: WorldModel): ISemanticEvent[] => {
       const events: ISemanticEvent[] = [];
+
+      // Unblock passage
       if (trollRoom) {
         RoomBehavior.unblockExit(trollRoom, Direction.NORTH);
       }
+
+      // Add score
       const scoring = w.getCapability(StandardCapabilities.SCORING);
       if (scoring) {
         scoring.scoreValue = (scoring.scoreValue || 0) + 10;
         if (!scoring.achievements) scoring.achievements = [];
         scoring.achievements.push('Defeated the troll');
       }
+
+      // Show smoke disappear message
       events.push({
         id: generateEventId(),
         type: 'game.message',
         entities: {},
-        data: { messageId: 'dungeo.troll.death.passage_clear' },
+        data: { messageId: TrollMessages.SMOKE_DISAPPEAR },
         timestamp: Date.now(),
         narrate: true
       });
+
+      // Remove troll and axe from the game
+      // (Zork I commercial: "the carcass has disappeared")
+      w.removeEntity(axe.id);
+      w.removeEntity(troll.id);
+
       return events;
     },
 

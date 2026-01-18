@@ -39,7 +39,7 @@ import { ScoringEventProcessor } from '@sharpee/stdlib';
 import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, TURN_SWITCH_ACTION_ID, TurnSwitchMessages, PUT_UNDER_ACTION_ID, PutUnderMessages, PUSH_KEY_ACTION_ID, PushKeyMessages, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages, INFLATE_ACTION_ID, InflateMessages, DEFLATE_ACTION_ID, DeflateMessages, COMMANDING_ACTION_ID, CommandingMessages, LAUNCH_ACTION_ID, LaunchMessages, TALK_TO_TROLL_ACTION_ID, TalkToTrollMessages } from './actions';
 
 // Import scheduler module
-import { registerScheduledEvents, DungeoSchedulerMessages, FloodingMessages, registerBalloonPutHandler, BalloonHandlerMessages, registerTrollRecoveryDaemon } from './scheduler';
+import { registerScheduledEvents, DungeoSchedulerMessages, FloodingMessages, registerBalloonPutHandler, BalloonHandlerMessages, registerTrollRecoveryDaemon, SwordGlowMessages } from './scheduler';
 import { setSchedulerForGDT, setEngineForKL } from './actions/gdt/commands';
 
 // Import handlers
@@ -1491,8 +1491,11 @@ export class DungeoStory implements Story {
     language.addMessage('dungeo.trapdoor.opened', 'The door reluctantly opens to reveal a rickety staircase descending into darkness.');
     language.addMessage(TrapdoorMessages.SLAMS_SHUT, 'The door crashes shut, and you hear someone barring it.');
 
-    // Troll combat
-    language.addMessage('dungeo.troll.death.passage_clear', 'With the troll dispatched, the passage to the north is now clear.');
+    // Troll combat (Zork I commercial behavior)
+    language.addMessage(TrollMessages.KNOCKED_OUT, 'The troll is battered into unconsciousness.');
+    language.addMessage(TrollMessages.KILL_UNCONSCIOUS, 'The unconscious troll cannot defend himself: he dies.');
+    language.addMessage(TrollMessages.SMOKE_DISAPPEAR, 'Almost as soon as the troll breathes his last, a cloud of sinister black smoke envelops him, and when the fog lifts, the carcass has disappeared.');
+    language.addMessage(TrollMessages.DEATH_PASSAGE_CLEAR, 'With the troll dispatched, the passage to the north is now clear.');
 
     // Troll axe - cannot be taken while troll is alive (ADR-090 universal dispatch)
     language.addMessage('dungeo.troll.axe.white_hot', "The troll's axe seems white-hot. You can't hold on to it.");
@@ -1501,7 +1504,7 @@ export class DungeoStory implements Story {
     language.addMessage(EggMessages.NO_EXPERTISE, 'You have neither the tools nor the expertise.');
 
     // Troll state changes (MDL act1.254 OUT!/IN!)
-    language.addMessage(DungeoSchedulerMessages.TROLL_KNOCKED_OUT, 'The troll staggers and falls unconscious!');
+    language.addMessage(DungeoSchedulerMessages.TROLL_KNOCKED_OUT, 'The troll is battered into unconsciousness.');
     language.addMessage(DungeoSchedulerMessages.TROLL_WAKES_UP, 'The troll stirs, quickly resuming a fighting stance.');
 
     // Troll NPC behavior messages (MDL act1.254)
@@ -1518,6 +1521,11 @@ export class DungeoStory implements Story {
 
     // Talk to troll action (conscious troll response)
     language.addMessage(TalkToTrollMessages.GROWLS, 'The troll growls menacingly at you.');
+
+    // Sword glow daemon (elvish sword glows near villains)
+    language.addMessage(SwordGlowMessages.GLOW_BRIGHT, 'Your sword has begun to glow very brightly.');
+    language.addMessage(SwordGlowMessages.GLOW_FAINT, 'Your sword is glowing with a faint blue glow.');
+    language.addMessage(SwordGlowMessages.GLOW_OFF, 'Your sword is no longer glowing.');
 
     // Trophy case scoring
     language.addMessage('dungeo.treasure.scored', 'Your score just went up by {points} points!');

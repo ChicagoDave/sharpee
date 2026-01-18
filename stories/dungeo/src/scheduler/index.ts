@@ -32,6 +32,7 @@ export { registerIncenseFuse, getIncenseBurnRemaining } from './incense-fuse';
 export { registerBalloonDaemon, isBalloonDaemonActive, getBalloonPosition, resetBalloonDaemonTimer } from './balloon-daemon';
 export { registerBalloonPutHandler, registerBurnDaemon, isBalloonInflated, getBurningObjectId, BalloonHandlerMessages } from '../handlers/balloon-handler';
 export { registerTrollRecoveryDaemon, isTrollRecoveryActive, getTrollState } from './troll-daemon';
+export { registerSwordGlowDaemon, getSwordGlowState, resetSwordGlowState, SwordGlowMessages } from './sword-glow-daemon';
 
 import { WorldModel } from '@sharpee/world-model';
 import { ISchedulerService } from '@sharpee/engine';
@@ -43,6 +44,7 @@ import { registerBankAlarmDaemon } from './bank-alarm-daemon';
 import { registerIncenseFuse } from './incense-fuse';
 import { registerBalloonDaemon } from './balloon-daemon';
 import { registerBurnDaemon } from '../handlers/balloon-handler';
+import { registerSwordGlowDaemon } from './sword-glow-daemon';
 import { ForestRoomIds } from '../regions/forest';
 import { DamRoomIds } from '../regions/dam';
 import { BankRoomIds } from '../regions/bank-of-zork';
@@ -99,6 +101,9 @@ export function registerScheduledEvents(
 
   // Register burn daemon (handles burn timer for all flammable objects)
   registerBurnDaemon(scheduler);
+
+  // Register sword glow daemon (elvish sword glows near villains)
+  registerSwordGlowDaemon(scheduler);
 
   // Note: Crypt trigger daemon is registered via registerEndgameTriggerHandler
   // in src/handlers/endgame-trigger-handler.ts

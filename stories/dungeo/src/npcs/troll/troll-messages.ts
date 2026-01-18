@@ -29,6 +29,12 @@ export const TrollMessages = {
   CANT_HEAR_YOU: 'dungeo.troll.cant_hear_you',
 
   // === Death messages ===
+  /** Troll knocked unconscious */
+  KNOCKED_OUT: 'dungeo.troll.knocked_out',
+  /** Kill unconscious troll */
+  KILL_UNCONSCIOUS: 'dungeo.troll.kill_unconscious',
+  /** Troll disappears in smoke */
+  SMOKE_DISAPPEAR: 'dungeo.troll.smoke_disappear',
   /** Passage clears when troll dies */
   DEATH_PASSAGE_CLEAR: 'dungeo.troll.death.passage_clear',
 } as const;

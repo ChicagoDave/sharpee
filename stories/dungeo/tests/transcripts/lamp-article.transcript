@@ -1,20 +1,25 @@
----
 title: Lamp Article Test (ISSUE-013)
 story: dungeo
+description: Test that lamp "switches on" message uses correct article capitalization
+
 ---
+
 # Test ISSUE-013: Lamp "switches on" message should have "The" article
-# Verifies: "{cap:the:target} switches on, banishing the darkness."
+# Verifies: "{the:cap:target} switches on, banishing the darkness."
 
-# Go to cellar (dark room)
-> open mailbox
-> take all
-> open window
-> w
-> w
-> open trap door
-> d
-> d
+# Use GDT to get lantern and go to a dark room
+> gdt
+[OK: contains "GDT ready"]
 
-# Turn on lamp in darkness - should show "The brass lantern"
+> tk brass lantern
+[OK: contains "Taken"]
+
+> ah Cellar
+[OK: contains "Cellar"]
+
+> ex
+[OK: contains "Returning"]
+
+# Turn on lamp in darkness - should show "The brass lantern" (not "the Brass lantern")
 > turn on lantern
-/The brass lantern switches on/
+[OK: contains "The brass lantern switches on"]

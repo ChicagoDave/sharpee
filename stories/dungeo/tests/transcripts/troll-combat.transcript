@@ -1,7 +1,7 @@
 title: Troll Combat
 story: dungeo
 author: Sharpee Team
-description: Test killing the troll and the troll attacking the player
+description: Test killing the troll, sword glow, and smoke disappear
 
 ---
 
@@ -41,23 +41,24 @@ description: Test killing the troll and the troll attacking the player
 > down
 [OK: contains "Cellar"]
 
+# Enter troll room - sword should glow
 > east
 [OK: contains "Troll Room"]
 [OK: contains "troll"]
+[OK: contains "sword"]
+[OK: contains "glow"]
 
 # Wait one turn - troll should attack us
 > z
 [EVENT: true, type="npc.attacked"]
 
-# Try "kill troll" - should be recognized as attacking
+# Attack troll multiple times until dead
 > kill troll
 [EVENT: true, type="if.event.attacked"]
 
-# Try "attack troll" too
 > attack troll
 [EVENT: true, type="if.event.attacked"]
 
-# The troll should eventually die or we should see combat messages
 > kill troll
 [EVENT: true, type="if.event.attacked"]
 
@@ -66,3 +67,8 @@ description: Test killing the troll and the troll attacking the player
 
 > kill troll
 [EVENT: true, type="if.event.attacked"]
+
+# Eventually troll dies - verify smoke message and sword stops glowing
+> look
+[NOT: contains "troll"]
+[NOT: contains "axe"]
