@@ -61,3 +61,7 @@ fix: Language layer message resolutio
 [01:35:15] EDIT: docs/work/issues/issues-list.md
 [01:35:36] EDIT: docs/work/issues/issues-list.md
 [01:36:28] GIT: git checkout dungeo && git merge disambiguate --no-edit
+[01:37:38] GIT: git commit -m "$(cat <<'EOF'
+fix: Template resolution and disambiguation options
+[01:40:14] GIT: git stash && git checkout main && git merge dungeo --no-edit && git checkout dun
+[01:42:37] EDIT: docs/context/session-20260118-0039-dungeo.md
