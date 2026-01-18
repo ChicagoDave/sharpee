@@ -50,3 +50,18 @@ ex" | node packages
 [23:01:34] EDIT: docs/context/session-20260117-1611-dungeo.md
 [23:01:45] EDIT: docs/context/session-20260117-1611-dungeo.md
 [23:02:03] EDIT: docs/context/session-20260117-1611-dungeo.md
+[23:03:06] GIT: git add -A && git commit -m "$(cat <<'EOF'
+fix: Language layer message resolutio
+[23:03:18] GIT: git push
+[23:17:25] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo /tmp/test-talk.transc
+[23:20:37] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[23:22:52] EDIT: stories/dungeo/src/actions/talk-to-troll/talk-to-troll-action.ts
+[23:25:29] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo /tmp/test-talk.transc
+[23:28:33] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[23:30:41] EDIT: docs/work/dungeo/troll-logic.md
+[23:30:50] EDIT: docs/work/dungeo/troll-logic.md
+[23:31:01] EDIT: docs/work/dungeo/troll-logic.md
+[23:31:07] EDIT: docs/work/dungeo/troll-logic.md
+[23:31:20] EDIT: docs/work/issues/issues-list.md
+[23:31:28] EDIT: docs/work/issues/issues-list.md
+[23:34:54] WRITE: docs/context/session-20260117-2334-dungeo.md

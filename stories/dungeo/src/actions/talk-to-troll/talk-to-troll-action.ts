@@ -33,10 +33,14 @@ export const talkToTrollAction: Action = {
   validate(context: ActionContext): ValidationResult {
     const sharedData = getSharedData(context);
 
-    // Find the troll
+    // Find the troll by checking entity name or identity aliases
     const troll = context.world.getAllEntities().find(e => {
-      const identity = e.get('identity') as { name?: string } | undefined;
-      return identity?.name?.toLowerCase() === 'troll';
+      // Check entity's base name
+      if (e.name.toLowerCase() === 'troll') return true;
+      // Check identity trait aliases
+      const identity = e.get('identity') as { name?: string; aliases?: string[] } | undefined;
+      if (identity?.aliases?.some(a => a.toLowerCase() === 'troll')) return true;
+      return false;
     });
 
     if (!troll) {

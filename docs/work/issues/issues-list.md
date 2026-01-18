@@ -9,6 +9,7 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-003 | Window doesn't block passage to Kitchen | Critical | Story | 2026-01-16 | - | 2026-01-16 |
 | ISSUE-004 | "kill troll" not recognized | Critical | Parser | 2026-01-16 | - | 2026-01-16 |
 | ISSUE-006 | Troll doesn't attack player | Critical | Story/NPC | 2026-01-16 | - | 2026-01-16 |
+| ISSUE-015 | Troll logic implementation complete | High | Story/NPC | 2026-01-16 | - | 2026-01-17 |
 | ISSUE-010 | Room contents not shown on room entry | High | TextService | 2026-01-16 | - | - |
 | ISSUE-001 | "get all" / "drop all" returns entity_not_found | Medium | Parser | 2026-01-16 | - | - |
 | ISSUE-005 | Text output order wrong (contents before description) | Medium | TextService | 2026-01-16 | - | - |
@@ -360,6 +361,39 @@ If all true, trigger implicit LOOK or emit room description event.
 ---
 
 ## Closed Issues
+
+### ISSUE-015: Troll Logic Implementation
+
+**Reported**: 2026-01-16
+**Fixed**: 2026-01-17
+**Severity**: High
+**Component**: Story / NPC / Platform
+
+**Description**:
+Complete implementation of canonical MDL Zork troll behavior including combat, state management, and player interactions.
+
+**Features Implemented**:
+- Troll states (alive/unconscious/dead) with dynamic descriptions
+- Exit blocking when troll alive, unblocking when defeated
+- Axe "white-hot" blocking (can't take while troll alive)
+- Axe visibility toggle (hidden when troll unconscious)
+- Wake-up daemon (troll recovers after 5 turns unconscious)
+- Weapon recovery (75% chance to pick up dropped axe)
+- Disarmed cowering behavior
+- TAKE/MOVE troll response ("spits in your face")
+- Unarmed attack response ("laughs at your puny gesture")
+- TALK TO TROLL grammar patterns (talk to troll, hello troll)
+- GIVE/THROW items to troll (eats items, throws knife back)
+
+**Files changed**: See `docs/work/dungeo/troll-logic.md` for complete list.
+
+**Test transcripts**:
+- `troll-axe.transcript` - White-hot blocking tests
+- `troll-interactions.transcript` - Player interaction tests
+- `troll-visibility.transcript` - Axe visibility tests
+- `troll-recovery.transcript` - Wake-up daemon tests
+
+---
 
 ### ISSUE-003: Window doesn't block passage to Kitchen
 

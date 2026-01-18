@@ -436,13 +436,13 @@ Need to verify and potentially add custom message.
 | **THROW/GIVE items to troll** | ✅ Done | Entity event handlers on troll for `if.event.given` and `if.event.thrown` |
 | **TAKE/MOVE troll response** | ✅ Done | TrollTakingBehavior shows "spits in your face" message (language layer bug fixed) |
 | **Unarmed attack response** | ✅ Done | TrollAttackingBehavior shows "laughs at your puny gesture" message (language layer bug fixed) |
-| **HELLO to dead/unconscious troll** | 🚫 N/A | No grammar pattern for TALK/HELLO in parser - would need parser extension |
+| **TALK TO TROLL grammar** | ✅ Done | Grammar patterns work; fixed entity lookup in action validate |
 
 ### Known Issues
 
 **RESOLVED - Language Layer Message Resolution**: Fixed in session 2026-01-17 (second session). The `handleActionFailure` function in `packages/text-service/src/handlers/action.ts` was missing fallback logic to try just the `messageId` if the full `${actionId}.${messageId}` lookup failed. Added the same fallback that `handleActionSuccess` already had.
 
-**No TALK/HELLO Grammar**: The parser doesn't have patterns for "talk to X" or "hello X", so TrollTalkingBehavior can't be tested. Would need parser-en-us grammar extension.
+**RESOLVED - TALK TO TROLL Grammar**: Fixed in session 2026-01-17. The grammar patterns (`talk to troll`, `talk to the troll`, `hello troll`) were working correctly - the action was being invoked. The bug was in the action's validate function which looked for troll by `identity.name === 'troll'`, but the troll's identity name is "nasty-looking troll" with "troll" only being an alias. Fixed to check both entity base name and identity aliases.
 
 **GDT KO/WU Commands**: Fixed grammar patterns to include 'ko' and 'wu' in oneArgCodes. Also added to VALID_CODES in gdt-parser.ts.
 
@@ -535,6 +535,9 @@ None! All features implementable using existing platform capabilities:
 - `stories/dungeo/tests/transcripts/troll-recovery.transcript` - Fixed header format, room name for AH command
 - `stories/dungeo/tests/transcripts/troll-visibility.transcript` - Fixed header format, room name for AH command
 
+**Session 2026-01-17 (talk to troll grammar fix):**
+- `stories/dungeo/src/actions/talk-to-troll/talk-to-troll-action.ts` - Fixed entity lookup to check entity name and identity aliases
+
 ### Test Coverage
 
 ```
@@ -567,4 +570,13 @@ Axe NOT visible  ✅
 
 > attack troll (with sword)
 (Combat proceeds normally)  ✅
+
+> talk to troll
+"The troll growls menacingly at you."  ✅ (FIXED 2026-01-17)
+
+> talk to the troll
+"The troll growls menacingly at you."  ✅
+
+> hello troll
+"The troll growls menacingly at you."  ✅
 ```
