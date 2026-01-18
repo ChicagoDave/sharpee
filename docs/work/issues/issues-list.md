@@ -18,69 +18,13 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-009 | Egg openable by player (should require thief) | Medium | Story | 2026-01-16 | - | 2026-01-18 |
 | ISSUE-012 | Browser client needs save/restore (localStorage) | Medium | Browser | 2026-01-16 | - | - |
 | ISSUE-014 | Turning on lamp in dark room should trigger LOOK | Medium | Engine/Stdlib | 2026-01-16 | - | 2026-01-18 |
-| ISSUE-002 | "in" doesn't enter through open window | Low | Grammar | 2026-01-16 | - | - |
-| ISSUE-011 | Nest has SceneryTrait hiding it from view | Low | Story | 2026-01-16 | - | - |
-| ISSUE-013 | Lamp "switches on" message missing "The" article | Low | TextService | 2026-01-16 | - | - |
+| ISSUE-002 | "in" doesn't enter through open window | Low | Grammar | 2026-01-16 | - | 2026-01-18 |
+| ISSUE-011 | Nest has SceneryTrait hiding it from view | Low | Story | 2026-01-16 | - | 2026-01-18 |
+| ISSUE-013 | Lamp "switches on" message missing "The" article | Low | TextService | 2026-01-16 | - | 2026-01-18 |
 
 ---
 
 ## Open Issues
-
-### ISSUE-002: "in" doesn't enter through open window at Behind House
-
-**Reported**: 2026-01-16
-**Severity**: Low
-**Component**: Grammar / Room Connections
-
-**Description**:
-At Behind House with the window open, typing "in" doesn't enter the Kitchen through the window. Player must use "w" instead.
-
-**Reproduction**:
-```
-> (at Behind House with window open)
-> in
-You can't go that way.
-
-> w
-Kitchen
-```
-
-**Expected**: "in" should work as an alias for entering through the window when at Behind House.
-
-**Notes**: May require special handling since the window is both a direction and an enterable object. Classic Zork behavior would allow "in" here.
-
-**Source**: `docs/work/dungeo/play-output-6.md` lines 49-50
-
----
-
-### ISSUE-011: Nest has SceneryTrait hiding it from view
-
-**Reported**: 2026-01-16
-**Severity**: Low
-**Component**: Story / Forest Objects
-
-**Description**:
-The bird's nest in "Up a Tree" has SceneryTrait which typically hides objects from room contents lists. In original Zork, the nest is visible when you climb the tree.
-
-**Reproduction**:
-```
-> (at Up a Tree)
-> look
-Up a Tree
-
-You are about ten feet above the ground nestled among some large branches.
-(nest not mentioned even though it contains the egg)
-```
-
-**Expected**: "You can see small bird's nest here." or nest mentioned in room description.
-
-**Actual**: Nest is not visible; player must know to "take egg" or "examine nest".
-
-**Notes**: Testing shows nest IS visible on explicit LOOK ("You can see nest here. In nest you see jewel-encrusted egg."). The real issue is ISSUE-010 - contents not shown on room entry. Consider adding nest to room description for discoverability: "On the branch is a small bird's nest."
-
-**Source**: `stories/dungeo/src/regions/forest.ts` line 276
-
----
 
 ### ISSUE-012: Browser client needs save/restore (localStorage)
 
@@ -116,31 +60,6 @@ if (saved) {
 4. Multiple save slots (optional, v2)
 
 **Source**: Browser testing session 2026-01-16, console log line 531-534
-
----
-
-### ISSUE-013: Lamp "switches on" message missing "The" article
-
-**Reported**: 2026-01-16
-**Severity**: Low
-**Component**: TextService / Language Provider
-
-**Description**:
-When turning on the brass lantern, the message is missing the definite article "The".
-
-**Reproduction**:
-```
-> turn on lamp
-brass lantern switches on, banishing the darkness.
-```
-
-**Expected**: "The brass lantern switches on, banishing the darkness."
-
-**Actual**: "brass lantern switches on, banishing the darkness."
-
-**Notes**: The `illuminates_darkness` message template likely uses `{target}` without capitalizing/adding article. Should use `{Target}` or `{the target}`.
-
-**Source**: Browser testing session 2026-01-16, console log line 385
 
 ---
 
@@ -482,6 +401,113 @@ Which do you mean: the small key or the skeleton key?
 - `packages/engine/src/types.ts` - Add needsInput to TurnResult
 - `packages/text-service/src/text-service.ts` - Add handleClientQuery and formatCandidateList
 - `packages/lang-en-us/src/language-provider.ts` - Add disambiguation_prompt message
+
+---
+
+### ISSUE-013: Lamp "switches on" message missing "The" article
+
+**Reported**: 2026-01-16
+**Fixed**: 2026-01-18
+**Severity**: Low
+**Component**: TextService / Language Provider
+
+**Description**:
+When turning on the brass lantern in a dark room, the message was missing the definite article "The" at the start.
+
+**Solution**:
+Updated the `illuminates_darkness` message template in `packages/lang-en-us/src/actions/switching-on.ts` to use the formatter system:
+
+```typescript
+// Before:
+'illuminates_darkness': "{target} switches on, banishing the darkness."
+
+// After:
+'illuminates_darkness': "{cap:the:target} switches on, banishing the darkness."
+```
+
+The `{cap:the:target}` formatter chain:
+1. Applies `the` formatter → "the brass lantern"
+2. Applies `cap` formatter → "The brass lantern"
+
+**Result**:
+```
+> turn on lantern
+The brass lantern switches on, banishing the darkness.
+```
+
+**Files changed**:
+- `packages/lang-en-us/src/actions/switching-on.ts` - Use `{cap:the:target}` formatter
+- `stories/dungeo/tests/transcripts/lamp-article.transcript` - Integration test
+
+---
+
+### ISSUE-011: Nest has SceneryTrait hiding it from view
+
+**Reported**: 2026-01-16
+**Fixed**: 2026-01-18
+**Severity**: Low
+**Component**: Story / Forest Objects
+
+**Description**:
+The bird's nest in "Up a Tree" was not discoverable because it wasn't mentioned in the room description. Players had to guess to examine or take the egg.
+
+**Solution**:
+Added the nest to the room description for "Up a Tree":
+
+```typescript
+// Before:
+'You are about ten feet above the ground nestled among some large branches. The nearest branch above you is beyond your reach.'
+
+// After:
+'You are about ten feet above the ground nestled among some large branches. The nearest branch above you is beyond your reach. On one of the branches is a small bird\'s nest.'
+```
+
+**Result**:
+```
+> u
+Up a Tree
+
+You are about ten feet above the ground nestled among some large branches. The nearest branch above you is beyond your reach. On one of the branches is a small bird's nest.
+```
+
+**Files changed**:
+- `stories/dungeo/src/regions/forest.ts` - Added nest mention to room description
+- `stories/dungeo/tests/transcripts/nest-in-description.transcript` - Integration test
+
+---
+
+### ISSUE-002: "in" doesn't enter through open window at Behind House
+
+**Reported**: 2026-01-16
+**Fixed**: 2026-01-18
+**Severity**: Low
+**Component**: Story / Room Connections
+
+**Description**:
+At Behind House with the window open, typing "in" didn't enter the Kitchen through the window. Player had to use "w" instead.
+
+**Solution**:
+Added a `Direction.IN` exit from Behind House that goes through the window to the Kitchen:
+
+```typescript
+// In createWhiteHouseObjects:
+RoomBehavior.setExit(behindHouse, Direction.WEST, kitchenId, window.id);
+RoomBehavior.setExit(behindHouse, Direction.IN, kitchenId, window.id);  // Added
+```
+
+Both "west" and "in" now route through the window, which checks if the window is open before allowing passage.
+
+**Result**:
+```
+> (at Behind House)
+> open window
+> in
+Kitchen
+```
+
+**Files changed**:
+- `stories/dungeo/src/regions/white-house.ts` - Added `Direction.IN` exit through window
+- `stories/dungeo/tests/transcripts/window-in-direction.transcript` - Integration test
 
 ---
 

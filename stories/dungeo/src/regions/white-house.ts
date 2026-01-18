@@ -178,6 +178,7 @@ export function createWhiteHouseObjects(world: WorldModel, roomIds: WhiteHouseRo
     const kitchen = world.getEntity(kitchenId);
     if (behindHouse && kitchen) {
       RoomBehavior.setExit(behindHouse, Direction.WEST, kitchenId, window.id);
+      RoomBehavior.setExit(behindHouse, Direction.IN, kitchenId, window.id);  // "in" also enters through window
       RoomBehavior.setExit(kitchen, Direction.EAST, roomIds.behindHouse, window.id);
     }
   }

@@ -32,7 +32,7 @@ export const switchingOnLanguage = {
     'temporary_activation': "{target} switches on temporarily.",
     'with_sound': "{You} {switch} on {target}. {sound}",
     'door_opens': "{target} switches on and opens.",
-    'illuminates_darkness': "{target} switches on, banishing the darkness."
+    'illuminates_darkness': "{cap:the:target} switches on, banishing the darkness."
   },
   
   help: {

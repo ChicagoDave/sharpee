@@ -1,0 +1,18 @@
+---
+title: Nest in Description Test (ISSUE-011)
+story: dungeo
+---
+# Test ISSUE-011: Nest should be mentioned in Up a Tree room description
+# Verifies nest is discoverable in room description
+
+# Go to Forest Path 1 (where the large tree is)
+> open mailbox
+> take all
+> n
+> n
+
+# Climb up the tree
+> u
+
+# Verify the nest is mentioned in the room description
+/bird's nest/

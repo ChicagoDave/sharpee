@@ -1,0 +1,20 @@
+---
+title: Lamp Article Test (ISSUE-013)
+story: dungeo
+---
+# Test ISSUE-013: Lamp "switches on" message should have "The" article
+# Verifies: "{cap:the:target} switches on, banishing the darkness."
+
+# Go to cellar (dark room)
+> open mailbox
+> take all
+> open window
+> w
+> w
+> open trap door
+> d
+> d
+
+# Turn on lamp in darkness - should show "The brass lantern"
+> turn on lantern
+/The brass lantern switches on/
