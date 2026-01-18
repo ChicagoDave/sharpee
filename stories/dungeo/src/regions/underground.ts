@@ -410,8 +410,8 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
 
       // Remove troll and axe from the game
       // (Zork I commercial: "the carcass has disappeared")
-      w.removeEntity(axe.id);
-      w.removeEntity(troll.id);
+      world.removeEntity(axe.id);
+      world.removeEntity(troll.id);
 
       return events;
     },
@@ -430,7 +430,7 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
 
       if (isKnife(item)) {
         // Knife: troll throws it back to the floor
-        w.moveEntity(item.id, roomId);
+        world.moveEntity(item.id, roomId);
         events.push({
           id: generateEventId(),
           type: 'game.message',
@@ -444,8 +444,7 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
         });
       } else {
         // Non-knife: troll eats it (destroy the item)
-        // Move to 'limbo' (deleted from game world tracking)
-        (w as any).removeEntity?.(item.id) ?? w.moveEntity(item.id, 'limbo');
+        world.removeEntity(item.id);
         events.push({
           id: generateEventId(),
           type: 'game.message',
@@ -489,7 +488,7 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
 
       if (isKnife(item)) {
         // Knife: troll throws it back to the floor
-        w.moveEntity(item.id, roomId);
+        world.moveEntity(item.id, roomId);
         events.push({
           id: generateEventId(),
           type: 'game.message',
@@ -503,7 +502,7 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
         });
       } else {
         // Non-knife: troll eats it
-        (w as any).removeEntity?.(item.id) ?? w.moveEntity(item.id, 'limbo');
+        world.removeEntity(item.id);
         events.push({
           id: generateEventId(),
           type: 'game.message',

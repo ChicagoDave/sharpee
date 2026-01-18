@@ -21,6 +21,8 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-002 | "in" doesn't enter through open window | Low | Grammar | 2026-01-16 | - | 2026-01-18 |
 | ISSUE-011 | Nest has SceneryTrait hiding it from view | Low | Story | 2026-01-16 | - | 2026-01-18 |
 | ISSUE-013 | Lamp "switches on" message missing "The" article | Low | TextService | 2026-01-16 | - | 2026-01-18 |
+| ISSUE-016 | Troll death handler fails - removeEntity not a function | High | Story/Platform | 2026-01-18 | - | 2026-01-18 |
+| ISSUE-017 | Platform events not detected (requiresClientAction lost) | High | Platform | 2026-01-18 | - | 2026-01-18 |
 
 ---
 
@@ -31,6 +33,101 @@ Catalog of known bugs and issues to be addressed.
 ---
 
 ## Closed Issues
+
+### ISSUE-017: Platform events not detected (requiresClientAction lost)
+
+**Reported**: 2026-01-18
+**Fixed**: 2026-01-18
+**Severity**: High
+**Component**: Platform (browser-en-us, cli-en-us)
+
+**Description**:
+Platform events like `platform.save_requested` were not being processed because `isPlatformRequestEvent()` returned false. The save command would emit events but the actual save never happened.
+
+**Root Cause**:
+When browser and CLI platforms converted `SequencedEvent` to `SemanticEvent` for platform event checking, they created a new object without preserving the `requiresClientAction: true` property:
+
+```typescript
+// BEFORE - missing requiresClientAction
+const semanticEvent: SemanticEvent = {
+  id: event.source || `evt_${event.turn}_${event.sequence}`,
+  type: event.type,
+  timestamp: event.timestamp.getTime(),
+  entities: {},
+  data: event.data
+};
+```
+
+The `isPlatformRequestEvent()` function checks `'requiresClientAction' in event && event.requiresClientAction === true`, so the event was never detected as a platform event.
+
+**Solution**:
+Spread the original event properties to preserve `requiresClientAction`:
+
+```typescript
+// AFTER - preserves all original properties
+const semanticEvent: SemanticEvent = {
+  ...(event as any),
+  id: event.source || `evt_${event.turn}_${event.sequence}`,
+  type: event.type,
+  timestamp: event.timestamp.getTime(),
+  entities: (event as any).entities || {},
+  data: event.data,
+  payload: (event as any).payload || event.data
+};
+```
+
+**Files changed**:
+- `packages/platforms/browser-en-us/src/browser-platform.ts` - Spread event properties
+- `packages/platforms/cli-en-us/src/cli-platform.ts` - Spread event properties
+
+---
+
+### ISSUE-016: Troll death handler fails - removeEntity not a function
+
+**Reported**: 2026-01-18
+**Fixed**: 2026-01-18
+**Severity**: High
+**Component**: Story / Platform (Event Handlers)
+
+**Description**:
+When the troll was killed, the death handler failed with error: `s.removeEntity is not a function`. The troll and axe were not removed from the game, and the "smoke disappear" message was never shown.
+
+**Root Cause**:
+Per ADR-075, entity handlers (registered via `entity.on = {...}`) receive `WorldQuery` (read-only) as the second parameter, not `WorldModel`. The death handler code was typed as `(event, w: WorldModel)` but actually received `WorldQuery` which doesn't have mutation methods like `removeEntity()` or `moveEntity()`.
+
+```typescript
+// Handler declaration (line 385)
+'if.event.death': (_event: ISemanticEvent, w: WorldModel): ISemanticEvent[] => {
+  // ...
+  w.removeEntity(axe.id);  // ERROR: w is actually WorldQuery, not WorldModel
+  w.removeEntity(troll.id);
+}
+```
+
+**Solution**:
+Use the closure-captured `world` variable (from the outer function scope) instead of the `w` parameter. The outer `world` IS the actual `WorldModel` with mutation methods:
+
+```typescript
+// AFTER - use closure-captured world
+'if.event.death': (_event: ISemanticEvent, _w: WorldModel): ISemanticEvent[] => {
+  // ...
+  world.removeEntity(axe.id);   // world is WorldModel from closure
+  world.removeEntity(troll.id);
+}
+```
+
+This pattern matches other handlers like `glacier-handler.ts` which use the outer scope `world` variable.
+
+**Files changed**:
+- `stories/dungeo/src/regions/underground.ts`:
+  - Line 413-414: `w.removeEntity()` → `world.removeEntity()` (death handler)
+  - Line 433: `w.moveEntity()` → `world.moveEntity()` (knife throw-back)
+  - Line 448: Simplified to `world.removeEntity()` (troll eating items - given)
+  - Line 492: `w.moveEntity()` → `world.moveEntity()` (knife throw-back)
+  - Line 506: Simplified to `world.removeEntity()` (troll eating items - thrown)
+- `stories/dungeo/tests/transcripts/troll-combat.transcript` - Updated to use GDT for deterministic testing
+
+---
 
 ### ISSUE-012: Browser client needs save/restore (localStorage)
 

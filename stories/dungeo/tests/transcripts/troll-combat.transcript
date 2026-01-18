@@ -52,23 +52,17 @@ description: Test killing the troll, sword glow, and smoke disappear
 > z
 [EVENT: true, type="npc.attacked"]
 
-# Attack troll multiple times until dead
-> kill troll
-[EVENT: true, type="if.event.attacked"]
+# Use GDT to kill the troll directly (deterministic test)
+# After death: troll and axe are removed from the game
+> gdt
+[OK: contains "GDT"]
 
-> attack troll
-[EVENT: true, type="if.event.attacked"]
+> kl troll
+[OK: contains "Killed"]
+[OK: contains "Death handler triggered"]
 
-> kill troll
-[EVENT: true, type="if.event.attacked"]
-
-> kill troll
-[EVENT: true, type="if.event.attacked"]
-
-> kill troll
-[EVENT: true, type="if.event.attacked"]
-
-# Eventually troll dies - verify smoke message and sword stops glowing
+# Troll and axe should be removed from the game
+# (Room name "Troll Room" still contains "troll" - check for absence of "can see")
 > look
-[NOT: contains "troll"]
-[NOT: contains "axe"]
+[OK: contains "Troll Room"]
+[OK: not contains "You can see"]

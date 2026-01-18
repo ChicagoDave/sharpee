@@ -68,15 +68,17 @@ export class BrowserPlatform {
     // Listen for semantic events through the event source
     this.engine.on('event', (event: SequencedEvent) => {
       // Convert SequencedEvent to SemanticEvent for platform event checking
+      // Spread original event to preserve extra properties like requiresClientAction
       const semanticEvent: SemanticEvent = {
+        ...(event as any),
         id: event.source || `evt_${event.turn}_${event.sequence}`,
         type: event.type,
         timestamp: event.timestamp.getTime(),
-        entities: {},
+        entities: (event as any).entities || {},
         data: event.data,
-        payload: event.data
+        payload: (event as any).payload || event.data
       };
-      
+
       // Check if this is a platform request event that we need to handle
       if (isPlatformRequestEvent(semanticEvent)) {
         this.pendingPlatformOps.push(semanticEvent as PlatformEvent);
