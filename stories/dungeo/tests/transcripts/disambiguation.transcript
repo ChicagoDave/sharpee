@@ -1,0 +1,23 @@
+title: Disambiguation Prompt Test
+story: dungeo
+description: ISSUE-008 - Verify disambiguation lists options
+
+---
+
+# Use GDT to get both keys (skeleton key and small key both alias to "key")
+> gdt
+[OK: contains "GDT"]
+
+> tk skeleton key
+[OK: contains "Taken"]
+
+> tk small key
+[OK: contains "Taken"]
+
+> ex
+[OK: contains "game"]
+
+# Now try to drop "key" - should trigger disambiguation since both match
+> drop key
+[OK: contains "Which do you mean"]
+[OK: contains "key"]

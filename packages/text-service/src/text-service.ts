@@ -127,6 +127,9 @@ export class TextService implements ITextService {
       case 'command.failed':
         return this.handleCommandFailed(event, context);
 
+      case 'client.query':
+        return this.handleClientQuery(event, context);
+
       default:
         return handleGenericEvent(event, context);
     }
@@ -159,11 +162,7 @@ export class TextService implements ITextService {
         return [createBlock(BLOCK_KEYS.ERROR, message)];
       }
 
-      if (data.reason.includes('AMBIGUOUS')) {
-        const message = context.languageProvider?.getMessage('core.ambiguous_reference')
-          ?? "Which one do you mean?";
-        return [createBlock(BLOCK_KEYS.ERROR, message)];
-      }
+      // Note: AMBIGUOUS_ENTITY now uses client.query event, not command.failed
 
       if (data.reason.includes('NO_MATCH') || data.reason.includes('parse')) {
         const message = context.languageProvider?.getMessage('core.command_not_understood')
@@ -176,6 +175,53 @@ export class TextService implements ITextService {
     const message = context.languageProvider?.getMessage('core.command_failed')
       ?? "I don't understand that.";
     return [createBlock(BLOCK_KEYS.ERROR, message)];
+  }
+
+  /**
+   * Handle client.query events (disambiguation, confirmations, etc.)
+   */
+  private handleClientQuery(event: ISemanticEvent, context: HandlerContext): ITextBlock[] {
+    const data = event.data as {
+      source?: string;
+      type?: string;
+      messageId?: string;
+      candidates?: Array<{ id: string; name: string; description?: string }>;
+    };
+
+    // Only handle disambiguation queries here
+    if (data.source !== 'disambiguation') {
+      return [];
+    }
+
+    // Format candidates as natural list
+    const candidateNames = (data.candidates || []).map(c => c.name);
+    const options = this.formatCandidateList(candidateNames);
+
+    // Get message template with options
+    const message = context.languageProvider?.getMessage('core.disambiguation_prompt', { options })
+      ?? `Which do you mean: ${options}?`;
+
+    return [createBlock(BLOCK_KEYS.ERROR, message)];
+  }
+
+  /**
+   * Format a list of candidate names as natural English
+   * e.g., "the red ball or the blue ball" or "the sword, the axe, or the knife"
+   */
+  private formatCandidateList(names: string[]): string {
+    if (names.length === 0) return '';
+    if (names.length === 1) return `the ${names[0]}`;
+
+    // Add "the" article to each name
+    const withArticles = names.map(n => `the ${n}`);
+
+    if (withArticles.length === 2) {
+      return `${withArticles[0]} or ${withArticles[1]}`;
+    }
+
+    // Oxford comma style: "the X, the Y, or the Z"
+    const last = withArticles.pop();
+    return `${withArticles.join(', ')}, or ${last}`;
   }
 }
 

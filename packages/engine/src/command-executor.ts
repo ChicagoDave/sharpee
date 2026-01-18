@@ -10,7 +10,7 @@
  * All event creation is owned by the action components themselves.
  */
 
-import { ISemanticEvent, ISystemEvent, IGenericEventSource } from '@sharpee/core';
+import { ISemanticEvent, ISystemEvent, IGenericEventSource, QuerySource, QueryType } from '@sharpee/core';
 import { IParser, IValidatedCommand, IParsedCommand } from '@sharpee/world-model';
 import { hasWorldContext } from './parser-interface';
 import { SharedDataKeys, EngineSharedData } from './shared-data-keys';
@@ -148,6 +148,36 @@ export class CommandExecutor {
       // Phase 2: Validate
       const validationResult = this.validator.validate(parsedCommand);
       if (!validationResult.success) {
+        // Check for disambiguation - emit client.query event instead of throwing
+        if (validationResult.error.code === 'AMBIGUOUS_ENTITY') {
+          const details = validationResult.error.details || {};
+          const candidates = details.ambiguousEntities || [];
+
+          // Emit client.query event for disambiguation
+          const queryEvent = eventSequencer.sequence({
+            type: 'client.query',
+            data: {
+              source: QuerySource.DISAMBIGUATION,
+              type: QueryType.DISAMBIGUATION,
+              messageId: 'core.disambiguation_prompt',
+              candidates: candidates,
+              searchText: details.searchText,
+              originalCommand: parsedCommand
+            }
+          }, turn);
+
+          // Return early with query pending
+          return {
+            turn,
+            input,
+            success: false,
+            needsInput: true,
+            events: [queryEvent],
+            error: 'DISAMBIGUATION_NEEDED'
+          };
+        }
+
+        // Other validation errors still throw
         throw new Error(`Validation failed: ${validationResult.error.code}`);
       }
 

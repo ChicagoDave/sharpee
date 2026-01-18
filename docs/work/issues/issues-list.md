@@ -13,8 +13,8 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-010 | Room contents not shown on room entry | High | TextService | 2026-01-16 | - | 2026-01-17 |
 | ISSUE-005 | Text output order wrong (contents before description) | Medium | TextService | 2026-01-16 | - | 2026-01-17 |
 | ISSUE-001 | "get all" / "drop all" returns entity_not_found | Medium | Validator | 2026-01-16 | - | 2026-01-17 |
-| ISSUE-007 | Template placeholder {are} not resolved | Medium | TextService | 2026-01-16 | - | - |
-| ISSUE-008 | Disambiguation doesn't list options | Medium | TextService | 2026-01-16 | - | - |
+| ISSUE-007 | Template placeholder {are} not resolved | Medium | TextService | 2026-01-16 | - | 2026-01-18 |
+| ISSUE-008 | Disambiguation doesn't list options | Medium | TextService | 2026-01-16 | - | 2026-01-18 |
 | ISSUE-009 | Egg openable by player (should require thief) | Medium | Story | 2026-01-16 | - | - |
 | ISSUE-012 | Browser client needs save/restore (localStorage) | Medium | Browser | 2026-01-16 | - | - |
 | ISSUE-014 | Turning on lamp in dark room should trigger LOOK | Medium | Engine/Stdlib | 2026-01-16 | - | - |
@@ -50,58 +50,6 @@ Kitchen
 **Notes**: May require special handling since the window is both a direction and an enterable object. Classic Zork behavior would allow "in" here.
 
 **Source**: `docs/work/dungeo/play-output-6.md` lines 49-50
-
----
-
-### ISSUE-007: Template placeholder {are} not resolved
-
-**Reported**: 2026-01-16
-**Severity**: Medium
-**Component**: TextService / Language Provider
-
-**Description**:
-Inventory output shows unresolved template placeholder `{are}` instead of the word "are".
-
-**Reproduction**:
-```
-> i
-You {are} carrying:
-
-  leaflet, welcome mat
-```
-
-**Expected**: "You are carrying:"
-
-**Actual**: "You {are} carrying:"
-
-**Notes**: Template resolution failing for verb conjugation placeholders.
-
-**Source**: Browser testing session 2026-01-16, console log line 397
-
----
-
-### ISSUE-008: Disambiguation doesn't list options
-
-**Reported**: 2026-01-16
-**Severity**: Medium
-**Component**: TextService / Disambiguation
-
-**Description**:
-When multiple objects match (e.g., "rug" matches both oriental rug and welcome mat), the disambiguation prompt just says "Which do you mean?" without listing the options.
-
-**Reproduction**:
-```
-> move rug
-Which do you mean?
-```
-
-**Expected**: "Which do you mean: the oriental rug, or the welcome mat?"
-
-**Actual**: "Which do you mean?" (no options listed)
-
-**Notes**: The disambiguation event contains the candidates (topCandidates), but they're not being rendered.
-
-**Source**: Browser testing session 2026-01-16, console log lines 310, 349
 
 ---
 
@@ -465,6 +413,76 @@ Also updated `NpcService.executeAttack()` to use `CombatService` for actual dama
 **Files changed**:
 - `packages/stdlib/src/npc/behaviors.ts` - guardBehavior.onTurn attacks if hostile
 - `packages/stdlib/src/npc/npc-service.ts` - executeAttack uses CombatService
+
+---
+
+### ISSUE-007: Template placeholder {are} not resolved
+
+**Reported**: 2026-01-16
+**Fixed**: 2026-01-18
+**Severity**: Medium
+**Component**: TextService / Language Provider
+
+**Description**:
+Inventory output showed unresolved template placeholder `{are}` instead of the word "are".
+
+**Reproduction**:
+```
+> i
+You {are} carrying:
+  leaflet, welcome mat
+```
+
+**Root Cause**:
+The placeholder resolver (ADR-089) expects base verb forms like `{be}` which it conjugates to "are" for 2nd person narrative. The inventory templates used `{are}` directly (already conjugated), which wasn't recognized as a verb by the pattern matcher and was left unresolved.
+
+**Solution**:
+Changed inventory templates from `{are}` to `{be}` in `packages/lang-en-us/src/actions/inventory.ts`:
+```typescript
+// Before:
+'carrying': "{You} {are} carrying:",
+
+// After:
+'carrying': "{You} {be} carrying:",
+```
+
+**Files changed**:
+- `packages/lang-en-us/src/actions/inventory.ts` - Changed 6 occurrences of `{are}` to `{be}`
+
+---
+
+### ISSUE-008: Disambiguation doesn't list options
+
+**Reported**: 2026-01-16
+**Fixed**: 2026-01-18
+**Severity**: Medium
+**Component**: TextService / Engine
+
+**Description**:
+When multiple objects matched a noun (e.g., "key" matching both skeleton key and small key), the disambiguation prompt showed "Which do you mean?" without listing the options.
+
+**Root Cause**:
+The CommandExecutor threw a generic Error for validation failures, losing the structured disambiguation data. The error message "Validation failed: AMBIGUOUS_ENTITY" was passed to TextService, but the candidate entity list was not.
+
+**Solution**:
+Implemented full platform events flow for disambiguation (per `docs/design/disambiguation-via-platform-events.md`):
+
+1. **CommandExecutor** (engine): Check for AMBIGUOUS_ENTITY, emit `client.query` event with candidates instead of throwing
+2. **TextService**: Add `handleClientQuery()` to format disambiguation candidates as natural English
+3. **Language layer**: Add `core.disambiguation_prompt` message template with `{options}` placeholder
+4. **TurnResult type**: Add `needsInput` flag for disambiguation state
+
+**Result**:
+```
+> drop key
+Which do you mean: the small key or the skeleton key?
+```
+
+**Files changed**:
+- `packages/engine/src/command-executor.ts` - Emit client.query for AMBIGUOUS_ENTITY
+- `packages/engine/src/types.ts` - Add needsInput to TurnResult
+- `packages/text-service/src/text-service.ts` - Add handleClientQuery and formatCandidateList
+- `packages/lang-en-us/src/language-provider.ts` - Add disambiguation_prompt message
 
 ---
 

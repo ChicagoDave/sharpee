@@ -1,54 +1,3 @@
-[15:07:31] WRITE: docs/context/session-20260117-1427-dungeo.md
-[15:08:29] GIT: git commit -m "$(cat <<'EOF'
-feat: Add troll NPC behaviors and capability dispat
-[15:08:36] GIT: git push origin dungeo
-[16:13:20] EDIT: packages/text-service/src/handlers/action.ts
-[16:29:34] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[16:30:52] WRITE: stories/dungeo/tests/transcripts/troll-interactions.transcript
-[16:31:27] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[16:32:52] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[16:33:23] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[16:33:53] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[16:34:46] EDIT: stories/dungeo/tests/transcripts/troll-recovery.transcript
-[16:34:52] EDIT: stories/dungeo/tests/transcripts/troll-visibility.transcript
-[16:35:07] WRITE: stories/dungeo/tests/transcripts/troll-recovery.transcript
-[16:35:17] WRITE: stories/dungeo/tests/transcripts/troll-visibility.transcript
-[16:35:52] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[16:36:23] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[16:38:09] EDIT: stories/dungeo/tests/transcripts/troll-recovery.transcript
-[16:38:10] EDIT: stories/dungeo/tests/transcripts/troll-visibility.transcript
-[16:38:27] EDIT: stories/dungeo/src/actions/gdt/gdt-parser.ts
-[16:41:03] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[16:42:05] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[16:46:54] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[16:47:53] EDIT: stories/dungeo/src/index.ts
-[16:50:30] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[16:51:55] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[16:52:39] EDIT: docs/work/dungeo/troll-logic.md
-[16:52:53] EDIT: docs/work/dungeo/troll-logic.md
-[16:53:02] EDIT: docs/work/dungeo/troll-logic.md
-[16:54:08] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[16:55:17] WRITE: docs/context/session-20260117-1611-dungeo.md
-[22:48:49] WRITE: stories/dungeo/src/actions/talk-to-troll/talk-to-troll-action.ts
-[22:48:55] WRITE: stories/dungeo/src/actions/talk-to-troll/index.ts
-[22:49:08] EDIT: stories/dungeo/src/actions/index.ts
-[22:49:14] EDIT: stories/dungeo/src/actions/index.ts
-[22:49:20] EDIT: stories/dungeo/src/actions/index.ts
-[22:49:26] EDIT: stories/dungeo/src/actions/index.ts
-[22:49:48] EDIT: stories/dungeo/src/index.ts
-[22:50:07] EDIT: stories/dungeo/src/index.ts
-[22:50:27] EDIT: stories/dungeo/src/index.ts
-[22:52:35] TRANSCRIPT FAIL: echo "gdt
-ah Troll Room
-talk to troll
-ko troll
-talk to troll
-ex" | node packages
-[22:55:23] EDIT: stories/dungeo/src/index.ts
-[22:58:29] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo /tmp/test-talk-troll.
-[23:00:02] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo /tmp/test-talk-troll.
-[23:01:34] EDIT: docs/context/session-20260117-1611-dungeo.md
-[23:01:45] EDIT: docs/context/session-20260117-1611-dungeo.md
 [23:02:03] EDIT: docs/context/session-20260117-1611-dungeo.md
 [23:03:06] GIT: git add -A && git commit -m "$(cat <<'EOF'
 fix: Language layer message resolutio
@@ -87,3 +36,28 @@ fix: Language layer message resolutio
 [00:32:48] EDIT: docs/work/issues/issues-list.md
 [00:33:15] WRITE: docs/context/session-20260117-2336-dungeo.md
 [00:35:18] EDIT: docs/context/session-20260117-2336-dungeo.md
+[00:36:25] GIT: git push origin dungeo
+[00:48:42] EDIT: packages/lang-en-us/src/actions/inventory.ts
+[00:53:27] WRITE: stories/dungeo/tests/transcripts/inventory-message.transcript
+[00:54:08] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[00:55:53] EDIT: stories/dungeo/tests/transcripts/inventory-message.transcript
+[00:56:31] EDIT: stories/dungeo/tests/transcripts/inventory-message.transcript
+[00:57:03] EDIT: stories/dungeo/tests/transcripts/inventory-message.transcript
+[00:58:16] EDIT: docs/work/issues/issues-list.md
+[00:58:24] EDIT: docs/work/issues/issues-list.md
+[00:58:51] EDIT: docs/work/issues/issues-list.md
+[01:10:43] WRITE: docs/work/disambiguate/implementation-plan.md
+[01:18:18] EDIT: packages/engine/src/command-executor.ts
+[01:18:29] EDIT: packages/engine/src/command-executor.ts
+[01:18:54] EDIT: packages/text-service/src/text-service.ts
+[01:19:15] EDIT: packages/text-service/src/text-service.ts
+[01:19:44] EDIT: packages/lang-en-us/src/language-provider.ts
+[01:20:00] EDIT: packages/text-service/src/text-service.ts
+[01:21:49] EDIT: packages/engine/src/types.ts
+[01:29:27] WRITE: stories/dungeo/tests/transcripts/disambiguation.transcript
+[01:31:25] EDIT: stories/dungeo/tests/transcripts/disambiguation.transcript
+[01:33:02] EDIT: stories/dungeo/tests/transcripts/disambiguation.transcript
+[01:35:00] EDIT: docs/work/issues/issues-list.md
+[01:35:15] EDIT: docs/work/issues/issues-list.md
+[01:35:36] EDIT: docs/work/issues/issues-list.md
+[01:36:28] GIT: git checkout dungeo && git merge disambiguate --no-edit

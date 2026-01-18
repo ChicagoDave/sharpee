@@ -90,6 +90,13 @@ export interface TurnResult {
    * Used for pronoun resolution (ADR-089)
    */
   validatedCommand?: IValidatedCommand;
+
+  /**
+   * Whether the turn is waiting for additional input (e.g., disambiguation)
+   * When true, a client.query event was emitted and the engine expects
+   * a follow-up response before continuing.
+   */
+  needsInput?: boolean;
 }
 
 /**

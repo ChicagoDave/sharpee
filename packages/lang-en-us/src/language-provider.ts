@@ -65,6 +65,7 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     const coreMessages: Record<string, string> = {
       'core.entity_not_found': "You can't see any such thing.",
       'core.ambiguous_reference': "Which do you mean?",
+      'core.disambiguation_prompt': "Which do you mean: {options}?",
       'core.command_not_understood': "I don't understand that command.",
       'core.command_failed': "I don't understand that.",
     };

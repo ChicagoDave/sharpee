@@ -1,0 +1,15 @@
+title: ISSUE-007 Inventory Message
+story: dungeo
+description: Verify inventory message shows "You are carrying" not "You {are} carrying"
+
+---
+
+# Take an item and check inventory
+
+> take mat
+Taken.
+
+> i
+[OK: contains "You are carrying:"]
+[OK: contains "welcome mat"]
+
