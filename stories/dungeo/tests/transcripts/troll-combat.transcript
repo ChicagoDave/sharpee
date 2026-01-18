@@ -33,7 +33,7 @@ description: Test killing the troll and the troll attacking the player
 
 # Go to Troll Room
 > push rug
-[OK: contains "trapdoor"]
+[OK: contains "trap door"]
 
 > open trapdoor
 [OK: contains "open"]

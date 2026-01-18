@@ -1,0 +1,11 @@
+title: Save Test
+story: dungeo
+author: Sharpee Team
+description: Test save command emits proper events
+
+---
+
+# Test save command
+> save
+[EVENT: true, type="platform.save_requested"]
+[EVENT: true, type="if.event.save_requested"]

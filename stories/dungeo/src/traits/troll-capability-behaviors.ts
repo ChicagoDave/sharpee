@@ -7,6 +7,7 @@
  * From MDL source (act1.254):
  * - TAKE: "The troll spits in your face..."
  * - ATTACK (unarmed): "The troll laughs at your puny gesture."
+ * - ATTACK (armed): Full combat via CombatService
  * - TALK (when dead/unconscious): "Unfortunately, the troll can't hear you."
  *
  * NOTE: GIVE/THROW to troll are handled via entity event handlers in
@@ -24,10 +25,38 @@ import {
   WorldModel,
   CombatantTrait,
   TraitType,
-  IdentityTrait
+  IdentityTrait,
+  WeaponTrait
 } from '@sharpee/world-model';
 
+import {
+  CombatService,
+  CombatResult,
+  applyCombatResult,
+  findWieldedWeapon
+} from '@sharpee/stdlib';
+
 import { TrollTrait } from './troll-trait';
+
+// Simple random implementation for combat
+function createSimpleRandom() {
+  return {
+    next: () => Math.random(),
+    int: (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min,
+    chance: (probability: number) => Math.random() < probability,
+    pick: <T>(array: T[]) => array[Math.floor(Math.random() * array.length)],
+    shuffle: <T>(array: T[]) => {
+      const result = [...array];
+      for (let i = result.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [result[i], result[j]] = [result[j], result[i]];
+      }
+      return result;
+    },
+    getSeed: () => 0,
+    setSeed: () => {}
+  };
+}
 
 /**
  * Message IDs for troll capability behaviors
@@ -133,14 +162,17 @@ export const TrollTakingBehavior: CapabilityBehavior = {
 interface AttackingSharedData extends CapabilitySharedData {
   hasWeapon?: boolean;
   trollName?: string;
+  weapon?: IFEntity;
+  combatResult?: CombatResult;
+  droppedItems?: string[];
 }
 
 /**
- * Behavior for attacking the troll without a weapon
+ * Behavior for attacking the troll
  *
- * MDL: "The troll laughs at your puny gesture."
- *
- * Only intercepts when player is unarmed. If armed, let stdlib combat handle it.
+ * MDL behavior:
+ * - Unarmed: "The troll laughs at your puny gesture." (blocked)
+ * - Armed: Full combat via CombatService
  */
 export const TrollAttackingBehavior: CapabilityBehavior = {
   validate(
@@ -154,19 +186,30 @@ export const TrollAttackingBehavior: CapabilityBehavior = {
       return { valid: true };
     }
 
-    // Troll must be alive to respond
-    if (!isTrollActive(entity)) {
-      return { valid: true }; // Let stdlib handle dead troll
-    }
-
-    // Check if attacker has a weapon
-    const hasWeapon = actorHasWeapon(world, actorId);
-    sharedData.hasWeapon = hasWeapon;
-
     const identity = entity.get(IdentityTrait);
     sharedData.trollName = identity?.name || 'troll';
 
-    if (!hasWeapon) {
+    // Check if troll is already dead
+    const combatant = entity.get(CombatantTrait);
+    if (combatant && !combatant.isAlive) {
+      return {
+        valid: false,
+        error: 'already_dead',
+        params: { target: sharedData.trollName }
+      };
+    }
+
+    // Find player's weapon
+    const actor = world.getEntity(actorId);
+    if (!actor) {
+      return { valid: false, error: 'no_actor' };
+    }
+
+    const weapon = findWieldedWeapon(actor, world);
+    sharedData.hasWeapon = !!weapon;
+    sharedData.weapon = weapon;
+
+    if (!weapon) {
       // Block unarmed attack with mocking response
       return {
         valid: false,
@@ -174,16 +217,123 @@ export const TrollAttackingBehavior: CapabilityBehavior = {
       };
     }
 
-    // Has weapon - let stdlib combat handle it
+    // Armed attack is valid - will execute combat
     return { valid: true };
   },
 
-  execute() {
-    // Not executed for unarmed (blocked), armed uses stdlib
+  execute(
+    entity: IFEntity,
+    world: WorldModel,
+    actorId: string,
+    sharedData: AttackingSharedData
+  ): void {
+    // Only execute combat if player has weapon
+    if (!sharedData.hasWeapon || !sharedData.weapon) {
+      return;
+    }
+
+    const actor = world.getEntity(actorId);
+    if (!actor) return;
+
+    // Use CombatService for skill-based combat
+    const combatService = new CombatService();
+    const combatResult = combatService.resolveAttack({
+      attacker: actor,
+      target: entity,
+      weapon: sharedData.weapon,
+      world: world,
+      random: createSimpleRandom()
+    });
+
+    // Apply combat result (handles health, death, inventory dropping)
+    const combatApplyResult = applyCombatResult(entity, combatResult, world);
+
+    // Store results for report phase
+    sharedData.combatResult = combatResult;
+    sharedData.droppedItems = combatApplyResult.droppedItems;
   },
 
-  report() {
-    return [];
+  report(
+    entity: IFEntity,
+    world: WorldModel,
+    actorId: string,
+    sharedData: AttackingSharedData
+  ): CapabilityEffect[] {
+    const effects: CapabilityEffect[] = [];
+    const combatResult = sharedData.combatResult;
+
+    if (!combatResult) {
+      return effects;
+    }
+
+    const actor = world.getEntity(actorId);
+    const weapon = sharedData.weapon;
+    const trollName = sharedData.trollName || 'troll';
+
+    // Create ATTACKED event
+    effects.push(createEffect('if.event.attacked', {
+      target: entity.id,
+      targetName: trollName,
+      weapon: weapon?.id,
+      weaponName: weapon?.name,
+      unarmed: false,
+      hit: combatResult.hit,
+      damage: combatResult.damage
+    }));
+
+    // Create action.success with combat message
+    const params: Record<string, unknown> = {
+      target: trollName,
+      weapon: weapon?.name,
+      damage: combatResult.damage,
+      attackerName: actor?.name || 'player',
+      targetName: trollName
+    };
+
+    if (combatResult.messageData) {
+      Object.assign(params, combatResult.messageData);
+    }
+
+    effects.push(createEffect('action.success', {
+      actionId: 'if.action.attacking',
+      messageId: combatResult.messageId,
+      params
+    }));
+
+    // Handle dropped items
+    if (sharedData.droppedItems?.length) {
+      for (const itemId of sharedData.droppedItems) {
+        const item = world.getEntity(itemId);
+        if (item) {
+          effects.push(createEffect('if.event.dropped', {
+            item: itemId,
+            itemName: item.name,
+            dropper: entity.id,
+            dropperName: trollName
+          }));
+        }
+      }
+    }
+
+    // Handle death
+    if (combatResult.targetKilled) {
+      effects.push(createEffect('if.event.death', {
+        target: entity.id,
+        targetName: trollName,
+        killedBy: actorId
+      }));
+    }
+
+    // Handle knockout
+    if (combatResult.targetKnockedOut) {
+      effects.push(createEffect('if.event.knocked_out', {
+        target: entity.id,
+        targetName: trollName,
+        knockedOutBy: actorId
+      }));
+    }
+
+    return effects;
   },
 
   blocked(
