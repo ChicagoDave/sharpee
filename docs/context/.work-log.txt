@@ -65,3 +65,26 @@ fix: Language layer message resolutio
 fix: Template resolution and disambiguation options
 [01:40:14] GIT: git stash && git checkout main && git merge dungeo --no-edit && git checkout dun
 [01:42:37] EDIT: docs/context/session-20260118-0039-dungeo.md
+[01:43:32] GIT: git commit -m "$(cat <<'EOF'
+docs: Add session summary for ISSUE-007 and ISSUE-0
+[01:43:41] GIT: git push origin dungeo && git push origin main
+[01:53:13] WRITE: /home/dave/.claude/plans/cozy-toasting-badger.md
+[02:03:07] EDIT: packages/stdlib/src/actions/standard/switching_on/switching_on.ts
+[02:03:20] EDIT: packages/stdlib/src/actions/standard/switching_on/switching_on.ts
+[02:03:31] EDIT: packages/stdlib/src/actions/standard/switching_on/switching_on.ts
+[02:03:47] EDIT: packages/stdlib/src/actions/standard/switching_on/switching_on.ts
+[02:04:02] EDIT: packages/stdlib/src/actions/standard/switching_on/switching_on.ts
+[02:04:23] WRITE: stories/dungeo/tests/transcripts/light-reveals-room.transcript
+[02:09:20] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[02:10:02] EDIT: stories/dungeo/tests/transcripts/light-reveals-room.transcript
+[02:11:08] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[02:12:40] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[02:13:14] EDIT: stories/dungeo/tests/transcripts/light-reveals-room.transcript
+[02:14:19] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[02:14:53] EDIT: stories/dungeo/tests/transcripts/light-reveals-room.transcript
+[02:15:58] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[02:16:28] EDIT: stories/dungeo/tests/transcripts/light-reveals-room.transcript
+[02:17:32] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[02:19:30] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&1 | tail -30
+[02:21:03] TEST/BUILD FAIL (exit -1): pnpm --filter @sharpee/stdlib test switching 2>&1 | tail -50
+[02:24:05] WRITE: docs/context/session-20260118-0222-dungeo.md

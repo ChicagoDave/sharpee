@@ -1,0 +1,49 @@
+title: Light Reveals Room Description
+story: dungeo
+description: Test that turning on a light in a dark room automatically shows the room description
+
+---
+
+# Navigate to Living Room - need to open window first
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> open window
+[OK: contains "open"]
+
+> west
+[OK: contains "Kitchen"]
+
+> west
+[OK: contains "Living Room"]
+
+# Get the lantern but DON'T turn it on yet
+> take lantern
+[OK: contains "Taken"]
+
+# Move rug and open trapdoor
+> push rug
+[OK: contains "Moving the rug reveals"]
+
+> open trap door
+[OK: contains "open"]
+
+# Go down into Cellar without light - trapdoor slams behind us
+> down
+[OK: contains "door crashes"]
+
+# Verify we can't see the room in the dark
+> look
+[OK: contains "dark"]
+
+# Turn on the lamp - should show "banishing the darkness" AND room description
+> turn on lantern
+[OK: contains "banishing"]
+[OK: contains "Cellar"]
+
+# Verify we can now look around normally
+> look
+[OK: contains "Cellar"]

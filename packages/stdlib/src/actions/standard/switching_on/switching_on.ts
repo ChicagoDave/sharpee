@@ -13,12 +13,13 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, SwitchableBehavior, LightSourceBehavior } from '@sharpee/world-model';
+import { TraitType, SwitchableBehavior, LightSourceBehavior, VisibilityBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { SwitchedOnEventData } from './switching_on-events';
 import { analyzeSwitchingContext, determineSwitchingMessage } from '../switching-shared';
 import { MESSAGES } from './switching_on-messages';
+import { captureRoomSnapshot, captureEntitySnapshots, RoomSnapshot, EntitySnapshot } from '../../base/snapshot-utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -31,6 +32,10 @@ interface SwitchingOnSharedData {
   lightRadius?: number;
   lightIntensity?: string;
   willIlluminateLocation?: boolean;
+  // Auto-LOOK: Room was dark before turning on light
+  wasDarkBefore?: boolean;
+  roomSnapshot?: RoomSnapshot;
+  visibleSnapshots?: EntitySnapshot[];
   // Temporary activation
   autoOffTime?: number;
   temporary?: boolean;
@@ -114,6 +119,12 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
     sharedData.targetId = noun.id;
     sharedData.targetName = noun.name;
 
+    // Check if room is currently dark BEFORE turning on the light
+    // This is needed to determine if we should auto-LOOK after illuminating
+    const actorRoom = context.world.getContainingRoom(context.player.id);
+    const wasDarkBefore = actorRoom ? VisibilityBehavior.isDark(actorRoom, context.world) : false;
+    sharedData.wasDarkBefore = wasDarkBefore;
+
     // Delegate state change to behavior
     const result = SwitchableBehavior.switchOn(noun);
 
@@ -153,6 +164,17 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
 
       if (analysis.isInSameRoom && analysis.willAffectDarkness) {
         sharedData.willIlluminateLocation = true;
+      }
+    }
+
+    // If we illuminated a dark room, capture room data for auto-LOOK description
+    if (sharedData.willIlluminateLocation && sharedData.wasDarkBefore) {
+      const room = context.world.getContainingRoom(context.player.id);
+      if (room) {
+        sharedData.roomSnapshot = captureRoomSnapshot(room, context.world, false);
+        const contents = context.world.getContents(room.id)
+          .filter(e => e.id !== context.player.id);
+        sharedData.visibleSnapshots = captureEntitySnapshots(contents, context.world);
       }
     }
 
@@ -252,8 +274,8 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       eventData.willOpen = true;
     }
 
-    // Create events
-    return [
+    // Create events array
+    const events: ISemanticEvent[] = [
       context.event('if.event.switched_on', eventData),
       context.event('action.success', {
         actionId: this.id,
@@ -261,6 +283,23 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
         params: sharedData.params
       })
     ];
+
+    // If we illuminated a dark room, add room description events (auto-LOOK)
+    if (sharedData.willIlluminateLocation && sharedData.wasDarkBefore && sharedData.roomSnapshot) {
+      const room = sharedData.roomSnapshot;
+
+      events.push(context.event('if.event.room.description', {
+        room: room,
+        visibleItems: sharedData.visibleSnapshots || [],
+        roomId: room.id,
+        roomName: room.name,
+        roomDescription: room.description,
+        includeContents: true,
+        verbose: true
+      }));
+    }
+
+    return events;
   },
 
   /**
