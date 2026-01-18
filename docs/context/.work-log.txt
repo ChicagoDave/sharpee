@@ -55,3 +55,27 @@ fix: Three low-severity issues (ISSUE-002, ISSUE-01
 [12:50:25] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
 [12:50:56] WRITE: stories/dungeo/tests/transcripts/multi-object-format.transcript
 [13:05:34] WRITE: docs/context/session-20260118-1214-dungeo.md
+[13:06:14] GIT: git commit -m "$(cat <<'EOF'
+feat: Browser save/restore and compact multi-object
+[13:06:23] GIT: git push
+[13:20:09] EDIT: stories/dungeo/src/traits/troll-capability-behaviors.ts
+[13:20:15] EDIT: stories/dungeo/src/traits/troll-capability-behaviors.ts
+[13:20:43] EDIT: stories/dungeo/src/traits/troll-capability-behaviors.ts
+[13:23:28] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[13:25:49] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[13:26:22] EDIT: stories/dungeo/tests/transcripts/troll-combat.transcript
+[13:27:27] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[13:36:50] TRANSCRIPT FAIL: echo -e "save\nlook\nquit\ny" | timeout 10 node packages/transcript-tester/dist/
+[13:36:57] WRITE: stories/dungeo/tests/transcripts/save-test.transcript
+[13:38:03] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[13:41:54] TRANSCRIPT FAIL: echo -e "save\nquit\ny" | node --enable-source-maps packages/transcript-tester/d
+[13:42:30] WRITE: test-save.js
+[13:45:33] WRITE: docs/context/session-20260118-1307-dungeo.md
+[13:46:44] GIT: git push origin dungeo
+[13:53:26] WRITE: debug-save.js
+[13:55:23] EDIT: packages/text-service/src/stages/filter.ts
+[13:55:29] EDIT: packages/text-service/src/handlers/generic.ts
+[14:02:30] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[14:03:58] TRANSCRIPT FAIL: rm -f debug-save.js test-save.js && node packages/transcript-tester/dist/cli.js 
+[14:04:17] WRITE: docs/context/session-20260118-1347-dungeo.md
+[14:06:57] EDIT: docs/context/session-20260118-1347-dungeo.md

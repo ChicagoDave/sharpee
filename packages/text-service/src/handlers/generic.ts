@@ -60,6 +60,11 @@ export function handleGenericEvent(
 ): ITextBlock[] {
   const data = event.data as GenericEventData;
 
+  // Guard against undefined data
+  if (!data) {
+    return [];
+  }
+
   // First check for explicit message/text in event data
   if (data.message || data.text) {
     const text = data.message ?? data.text ?? '';

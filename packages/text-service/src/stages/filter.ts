@@ -19,6 +19,11 @@ export function filterEvents(events: ISemanticEvent[]): ISemanticEvent[] {
       return false;
     }
 
+    // Skip platform events (save/restore/quit/restart requests and completions)
+    if (event.type.startsWith('platform.')) {
+      return false;
+    }
+
     return true;
   });
 }
