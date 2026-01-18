@@ -1,0 +1,40 @@
+title: Egg Opening - Player Cannot Open
+story: dungeo
+description: Test that the player cannot open the jewel-encrusted egg (only the thief can)
+
+---
+
+# Use GDT to teleport to Up a Tree where the nest/egg is
+> gdt
+[OK: contains "GAME DEBUGGING TOOL"]
+
+> ah Up a Tree
+[OK: contains "Teleported"]
+[OK: contains "Up a Tree"]
+
+> ex
+[OK: contains "Returning to game"]
+
+# Verify the nest and egg are here
+> look
+[OK: contains "Up a Tree"]
+
+# Take the egg from the nest
+> take egg
+[OK: contains "jewel-encrusted egg"]
+
+# Verify we have the egg
+> i
+[OK: contains "egg"]
+
+# Try to open the egg - should be blocked
+> open egg
+[OK: contains "neither the tools nor the expertise"]
+
+# Verify egg is still closed
+> examine egg
+[OK: contains "egg"]
+
+# Try different phrasing
+> open jewel-encrusted egg
+[OK: contains "neither the tools nor the expertise"]

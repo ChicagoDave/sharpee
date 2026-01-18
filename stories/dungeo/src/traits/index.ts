@@ -44,3 +44,15 @@ export {
   TrollTalkingBehavior,
   TrollCapabilityMessages
 } from './troll-capability-behaviors';
+
+// Egg (player can't open, only thief can)
+export {
+  EggTrait,
+  EggTraitConfig,
+  EggTraitConstructor
+} from './egg-trait';
+
+export {
+  EggOpeningBehavior,
+  EggMessages
+} from './egg-behaviors';

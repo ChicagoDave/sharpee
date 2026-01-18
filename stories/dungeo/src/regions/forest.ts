@@ -19,6 +19,7 @@ import {
   OpenableTrait,
   SceneryTrait
 } from '@sharpee/world-model';
+import { EggTrait } from '../traits';
 
 export interface ForestRoomIds {
   forestPath1: string;  // North of North of House
@@ -287,6 +288,7 @@ function createTreeObjects(world: WorldModel, roomId: string): void {
   }));
   egg.add(new ContainerTrait({ capacity: { maxItems: 1 } }));
   egg.add(new OpenableTrait({ isOpen: false }));
+  egg.add(new EggTrait());  // Player can't open - only thief can
   (egg as any).isTreasure = true;
   (egg as any).treasureId = 'jewel-encrusted-egg';
   (egg as any).treasureValue = 5;

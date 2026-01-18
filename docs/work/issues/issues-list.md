@@ -15,7 +15,7 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-001 | "get all" / "drop all" returns entity_not_found | Medium | Validator | 2026-01-16 | - | 2026-01-17 |
 | ISSUE-007 | Template placeholder {are} not resolved | Medium | TextService | 2026-01-16 | - | 2026-01-18 |
 | ISSUE-008 | Disambiguation doesn't list options | Medium | TextService | 2026-01-16 | - | 2026-01-18 |
-| ISSUE-009 | Egg openable by player (should require thief) | Medium | Story | 2026-01-16 | - | - |
+| ISSUE-009 | Egg openable by player (should require thief) | Medium | Story | 2026-01-16 | - | 2026-01-18 |
 | ISSUE-012 | Browser client needs save/restore (localStorage) | Medium | Browser | 2026-01-16 | - | - |
 | ISSUE-014 | Turning on lamp in dark room should trigger LOOK | Medium | Engine/Stdlib | 2026-01-16 | - | 2026-01-18 |
 | ISSUE-002 | "in" doesn't enter through open window | Low | Grammar | 2026-01-16 | - | - |
@@ -50,33 +50,6 @@ Kitchen
 **Notes**: May require special handling since the window is both a direction and an enterable object. Classic Zork behavior would allow "in" here.
 
 **Source**: `docs/work/dungeo/play-output-6.md` lines 49-50
-
----
-
-### ISSUE-009: Egg openable by player (should require thief)
-
-**Reported**: 2026-01-16
-**Severity**: Medium
-**Component**: Story / Egg Handler
-
-**Description**:
-The jewel-encrusted egg can be opened by the player using the standard OPEN command. In original Zork, only the thief has the skills to open the egg without destroying it. The player should get "You have neither the tools nor the expertise."
-
-**Reproduction**:
-```
-> open egg
-You open jewel-encrusted egg.
-
-Inside the jewel-encrusted egg you see golden canary.
-```
-
-**Expected**: "You have neither the tools nor the expertise." (block player from opening)
-
-**Actual**: Egg opens normally, revealing canary.
-
-**Notes**: Need an event handler for `if.event.opening` on the egg that blocks player but allows thief NPC. The thief opening the egg is a key puzzle mechanic.
-
-**Source**: Browser testing session 2026-01-16, console log lines 771-785
 
 ---
 
@@ -203,6 +176,41 @@ brass lantern switches on, banishing the darkness.
 **Files changed**:
 - `packages/stdlib/src/actions/standard/switching_on/switching_on.ts` - Added wasDarkBefore tracking, room snapshot capture, room description event emission
 - `stories/dungeo/tests/transcripts/light-reveals-room.transcript` - Integration test
+
+---
+
+### ISSUE-009: Egg openable by player (should require thief)
+
+**Reported**: 2026-01-16
+**Fixed**: 2026-01-18
+**Severity**: Medium
+**Component**: Story / Egg Handler
+
+**Description**:
+The jewel-encrusted egg could be opened by the player using the standard OPEN command. In original Zork, only the thief has the skills to open the egg without destroying it.
+
+**Solution**:
+Implemented capability dispatch (ADR-090) for the egg's opening action:
+
+1. **EggTrait**: Claims `if.action.opening` capability
+2. **EggOpeningBehavior**:
+   - validate: Checks if actor is player → blocks with "You have neither the tools nor the expertise."
+   - validate: If actor is NPC (thief) → allows opening
+3. Applied EggTrait to the egg entity in forest.ts
+
+**Result**:
+```
+> open egg
+You have neither the tools nor the expertise.
+```
+
+**Files changed**:
+- `stories/dungeo/src/traits/egg-trait.ts` - New trait claiming opening capability
+- `stories/dungeo/src/traits/egg-behaviors.ts` - Behavior that blocks player opening
+- `stories/dungeo/src/traits/index.ts` - Export new trait/behavior
+- `stories/dungeo/src/regions/forest.ts` - Apply EggTrait to egg entity
+- `stories/dungeo/src/index.ts` - Register capability behavior and message
+- `stories/dungeo/tests/transcripts/egg-opening.transcript` - Integration test
 
 ---
 
