@@ -1,0 +1,53 @@
+title: Get All / Drop All (ISSUE-001)
+story: dungeo
+author: Claude
+description: Test multi-object commands like "get all" and "drop all"
+
+---
+
+# Setup: open mailbox and take leaflet
+> open mailbox
+[OK: contains "open"]
+
+> get leaflet
+[OK: contains "take"]
+
+# Test GET ALL - should take the welcome mat (only other takeable item)
+> get all
+[OK: contains "Taken"]
+[OK: contains "welcome mat"]
+
+# Now inventory should have both
+> inventory
+[OK: contains "leaflet"]
+[OK: contains "welcome mat"]
+
+# Test DROP ALL - should drop everything
+> drop all
+[OK: contains "Dropped"]
+
+# Inventory should be empty now
+> inventory
+[OK: contains "nothing"]
+
+# Test GET ALL BUT X - should exclude leaflet
+> get all but leaflet
+[OK: contains "Taken"]
+
+> inventory
+[OK: contains "welcome mat"]
+[OK: not contains "leaflet"]
+
+# Test DROP ALL BUT X
+> drop all but mat
+[OK: contains "nothing"]
+
+> get all
+[OK: contains "Taken"]
+
+> drop all but welcome mat
+[OK: contains "Dropped"]
+[OK: contains "leaflet"]
+
+> inventory
+[OK: contains "welcome mat"]

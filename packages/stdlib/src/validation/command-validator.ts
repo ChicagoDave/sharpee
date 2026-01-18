@@ -154,13 +154,23 @@ export class CommandValidator implements CommandValidator {
     // 2. Resolve direct object if present in parsed command
     let directObject: IValidatedObjectReference | undefined;
     if (command.structure?.directObject) {
-      const metadata = this.getActionMetadata(actionHandler);
-      const scope = metadata.directObjectScope || ScopeLevel.VISIBLE;
-      const resolved = this.resolveEntity(command.structure.directObject, 'direct', scope, command);
-      if (!resolved.success) {
-        return resolved;
+      // ADR-080: Multi-object commands ("get all", "drop all but sword")
+      // Skip single-entity resolution - let the action handle expansion via expandMultiObject()
+      const nounPhrase = command.structure.directObject;
+      if (nounPhrase.isAll || nounPhrase.isList) {
+        // Leave directObject undefined - action will use isMultiObjectCommand()
+        // and expandMultiObject() to handle multiple entities
+        directObject = undefined;
+      } else {
+        // Normal single-entity resolution
+        const metadata = this.getActionMetadata(actionHandler);
+        const scope = metadata.directObjectScope || ScopeLevel.VISIBLE;
+        const resolved = this.resolveEntity(nounPhrase, 'direct', scope, command);
+        if (!resolved.success) {
+          return resolved;
+        }
+        directObject = resolved.value;
       }
-      directObject = resolved.value;
     }
     // If no direct object in parsed command, that's fine - let the action decide if it needs one
 
@@ -354,7 +364,12 @@ export class CommandValidator implements CommandValidator {
     // 2. Resolve direct object - use selection if provided
     let directObject: IValidatedObjectReference | undefined;
     if (command.structure?.directObject) {
-      if (selections.directObject) {
+      const nounPhrase = command.structure.directObject;
+
+      // ADR-080: Multi-object commands bypass resolution
+      if (nounPhrase.isAll || nounPhrase.isList) {
+        directObject = undefined;
+      } else if (selections.directObject) {
         // Use explicit selection
         const entity = this.world.getEntity(selections.directObject);
         if (!entity) {
@@ -374,13 +389,13 @@ export class CommandValidator implements CommandValidator {
         }
         directObject = {
           entity,
-          parsed: command.structure.directObject
+          parsed: nounPhrase
         };
       } else {
         // Normal resolution
         const metadata = this.getActionMetadata(actionHandler);
         const scope = metadata.directObjectScope || ScopeLevel.VISIBLE;
-        const resolved = this.resolveEntity(command.structure.directObject, 'direct', scope, command);
+        const resolved = this.resolveEntity(nounPhrase, 'direct', scope, command);
         if (!resolved.success) {
           return resolved;
         }

@@ -65,3 +65,25 @@ fix: Language layer message resolutio
 [23:31:20] EDIT: docs/work/issues/issues-list.md
 [23:31:28] EDIT: docs/work/issues/issues-list.md
 [23:34:54] WRITE: docs/context/session-20260117-2334-dungeo.md
+[23:35:53] GIT: git push
+[23:52:14] EDIT: packages/lang-en-us/src/actions/going.ts
+[00:00:55] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo /tmp/room-contents-te
+[00:03:51] WRITE: stories/dungeo/tests/transcripts/room-contents-on-entry.transcript
+[00:05:01] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[00:05:54] EDIT: packages/text-service/src/stages/sort.ts
+[00:10:31] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[00:11:23] EDIT: docs/work/issues/issues-list.md
+[00:11:52] EDIT: docs/work/issues/issues-list.md
+[00:12:04] EDIT: docs/work/issues/issues-list.md
+[00:12:20] EDIT: docs/work/issues/issues-list.md
+[00:12:56] WRITE: docs/context/session-20260117-2336-dungeo.md
+[00:26:14] EDIT: packages/stdlib/src/validation/command-validator.ts
+[00:26:32] EDIT: packages/stdlib/src/validation/command-validator.ts
+[00:30:27] WRITE: stories/dungeo/tests/transcripts/get-all.transcript
+[00:31:33] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[00:31:59] WRITE: stories/dungeo/tests/transcripts/get-all.transcript
+[00:32:26] EDIT: docs/work/issues/issues-list.md
+[00:32:35] EDIT: docs/work/issues/issues-list.md
+[00:32:48] EDIT: docs/work/issues/issues-list.md
+[00:33:15] WRITE: docs/context/session-20260117-2336-dungeo.md
+[00:35:18] EDIT: docs/context/session-20260117-2336-dungeo.md

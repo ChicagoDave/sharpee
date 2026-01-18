@@ -48,7 +48,14 @@ export function sortEventsForProse(events: ISemanticEvent[]): ISemanticEvent[] {
     if (aIsImplicitTake && !bIsImplicitTake) return -1;
     if (!aIsImplicitTake && bIsImplicitTake) return 1;
 
-    // Same transaction: action.* first
+    // Room description should come before action.success (for contents list)
+    // This ensures "Room Name\nDescription" appears before "You see X here."
+    const aIsRoomDesc = a.type === 'if.event.room.description' || a.type === 'if.event.room_description';
+    const bIsRoomDesc = b.type === 'if.event.room.description' || b.type === 'if.event.room_description';
+    if (aIsRoomDesc && !bIsRoomDesc) return -1;
+    if (!aIsRoomDesc && bIsRoomDesc) return 1;
+
+    // Same transaction: action.* first (after room description)
     const aIsAction = a.type.startsWith('action.');
     const bIsAction = b.type.startsWith('action.');
     if (aIsAction && !bIsAction) return -1;

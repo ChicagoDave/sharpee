@@ -1,0 +1,24 @@
+title: Room Contents on Entry (ISSUE-010)
+story: dungeo
+author: Claude
+description: Test that room contents are displayed when entering a room
+
+---
+
+# Start at West of House and move to Behind House
+# Behind House should show its contents (window, path) on entry
+
+> open mailbox
+[OK: contains "open"]
+
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+[OK: contains "window"]
+
+# Now test with looking to compare
+> look
+[OK: contains "Behind House"]
+[OK: contains "window"]

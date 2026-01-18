@@ -10,9 +10,9 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-004 | "kill troll" not recognized | Critical | Parser | 2026-01-16 | - | 2026-01-16 |
 | ISSUE-006 | Troll doesn't attack player | Critical | Story/NPC | 2026-01-16 | - | 2026-01-16 |
 | ISSUE-015 | Troll logic implementation complete | High | Story/NPC | 2026-01-16 | - | 2026-01-17 |
-| ISSUE-010 | Room contents not shown on room entry | High | TextService | 2026-01-16 | - | - |
-| ISSUE-001 | "get all" / "drop all" returns entity_not_found | Medium | Parser | 2026-01-16 | - | - |
-| ISSUE-005 | Text output order wrong (contents before description) | Medium | TextService | 2026-01-16 | - | - |
+| ISSUE-010 | Room contents not shown on room entry | High | TextService | 2026-01-16 | - | 2026-01-17 |
+| ISSUE-005 | Text output order wrong (contents before description) | Medium | TextService | 2026-01-16 | - | 2026-01-17 |
+| ISSUE-001 | "get all" / "drop all" returns entity_not_found | Medium | Validator | 2026-01-16 | - | 2026-01-17 |
 | ISSUE-007 | Template placeholder {are} not resolved | Medium | TextService | 2026-01-16 | - | - |
 | ISSUE-008 | Disambiguation doesn't list options | Medium | TextService | 2026-01-16 | - | - |
 | ISSUE-009 | Egg openable by player (should require thief) | Medium | Story | 2026-01-16 | - | - |
@@ -25,33 +25,6 @@ Catalog of known bugs and issues to be addressed.
 ---
 
 ## Open Issues
-
-### ISSUE-001: "get all" / "drop all" returns entity_not_found
-
-**Reported**: 2026-01-16
-**Severity**: Medium
-**Component**: Parser / Command Validator
-
-**Description**:
-Using "get all" or "drop all" returns `core.entity_not_found` instead of taking/dropping all portable items in scope.
-
-**Reproduction**:
-```
-> l
-You can see kitchen table, brown sack, glass bottle here.
-
-> get all
-core.entity_not_found
-
-> drop all
-core.entity_not_found
-```
-
-**Expected**: Should take/drop all portable items in the current location.
-
-**Source**: `docs/work/dungeo/play-output-6.md` lines 66-67, 74-75
-
----
 
 ### ISSUE-002: "in" doesn't enter through open window at Behind House
 
@@ -77,40 +50,6 @@ Kitchen
 **Notes**: May require special handling since the window is both a direction and an enterable object. Classic Zork behavior would allow "in" here.
 
 **Source**: `docs/work/dungeo/play-output-6.md` lines 49-50
-
----
-
-### ISSUE-005: Text output order wrong
-
-**Reported**: 2026-01-16
-**Severity**: Medium
-**Component**: TextService / Sort Stage
-
-**Description**:
-When entering a room, the contents list appears before the room name and description.
-
-**Reproduction**:
-```
-> look
-You can see small mailbox, front door, welcome mat, white house here.
-
-West of House
-
-This is an open field west of a white house with a boarded front door.
-```
-
-**Expected**:
-```
-West of House
-
-This is an open field west of a white house with a boarded front door.
-
-You can see small mailbox, front door, welcome mat, white house here.
-```
-
-**Actual**: Contents list comes first.
-
-**Source**: Browser testing session 2026-01-16, console log line 41
 
 ---
 
@@ -190,40 +129,6 @@ Inside the jewel-encrusted egg you see golden canary.
 **Notes**: Need an event handler for `if.event.opening` on the egg that blocks player but allows thief NPC. The thief opening the egg is a key puzzle mechanic.
 
 **Source**: Browser testing session 2026-01-16, console log lines 771-785
-
----
-
-### ISSUE-010: Room contents not shown on room entry
-
-**Reported**: 2026-01-16
-**Severity**: High
-**Component**: TextService / Room Handler
-
-**Description**:
-When moving to a new room, the room contents are not displayed. Only explicit LOOK command shows contents. This makes objects invisible until player types LOOK.
-
-**Reproduction**:
-```
-> e
-Behind House
-
-You are behind the white house. In one corner of the house there is a small window which is slightly ajar.
-(no contents list - should show window, path)
-
-> look
-You can see small window, path here.
-
-Behind House
-...
-```
-
-**Expected**: Room entry should show contents like explicit LOOK does.
-
-**Actual**: Only room name and description shown on entry; must LOOK to see contents.
-
-**Notes**: Related to ISSUE-005 but distinct. The room.description event includes contents data, but text-service isn't rendering it on room entry. May be action-specific handling difference between `going` and `looking`.
-
-**Source**: Browser testing session 2026-01-16, console log - compare turns 7-34 (no contents) vs turn 1 (has contents)
 
 ---
 
@@ -361,6 +266,96 @@ If all true, trigger implicit LOOK or emit room description event.
 ---
 
 ## Closed Issues
+
+### ISSUE-001: "get all" / "drop all" returns entity_not_found
+
+**Reported**: 2026-01-16
+**Fixed**: 2026-01-17
+**Severity**: Medium
+**Component**: Command Validator
+
+**Description**:
+Using "get all" or "drop all" returned `core.entity_not_found` instead of taking/dropping all portable items.
+
+**Root Cause**:
+The command validator didn't check for `isAll` or `isList` flags on noun phrases before calling `resolveEntity()`. The parser correctly detected "all" and set `isAll: true`, but the validator tried to resolve "all" as a literal entity name → failed.
+
+The multi-object handling infrastructure (`multi-object-handler.ts`, action layer support) was already fully implemented but unreachable due to this validator bug.
+
+**Solution**:
+Updated `packages/stdlib/src/validation/command-validator.ts` to check for `isAll` or `isList` before entity resolution:
+```typescript
+if (nounPhrase.isAll || nounPhrase.isList) {
+  // Leave directObject undefined - action will use isMultiObjectCommand()
+  // and expandMultiObject() to handle multiple entities
+  directObject = undefined;
+} else {
+  // Normal single-entity resolution
+}
+```
+
+**Features Now Working**:
+- `get all` - Takes all reachable items
+- `drop all` - Drops all carried items
+- `get all but sword` - Takes all except specified items
+- `drop all but knife and lamp` - Drops all except specified items
+
+**Files changed**:
+- `packages/stdlib/src/validation/command-validator.ts` - Added isAll/isList bypass in both `validate()` and `resolveWithSelection()` methods
+
+---
+
+### ISSUE-010: Room contents not shown on room entry
+
+**Reported**: 2026-01-16
+**Fixed**: 2026-01-17
+**Severity**: High
+**Component**: TextService / Language Layer
+
+**Description**:
+When moving to a new room, the room contents were not displayed. Only explicit LOOK command showed contents.
+
+**Root Cause**:
+The going action emitted `action.success` with `messageId: 'contents_list'`, but no `contents_list` message was defined in `going.ts` language file. The looking action worked because it had this message defined.
+
+**Solution**:
+Added `contents_list` message to `packages/lang-en-us/src/actions/going.ts`:
+```typescript
+'contents_list': "{You} can {see} {items} here.",
+```
+
+**Files changed**:
+- `packages/lang-en-us/src/actions/going.ts` - Added contents_list message
+
+---
+
+### ISSUE-005: Text output order wrong
+
+**Reported**: 2026-01-16
+**Fixed**: 2026-01-17
+**Severity**: Medium
+**Component**: TextService / Sort Stage
+
+**Description**:
+Room contents list appeared before room name and description instead of after.
+
+**Root Cause**:
+The sort stage in TextService prioritized `action.*` events before all other events. This caused `action.success` (contents_list) to appear before `if.event.room.description`.
+
+**Solution**:
+Updated `packages/text-service/src/stages/sort.ts` to prioritize room description events before action.success:
+```typescript
+// Room description should come before action.success (for contents list)
+const aIsRoomDesc = a.type === 'if.event.room.description' || a.type === 'if.event.room_description';
+const bIsRoomDesc = b.type === 'if.event.room.description' || b.type === 'if.event.room_description';
+if (aIsRoomDesc && !bIsRoomDesc) return -1;
+if (!aIsRoomDesc && bIsRoomDesc) return 1;
+```
+
+**Files changed**:
+- `packages/text-service/src/stages/sort.ts` - Added room description priority
+
+---
 
 ### ISSUE-015: Troll Logic Implementation
 
