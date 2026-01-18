@@ -20,6 +20,7 @@ export const TakingMessages = {
   // Success messages
   TAKEN: 'taken',
   TAKEN_FROM: 'taken_from',
+  TAKEN_MULTI: 'taken_multi',  // Compact format for multi-object: "{item}: Taken."
 } as const;
 
 export type TakingMessageId = typeof TakingMessages[keyof typeof TakingMessages];

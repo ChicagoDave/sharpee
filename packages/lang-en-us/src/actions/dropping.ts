@@ -18,7 +18,8 @@ export const droppingLanguage = {
     'not_held': "{You} aren't holding {item}.",
     'dropped': "Dropped.",
     'dropped_in': "{You} {put} {item} in {container}.",
-    'dropped_on': "{You} {put} {item} on {surface}."
+    'dropped_on': "{You} {put} {item} on {surface}.",
+    'dropped_multi': "{item}: Dropped."
   },
   
   help: {

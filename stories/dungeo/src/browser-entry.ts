@@ -10,7 +10,12 @@ import { WorldModel, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { LanguageProvider } from '@sharpee/lang-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
+import { ISaveRestoreHooks, ISaveData } from '@sharpee/core';
 import { story } from './index';
+
+// localStorage keys for save/restore
+const STORAGE_KEY = 'dungeo-save';
+const STORAGE_META_KEY = 'dungeo-save-meta';
 
 // DOM elements
 let statusLocation: HTMLElement | null;
@@ -55,6 +60,69 @@ function beep(frequency = 800, duration = 100): void {
     oscillator.stop(audioContext.currentTime + duration / 1000);
   } catch (e) {
     // Audio not available, silently ignore
+  }
+}
+
+/**
+ * Save/Restore hooks for localStorage persistence
+ */
+const saveRestoreHooks: ISaveRestoreHooks = {
+  async onSaveRequested(data: ISaveData): Promise<void> {
+    try {
+      const json = JSON.stringify(data);
+      localStorage.setItem(STORAGE_KEY, json);
+
+      // Store metadata separately for quick access on page load
+      const meta = {
+        timestamp: data.timestamp,
+        turnCount: data.metadata.turnCount,
+        description: data.metadata.description,
+      };
+      localStorage.setItem(STORAGE_META_KEY, JSON.stringify(meta));
+
+      console.log('[save] Game saved to localStorage', meta);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('[save] Failed:', message);
+      throw new Error(`Save failed: ${message}`);
+    }
+  },
+
+  async onRestoreRequested(): Promise<ISaveData | null> {
+    try {
+      const json = localStorage.getItem(STORAGE_KEY);
+      if (!json) {
+        console.log('[restore] No saved game found');
+        return null;
+      }
+
+      const data = JSON.parse(json) as ISaveData;
+      console.log('[restore] Loading saved game from localStorage', {
+        timestamp: data.timestamp,
+        turnCount: data.metadata.turnCount,
+      });
+      return data;
+    } catch (error) {
+      console.error('[restore] Failed to parse save data:', error);
+      return null;
+    }
+  },
+};
+
+/**
+ * Check for existing saved game and prompt user
+ */
+function checkForSavedGame(): { hasSave: boolean; meta?: { timestamp: number; turnCount: number } } {
+  try {
+    const metaJson = localStorage.getItem(STORAGE_META_KEY);
+    if (!metaJson) {
+      return { hasSave: false };
+    }
+
+    const meta = JSON.parse(metaJson);
+    return { hasSave: true, meta };
+  } catch {
+    return { hasSave: false };
   }
 }
 
@@ -119,11 +187,26 @@ function initializeGame(): void {
         beep(1000, 50); // Higher, shorter beep for points
       }
     }
+
+    // Handle platform events for save/restore
+    if (event.type === 'platform.save_failed') {
+      displayText(`[Save failed: ${event.data?.error || 'Unknown error'}]`);
+      beep();
+    } else if (event.type === 'platform.restore_failed') {
+      displayText(`[Restore failed: ${event.data?.error || 'No saved game found'}]`);
+      beep();
+    } else if (event.type === 'platform.restore_completed') {
+      // Update score/turn from restored state
+      if (event.data?.turnCount !== undefined) {
+        currentTurn = event.data.turnCount;
+      }
+      updateStatusLine();
+    }
   });
 
-  // Set the story and start
+  // Set the story and register save/restore hooks
   engine.setStory(story);
-  engine.start();
+  engine.registerSaveRestoreHooks(saveRestoreHooks);
 }
 
 /**
@@ -298,11 +381,35 @@ async function start(): Promise<void> {
     initializeGame();
     console.log('Game initialized');
 
-    // Show initial room description
-    displayText('');
-    console.log('Executing initial look command...');
-    await engine.executeTurn('look');
-    console.log('Initial look complete');
+    // Check for existing saved game
+    const { hasSave, meta } = checkForSavedGame();
+
+    if (hasSave && meta) {
+      const date = new Date(meta.timestamp).toLocaleString();
+      const shouldRestore = confirm(
+        `Found saved game from ${date} (${meta.turnCount} turns).\n\nContinue where you left off?`
+      );
+
+      if (shouldRestore) {
+        console.log('User chose to restore saved game');
+        await engine.start();
+        await engine.executeTurn('restore');
+        // After restore, show current room
+        await engine.executeTurn('look');
+      } else {
+        console.log('User chose to start new game');
+        await engine.start();
+        displayText('');
+        await engine.executeTurn('look');
+      }
+    } else {
+      // No saved game, start fresh
+      await engine.start();
+      displayText('');
+      console.log('Executing initial look command...');
+      await engine.executeTurn('look');
+      console.log('Initial look complete');
+    }
 
     // Focus input
     if (commandInput) {

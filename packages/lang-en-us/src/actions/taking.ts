@@ -23,7 +23,8 @@ export const takingLanguage = {
     'container_full': "{You're} carrying too much already.",
     'too_heavy': "{item} is too heavy to carry.",
     'taken': "Taken.",
-    'taken_from': "{You} {take} {item} from {container}."
+    'taken_from': "{You} {take} {item} from {container}.",
+    'taken_multi': "{item}: Taken."
   },
   
   help: {

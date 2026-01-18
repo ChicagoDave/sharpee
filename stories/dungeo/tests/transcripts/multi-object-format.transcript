@@ -1,0 +1,37 @@
+title: Multi-object take/drop compact format
+story: dungeo
+description: Verifies take all and drop all show compact format
+
+---
+
+# Take single item from container - shows "taken_from" message
+> open mailbox
+[OK: contains "open"]
+
+> take leaflet
+[OK: contains "take"]
+[OK: contains "leaflet"]
+
+# Go to kitchen to get multiple items
+> s
+[OK: contains "South of House"]
+
+> e
+[OK: contains "Behind House"]
+
+> open window
+[OK: contains "open"]
+
+> w
+[OK: contains "Kitchen"]
+
+# Take all - multiple items should use compact format "{item}: Taken."
+> take all
+[OK: contains "sack: Taken."]
+[OK: contains "bottle: Taken."]
+
+# Drop all - multiple items should use compact format "{item}: Dropped."
+> drop all
+[OK: contains "sack: Dropped."]
+[OK: contains "bottle: Dropped."]
+[OK: contains "leaflet: Dropped."]

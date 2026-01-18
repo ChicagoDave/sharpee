@@ -16,7 +16,7 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-007 | Template placeholder {are} not resolved | Medium | TextService | 2026-01-16 | - | 2026-01-18 |
 | ISSUE-008 | Disambiguation doesn't list options | Medium | TextService | 2026-01-16 | - | 2026-01-18 |
 | ISSUE-009 | Egg openable by player (should require thief) | Medium | Story | 2026-01-16 | - | 2026-01-18 |
-| ISSUE-012 | Browser client needs save/restore (localStorage) | Medium | Browser | 2026-01-16 | - | - |
+| ISSUE-012 | Browser client needs save/restore (localStorage) | Medium | Browser | 2026-01-16 | - | 2026-01-18 |
 | ISSUE-014 | Turning on lamp in dark room should trigger LOOK | Medium | Engine/Stdlib | 2026-01-16 | - | 2026-01-18 |
 | ISSUE-002 | "in" doesn't enter through open window | Low | Grammar | 2026-01-16 | - | 2026-01-18 |
 | ISSUE-011 | Nest has SceneryTrait hiding it from view | Low | Story | 2026-01-16 | - | 2026-01-18 |
@@ -26,44 +26,46 @@ Catalog of known bugs and issues to be addressed.
 
 ## Open Issues
 
-### ISSUE-012: Browser client needs save/restore (localStorage)
-
-**Reported**: 2026-01-16
-**Severity**: Medium
-**Component**: Browser Client
-
-**Description**:
-The thin browser client (`stories/dungeo/src/browser-entry.ts`) receives `platform.save_requested` events but doesn't persist game state. Save/restore should use localStorage to allow players to continue later.
-
-**Current behavior**:
-- SAVE command triggers event (visible in console logs)
-- No actual persistence occurs
-- Page refresh loses all progress
-
-**Implementation notes**:
-```typescript
-// On save event:
-const saveData = await engine.save();
-localStorage.setItem('dungeo-save', JSON.stringify(saveData));
-
-// On restore event / page load:
-const saved = localStorage.getItem('dungeo-save');
-if (saved) {
-  await engine.restore(JSON.parse(saved));
-}
-```
-
-**Features needed**:
-1. Save game state to localStorage on SAVE command
-2. Restore game state on RESTORE command
-3. Auto-detect save on page load, offer to continue
-4. Multiple save slots (optional, v2)
-
-**Source**: Browser testing session 2026-01-16, console log line 531-534
+*No open issues.*
 
 ---
 
 ## Closed Issues
+
+### ISSUE-012: Browser client needs save/restore (localStorage)
+
+**Reported**: 2026-01-16
+**Fixed**: 2026-01-18
+**Severity**: Medium
+**Component**: Browser Client
+
+**Description**:
+The thin browser client (`stories/dungeo/src/browser-entry.ts`) received `platform.save_requested` events but didn't persist game state.
+
+**Solution**:
+Implemented `ISaveRestoreHooks` for localStorage persistence:
+
+1. **Save hook** (`onSaveRequested`): Serializes save data to `dungeo-save` localStorage key, stores metadata separately in `dungeo-save-meta` for quick access
+2. **Restore hook** (`onRestoreRequested`): Retrieves and parses save data from localStorage
+3. **Auto-restore prompt**: On page load, checks for existing save and prompts user to continue
+4. **Platform event handling**: Listens for `platform.save_failed`, `platform.restore_failed`, `platform.restore_completed` to update UI
+
+**Result**:
+```
+> save
+Game saved.
+
+[Page refresh]
+"Found saved game from 1/18/2026... Continue where you left off?"
+[OK]
+[Game restored to previous state]
+```
+
+**Files changed**:
+- `stories/dungeo/src/browser-entry.ts` - Added ISaveRestoreHooks implementation, auto-restore prompt
+- `docs/work/platform/thin-web-save-restore.md` - Design document
+
+---
 
 ### ISSUE-014: Turning on lamp in dark room should trigger LOOK
 

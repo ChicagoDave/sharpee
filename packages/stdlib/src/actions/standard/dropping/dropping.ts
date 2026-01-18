@@ -162,7 +162,8 @@ function reportSingleSuccess(
   context: ActionContext,
   noun: IFEntity,
   result: DroppingItemResult,
-  events: ISemanticEvent[]
+  events: ISemanticEvent[],
+  isMultiObject: boolean = false
 ): void {
   const actor = context.player;
   const dropLocation = result.dropLocation
@@ -200,7 +201,10 @@ function reportSingleSuccess(
     location: dropLocation?.name
   };
 
-  if (droppedData.toContainer) {
+  // Use compact format for multi-object commands
+  if (isMultiObject) {
+    messageId = 'dropped_multi';
+  } else if (droppedData.toContainer) {
     messageId = 'dropped_in';
     params.container = dropLocation?.name;
   } else if (droppedData.toSupporter) {
@@ -319,9 +323,11 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     if (sharedData.multiObjectResults) {
       const events: ISemanticEvent[] = [];
       // Generate events for each item (success and failure)
+      // Use compact format when multiple items
+      const isMultiObject = sharedData.multiObjectResults.length > 1;
       for (const result of sharedData.multiObjectResults) {
         if (result.success) {
-          reportSingleSuccess(context, result.entity, result, events);
+          reportSingleSuccess(context, result.entity, result, events, isMultiObject);
         } else {
           reportSingleBlocked(context, result.entity, result.error!, result.errorParams, events);
         }

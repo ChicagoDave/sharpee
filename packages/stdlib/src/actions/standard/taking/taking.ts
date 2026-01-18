@@ -190,7 +190,8 @@ function reportSingleSuccess(
   context: ActionContext,
   noun: IFEntity,
   result: TakingItemResult | TakingSharedData,
-  events: ISemanticEvent[]
+  events: ISemanticEvent[],
+  isMultiObject: boolean = false
 ): void {
   const actor = context.player;
 
@@ -226,7 +227,16 @@ function reportSingleSuccess(
 
   // Add the taken event
   events.push(context.event('if.event.taken', takenData));
-  const messageId = isFromContainerOrSupporter ? TakingMessages.TAKEN_FROM : TakingMessages.TAKEN;
+
+  // Use compact format for multi-object commands
+  let messageId: string;
+  if (isMultiObject) {
+    messageId = TakingMessages.TAKEN_MULTI;
+  } else if (isFromContainerOrSupporter) {
+    messageId = TakingMessages.TAKEN_FROM;
+  } else {
+    messageId = TakingMessages.TAKEN;
+  }
 
   // Add success event
   events.push(context.event('action.success', {
@@ -324,9 +334,11 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     // Check for multi-object command
     if (sharedData.multiObjectResults) {
       // Generate events for each item (success and failure)
+      // Use compact format when multiple items
+      const isMultiObject = sharedData.multiObjectResults.length > 1;
       for (const result of sharedData.multiObjectResults) {
         if (result.success) {
-          reportSingleSuccess(context, result.entity, result, events);
+          reportSingleSuccess(context, result.entity, result, events, isMultiObject);
         } else {
           reportSingleBlocked(context, result.entity, result.error!, events);
         }
@@ -336,7 +348,7 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
 
     // Single object report
     const noun = context.command.directObject!.entity!;
-    reportSingleSuccess(context, noun, sharedData, events);
+    reportSingleSuccess(context, noun, sharedData, events, false);
     return events;
   },
 

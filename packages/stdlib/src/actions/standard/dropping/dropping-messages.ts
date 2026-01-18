@@ -18,6 +18,7 @@ export const DroppingMessages = {
   DROPPED_ON: 'dropped_on',
   DROPPED_QUIETLY: 'dropped_quietly',
   DROPPED_CARELESSLY: 'dropped_carelessly',
+  DROPPED_MULTI: 'dropped_multi',  // Compact format for multi-object: "{item}: Dropped."
 } as const;
 
 export type DroppingMessageId = typeof DroppingMessages[keyof typeof DroppingMessages];
