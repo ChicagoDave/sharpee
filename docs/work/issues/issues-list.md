@@ -17,7 +17,7 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-008 | Disambiguation doesn't list options | Medium | TextService | 2026-01-16 | - | 2026-01-18 |
 | ISSUE-009 | Egg openable by player (should require thief) | Medium | Story | 2026-01-16 | - | - |
 | ISSUE-012 | Browser client needs save/restore (localStorage) | Medium | Browser | 2026-01-16 | - | - |
-| ISSUE-014 | Turning on lamp in dark room should trigger LOOK | Medium | Engine/Stdlib | 2026-01-16 | - | - |
+| ISSUE-014 | Turning on lamp in dark room should trigger LOOK | Medium | Engine/Stdlib | 2026-01-16 | - | 2026-01-18 |
 | ISSUE-002 | "in" doesn't enter through open window | Low | Grammar | 2026-01-16 | - | - |
 | ISSUE-011 | Nest has SceneryTrait hiding it from view | Low | Story | 2026-01-16 | - | - |
 | ISSUE-013 | Lamp "switches on" message missing "The" article | Low | TextService | 2026-01-16 | - | - |
@@ -171,49 +171,40 @@ brass lantern switches on, banishing the darkness.
 
 ---
 
+## Closed Issues
+
 ### ISSUE-014: Turning on lamp in dark room should trigger LOOK
 
 **Reported**: 2026-01-16
+**Fixed**: 2026-01-18
 **Severity**: Medium
-**Component**: Engine / Stdlib (switching_on action)
+**Component**: Stdlib (switching_on action)
 
 **Description**:
-When turning on a light source in a dark room that hasn't been seen yet, the room description should be shown automatically. Currently player must manually type LOOK after turning on the lamp.
+When turning on a light source in a dark room, the room description should be shown automatically. Previously, players had to manually type LOOK after turning on the lamp.
 
-**Reproduction**:
+**Solution**:
+Extended the `switching_on` action to emit `if.event.room.description` when illuminating a dark room:
+
+1. **Execute phase**: Check `VisibilityBehavior.isDark()` BEFORE switching on the light to capture prior darkness state
+2. **Execute phase**: After light is on, if room was dark, capture room snapshot with `captureRoomSnapshot()`
+3. **Report phase**: If `wasDarkBefore && willIlluminateLocation`, emit `if.event.room.description` event
+
+Key insight: Must check darkness BEFORE the light turns on (to know the prior state), but capture room contents AFTER (so visible items are accurate).
+
+**Result**:
 ```
-> (enter Cellar in darkness)
-The door crashes shut, and you hear someone barring it.
-
-> turn on lamp
-brass lantern switches on, banishing the darkness.
-
-> look
-You can see metal ramp here.
-
+> turn on lantern
 Cellar
-
-This is a dark and damp cellar...
+This is a dark and damp cellar with a narrow passageway...
+brass lantern switches on, banishing the darkness.
 ```
 
-**Expected**: After "banishing the darkness", automatically show room description (like a LOOK).
-
-**Actual**: Room remains undescribed until explicit LOOK command.
-
-**Implementation notes**:
-In `switching_on` action's execute or report phase, check if:
-1. Target is a light source
-2. Player's location was dark before
-3. Player's location is now lit
-4. This is first visit OR room never seen lit
-
-If all true, trigger implicit LOOK or emit room description event.
-
-**Source**: Browser testing session 2026-01-16, console log lines 384-400
+**Files changed**:
+- `packages/stdlib/src/actions/standard/switching_on/switching_on.ts` - Added wasDarkBefore tracking, room snapshot capture, room description event emission
+- `stories/dungeo/tests/transcripts/light-reveals-room.transcript` - Integration test
 
 ---
-
-## Closed Issues
 
 ### ISSUE-001: "get all" / "drop all" returns entity_not_found
 
