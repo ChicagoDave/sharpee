@@ -252,6 +252,8 @@ function executeSingleEntity(
 
 /**
  * Generate success events for removing a single entity
+ *
+ * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
  */
 function reportSingleSuccess(
   context: ActionContext,
@@ -267,40 +269,39 @@ function reportSingleSuccess(
     item: item.name
   };
 
-  let messageId: string;
+  let messageKey: string;
   if (source.has(TraitType.CONTAINER)) {
     params.container = source.name;
-    messageId = RemovingMessages.REMOVED_FROM;
+    messageKey = RemovingMessages.REMOVED_FROM;
   } else {
     params.surface = source.name;
-    messageId = RemovingMessages.REMOVED_FROM_SURFACE;
+    messageKey = RemovingMessages.REMOVED_FROM_SURFACE;
   }
 
-  // Create the TAKEN event (same as taking action) for world model updates with snapshots
-  const takenData: RemovingEventMap['if.event.taken'] = {
+  // Emit domain event with messageId (simplified pattern - ADR-097)
+  // Using if.event.taken since removing is semantically a form of taking
+  events.push(context.event('if.event.taken', {
+    // Rendering data (messageId + params for text-service)
+    messageId: `${context.action.id}.${messageKey}`,
+    params,
+    // Domain data (for event sourcing / handlers)
     item: item.name,
+    itemId: item.id,
+    actorId: actor.id,
     fromLocation: source.id,
     container: source.name,
     fromContainer: source.has(TraitType.CONTAINER),
     fromSupporter: source.has(TraitType.SUPPORTER) && !source.has(TraitType.CONTAINER),
-    // Add atomic event snapshots
     itemSnapshot: captureEntitySnapshot(item, context.world, true),
     actorSnapshot: captureEntitySnapshot(actor, context.world, false),
     sourceSnapshot: captureEntitySnapshot(source, context.world, source.has(TraitType.ROOM))
-  } as RemovingEventMap['if.event.taken'] & { itemSnapshot?: any; actorSnapshot?: any; sourceSnapshot?: any };
-
-  events.push(context.event('if.event.taken', takenData));
-
-  // Create success message
-  events.push(context.event('action.success', {
-    actionId: context.action.id,
-    messageId,
-    params: params
   }));
 }
 
 /**
  * Generate blocked event for a single entity that couldn't be removed
+ *
+ * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
  */
 function reportSingleBlocked(
   context: ActionContext,
@@ -310,10 +311,16 @@ function reportSingleBlocked(
   errorParams: Record<string, unknown> | undefined,
   events: ISemanticEvent[]
 ): void {
-  events.push(context.event('action.blocked', {
-    actionId: context.action.id,
-    messageId: error,
-    params: { ...errorParams, item: item.name, source: source.name }
+  events.push(context.event('if.event.remove_blocked', {
+    // Rendering data
+    messageId: `${context.action.id}.${error}`,
+    params: { ...errorParams, item: item.name, source: source.name },
+    // Domain data
+    itemId: item.id,
+    itemName: item.name,
+    sourceId: source.id,
+    sourceName: source.name,
+    reason: error
   }));
 }
 
@@ -445,66 +452,65 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
     // Single object report
     const actor = context.player;
     const item = context.command.directObject!.entity!;
-    const removeResult = sharedData.removeResult as IRemoveItemResult | IRemoveItemFromSupporterResult | null;
-    const takeResult = sharedData.takeResult as ITakeItemResult;
-
-    const events: ISemanticEvent[] = [];
 
     // Build message params and determine message
     const params: Record<string, any> = {
       item: item.name
     };
 
-    let messageId: string;
+    let messageKey: string;
     if (source.has(TraitType.CONTAINER)) {
       params.container = source.name;
-      messageId = RemovingMessages.REMOVED_FROM;
+      messageKey = RemovingMessages.REMOVED_FROM;
     } else {
       params.surface = source.name;
-      messageId = RemovingMessages.REMOVED_FROM_SURFACE;
+      messageKey = RemovingMessages.REMOVED_FROM_SURFACE;
     }
 
-    // Create the TAKEN event (same as taking action) for world model updates with snapshots
-    const takenData: RemovingEventMap['if.event.taken'] = {
-      item: item.name,
-      fromLocation: source.id,
-      container: source.name,
-      fromContainer: source.has(TraitType.CONTAINER),
-      fromSupporter: source.has(TraitType.SUPPORTER) && !source.has(TraitType.CONTAINER),
-      // Add atomic event snapshots
-      itemSnapshot: captureEntitySnapshot(item, context.world, true),
-      actorSnapshot: captureEntitySnapshot(actor, context.world, false),
-      sourceSnapshot: captureEntitySnapshot(source, context.world, source.has(TraitType.ROOM))
-    } as RemovingEventMap['if.event.taken'] & { itemSnapshot?: any; actorSnapshot?: any; sourceSnapshot?: any };
-
-    events.push(context.event('if.event.taken', takenData));
-
-    // Create success message
-    events.push(context.event('action.success', {
-      actionId: context.action.id,
-      messageId,
-      params: params
-    }));
-
-    return events;
+    // Emit domain event with messageId (simplified pattern - ADR-097)
+    return [
+      context.event('if.event.taken', {
+        // Rendering data (messageId + params for text-service)
+        messageId: `${context.action.id}.${messageKey}`,
+        params,
+        // Domain data (for event sourcing / handlers)
+        item: item.name,
+        itemId: item.id,
+        actorId: actor.id,
+        fromLocation: source.id,
+        container: source.name,
+        fromContainer: source.has(TraitType.CONTAINER),
+        fromSupporter: source.has(TraitType.SUPPORTER) && !source.has(TraitType.CONTAINER),
+        itemSnapshot: captureEntitySnapshot(item, context.world, true),
+        actorSnapshot: captureEntitySnapshot(actor, context.world, false),
+        sourceSnapshot: captureEntitySnapshot(source, context.world, source.has(TraitType.ROOM))
+      })
+    ];
   },
 
   /**
    * Generate events when validation fails
-   * Called instead of execute/report when validate returns invalid
+   *
+   * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const item = context.command.directObject?.entity;
     const source = context.command.indirectObject?.entity;
 
-    return [context.event('action.blocked', {
-      actionId: context.action.id,
-      messageId: result.error,
+    return [context.event('if.event.remove_blocked', {
+      // Rendering data
+      messageId: `${context.action.id}.${result.error}`,
       params: {
         ...result.params,
         item: item?.name,
         source: source?.name
-      }
+      },
+      // Domain data
+      itemId: item?.id,
+      itemName: item?.name,
+      sourceId: source?.id,
+      sourceName: source?.name,
+      reason: result.error
     })];
   }
 };

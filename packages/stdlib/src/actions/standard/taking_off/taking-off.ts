@@ -153,46 +153,58 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
     sharedData.messageId = 'removed';
   },
 
+  /**
+   * Generate events when validation fails
+   *
+   * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
+   */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
-      reason: result.error,
-      params: result.params || {}
+    const item = context.command.directObject?.entity;
+
+    return [context.event('if.event.take_off_blocked', {
+      // Rendering data
+      messageId: `${context.action.id}.${result.error}`,
+      params: result.params || {},
+      // Domain data
+      itemId: item?.id,
+      itemName: item?.name,
+      reason: result.error
     })];
   },
 
+  /**
+   * Report phase - generates events after successful execution
+   *
+   * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
+   */
   report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getTakingOffSharedData(context);
 
     // Handle behavior failures (safety net - should be rare after validation)
     if (sharedData.failed) {
-      return [context.event('action.blocked', {
-        actionId: this.id,
-        messageId: sharedData.errorMessageId,
-        reason: sharedData.errorReason,
-        params: sharedData.errorParams || {}
+      return [context.event('if.event.take_off_blocked', {
+        messageId: `${context.action.id}.${sharedData.errorMessageId}`,
+        params: sharedData.errorParams || {},
+        itemId: sharedData.itemId,
+        itemName: sharedData.itemName,
+        reason: sharedData.errorReason
       })];
     }
 
-    const events: ISemanticEvent[] = [];
-
-    // Create REMOVED event for world model updates
-    const removedData: RemovedEventData = {
-      itemId: sharedData.itemId,
-      bodyPart: sharedData.bodyPart,
-      layer: sharedData.layer
-    };
-    events.push(context.event('if.event.removed', removedData));
-
-    // Create success message
-    events.push(context.event('action.success', {
-      actionId: this.id,
-      messageId: sharedData.messageId,
-      params: sharedData.params
-    }));
-
-    return events;
+    // Emit domain event with messageId (simplified pattern - ADR-097)
+    return [
+      context.event('if.event.removed', {
+        // Rendering data (messageId + params for text-service)
+        messageId: `${context.action.id}.${sharedData.messageId}`,
+        params: sharedData.params,
+        // Domain data (for event sourcing / handlers)
+        itemId: sharedData.itemId,
+        itemName: sharedData.itemName,
+        actorId: context.player.id,
+        bodyPart: sharedData.bodyPart,
+        layer: sharedData.layer
+      })
+    ];
   },
 
   metadata: {

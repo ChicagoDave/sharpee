@@ -216,72 +216,64 @@ export const unlockingAction: Action & { metadata: ActionMetadata } = {
 
   /**
    * Report phase - generates events after successful execution
-   * Only called on success path - validation has already passed
+   *
+   * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
    */
   report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getUnlockingSharedData(context);
 
     // Check if behavior failed (safety net for edge cases)
     if (sharedData.failed) {
-      return [context.event('action.error', {
-        actionId: this.id,
-        messageId: sharedData.errorMessageId,
-        reason: sharedData.errorMessageId,
-        params: { item: sharedData.targetName }
+      return [context.event('if.event.unlock_blocked', {
+        messageId: `${context.action.id}.${sharedData.errorMessageId}`,
+        params: { item: sharedData.targetName },
+        targetId: sharedData.targetId,
+        targetName: sharedData.targetName,
+        reason: sharedData.errorMessageId
       })];
     }
 
-    // Build event data
-    const eventData: UnlockedEventData = {
-      targetId: sharedData.targetId,
-      targetName: sharedData.targetName,
-      containerId: sharedData.targetId,
-      containerName: sharedData.targetName
-    };
-
-    if (sharedData.isContainer !== undefined) {
-      eventData.isContainer = sharedData.isContainer;
-    }
-    if (sharedData.isDoor !== undefined) {
-      eventData.isDoor = sharedData.isDoor;
-    }
-    if (sharedData.keyId) {
-      eventData.keyId = sharedData.keyId;
-      eventData.keyName = sharedData.keyName;
-    }
-    if (sharedData.sound) {
-      eventData.sound = sharedData.sound;
-    }
-    if (sharedData.willAutoOpen) {
-      eventData.willAutoOpen = sharedData.willAutoOpen;
-    }
-    if (sharedData.hasContents !== undefined) {
-      eventData.hasContents = sharedData.hasContents;
-      eventData.contentsCount = sharedData.contentsCount;
-      eventData.contentsIds = sharedData.contentsIds;
-    }
-
-    // Create the UNLOCKED event and success message
+    // Emit domain event with messageId (simplified pattern - ADR-097)
     return [
-      context.event('if.event.unlocked', eventData),
-      context.event('action.success', {
-        actionId: this.id,
-        messageId: sharedData.messageId,
-        params: sharedData.params
+      context.event('if.event.unlocked', {
+        // Rendering data (messageId + params for text-service)
+        messageId: `${context.action.id}.${sharedData.messageId}`,
+        params: sharedData.params,
+        // Domain data (for event sourcing / handlers)
+        targetId: sharedData.targetId,
+        targetName: sharedData.targetName,
+        containerId: sharedData.targetId,
+        containerName: sharedData.targetName,
+        actorId: context.player.id,
+        isContainer: sharedData.isContainer,
+        isDoor: sharedData.isDoor,
+        keyId: sharedData.keyId,
+        keyName: sharedData.keyName,
+        sound: sharedData.sound,
+        willAutoOpen: sharedData.willAutoOpen,
+        hasContents: sharedData.hasContents,
+        contentsCount: sharedData.contentsCount,
+        contentsIds: sharedData.contentsIds
       })
     ];
   },
 
   /**
    * Generate events when validation fails
-   * Called instead of execute/report when validate returns invalid
+   *
+   * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
-      reason: result.error,
-      params: result.params || {}
+    const noun = context.command.directObject?.entity;
+
+    return [context.event('if.event.unlock_blocked', {
+      // Rendering data
+      messageId: `${context.action.id}.${result.error}`,
+      params: result.params || {},
+      // Domain data
+      targetId: noun?.id,
+      targetName: noun?.name,
+      reason: result.error
     })];
   },
 

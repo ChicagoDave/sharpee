@@ -229,6 +229,8 @@ function executeSingleEntity(
 
 /**
  * Generate success events for putting a single entity
+ *
+ * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
  */
 function reportSingleSuccess(
   context: ActionContext,
@@ -240,38 +242,44 @@ function reportSingleSuccess(
   const targetPreposition = result.targetPreposition as 'in' | 'on';
 
   if (targetPreposition === 'in') {
+    const params = { item: item.name, container: target.name };
     events.push(context.event('if.event.put_in', {
+      // Rendering data (messageId + params for text-service)
+      messageId: `${context.action.id}.${PuttingMessages.PUT_IN}`,
+      params,
+      // Domain data (for event sourcing / handlers)
       itemId: item.id,
+      itemName: item.name,
       targetId: target.id,
+      targetName: target.name,
+      actorId: context.player.id,
       preposition: 'in' as const,
       itemSnapshot: captureEntitySnapshot(item, context.world, true),
       targetSnapshot: captureEntitySnapshot(target, context.world, true)
     }));
-
-    events.push(context.event('action.success', {
-      actionId: context.action.id,
-      messageId: PuttingMessages.PUT_IN,
-      params: { item: item.name, container: target.name }
-    }));
   } else {
+    const params = { item: item.name, surface: target.name };
     events.push(context.event('if.event.put_on', {
+      // Rendering data (messageId + params for text-service)
+      messageId: `${context.action.id}.${PuttingMessages.PUT_ON}`,
+      params,
+      // Domain data (for event sourcing / handlers)
       itemId: item.id,
+      itemName: item.name,
       targetId: target.id,
+      targetName: target.name,
+      actorId: context.player.id,
       preposition: 'on' as const,
       itemSnapshot: captureEntitySnapshot(item, context.world, true),
       targetSnapshot: captureEntitySnapshot(target, context.world, true)
-    }));
-
-    events.push(context.event('action.success', {
-      actionId: context.action.id,
-      messageId: PuttingMessages.PUT_ON,
-      params: { item: item.name, surface: target.name }
     }));
   }
 }
 
 /**
  * Generate blocked event for a single entity that couldn't be put
+ *
+ * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
  */
 function reportSingleBlocked(
   context: ActionContext,
@@ -281,10 +289,16 @@ function reportSingleBlocked(
   errorParams: Record<string, unknown> | undefined,
   events: ISemanticEvent[]
 ): void {
-  events.push(context.event('action.blocked', {
-    actionId: context.action.id,
-    messageId: error,
-    params: { ...errorParams, item: item.name, destination: target.name }
+  events.push(context.event('if.event.put_blocked', {
+    // Rendering data
+    messageId: `${context.action.id}.${error}`,
+    params: { ...errorParams, item: item.name, destination: target.name },
+    // Domain data
+    itemId: item.id,
+    itemName: item.name,
+    targetId: target.id,
+    targetName: target.name,
+    reason: error
   }));
 }
 
@@ -429,51 +443,67 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
     const item = context.command.directObject!.entity!;
     const targetPreposition = sharedData.targetPreposition as 'in' | 'on';
 
+    // Emit domain event with messageId (simplified pattern - ADR-097)
     if (targetPreposition === 'in') {
+      const params = { item: item.name, container: target.name };
       events.push(context.event('if.event.put_in', {
+        // Rendering data (messageId + params for text-service)
+        messageId: `${context.action.id}.${PuttingMessages.PUT_IN}`,
+        params,
+        // Domain data (for event sourcing / handlers)
         itemId: item.id,
+        itemName: item.name,
         targetId: target.id,
+        targetName: target.name,
+        actorId: context.player.id,
         preposition: 'in' as const,
         itemSnapshot: captureEntitySnapshot(item, context.world, true),
         targetSnapshot: captureEntitySnapshot(target, context.world, true)
       }));
-
-      events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: PuttingMessages.PUT_IN,
-        params: { item: item.name, container: target.name }
-      }));
     } else {
+      const params = { item: item.name, surface: target.name };
       events.push(context.event('if.event.put_on', {
+        // Rendering data (messageId + params for text-service)
+        messageId: `${context.action.id}.${PuttingMessages.PUT_ON}`,
+        params,
+        // Domain data (for event sourcing / handlers)
         itemId: item.id,
+        itemName: item.name,
         targetId: target.id,
+        targetName: target.name,
+        actorId: context.player.id,
         preposition: 'on' as const,
         itemSnapshot: captureEntitySnapshot(item, context.world, true),
         targetSnapshot: captureEntitySnapshot(target, context.world, true)
-      }));
-
-      events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: PuttingMessages.PUT_ON,
-        params: { item: item.name, surface: target.name }
       }));
     }
 
     return events;
   },
 
+  /**
+   * Generate events when validation fails
+   *
+   * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
+   */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const item = context.command.directObject?.entity;
     const target = context.command.indirectObject?.entity;
 
-    return [context.event('action.blocked', {
-      actionId: context.action.id,
-      messageId: result.error,
+    return [context.event('if.event.put_blocked', {
+      // Rendering data
+      messageId: `${context.action.id}.${result.error}`,
       params: {
         ...result.params,
         item: item?.name,
         destination: target?.name
-      }
+      },
+      // Domain data
+      itemId: item?.id,
+      itemName: item?.name,
+      targetId: target?.id,
+      targetName: target?.name,
+      reason: result.error
     })];
   }
 };

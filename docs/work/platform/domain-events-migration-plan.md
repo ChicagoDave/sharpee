@@ -90,30 +90,23 @@ MessageId determines the displayed message.
 
 ## Actions to Migrate
 
-### Completed (1)
+### Completed (13)
 
 | Action | Domain Event | Message Namespace | Notes |
 |--------|--------------|-------------------|-------|
-| ✅ taking | `if.event.taken` | `if.action.taken.*` | Proof-of-concept (needs messageId update) |
-
-### High Priority - State Mutations (12)
-
-These actions modify world state and are frequently used:
-
-| Action | Domain Event | Message Namespace | Complexity |
-|--------|--------------|-------------------|------------|
-| dropping | `if.event.dropped` | `if.action.dropped.*` | Low |
-| opening | `if.event.opened` | `if.action.opened.*` | Low |
-| closing | `if.event.closed` | `if.action.closed.*` | Low |
-| locking | `if.event.locked` | `if.action.locked.*` | Low |
-| unlocking | `if.event.unlocked` | `if.action.unlocked.*` | Low |
-| switching_on | `if.event.switched_on` | `if.action.switched_on.*` | Medium - auto-LOOK |
-| switching_off | `if.event.switched_off` | `if.action.switched_off.*` | Low |
-| wearing | `if.event.worn` | `if.action.worn.*` | Low |
-| taking_off | `if.event.removed` | `if.action.removed.*` | Low |
-| inserting | `if.event.inserted` | `if.action.inserted.*` | Low |
-| putting | `if.event.put` | `if.action.put.*` | Low |
-| removing | `if.event.removed_from` | `if.action.removed_from.*` | Low |
+| ✅ taking | `if.event.taken` | `if.action.taking.*` | Phase 1 proof-of-concept |
+| ✅ dropping | `if.event.dropped` | `if.action.dropping.*` | Phase 2 |
+| ✅ opening | `if.event.opened` | `if.action.opening.*` | Phase 2 |
+| ✅ closing | `if.event.closed` | `if.action.closing.*` | Phase 2 |
+| ✅ putting | `if.event.put_in`, `if.event.put_on` | `if.action.putting.*` | Phase 2 |
+| ✅ inserting | (delegates to putting) | `if.action.inserting.*` | Phase 2 |
+| ✅ locking | `if.event.locked` | `if.action.locking.*` | Phase 3 |
+| ✅ unlocking | `if.event.unlocked` | `if.action.unlocking.*` | Phase 3 |
+| ✅ switching_on | `if.event.switched_on` | `if.action.switching_on.*` | Phase 3 |
+| ✅ switching_off | `if.event.switched_off` | `if.action.switching_off.*` | Phase 3 |
+| ✅ wearing | `if.event.worn` | `if.action.wearing.*` | Phase 3 |
+| ✅ taking_off | `if.event.removed` | `if.action.taking_off.*` | Phase 3 |
+| ✅ removing | `if.event.taken` | `if.action.removing.*` | Phase 3 |
 
 ### Medium Priority - Information Actions (8)
 

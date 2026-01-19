@@ -153,7 +153,9 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
 
   /**
    * Report events after successful closing
-   * Only called on success path - validation passed
+   *
+   * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
+   * Text-service looks up message from domain event - no separate action.success needed.
    */
   report(context: ActionContext): ISemanticEvent[] {
     const noun = context.command.directObject!.entity!;
@@ -162,7 +164,7 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
 
     const events: ISemanticEvent[] = [];
 
-    // Add the domain event (closed)
+    // Add the backward compat domain event (closed)
     events.push(context.event('closed', {
       targetId: noun.id,
       targetName: noun.name,
@@ -170,7 +172,7 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
       sound: result.closeSound
     }));
 
-    // Add the action event (if.event.closed) - using data builder
+    // Build domain data for the primary event
     const eventData = buildEventData(closedDataConfig, context);
 
     // Add additional fields for backward compatibility
@@ -189,9 +191,16 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
       contentsIds = contents.map(item => item.id);
     }
 
-    const fullEventData = {
+    // Emit domain event with messageId (simplified pattern - ADR-097)
+    events.push(context.event('if.event.closed', {
+      // Rendering data (messageId + params for text-service)
+      messageId: `${context.action.id}.${ClosingMessages.CLOSED}`,
+      params: { item: noun.name },
+      // Domain data (for event sourcing / handlers)
       ...eventData,
-      targetName: noun.name,  // Add targetName explicitly
+      targetId: noun.id,
+      targetName: noun.name,
+      actorId: context.player.id,
       containerId: noun.id,
       containerName: noun.name,
       isContainer,
@@ -201,15 +210,6 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
       contentsCount,
       contentsIds,
       item: noun.name
-    };
-
-    events.push(context.event('if.event.closed', fullEventData));
-
-    // Add success event
-    events.push(context.event('action.success', {
-      actionId: context.action.id,
-      messageId: ClosingMessages.CLOSED,
-      params: { item: noun.name }
     }));
 
     return events;
@@ -217,18 +217,23 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
 
   /**
    * Generate events when validation fails
-   * Called instead of execute/report when validate returns invalid
+   *
+   * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const noun = context.command.directObject?.entity;
 
-    return [context.event('action.blocked', {
-      actionId: context.action.id,
-      messageId: result.error,
+    return [context.event('if.event.close_blocked', {
+      // Rendering data
+      messageId: `${context.action.id}.${result.error}`,
       params: {
         ...result.params,
         item: noun?.name
-      }
+      },
+      // Domain data
+      targetId: noun?.id,
+      targetName: noun?.name,
+      reason: result.error
     })];
   }
 };

@@ -157,6 +157,9 @@ function executeSingleEntity(
 
 /**
  * Generate success events for dropping a single entity
+ *
+ * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
+ * Text-service looks up message from domain event - no separate action.success needed.
  */
 function reportSingleSuccess(
   context: ActionContext,
@@ -170,58 +173,63 @@ function reportSingleSuccess(
     ? context.world.getEntity(result.dropLocation)
     : getDropLocation(context);
 
-  // Build event data for this item
-  const droppedData: Record<string, unknown> = {
-    item: noun.id,
-    itemName: noun.name,
-    toLocation: dropLocation?.id,
-    toLocationName: dropLocation?.name
-  };
-
-  // Add location type flags
-  if (dropLocation) {
-    if (!dropLocation.has(TraitType.ROOM)) {
-      if (dropLocation.has(TraitType.CONTAINER)) {
-        droppedData.toContainer = true;
-      } else if (dropLocation.has(TraitType.SUPPORTER)) {
-        droppedData.toSupporter = true;
-      }
-    } else {
-      droppedData.toRoom = true;
-    }
-  }
-
-  // Add the dropped event
-  events.push(context.event('if.event.dropped', droppedData));
-
-  // Determine success message
-  let messageId = 'dropped';
+  // Determine message key based on context
+  let messageKey: string = DroppingMessages.DROPPED;
   const params: Record<string, any> = {
     item: noun.name,
     location: dropLocation?.name
   };
 
+  // Determine location type flags and message
+  let toContainer = false;
+  let toSupporter = false;
+  let toRoom = false;
+
+  if (dropLocation) {
+    if (!dropLocation.has(TraitType.ROOM)) {
+      if (dropLocation.has(TraitType.CONTAINER)) {
+        toContainer = true;
+      } else if (dropLocation.has(TraitType.SUPPORTER)) {
+        toSupporter = true;
+      }
+    } else {
+      toRoom = true;
+    }
+  }
+
   // Use compact format for multi-object commands
   if (isMultiObject) {
-    messageId = 'dropped_multi';
-  } else if (droppedData.toContainer) {
-    messageId = 'dropped_in';
+    messageKey = DroppingMessages.DROPPED_MULTI;
+  } else if (toContainer) {
+    messageKey = DroppingMessages.DROPPED_IN;
     params.container = dropLocation?.name;
-  } else if (droppedData.toSupporter) {
-    messageId = 'dropped_on';
+  } else if (toSupporter) {
+    messageKey = DroppingMessages.DROPPED_ON;
     params.supporter = dropLocation?.name;
   }
 
-  // Add success event
-  events.push(context.event('action.success', {
-    actionId: context.action.id,
-    messageId,
-    params
+  // Emit domain event with messageId (simplified pattern - ADR-097)
+  // Text-service will look up message directly from this event
+  events.push(context.event('if.event.dropped', {
+    // Rendering data (messageId + params for text-service)
+    messageId: `${context.action.id}.${messageKey}`,
+    params,
+    // Domain data (for event sourcing / handlers)
+    item: noun.name,
+    itemId: noun.id,
+    actorId: actor.id,
+    toLocation: dropLocation?.id,
+    toLocationName: dropLocation?.name,
+    toContainer,
+    toSupporter,
+    toRoom
   }));
 }
 
 /**
  * Generate blocked event for a single entity that couldn't be dropped
+ *
+ * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
  */
 function reportSingleBlocked(
   context: ActionContext,
@@ -230,10 +238,14 @@ function reportSingleBlocked(
   errorParams: Record<string, unknown> | undefined,
   events: ISemanticEvent[]
 ): void {
-  events.push(context.event('action.blocked', {
-    actionId: context.action.id,
-    messageId: error,
-    params: { ...errorParams, item: noun.name }
+  events.push(context.event('if.event.drop_blocked', {
+    // Rendering data
+    messageId: `${context.action.id}.${error}`,
+    params: { ...errorParams, item: noun.name },
+    // Domain data
+    item: noun.name,
+    itemId: noun.id,
+    reason: error
   }));
 }
 
@@ -335,30 +347,42 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
       return events;
     }
 
-    // Single object report - use the data builder pattern
+    // Single object report - use the data builder pattern for domain data
     const droppedData = buildEventData(droppedDataConfig, context);
+    const actor = context.player;
+    const noun = context.command.directObject!.entity!;
 
     // Determine success message
     const { messageId, params } = determineDroppingMessage(droppedData, context);
 
-    // Return both the domain event and success message
+    // Return domain event with messageId (simplified pattern - ADR-097)
     return [
-      context.event('if.event.dropped', droppedData),
-      context.event('action.success', {
-        actionId: context.action.id,
-        messageId,
-        params: params
+      context.event('if.event.dropped', {
+        // Rendering data (messageId + params for text-service)
+        messageId: `${context.action.id}.${messageId}`,
+        params,
+        // Domain data (for event sourcing / handlers)
+        ...droppedData,
+        item: noun.name,
+        itemId: noun.id,
+        actorId: actor.id
       })
     ];
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    // blocked() is called when validation fails
+    // Uses simplified event pattern (ADR-097)
     const noun = context.command.directObject?.entity;
 
-    return [context.event('action.blocked', {
-      actionId: context.action.id,
-      messageId: result.error,
-      params: { ...result.params, item: noun?.name }
+    return [context.event('if.event.drop_blocked', {
+      // Rendering data
+      messageId: `${context.action.id}.${result.error}`,
+      params: { ...result.params, item: noun?.name },
+      // Domain data
+      item: noun?.name,
+      itemId: noun?.id,
+      reason: result.error
     })];
   },
 

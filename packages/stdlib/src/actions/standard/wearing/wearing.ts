@@ -151,7 +151,8 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
 
   /**
    * Report phase - generates events after successful execution
-   * Only called on success path - validation has already passed
+   *
+   * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
    */
   report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getWearingSharedData(context);
@@ -159,11 +160,12 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
 
     // Check if behavior failed (safety net for edge cases)
     if (sharedData.failed) {
-      return [context.event('action.error', {
-        actionId: this.id,
-        messageId: sharedData.errorMessageId,
-        reason: sharedData.errorReason,
-        params: sharedData.errorParams
+      return [context.event('if.event.wear_blocked', {
+        messageId: `${context.action.id}.${sharedData.errorMessageId}`,
+        params: sharedData.errorParams,
+        itemId: sharedData.itemId,
+        itemName: sharedData.itemName,
+        reason: sharedData.errorReason
       })];
     }
 
@@ -172,19 +174,17 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
       events.push(...context.sharedData.implicitTakeEvents);
     }
 
-    // Create WORN event for world model updates
-    const wornData: WornEventData = {
+    // Emit domain event with messageId (simplified pattern - ADR-097)
+    events.push(context.event('if.event.worn', {
+      // Rendering data (messageId + params for text-service)
+      messageId: `${context.action.id}.${sharedData.messageId}`,
+      params: sharedData.params,
+      // Domain data (for event sourcing / handlers)
       itemId: sharedData.itemId,
+      itemName: sharedData.itemName,
+      actorId: context.player.id,
       bodyPart: sharedData.bodyPart,
       layer: sharedData.layer
-    };
-    events.push(context.event('if.event.worn', wornData));
-
-    // Create success message
-    events.push(context.event('action.success', {
-      actionId: this.id,
-      messageId: sharedData.messageId,
-      params: sharedData.params
     }));
 
     return events;
@@ -192,14 +192,20 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
 
   /**
    * Generate events when validation fails
-   * Called instead of execute/report when validate returns invalid
+   *
+   * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
-      reason: result.error,
-      params: result.params || {}
+    const item = context.command.directObject?.entity;
+
+    return [context.event('if.event.wear_blocked', {
+      // Rendering data
+      messageId: `${context.action.id}.${result.error}`,
+      params: result.params || {},
+      // Domain data
+      itemId: item?.id,
+      itemName: item?.name,
+      reason: result.error
     })];
   },
 

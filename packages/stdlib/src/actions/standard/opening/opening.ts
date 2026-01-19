@@ -123,18 +123,41 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
     context.sharedData.openResult = result;
   },
 
+  /**
+   * Report phase - generates events for successful opening
+   *
+   * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
+   * Text-service looks up message from domain event - no separate action.success needed.
+   */
   report(context: ActionContext): ISemanticEvent[] {
     // report() is only called on success - validation passed
     const noun = context.command.directObject!.entity!;
     const result = context.sharedData.openResult as IOpenResult;
     const events: ISemanticEvent[] = [];
 
-    // 1. The atomic opened event - just the fact of opening
-    const openedData: OpenedEventData = {
+    // Determine message based on contents
+    const isContainer = noun.has(TraitType.CONTAINER);
+    const contents = isContainer ? context.world.getContents(noun.id) : [];
+
+    let messageKey: string = OpeningMessages.OPENED;
+    let params: Record<string, any> = { item: noun.name };
+
+    // Special message for empty containers
+    if (isContainer && contents.length === 0) {
+      messageKey = OpeningMessages.ITS_EMPTY;
+      params = { container: noun.name };
+    }
+
+    // 1. Primary domain event with messageId (simplified pattern - ADR-097)
+    events.push(context.event('if.event.opened', {
+      // Rendering data (messageId + params for text-service)
+      messageId: `${context.action.id}.${messageKey}`,
+      params,
+      // Domain data (for event sourcing / handlers)
       targetId: noun.id,
-      targetName: noun.name
-    };
-    events.push(context.event('if.event.opened', openedData));
+      targetName: noun.name,
+      actorId: context.player.id
+    }));
 
     // 2. Domain event for backward compatibility (simplified)
     events.push(context.event('opened', {
@@ -145,39 +168,28 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
     // Note: if.event.revealed is emitted by the opened event handler in stdlib
     // This ensures revealed events fire regardless of what action opened the container
 
-    // 3. Success event with appropriate message
-    const isContainer = noun.has(TraitType.CONTAINER);
-    const contents = isContainer ? context.world.getContents(noun.id) : [];
-
-    let messageId: string = OpeningMessages.OPENED;
-    let params: Record<string, any> = { item: noun.name };
-
-    // Special message for empty containers
-    if (isContainer && contents.length === 0) {
-      messageId = OpeningMessages.ITS_EMPTY;
-      params = { container: noun.name };
-    }
-
-    events.push(context.event('action.success', {
-      actionId: context.action.id,
-      messageId,
-      params
-    }));
-
     return events;
   },
 
+  /**
+   * Blocked phase - generates events when validation fails
+   *
+   * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
+   */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    // blocked() is called when validation fails
     const noun = context.command.directObject?.entity;
 
-    return [context.event('action.blocked', {
-      actionId: context.action.id,
-      messageId: result.error,
+    return [context.event('if.event.open_blocked', {
+      // Rendering data
+      messageId: `${context.action.id}.${result.error}`,
       params: {
         ...result.params,
         item: noun?.name
-      }
+      },
+      // Domain data
+      targetId: noun?.id,
+      targetName: noun?.name,
+      reason: result.error
     })];
   }
 };

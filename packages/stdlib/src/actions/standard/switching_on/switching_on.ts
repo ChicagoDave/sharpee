@@ -221,70 +221,49 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
 
   /**
    * Report phase - generates events after successful execution
-   * Only called on success path - validation has already passed
+   *
+   * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
+   * Note: Auto-LOOK events still use looking action's message IDs.
    */
   report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getSwitchingOnSharedData(context);
 
     // Check if behavior failed (safety net for edge cases)
     if (sharedData.failed) {
-      return [context.event('action.error', {
-        actionId: this.id,
-        messageId: sharedData.errorMessageId,
-        reason: sharedData.errorMessageId,
-        params: { target: sharedData.targetName }
+      return [context.event('if.event.switch_on_blocked', {
+        messageId: `${context.action.id}.${sharedData.errorMessageId}`,
+        params: { target: sharedData.targetName },
+        targetId: sharedData.targetId,
+        targetName: sharedData.targetName,
+        reason: sharedData.errorMessageId
       })];
     }
 
-    // Build event data
-    const eventData: SwitchedOnEventData = {
-      target: sharedData.targetId,
-      targetName: sharedData.targetName
-    };
-
-    // Add light source data
-    if (sharedData.isLightSource) {
-      eventData.isLightSource = true;
-      eventData.lightRadius = sharedData.lightRadius;
-      eventData.lightIntensity = sharedData.lightIntensity;
-      if (sharedData.willIlluminateLocation) {
-        eventData.willIlluminateLocation = true;
-      }
-    }
-
-    // Add temporary activation data
-    if (sharedData.temporary) {
-      eventData.temporary = true;
-      eventData.autoOffTime = sharedData.autoOffTime;
-    }
-
-    // Add power and sound data
-    if (sharedData.powerConsumption) {
-      eventData.powerConsumption = sharedData.powerConsumption;
-    }
-    if (sharedData.continuousSound) {
-      eventData.continuousSound = sharedData.continuousSound;
-    }
-    if (sharedData.sound) {
-      eventData.sound = sharedData.sound;
-    }
-
-    // Add side effects
-    if (sharedData.willOpen) {
-      eventData.willOpen = true;
-    }
-
-    // Create events array
+    // Create events array with primary domain event (simplified pattern - ADR-097)
     const events: ISemanticEvent[] = [
-      context.event('if.event.switched_on', eventData),
-      context.event('action.success', {
-        actionId: this.id,
-        messageId: sharedData.messageId,
-        params: sharedData.params
+      context.event('if.event.switched_on', {
+        // Rendering data (messageId + params for text-service)
+        messageId: `${context.action.id}.${sharedData.messageId}`,
+        params: sharedData.params,
+        // Domain data (for event sourcing / handlers)
+        target: sharedData.targetId,
+        targetName: sharedData.targetName,
+        actorId: context.player.id,
+        isLightSource: sharedData.isLightSource,
+        lightRadius: sharedData.lightRadius,
+        lightIntensity: sharedData.lightIntensity,
+        willIlluminateLocation: sharedData.willIlluminateLocation,
+        temporary: sharedData.temporary,
+        autoOffTime: sharedData.autoOffTime,
+        powerConsumption: sharedData.powerConsumption,
+        continuousSound: sharedData.continuousSound,
+        sound: sharedData.sound,
+        willOpen: sharedData.willOpen
       })
     ];
 
     // If we illuminated a dark room, add room description events (auto-LOOK)
+    // These use looking action's message IDs since they're room descriptions
     if (sharedData.willIlluminateLocation && sharedData.wasDarkBefore && sharedData.roomSnapshot) {
       const room = sharedData.roomSnapshot;
       const contents = context.world.getContents(room.id)
@@ -302,8 +281,9 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       }));
 
       // Emit action.success for room description (for text rendering)
+      // Keep using looking action's messages since this is auto-LOOK
       events.push(context.event('action.success', {
-        actionId: 'if.action.looking',  // Use looking action ID for message lookup
+        actionId: 'if.action.looking',
         messageId: 'room_description',
         params: {
           name: room.name,
@@ -330,14 +310,20 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
 
   /**
    * Generate events when validation fails
-   * Called instead of execute/report when validate returns invalid
+   *
+   * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
-      reason: result.error,
-      params: result.params || {}
+    const noun = context.command.directObject?.entity;
+
+    return [context.event('if.event.switch_on_blocked', {
+      // Rendering data
+      messageId: `${context.action.id}.${result.error}`,
+      params: result.params || {},
+      // Domain data
+      targetId: noun?.id,
+      targetName: noun?.name,
+      reason: result.error
     })];
   },
 

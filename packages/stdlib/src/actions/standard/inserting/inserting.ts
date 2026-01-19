@@ -160,23 +160,29 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
 
   /**
    * Report events after successful inserting
-   * Only called on success path - delegates to putting action
+   *
+   * Delegates to putting action which uses simplified event pattern (ADR-097).
    */
   report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getInsertingSharedData(context);
     const modifiedContext = sharedData.modifiedContext;
 
     if (!modifiedContext) {
-      // Shouldn't happen, but handle gracefully
-      return [context.event('action.error', {
-        actionId: context.action.id,
-        messageId: InsertingMessages.CANT_INSERT,
-        reason: 'cant_insert',
-        params: {}
+      // Shouldn't happen, but handle gracefully with domain event
+      const item = context.command.directObject?.entity;
+      const container = context.command.indirectObject?.entity;
+      return [context.event('if.event.insert_blocked', {
+        messageId: `${context.action.id}.${InsertingMessages.CANT_INSERT}`,
+        params: { item: item?.name, container: container?.name },
+        itemId: item?.id,
+        itemName: item?.name,
+        containerId: container?.id,
+        containerName: container?.name,
+        reason: 'cant_insert'
       })];
     }
 
-    // Delegate to putting action's report
+    // Delegate to putting action's report (already using new pattern)
     if ('report' in puttingAction && typeof puttingAction.report === 'function') {
       return puttingAction.report(modifiedContext);
     }
@@ -187,20 +193,27 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
 
   /**
    * Generate events when validation fails
-   * Called instead of execute/report when validate returns invalid
+   *
+   * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const item = context.command.directObject?.entity;
     const container = context.command.indirectObject?.entity;
 
-    return [context.event('action.blocked', {
-      actionId: context.action.id,
-      messageId: result.error,
+    return [context.event('if.event.insert_blocked', {
+      // Rendering data
+      messageId: `${context.action.id}.${result.error}`,
       params: {
         ...result.params,
         item: item?.name,
         container: container?.name
-      }
+      },
+      // Domain data
+      itemId: item?.id,
+      itemName: item?.name,
+      containerId: container?.id,
+      containerName: container?.name,
+      reason: result.error
     })];
   }
 };

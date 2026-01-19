@@ -192,78 +192,61 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
 
   /**
    * Report phase - generates events after successful execution
-   * Only called on success path - validation has already passed
+   *
+   * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
    */
   report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getSwitchingOffSharedData(context);
 
     // Check if behavior failed (safety net for edge cases)
     if (sharedData.failed) {
-      return [context.event('action.error', {
-        actionId: this.id,
-        messageId: sharedData.errorMessageId,
-        reason: sharedData.errorMessageId,
-        params: { target: sharedData.targetName }
+      return [context.event('if.event.switch_off_blocked', {
+        messageId: `${context.action.id}.${sharedData.errorMessageId}`,
+        params: { target: sharedData.targetName },
+        targetId: sharedData.targetId,
+        targetName: sharedData.targetName,
+        reason: sharedData.errorMessageId
       })];
     }
 
-    // Build event data
-    const eventData: SwitchedOffEventData = {
-      target: sharedData.targetId,
-      targetName: sharedData.targetName
-    };
-
-    // Add light source data
-    if (sharedData.isLightSource) {
-      eventData.isLightSource = true;
-      if (sharedData.willDarkenLocation) {
-        eventData.willDarkenLocation = true;
-      }
-    }
-
-    // Add temporary and power data
-    if (sharedData.wasTemporary) {
-      eventData.wasTemporary = true;
-      eventData.remainingTime = sharedData.remainingTime;
-    }
-    if (sharedData.powerFreed) {
-      eventData.powerFreed = sharedData.powerFreed;
-    }
-
-    // Add sound data
-    if (sharedData.sound) {
-      eventData.sound = sharedData.sound;
-    }
-    if (sharedData.stoppedSound) {
-      eventData.stoppedSound = sharedData.stoppedSound;
-    }
-
-    // Add side effects
-    if (sharedData.willClose) {
-      eventData.willClose = true;
-    }
-
-    // Create events
+    // Emit domain event with messageId (simplified pattern - ADR-097)
     return [
-      context.event('if.event.switched_off', eventData),
-      context.event('action.success', {
-        actionId: this.id,
-        messageId: sharedData.messageId,
-        params: sharedData.params
+      context.event('if.event.switched_off', {
+        // Rendering data (messageId + params for text-service)
+        messageId: `${context.action.id}.${sharedData.messageId}`,
+        params: sharedData.params,
+        // Domain data (for event sourcing / handlers)
+        target: sharedData.targetId,
+        targetName: sharedData.targetName,
+        actorId: context.player.id,
+        isLightSource: sharedData.isLightSource,
+        willDarkenLocation: sharedData.willDarkenLocation,
+        wasTemporary: sharedData.wasTemporary,
+        remainingTime: sharedData.remainingTime,
+        powerFreed: sharedData.powerFreed,
+        sound: sharedData.sound,
+        stoppedSound: sharedData.stoppedSound,
+        willClose: sharedData.willClose
       })
     ];
   },
 
   /**
    * Generate events when validation fails
-   * Called instead of execute/report when validate returns invalid
+   *
+   * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
-      reason: result.error,
-      params: result.params || {}
+    const noun = context.command.directObject?.entity;
+
+    return [context.event('if.event.switch_off_blocked', {
+      // Rendering data
+      messageId: `${context.action.id}.${result.error}`,
+      params: result.params || {},
+      // Domain data
+      targetId: noun?.id,
+      targetName: noun?.name,
+      reason: result.error
     })];
   },
 

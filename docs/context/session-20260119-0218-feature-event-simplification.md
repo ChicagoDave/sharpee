@@ -1,6 +1,6 @@
 # Session Summary: 2026-01-19 - feature/event-simplification
 
-## Status: Completed
+## Status: In Progress (Phase 2 Complete)
 
 ## Goals
 - Implement event management architecture changes documented in `docs/work/platform/event-management.md`
@@ -323,8 +323,138 @@ small mailbox is fixed in place.
 - Status: Ready for continued migration work or review
 - Parent branch: `dungeo` (will merge back after completion)
 
-**Next Session**: Start Phase 2 migration with dropping action, following established pattern.
+---
+
+## Phase 2 Migration (02:22 - 02:37)
+
+### Completed Actions
+
+Migrated 5 additional actions to the simplified event pattern:
+
+1. **dropping** (`packages/stdlib/src/actions/standard/dropping/dropping.ts`)
+   - Success: `if.event.dropped` with messageId
+   - Blocked: `if.event.drop_blocked` with messageId
+   - Handles multi-object commands (drop all)
+
+2. **opening** (`packages/stdlib/src/actions/standard/opening/opening.ts`)
+   - Success: `if.event.opened` with messageId
+   - Blocked: `if.event.open_blocked` with messageId
+   - Keeps backward compat `opened` event
+
+3. **closing** (`packages/stdlib/src/actions/standard/closing/closing.ts`)
+   - Success: `if.event.closed` with messageId
+   - Blocked: `if.event.close_blocked` with messageId
+   - Keeps backward compat `closed` event
+
+4. **putting** (`packages/stdlib/src/actions/standard/putting/putting.ts`)
+   - Success: `if.event.put_in` or `if.event.put_on` with messageId
+   - Blocked: `if.event.put_blocked` with messageId
+   - Handles both containers and supporters
+
+5. **inserting** (`packages/stdlib/src/actions/standard/inserting/inserting.ts`)
+   - Delegates to putting action for success path
+   - Blocked: `if.event.insert_blocked` with messageId
+
+### Pattern Notes
+
+All Phase 2 migrations follow the same pattern:
+- MessageId format: `${context.action.id}.${messageKey}` (e.g., `if.action.dropping.dropped`)
+- Domain events include both rendering data (messageId, params) and domain data
+- Blocked paths use separate event types (e.g., `if.event.drop_blocked`) for clarity
+
+### Testing
+
+All transcript tests pass:
+- `/tmp/test-phase2.transcript` - Success paths for all migrated actions
+- `/tmp/test-phase2-blocked.transcript` - Blocked paths verification
+- `stories/dungeo/tests/transcripts --all` - Full regression suite
+
+### Migration Status
+
+| Phase | Actions | Status |
+|-------|---------|--------|
+| 1. Foundation | taking | ✅ Complete |
+| 2. Core manipulation | dropping, opening, closing, putting, inserting | ✅ Complete |
+| 3. Inventory & containers | 7 actions | Pending |
+| 4. World interaction | 12 actions | Pending |
+| 5. System commands | 14 actions | Pending |
+
+**Total migrated**: 6 of 39 actions (15%)
+
+### Files Modified
+
+- `packages/stdlib/src/actions/standard/dropping/dropping.ts`
+- `packages/stdlib/src/actions/standard/opening/opening.ts`
+- `packages/stdlib/src/actions/standard/closing/closing.ts`
+- `packages/stdlib/src/actions/standard/putting/putting.ts`
+- `packages/stdlib/src/actions/standard/inserting/inserting.ts`
+- `docs/work/platform/domain-events-migration-plan.md` - Updated completed count
+
+### Next Steps
+
+1. Continue with Phase 3: locking, unlocking, switching_on, switching_off, wearing, taking_off, removing
+2. Consider updating messageId convention to past-tense (dropped vs dropping) for consistency with domain events
 
 ---
 
-**Progressive update**: Session completed 2026-01-19 02:18
+## Phase 3 Migration (02:37 - 02:49)
+
+### Completed Actions
+
+Migrated 7 additional actions to the simplified event pattern:
+
+1. **locking** (`packages/stdlib/src/actions/standard/locking/locking.ts`)
+   - Success: `if.event.locked` with messageId
+   - Blocked: `if.event.lock_blocked` with messageId
+
+2. **unlocking** (`packages/stdlib/src/actions/standard/unlocking/unlocking.ts`)
+   - Success: `if.event.unlocked` with messageId
+   - Blocked: `if.event.unlock_blocked` with messageId
+
+3. **switching_on** (`packages/stdlib/src/actions/standard/switching_on/switching_on.ts`)
+   - Success: `if.event.switched_on` with messageId
+   - Blocked: `if.event.switch_on_blocked` with messageId
+   - Note: Auto-LOOK events still use looking action's message IDs
+
+4. **switching_off** (`packages/stdlib/src/actions/standard/switching_off/switching_off.ts`)
+   - Success: `if.event.switched_off` with messageId
+   - Blocked: `if.event.switch_off_blocked` with messageId
+
+5. **wearing** (`packages/stdlib/src/actions/standard/wearing/wearing.ts`)
+   - Success: `if.event.worn` with messageId
+   - Blocked: `if.event.wear_blocked` with messageId
+
+6. **taking_off** (`packages/stdlib/src/actions/standard/taking_off/taking-off.ts`)
+   - Success: `if.event.removed` with messageId
+   - Blocked: `if.event.take_off_blocked` with messageId
+
+7. **removing** (`packages/stdlib/src/actions/standard/removing/removing.ts`)
+   - Success: `if.event.taken` with messageId (uses taking's event type)
+   - Blocked: `if.event.remove_blocked` with messageId
+
+### Migration Status
+
+| Phase | Actions | Status |
+|-------|---------|--------|
+| 1. Foundation | taking | ✅ Complete |
+| 2. Core manipulation | dropping, opening, closing, putting, inserting | ✅ Complete |
+| 3. Inventory & containers | locking, unlocking, switching_on, switching_off, wearing, taking_off, removing | ✅ Complete |
+| 4. World interaction | 12 actions | Pending |
+| 5. System commands | 14 actions | Pending |
+
+**Total migrated**: 13 of 39 actions (33%)
+
+### Files Modified
+
+- `packages/stdlib/src/actions/standard/locking/locking.ts`
+- `packages/stdlib/src/actions/standard/unlocking/unlocking.ts`
+- `packages/stdlib/src/actions/standard/switching_on/switching_on.ts`
+- `packages/stdlib/src/actions/standard/switching_off/switching_off.ts`
+- `packages/stdlib/src/actions/standard/wearing/wearing.ts`
+- `packages/stdlib/src/actions/standard/taking_off/taking-off.ts`
+- `packages/stdlib/src/actions/standard/removing/removing.ts`
+- `docs/work/platform/domain-events-migration-plan.md` - Updated completed count
+
+---
+
+**Progressive update**: Phase 3 completed 2026-01-19 02:49
