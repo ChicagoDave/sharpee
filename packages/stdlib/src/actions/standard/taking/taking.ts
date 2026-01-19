@@ -185,6 +185,9 @@ function executeSingleEntity(
 
 /**
  * Generate success events for taking a single entity
+ *
+ * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
+ * Text-service looks up message from domain event - no separate action.success needed.
  */
 function reportSingleSuccess(
   context: ActionContext,
@@ -215,8 +218,18 @@ function reportSingleSuccess(
   // Get container name for message
   const containerEntity = previousLocation ? context.world.getEntity(previousLocation) : null;
 
-  // Build event data for this item
-  const takenData = {
+  // Determine message ID based on context
+  let messageKey: string;
+  if (isMultiObject) {
+    messageKey = TakingMessages.TAKEN_MULTI;
+  } else if (isFromContainerOrSupporter) {
+    messageKey = TakingMessages.TAKEN_FROM;
+  } else {
+    messageKey = TakingMessages.TAKEN;
+  }
+
+  // Build params for message lookup
+  const params = {
     item: noun.name,
     itemId: noun.id,
     actor: actor.name,
@@ -225,29 +238,21 @@ function reportSingleSuccess(
     container: containerEntity?.name || ''
   };
 
-  // Add the taken event
-  events.push(context.event('if.event.taken', takenData));
-
-  // Use compact format for multi-object commands
-  let messageId: string;
-  if (isMultiObject) {
-    messageId = TakingMessages.TAKEN_MULTI;
-  } else if (isFromContainerOrSupporter) {
-    messageId = TakingMessages.TAKEN_FROM;
-  } else {
-    messageId = TakingMessages.TAKEN;
-  }
-
-  // Add success event
-  events.push(context.event('action.success', {
-    actionId: context.action.id,
-    messageId,
-    params: takenData
+  // Emit domain event with messageId (simplified pattern - ADR-097)
+  // Text-service will look up message directly from this event
+  events.push(context.event('if.event.taken', {
+    // Rendering data (messageId + params for text-service)
+    messageId: `${context.action.id}.${messageKey}`,
+    params,
+    // Domain data (for event sourcing / handlers)
+    ...params
   }));
 }
 
 /**
  * Generate blocked event for a single entity that couldn't be taken
+ *
+ * Uses simplified event pattern (ADR-097): domain event carries messageId directly.
  */
 function reportSingleBlocked(
   context: ActionContext,
@@ -255,10 +260,14 @@ function reportSingleBlocked(
   error: string,
   events: ISemanticEvent[]
 ): void {
-  events.push(context.event('action.blocked', {
-    actionId: context.action.id,
-    messageId: error,
-    params: { item: noun.name }
+  events.push(context.event('if.event.take_blocked', {
+    // Rendering data
+    messageId: `${context.action.id}.${error}`,
+    params: { item: noun.name },
+    // Domain data
+    item: noun.name,
+    itemId: noun.id,
+    reason: error
   }));
 }
 
@@ -354,15 +363,20 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     // blocked() is called when validation fails
+    // Uses simplified event pattern (ADR-097)
     const noun = context.command.directObject?.entity;
 
-    return [context.event('action.blocked', {
-      actionId: context.action.id,
-      messageId: result.error,
+    return [context.event('if.event.take_blocked', {
+      // Rendering data
+      messageId: `${context.action.id}.${result.error}`,
       params: {
         ...result.params,
         item: noun?.name
-      }
+      },
+      // Domain data
+      item: noun?.name,
+      itemId: noun?.id,
+      reason: result.error
     })];
   },
 

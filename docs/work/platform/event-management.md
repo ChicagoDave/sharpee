@@ -199,6 +199,61 @@ Each action should emit ONE domain event. Standard events:
 4. Remove old code paths once all actions migrated
 5. Clean up text-service to final simple form
 
+## Implementation Progress
+
+### Phase 1: Text-Service Update (COMPLETE)
+
+Added `tryProcessDomainEventMessage()` method to text-service that:
+- Checks if domain event has `messageId` in `event.data`
+- If found, looks up message via `languageProvider.getMessage()`
+- Returns text blocks directly, skipping legacy handlers
+- Falls through to legacy handling if messageId not found or message not resolved
+
+This allows both old and new patterns to coexist during migration.
+
+### Phase 2: Taking Action Migration (COMPLETE)
+
+Updated `taking` action as proof-of-concept:
+
+**Before** (dual event pattern):
+```typescript
+// Two events: domain + action.success
+events.push(context.event('if.event.taken', { item, itemId, ... }));
+events.push(context.event('action.success', {
+  actionId: context.action.id,
+  messageId: 'taken',
+  params: { item, itemId, ... }
+}));
+```
+
+**After** (simplified pattern):
+```typescript
+// Single event with messageId
+events.push(context.event('if.event.taken', {
+  messageId: `${context.action.id}.taken`,
+  params: { item, itemId, ... },
+  // Domain data spread at top level for event sourcing
+  item, itemId, ...
+}));
+```
+
+**Verified working**:
+- `TAKE MAT` → "Taken." (single event, correct message lookup)
+- `TAKE MAILBOX` → "small mailbox is fixed in place." (blocked event works)
+- Inventory shows items correctly after taking
+
+### Phase 3: Remaining Actions (PENDING)
+
+42 stdlib actions still need migration:
+- about, attacking, climbing, closing, drinking, eating, dropping, entering, etc.
+- Each follows the same pattern as taking
+
+### Notes
+
+- Using full message key (`if.action.taking.taken`) works with existing message registration
+- Flat namespace (`taken`) would require updating message registration
+- Can migrate incrementally - old and new patterns coexist
+
 ## Related Issues
 
 - ISSUE-018: SWITCH ON LAMP not showing room description (symptom of this architectural problem)

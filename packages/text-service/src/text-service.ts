@@ -48,8 +48,14 @@ export interface ITextService {
 }
 
 /**
- * State change events that don't produce text output.
+ * State change events that don't produce text output (LEGACY pattern).
  * The corresponding action.success event provides the message.
+ *
+ * NOTE: With the simplified event pattern (ADR-097), domain events can carry
+ * messageId directly. When they do, we process them and skip action.success.
+ * This set is only checked when events DON'T have messageId (backward compat).
+ *
+ * @deprecated Will be removed once all actions migrate to simplified pattern
  */
 const STATE_CHANGE_EVENTS = new Set([
   'if.event.opened',
@@ -100,7 +106,14 @@ export class TextService implements ITextService {
    * Route event to appropriate handler
    */
   private routeToHandler(event: ISemanticEvent, context: HandlerContext): ITextBlock[] {
-    // Skip state change events (action.success provides the message)
+    // NEW PATTERN (ADR-097): Domain events can carry messageId directly.
+    // If present, look up message and return block - no action.success needed.
+    const result = this.tryProcessDomainEventMessage(event, context);
+    if (result) {
+      return result;
+    }
+
+    // LEGACY PATTERN: Skip state change events (action.success provides message)
     if (STATE_CHANGE_EVENTS.has(event.type)) {
       return [];
     }
@@ -135,6 +148,52 @@ export class TextService implements ITextService {
       default:
         return handleGenericEvent(event, context);
     }
+  }
+
+  /**
+   * NEW PATTERN (ADR-097): Process domain events that carry messageId directly.
+   *
+   * Returns text blocks if event has messageId and message was found.
+   * Returns null to fall through to legacy handling.
+   *
+   * This allows gradual migration: actions can be updated one at a time
+   * to emit domain events with messageId instead of separate action.success.
+   */
+  private tryProcessDomainEventMessage(
+    event: ISemanticEvent,
+    context: HandlerContext
+  ): ITextBlock[] | null {
+    const data = event.data as { messageId?: string; params?: Record<string, unknown> } | undefined;
+
+    // No messageId = fall through to legacy handling
+    if (!data?.messageId) {
+      return null;
+    }
+
+    // Skip action.success/failure/blocked - they use legacy handler
+    // (prevents double processing during migration)
+    if (event.type.startsWith('action.')) {
+      return null;
+    }
+
+    // Look up message via language provider
+    if (!context.languageProvider) {
+      return null;
+    }
+
+    const message = context.languageProvider.getMessage(data.messageId, data.params);
+
+    // If message wasn't found (returns the messageId), fall through to legacy
+    if (message === data.messageId) {
+      return null;
+    }
+
+    // Determine block key based on event type
+    const blockKey = event.type.includes('blocked') || event.type.includes('failure')
+      ? BLOCK_KEYS.ACTION_BLOCKED
+      : BLOCK_KEYS.ACTION_RESULT;
+
+    return [createBlock(blockKey, message)];
   }
 
   /**
