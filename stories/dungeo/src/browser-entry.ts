@@ -12,6 +12,13 @@ import { LanguageProvider } from '@sharpee/lang-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
 import { ISaveRestoreHooks, ISaveData } from '@sharpee/core';
 import { story } from './index';
+import { STORY_VERSION, ENGINE_VERSION, BUILD_DATE } from './version';
+
+// Game metadata for title display
+const GAME_TITLE = 'DUNGEO';
+const GAME_DESCRIPTION = 'A port of Mainframe Zork (1981)';
+const GAME_AUTHORS = 'Dave Cornelson';
+const SHARPEE_VERSION = ENGINE_VERSION;
 
 // localStorage keys for save/restore
 const STORAGE_INDEX_KEY = 'dungeo-saves-index';  // Array of save slot names
@@ -62,6 +69,8 @@ let commandHistory: string[] = [];
 let historyIndex = -1;
 let currentTurn = 0;
 let currentScore = 0;
+let turnOffset = 0;  // Offset to add to engine turn after restore
+let transcript: string[] = [];  // All output text for save/restore
 
 // Audio context for PC speaker beep
 let audioContext: AudioContext | null = null;
@@ -569,6 +578,7 @@ function performSave(slotName: string, silent = false): void {
       score: currentScore,
       locations,
       traits,
+      transcript: [...transcript],  // Copy current transcript
     };
 
     const key = SAVE_PREFIX + slotName;
@@ -616,6 +626,7 @@ function performAutoSave(): void {
       score: currentScore,
       locations,
       traits,
+      transcript: [...transcript],  // Copy current transcript
     };
 
     const key = SAVE_PREFIX + AUTOSAVE_SLOT;
@@ -649,6 +660,8 @@ interface BrowserSaveData {
   locations: Record<string, string | null>;
   // Entity trait states: entityId -> { traitName -> traitData }
   traits: Record<string, Record<string, any>>;
+  // Text transcript (all output text for this session)
+  transcript?: string[];
 }
 
 /**
@@ -809,14 +822,48 @@ const saveRestoreHooks: ISaveRestoreHooks = {
         return null;
       }
 
+      // Clear screen first
+      clearScreen();
+
       // Restore state without replacing entities (preserves handlers)
       restoreWorldState({ locations: saveData.locations, traits: saveData.traits });
       currentTurn = saveData.turnCount || 0;
       currentScore = saveData.score || 0;
+      // Set offset so engine's turn counter aligns with saved turn
+      // Engine's next turn will be 1, but we want to show savedTurn
+      turnOffset = currentTurn - 1;
+
+      // Restore transcript if available, otherwise start fresh
+      if (saveData.transcript && Array.isArray(saveData.transcript)) {
+        transcript = [...saveData.transcript];
+        // Re-display the saved transcript
+        for (const line of transcript) {
+          if (line.startsWith('> ')) {
+            // Command echo
+            const div = document.createElement('div');
+            div.className = 'command-echo';
+            div.textContent = line;
+            textContent?.appendChild(div);
+          } else {
+            // Regular text
+            const p = document.createElement('p');
+            p.textContent = line;
+            textContent?.appendChild(p);
+          }
+        }
+      } else {
+        transcript = [];
+      }
+
       updateStatusLine();
 
-      console.log('[restore] Restored from', slotName, 'to turn', currentTurn);
+      console.log('[restore] Restored from', slotName, 'to turn', currentTurn, 'offset', turnOffset);
       displayText(`[Restored "${slotName}"]`);
+
+      // Execute LOOK to show current location
+      scrollToBottom();
+      await engine.executeTurn('look');
+      syncScoreFromWorld();
 
       // Return a minimal ISaveData so engine thinks restore succeeded
       // The actual state is already restored via world.loadJSON()
@@ -897,9 +944,11 @@ function initializeGame(): void {
 
   // Set up event handlers
   engine.on('text:output', (text: string, turn: number) => {
-    console.log('[text:output]', { text, turn });
+    console.log('[text:output]', { text, turn, turnOffset });
     displayText(text);
-    currentTurn = turn;
+
+    // Apply turn offset (set after restore to maintain correct turn count)
+    currentTurn = turn + turnOffset;
     updateStatusLine();
 
     // Auto-save after each turn (debounced - only save if turn changed)
@@ -942,6 +991,11 @@ function initializeGame(): void {
         currentTurn = event.data.turnCount;
       }
       updateStatusLine();
+    }
+
+    // Handle ABOUT command
+    if (event.type === 'if.action.about') {
+      displayText(getTitleInfo());
     }
   });
 
@@ -1034,9 +1088,25 @@ async function handleCommand(): Promise<void> {
   // Execute command
   try {
     await engine.executeTurn(command);
+    // Sync score from world after each turn
+    syncScoreFromWorld();
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     displayText(`[Error: ${message}]`);
+  }
+}
+
+/**
+ * Sync score from world capability to currentScore and update status line
+ */
+function syncScoreFromWorld(): void {
+  const scoring = world.getCapability('scoring');
+  if (scoring && typeof scoring.scoreValue === 'number') {
+    const newScore = scoring.scoreValue;
+    if (newScore !== currentScore) {
+      currentScore = newScore;
+      updateStatusLine();
+    }
   }
 }
 
@@ -1069,7 +1139,7 @@ function navigateHistory(direction: number): void {
 /**
  * Display text in the main window
  */
-function displayText(text: string): void {
+function displayText(text: string, addToTranscript = true): void {
   if (!textContent) return;
 
   const lines = text.split('\n');
@@ -1079,6 +1149,9 @@ function displayText(text: string): void {
       const p = document.createElement('p');
       p.textContent = line;
       textContent.appendChild(p);
+      if (addToTranscript) {
+        transcript.push(line);
+      }
     }
   }
 
@@ -1088,15 +1161,57 @@ function displayText(text: string): void {
 /**
  * Display command echo
  */
-function displayCommand(command: string): void {
+function displayCommand(command: string, addToTranscript = true): void {
   if (!textContent) return;
 
   const div = document.createElement('div');
   div.className = 'command-echo';
   div.textContent = `> ${command}`;
   textContent.appendChild(div);
+  if (addToTranscript) {
+    transcript.push(`> ${command}`);
+  }
 
   scrollToBottom();
+}
+
+/**
+ * Clear the screen (but preserve transcript unless clearing it too)
+ */
+function clearScreen(): void {
+  if (textContent) {
+    textContent.innerHTML = '';
+  }
+}
+
+/**
+ * Display the game title block
+ */
+function displayTitle(): void {
+  displayText(GAME_TITLE);
+  displayText(GAME_DESCRIPTION);
+  displayText(`By ${GAME_AUTHORS}`);
+  displayText('');
+  displayText(`Sharpee Engine v${SHARPEE_VERSION}`);
+  displayText(`Game Version ${STORY_VERSION}`);
+  displayText('');
+  displayText('Type HELP for instructions, ABOUT for credits.');
+  displayText('');
+}
+
+/**
+ * Get the title info for ABOUT command
+ */
+function getTitleInfo(): string {
+  return [
+    GAME_TITLE,
+    GAME_DESCRIPTION,
+    `By ${GAME_AUTHORS}`,
+    '',
+    `Sharpee Engine v${SHARPEE_VERSION}`,
+    `Game Version ${STORY_VERSION}`,
+    `Built: ${BUILD_DATE}`,
+  ].join('\n');
 }
 
 /**
@@ -1163,18 +1278,48 @@ async function start(): Promise<void> {
         restoreWorldState({ locations: autosaveData.locations, traits: autosaveData.traits });
         currentTurn = autosaveData.turnCount || 0;
         currentScore = autosaveData.score || 0;
-        console.log('[startup] Restored to turn', currentTurn);
+        // Set offset so engine's turn counter aligns with saved turn
+        // Engine's next turn will be 1, but we want to show savedTurn
+        turnOffset = currentTurn - 1;
+
+        // Restore transcript if available
+        if (autosaveData.transcript && Array.isArray(autosaveData.transcript)) {
+          transcript = [...autosaveData.transcript];
+          // Re-display the saved transcript
+          for (const line of transcript) {
+            if (line.startsWith('> ')) {
+              const div = document.createElement('div');
+              div.className = 'command-echo';
+              div.textContent = line;
+              textContent?.appendChild(div);
+            } else {
+              const p = document.createElement('p');
+              p.textContent = line;
+              textContent?.appendChild(p);
+            }
+          }
+        }
+
+        console.log('[startup] Restored to turn', currentTurn, 'score', currentScore, 'offset', turnOffset);
         updateStatusLine();
+
+        // Show restored message and current room
+        displayText('[Session restored]');
+        await engine.executeTurn('look');
+        syncScoreFromWorld();
       } catch (error) {
         console.error('[startup] Failed to restore autosave:', error);
+        // Fall through to new game
+        displayTitle();
+        await engine.executeTurn('look');
       }
+    } else {
+      // New game - display title
+      displayTitle();
+      console.log('Executing initial look command...');
+      await engine.executeTurn('look');
+      console.log('Initial look complete');
     }
-
-    // Show current room
-    displayText('');
-    console.log('Executing initial look command...');
-    await engine.executeTurn('look');
-    console.log('Initial look complete');
 
     // Focus input
     if (commandInput) {

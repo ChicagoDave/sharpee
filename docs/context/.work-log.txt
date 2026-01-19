@@ -30,3 +30,56 @@
 [21:35:11] EDIT: docs/context/session-20260118-2011-dungeo.md
 [21:41:53] WRITE: docs/work/platform/room-contents-fix.md
 [21:42:02] EDIT: docs/context/session-20260118-2011-dungeo.md
+[21:43:00] GIT: git commit -m "$(cat <<'EOF'
+fix: Double LOOK bug and browser save/restore impro
+[21:43:09] GIT: git push
+[21:52:55] WRITE: /home/dave/.claude/plans/greedy-cuddling-orbit.md
+[21:55:54] EDIT: /home/dave/.claude/plans/greedy-cuddling-orbit.md
+[21:56:00] EDIT: /home/dave/.claude/plans/greedy-cuddling-orbit.md
+[21:56:23] EDIT: packages/text-service/src/text-service.ts
+[21:56:43] EDIT: packages/stdlib/src/actions/standard/going/going.ts
+[21:56:55] EDIT: packages/lang-en-us/src/actions/looking.ts
+[21:57:09] EDIT: packages/lang-en-us/src/actions/going.ts
+[22:27:40] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo /tmp/test-room-desc.t
+[22:29:24] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo /tmp/test-room-desc.t
+[22:33:18] EDIT: stories/dungeo/src/browser-entry.ts
+[22:33:29] EDIT: stories/dungeo/src/browser-entry.ts
+[22:33:39] EDIT: stories/dungeo/src/browser-entry.ts
+[22:33:50] EDIT: stories/dungeo/src/browser-entry.ts
+[22:34:06] EDIT: stories/dungeo/src/browser-entry.ts
+[22:34:16] EDIT: stories/dungeo/src/browser-entry.ts
+[22:34:49] EDIT: stories/dungeo/src/browser-entry.ts
+[22:35:01] EDIT: stories/dungeo/src/browser-entry.ts
+[22:58:57] WRITE: docs/context/session-20260118-2257-dungeo.md
+[23:05:57] WRITE: scripts/build-platform.sh
+[23:06:23] WRITE: scripts/build-dungeo.sh
+[23:06:45] WRITE: scripts/build-web.sh
+[23:07:28] EDIT: CLAUDE.md
+[23:10:35] EDIT: scripts/build-platform.sh
+[23:10:41] EDIT: scripts/build-platform.sh
+[23:11:01] EDIT: scripts/build-dungeo.sh
+[23:17:23] EDIT: scripts/build-platform.sh
+[23:17:32] EDIT: scripts/build-web.sh
+[23:21:49] EDIT: packages/stdlib/src/actions/standard/looking/looking-data.ts
+[23:21:57] EDIT: packages/stdlib/src/actions/standard/looking/looking.ts
+[23:31:48] EDIT: stories/dungeo/src/traits/troll-capability-behaviors.ts
+[23:32:04] EDIT: stories/dungeo/src/traits/troll-capability-behaviors.ts
+[23:33:09] EDIT: packages/stdlib/src/actions/standard/going/going.ts
+[23:33:39] EDIT: packages/lang-en-us/src/actions/going.ts
+[23:49:56] EDIT: packages/stdlib/src/actions/standard/switching_on/switching_on.ts
+[23:50:05] EDIT: stories/dungeo/src/browser-entry.ts
+[00:04:55] EDIT: stories/dungeo/src/browser-entry.ts
+[00:05:11] EDIT: stories/dungeo/src/browser-entry.ts
+[00:05:29] EDIT: stories/dungeo/src/browser-entry.ts
+[00:05:37] EDIT: stories/dungeo/src/browser-entry.ts
+[00:05:46] EDIT: stories/dungeo/src/browser-entry.ts
+[00:06:02] EDIT: stories/dungeo/src/browser-entry.ts
+[00:06:32] EDIT: stories/dungeo/src/browser-entry.ts
+[00:07:08] EDIT: stories/dungeo/src/browser-entry.ts
+[00:07:21] EDIT: stories/dungeo/src/browser-entry.ts
+[00:07:59] EDIT: stories/dungeo/src/browser-entry.ts
+[00:08:47] EDIT: stories/dungeo/src/browser-entry.ts
+[00:11:17] WRITE: docs/context/session-20260119-0010-dungeo.md
+[00:39:27] EDIT: docs/work/issues/issues-list.md
+[01:05:18] WRITE: docs/work/platform/event-management.md
+[01:10:04] WRITE: docs/context/session-20260119-0108-dungeo.md

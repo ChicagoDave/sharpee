@@ -275,7 +275,27 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     const movedData = buildEventData(actorMovedDataConfig, context);
     const enteredData = buildEventData(actorEnteredDataConfig, context);
 
-    // Build room description for the DESTINATION (using actual location, not stale context)
+    // Return movement events first
+    const events: ISemanticEvent[] = [
+      context.event('if.event.actor_exited', exitedData),
+      context.event('if.event.actor_moved', movedData),
+      context.event('if.event.actor_entered', enteredData)
+    ];
+
+    // Check if destination is dark (no usable light source)
+    const isDark = VisibilityBehavior.isDark(destinationRoom, context.world);
+
+    if (isDark) {
+      // Dark room with no light - emit darkness message
+      events.push(context.event('action.success', {
+        actionId: context.action.id,
+        messageId: 'too_dark',
+        params: {}
+      }));
+      return events;
+    }
+
+    // Room has light - build and emit room description
     const roomSnapshot = captureRoomSnapshot(destinationRoom, context.world, false);
 
     // Get visible contents in the destination room
@@ -293,6 +313,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       verbose: true, // Always verbose after movement
       previousLocation: sharedData.previousLocation,
       currentLocation: sharedData.currentLocation,
+      isDark: false,
       contents: destinationContents.map(entity => ({
         id: entity.id,
         name: entity.name,
@@ -300,14 +321,19 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       }))
     };
 
-    // Return all movement events plus room description
-    const events: ISemanticEvent[] = [
-      context.event('if.event.actor_exited', exitedData),
-      context.event('if.event.actor_moved', movedData),
-      context.event('if.event.actor_entered', enteredData),
-      // Emit room description for the destination
-      context.event('if.event.room.description', roomDescData)
-    ];
+    // Emit room description for the destination (for event listeners)
+    events.push(context.event('if.event.room.description', roomDescData));
+
+    // Emit room description via action.success (for text rendering)
+    // The if.event.room.description is suppressed by STATE_CHANGE_EVENTS
+    events.push(context.event('action.success', {
+      actionId: context.action.id,
+      messageId: 'room_description',
+      params: {
+        name: destinationRoom.name,
+        description: destinationRoom.description
+      }
+    }));
 
     // Add contents list as action.success event (like looking does)
     if (destinationContents.length > 0) {

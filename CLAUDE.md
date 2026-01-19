@@ -349,32 +349,40 @@ Since "turn switch" is puzzle-specific (not a generic IF verb), Option B is corr
 
 ### Build Scripts (Use These!)
 
-**IMPORTANT**: Use these scripts instead of manual `pnpm build` commands to avoid WSL permission issues:
+**IMPORTANT**: Use these scripts instead of manual `pnpm build` commands to avoid WSL permission issues.
+
+Three main scripts, each building on the previous:
 
 ```bash
-# Full build of all dungeo dependencies (use when ALL packages change)
-./scripts/build-all-dungeo.sh
+# 1. Build platform packages only (core → sharpee → transcript-tester)
+./scripts/build-platform.sh                    # Full platform build
+./scripts/build-platform.sh --skip stdlib      # Skip to stdlib and build from there
 
-# PREFERRED: Skip to specific package (much faster!)
-./scripts/build-all-dungeo.sh --skip text-service  # Rebuild from text-service onward
-./scripts/build-all-dungeo.sh --skip dungeo        # Only rebuild dungeo + bundle
+# 2. Build platform + dungeo story (for testing)
+./scripts/build-dungeo.sh                      # Full build for testing
+./scripts/build-dungeo.sh --skip text-service  # Skip to text-service in platform
+./scripts/build-dungeo.sh --skip dungeo        # Only rebuild dungeo (platform already built)
 
-# Bundle everything into single sharpee.js (fast rebuilds)
-./scripts/bundle-sharpee.sh
-
-# Fast transcript testing (uses bundled sharpee.js)
-./scripts/fast-transcript-test.sh stories/dungeo/tests/transcripts/navigation.transcript
+# 3. Build everything + browser bundle (for web deployment)
+./scripts/build-web.sh                         # Full web build
+./scripts/build-web.sh --skip dungeo           # Only rebuild dungeo + browser bundle
+./scripts/build-web.sh --skip web              # Only rebuild browser bundle
 ```
 
 **Workflow**:
 
-1. After changing platform packages, run `./scripts/build-all-dungeo.sh --skip <first-changed-package>`
-2. For story-only changes, run `./scripts/build-all-dungeo.sh --skip dungeo`
-3. Test with bundled sharpee.js (see below)
+1. Platform changes: `./scripts/build-dungeo.sh --skip <first-changed-package>`
+2. Story-only changes: `./scripts/build-dungeo.sh --skip dungeo`
+3. Browser deployment: `./scripts/build-web.sh --skip web`
+
+**Outputs**:
+- `build-platform.sh` → `dist/sharpee.js` (node bundle)
+- `build-dungeo.sh` → `dist/sharpee.js` (ready for testing)
+- `build-web.sh` → `dist/web/dungeo/` (HTML + JS + CSS)
 
 **IMPORTANT**:
 - Always use `--skip` when possible to avoid slow full rebuilds
-- Always use the bundled `dist/sharpee.js` for testing - it's much faster than loading individual packages
+- Always use `dist/sharpee.js` for testing - much faster than loading individual packages
 
 ### Fast Testing (Use This!)
 

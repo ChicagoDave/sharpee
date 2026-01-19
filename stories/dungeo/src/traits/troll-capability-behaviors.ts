@@ -37,6 +37,7 @@ import {
 } from '@sharpee/stdlib';
 
 import { TrollTrait } from './troll-trait';
+import { TrollMessages } from '../npcs/troll/troll-messages';
 
 // Simple random implementation for combat
 function createSimpleRandom() {
@@ -282,6 +283,11 @@ export const TrollAttackingBehavior: CapabilityBehavior = {
     }));
 
     // Create action.success with combat message
+    // Use custom troll message for knockout
+    const messageId = combatResult.targetKnockedOut
+      ? TrollMessages.KNOCKED_OUT
+      : combatResult.messageId;
+
     const params: Record<string, unknown> = {
       target: trollName,
       weapon: weapon?.name,
@@ -296,7 +302,7 @@ export const TrollAttackingBehavior: CapabilityBehavior = {
 
     effects.push(createEffect('action.success', {
       actionId: 'if.action.attacking',
-      messageId: combatResult.messageId,
+      messageId,
       params
     }));
 

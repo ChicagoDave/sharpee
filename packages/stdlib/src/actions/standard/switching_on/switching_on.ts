@@ -287,7 +287,10 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
     // If we illuminated a dark room, add room description events (auto-LOOK)
     if (sharedData.willIlluminateLocation && sharedData.wasDarkBefore && sharedData.roomSnapshot) {
       const room = sharedData.roomSnapshot;
+      const contents = context.world.getContents(room.id)
+        .filter(e => e.id !== context.player.id);
 
+      // Emit room description event (for event listeners)
       events.push(context.event('if.event.room.description', {
         room: room,
         visibleItems: sharedData.visibleSnapshots || [],
@@ -297,6 +300,29 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
         includeContents: true,
         verbose: true
       }));
+
+      // Emit action.success for room description (for text rendering)
+      events.push(context.event('action.success', {
+        actionId: 'if.action.looking',  // Use looking action ID for message lookup
+        messageId: 'room_description',
+        params: {
+          name: room.name,
+          description: room.description
+        }
+      }));
+
+      // Emit contents list if there are visible items
+      if (contents.length > 0) {
+        const itemList = contents.map(e => e.name).join(', ');
+        events.push(context.event('action.success', {
+          actionId: 'if.action.looking',
+          messageId: 'contents_list',
+          params: {
+            items: itemList,
+            count: contents.length
+          }
+        }));
+      }
     }
 
     return events;

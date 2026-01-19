@@ -15,12 +15,13 @@ export const goingLanguage = {
   ],
   
   messages: {
+    'room_description': "{name}\n{description}",
     'contents_list': "{You} can {see} {items} here.",
     'no_exit': "{You} {can't} go that way.",
     'no_exit_that_way': "{You} {can't} go that way.",
     'door_closed': "The {door} is closed.",
     'door_locked': "The {door} is locked.",
-    'too_dark': "It's too dark to navigate safely.",
+    'too_dark': "It is pitch dark. You are likely to be eaten by a grue.",
     'moved': "{You} {go} {direction}.",
     'cant_go_through': "{You} {can't} go through {obstacle}.",
     'already_there': "{You're} already there.",

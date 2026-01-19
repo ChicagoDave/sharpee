@@ -15,10 +15,8 @@ export const lookingLanguage = {
   ],
   
   messages: {
-    // Note: room_description is empty because if.event.room.description already outputs the room
-    // via the text service's room handler. This message ID exists for completeness but should not
-    // duplicate the room description output.
-    'room_description': "",
+    // Room description - rendered via action.success (if.event.room.description is suppressed)
+    'room_description': "{name}\n{description}",
     'room_dark': "It's pitch dark, and {you} {can't} see a thing.",
     'exits': "Exits: {exits}",
     'you_see': "{You} can {see} {items} here.",

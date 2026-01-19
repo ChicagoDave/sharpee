@@ -98,6 +98,15 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
       params
     }));
 
+    // If there are items, also emit contents_list
+    if (params.hasItems) {
+      events.push(context.event('action.success', {
+        actionId: context.action.id,
+        messageId: 'contents_list',
+        params
+      }));
+    }
+
     // Add messages for container/supporter contents
     const openContainerContents = listData.openContainerContents as ContainerContentsInfo[] | undefined;
     if (openContainerContents && openContainerContents.length > 0) {

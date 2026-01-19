@@ -23,12 +23,118 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-013 | Lamp "switches on" message missing "The" article | Low | TextService | 2026-01-16 | - | 2026-01-18 |
 | ISSUE-016 | Troll death handler fails - removeEntity not a function | High | Story/Platform | 2026-01-18 | - | 2026-01-18 |
 | ISSUE-017 | Platform events not detected (requiresClientAction lost) | High | Platform | 2026-01-18 | - | 2026-01-18 |
+| ISSUE-018 | SWITCH ON LAMP not showing room description in dark room | Medium | Stdlib/TextService | 2026-01-19 | - | - |
+| ISSUE-019 | Restore dialog race condition (opens repeatedly) | Medium | Browser | 2026-01-19 | - | - |
+| ISSUE-020 | Restore adds to screen instead of clearing/replacing | Medium | Browser | 2026-01-19 | - | - |
+| ISSUE-021 | UP from Studio limited to two items (verify against 1981 source) | Low | Story | 2026-01-19 | - | - |
+| ISSUE-022 | ABOUT info hardcoded in browser-entry, wrong authors | Low | Story/Browser | 2026-01-19 | - | - |
 
 ---
 
 ## Open Issues
 
-*No open issues.*
+### ISSUE-018: SWITCH ON LAMP not showing room description in dark room
+
+**Reported**: 2026-01-19
+**Severity**: Medium
+**Component**: Stdlib / TextService
+
+**Description**:
+When turning on the lamp in a dark room (e.g., Cellar), the room description is not displayed even though the `switching_on` action emits `if.event.room.description` and `action.success` events with `room_description` and `contents_list` message IDs.
+
+**Root Cause**:
+The `action.success` events are emitted with `actionId: "if.action.switching_on"` but messages are registered under `if.action.looking.room_description`. The text-service looks up `if.action.switching_on.room_description` which doesn't exist, so no text is rendered.
+
+The source code at `switching_on.ts:306` does specify `actionId: 'if.action.looking'`, but the built bundle may be stale, OR the `context.event()` function is overriding the actionId.
+
+**Reproduction**:
+```
+> (in Living Room)
+> open trapdoor
+> down
+It is pitch dark. You are likely to be eaten by a grue.
+> turn on lamp
+The brass lantern switches on, banishing the darkness.
+(Room description should appear here but doesn't)
+> look
+Cellar
+This is a dark and damp cellar...
+```
+
+**Expected**: Room description should appear immediately after lamp turns on.
+
+**Notes**: Related to ISSUE-014 which was marked fixed. May need to reopen or verify build.
+
+---
+
+### ISSUE-019: Restore dialog race condition (opens repeatedly)
+
+**Reported**: 2026-01-19
+**Severity**: Medium
+**Component**: Browser Client
+
+**Description**:
+When using RESTORE command, the restore dialog opens multiple times in rapid succession. Console logs show `[restore-dialog] Opening restore dialog...` repeating 8+ times.
+
+**Root Cause**:
+In `browser-entry.ts`, the `onRestoreRequested` hook calls `engine.executeTurn('look')` at line 865 BEFORE returning the ISaveData. Calling engine methods inside a hook that's invoked BY the engine causes reentrancy issues and may queue additional restore requests.
+
+**Reproduction**:
+1. Save game
+2. Type RESTORE
+3. Select a save slot
+4. Observe console showing multiple dialog opens
+
+**Solution**: Remove `executeTurn('look')` from inside `onRestoreRequested`. The LOOK should be triggered after the hook completes, not during.
+
+---
+
+### ISSUE-020: Restore adds to screen instead of clearing/replacing
+
+**Reported**: 2026-01-19
+**Severity**: Medium
+**Component**: Browser Client
+
+**Description**:
+When restoring a saved game, the restored content is appended to the existing screen output rather than replacing it. The transcript replay and new LOOK output appear below whatever was already on screen.
+
+**Root Cause**:
+Related to ISSUE-019. The `clearScreen()` call at line 826 may be executing, but the race condition causes multiple restore cycles, each adding more content. Additionally, the modal dialog doesn't close properly before new content is added.
+
+**Reproduction**:
+1. Play for several turns
+2. Type RESTORE
+3. Select a save
+4. Observe old content still visible above restored transcript
+
+---
+
+### ISSUE-021: UP from Studio limited to two items (verify against 1981 source)
+
+**Reported**: 2026-01-19
+**Severity**: Low
+**Component**: Story
+
+**Description**:
+Going UP from Studio appears to be limited to carrying only two items. Need to verify this against the 1981 MDL Zork source to determine if this is canonical behavior or a bug.
+
+**Notes**: The chimney connection between Studio and Kitchen may have a carrying capacity limit in the original. Check `docs/dungeon-81/mdlzork_810722/` for authoritative reference.
+
+---
+
+### ISSUE-022: ABOUT info hardcoded in browser-entry, wrong authors
+
+**Reported**: 2026-01-19
+**Severity**: Low
+**Component**: Story / Browser Client
+
+**Description**:
+The ABOUT command displays game metadata that is hardcoded in `browser-entry.ts` with incorrect authorship attribution. The game credits "Dave Cornelson" as author but should credit the original Zork authors (Marc Blank, Dave Lebling, et al.) since this is a port of their work.
+
+**Solution**:
+1. Move ABOUT info to the story layer (not browser-entry) so it works in all platforms
+2. Credit original Zork authors: "Original by Marc Blank, Dave Lebling, Bruce Daniels, and Tim Anderson"
+3. Optionally note the Sharpee port: "Sharpee port by Dave Cornelson"
 
 ---
 

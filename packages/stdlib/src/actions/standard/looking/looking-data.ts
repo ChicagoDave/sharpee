@@ -307,14 +307,16 @@ export function determineLookingMessage(
     return itemLocation === location.id;
   });
 
-  // If there are direct room items, use contents_list
+  // If there are direct room items, include them in params for contents_list
+  // (the action will emit room_description first, then contents_list)
   if (directInRoom.length > 0) {
     const itemList = directInRoom.map(e => e.name).join(', ');
     return {
-      messageId: 'contents_list',
+      messageId,  // room_description or room_description_brief
       params: {
         items: itemList,
         count: directInRoom.length,
+        hasItems: true,
         ...params
       }
     };
