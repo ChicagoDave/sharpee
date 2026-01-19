@@ -170,11 +170,14 @@ export const listeningAction: Action & { metadata: ActionMetadata } = {
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     // Listening always succeeds, but include blocked for consistency
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
+    const target = context.command.directObject?.entity;
+    return [context.event('if.event.listen_blocked', {
+      blocked: true,
+      messageId: `${context.action.id}.${result.error}`,
       reason: result.error,
-      params: result.params || {}
+      targetId: target?.id,
+      targetName: target?.name,
+      ...result.params
     })];
   },
 
@@ -182,16 +185,11 @@ export const listeningAction: Action & { metadata: ActionMetadata } = {
     const events: ISemanticEvent[] = [];
     const sharedData = getListeningSharedData(context);
 
-    // Emit listened event for world model
-    if (sharedData.eventData) {
-      events.push(context.event('if.event.listened', sharedData.eventData));
-    }
-
-    // Emit success message
-    events.push(context.event('action.success', {
-      actionId: context.action.id,
-      messageId: sharedData.messageId || 'silence',
-      params: sharedData.params || {}
+    // Emit listened event with messageId for text rendering
+    events.push(context.event('if.event.listened', {
+      messageId: `${context.action.id}.${sharedData.messageId || 'silence'}`,
+      ...sharedData.eventData,
+      ...sharedData.params
     }));
 
     return events;

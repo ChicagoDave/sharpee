@@ -1,8 +1,10 @@
 # Domain Events Migration Plan
 
+**Status**: Phase 4 In Progress (24/39 actions migrated - 62%)
+
 ## Overview
 
-This document outlines the plan to migrate all stdlib actions from the dual event pattern to the simplified domain event pattern.
+This document outlines the plan to migrate all stdlib actions from the dual event pattern to the simplified domain event pattern (ADR-097).
 
 ### Current State (Dual Event Pattern)
 
@@ -88,62 +90,76 @@ Note: Using the same event type (`if.event.taken`) with `blocked: true` in domai
 Event handlers can check `blocked` flag to distinguish success from failure.
 MessageId determines the displayed message.
 
-## Actions to Migrate
+## Migration Progress
 
-### Completed (13)
+### ✅ Phase 1: Foundation (Complete)
 
 | Action | Domain Event | Message Namespace | Notes |
 |--------|--------------|-------------------|-------|
-| ✅ taking | `if.event.taken` | `if.action.taking.*` | Phase 1 proof-of-concept |
-| ✅ dropping | `if.event.dropped` | `if.action.dropping.*` | Phase 2 |
-| ✅ opening | `if.event.opened` | `if.action.opening.*` | Phase 2 |
-| ✅ closing | `if.event.closed` | `if.action.closing.*` | Phase 2 |
-| ✅ putting | `if.event.put_in`, `if.event.put_on` | `if.action.putting.*` | Phase 2 |
-| ✅ inserting | (delegates to putting) | `if.action.inserting.*` | Phase 2 |
-| ✅ locking | `if.event.locked` | `if.action.locking.*` | Phase 3 |
-| ✅ unlocking | `if.event.unlocked` | `if.action.unlocking.*` | Phase 3 |
-| ✅ switching_on | `if.event.switched_on` | `if.action.switching_on.*` | Phase 3 |
-| ✅ switching_off | `if.event.switched_off` | `if.action.switching_off.*` | Phase 3 |
-| ✅ wearing | `if.event.worn` | `if.action.wearing.*` | Phase 3 |
-| ✅ taking_off | `if.event.removed` | `if.action.taking_off.*` | Phase 3 |
-| ✅ removing | `if.event.taken` | `if.action.removing.*` | Phase 3 |
+| ✅ taking | `if.event.taken` | `if.action.taking.*` | Proof-of-concept |
 
-### Medium Priority - Information Actions (8)
+### ✅ Phase 2: Core Manipulation (Complete)
 
-These actions don't mutate state but provide information:
+| Action | Domain Event | Message Namespace | Notes |
+|--------|--------------|-------------------|-------|
+| ✅ dropping | `if.event.dropped` | `if.action.dropping.*` | Handles multi-object (drop all) |
+| ✅ opening | `if.event.opened` | `if.action.opening.*` | Keeps backward compat `opened` event |
+| ✅ closing | `if.event.closed` | `if.action.closing.*` | Keeps backward compat `closed` event |
+| ✅ putting | `if.event.put_in`, `if.event.put_on` | `if.action.putting.*` | Handles containers and supporters |
+| ✅ inserting | (delegates to putting) | `if.action.inserting.*` | Delegates success to putting |
 
-| Action | Domain Event | Message Namespace | Complexity |
-|--------|--------------|-------------------|------------|
-| looking | `if.event.looked` | `if.action.looked.*` | High - multiple messages |
-| examining | `if.event.examined` | `if.action.examined.*` | Medium |
-| searching | `if.event.searched` | `if.action.searched.*` | Low |
-| reading | `if.event.read` | `if.action.read.*` | Low |
-| listening | `if.event.listened` | `if.action.listened.*` | Low |
-| smelling | `if.event.smelled` | `if.action.smelled.*` | Low |
-| touching | `if.event.touched` | `if.action.touched.*` | Low |
-| inventory | `if.event.inventory` | `if.action.inventory.*` | Medium - list formatting |
+### ✅ Phase 3: Inventory & Containers (Complete)
 
-### Medium Priority - Movement (3)
+| Action | Domain Event | Message Namespace | Notes |
+|--------|--------------|-------------------|-------|
+| ✅ locking | `if.event.locked` | `if.action.locking.*` | |
+| ✅ unlocking | `if.event.unlocked` | `if.action.unlocking.*` | |
+| ✅ switching_on | `if.event.switched_on` | `if.action.switching_on.*` | Auto-LOOK uses looking's messageIds |
+| ✅ switching_off | `if.event.switched_off` | `if.action.switching_off.*` | |
+| ✅ wearing | `if.event.worn` | `if.action.wearing.*` | |
+| ✅ taking_off | `if.event.removed` | `if.action.taking_off.*` | |
+| ✅ removing | `if.event.taken` | `if.action.removing.*` | Uses taking's event type |
 
-| Action | Domain Event | Message Namespace | Complexity |
-|--------|--------------|-------------------|------------|
-| going | `if.event.went` | `if.action.went.*` | High - room desc, dark |
-| entering | `if.event.entered` | `if.action.entered.*` | Medium |
-| exiting | `if.event.exited` | `if.action.exited.*` | Medium |
+### 🔄 Phase 4: World Interaction (18 actions) - 11 Complete
 
-### Medium Priority - Interaction (7)
+Information actions, movement, and interaction with the world.
 
-| Action | Domain Event | Message Namespace | Complexity |
-|--------|--------------|-------------------|------------|
-| attacking | `if.event.attacked` | `if.action.attacked.*` | Medium |
-| giving | `if.event.gave` | `if.action.gave.*` | Low |
-| showing | `if.event.showed` | `if.action.showed.*` | Low |
-| throwing | `if.event.threw` | `if.action.threw.*` | Low |
-| talking | `if.event.talked` | `if.action.talked.*` | Low |
-| pushing | `if.event.pushed` | `if.action.pushed.*` | Low |
-| pulling | `if.event.pulled` | `if.action.pulled.*` | Low |
+#### Information Actions (8) - 5 Complete
 
-### Lower Priority - Miscellaneous (8)
+| Action | Domain Event | Message Namespace | Status |
+|--------|--------------|-------------------|--------|
+| looking | `if.event.looked` | `if.action.looking.*` | 🔲 High complexity |
+| examining | `if.event.examined` | `if.action.examining.*` | 🔲 Medium |
+| ✅ searching | `if.event.searched` | `if.action.searching.*` | Complete |
+| ✅ reading | `if.event.read` | `if.action.reading.*` | Complete |
+| ✅ listening | `if.event.listened` | `if.action.listening.*` | Complete |
+| ✅ smelling | `if.event.smelled` | `if.action.smelling.*` | Complete |
+| ✅ touching | `if.event.touched` | `if.action.touching.*` | Complete |
+| inventory | `if.event.inventory` | `if.action.inventory.*` | 🔲 Medium |
+
+#### Movement Actions (3) - 0 Complete
+
+| Action | Domain Event | Message Namespace | Status |
+|--------|--------------|-------------------|--------|
+| going | `if.event.went` | `if.action.going.*` | 🔲 High complexity |
+| entering | `if.event.entered` | `if.action.entering.*` | 🔲 Medium |
+| exiting | `if.event.exited` | `if.action.exiting.*` | 🔲 Medium |
+
+#### Interaction Actions (7) - 6 Complete
+
+| Action | Domain Event | Message Namespace | Status |
+|--------|--------------|-------------------|--------|
+| attacking | `if.event.attacked` | `if.action.attacking.*` | 🔲 Medium |
+| ✅ giving | `if.event.given` | `if.action.giving.*` | Complete |
+| ✅ showing | `if.event.shown` | `if.action.showing.*` | Complete |
+| ✅ throwing | `if.event.thrown` | `if.action.throwing.*` | Complete |
+| ✅ talking | `if.event.talked` | `if.action.talking.*` | Complete |
+| ✅ pushing | `if.event.pushed` | `if.action.pushing.*` | Complete |
+| ✅ pulling | `if.event.pulled` | `if.action.pulling.*` | Complete |
+
+### 🔲 Phase 5: Miscellaneous & System (8 actions + 8 no-migration)
+
+#### Miscellaneous Actions (8)
 
 | Action | Domain Event | Message Namespace | Complexity |
 |--------|--------------|-------------------|------------|
@@ -156,7 +172,7 @@ These actions don't mutate state but provide information:
 | raising | `if.event.raised` | `if.action.raised.*` | Low |
 | undoing | `if.event.undone` | `if.action.undone.*` | Low |
 
-### System Actions - No Migration Needed (8)
+#### System Actions - No Migration Needed (8)
 
 These emit system events or don't emit domain events:
 
@@ -262,42 +278,43 @@ In verbose output, check:
 - `messageId` present in event data
 - Correct message rendered
 
-## Batch Migration Strategy
+## Migration Strategy Summary
 
-### Phase 1: Low-Complexity Actions (20 actions)
+### Completed Phases
 
-Migrate simple actions that follow standard pattern:
-- dropping, opening, closing, locking, unlocking
-- switching_off, wearing, taking_off
-- inserting, putting, removing
-- searching, reading, listening, smelling, touching
-- giving, showing, throwing, talking
+| Phase | Focus | Actions | Status |
+|-------|-------|---------|--------|
+| 1 | Foundation | 1 | ✅ Complete |
+| 2 | Core Manipulation | 5 | ✅ Complete |
+| 3 | Inventory & Containers | 7 | ✅ Complete |
+| 4 | World Interaction (partial) | 11 of 18 | 🔄 In Progress |
 
-**Estimated effort:** 2-3 hours
+**Total**: 24/39 actions (62%)
 
-### Phase 2: Medium-Complexity Actions (8 actions)
+### Remaining Work
 
-Actions with special handling:
-- switching_on (auto-LOOK when light turns on in dark)
-- examining (object descriptions, special cases)
-- inventory (list formatting)
-- attacking (combat outcome variations)
-- pushing, pulling (capability dispatch)
-- entering, exiting (location changes)
+| Phase | Focus | Actions | Status |
+|-------|-------|---------|--------|
+| 4 | World Interaction (remaining) | 7 | 🔲 Pending |
+| 5 | Miscellaneous | 8 | 🔲 Pending |
 
-**Estimated effort:** 2-3 hours
+**Note**: 8 system actions don't need migration (no domain events).
 
-### Phase 3: High-Complexity Actions (2 actions)
+### Phase 4 Remaining Actions
 
-Actions with significant logic:
-- looking (room description, contents, dark handling, verbose mode)
-- going (movement, dark rooms, vehicles, auto-look)
+1. **Medium complexity** (next to migrate):
+   - examining (object descriptions)
+   - inventory (list formatting)
+   - attacking (combat outcomes)
+   - entering, exiting (location changes)
 
-**Estimated effort:** 2-3 hours
+2. **High complexity** (most involved):
+   - looking (room description, contents, dark handling, verbose mode)
+   - going (movement, dark rooms, vehicles, auto-look)
 
-### Phase 4: Message Registration Migration
+### Post-Migration: Message Registration
 
-Update `lang-en-us` action files to use new message keys:
+After stdlib actions migrated, update `lang-en-us` action files to use new message keys:
 
 **Example: `packages/lang-en-us/src/actions/taking.ts`**
 
@@ -326,7 +343,7 @@ export const takenMessages = {
 
 Note: Language provider will need update to load flat message keys instead of `{actionId}.{key}` pattern.
 
-### Phase 5: Cleanup
+### Final Cleanup
 
 After all actions and messages migrated:
 

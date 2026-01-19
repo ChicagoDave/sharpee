@@ -348,11 +348,17 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
+    const item = context.command.directObject?.entity;
+    const target = context.command.indirectObject?.entity;
+    return [context.event('if.event.throw_blocked', {
+      blocked: true,
+      messageId: `${context.action.id}.${result.error}`,
       reason: result.error,
-      params: result.params || {}
+      itemId: item?.id,
+      itemName: item?.name,
+      targetId: target?.id,
+      targetName: target?.name,
+      ...result.params
     })];
   },
 
@@ -365,15 +371,17 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
       events.push(...context.sharedData.implicitTakeEvents);
     }
 
-    // Build event data
-    const eventData: ThrowingEventMap['if.event.thrown'] = {
+    // Build event data with messageId for text rendering
+    const eventData: ThrowingEventMap['if.event.thrown'] & { messageId: string } = {
+      messageId: `${context.action.id}.${sharedData.messageId}`,
       item: sharedData.itemId,
       itemName: sharedData.itemName,
       throwType: sharedData.throwType,
       isFragile: sharedData.isFragile,
       weight: sharedData.weight,
       willBreak: sharedData.willBreak,
-      finalLocation: sharedData.finalLocation
+      finalLocation: sharedData.finalLocation,
+      ...sharedData.params
     };
 
     if (sharedData.targetId) {
@@ -386,15 +394,8 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
       eventData.direction = sharedData.direction;
     }
 
-    // Create THROWN event
+    // Create THROWN event with messageId
     events.push(context.event('if.event.thrown', eventData));
-
-    // Add success message
-    events.push(context.event('action.success', {
-      actionId: this.id,
-      messageId: sharedData.messageId,
-      params: sharedData.params
-    }));
 
     // If item breaks, create ITEM_DESTROYED event
     if (sharedData.willBreak) {
@@ -406,12 +407,15 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
       events.push(context.event('if.event.item_destroyed', destroyedData));
     }
 
-    // Add target reaction for actors
+    // Add target reaction for actors as additional event
     if (sharedData.hit && sharedData.targetAngry) {
-      events.push(context.event('action.success', {
-        actionId: this.id,
-        messageId: 'target_angry',
-        params: sharedData.params
+      events.push(context.event('if.event.thrown', {
+        messageId: `${context.action.id}.target_angry`,
+        item: sharedData.itemId,
+        itemName: sharedData.itemName,
+        target: sharedData.targetId,
+        targetName: sharedData.targetName,
+        ...sharedData.params
       }));
     }
 

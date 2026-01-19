@@ -235,11 +235,17 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
+    const item = context.command.directObject?.entity;
+    const recipient = context.command.indirectObject?.entity;
+    return [context.event('if.event.give_blocked', {
+      blocked: true,
+      messageId: `${context.action.id}.${result.error}`,
       reason: result.error,
-      params: result.params || {}
+      itemId: item?.id,
+      itemName: item?.name,
+      recipientId: recipient?.id,
+      recipientName: recipient?.name,
+      ...result.params
     })];
   },
 
@@ -252,21 +258,15 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       events.push(...context.sharedData.implicitTakeEvents);
     }
 
-    // Build event data
-    const eventData: GivingEventMap['if.event.given'] = {
+    // Emit given event with messageId for text rendering
+    events.push(context.event('if.event.given', {
+      messageId: `${context.action.id}.${sharedData.messageId}`,
       item: sharedData.itemId,
       itemName: sharedData.itemName,
       recipient: sharedData.recipientId,
       recipientName: sharedData.recipientName,
-      accepted: true
-    };
-
-    // Create events
-    events.push(context.event('if.event.given', eventData));
-    events.push(context.event('action.success', {
-      actionId: this.id,
-      messageId: sharedData.messageId,
-      params: sharedData.params
+      accepted: true,
+      ...sharedData.params
     }));
 
     return events;

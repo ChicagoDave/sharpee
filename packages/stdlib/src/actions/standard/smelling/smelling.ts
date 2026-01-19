@@ -193,11 +193,14 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
+    const target = context.command.directObject?.entity;
+    return [context.event('if.event.smell_blocked', {
+      blocked: true,
+      messageId: `${context.action.id}.${result.error}`,
       reason: result.error,
-      params: result.params || {}
+      targetId: target?.id,
+      targetName: target?.name,
+      ...result.params
     })];
   },
 
@@ -205,16 +208,11 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
     const events: ISemanticEvent[] = [];
     const sharedData = getSmellingSharedData(context);
 
-    // Emit smelled event for world model
-    if (sharedData.eventData) {
-      events.push(context.event('if.event.smelled', sharedData.eventData));
-    }
-
-    // Emit success message
-    events.push(context.event('action.success', {
-      actionId: context.action.id,
-      messageId: sharedData.messageId || 'no_scent',
-      params: sharedData.params || {}
+    // Emit smelled event with messageId for text rendering
+    events.push(context.event('if.event.smelled', {
+      messageId: `${context.action.id}.${sharedData.messageId || 'no_scent'}`,
+      ...sharedData.eventData,
+      ...sharedData.params
     }));
 
     return events;

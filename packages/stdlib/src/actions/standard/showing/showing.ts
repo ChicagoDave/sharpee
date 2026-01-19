@@ -224,11 +224,17 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
+    const item = context.command.directObject?.entity;
+    const viewer = context.command.indirectObject?.entity;
+    return [context.event('if.event.show_blocked', {
+      blocked: true,
+      messageId: `${context.action.id}.${result.error}`,
       reason: result.error,
-      params: result.params || {}
+      itemId: item?.id,
+      itemName: item?.name,
+      viewerId: viewer?.id,
+      viewerName: viewer?.name,
+      ...result.params
     })];
   },
 
@@ -241,16 +247,11 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
       events.push(...context.sharedData.implicitTakeEvents);
     }
 
-    // Emit shown event for world model
-    if (sharedData.eventData) {
-      events.push(context.event('if.event.shown', sharedData.eventData));
-    }
-
-    // Emit success message
-    events.push(context.event('action.success', {
-      actionId: context.action.id,
-      messageId: sharedData.messageId || 'shown',
-      params: sharedData.params || {}
+    // Emit shown event with messageId for text rendering
+    events.push(context.event('if.event.shown', {
+      messageId: `${context.action.id}.${sharedData.messageId || 'shown'}`,
+      ...sharedData.eventData,
+      ...sharedData.params
     }));
 
     return events;

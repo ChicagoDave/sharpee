@@ -120,11 +120,14 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
    * Generate events when validation fails
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
+    const target = context.command.directObject?.entity;
+    return [context.event('if.event.pull_blocked', {
+      blocked: true,
+      messageId: `${context.action.id}.${result.error}`,
       reason: result.error,
-      params: result.params || {}
+      targetId: target?.id,
+      targetName: target?.name,
+      ...result.params
     })];
   },
 
@@ -135,22 +138,13 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
     const events: ISemanticEvent[] = [];
     const sharedData = getPullingSharedData(context);
 
-    // Build event data
-    const eventData: PulledEventData = {
+    // Emit pulled event with messageId for text rendering
+    events.push(context.event('if.event.pulled', {
+      messageId: `${context.action.id}.pulled`,
       target: sharedData.targetId,
       targetName: sharedData.targetName,
       pullCount: sharedData.pullCount,
       pullType: sharedData.pullType
-    };
-
-    // Emit the pulled event for story handlers
-    events.push(context.event('if.event.pulled', eventData));
-
-    // Simple success message
-    events.push(context.event('action.success', {
-      actionId: this.id,
-      messageId: 'pulled',
-      params: { target: sharedData.targetName }
     }));
 
     return events;

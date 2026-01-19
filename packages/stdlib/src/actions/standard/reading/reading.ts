@@ -179,11 +179,14 @@ export const reading: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
+    const target = context.command.directObject?.entity;
+    return [context.event('if.event.read_blocked', {
+      blocked: true,
+      messageId: `${context.action.id}.${result.error}`,
       reason: result.error,
-      params: result.params || {}
+      targetId: target?.id,
+      targetName: target?.name,
+      ...result.params
     })];
   },
 
@@ -196,16 +199,14 @@ export const reading: Action = {
       events.push(...context.sharedData.implicitTakeEvents);
     }
 
-    // Emit read event
-    if (sharedData.readEvent) {
-      events.push(sharedData.readEvent);
-    }
-
-    // Emit success message
-    events.push(context.event('action.success', {
-      actionId: context.action.id,
-      messageId: sharedData.messageId || 'read_text',
-      params: sharedData.params || {}
+    // Emit read event with messageId for text rendering
+    const target = context.command.directObject?.entity;
+    events.push(context.event('if.event.read', {
+      messageId: `${context.action.id}.${sharedData.messageId || 'read_text'}`,
+      targetId: target?.id,
+      targetName: String(target?.attributes.name || 'something'),
+      text: sharedData.params?.text,
+      ...sharedData.params
     }));
 
     return events;

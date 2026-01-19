@@ -190,11 +190,14 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
+    const target = context.command.directObject?.entity;
+    return [context.event('if.event.talk_blocked', {
+      blocked: true,
+      messageId: `${context.action.id}.${result.error}`,
       reason: result.error,
-      params: result.params || {}
+      targetId: target?.id,
+      targetName: target?.name,
+      ...result.params
     })];
   },
 
@@ -202,16 +205,11 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     const events: ISemanticEvent[] = [];
     const sharedData = getTalkingSharedData(context);
 
-    // Emit talked event for world model
-    if (sharedData.eventData) {
-      events.push(context.event('if.event.talked', sharedData.eventData));
-    }
-
-    // Emit success message
-    events.push(context.event('action.success', {
-      actionId: context.action.id,
-      messageId: sharedData.messageId || 'talked',
-      params: { target: sharedData.targetName }
+    // Emit talked event with messageId for text rendering
+    events.push(context.event('if.event.talked', {
+      messageId: `${context.action.id}.${sharedData.messageId || 'talked'}`,
+      ...sharedData.eventData,
+      target: sharedData.targetName
     }));
 
     return events;

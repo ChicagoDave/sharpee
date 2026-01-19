@@ -246,11 +246,14 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
    * Generate events when validation fails
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
+    const target = context.command.directObject?.entity;
+    return [context.event('if.event.push_blocked', {
+      blocked: true,
+      messageId: `${context.action.id}.${result.error}`,
       reason: result.error,
-      params: result.params || {}
+      targetId: target?.id,
+      targetName: target?.name,
+      ...result.params
     })];
   },
 
@@ -261,8 +264,9 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
     const events: ISemanticEvent[] = [];
     const sharedData = getPushingSharedData(context);
 
-    // Build event data from sharedData
-    const eventData: PushedEventData = {
+    // Emit pushed event with messageId for text rendering
+    events.push(context.event('if.event.pushed', {
+      messageId: `${context.action.id}.${sharedData.messageId}`,
       target: sharedData.targetId,
       targetName: sharedData.targetName,
       direction: sharedData.direction,
@@ -276,17 +280,8 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
       moveDirection: sharedData.moveDirection,
       nudged: sharedData.nudged,
       revealsPassage: sharedData.revealsPassage,
-      requiresStrength: sharedData.requiresStrength
-    };
-
-    // Emit the PUSHED event for world model
-    events.push(context.event('if.event.pushed', eventData));
-
-    // Add success message
-    events.push(context.event('action.success', {
-      actionId: this.id,
-      messageId: sharedData.messageId,
-      params: sharedData.messageParams
+      requiresStrength: sharedData.requiresStrength,
+      ...sharedData.messageParams
     }));
 
     return events;
