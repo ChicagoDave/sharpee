@@ -23,7 +23,7 @@ Actions emit ONE domain event that carries everything:
 ```typescript
 context.event('if.event.taken', {
   // Rendering data (text-service uses these)
-  messageId: `${context.action.id}.${messageKey}`,
+  messageId: 'if.action.taken.success',  // or 'if.action.taken.from'
   params: { item, container, ... },
 
   // Domain data (event sourcing / handlers use these)
@@ -35,101 +35,133 @@ context.event('if.event.taken', {
 });
 ```
 
+### MessageId Convention
+
+Pattern: `if.action.{event}.{outcome}`
+
+- `{event}` = past tense verb matching domain event type
+- `{outcome}` = `success`, or specific variation/failure
+
+Examples:
+```
+if.action.taken.success        → "Taken."
+if.action.taken.from           → "You take {item} from {container}."
+if.action.taken.already_have   → "You already have that."
+if.action.taken.fixed_in_place → "{item} is fixed in place."
+
+if.action.opened.success       → "Opened."
+if.action.opened.locked        → "It's locked."
+
+if.action.dropped.success      → "Dropped."
+if.action.dropped.not_holding  → "You're not holding that."
+
+if.action.looked.room          → "{name}\n{description}"
+if.action.looked.dark          → "It's pitch dark."
+if.action.looked.contents      → "You can see {items} here."
+```
+
 Key points:
-- `messageId` is the full key (e.g., `if.action.taking.taken`)
+- MessageId aligns with domain event (`if.event.taken` → `if.action.taken.*`)
+- Groups related messages under same namespace
+- Readable and self-documenting
 - `params` contains data for message template substitution
-- Domain data is spread at top level for backward compatibility with handlers
+- Domain data spread at top level for backward compatibility with handlers
 
 ## Blocked Events
 
-For blocked/failure cases, use a `*_blocked` or `*_failed` event type:
+For blocked/failure cases, emit the same domain event type but with a blocked messageId:
 
 ```typescript
-context.event('if.event.take_blocked', {
-  messageId: `${context.action.id}.${errorKey}`,
-  params: { item, reason, ... },
+context.event('if.event.taken', {
+  messageId: 'if.action.taken.fixed_in_place',  // blocked outcome
+  params: { item },
 
   // Domain data
   item: noun.name,
   itemId: noun.id,
-  reason: errorKey,
+  blocked: true,
+  reason: 'fixed_in_place',
 });
 ```
+
+Note: Using the same event type (`if.event.taken`) with `blocked: true` in domain data.
+Event handlers can check `blocked` flag to distinguish success from failure.
+MessageId determines the displayed message.
 
 ## Actions to Migrate
 
 ### Completed (1)
 
-| Action | Domain Event | Notes |
-|--------|--------------|-------|
-| ✅ taking | `if.event.taken`, `if.event.take_blocked` | Proof-of-concept complete |
+| Action | Domain Event | Message Namespace | Notes |
+|--------|--------------|-------------------|-------|
+| ✅ taking | `if.event.taken` | `if.action.taken.*` | Proof-of-concept (needs messageId update) |
 
 ### High Priority - State Mutations (12)
 
 These actions modify world state and are frequently used:
 
-| Action | Domain Event | Blocked Event | Complexity |
-|--------|--------------|---------------|------------|
-| dropping | `if.event.dropped` | `if.event.drop_blocked` | Low |
-| opening | `if.event.opened` | `if.event.open_blocked` | Low |
-| closing | `if.event.closed` | `if.event.close_blocked` | Low |
-| locking | `if.event.locked` | `if.event.lock_blocked` | Low |
-| unlocking | `if.event.unlocked` | `if.event.unlock_blocked` | Low |
-| switching_on | `if.event.switched_on` | `if.event.switch_on_blocked` | Medium - auto-LOOK |
-| switching_off | `if.event.switched_off` | `if.event.switch_off_blocked` | Low |
-| wearing | `if.event.worn` | `if.event.wear_blocked` | Low |
-| taking_off | `if.event.removed` | `if.event.remove_blocked` | Low |
-| inserting | `if.event.inserted` | `if.event.insert_blocked` | Low |
-| putting | `if.event.put` | `if.event.put_blocked` | Low |
-| removing | `if.event.removed_from` | `if.event.remove_from_blocked` | Low |
+| Action | Domain Event | Message Namespace | Complexity |
+|--------|--------------|-------------------|------------|
+| dropping | `if.event.dropped` | `if.action.dropped.*` | Low |
+| opening | `if.event.opened` | `if.action.opened.*` | Low |
+| closing | `if.event.closed` | `if.action.closed.*` | Low |
+| locking | `if.event.locked` | `if.action.locked.*` | Low |
+| unlocking | `if.event.unlocked` | `if.action.unlocked.*` | Low |
+| switching_on | `if.event.switched_on` | `if.action.switched_on.*` | Medium - auto-LOOK |
+| switching_off | `if.event.switched_off` | `if.action.switched_off.*` | Low |
+| wearing | `if.event.worn` | `if.action.worn.*` | Low |
+| taking_off | `if.event.removed` | `if.action.removed.*` | Low |
+| inserting | `if.event.inserted` | `if.action.inserted.*` | Low |
+| putting | `if.event.put` | `if.action.put.*` | Low |
+| removing | `if.event.removed_from` | `if.action.removed_from.*` | Low |
 
 ### Medium Priority - Information Actions (8)
 
 These actions don't mutate state but provide information:
 
-| Action | Domain Event | Blocked Event | Complexity |
-|--------|--------------|---------------|------------|
-| looking | `if.event.looked` | - | High - multiple messages |
-| examining | `if.event.examined` | `if.event.examine_blocked` | Medium |
-| searching | `if.event.searched` | `if.event.search_blocked` | Low |
-| reading | `if.event.read` | `if.event.read_blocked` | Low |
-| listening | `if.event.listened` | - | Low |
-| smelling | `if.event.smelled` | - | Low |
-| touching | `if.event.touched` | - | Low |
-| inventory | `if.event.inventory` | - | Medium - list formatting |
+| Action | Domain Event | Message Namespace | Complexity |
+|--------|--------------|-------------------|------------|
+| looking | `if.event.looked` | `if.action.looked.*` | High - multiple messages |
+| examining | `if.event.examined` | `if.action.examined.*` | Medium |
+| searching | `if.event.searched` | `if.action.searched.*` | Low |
+| reading | `if.event.read` | `if.action.read.*` | Low |
+| listening | `if.event.listened` | `if.action.listened.*` | Low |
+| smelling | `if.event.smelled` | `if.action.smelled.*` | Low |
+| touching | `if.event.touched` | `if.action.touched.*` | Low |
+| inventory | `if.event.inventory` | `if.action.inventory.*` | Medium - list formatting |
 
 ### Medium Priority - Movement (3)
 
-| Action | Domain Event | Blocked Event | Complexity |
-|--------|--------------|---------------|------------|
-| going | `if.event.went` | `if.event.go_blocked` | High - room desc, dark |
-| entering | `if.event.entered` | `if.event.enter_blocked` | Medium |
-| exiting | `if.event.exited` | `if.event.exit_blocked` | Medium |
+| Action | Domain Event | Message Namespace | Complexity |
+|--------|--------------|-------------------|------------|
+| going | `if.event.went` | `if.action.went.*` | High - room desc, dark |
+| entering | `if.event.entered` | `if.action.entered.*` | Medium |
+| exiting | `if.event.exited` | `if.action.exited.*` | Medium |
 
 ### Medium Priority - Interaction (7)
 
-| Action | Domain Event | Blocked Event | Complexity |
-|--------|--------------|---------------|------------|
-| attacking | `if.event.attacked` | `if.event.attack_blocked` | Medium |
-| giving | `if.event.gave` | `if.event.give_blocked` | Low |
-| showing | `if.event.showed` | `if.event.show_blocked` | Low |
-| throwing | `if.event.threw` | `if.event.throw_blocked` | Low |
-| talking | `if.event.talked` | - | Low |
-| pushing | `if.event.pushed` | `if.event.push_blocked` | Low |
-| pulling | `if.event.pulled` | `if.event.pull_blocked` | Low |
+| Action | Domain Event | Message Namespace | Complexity |
+|--------|--------------|-------------------|------------|
+| attacking | `if.event.attacked` | `if.action.attacked.*` | Medium |
+| giving | `if.event.gave` | `if.action.gave.*` | Low |
+| showing | `if.event.showed` | `if.action.showed.*` | Low |
+| throwing | `if.event.threw` | `if.action.threw.*` | Low |
+| talking | `if.event.talked` | `if.action.talked.*` | Low |
+| pushing | `if.event.pushed` | `if.action.pushed.*` | Low |
+| pulling | `if.event.pulled` | `if.action.pulled.*` | Low |
 
 ### Lower Priority - Miscellaneous (8)
 
-| Action | Domain Event | Blocked Event | Complexity |
-|--------|--------------|---------------|------------|
-| climbing | `if.event.climbed` | `if.event.climb_blocked` | Low |
-| eating | `if.event.ate` | `if.event.eat_blocked` | Low |
-| drinking | `if.event.drank` | `if.event.drink_blocked` | Low |
-| sleeping | `if.event.slept` | - | Low |
-| waiting | `if.event.waited` | - | Low |
-| lowering | `if.event.lowered` | `if.event.lower_blocked` | Low |
-| raising | `if.event.raised` | `if.event.raise_blocked` | Low |
-| undoing | `if.event.undone` | `if.event.undo_blocked` | Low |
+| Action | Domain Event | Message Namespace | Complexity |
+|--------|--------------|-------------------|------------|
+| climbing | `if.event.climbed` | `if.action.climbed.*` | Low |
+| eating | `if.event.ate` | `if.action.ate.*` | Low |
+| drinking | `if.event.drank` | `if.action.drank.*` | Low |
+| sleeping | `if.event.slept` | `if.action.slept.*` | Low |
+| waiting | `if.event.waited` | `if.action.waited.*` | Low |
+| lowering | `if.event.lowered` | `if.action.lowered.*` | Low |
+| raising | `if.event.raised` | `if.action.raised.*` | Low |
+| undoing | `if.event.undone` | `if.action.undone.*` | Low |
 
 ### System Actions - No Migration Needed (8)
 
@@ -175,10 +207,10 @@ report(context): ISemanticEvent[] {
 **After:**
 ```typescript
 report(context): ISemanticEvent[] {
-  events.push(context.event('if.event.xxx', {
+  events.push(context.event('if.event.taken', {
     // Rendering
-    messageId: `${context.action.id}.${messageKey}`,
-    params,
+    messageId: 'if.action.taken.success',  // or .from, etc.
+    params: { item, container, ... },
     // Domain (spread for backward compat)
     ...domainData
   }));
@@ -202,11 +234,12 @@ blocked(context, result): ISemanticEvent[] {
 **After:**
 ```typescript
 blocked(context, result): ISemanticEvent[] {
-  return [context.event('if.event.xxx_blocked', {
+  return [context.event('if.event.taken', {
     // Rendering
-    messageId: `${context.action.id}.${result.error}`,
-    params: { ...result.params },
+    messageId: `if.action.taken.${result.error}`,  // e.g., if.action.taken.fixed_in_place
+    params: { item, ... },
     // Domain
+    blocked: true,
     reason: result.error,
     ...
   })];
@@ -269,14 +302,46 @@ Actions with significant logic:
 
 **Estimated effort:** 2-3 hours
 
-### Phase 4: Cleanup
+### Phase 4: Message Registration Migration
 
-After all actions migrated:
+Update `lang-en-us` action files to use new message keys:
+
+**Example: `packages/lang-en-us/src/actions/taking.ts`**
+
+Before:
+```typescript
+export const takingLanguage = {
+  actionId: 'if.action.taking',
+  messages: {
+    'taken': "Taken.",
+    'taken_from': "You take {item} from {container}.",
+    'fixed_in_place': "{item} is fixed in place.",
+    ...
+  }
+};
+```
+
+After:
+```typescript
+export const takenMessages = {
+  'if.action.taken.success': "Taken.",
+  'if.action.taken.from': "You take {item} from {container}.",
+  'if.action.taken.fixed_in_place': "{item} is fixed in place.",
+  ...
+};
+```
+
+Note: Language provider will need update to load flat message keys instead of `{actionId}.{key}` pattern.
+
+### Phase 5: Cleanup
+
+After all actions and messages migrated:
 
 1. Remove `STATE_CHANGE_EVENTS` set from text-service
 2. Remove `handleActionSuccess`, `handleActionFailure` handlers
 3. Simplify `routeToHandler()` to only handle special cases
-4. Update documentation
+4. Remove old actionId-based message loading from language provider
+5. Update documentation
 
 ## Testing Strategy
 
@@ -319,7 +384,17 @@ If issues arise:
 
 ### Message Keys
 
-Currently using full message keys (`if.action.taking.taken`) to work with existing message registration. Future improvement: flatten to shared namespace where appropriate.
+Using new convention: `if.action.{event}.{outcome}`
+
+Examples:
+- `if.action.taken.success` → "Taken."
+- `if.action.taken.from` → "You take {item} from {container}."
+- `if.action.taken.fixed_in_place` → "{item} is fixed in place."
+
+This requires updating message registration in `lang-en-us` from old keys:
+- `if.action.taking.taken` → `if.action.taken.success`
+- `if.action.taking.taken_from` → `if.action.taken.from`
+- `if.action.taking.fixed_in_place` → `if.action.taken.fixed_in_place`
 
 ### Event Handler Compatibility
 
