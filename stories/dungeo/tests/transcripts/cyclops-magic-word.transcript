@@ -43,7 +43,7 @@ description: Test saying "odysseus" or "ulysses" to scare away the cyclops
 > north
 [FAIL: contains "Living Room"]
 [OK: contains "block"]
-[EVENT: true, type="action.blocked"]
+[EVENT: true, type="if.event.went" blocked="true"]
 
 # Verify we're still in Cyclops Room
 > look

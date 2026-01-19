@@ -8,12 +8,28 @@ description: Tests that the troll wakes up after being knocked out, with descrip
 # From MDL source (act1.254): OUT!/IN! transitions
 # Recovery time: 5 turns
 
+# Get lantern first (Troll Room is dark)
+> GDT
+[OK: contains "GDT"]
+
+> TK brass lantern
+[OK: contains "Taken"]
+
+> EX
+[OK: contains "Returning"]
+
+> turn on lantern
+[OK: contains "on"]
+
 # Get to the Troll Room via GDT teleport
 > GDT
 [OK: contains "GDT"]
 
 > AH Troll Room
 [OK: contains "Teleported"]
+
+> EX
+[OK: contains "Returning"]
 
 # Verify initial state - exits blocked, conscious troll
 > look
@@ -31,9 +47,15 @@ description: Tests that the troll wakes up after being knocked out, with descrip
 [OK: contains "troll blocks"]
 
 # Knock out the troll via GDT
+> GDT
+[OK: contains "GDT"]
+
 > KO troll
 [OK: contains "Knocked out"]
 [OK: contains "isConscious: false"]
+
+> EX
+[OK: contains "Returning"]
 
 # Description should change to TROLLOUT
 > examine troll
@@ -75,7 +97,3 @@ description: Tests that the troll wakes up after being knocked out, with descrip
 # Exit should be blocked again
 > north
 [OK: contains "troll blocks"]
-
-# Exit GDT mode
-> EX
-[OK: contains "Returning to game"]

@@ -42,7 +42,11 @@ description: Test treasure scoring - take points and trophy case bonus
 > east
 [OK: contains "Behind House"]
 
-# Enter the Kitchen
+# Open the window to enter
+> open window
+[OK: contains "open"]
+
+# Enter the Kitchen through the window
 > west
 [OK: contains "Kitchen"]
 

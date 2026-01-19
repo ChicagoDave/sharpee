@@ -21,7 +21,7 @@ description: Test maze room connections per 1981 MDL source
 # Turn on lantern (maze is dark)
 > turn on lantern
 [OK: contains "lantern"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="if.event.switched_on"]
 
 # Verify we're in Grating Room
 > look

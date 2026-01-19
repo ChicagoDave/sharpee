@@ -57,8 +57,6 @@ description: Test entering the house, finding objects, and using the lantern
 > take lantern
 [OK: contains "Taken"]
 [EVENT: true, type="if.event.taken"]
-[EVENT: true, type="action.success"]
-[EVENT: false, type="action.blocked"]
 
 > take sword
 [OK: contains "Taken"]
@@ -73,7 +71,6 @@ description: Test entering the house, finding objects, and using the lantern
 > switch on lantern
 [OK: contains "on"]
 [EVENT: true, type="if.event.switched_on"]
-[EVENT: true, type="action.success"]
 
 # Go up to the Attic via Kitchen
 > east

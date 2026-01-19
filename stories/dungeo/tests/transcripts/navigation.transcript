@@ -17,7 +17,6 @@ description: Test basic navigation around the white house area
 [OK: contains "North of House"]
 [EVENT: true, type="if.event.actor_moved"]
 [EVENT: true, type="if.event.actor_entered"]
-[EVENT: true, type="action.success"]
 
 > east
 [OK: contains "Behind House"]
@@ -48,4 +47,3 @@ description: Test basic navigation around the white house area
 > west
 [OK: contains "West of House"]
 [EVENT: true, type="if.event.actor_moved"]
-[EVENT: false, type="action.blocked"]

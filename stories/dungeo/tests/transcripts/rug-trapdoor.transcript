@@ -25,9 +25,8 @@ description: Test moving the rug to reveal the trap door and descending to the C
 # Move the rug to reveal trap door
 > push rug
 [OK: contains "Moving the rug reveals a trap door"]
-[EVENT: true, 1, type="if.event.pushed"]
-[EVENT: true, 2, type="action.success" messageId="pushed_nudged"]
-[EVENT: true, 3, type="game.message" messageId="dungeo.rug.moved.reveal_trapdoor"]
+[EVENT: true, type="if.event.pushed"]
+[EVENT: true, type="game.message" messageId="dungeo.rug.moved.reveal_trapdoor"]
 [EVENT: false, type="if.event.destroyed"]
 [STATE: true, y08.location = r06]
 

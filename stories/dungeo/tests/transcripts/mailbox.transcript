@@ -13,8 +13,6 @@ description: Test opening mailbox and reading the leaflet
 > open mailbox
 [OK: contains "open"]
 [EVENT: true, type="if.event.opened"]
-[EVENT: true, type="action.success"]
-[EVENT: false, type="action.blocked"]
 
 # Search inside the mailbox
 > search mailbox
@@ -30,7 +28,7 @@ description: Test opening mailbox and reading the leaflet
 # Read it
 > read leaflet
 [OK: contains "DUNGEO"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="if.event.read"]
 
 # Check inventory
 > inventory
@@ -41,10 +39,8 @@ description: Test opening mailbox and reading the leaflet
 > put leaflet in mailbox
 [OK: contains "put"]
 [EVENT: true, type="if.event.put_in"]
-[EVENT: true, type="action.success"]
 
 # Close the mailbox
 > close mailbox
 [OK: contains "close"]
 [EVENT: true, type="if.event.closed"]
-[EVENT: true, type="action.success"]

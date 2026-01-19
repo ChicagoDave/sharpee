@@ -16,7 +16,7 @@ description: Test implicit inference and implicit take for reading action
 [OK: contains "first taking"]
 [OK: contains "DUNGEO"]
 [EVENT: true, type="if.event.implicit_take"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="if.event.read"]
 
 # Verify pronoun still refers to mailbox (inference doesn't change pronoun context)
 > examine it
@@ -24,7 +24,7 @@ description: Test implicit inference and implicit take for reading action
 
 # Explicit "read mailbox" should NOT infer - should fail
 > read mailbox
-[EVENT: true, type="action.blocked"]
+[EVENT: true, type="if.event.read" blocked="true"]
 
 # Drop the leaflet to test implicit take with explicit noun
 > drop leaflet
