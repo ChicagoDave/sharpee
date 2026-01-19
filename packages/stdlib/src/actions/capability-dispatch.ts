@@ -182,12 +182,16 @@ export function createCapabilityDispatchAction(
         return effectsToEvents(effects, context);
       }
 
-      // Default blocked event
+      // Default blocked event - use domain event pattern
       return [
-        context.event('action.blocked', {
-          actionId: config.actionId,
+        context.event('if.event.capability_blocked', {
+          blocked: true,
           messageId: result.error || config.cantDoThatError,
-          params: result.params || {}
+          actionId: config.actionId,
+          reason: result.error || config.cantDoThatError,
+          targetId: entity?.id,
+          targetName: entity?.name,
+          ...result.params
         })
       ];
     },

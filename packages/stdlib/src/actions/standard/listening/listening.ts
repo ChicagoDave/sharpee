@@ -174,10 +174,13 @@ export const listeningAction: Action & { metadata: ActionMetadata } = {
     return [context.event('if.event.listen_blocked', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
+      params: {
+        ...result.params,
+        target: target?.name
+      },
       reason: result.error,
       targetId: target?.id,
-      targetName: target?.name,
-      ...result.params
+      targetName: target?.name
     })];
   },
 
@@ -188,8 +191,8 @@ export const listeningAction: Action & { metadata: ActionMetadata } = {
     // Emit listened event with messageId for text rendering
     events.push(context.event('if.event.listened', {
       messageId: `${context.action.id}.${sharedData.messageId || 'silence'}`,
-      ...sharedData.eventData,
-      ...sharedData.params
+      params: sharedData.params,
+      ...sharedData.eventData
     }));
 
     return events;

@@ -229,12 +229,16 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
     return [context.event('if.event.show_blocked', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
+      params: {
+        ...result.params,
+        item: item?.name,
+        viewer: viewer?.name
+      },
       reason: result.error,
       itemId: item?.id,
       itemName: item?.name,
       viewerId: viewer?.id,
-      viewerName: viewer?.name,
-      ...result.params
+      viewerName: viewer?.name
     })];
   },
 
@@ -250,8 +254,8 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
     // Emit shown event with messageId for text rendering
     events.push(context.event('if.event.shown', {
       messageId: `${context.action.id}.${sharedData.messageId || 'shown'}`,
-      ...sharedData.eventData,
-      ...sharedData.params
+      params: sharedData.params,
+      ...sharedData.eventData
     }));
 
     return events;

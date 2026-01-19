@@ -67,8 +67,7 @@ const STATE_CHANGE_EVENTS = new Set([
   'if.event.taken',       // State change - action.success provides message
   'if.event.dropped',     // State change - action.success provides message
   'if.event.read',        // State change - action.success provides message
-  'if.event.room.description',    // Room desc - action.success provides message
-  'if.event.room_description',    // Legacy variant
+  // Note: if.event.room.description removed - specialized handler handles it
 ]);
 
 /**

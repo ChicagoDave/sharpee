@@ -275,7 +275,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     const movedData = buildEventData(actorMovedDataConfig, context);
     const enteredData = buildEventData(actorEnteredDataConfig, context);
 
-    // Return movement events first
+    // Return movement events first (no messageId - these are for event sourcing/handlers)
     const events: ISemanticEvent[] = [
       context.event('if.event.actor_exited', exitedData),
       context.event('if.event.actor_moved', movedData),
@@ -286,11 +286,13 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     const isDark = VisibilityBehavior.isDark(destinationRoom, context.world);
 
     if (isDark) {
-      // Dark room with no light - emit darkness message
-      events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: 'too_dark',
-        params: {}
+      // Dark room with no light - emit went event with darkness messageId
+      events.push(context.event('if.event.went', {
+        messageId: `${context.action.id}.too_dark`,
+        params: {},
+        actorId: context.player.id,
+        destinationId: destinationRoom.id,
+        isDark: true
       }));
       return events;
     }
@@ -321,32 +323,22 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       }))
     };
 
-    // Emit room description for the destination (for event listeners)
+    // Emit room description (specialized handler renders this)
     events.push(context.event('if.event.room.description', roomDescData));
 
-    // Emit room description via action.success (for text rendering)
-    // The if.event.room.description is suppressed by STATE_CHANGE_EVENTS
-    events.push(context.event('action.success', {
-      actionId: context.action.id,
-      messageId: 'room_description',
-      params: {
-        name: destinationRoom.name,
-        description: destinationRoom.description
-      }
-    }));
-
-    // Add contents list as action.success event (like looking does)
+    // Emit contents list if there are visible items
     if (destinationContents.length > 0) {
       const itemList = destinationContents.map(e => e.name).join(', ');
-      events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: 'contents_list',
+      // Use looking's messageId namespace since this is auto-look
+      events.push(context.event('if.event.list.contents', {
+        messageId: 'if.action.looking.contents_list',
         params: {
           items: itemList,
-          count: destinationContents.length,
-          previousLocation: sharedData.previousLocation,
-          currentLocation: sharedData.currentLocation
-        }
+          count: destinationContents.length
+        },
+        locationId: destinationRoom.id,
+        itemIds: destinationContents.map(e => e.id),
+        itemNames: destinationContents.map(e => e.name)
       }));
     }
 
@@ -358,11 +350,12 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
    * Called instead of execute/report when validate returns invalid
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: context.action.id,
-      messageId: result.error,
+    return [context.event('if.event.went', {
+      blocked: true,
       reason: result.error,
-      params: result.params || {}
+      messageId: `${context.action.id}.${result.error}`,
+      params: result.params || {},
+      actorId: context.player.id
     })];
   },
   

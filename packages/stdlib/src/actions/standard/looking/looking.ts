@@ -62,52 +62,44 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
   report(context: ActionContext): ISemanticEvent[] {
     // report() is only called on success - looking always succeeds
     const events: ISemanticEvent[] = [];
-    
-    // Build and emit looked event
+
+    // Build looked event data
     const lookedEventData = buildEventData(lookingEventDataConfig, context);
-    events.push(context.event('if.event.looked', lookedEventData));
-    
+
     // Determine message and params
     const isDark = lookedEventData.isDark as boolean;
     const { messageId, params } = determineLookingMessage(context, isDark);
-    
-    // If dark, return early with just the dark message
+
+    // If dark, emit looked event with dark messageId and return early
     if (isDark) {
-      events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId,
-        params
+      events.push(context.event('if.event.looked', {
+        messageId: `${context.action.id}.${messageId}`,
+        params,
+        ...lookedEventData
       }));
       return events;
     }
-    
-    // Build and emit room description event
+
+    // Emit looked event as domain event (no messageId - specialized handler handles room description)
+    events.push(context.event('if.event.looked', lookedEventData));
+
+    // Build and emit room description event (specialized handler renders this)
     const roomDescData = buildEventData(roomDescriptionDataConfig, context);
     events.push(context.event('if.event.room.description', roomDescData));
-    
-    // Build and emit list contents event if there are visible items
-    const listData = buildEventData(listContentsDataConfig, context);
-    if (listData && Object.keys(listData).length > 0) {
-      events.push(context.event('if.event.list.contents', listData));
-    }
-    
-    // Add the room description message
-    events.push(context.event('action.success', {
-      actionId: context.action.id,
-      messageId,
-      params
-    }));
 
-    // If there are items, also emit contents_list
+    // Build list contents data
+    const listData = buildEventData(listContentsDataConfig, context);
+
+    // Emit contents_list if there are direct items in the room
     if (params.hasItems) {
-      events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: 'contents_list',
-        params
+      events.push(context.event('if.event.list.contents', {
+        messageId: `${context.action.id}.contents_list`,
+        params,
+        ...listData
       }));
     }
 
-    // Add messages for container/supporter contents
+    // Emit messages for container/supporter contents
     const openContainerContents = listData.openContainerContents as ContainerContentsInfo[] | undefined;
     if (openContainerContents && openContainerContents.length > 0) {
       for (const containerInfo of openContainerContents) {
@@ -116,13 +108,17 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
           : 'surface_contents';
         const containerKey = containerInfo.preposition === 'in' ? 'container' : 'surface';
 
-        events.push(context.event('action.success', {
-          actionId: context.action.id,
-          messageId: contentsMessageId,
+        events.push(context.event('if.event.list.contents', {
+          messageId: `${context.action.id}.${contentsMessageId}`,
           params: {
             [containerKey]: containerInfo.containerName,
             items: containerInfo.itemNames.join(', ')
-          }
+          },
+          containerId: containerInfo.containerId,
+          containerName: containerInfo.containerName,
+          preposition: containerInfo.preposition,
+          itemIds: containerInfo.itemIds,
+          itemNames: containerInfo.itemNames
         }));
       }
     }
@@ -133,10 +129,12 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     // blocked() is called when validation fails
     // Looking always succeeds, so this should never be called
-    return [context.event('action.blocked', {
-      actionId: context.action.id,
-      messageId: result.error,
-      params: result.params
+    return [context.event('if.event.looked', {
+      blocked: true,
+      reason: result.error,
+      messageId: `${context.action.id}.${result.error}`,
+      params: result.params,
+      actorId: context.player.id
     })];
   },
 

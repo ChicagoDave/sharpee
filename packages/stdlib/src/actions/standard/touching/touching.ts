@@ -227,10 +227,13 @@ export const touchingAction: Action & { metadata: ActionMetadata } = {
     return [context.event('if.event.touch_blocked', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
+      params: {
+        ...result.params,
+        target: target?.name
+      },
       reason: result.error,
       targetId: target?.id,
-      targetName: target?.name,
-      ...result.params
+      targetName: target?.name
     })];
   },
 
@@ -241,8 +244,8 @@ export const touchingAction: Action & { metadata: ActionMetadata } = {
     // Emit touched event with messageId for text rendering
     events.push(context.event('if.event.touched', {
       messageId: `${context.action.id}.${sharedData.messageId || 'touched'}`,
-      ...sharedData.eventData,
-      target: sharedData.targetName
+      params: { target: sharedData.targetName },
+      ...sharedData.eventData
     }));
 
     return events;

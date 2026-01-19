@@ -361,7 +361,9 @@ world.moveEntity(lamp.id, table.id);
 
 ## Event Handlers
 
-Handle events to add custom logic when actions occur.
+Event handlers let you **react** to domain events - records of what happened in the game world. When an action completes and records a domain event (like `if.event.pulled`), your handlers can execute custom logic.
+
+**Key distinction:** Domain events are records written to event sources for event sourcing and text rendering. Handlers are a separate mechanism that reacts to these events during processing.
 
 ### Entity-Level Handler
 
@@ -398,9 +400,9 @@ world.registerEventHandler('if.event.taken', (event, world) => {
 });
 ```
 
-### Common Events to Handle
+### Common Domain Events to React To
 
-| Event | When Fired | Data |
+| Domain Event | When Recorded | Data |
 |-------|------------|------|
 | `if.event.taken` | Item picked up | `itemId`, `actorId` |
 | `if.event.dropped` | Item dropped | `itemId`, `actorId` |

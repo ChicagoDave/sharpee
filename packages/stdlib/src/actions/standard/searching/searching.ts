@@ -114,13 +114,13 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const target = context.command.directObject?.entity;
-    return [context.event('if.event.search_blocked', {
+    return [context.event('if.event.searched', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
+      params: { target: target?.name, ...result.params },
       reason: result.error,
       targetId: target?.id,
-      targetName: target?.name,
-      ...result.params
+      targetName: target?.name
     })];
   },
 
@@ -131,8 +131,8 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
     // Emit searched event with messageId for text rendering
     events.push(context.event('if.event.searched', {
       messageId: `${context.action.id}.${sharedData.messageId || 'nothing_special'}`,
-      ...sharedData.eventData,
-      ...sharedData.params
+      params: sharedData.params || {},
+      ...sharedData.eventData
     }));
 
     return events;

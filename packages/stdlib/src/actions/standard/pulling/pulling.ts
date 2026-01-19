@@ -121,13 +121,13 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const target = context.command.directObject?.entity;
-    return [context.event('if.event.pull_blocked', {
+    return [context.event('if.event.pulled', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
+      params: { target: target?.name, ...result.params },
       reason: result.error,
       targetId: target?.id,
-      targetName: target?.name,
-      ...result.params
+      targetName: target?.name
     })];
   },
 
@@ -141,6 +141,7 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
     // Emit pulled event with messageId for text rendering
     events.push(context.event('if.event.pulled', {
       messageId: `${context.action.id}.pulled`,
+      params: { target: sharedData.targetName },
       target: sharedData.targetId,
       targetName: sharedData.targetName,
       pullCount: sharedData.pullCount,

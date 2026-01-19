@@ -194,10 +194,13 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     return [context.event('if.event.talk_blocked', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
+      params: {
+        ...result.params,
+        target: target?.name
+      },
       reason: result.error,
       targetId: target?.id,
-      targetName: target?.name,
-      ...result.params
+      targetName: target?.name
     })];
   },
 
@@ -208,8 +211,8 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     // Emit talked event with messageId for text rendering
     events.push(context.event('if.event.talked', {
       messageId: `${context.action.id}.${sharedData.messageId || 'talked'}`,
-      ...sharedData.eventData,
-      target: sharedData.targetName
+      params: { target: sharedData.targetName },
+      ...sharedData.eventData
     }));
 
     return events;

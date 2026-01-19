@@ -247,13 +247,13 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const target = context.command.directObject?.entity;
-    return [context.event('if.event.push_blocked', {
+    return [context.event('if.event.pushed', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
+      params: { target: target?.name, ...result.params },
       reason: result.error,
       targetId: target?.id,
-      targetName: target?.name,
-      ...result.params
+      targetName: target?.name
     })];
   },
 
@@ -267,6 +267,7 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
     // Emit pushed event with messageId for text rendering
     events.push(context.event('if.event.pushed', {
       messageId: `${context.action.id}.${sharedData.messageId}`,
+      params: sharedData.messageParams,
       target: sharedData.targetId,
       targetName: sharedData.targetName,
       direction: sharedData.direction,
@@ -280,8 +281,7 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
       moveDirection: sharedData.moveDirection,
       nudged: sharedData.nudged,
       revealsPassage: sharedData.revealsPassage,
-      requiresStrength: sharedData.requiresStrength,
-      ...sharedData.messageParams
+      requiresStrength: sharedData.requiresStrength
     }));
 
     return events;

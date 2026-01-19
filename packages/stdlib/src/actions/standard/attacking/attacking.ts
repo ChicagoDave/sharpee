@@ -252,11 +252,14 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
    * Generate events when validation fails
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
+    const target = context.command.directObject?.entity;
+    return [context.event('if.event.attacked', {
+      blocked: true,
+      messageId: `${context.action.id}.${result.error}`,
+      params: { target: target?.name, ...result.params },
       reason: result.error,
-      params: result.params || {}
+      targetId: target?.id,
+      targetName: target?.name
     })];
   },
 
@@ -279,10 +282,12 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
     // Check if attack failed (for non-combat attacks)
     if (!result.success && !usedCombatService) {
       return [
-        context.event('action.error', {
-          actionId: this.id,
-          messageId: customMessage || 'attack_ineffective',
-          params: { target: target.name }
+        context.event('if.event.attacked', {
+          messageId: `${context.action.id}.${customMessage || 'attack_ineffective'}`,
+          params: { target: target.name },
+          target: target.id,
+          targetName: target.name,
+          failed: true
         })
       ];
     }
@@ -364,12 +369,13 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // Add success message (or use custom message if available)
-    events.push(context.event('action.success', {
-      actionId: this.id,
-      messageId: customMessage || messageId,
-      params: params
-    }));
+    // Update the main attacked event with messageId for text rendering
+    // The first event in the array is the attacked event - update it
+    events[0] = context.event('if.event.attacked', {
+      messageId: `${context.action.id}.${customMessage || messageId}`,
+      params,
+      ...eventData
+    });
 
     // Additional events based on result
     if (result.itemsDropped?.length) {

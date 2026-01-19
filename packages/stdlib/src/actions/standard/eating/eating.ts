@@ -228,11 +228,14 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
    * Generate events when validation fails
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
+    const item = context.command.directObject?.entity;
+    return [context.event('if.event.eaten', {
+      blocked: true,
+      messageId: `${context.action.id}.${result.error}`,
+      params: { item: item?.name, ...result.params },
       reason: result.error,
-      params: result.params || {}
+      itemId: item?.id,
+      itemName: item?.name
     })];
   },
 
@@ -248,14 +251,12 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
       events.push(...context.sharedData.implicitTakeEvents);
     }
 
-    // Emit the EATEN event
-    events.push(context.event('if.event.eaten', sharedData.eventData));
-
-    // Add success message
-    events.push(context.event('action.success', {
-      actionId: this.id,
-      messageId: sharedData.messageId,
-      params: { item: sharedData.itemName }
+    // Emit the EATEN event with messageId for text rendering
+    // eventData already contains item (id) and itemName (string)
+    events.push(context.event('if.event.eaten', {
+      messageId: `${context.action.id}.${sharedData.messageId}`,
+      params: { item: sharedData.eventData?.itemName },
+      ...sharedData.eventData
     }));
 
     return events;

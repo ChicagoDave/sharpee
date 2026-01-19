@@ -353,12 +353,16 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     return [context.event('if.event.throw_blocked', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
+      params: {
+        ...result.params,
+        item: item?.name,
+        target: target?.name
+      },
       reason: result.error,
       itemId: item?.id,
       itemName: item?.name,
       targetId: target?.id,
-      targetName: target?.name,
-      ...result.params
+      targetName: target?.name
     })];
   },
 
@@ -372,16 +376,16 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     }
 
     // Build event data with messageId for text rendering
-    const eventData: ThrowingEventMap['if.event.thrown'] & { messageId: string } = {
+    const eventData: ThrowingEventMap['if.event.thrown'] & { messageId: string; params: Record<string, any> } = {
       messageId: `${context.action.id}.${sharedData.messageId}`,
+      params: sharedData.params,
       item: sharedData.itemId,
       itemName: sharedData.itemName,
       throwType: sharedData.throwType,
       isFragile: sharedData.isFragile,
       weight: sharedData.weight,
       willBreak: sharedData.willBreak,
-      finalLocation: sharedData.finalLocation,
-      ...sharedData.params
+      finalLocation: sharedData.finalLocation
     };
 
     if (sharedData.targetId) {
@@ -411,11 +415,11 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     if (sharedData.hit && sharedData.targetAngry) {
       events.push(context.event('if.event.thrown', {
         messageId: `${context.action.id}.target_angry`,
+        params: sharedData.params,
         item: sharedData.itemId,
         itemName: sharedData.itemName,
         target: sharedData.targetId,
-        targetName: sharedData.targetName,
-        ...sharedData.params
+        targetName: sharedData.targetName
       }));
     }
 

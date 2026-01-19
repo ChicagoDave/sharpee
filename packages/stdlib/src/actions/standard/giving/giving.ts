@@ -240,12 +240,16 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
     return [context.event('if.event.give_blocked', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
+      params: {
+        ...result.params,
+        item: item?.name,
+        recipient: recipient?.name
+      },
       reason: result.error,
       itemId: item?.id,
       itemName: item?.name,
       recipientId: recipient?.id,
-      recipientName: recipient?.name,
-      ...result.params
+      recipientName: recipient?.name
     })];
   },
 
@@ -261,12 +265,12 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
     // Emit given event with messageId for text rendering
     events.push(context.event('if.event.given', {
       messageId: `${context.action.id}.${sharedData.messageId}`,
+      params: sharedData.params,
       item: sharedData.itemId,
       itemName: sharedData.itemName,
       recipient: sharedData.recipientId,
       recipientName: sharedData.recipientName,
-      accepted: true,
-      ...sharedData.params
+      accepted: true
     }));
 
     return events;

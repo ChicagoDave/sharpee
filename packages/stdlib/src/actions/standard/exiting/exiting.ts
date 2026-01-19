@@ -143,38 +143,22 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
     if (!state) {
       // This shouldn't happen, but handle gracefully
       return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          messageId: 'action_failed',
-          params: {
-            error: 'Missing state from execute phase'
-          }
+        context.event('if.event.exited', {
+          messageId: `${context.action.id}.action_failed`,
+          error: 'Missing state from execute phase'
         })
       ];
     }
 
-    const events: ISemanticEvent[] = [];
-
-    // Create the EXITED event for world model updates
-    const exitedData: ExitedEventData = {
+    // Create the EXITED event with messageId for text rendering
+    return [context.event('if.event.exited', {
+      messageId: `${context.action.id}.exited`,
+      params: { place: state.fromLocationName },
       fromLocation: state.fromLocation,
+      fromLocationName: state.fromLocationName,
       toLocation: state.toLocation,
       preposition: state.preposition
-    };
-
-    events.push(context.event('if.event.exited', exitedData));
-
-    // Create success message
-    events.push(context.event('action.success', {
-      actionId: context.action.id,
-      messageId: 'exited',
-      params: {
-        place: state.fromLocationName,
-        preposition: state.preposition
-      }
-    }));
-
-    return events;
+    } as ExitedEventData & { messageId: string; params: Record<string, any>; fromLocationName: string })];
   },
 
   /**
@@ -182,10 +166,11 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
    * Called instead of execute/report when validate returns invalid
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: context.action.id,
-      messageId: result.error,
-      params: result.params || {}
+    return [context.event('if.event.exited', {
+      blocked: true,
+      messageId: `${context.action.id}.${result.error}`,
+      params: result.params || {},
+      reason: result.error
     })];
   },
   

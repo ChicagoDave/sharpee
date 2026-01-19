@@ -314,11 +314,14 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
    * Generate events when validation fails
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
+    const item = context.command.directObject?.entity;
+    return [context.event('if.event.drunk', {
+      blocked: true,
+      messageId: `${context.action.id}.${result.error}`,
+      params: { item: item?.name, ...result.params },
       reason: result.error,
-      params: result.params || {}
+      itemId: item?.id,
+      itemName: item?.name
     })];
   },
 
@@ -339,14 +342,11 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
       events.push(context.event('if.event.taken', implicitTakenData));
     }
 
-    // Emit DRUNK event
-    events.push(context.event('if.event.drunk', sharedData.eventData));
-
-    // Add success message
-    events.push(context.event('action.success', {
-      actionId: this.id,
-      messageId: sharedData.messageId,
-      params: sharedData.params
+    // Emit DRUNK event with messageId for text rendering
+    events.push(context.event('if.event.drunk', {
+      messageId: `${context.action.id}.${sharedData.messageId}`,
+      params: sharedData.params || {},
+      ...sharedData.eventData
     }));
 
     return events;

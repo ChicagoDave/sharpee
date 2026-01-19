@@ -150,7 +150,7 @@ export interface EventHandlers {
 
 export interface EventResult {
   message?: string;        // Message to display
-  preventDefault?: boolean; // Stop further handlers
+  events?: ISemanticEvent[]; // Additional domain events to record
 }
 ```
 
@@ -168,21 +168,32 @@ export class Story {
     this.handlers.get(eventType)!.add(handler);
   }
   
-  emit(eventType: string, data: any): void {
+  processEvent(eventType: string, data: any): ISemanticEvent[] {
+    const additionalEvents: ISemanticEvent[] = [];
+
     // First check entity handlers
     if (data.entity) {
       const entity = this.world.getEntity(data.entity);
       if (entity.on?.[eventType]) {
         const result = entity.on[eventType](data);
-        if (result?.preventDefault) return;
+        if (result?.events) {
+          additionalEvents.push(...result.events);
+        }
       }
     }
-    
+
     // Then story handlers
     const handlers = this.handlers.get(eventType);
     if (handlers) {
-      handlers.forEach(handler => handler(data));
+      handlers.forEach(handler => {
+        const result = handler(data);
+        if (result?.events) {
+          additionalEvents.push(...result.events);
+        }
+      });
     }
+
+    return additionalEvents;
   }
 }
 ```
@@ -333,8 +344,17 @@ story.on('turn.ended', (event) => {
 
 - ADR-051: ActionBehaviors (superseded by this ADR)
 - ADR-023: Event system (original fire-and-forget design)
+- ADR-106: Domain Events and Event Sourcing (clarifies that `if.event.*` are domain events - immutable records of "things that have already happened" - and handlers react to these facts)
 
 ## Notes
+
+### Domain Events Clarification (See ADR-106)
+
+The events that handlers react to (`if.event.pushed`, `if.event.taken`, etc.) are **domain events** - immutable records of completed actions. They are NOT traditional pub/sub events to be "fired and handled."
+
+Handlers **react to facts** that have already occurred. A handler cannot prevent or undo a domain event - it can only cause additional consequences. For example, when `if.event.pulled` is recorded for a lever, a handler reacts by opening a door (a consequence), not by approving or denying the pull.
+
+**Note:** The original design included `preventDefault` in `EventResult` to stop further handlers. This was never implemented and has been removed. Domain events are facts; handlers react to them but cannot prevent them.
 
 This represents a fundamental shift in our architecture, acknowledging that interactive fiction requires complex game logic that must be triggered by events. The two-tier system (entity + story handlers) provides the right balance of encapsulation and flexibility.
 

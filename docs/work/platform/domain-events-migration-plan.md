@@ -1,6 +1,6 @@
 # Domain Events Migration Plan
 
-**Status**: Phase 4 In Progress (24/39 actions migrated - 62%)
+**Status**: ✅ All Phases Complete (38/39 actions migrated - 97%)
 
 ## Overview
 
@@ -120,36 +120,36 @@ MessageId determines the displayed message.
 | ✅ taking_off | `if.event.removed` | `if.action.taking_off.*` | |
 | ✅ removing | `if.event.taken` | `if.action.removing.*` | Uses taking's event type |
 
-### 🔄 Phase 4: World Interaction (18 actions) - 11 Complete
+### ✅ Phase 4: World Interaction (18 actions) - Complete
 
 Information actions, movement, and interaction with the world.
 
-#### Information Actions (8) - 5 Complete
+#### Information Actions (8) - All Complete
 
 | Action | Domain Event | Message Namespace | Status |
 |--------|--------------|-------------------|--------|
-| looking | `if.event.looked` | `if.action.looking.*` | 🔲 High complexity |
-| examining | `if.event.examined` | `if.action.examining.*` | 🔲 Medium |
+| ✅ looking | `if.event.looked` | `if.action.looking.*` | Complete (uses specialized room handler) |
+| ✅ examining | `if.event.examined` | `if.action.examining.*` | Complete |
 | ✅ searching | `if.event.searched` | `if.action.searching.*` | Complete |
 | ✅ reading | `if.event.read` | `if.action.reading.*` | Complete |
 | ✅ listening | `if.event.listened` | `if.action.listening.*` | Complete |
 | ✅ smelling | `if.event.smelled` | `if.action.smelling.*` | Complete |
 | ✅ touching | `if.event.touched` | `if.action.touching.*` | Complete |
-| inventory | `if.event.inventory` | `if.action.inventory.*` | 🔲 Medium |
+| ✅ inventory | `if.event.inventory` | `if.action.inventory.*` | Complete |
 
-#### Movement Actions (3) - 0 Complete
-
-| Action | Domain Event | Message Namespace | Status |
-|--------|--------------|-------------------|--------|
-| going | `if.event.went` | `if.action.going.*` | 🔲 High complexity |
-| entering | `if.event.entered` | `if.action.entering.*` | 🔲 Medium |
-| exiting | `if.event.exited` | `if.action.exiting.*` | 🔲 Medium |
-
-#### Interaction Actions (7) - 6 Complete
+#### Movement Actions (3) - All Complete
 
 | Action | Domain Event | Message Namespace | Status |
 |--------|--------------|-------------------|--------|
-| attacking | `if.event.attacked` | `if.action.attacking.*` | 🔲 Medium |
+| ✅ going | `if.event.went` | `if.action.going.*` | Complete (uses specialized room handler for auto-look) |
+| ✅ entering | `if.event.entered` | `if.action.entering.*` | Complete |
+| ✅ exiting | `if.event.exited` | `if.action.exiting.*` | Complete |
+
+#### Interaction Actions (7) - 7 Complete
+
+| Action | Domain Event | Message Namespace | Status |
+|--------|--------------|-------------------|--------|
+| ✅ attacking | `if.event.attacked` | `if.action.attacking.*` | Complete |
 | ✅ giving | `if.event.given` | `if.action.giving.*` | Complete |
 | ✅ showing | `if.event.shown` | `if.action.showing.*` | Complete |
 | ✅ throwing | `if.event.thrown` | `if.action.throwing.*` | Complete |
@@ -157,20 +157,20 @@ Information actions, movement, and interaction with the world.
 | ✅ pushing | `if.event.pushed` | `if.action.pushing.*` | Complete |
 | ✅ pulling | `if.event.pulled` | `if.action.pulling.*` | Complete |
 
-### 🔲 Phase 5: Miscellaneous & System (8 actions + 8 no-migration)
+### ✅ Phase 5: Miscellaneous & System (8 actions + 8 no-migration) - Complete
 
-#### Miscellaneous Actions (8)
+#### Miscellaneous Actions (8) - All Complete
 
-| Action | Domain Event | Message Namespace | Complexity |
-|--------|--------------|-------------------|------------|
-| climbing | `if.event.climbed` | `if.action.climbed.*` | Low |
-| eating | `if.event.ate` | `if.action.ate.*` | Low |
-| drinking | `if.event.drank` | `if.action.drank.*` | Low |
-| sleeping | `if.event.slept` | `if.action.slept.*` | Low |
-| waiting | `if.event.waited` | `if.action.waited.*` | Low |
-| lowering | `if.event.lowered` | `if.action.lowered.*` | Low |
-| raising | `if.event.raised` | `if.action.raised.*` | Low |
-| undoing | `if.event.undone` | `if.action.undone.*` | Low |
+| Action | Domain Event | Message Namespace | Status |
+|--------|--------------|-------------------|--------|
+| ✅ climbing | `if.event.climbed` | `if.action.climbing.*` | Complete |
+| ✅ eating | `if.event.eaten` | `if.action.eating.*` | Complete |
+| ✅ drinking | `if.event.drunk` | `if.action.drinking.*` | Complete |
+| ✅ sleeping | `if.event.slept` | `if.action.sleeping.*` | Complete |
+| ✅ waiting | `if.event.waited` | `if.action.waiting.*` | Complete |
+| ✅ lowering | `if.event.lowered` | `if.action.lowering.*` | Complete (capability dispatch) |
+| ✅ raising | `if.event.raised` | `if.action.raising.*` | Complete (capability dispatch) |
+| N/A undoing | Platform event | N/A | Uses platform events |
 
 #### System Actions - No Migration Needed (8)
 
@@ -287,30 +287,28 @@ In verbose output, check:
 | 1 | Foundation | 1 | ✅ Complete |
 | 2 | Core Manipulation | 5 | ✅ Complete |
 | 3 | Inventory & Containers | 7 | ✅ Complete |
-| 4 | World Interaction (partial) | 11 of 18 | 🔄 In Progress |
+| 4 | World Interaction | 18 | ✅ Complete |
+| 5 | Miscellaneous | 7 of 8 | ✅ Complete |
 
-**Total**: 24/39 actions (62%)
+**Total**: 38/39 actions (97%)
 
 ### Remaining Work
 
-| Phase | Focus | Actions | Status |
-|-------|-------|---------|--------|
-| 4 | World Interaction (remaining) | 7 | 🔲 Pending |
-| 5 | Miscellaneous | 8 | 🔲 Pending |
+All stdlib action migrations are complete. Remaining work:
+1. Fix params pattern in remaining actions (some still spread params at top level)
+2. Update message registration in lang-en-us (optional, for cleaner message keys)
+3. Clean up deprecated text-service code
 
-**Note**: 8 system actions don't need migration (no domain events).
+**Note**: 8 system actions don't need migration (no domain events). 1 action (undoing) uses platform events.
 
-### Phase 4 Remaining Actions
+### Pattern Note: Room Description
 
-1. **Medium complexity** (next to migrate):
-   - examining (object descriptions)
-   - inventory (list formatting)
-   - attacking (combat outcomes)
-   - entering, exiting (location changes)
+The `looking` and `going` actions use a hybrid approach:
+- Room name/description handled by specialized `handleRoomDescription` handler
+- Contents list and other messages use messageId pattern
+- Dark room message uses messageId pattern
 
-2. **High complexity** (most involved):
-   - looking (room description, contents, dark handling, verbose mode)
-   - going (movement, dark rooms, vehicles, auto-look)
+This preserves the separate ROOM_NAME and ROOM_DESCRIPTION text blocks while using messageId for other messages.
 
 ### Post-Migration: Message Registration
 

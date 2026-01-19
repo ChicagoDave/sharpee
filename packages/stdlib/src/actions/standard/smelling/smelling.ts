@@ -197,10 +197,13 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
     return [context.event('if.event.smell_blocked', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
+      params: {
+        ...result.params,
+        target: target?.name
+      },
       reason: result.error,
       targetId: target?.id,
-      targetName: target?.name,
-      ...result.params
+      targetName: target?.name
     })];
   },
 
@@ -211,8 +214,8 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
     // Emit smelled event with messageId for text rendering
     events.push(context.event('if.event.smelled', {
       messageId: `${context.action.id}.${sharedData.messageId || 'no_scent'}`,
-      ...sharedData.eventData,
-      ...sharedData.params
+      params: sharedData.params,
+      ...sharedData.eventData
     }));
 
     return events;

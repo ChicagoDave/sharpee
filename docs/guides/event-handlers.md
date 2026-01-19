@@ -2,25 +2,36 @@
 
 ## Overview
 
-Event handlers allow you to add custom game logic that responds to player actions and game events. When a player pushes a button, pulls a lever, or performs any action, the system emits events that your handlers can respond to.
+Event handlers allow you to add custom game logic that **reacts** to domain events. When a player performs an action, the system records domain events that describe what happened. Your handlers can react to these events to implement puzzles, trigger sequences, and add custom behavior.
+
+## Understanding Domain Events vs Handlers
+
+**Domain events** (`if.event.*`) are **records** of what happened in the game world. They are written to event sources for:
+1. **Event sourcing** - Recording game history
+2. **Text rendering** - The text service reads them to generate player output
+
+**Event handlers** are a **separate mechanism** that lets your story **react** to domain events as they're recorded. Handlers don't "receive" events in a pub/sub sense - they intercept domain events during processing.
 
 ## Core Concepts
 
-### Events
-Events are messages that describe what happened in the game:
+### Domain Events
+Domain events describe what happened in the game (past tense):
 - `if.event.pushed` - Something was pushed
-- `if.event.pulled` - Something was pulled  
+- `if.event.pulled` - Something was pulled
 - `if.event.taken` - Something was taken
 - `if.event.dropped` - Something was dropped
 - `if.event.opened` - Something was opened
 - `if.event.closed` - Something was closed
 
+These events carry both **domain data** (what happened) and **rendering data** (messageId + params for the text service).
+
 ### Handlers
-Handlers are functions that respond to events. They can:
-- Modify game state
-- Generate new events
-- Display messages
+Handlers are functions that **react** to domain events. They can:
+- Modify game state (open doors, update puzzles)
+- Generate additional domain events
 - Trigger puzzles or sequences
+
+Handlers run during event processing, before the text service renders output.
 
 ## Entity-Level Handlers
 
@@ -363,11 +374,12 @@ story.on('game.puzzle.solved', (event) => {
 });
 ```
 
-### Event Propagation
-Events are processed in this order:
+### Domain Event Processing Order
+When a domain event is recorded, handlers are invoked in this order:
 1. Entity-level handlers (on the affected entity)
 2. Story-level handlers
-3. System handlers (UI updates, etc.)
+3. Event is written to event source
+4. At turn end, text service renders all domain events
 
 ### Performance Considerations
 - Handlers run synchronously, so avoid heavy computation

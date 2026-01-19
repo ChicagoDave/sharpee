@@ -123,11 +123,11 @@ export const sleepingAction: Action & { metadata: ActionMetadata } = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
-      reason: result.error,
-      params: result.params || {}
+    return [context.event('if.event.sleep_blocked', {
+      blocked: true,
+      messageId: `${context.action.id}.${result.error}`,
+      params: result.params,
+      reason: result.error
     })];
   },
 
@@ -135,24 +135,18 @@ export const sleepingAction: Action & { metadata: ActionMetadata } = {
     const events: ISemanticEvent[] = [];
     const sharedData = getSleepingSharedData(context);
 
-    // Emit slept event for world model
-    if (sharedData.eventData) {
-      events.push(context.event('if.event.slept', sharedData.eventData));
-    }
-
-    // Emit success message
-    events.push(context.event('action.success', {
-      actionId: context.action.id,
-      messageId: sharedData.messageId || 'slept',
-      params: sharedData.params || {}
+    // Emit slept event with messageId for text rendering
+    events.push(context.event('if.event.slept', {
+      messageId: `${context.action.id}.${sharedData.messageId || 'slept'}`,
+      params: sharedData.params,
+      ...sharedData.eventData
     }));
 
-    // Add wake refreshed message if applicable
+    // Add wake refreshed event if applicable
     if (sharedData.wakeRefreshed) {
-      events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: 'woke_refreshed',
-        params: {}
+      events.push(context.event('if.event.slept', {
+        messageId: `${context.action.id}.woke_refreshed`,
+        wakeRefreshed: true
       }));
     }
 

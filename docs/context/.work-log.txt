@@ -1,60 +1,56 @@
-[22:35:01] EDIT: stories/dungeo/src/browser-entry.ts
-[22:58:57] WRITE: docs/context/session-20260118-2257-dungeo.md
-[23:05:57] WRITE: scripts/build-platform.sh
-[23:06:23] WRITE: scripts/build-dungeo.sh
-[23:06:45] WRITE: scripts/build-web.sh
-[23:07:28] EDIT: CLAUDE.md
-[23:10:35] EDIT: scripts/build-platform.sh
-[23:10:41] EDIT: scripts/build-platform.sh
-[23:11:01] EDIT: scripts/build-dungeo.sh
-[23:17:23] EDIT: scripts/build-platform.sh
-[23:17:32] EDIT: scripts/build-web.sh
-[23:21:49] EDIT: packages/stdlib/src/actions/standard/looking/looking-data.ts
-[23:21:57] EDIT: packages/stdlib/src/actions/standard/looking/looking.ts
-[23:31:48] EDIT: stories/dungeo/src/traits/troll-capability-behaviors.ts
-[23:32:04] EDIT: stories/dungeo/src/traits/troll-capability-behaviors.ts
-[23:33:09] EDIT: packages/stdlib/src/actions/standard/going/going.ts
-[23:33:39] EDIT: packages/lang-en-us/src/actions/going.ts
-[23:49:56] EDIT: packages/stdlib/src/actions/standard/switching_on/switching_on.ts
-[23:50:05] EDIT: stories/dungeo/src/browser-entry.ts
-[00:04:55] EDIT: stories/dungeo/src/browser-entry.ts
-[00:05:11] EDIT: stories/dungeo/src/browser-entry.ts
-[00:05:29] EDIT: stories/dungeo/src/browser-entry.ts
-[00:05:37] EDIT: stories/dungeo/src/browser-entry.ts
-[00:05:46] EDIT: stories/dungeo/src/browser-entry.ts
-[00:06:02] EDIT: stories/dungeo/src/browser-entry.ts
-[00:06:32] EDIT: stories/dungeo/src/browser-entry.ts
-[00:07:08] EDIT: stories/dungeo/src/browser-entry.ts
-[00:07:21] EDIT: stories/dungeo/src/browser-entry.ts
-[00:07:59] EDIT: stories/dungeo/src/browser-entry.ts
-[00:08:47] EDIT: stories/dungeo/src/browser-entry.ts
-[00:11:17] WRITE: docs/context/session-20260119-0010-dungeo.md
-[00:39:27] EDIT: docs/work/issues/issues-list.md
-[01:05:18] WRITE: docs/work/platform/event-management.md
-[01:10:04] WRITE: docs/context/session-20260119-0108-dungeo.md
-[01:15:50] GIT: git add -A && git commit -m "$(cat <<'EOF'
-docs: Event management architecture a
-[01:15:58] GIT: git push
-[01:23:04] EDIT: packages/text-service/src/text-service.ts
-[01:23:11] EDIT: packages/text-service/src/text-service.ts
-[01:23:23] EDIT: packages/text-service/src/text-service.ts
-[01:24:18] EDIT: packages/stdlib/src/actions/standard/taking/taking.ts
-[01:24:27] EDIT: packages/stdlib/src/actions/standard/taking/taking.ts
-[01:24:36] EDIT: packages/stdlib/src/actions/standard/taking/taking.ts
-[01:32:24] TRANSCRIPT FAIL: echo -e "look\ntake lantern\ni\ntake trophy case\nquit" | node packages/transcri
-[01:34:08] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[01:45:57] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/stdlib' test -- --run 2>&1 | tail -50
-[01:48:12] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/stdlib' test -- taking-golden --run 2>&1 | tail -100
-[01:55:38] EDIT: docs/work/platform/event-management.md
-[01:56:21] GIT: git commit -m "$(cat <<'EOF'
-feat: Simplified event pattern for text rendering (
-[02:01:07] WRITE: docs/work/platform/domain-events-migration-plan.md
-[02:01:22] GIT: git add docs/work/platform/domain-events-migration-plan.md && git commit -m "$(c
-[02:11:41] EDIT: docs/work/platform/domain-events-migration-plan.md
-[02:11:51] EDIT: docs/work/platform/domain-events-migration-plan.md
-[02:12:17] EDIT: docs/work/platform/domain-events-migration-plan.md
-[02:12:32] EDIT: docs/work/platform/domain-events-migration-plan.md
-[02:12:42] EDIT: docs/work/platform/domain-events-migration-plan.md
-[02:12:53] EDIT: docs/work/platform/domain-events-migration-plan.md
-[02:13:11] GIT: git add docs/work/platform/domain-events-migration-plan.md && git commit -m "$(c
-[02:19:26] WRITE: docs/context/session-20260119-0218-feature-event-simplification.md
+[08:59:00] EDIT: packages/stdlib/src/actions/standard/exiting/exiting.ts
+[08:59:07] EDIT: packages/stdlib/src/actions/standard/exiting/exiting.ts
+[08:59:23] EDIT: packages/stdlib/src/actions/standard/examining/examining.ts
+[08:59:30] EDIT: packages/stdlib/src/actions/standard/examining/examining.ts
+[08:59:51] EDIT: packages/stdlib/src/actions/standard/inventory/inventory.ts
+[08:59:59] EDIT: packages/stdlib/src/actions/standard/inventory/inventory.ts
+[09:04:57] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[09:06:35] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[09:08:31] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&1 | tail -30
+[09:09:39] EDIT: docs/architecture/adrs/adr-052-event-handlers-custom-logic.md
+[09:09:49] EDIT: docs/architecture/adrs/adr-052-event-handlers-custom-logic.md
+[09:10:01] EDIT: docs/architecture/adrs/adr-052-event-handlers-custom-logic.md
+[09:10:07] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&1 | grep -B2
+[09:10:15] EDIT: docs/reference/core-concepts.md
+[09:10:35] EDIT: packages/stdlib/src/actions/standard/pushing/pushing.ts
+[09:10:56] EDIT: packages/stdlib/src/actions/standard/pulling/pulling.ts
+[09:11:25] EDIT: packages/stdlib/src/actions/standard/reading/reading.ts
+[09:11:40] EDIT: packages/stdlib/src/actions/standard/searching/searching.ts
+[09:12:46] WRITE: docs/context/session-20260119-0912-feature-event-simplification.md
+[09:13:53] WRITE: docs/work/platform/context/2026-01-19-domain-events-documentation.md
+[09:17:00] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&1 | tail -15
+[09:18:01] EDIT: packages/stdlib/src/actions/standard/attacking/attacking.ts
+[09:18:10] EDIT: packages/stdlib/src/actions/standard/attacking/attacking.ts
+[09:18:17] EDIT: packages/stdlib/src/actions/standard/attacking/attacking.ts
+[09:18:32] EDIT: packages/stdlib/src/actions/standard/climbing/climbing.ts
+[09:18:50] EDIT: packages/stdlib/src/actions/standard/climbing/climbing.ts
+[09:19:13] EDIT: packages/stdlib/src/actions/standard/drinking/drinking.ts
+[09:19:31] EDIT: packages/stdlib/src/actions/standard/eating/eating.ts
+[09:25:13] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&1 | tail -10
+[09:25:40] EDIT: docs/work/platform/domain-events-migration-plan.md
+[09:25:47] EDIT: docs/work/platform/domain-events-migration-plan.md
+[09:26:05] EDIT: docs/work/platform/domain-events-migration-plan.md
+[09:26:46] WRITE: docs/context/session-20260119-0839-feature/event-simplification.md
+[09:27:13] WRITE: docs/architecture/review/architecture-review.md
+[09:28:32] WRITE: docs/architecture/review/diagram-specifications.md
+[09:36:03] EDIT: packages/stdlib/src/actions/standard/giving/giving.ts
+[09:36:04] EDIT: packages/stdlib/src/actions/standard/giving/giving.ts
+[09:36:22] EDIT: packages/stdlib/src/actions/standard/listening/listening.ts
+[09:36:22] EDIT: packages/stdlib/src/actions/standard/listening/listening.ts
+[09:36:34] EDIT: packages/stdlib/src/actions/standard/showing/showing.ts
+[09:36:35] EDIT: packages/stdlib/src/actions/standard/showing/showing.ts
+[09:36:42] WRITE: docs/architecture/review/turn-cycle-sequence.md
+[09:36:52] EDIT: packages/stdlib/src/actions/standard/sleeping/sleeping.ts
+[09:36:53] EDIT: packages/stdlib/src/actions/standard/sleeping/sleeping.ts
+[09:36:54] EDIT: packages/stdlib/src/actions/standard/smelling/smelling.ts
+[09:36:55] EDIT: packages/stdlib/src/actions/standard/smelling/smelling.ts
+[09:36:56] EDIT: packages/stdlib/src/actions/standard/talking/talking.ts
+[09:36:57] EDIT: packages/stdlib/src/actions/standard/talking/talking.ts
+[09:37:22] EDIT: packages/stdlib/src/actions/standard/throwing/throwing.ts
+[09:37:23] EDIT: packages/stdlib/src/actions/standard/throwing/throwing.ts
+[09:37:24] EDIT: packages/stdlib/src/actions/standard/throwing/throwing.ts
+[09:37:25] EDIT: packages/stdlib/src/actions/standard/touching/touching.ts
+[09:37:26] EDIT: packages/stdlib/src/actions/standard/touching/touching.ts
+[09:37:27] EDIT: packages/stdlib/src/actions/standard/waiting/waiting.ts
+[09:39:23] WRITE: docs/architecture/review/package-dependency-graph.md
+[09:42:46] WRITE: docs/context/session-20260119-0941-feature-event-simplification.md

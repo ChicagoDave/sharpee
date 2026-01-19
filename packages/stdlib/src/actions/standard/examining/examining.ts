@@ -85,22 +85,21 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
     // Get message parameters from the data
     const { messageId, params, contentsMessage } = buildExaminingMessageParams(eventData, noun);
 
-    // Build events array
+    // Build events array - emit domain event with messageId for text rendering
     const events: ISemanticEvent[] = [
-      context.event('if.event.examined', eventData),
-      context.event('action.success', {
-        actionId: context.action.id,
-        messageId: messageId,
-        params: params
+      context.event('if.event.examined', {
+        messageId: `${context.action.id}.${messageId}`,
+        params,
+        ...eventData
       })
     ];
 
     // Add contents message for containers/supporters with visible items
     if (contentsMessage) {
-      events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: contentsMessage.messageId,
-        params: contentsMessage.params
+      events.push(context.event('if.event.examined', {
+        messageId: `${context.action.id}.${contentsMessage.messageId}`,
+        params: contentsMessage.params,
+        isContentsMessage: true
       }));
     }
 
@@ -111,13 +110,13 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
     // blocked() is called when validation fails
     const noun = context.command.directObject?.entity;
 
-    return [context.event('action.blocked', {
-      actionId: context.action.id,
-      messageId: result.error,
-      params: {
-        ...result.params,
-        target: noun?.name
-      }
+    return [context.event('if.event.examined', {
+      blocked: true,
+      messageId: `${context.action.id}.${result.error}`,
+      params: { target: noun?.name, ...result.params },
+      reason: result.error,
+      targetId: noun?.id,
+      targetName: noun?.name
     })];
   },
 

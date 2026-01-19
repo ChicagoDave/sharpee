@@ -258,39 +258,62 @@ The central game state manager.
 
 ## Event System
 
-Events drive the game's output and custom logic.
+Sharpee uses **domain events** for event sourcing and text rendering. Understanding the distinction between domain events and event handlers is crucial.
 
-### Event Types
-- **Action Events** (`action.*`): Command execution results
-  - `action.success`: Action completed successfully
-  - `action.error`: Action failed
-  - `action.info`: Informational message
-  
-- **Game Events** (`if.event.*`): Game state changes
-  - `if.event.taken`: Object picked up
-  - `if.event.dropped`: Object dropped
-  - `if.event.opened`: Container opened
-  - `if.event.pushed`: Object pushed
-  - etc.
+### Domain Events (Event Sourcing)
 
-### Text Output Pattern (Critical)
+Domain events (`if.event.*`) are **records of what happened** in the game world. They are NOT traditional pub/sub events to be "fired and handled" - they're event sourcing records written to event sources.
+
+**Key characteristics:**
+- Describe completed actions in past tense (taken, dropped, opened)
+- Written to one of THREE event sources: **game**, **debug**, **platform**
+- Consumed by the **text service** at turn end for rendering
+- Carry both domain data (what happened) and rendering data (messageId + params)
+
+**Domain event structure (ADR-097 pattern):**
+```typescript
+context.event('if.event.taken', {
+  // Rendering data (text service uses these)
+  messageId: 'if.action.taken.success',
+  params: { item: 'brass lamp' },
+
+  // Domain data (event sourcing / handlers can use these)
+  itemId: lamp.id,
+  actorId: player.id,
+  previousLocation: room.id
+});
+```
+
+### Event Sources
+
+The Engine maintains three event sources:
+- **game**: Domain events from player actions and world changes
+- **debug**: Diagnostic events for development/testing
+- **platform**: System events (save, restore, quit)
+
+At turn end, events are popped from these sources and sent to the text service.
+
+### Text Rendering Flow
 
 **Actions NEVER emit text directly.** The flow is:
 
-1. Actions emit **semantic events** with `messageId` and `params`
-2. Report service receives events after turn completes
-3. Report service looks up `messageId` in language-specific message templates
-4. Report service renders final text to player
+1. Actions emit **domain events** with `messageId` and `params`
+2. Events are written to the appropriate event source
+3. At turn end, events are sent to the **text service**
+4. Text service looks up `messageId` in language-specific message templates
+5. Text service renders final text to player
 
 ```typescript
-// CORRECT: Emit event with messageId
-events.push(context.event('action.success', {
-  actionId: IFActions.WAITING,
-  messageId: 'time_passes'  // Report service looks this up
+// CORRECT: Emit domain event with messageId
+events.push(context.event('if.event.taken', {
+  messageId: 'if.action.taken.success',
+  params: { item: noun.name },
+  itemId: noun.id,
+  actorId: actor.id
 }));
 
 // WRONG: Never emit text directly
-events.push({ text: 'Time passes.' });  // DON'T DO THIS
+events.push({ text: 'Taken.' });  // DON'T DO THIS
 ```
 
 This separation enables:
@@ -298,15 +321,36 @@ This separation enables:
 - Customizable prose styles
 - Story-specific message overrides
 - Consistent output formatting
+- Event replay and debugging
+
+### Domain Event Types
+
+- **World Events** (`if.event.*`): What happened in the game world
+  - `if.event.taken`: Object picked up
+  - `if.event.dropped`: Object dropped
+  - `if.event.opened`: Container opened
+  - `if.event.pushed`: Object pushed
+  - etc.
+
+- **Platform Events** (`platform.*`): System operations
+  - `platform.save_completed`: Game saved
+  - `platform.restore_completed`: Game restored
+
+- **Game Events** (`game.*`): Game lifecycle
+  - `game.started`: Game began
+  - `game.message`: System message
 
 ### Event Handlers (ADR-052)
+
+Event handlers are a **separate mechanism** that lets stories react to domain events. When a domain event is recorded, registered handlers can execute custom logic.
 
 **Entity-level handlers:**
 ```typescript
 const redBook = {
   on: {
     'if.event.pushed': (event) => {
-      // Custom logic when this book is pushed
+      // React when this book is pushed
+      // This runs as the domain event is being processed
     }
   }
 }
@@ -314,10 +358,15 @@ const redBook = {
 
 **Story-level handlers (daemons):**
 ```typescript
-story.on('if.event.pushed', (event) => {
-  // Global logic for any push event
+world.registerEventHandler('if.event.pushed', (event, world) => {
+  // React to any push event globally
 })
 ```
+
+**Important distinction:**
+- Domain events are **records** written to event sources
+- Event handlers **react** to those records during processing
+- Handlers can return additional events or modify world state
 
 ## Perception System
 
@@ -751,21 +800,29 @@ interface Action {
 
 ## Extensibility Patterns
 
-### Event Handler Override Pattern
-Stories can override default behavior by handling events:
+### Story Handler Pattern
+Stories can add custom logic by reacting to domain events:
 
 ```typescript
-// Default behavior in text service
-textService.on('if.action.about', (event) => {
-  // Standard about display from story config
-})
+// React to domain events to implement consequences
+world.registerEventHandler('if.event.taken', (event, world) => {
+  // A treasure WAS taken - update score as a consequence
+  if (isTreasure(event.data.itemId)) {
+    updateScore(10);
+  }
+});
 
-// Story can override
-story.on('if.action.about', (event) => {
-  // Custom about display (ASCII art, menu, etc.)
-  event.preventDefault() // Stop default handler
-})
+// Entity-level handler for specific object
+lever.on = {
+  'if.event.pulled': (event) => {
+    // The lever WAS pulled - open door as consequence
+    secretDoor.get(TraitType.OPENABLE).isOpen = true;
+    return { message: 'A door grinds open nearby.' };
+  }
+};
 ```
+
+See ADR-106 for the distinction between domain events (facts) and handlers (reactions).
 
 ### Signal Action Pattern
 For meta-actions that don't mutate world state:

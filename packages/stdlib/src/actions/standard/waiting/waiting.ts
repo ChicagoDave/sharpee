@@ -59,11 +59,11 @@ export const waitingAction: Action & { metadata: ActionMetadata } = {
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     // Waiting always succeeds, but include blocked for consistency
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
-      reason: result.error,
-      params: result.params || {}
+    return [context.event('if.event.wait_blocked', {
+      blocked: true,
+      messageId: `${context.action.id}.${result.error}`,
+      params: result.params,
+      reason: result.error
     })];
   },
 
@@ -71,22 +71,14 @@ export const waitingAction: Action & { metadata: ActionMetadata } = {
     const events: ISemanticEvent[] = [];
     const sharedData = getWaitingSharedData(context);
 
-    // Build event data
-    const eventData: WaitedEventData = {
+    // Emit waited event with messageId for text rendering
+    // Engine/daemons listen to this to advance turn counter and process scheduled events
+    events.push(context.event('if.event.waited', {
+      messageId: `${context.action.id}.time_passes`,
       turnsPassed: 1,
       location: sharedData.locationId,
       locationName: sharedData.locationName
-    };
-
-    // Emit world event - signals time passage
-    // Engine/daemons listen to this to advance turn counter and process scheduled events
-    events.push(context.event('if.event.waited', eventData));
-
-    // Emit success message
-    events.push(context.event('action.success', {
-      actionId: IFActions.WAITING,
-      messageId: 'time_passes'
-    }));
+    } as WaitedEventData & { messageId: string }));
 
     return events;
   }

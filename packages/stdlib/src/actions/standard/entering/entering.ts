@@ -151,42 +151,25 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
     if (!state) {
       // This shouldn't happen, but handle gracefully
       return [
-        context.event('action.error', {
-          actionId: context.action.id,
-          messageId: EnteringMessages.ACTION_FAILED,
-          params: {
-            error: 'Missing state from execute phase'
-          }
+        context.event('if.event.entered', {
+          messageId: `${context.action.id}.${EnteringMessages.ACTION_FAILED}`,
+          error: 'Missing state from execute phase'
         })
       ];
     }
 
-    const events: ISemanticEvent[] = [];
+    // Determine the message ID based on preposition
+    const messageId = state.preposition === 'on' ? EnteringMessages.ENTERED_ON : EnteringMessages.ENTERED;
 
-    // Create the ENTERED event for world model updates
-    const enteredData: EnteredEventData = {
+    // Create the ENTERED event with messageId for text rendering
+    return [context.event('if.event.entered', {
+      messageId: `${context.action.id}.${messageId}`,
+      params: { place: state.targetName },
       targetId: state.targetId,
+      targetName: state.targetName,
       fromLocation: state.fromLocation,
       preposition: state.preposition
-    };
-
-    events.push(context.event('if.event.entered', enteredData));
-
-    // Build params for success message
-    const params: Record<string, any> = {
-      place: state.targetName,
-      preposition: state.preposition
-    };
-
-    // Create success message
-    const messageId = state.preposition === 'on' ? EnteringMessages.ENTERED_ON : EnteringMessages.ENTERED;
-    events.push(context.event('action.success', {
-      actionId: context.action.id,
-      messageId: messageId,
-      params: params
-    }));
-
-    return events;
+    } as EnteredEventData & { messageId: string; params: Record<string, any>; targetName: string })];
   },
 
   /**
@@ -196,13 +179,13 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const target = context.command.directObject?.entity;
 
-    return [context.event('action.blocked', {
-      actionId: context.action.id,
-      messageId: result.error,
-      params: {
-        ...result.params,
-        place: target?.name
-      }
+    return [context.event('if.event.entered', {
+      blocked: true,
+      messageId: `${context.action.id}.${result.error}`,
+      params: { place: target?.name, ...result.params },
+      reason: result.error,
+      targetId: target?.id,
+      targetName: target?.name
     })];
   },
 

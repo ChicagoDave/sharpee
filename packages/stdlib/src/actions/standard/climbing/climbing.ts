@@ -122,11 +122,16 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
    * Generate events when validation fails
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
+    const target = context.command.directObject?.entity;
+    const direction = context.command.parsed.extras?.direction as string;
+    return [context.event('if.event.climbed', {
+      blocked: true,
+      messageId: `${context.action.id}.${result.error}`,
+      params: { target: target?.name, ...result.params },
       reason: result.error,
-      params: result.params || {}
+      targetId: target?.id,
+      targetName: target?.name,
+      direction
     })];
   },
 
@@ -138,13 +143,17 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
     const sharedData = getClimbingSharedData(context);
 
     if (sharedData.mode === 'directional') {
-      // Directional climbing events
-      const climbedData: ClimbedEventData = {
+      // Directional climbing - determine message
+      const messageId = sharedData.direction === 'up' ? 'climbed_up' : 'climbed_down';
+
+      // Emit climbed event with messageId for text rendering
+      events.push(context.event('if.event.climbed', {
+        messageId: `${context.action.id}.${messageId}`,
+        params: { direction: sharedData.direction },
         direction: sharedData.direction,
         method: 'directional',
         destinationId: sharedData.destinationId
-      };
-      events.push(context.event('if.event.climbed', climbedData));
+      } as ClimbedEventData & { messageId: string; params: Record<string, any> }));
 
       // Movement event if there's a destination
       if (sharedData.destinationId) {
@@ -155,34 +164,21 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
           method: 'climbing'
         }));
       }
-
-      // Success message
-      const messageId = sharedData.direction === 'up' ? 'climbed_up' : 'climbed_down';
-      events.push(context.event('action.success', {
-        actionId: this.id,
-        messageId: messageId,
-        params: { direction: sharedData.direction }
-      }));
     } else {
-      // Object climbing events
-      const climbedData: ClimbedEventData = {
+      // Object climbing - emit climbed event with messageId for text rendering
+      events.push(context.event('if.event.climbed', {
+        messageId: `${context.action.id}.climbed_onto`,
+        params: { target: sharedData.targetName },
         targetId: sharedData.targetId,
+        targetName: sharedData.targetName,
         method: 'onto'
-      };
-      events.push(context.event('if.event.climbed', climbedData));
+      } as ClimbedEventData & { messageId: string; params: Record<string, any>; targetName?: string }));
 
       // Entered event for climbing onto
       events.push(context.event('if.event.entered', {
         targetId: sharedData.targetId,
         method: 'climbing',
         preposition: 'onto'
-      }));
-
-      // Success message
-      events.push(context.event('action.success', {
-        actionId: this.id,
-        messageId: 'climbed_onto',
-        params: { object: sharedData.targetName }
       }));
     }
 

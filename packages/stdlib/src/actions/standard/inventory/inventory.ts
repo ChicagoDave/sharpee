@@ -225,42 +225,41 @@ export const inventoryAction: Action & { metadata: ActionMetadata } = {
       return events;
     }
 
-    // Create the observable action event - NPCs can see this
-    events.push(context.event('if.action.inventory', analysis.eventData));
-
-    // Add the main inventory message
-    events.push(context.event('action.success', {
-      actionId: context.action.id,
-      messageId: analysis.messageId,
-      params: analysis.params
+    // Emit the main inventory event with messageId for text rendering
+    // Include all data for comprehensive event handling
+    events.push(context.event('if.event.inventory', {
+      messageId: `${context.action.id}.${analysis.messageId}`,
+      params: {
+        ...analysis.params,
+        holdingList: analysis.holdingList,
+        wornList: analysis.wornList
+      },
+      ...analysis.eventData
     }));
 
     // Add item lists if not empty
     if (analysis.holdingList) {
-      events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: InventoryMessages.HOLDING_LIST,
-        params: { items: analysis.holdingList }
+      events.push(context.event('if.event.inventory', {
+        messageId: `${context.action.id}.${InventoryMessages.HOLDING_LIST}`,
+        params: { items: analysis.holdingList },
+        isHoldingList: true
       }));
     }
 
     if (analysis.wornList) {
-      events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: InventoryMessages.WORN_LIST,
-        params: { items: analysis.wornList }
+      events.push(context.event('if.event.inventory', {
+        messageId: `${context.action.id}.${InventoryMessages.WORN_LIST}`,
+        params: { items: analysis.wornList },
+        isWornList: true
       }));
     }
 
     // Add burden status if relevant
     if (analysis.burdenMessage) {
-      events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: analysis.burdenMessage,
-        params: {
-          weight: analysis.totalWeight,
-          limit: analysis.weightLimit
-        }
+      events.push(context.event('if.event.inventory', {
+        messageId: `${context.action.id}.${analysis.burdenMessage}`,
+        params: { weight: analysis.totalWeight, limit: analysis.weightLimit },
+        isBurdenMessage: true
       }));
     }
 
@@ -270,10 +269,11 @@ export const inventoryAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     // blocked() is called when validation fails
     // Inventory always succeeds, so this should never be called
-    return [context.event('action.blocked', {
-      actionId: context.action.id,
-      messageId: result.error,
-      params: result.params
+    return [context.event('if.event.inventory', {
+      blocked: true,
+      messageId: `${context.action.id}.${result.error}`,
+      params: result.params || {},
+      reason: result.error
     })];
   },
 
