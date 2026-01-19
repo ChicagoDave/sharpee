@@ -36,7 +36,13 @@ export interface IRoomData {
   
   /** Initial description (shown on first visit) */
   initialDescription?: string;
-  
+
+  /**
+   * Message ID for localized initial description (ADR-107).
+   * If set, takes precedence over literal `initialDescription`.
+   */
+  initialDescriptionId?: string;
+
   /** Ambient sound description */
   ambientSound?: string;
   
@@ -89,6 +95,7 @@ export class RoomTrait implements ITrait, IRoomData {
   isOutdoors: boolean;
   isUnderground: boolean;
   initialDescription?: string;
+  initialDescriptionId?: string;
   ambientSound?: string;
   ambientSmell?: string;
   region?: string;
@@ -117,6 +124,7 @@ export class RoomTrait implements ITrait, IRoomData {
     this.isOutdoors = data.isOutdoors ?? false;
     this.isUnderground = data.isUnderground ?? false;
     this.initialDescription = data.initialDescription;
+    this.initialDescriptionId = data.initialDescriptionId;
     this.ambientSound = data.ambientSound;
     this.ambientSmell = data.ambientSmell;
     this.region = data.region;

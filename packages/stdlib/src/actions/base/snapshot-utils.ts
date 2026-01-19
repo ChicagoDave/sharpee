@@ -15,6 +15,10 @@ export interface EntitySnapshot {
   name: string;
   description?: string;
   shortDescription?: string;
+  /** Message ID for localized name (ADR-107) */
+  nameId?: string;
+  /** Message ID for localized description (ADR-107) */
+  descriptionId?: string;
   location?: string;
   isOpenable?: boolean;
   isOpen?: boolean;
@@ -39,6 +43,10 @@ export interface RoomSnapshot {
   id: string;
   name: string;
   description?: string;
+  /** Message ID for localized name (ADR-107) */
+  nameId?: string;
+  /** Message ID for localized description (ADR-107) */
+  descriptionId?: string;
   isDark?: boolean;
   isVisited?: boolean;
   exits?: Record<string, string>;
@@ -75,6 +83,9 @@ export function captureEntitySnapshot(
     name: identity?.name || entity.id,
     description: identity?.description,
     shortDescription: identity?.shortDescription,
+    // Include message IDs if present (ADR-107 dual-mode)
+    nameId: identity?.nameId,
+    descriptionId: identity?.descriptionId,
     location: world.getLocation(entity.id)
   };
   
@@ -175,7 +186,10 @@ export function captureRoomSnapshot(
   const snapshot: RoomSnapshot = {
     id: room.id,
     name: identity?.name || room.attributes?.name || room.id,
-    description: identity?.description || room.attributes?.description
+    description: identity?.description || room.attributes?.description,
+    // Include message IDs if present (ADR-107 dual-mode)
+    nameId: identity?.nameId,
+    descriptionId: identity?.descriptionId
   };
   
   // Add darkness state (can be on dedicated darkness trait OR on room trait)

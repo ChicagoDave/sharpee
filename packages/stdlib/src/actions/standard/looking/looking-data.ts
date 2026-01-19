@@ -47,6 +47,9 @@ export const buildLookingEventData: ActionDataBuilder<Record<string, unknown>> =
   const roomSnapshot = captureRoomSnapshot(location, context.world, false);
   const visibleSnapshots = captureEntitySnapshots(visible, context.world);
 
+  // Get identity trait for ID fields (ADR-107 dual-mode)
+  const identity = location.get?.('identity') as any;
+
   return {
     actorId: player.id,
     // New atomic structure
@@ -56,6 +59,9 @@ export const buildLookingEventData: ActionDataBuilder<Record<string, unknown>> =
     locationId: location.id,
     locationName: location.name,
     locationDescription: location.description,
+    // ADR-107: Message IDs for localization (take precedence over literals)
+    locationNameId: identity?.nameId,
+    locationDescriptionId: identity?.descriptionId,
     isDark: isDark,
     inVehicle: immediateContainer?.name || null,
     contents: visible.map(entity => ({
@@ -95,6 +101,9 @@ export const buildRoomDescriptionData: ActionDataBuilder<Record<string, unknown>
   const firstVisit = !(context as any).visitedLocations?.includes(location.id);
   const isVerbose = verboseMode || firstVisit;
 
+  // Get identity trait for ID fields (ADR-107 dual-mode)
+  const identity = location.get?.('identity') as any;
+
   return {
     // New atomic structure
     room: roomSnapshot,
@@ -103,6 +112,9 @@ export const buildRoomDescriptionData: ActionDataBuilder<Record<string, unknown>
     roomId: location.id,
     roomName: location.name,
     roomDescription: location.description,
+    // ADR-107: Message IDs for localization (take precedence over literals)
+    roomNameId: identity?.nameId,
+    roomDescriptionId: identity?.descriptionId,
     includeContents: true,
     verbose: isVerbose,
     inVehicle: immediateContainer?.name || null,

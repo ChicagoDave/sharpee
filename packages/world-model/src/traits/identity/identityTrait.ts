@@ -19,7 +19,21 @@ export class IdentityTrait implements ITrait {
   
   /** Full description shown when examining */
   description = '';
-  
+
+  /**
+   * Message ID for localized name (ADR-107).
+   * If set, the language layer resolves this ID to the actual name text.
+   * Takes precedence over literal `name` if both are set.
+   */
+  nameId?: string;
+
+  /**
+   * Message ID for localized description (ADR-107).
+   * If set, the language layer resolves this ID to the actual description text.
+   * Takes precedence over literal `description` if both are set.
+   */
+  descriptionId?: string;
+
   /** Alternative names/aliases the entity can be referred to by */
   aliases: string[] = [];
   
