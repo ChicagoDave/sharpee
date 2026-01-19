@@ -1,77 +1,32 @@
-[12:47:45] EDIT: stories/dungeo/tests/transcripts/multi-object-format.transcript
-[12:48:50] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[12:49:20] WRITE: stories/dungeo/tests/transcripts/multi-object-format.transcript
-[12:50:25] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[12:50:56] WRITE: stories/dungeo/tests/transcripts/multi-object-format.transcript
-[13:05:34] WRITE: docs/context/session-20260118-1214-dungeo.md
-[13:06:14] GIT: git commit -m "$(cat <<'EOF'
-feat: Browser save/restore and compact multi-object
-[13:06:23] GIT: git push
-[13:20:09] EDIT: stories/dungeo/src/traits/troll-capability-behaviors.ts
-[13:20:15] EDIT: stories/dungeo/src/traits/troll-capability-behaviors.ts
-[13:20:43] EDIT: stories/dungeo/src/traits/troll-capability-behaviors.ts
-[13:23:28] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[13:25:49] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[13:26:22] EDIT: stories/dungeo/tests/transcripts/troll-combat.transcript
-[13:27:27] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[13:36:50] TRANSCRIPT FAIL: echo -e "save\nlook\nquit\ny" | timeout 10 node packages/transcript-tester/dist/
-[13:36:57] WRITE: stories/dungeo/tests/transcripts/save-test.transcript
-[13:38:03] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[13:41:54] TRANSCRIPT FAIL: echo -e "save\nquit\ny" | node --enable-source-maps packages/transcript-tester/d
-[13:42:30] WRITE: test-save.js
-[13:45:33] WRITE: docs/context/session-20260118-1307-dungeo.md
-[13:46:44] GIT: git push origin dungeo
-[13:53:26] WRITE: debug-save.js
-[13:55:23] EDIT: packages/text-service/src/stages/filter.ts
-[13:55:29] EDIT: packages/text-service/src/handlers/generic.ts
-[14:02:30] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[14:03:58] TRANSCRIPT FAIL: rm -f debug-save.js test-save.js && node packages/transcript-tester/dist/cli.js 
-[14:04:17] WRITE: docs/context/session-20260118-1347-dungeo.md
-[14:06:57] EDIT: docs/context/session-20260118-1347-dungeo.md
-[14:07:47] GIT: git add docs/context/session-20260118-1347-dungeo.md docs/context/.work-log.txt 
-[14:07:53] GIT: git push origin dungeo
-[14:12:41] EDIT: packages/lang-en-us/src/actions/switching-on.ts
-[14:20:25] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[14:22:58] WRITE: stories/dungeo/tests/transcripts/lamp-article.transcript
-[14:23:33] WRITE: stories/dungeo/tests/transcripts/lamp-article.transcript
-[14:24:13] WRITE: stories/dungeo/tests/transcripts/lamp-article.transcript
-[14:25:16] WRITE: docs/context/session-20260118-1408-dungeo.md
-[15:22:05] EDIT: stories/dungeo/src/regions/underground.ts
-[15:22:13] EDIT: stories/dungeo/src/regions/underground.ts
-[15:36:12] EDIT: stories/dungeo/src/npcs/troll/troll-messages.ts
-[15:36:56] EDIT: stories/dungeo/src/regions/underground.ts
-[15:37:18] EDIT: stories/dungeo/src/regions/underground.ts
-[15:38:02] EDIT: stories/dungeo/src/index.ts
-[15:38:14] EDIT: stories/dungeo/src/index.ts
-[15:38:58] WRITE: stories/dungeo/src/scheduler/sword-glow-daemon.ts
-[15:39:11] EDIT: stories/dungeo/src/scheduler/index.ts
-[15:39:17] EDIT: stories/dungeo/src/scheduler/index.ts
-[15:39:24] EDIT: stories/dungeo/src/scheduler/index.ts
-[15:39:36] EDIT: stories/dungeo/src/index.ts
-[15:39:49] EDIT: stories/dungeo/src/index.ts
-[15:43:09] EDIT: stories/dungeo/src/scheduler/sword-glow-daemon.ts
-[15:43:22] EDIT: stories/dungeo/src/scheduler/sword-glow-daemon.ts
-[15:45:19] WRITE: stories/dungeo/tests/transcripts/troll-combat.transcript
-[15:47:11] WRITE: docs/context/session-20260118-1408-dungeo.md
-[15:47:56] GIT: git commit -m "$(cat <<'EOF'
-feat: Lamp article fix, troll smoke death, sword gl
-[15:48:04] GIT: git push
-[16:56:11] EDIT: stories/dungeo/src/regions/underground.ts
-[16:56:12] EDIT: stories/dungeo/src/regions/underground.ts
-[16:56:13] EDIT: stories/dungeo/src/regions/underground.ts
-[16:59:55] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&1 | tail -40
-[17:01:01] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[17:01:41] EDIT: stories/dungeo/tests/transcripts/troll-combat.transcript
-[17:02:49] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[17:03:20] EDIT: stories/dungeo/tests/transcripts/troll-combat.transcript
-[17:03:34] EDIT: stories/dungeo/tests/transcripts/troll-combat.transcript
-[17:04:39] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[17:05:29] EDIT: stories/dungeo/tests/transcripts/troll-combat.transcript
-[17:06:34] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[17:15:45] EDIT: packages/platforms/browser-en-us/src/browser-platform.ts
-[17:16:12] EDIT: packages/platforms/cli-en-us/src/cli-platform.ts
-[17:16:39] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/browser-en-us' build && pnpm --filter '@sharpee/cli-en-u
-[17:23:18] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[17:26:47] EDIT: docs/work/issues/issues-list.md
-[17:27:11] EDIT: docs/work/issues/issues-list.md
-[17:28:36] WRITE: docs/context/session-20260118-1727-dungeo.md
+[21:00:58] WRITE: stories/dungeo/tests/transcripts/sword-glow-debug.transcript
+[21:02:11] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[21:02:27] EDIT: stories/dungeo/tests/transcripts/sword-glow-debug.transcript
+[21:03:31] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[21:03:47] EDIT: stories/dungeo/tests/transcripts/sword-glow-debug.transcript
+[21:04:51] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[21:06:37] TRANSCRIPT FAIL: echo -e "look\nopen mailbox\nread leaflet\nsouth\neast\nopen window\nin\nlook\nt
+[21:07:45] EDIT: stories/dungeo/src/scheduler/sword-glow-daemon.ts
+[21:07:53] EDIT: stories/dungeo/src/scheduler/sword-glow-daemon.ts
+[21:08:02] EDIT: stories/dungeo/src/scheduler/sword-glow-daemon.ts
+[21:10:29] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[21:11:03] EDIT: stories/dungeo/tests/transcripts/sword-glow-debug.transcript
+[21:12:08] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[21:12:33] EDIT: stories/dungeo/tests/transcripts/sword-glow-debug.transcript
+[21:13:39] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[21:14:12] EDIT: stories/dungeo/src/scheduler/sword-glow-daemon.ts
+[21:14:21] EDIT: stories/dungeo/src/scheduler/sword-glow-daemon.ts
+[21:14:30] EDIT: stories/dungeo/src/scheduler/sword-glow-daemon.ts
+[21:14:43] EDIT: stories/dungeo/tests/transcripts/sword-glow-debug.transcript
+[21:14:51] EDIT: stories/dungeo/tests/transcripts/sword-glow-debug.transcript
+[21:17:14] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[21:19:46] EDIT: docs/context/session-20260118-2011-dungeo.md
+[21:25:36] EDIT: packages/lang-en-us/src/actions/looking.ts
+[21:31:22] WRITE: stories/dungeo/tests/transcripts/double-look-fix.transcript
+[21:32:28] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[21:33:06] WRITE: stories/dungeo/tests/transcripts/troll-room-look.transcript
+[21:34:12] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[21:34:57] EDIT: docs/context/session-20260118-2011-dungeo.md
+[21:35:05] EDIT: docs/context/session-20260118-2011-dungeo.md
+[21:35:11] EDIT: docs/context/session-20260118-2011-dungeo.md
+[21:41:53] WRITE: docs/work/platform/room-contents-fix.md
+[21:42:02] EDIT: docs/context/session-20260118-2011-dungeo.md

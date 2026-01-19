@@ -11,9 +11,11 @@ import { SequencedEvent } from './types';
 
 /**
  * Event normalization - ensures consistent event structure
+ * Preserves all original properties (including requiresClientAction for platform events)
  */
 export function normalizeEvent(event: ISemanticEvent): ISemanticEvent {
   const normalized: ISemanticEvent = {
+    ...(event as any),  // Preserve all original properties (e.g., requiresClientAction)
     id: event.id || generateEventId(),
     type: event.type.toLowerCase(),
     timestamp: event.timestamp || Date.now(),
@@ -138,13 +140,15 @@ function determineScope(event: ISemanticEvent): 'turn' | 'global' | 'system' {
 
 /**
  * Convert a SequencedEvent back to a SemanticEvent
+ * Preserves all original properties (including requiresClientAction for platform events)
  */
 export function toSemanticEvent(event: SequencedEvent): ISemanticEvent {
   return {
+    ...(event as any),  // Preserve all original properties (e.g., requiresClientAction, payload)
     id: event.source || `${event.turn}-${event.sequence}`,
     type: event.type,
     timestamp: event.timestamp.getTime(),
     data: event.data,
-    entities: {}
+    entities: (event as any).entities || {}
   };
 }

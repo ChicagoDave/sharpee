@@ -276,3 +276,220 @@ body {
 #command-input:focus {
   caret-color: var(--dos-bright-white);
 }
+
+/* ============================================
+   Save/Restore Modal Dialogs
+   ============================================ */
+
+.modal-hidden {
+  display: none !important;
+}
+
+#modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-dialog {
+  background: var(--dos-blue);
+  border: 2px solid var(--dos-cyan);
+  min-width: 300px;
+  max-width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-title {
+  background: var(--dos-cyan);
+  color: var(--dos-black);
+  padding: 4px 8px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.modal-content {
+  padding: 12px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.save-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.save-input-row label {
+  white-space: nowrap;
+}
+
+#save-name-input {
+  flex: 1;
+  background: var(--dos-black);
+  border: 1px solid var(--dos-cyan);
+  color: var(--dos-bright-white);
+  font-family: inherit;
+  font-size: inherit;
+  padding: 4px 6px;
+  outline: none;
+}
+
+#save-name-input:focus {
+  border-color: var(--dos-bright-white);
+}
+
+.saves-list-label {
+  color: var(--dos-white);
+  margin-bottom: 8px;
+  font-size: 0.9em;
+}
+
+.saves-list {
+  background: var(--dos-black);
+  border: 1px solid var(--dos-cyan);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.save-slot {
+  padding: 6px 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid #333;
+}
+
+.save-slot:last-child {
+  border-bottom: none;
+}
+
+.save-slot:hover {
+  background: var(--dos-blue);
+}
+
+.save-slot.selected {
+  background: var(--dos-cyan);
+  color: var(--dos-black);
+}
+
+.save-slot-name {
+  font-weight: bold;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.save-slot-info {
+  color: var(--dos-white);
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+.save-slot.selected .save-slot-info {
+  color: var(--dos-black);
+}
+
+.no-saves-message {
+  color: var(--dos-white);
+  font-style: italic;
+  padding: 12px;
+  text-align: center;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 12px;
+  border-top: 1px solid var(--dos-cyan);
+}
+
+.modal-btn {
+  background: var(--dos-black);
+  border: 1px solid var(--dos-cyan);
+  color: var(--dos-bright-white);
+  font-family: inherit;
+  font-size: inherit;
+  padding: 6px 20px;
+  cursor: pointer;
+  min-width: 80px;
+}
+
+.modal-btn:hover {
+  background: var(--dos-blue);
+  border-color: var(--dos-bright-white);
+}
+
+.modal-btn:focus {
+  outline: 1px solid var(--dos-bright-white);
+  outline-offset: 2px;
+}
+
+.modal-btn:disabled {
+  color: var(--dos-white);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Startup dialog */
+.startup-info {
+  color: var(--dos-cyan);
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.startup-question {
+  color: var(--dos-bright-white);
+  margin: 0;
+}
+
+/* Modal scrollbar styling */
+.saves-list::-webkit-scrollbar,
+.modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.saves-list::-webkit-scrollbar-track,
+.modal-content::-webkit-scrollbar-track {
+  background: var(--dos-black);
+}
+
+.saves-list::-webkit-scrollbar-thumb,
+.modal-content::-webkit-scrollbar-thumb {
+  background: var(--dos-cyan);
+}
+
+/* Mobile modal adjustments */
+@media (max-width: 600px) {
+  .modal-dialog {
+    min-width: 280px;
+    margin: 12px;
+  }
+
+  .save-input-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .modal-buttons {
+    gap: 12px;
+  }
+
+  .modal-btn {
+    flex: 1;
+    padding: 10px 16px;
+  }
+}
