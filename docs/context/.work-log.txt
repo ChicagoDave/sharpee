@@ -1,54 +1,3 @@
-[21:00:58] WRITE: stories/dungeo/tests/transcripts/sword-glow-debug.transcript
-[21:02:11] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[21:02:27] EDIT: stories/dungeo/tests/transcripts/sword-glow-debug.transcript
-[21:03:31] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[21:03:47] EDIT: stories/dungeo/tests/transcripts/sword-glow-debug.transcript
-[21:04:51] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[21:06:37] TRANSCRIPT FAIL: echo -e "look\nopen mailbox\nread leaflet\nsouth\neast\nopen window\nin\nlook\nt
-[21:07:45] EDIT: stories/dungeo/src/scheduler/sword-glow-daemon.ts
-[21:07:53] EDIT: stories/dungeo/src/scheduler/sword-glow-daemon.ts
-[21:08:02] EDIT: stories/dungeo/src/scheduler/sword-glow-daemon.ts
-[21:10:29] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[21:11:03] EDIT: stories/dungeo/tests/transcripts/sword-glow-debug.transcript
-[21:12:08] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[21:12:33] EDIT: stories/dungeo/tests/transcripts/sword-glow-debug.transcript
-[21:13:39] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[21:14:12] EDIT: stories/dungeo/src/scheduler/sword-glow-daemon.ts
-[21:14:21] EDIT: stories/dungeo/src/scheduler/sword-glow-daemon.ts
-[21:14:30] EDIT: stories/dungeo/src/scheduler/sword-glow-daemon.ts
-[21:14:43] EDIT: stories/dungeo/tests/transcripts/sword-glow-debug.transcript
-[21:14:51] EDIT: stories/dungeo/tests/transcripts/sword-glow-debug.transcript
-[21:17:14] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[21:19:46] EDIT: docs/context/session-20260118-2011-dungeo.md
-[21:25:36] EDIT: packages/lang-en-us/src/actions/looking.ts
-[21:31:22] WRITE: stories/dungeo/tests/transcripts/double-look-fix.transcript
-[21:32:28] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[21:33:06] WRITE: stories/dungeo/tests/transcripts/troll-room-look.transcript
-[21:34:12] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[21:34:57] EDIT: docs/context/session-20260118-2011-dungeo.md
-[21:35:05] EDIT: docs/context/session-20260118-2011-dungeo.md
-[21:35:11] EDIT: docs/context/session-20260118-2011-dungeo.md
-[21:41:53] WRITE: docs/work/platform/room-contents-fix.md
-[21:42:02] EDIT: docs/context/session-20260118-2011-dungeo.md
-[21:43:00] GIT: git commit -m "$(cat <<'EOF'
-fix: Double LOOK bug and browser save/restore impro
-[21:43:09] GIT: git push
-[21:52:55] WRITE: /home/dave/.claude/plans/greedy-cuddling-orbit.md
-[21:55:54] EDIT: /home/dave/.claude/plans/greedy-cuddling-orbit.md
-[21:56:00] EDIT: /home/dave/.claude/plans/greedy-cuddling-orbit.md
-[21:56:23] EDIT: packages/text-service/src/text-service.ts
-[21:56:43] EDIT: packages/stdlib/src/actions/standard/going/going.ts
-[21:56:55] EDIT: packages/lang-en-us/src/actions/looking.ts
-[21:57:09] EDIT: packages/lang-en-us/src/actions/going.ts
-[22:27:40] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo /tmp/test-room-desc.t
-[22:29:24] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo /tmp/test-room-desc.t
-[22:33:18] EDIT: stories/dungeo/src/browser-entry.ts
-[22:33:29] EDIT: stories/dungeo/src/browser-entry.ts
-[22:33:39] EDIT: stories/dungeo/src/browser-entry.ts
-[22:33:50] EDIT: stories/dungeo/src/browser-entry.ts
-[22:34:06] EDIT: stories/dungeo/src/browser-entry.ts
-[22:34:16] EDIT: stories/dungeo/src/browser-entry.ts
-[22:34:49] EDIT: stories/dungeo/src/browser-entry.ts
 [22:35:01] EDIT: stories/dungeo/src/browser-entry.ts
 [22:58:57] WRITE: docs/context/session-20260118-2257-dungeo.md
 [23:05:57] WRITE: scripts/build-platform.sh
@@ -83,3 +32,29 @@ fix: Double LOOK bug and browser save/restore impro
 [00:39:27] EDIT: docs/work/issues/issues-list.md
 [01:05:18] WRITE: docs/work/platform/event-management.md
 [01:10:04] WRITE: docs/context/session-20260119-0108-dungeo.md
+[01:15:50] GIT: git add -A && git commit -m "$(cat <<'EOF'
+docs: Event management architecture a
+[01:15:58] GIT: git push
+[01:23:04] EDIT: packages/text-service/src/text-service.ts
+[01:23:11] EDIT: packages/text-service/src/text-service.ts
+[01:23:23] EDIT: packages/text-service/src/text-service.ts
+[01:24:18] EDIT: packages/stdlib/src/actions/standard/taking/taking.ts
+[01:24:27] EDIT: packages/stdlib/src/actions/standard/taking/taking.ts
+[01:24:36] EDIT: packages/stdlib/src/actions/standard/taking/taking.ts
+[01:32:24] TRANSCRIPT FAIL: echo -e "look\ntake lantern\ni\ntake trophy case\nquit" | node packages/transcri
+[01:34:08] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[01:45:57] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/stdlib' test -- --run 2>&1 | tail -50
+[01:48:12] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/stdlib' test -- taking-golden --run 2>&1 | tail -100
+[01:55:38] EDIT: docs/work/platform/event-management.md
+[01:56:21] GIT: git commit -m "$(cat <<'EOF'
+feat: Simplified event pattern for text rendering (
+[02:01:07] WRITE: docs/work/platform/domain-events-migration-plan.md
+[02:01:22] GIT: git add docs/work/platform/domain-events-migration-plan.md && git commit -m "$(c
+[02:11:41] EDIT: docs/work/platform/domain-events-migration-plan.md
+[02:11:51] EDIT: docs/work/platform/domain-events-migration-plan.md
+[02:12:17] EDIT: docs/work/platform/domain-events-migration-plan.md
+[02:12:32] EDIT: docs/work/platform/domain-events-migration-plan.md
+[02:12:42] EDIT: docs/work/platform/domain-events-migration-plan.md
+[02:12:53] EDIT: docs/work/platform/domain-events-migration-plan.md
+[02:13:11] GIT: git add docs/work/platform/domain-events-migration-plan.md && git commit -m "$(c
+[02:19:26] WRITE: docs/context/session-20260119-0218-feature-event-simplification.md
