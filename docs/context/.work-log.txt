@@ -1,54 +1,3 @@
-[09:37:25] EDIT: packages/stdlib/src/actions/standard/touching/touching.ts
-[09:37:26] EDIT: packages/stdlib/src/actions/standard/touching/touching.ts
-[09:37:27] EDIT: packages/stdlib/src/actions/standard/waiting/waiting.ts
-[09:39:23] WRITE: docs/architecture/review/package-dependency-graph.md
-[09:42:46] WRITE: docs/context/session-20260119-0941-feature-event-simplification.md
-[09:43:41] GIT: git add -A && git commit -m "$(cat <<'EOF'
-feat: Complete params pattern consist
-[09:43:51] GIT: git push
-[09:57:06] WRITE: docs/architecture/adrs/adr-107-dual-mode-authored-content.md
-[10:10:35] EDIT: docs/architecture/adrs/adr-107-dual-mode-authored-content.md
-[10:23:56] WRITE: stories/armoured/package.json
-[10:23:57] WRITE: stories/armoured/tsconfig.json
-[10:24:28] WRITE: stories/armoured/src/traits/armor-trait.ts
-[10:24:28] WRITE: stories/armoured/src/traits/weapon-trait.ts
-[10:24:29] WRITE: stories/armoured/src/traits/value-trait.ts
-[10:24:30] WRITE: stories/armoured/src/traits/combatant-trait.ts
-[10:24:30] WRITE: stories/armoured/src/traits/index.ts
-[10:25:05] WRITE: stories/armoured/src/data/armor-data.ts
-[10:25:06] WRITE: stories/armoured/src/data/weapon-data.ts
-[10:25:07] WRITE: stories/armoured/src/data/index.ts
-[10:25:33] WRITE: stories/armoured/src/regions/guild-hall.ts
-[10:25:33] WRITE: stories/armoured/src/regions/index.ts
-[10:26:09] WRITE: stories/armoured/src/factories/equipment-factory.ts
-[10:26:10] WRITE: stories/armoured/src/factories/scenery-factory.ts
-[10:26:11] WRITE: stories/armoured/src/factories/index.ts
-[10:26:38] WRITE: stories/armoured/src/index.ts
-[10:27:00] WRITE: stories/armoured/src/combat/combat-utils.ts
-[10:27:02] WRITE: stories/armoured/src/combat/index.ts
-[10:27:33] WRITE: stories/armoured/README.md
-[10:28:11] EDIT: stories/dungeo/tests/transcripts/mailbox.transcript
-[10:28:17] EDIT: stories/dungeo/tests/transcripts/mailbox.transcript
-[10:28:22] EDIT: stories/dungeo/tests/transcripts/mailbox.transcript
-[10:28:27] EDIT: stories/dungeo/tests/transcripts/mailbox.transcript
-[10:28:44] EDIT: stories/dungeo/tests/transcripts/navigation.transcript
-[10:28:45] EDIT: stories/dungeo/tests/transcripts/navigation.transcript
-[10:28:46] EDIT: stories/dungeo/tests/transcripts/house-interior.transcript
-[10:28:47] EDIT: stories/dungeo/tests/transcripts/house-interior.transcript
-[10:29:03] EDIT: stories/dungeo/tests/transcripts/rug-trapdoor.transcript
-[10:30:52] WRITE: stories/armoured/src/browser-entry.ts
-[10:30:55] EDIT: stories/dungeo/tests/transcripts/maze-navigation.transcript
-[10:31:20] WRITE: scripts/build-armoured.sh
-[10:31:54] EDIT: stories/dungeo/tests/transcripts/implicit-inference.transcript
-[10:32:00] EDIT: stories/dungeo/tests/transcripts/implicit-inference.transcript
-[10:33:03] EDIT: stories/dungeo/tests/transcripts/troll-blocking.transcript
-[10:33:10] EDIT: stories/dungeo/tests/transcripts/troll-blocking.transcript
-[10:33:37] EDIT: stories/dungeo/tests/transcripts/cyclops-magic-word.transcript
-[10:39:55] EDIT: stories/armoured/src/index.ts
-[10:40:07] EDIT: stories/armoured/src/index.ts
-[10:40:58] TEST/BUILD FAIL (exit -1): pnpm --filter "@sharpee/story-armoured" build
-[10:44:12] WRITE: dist/web/armoured/index.html
-[10:44:14] WRITE: dist/web/armoured/styles.css
 [12:22:40] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&1 | grep -E 
 [12:24:19] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&1 | grep -B5
 [12:25:28] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
@@ -93,3 +42,37 @@ feat: Complete params pattern consist
 [01:47:27] EDIT: stories/dungeo/src/browser-entry.ts
 [01:47:36] EDIT: stories/dungeo/src/browser-entry.ts
 [02:08:21] WRITE: docs/context/session-20260120-0014-dungeo.md
+[02:09:33] GIT: git commit -m "$(cat <<'EOF'
+feat: Browser save/restore improvements with compre
+[02:09:43] GIT: git push origin dungeo
+[02:23:17] WRITE: stories/dungeo/src/actions/diagnose/types.ts
+[02:23:37] WRITE: stories/dungeo/src/actions/diagnose/diagnose-action.ts
+[02:23:42] WRITE: stories/dungeo/src/actions/diagnose/index.ts
+[02:23:53] WRITE: stories/dungeo/src/actions/room-info/types.ts
+[02:24:42] WRITE: stories/dungeo/src/actions/room-info/room-action.ts
+[02:24:49] WRITE: stories/dungeo/src/actions/room-info/rname-action.ts
+[02:25:05] WRITE: stories/dungeo/src/actions/room-info/objects-action.ts
+[02:25:11] WRITE: stories/dungeo/src/actions/room-info/index.ts
+[02:25:34] EDIT: stories/dungeo/src/actions/index.ts
+[02:25:40] EDIT: stories/dungeo/src/actions/index.ts
+[02:25:47] EDIT: stories/dungeo/src/actions/index.ts
+[02:25:52] EDIT: stories/dungeo/src/actions/index.ts
+[02:26:38] EDIT: stories/dungeo/src/index.ts
+[02:26:47] EDIT: stories/dungeo/src/index.ts
+[02:27:34] EDIT: stories/dungeo/src/index.ts
+[02:27:58] EDIT: stories/dungeo/src/browser-entry.ts
+[02:28:26] EDIT: stories/dungeo/src/browser-entry.ts
+[02:28:47] EDIT: stories/dungeo/src/browser-entry.ts
+[02:30:19] EDIT: stories/dungeo/src/browser-entry.ts
+[02:33:44] EDIT: stories/dungeo/src/actions/diagnose/diagnose-action.ts
+[02:34:11] EDIT: stories/dungeo/src/actions/room-info/objects-action.ts
+[02:34:26] EDIT: stories/dungeo/src/actions/room-info/objects-action.ts
+[02:34:43] EDIT: stories/dungeo/src/actions/room-info/room-action.ts
+[02:36:22] WRITE: stories/dungeo/tests/transcripts/help-commands.transcript
+[02:41:11] TRANSCRIPT FAIL: ./scripts/build-platform.sh --skip transcript-tester 2>&1 | tail -20
+[02:42:01] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[02:46:25] WRITE: docs/context/session-20260120-0213-dungeo.md
+[02:48:23] GIT: git commit -m "$(cat <<'EOF'
+feat: Add HELP, DIAGNOSE, ROOM, RNAME, OBJECTS comm
+[02:48:37] GIT: git push
+[02:56:23] WRITE: docs/work/platform/again-implementation.md

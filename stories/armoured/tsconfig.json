@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true
+  },
+  "include": ["src/**/*"],
+  "references": [
+    { "path": "../../packages/core" },
+    { "path": "../../packages/if-domain" },
+    { "path": "../../packages/world-model" },
+    { "path": "../../packages/stdlib" },
+    { "path": "../../packages/engine" },
+    { "path": "../../packages/parser-en-us" },
+    { "path": "../../packages/lang-en-us" }
+  ]
+}
