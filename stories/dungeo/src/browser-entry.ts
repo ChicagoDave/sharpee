@@ -1007,6 +1007,26 @@ function initializeGame(): void {
     if (event.type === 'if.action.about') {
       displayText(getTitleInfo());
     }
+
+    // Handle HELP command (1981 Fortran-style help)
+    if (event.type === 'if.event.help_displayed') {
+      displayText(getHelpText());
+    }
+
+    // Handle DIAGNOSE command
+    if (event.type === 'dungeo.event.diagnose') {
+      displayText(formatDiagnose(event.data));
+    }
+
+    // Handle RNAME command (room name only)
+    if (event.type === 'dungeo.event.rname') {
+      displayText(event.data?.roomName || 'Unknown');
+    }
+
+    // Handle OBJECTS command
+    if (event.type === 'dungeo.event.objects') {
+      displayText(formatObjects(event.data));
+    }
   });
 
   // Set the story and register save/restore hooks
@@ -1223,6 +1243,103 @@ function getTitleInfo(): string {
     `Sharpee v${SHARPEE_VERSION} | Game v${STORY_VERSION}`,
     `Built: ${BUILD_DATE}`,
   ].join('\n');
+}
+
+/**
+ * Get the HELP text (1981 Fortran-style, updated for browser)
+ */
+function getHelpText(): string {
+  return `Commands to DUNGEO are simple sentences: <verb>, <verb> <object>,
+and <verb> <object> <indirect object> are examples.
+
+Some useful commands are:
+
+<direction>     Walk in that direction. Common directions
+                are N, S, E, W, NE, NW, SE, SW, U(p), and D(own).
+AGAIN (G)       Repeat the last command.
+LOOK (L)        Describe the surroundings.
+ROOM            Print the verbose room description without objects.
+RNAME           Print the short room name.
+OBJECTS         Print the objects in the room.
+INVENTORY (I)   Describe your possessions.
+DIAGNOSE        Describe your state of health.
+WAIT (Z)        Causes "time" to pass.
+SCORE           Print your score and number of moves.
+SAVE            Save the game to a named slot.
+RESTORE         Restore a saved game.
+RESTART         Start the game over.
+QUIT (Q)        Leave the game.`;
+}
+
+/**
+ * Format DIAGNOSE output (1981 MDL-style)
+ */
+function formatDiagnose(data: any): string {
+  const lines: string[] = [];
+
+  // Health status
+  if (data.woundLevel === 0) {
+    lines.push('You are in perfect health.');
+  } else {
+    let woundText = '';
+    switch (data.woundLevel) {
+      case 1: woundText = 'You have a light wound,'; break;
+      case 2: woundText = 'You have a serious wound,'; break;
+      case 3: woundText = 'You have several wounds,'; break;
+      default: woundText = 'You have serious wounds,'; break;
+    }
+    if (data.turnsToHeal) {
+      woundText += ` which will be cured after ${data.turnsToHeal} moves.`;
+    }
+    lines.push(woundText);
+  }
+
+  // Strength/resilience status
+  switch (data.strengthLevel) {
+    case 0: lines.push("You are at death's door."); break;
+    case 1: lines.push('You can be killed by one more light wound.'); break;
+    case 2: lines.push('You can be killed by a serious wound.'); break;
+    case 3: lines.push('You can survive one serious wound.'); break;
+    default: lines.push('You are strong enough to take several wounds.'); break;
+  }
+
+  // Death count
+  if (data.deaths === 1) {
+    lines.push('You have been killed once.');
+  } else if (data.deaths === 2) {
+    lines.push('You have been killed twice.');
+  } else if (data.deaths > 2) {
+    lines.push(`You have been killed ${data.deaths} times.`);
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Format OBJECTS output
+ */
+function formatObjects(data: any): string {
+  if (!data.hasItems || !data.items || data.items.length === 0) {
+    return 'There is nothing here.';
+  }
+
+  const lines: string[] = [];
+
+  // List items directly in room
+  for (const item of data.items) {
+    lines.push(`There is a ${item.name} here.`);
+  }
+
+  // List contents of open containers
+  if (data.containerContents) {
+    for (const container of data.containerContents) {
+      const itemNames = container.items.map((i: any) => i.name).join(', ');
+      const prep = container.preposition === 'in' ? 'In' : 'On';
+      lines.push(`${prep} the ${container.containerName}: ${itemNames}`);
+    }
+  }
+
+  return lines.join('\n');
 }
 
 /**

@@ -136,6 +136,12 @@ export * from './commanding';
 // Talk to Troll (minor MDL edge case)
 export * from './talk-to-troll';
 
+// Diagnose (health status)
+export * from './diagnose';
+
+// Room Info (ROOM, RNAME, OBJECTS)
+export * from './room-info';
+
 // Re-export balloon action IDs and messages
 export { LIGHT_ACTION_ID, LightMessages } from './light';
 export { TIE_ACTION_ID, TieMessages } from './tie';
@@ -187,6 +193,8 @@ import { fallsDeathAction, FALLS_DEATH_ACTION_ID, FallsDeathMessages } from './f
 import { commandingAction, COMMANDING_ACTION_ID, CommandingMessages } from './commanding';
 import { launchAction, LAUNCH_ACTION_ID, LaunchMessages } from './launch';
 import { talkToTrollAction, TALK_TO_TROLL_ACTION_ID, TalkToTrollMessages } from './talk-to-troll';
+import { diagnoseAction, DIAGNOSE_ACTION_ID, DiagnoseMessages } from './diagnose';
+import { roomInfoActions, ROOM_ACTION_ID, RNAME_ACTION_ID, OBJECTS_ACTION_ID, RoomInfoMessages } from './room-info';
 
 // Re-export press-button, turn-bolt, and turn-switch
 export { PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler } from './press-button';
@@ -224,6 +232,12 @@ export { COMMANDING_ACTION_ID, CommandingMessages } from './commanding';
 
 // Re-export talk-to-troll action for use in index.ts
 export { TALK_TO_TROLL_ACTION_ID, TalkToTrollMessages } from './talk-to-troll';
+
+// Re-export diagnose action for use in index.ts
+export { DIAGNOSE_ACTION_ID, DiagnoseMessages } from './diagnose';
+
+// Re-export room-info actions for use in index.ts
+export { ROOM_ACTION_ID, RNAME_ACTION_ID, OBJECTS_ACTION_ID, RoomInfoMessages } from './room-info';
 
 export const customActions = [
   ...gdtActions,
@@ -270,5 +284,7 @@ export const customActions = [
   fallsDeathAction,
   commandingAction,
   launchAction,
-  talkToTrollAction
+  talkToTrollAction,
+  diagnoseAction,
+  ...roomInfoActions
 ];
