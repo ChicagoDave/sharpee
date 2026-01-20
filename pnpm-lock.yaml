@@ -262,7 +262,7 @@ importers:
         version: 5.4.21(@types/node@20.19.27)(terser@5.44.1)
       vitest:
         specifier: ^1.0.0
-        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(terser@5.44.1)
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(terser@5.44.1)
 
   packages/platforms/test:
     dependencies:
@@ -293,7 +293,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.0.0
-        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(terser@5.44.1)
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(terser@5.44.1)
 
   packages/sharpee:
     dependencies:
@@ -477,7 +477,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.3.0
-        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(terser@5.44.1)
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(terser@5.44.1)
 
   packages/world-model:
     dependencies:
@@ -508,6 +508,37 @@ importers:
         version: 5.0.10
       typescript:
         specifier: ^5.2.2
+        version: 5.9.3
+
+  stories/armoured:
+    dependencies:
+      '@sharpee/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@sharpee/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
+      '@sharpee/if-domain':
+        specifier: workspace:*
+        version: link:../../packages/if-domain
+      '@sharpee/lang-en-us':
+        specifier: workspace:*
+        version: link:../../packages/lang-en-us
+      '@sharpee/parser-en-us':
+        specifier: workspace:*
+        version: link:../../packages/parser-en-us
+      '@sharpee/stdlib':
+        specifier: workspace:*
+        version: link:../../packages/stdlib
+      '@sharpee/world-model':
+        specifier: workspace:*
+        version: link:../../packages/world-model
+    devDependencies:
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      typescript:
+        specifier: ^5.3.3
         version: 5.9.3
 
   stories/cloak-of-darkness:
@@ -573,7 +604,13 @@ importers:
       '@sharpee/world-model':
         specifier: workspace:*
         version: link:../../packages/world-model
+      lz-string:
+        specifier: ^1.5.0
+        version: 1.5.0
     devDependencies:
+      '@types/lz-string':
+        specifier: ^1.5.0
+        version: 1.5.0
       '@types/node':
         specifier: ^20.11.19
         version: 20.19.27
@@ -585,7 +622,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.3.0
-        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(terser@5.44.1)
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(terser@5.44.1)
 
   stories/reflections:
     dependencies:
@@ -625,7 +662,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.0.0
-        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(terser@5.44.1)
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(terser@5.44.1)
 
   stories/secretletter2025:
     dependencies:
@@ -1441,6 +1478,10 @@ packages:
 
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
+
+  '@types/lz-string@1.5.0':
+    resolution: {integrity: sha512-s84fKOrzqqNCAPljhVyC5TjAo6BH4jKHw9NRNFNiRUY5QSgZCmVm5XILlWbisiKl+0OcS7eWihmKGS5akc2iQw==}
+    deprecated: This is a stub types definition. lz-string provides its own type definitions, so you do not need this installed.
 
   '@types/minimatch@3.0.5':
     resolution: {integrity: sha512-Klz949h02Gz2uZCMGwDUSDS1YBlTdDDgbWHi+81l29tQALUtvz4rAYi5uoVhE5Lagoq6DeqAUlbrHvW/mXDgdQ==}
@@ -2833,6 +2874,10 @@ packages:
   lru-cache@6.0.0:
     resolution: {integrity: sha512-Jo6dJ04CmSjuznwJSS3pUeWmd/H0ffTlkXXgwZi+eq1UCmqQwCh+eLsYOYCwY991i2Fah4h1BEMCx4qThGbsiA==}
     engines: {node: '>=10'}
+
+  lz-string@1.5.0:
+    resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
+    hasBin: true
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
@@ -4871,6 +4916,10 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
+  '@types/lz-string@1.5.0':
+    dependencies:
+      lz-string: 1.5.0
+
   '@types/minimatch@3.0.5': {}
 
   '@types/minimist@1.2.5': {}
@@ -6505,6 +6554,8 @@ snapshots:
     dependencies:
       yallist: 4.0.0
 
+  lz-string@1.5.0: {}
+
   magic-string@0.30.21:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
@@ -7714,7 +7765,7 @@ snapshots:
       - supports-color
       - terser
 
-  vitest@1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(terser@5.44.1):
+  vitest@1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(terser@5.44.1):
     dependencies:
       '@vitest/expect': 1.6.1
       '@vitest/runner': 1.6.1

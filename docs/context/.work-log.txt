@@ -62,3 +62,34 @@ feat: Complete params pattern consist
 [12:32:32] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
 [12:34:49] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&1 | tail -20
 [14:40:12] WRITE: docs/context/session-20260119-0945-feature-event-simplification.md
+[23:42:48] GIT: git stash && git checkout main && git merge dungeo -m "Merge dungeo: ADR-107 dua
+[23:42:56] GIT: git push origin main
+[00:07:16] EDIT: packages/stdlib/src/actions/standard/restoring/restoring.ts
+[00:07:24] EDIT: packages/stdlib/src/actions/standard/restoring/restoring.ts
+[00:11:42] GIT: git add packages/stdlib/src/actions/standard/restoring/restoring.ts && git commi
+[00:11:53] GIT: git push origin dungeo
+[00:13:43] EDIT: docs/context/session-20260119-1446-dungeo.md
+[00:13:45] EDIT: docs/context/session-20260119-1446-dungeo.md
+[00:13:46] EDIT: docs/context/session-20260119-1446-dungeo.md
+[00:13:48] EDIT: docs/context/session-20260119-1446-dungeo.md
+[00:13:49] EDIT: docs/context/session-20260119-1446-dungeo.md
+[00:13:51] EDIT: docs/context/session-20260119-1446-dungeo.md
+[00:53:04] EDIT: stories/dungeo/src/browser-entry.ts
+[00:53:17] EDIT: stories/dungeo/src/browser-entry.ts
+[01:01:17] EDIT: stories/dungeo/src/browser-entry.ts
+[01:01:24] EDIT: stories/dungeo/src/browser-entry.ts
+[01:06:47] EDIT: stories/dungeo/src/browser-entry.ts
+[01:11:08] EDIT: packages/text-service/src/cli-renderer.ts
+[01:22:16] EDIT: stories/dungeo/src/browser-entry.ts
+[01:22:29] EDIT: stories/dungeo/src/browser-entry.ts
+[01:24:29] EDIT: stories/dungeo/src/browser-entry.ts
+[01:24:51] EDIT: stories/dungeo/src/browser-entry.ts
+[01:27:22] EDIT: templates/browser/infocom.css
+[01:27:30] EDIT: templates/browser/infocom.css
+[01:36:21] EDIT: stories/dungeo/src/browser-entry.ts
+[01:36:41] EDIT: stories/dungeo/src/browser-entry.ts
+[01:41:42] EDIT: stories/dungeo/src/browser-entry.ts
+[01:41:50] EDIT: stories/dungeo/src/browser-entry.ts
+[01:47:27] EDIT: stories/dungeo/src/browser-entry.ts
+[01:47:36] EDIT: stories/dungeo/src/browser-entry.ts
+[02:08:21] WRITE: docs/context/session-20260120-0014-dungeo.md

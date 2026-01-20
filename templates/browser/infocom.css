@@ -379,8 +379,8 @@ body {
 }
 
 .save-slot.selected {
-  background: var(--dos-cyan);
-  color: var(--dos-black);
+  background: var(--dos-bright-white);
+  color: var(--dos-blue);
 }
 
 .save-slot-name {
@@ -398,7 +398,7 @@ body {
 }
 
 .save-slot.selected .save-slot-info {
-  color: var(--dos-black);
+  color: var(--dos-blue);
 }
 
 .no-saves-message {

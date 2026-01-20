@@ -11,13 +11,15 @@ import { Parser } from '@sharpee/parser-en-us';
 import { LanguageProvider } from '@sharpee/lang-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
 import { ISaveRestoreHooks, ISaveData } from '@sharpee/core';
+import { compressToUTF16, decompressFromUTF16 } from 'lz-string';
 import { story } from './index';
 import { STORY_VERSION, ENGINE_VERSION, BUILD_DATE } from './version';
 
 // Game metadata for title display
 const GAME_TITLE = 'DUNGEO';
 const GAME_DESCRIPTION = 'A port of Mainframe Zork (1981)';
-const GAME_AUTHORS = 'Dave Cornelson';
+const GAME_AUTHORS = 'Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling';
+const PORTED_BY = 'David Cornelson';
 const SHARPEE_VERSION = ENGINE_VERSION;
 
 // localStorage keys for save/restore
@@ -70,7 +72,6 @@ let historyIndex = -1;
 let currentTurn = 0;
 let currentScore = 0;
 let turnOffset = 0;  // Offset to add to engine turn after restore
-let transcript: string[] = [];  // All output text for save/restore
 
 // Audio context for PC speaker beep
 let audioContext: AudioContext | null = null;
@@ -267,15 +268,16 @@ function showRestoreDialog(): Promise<string | null> {
     isDialogOpen = true;
     selectedSaveSlot = null;
 
-    const saves = getSaveIndex();
-    console.log('[restore-dialog] Available saves:', saves);
+    // Get user saves (excluding autosave)
+    const userSaves = getSaveIndex().filter(s => s.name !== AUTOSAVE_SLOT);
+    console.log('[restore-dialog] Available saves:', userSaves);
 
     // Populate restore slots list
     populateSaveSlotsList(restoreSlotsListEl, false);
 
     // Show/hide no saves message
     if (noSavesMessage) {
-      if (saves.length === 0) {
+      if (userSaves.length === 0) {
         noSavesMessage.classList.remove('modal-hidden');
         restoreSlotsListEl?.classList.add('modal-hidden');
       } else {
@@ -300,7 +302,7 @@ function showRestoreDialog(): Promise<string | null> {
     }
 
     // Focus first save slot or cancel button
-    if (saves.length > 0) {
+    if (userSaves.length > 0) {
       const firstSlot = restoreSlotsListEl?.querySelector('.save-slot') as HTMLElement;
       firstSlot?.focus();
     }
@@ -379,7 +381,9 @@ function hideStartupDialog(shouldContinue: boolean): void {
 function populateSaveSlotsList(listEl: HTMLElement | null, forSave: boolean): void {
   if (!listEl) return;
 
-  const saves = getSaveIndex();
+  // Get saves, filtering out autosave for restore dialog
+  const allSaves = getSaveIndex();
+  const saves = forSave ? allSaves : allSaves.filter(s => s.name !== AUTOSAVE_SLOT);
   listEl.innerHTML = '';
 
   if (saves.length === 0 && forSave) {
@@ -571,6 +575,10 @@ function performSave(slotName: string, silent = false): void {
     // Capture state without full serialization
     const { locations, traits } = captureWorldState();
 
+    // Compress the transcript HTML for storage
+    const html = textContent?.innerHTML || '';
+    const compressedHtml = compressToUTF16(html);
+
     const saveData: BrowserSaveData = {
       version: '2.0.0-browser',
       timestamp: Date.now(),
@@ -578,7 +586,7 @@ function performSave(slotName: string, silent = false): void {
       score: currentScore,
       locations,
       traits,
-      transcript: [...transcript],  // Copy current transcript
+      transcriptHtml: compressedHtml,
     };
 
     const key = SAVE_PREFIX + slotName;
@@ -619,6 +627,10 @@ function performAutoSave(): void {
     // Capture state without full serialization
     const { locations, traits } = captureWorldState();
 
+    // Compress the transcript HTML for storage
+    const html = textContent?.innerHTML || '';
+    const compressedHtml = compressToUTF16(html);
+
     const saveData: BrowserSaveData = {
       version: '2.0.0-browser',
       timestamp: Date.now(),
@@ -626,7 +638,7 @@ function performAutoSave(): void {
       score: currentScore,
       locations,
       traits,
-      transcript: [...transcript],  // Copy current transcript
+      transcriptHtml: compressedHtml,
     };
 
     const key = SAVE_PREFIX + AUTOSAVE_SLOT;
@@ -660,8 +672,8 @@ interface BrowserSaveData {
   locations: Record<string, string | null>;
   // Entity trait states: entityId -> { traitName -> traitData }
   traits: Record<string, Record<string, any>>;
-  // Text transcript (all output text for this session)
-  transcript?: string[];
+  // Compressed HTML transcript (innerHTML of #text-content)
+  transcriptHtml?: string;
 }
 
 /**
@@ -833,36 +845,17 @@ const saveRestoreHooks: ISaveRestoreHooks = {
       // Engine's next turn will be 1, but we want to show savedTurn
       turnOffset = currentTurn - 1;
 
-      // Restore transcript if available, otherwise start fresh
-      if (saveData.transcript && Array.isArray(saveData.transcript)) {
-        transcript = [...saveData.transcript];
-        // Re-display the saved transcript
-        for (const line of transcript) {
-          if (line.startsWith('> ')) {
-            // Command echo
-            const div = document.createElement('div');
-            div.className = 'command-echo';
-            div.textContent = line;
-            textContent?.appendChild(div);
-          } else {
-            // Regular text
-            const p = document.createElement('p');
-            p.textContent = line;
-            textContent?.appendChild(p);
-          }
-        }
-      } else {
-        transcript = [];
+      // Restore transcript HTML if available
+      if (saveData.transcriptHtml && textContent) {
+        const html = decompressFromUTF16(saveData.transcriptHtml);
+        textContent.innerHTML = html || '';
       }
 
       updateStatusLine();
 
       console.log('[restore] Restored from', slotName, 'to turn', currentTurn, 'offset', turnOffset);
       displayText(`[Restored "${slotName}"]`);
-
-      // Execute LOOK to show current location
       scrollToBottom();
-      await engine.executeTurn('look');
       syncScoreFromWorld();
 
       // Return a minimal ISaveData so engine thinks restore succeeded
@@ -894,6 +887,23 @@ const saveRestoreHooks: ISaveRestoreHooks = {
       beep();
       return null;
     }
+  },
+
+  async onRestartRequested(_context: any): Promise<boolean> {
+    // Clear autosave (but keep manual saves)
+    try {
+      localStorage.removeItem(SAVE_PREFIX + AUTOSAVE_SLOT);
+      // Update index to remove autosave
+      const saves = getSaveIndex().filter(s => s.name !== AUTOSAVE_SLOT);
+      localStorage.setItem(STORAGE_INDEX_KEY, JSON.stringify(saves));
+    } catch (error) {
+      console.error('[restart] Failed to clear autosave:', error);
+    }
+
+    console.log('[restart] Restarting game via page reload...');
+    // Reload the page to fully reset - engine doesn't clear scheduler/world state
+    window.location.reload();
+    return false; // Won't reach this, but signals we're handling it
   },
 };
 
@@ -1138,20 +1148,22 @@ function navigateHistory(direction: number): void {
 
 /**
  * Display text in the main window
+ * Double newlines create paragraph breaks, single newlines preserved with pre-line
  */
-function displayText(text: string, addToTranscript = true): void {
+function displayText(text: string): void {
   if (!textContent) return;
 
-  const lines = text.split('\n');
+  // Split on double newlines to get paragraphs
+  const paragraphs = text.split(/\n\n+/);
 
-  for (const line of lines) {
-    if (line.trim()) {
+  for (const para of paragraphs) {
+    const trimmed = para.trim();
+    if (trimmed) {
       const p = document.createElement('p');
-      p.textContent = line;
+      // Use pre-line to preserve single newlines within paragraph
+      p.style.whiteSpace = 'pre-line';
+      p.textContent = trimmed;
       textContent.appendChild(p);
-      if (addToTranscript) {
-        transcript.push(line);
-      }
     }
   }
 
@@ -1161,22 +1173,19 @@ function displayText(text: string, addToTranscript = true): void {
 /**
  * Display command echo
  */
-function displayCommand(command: string, addToTranscript = true): void {
+function displayCommand(command: string): void {
   if (!textContent) return;
 
   const div = document.createElement('div');
   div.className = 'command-echo';
   div.textContent = `> ${command}`;
   textContent.appendChild(div);
-  if (addToTranscript) {
-    transcript.push(`> ${command}`);
-  }
 
   scrollToBottom();
 }
 
 /**
- * Clear the screen (but preserve transcript unless clearing it too)
+ * Clear the screen
  */
 function clearScreen(): void {
   if (textContent) {
@@ -1185,18 +1194,20 @@ function clearScreen(): void {
 }
 
 /**
- * Display the game title block
+ * Display the game title block (as a single paragraph)
  */
 function displayTitle(): void {
-  displayText(GAME_TITLE);
-  displayText(GAME_DESCRIPTION);
-  displayText(`By ${GAME_AUTHORS}`);
-  displayText('');
-  displayText(`Sharpee Engine v${SHARPEE_VERSION}`);
-  displayText(`Game Version ${STORY_VERSION}`);
-  displayText('');
-  displayText('Type HELP for instructions, ABOUT for credits.');
-  displayText('');
+  const titleBlock = [
+    GAME_TITLE,
+    GAME_DESCRIPTION,
+    `By ${GAME_AUTHORS}`,
+    `Ported by ${PORTED_BY}`,
+    '',
+    `Sharpee v${SHARPEE_VERSION} | Game v${STORY_VERSION}`,
+    '',
+    'Type HELP for instructions, ABOUT for credits.',
+  ].join('\n');
+  displayText(titleBlock);
 }
 
 /**
@@ -1207,9 +1218,9 @@ function getTitleInfo(): string {
     GAME_TITLE,
     GAME_DESCRIPTION,
     `By ${GAME_AUTHORS}`,
+    `Ported by ${PORTED_BY}`,
     '',
-    `Sharpee Engine v${SHARPEE_VERSION}`,
-    `Game Version ${STORY_VERSION}`,
+    `Sharpee v${SHARPEE_VERSION} | Game v${STORY_VERSION}`,
     `Built: ${BUILD_DATE}`,
   ].join('\n');
 }
@@ -1282,30 +1293,18 @@ async function start(): Promise<void> {
         // Engine's next turn will be 1, but we want to show savedTurn
         turnOffset = currentTurn - 1;
 
-        // Restore transcript if available
-        if (autosaveData.transcript && Array.isArray(autosaveData.transcript)) {
-          transcript = [...autosaveData.transcript];
-          // Re-display the saved transcript
-          for (const line of transcript) {
-            if (line.startsWith('> ')) {
-              const div = document.createElement('div');
-              div.className = 'command-echo';
-              div.textContent = line;
-              textContent?.appendChild(div);
-            } else {
-              const p = document.createElement('p');
-              p.textContent = line;
-              textContent?.appendChild(p);
-            }
-          }
+        // Restore transcript HTML if available
+        if (autosaveData.transcriptHtml && textContent) {
+          const html = decompressFromUTF16(autosaveData.transcriptHtml);
+          textContent.innerHTML = html || '';
         }
 
         console.log('[startup] Restored to turn', currentTurn, 'score', currentScore, 'offset', turnOffset);
         updateStatusLine();
 
-        // Show restored message and current room
+        // Show restored message (transcript already shows game state)
         displayText('[Session restored]');
-        await engine.executeTurn('look');
+        scrollToBottom();
         syncScoreFromWorld();
       } catch (error) {
         console.error('[startup] Failed to restore autosave:', error);

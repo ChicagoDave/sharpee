@@ -166,6 +166,10 @@ function renderBlock(block: ITextBlock, options: CLIRenderOptions): string {
 /**
  * Render ITextBlock[] to string for CLI output.
  *
+ * Uses smart joining: single newline between consecutive blocks of the same type,
+ * double newline between different block types. This keeps related output together
+ * (e.g., multiple "Taken" messages) while separating distinct sections.
+ *
  * @example
  * const output = renderToString(blocks, { ansi: true });
  * console.log(output);
@@ -186,10 +190,24 @@ export function renderToString(
     ? blocks
     : blocks.filter((b) => !isStatusBlock(b));
 
-  return filteredBlocks
-    .map((block) => renderBlock(block, opts))
-    .filter((text) => text.trim())
-    .join(opts.blockSeparator);
+  // Render each block and pair with its key for smart joining
+  const rendered = filteredBlocks
+    .map((block) => ({ key: block.key, text: renderBlock(block, opts) }))
+    .filter((item) => item.text.trim());
+
+  if (rendered.length === 0) return '';
+
+  // Smart join: \n between same block types, \n\n between different types
+  const parts: string[] = [rendered[0].text];
+  for (let i = 1; i < rendered.length; i++) {
+    const prev = rendered[i - 1];
+    const curr = rendered[i];
+    // Use single newline for consecutive same-type blocks, double for different
+    const separator = prev.key === curr.key ? '\n' : opts.blockSeparator;
+    parts.push(separator + curr.text);
+  }
+
+  return parts.join('');
 }
 
 /**

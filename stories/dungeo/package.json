@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/story-dungeo",
-  "version": "1.0.15-alpha.6",
+  "version": "1.0.27-alpha.6",
   "description": "Dungeo - A Sharpee implementation of Mainframe Zork",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -27,13 +27,15 @@
     "@sharpee/engine": "workspace:*",
     "@sharpee/event-processor": "workspace:*",
     "@sharpee/if-domain": "workspace:*",
-    "@sharpee/stdlib": "workspace:*",
-    "@sharpee/world-model": "workspace:*",
     "@sharpee/lang-en-us": "workspace:*",
     "@sharpee/parser-en-us": "workspace:*",
-    "@sharpee/text-service": "workspace:*"
+    "@sharpee/stdlib": "workspace:*",
+    "@sharpee/text-service": "workspace:*",
+    "@sharpee/world-model": "workspace:*",
+    "lz-string": "^1.5.0"
   },
   "devDependencies": {
+    "@types/lz-string": "^1.5.0",
     "@types/node": "^20.11.19",
     "rimraf": "^5.0.5",
     "typescript": "^5.3.3",
