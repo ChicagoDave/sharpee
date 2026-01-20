@@ -38,18 +38,21 @@ interface RestoringSharedData {
 
 /**
  * Build list of available saves from game state
+ * Filters out autosave - that's for internal use only
  */
 function buildAvailableSaves(existingSaves: Record<string, any>): SaveInfo[] {
-  return Object.entries(existingSaves).map(([slot, data]: [string, any]) => ({
-    slot,
-    name: data.name || slot,
-    timestamp: data.timestamp || Date.now(),
-    metadata: {
-      score: data.score,
-      moves: data.moves,
-      version: data.version
-    }
-  }));
+  return Object.entries(existingSaves)
+    .filter(([slot]) => slot !== 'autosave')
+    .map(([slot, data]: [string, any]) => ({
+      slot,
+      name: data.name || slot,
+      timestamp: data.timestamp || Date.now(),
+      metadata: {
+        score: data.score,
+        moves: data.moves,
+        version: data.version
+      }
+    }));
 }
 
 /**
@@ -140,9 +143,9 @@ export const restoringAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Check if any saves exist
-    const saveCount = Object.keys(existingSaves).length;
-    if (saveCount === 0) {
+    // Check if any user saves exist (autosave doesn't count)
+    const userSaves = Object.keys(existingSaves).filter(slot => slot !== 'autosave');
+    if (userSaves.length === 0) {
       return {
         valid: false,
         error: 'no_saves'
