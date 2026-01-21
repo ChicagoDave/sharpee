@@ -1,0 +1,10 @@
+title: DROP ALL Empty Inventory Test
+story: dungeo
+author: Sharpee Team
+description: Test that DROP ALL with empty inventory shows proper message
+
+---
+
+# Start at West of House with nothing
+> drop all
+[OK: contains "carrying anything"]

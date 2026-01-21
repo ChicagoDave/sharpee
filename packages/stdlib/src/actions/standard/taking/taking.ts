@@ -118,7 +118,12 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
  * Validate a multi-object command (take all, take X and Y)
  */
 function validateMultiObject(context: ActionContext): ValidationResult {
-  const items = expandMultiObject(context, { scope: 'reachable' });
+  const playerId = context.player.id;
+  const items = expandMultiObject(context, {
+    scope: 'reachable',
+    // Filter out items already carried by the player
+    filter: (entity, world) => world.getLocation(entity.id) !== playerId
+  });
 
   if (items.length === 0) {
     return { valid: false, error: TakingMessages.NOTHING_TO_TAKE };

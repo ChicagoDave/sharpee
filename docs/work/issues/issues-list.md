@@ -23,91 +23,19 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-013 | Lamp "switches on" message missing "The" article | Low | TextService | 2026-01-16 | - | 2026-01-18 |
 | ISSUE-016 | Troll death handler fails - removeEntity not a function | High | Story/Platform | 2026-01-18 | - | 2026-01-18 |
 | ISSUE-017 | Platform events not detected (requiresClientAction lost) | High | Platform | 2026-01-18 | - | 2026-01-18 |
-| ISSUE-018 | SWITCH ON LAMP not showing room description in dark room | Medium | Stdlib/TextService | 2026-01-19 | - | - |
-| ISSUE-019 | Restore dialog race condition (opens repeatedly) | Medium | Browser | 2026-01-19 | - | - |
-| ISSUE-020 | Restore adds to screen instead of clearing/replacing | Medium | Browser | 2026-01-19 | - | - |
+| ISSUE-018 | SWITCH ON LAMP not showing room description in dark room | Medium | Stdlib/TextService | 2026-01-19 | - | 2026-01-21 |
+| ISSUE-019 | Restore dialog race condition (opens repeatedly) | Medium | Browser | 2026-01-19 | - | 2026-01-21 |
+| ISSUE-020 | Restore adds to screen instead of clearing/replacing | Medium | Browser | 2026-01-19 | - | 2026-01-21 |
 | ISSUE-021 | UP from Studio limited to two items (verify against 1981 source) | Low | Story | 2026-01-19 | - | - |
-| ISSUE-022 | ABOUT info hardcoded in browser-entry, wrong authors | Low | Story/Browser | 2026-01-19 | - | - |
+| ISSUE-022 | ABOUT info hardcoded in browser-entry, wrong authors | Low | Story/Browser | 2026-01-19 | - | 2026-01-21 |
+| ISSUE-023 | AGAIN (G) command bypasses parser, not in stdlib | Medium | Platform | 2026-01-20 | - | 2026-01-21 |
+| ISSUE-024 | TAKE ALL tries to take items already carried | Medium | Stdlib | 2026-01-21 | - | 2026-01-21 |
+| ISSUE-025 | Attic should be a dark room (requires light source) | Medium | Story | 2026-01-21 | - | 2026-01-21 |
+| ISSUE-026 | DROP ALL with empty inventory has no message | Low | Lang | 2026-01-21 | - | 2026-01-21 |
 
 ---
 
 ## Open Issues
-
-### ISSUE-018: SWITCH ON LAMP not showing room description in dark room
-
-**Reported**: 2026-01-19
-**Severity**: Medium
-**Component**: Stdlib / TextService
-
-**Description**:
-When turning on the lamp in a dark room (e.g., Cellar), the room description is not displayed even though the `switching_on` action emits `if.event.room.description` and `action.success` events with `room_description` and `contents_list` message IDs.
-
-**Root Cause**:
-The `action.success` events are emitted with `actionId: "if.action.switching_on"` but messages are registered under `if.action.looking.room_description`. The text-service looks up `if.action.switching_on.room_description` which doesn't exist, so no text is rendered.
-
-The source code at `switching_on.ts:306` does specify `actionId: 'if.action.looking'`, but the built bundle may be stale, OR the `context.event()` function is overriding the actionId.
-
-**Reproduction**:
-```
-> (in Living Room)
-> open trapdoor
-> down
-It is pitch dark. You are likely to be eaten by a grue.
-> turn on lamp
-The brass lantern switches on, banishing the darkness.
-(Room description should appear here but doesn't)
-> look
-Cellar
-This is a dark and damp cellar...
-```
-
-**Expected**: Room description should appear immediately after lamp turns on.
-
-**Notes**: Related to ISSUE-014 which was marked fixed. May need to reopen or verify build.
-
----
-
-### ISSUE-019: Restore dialog race condition (opens repeatedly)
-
-**Reported**: 2026-01-19
-**Severity**: Medium
-**Component**: Browser Client
-
-**Description**:
-When using RESTORE command, the restore dialog opens multiple times in rapid succession. Console logs show `[restore-dialog] Opening restore dialog...` repeating 8+ times.
-
-**Root Cause**:
-In `browser-entry.ts`, the `onRestoreRequested` hook calls `engine.executeTurn('look')` at line 865 BEFORE returning the ISaveData. Calling engine methods inside a hook that's invoked BY the engine causes reentrancy issues and may queue additional restore requests.
-
-**Reproduction**:
-1. Save game
-2. Type RESTORE
-3. Select a save slot
-4. Observe console showing multiple dialog opens
-
-**Solution**: Remove `executeTurn('look')` from inside `onRestoreRequested`. The LOOK should be triggered after the hook completes, not during.
-
----
-
-### ISSUE-020: Restore adds to screen instead of clearing/replacing
-
-**Reported**: 2026-01-19
-**Severity**: Medium
-**Component**: Browser Client
-
-**Description**:
-When restoring a saved game, the restored content is appended to the existing screen output rather than replacing it. The transcript replay and new LOOK output appear below whatever was already on screen.
-
-**Root Cause**:
-Related to ISSUE-019. The `clearScreen()` call at line 826 may be executing, but the race condition causes multiple restore cycles, each adding more content. Additionally, the modal dialog doesn't close properly before new content is added.
-
-**Reproduction**:
-1. Play for several turns
-2. Type RESTORE
-3. Select a save
-4. Observe old content still visible above restored transcript
-
----
 
 ### ISSUE-021: UP from Studio limited to two items (verify against 1981 source)
 
@@ -122,23 +50,197 @@ Going UP from Studio appears to be limited to carrying only two items. Need to v
 
 ---
 
+## Closed Issues
+
 ### ISSUE-022: ABOUT info hardcoded in browser-entry, wrong authors
 
 **Reported**: 2026-01-19
+**Fixed**: 2026-01-21
 **Severity**: Low
 **Component**: Story / Browser Client
 
 **Description**:
-The ABOUT command displays game metadata that is hardcoded in `browser-entry.ts` with incorrect authorship attribution. The game credits "Dave Cornelson" as author but should credit the original Zork authors (Marc Blank, Dave Lebling, et al.) since this is a port of their work.
+The ABOUT command credited "Dave Cornelson" as author but should credit the original Zork authors.
 
-**Solution**:
-1. Move ABOUT info to the story layer (not browser-entry) so it works in all platforms
-2. Credit original Zork authors: "Original by Marc Blank, Dave Lebling, Bruce Daniels, and Tim Anderson"
-3. Optionally note the Sharpee port: "Sharpee port by Dave Cornelson"
+**Resolution**:
+Fixed in a previous build. ABOUT now correctly shows:
+- Original authors: Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling
+- Ported by: David Cornelson
 
 ---
 
-## Closed Issues
+### ISSUE-026: DROP ALL with empty inventory has no message
+
+**Reported**: 2026-01-21
+**Fixed**: 2026-01-21
+**Severity**: Low
+**Component**: Lang (lang-en-us)
+
+**Description**:
+When using "drop all" with an empty inventory, no message was displayed because the `nothing_to_drop` message was missing from the language layer.
+
+**Solution**:
+Added the missing message to `packages/lang-en-us/src/actions/dropping.ts`:
+```typescript
+'nothing_to_drop': "{You} aren't carrying anything."
+```
+
+The event `if.event.drop_blocked` was already being emitted with `messageId: 'if.action.dropping.nothing_to_drop'`, but the message text was not defined.
+
+**Files changed**:
+- `packages/lang-en-us/src/actions/dropping.ts` - Added nothing_to_drop message
+
+---
+
+### ISSUE-020: Restore adds to screen instead of clearing/replacing
+
+**Reported**: 2026-01-19
+**Fixed**: 2026-01-21
+**Severity**: Medium
+**Component**: Browser Client
+
+**Description**:
+When restoring a saved game, the restored content was appended to the existing screen output rather than replacing it.
+
+**Resolution**:
+Fixed in a previous build. Restore now properly clears the screen before displaying restored content.
+
+---
+
+### ISSUE-019: Restore dialog race condition (opens repeatedly)
+
+**Reported**: 2026-01-19
+**Fixed**: 2026-01-21
+**Severity**: Medium
+**Component**: Browser Client
+
+**Description**:
+When using RESTORE command, the restore dialog opened multiple times in rapid succession.
+
+**Resolution**:
+Fixed in a previous build. The restore hook no longer has reentrancy issues.
+
+---
+
+### ISSUE-018: SWITCH ON LAMP not showing room description in dark room
+
+**Reported**: 2026-01-19
+**Fixed**: 2026-01-21
+**Severity**: Medium
+**Component**: Stdlib / TextService
+
+**Description**:
+When turning on the lamp in a dark room, the room description was not displayed.
+
+**Resolution**:
+Issue was resolved in a previous build. The switching_on action correctly emits `if.event.room.description` when illuminating a dark room, and the text-service now processes it properly.
+
+---
+
+### ISSUE-025: Attic should be a dark room (requires light source)
+
+**Reported**: 2026-01-21
+**Fixed**: 2026-01-21
+**Severity**: Medium
+**Component**: Story (house-interior region)
+
+**Description**:
+The Attic room was lit, but in original Zork it is a dark room that requires a light source to see.
+
+**Solution**:
+Modified `createRoom` function in `stories/dungeo/src/regions/house-interior.ts` to accept `isDark` parameter, and passed `true` for the Attic room.
+
+**Files changed**:
+- `stories/dungeo/src/regions/house-interior.ts` - Added isDark parameter, set Attic to dark
+- `stories/dungeo/tests/transcripts/attic-dark.transcript` - Test for darkness behavior
+
+---
+
+### ISSUE-024: TAKE ALL tries to take items already carried
+
+**Reported**: 2026-01-21
+**Fixed**: 2026-01-21
+**Severity**: Medium
+**Component**: Stdlib (taking action)
+
+**Description**:
+When using "take all", the action attempted to take items already in the player's inventory, resulting in unnecessary "You already have that" messages.
+
+**Solution**:
+Added a filter to the `expandMultiObject` call in `validateMultiObject` that excludes items whose location is the player's inventory:
+
+```typescript
+const items = expandMultiObject(context, {
+  scope: 'reachable',
+  filter: (entity, world) => world.getLocation(entity.id) !== playerId
+});
+```
+
+**Files changed**:
+- `packages/stdlib/src/actions/standard/taking/taking.ts` - Added filter to exclude carried items
+- `stories/dungeo/tests/transcripts/take-all-filter.transcript` - Test for filter behavior
+
+---
+
+### ISSUE-023: AGAIN (G) command bypasses parser, not in stdlib
+
+**Reported**: 2026-01-20
+**Fixed**: 2026-01-21
+**Severity**: Medium
+**Component**: Platform (Engine, Stdlib, Parser, Lang)
+
+**Description**:
+The AGAIN/G command was implemented at the engine level by intercepting literal strings "g" and "again" before parsing. This bypassed the normal action dispatch flow and broke internationalization (non-English parsers couldn't add locale-specific patterns like "encore" for French).
+
+**Root Cause**:
+Engine special-cased the command at `game-engine.ts:454-483`:
+```typescript
+if (normalized === 'g' || normalized === 'again') {
+  // Direct substitution, bypasses parser
+}
+```
+
+This prevented:
+- Grammar registration (can't be extended with aliases)
+- Language layer messages (error hardcoded in engine)
+- i18n support (only English words recognized)
+
+**Solution**:
+Implemented Option C (Hybrid) from `docs/work/platform/again-implementation.md`:
+
+1. **Stdlib action** (`packages/stdlib/src/actions/standard/again/`):
+   - `again.ts` - 4-phase action (validate history exists, report intent)
+   - `again-events.ts` - Event type definitions
+   - Registered in meta-registry (excluded from history)
+
+2. **Grammar patterns** (`packages/parser-en-us/src/grammar.ts`):
+   - `again` → `if.action.again`
+   - `g` → `if.action.again`
+
+3. **Language messages** (`packages/lang-en-us/src/actions/again.ts`):
+   - `NOTHING_TO_REPEAT`: "There is nothing to repeat."
+
+4. **Engine modification** (`packages/engine/src/game-engine.ts`):
+   - Handle `if.event.again` by re-executing stored command
+   - Removed hardcoded string matching
+
+**Result**:
+- Parser owns the words (locale-specific)
+- Action validates and reports intent
+- Engine handles re-execution (language-agnostic)
+- Other parsers can now add `encore`, `nochmal`, etc.
+
+**Files changed**:
+- `packages/stdlib/src/actions/standard/again/again.ts` - New action
+- `packages/stdlib/src/actions/standard/again/again-events.ts` - Events
+- `packages/stdlib/src/actions/standard/again/index.ts` - Exports
+- `packages/stdlib/src/actions/standard/index.ts` - Registration
+- `packages/parser-en-us/src/grammar.ts` - Grammar patterns
+- `packages/lang-en-us/src/actions/again.ts` - Messages
+- `packages/engine/src/game-engine.ts` - Event handling
+- `stories/dungeo/tests/transcripts/again*.transcript` - 3 test files
+
+---
 
 ### ISSUE-017: Platform events not detected (requiresClientAction lost)
 
