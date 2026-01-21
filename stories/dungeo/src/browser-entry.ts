@@ -1214,23 +1214,6 @@ function clearScreen(): void {
 }
 
 /**
- * Display the game title block (as a single paragraph)
- */
-function displayTitle(): void {
-  const titleBlock = [
-    GAME_TITLE,
-    GAME_DESCRIPTION,
-    `By ${GAME_AUTHORS}`,
-    `Ported by ${PORTED_BY}`,
-    '',
-    `Sharpee v${SHARPEE_VERSION} | Game v${STORY_VERSION}`,
-    '',
-    'Type HELP for instructions, ABOUT for credits.',
-  ].join('\n');
-  displayText(titleBlock);
-}
-
-/**
  * Get the title info for ABOUT command
  */
 function getTitleInfo(): string {
@@ -1425,13 +1408,11 @@ async function start(): Promise<void> {
         syncScoreFromWorld();
       } catch (error) {
         console.error('[startup] Failed to restore autosave:', error);
-        // Fall through to new game
-        displayTitle();
+        // Fall through to new game - banner is displayed by engine.start()
         await engine.executeTurn('look');
       }
     } else {
-      // New game - display title
-      displayTitle();
+      // New game - banner is displayed by engine.start() via text-service
       console.log('Executing initial look command...');
       await engine.executeTurn('look');
       console.log('Initial look complete');

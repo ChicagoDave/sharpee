@@ -29,6 +29,7 @@ import { handleRoomDescription } from './handlers/room.js';
 import { handleActionSuccess, handleActionFailure } from './handlers/action.js';
 import { handleRevealed } from './handlers/revealed.js';
 import { handleGameMessage, handleGenericEvent } from './handlers/generic.js';
+import { handleGameStarted } from './handlers/game.js';
 
 /**
  * Text service interface (ADR-096)
@@ -118,6 +119,9 @@ export class TextService implements ITextService {
     }
 
     switch (event.type) {
+      case 'game.started':
+        return handleGameStarted(event, context);
+
       case 'if.event.room_description':
       case 'if.event.room.description':
         return handleRoomDescription(event, context);

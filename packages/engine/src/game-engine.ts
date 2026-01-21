@@ -385,7 +385,7 @@ export class GameEngine {
       version: this.context.metadata.version
     }, this.sessionStartTime);
     this.emitGameEvent(startedEvent);
-    
+
     this.emit('state:changed', this.context);
   }
 
@@ -532,8 +532,10 @@ export class GameEngine {
         );
       }
 
-      this.turnEvents.set(turn, semanticEvents);
-      
+      // Merge with any existing events for this turn (e.g., game.started from engine.start())
+      const existingEvents = this.turnEvents.get(turn) || [];
+      this.turnEvents.set(turn, [...existingEvents, ...semanticEvents]);
+
       // Also track in event source for save/restore
       for (const semanticEvent of semanticEvents) {
         this.eventSource.emit(semanticEvent);
@@ -1483,12 +1485,14 @@ export class GameEngine {
     // Store in turn events if we're in a turn (as SemanticEvent for compatibility)
     if (this.context.currentTurn > 0) {
       const eventData = gameEvent.data as { id?: string } | undefined;
+      // IGameEvent uses 'payload', ISemanticEvent uses 'data' - copy payload to data
+      const payload = (event as any).payload || {};
       const semanticEvent: ISemanticEvent = {
         id: event.id || eventData?.id as string,
         type: event.type,
         timestamp: event.timestamp || Date.now(),
         entities: event.entities || {},
-        data: event.data || {}
+        data: { ...payload, story: payload.story }
       };
       const turnEvents = this.turnEvents.get(this.context.currentTurn) || [];
       turnEvents.push(semanticEvent);

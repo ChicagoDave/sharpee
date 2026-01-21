@@ -49,4 +49,25 @@ export function registerAllMessages(language: LanguageProvider): void {
   registerActionMessages(language);
   registerPuzzleMessages(language);
   registerObjectMessages(language);
+
+  // Game lifecycle messages
+  registerGameMessages(language);
+}
+
+/**
+ * Register game lifecycle messages (opening banner, etc.)
+ * These override the platform defaults with Dungeo-specific content.
+ */
+function registerGameMessages(language: LanguageProvider): void {
+  // Opening banner - displayed when game starts
+  // Uses story config params: {title}, {author}, {version}
+  // Custom params can be added via story config's `custom` field
+  language.addMessage('game.started.banner',
+    `{title}
+A port of Mainframe Zork (1981)
+By {author}
+Ported by David Cornelson
+
+Type HELP for instructions, ABOUT for credits.`
+  );
 }
