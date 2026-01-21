@@ -6,13 +6,13 @@
  */
 
 /** Story version (auto-incremented on build) */
-export const STORY_VERSION = '1.0.55-alpha.6';
+export const STORY_VERSION = '1.0.63-alpha.6';
 
 /** Build timestamp (ISO 8601) */
-export const BUILD_DATE = '2026-01-21T15:26:11Z';
+export const BUILD_DATE = '2026-01-21T22:09:28Z';
 
 /** Engine version at build time */
-export const ENGINE_VERSION = '0.9.3-beta.1';
+export const ENGINE_VERSION = '0.9.44-beta.1';
 
 /** Combined version info object for easy access */
 export const VERSION_INFO = {

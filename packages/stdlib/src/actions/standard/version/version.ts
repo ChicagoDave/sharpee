@@ -19,7 +19,7 @@ import { ActionMetadata } from '../../../validation';
 import { VersionDisplayedEventData } from './version-events';
 
 /** Engine version - update this when engine version changes */
-export const ENGINE_VERSION = '0.9.3-beta.1';
+export const ENGINE_VERSION = '0.9.43-beta.1';
 
 export const versionAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.VERSION,

@@ -25,7 +25,7 @@ fi
 increment_version() {
     local DUNGEO_PKG="stories/dungeo/package.json"
     local VERSION_FILE="stories/dungeo/src/version.ts"
-    local ENGINE_PKG="packages/engine/package.json"
+    local ENGINE_PKG="packages/sharpee/package.json"
 
     if [ ! -f "$DUNGEO_PKG" ]; then
         return
