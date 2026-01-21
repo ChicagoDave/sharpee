@@ -40,12 +40,12 @@ stories/{story}/
 ├── tsconfig.json             # TypeScript config
 ├── src/
 │   ├── index.ts              # Story class and entry point
-│   ├── grammar/              # Parser extensions
-│   ├── messages/             # Language extensions
-│   ├── orchestration/        # Engine registrations
-│   ├── regions/              # Room definitions
-│   ├── npcs/                 # NPC entities and behaviors
-│   ├── actions/              # Story-specific actions
+│   ├── grammar/              # Parser extensions (one file per feature)
+│   ├── messages/             # Language extensions (one file per feature)
+│   ├── orchestration/        # Engine registrations (one file per subsystem)
+│   ├── regions/              # Room definitions (one file per region)
+│   ├── npcs/                 # NPC entities and behaviors (one folder per NPC)
+│   ├── actions/              # Story-specific actions (one folder per action)
 │   ├── handlers/             # Event handlers and puzzles
 │   ├── scheduler/            # Daemons and fuses
 │   ├── traits/               # Custom traits
@@ -53,6 +53,8 @@ stories/{story}/
 └── tests/
     └── transcripts/          # Integration test transcripts
 ```
+
+**Key principle:** Flat file organization within each folder. Regions are single files, not nested directories.
 
 ## Core Files
 
@@ -272,74 +274,114 @@ export function initializeOrchestration(
 
 ### `src/regions/` - Room Definitions
 
-Organize rooms by geographic area:
+Each region is a **single file** containing all rooms and objects for that area:
 
 ```
 src/regions/
-├── house/
-│   ├── index.ts          # Exports, connections, region setup
-│   ├── rooms/
-│   │   ├── living-room.ts
-│   │   ├── kitchen.ts
-│   │   └── bedroom.ts
-│   └── objects/
-│       └── index.ts      # Objects in this region
-├── forest/
-│   ├── index.ts
-│   ├── rooms/
-│   └── objects/
-└── underground/
-    ├── index.ts
-    ├── rooms/
-    └── objects/
+├── white-house.ts        # Starting area (West/North/South/Behind House)
+├── house-interior.ts     # Inside the house (Kitchen, Living Room, Attic)
+├── forest.ts             # Forest paths and clearings
+├── underground.ts        # Cellar, passages, troll room
+├── temple.ts             # Temple area
+└── endgame.ts            # Final puzzle area
 ```
 
-**Example room definition:**
+**Example region file:**
 
 ```typescript
-// src/regions/house/rooms/living-room.ts
-import { WorldModel, IFEntity, RoomTrait, ContainerTrait } from '@sharpee/world-model';
+// src/regions/house.ts
+import {
+  WorldModel,
+  IFEntity,
+  IdentityTrait,
+  RoomTrait,
+  EntityType,
+  Direction,
+  ContainerTrait,
+  OpenableTrait
+} from '@sharpee/world-model';
 
-export function createLivingRoom(world: WorldModel): IFEntity {
-  const room = world.createEntity('living-room', 'room');
-
-  room.add(new RoomTrait({
-    name: 'Living Room',
-    description: 'A cozy living room with a fireplace.',
-    exits: {
-      north: null,  // Set during connection phase
-      east: null,
-    }
-  }));
-
-  return room;
-}
-
-// src/regions/house/index.ts
-import { WorldModel, Direction } from '@sharpee/world-model';
-import { createLivingRoom } from './rooms/living-room';
-import { createKitchen } from './rooms/kitchen';
-import { createHouseObjects } from './objects';
+// === Type Exports ===
 
 export interface HouseRoomIds {
   livingRoom: string;
   kitchen: string;
+  attic: string;
 }
 
+// === Helper Functions ===
+
+function createRoom(world: WorldModel, name: string, description: string): IFEntity {
+  const room = world.createEntity(name, EntityType.ROOM);
+  room.add(new RoomTrait({ exits: {}, isDark: false }));
+  room.add(new IdentityTrait({ name, description }));
+  return room;
+}
+
+// === Room Creation ===
+
 export function createHouseRegion(world: WorldModel): HouseRoomIds {
-  const livingRoom = createLivingRoom(world);
-  const kitchen = createKitchen(world);
+  const livingRoom = createRoom(world, 'Living Room',
+    'A comfortable living room with a trophy case on the wall.');
+
+  const kitchen = createRoom(world, 'Kitchen',
+    'A well-appointed kitchen with a table in the center.');
+
+  const attic = createRoom(world, 'Attic',
+    'A dusty attic filled with old furniture.');
+  attic.get(RoomTrait)!.isDark = true;  // Attic is dark
+
+  // Internal connections within region
+  world.connect(livingRoom.id, Direction.NORTH, kitchen.id);
+  world.connect(kitchen.id, Direction.UP, attic.id);
 
   return {
     livingRoom: livingRoom.id,
     kitchen: kitchen.id,
+    attic: attic.id,
   };
 }
 
-export function connectHouseRooms(world: WorldModel, ids: HouseRoomIds): void {
-  world.connect(ids.livingRoom, Direction.NORTH, ids.kitchen);
+// === Object Creation ===
+
+export function createHouseObjects(world: WorldModel, ids: HouseRoomIds): void {
+  // Trophy case in living room
+  const trophyCase = world.createEntity('trophy case', EntityType.OBJECT);
+  trophyCase.add(new IdentityTrait({
+    name: 'trophy case',
+    description: 'A glass-fronted trophy case mounted on the wall.',
+  }));
+  trophyCase.add(new ContainerTrait({ capacity: 100 }));
+  trophyCase.add(new OpenableTrait({ isOpen: false }));
+  world.moveEntity(trophyCase.id, ids.livingRoom);
+
+  // Table in kitchen
+  const table = world.createEntity('table', EntityType.OBJECT);
+  table.add(new IdentityTrait({
+    name: 'table',
+    description: 'A sturdy wooden table.',
+  }));
+  world.moveEntity(table.id, ids.kitchen);
+}
+
+// === Cross-Region Connections ===
+
+export function connectHouseToExterior(
+  world: WorldModel,
+  houseIds: HouseRoomIds,
+  exteriorIds: { behindHouse: string }
+): void {
+  // Kitchen window leads outside
+  world.connect(houseIds.kitchen, Direction.EAST, exteriorIds.behindHouse);
 }
 ```
+
+**Pattern:**
+1. **Type export** - `XxxRoomIds` interface for type-safe room references
+2. **Helper functions** - Shared room/object creation utilities
+3. **`createXxxRegion()`** - Creates all rooms, returns ID map
+4. **`createXxxObjects()`** - Creates and places objects in rooms
+5. **`connectXxxTo...()`** - Cross-region connections (called from story index)
 
 ### `src/npcs/` - Non-Player Characters
 
