@@ -130,6 +130,9 @@ export * from './launch';
 // Falls Death (any action except LOOK at Aragain Falls)
 export * from './falls-death';
 
+// Grue Death (moving in dark room with failed survival roll)
+export * from './grue-death';
+
 // Commanding (Robot commands - tell robot to X)
 export * from './commanding';
 
@@ -190,6 +193,7 @@ import { inflateAction, INFLATE_ACTION_ID, InflateMessages } from './inflate';
 import { deflateAction, DEFLATE_ACTION_ID, DeflateMessages } from './deflate';
 import { riverBlockedAction, RIVER_BLOCKED_ACTION_ID, RiverBlockedMessages } from './river-blocked';
 import { fallsDeathAction, FALLS_DEATH_ACTION_ID, FallsDeathMessages } from './falls-death';
+import { grueDeathAction, GRUE_DEATH_ACTION_ID, GrueDeathMessages } from './grue-death';
 import { commandingAction, COMMANDING_ACTION_ID, CommandingMessages } from './commanding';
 import { launchAction, LAUNCH_ACTION_ID, LaunchMessages } from './launch';
 import { talkToTrollAction, TALK_TO_TROLL_ACTION_ID, TalkToTrollMessages } from './talk-to-troll';
@@ -225,6 +229,7 @@ export { DEFLATE_ACTION_ID, DeflateMessages } from './deflate';
 // Re-export river navigation actions for use in index.ts
 export { RIVER_BLOCKED_ACTION_ID, RiverBlockedMessages } from './river-blocked';
 export { FALLS_DEATH_ACTION_ID, FallsDeathMessages } from './falls-death';
+export { GRUE_DEATH_ACTION_ID, GrueDeathMessages } from './grue-death';
 export { LAUNCH_ACTION_ID, LaunchMessages } from './launch';
 
 // Re-export commanding action for use in index.ts
@@ -282,6 +287,7 @@ export const customActions = [
   deflateAction,
   riverBlockedAction,
   fallsDeathAction,
+  grueDeathAction,
   commandingAction,
   launchAction,
   talkToTrollAction,

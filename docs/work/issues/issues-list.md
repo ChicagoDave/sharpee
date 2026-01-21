@@ -32,6 +32,7 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-024 | TAKE ALL tries to take items already carried | Medium | Stdlib | 2026-01-21 | - | 2026-01-21 |
 | ISSUE-025 | Attic should be a dark room (requires light source) | Medium | Story | 2026-01-21 | - | 2026-01-21 |
 | ISSUE-026 | DROP ALL with empty inventory has no message | Low | Lang | 2026-01-21 | - | 2026-01-21 |
+| ISSUE-027 | Grue death mechanics (75% death in dark rooms) | High | Story | 2026-01-21 | - | 2026-01-21 |
 
 ---
 
@@ -51,6 +52,51 @@ Going UP from Studio appears to be limited to carrying only two items. Need to v
 ---
 
 ## Closed Issues
+
+### ISSUE-027: Grue death mechanics (75% death in dark rooms)
+
+**Reported**: 2026-01-21
+**Fixed**: 2026-01-21
+**Severity**: High
+**Component**: Story (handlers, actions)
+
+**Description**:
+Implemented canonical grue death mechanics from FORTRAN verbs.f (lines 1846-1897). When player attempts to move in a dark room, there is a 75% chance of death (25% survival roll).
+
+**Implementation per FORTRAN source**:
+- Grue check triggers when moving FROM a dark room (not entering)
+- 25% survival roll (PROB(25,25)) - if passed, normal movement
+- On 75% grue path:
+  - Invalid exit → death (message 522: "walked into slavering fangs")
+  - Blocked exit (closed door) → death (message 523: "grue slithered into room")
+  - Dark destination → death (message 522)
+  - Lit destination → survive
+- GDT ND command (immortality) bypasses grue check
+
+**Event Pattern**:
+Uses `if.event.player.died` with `messageId` for proper text service rendering (no `action.success`):
+```typescript
+context.event('if.event.player.died', {
+  messageId: GrueDeathMessages.WALKED_INTO_GRUE,
+  cause: 'grue',
+  deathType: 'walked_into'
+})
+```
+
+**Files created**:
+- `stories/dungeo/src/actions/grue-death/types.ts` - Action ID and message constants
+- `stories/dungeo/src/actions/grue-death/grue-death-action.ts` - 4-phase death action
+- `stories/dungeo/src/actions/grue-death/index.ts` - Exports
+- `stories/dungeo/src/handlers/grue-handler.ts` - Command transformer with FORTRAN logic
+- `stories/dungeo/tests/transcripts/grue-mechanics.transcript` - Comprehensive test
+- `stories/dungeo/tests/transcripts/grue-death-simple.transcript` - Simple death test
+
+**Files modified**:
+- `stories/dungeo/src/actions/index.ts` - Added grue death exports
+- `stories/dungeo/src/actions/falls-death/falls-death-action.ts` - Updated to use if.event.player.died
+- `stories/dungeo/src/index.ts` - Added messages and transformer registration, updated death handler
+
+---
 
 ### ISSUE-022: ABOUT info hardcoded in browser-entry, wrong authors
 
