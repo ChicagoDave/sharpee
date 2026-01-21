@@ -41,11 +41,15 @@ export function handleGameStarted(
   }
 
   // Build params for template substitution
+  // engineVersion comes from event data (set by engine from world's versionInfo)
+  const engineVersion = data?.engineVersion || 'unknown';
+
   const params: Record<string, string> = {
     title: story.title || 'Unknown',
     author: story.author || 'Unknown',
     version: story.version || '1.0.0',
     id: story.id || 'unknown',
+    engineVersion: engineVersion,
   };
 
   // Look up banner message via language provider

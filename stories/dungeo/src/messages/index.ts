@@ -60,10 +60,11 @@ export function registerAllMessages(language: LanguageProvider): void {
  */
 function registerGameMessages(language: LanguageProvider): void {
   // Opening banner - displayed when game starts
-  // Uses story config params: {title}, {author}, {version}
+  // Uses story config params: {title}, {author}, {version}, {engineVersion}
   // Custom params can be added via story config's `custom` field
   language.addMessage('game.started.banner',
-    `{title}
+    `{title} v{version}
+Sharpee Engine v{engineVersion}
 A port of Mainframe Zork (1981)
 By {author}
 Ported by David Cornelson

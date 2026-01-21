@@ -19,60 +19,52 @@ if [ "$1" = "--skip" ] && [ -n "$2" ]; then
     SKIP_TO="$2"
 fi
 
-# Increment patch version for Dungeo (patch only, prerelease tags untouched)
-# If patch reaches 999, roll to next minor
-increment_version() {
+# Update versions with date-based prerelease tag (beta.YYYYMMDD.HHMM)
+# Base version (major.minor.patch) is preserved; only the date portion updates
+update_versions() {
+    local SHARPEE_PKG="packages/sharpee/package.json"
     local DUNGEO_PKG="stories/dungeo/package.json"
-    local VERSION_FILE="stories/dungeo/src/version.ts"
-    local ENGINE_PKG="packages/sharpee/package.json"
+    local DUNGEO_VERSION_FILE="stories/dungeo/src/version.ts"
+    local BROWSER_PKG="packages/platforms/browser-en-us/package.json"
+    local BROWSER_VERSION_FILE="packages/platforms/browser-en-us/src/version.ts"
 
-    if [ ! -f "$DUNGEO_PKG" ]; then
-        return
+    # Generate date-based prerelease tag: beta.YYYYMMDD.HHMM
+    local DATE_TAG=$(date -u +"%Y%m%d.%H%M")
+    local BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+    # Update Sharpee version
+    if [ -f "$SHARPEE_PKG" ]; then
+        local SHARPEE_CURRENT=$(node -p "require('./$SHARPEE_PKG').version")
+        local SHARPEE_BASE=$(echo "$SHARPEE_CURRENT" | sed 's/-.*//')
+        local SHARPEE_NEW="${SHARPEE_BASE}-beta.${DATE_TAG}"
+
+        node -e "
+          const fs = require('fs');
+          const pkg = require('./$SHARPEE_PKG');
+          pkg.version = '$SHARPEE_NEW';
+          fs.writeFileSync('$SHARPEE_PKG', JSON.stringify(pkg, null, 2) + '\n');
+        "
+        echo "[sharpee version] $SHARPEE_CURRENT → $SHARPEE_NEW"
     fi
 
-    # Read current version from package.json
-    CURRENT_VERSION=$(node -p "require('./$DUNGEO_PKG').version")
+    # Update Dungeo version
+    if [ -f "$DUNGEO_PKG" ]; then
+        local DUNGEO_CURRENT=$(node -p "require('./$DUNGEO_PKG').version")
+        local DUNGEO_BASE=$(echo "$DUNGEO_CURRENT" | sed 's/-.*//')
+        local DUNGEO_NEW="${DUNGEO_BASE}-beta.${DATE_TAG}"
 
-    # Extract base version and prerelease separately
-    BASE_VERSION=$(echo "$CURRENT_VERSION" | sed 's/-.*//')
-    PRERELEASE=$(echo "$CURRENT_VERSION" | grep -oP '(?<=-).*' || echo "")
+        node -e "
+          const fs = require('fs');
+          const pkg = require('./$DUNGEO_PKG');
+          pkg.version = '$DUNGEO_NEW';
+          fs.writeFileSync('$DUNGEO_PKG', JSON.stringify(pkg, null, 2) + '\n');
+        "
 
-    # Parse base version parts
-    MAJOR=$(echo "$BASE_VERSION" | cut -d. -f1)
-    MINOR=$(echo "$BASE_VERSION" | cut -d. -f2)
-    PATCH=$(echo "$BASE_VERSION" | cut -d. -f3)
+        # Get engine version (just updated above)
+        local ENGINE_VERSION="${SHARPEE_NEW}"
 
-    # Increment patch, roll minor if needed
-    if [ "$PATCH" -ge 999 ]; then
-        MINOR=$((MINOR + 1))
-        PATCH=0
-    else
-        PATCH=$((PATCH + 1))
-    fi
-
-    # Reconstruct version (preserve prerelease if present)
-    if [ -n "$PRERELEASE" ]; then
-        NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}-${PRERELEASE}"
-    else
-        NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
-    fi
-
-    # Update package.json with new version
-    node -e "
-      const fs = require('fs');
-      const pkg = require('./$DUNGEO_PKG');
-      pkg.version = '$NEW_VERSION';
-      fs.writeFileSync('$DUNGEO_PKG', JSON.stringify(pkg, null, 2) + '\n');
-    "
-
-    # Get engine version
-    ENGINE_VERSION=$(node -p "require('./$ENGINE_PKG').version")
-
-    # Generate build timestamp
-    BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-    # Generate version.ts
-    cat > "$VERSION_FILE" << EOF
+        # Generate dungeo version.ts
+        cat > "$DUNGEO_VERSION_FILE" << EOF
 /**
  * Version information for Dungeo
  *
@@ -80,8 +72,8 @@ increment_version() {
  * DO NOT EDIT MANUALLY - changes will be overwritten.
  */
 
-/** Story version (auto-incremented on build) */
-export const STORY_VERSION = '$NEW_VERSION';
+/** Story version */
+export const STORY_VERSION = '$DUNGEO_NEW';
 
 /** Build timestamp (ISO 8601) */
 export const BUILD_DATE = '$BUILD_DATE';
@@ -96,14 +88,58 @@ export const VERSION_INFO = {
   engineVersion: ENGINE_VERSION
 } as const;
 EOF
+        echo "[dungeo version] $DUNGEO_CURRENT → $DUNGEO_NEW"
+    fi
 
-    echo "[dungeo version] $CURRENT_VERSION → $NEW_VERSION (built $BUILD_DATE)"
+    # Update Browser client version
+    if [ -f "$BROWSER_PKG" ]; then
+        local BROWSER_CURRENT=$(node -p "require('./$BROWSER_PKG').version")
+        local BROWSER_BASE=$(echo "$BROWSER_CURRENT" | sed 's/-.*//')
+        local BROWSER_NEW="${BROWSER_BASE}-beta.${DATE_TAG}"
+
+        node -e "
+          const fs = require('fs');
+          const pkg = require('./$BROWSER_PKG');
+          pkg.version = '$BROWSER_NEW';
+          fs.writeFileSync('$BROWSER_PKG', JSON.stringify(pkg, null, 2) + '\n');
+        "
+
+        # Create version.ts directory if needed
+        mkdir -p "$(dirname "$BROWSER_VERSION_FILE")"
+
+        # Generate browser version.ts
+        cat > "$BROWSER_VERSION_FILE" << EOF
+/**
+ * Version information for Browser Client
+ *
+ * This file is auto-generated by the build script.
+ * DO NOT EDIT MANUALLY - changes will be overwritten.
+ */
+
+/** Client version */
+export const CLIENT_VERSION = '$BROWSER_NEW';
+
+/** Build timestamp (ISO 8601) */
+export const BUILD_DATE = '$BUILD_DATE';
+
+/** Engine version at build time */
+export const ENGINE_VERSION = '${SHARPEE_NEW}';
+
+/** Combined version info object for easy access */
+export const VERSION_INFO = {
+  version: CLIENT_VERSION,
+  buildDate: BUILD_DATE,
+  engineVersion: ENGINE_VERSION
+} as const;
+EOF
+        echo "[browser version] $BROWSER_CURRENT → $BROWSER_NEW"
+    fi
 }
 
 # If skipping to dungeo, just build dungeo
 if [ "$SKIP_TO" = "dungeo" ]; then
     echo "=== Building Dungeo Only ==="
-    increment_version
+    update_versions
 
     echo -n "[dungeo] "
     if pnpm --filter "@sharpee/story-dungeo" build > /dev/null 2>&1; then
@@ -128,7 +164,7 @@ else
 fi
 
 echo ""
-increment_version
+update_versions
 
 # Build dungeo story
 echo "=== Building Dungeo Story ==="
