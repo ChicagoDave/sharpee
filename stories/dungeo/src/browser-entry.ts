@@ -12,14 +12,14 @@ import { LanguageProvider } from '@sharpee/lang-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
 import { ISaveRestoreHooks, ISaveData } from '@sharpee/core';
 import { compressToUTF16, decompressFromUTF16 } from 'lz-string';
-import { story } from './index';
+import { story, config } from './index';
 import { STORY_VERSION, ENGINE_VERSION, BUILD_DATE } from './version';
 
-// Game metadata for title display
-const GAME_TITLE = 'DUNGEO';
-const GAME_DESCRIPTION = 'A port of Mainframe Zork (1981)';
-const GAME_AUTHORS = 'Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling';
-const PORTED_BY = 'David Cornelson';
+// Game metadata from story config
+const GAME_TITLE = config.title;
+const GAME_DESCRIPTION = config.description || '';
+const GAME_AUTHORS = Array.isArray(config.author) ? config.author.join(', ') : config.author;
+const PORTED_BY = config.custom?.portedBy || '';
 const SHARPEE_VERSION = ENGINE_VERSION;
 
 // localStorage keys for save/restore

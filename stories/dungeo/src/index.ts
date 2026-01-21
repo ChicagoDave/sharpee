@@ -108,11 +108,14 @@ import { VERSION_INFO } from './version';
  * Dungeo story configuration
  */
 export const config: StoryConfig = {
-  id: "dungeo",
-  title: "DUNGEO",
-  author: "Based on Zork by MIT (Sharpee implementation)",
+  id: "dungeon",
+  title: "DUNGEON",
+  author: "Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling",
   version: VERSION_INFO.version,
-  description: "A Sharpee implementation of Mainframe Zork. Welcome to the Great Underground Empire!"
+  description: "A port of Mainframe Zork (1981)",
+  custom: {
+    portedBy: "David Cornelson"
+  }
 };
 
 /**
