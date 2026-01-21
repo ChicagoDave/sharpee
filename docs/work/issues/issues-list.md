@@ -26,7 +26,7 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-018 | SWITCH ON LAMP not showing room description in dark room | Medium | Stdlib/TextService | 2026-01-19 | - | 2026-01-21 |
 | ISSUE-019 | Restore dialog race condition (opens repeatedly) | Medium | Browser | 2026-01-19 | - | 2026-01-21 |
 | ISSUE-020 | Restore adds to screen instead of clearing/replacing | Medium | Browser | 2026-01-19 | - | 2026-01-21 |
-| ISSUE-021 | UP from Studio limited to two items (verify against 1981 source) | Low | Story | 2026-01-19 | - | - |
+| ISSUE-021 | UP from Studio limited to two items (verify against 1981 source) | Low | Story | 2026-01-19 | - | 2026-01-21 |
 | ISSUE-022 | ABOUT info hardcoded in browser-entry, wrong authors | Low | Story/Browser | 2026-01-19 | - | 2026-01-21 |
 | ISSUE-023 | AGAIN (G) command bypasses parser, not in stdlib | Medium | Platform | 2026-01-20 | - | 2026-01-21 |
 | ISSUE-024 | TAKE ALL tries to take items already carried | Medium | Stdlib | 2026-01-21 | - | 2026-01-21 |
@@ -38,20 +38,67 @@ Catalog of known bugs and issues to be addressed.
 
 ## Open Issues
 
-### ISSUE-021: UP from Studio limited to two items (verify against 1981 source)
-
-**Reported**: 2026-01-19
-**Severity**: Low
-**Component**: Story
-
-**Description**:
-Going UP from Studio appears to be limited to carrying only two items. Need to verify this against the 1981 MDL Zork source to determine if this is canonical behavior or a bug.
-
-**Notes**: The chimney connection between Studio and Kitchen may have a carrying capacity limit in the original. Check `docs/dungeon-81/mdlzork_810722/` for authoritative reference.
+(No open issues)
 
 ---
 
 ## Closed Issues
+
+### ISSUE-021: UP from Studio limited to two items (chimney restriction)
+
+**Reported**: 2026-01-19
+**Fixed**: 2026-01-21
+**Severity**: Low
+**Component**: Story (handlers, actions)
+
+**Description**:
+The chimney passage from Studio to Kitchen has a carrying restriction per MDL source (act1.254 lines 133-146, dung.355 lines 1793-1797).
+
+**Canonical behavior per MDL source**:
+- Maximum 2 items in inventory
+- Must have the lamp specifically (not just any light source)
+- Cannot be empty-handed
+
+**Messages**:
+- Empty-handed: "Going up empty-handed is a bad idea." (note: original has typo "idead")
+- Too much baggage OR no lamp: "The chimney is too narrow for you and all of your baggage."
+
+**MDL code reference** (act1.254):
+```lisp
+<COND (<AND <L=? <LENGTH .AOBJS> 2>
+            <MEMQ <SFIND-OBJ "LAMP"> .AOBJS>>
+       <SETG LIGHT-LOAD!-FLAG T>
+       <>)
+      (<EMPTY? .AOBJS>
+       <TELL "Going up empty-handed is a bad idead.">
+       T)
+      (T
+       <SETG LIGHT-LOAD!-FLAG <>>)>>
+```
+
+**Implementation**:
+- `stories/dungeo/src/actions/chimney-blocked/` - Blocking action with 4-phase pattern
+- `stories/dungeo/src/handlers/chimney-handler.ts` - Command transformer checking inventory
+
+**Also fixed**:
+- Studio room description (was wrong - mentioned "sketches of mountains" instead of "paints of 69 different colors")
+- Chimney scenery description (was backwards - said "leads down" instead of "leads up")
+- Paint splatters scenery (was "crude drawings of grotesque creatures")
+
+**Files created**:
+- `stories/dungeo/src/actions/chimney-blocked/types.ts`
+- `stories/dungeo/src/actions/chimney-blocked/chimney-blocked-action.ts`
+- `stories/dungeo/src/actions/chimney-blocked/index.ts`
+- `stories/dungeo/src/handlers/chimney-handler.ts`
+- `stories/dungeo/tests/transcripts/chimney-restriction.transcript`
+
+**Files modified**:
+- `stories/dungeo/src/regions/underground.ts` - Fixed descriptions
+- `stories/dungeo/src/actions/index.ts` - Added exports
+- `stories/dungeo/src/handlers/index.ts` - Added export
+- `stories/dungeo/src/index.ts` - Import, registration, messages
+
+---
 
 ### ISSUE-027: Grue death mechanics (75% death in dark rooms)
 

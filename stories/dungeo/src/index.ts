@@ -36,7 +36,7 @@ import { DungeoScoringService } from './scoring';
 import { ScoringEventProcessor } from '@sharpee/stdlib';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, TURN_SWITCH_ACTION_ID, TurnSwitchMessages, PUT_UNDER_ACTION_ID, PutUnderMessages, PUSH_KEY_ACTION_ID, PushKeyMessages, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages, INFLATE_ACTION_ID, InflateMessages, DEFLATE_ACTION_ID, DeflateMessages, COMMANDING_ACTION_ID, CommandingMessages, LAUNCH_ACTION_ID, LaunchMessages, TALK_TO_TROLL_ACTION_ID, TalkToTrollMessages, DIAGNOSE_ACTION_ID, DiagnoseMessages, ROOM_ACTION_ID, RNAME_ACTION_ID, OBJECTS_ACTION_ID, RoomInfoMessages, GRUE_DEATH_ACTION_ID, GrueDeathMessages } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, TURN_SWITCH_ACTION_ID, TurnSwitchMessages, PUT_UNDER_ACTION_ID, PutUnderMessages, PUSH_KEY_ACTION_ID, PushKeyMessages, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages, INFLATE_ACTION_ID, InflateMessages, DEFLATE_ACTION_ID, DeflateMessages, COMMANDING_ACTION_ID, CommandingMessages, LAUNCH_ACTION_ID, LaunchMessages, TALK_TO_TROLL_ACTION_ID, TalkToTrollMessages, DIAGNOSE_ACTION_ID, DiagnoseMessages, ROOM_ACTION_ID, RNAME_ACTION_ID, OBJECTS_ACTION_ID, RoomInfoMessages, GRUE_DEATH_ACTION_ID, GrueDeathMessages, CHIMNEY_BLOCKED_ACTION_ID, ChimneyBlockedMessages } from './actions';
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages, FloodingMessages, registerBalloonPutHandler, BalloonHandlerMessages, registerTrollRecoveryDaemon, SwordGlowMessages } from './scheduler';
@@ -71,6 +71,7 @@ import { createBalloonExitTransformer } from './handlers/balloon-handler';
 import { createRiverEntryTransformer, registerBoatMovementHandler, RiverMessages } from './handlers/river-handler';
 import { createFallsDeathTransformer, registerFallsRoom, FallsDeathMessages } from './handlers/falls-death-handler';
 import { createGrueDeathTransformer } from './handlers/grue-handler';
+import { createChimneyCommandTransformer } from './handlers/chimney-handler';
 import { createTinyRoomDoorTransformer, createTinyRoomMatTransformer, TinyRoomMessages } from './handlers/tiny-room-handler';
 
 // Import NPCs
@@ -2124,6 +2125,10 @@ export class DungeoStory implements Story {
     language.addMessage(GrueDeathMessages.WALKED_INTO_GRUE, 'Oh, no! You have walked into the slavering fangs of a lurking grue!\n\n    **** You have died ****');
     language.addMessage(GrueDeathMessages.SLITHERED_INTO_ROOM, 'Oh, no! A lurking grue slithered into the room and devoured you!\n\n    **** You have died ****');
 
+    // Chimney restriction messages (from MDL dung.355 and act1.254)
+    language.addMessage(ChimneyBlockedMessages.TOO_MUCH_BAGGAGE, 'The chimney is too narrow for you and all of your baggage.');
+    language.addMessage(ChimneyBlockedMessages.EMPTY_HANDED, 'Going up empty-handed is a bad idea.');
+
     // Death penalty messages (from FORTRAN source - 10 pts per death, game over after 2)
     language.addMessage(DeathPenaltyMessages.PENALTY, 'You have lost 10 points for dying.');
     language.addMessage(DeathPenaltyMessages.GAME_OVER, 'You have died too many times. The Great Underground Empire claims another victim.\n\n    **** GAME OVER ****');
@@ -2248,6 +2253,10 @@ export class DungeoStory implements Story {
     // Register Grue death transformer
     // Moving in dark room has 75% death chance per FORTRAN verbs.f
     engine.registerParsedCommandTransformer(createGrueDeathTransformer());
+
+    // Register Chimney restriction transformer
+    // Studio to Kitchen requires lamp + max 1 other item per MDL act1.254
+    engine.registerParsedCommandTransformer(createChimneyCommandTransformer());
 
     // Register boat movement handler
     // Moves boat with player when navigating river

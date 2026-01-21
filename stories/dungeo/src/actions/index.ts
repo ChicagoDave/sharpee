@@ -133,6 +133,9 @@ export * from './falls-death';
 // Grue Death (moving in dark room with failed survival roll)
 export * from './grue-death';
 
+// Chimney Blocked (climbing chimney without proper inventory)
+export * from './chimney-blocked';
+
 // Commanding (Robot commands - tell robot to X)
 export * from './commanding';
 
@@ -194,6 +197,7 @@ import { deflateAction, DEFLATE_ACTION_ID, DeflateMessages } from './deflate';
 import { riverBlockedAction, RIVER_BLOCKED_ACTION_ID, RiverBlockedMessages } from './river-blocked';
 import { fallsDeathAction, FALLS_DEATH_ACTION_ID, FallsDeathMessages } from './falls-death';
 import { grueDeathAction, GRUE_DEATH_ACTION_ID, GrueDeathMessages } from './grue-death';
+import { chimneyBlockedAction, CHIMNEY_BLOCKED_ACTION_ID, ChimneyBlockedMessages } from './chimney-blocked';
 import { commandingAction, COMMANDING_ACTION_ID, CommandingMessages } from './commanding';
 import { launchAction, LAUNCH_ACTION_ID, LaunchMessages } from './launch';
 import { talkToTrollAction, TALK_TO_TROLL_ACTION_ID, TalkToTrollMessages } from './talk-to-troll';
@@ -230,6 +234,7 @@ export { DEFLATE_ACTION_ID, DeflateMessages } from './deflate';
 export { RIVER_BLOCKED_ACTION_ID, RiverBlockedMessages } from './river-blocked';
 export { FALLS_DEATH_ACTION_ID, FallsDeathMessages } from './falls-death';
 export { GRUE_DEATH_ACTION_ID, GrueDeathMessages } from './grue-death';
+export { CHIMNEY_BLOCKED_ACTION_ID, ChimneyBlockedMessages } from './chimney-blocked';
 export { LAUNCH_ACTION_ID, LaunchMessages } from './launch';
 
 // Re-export commanding action for use in index.ts
@@ -288,6 +293,7 @@ export const customActions = [
   riverBlockedAction,
   fallsDeathAction,
   grueDeathAction,
+  chimneyBlockedAction,
   commandingAction,
   launchAction,
   talkToTrollAction,

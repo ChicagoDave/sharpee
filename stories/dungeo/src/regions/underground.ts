@@ -106,7 +106,7 @@ export function createUndergroundRegion(world: WorldModel): UndergroundRoomIds {
     'A chasm runs southwest to northeast. You are on the east edge.');
 
   const studio = createRoom(world, 'Studio',
-    'This appears to have been an artist\'s studio. The walls are covered with sketches of mountains. A stairway leads down. The only other exit is to the northwest.');
+    'This is what appears to have been an artist\'s studio. The walls and floors are splattered with paints of 69 different colors. Strangely enough, nothing of value is hanging here. At the north and northwest of the room are open doors (also covered with paint). An extremely dark and narrow chimney leads up from a fireplace; although you might be able to get up it, it seems unlikely you could get back down.');
 
   const torchRoom = createRoom(world, 'Torch Room',
     'This is a large room with a prominent doorway leading to a down staircase. To the west is a narrow twisting tunnel, covered with a thin layer of dust. Above you is a large dome painted with scenes depicting elfin hacking rites. Up around the edge of the dome (20 feet up) is a wooden railing. In the center of the room there is a white marble pedestal.');
@@ -544,29 +544,29 @@ function createGalleryObjects(world: WorldModel, roomId: string): void {
 // ============= Studio Objects =============
 
 function createStudioObjects(world: WorldModel, roomId: string): void {
-  // Chimney (scenery - leads down to Kitchen)
+  // Chimney (scenery - leads UP to Kitchen)
   const chimney = world.createEntity('chimney', EntityType.SCENERY);
   chimney.add(new IdentityTrait({
     name: 'chimney',
-    aliases: ['chimney', 'dark chimney', 'fireplace chimney'],
-    description: 'A dark chimney leads down. You could probably climb down it.',
+    aliases: ['chimney', 'dark chimney', 'fireplace chimney', 'narrow chimney', 'fireplace'],
+    description: 'The chimney is very dark and narrow. You might be able to climb up it, but it seems unlikely you could get back down.',
     properName: false,
     article: 'a'
   }));
   chimney.add(new SceneryTrait());
   world.moveEntity(chimney.id, roomId);
 
-  // Grotesque drawings (scenery)
-  const drawings = world.createEntity('drawings', EntityType.SCENERY);
-  drawings.add(new IdentityTrait({
-    name: 'crude drawings',
-    aliases: ['drawings', 'crude drawings', 'grotesque creatures', 'pictures'],
-    description: 'The walls are covered with crude drawings of what appear to be grotesque creatures, perhaps the work of a disturbed artist.',
+  // Paint splatters (scenery)
+  const paint = world.createEntity('paint', EntityType.SCENERY);
+  paint.add(new IdentityTrait({
+    name: 'paint',
+    aliases: ['paint', 'paints', 'splatter', 'splatters', 'paint splatters', 'colors'],
+    description: 'The walls and floors are splattered with paints of 69 different colors. It looks like the work of a very messy artist.',
     properName: false,
     article: 'some'
   }));
-  drawings.add(new SceneryTrait());
-  world.moveEntity(drawings.id, roomId);
+  paint.add(new SceneryTrait());
+  world.moveEntity(paint.id, roomId);
 }
 
 // ============= Dome Room Objects =============
