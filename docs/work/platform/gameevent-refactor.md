@@ -267,10 +267,10 @@ const restartEvent: ISemanticEvent = {
 - Simplified `emitGameEvent()` - no more payload conversion
 - Deprecated `IGameEvent` interface with JSDoc warnings
 
-### Phase 3: Clean up (future v1.0.0)
-- Remove `IGameEvent` interface entirely
-- Remove deprecated type guard aliases
-- Clean up any remaining payload references
+### Phase 3: Clean up (COMPLETED 2026-01-21)
+- Removed `IGameEvent` interface entirely from `game-events.ts`
+- Removed deprecated `isGameStartEvent` and `isGameEndEvent` aliases
+- Note: `payload` field in `IPlatformEvent` is intentional (different interface)
 
 ## Files Affected
 

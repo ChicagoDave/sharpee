@@ -206,27 +206,6 @@ export const GameEventType = {
 
 export type GameEventTypeValue = typeof GameEventType[keyof typeof GameEventType];
 
-/**
- * @deprecated Use ISemanticEvent with typed data interfaces instead.
- * Game events now use event.data, not a separate payload field.
- * See GameStartedData, GameEndedData, etc. for typed data access.
- * Will be removed in v1.0.0
- */
-export interface IGameEvent extends ISemanticEvent {
-  type: GameEventTypeValue;
-
-  /**
-   * @deprecated Use event.data instead. This field exists for backwards compatibility.
-   */
-  payload: {
-    gameState?: GameState;
-    story?: GameEventStoryData;
-    session?: GameEventSessionData;
-    ending?: GameEventEndingData;
-    error?: GameEventErrorData;
-    metadata?: Record<string, unknown>;
-  };
-}
 
 /**
  * Check if an event is a game lifecycle event (any GameEventType).
@@ -263,16 +242,6 @@ export function isGameEndSequenceEvent(event: ISemanticEvent): boolean {
     event.type === GameEventType.GAME_ABORTED
   );
 }
-
-/**
- * @deprecated Use isGameStartSequenceEvent instead
- */
-export const isGameStartEvent = isGameStartSequenceEvent;
-
-/**
- * @deprecated Use isGameEndSequenceEvent instead
- */
-export const isGameEndEvent = isGameEndSequenceEvent;
 
 // =============================================================================
 // Helper Functions to Create Game Events
