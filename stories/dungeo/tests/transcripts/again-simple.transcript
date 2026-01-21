@@ -1,0 +1,12 @@
+title: AGAIN Simple Test
+story: dungeo
+author: Sharpee Team
+description: Simple test for AGAIN command
+
+---
+
+> look
+[OK: contains "West of House"]
+
+> again
+[OK: contains "West of House"]

@@ -1,9 +1,10 @@
 #!/bin/bash
-# Build all Sharpee platform packages and create the node bundle
+# Build all Sharpee platform packages and create the node bundle (Ubuntu version)
+# Uses 'npx pnpm' instead of 'pnpm' for environments without global pnpm
 #
 # Usage:
-#   ./scripts/build-platform.sh              # Build everything
-#   ./scripts/build-platform.sh --skip stdlib  # Skip to stdlib and build from there
+#   bash scripts/build-platform-ubuntu.sh              # Build everything
+#   bash scripts/build-platform-ubuntu.sh --skip stdlib  # Skip to stdlib and build from there
 #
 # Output: dist/sharpee.js (node bundle with all platform packages)
 
@@ -86,16 +87,16 @@ build_package() {
     fi
 
     echo -n "[$name] "
-    if pnpm --filter "$package" build > /dev/null 2>&1; then
+    if npx pnpm --filter "$package" build > /dev/null 2>&1; then
         echo "✓"
     else
         echo "✗ FAILED"
-        pnpm --filter "$package" build 2>&1 | tail -20
+        npx pnpm --filter "$package" build 2>&1 | tail -20
         exit 1
     fi
 }
 
-echo "=== Building Sharpee Platform ==="
+echo "=== Building Sharpee Platform (Ubuntu) ==="
 if [ -n "$SKIP_TO" ]; then
     echo "(skipping to: $SKIP_TO)"
 fi

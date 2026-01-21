@@ -76,6 +76,7 @@ export * from './saving';
 export * from './restoring';
 export * from './quitting';
 export * from './undoing';
+export * from './again';
 
 // Import all action language definitions
 import { takingLanguage } from './taking';
@@ -130,6 +131,7 @@ import { savingLanguage } from './saving';
 import { restoringLanguage } from './restoring';
 import { quittingLanguage } from './quitting';
 import { undoingLanguage } from './undoing';
+import { againLanguage } from './again';
 
 /**
  * All standard action language definitions
@@ -206,5 +208,6 @@ export const standardActionLanguage = [
   savingLanguage,
   restoringLanguage,
   quittingLanguage,
-  undoingLanguage
+  undoingLanguage,
+  againLanguage
 ];

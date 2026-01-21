@@ -434,7 +434,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.6.0
-        version: 1.6.1(@types/node@18.19.130)(@vitest/ui@3.2.4(vitest@3.2.4))(terser@5.44.1)
+        version: 1.6.1(@types/node@18.19.130)(@vitest/ui@3.2.4)(terser@5.44.1)
 
   packages/transcript-tester:
     dependencies:
@@ -7730,7 +7730,7 @@ snapshots:
       fsevents: 2.3.3
       terser: 5.44.1
 
-  vitest@1.6.1(@types/node@18.19.130)(@vitest/ui@3.2.4(vitest@3.2.4))(terser@5.44.1):
+  vitest@1.6.1(@types/node@18.19.130)(@vitest/ui@3.2.4)(terser@5.44.1):
     dependencies:
       '@vitest/expect': 1.6.1
       '@vitest/runner': 1.6.1

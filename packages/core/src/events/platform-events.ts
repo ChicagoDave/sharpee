@@ -16,6 +16,7 @@ export const PlatformEventType = {
   QUIT_REQUESTED: 'platform.quit_requested',
   RESTART_REQUESTED: 'platform.restart_requested',
   UNDO_REQUESTED: 'platform.undo_requested',
+  AGAIN_REQUESTED: 'platform.again_requested',
 
   // Completion events - emitted by engine after processing
   SAVE_COMPLETED: 'platform.save_completed',
@@ -29,7 +30,8 @@ export const PlatformEventType = {
   RESTORE_FAILED: 'platform.restore_failed',
   QUIT_CANCELLED: 'platform.quit_cancelled',
   RESTART_CANCELLED: 'platform.restart_cancelled',
-  UNDO_FAILED: 'platform.undo_failed'
+  UNDO_FAILED: 'platform.undo_failed',
+  AGAIN_FAILED: 'platform.again_failed'
 } as const;
 
 export type PlatformEventTypeValue = typeof PlatformEventType[keyof typeof PlatformEventType];
@@ -146,7 +148,8 @@ export function isPlatformRequestEvent(event: ISemanticEvent): boolean {
     event.type === PlatformEventType.RESTORE_REQUESTED ||
     event.type === PlatformEventType.QUIT_REQUESTED ||
     event.type === PlatformEventType.RESTART_REQUESTED ||
-    event.type === PlatformEventType.UNDO_REQUESTED
+    event.type === PlatformEventType.UNDO_REQUESTED ||
+    event.type === PlatformEventType.AGAIN_REQUESTED
   );
 }
 
@@ -161,7 +164,8 @@ export function isPlatformCompletionEvent(event: ISemanticEvent): boolean {
     event.type === PlatformEventType.RESTORE_FAILED ||
     event.type === PlatformEventType.QUIT_CANCELLED ||
     event.type === PlatformEventType.RESTART_CANCELLED ||
-    event.type === PlatformEventType.UNDO_FAILED
+    event.type === PlatformEventType.UNDO_FAILED ||
+    event.type === PlatformEventType.AGAIN_FAILED
   );
 }
 
@@ -256,5 +260,32 @@ export function createUndoCompletedEvent(success: boolean, restoredToTurn?: numb
     success ? PlatformEventType.UNDO_COMPLETED : PlatformEventType.UNDO_FAILED,
     undefined,
     { success, restoredToTurn, error }
+  );
+}
+
+/**
+ * Context for again (repeat) operations
+ */
+export interface IAgainContext {
+  /**
+   * The original command text to repeat
+   */
+  command: string;
+
+  /**
+   * The action ID of the command to repeat
+   */
+  actionId: string;
+}
+
+export function createAgainRequestedEvent(context: IAgainContext): IPlatformEvent {
+  return createPlatformEvent(PlatformEventType.AGAIN_REQUESTED, context);
+}
+
+export function createAgainFailedEvent(error: string): IPlatformEvent {
+  return createPlatformEvent(
+    PlatformEventType.AGAIN_FAILED,
+    undefined,
+    { success: false, error }
   );
 }

@@ -1,10 +1,11 @@
 #!/bin/bash
-# Build Sharpee platform + Dungeo story for testing
+# Build Sharpee platform + Dungeo story for testing (Ubuntu version)
+# Uses 'npx pnpm' instead of 'pnpm' for environments without global pnpm
 #
 # Usage:
-#   ./scripts/build-dungeo.sh                  # Build everything
-#   ./scripts/build-dungeo.sh --skip stdlib    # Skip to stdlib in platform build
-#   ./scripts/build-dungeo.sh --skip dungeo    # Only rebuild dungeo (platform already built)
+#   bash scripts/build-dungeo-ubuntu.sh                  # Build everything
+#   bash scripts/build-dungeo-ubuntu.sh --skip stdlib    # Skip to stdlib in platform build
+#   bash scripts/build-dungeo-ubuntu.sh --skip dungeo    # Only rebuild dungeo (platform already built)
 #
 # Output: dist/sharpee.js ready for transcript testing
 
@@ -106,11 +107,11 @@ if [ "$SKIP_TO" = "dungeo" ]; then
     increment_version
 
     echo -n "[dungeo] "
-    if pnpm --filter "@sharpee/story-dungeo" build > /dev/null 2>&1; then
+    if npx pnpm --filter "@sharpee/story-dungeo" build > /dev/null 2>&1; then
         echo "✓"
     else
         echo "✗ FAILED"
-        pnpm --filter "@sharpee/story-dungeo" build 2>&1 | tail -20
+        npx pnpm --filter "@sharpee/story-dungeo" build 2>&1 | tail -20
         exit 1
     fi
 
@@ -122,9 +123,9 @@ fi
 
 # Build platform first
 if [ -n "$SKIP_TO" ]; then
-    "$REPO_ROOT/scripts/build-platform.sh" --skip "$SKIP_TO"
+    bash "$REPO_ROOT/scripts/build-platform-ubuntu.sh" --skip "$SKIP_TO"
 else
-    "$REPO_ROOT/scripts/build-platform.sh"
+    bash "$REPO_ROOT/scripts/build-platform-ubuntu.sh"
 fi
 
 echo ""
@@ -133,15 +134,15 @@ increment_version
 # Build dungeo story
 echo "=== Building Dungeo Story ==="
 echo -n "[dungeo] "
-if pnpm --filter "@sharpee/story-dungeo" build > /dev/null 2>&1; then
+if npx pnpm --filter "@sharpee/story-dungeo" build > /dev/null 2>&1; then
     echo "✓"
 else
     echo "✗ FAILED"
-    pnpm --filter "@sharpee/story-dungeo" build 2>&1 | tail -20
+    npx pnpm --filter "@sharpee/story-dungeo" build 2>&1 | tail -20
     exit 1
 fi
 
 echo ""
 echo "=== Dungeo Build Complete ==="
 echo "Test with: node dist/sharpee.js --play"
-echo "Or: ./scripts/fast-transcript-test.sh stories/dungeo --all"
+echo "Or: node dist/sharpee.js --test stories/dungeo/tests/transcripts/<name>.transcript"

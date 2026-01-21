@@ -25,6 +25,7 @@ import {
   ParserFactory,
   CommandHistoryData,
   CommandHistoryEntry,
+  CommandHistoryCapabilitySchema,
   IFActions,
   MetaCommandRegistry,
   IPerceptionService,
@@ -32,7 +33,7 @@ import {
 } from '@sharpee/stdlib';
 import { LanguageProvider, IEventProcessorWiring } from '@sharpee/if-domain';
 import { ITextService, createTextService, renderToString } from '@sharpee/text-service';
-import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, ISerializedSchedulerState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, getUntypedEventData } from '@sharpee/core';
+import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, ISerializedSchedulerState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, getUntypedEventData } from '@sharpee/core';
 
 import { ISchedulerService, createSchedulerService } from './scheduler';
 import { INpcService, createNpcService, guardBehavior, passiveBehavior } from '@sharpee/stdlib';
@@ -122,6 +123,12 @@ export class GameEngine {
   }) {
     this.world = options.world;
     this.perceptionService = options.perceptionService;
+
+    // Register essential engine capabilities (stories can register additional ones)
+    // Command history is required for the AGAIN command to function
+    this.world.registerCapability(StandardCapabilities.COMMAND_HISTORY, {
+      schema: CommandHistoryCapabilitySchema
+    });
     this.config = {
       maxHistory: 100,
       validateEvents: true,
@@ -451,36 +458,10 @@ export class GameEngine {
       this.createUndoSnapshot();
     }
 
-    // Handle 'again' / 'g' command substitution
-    const normalized = input.trim().toLowerCase();
-    if (normalized === 'g' || normalized === 'again') {
-      // Get command history to find last command
-      const historyData = this.world.getCapability(StandardCapabilities.COMMAND_HISTORY) as CommandHistoryData | null;
-      
-      if (!historyData || !historyData.entries || historyData.entries.length === 0) {
-        // No command to repeat - return error event
-        const turn = this.context.currentTurn;
-        const errorEvent = eventSequencer.sequence({
-          type: 'if.error',
-          data: {
-            message: 'no_command_to_repeat',
-            command: input
-          }
-        }, turn);
-        
-        return {
-          turn,
-          input: input,
-          success: false,
-          events: [errorEvent],
-          error: 'There is nothing to repeat.'
-        };
-      }
-      
-      // Get the last command and substitute
-      const lastEntry = historyData.entries[historyData.entries.length - 1];
-      input = lastEntry.originalText;
-    }
+    // Note: AGAIN/G command handling has been moved to the again action (if.action.again)
+    // which emits platform.again_requested event, processed by processPlatformOperations.
+    // This enables proper i18n support - each parser package defines its own patterns
+    // (e.g., "again"/"g" in English, "encore"/"e" in French).
 
     // Check if system events are enabled via debug capability
     const debugData = this.world.getCapability('debug');
@@ -1138,12 +1119,8 @@ export class GameEngine {
       return;
     }
 
-    // Don't record 'again' or 'g' commands (they should never get here, but just in case)
-    const normalized = input.trim().toLowerCase();
-    const excluded = ['again', 'g', 'oops', 'undo'];
-    if (excluded.includes(normalized)) {
-      return;
-    }
+    // Note: Meta-commands (again, undo, save, etc.) are excluded by the isMeta check
+    // in executeTurn before calling this function. No need for string-based exclusion.
 
     // Get the action ID from the result
     const actionId = result.actionId;
@@ -1212,14 +1189,20 @@ export class GameEngine {
    */
   private async processPlatformOperations(turn?: number): Promise<void> {
     const currentTurn = turn ?? this.context.currentTurn;
-    
+
     // Ensure there's an entry for the current turn
     if (!this.turnEvents.has(currentTurn)) {
       this.turnEvents.set(currentTurn, []);
     }
-    
+
+    // IMPORTANT: Save and clear pending ops at START to prevent infinite recursion
+    // When AGAIN calls executeTurn() recursively, that nested call must not see
+    // the same pending operations, or it will process AGAIN_REQUESTED again.
+    const opsToProcess = [...this.pendingPlatformOps];
+    this.pendingPlatformOps = [];
+
     // Process each pending operation
-    for (const platformOp of this.pendingPlatformOps) {
+    for (const platformOp of opsToProcess) {
       try {
         switch (platformOp.type) {
           case PlatformEventType.SAVE_REQUESTED: {
@@ -1404,6 +1387,37 @@ export class GameEngine {
             }
             break;
           }
+
+          case PlatformEventType.AGAIN_REQUESTED: {
+            const againContext = platformOp.payload.context as IAgainContext;
+
+            if (!againContext?.command) {
+              const errorEvent = createAgainFailedEvent('No command to repeat');
+              this.eventSource.emit(errorEvent);
+              this.turnEvents.get(currentTurn)?.push(errorEvent);
+              this.emit('event', errorEvent as any);
+              break;
+            }
+
+            // Re-execute the stored command
+            // Note: The repeated command goes through normal validation/execution
+            // and its events will be added to the current turn
+            try {
+              const repeatResult = await this.executeTurn(againContext.command);
+
+              // Merge the repeated command's events into this turn
+              // (executeTurn already stored them, but we want them in currentTurn's context)
+              // The events are already emitted by executeTurn, no need to re-emit
+            } catch (error) {
+              const errorEvent = createAgainFailedEvent(
+                error instanceof Error ? error.message : 'Failed to repeat command'
+              );
+              this.eventSource.emit(errorEvent);
+              this.turnEvents.get(currentTurn)?.push(errorEvent);
+              this.emit('event', errorEvent as any);
+            }
+            break;
+          }
         }
       } catch (error) {
         console.error(`Error processing platform operation ${platformOp.type}:`, error);
@@ -1426,6 +1440,9 @@ export class GameEngine {
           case PlatformEventType.UNDO_REQUESTED:
             errorEvent = createUndoCompletedEvent(false, undefined, error instanceof Error ? error.message : 'Unknown error');
             break;
+          case PlatformEventType.AGAIN_REQUESTED:
+            errorEvent = createAgainFailedEvent(error instanceof Error ? error.message : 'Unknown error');
+            break;
           default:
             continue;
         }
@@ -1436,9 +1453,7 @@ export class GameEngine {
         this.emit('event', errorEvent as any);
       }
     }
-    
-    // Clear pending operations
-    this.pendingPlatformOps = [];
+    // Note: pendingPlatformOps was cleared at the start of this function
   }
 
   /**

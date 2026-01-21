@@ -1,11 +1,12 @@
 #!/bin/bash
-# Build Sharpee platform + Dungeo story + browser bundle
+# Build Sharpee platform + Dungeo story + browser bundle (Ubuntu version)
+# Uses 'npx pnpm' instead of 'pnpm' for environments without global pnpm
 #
 # Usage:
-#   ./scripts/build-web.sh                   # Build everything
-#   ./scripts/build-web.sh --skip stdlib     # Skip to stdlib in platform build
-#   ./scripts/build-web.sh --skip dungeo     # Only rebuild dungeo + browser bundle
-#   ./scripts/build-web.sh --skip web        # Only rebuild browser bundle (dungeo already built)
+#   bash scripts/build-web-ubuntu.sh                   # Build everything
+#   bash scripts/build-web-ubuntu.sh --skip stdlib     # Skip to stdlib in platform build
+#   bash scripts/build-web-ubuntu.sh --skip dungeo     # Only rebuild dungeo + browser bundle
+#   bash scripts/build-web-ubuntu.sh --skip web        # Only rebuild browser bundle (dungeo already built)
 #
 # Output: dist/web/dungeo/ (HTML + JS + CSS for browser deployment)
 
@@ -100,9 +101,9 @@ fi
 
 # Build dungeo first (which builds platform)
 if [ -n "$SKIP_TO" ]; then
-    "$REPO_ROOT/scripts/build-dungeo.sh" --skip "$SKIP_TO"
+    bash "$REPO_ROOT/scripts/build-dungeo-ubuntu.sh" --skip "$SKIP_TO"
 else
-    "$REPO_ROOT/scripts/build-dungeo.sh"
+    bash "$REPO_ROOT/scripts/build-dungeo-ubuntu.sh"
 fi
 
 echo ""

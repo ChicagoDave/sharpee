@@ -175,34 +175,129 @@ This separates concerns: action handles validation/reporting, engine handles re-
 
 ## Recommended Approach
 
-**Option A (Minimal)** for immediate use—adds grammar and language layer without major refactoring.
+**Option C (Hybrid)** is the correct approach. Option A is rejected because it breaks internationalization.
 
-**Option C (Hybrid)** for proper architecture alignment if we want full stdlib integration.
+### Why Option A Fails
 
-The key insight is that AGAIN is fundamentally different from other actions:
+The current engine-level string matching hardcodes English:
+
+```typescript
+// packages/engine/src/game-engine.ts
+if (normalized === 'g' || normalized === 'again') {
+```
+
+This breaks for any non-English parser. A French player typing `encore` would get "I don't understand" instead of repeating their last command.
+
+### i18n Architecture
+
+Each parser package registers locale-specific patterns for the universal action ID:
+
+| Package | Patterns | Maps To |
+|---------|----------|---------|
+| `parser-en-us` | `again`, `g` | `if.action.again` |
+| `parser-fr-fr` | `encore`, `e` | `if.action.again` |
+| `parser-de-de` | `nochmal`, `n` | `if.action.again` |
+| `parser-es-es` | `otra vez`, `o` | `if.action.again` |
+
+The **action ID is universal**, the **grammar patterns are locale-specific**. The engine never knows what word triggered the action—it just sees `if.action.again` and handles re-execution.
+
+### Option C Flow
+
+```
+"g" → parser → if.action.again → validate (history exists?)
+    → execute (no-op) → report (if.event.again with command)
+    → engine sees if.event.again → re-executes stored command
+```
+
+This separates concerns properly:
+- **Parser**: owns the words ("again", "g", "encore", etc.)
+- **Action**: validates history exists, reports intent
+- **Engine**: handles re-execution (language-agnostic)
+
+### Meta-Action Pattern
+
+AGAIN is fundamentally different from normal actions:
 - Normal actions: parse → validate → execute → report
 - AGAIN: needs to trigger another full parse → validate → execute → report cycle
 
 This is similar to UNDO which also requires engine-level handling (snapshot restoration). Both are "meta-actions" that affect the command execution flow itself rather than game state.
 
+The meta-action pattern: **action validates and signals intent, engine handles the special execution**.
+
 ---
 
 ## Implementation Checklist
 
-### Phase 1: Grammar + Language (Option A)
-- [ ] Add grammar patterns in `packages/parser-en-us/src/grammar.ts`
-- [ ] Add `AgainMessages` in `packages/lang-en-us/src/messages/again.ts`
-- [ ] Update engine to use language messages for "nothing to repeat" error
-- [ ] Add transcript test for AGAIN command
-- [ ] Update docs
+### 1. Stdlib Action
+- [ ] Create `packages/stdlib/src/actions/standard/again/again-action.ts`
+- [ ] Create `packages/stdlib/src/actions/standard/again/again-events.ts`
+- [ ] Create `packages/stdlib/src/actions/standard/again/again-data.ts`
+- [ ] Create `packages/stdlib/src/actions/standard/again/index.ts`
+- [ ] Register in `packages/stdlib/src/actions/standard/index.ts`
+- [ ] Add to meta-registry exclusions (prevent AGAIN from being recorded in history)
 
-### Phase 2: Full Stdlib Action (Option C)
-- [ ] Create `packages/stdlib/src/actions/standard/again/` action files
-- [ ] Add `if.event.again` and `if.event.again_blocked` event types
-- [ ] Modify engine to handle `if.event.again` re-execution
-- [ ] Remove engine string-literal special case
-- [ ] Add unit tests for action
-- [ ] Update transcript tests
+### 2. Grammar (parser-en-us)
+- [ ] Add grammar patterns in `packages/parser-en-us/src/grammar.ts`:
+  - `again` → `if.action.again`
+  - `g` → `if.action.again`
+
+### 3. Language Messages (lang-en-us)
+- [ ] Create `packages/lang-en-us/src/messages/again.ts`
+- [ ] Register messages in `packages/lang-en-us/src/index.ts`
+- [ ] Messages needed:
+  - `NOTHING_TO_REPEAT`: "There is nothing to repeat."
+
+### 4. Engine Modifications
+- [ ] Add handler for `if.event.again` in game-engine.ts
+- [ ] When `if.event.again` is reported, re-execute the command from event data
+- [ ] Remove hardcoded `'g' || 'again'` string matching (lines 454-483)
+- [ ] Ensure re-executed command output is included in turn result
+
+### 5. Testing
+- [ ] Add unit tests for again-action (validate with/without history)
+- [ ] Add transcript test: `stories/dungeo/tests/transcripts/again.transcript`
+- [ ] Test edge cases:
+  - AGAIN with no prior command
+  - AGAIN after failed command (should it repeat?)
+  - AGAIN after AGAIN (should be excluded from history)
+
+### 6. Documentation
+- [ ] Update this plan with completion notes
+- [ ] Add ADR if needed (may not be necessary, follows existing meta-action pattern)
+
+---
+
+## Open Questions
+
+### 1. Should AGAIN repeat failed commands?
+
+If the player types `take lamp` and it fails (lamp not here), should `g` repeat that failed attempt?
+
+**Option A: Only repeat successful commands**
+- Matches Inform 7 behavior
+- History already only records successful commands
+- Less confusing for players
+
+**Option B: Repeat last attempted command regardless of success**
+- Would need to track attempted commands separately
+- More work, less clear benefit
+
+**Recommendation**: Option A (current behavior) - only successful commands are in history.
+
+### 2. Should we show "(repeating...)" feedback?
+
+When AGAIN executes, should output include a prefix like "(repeating: take lamp)"?
+
+**Option A: Silent** - just show the repeated command's output
+**Option B: Feedback** - show "(repeating: take lamp)" before output
+
+**Recommendation**: Silent by default. The player just typed "g" - they know what they're repeating. Could add as optional verbose mode later.
+
+### 3. What if the repeated command is now invalid?
+
+Player takes lamp, moves to new room, types `g`. The "take lamp" command now fails because lamp is already held.
+
+**Behavior**: This is fine. The command re-executes through normal validation and will fail with appropriate message ("You already have that"). No special handling needed.
 
 ---
 
