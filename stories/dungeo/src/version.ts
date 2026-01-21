@@ -6,13 +6,13 @@
  */
 
 /** Story version */
-export const STORY_VERSION = '1.0.64-beta.20260121.2244';
+export const STORY_VERSION = '1.0.64-beta.20260121.2253';
 
 /** Build timestamp (ISO 8601) */
-export const BUILD_DATE = '2026-01-21T22:44:36Z';
+export const BUILD_DATE = '2026-01-21T22:53:45Z';
 
 /** Engine version at build time */
-export const ENGINE_VERSION = '0.9.46-beta.20260121.2244';
+export const ENGINE_VERSION = '0.9.47-beta.20260121.2253';
 
 /** Combined version info object for easy access */
 export const VERSION_INFO = {

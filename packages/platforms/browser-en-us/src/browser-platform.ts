@@ -1,9 +1,10 @@
-import type { 
-  GameEngine, 
-  SequencedEvent, 
-  PlatformEvent, 
-  SemanticEvent 
+import type {
+  GameEngine,
+  SequencedEvent,
+  PlatformEvent,
+  SemanticEvent
 } from '@sharpee/sharpee';
+import { VERSION_INFO } from './version.js';
 import { 
   QueryManager, 
   createQueryManager,
@@ -205,13 +206,19 @@ export class BrowserPlatform {
   async start(): Promise<void> {
     this.isRunning = true;
     this.client.setInputEnabled(true);
-    
+
+    // Set client version on world model for banner display
+    const world = this.engine.getWorld();
+    if (world) {
+      (world as any).clientVersion = VERSION_INFO.version;
+    }
+
     // Start the game engine
     this.engine.start();
-    
+
     // Show initial text
     this.client.displayText('Type commands to play.\n');
-    
+
     // Execute 'look' command to show initial room
     await this.engine.executeTurn('look');
   }

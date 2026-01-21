@@ -6,6 +6,7 @@
 - Complete Phase 3 of Story Index Refactoring: Extract onEngineReady() orchestration logic
 - Establish canonical Sharpee story structure with modular organization
 - Achieve 76% reduction in index.ts size across all three refactoring phases
+- Create author's guide documenting the canonical story structure for future projects
 
 ## Completed
 
@@ -191,10 +192,33 @@ interface RoomConfig {
 
 **Impact**: This structure will be documented in Sharpee authoring guide as recommended practice.
 
+### Author's Guide: Project Structure Documentation
+
+Created comprehensive author's guide at `docs/guides/project-structure.md` documenting the canonical Sharpee story organization established through Phases 1-3.
+
+**Guide Contents:**
+- **Story directory structure**: Package.json, tsconfig, src/ organization
+- **Core files**: index.ts entry point with Story interface implementation
+- **Grammar folder**: Parser extension patterns with `registerAllGrammar()`
+- **Messages folder**: Language layer patterns with `registerAllMessages()`
+- **Orchestration folder**: Engine initialization patterns with `initializeOrchestration()`
+- **Regions folder**: Room definitions (flat files, one per region)
+- **NPCs folder**: NPC organization (one folder per NPC with entity, behavior, messages)
+- **Actions folder**: Story-specific action patterns
+- **Testing**: Transcript test organization and execution
+
+**Correction Applied:**
+- Initial version incorrectly documented regions as nested directories (`regions/house/rooms/`, `regions/house/objects/`)
+- User corrected: Regions are **single flat files** in `src/regions/` (e.g., `white-house.ts`, `forest.ts`)
+- Fixed guide to show correct flat structure with example showing type exports, room creators, object creators, and connection functions all in one file
+
+**Key Principle Documented:**
+> Flat file organization within each folder. Regions are single files, not nested directories.
+
 ## Open Items
 
 ### Short Term
-- None - Phase 3 complete and tested
+- None - Phase 3 complete, tested, and documented
 
 ### Long Term
 - Apply orchestration pattern to other stories in monorepo
@@ -215,9 +239,10 @@ interface RoomConfig {
 **Modified** (1 file):
 - `stories/dungeo/src/index.ts` - Replaced 270-line onEngineReady with 25-line orchestration call
 
-**Documentation** (2 files):
+**Documentation** (3 files):
 - `docs/work/dungeo/story-index-refactor.md` - Updated with Phase 3 results, canonical structure
 - `docs/work/dungeo/onengineready-refactor.md` - Created refactoring plan document
+- `docs/guides/project-structure.md` - Comprehensive author's guide to Sharpee story organization
 
 ## Architectural Notes
 
@@ -311,3 +336,106 @@ This pattern should be documented in core concepts as best practice for region o
 ---
 
 **Progressive update**: Session completed 2026-01-21 13:03
+
+## Work Log (auto-captured)
+```
+[01:19:59] WRITE: docs/architecture/adrs/adr-108-player-character-system.md
+[01:24:35] EDIT: docs/work/dungeo/story-index-refactor.md
+[01:25:04] EDIT: docs/work/dungeo/story-index-refactor.md
+[01:25:16] EDIT: docs/work/dungeo/story-index-refactor.md
+[01:25:33] EDIT: docs/work/dungeo/story-index-refactor.md
+[01:25:44] EDIT: docs/work/dungeo/story-index-refactor.md
+[01:32:26] WRITE: stories/dungeo/src/grammar/gdt-grammar.ts
+[01:32:48] WRITE: stories/dungeo/src/grammar/speech-grammar.ts
+[01:33:25] WRITE: stories/dungeo/src/grammar/puzzle-grammar.ts
+[01:33:40] WRITE: stories/dungeo/src/grammar/ritual-grammar.ts
+[01:33:55] WRITE: stories/dungeo/src/grammar/liquid-grammar.ts
+[01:34:08] WRITE: stories/dungeo/src/grammar/boat-grammar.ts
+[01:34:16] WRITE: stories/dungeo/src/grammar/utility-grammar.ts
+[01:34:27] WRITE: stories/dungeo/src/grammar/index.ts
+[01:34:44] EDIT: stories/dungeo/src/index.ts
+[01:36:34] EDIT: stories/dungeo/src/index.ts
+[01:36:59] EDIT: stories/dungeo/src/index.ts
+[01:40:17] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[01:41:49] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[01:43:13] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[01:44:40] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[01:46:16] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[01:47:40] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[01:49:05] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[01:51:12] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&1 | tail -40
+[01:52:22] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[01:56:52] EDIT: docs/work/dungeo/story-index-refactor.md
+[01:57:07] EDIT: docs/work/dungeo/story-index-refactor.md
+[01:57:18] EDIT: docs/work/dungeo/story-index-refactor.md
+[01:57:26] EDIT: docs/work/dungeo/story-index-refactor.md
+[01:59:07] WRITE: docs/context/session-20260121-0157-dungeo.md
+[02:00:22] GIT: git commit -m "$(cat <<'EOF'
+feat: Extract grammar to src/grammar/, add ADR-108 
+[02:00:31] GIT: git push origin dungeo
+[02:06:49] WRITE: stories/dungeo/src/messages/npc-messages.ts
+[02:07:30] WRITE: stories/dungeo/src/messages/scheduler-messages.ts
+[02:09:16] WRITE: stories/dungeo/src/messages/action-messages.ts
+[02:10:13] WRITE: stories/dungeo/src/messages/puzzle-messages.ts
+[02:10:54] WRITE: stories/dungeo/src/messages/object-messages.ts
+[02:11:10] WRITE: stories/dungeo/src/messages/index.ts
+[02:11:34] EDIT: stories/dungeo/src/index.ts
+[02:11:51] EDIT: stories/dungeo/src/index.ts
+[02:12:15] EDIT: stories/dungeo/src/index.ts
+[02:12:41] EDIT: stories/dungeo/src/index.ts
+[02:13:05] EDIT: stories/dungeo/src/index.ts
+[02:13:41] EDIT: stories/dungeo/src/index.ts
+[02:14:05] EDIT: stories/dungeo/src/index.ts
+[02:14:25] EDIT: stories/dungeo/src/index.ts
+[02:14:48] EDIT: stories/dungeo/src/index.ts
+[02:15:12] EDIT: stories/dungeo/src/index.ts
+[02:16:18] EDIT: stories/dungeo/src/index.ts
+[02:16:59] EDIT: stories/dungeo/src/index.ts
+[02:17:23] EDIT: stories/dungeo/src/index.ts
+[02:20:28] WRITE: docs/context/session-20260121-0219-dungeo.md
+[02:30:48] EDIT: stories/dungeo/src/messages/npc-messages.ts
+[02:31:06] EDIT: stories/dungeo/src/messages/npc-messages.ts
+[09:03:40] WRITE: docs/context/session-20260121-0902-dungeo.md
+[09:03:49] EDIT: docs/work/dungeo/story-index-refactor.md
+[09:03:56] EDIT: docs/work/dungeo/story-index-refactor.md
+[09:04:02] EDIT: docs/work/dungeo/story-index-refactor.md
+[09:04:09] EDIT: docs/work/dungeo/story-index-refactor.md
+[09:04:25] EDIT: docs/work/dungeo/story-index-refactor.md
+[09:10:35] WRITE: docs/work/dungeo/onengineready-refactor.md
+[09:14:03] WRITE: stories/dungeo/src/orchestration/command-transformers.ts
+[09:14:22] WRITE: stories/dungeo/src/orchestration/npc-setup.ts
+[09:14:36] WRITE: stories/dungeo/src/orchestration/puzzle-handlers.ts
+[09:15:03] WRITE: stories/dungeo/src/orchestration/event-handlers.ts
+[09:15:33] WRITE: stories/dungeo/src/orchestration/scheduler-setup.ts
+[09:16:03] WRITE: stories/dungeo/src/orchestration/index.ts
+[09:16:23] EDIT: stories/dungeo/src/index.ts
+[09:16:57] EDIT: stories/dungeo/src/index.ts
+[09:20:59] EDIT: stories/dungeo/src/orchestration/command-transformers.ts
+[09:21:10] EDIT: stories/dungeo/src/orchestration/event-handlers.ts
+[09:21:25] EDIT: stories/dungeo/src/orchestration/event-handlers.ts
+[09:21:32] EDIT: stories/dungeo/src/orchestration/npc-setup.ts
+[09:21:40] EDIT: stories/dungeo/src/orchestration/puzzle-handlers.ts
+[09:21:46] EDIT: stories/dungeo/src/orchestration/scheduler-setup.ts
+[09:21:59] EDIT: stories/dungeo/src/orchestration/scheduler-setup.ts
+[09:22:59] EDIT: stories/dungeo/src/orchestration/scheduler-setup.ts
+[09:23:17] EDIT: stories/dungeo/src/orchestration/index.ts
+[09:26:04] EDIT: stories/dungeo/src/orchestration/scheduler-setup.ts
+[09:29:11] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&1 | tail -30
+[13:01:42] EDIT: docs/work/dungeo/story-index-refactor.md
+[13:01:54] EDIT: docs/work/dungeo/story-index-refactor.md
+[13:02:05] EDIT: docs/work/dungeo/story-index-refactor.md
+[13:02:18] EDIT: docs/work/dungeo/story-index-refactor.md
+[13:02:27] EDIT: docs/work/dungeo/story-index-refactor.md
+[13:02:43] EDIT: docs/work/dungeo/story-index-refactor.md
+[13:04:19] WRITE: docs/context/session-20260121-1303-dungeo.md
+[13:05:23] GIT: git commit -m "$(cat <<'EOF'
+feat: Extract messages and orchestration to modular
+[13:05:33] GIT: git push origin dungeo
+[13:08:16] WRITE: docs/guides/project-structure.md
+[13:08:34] GIT: git add docs/guides/project-structure.md && git commit -m "$(cat <<'EOF'
+docs: A
+[13:13:25] EDIT: docs/guides/project-structure.md
+[13:13:38] EDIT: docs/guides/project-structure.md
+[13:xx:xx] GIT: git commit -m "docs: Fix regions structure in author's guide"
+[13:xx:xx] GIT: git push origin dungeo
+```

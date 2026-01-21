@@ -1,99 +1,86 @@
-[21:56:47] EDIT: docs/work/issues/issues-list.md
-[21:56:57] EDIT: docs/work/issues/issues-list.md
-[21:58:19] EDIT: docs/work/issues/issues-list.md
-[21:58:33] EDIT: docs/work/issues/issues-list.md
-[21:58:40] EDIT: docs/work/issues/issues-list.md
-[22:13:08] WRITE: docs/work/dungeo/grue-logic.md
-[22:14:29] WRITE: docs/context/session-20260120-2213-dungeo.md
-[22:15:44] GIT: git commit -m "$(cat <<'EOF'
-fix: TAKE ALL filter, Attic darkness, DROP ALL mess
-[22:15:54] GIT: git push
-[22:22:50] WRITE: stories/dungeo/src/actions/grue-death/types.ts
-[22:23:03] WRITE: stories/dungeo/src/actions/grue-death/grue-death-action.ts
-[22:23:09] WRITE: stories/dungeo/src/actions/grue-death/index.ts
-[22:23:49] WRITE: stories/dungeo/src/handlers/grue-handler.ts
-[22:24:03] EDIT: stories/dungeo/src/actions/index.ts
-[22:24:09] EDIT: stories/dungeo/src/actions/index.ts
-[22:24:15] EDIT: stories/dungeo/src/actions/index.ts
-[22:24:21] EDIT: stories/dungeo/src/actions/index.ts
-[22:25:06] EDIT: stories/dungeo/src/index.ts
-[22:25:19] EDIT: stories/dungeo/src/index.ts
-[22:25:44] EDIT: stories/dungeo/src/index.ts
-[22:26:05] EDIT: stories/dungeo/src/index.ts
-[22:26:42] EDIT: stories/dungeo/src/handlers/grue-handler.ts
-[22:26:50] EDIT: stories/dungeo/src/handlers/grue-handler.ts
-[22:27:37] WRITE: stories/dungeo/tests/transcripts/grue-mechanics.transcript
-[22:31:39] EDIT: stories/dungeo/src/actions/grue-death/grue-death-action.ts
-[22:34:57] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[22:38:00] WRITE: stories/dungeo/tests/transcripts/grue-mechanics.transcript
-[22:38:44] EDIT: stories/dungeo/tests/transcripts/grue-mechanics.transcript
-[22:40:20] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[22:42:15] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&1 | tail -80
-[22:43:46] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[22:45:08] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --play <<< "n
-e
-open 
-[22:45:41] WRITE: stories/dungeo/tests/transcripts/grue-death-simple.transcript
-[22:48:59] TRANSCRIPT FAIL: for i in {1..5}; do
-  echo "=== Run $i ==="
-  node packages/transcript-tester/di
-[22:53:29] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[22:53:42] EDIT: stories/dungeo/tests/transcripts/grue-death-simple.transcript
-[22:55:24] TRANSCRIPT FAIL: cat << 'EOF' | node packages/transcript-tester/dist/cli.js stories/dungeo --play
-[22:59:37] EDIT: stories/dungeo/src/actions/grue-death/grue-death-action.ts
-[22:59:46] EDIT: stories/dungeo/src/actions/falls-death/falls-death-action.ts
-[23:02:29] EDIT: stories/dungeo/src/actions/grue-death/grue-death-action.ts
-[23:02:38] EDIT: stories/dungeo/src/actions/falls-death/falls-death-action.ts
-[23:03:05] EDIT: stories/dungeo/src/index.ts
-[23:06:23] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[23:07:53] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[23:09:23] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[23:10:53] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[23:12:25] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[23:18:27] WRITE: stories/dungeo/tests/transcripts/grue-death-simple.transcript
-[23:19:51] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[23:22:25] EDIT: docs/work/issues/issues-list.md
-[23:22:47] EDIT: docs/work/issues/issues-list.md
-[23:23:21] WRITE: docs/context/session-20260121-0500-dungeo.md
-[23:24:12] GIT: git commit -m "$(cat <<'EOF'
-feat: Implement grue death mechanics per FORTRAN ve
-[23:24:21] GIT: git push
-[23:29:51] EDIT: stories/dungeo/src/regions/underground.ts
-[23:30:02] EDIT: stories/dungeo/src/regions/underground.ts
-[23:30:28] EDIT: stories/dungeo/src/regions/underground.ts
-[23:32:29] WRITE: stories/dungeo/src/actions/chimney-blocked/types.ts
-[23:32:40] WRITE: stories/dungeo/src/actions/chimney-blocked/chimney-blocked-action.ts
-[23:32:45] WRITE: stories/dungeo/src/actions/chimney-blocked/index.ts
-[23:33:05] WRITE: stories/dungeo/src/handlers/chimney-handler.ts
-[23:33:17] EDIT: stories/dungeo/src/actions/index.ts
-[23:33:23] EDIT: stories/dungeo/src/actions/index.ts
-[23:33:28] EDIT: stories/dungeo/src/actions/index.ts
-[23:33:34] EDIT: stories/dungeo/src/actions/index.ts
-[23:33:44] EDIT: stories/dungeo/src/handlers/index.ts
-[23:34:05] EDIT: stories/dungeo/src/index.ts
-[23:34:17] EDIT: stories/dungeo/src/index.ts
-[23:34:43] EDIT: stories/dungeo/src/index.ts
-[23:34:56] EDIT: stories/dungeo/src/index.ts
-[23:38:26] EDIT: stories/dungeo/src/actions/chimney-blocked/chimney-blocked-action.ts
-[23:38:44] EDIT: stories/dungeo/src/handlers/chimney-handler.ts
-[23:40:33] WRITE: stories/dungeo/tests/transcripts/chimney-restriction.transcript
-[23:42:10] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[23:42:30] WRITE: stories/dungeo/tests/transcripts/chimney-restriction.transcript
-[23:44:14] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[23:44:48] WRITE: stories/dungeo/tests/transcripts/chimney-restriction.transcript
-[23:46:15] WRITE: stories/dungeo/tests/transcripts/chimney-restriction.transcript
-[23:47:45] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[23:59:39] EDIT: docs/work/issues/issues-list.md
-[00:00:03] EDIT: docs/work/issues/issues-list.md
-[00:01:07] WRITE: docs/context/session-20260121-0530-dungeo.md
-[00:02:20] GIT: git commit -m "$(cat <<'EOF'
-feat: Implement chimney restriction per MDL source 
-[00:02:30] GIT: git push
-[00:23:42] EDIT: stories/dungeo/src/regions/white-house.ts
-[00:23:51] EDIT: docs/work/dungeo/leaflet.txt
-[00:52:46] EDIT: stories/dungeo/src/index.ts
-[00:52:53] EDIT: stories/dungeo/src/browser-entry.ts
-[00:59:36] WRITE: docs/work/dungeo/game-started-event-plan.md
-[01:00:43] EDIT: docs/work/issues/issues-list.md
-[01:04:42] WRITE: docs/work/dungeo/story-index-refactor.md
-[01:06:20] WRITE: docs/context/session-20260121-0009-dungeo.md
+[13:15:08] GIT: git add docs/guides/project-structure.md && git commit -m "$(cat <<'EOF'
+docs: F
+[13:15:14] GIT: git push origin dungeo
+[13:16:09] EDIT: docs/context/session-20260121-1303-dungeo.md
+[13:16:17] EDIT: docs/context/session-20260121-1303-dungeo.md
+[13:16:23] EDIT: docs/context/session-20260121-1303-dungeo.md
+[13:16:29] EDIT: docs/context/session-20260121-1303-dungeo.md
+[13:22:19] WRITE: packages/text-service/src/handlers/game.ts
+[13:22:32] EDIT: packages/text-service/src/handlers/index.ts
+[13:22:45] EDIT: packages/text-service/src/text-service.ts
+[13:22:51] EDIT: packages/text-service/src/text-service.ts
+[13:23:06] EDIT: packages/text-blocks/src/types.ts
+[13:23:20] EDIT: packages/lang-en-us/src/language-provider.ts
+[13:23:54] EDIT: stories/dungeo/src/messages/index.ts
+[13:24:14] EDIT: stories/dungeo/src/browser-entry.ts
+[13:25:40] EDIT: packages/engine/src/game-engine.ts
+[13:25:50] EDIT: stories/dungeo/src/browser-entry.ts
+[13:30:06] EDIT: packages/engine/src/game-engine.ts
+[13:30:14] EDIT: packages/text-service/src/handlers/game.ts
+[13:35:53] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --play <<< $'wait\nqu
+[14:00:43] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo /tmp/startup-test.tra
+[14:48:24] EDIT: packages/engine/src/game-engine.ts
+[14:48:36] EDIT: packages/engine/src/game-engine.ts
+[14:48:56] EDIT: packages/engine/src/game-engine.ts
+[14:59:02] WRITE: docs/work/platform/gameevent-refactor.md
+[15:00:04] WRITE: docs/context/session-20260121-1316-dungeo.md
+[15:00:58] GIT: git commit -m "$(cat <<'EOF'
+feat(ISSUE-028): Route game banner through text-ser
+[15:01:07] GIT: git push origin dungeo
+[15:03:22] EDIT: packages/core/src/events/game-events.ts
+[15:03:33] EDIT: packages/core/src/events/game-events.ts
+[15:03:42] EDIT: packages/core/src/events/game-events.ts
+[15:04:05] EDIT: packages/core/src/events/game-events.ts
+[15:04:30] EDIT: packages/core/src/events/game-events.ts
+[15:04:57] EDIT: packages/engine/src/game-engine.ts
+[15:05:21] EDIT: packages/text-service/src/handlers/game.ts
+[15:06:39] EDIT: packages/core/src/events/game-events.ts
+[15:06:56] EDIT: packages/core/src/events/game-events.ts
+[15:07:28] EDIT: packages/core/src/events/game-events.ts
+[15:07:44] EDIT: packages/core/src/events/game-events.ts
+[15:07:51] EDIT: packages/text-service/src/handlers/game.ts
+[15:07:58] EDIT: packages/text-service/src/handlers/game.ts
+[15:19:49] WRITE: docs/context/session-20260121-1501-dungeo.md
+[15:20:03] EDIT: docs/work/platform/gameevent-refactor.md
+[15:34:21] EDIT: packages/text-service/src/stages/sort.ts
+[15:43:53] WRITE: docs/context/session-20260121-1542-dungeo.md
+[15:44:47] GIT: git commit -m "$(cat <<'EOF'
+refactor: Deprecate IGameEvent, use ISemanticEvent 
+[15:44:56] GIT: git push
+[15:50:19] EDIT: packages/core/src/events/game-events.ts
+[15:50:32] EDIT: packages/core/src/events/game-events.ts
+[15:50:50] EDIT: docs/work/platform/gameevent-refactor.md
+[16:01:39] WRITE: docs/context/session-20260121-1600-dungeo.md
+[16:03:17] GIT: git commit -m "$(cat <<'EOF'
+refactor: Complete IGameEvent deprecation (Phase 3)
+[16:03:26] GIT: git push
+[16:06:13] EDIT: scripts/build-dungeo.sh
+[16:06:27] EDIT: scripts/build-dungeo-ubuntu.sh
+[16:06:38] EDIT: packages/stdlib/src/actions/standard/version/version.ts
+[16:13:24] WRITE: /tmp/version-test.transcript
+[16:14:26] GIT: git push
+[16:27:11] WRITE: /tmp/banner-test.transcript
+[16:35:35] EDIT: scripts/build-dungeo.sh
+[16:35:41] EDIT: scripts/build-dungeo.sh
+[16:36:14] EDIT: scripts/build-dungeo-ubuntu.sh
+[16:36:19] EDIT: scripts/build-dungeo-ubuntu.sh
+[16:36:37] EDIT: packages/text-service/src/handlers/game.ts
+[16:36:50] EDIT: stories/dungeo/src/messages/index.ts
+[16:37:41] EDIT: packages/core/src/events/game-events.ts
+[16:38:15] EDIT: packages/core/src/events/game-events.ts
+[16:38:33] EDIT: packages/engine/src/game-engine.ts
+[16:38:44] EDIT: packages/text-service/src/handlers/game.ts
+[16:46:23] WRITE: /tmp/banner-test.transcript
+[16:46:38] WRITE: /tmp/banner-check.transcript
+[16:46:53] WRITE: /tmp/banner-full.transcript
+[16:48:53] GIT: git commit -m "$(cat <<'EOF'
+feat: Date-based versioning and banner version disp
+[16:49:03] GIT: git push
+[16:59:46] EDIT: stories/dungeo/src/messages/index.ts
+[16:59:59] EDIT: packages/core/src/events/game-events.ts
+[17:00:08] EDIT: packages/core/src/events/game-events.ts
+[17:00:18] EDIT: packages/engine/src/game-engine.ts
+[17:00:27] EDIT: packages/text-service/src/handlers/game.ts
+[17:00:59] EDIT: packages/platforms/browser-en-us/src/browser-platform.ts
+[17:01:17] EDIT: packages/platforms/browser-en-us/src/browser-platform.ts
+[17:07:49] WRITE: docs/context/session-20260121-1706-dungeo.md

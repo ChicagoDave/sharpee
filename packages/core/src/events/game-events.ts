@@ -79,6 +79,7 @@ export interface GameLifecycleStartingData {
 export interface GameLifecycleStartedData {
   story?: GameEventStoryData;
   engineVersion?: string;
+  clientVersion?: string;
   gameState: 'running';
   session: {
     startTime: number;
@@ -309,11 +310,13 @@ export function createGameStartingEvent(story?: GameEventStoryData): ISemanticEv
 export function createGameStartedEvent(
   story?: GameEventStoryData,
   startTime?: number,
-  engineVersion?: string
+  engineVersion?: string,
+  clientVersion?: string
 ): ISemanticEvent {
   return createGameEvent<GameLifecycleStartedData>(GameEventType.GAME_STARTED, {
     story,
     engineVersion,
+    clientVersion,
     gameState: 'running',
     session: {
       startTime: startTime || Date.now(),

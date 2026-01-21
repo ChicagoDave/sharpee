@@ -41,8 +41,9 @@ export function handleGameStarted(
   }
 
   // Build params for template substitution
-  // engineVersion comes from event data (set by engine from world's versionInfo)
+  // engineVersion and clientVersion come from event data (set by engine from world's versionInfo)
   const engineVersion = data?.engineVersion || 'unknown';
+  const clientVersion = data?.clientVersion || 'N/A';
 
   const params: Record<string, string> = {
     title: story.title || 'Unknown',
@@ -50,6 +51,7 @@ export function handleGameStarted(
     version: story.version || '1.0.0',
     id: story.id || 'unknown',
     engineVersion: engineVersion,
+    clientVersion: clientVersion,
   };
 
   // Look up banner message via language provider

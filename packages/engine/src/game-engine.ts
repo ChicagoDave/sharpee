@@ -377,9 +377,10 @@ export class GameEngine {
     this.sessionMoves = 0;
     // Keep currentTurn as is (already 1 from constructor)
     
-    // Get engine version from world's versionInfo (set by story)
+    // Get version info from world (set by story/platform)
     const versionInfo = (this.world as any).versionInfo;
     const engineVersion = versionInfo?.engineVersion;
+    const clientVersion = versionInfo?.clientVersion || (this.world as any).clientVersion;
 
     // Emit game started event
     const startedEvent = createGameStartedEvent({
@@ -387,7 +388,7 @@ export class GameEngine {
       title: this.context.metadata.title,
       author: this.context.metadata.author,
       version: this.context.metadata.version
-    }, this.sessionStartTime, engineVersion);
+    }, this.sessionStartTime, engineVersion, clientVersion);
     this.emitGameEvent(startedEvent);
 
     this.emit('state:changed', this.context);
