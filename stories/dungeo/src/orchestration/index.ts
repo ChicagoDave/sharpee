@@ -1,0 +1,175 @@
+/**
+ * Orchestration Module for Dungeo
+ *
+ * Aggregates all engine registration functions into a single entry point.
+ * This module is called from onEngineReady() to set up:
+ * - Command transformers (intercept/modify commands)
+ * - Scheduler events (daemons and fuses)
+ * - Puzzle handlers (complex multi-room puzzles)
+ * - NPC registration (NPC behaviors)
+ * - Event handlers (react to game events)
+ *
+ * This pattern establishes the canonical structure for Sharpee stories.
+ */
+
+import type { GameEngine } from '@sharpee/engine';
+import type { WorldModel } from '@sharpee/world-model';
+import { ScoringEventProcessor } from '@sharpee/stdlib';
+
+import { registerCommandTransformers, TransformerConfig } from './command-transformers';
+import { registerSchedulerEvents, SchedulerConfig } from './scheduler-setup';
+import { registerPuzzleHandlers, PuzzleConfig } from './puzzle-handlers';
+import { registerNpcs, NpcConfig } from './npc-setup';
+import { registerEventHandlers, EventHandlerConfig } from './event-handlers';
+import { MirrorRoomConfig } from '../handlers/mirror-room-handler';
+import { DungeoScoringService } from '../scoring';
+
+// Import region types for type compatibility
+import { WhiteHouseRoomIds } from '../regions/white-house';
+import { HouseInteriorRoomIds } from '../regions/house-interior';
+import { ForestRoomIds } from '../regions/forest';
+import { UndergroundRoomIds } from '../regions/underground';
+import { FrigidRiverRoomIds } from '../regions/frigid-river';
+import { RoundRoomIds } from '../regions/round-room';
+import { DamRoomIds } from '../regions/dam';
+import { BankRoomIds } from '../regions/bank-of-zork';
+import { CoalMineRoomIds } from '../regions/coal-mine';
+import { TempleRoomIds } from '../regions/temple';
+import { MazeRoomIds } from '../regions/maze';
+import { EndgameRoomIds } from '../regions/endgame';
+import { RoyalPuzzleRoomIds } from '../regions/royal-puzzle';
+
+/**
+ * Unified configuration for all orchestration registrations
+ *
+ * Uses actual region types from the story for full type safety.
+ */
+export interface OrchestrationConfig {
+  // ==========================================================================
+  // Room IDs by Region (using actual region types)
+  // ==========================================================================
+
+  whiteHouseIds: WhiteHouseRoomIds;
+  houseInteriorIds: HouseInteriorRoomIds;
+  forestIds: ForestRoomIds;
+  undergroundIds: UndergroundRoomIds;
+  frigidRiverIds: FrigidRiverRoomIds;
+  roundRoomIds: RoundRoomIds;
+  damIds: DamRoomIds;
+  bankIds: BankRoomIds;
+  coalMineIds: CoalMineRoomIds;
+  templeIds: TempleRoomIds;
+  mazeIds: MazeRoomIds;
+  endgameIds: EndgameRoomIds;
+  royalPuzzleIds: RoyalPuzzleRoomIds;
+
+  // ==========================================================================
+  // Optional Features
+  // ==========================================================================
+
+  /** Balloon configuration (optional - only if balloon exists) */
+  balloonIds?: {
+    balloonId: string;
+    receptacleId: string;
+  };
+
+  /** Mirror room configuration (optional - only if mirror puzzle exists) */
+  mirrorConfig?: MirrorRoomConfig;
+}
+
+/**
+ * Initialize all engine orchestration
+ *
+ * This is the main entry point called from onEngineReady().
+ * It delegates to specialized registration functions for each subsystem.
+ *
+ * @param engine - The game engine instance
+ * @param world - The world model
+ * @param config - Configuration containing all room IDs and feature flags
+ * @param scoringProcessor - Event processor for treasure scoring
+ * @param scoringService - Scoring service for achievements and penalties
+ */
+export function initializeOrchestration(
+  engine: GameEngine,
+  world: WorldModel,
+  config: OrchestrationConfig,
+  scoringProcessor: ScoringEventProcessor,
+  scoringService: DungeoScoringService
+): void {
+  // 1. Command Transformers
+  // Intercept and modify parsed commands before execution
+  const transformerConfig: TransformerConfig = {
+    aragainFallsId: config.frigidRiverIds.aragainFalls
+  };
+  registerCommandTransformers(engine, world, transformerConfig);
+
+  // 2. Scheduler Events
+  // Register daemons and fuses for timed events
+  const scheduler = engine.getScheduler();
+  if (scheduler) {
+    const schedulerConfig: SchedulerConfig = {
+      forestIds: config.forestIds,
+      damIds: config.damIds,
+      bankIds: config.bankIds,
+      balloonIds: config.balloonIds,
+      undergroundIds: config.undergroundIds,
+      roundRoomIds: config.roundRoomIds,
+      coalMineIds: config.coalMineIds,
+      templeIds: config.templeIds,
+      endgameIds: config.endgameIds,
+      mazeIds: config.mazeIds,
+      houseInteriorIds: config.houseInteriorIds,
+      royalPuzzleIds: config.royalPuzzleIds
+    };
+    registerSchedulerEvents(scheduler, world, schedulerConfig);
+  }
+
+  // 3. Puzzle Handlers
+  // Register complex multi-room puzzle handlers
+  const puzzleConfig: PuzzleConfig = {
+    endgameIds: {
+      smallRoom: config.endgameIds.smallRoom,
+      stoneRoom: config.endgameIds.stoneRoom,
+      hallway: config.endgameIds.hallway,
+      insideMirror: config.endgameIds.insideMirror,
+      dungeonEntrance: config.endgameIds.dungeonEntrance
+    }
+  };
+  registerPuzzleHandlers(engine, world, puzzleConfig);
+
+  // 4. NPC Registration
+  // Register NPC behaviors with the NPC service
+  const npcService = engine.getNpcService();
+  if (npcService) {
+    // Calculate surface rooms (thief forbidden from surface)
+    const surfaceRoomIds = [
+      ...Object.values(config.whiteHouseIds),
+      ...Object.values(config.houseInteriorIds),
+      ...Object.values(config.forestIds)
+    ];
+
+    const npcConfig: NpcConfig = {
+      surfaceRoomIds,
+      treasureRoomId: config.mazeIds.treasureRoom,
+      cyclopsRoomId: config.mazeIds.cyclopsRoom,
+      dungeonEntranceId: config.endgameIds.dungeonEntrance
+    };
+    registerNpcs(engine, npcService, world, npcConfig);
+  }
+
+  // 5. Event Handlers
+  // Register event processor handlers for scoring, achievements, etc.
+  const eventConfig: EventHandlerConfig = {
+    mirrorConfig: config.mirrorConfig,
+    bottomOfShaftId: config.coalMineIds.bottomOfShaft,
+    balloonIds: config.balloonIds
+  };
+  registerEventHandlers(engine, world, eventConfig, scoringProcessor, scoringService);
+}
+
+// Re-export types and functions for direct access if needed
+export type { TransformerConfig } from './command-transformers';
+export type { SchedulerConfig } from './scheduler-setup';
+export type { PuzzleConfig } from './puzzle-handlers';
+export type { NpcConfig } from './npc-setup';
+export type { EventHandlerConfig } from './event-handlers';

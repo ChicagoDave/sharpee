@@ -6,24 +6,24 @@
 
 **Related**: ADR-108 (Player Character System) defines the architecture for player creation and switching.
 
-## Current Structure (After Phase 1)
+## Current Structure (After Phase 3)
 
 | Section | Lines | Description |
 |---------|-------|-------------|
-| Imports | 1-108 | Dependencies from engine, stdlib, regions, NPCs, grammar |
-| Config | 110-122 | StoryConfig definition |
-| Class declaration | 124-149 | DungeoStory class with region ID fields |
-| `initializeWorld()` | 154-394 | Room creation, connections, objects, handlers |
-| `initializeMirrorRoomHandler()` | 400-440 | Mirror puzzle setup (private) |
-| `createPlayer()` | 445-521 | Player entity creation |
-| `extendParser()` | 523-529 | **3 lines** - delegates to grammar modules |
-| `extendLanguage()` | 531-1162 | Message registration (~630 lines) |
-| `getCustomActions()` | 1167-1169 | Returns action array |
-| `initialize()` | 1174-1176 | Empty |
-| `isComplete()` | 1181-1184 | Returns false |
-| `onEngineReady()` | 1190-1458 | Transformers, scheduler, NPCs, handlers (~270 lines) |
+| Imports | ~70 | Dependencies from engine, stdlib, regions, NPCs |
+| Config | ~12 | StoryConfig definition |
+| Class declaration | ~25 | DungeoStory class with region ID fields |
+| `initializeWorld()` | ~240 | Room creation, connections, objects, handlers |
+| `initializeMirrorRoomHandler()` | ~40 | Mirror puzzle setup (private) |
+| `createPlayer()` | ~75 | Player entity creation |
+| `extendParser()` | **3 lines** | Delegates to `grammar/` modules |
+| `extendLanguage()` | **3 lines** | Delegates to `messages/` modules |
+| `getCustomActions()` | ~3 | Returns action array |
+| `initialize()` | ~3 | Empty |
+| `isComplete()` | ~3 | Returns false |
+| `onEngineReady()` | **~25 lines** | Delegates to `orchestration/` modules |
 
-**Total**: 1468 lines (down from ~2460)
+**Total**: ~595 lines (down from ~2460, 76% reduction)
 
 ## Platform Infrastructure (ADR-108)
 
@@ -164,9 +164,30 @@ extendLanguage(language: LanguageProvider): void {
 }
 ```
 
-### 5. Engine Ready Handlers (~270 lines)
+### 5. Engine Ready Handlers (~270 lines) → Extracted to `orchestration/`
 
-Command transformers, scheduler registrations, NPC registrations, event handlers. This is orchestration that ties story-specific systems together. Keep in story but consider grouping registrations by subsystem.
+Command transformers, scheduler registrations, NPC registrations, event handlers. This orchestration ties story-specific systems together.
+
+**Extracted to** `src/orchestration/`:
+```
+src/orchestration/
+├── index.ts                  # Config types + initializeOrchestration()
+├── command-transformers.ts   # GDT, puzzles, death, movement restrictions
+├── scheduler-setup.ts        # Daemons, fuses, timed events
+├── puzzle-handlers.ts        # Laser puzzle, Inside Mirror
+├── npc-setup.ts              # Thief, Cyclops, Troll, Dungeon Master
+└── event-handlers.ts         # Scoring, achievements, death penalty
+```
+
+Then `onEngineReady()` becomes:
+```typescript
+onEngineReady(engine: GameEngine): void {
+  initializeOrchestration(engine, this.world, {
+    whiteHouseIds: this.whiteHouseIds,
+    // ... all region IDs ...
+  }, this.scoringProcessor, this.scoringService);
+}
+```
 
 ## Recommended Refactoring Plan
 
@@ -193,25 +214,49 @@ extendParser(parser: Parser): void {
 }
 ```
 
-### Phase 2: Split Messages (Story Change)
+### Phase 2: Split Messages (Story Change) ✅ COMPLETE
 
-Move messages to `src/messages/` folder:
-- ~10 files organized by feature
-- `index.ts` exports registration functions
-- `extendLanguage()` imports and calls them
+Messages extracted to `src/messages/` folder (2026-01-21):
 
+| File | Lines | Content |
+|------|-------|---------|
+| `index.ts` | 50 | Exports + `registerAllMessages()` |
+| `npc-messages.ts` | 180 | Troll, Thief, Cyclops, Robot, Dungeon Master |
+| `scheduler-messages.ts` | 120 | Lantern, candles, dam, flooding, balloon |
+| `action-messages.ts` | 350 | SAY, RING, BREAK, BURN, WAVE, DIG, POUR, etc. |
+| `puzzle-messages.ts` | 130 | Royal puzzle, mirror, exorcism, laser, endgame |
+| `object-messages.ts` | 80 | Window, rug, trophy case, glacier, boat |
+| **Total** | 910 | |
+
+**Result**: `extendLanguage()` reduced from ~630 lines to 3 lines:
+```typescript
+extendLanguage(language: LanguageProvider): void {
+  registerAllMessages(language);
+}
 ```
-src/messages/
-├── index.ts              # Re-exports all + registerAllMessages()
-├── npc-messages.ts       # Thief, Cyclops, Troll, Robot, DM
-├── puzzle-messages.ts    # Royal puzzle, mirror, laser, etc.
-├── scheduler-messages.ts # Lantern, candles, dam, flooding
-├── combat-messages.ts    # Death, diagnose, wounds
-├── action-messages.ts    # Custom action result overrides
-└── object-messages.ts    # Object-specific descriptions
+
+### Phase 3: Split Orchestration (Story Change) ✅ COMPLETE
+
+Engine orchestration extracted to `src/orchestration/` folder (2026-01-21):
+
+| File | Lines | Content |
+|------|-------|---------|
+| `index.ts` | 120 | Config types + `initializeOrchestration()` |
+| `command-transformers.ts` | 100 | GDT, puzzles, death, movement restrictions |
+| `scheduler-setup.ts` | 120 | Daemons, fuses, bat, exorcism, troll recovery |
+| `puzzle-handlers.ts` | 45 | Laser puzzle, Inside Mirror |
+| `npc-setup.ts` | 55 | Thief, Cyclops, Troll, Dungeon Master |
+| `event-handlers.ts` | 110 | Scoring, achievements, death penalty |
+| **Total** | 550 | |
+
+**Result**: `onEngineReady()` reduced from ~270 lines to ~25 lines:
+```typescript
+onEngineReady(engine: GameEngine): void {
+  initializeOrchestration(engine, this.world, { ... }, scoringProcessor, scoringService);
+}
 ```
 
-### Phase 3: Implement ADR-108 Player Factory (Platform Change)
+### Phase 4: Implement ADR-108 Player Factory (Platform Change)
 
 Implement `createDefaultPlayer()` in stdlib per ADR-108:
 - `PlayerTrait` with name, description, pronouns, isPlayerControlled
@@ -219,7 +264,7 @@ Implement `createDefaultPlayer()` in stdlib per ADR-108:
 - Factory function with sensible defaults
 - `world.setCurrentPlayer()` / `getCurrentPlayer()` methods
 
-### Phase 4: Update DUNGEON to Use Player Factory
+### Phase 5: Update DUNGEON to Use Player Factory
 
 ```typescript
 // stories/dungeo/src/index.ts (after ADR-108 implementation)
@@ -267,33 +312,77 @@ export class DungeoStory implements Story {
 | `grammar/*.ts` (8 files) | N/A | 1208 lines total |
 | **Subtotal** | ~2460 lines | 2676 lines |
 
-### After Phase 2 (projected):
+### After Phase 2 (actual):
 
 | File | Before | After |
 |------|--------|-------|
-| `index.ts` | 1468 lines | ~800 lines |
-| `grammar/*.ts` | 1208 lines | 1208 lines |
-| `messages/*.ts` (~6 files) | N/A | ~700 lines total |
-| **Total** | 2676 lines | ~2700 lines |
+| `index.ts` | 1468 lines | ~840 lines |
+| `grammar/*.ts` (8 files) | 1208 lines | 1208 lines |
+| `messages/*.ts` (6 files) | N/A | 910 lines total |
+| **Total** | 2676 lines | ~2958 lines |
 
-Line count slightly increases due to boilerplate, but code is now:
-- **Organized by feature** - easier to find/modify specific grammar or messages
-- **Navigable** - index.ts becomes a readable orchestration file
-- **Testable in isolation** - grammar and messages can have unit tests
+### After Phase 3 (actual):
+
+| File | Before | After |
+|------|--------|-------|
+| `index.ts` | ~840 lines | ~595 lines |
+| `grammar/*.ts` (8 files) | 1208 lines | 1208 lines |
+| `messages/*.ts` (6 files) | 910 lines | 910 lines |
+| `orchestration/*.ts` (6 files) | N/A | 550 lines total |
+| **Total** | ~2958 lines | ~3263 lines |
+
+Line count increases due to boilerplate, but code is now:
+- **Organized by feature** - easier to find/modify specific grammar, messages, or orchestration
+- **Navigable** - index.ts becomes a readable ~600 line orchestration file
+- **Testable in isolation** - each module can have unit tests
+- **Template for future stories** - establishes canonical Sharpee story structure
 
 ## Priority
 
 1. **Phase 1 (Grammar split)**: ✅ COMPLETE (2026-01-21)
-2. **Phase 2 (Messages split)**: High - Story-only, straightforward extraction
-3. **Phase 3 (ADR-108 Player Factory)**: Medium - Platform change, benefits all stories
-4. **Phase 4 (Use Player Factory)**: Low - After platform work complete
+2. **Phase 2 (Messages split)**: ✅ COMPLETE (2026-01-21)
+3. **Phase 3 (Orchestration split)**: ✅ COMPLETE (2026-01-21) - Validated with build + transcript tests
+4. **Phase 4 (ADR-108 Player Factory)**: Medium - Platform change, benefits all stories
+5. **Phase 5 (Use Player Factory)**: Low - After platform work complete
 
 ## Notes
 
-- Grammar split can be done incrementally (one feature at a time)
-- Messages split is straightforward - just moving `addMessage()` calls
+- ~~Grammar split can be done incrementally (one feature at a time)~~ ✅ Done
+- ~~Messages split is straightforward - just moving `addMessage()` calls~~ ✅ Done
+- ~~Orchestration split requires importing region types for type compatibility~~ ✅ Done
+- **Lesson learned (Phase 2)**: When extracting messages, check for duplicates across modules (e.g., `TrollMessages` vs `TrollCapabilityMessages` vs `DungeoSchedulerMessages`)
+- **Lesson learned (Phase 3)**: Use actual region types (e.g., `ForestRoomIds`) in config interfaces for type safety rather than generic `Record<string, string>`
 - ADR-108 implementation unlocks multi-protagonist stories (Reflections)
 - Player factory is optional for DUNGEON but enables future flexibility
+
+## Canonical Story Structure
+
+Phases 1-3 establish the **canonical Sharpee story template**:
+
+```
+stories/{story}/src/
+├── index.ts              # Story class, config, lifecycle (~600 lines)
+├── grammar/              # Parser extensions (Phase 1)
+│   ├── index.ts          # registerAllGrammar()
+│   └── *.ts              # Feature-specific patterns
+├── messages/             # Language extensions (Phase 2)
+│   ├── index.ts          # registerAllMessages()
+│   └── *.ts              # Feature-specific messages
+├── orchestration/        # Engine registrations (Phase 3)
+│   ├── index.ts          # initializeOrchestration()
+│   ├── command-transformers.ts
+│   ├── scheduler-setup.ts
+│   ├── puzzle-handlers.ts
+│   ├── npc-setup.ts
+│   └── event-handlers.ts
+├── regions/              # Room definitions by area
+├── npcs/                 # NPC entities and behaviors
+├── actions/              # Story-specific actions
+├── handlers/             # Event handlers, puzzle logic
+└── scheduler/            # Daemon/fuse definitions
+```
+
+New stories can follow this structure for consistent organization.
 
 ## Related
 

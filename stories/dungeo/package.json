@@ -1,13 +1,13 @@
 {
   "name": "@sharpee/story-dungeo",
-  "version": "1.0.43-alpha.6",
+  "version": "1.0.55-alpha.6",
   "description": "Dungeo - A Sharpee implementation of Mainframe Zork",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "sharpee": {
     "ifid": "621168D1-6D5C-449F-83D5-841D03A1BF78",
-    "title": "DUNGEO",
-    "author": "Dave Cornelson",
+    "title": "DUNGEON",
+    "author": "David Cornelson",
     "firstPublished": "2025",
     "headline": "A Recreation of Mainframe Zork",
     "genre": "Fantasy",
