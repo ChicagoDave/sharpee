@@ -2,80 +2,75 @@
 
 ## Overview
 
-`stories/dungeo/src/index.ts` is ~2460 lines containing the entire DUNGEON story implementation. This document analyzes what could be extracted into a reusable `BaseStory` class vs what must remain DUNGEON-specific.
+`stories/dungeo/src/index.ts` is ~2460 lines containing the entire DUNGEON story implementation. This document analyzes what could be extracted vs what must remain DUNGEON-specific.
 
-## Current Structure
+**Related**: ADR-108 (Player Character System) defines the architecture for player creation and switching.
+
+## Current Structure (After Phase 1)
 
 | Section | Lines | Description |
 |---------|-------|-------------|
-| Imports | 1-103 | Dependencies from engine, stdlib, regions, NPCs, etc. |
-| Config | 107-119 | StoryConfig definition |
-| Class declaration | 121-146 | DungeoStory class with region ID fields |
-| `initializeWorld()` | 151-391 | Room creation, connections, objects, handlers |
-| `initializeMirrorRoomHandler()` | 397-437 | Mirror puzzle setup (private) |
-| `createPlayer()` | 442-518 | Player entity creation |
-| `extendParser()` | 523-1520 | Grammar patterns (~1000 lines) |
-| `extendLanguage()` | 1525-2156 | Message registration (~630 lines) |
-| `getCustomActions()` | 2161-2163 | Returns action array |
-| `initialize()` | 2168-2170 | Empty |
-| `isComplete()` | 2175-2178 | Returns false |
-| `onEngineReady()` | 2184-2452 | Transformers, scheduler, NPCs, handlers (~270 lines) |
+| Imports | 1-108 | Dependencies from engine, stdlib, regions, NPCs, grammar |
+| Config | 110-122 | StoryConfig definition |
+| Class declaration | 124-149 | DungeoStory class with region ID fields |
+| `initializeWorld()` | 154-394 | Room creation, connections, objects, handlers |
+| `initializeMirrorRoomHandler()` | 400-440 | Mirror puzzle setup (private) |
+| `createPlayer()` | 445-521 | Player entity creation |
+| `extendParser()` | 523-529 | **3 lines** - delegates to grammar modules |
+| `extendLanguage()` | 531-1162 | Message registration (~630 lines) |
+| `getCustomActions()` | 1167-1169 | Returns action array |
+| `initialize()` | 1174-1176 | Empty |
+| `isComplete()` | 1181-1184 | Returns false |
+| `onEngineReady()` | 1190-1458 | Transformers, scheduler, NPCs, handlers (~270 lines) |
 
-## Candidate for BaseStory Class
+**Total**: 1468 lines (down from ~2460)
 
-### 1. Player Creation Pattern
+## Platform Infrastructure (ADR-108)
 
-The `createPlayer()` method is nearly identical across IF games:
+### Player Creation via Factory
+
+ADR-108 defines `createDefaultPlayer()` in stdlib with `PlayerTrait`:
 
 ```typescript
-// Current DUNGEON implementation
+// stdlib provides the factory
+import { createDefaultPlayer, secondPersonPronouns } from '@sharpee/stdlib';
+
+// DUNGEON uses it with customization
 createPlayer(world: WorldModel): IFEntity {
-  const player = world.createEntity('yourself', EntityType.ACTOR);
+  const player = createDefaultPlayer(world, {
+    id: 'yourself',
+    name: 'Adventurer',
+    description: 'A brave adventurer, ready to explore the Great Underground Empire.',
+    pronouns: secondPersonPronouns,
+    startLocation: this.westOfHouseId,
+  });
 
-  player.add(new IdentityTrait({
-    name: 'yourself',
-    description: 'A brave adventurer...',
-    aliases: ['self', 'myself', 'me', 'yourself', 'adventurer'],
-    properName: true,
-    article: ''
+  // Add DUNGEON-specific traits
+  player.add(new CombatantTrait({
+    health: 100,
+    maxHealth: 100,
+    skill: 50,
+    baseDamage: 1,
+    armor: 0,
+    hostile: false,
+    canRetaliate: false
   }));
-
-  player.add(new ActorTrait({ isPlayer: true }));
-  player.add(new ContainerTrait({ capacity: { maxItems: 15, maxWeight: 100 } }));
-  player.add(new CombatantTrait({ health: 100, maxHealth: 100, ... }));
 
   return player;
 }
 ```
 
-**Extraction**: Move to `BaseStory` with configuration options:
+**Benefits**:
+- Default works out-of-the-box for simple stories
+- Stories customize via options (name, pronouns, description)
+- Stories add game-specific traits (combat, magic, etc.)
+- Supports mid-game player switching (Reflections-style multi-protagonist)
+
+### Scoring Infrastructure (Future Consideration)
+
+Basic scoring setup is somewhat boilerplate but varies enough between games that extraction isn't prioritized. Current DUNGEON implementation:
 
 ```typescript
-// packages/engine/src/base-story.ts
-export interface PlayerConfig {
-  name?: string;           // default: 'yourself'
-  description?: string;    // default: 'An adventurer.'
-  aliases?: string[];      // default: ['self', 'myself', 'me']
-  inventoryCapacity?: number;  // default: 10
-  inventoryWeight?: number;    // default: 50
-  hasCombat?: boolean;     // default: false
-}
-
-export abstract class BaseStory implements Story {
-  protected playerConfig: PlayerConfig = {};
-
-  createPlayer(world: WorldModel): IFEntity {
-    // Check for existing player, create with config...
-  }
-}
-```
-
-### 2. Scoring Infrastructure
-
-Basic scoring setup is boilerplate:
-
-```typescript
-// Current DUNGEON implementation
 world.registerCapability(StandardCapabilities.SCORING, {
   initialData: {
     scoreValue: 0,
@@ -92,36 +87,7 @@ this.scoringProcessor = new ScoringEventProcessor(this.scoringService, world)
   .enableDynamicTreasures('trophy case');
 ```
 
-**Extraction**: Move pattern to `BaseStory` with configuration:
-
-```typescript
-export interface ScoringConfig {
-  maxScore: number;
-  trophyContainerName?: string;  // default: 'trophy case'
-  deathPenalty?: number;         // default: 0
-  trackDeaths?: boolean;         // default: false
-}
-
-export abstract class BaseStory {
-  protected scoringConfig?: ScoringConfig;
-
-  protected initializeScoring(world: WorldModel): void {
-    if (!this.scoringConfig) return;
-    // Register capability, create services...
-  }
-}
-```
-
-### 3. Default Method Implementations
-
-These are always the same:
-
-```typescript
-initialize(): void {}
-isComplete(): boolean { return false; }
-```
-
-**Extraction**: Provide defaults in `BaseStory`, stories override if needed.
+**Future**: A `ScoringConfig` pattern could be added to stdlib if multiple stories need similar scoring systems. Lower priority than player creation (ADR-108).
 
 ## DUNGEON-Specific (Must Remain)
 
@@ -204,78 +170,79 @@ Command transformers, scheduler registrations, NPC registrations, event handlers
 
 ## Recommended Refactoring Plan
 
-### Phase 1: Extract BaseStory (Platform Change)
+### Phase 1: Split Grammar (Story Change) ✅ COMPLETE
 
-Create `packages/engine/src/base-story.ts`:
+Grammar patterns extracted to `src/grammar/` folder (2026-01-21):
 
+| File | Lines | Content |
+|------|-------|---------|
+| `index.ts` | 54 | Exports + `registerAllGrammar()` |
+| `gdt-grammar.ts` | 90 | GDT debug commands |
+| `speech-grammar.ts` | 147 | SAY, COMMANDING, KNOCK, ANSWER |
+| `puzzle-grammar.ts` | 462 | Walls, panels, poles, dials, machines, tiny room, dig, send |
+| `ritual-grammar.ts` | 132 | BREAK, BURN, PRAY, INCANT, WAVE, RING, WIND |
+| `liquid-grammar.ts` | 167 | POUR, FILL, LIGHT with tool, TIE, UNTIE |
+| `boat-grammar.ts` | 103 | INFLATE, DEFLATE, BOARD, LAUNCH |
+| `utility-grammar.ts` | 53 | DIAGNOSE, ROOM, RNAME, OBJECTS |
+| **Total** | 1208 | |
+
+**Result**: `extendParser()` reduced from ~1000 lines to 3 lines:
 ```typescript
-export interface PlayerConfig { ... }
-export interface ScoringConfig { ... }
-
-export abstract class BaseStory implements Story {
-  abstract config: StoryConfig;
-
-  protected playerConfig: PlayerConfig = {};
-  protected scoringConfig?: ScoringConfig;
-
-  // Default implementations
-  createPlayer(world: WorldModel): IFEntity { ... }
-  initialize(): void {}
-  isComplete(): boolean { return false; }
-
-  // Protected helpers
-  protected initializeScoring(world: WorldModel): void { ... }
-
-  // Abstract methods stories must implement
-  abstract initializeWorld(world: WorldModel): void;
-  abstract extendParser(parser: Parser): void;
-  abstract extendLanguage(language: LanguageProvider): void;
-  abstract onEngineReady(engine: GameEngine): void;
+extendParser(parser: Parser): void {
+  registerAllGrammar(parser);
 }
 ```
 
-### Phase 2: Split Grammar (Story Change)
-
-Move grammar patterns to `src/grammar/` folder:
-- ~15 files, each ~50-100 lines
-- `index.ts` exports registration functions
-- `extendParser()` imports and calls them
-
-### Phase 3: Split Messages (Story Change)
+### Phase 2: Split Messages (Story Change)
 
 Move messages to `src/messages/` folder:
 - ~10 files organized by feature
 - `index.ts` exports registration functions
 - `extendLanguage()` imports and calls them
 
-### Phase 4: Update DUNGEON to Use BaseStory
+```
+src/messages/
+├── index.ts              # Re-exports all + registerAllMessages()
+├── npc-messages.ts       # Thief, Cyclops, Troll, Robot, DM
+├── puzzle-messages.ts    # Royal puzzle, mirror, laser, etc.
+├── scheduler-messages.ts # Lantern, candles, dam, flooding
+├── combat-messages.ts    # Death, diagnose, wounds
+├── action-messages.ts    # Custom action result overrides
+└── object-messages.ts    # Object-specific descriptions
+```
+
+### Phase 3: Implement ADR-108 Player Factory (Platform Change)
+
+Implement `createDefaultPlayer()` in stdlib per ADR-108:
+- `PlayerTrait` with name, description, pronouns, isPlayerControlled
+- Pronoun presets (secondPerson, thirdPersonFeminine, etc.)
+- Factory function with sensible defaults
+- `world.setCurrentPlayer()` / `getCurrentPlayer()` methods
+
+### Phase 4: Update DUNGEON to Use Player Factory
 
 ```typescript
-// stories/dungeo/src/index.ts (after refactoring)
-import { BaseStory, PlayerConfig, ScoringConfig } from '@sharpee/engine';
+// stories/dungeo/src/index.ts (after ADR-108 implementation)
+import { createDefaultPlayer, secondPersonPronouns } from '@sharpee/stdlib';
 import { registerAllGrammar } from './grammar';
 import { registerAllMessages } from './messages';
 
-export class DungeoStory extends BaseStory {
-  config = config;
+export class DungeoStory implements Story {
+  // ...
 
-  protected playerConfig: PlayerConfig = {
-    description: 'A brave adventurer, ready to explore the Great Underground Empire.',
-    inventoryCapacity: 15,
-    inventoryWeight: 100,
-    hasCombat: true
-  };
+  createPlayer(world: WorldModel): IFEntity {
+    const player = createDefaultPlayer(world, {
+      id: 'yourself',
+      name: 'Adventurer',
+      description: 'A brave adventurer, ready to explore the Great Underground Empire.',
+      pronouns: secondPersonPronouns,
+      startLocation: this.westOfHouseId,
+    });
 
-  protected scoringConfig: ScoringConfig = {
-    maxScore: 616,
-    trophyContainerName: 'trophy case',
-    deathPenalty: 10,
-    trackDeaths: true
-  };
+    // DUNGEON-specific: combat system
+    player.add(new CombatantTrait({ ... }));
 
-  initializeWorld(world: WorldModel): void {
-    super.initializeScoring(world);
-    // Region creation, connections, etc.
+    return player;
   }
 
   extendParser(parser: Parser): void {
@@ -286,37 +253,49 @@ export class DungeoStory extends BaseStory {
     registerAllMessages(language);
   }
 
-  onEngineReady(engine: GameEngine): void {
-    // Transformers, handlers, NPCs...
-  }
+  // ...
 }
 ```
 
 ## File Size Impact
 
+### After Phase 1 (actual):
+
 | File | Before | After |
 |------|--------|-------|
-| `index.ts` | ~2460 lines | ~500 lines |
-| `grammar/index.ts` | N/A | ~50 lines |
-| `grammar/*.ts` (15 files) | N/A | ~1000 lines total |
-| `messages/index.ts` | N/A | ~50 lines |
-| `messages/*.ts` (10 files) | N/A | ~650 lines total |
-| **Total** | ~2460 lines | ~2250 lines |
+| `index.ts` | ~2460 lines | 1468 lines |
+| `grammar/*.ts` (8 files) | N/A | 1208 lines total |
+| **Subtotal** | ~2460 lines | 2676 lines |
 
-Line count stays similar, but code is now:
-- **Organized by feature** - easier to find/modify
+### After Phase 2 (projected):
+
+| File | Before | After |
+|------|--------|-------|
+| `index.ts` | 1468 lines | ~800 lines |
+| `grammar/*.ts` | 1208 lines | 1208 lines |
+| `messages/*.ts` (~6 files) | N/A | ~700 lines total |
+| **Total** | 2676 lines | ~2700 lines |
+
+Line count slightly increases due to boilerplate, but code is now:
+- **Organized by feature** - easier to find/modify specific grammar or messages
+- **Navigable** - index.ts becomes a readable orchestration file
 - **Testable in isolation** - grammar and messages can have unit tests
-- **Reusable patterns** - BaseStory for other games
 
 ## Priority
 
-1. **Phase 2 & 3 (Grammar/Messages split)**: High - Story-only change, no platform impact
-2. **Phase 1 (BaseStory)**: Medium - Platform change, discuss first
-3. **Phase 4 (Use BaseStory)**: Low - After platform work complete
+1. **Phase 1 (Grammar split)**: ✅ COMPLETE (2026-01-21)
+2. **Phase 2 (Messages split)**: High - Story-only, straightforward extraction
+3. **Phase 3 (ADR-108 Player Factory)**: Medium - Platform change, benefits all stories
+4. **Phase 4 (Use Player Factory)**: Low - After platform work complete
 
 ## Notes
 
-- Grammar split could be done incrementally (one feature at a time)
+- Grammar split can be done incrementally (one feature at a time)
 - Messages split is straightforward - just moving `addMessage()` calls
-- BaseStory extraction is a bigger architectural decision
-- Consider whether other stories (armoured, future games) would benefit from BaseStory before investing in it
+- ADR-108 implementation unlocks multi-protagonist stories (Reflections)
+- Player factory is optional for DUNGEON but enables future flexibility
+
+## Related
+
+- **ADR-108**: Player Character System - defines player creation architecture
+- **ADR-070**: NPC System - PC↔NPC transitions for multi-protagonist
