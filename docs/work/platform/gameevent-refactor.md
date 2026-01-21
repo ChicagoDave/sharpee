@@ -255,20 +255,22 @@ const restartEvent: ISemanticEvent = {
 
 ## Migration Path
 
-### Phase 1: Add compatibility (current work)
+### Phase 1: Add compatibility (COMPLETED 2026-01-21)
 - Update `emitGameEvent()` to copy `payload` to `data`
 - Update handlers to check `data` first, fall back to `payload`
 - Fix ISSUE-028 (game banner through text-service)
 
-### Phase 2: Update creators (future)
-- Change all `createGame*Event()` to return `ISemanticEvent`
-- Add typed data interfaces
-- Update type guards to use `event.type` discrimination
+### Phase 2: Update creators (COMPLETED 2026-01-21)
+- Changed all `createGame*Event()` to return `ISemanticEvent`
+- Added typed data interfaces (`GameLifecycle*Data`)
+- Added specific type guards (isGameStartedEvent, etc.)
+- Simplified `emitGameEvent()` - no more payload conversion
+- Deprecated `IGameEvent` interface with JSDoc warnings
 
-### Phase 3: Clean up (future)
-- Remove `payload` field usage
-- Remove `IGameEvent` interface
-- Remove compatibility code from handlers
+### Phase 3: Clean up (future v1.0.0)
+- Remove `IGameEvent` interface entirely
+- Remove deprecated type guard aliases
+- Clean up any remaining payload references
 
 ## Files Affected
 

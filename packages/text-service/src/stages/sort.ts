@@ -38,6 +38,13 @@ export function sortEventsForProse(events: ISemanticEvent[]): ISemanticEvent[] {
     const aTxnId = aData?._transactionId;
     const bTxnId = bData?._transactionId;
 
+    // Game lifecycle events (game.started banner) come first, before everything
+    // This ensures the banner displays before the first room description
+    const aIsGameLifecycle = a.type.startsWith('game.');
+    const bIsGameLifecycle = b.type.startsWith('game.');
+    if (aIsGameLifecycle && !bIsGameLifecycle) return -1;
+    if (!aIsGameLifecycle && bIsGameLifecycle) return 1;
+
     // Different transactions or no transaction: maintain original order
     if (aTxnId !== bTxnId) return 0;
 

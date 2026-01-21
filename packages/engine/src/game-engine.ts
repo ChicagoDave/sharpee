@@ -1459,43 +1459,30 @@ export class GameEngine {
   }
 
   /**
-   * Emit a game lifecycle event
+   * Emit a game lifecycle event.
+   * All game events now use ISemanticEvent with data in the `data` field.
+   * (IGameEvent with `payload` is deprecated - see ADR-097)
    */
-  private emitGameEvent(event: any): void {
-    // Create a GameEvent that's compatible with the engine's type system
-    const existingData = typeof event.data === 'object' && event.data !== null
-      ? event.data
-      : {};
+  private emitGameEvent(event: ISemanticEvent): void {
+    // Create a GameEvent for the sequencer (internal type)
     const gameEvent: GameEvent = {
       type: event.type,
       data: {
-        ...existingData,
-        id: event.id || `event-${Date.now()}`,
-        timestamp: event.timestamp || Date.now(),
+        ...(typeof event.data === 'object' && event.data !== null ? event.data : {}),
+        id: event.id,
+        timestamp: event.timestamp,
         entities: event.entities || {}
       }
     };
-    
-    // Convert to sequenced event for consistency
+
+    // Sequence and emit
     const sequencedEvent = eventSequencer.sequence(gameEvent, this.context.currentTurn);
-    
-    // Emit through event emitter
     this.emit('event', sequencedEvent);
-    
-    // Store in turn events if we're in a turn (as SemanticEvent for compatibility)
+
+    // Store in turn events for text-service processing
     if (this.context.currentTurn > 0) {
-      const eventData = gameEvent.data as { id?: string } | undefined;
-      // IGameEvent uses 'payload', ISemanticEvent uses 'data' - copy payload to data
-      const payload = (event as any).payload || {};
-      const semanticEvent: ISemanticEvent = {
-        id: event.id || eventData?.id as string,
-        type: event.type,
-        timestamp: event.timestamp || Date.now(),
-        entities: event.entities || {},
-        data: { ...payload, story: payload.story }
-      };
       const turnEvents = this.turnEvents.get(this.context.currentTurn) || [];
-      turnEvents.push(semanticEvent);
+      turnEvents.push(event);
       this.turnEvents.set(this.context.currentTurn, turnEvents);
     }
   }

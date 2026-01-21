@@ -5,22 +5,25 @@
  * text output (e.g., opening banner).
  *
  * @see ADR-096 Text Service Architecture
+ * @see ADR-097 IGameEvent Deprecation (now uses ISemanticEvent with typed data)
  * @see ISSUE-028 Opening banner hardcoded in browser-entry.ts
  */
 
 import type { ITextBlock } from '@sharpee/text-blocks';
-import type { ISemanticEvent } from '@sharpee/core';
+import type { ISemanticEvent, GameLifecycleStartedData } from '@sharpee/core';
 import { createBlock } from '../stages/assemble.js';
 import type { HandlerContext } from './types.js';
 
 /**
  * Handle game.started event to produce the opening banner.
  *
- * The event payload contains story metadata:
+ * The event data (GameStartedData) contains:
  * - story.title: Game title
  * - story.author: Author name(s)
  * - story.version: Game version
  * - story.id: Story identifier
+ * - gameState: 'running'
+ * - session: { startTime, turns, moves }
  *
  * The language provider supplies the banner template via 'game.started.banner'.
  * Stories can customize by overriding this message in extendLanguage().
@@ -29,10 +32,9 @@ export function handleGameStarted(
   event: ISemanticEvent,
   context: HandlerContext
 ): ITextBlock[] {
-  // Event data can be in 'data' (ISemanticEvent standard) or 'payload' (IGameEvent)
-  // Check both for compatibility
-  const eventData = event.data as any;
-  const story = eventData?.story || eventData?.payload?.story;
+  // Event data is now directly in `data` field (ISemanticEvent standard)
+  const data = event.data as GameLifecycleStartedData;
+  const story = data?.story;
 
   if (!story) {
     return [];
