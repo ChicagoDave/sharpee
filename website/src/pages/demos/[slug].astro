@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { STORY_VERSION as dungeoVersion } from '../../../../stories/dungeo/src/version';
 
 export async function getStaticPaths() {
   const demos = await getCollection('demos');
@@ -12,6 +13,9 @@ export async function getStaticPaths() {
 
 const { demo } = Astro.props;
 const { Content } = await demo.render();
+
+// Use actual game version for dungeo, fallback to frontmatter for others
+const version = demo.slug === 'dungeo' ? dungeoVersion : demo.data.version;
 ---
 
 <BaseLayout title={demo.data.title} description={demo.data.description}>
@@ -40,7 +44,7 @@ const { Content } = await demo.render();
               ))}
             </span>
             <span>&bull;</span>
-            <span>Version {demo.data.version}</span>
+            <span>Version {version}</span>
           </div>
         </header>
 
