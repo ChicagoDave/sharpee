@@ -29,7 +29,8 @@ import {
   IFActions,
   MetaCommandRegistry,
   IPerceptionService,
-  registerStandardChains
+  registerStandardChains,
+  createScopeResolver
 } from '@sharpee/stdlib';
 import { LanguageProvider, IEventProcessorWiring } from '@sharpee/if-domain';
 import { ITextService, createTextService, renderToString } from '@sharpee/text-service';
@@ -41,6 +42,8 @@ import { INpcService, createNpcService, guardBehavior, passiveBehavior } from '@
 import {
   GameContext,
   TurnResult,
+  MetaCommandResult,
+  CommandResult,
   EngineConfig,
   SequencedEvent,
   GameEvent
@@ -49,9 +52,10 @@ import { Story } from './story';
 import { NarrativeSettings, buildNarrativeSettings } from './narrative';
 
 import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer } from './command-executor';
+import { createActionContext } from './action-context-factory';
 import { EventSequenceUtils, eventSequencer } from './event-sequencer';
 import { toSequencedEvent, toSemanticEvent, processEvent } from './event-adapter';
-import { IEngineAwareParser, hasPronounContext, hasPlatformEventEmitter } from './parser-interface';
+import { IEngineAwareParser, hasPronounContext, hasPlatformEventEmitter, hasWorldContext } from './parser-interface';
 import { VocabularyManager, createVocabularyManager } from './vocabulary-manager';
 import { SaveRestoreService, createSaveRestoreService, ISaveRestoreStateProvider } from './save-restore-service';
 import { TurnEventProcessor, createTurnEventProcessor, EnrichmentContext } from './turn-event-processor';
@@ -503,8 +507,45 @@ export class GameEngine {
     this.emit('turn:start', turn, input);
 
     try {
-      // Query handling is managed by the platform layer
-      // Platform will intercept input before it reaches here
+      // Early detection: Parse first to check if this is a meta-command
+      // Meta-commands (VERSION, SCORE, HELP, etc.) take a completely separate path
+      // that doesn't interact with turn machinery (no turn increment, no NPCs, etc.)
+      if (this.parser) {
+        // Set world context for parser
+        const player = this.world.getPlayer();
+        if (player && hasWorldContext(this.parser)) {
+          const playerLocation = this.world.getLocation(player.id) || '';
+          (this.parser as any).setWorldContext(this.world, player.id, playerLocation);
+        }
+
+        // Parse to get action ID
+        const parseResult = this.parser.parse(input);
+        if (parseResult.success) {
+          const parsedCommand = parseResult.value;
+          const actionId = parsedCommand.action;
+
+          // Check if this is a meta-command
+          if (actionId && MetaCommandRegistry.isMeta(actionId)) {
+            // Route to separate meta-command path
+            const metaResult = await this.executeMetaCommand(input, parsedCommand);
+
+            // Convert MetaCommandResult to TurnResult for backward compatibility
+            // Turn is included for display context but not incremented
+            return {
+              type: 'turn',  // For backward compatibility with callers that don't check type
+              turn,
+              input: metaResult.input,
+              success: metaResult.success,
+              events: metaResult.events.map(e => eventSequencer.sequence(e as any, turn)),
+              error: metaResult.error,
+              actionId: metaResult.actionId
+            };
+          }
+        }
+        // If parse failed or not a meta-command, fall through to regular execution
+      }
+
+      // Regular command path - full turn processing
       // Execute the command
       const result = await this.commandExecutor.execute(
         input,
@@ -551,12 +592,9 @@ export class GameEngine {
         }
       }
 
-      // Check if this is a meta-command (out-of-world action)
-      // Meta-commands don't increment turns, trigger NPCs, or get recorded in history
-      const isMeta = result.actionId ? MetaCommandRegistry.isMeta(result.actionId) : false;
-
-      // Update command history if command was successful and not a meta-command
-      if (result.success && !isMeta) {
+      // Update command history if command was successful
+      // Note: Meta-commands take the early path (executeMetaCommand) and never reach here
+      if (result.success) {
         this.updateCommandHistory(result, input, turn);
 
         // Update pronoun context for "it"/"them"/"him"/"her" resolution (ADR-089)
@@ -595,9 +633,10 @@ export class GameEngine {
         }
       }
 
-      // Run NPC and scheduler ticks for non-meta commands
+      // Run NPC and scheduler ticks after successful player action
       // Order: NPC phase (ADR-070), then scheduler tick (ADR-071)
-      if (!isMeta && result.success) {
+      // Note: Meta-commands take the early path and never reach here
+      if (result.success) {
         const playerLocation = this.world.getLocation(this.context.player.id);
 
         // NPC turn phase (ADR-070)
@@ -717,17 +756,13 @@ export class GameEngine {
         }
       }
 
-      // Update context only for non-meta commands
-      if (!isMeta) {
-        this.updateContext(result);
-        // Update session statistics
-        this.sessionTurns++;
-        if (result.success) {
-          this.sessionMoves++;
-        }
-      } else {
-        // For meta-commands, only update vocabulary (scope may have changed)
-        this.updateScopeVocabulary();
+      // Update context and turn counter
+      // Note: Meta-commands take the early path and never reach here
+      this.updateContext(result);
+      // Update session statistics
+      this.sessionTurns++;
+      if (result.success) {
+        this.sessionMoves++;
       }
 
       // Process pending platform operations before text service
@@ -778,6 +813,311 @@ export class GameEngine {
       this.emit('turn:failed', error as Error, turn);
       throw error;
     }
+  }
+
+  /**
+   * Execute a meta-command (VERSION, SCORE, HELP, etc.)
+   *
+   * Meta-commands operate outside the turn cycle:
+   * - They don't increment turns
+   * - They don't trigger NPC ticks or scheduler
+   * - They don't create undo snapshots
+   * - They don't get stored in command history
+   * - Events are processed immediately through text service (not stored in turnEvents)
+   *
+   * @param input - Raw command string
+   * @param parsedCommand - Parsed command from parser
+   * @returns MetaCommandResult with events and success status
+   */
+  private async executeMetaCommand(
+    input: string,
+    parsedCommand: any
+  ): Promise<MetaCommandResult> {
+    const events: ISemanticEvent[] = [];
+
+    try {
+      // Validate the command
+      const validationResult = (this.commandExecutor as any).validator.validate(parsedCommand);
+
+      if (!validationResult.success) {
+        // Validation failed - emit error event
+        const errorEvent: ISemanticEvent = {
+          id: `meta_error_${Date.now()}`,
+          type: 'action.error',
+          timestamp: Date.now(),
+          data: {
+            messageId: validationResult.error?.code || 'validation_failed',
+            params: validationResult.error?.details || {}
+          },
+          entities: {}
+        };
+        events.push(errorEvent);
+
+        // Process error through text service and emit
+        this.processMetaEvents(events);
+
+        return {
+          type: 'meta',
+          input,
+          success: false,
+          events,
+          error: validationResult.error?.code || 'Validation failed',
+          actionId: parsedCommand.action
+        };
+      }
+
+      const command = validationResult.value;
+      const action = this.actionRegistry.get(command.actionId);
+
+      if (!action) {
+        const errorEvent: ISemanticEvent = {
+          id: `meta_error_${Date.now()}`,
+          type: 'action.error',
+          timestamp: Date.now(),
+          data: {
+            messageId: 'action_not_found',
+            params: { actionId: command.actionId }
+          },
+          entities: {}
+        };
+        events.push(errorEvent);
+
+        this.processMetaEvents(events);
+
+        return {
+          type: 'meta',
+          input,
+          success: false,
+          events,
+          error: `Action not found: ${command.actionId}`,
+          actionId: command.actionId
+        };
+      }
+
+      // Create action context for meta-command execution
+      const scopeResolver = createScopeResolver(this.world);
+      const actionContext = createActionContext(this.world, this.context, command, action, scopeResolver);
+
+      // Run action's four-phase pattern
+      const actionValidation = action.validate(actionContext);
+
+      let actionEvents: ISemanticEvent[];
+      if (actionValidation.valid) {
+        // Execute and report
+        action.execute(actionContext);
+        actionEvents = action.report ? action.report(actionContext) : [];
+      } else {
+        // Blocked - get error events
+        actionEvents = action.blocked
+          ? action.blocked(actionContext, actionValidation)
+          : [{
+              id: `meta_blocked_${Date.now()}`,
+              type: 'action.error',
+              timestamp: Date.now(),
+              data: {
+                messageId: actionValidation.error || 'validation_failed',
+                params: actionValidation.params || {}
+              },
+              entities: {}
+            }];
+      }
+
+      events.push(...actionEvents);
+
+      // Handle platform operations inline (SAVE, RESTORE, QUIT, AGAIN, etc.)
+      // These are handled BEFORE text processing so completion events get rendered
+      const platformOps = events.filter(isPlatformRequestEvent);
+      for (const op of platformOps) {
+        const completionEvents = await this.processMetaPlatformOperation(op as IPlatformEvent);
+        events.push(...completionEvents);
+      }
+
+      // Process events through text service and emit to clients
+      // Events are NOT stored in turnEvents - processed immediately
+      this.processMetaEvents(events);
+
+      return {
+        type: 'meta',
+        input,
+        success: actionValidation.valid,
+        events,
+        actionId: command.actionId
+      };
+
+    } catch (error: any) {
+      const errorEvent: ISemanticEvent = {
+        id: `meta_error_${Date.now()}`,
+        type: 'command.failed',
+        timestamp: Date.now(),
+        data: {
+          reason: error.message,
+          input
+        },
+        entities: {}
+      };
+      events.push(errorEvent);
+
+      this.processMetaEvents(events);
+
+      return {
+        type: 'meta',
+        input,
+        success: false,
+        events,
+        error: error.message,
+        actionId: parsedCommand.action
+      };
+    }
+  }
+
+  /**
+   * Process meta-command events: text service → emit to clients
+   *
+   * - Does NOT store in turnEvents
+   * - Passes currentTurn for display context (turn/score shown to player)
+   * - Turn counter is NOT incremented
+   */
+  private processMetaEvents(events: ISemanticEvent[]): void {
+    if (!this.textService || events.length === 0) {
+      return;
+    }
+
+    // Process events through text service
+    const blocks = this.textService.processTurn(events);
+    const output = renderToString(blocks);
+
+    if (output) {
+      // Emit text output with current turn number (for display context only)
+      this.emit('text:output', output, this.context.currentTurn);
+    }
+  }
+
+  /**
+   * Process a single platform operation for meta-commands.
+   *
+   * This is similar to processPlatformOperations but handles one operation
+   * at a time and returns completion events for inclusion in the result.
+   */
+  private async processMetaPlatformOperation(platformOp: IPlatformEvent): Promise<ISemanticEvent[]> {
+    const completionEvents: ISemanticEvent[] = [];
+
+    switch (platformOp.type) {
+      case PlatformEventType.SAVE_REQUESTED: {
+        const context = platformOp.payload.context as ISaveContext;
+        if (this.saveRestoreHooks?.onSaveRequested) {
+          try {
+            const saveData = this.createSaveData();
+            if (context?.saveName) {
+              saveData.metadata.description = context.saveName;
+            }
+            if (context?.metadata) {
+              Object.assign(saveData.metadata, context.metadata);
+            }
+            await this.saveRestoreHooks.onSaveRequested(saveData);
+            completionEvents.push(createSaveCompletedEvent(true));
+          } catch (error: any) {
+            completionEvents.push(createSaveCompletedEvent(false, error.message));
+          }
+        } else {
+          completionEvents.push(createSaveCompletedEvent(false, 'No save handler registered'));
+        }
+        break;
+      }
+
+      case PlatformEventType.RESTORE_REQUESTED: {
+        if (this.saveRestoreHooks?.onRestoreRequested) {
+          try {
+            const saveData = await this.saveRestoreHooks.onRestoreRequested();
+            if (saveData) {
+              this.loadSaveData(saveData);
+              completionEvents.push(createRestoreCompletedEvent(true));
+            } else {
+              completionEvents.push(createRestoreCompletedEvent(false, 'No save data available'));
+            }
+          } catch (error: any) {
+            completionEvents.push(createRestoreCompletedEvent(false, error.message));
+          }
+        } else {
+          completionEvents.push(createRestoreCompletedEvent(false, 'No restore handler registered'));
+        }
+        break;
+      }
+
+      case PlatformEventType.QUIT_REQUESTED: {
+        const context = platformOp.payload.context as IQuitContext;
+        if (this.saveRestoreHooks?.onQuitRequested) {
+          const shouldQuit = await this.saveRestoreHooks.onQuitRequested(context);
+          if (shouldQuit) {
+            this.stop('quit');
+            completionEvents.push(createQuitConfirmedEvent());
+          } else {
+            completionEvents.push(createQuitCancelledEvent());
+          }
+        } else {
+          // No quit hook - auto-confirm
+          completionEvents.push(createQuitConfirmedEvent());
+        }
+        break;
+      }
+
+      case PlatformEventType.RESTART_REQUESTED: {
+        const context = platformOp.payload.context as IRestartContext;
+        if (this.saveRestoreHooks?.onRestartRequested) {
+          const shouldRestart = await this.saveRestoreHooks.onRestartRequested(context);
+          if (shouldRestart && this.story) {
+            if (this.running) this.stop();
+            if (this.parser && hasPronounContext(this.parser)) {
+              this.parser.resetPronounContext();
+            }
+            await this.setStory(this.story);
+            this.start();
+            completionEvents.push(createRestartCompletedEvent(true));
+          } else {
+            completionEvents.push(createRestartCompletedEvent(false));
+          }
+        } else if (this.story) {
+          // Default: restart
+          if (this.running) this.stop();
+          if (this.parser && hasPronounContext(this.parser)) {
+            this.parser.resetPronounContext();
+          }
+          await this.setStory(this.story);
+          this.start();
+          completionEvents.push(createRestartCompletedEvent(true));
+        }
+        break;
+      }
+
+      case PlatformEventType.UNDO_REQUESTED: {
+        const success = this.undo();
+        if (success) {
+          completionEvents.push(createUndoCompletedEvent(true, this.context.currentTurn));
+        } else {
+          completionEvents.push(createUndoCompletedEvent(false, undefined, 'Nothing to undo'));
+        }
+        break;
+      }
+
+      case PlatformEventType.AGAIN_REQUESTED: {
+        const againContext = platformOp.payload.context as IAgainContext;
+        if (!againContext?.command) {
+          completionEvents.push(createAgainFailedEvent('No command to repeat'));
+        } else {
+          // Recursive call - the repeated command will dispatch normally
+          // (meta path if it was meta, regular path if it was regular)
+          try {
+            await this.executeTurn(againContext.command);
+            // The repeated command handles its own text output
+            // No completion event needed for successful AGAIN
+          } catch (error: any) {
+            completionEvents.push(createAgainFailedEvent(error.message));
+          }
+        }
+        break;
+      }
+    }
+
+    return completionEvents;
   }
 
   /**

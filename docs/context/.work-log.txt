@@ -1,54 +1,3 @@
-[15:50:50] EDIT: docs/work/platform/gameevent-refactor.md
-[16:01:39] WRITE: docs/context/session-20260121-1600-dungeo.md
-[16:03:17] GIT: git commit -m "$(cat <<'EOF'
-refactor: Complete IGameEvent deprecation (Phase 3)
-[16:03:26] GIT: git push
-[16:06:13] EDIT: scripts/build-dungeo.sh
-[16:06:27] EDIT: scripts/build-dungeo-ubuntu.sh
-[16:06:38] EDIT: packages/stdlib/src/actions/standard/version/version.ts
-[16:13:24] WRITE: /tmp/version-test.transcript
-[16:14:26] GIT: git push
-[16:27:11] WRITE: /tmp/banner-test.transcript
-[16:35:35] EDIT: scripts/build-dungeo.sh
-[16:35:41] EDIT: scripts/build-dungeo.sh
-[16:36:14] EDIT: scripts/build-dungeo-ubuntu.sh
-[16:36:19] EDIT: scripts/build-dungeo-ubuntu.sh
-[16:36:37] EDIT: packages/text-service/src/handlers/game.ts
-[16:36:50] EDIT: stories/dungeo/src/messages/index.ts
-[16:37:41] EDIT: packages/core/src/events/game-events.ts
-[16:38:15] EDIT: packages/core/src/events/game-events.ts
-[16:38:33] EDIT: packages/engine/src/game-engine.ts
-[16:38:44] EDIT: packages/text-service/src/handlers/game.ts
-[16:46:23] WRITE: /tmp/banner-test.transcript
-[16:46:38] WRITE: /tmp/banner-check.transcript
-[16:46:53] WRITE: /tmp/banner-full.transcript
-[16:48:53] GIT: git commit -m "$(cat <<'EOF'
-feat: Date-based versioning and banner version disp
-[16:49:03] GIT: git push
-[16:59:46] EDIT: stories/dungeo/src/messages/index.ts
-[16:59:59] EDIT: packages/core/src/events/game-events.ts
-[17:00:08] EDIT: packages/core/src/events/game-events.ts
-[17:00:18] EDIT: packages/engine/src/game-engine.ts
-[17:00:27] EDIT: packages/text-service/src/handlers/game.ts
-[17:00:59] EDIT: packages/platforms/browser-en-us/src/browser-platform.ts
-[17:01:17] EDIT: packages/platforms/browser-en-us/src/browser-platform.ts
-[17:07:49] WRITE: docs/context/session-20260121-1706-dungeo.md
-[17:08:56] GIT: git commit -m "$(cat <<'EOF'
-feat: Complete version system with banner display
-
-
-[17:09:06] GIT: git push
-[17:13:08] TRANSCRIPT FAIL: grep -r "STORY_VERSION\|version.ts" /mnt/c/repotemp/sharpee/packages/transcript-
-[17:23:02] WRITE: scripts/update-versions.sh
-[17:23:26] WRITE: scripts/build-platform.sh
-[17:23:39] WRITE: scripts/build-story.sh
-[17:24:02] WRITE: scripts/build-client.sh
-[17:24:24] WRITE: scripts/build.sh
-[17:25:27] EDIT: scripts/build.sh
-[17:28:57] TRANSCRIPT FAIL: ./scripts/build.sh --skip transcript-tester -s dungeo -c browser
-[17:29:44] EDIT: CLAUDE.md
-[17:31:41] WRITE: docs/guides/build-system.md
-[17:32:00] WRITE: docs/guides/README.md
 [17:42:02] EDIT: stories/dungeo/src/browser-entry.ts
 [17:44:21] TRANSCRIPT FAIL: ./scripts/build.sh --skip transcript-tester -s dungeo -c browser 2>&1 | tail -30
 [17:47:49] EDIT: packages/stdlib/src/actions/standard/version/version.ts
@@ -61,3 +10,49 @@ feat: Complete version system with banner display
 [18:35:10] EDIT: packages/engine/src/game-engine.ts
 [18:35:25] EDIT: packages/engine/src/game-engine.ts
 [18:40:33] WRITE: docs/context/session-20260121-1838-dungeo.md
+[18:42:35] GIT: git commit -m "$(cat <<'EOF'
+refactor: Modular build system and meta-command fix
+[18:42:51] GIT: git push
+[19:02:51] WRITE: docs/work/platform/meta-commands.md
+[19:07:57] EDIT: docs/work/platform/meta-commands.md
+[19:09:34] EDIT: docs/work/platform/meta-commands.md
+[19:10:13] EDIT: docs/work/platform/meta-commands.md
+[19:10:25] EDIT: docs/work/platform/meta-commands.md
+[19:10:32] EDIT: docs/work/platform/meta-commands.md
+[19:11:00] EDIT: docs/work/platform/meta-commands.md
+[19:11:05] EDIT: docs/work/platform/meta-commands.md
+[19:17:57] EDIT: docs/work/platform/meta-commands.md
+[19:18:04] EDIT: docs/work/platform/meta-commands.md
+[19:18:18] EDIT: docs/work/platform/meta-commands.md
+[19:18:28] EDIT: docs/work/platform/meta-commands.md
+[19:23:07] WRITE: docs/context/session-20260121-1854-dungeo.md
+[19:25:04] EDIT: packages/engine/src/types.ts
+[19:25:19] EDIT: packages/engine/src/types.ts
+[19:25:47] EDIT: packages/engine/src/game-engine.ts
+[19:26:33] EDIT: packages/engine/src/game-engine.ts
+[19:27:09] EDIT: packages/engine/src/game-engine.ts
+[19:27:20] EDIT: packages/engine/src/game-engine.ts
+[19:27:56] EDIT: packages/engine/src/game-engine.ts
+[19:28:01] EDIT: packages/engine/src/game-engine.ts
+[19:28:07] EDIT: packages/engine/src/game-engine.ts
+[19:30:30] EDIT: packages/engine/src/game-engine.ts
+[19:30:50] EDIT: packages/engine/src/game-engine.ts
+[19:30:59] EDIT: packages/engine/src/game-engine.ts
+[19:41:14] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --play 2>&1 <<'EOF'
+l
+[19:42:33] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --play 2>&1 <<'EOF'
+/
+[19:44:57] GIT: git commit -m "$(cat <<'EOF'
+feat: Scaffold sharpee.net website with Astro
+
+- In
+[19:44:58] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[19:45:03] GIT: git push
+[19:52:10] TRANSCRIPT FAIL: cat > /tmp/meta-test.transcript << 'ENDTRANSCRIPT'
+# Test that meta-commands wor
+[20:53:22] EDIT: packages/parser-en-us/src/grammar.ts
+[20:58:59] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo /tmp/turn-count-test.
+[21:01:17] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&1 | tail -30
+[21:02:22] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[21:03:27] WRITE: docs/context/session-20260121-1924-dungeo.md
+[21:03:33] EDIT: docs/work/platform/meta-commands.md

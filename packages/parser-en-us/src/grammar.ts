@@ -301,7 +301,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Score and version
   grammar
     .define('score')
-    .mapsTo('if.action.score')
+    .mapsTo('if.action.scoring')
     .withPriority(100)
     .build();
 
