@@ -6,7 +6,7 @@ const docs = defineCollection({
   schema: z.object({
     title: z.string(),
     description: z.string(),
-    section: z.enum(['getting-started', 'author-guide', 'developer-guide']),
+    section: z.enum(['getting-started', 'tutorials', 'author-guide', 'developer-guide']),
     order: z.number().default(0), // For sidebar ordering
     draft: z.boolean().default(false),
   }),
