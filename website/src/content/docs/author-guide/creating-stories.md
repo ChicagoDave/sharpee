@@ -19,7 +19,7 @@ A minimal Sharpee story needs:
 ```typescript
 // stories/my-story/src/index.ts
 import { Story, StoryConfig } from '@sharpee/engine';
-import { WorldModel, EntityType, TraitType } from '@sharpee/world-model';
+import { WorldModel, AuthorModel, EntityType, TraitType } from '@sharpee/world-model';
 
 export const config: StoryConfig = {
   id: "my-story",
@@ -241,11 +241,35 @@ chest.add({
 chest.add({ type: TraitType.PORTABLE });
 world.moveEntity(chest.id, room.id);
 
-// Put item in chest
+// Put item in chest (chest must be open, or use AuthorModel)
 const coin = world.createEntity('gold coin', EntityType.OBJECT);
 coin.add({ type: TraitType.PORTABLE });
-world.moveEntity(coin.id, chest.id);
+world.moveEntity(coin.id, chest.id);  // Works if chest.isOpen = true
 ```
+
+### Using AuthorModel for Setup
+
+During world initialization, you often need to place items in closed containers. Use `AuthorModel` to bypass game validation rules:
+
+```typescript
+// Create a closed safe with treasure inside
+const safe = world.createEntity('wall safe', EntityType.CONTAINER);
+safe.add({ type: TraitType.CONTAINER });
+safe.add({ type: TraitType.OPENABLE, isOpen: false });
+safe.add({ type: TraitType.LOCKABLE, isLocked: true });
+
+const jewels = world.createEntity('jewels', EntityType.OBJECT);
+jewels.add({ type: TraitType.PORTABLE });
+
+// AuthorModel bypasses "container is closed" validation
+const author = new AuthorModel(world.getDataStore(), world);
+author.moveEntity(jewels.id, safe.id);
+```
+
+Use `AuthorModel` when:
+- Placing items in closed containers during setup
+- Implementing special mechanics (magic, teleportation)
+- Writing tests that need to bypass game rules
 
 ### Lockable Container
 

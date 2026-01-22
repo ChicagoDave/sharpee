@@ -14,7 +14,7 @@ Let's create a simple two-room adventure to understand the basics.
 Create `src/index.ts`:
 
 ```typescript
-import { createStory, WorldModel, IFEntity } from '@sharpee/sharpee';
+import { createStory, WorldModel, AuthorModel, IFEntity } from '@sharpee/sharpee';
 
 const story = createStory({
   title: 'My First Adventure',
@@ -66,7 +66,35 @@ initializeWorld(world: WorldModel): IFEntity {
 }
 ```
 
-### 3. Run Your Story
+### 3. Using AuthorModel for Setup
+
+When placing items in closed containers during world setup, use `AuthorModel` to bypass validation:
+
+```typescript
+initializeWorld(world: WorldModel): IFEntity {
+  // ... room creation code ...
+
+  // Create a closed chest
+  const chest = world.createEntity('chest', 'container', {
+    name: 'wooden chest',
+    isOpen: false,
+  });
+  world.moveEntity(chest.id, library.id);
+
+  // Create a gem to hide inside
+  const gem = world.createEntity('gem', 'object', {
+    name: 'sparkling gem',
+  });
+
+  // Use AuthorModel to bypass "container is closed" validation
+  const author = new AuthorModel(world.getDataStore(), world);
+  author.moveEntity(gem.id, chest.id);
+
+  return foyer;
+}
+```
+
+### 4. Run Your Story
 
 Build and run with the Sharpee CLI:
 
