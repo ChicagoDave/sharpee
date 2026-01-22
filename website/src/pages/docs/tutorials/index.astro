@@ -1,0 +1,26 @@
+---
+import { getCollection } from 'astro:content';
+
+// Get the first doc in this section
+const docs = await getCollection('docs', (doc) => doc.data.section === 'tutorials');
+const sortedDocs = docs.sort((a, b) => a.data.order - b.data.order);
+
+// Redirect to first doc or show placeholder
+if (sortedDocs.length > 0) {
+  const firstDoc = sortedDocs[0];
+  return Astro.redirect(`/docs/tutorials/${firstDoc.slug.split('/').pop()}`);
+}
+
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+---
+
+<DocsLayout title="Tutorials" section="tutorials">
+  <p>Tutorials are coming soon!</p>
+  <p class="mt-4">
+    Learn by building:
+  </p>
+  <ul class="mt-2 list-disc list-inside space-y-1">
+    <li>Cloak of Darkness - classic IF tutorial game</li>
+    <li>More tutorials coming...</li>
+  </ul>
+</DocsLayout>
