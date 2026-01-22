@@ -91,7 +91,11 @@ done
 # Build all packages
 echo ""
 echo -e "${GREEN}=== Building packages ===${NC}"
-./scripts/build-platform.sh
+if command -v pnpm &> /dev/null; then
+  ./scripts/build-platform.sh
+else
+  ./scripts/build-platform-ubuntu.sh
+fi
 
 # Publish each package
 echo ""
