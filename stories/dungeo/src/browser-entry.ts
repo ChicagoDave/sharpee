@@ -1374,6 +1374,12 @@ async function start(): Promise<void> {
     initializeGame();
     console.log('Game initialized');
 
+    // Set client version for banner display (before engine.start emits game started event)
+    const gameWorld = engine.getWorld();
+    if (gameWorld) {
+      (gameWorld as any).clientVersion = STORY_VERSION;
+    }
+
     // Start the engine first
     await engine.start();
 

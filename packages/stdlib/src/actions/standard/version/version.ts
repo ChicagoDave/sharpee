@@ -54,20 +54,21 @@ export const versionAction: Action & { metadata: ActionMetadata } = {
     const storyTitle = storyConfig.title || 'Unknown';
     const storyVersion = versionInfo.version || storyConfig.version || '0.0.0';
     const engineVersion = versionInfo.engineVersion || ENGINE_VERSION;
+    const clientVersion = versionInfo.clientVersion || (world as any).clientVersion || 'N/A';
     const buildDate = versionInfo.buildDate;
+    const author = storyConfig.author || 'Unknown';
 
-    // Construct the version message
-    let message = `${storyTitle} v${storyVersion}\nSharpee Engine v${engineVersion}`;
-    if (buildDate) {
-      message += `\nBuilt: ${buildDate}`;
-    }
-
+    // Event data matches banner template params for consistency
     const eventData: VersionDisplayedEventData = {
       storyTitle,
       storyVersion,
       engineVersion,
+      clientVersion,
       buildDate,
-      message // Include pre-formatted message for text service
+      // Template params matching game.started.banner format
+      title: storyTitle,
+      version: storyVersion,
+      author: Array.isArray(author) ? author.join(', ') : author
     };
 
     return [

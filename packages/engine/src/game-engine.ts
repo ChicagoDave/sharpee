@@ -480,7 +480,7 @@ export class GameEngine {
     }
 
     const turn = this.context.currentTurn;
-    
+
     // Validate input
     if (input === null || input === undefined) {
       const errorEvent = eventSequencer.sequence({
@@ -748,6 +748,9 @@ export class GameEngine {
           this.emit('text:output', output, turn);
         }
       }
+
+      // Clear turn events after processing to prevent accumulation on same turn (meta commands)
+      this.turnEvents.set(turn, []);
 
       // Emit completion
       this.emit('turn:complete', result);

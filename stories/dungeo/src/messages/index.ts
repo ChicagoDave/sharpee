@@ -74,4 +74,18 @@ Ported by David Cornelson
 
 Type HELP for instructions, ABOUT for credits.`
   );
+
+  // VERSION command - same format as banner for consistency
+  language.addMessage('if.action.version',
+    `{title}
+
+Story v{version} built on Sharpee v{engineVersion}
+Web Client version: {clientVersion}
+
+A port of Mainframe Zork (1981)
+By {author}
+Ported by David Cornelson
+
+Type HELP for instructions, ABOUT for credits.`
+  );
 }

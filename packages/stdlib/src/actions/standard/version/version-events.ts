@@ -4,6 +4,9 @@
 
 /**
  * Event data for when version information is displayed
+ *
+ * Includes both semantic fields (storyVersion, storyTitle) and
+ * template-friendly aliases (version, title) for banner compatibility.
  */
 export interface VersionDisplayedEventData {
   /** Story/game version */
@@ -12,10 +15,17 @@ export interface VersionDisplayedEventData {
   storyTitle: string;
   /** Engine version */
   engineVersion: string;
+  /** Client version (browser, electron, etc.) */
+  clientVersion?: string;
   /** Build timestamp (ISO 8601) */
   buildDate?: string;
-  /** Pre-formatted message for display */
-  message?: string;
+  /** Story author(s) */
+  author?: string;
+  // Template-friendly aliases (match game.started.banner params)
+  /** Alias for storyTitle */
+  title?: string;
+  /** Alias for storyVersion */
+  version?: string;
 }
 
 /**
