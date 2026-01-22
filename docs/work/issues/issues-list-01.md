@@ -33,50 +33,30 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-025 | Attic should be a dark room (requires light source) | Medium | Story | 2026-01-21 | - | 2026-01-21 |
 | ISSUE-026 | DROP ALL with empty inventory has no message | Low | Lang | 2026-01-21 | - | 2026-01-21 |
 | ISSUE-027 | Grue death mechanics (75% death in dark rooms) | High | Story | 2026-01-21 | - | 2026-01-21 |
-| ISSUE-028 | Opening banner hardcoded in browser-entry.ts | Low | Platform | 2026-01-21 | - | - |
+| ISSUE-028 | Opening banner hardcoded in browser-entry.ts | Low | Platform | 2026-01-21 | - | 2026-01-22 |
 
 ---
 
-## Open Issues
-
-### ISSUE-028: Opening banner hardcoded in browser-entry.ts
-
-**Reported**: 2026-01-21
-**Severity**: Low
-**Component**: Platform (text-service, lang-en-us, browser-entry)
-
-**Description**:
-The game opening banner (title, author, description) is hardcoded in `stories/dungeo/src/browser-entry.ts` in the `displayTitle()` function. This violates the architecture where all prose should go through the language layer.
-
-**Current state**:
-- `browser-entry.ts` hardcodes `GAME_TITLE`, `GAME_AUTHORS`, etc.
-- Engine already emits `game.started` event with story metadata
-- Text-service doesn't handle this event
-
-**Solution**:
-Route `game.started` through text-service to language layer:
-
-1. **text-service**: Add handler for `game.started` event
-2. **text-blocks**: Add `GAME_BANNER` block key
-3. **lang-en-us**: Add default `game.started.banner` message template
-4. **dungeo/index.ts**: Override banner in `extendLanguage()`
-5. **browser-entry.ts**: Remove `displayTitle()` function
-
-**Plan document**: `docs/work/dungeo/game-started-event-plan.md`
-
-**Files to modify**:
-- `packages/text-service/src/handlers/game.ts` (NEW)
-- `packages/text-service/src/text-service.ts`
-- `packages/text-blocks/src/types.ts`
-- `packages/lang-en-us/src/language-provider.ts`
-- `stories/dungeo/src/index.ts`
-- `stories/dungeo/src/browser-entry.ts`
-
----
+**This issue list is complete. New issues should be added to `issues-list-02.md`.**
 
 ---
 
 ## Closed Issues
+
+### ISSUE-028: Opening banner hardcoded in browser-entry.ts
+
+**Reported**: 2026-01-21
+**Fixed**: 2026-01-22
+**Severity**: Low
+**Component**: Platform (text-service, lang-en-us, browser-entry)
+
+**Description**:
+The game opening banner (title, author, description) was hardcoded in `stories/dungeo/src/browser-entry.ts`. This violated the architecture where all prose should go through the language layer.
+
+**Resolution**:
+Banner display moved to website integration. The browser client now receives properly formatted output from the engine's game.started event flow. Story metadata is defined in the story's index.ts and flows through the standard text service pipeline.
+
+---
 
 ### ISSUE-021: UP from Studio limited to two items (chimney restriction)
 
