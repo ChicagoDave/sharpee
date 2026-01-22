@@ -56,3 +56,9 @@ feat: Scaffold sharpee.net website with Astro
 [21:02:22] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
 [21:03:27] WRITE: docs/context/session-20260121-1924-dungeo.md
 [21:03:33] EDIT: docs/work/platform/meta-commands.md
+[00:46:29] GIT: git commit -m "$(cat <<'EOF'
+feat: Meta-command early divergence architecture
+
+I
+[00:46:34] GIT: git push
+[01:05:05] EDIT: docs/context/session-20260122-0043-dungeo.md

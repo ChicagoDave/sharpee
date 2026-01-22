@@ -1,0 +1,495 @@
+/* Infocom DOS-era styling for Sharpee IF games */
+
+/* DOS Color Palette */
+:root {
+  --dos-blue: #0000aa;
+  --dos-cyan: #00aaaa;
+  --dos-white: #aaaaaa;
+  --dos-bright-white: #ffffff;
+  --dos-black: #000000;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--dos-blue);
+  color: var(--dos-bright-white);
+  font-family: "Perfect DOS VGA 437", "Consolas", "Courier New", monospace;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+#game-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 80ch;
+  margin: 0 auto;
+  padding: 0;
+}
+
+/* Status Line - Cyan background, black text */
+#status-line {
+  background: var(--dos-cyan);
+  color: var(--dos-black);
+  padding: 4px 8px;
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+#location-name {
+  text-transform: uppercase;
+}
+
+/* Main Text Window */
+#main-window {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  padding-bottom: 1em;
+}
+
+#text-content p {
+  margin-bottom: 0.8em;
+}
+
+#text-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Command echo styling */
+.command-echo {
+  color: var(--dos-white);
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+/* Input Area */
+#input-area {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-top: 2px solid var(--dos-cyan);
+  flex-shrink: 0;
+  background: var(--dos-blue);
+}
+
+.prompt {
+  color: var(--dos-bright-white);
+  margin-right: 4px;
+}
+
+#command-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--dos-bright-white);
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  outline: none;
+  caret-color: var(--dos-bright-white);
+}
+
+#command-input::placeholder {
+  color: var(--dos-white);
+  opacity: 0.5;
+}
+
+/* Hide scrollbar but allow scrolling (Webkit) */
+#main-window::-webkit-scrollbar {
+  width: 8px;
+}
+
+#main-window::-webkit-scrollbar-track {
+  background: var(--dos-blue);
+}
+
+#main-window::-webkit-scrollbar-thumb {
+  background: var(--dos-cyan);
+}
+
+/* Firefox scrollbar */
+#main-window {
+  scrollbar-width: thin;
+  scrollbar-color: var(--dos-cyan) var(--dos-blue);
+}
+
+/* System messages */
+.system-message {
+  color: var(--dos-cyan);
+}
+
+/* Game over / victory */
+.game-status {
+  color: var(--dos-bright-white);
+  text-align: center;
+  font-weight: bold;
+  margin: 1em 0;
+  padding: 0.5em;
+  border: 1px solid var(--dos-cyan);
+}
+
+/* Mobile adjustments */
+@media (max-width: 600px) {
+  body {
+    font-size: 14px;
+  }
+
+  #game-container {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  #status-line {
+    font-size: 12px;
+    padding: 6px 12px;
+    /* Safe area for notched phones */
+    padding-top: max(6px, env(safe-area-inset-top));
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+
+  #main-window {
+    padding: 12px;
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+
+  #input-area {
+    padding: 8px 12px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+    /* Larger touch target */
+    min-height: 48px;
+  }
+
+  #command-input {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+    padding: 8px 0;
+  }
+
+  .prompt {
+    font-size: 16px;
+  }
+}
+
+/* Small phones */
+@media (max-width: 380px) {
+  body {
+    font-size: 13px;
+  }
+
+  #status-line {
+    font-size: 11px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  #location-name {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+
+  #score-turns {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+}
+
+/* Landscape phone */
+@media (max-height: 500px) and (orientation: landscape) {
+  body {
+    font-size: 13px;
+    line-height: 1.3;
+  }
+
+  #status-line {
+    padding: 2px 8px;
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+  }
+
+  #main-window {
+    padding: 4px 8px;
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+  }
+
+  #text-content p {
+    margin-bottom: 0.5em;
+  }
+
+  #input-area {
+    padding: 4px 8px;
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+    min-height: 36px;
+  }
+}
+
+/* When virtual keyboard is likely open - use dvh for dynamic viewport */
+@supports (height: 100dvh) {
+  #game-container {
+    height: 100dvh;
+  }
+}
+
+/* Touch-specific: larger tap targets, no hover effects */
+@media (pointer: coarse) {
+  #command-input {
+    padding: 12px 0;
+  }
+
+  #input-area {
+    min-height: 52px;
+  }
+
+  /* Ensure scrollbar is visible on touch */
+  #main-window {
+    scrollbar-width: auto;
+  }
+
+  #main-window::-webkit-scrollbar {
+    width: 12px;
+  }
+}
+
+/* Blinking cursor effect */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+#command-input:focus {
+  caret-color: var(--dos-bright-white);
+}
+
+/* ============================================
+   Save/Restore Modal Dialogs
+   ============================================ */
+
+.modal-hidden {
+  display: none !important;
+}
+
+#modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-dialog {
+  background: var(--dos-blue);
+  border: 2px solid var(--dos-cyan);
+  min-width: 300px;
+  max-width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-title {
+  background: var(--dos-cyan);
+  color: var(--dos-black);
+  padding: 4px 8px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.modal-content {
+  padding: 12px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.save-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.save-input-row label {
+  white-space: nowrap;
+}
+
+#save-name-input {
+  flex: 1;
+  background: var(--dos-black);
+  border: 1px solid var(--dos-cyan);
+  color: var(--dos-bright-white);
+  font-family: inherit;
+  font-size: inherit;
+  padding: 4px 6px;
+  outline: none;
+}
+
+#save-name-input:focus {
+  border-color: var(--dos-bright-white);
+}
+
+.saves-list-label {
+  color: var(--dos-white);
+  margin-bottom: 8px;
+  font-size: 0.9em;
+}
+
+.saves-list {
+  background: var(--dos-black);
+  border: 1px solid var(--dos-cyan);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.save-slot {
+  padding: 6px 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid #333;
+}
+
+.save-slot:last-child {
+  border-bottom: none;
+}
+
+.save-slot:hover {
+  background: var(--dos-blue);
+}
+
+.save-slot.selected {
+  background: var(--dos-bright-white);
+  color: var(--dos-blue);
+}
+
+.save-slot-name {
+  font-weight: bold;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.save-slot-info {
+  color: var(--dos-white);
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+.save-slot.selected .save-slot-info {
+  color: var(--dos-blue);
+}
+
+.no-saves-message {
+  color: var(--dos-white);
+  font-style: italic;
+  padding: 12px;
+  text-align: center;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 12px;
+  border-top: 1px solid var(--dos-cyan);
+}
+
+.modal-btn {
+  background: var(--dos-black);
+  border: 1px solid var(--dos-cyan);
+  color: var(--dos-bright-white);
+  font-family: inherit;
+  font-size: inherit;
+  padding: 6px 20px;
+  cursor: pointer;
+  min-width: 80px;
+}
+
+.modal-btn:hover {
+  background: var(--dos-blue);
+  border-color: var(--dos-bright-white);
+}
+
+.modal-btn:focus {
+  outline: 1px solid var(--dos-bright-white);
+  outline-offset: 2px;
+}
+
+.modal-btn:disabled {
+  color: var(--dos-white);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Startup dialog */
+.startup-info {
+  color: var(--dos-cyan);
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.startup-question {
+  color: var(--dos-bright-white);
+  margin: 0;
+}
+
+/* Modal scrollbar styling */
+.saves-list::-webkit-scrollbar,
+.modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.saves-list::-webkit-scrollbar-track,
+.modal-content::-webkit-scrollbar-track {
+  background: var(--dos-black);
+}
+
+.saves-list::-webkit-scrollbar-thumb,
+.modal-content::-webkit-scrollbar-thumb {
+  background: var(--dos-cyan);
+}
+
+/* Mobile modal adjustments */
+@media (max-width: 600px) {
+  .modal-dialog {
+    min-width: 280px;
+    margin: 12px;
+  }
+
+  .save-input-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .modal-buttons {
+    gap: 12px;
+  }
+
+  .modal-btn {
+    flex: 1;
+    padding: 10px 16px;
+  }
+}
