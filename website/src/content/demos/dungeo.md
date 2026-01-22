@@ -1,7 +1,7 @@
 ---
 title: "Dungeon"
 description: "A faithful recreation of Mainframe Zork (1981) - the original dungeon crawler that started it all"
-coverImage: "/images/demos/dungeo-cover.png"
+coverImage: "/images/demos/dungeo-cover.jpg"
 authors:
   - name: "Tim Anderson, Marc Blank, Bruce Daniels, Dave Lebling (MIT 1977-1979)"
   - name: "Ported by David Cornelson"
