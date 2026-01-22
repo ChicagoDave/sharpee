@@ -7,7 +7,7 @@ authors:
     url: "https://github.com/ChicagoDave"
 version: "0.1.0-beta"
 platforms:
-  browser: "/games/dungeo/index.html"
+  browser: "/play/dungeo/"
 featured: true
 dateAdded: 2026-01-21
 ---

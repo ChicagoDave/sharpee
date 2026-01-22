@@ -1,0 +1,29 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Play Dungeo" description="Play Dungeo - A faithful recreation of Mainframe Zork (1981)">
+  <div class="flex flex-col h-[calc(100vh-4rem)]">
+    <!-- Header bar -->
+    <div class="bg-white border-b border-slate-200 py-3">
+      <div class="container mx-auto px-4 flex items-center justify-between">
+        <div>
+          <a href="/demos/dungeo" class="text-emerald-600 hover:text-emerald-700 text-sm font-medium">
+            &larr; Back to Dungeo
+          </a>
+          <h1 class="text-xl font-bold text-slate-900 mt-1">Dungeo</h1>
+        </div>
+        <div class="text-sm text-slate-500">
+          Type <code class="bg-slate-100 px-1.5 py-0.5 rounded">help</code> for commands
+        </div>
+      </div>
+    </div>
+
+    <!-- Game iframe -->
+    <iframe
+      src="/games/dungeo/index.html"
+      class="flex-1 w-full border-0"
+      title="Dungeo game"
+    />
+  </div>
+</BaseLayout>
