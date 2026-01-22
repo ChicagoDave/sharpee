@@ -62,3 +62,28 @@ feat: Meta-command early divergence architecture
 I
 [00:46:34] GIT: git push
 [01:05:05] EDIT: docs/context/session-20260122-0043-dungeo.md
+[01:05:42] GIT: git commit -m "$(cat <<'EOF'
+feat: Add Dungeo browser demo to website
+
+Copy buil
+[01:05:47] GIT: git push
+[02:36:12] GIT: git commit -m "$(cat <<'EOF'
+chore: Remove redundant demos folder
+
+Demo moved to
+[02:39:48] WRITE: docs/work/issues/issues-list-02.md
+[02:41:35] WRITE: docs/work/issues/README.md
+[02:45:50] EDIT: docs/work/issues/issues-list-01.md
+[02:46:05] EDIT: docs/work/issues/issues-list-01.md
+[02:49:20] GIT: git commit -m "$(cat <<'EOF'
+chore: Reorganize issue tracking
+
+- Rename issues-l
+[02:53:27] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&1 | head -30
+[02:54:47] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
+[02:57:44] TRANSCRIPT FAIL: ./scripts/build.sh --skip transcript-tester -s dungeo 2>&1 | tail -50
+[03:01:06] TRANSCRIPT FAIL: timeout 300 node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&
+[03:02:19] WRITE: docs/work/issues/issues-list-02.md
+[03:03:49] EDIT: docs/work/issues/issues-list-02.md
+[03:03:53] EDIT: docs/work/issues/issues-list-02.md
+[03:08:03] WRITE: docs/context/session-20260122-0043-dungeo.md
