@@ -1,0 +1,47 @@
+---
+import '../styles/global.css';
+import Navigation from '../components/Navigation.astro';
+import Footer from '../components/Footer.astro';
+import DocsSidebar from '../components/DocsSidebar.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  section: string;
+}
+
+const { title, description, section } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description || `${title} - Sharpee Documentation`} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title} | Sharpee Docs</title>
+  </head>
+  <body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+    <Navigation />
+    <div class="flex-1 container mx-auto px-4 py-8">
+      <div class="flex flex-col lg:flex-row gap-8">
+        <!-- Sidebar -->
+        <aside class="lg:w-64 flex-shrink-0">
+          <DocsSidebar currentSection={section} />
+        </aside>
+
+        <!-- Main content -->
+        <main class="flex-1 min-w-0">
+          <article class="bg-white rounded-lg shadow-sm p-8">
+            <h1 class="text-3xl font-bold text-slate-900 mb-6">{title}</h1>
+            <div class="prose prose-slate max-w-none">
+              <slot />
+            </div>
+          </article>
+        </main>
+      </div>
+    </div>
+    <Footer />
+  </body>
+</html>

@@ -1,0 +1,24 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer class="bg-slate-900 text-slate-400 py-8 mt-auto">
+  <div class="container mx-auto px-4">
+    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+      <div class="text-sm">
+        &copy; {year} Sharpee. Open source under MIT license.
+      </div>
+      <div class="flex items-center gap-6 text-sm">
+        <a href="https://github.com/ChicagoDave/sharpee" class="hover:text-white transition-colors">
+          GitHub
+        </a>
+        <a href="https://www.npmjs.com/package/@sharpee/sharpee" class="hover:text-white transition-colors">
+          npm
+        </a>
+        <a href="/docs/getting-started" class="hover:text-white transition-colors">
+          Documentation
+        </a>
+      </div>
+    </div>
+  </div>
+</footer>

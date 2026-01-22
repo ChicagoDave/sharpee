@@ -1,0 +1,29 @@
+---
+import { getCollection } from 'astro:content';
+
+// Get the first doc in this section
+const docs = await getCollection('docs', (doc) => doc.data.section === 'author-guide');
+const sortedDocs = docs.sort((a, b) => a.data.order - b.data.order);
+
+// Redirect to first doc or show placeholder
+if (sortedDocs.length > 0) {
+  const firstDoc = sortedDocs[0];
+  return Astro.redirect(`/docs/author-guide/${firstDoc.slug.split('/').pop()}`);
+}
+
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+---
+
+<DocsLayout title="Author Guide" section="author-guide">
+  <p>The author guide documentation is coming soon!</p>
+  <p class="mt-4">
+    This guide will cover:
+  </p>
+  <ul class="mt-2 list-disc list-inside space-y-1">
+    <li>Creating your first story</li>
+    <li>Rooms and regions</li>
+    <li>Objects and traits</li>
+    <li>NPCs and conversations</li>
+    <li>Puzzles and events</li>
+  </ul>
+</DocsLayout>

@@ -1,0 +1,52 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import GameCard from '../../components/GameCard.astro';
+
+const demos = await getCollection('demos');
+const sortedDemos = demos.sort((a, b) => {
+  // Featured first, then by date
+  if (a.data.featured !== b.data.featured) {
+    return a.data.featured ? -1 : 1;
+  }
+  return b.data.dateAdded.getTime() - a.data.dateAdded.getTime();
+});
+---
+
+<BaseLayout title="Demos" description="Try example games built with Sharpee">
+  <section class="py-12 bg-slate-50">
+    <div class="container mx-auto px-4">
+      <div class="max-w-3xl mx-auto text-center mb-12">
+        <h1 class="text-4xl font-bold text-slate-900">Demo Games</h1>
+        <p class="mt-4 text-lg text-slate-600">
+          Explore example games that showcase Sharpee's capabilities.
+          These demos are great for learning how to build your own adventures.
+        </p>
+      </div>
+
+      {sortedDemos.length > 0 ? (
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {sortedDemos.map((demo) => (
+            <GameCard
+              title={demo.data.title}
+              description={demo.data.description}
+              coverImage={demo.data.coverImage}
+              authors={demo.data.authors}
+              version={demo.data.version}
+              platforms={demo.data.platforms}
+              slug={demo.slug}
+              type="demo"
+            />
+          ))}
+        </div>
+      ) : (
+        <div class="text-center py-12">
+          <p class="text-slate-500 text-lg">Demo games coming soon!</p>
+          <a href="/docs/getting-started" class="mt-4 inline-block text-emerald-600 hover:text-emerald-700">
+            Learn how to create your own &rarr;
+          </a>
+        </div>
+      )}
+    </div>
+  </section>
+</BaseLayout>

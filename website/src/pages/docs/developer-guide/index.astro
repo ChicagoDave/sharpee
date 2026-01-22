@@ -1,0 +1,30 @@
+---
+import { getCollection } from 'astro:content';
+
+// Get the first doc in this section
+const docs = await getCollection('docs', (doc) => doc.data.section === 'developer-guide');
+const sortedDocs = docs.sort((a, b) => a.data.order - b.data.order);
+
+// Redirect to first doc or show placeholder
+if (sortedDocs.length > 0) {
+  const firstDoc = sortedDocs[0];
+  return Astro.redirect(`/docs/developer-guide/${firstDoc.slug.split('/').pop()}`);
+}
+
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+---
+
+<DocsLayout title="Developer Guide" section="developer-guide">
+  <p>The developer guide documentation is coming soon!</p>
+  <p class="mt-4">
+    This guide will cover:
+  </p>
+  <ul class="mt-2 list-disc list-inside space-y-1">
+    <li>Architecture overview</li>
+    <li>Creating custom actions</li>
+    <li>Building new traits</li>
+    <li>Parser extensions</li>
+    <li>Building platforms (clients)</li>
+    <li>Contributing to Sharpee</li>
+  </ul>
+</DocsLayout>

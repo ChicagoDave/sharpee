@@ -1,0 +1,159 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Home">
+  <!-- Hero Section -->
+  <section class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white py-20">
+    <div class="container mx-auto px-4">
+      <div class="max-w-3xl mx-auto text-center">
+        <h1 class="text-5xl md:text-6xl font-bold tracking-tight">
+          Sharpee
+        </h1>
+        <p class="mt-4 text-xl md:text-2xl text-slate-300">
+          A modern parser-based Interactive Fiction authoring platform
+        </p>
+        <p class="mt-6 text-slate-400 max-w-2xl mx-auto">
+          Create text adventures with natural language parsing, rich world modeling,
+          and a clean TypeScript architecture. Build once, deploy to browser, desktop,
+          or screen readers.
+        </p>
+        <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+          <a
+            href="/docs/getting-started"
+            class="px-6 py-3 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition-colors"
+          >
+            Get Started
+          </a>
+          <a
+            href="/demos"
+            class="px-6 py-3 bg-slate-700 text-white font-semibold rounded-lg hover:bg-slate-600 transition-colors"
+          >
+            Try a Demo
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="py-16 bg-white">
+    <div class="container mx-auto px-4">
+      <h2 class="text-3xl font-bold text-center text-slate-900">
+        Why Sharpee?
+      </h2>
+      <div class="mt-12 grid md:grid-cols-3 gap-8">
+        <div class="text-center">
+          <div class="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center mx-auto">
+            <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h3 class="mt-4 text-xl font-semibold text-slate-900">Natural Language Parser</h3>
+          <p class="mt-2 text-slate-600">
+            Advanced grammar system understands complex commands with objects, prepositions, and modifiers.
+          </p>
+        </div>
+
+        <div class="text-center">
+          <div class="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center mx-auto">
+            <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
+          <h3 class="mt-4 text-xl font-semibold text-slate-900">Rich World Model</h3>
+          <p class="mt-2 text-slate-600">
+            Traits, behaviors, and containers create realistic, interactive environments with minimal code.
+          </p>
+        </div>
+
+        <div class="text-center">
+          <div class="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center mx-auto">
+            <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+            </svg>
+          </div>
+          <h3 class="mt-4 text-xl font-semibold text-slate-900">Multi-Platform</h3>
+          <p class="mt-2 text-slate-600">
+            Deploy to web browsers, Electron desktop apps, or screen reader-optimized terminals.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Code Example Section -->
+  <section class="py-16 bg-slate-50">
+    <div class="container mx-auto px-4">
+      <h2 class="text-3xl font-bold text-center text-slate-900">
+        Clean, Expressive Code
+      </h2>
+      <p class="mt-4 text-center text-slate-600 max-w-2xl mx-auto">
+        Define rooms, objects, and interactions with TypeScript's type safety and IDE support.
+      </p>
+      <div class="mt-8 max-w-3xl mx-auto">
+        <pre class="bg-slate-900 text-slate-100 rounded-lg p-6 overflow-x-auto text-sm"><code class="language-typescript"><span class="text-emerald-400">export function</span> <span class="text-yellow-300">createLivingRoom</span>(world: WorldModel): IFEntity {"{"}
+  <span class="text-emerald-400">const</span> room = world.createRoom(<span class="text-orange-300">'living-room'</span>, {"{"}
+    name: <span class="text-orange-300">'Living Room'</span>,
+    description: <span class="text-orange-300">`A cozy room with a fireplace.
+      An oriental rug covers the floor.`</span>
+  {"}"});
+
+  <span class="text-slate-500">// Create a container with hidden contents</span>
+  <span class="text-emerald-400">const</span> rug = world.createEntity(<span class="text-orange-300">'rug'</span>, <span class="text-orange-300">'object'</span>);
+  addTrait(rug, ContainerTrait, {"{"} isOpen: <span class="text-purple-400">false</span> {"}"});
+  addTrait(rug, SceneryTrait);
+
+  world.moveEntity(rug.id, room.id);
+  <span class="text-emerald-400">return</span> room;
+{"}"}</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Install Section -->
+  <section class="py-16 bg-white">
+    <div class="container mx-auto px-4 text-center">
+      <h2 class="text-3xl font-bold text-slate-900">
+        Get Started in Minutes
+      </h2>
+      <div class="mt-8 max-w-md mx-auto">
+        <div class="bg-slate-900 rounded-lg p-4">
+          <code class="text-emerald-400">npm install @sharpee/sharpee</code>
+        </div>
+      </div>
+      <a
+        href="/docs/getting-started"
+        class="inline-block mt-6 text-emerald-600 font-medium hover:text-emerald-700"
+      >
+        Read the full installation guide &rarr;
+      </a>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="py-16 bg-emerald-600 text-white">
+    <div class="container mx-auto px-4 text-center">
+      <h2 class="text-3xl font-bold">
+        Ready to Create Your Adventure?
+      </h2>
+      <p class="mt-4 text-emerald-100 max-w-xl mx-auto">
+        Whether you're writing your first text game or porting a classic, Sharpee has the tools you need.
+      </p>
+      <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+        <a
+          href="/docs/author-guide"
+          class="px-6 py-3 bg-white text-emerald-600 font-semibold rounded-lg hover:bg-emerald-50 transition-colors"
+        >
+          Author Guide
+        </a>
+        <a
+          href="/games"
+          class="px-6 py-3 bg-emerald-700 text-white font-semibold rounded-lg hover:bg-emerald-800 transition-colors"
+        >
+          Browse Games
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
