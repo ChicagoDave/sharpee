@@ -16,6 +16,9 @@ description: Test the bell/book/candle exorcism to banish spirits at Entry to Ha
 > east
 [OK: contains "Behind House"]
 
+> open window
+[OK: contains "open"]
+
 > west
 [OK: contains "Kitchen"]
 

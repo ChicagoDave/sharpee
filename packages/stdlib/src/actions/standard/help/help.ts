@@ -124,11 +124,11 @@ export const helpAction: Action & { metadata: ActionMetadata } = {
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     // Help always succeeds, but include blocked for consistency
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
-      reason: result.error,
-      params: result.params || {}
+    return [context.event('if.event.help_displayed', {
+      messageId: `if.action.help.${result.error}`,
+      params: result.params || {},
+      blocked: true,
+      reason: result.error
     })];
   },
 
@@ -137,7 +137,24 @@ export const helpAction: Action & { metadata: ActionMetadata } = {
 
     // Emit the help event with the prepared data
     if (sharedData.eventData) {
-      return [context.event('if.event.help_displayed', sharedData.eventData)];
+      // Determine messageId based on help type
+      let messageId = 'if.action.help.general';
+      if (sharedData.eventData.specificHelp) {
+        messageId = 'if.action.help.topic';
+      } else if (sharedData.eventData.firstTime) {
+        messageId = 'if.action.help.first_time';
+      }
+
+      return [context.event('if.event.help_displayed', {
+        messageId,
+        params: {
+          topic: sharedData.eventData.helpRequest,
+          sections: sharedData.eventData.sections,
+          hintsAvailable: sharedData.eventData.hintsAvailable
+        },
+        // Domain data
+        ...sharedData.eventData
+      })];
     }
 
     return [];

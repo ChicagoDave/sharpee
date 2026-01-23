@@ -1,0 +1,125 @@
+title: Grue Death Mechanics
+story: dungeo
+author: Sharpee Team
+description: Test grue death mechanics from FORTRAN verbs.f - 25% survival in dark rooms
+
+---
+
+# Setup: Get to the cellar with lamp
+
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> open window
+[OK: contains "open"]
+
+> west
+[OK: contains "Kitchen"]
+
+> west
+[OK: contains "Living Room"]
+
+> take lantern
+[OK: contains "Taken"]
+
+> take sword
+[OK: contains "Taken"]
+
+> push rug
+[OK: contains "trap door"]
+
+> open trapdoor
+[OK: contains "open"]
+
+# Go down with lamp OFF - we enter dark room but from LIT room = safe
+# Should see pitch dark warning (grue check is on LEAVING dark room, not entering)
+> down
+[OK: contains "pitch dark"]
+
+# Turn on lantern - should now see the Cellar
+> switch on lantern
+[OK: contains "Cellar"]
+
+# Verify we're in cellar
+> look
+[OK: contains "Cellar"]
+
+# Test 1: Moving in LIT room - no grue check
+# Going east to Troll Room (also lit now because we have lantern)
+> east
+[OK: contains "Troll Room"]
+[FAIL: contains "grue"]
+
+# Use GDT to kill troll so we can move around freely
+> gdt
+[OK: contains "GDT"]
+
+> kl troll
+[OK: contains "Killed"]
+
+> ex
+[OK: contains "Returning"]
+
+# Go back to cellar (still lit)
+> west
+[OK: contains "Cellar"]
+[FAIL: contains "grue"]
+
+# Test 2: GDT ND (No Deaths) prevents grue death
+# Enable immortality mode
+> gdt
+[OK: contains "GDT"]
+
+> nd
+[OK: contains "Immortality"]
+
+> ex
+[OK: contains "Returning"]
+
+# Now turn off lamp and try moving in dark
+> switch off lantern
+[OK: contains "off"]
+
+# Verify we're in pitch dark
+> look
+[OK: contains "pitch dark"]
+
+# Even in dark room, with immortality we can move safely
+# Going east from cellar leads to troll room
+# With ND enabled, this should NOT kill us
+> east
+[FAIL: contains "grue"]
+[FAIL: contains "died"]
+
+# We survived! We're now in troll room (also dark)
+# Turn lamp back on
+> switch on lantern
+[OK: contains "Troll Room"]
+
+# Verify we're in troll room
+> look
+[OK: contains "Troll Room"]
+
+# Disable immortality for potential death test
+> gdt
+[OK: contains "GDT"]
+
+> rd
+[OK: contains "Immortality"]
+
+> ex
+[OK: contains "Returning"]
+
+# Test 3: Moving from dark to dark WITHOUT immortality (may die 75% chance)
+# Turn off lamp
+> switch off lantern
+[OK: contains "off"]
+
+# Move west back to cellar (dark to dark)
+# This has 75% chance of death, 25% survival
+# We just verify no crash - skip specific output check
+> west
+[SKIP]

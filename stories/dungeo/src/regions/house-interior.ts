@@ -36,9 +36,9 @@ function generateEventId(): string {
   return `evt-${Date.now()}-${++eventCounter}`;
 }
 
-function createRoom(world: WorldModel, name: string, description: string): IFEntity {
+function createRoom(world: WorldModel, name: string, description: string, isDark = false): IFEntity {
   const room = world.createEntity(name, EntityType.ROOM);
-  room.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: false }));
+  room.add(new RoomTrait({ exits: {}, isDark, isOutdoors: false }));
   room.add(new IdentityTrait({ name, description, properName: true, article: 'the' }));
   return room;
 }
@@ -62,7 +62,7 @@ export function createHouseInteriorRegion(world: WorldModel): HouseInteriorRoomI
     'This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut.');
 
   const attic = createRoom(world, 'Attic',
-    'This is the attic. The only exit is stairs that lead down.');
+    'This is the attic. The only exit is stairs that lead down.', true);
 
   // === Set up connections ===
 

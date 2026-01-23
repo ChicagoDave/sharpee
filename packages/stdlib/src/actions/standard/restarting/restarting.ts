@@ -109,11 +109,11 @@ export const restartingAction: Action & { metadata: ActionMetadata } = {
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     // Restarting always succeeds, but include blocked for consistency
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
-      reason: result.error,
-      params: result.params || {}
+    return [context.event('if.event.restart_blocked', {
+      messageId: `if.action.restarting.${result.error}`,
+      params: result.params || {},
+      blocked: true,
+      reason: result.error
     })];
   },
 
@@ -129,16 +129,8 @@ export const restartingAction: Action & { metadata: ActionMetadata } = {
     // Emit the restart requested event
     events.push(context.event('if.event.restart_requested', data.eventData));
 
-    // If not force restart and there's significant progress, emit a hint
-    if (data.showHint) {
-      events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: 'restart_requested',
-        params: {
-          hint: 'The game will ask for confirmation before restarting.'
-        }
-      }));
-    }
+    // Hint about confirmation is conveyed via the restart_requested event's data
+    // (showHint, hasUnsavedChanges fields)
 
     return events;
   },

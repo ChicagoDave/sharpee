@@ -351,34 +351,41 @@ Since "turn switch" is puzzle-specific (not a generic IF verb), Option B is corr
 
 **IMPORTANT**: Use these scripts instead of manual `pnpm build` commands to avoid WSL permission issues.
 
-Three main scripts, each building on the previous:
+Main controller script with modular components:
 
 ```bash
-# 1. Build platform packages only (core → sharpee → transcript-tester)
-./scripts/build-platform.sh                    # Full platform build
-./scripts/build-platform.sh --skip stdlib      # Skip to stdlib and build from there
+# Controller script - use this for all builds
+./scripts/build.sh                                    # Platform only
+./scripts/build.sh -s dungeo                          # Platform + dungeo story
+./scripts/build.sh -s dungeo -c browser               # Platform + story + browser client
+./scripts/build.sh -s reflections -c electron         # Platform + different story/client
+./scripts/build.sh --skip stdlib -s dungeo            # Skip to stdlib, then story
+./scripts/build.sh --all dungeo browser               # Shorthand for full web build
 
-# 2. Build platform + dungeo story (for testing)
-./scripts/build-dungeo.sh                      # Full build for testing
-./scripts/build-dungeo.sh --skip text-service  # Skip to text-service in platform
-./scripts/build-dungeo.sh --skip dungeo        # Only rebuild dungeo (platform already built)
-
-# 3. Build everything + browser bundle (for web deployment)
-./scripts/build-web.sh                         # Full web build
-./scripts/build-web.sh --skip dungeo           # Only rebuild dungeo + browser bundle
-./scripts/build-web.sh --skip web              # Only rebuild browser bundle
+# Individual scripts (called by controller, can use directly)
+./scripts/build-platform.sh                           # Platform packages + node bundle
+./scripts/build-platform.sh --skip stdlib             # Skip to stdlib
+./scripts/build-story.sh dungeo                       # Build specific story
+./scripts/build-client.sh dungeo browser              # Build browser client for story
+./scripts/update-versions.sh --story dungeo --client browser  # Update version.ts files
 ```
 
 **Workflow**:
 
-1. Platform changes: `./scripts/build-dungeo.sh --skip <first-changed-package>`
-2. Story-only changes: `./scripts/build-dungeo.sh --skip dungeo`
-3. Browser deployment: `./scripts/build-web.sh --skip web`
+1. Platform changes: `./scripts/build.sh --skip <first-changed-package> -s dungeo`
+2. Story-only changes: `./scripts/build.sh --skip transcript-tester -s dungeo`
+3. Browser deployment: `./scripts/build.sh -s dungeo -c browser`
+4. Full rebuild: `./scripts/build.sh --all dungeo browser`
 
 **Outputs**:
-- `build-platform.sh` → `dist/sharpee.js` (node bundle)
-- `build-dungeo.sh` → `dist/sharpee.js` (ready for testing)
-- `build-web.sh` → `dist/web/dungeo/` (HTML + JS + CSS)
+- Platform build → `dist/sharpee.js` (node bundle)
+- Story build → `stories/{story}/dist/` (compiled story)
+- Browser client → `dist/web/{story}/` (HTML + JS + CSS)
+
+**Version System**:
+- Versions auto-update on every build with format `X.Y.Z-beta.YYYYMMDD.HHMM`
+- `update-versions.sh` generates `version.ts` files for story and client
+- Version update runs FIRST, before any compilation
 
 **IMPORTANT**:
 - Always use `--skip` when possible to avoid slow full rebuilds

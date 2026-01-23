@@ -101,11 +101,11 @@ export const quittingAction: Action & { metadata: ActionMetadata } = {
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     // Quitting always succeeds, but include blocked for consistency
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
-      reason: result.error,
-      params: result.params || {}
+    return [context.event('if.event.quit_blocked', {
+      messageId: `if.action.quitting.${result.error}`,
+      params: result.params || {},
+      blocked: true,
+      reason: result.error
     })];
   },
 
@@ -135,16 +135,8 @@ export const quittingAction: Action & { metadata: ActionMetadata } = {
     // Emit quit_requested notification
     events.push(context.event('if.event.quit_requested', sharedData.eventData));
 
-    // If not force quit and there are unsaved changes, emit a hint
-    if (!sharedData.forceQuit && sharedData.hasUnsavedProgress) {
-      events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: 'quit_requested',
-        params: {
-          hint: 'You have unsaved progress. The game will ask for confirmation.'
-        }
-      }));
-    }
+    // If not force quit and there are unsaved changes, add hint to the quit_requested event
+    // The hint is already conveyed via hasUnsavedChanges in the event data
 
     return events;
   },

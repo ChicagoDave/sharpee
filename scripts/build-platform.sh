@@ -6,58 +6,13 @@
 #   ./scripts/build-platform.sh --skip stdlib  # Skip to stdlib and build from there
 #
 # Output: dist/sharpee.js (node bundle with all platform packages)
+#
+# Note: Version updates are handled by update-versions.sh, called by build.sh
 
 set -e
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
-
-# Increment patch version (patch only, prerelease tags untouched)
-# If patch reaches 999, roll to next minor
-increment_sharpee_version() {
-    local SHARPEE_PKG="packages/sharpee/package.json"
-
-    if [ ! -f "$SHARPEE_PKG" ]; then
-        return
-    fi
-
-    # Read current version
-    CURRENT_VERSION=$(node -p "require('./$SHARPEE_PKG').version")
-
-    # Extract base version and prerelease separately
-    BASE_VERSION=$(echo "$CURRENT_VERSION" | sed 's/-.*//')
-    PRERELEASE=$(echo "$CURRENT_VERSION" | grep -oP '(?<=-).*' || echo "")
-
-    # Parse base version parts
-    MAJOR=$(echo "$BASE_VERSION" | cut -d. -f1)
-    MINOR=$(echo "$BASE_VERSION" | cut -d. -f2)
-    PATCH=$(echo "$BASE_VERSION" | cut -d. -f3)
-
-    # Increment patch, roll minor if needed
-    if [ "$PATCH" -ge 999 ]; then
-        MINOR=$((MINOR + 1))
-        PATCH=0
-    else
-        PATCH=$((PATCH + 1))
-    fi
-
-    # Reconstruct version (preserve prerelease if present)
-    if [ -n "$PRERELEASE" ]; then
-        NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}-${PRERELEASE}"
-    else
-        NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
-    fi
-
-    # Update package.json
-    node -e "
-      const fs = require('fs');
-      const pkg = require('./$SHARPEE_PKG');
-      pkg.version = '$NEW_VERSION';
-      fs.writeFileSync('$SHARPEE_PKG', JSON.stringify(pkg, null, 2) + '\n');
-    "
-
-    echo "[sharpee version] $CURRENT_VERSION → $NEW_VERSION"
-}
 
 # Parse arguments
 SKIP_TO=""
@@ -99,7 +54,6 @@ echo "=== Building Sharpee Platform ==="
 if [ -n "$SKIP_TO" ]; then
     echo "(skipping to: $SKIP_TO)"
 fi
-increment_sharpee_version
 echo ""
 
 # Build order based on dependencies

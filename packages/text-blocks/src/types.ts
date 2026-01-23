@@ -169,4 +169,6 @@ export const CORE_BLOCK_KEYS = {
   PROMPT: 'prompt',
   /** Game/story message */
   GAME_MESSAGE: 'game.message',
+  /** Game opening banner */
+  GAME_BANNER: 'game.banner',
 } as const;

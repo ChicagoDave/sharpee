@@ -1,0 +1,116 @@
+title: Chimney Restriction
+story: dungeo
+author: Sharpee Team
+description: Test Studio chimney restriction per MDL source (act1.254) - lamp + max 1 other item
+
+---
+
+# Chimney Restriction Test
+# Rules:
+# - Max 2 items in inventory
+# - Must have lamp
+# - Cannot be empty-handed
+
+# === Setup: Get lamp and go to Studio via GDT ===
+
+# First get the lamp from Living Room
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> open window
+[OK: contains "open"]
+
+> west
+[OK: contains "Kitchen"]
+
+> west
+[OK: contains "Living Room"]
+
+# Get the lamp
+> take lantern
+[OK: contains "Taken"]
+
+# Get the sword too
+> take sword
+[OK: contains "Taken"]
+
+# Turn on lamp
+> turn on lantern
+[OK: contains "on"]
+
+# Teleport to Studio using GDT
+> gdt
+[OK: contains "GDT"]
+
+> ah studio
+[OK: contains "Studio"]
+
+> ex
+[OK: contains "game"]
+
+# Verify we're in Studio
+> look
+[OK: contains "Studio"]
+[OK: contains "chimney"]
+
+# === Test 1: Has lamp + sword (2 items) - should succeed ===
+> inventory
+[OK: contains "lantern"]
+[OK: contains "sword"]
+
+> up
+[OK: contains "Kitchen"]
+
+# Success! We're in Kitchen with lamp+sword
+
+# === Test 2: Test empty-handed ===
+
+# Teleport back to Studio
+> gdt
+[OK: contains "GDT"]
+
+> ah studio
+[OK: contains "Studio"]
+
+> ex
+[OK: contains "game"]
+
+# Drop everything
+> drop all
+[OK: contains "Dropped"]
+
+> inventory
+[OK: contains "empty"]
+
+# Try to go up - should fail with empty-handed message
+> up
+[OK: contains "empty-handed"]
+
+# === Test 3: Test without lamp (just sword) ===
+> take sword
+[OK: contains "Taken"]
+
+> up
+[OK: contains "narrow"]
+
+# === Test 4: Test with just lamp - should succeed ===
+> drop sword
+[OK: contains "Dropped"]
+
+> take lantern
+[OK: contains "Taken"]
+
+> turn on lantern
+[OK: contains "on"]
+
+> up
+[OK: contains "Kitchen"]
+
+# Final verification
+> look
+[OK: contains "Kitchen"]
+
+# Test complete!

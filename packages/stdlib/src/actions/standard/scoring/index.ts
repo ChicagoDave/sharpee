@@ -3,4 +3,4 @@
  */
 
 export { scoringAction } from './scoring';
-export type { ScoreDisplayedEventData, ScoringErrorData, ScoringEventMap } from './scoring-events';
+export type { ScoreDisplayedEventData, ScoringEventMap } from './scoring-events';

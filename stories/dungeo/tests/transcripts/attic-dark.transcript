@@ -1,0 +1,50 @@
+title: Attic Darkness Test
+story: dungeo
+author: Sharpee Team
+description: Test that Attic is dark without light source
+
+---
+
+# Start at West of House, go to kitchen
+> open mailbox
+[OK: contains "open"]
+
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> open window
+[OK: contains "open"]
+
+> west
+[OK: contains "Kitchen"]
+
+# Go up to attic without lamp - should be dark
+> up
+[OK: contains "dark"]
+[OK: contains "grue"]
+
+# Go back down
+> down
+[OK: contains "Kitchen"]
+
+# Get the lamp from living room
+> west
+[OK: contains "Living Room"]
+
+> take lamp
+[OK: contains "Taken"]
+
+> turn on lamp
+[OK: contains "on"]
+
+# Now go to attic with lamp
+> east
+[OK: contains "Kitchen"]
+
+> up
+[OK: contains "Attic"]
+[NOT: contains "dark"]
+[NOT: contains "grue"]

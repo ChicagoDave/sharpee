@@ -24,7 +24,9 @@ const VALID_CODES = new Set<string>([
   // Trivia debug
   'TQ',
   // Kill/Knockout/Wake
-  'KL', 'KO', 'WU'
+  'KL', 'KO', 'WU',
+  // Force commands
+  'FO'
 ]);
 
 /**

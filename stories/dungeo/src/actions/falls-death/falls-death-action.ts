@@ -35,15 +35,9 @@ export const fallsDeathAction: Action = {
   },
 
   report(context: ActionContext): ISemanticEvent[] {
-    // Emit both a renderable success event and a game state event
+    // Domain event with messageId - no action.success needed
     return [
-      // This event renders the death message
-      context.event('action.success', {
-        actionId: FALLS_DEATH_ACTION_ID,
-        messageId: FallsDeathMessages.DEATH
-      }),
-      // This event signals game state change for death handling
-      context.event('game.player_death', {
+      context.event('if.event.player.died', {
         messageId: FallsDeathMessages.DEATH,
         cause: 'aragain_falls'
       })

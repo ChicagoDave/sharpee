@@ -16,6 +16,7 @@ export const droppingLanguage = {
   messages: {
     'no_target': "Drop what?",
     'not_held': "{You} aren't holding {item}.",
+    'nothing_to_drop': "{You} aren't carrying anything.",
     'dropped': "Dropped.",
     'dropped_in': "{You} {put} {item} in {container}.",
     'dropped_on': "{You} {put} {item} on {surface}.",

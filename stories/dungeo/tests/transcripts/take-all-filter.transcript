@@ -1,0 +1,23 @@
+title: TAKE ALL Filter Test
+story: dungeo
+author: Sharpee Team
+description: Test that TAKE ALL doesn't try to take items already carried
+
+---
+
+# Start at West of House
+> look
+[OK: contains "West of House"]
+
+# Take the welcome mat first
+> take mat
+[OK: contains "Taken"]
+
+# Now take all - should not mention mat again
+> take all
+[NOT: contains "mat"]
+[NOT: contains "already"]
+
+# Verify we have the mat
+> i
+[OK: contains "mat"]

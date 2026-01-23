@@ -99,6 +99,21 @@ export const koHandler: GDTCommandHandler = {
     output.push(`Knocked out: ${entityName} (${targetEntity.id})`);
     output.push(`isAlive: ${combatant.isAlive}, isConscious: ${combatant.isConscious}`);
 
+    // Trigger the entity's knocked_out event handler if it exists
+    // This handles entity-specific knockout logic (e.g., troll description change, exit unblocking)
+    const entityHandlers = (targetEntity as any).on;
+    if (entityHandlers && typeof entityHandlers['if.event.knocked_out'] === 'function') {
+      const knockedOutEvent = {
+        id: `gdt-knockout-${Date.now()}`,
+        type: 'if.event.knocked_out',
+        timestamp: Date.now(),
+        entities: { target: targetEntity.id },
+        data: { source: 'gdt' }
+      };
+      entityHandlers['if.event.knocked_out'](knockedOutEvent, world);
+      output.push('(triggered entity knocked_out handler)');
+    }
+
     return {
       success: true,
       output

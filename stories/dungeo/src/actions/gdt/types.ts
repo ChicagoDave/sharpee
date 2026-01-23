@@ -62,7 +62,9 @@ export type GDTCommandCode =
   | 'KL' // Kill
   // Knock out / Wake up
   | 'KO' // Knock Out (unconscious)
-  | 'WU'; // Wake Up
+  | 'WU' // Wake Up
+  // Force commands (testing)
+  | 'FO'; // Force Open
 
 /**
  * Parsed GDT command

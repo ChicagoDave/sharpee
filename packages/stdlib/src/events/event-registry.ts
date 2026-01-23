@@ -25,7 +25,7 @@ export type { EnteredEventData, EnteringErrorData } from '../actions/standard/en
 export type { ExitedEventData, ExitingErrorData } from '../actions/standard/exiting/exiting-events';
 export type { SwitchedOnEventData, SwitchingOnErrorData } from '../actions/standard/switching_on/switching_on-events';
 export type { SwitchedOffEventData, SwitchingOffErrorData } from '../actions/standard/switching_off/switching_off-events';
-export type { ScoreDisplayedEventData, ScoringErrorData } from '../actions/standard/scoring/scoring-events';
+export type { ScoreDisplayedEventData } from '../actions/standard/scoring/scoring-events';
 export type { InventoryEventData, InventoryItem } from '../actions/standard/inventory/inventory-events';
 
 // Import types for declaration merging

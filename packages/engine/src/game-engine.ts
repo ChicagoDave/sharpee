@@ -25,14 +25,16 @@ import {
   ParserFactory,
   CommandHistoryData,
   CommandHistoryEntry,
+  CommandHistoryCapabilitySchema,
   IFActions,
   MetaCommandRegistry,
   IPerceptionService,
-  registerStandardChains
+  registerStandardChains,
+  createScopeResolver
 } from '@sharpee/stdlib';
 import { LanguageProvider, IEventProcessorWiring } from '@sharpee/if-domain';
 import { ITextService, createTextService, renderToString } from '@sharpee/text-service';
-import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, ISerializedSchedulerState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, getUntypedEventData } from '@sharpee/core';
+import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, ISerializedSchedulerState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, getUntypedEventData } from '@sharpee/core';
 
 import { ISchedulerService, createSchedulerService } from './scheduler';
 import { INpcService, createNpcService, guardBehavior, passiveBehavior } from '@sharpee/stdlib';
@@ -40,6 +42,8 @@ import { INpcService, createNpcService, guardBehavior, passiveBehavior } from '@
 import {
   GameContext,
   TurnResult,
+  MetaCommandResult,
+  CommandResult,
   EngineConfig,
   SequencedEvent,
   GameEvent
@@ -48,9 +52,10 @@ import { Story } from './story';
 import { NarrativeSettings, buildNarrativeSettings } from './narrative';
 
 import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer } from './command-executor';
+import { createActionContext } from './action-context-factory';
 import { EventSequenceUtils, eventSequencer } from './event-sequencer';
 import { toSequencedEvent, toSemanticEvent, processEvent } from './event-adapter';
-import { IEngineAwareParser, hasPronounContext, hasPlatformEventEmitter } from './parser-interface';
+import { IEngineAwareParser, hasPronounContext, hasPlatformEventEmitter, hasWorldContext } from './parser-interface';
 import { VocabularyManager, createVocabularyManager } from './vocabulary-manager';
 import { SaveRestoreService, createSaveRestoreService, ISaveRestoreStateProvider } from './save-restore-service';
 import { TurnEventProcessor, createTurnEventProcessor, EnrichmentContext } from './turn-event-processor';
@@ -122,6 +127,12 @@ export class GameEngine {
   }) {
     this.world = options.world;
     this.perceptionService = options.perceptionService;
+
+    // Register essential engine capabilities (stories can register additional ones)
+    // Command history is required for the AGAIN command to function
+    this.world.registerCapability(StandardCapabilities.COMMAND_HISTORY, {
+      schema: CommandHistoryCapabilitySchema
+    });
     this.config = {
       maxHistory: 100,
       validateEvents: true,
@@ -370,15 +381,20 @@ export class GameEngine {
     this.sessionMoves = 0;
     // Keep currentTurn as is (already 1 from constructor)
     
+    // Get version info from world (set by story/platform)
+    const versionInfo = (this.world as any).versionInfo;
+    const engineVersion = versionInfo?.engineVersion;
+    const clientVersion = versionInfo?.clientVersion || (this.world as any).clientVersion;
+
     // Emit game started event
     const startedEvent = createGameStartedEvent({
       id: this.story?.config.id,
       title: this.context.metadata.title,
       author: this.context.metadata.author,
       version: this.context.metadata.version
-    }, this.sessionStartTime);
+    }, this.sessionStartTime, engineVersion, clientVersion);
     this.emitGameEvent(startedEvent);
-    
+
     this.emit('state:changed', this.context);
   }
 
@@ -451,36 +467,10 @@ export class GameEngine {
       this.createUndoSnapshot();
     }
 
-    // Handle 'again' / 'g' command substitution
-    const normalized = input.trim().toLowerCase();
-    if (normalized === 'g' || normalized === 'again') {
-      // Get command history to find last command
-      const historyData = this.world.getCapability(StandardCapabilities.COMMAND_HISTORY) as CommandHistoryData | null;
-      
-      if (!historyData || !historyData.entries || historyData.entries.length === 0) {
-        // No command to repeat - return error event
-        const turn = this.context.currentTurn;
-        const errorEvent = eventSequencer.sequence({
-          type: 'if.error',
-          data: {
-            message: 'no_command_to_repeat',
-            command: input
-          }
-        }, turn);
-        
-        return {
-          turn,
-          input: input,
-          success: false,
-          events: [errorEvent],
-          error: 'There is nothing to repeat.'
-        };
-      }
-      
-      // Get the last command and substitute
-      const lastEntry = historyData.entries[historyData.entries.length - 1];
-      input = lastEntry.originalText;
-    }
+    // Note: AGAIN/G command handling has been moved to the again action (if.action.again)
+    // which emits platform.again_requested event, processed by processPlatformOperations.
+    // This enables proper i18n support - each parser package defines its own patterns
+    // (e.g., "again"/"g" in English, "encore"/"e" in French).
 
     // Check if system events are enabled via debug capability
     const debugData = this.world.getCapability('debug');
@@ -494,7 +484,7 @@ export class GameEngine {
     }
 
     const turn = this.context.currentTurn;
-    
+
     // Validate input
     if (input === null || input === undefined) {
       const errorEvent = eventSequencer.sequence({
@@ -517,8 +507,45 @@ export class GameEngine {
     this.emit('turn:start', turn, input);
 
     try {
-      // Query handling is managed by the platform layer
-      // Platform will intercept input before it reaches here
+      // Early detection: Parse first to check if this is a meta-command
+      // Meta-commands (VERSION, SCORE, HELP, etc.) take a completely separate path
+      // that doesn't interact with turn machinery (no turn increment, no NPCs, etc.)
+      if (this.parser) {
+        // Set world context for parser
+        const player = this.world.getPlayer();
+        if (player && hasWorldContext(this.parser)) {
+          const playerLocation = this.world.getLocation(player.id) || '';
+          (this.parser as any).setWorldContext(this.world, player.id, playerLocation);
+        }
+
+        // Parse to get action ID
+        const parseResult = this.parser.parse(input);
+        if (parseResult.success) {
+          const parsedCommand = parseResult.value;
+          const actionId = parsedCommand.action;
+
+          // Check if this is a meta-command
+          if (actionId && MetaCommandRegistry.isMeta(actionId)) {
+            // Route to separate meta-command path
+            const metaResult = await this.executeMetaCommand(input, parsedCommand);
+
+            // Convert MetaCommandResult to TurnResult for backward compatibility
+            // Turn is included for display context but not incremented
+            return {
+              type: 'turn',  // For backward compatibility with callers that don't check type
+              turn,
+              input: metaResult.input,
+              success: metaResult.success,
+              events: metaResult.events.map(e => eventSequencer.sequence(e as any, turn)),
+              error: metaResult.error,
+              actionId: metaResult.actionId
+            };
+          }
+        }
+        // If parse failed or not a meta-command, fall through to regular execution
+      }
+
+      // Regular command path - full turn processing
       // Execute the command
       const result = await this.commandExecutor.execute(
         input,
@@ -551,8 +578,10 @@ export class GameEngine {
         );
       }
 
-      this.turnEvents.set(turn, semanticEvents);
-      
+      // Merge with any existing events for this turn (e.g., game.started from engine.start())
+      const existingEvents = this.turnEvents.get(turn) || [];
+      this.turnEvents.set(turn, [...existingEvents, ...semanticEvents]);
+
       // Also track in event source for save/restore
       for (const semanticEvent of semanticEvents) {
         this.eventSource.emit(semanticEvent);
@@ -563,12 +592,9 @@ export class GameEngine {
         }
       }
 
-      // Check if this is a meta-command (out-of-world action)
-      // Meta-commands don't increment turns, trigger NPCs, or get recorded in history
-      const isMeta = result.actionId ? MetaCommandRegistry.isMeta(result.actionId) : false;
-
-      // Update command history if command was successful and not a meta-command
-      if (result.success && !isMeta) {
+      // Update command history if command was successful
+      // Note: Meta-commands take the early path (executeMetaCommand) and never reach here
+      if (result.success) {
         this.updateCommandHistory(result, input, turn);
 
         // Update pronoun context for "it"/"them"/"him"/"her" resolution (ADR-089)
@@ -607,9 +633,10 @@ export class GameEngine {
         }
       }
 
-      // Run NPC and scheduler ticks for non-meta commands
+      // Run NPC and scheduler ticks after successful player action
       // Order: NPC phase (ADR-070), then scheduler tick (ADR-071)
-      if (!isMeta && result.success) {
+      // Note: Meta-commands take the early path and never reach here
+      if (result.success) {
         const playerLocation = this.world.getLocation(this.context.player.id);
 
         // NPC turn phase (ADR-070)
@@ -729,17 +756,13 @@ export class GameEngine {
         }
       }
 
-      // Update context only for non-meta commands
-      if (!isMeta) {
-        this.updateContext(result);
-        // Update session statistics
-        this.sessionTurns++;
-        if (result.success) {
-          this.sessionMoves++;
-        }
-      } else {
-        // For meta-commands, only update vocabulary (scope may have changed)
-        this.updateScopeVocabulary();
+      // Update context and turn counter
+      // Note: Meta-commands take the early path and never reach here
+      this.updateContext(result);
+      // Update session statistics
+      this.sessionTurns++;
+      if (result.success) {
+        this.sessionMoves++;
       }
 
       // Process pending platform operations before text service
@@ -760,6 +783,9 @@ export class GameEngine {
           this.emit('text:output', output, turn);
         }
       }
+
+      // Clear turn events after processing to prevent accumulation on same turn (meta commands)
+      this.turnEvents.set(turn, []);
 
       // Emit completion
       this.emit('turn:complete', result);
@@ -787,6 +813,322 @@ export class GameEngine {
       this.emit('turn:failed', error as Error, turn);
       throw error;
     }
+  }
+
+  /**
+   * Execute a meta-command (VERSION, SCORE, HELP, etc.)
+   *
+   * Meta-commands operate outside the turn cycle:
+   * - They don't increment turns
+   * - They don't trigger NPC ticks or scheduler
+   * - They don't create undo snapshots
+   * - They don't get stored in command history
+   * - Events are processed immediately through text service (not stored in turnEvents)
+   *
+   * @param input - Raw command string
+   * @param parsedCommand - Parsed command from parser
+   * @returns MetaCommandResult with events and success status
+   */
+  private async executeMetaCommand(
+    input: string,
+    parsedCommand: any
+  ): Promise<MetaCommandResult> {
+    const events: ISemanticEvent[] = [];
+
+    try {
+      // Validate the command
+      const validationResult = (this.commandExecutor as any).validator.validate(parsedCommand);
+
+      if (!validationResult.success) {
+        // Validation failed - emit error event using domain event pattern
+        const errorEvent: ISemanticEvent = {
+          id: `meta_error_${Date.now()}`,
+          type: 'if.event.command_error',
+          timestamp: Date.now(),
+          data: {
+            messageId: `if.action.command.${validationResult.error?.code || 'validation_failed'}`,
+            params: validationResult.error?.details || {},
+            blocked: true,
+            reason: validationResult.error?.code || 'validation_failed'
+          },
+          entities: {}
+        };
+        events.push(errorEvent);
+
+        // Process error through text service and emit
+        this.processMetaEvents(events);
+
+        return {
+          type: 'meta',
+          input,
+          success: false,
+          events,
+          error: validationResult.error?.code || 'Validation failed',
+          actionId: parsedCommand.action
+        };
+      }
+
+      const command = validationResult.value;
+      const action = this.actionRegistry.get(command.actionId);
+
+      if (!action) {
+        const errorEvent: ISemanticEvent = {
+          id: `meta_error_${Date.now()}`,
+          type: 'if.event.command_error',
+          timestamp: Date.now(),
+          data: {
+            messageId: 'if.action.command.action_not_found',
+            params: { actionId: command.actionId },
+            blocked: true,
+            reason: 'action_not_found'
+          },
+          entities: {}
+        };
+        events.push(errorEvent);
+
+        this.processMetaEvents(events);
+
+        return {
+          type: 'meta',
+          input,
+          success: false,
+          events,
+          error: `Action not found: ${command.actionId}`,
+          actionId: command.actionId
+        };
+      }
+
+      // Create action context for meta-command execution
+      const scopeResolver = createScopeResolver(this.world);
+      const actionContext = createActionContext(this.world, this.context, command, action, scopeResolver);
+
+      // Run action's four-phase pattern
+      const actionValidation = action.validate(actionContext);
+
+      let actionEvents: ISemanticEvent[];
+      if (actionValidation.valid) {
+        // Execute and report
+        action.execute(actionContext);
+        actionEvents = action.report ? action.report(actionContext) : [];
+      } else {
+        // Blocked - get error events
+        actionEvents = action.blocked
+          ? action.blocked(actionContext, actionValidation)
+          : [{
+              id: `meta_blocked_${Date.now()}`,
+              type: 'if.event.command_error',
+              timestamp: Date.now(),
+              data: {
+                messageId: `if.action.command.${actionValidation.error || 'validation_failed'}`,
+                params: actionValidation.params || {},
+                blocked: true,
+                reason: actionValidation.error || 'validation_failed'
+              },
+              entities: {}
+            }];
+      }
+
+      events.push(...actionEvents);
+
+      // Handle platform operations inline (SAVE, RESTORE, QUIT, AGAIN, etc.)
+      // These are handled BEFORE text processing so completion events get rendered
+      const platformOps = events.filter(isPlatformRequestEvent);
+      for (const op of platformOps) {
+        const completionEvents = await this.processMetaPlatformOperation(op as IPlatformEvent);
+        events.push(...completionEvents);
+      }
+
+      // Process events through text service and emit to clients
+      // Events are NOT stored in turnEvents - processed immediately
+      this.processMetaEvents(events);
+
+      return {
+        type: 'meta',
+        input,
+        success: actionValidation.valid,
+        events,
+        actionId: command.actionId
+      };
+
+    } catch (error: any) {
+      const errorEvent: ISemanticEvent = {
+        id: `meta_error_${Date.now()}`,
+        type: 'command.failed',
+        timestamp: Date.now(),
+        data: {
+          reason: error.message,
+          input
+        },
+        entities: {}
+      };
+      events.push(errorEvent);
+
+      this.processMetaEvents(events);
+
+      return {
+        type: 'meta',
+        input,
+        success: false,
+        events,
+        error: error.message,
+        actionId: parsedCommand.action
+      };
+    }
+  }
+
+  /**
+   * Process meta-command events: text service → emit to clients
+   *
+   * - Does NOT store in turnEvents
+   * - Passes currentTurn for display context (turn/score shown to player)
+   * - Turn counter is NOT incremented
+   */
+  private processMetaEvents(events: ISemanticEvent[]): void {
+    if (!this.textService || events.length === 0) {
+      return;
+    }
+
+    // Emit individual events through engine's event system (for tests/listeners)
+    for (const event of events) {
+      this.emit('event', event as any);
+    }
+
+    // Process events through text service
+    const blocks = this.textService.processTurn(events);
+    const output = renderToString(blocks);
+
+    if (output) {
+      // Emit text output with current turn number (for display context only)
+      this.emit('text:output', output, this.context.currentTurn);
+    }
+  }
+
+  /**
+   * Process a single platform operation for meta-commands.
+   *
+   * This is similar to processPlatformOperations but handles one operation
+   * at a time and returns completion events for inclusion in the result.
+   */
+  private async processMetaPlatformOperation(platformOp: IPlatformEvent): Promise<ISemanticEvent[]> {
+    const completionEvents: ISemanticEvent[] = [];
+
+    switch (platformOp.type) {
+      case PlatformEventType.SAVE_REQUESTED: {
+        const context = platformOp.payload.context as ISaveContext;
+        if (this.saveRestoreHooks?.onSaveRequested) {
+          try {
+            const saveData = this.createSaveData();
+            if (context?.saveName) {
+              saveData.metadata.description = context.saveName;
+            }
+            if (context?.metadata) {
+              Object.assign(saveData.metadata, context.metadata);
+            }
+            await this.saveRestoreHooks.onSaveRequested(saveData);
+            completionEvents.push(createSaveCompletedEvent(true));
+          } catch (error: any) {
+            completionEvents.push(createSaveCompletedEvent(false, error.message));
+          }
+        } else {
+          completionEvents.push(createSaveCompletedEvent(false, 'No save handler registered'));
+        }
+        break;
+      }
+
+      case PlatformEventType.RESTORE_REQUESTED: {
+        if (this.saveRestoreHooks?.onRestoreRequested) {
+          try {
+            const saveData = await this.saveRestoreHooks.onRestoreRequested();
+            if (saveData) {
+              this.loadSaveData(saveData);
+              completionEvents.push(createRestoreCompletedEvent(true));
+            } else {
+              completionEvents.push(createRestoreCompletedEvent(false, 'No save data available'));
+            }
+          } catch (error: any) {
+            completionEvents.push(createRestoreCompletedEvent(false, error.message));
+          }
+        } else {
+          completionEvents.push(createRestoreCompletedEvent(false, 'No restore handler registered'));
+        }
+        break;
+      }
+
+      case PlatformEventType.QUIT_REQUESTED: {
+        const context = platformOp.payload.context as IQuitContext;
+        if (this.saveRestoreHooks?.onQuitRequested) {
+          const shouldQuit = await this.saveRestoreHooks.onQuitRequested(context);
+          if (shouldQuit) {
+            this.stop('quit');
+            completionEvents.push(createQuitConfirmedEvent());
+          } else {
+            completionEvents.push(createQuitCancelledEvent());
+          }
+        } else {
+          // No quit hook - auto-confirm
+          completionEvents.push(createQuitConfirmedEvent());
+        }
+        break;
+      }
+
+      case PlatformEventType.RESTART_REQUESTED: {
+        const context = platformOp.payload.context as IRestartContext;
+        if (this.saveRestoreHooks?.onRestartRequested) {
+          const shouldRestart = await this.saveRestoreHooks.onRestartRequested(context);
+          if (shouldRestart && this.story) {
+            if (this.running) this.stop();
+            if (this.parser && hasPronounContext(this.parser)) {
+              this.parser.resetPronounContext();
+            }
+            await this.setStory(this.story);
+            this.start();
+            completionEvents.push(createRestartCompletedEvent(true));
+          } else {
+            completionEvents.push(createRestartCompletedEvent(false));
+          }
+        } else if (this.story) {
+          // Default: restart
+          if (this.running) this.stop();
+          if (this.parser && hasPronounContext(this.parser)) {
+            this.parser.resetPronounContext();
+          }
+          await this.setStory(this.story);
+          this.start();
+          completionEvents.push(createRestartCompletedEvent(true));
+        }
+        break;
+      }
+
+      case PlatformEventType.UNDO_REQUESTED: {
+        const success = this.undo();
+        if (success) {
+          completionEvents.push(createUndoCompletedEvent(true, this.context.currentTurn));
+        } else {
+          completionEvents.push(createUndoCompletedEvent(false, undefined, 'Nothing to undo'));
+        }
+        break;
+      }
+
+      case PlatformEventType.AGAIN_REQUESTED: {
+        const againContext = platformOp.payload.context as IAgainContext;
+        if (!againContext?.command) {
+          completionEvents.push(createAgainFailedEvent('No command to repeat'));
+        } else {
+          // Recursive call - the repeated command will dispatch normally
+          // (meta path if it was meta, regular path if it was regular)
+          try {
+            await this.executeTurn(againContext.command);
+            // The repeated command handles its own text output
+            // No completion event needed for successful AGAIN
+          } catch (error: any) {
+            completionEvents.push(createAgainFailedEvent(error.message));
+          }
+        }
+        break;
+      }
+    }
+
+    return completionEvents;
   }
 
   /**
@@ -1138,12 +1480,8 @@ export class GameEngine {
       return;
     }
 
-    // Don't record 'again' or 'g' commands (they should never get here, but just in case)
-    const normalized = input.trim().toLowerCase();
-    const excluded = ['again', 'g', 'oops', 'undo'];
-    if (excluded.includes(normalized)) {
-      return;
-    }
+    // Note: Meta-commands (again, undo, save, etc.) are excluded by the isMeta check
+    // in executeTurn before calling this function. No need for string-based exclusion.
 
     // Get the action ID from the result
     const actionId = result.actionId;
@@ -1212,14 +1550,20 @@ export class GameEngine {
    */
   private async processPlatformOperations(turn?: number): Promise<void> {
     const currentTurn = turn ?? this.context.currentTurn;
-    
+
     // Ensure there's an entry for the current turn
     if (!this.turnEvents.has(currentTurn)) {
       this.turnEvents.set(currentTurn, []);
     }
-    
+
+    // IMPORTANT: Save and clear pending ops at START to prevent infinite recursion
+    // When AGAIN calls executeTurn() recursively, that nested call must not see
+    // the same pending operations, or it will process AGAIN_REQUESTED again.
+    const opsToProcess = [...this.pendingPlatformOps];
+    this.pendingPlatformOps = [];
+
     // Process each pending operation
-    for (const platformOp of this.pendingPlatformOps) {
+    for (const platformOp of opsToProcess) {
       try {
         switch (platformOp.type) {
           case PlatformEventType.SAVE_REQUESTED: {
@@ -1404,6 +1748,37 @@ export class GameEngine {
             }
             break;
           }
+
+          case PlatformEventType.AGAIN_REQUESTED: {
+            const againContext = platformOp.payload.context as IAgainContext;
+
+            if (!againContext?.command) {
+              const errorEvent = createAgainFailedEvent('No command to repeat');
+              this.eventSource.emit(errorEvent);
+              this.turnEvents.get(currentTurn)?.push(errorEvent);
+              this.emit('event', errorEvent as any);
+              break;
+            }
+
+            // Re-execute the stored command
+            // Note: The repeated command goes through normal validation/execution
+            // and its events will be added to the current turn
+            try {
+              const repeatResult = await this.executeTurn(againContext.command);
+
+              // Merge the repeated command's events into this turn
+              // (executeTurn already stored them, but we want them in currentTurn's context)
+              // The events are already emitted by executeTurn, no need to re-emit
+            } catch (error) {
+              const errorEvent = createAgainFailedEvent(
+                error instanceof Error ? error.message : 'Failed to repeat command'
+              );
+              this.eventSource.emit(errorEvent);
+              this.turnEvents.get(currentTurn)?.push(errorEvent);
+              this.emit('event', errorEvent as any);
+            }
+            break;
+          }
         }
       } catch (error) {
         console.error(`Error processing platform operation ${platformOp.type}:`, error);
@@ -1426,6 +1801,9 @@ export class GameEngine {
           case PlatformEventType.UNDO_REQUESTED:
             errorEvent = createUndoCompletedEvent(false, undefined, error instanceof Error ? error.message : 'Unknown error');
             break;
+          case PlatformEventType.AGAIN_REQUESTED:
+            errorEvent = createAgainFailedEvent(error instanceof Error ? error.message : 'Unknown error');
+            break;
           default:
             continue;
         }
@@ -1436,47 +1814,34 @@ export class GameEngine {
         this.emit('event', errorEvent as any);
       }
     }
-    
-    // Clear pending operations
-    this.pendingPlatformOps = [];
+    // Note: pendingPlatformOps was cleared at the start of this function
   }
 
   /**
-   * Emit a game lifecycle event
+   * Emit a game lifecycle event.
+   * All game events now use ISemanticEvent with data in the `data` field.
+   * (IGameEvent with `payload` is deprecated - see ADR-097)
    */
-  private emitGameEvent(event: any): void {
-    // Create a GameEvent that's compatible with the engine's type system
-    const existingData = typeof event.data === 'object' && event.data !== null
-      ? event.data
-      : {};
+  private emitGameEvent(event: ISemanticEvent): void {
+    // Create a GameEvent for the sequencer (internal type)
     const gameEvent: GameEvent = {
       type: event.type,
       data: {
-        ...existingData,
-        id: event.id || `event-${Date.now()}`,
-        timestamp: event.timestamp || Date.now(),
+        ...(typeof event.data === 'object' && event.data !== null ? event.data : {}),
+        id: event.id,
+        timestamp: event.timestamp,
         entities: event.entities || {}
       }
     };
-    
-    // Convert to sequenced event for consistency
+
+    // Sequence and emit
     const sequencedEvent = eventSequencer.sequence(gameEvent, this.context.currentTurn);
-    
-    // Emit through event emitter
     this.emit('event', sequencedEvent);
-    
-    // Store in turn events if we're in a turn (as SemanticEvent for compatibility)
+
+    // Store in turn events for text-service processing
     if (this.context.currentTurn > 0) {
-      const eventData = gameEvent.data as { id?: string } | undefined;
-      const semanticEvent: ISemanticEvent = {
-        id: event.id || eventData?.id as string,
-        type: event.type,
-        timestamp: event.timestamp || Date.now(),
-        entities: event.entities || {},
-        data: event.data || {}
-      };
       const turnEvents = this.turnEvents.get(this.context.currentTurn) || [];
-      turnEvents.push(semanticEvent);
+      turnEvents.push(event);
       this.turnEvents.set(this.context.currentTurn, turnEvents);
     }
   }

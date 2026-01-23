@@ -153,11 +153,11 @@ export const savingAction: Action & { metadata: ActionMetadata } = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
-      reason: result.error,
-      params: result.params || {}
+    return [context.event('if.event.save_blocked', {
+      messageId: `if.action.saving.${result.error}`,
+      params: result.params || {},
+      blocked: true,
+      reason: result.error
     })];
   },
 

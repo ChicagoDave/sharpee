@@ -235,9 +235,30 @@ function createLeaflet(world: WorldModel): IFEntity {
   }));
 
   leaflet.add(new ReadableTrait({
-    text: `WELCOME TO DUNGEO!
+    text: `                         WELCOME TO DUNGEON
 
-DUNGEO is a game of adventure, danger, and low cunning. In it you will explore some of the most amazing territory ever seen by mortals. No computer should be without one!`,
+      DUNGEON is a game of adventure, danger, and low cunning.  In it you
+  will explore some of the most amazing territory ever seen by mortal
+  man.  Hardened adventurers have run screaming from the terrors
+  contained within!
+
+      In DUNGEON the intrepid explorer delves into the forgotten secrets
+  of a lost labyrinth deep in the bowels of the earth, searching for
+  vast treasures long hidden from prying eyes, treasures guarded by
+  fearsome monsters and diabolical traps!
+
+      No system should be without one!
+
+      DUNGEON was created at the MIT Laboratory for Computer Science, by
+  Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling.  It was
+  inspired by the ADVENTURE game of Crowther and Woods, and the long
+  tradition of fantasy and science fiction adventure.  DUNGEON is written
+  in Sharpee. This version was translated from the paranoid
+  FORTRAN implementation by a DEC engineer to Sharpee by a less paranoid
+  developer, David Cornelson.
+
+      In-game information may be available using the HELP and INFO
+  commands.`,
     isReadable: true
   }));
 

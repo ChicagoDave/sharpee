@@ -42,9 +42,54 @@ export interface TimingData {
 }
 
 /**
+ * Result of executing a meta-command (VERSION, SCORE, HELP, etc.)
+ *
+ * Meta-commands operate outside the turn cycle - they don't increment turns,
+ * trigger NPCs, or get stored in command history. They emit semantic events
+ * that are processed immediately through the text service.
+ */
+export interface MetaCommandResult {
+  /**
+   * Discriminator for union type
+   */
+  type: 'meta';
+
+  /**
+   * Raw input string
+   */
+  input: string;
+
+  /**
+   * Whether the command succeeded
+   */
+  success: boolean;
+
+  /**
+   * Semantic events emitted by the meta-command
+   * These are processed immediately through text service, not stored in turnEvents
+   */
+  events: ISemanticEvent[];
+
+  /**
+   * Error message if command failed
+   */
+  error?: string;
+
+  /**
+   * The action ID that was executed
+   */
+  actionId?: string;
+}
+
+/**
  * Result of executing a turn
  */
 export interface TurnResult {
+  /**
+   * Discriminator for union type (optional for backward compatibility)
+   */
+  type?: 'turn';
+
   /**
    * Turn number
    */
@@ -98,6 +143,25 @@ export interface TurnResult {
    */
   needsInput?: boolean;
 }
+
+/**
+ * Union of all command execution results.
+ *
+ * executeTurn() returns this union type - callers should check `type` to determine
+ * whether a turn was executed (TurnResult) or a meta-command was executed (MetaCommandResult).
+ *
+ * @example
+ * ```typescript
+ * const result = await engine.executeTurn(input);
+ * if (result.type === 'meta') {
+ *   // Meta-command: no turn number, text already emitted
+ * } else {
+ *   // Regular turn: has turn number, events to process
+ *   console.log(`Turn ${result.turn}`);
+ * }
+ * ```
+ */
+export type CommandResult = TurnResult | MetaCommandResult;
 
 /**
  * Game context for execution

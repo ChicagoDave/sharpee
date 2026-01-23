@@ -40,6 +40,8 @@ import { klHandler, setEngineForKL } from './kl';
 // Phase 9 - Knock out / Wake up commands
 import { koHandler } from './ko';
 import { wuHandler } from './wu';
+// Phase 10 - Force commands (testing)
+import { foHandler } from './fo';
 
 /**
  * Registry of all GDT command handlers
@@ -91,6 +93,9 @@ handlers.set('KL', klHandler);
 // Register Phase 9 - Knock out / Wake up commands
 handlers.set('KO', koHandler);
 handlers.set('WU', wuHandler);
+
+// Register Phase 10 - Force commands (testing)
+handlers.set('FO', foHandler);
 
 /**
  * Get a command handler by code
@@ -166,3 +171,4 @@ export { dlHandler } from './dl';
 export { klHandler, setEngineForKL } from './kl';
 export { koHandler } from './ko';
 export { wuHandler } from './wu';
+export { foHandler } from './fo';

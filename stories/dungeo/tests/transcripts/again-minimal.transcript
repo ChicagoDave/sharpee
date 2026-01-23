@@ -1,0 +1,11 @@
+title: AGAIN Minimal
+story: dungeo
+description: Minimal AGAIN test
+
+---
+
+> look
+[OK: contains "West"]
+
+> again
+[OK: contains "West"]

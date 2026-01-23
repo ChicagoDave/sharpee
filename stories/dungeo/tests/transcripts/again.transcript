@@ -1,0 +1,39 @@
+title: AGAIN Command
+story: dungeo
+author: Sharpee Team
+description: Test the AGAIN (G) command for repeating last action
+
+---
+
+# Start at West of House
+> look
+[OK: contains "West of House"]
+
+# First, do an action that can be repeated
+> examine mailbox
+[OK: contains "mailbox"]
+
+# Use AGAIN with full word
+> again
+[OK: contains "mailbox"]
+
+# Open the mailbox and take leaflet
+> open mailbox
+[OK: contains "open"]
+
+> take leaflet
+[OK: contains "take"]
+
+# Use G abbreviation to repeat take (should fail since leaflet is held)
+> g
+[OK: contains "already"]
+
+# Go somewhere and repeat movement
+> north
+[OK: contains "North of House"]
+
+> g
+[OK: contains "clearing"]
+
+# Test AGAIN at start of game with no history
+# (This requires starting fresh - we'll test the error message separately)

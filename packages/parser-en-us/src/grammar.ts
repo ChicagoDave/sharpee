@@ -301,7 +301,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Score and version
   grammar
     .define('score')
-    .mapsTo('if.action.score')
+    .mapsTo('if.action.scoring')
     .withPriority(100)
     .build();
 
@@ -699,5 +699,23 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .define('alight')
     .mapsTo('if.action.exiting')
     .withPriority(95)
+    .build();
+
+  // =========================================================================
+  // Meta commands - AGAIN (repeat last command)
+  // =========================================================================
+
+  // Full word "again"
+  grammar
+    .define('again')
+    .mapsTo('if.action.again')
+    .withPriority(100)
+    .build();
+
+  // Abbreviation "g"
+  grammar
+    .define('g')
+    .mapsTo('if.action.again')
+    .withPriority(90)
     .build();
 }

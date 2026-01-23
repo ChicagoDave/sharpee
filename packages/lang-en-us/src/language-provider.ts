@@ -68,6 +68,8 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
       'core.disambiguation_prompt': "Which do you mean: {options}?",
       'core.command_not_understood': "I don't understand that command.",
       'core.command_failed': "I don't understand that.",
+      // Game lifecycle messages
+      'game.started.banner': "{title}\nBy {author}\n\nType HELP for instructions.",
     };
 
     for (const [key, value] of Object.entries(coreMessages)) {

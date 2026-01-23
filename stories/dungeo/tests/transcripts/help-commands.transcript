@@ -1,0 +1,20 @@
+# Test HELP, ABOUT, DIAGNOSE, ROOM, RNAME, OBJECTS commands
+
+> help
+Commands to DUNGEO are simple sentences
+
+> about
+DUNGEO
+A port of Mainframe Zork
+
+> diagnose
+You are in perfect health.
+
+> room
+West of House
+
+> rname
+West of House
+
+> objects
+There is a small mailbox here.

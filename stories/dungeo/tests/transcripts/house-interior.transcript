@@ -19,6 +19,10 @@ description: Test entering the house, finding objects, and using the lantern
 [OK: contains "window"]
 [EVENT: true, type="if.event.actor_moved"]
 
+# Open the window first (it starts slightly ajar but not open)
+> open window
+[OK: contains "open"]
+
 # Enter through the window into Kitchen
 > west
 [OK: contains "Kitchen"]

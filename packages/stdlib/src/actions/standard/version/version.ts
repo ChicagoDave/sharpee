@@ -19,7 +19,7 @@ import { ActionMetadata } from '../../../validation';
 import { VersionDisplayedEventData } from './version-events';
 
 /** Engine version - update this when engine version changes */
-export const ENGINE_VERSION = '0.9.3-beta.1';
+export const ENGINE_VERSION = '0.9.43-beta.1';
 
 export const versionAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.VERSION,
@@ -37,11 +37,11 @@ export const versionAction: Action & { metadata: ActionMetadata } = {
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     // Version always succeeds, but include blocked for consistency
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
-      reason: result.error,
-      params: result.params || {}
+    return [context.event('if.event.version_displayed', {
+      messageId: `if.action.version.${result.error}`,
+      params: result.params || {},
+      blocked: true,
+      reason: result.error
     })];
   },
 
@@ -54,24 +54,39 @@ export const versionAction: Action & { metadata: ActionMetadata } = {
     const storyTitle = storyConfig.title || 'Unknown';
     const storyVersion = versionInfo.version || storyConfig.version || '0.0.0';
     const engineVersion = versionInfo.engineVersion || ENGINE_VERSION;
+    const clientVersion = versionInfo.clientVersion || (world as any).clientVersion || 'N/A';
     const buildDate = versionInfo.buildDate;
+    const author = storyConfig.author || 'Unknown';
 
-    // Construct the version message
-    let message = `${storyTitle} v${storyVersion}\nSharpee Engine v${engineVersion}`;
-    if (buildDate) {
-      message += `\nBuilt: ${buildDate}`;
-    }
+    // Determine messageId based on available data
+    // Use existing lang-en-us keys: version_full, version_no_date
+    const messageId = buildDate
+      ? 'if.action.version.version_full'
+      : 'if.action.version.version_no_date';
 
+    // Event data with messageId for text-service lookup
     const eventData: VersionDisplayedEventData = {
+      messageId,
+      params: {
+        storyTitle,
+        storyVersion,
+        engineVersion,
+        clientVersion,
+        buildDate,
+        title: storyTitle,
+        version: storyVersion,
+        author: Array.isArray(author) ? author.join(', ') : author
+      },
+      // Domain data for event handlers
       storyTitle,
       storyVersion,
       engineVersion,
-      buildDate,
-      message // Include pre-formatted message for text service
+      clientVersion,
+      buildDate
     };
 
     return [
-      context.event('if.action.version', eventData)
+      context.event('if.event.version_displayed', eventData)
     ];
   },
 

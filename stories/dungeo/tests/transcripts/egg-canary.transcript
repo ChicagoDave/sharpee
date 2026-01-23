@@ -46,9 +46,16 @@ description: Tests the jeweled egg containing the clockwork canary, and the baub
 > look in egg
 [OK: contains "closed"]
 
-# Open the egg
-> open egg
-[OK: contains "open"]
+# The egg can only be opened by the thief - player lacks expertise
+# Use GDT to force open for testing
+> gdt
+[OK: contains "GDT"]
+
+> FO egg
+[OK: contains "Force opened"]
+
+> ex
+[OK: contains "Returning"]
 
 # Now we can see the canary
 > look in egg

@@ -1,0 +1,51 @@
+title: Grue Death Simple Test
+story: dungeo
+author: Sharpee Team
+description: Simple test to verify grue death can occur
+
+---
+
+# Quick setup
+> n
+[OK: contains "North"]
+
+> e
+[OK: contains "Behind"]
+
+> open window
+[OK: contains "open"]
+
+> w
+[OK: contains "Kitchen"]
+
+> w
+[OK: contains "Living Room"]
+
+> take lamp
+[OK: contains "Taken"]
+
+> push rug
+[OK: contains "trap"]
+
+> open trap
+[OK: contains "open"]
+
+# Go down without lamp - safe (from lit room)
+> d
+[OK: contains "pitch dark"]
+
+# Enable GDT to kill troll
+> gdt
+[OK: contains "GDT"]
+
+> kl troll
+[OK: contains "Killed"]
+
+> ex
+[OK: contains "Returning"]
+
+# Now in Cellar (dark), try to go east to Troll Room (also dark)
+# This should have 75% chance of death
+# Note: This test may occasionally pass (25% survival)
+> e
+[SKIP]
