@@ -4,7 +4,16 @@ description: "Install Sharpee and set up your development environment"
 ---
 
 :::caution[Temporary Outage]
-The npm packages are temporarily unavailable until January 24, 2025 due to a publishing issue. Check back soon!
+The npm packages are temporarily unavailable until January 24, 2025 due to a publishing issue.
+
+**Workaround** - clone and link locally:
+```bash
+git clone https://github.com/ChicagoDave/sharpee.git
+cd sharpee
+pnpm install && pnpm build
+# Then in your story project:
+npm link ./packages/sharpee
+```
 :::
 
 ## Prerequisites
