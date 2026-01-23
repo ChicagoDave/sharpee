@@ -1,0 +1,42 @@
+{
+  "name": "@sharpee/ext-testing",
+  "version": "1.0.0-alpha.1",
+  "description": "Debug and testing tools extension for Sharpee IF engine",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@sharpee/core": "workspace:*",
+    "@sharpee/world-model": "workspace:*",
+    "@sharpee/if-domain": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0",
+    "@types/node": "^20.0.0",
+    "rimraf": "^5.0.5"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "sharpee",
+    "interactive-fiction",
+    "testing",
+    "debug"
+  ],
+  "license": "MIT"
+}

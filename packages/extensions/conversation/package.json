@@ -10,7 +10,7 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@sharpee/core": "^0.1.0"
+    "@sharpee/core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.2.2",
