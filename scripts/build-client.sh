@@ -96,6 +96,19 @@ build_browser() {
     # Report bundle size
     BUNDLE_SIZE=$(ls -lh "$OUTDIR/${STORY}.js" | awk '{print $5}')
 
+    # Copy to website public directory
+    WEBSITE_GAMES="website/public/games/${STORY}"
+    echo -n "[website] "
+    if [ -d "website/public" ]; then
+        mkdir -p "$WEBSITE_GAMES"
+        cp "$OUTDIR/${STORY}.js" "$WEBSITE_GAMES/"
+        cp "$OUTDIR/index.html" "$WEBSITE_GAMES/"
+        cp "$OUTDIR/styles.css" "$WEBSITE_GAMES/"
+        echo "✓ copied to $WEBSITE_GAMES"
+    else
+        echo "- skipped (no website/public directory)"
+    fi
+
     echo ""
     echo "=== Browser Build Complete ==="
     echo "Output: $OUTDIR/"
@@ -103,6 +116,10 @@ build_browser() {
     echo "  - ${STORY}.js.map"
     echo "  - index.html"
     echo "  - styles.css"
+    if [ -d "website/public" ]; then
+        echo ""
+        echo "Website: $WEBSITE_GAMES/"
+    fi
     echo ""
     echo "To test: npx serve $OUTDIR"
 }
