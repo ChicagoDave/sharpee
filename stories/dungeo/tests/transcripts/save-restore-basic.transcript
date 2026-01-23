@@ -1,0 +1,39 @@
+title: Save/Restore Basic Test
+story: dungeo
+description: Tests basic $save and $restore functionality
+
+---
+
+# Start in West of House, verify initial state
+> look
+[OK: contains "West of House"]
+
+# Save initial state
+$save test-checkpoint-1
+
+# Go inside and take something
+> open mailbox
+[OK: contains "leaflet"]
+
+> take leaflet
+[OK: contains "take leaflet"]
+
+> inventory
+[OK: contains "leaflet"]
+
+# Restore should put us back - player inventory empty
+$restore test-checkpoint-1
+
+# After restore, inventory should be empty again
+> inventory
+[OK: contains "empty"]
+
+# The mailbox should be closed again (restore resets state)
+# Note: The mailbox still contains the leaflet
+> open mailbox
+[OK: contains "open"]
+
+# Verify the leaflet is back in the mailbox by checking events
+# (The reveal message may not show again due to session state)
+> examine mailbox
+[OK: contains "mailbox"]

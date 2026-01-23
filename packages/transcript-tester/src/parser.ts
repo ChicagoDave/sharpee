@@ -67,6 +67,23 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
       continue;
     }
 
+    // $ directives ($save, $restore) - these are standalone directives
+    if (trimmed.startsWith('$')) {
+      // Save any pending command first
+      if (currentCommand) {
+        finalizeCommand(currentCommand);
+        transcript.commands.push(currentCommand);
+        transcript.items!.push({ type: 'command', command: currentCommand });
+        currentCommand = null;
+      }
+
+      const directive = parseDollarDirective(trimmed, lineNumber);
+      if (directive) {
+        transcript.items!.push({ type: 'directive', directive });
+      }
+      continue;
+    }
+
     // Header lines (key: value)
     if (inHeader && trimmed.includes(':') && !trimmed.startsWith('>')) {
       const colonIndex = trimmed.indexOf(':');
@@ -197,6 +214,29 @@ function parseDirective(tag: string, lineNumber: number): Directive | null {
   }
 
   // Not a directive
+  return null;
+}
+
+/**
+ * Parse a $ directive like $save <name>, $restore <name>
+ */
+function parseDollarDirective(line: string, lineNumber: number): Directive | null {
+  const trimmed = line.trim();
+
+  // $save <name>
+  const saveMatch = trimmed.match(/^\$save\s+(.+)$/i);
+  if (saveMatch) {
+    return { type: 'save', lineNumber, saveName: saveMatch[1].trim() };
+  }
+
+  // $restore <name>
+  const restoreMatch = trimmed.match(/^\$restore\s+(.+)$/i);
+  if (restoreMatch) {
+    return { type: 'restore', lineNumber, saveName: restoreMatch[1].trim() };
+  }
+
+  // Unknown $ directive - warn but don't fail
+  console.warn(`Line ${lineNumber}: Unknown $ directive: ${trimmed}`);
   return null;
 }
 

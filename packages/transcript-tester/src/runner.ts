@@ -4,6 +4,8 @@
  * Executes transcript commands against a loaded story and checks results.
  */
 
+import * as fs from 'fs';
+import * as path from 'path';
 import {
   Transcript,
   TranscriptCommand,
@@ -456,6 +458,83 @@ async function handleDirective(
       }));
 
       return { nextIndex: currentIndex + 1, commandResults };
+    }
+
+    case 'save': {
+      if (!world || !directive.saveName) {
+        return { nextIndex: currentIndex + 1, error: 'SAVE requires world model and save name' };
+      }
+
+      if (verbose) {
+        console.log(`[$save ${directive.saveName}]`);
+      }
+
+      try {
+        // Get save directory from options or use default
+        const savesDir = options.savesDirectory || './saves';
+
+        // Ensure directory exists
+        if (!fs.existsSync(savesDir)) {
+          fs.mkdirSync(savesDir, { recursive: true });
+        }
+
+        // Serialize world state
+        const worldState = (world as any).toJSON();
+
+        // Write to file
+        const savePath = path.join(savesDir, `${directive.saveName}.json`);
+        fs.writeFileSync(savePath, worldState, 'utf-8');
+
+        if (verbose) {
+          console.log(`  Saved to: ${savePath}`);
+        }
+      } catch (e) {
+        return {
+          nextIndex: currentIndex + 1,
+          error: `Failed to save "${directive.saveName}": ${e instanceof Error ? e.message : String(e)}`
+        };
+      }
+
+      return { nextIndex: currentIndex + 1 };
+    }
+
+    case 'restore': {
+      if (!world || !directive.saveName) {
+        return { nextIndex: currentIndex + 1, error: 'RESTORE requires world model and save name' };
+      }
+
+      if (verbose) {
+        console.log(`[$restore ${directive.saveName}]`);
+      }
+
+      try {
+        // Get save directory from options or use default
+        const savesDir = options.savesDirectory || './saves';
+        const savePath = path.join(savesDir, `${directive.saveName}.json`);
+
+        // Check file exists
+        if (!fs.existsSync(savePath)) {
+          return {
+            nextIndex: currentIndex + 1,
+            error: `Save file not found: ${savePath}`
+          };
+        }
+
+        // Read and restore world state
+        const worldState = fs.readFileSync(savePath, 'utf-8');
+        (world as any).loadJSON(worldState);
+
+        if (verbose) {
+          console.log(`  Restored from: ${savePath}`);
+        }
+      } catch (e) {
+        return {
+          nextIndex: currentIndex + 1,
+          error: `Failed to restore "${directive.saveName}": ${e instanceof Error ? e.message : String(e)}`
+        };
+      }
+
+      return { nextIndex: currentIndex + 1 };
     }
 
     default:

@@ -352,10 +352,12 @@ async function main(): Promise<void> {
       game = loadStoryAndCreateGame(options.storyPath);
     }
 
-    // Run the transcript
+    // Run the transcript with saves directory based on story path
+    const savesDirectory = path.join(options.storyPath, 'saves');
     const result = await runTranscript(transcript, game, {
       verbose: options.verbose,
-      stopOnFailure: options.stopOnFailure
+      stopOnFailure: options.stopOnFailure,
+      savesDirectory
     });
 
     results.push(result);

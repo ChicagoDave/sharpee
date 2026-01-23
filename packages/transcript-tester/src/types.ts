@@ -20,7 +20,9 @@ export type DirectiveType =
   | 'end_if'      // [END IF]
   | 'while'       // [WHILE: condition]
   | 'end_while'   // [END WHILE]
-  | 'navigate';   // [NAVIGATE TO: "Room Name"]
+  | 'navigate'    // [NAVIGATE TO: "Room Name"]
+  | 'save'        // $save <name>
+  | 'restore';    // $restore <name>
 
 /**
  * A control flow directive in the transcript
@@ -31,6 +33,7 @@ export interface Directive {
   condition?: string;   // For IF/WHILE/REQUIRES/ENSURES: the condition expression
   target?: string;      // For NAVIGATE: the target room name
   goalName?: string;    // For GOAL: the goal name
+  saveName?: string;    // For SAVE/RESTORE: the checkpoint name
 }
 
 /**
@@ -206,6 +209,7 @@ export interface RunnerOptions {
   stopOnFailure?: boolean;
   updateExpected?: boolean;
   filter?: string;  // Only run commands matching this pattern
+  savesDirectory?: string;  // Directory for $save/$restore checkpoints
 }
 
 /**
