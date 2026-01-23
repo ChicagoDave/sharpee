@@ -108,9 +108,10 @@ export function createVolcanoRegion(world: WorldModel): VolcanoRoomIds {
     [Direction.WEST]: glacierRoom.id,
   });
 
+  // Glacier blocks the north passage initially - see glacier-handler.ts
+  // NORTH exit to Volcano View is added when glacier is melted
   setExits(glacierRoom, {
     [Direction.EAST]: egyptianRoom.id,
-    [Direction.NORTH]: volcanoView.id,
   });
 
   setExits(volcanoView, {

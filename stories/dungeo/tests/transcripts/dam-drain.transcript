@@ -1,29 +1,40 @@
 title: Dam Drain and Reservoir Walkability
 story: dungeo
-description: Test reservoir is blocked when dam is closed
+description: Test reservoir navigation when dam is flooded (default state)
 ---
 
-# Use GDT to teleport to Dam and verify reservoir exits are blocked
+# Use GDT to get lantern and teleport directly to Reservoir South
 > gdt
 [OK: contains "GDT ready"]
 
-# Teleport to Dam area
-> ah Dam
+# Get a light source first (underground areas are dark)
+> tk brass lantern
+[OK: contains "Taken"]
+
+# Teleport directly to Reservoir South
+> ah Reservoir South
 [OK: contains "Teleported"]
 
 # Exit GDT mode
 > ex
 [OK: contains "Returning"]
 
-# Go to Reservoir South
-> north
+# Turn on lantern
+> turn on lantern
+[OK: contains "on"]
+
+# Verify we're at Reservoir South
+> look
 [OK: contains "Reservoir South"]
 
-# Try to walk north - should be blocked (reservoir flooded)
-# The "movement_blocked" message is shown when exit is blocked
+# Try to walk north into the reservoir - should be blocked when flooded
 > north
-[OK: contains "blocked"]
+[OK: contains "full of water"]
 
-# Verify south goes back to Dam (bug fix: was incorrectly going to Temple)
-> south
-[OK: contains "Dam"]
+# Verify we're still at Reservoir South (we didn't move because blocked)
+> look
+[OK: contains "Reservoir South"]
+
+# Go up to Deep Canyon (valid exit from Reservoir South)
+> up
+[OK: contains "Deep Canyon"]

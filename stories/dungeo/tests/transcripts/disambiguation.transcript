@@ -1,10 +1,10 @@
 title: Disambiguation Prompt Test
 story: dungeo
-description: ISSUE-008 - Verify disambiguation lists options
+description: Verify disambiguation prompts when multiple items match
 
 ---
 
-# Use GDT to get both keys (skeleton key and small key both alias to "key")
+# Test 1: Two keys both match "key" - should trigger disambiguation
 > gdt
 [OK: contains "GDT"]
 
@@ -15,9 +15,39 @@ description: ISSUE-008 - Verify disambiguation lists options
 [OK: contains "Taken"]
 
 > ex
-[OK: contains "game"]
+[OK: contains "Returning"]
 
-# Now try to drop "key" - should trigger disambiguation since both match
+# "drop key" should trigger disambiguation since both match
 > drop key
 [OK: contains "Which do you mean"]
-[OK: contains "key"]
+
+# Verify both keys still in inventory (disambiguation didn't execute)
+> inventory
+[OK: contains "skeleton key"]
+[OK: contains "small key"]
+
+# Test 2: Two books both match "book" - should trigger disambiguation
+> gdt
+[OK: contains "GDT"]
+
+> tk guidebook
+[OK: contains "Taken"]
+
+> tk purple book
+[OK: contains "Taken"]
+
+> ex
+[OK: contains "Returning"]
+
+# "examine book" should trigger disambiguation
+> examine book
+[OK: contains "Which do you mean"]
+
+# Test 3: Single match should NOT trigger disambiguation
+# Only one mailbox exists - should work directly
+> examine mailbox
+[OK: contains "mailbox"]
+
+# Only one mat exists
+> examine mat
+[OK: contains "mat"]
