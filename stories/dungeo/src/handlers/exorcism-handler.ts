@@ -123,13 +123,13 @@ function completeExorcism(
   if (entryRoom) {
     (entryRoom as any).spiritsBlocking = false;
 
-    // Clear the blocked south exit
-    RoomBehavior.unblockExit(entryRoom, Direction.SOUTH);
+    // Clear the blocked east exit
+    RoomBehavior.unblockExit(entryRoom, Direction.EAST);
 
     // Update room description
     const identity = entryRoom.get(IdentityTrait);
     if (identity) {
-      identity.description = 'You are at the entrance to Hades, the land of the dead. An eerie mist swirls around you. A passage leads south into darkness, and a corridor leads north.';
+      identity.description = 'You are at the entrance to Hades, the land of the dead. An eerie mist swirls around you. A passage leads east into darkness, and a corridor leads north.';
     }
   }
 

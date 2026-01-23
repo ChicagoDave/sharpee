@@ -162,6 +162,54 @@ light candles              # Need matchbook! Get from Dam first
 
 ---
 
+## Walkthrough Transcript Segments
+
+Organized by light source to maximize torch usage before glacier destruction.
+
+### Phase A: Torch-Based Exploration (wt-01 through wt-11)
+
+| Segment | File | Status | Description | Treasures |
+|---------|------|--------|-------------|-----------|
+| wt-01 | wt-01-get-torch-early.transcript | ✅ Done | Get lantern, kill troll, get torch | Torch (20) |
+| wt-02 | wt-02-bank-puzzle.transcript | ✅ Done | Bank of Zork wall-walking puzzle | Portrait (15), Bills (25) |
+| wt-03 | wt-03-maze-cyclops-goal.transcript | ✅ Done | Navigate maze, say Odysseus | Coins (15), Chalice (20) |
+| wt-04 | wt-04-dam-reservoir.transcript | ✅ Done | Dam puzzle, get matchbook & boat | Trunk (23) |
+| wt-05 | wt-05-egyptian-room.transcript | ✅ Done | Temple area, coffin & sceptre | Coffin (10) |
+| wt-06 | wt-06-exorcism.transcript | ✅ Done | Bell/book/candle ritual at Hades | — |
+| wt-07 | wt-07-river-rainbow.transcript | 🚧 Next | Boat ride, emerald, wave sceptre | Emerald (15), Pot of gold (20) |
+| wt-08 | wt-08-well-tea-room.transcript | ⬜ Todo | Bucket puzzle, cakes, pearl | Pearl (14), Spices (10) |
+| wt-09 | wt-09-royal-puzzle.transcript | ⬜ Todo | Sliding block puzzle | Gold card (25) |
+| wt-10 | wt-10-canvas-puzzle.transcript | ⬜ Todo | Kill thief, ghost ritual | Canvas (34), Canary (8), Bauble (2) |
+| wt-11 | wt-11-coal-mine.transcript | ⬜ Todo | Coal → diamond (skip Gas Room) | Diamond (16), Red sphere (15) |
+
+### Phase B: Lantern for Gas Room (wt-12)
+
+| Segment | File | Status | Description | Treasures |
+|---------|------|--------|-------------|-----------|
+| wt-12 | wt-12-gas-room.transcript | ⬜ Todo | Gas Room only - NO FIRE | Bracelet (8) |
+
+### Phase C: Glacier & Volcano (wt-13, wt-14)
+
+| Segment | File | Status | Description | Treasures |
+|---------|------|--------|-------------|-----------|
+| wt-13 | wt-13-glacier.transcript | ⬜ Todo | Throw torch to melt glacier | — |
+| wt-14 | wt-14-volcano.transcript | ⬜ Todo | Balloon ride, volcano treasures | Crown (25), Ruby (23), Stamps (14), Coin (22) |
+
+### Phase D: Cleanup & Endgame (wt-15, wt-16)
+
+| Segment | File | Status | Description | Treasures |
+|---------|------|--------|-------------|-----------|
+| wt-15 | wt-15-trophy-cleanup.transcript | ⬜ Todo | Deposit all treasures, final score | — |
+| wt-16 | wt-16-endgame.transcript | ⬜ Todo | Crypt ritual, mirror puzzle, trivia | — |
+
+### Progress Summary
+
+- **Completed**: wt-01 through wt-06 (6 transcripts, 165 tests)
+- **Next**: wt-07 (River & Rainbow)
+- **Remaining**: wt-07 through wt-16 (10 transcripts)
+
+---
+
 ## Treasure Checklist (33 items, 650 points)
 
 | # | Treasure | Location | Points | Notes |
