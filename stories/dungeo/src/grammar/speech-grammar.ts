@@ -4,7 +4,7 @@
  * SAY action, magic words, COMMANDING NPCs, TALK TO, ANSWER, and KNOCK patterns.
  */
 
-import { GrammarBuilder, ScopeBuilder } from '@sharpee/if-domain';
+import { GrammarBuilder } from '@sharpee/if-domain';
 import {
   SAY_ACTION_ID,
   COMMANDING_ACTION_ID,
@@ -71,14 +71,12 @@ export function registerSpeechGrammar(grammar: GrammarBuilder): void {
   // Note: :command... (greedy syntax) already implies text capture, no .text() needed
   grammar
     .define('tell :npc to :command...')
-    .where('npc', (scope: ScopeBuilder) => scope.visible().matching({ animate: true }))
     .mapsTo(COMMANDING_ACTION_ID)
     .withPriority(150)
     .build();
 
   grammar
     .define('order :npc to :command...')
-    .where('npc', (scope: ScopeBuilder) => scope.visible().matching({ animate: true }))
     .mapsTo(COMMANDING_ACTION_ID)
     .withPriority(150)
     .build();

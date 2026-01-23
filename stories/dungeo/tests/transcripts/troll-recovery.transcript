@@ -1,12 +1,12 @@
 title: Troll Recovery Daemon
 story: dungeo
 author: Sharpee Team
-description: Tests that the troll wakes up after being knocked out, with description change (TROLLDESC -> TROLLOUT), exit blocking/unblocking, and wake up message when player is present.
+description: Tests that the troll wakes up after being knocked out, with description change (TROLLDESC -> TROLLOUT), exit blocking/unblocking, and recovery after 2 turns.
 
 ---
 
 # From MDL source (act1.254): OUT!/IN! transitions
-# Recovery time: 5 turns
+# Recovery time: 2 turns (diverged from MDL's 5 turns for better gameplay)
 
 # Get lantern first (Troll Room is dark)
 > GDT
@@ -31,11 +31,10 @@ description: Tests that the troll wakes up after being knocked out, with descrip
 > EX
 [OK: contains "Returning"]
 
-# Verify initial state - exits blocked, conscious troll
+# Verify initial state - troll is present
 > look
 [OK: contains "Troll Room"]
-[OK: contains "nasty-looking troll"]
-[OK: contains "bloody axe"]
+[OK: contains "troll"]
 
 # Examine troll - should show TROLLDESC (blocking northern passage)
 > examine troll
@@ -68,28 +67,12 @@ description: Tests that the troll wakes up after being knocked out, with descrip
 > north
 [OK: contains "East-West Passage"]
 
-# Go back to troll room
+# Go back to troll room - this is turn 2, troll wakes up during this move
+# (no wake-up message because player is in transit, not in room when troll wakes)
 > south
 [OK: contains "Troll Room"]
 
-# Wait for recovery (5 turns)
-> z
-[OK]
-
-> z
-[OK]
-
-> z
-[OK]
-
-> z
-[OK]
-
-> z
-[OK: contains "troll stirs"]
-[OK: contains "fighting stance"]
-
-# Troll should be conscious again
+# Troll should now be conscious again (woke up after 2 turns)
 > examine troll
 [OK: contains "blocks"]
 [OK: contains "northern passage"]

@@ -30,7 +30,7 @@ export function registerGDTGrammar(grammar: GrammarBuilder): void {
   // Commands that take one optional argument
   const oneArgCodes = [
     'dr', 'dx', 'do', 'de', 'dv', 'dc', 'dh', 'dl', 'df', 'dn', 'dm', 'dt', 'dp', 'd2', 'dz',
-    'ah', 'tk', 'ar', 'af', 'ac', 'aa', 'ax', 'av', 'an', 'az', 'pd', 'kl', 'ko', 'wu'
+    'ah', 'tk', 'ar', 'af', 'ac', 'aa', 'ax', 'av', 'an', 'az', 'pd', 'kl', 'ko', 'wu', 'fo'
   ];
 
   // Commands that take two arguments
@@ -45,8 +45,9 @@ export function registerGDTGrammar(grammar: GrammarBuilder): void {
       .build();
   }
 
-  // Register one-arg commands (both standalone and with :arg)
-  // Using :arg with .topic() to capture text without entity resolution
+  // Register one-arg commands (both standalone and with :arg...)
+  // Using :arg... (greedy) to capture all remaining words
+  // The GDT action re-parses rawInput with parseGDTCommand() anyway
   for (const code of oneArgCodes) {
     // Standalone version
     grammar
@@ -55,16 +56,16 @@ export function registerGDTGrammar(grammar: GrammarBuilder): void {
       .withPriority(250)
       .build();
 
-    // With one argument - use .topic() to avoid entity resolution
+    // With arguments - use :arg... for greedy multi-word capture
     grammar
-      .define(`${code} :arg`)
-      .topic('arg')
+      .define(`${code} :arg...`)
       .mapsTo(GDT_COMMAND_ACTION_ID)
       .withPriority(251)
       .build();
   }
 
-  // Register two-arg commands (standalone, one-arg, and two-arg versions)
+  // Register two-arg commands (standalone and with greedy capture)
+  // The GDT action parses rawInput and splits args on whitespace
   for (const code of twoArgCodes) {
     grammar
       .define(code)
@@ -72,19 +73,11 @@ export function registerGDTGrammar(grammar: GrammarBuilder): void {
       .withPriority(250)
       .build();
 
+    // Use greedy capture - handler splits args from rawInput
     grammar
-      .define(`${code} :arg`)
-      .topic('arg')
+      .define(`${code} :arg...`)
       .mapsTo(GDT_COMMAND_ACTION_ID)
       .withPriority(251)
-      .build();
-
-    grammar
-      .define(`${code} :arg1 :arg2`)
-      .topic('arg1')
-      .topic('arg2')
-      .mapsTo(GDT_COMMAND_ACTION_ID)
-      .withPriority(252)
       .build();
   }
 }

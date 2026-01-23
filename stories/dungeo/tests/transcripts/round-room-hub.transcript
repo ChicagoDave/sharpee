@@ -1,30 +1,56 @@
 title: Round Room Hub Navigation
 story: dungeo
-description: Test Round Room hub area rooms and connections (matches implementation)
+description: Test Round Room hub area rooms and connections (after robot fixes carousel)
 
 ---
 
-# Start with GDT to get lantern and teleport to Round Room
+# Setup: Get lantern and have robot fix the carousel
 > gdt
 [OK: contains "GDT"]
 
 > tk brass lantern
 [OK: contains "Taken"]
 
-# Exit GDT to turn on lantern, then re-enter
 > ex
 [OK: contains "Returning"]
 
 > turn on lantern
 [OK: contains "on"]
 
+# Teleport to Low Room where robot is
+> gdt
+[OK: contains "GDT"]
+
+> ah Low Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+# Command robot to go to Machine Room
+> tell robot to go east
+[OK: contains "Whirr"]
+
+# Follow robot to Machine Room
+> east
+[OK: contains "Machine Room"]
+
+# Have robot push button to fix the carousel
+> tell robot to push button
+[OK: contains "Whirr"]
+[OK: matches /(carousel|fixed)/i]
+
+# Now teleport to Round Room - exits should be deterministic
 > gdt
 [OK: contains "GDT"]
 
 > ah round room
-[OK: contains "Teleported to"]
+[OK: contains "Teleported"]
 
-# Test exits from Round Room - lantern should be lit now
+> ex
+[OK: contains "Returning"]
+
+# Test exits from Round Room - carousel is now fixed
 > look
 [OK: contains "Round Room"]
 
@@ -123,7 +149,3 @@ description: Test Round Room hub area rooms and connections (matches implementat
 # Go SW back to Round Room
 > sw
 [OK: contains "Round Room"]
-
-# Exit GDT
-> ex
-[OK: contains "Returning"]

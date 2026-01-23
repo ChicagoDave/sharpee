@@ -15,6 +15,9 @@ description: Test moving the rug to reveal the trap door and descending to the C
 > east
 [OK: contains "Behind House"]
 
+> open window
+[OK: contains "open"]
+
 > west
 [OK: contains "Kitchen"]
 
@@ -50,9 +53,12 @@ description: Test moving the rug to reveal the trap door and descending to the C
 [OK: contains "on"]
 
 # Now descend through the trap door
+# The trap door slams shut and gets barred behind you (classic Zork mechanic)
 > down
 [OK: contains "Cellar"]
+[OK: contains "crashes shut"]
+[OK: contains "barring"]
 
-# Can go back up through open trap door
+# Cannot go back up - trap door is barred from above
 > up
-[OK: contains "Living Room"]
+[OK: contains "can't go that way"]

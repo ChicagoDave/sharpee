@@ -240,6 +240,10 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 > e
 [OK: matches /(Behind|House)/i]
 
+# Open the window (starts slightly ajar but not fully open)
+> open window
+[OK: matches /(Opened|open)/i]
+
 # Go west to Kitchen
 > w
 [OK: matches /(Kitchen|window)/i]

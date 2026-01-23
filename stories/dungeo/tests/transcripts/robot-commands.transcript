@@ -11,6 +11,10 @@ description: Test commanding the robot - matches FORTRAN timefnc.for behavior
 > east
 [OK: contains "Behind House"]
 
+# Window starts slightly ajar but not fully open - must open to enter
+> open window
+[OK: matches /(Opened|open)/i]
+
 > west
 [OK: contains "Kitchen"]
 
