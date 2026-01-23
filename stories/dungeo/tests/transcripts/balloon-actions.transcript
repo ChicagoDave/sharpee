@@ -29,7 +29,7 @@ description: Tests LIGHT, TIE, UNTIE grammar patterns and basic action flow
 
 ## Try tie without being in balloon - should fail (no railing to tie to)
 > tie wire
-[OK: contains "no_railing"]
+[OK: contains "nothing here to tie"]
 
 ## Enter the balloon
 > enter balloon

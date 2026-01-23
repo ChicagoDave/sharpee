@@ -23,9 +23,9 @@ description: Test the coal machine - put coal in machine, turn switch, get diamo
 > examine machine
 [OK: contains "machine"]
 
-# Try turning switch without coal - blocked message shows raw ID (known issue)
+# Try turning switch without coal - should indicate it needs fuel
 > turn switch
-[OK: contains "no_coal"]
+[OK: contains "needs fuel"]
 
 # Get coal via GDT
 > gdt

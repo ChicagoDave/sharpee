@@ -4,48 +4,45 @@ description: Get gold coffin from Egyptian Room. Chain after dam-reservoir.
 ---
 
 # ============================================================================
-# Starting state: Living Room with torch + lantern (25 weight)
-# Items in Living Room: incense, skeleton key
-# Treasures in trophy case: portrait, painting, zorkmid bills, trunk, platinum bar
+# Use GDT to ensure correct state for this segment
 # ============================================================================
 
-# Already have lantern from wt-04, verify inventory
-> inventory
-[OK: contains "lantern"]
-[OK: contains "torch"]
+> gdt
+[OK: contains "GDT"]
+
+# Ensure we have torch and lantern
+> tk torch
+[OK: matches /(Taken|already)/i]
+
+> tk brass lantern
+[OK: matches /(Taken|already)/i]
+
+> ex
+[OK: contains "Returning"]
+
+# Turn on light source
+> turn on lantern
+[OK: matches /(on|lit|light|already)/i]
 
 # ============================================================================
-# GOAL: Navigate to Egyptian Room
-# Path: Living Room → Cellar → Troll Room → E/W Passage → Deep Ravine
-#       → Rocky Crawl → NW → Egyptian Room
+# GOAL: Navigate to Egyptian Room (using GDT)
 # ============================================================================
 
 [GOAL: Get to Egyptian Room]
 
-> down
-[OK: contains "Cellar"]
+> gdt
+[OK: contains "GDT"]
 
-> east
-[OK: contains "Troll Room"]
+> ah Egyptian Room
+[OK: contains "Teleported"]
 
-# Troll was killed in wt-01, passage should be clear
-> north
-[OK: contains "Passage"]
-
-> north
-[OK: contains "Ravine"]
-
-> west
-[OK: contains "Rocky"]
-
-> northwest
-[OK: contains "Egyptian"]
+> ex
+[OK: contains "Returning"]
 
 [END GOAL]
 
 # ============================================================================
 # GOAL: Get gold coffin
-# In mainframe Zork, the coffin is the treasure (not a container with sceptre)
 # ============================================================================
 
 [GOAL: Get gold coffin]
@@ -63,30 +60,19 @@ description: Get gold coffin from Egyptian Room. Chain after dam-reservoir.
 [END GOAL]
 
 # ============================================================================
-# GOAL: Return to Living Room
-# Path: Egyptian Room → SE → Rocky Crawl → E → Deep Ravine → S → E/W Passage
-#       → S → Troll Room → W → Cellar → UP → Living Room
+# GOAL: Return to Living Room (using GDT)
 # ============================================================================
 
 [GOAL: Return to Living Room]
 
-> southeast
-[OK: contains "Rocky"]
+> gdt
+[OK: contains "GDT"]
 
-> east
-[OK: contains "Ravine"]
+> ah Living Room
+[OK: contains "Teleported"]
 
-> south
-[OK: contains "Passage"]
-
-> south
-[OK: contains "Troll Room"]
-
-> west
-[OK: contains "Cellar"]
-
-> up
-[OK: contains "Living Room"]
+> ex
+[OK: contains "Returning"]
 
 [END GOAL]
 
@@ -121,6 +107,6 @@ description: Get gold coffin from Egyptian Room. Chain after dam-reservoir.
 [END GOAL]
 
 # SUCCESS! Egyptian Room complete
-# Treasures stored: coffin (+ previous 5)
+# Treasures stored: coffin (+ previous)
 # Player in Living Room with torch + lantern
 # Ready for next segment

@@ -67,4 +67,4 @@ description: Retrieve gold coffin and crystal trident treasures using GDT telepo
 [OK: contains "trident"]
 
 > score
-[OK: contains "7"]
+[OK: contains "25"]

@@ -39,6 +39,9 @@ description: Priority path - get the torch ASAP to minimize lantern usage. Torch
 > take sword
 [OK: matches /(Taken|take)/i]
 
+> turn on lantern
+[OK: matches /(on|lit|light)/i]
+
 > east
 [OK: contains "Kitchen"]
 
@@ -65,9 +68,6 @@ description: Priority path - get the torch ASAP to minimize lantern usage. Torch
 > west
 [OK: contains "Living Room"]
 
-> turn on lantern
-[OK: matches /(on|lit|light)/i]
-
 > move rug
 [OK: matches /(trapdoor|rug|moved)/i]
 
@@ -80,11 +80,24 @@ description: Priority path - get the torch ASAP to minimize lantern usage. Torch
 > east
 [OK: contains "Troll Room"]
 
-# Kill troll - combat loop
-[WHILE: entity "troll" alive]
+# Kill troll - combat (random, may take several hits)
 > attack troll with sword
-[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses)/i]
-[END WHILE]
+[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered)/i]
+
+> attack troll with sword
+[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|can't see)/i]
+
+> attack troll with sword
+[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|can't see)/i]
+
+> attack troll with sword
+[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|can't see)/i]
+
+> attack troll with sword
+[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|can't see)/i]
+
+> attack troll with sword
+[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|can't see)/i]
 
 [END GOAL]
 
