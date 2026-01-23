@@ -74,3 +74,6 @@ feat: Rewrite wt-04 without GDT, add save/restore t
 [14:37:57] GIT: git commit -m "$(cat <<'EOF'
 feat: Add fast-cli for transcript testing, fix unit
 [14:38:22] GIT: git push && git status --short
+[14:38:53] GIT: git commit -m "$(cat <<'EOF'
+chore: Version bumps, CLI additions, and infrastruc
+[14:39:14] GIT: git push && git status --short
