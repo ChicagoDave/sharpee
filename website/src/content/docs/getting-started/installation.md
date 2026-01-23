@@ -3,6 +3,10 @@ title: "Installation"
 description: "Install Sharpee and set up your development environment"
 ---
 
+:::caution[Temporary Outage]
+The npm packages are temporarily unavailable until January 24, 2025 due to a publishing issue. Check back soon!
+:::
+
 ## Prerequisites
 
 Before installing Sharpee, make sure you have:
