@@ -40,19 +40,22 @@ export function createDebugContext(world: WorldModel): DebugContext {
       const byId = world.getEntity(idOrName);
       if (byId) return byId;
 
-      // Try partial name match (case-insensitive)
+      // Normalize search term: lowercase, convert hyphens to spaces
       const searchLower = idOrName.toLowerCase();
+      const searchNormalized = searchLower.replace(/-/g, ' ');
       const allEntities = world.getAllEntities();
 
-      // Exact name match
+      // Exact name match (with normalized search)
       const exactMatch = allEntities.find(
-        (e) => e.name?.toLowerCase() === searchLower
+        (e) => e.name?.toLowerCase() === searchNormalized ||
+               e.name?.toLowerCase() === searchLower
       );
       if (exactMatch) return exactMatch;
 
-      // Partial name match
+      // Partial name match (with normalized search)
       const partialMatch = allEntities.find(
-        (e) => e.name?.toLowerCase().includes(searchLower)
+        (e) => e.name?.toLowerCase().includes(searchNormalized) ||
+               e.name?.toLowerCase().includes(searchLower)
       );
       if (partialMatch) return partialMatch;
 

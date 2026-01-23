@@ -347,6 +347,9 @@ importers:
       '@sharpee/event-processor':
         specifier: workspace:*
         version: link:../event-processor
+      '@sharpee/ext-testing':
+        specifier: workspace:*
+        version: link:../extensions/testing
       '@sharpee/if-domain':
         specifier: workspace:*
         version: link:../if-domain

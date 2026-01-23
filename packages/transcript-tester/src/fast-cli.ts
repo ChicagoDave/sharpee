@@ -29,7 +29,7 @@ const bundlePath = path.resolve(__dirname, '..', '..', '..', 'dist', 'sharpee.js
 const platform = require(bundlePath);
 
 // Extract what we need from the bundle
-const { GameEngine, WorldModel, EntityType, Parser, LanguageProvider, PerceptionService } = platform;
+const { GameEngine, WorldModel, EntityType, Parser, LanguageProvider, PerceptionService, TestingExtension } = platform;
 
 interface CliOptions {
   transcriptPaths: string[];
@@ -43,6 +43,7 @@ interface CliOptions {
 interface TestableGame {
   engine: any;
   world: any;
+  testingExtension: any;  // TestingExtension instance
   lastOutput: string;
   lastEvents: any[];
   lastTurnResult: any;
@@ -171,6 +172,9 @@ function loadStoryAndCreateGame(storyPath: string): TestableGame {
   engine.setStory(story);
   engine.start();
 
+  // Create testing extension
+  const testingExtension = TestingExtension ? new TestingExtension() : null;
+
   // Capture text output and events
   let lastOutput = '';
   let outputBuffer: string[] = [];
@@ -189,6 +193,7 @@ function loadStoryAndCreateGame(storyPath: string): TestableGame {
   const testableGame: TestableGame = {
     engine,
     world,
+    testingExtension,
     lastOutput: '',
     lastEvents: [],
     lastTurnResult: null,
@@ -357,7 +362,8 @@ async function main(): Promise<void> {
     const result = await runTranscript(transcript, game, {
       verbose: options.verbose,
       stopOnFailure: options.stopOnFailure,
-      savesDirectory
+      savesDirectory,
+      testingExtension: game.testingExtension
     });
 
     results.push(result);

@@ -1,0 +1,108 @@
+title: GDT Command Test
+story: dungeo
+description: Verify all GDT debug commands work correctly
+
+---
+
+> gdt
+[OK: contains "GDT ready"]
+
+# Test HE (help)
+> HE
+[OK: contains "GDT Commands"]
+
+# Test DA (dump actor/adventurer)
+> DA
+[OK: contains "Adventurer"]
+
+# Test DR (dump room)
+> DR
+[OK: contains "Room"]
+
+# Test DX (dump exits)
+> DX
+[OK: contains "Exit"]
+
+# Test DS (dump state/scope)
+> DS
+[OK: contains "GAME STATE"]
+
+# Test DO (dump object)
+> DO torch
+[OK: contains "torch"]
+
+# Test DE (dump entity)
+> DE west-of-house
+[OK: contains "west-of-house"]
+
+# Test AH (teleport to room)
+> AH kitchen
+[OK: contains "kitchen"]
+
+# Test NR (no robber - disable thief)
+> NR
+[OK: contains "Thief"]
+
+# Test TK (take - give item to player)
+> TK rusty-knife
+[OK: contains "rusty-knife"]
+
+# Test ND (no deaths - toggle immortality)
+> ND
+[OK: contains "immortal"]
+
+# Test RD (restore deaths)
+> RD
+[OK: contains "mortal"]
+
+# Test RR (restore robber - enable thief)
+> RR
+[OK: contains "thief"]
+
+# Test DF (display flags)
+> DF
+[OK: contains "FLAG"]
+
+# DC (daemon/scheduler) - skipped, requires scheduler setup
+# > DC
+# [OK: contains "CLOCK"]
+
+# Test KL (kill entity)
+> KL troll
+[OK: contains "troll"]
+
+# Test PZ (puzzle state)
+> PZ
+[OK: contains "Puzzle"]
+
+# Test TQ (trivia questions)
+> TQ
+[OK: contains "Trivia"]
+
+# Test AF (alter flags - deprecated)
+> AF
+[OK: contains "Alter Flags"]
+
+# Test DL (dial/lamp debug)
+> DL
+[OK: contains "Dial"]
+
+# Test KO (knock out)
+> KO thief
+[OK: contains "thief"]
+
+# Test WU (wake up)
+> WU thief
+[OK: contains "thief"]
+
+# Test FO (force open)
+> FO trophy-case
+[OK: contains "trophy"]
+
+# Test AO (alter object location)
+> AO brass-lantern cellar
+[OK: contains "lantern"]
+
+# Exit GDT
+> EX
+[OK: contains "game"]

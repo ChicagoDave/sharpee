@@ -25,7 +25,8 @@ const exports = {
   ...require('../packages/event-processor/dist/index.js'),
   ...require('../packages/text-blocks/dist/index.js'),
   ...require('../packages/text-service/dist/index.js'),
-  ...require('../packages/if-services/dist/index.js')
+  ...require('../packages/if-services/dist/index.js'),
+  ...require('../packages/extensions/testing/dist/index.js')
 };
 
 module.exports = exports;
@@ -38,7 +39,7 @@ if (require.main === module) {
   const readline = require('readline');
   const transcriptTester = require('../packages/transcript-tester/dist/index.js');
 
-  const { GameEngine, WorldModel, EntityType, Parser, LanguageProvider, PerceptionService } = exports;
+  const { GameEngine, WorldModel, EntityType, Parser, LanguageProvider, PerceptionService, TestingExtension } = exports;
 
   // Parse CLI arguments
   const args = process.argv.slice(2);
@@ -150,6 +151,9 @@ Examples:
     engine.setStory(story);
     engine.start();
 
+    // Create testing extension for $commands in transcripts
+    const testingExtension = TestingExtension ? new TestingExtension() : null;
+
     let lastOutput = '';
     let outputBuffer = [];
     let lastEvents = [];
@@ -166,6 +170,7 @@ Examples:
     const testableGame = {
       engine,
       world,
+      testingExtension,
       lastOutput: '',
       lastEvents: [],
 
@@ -294,7 +299,8 @@ Examples:
         const result = await transcriptTester.runTranscript(transcript, game, {
           verbose: options.verbose,
           stopOnFailure: options.stopOnFailure,
-          savesDirectory
+          savesDirectory,
+          testingExtension: game.testingExtension
         });
 
         results.push(result);

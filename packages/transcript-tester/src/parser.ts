@@ -218,7 +218,7 @@ function parseDirective(tag: string, lineNumber: number): Directive | null {
 }
 
 /**
- * Parse a $ directive like $save <name>, $restore <name>
+ * Parse a $ directive like $save <name>, $restore <name>, or ext-testing commands
  */
 function parseDollarDirective(line: string, lineNumber: number): Directive | null {
   const trimmed = line.trim();
@@ -235,8 +235,13 @@ function parseDollarDirective(line: string, lineNumber: number): Directive | nul
     return { type: 'restore', lineNumber, saveName: restoreMatch[1].trim() };
   }
 
-  // Unknown $ directive - warn but don't fail
-  console.warn(`Line ${lineNumber}: Unknown $ directive: ${trimmed}`);
+  // Any other $ directive is a test command (ext-testing)
+  // Valid test commands: $teleport, $take, $move, $kill, $immortal, $mortal, $state, $describe, etc.
+  const testCommandMatch = trimmed.match(/^\$(\w+)(.*)$/);
+  if (testCommandMatch) {
+    return { type: 'test-command', lineNumber, testCommand: trimmed };
+  }
+
   return null;
 }
 

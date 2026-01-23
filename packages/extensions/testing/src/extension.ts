@@ -380,10 +380,11 @@ export class TestingExtension implements ITestingExtension {
 
   private cmdTake(context: DebugContext, args: string[]): CommandResult {
     if (args.length === 0) {
-      return { success: false, output: [], error: 'Usage: take <item-id>' };
+      return { success: false, output: [], error: 'Usage: take <item-name>' };
     }
 
-    const itemId = args[0];
+    // Join args to support multi-word names like "brass lantern"
+    const itemId = args.join(' ');
     const item = context.findEntity(itemId);
 
     if (!item) {
@@ -430,10 +431,11 @@ export class TestingExtension implements ITestingExtension {
 
   private cmdRemove(context: DebugContext, args: string[]): CommandResult {
     if (args.length === 0) {
-      return { success: false, output: [], error: 'Usage: remove <object-id>' };
+      return { success: false, output: [], error: 'Usage: remove <object-name>' };
     }
 
-    const objectId = args[0];
+    // Join args to support multi-word names
+    const objectId = args.join(' ');
     const object = context.findEntity(objectId);
 
     if (!object) {
@@ -498,10 +500,11 @@ export class TestingExtension implements ITestingExtension {
 
   private cmdDisplayObject(context: DebugContext, args: string[]): CommandResult {
     if (args.length === 0) {
-      return { success: false, output: [], error: 'Usage: object <object-id>' };
+      return { success: false, output: [], error: 'Usage: object <object-name>' };
     }
 
-    const objectId = args[0];
+    // Join args to support multi-word names
+    const objectId = args.join(' ');
     const object = context.findEntity(objectId);
 
     if (!object) {

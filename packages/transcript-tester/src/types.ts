@@ -22,7 +22,8 @@ export type DirectiveType =
   | 'end_while'   // [END WHILE]
   | 'navigate'    // [NAVIGATE TO: "Room Name"]
   | 'save'        // $save <name>
-  | 'restore';    // $restore <name>
+  | 'restore'     // $restore <name>
+  | 'test-command'; // $teleport, $take, $kill, etc. (ext-testing)
 
 /**
  * A control flow directive in the transcript
@@ -34,6 +35,7 @@ export interface Directive {
   target?: string;      // For NAVIGATE: the target room name
   goalName?: string;    // For GOAL: the goal name
   saveName?: string;    // For SAVE/RESTORE: the checkpoint name
+  testCommand?: string; // For test-command: the full $command input (e.g., "$teleport kitchen")
 }
 
 /**
@@ -204,12 +206,20 @@ export interface TestRunResult {
 /**
  * Options for the test runner
  */
+/**
+ * Interface for ext-testing extension (optional)
+ */
+export interface TestingExtensionInterface {
+  executeTestCommand(input: string, world: any): { success: boolean; output: string[]; error?: string };
+}
+
 export interface RunnerOptions {
   verbose?: boolean;
   stopOnFailure?: boolean;
   updateExpected?: boolean;
   filter?: string;  // Only run commands matching this pattern
   savesDirectory?: string;  // Directory for $save/$restore checkpoints
+  testingExtension?: TestingExtensionInterface;  // Optional ext-testing integration
 }
 
 /**

@@ -537,6 +537,58 @@ async function handleDirective(
       return { nextIndex: currentIndex + 1 };
     }
 
+    case 'test-command': {
+      // Execute ext-testing command ($teleport, $take, $kill, etc.)
+      if (!directive.testCommand) {
+        return { nextIndex: currentIndex + 1, error: 'Test command missing' };
+      }
+
+      if (!options.testingExtension) {
+        // No testing extension available - warn and skip
+        if (verbose) {
+          console.log(`  [${directive.testCommand}] - skipped (no testing extension)`);
+        }
+        return { nextIndex: currentIndex + 1 };
+      }
+
+      if (!world) {
+        return { nextIndex: currentIndex + 1, error: 'World model not available for test command' };
+      }
+
+      if (verbose) {
+        console.log(`[${directive.testCommand}]`);
+      }
+
+      try {
+        const result = options.testingExtension.executeTestCommand(directive.testCommand, world);
+
+        if (verbose) {
+          if (result.output.length > 0) {
+            for (const line of result.output) {
+              console.log(`  ${line}`);
+            }
+          }
+          if (result.error) {
+            console.log(`  ERROR: ${result.error}`);
+          }
+        }
+
+        if (!result.success) {
+          return {
+            nextIndex: currentIndex + 1,
+            error: result.error || `Test command failed: ${directive.testCommand}`
+          };
+        }
+      } catch (e) {
+        return {
+          nextIndex: currentIndex + 1,
+          error: `Test command error: ${e instanceof Error ? e.message : String(e)}`
+        };
+      }
+
+      return { nextIndex: currentIndex + 1 };
+    }
+
     default:
       return { nextIndex: currentIndex + 1 };
   }
