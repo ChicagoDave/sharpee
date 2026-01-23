@@ -186,21 +186,33 @@ This documents the expected inventory state at the start of wt-06.
 
 **Total:** 165/~250 tests complete (66% estimated)
 
+## Additional Work
+
+### Walkthrough 7: River & Rainbow (Draft)
+
+Created draft `stories/dungeo/walkthroughs/wt-07-river-rainbow.transcript` covering:
+- Get hand pump from Reservoir North
+- Get and inflate boat at Dam Base
+- Get buoy with emerald from Frigid River-2
+- Get sharp stick (sceptre) for rainbow puzzle
+- Wave stick at Aragain Falls to create rainbow bridge
+- Cross rainbow to End of Rainbow
+- Get pot of gold treasure
+- Return to Living Room and store treasures
+
+**Status:** Draft created, needs testing in next session.
+
 ## Open Items
 
 ### Short Term
 
-**Walkthrough 7: Endgame (Next Session)**
-- Navigate Land of the Living Dead
-- Solve mirror puzzle (WAVE SCEPTRE to create rainbow bridge)
-- Cross Abyss on rainbow
-- Retrieve Staff of GDT (final treasure)
-- Return to Dungeon Master's room
-- Achieve maximum score (616 points)
-- Test QUIT command
-- Test victory conditions
+**Walkthrough 7: River & Rainbow (Test)**
+- Test wt-07 transcript with full walkthrough chain
+- Fix any assertion mismatches
+- Verify inflate/deflate boat mechanics
+- Verify wave stick rainbow mechanics
 
-**Estimated complexity:** High - involves multiple puzzles in sequence, careful navigation of dangerous areas, and final scoring verification.
+**Estimated complexity:** Medium - involves boat mechanics and rainbow puzzle.
 
 ### Long Term
 

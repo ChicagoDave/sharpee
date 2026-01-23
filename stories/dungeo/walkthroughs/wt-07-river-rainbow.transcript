@@ -1,0 +1,248 @@
+title: River & Rainbow (Emerald, Pot of Gold)
+story: dungeo
+description: Get emerald from buoy, wave stick for rainbow, get pot of gold. Chain after exorcism.
+---
+
+# ============================================================================
+# GOAL: Setup - Ensure correct state from previous segment
+# ============================================================================
+
+[GOAL: Verify starting state]
+
+> gdt
+[OK: contains "GDT"]
+
+# Ensure we have torch and lantern
+> tk torch
+[OK: matches /(Taken|already)/i]
+
+> tk brass lantern
+[OK: matches /(Taken|already)/i]
+
+> ex
+[OK: contains "Returning"]
+
+# Turn on light source
+> turn on torch
+[OK: matches /(on|lit|light|already)/i]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Get hand pump from Reservoir North
+# ============================================================================
+
+[GOAL: Get hand pump]
+[ENSURES: inventory contains "pump"]
+
+> gdt
+[OK: contains "GDT"]
+
+> ah Reservoir North
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+> look
+[OK: matches /(reservoir|pump)/i]
+
+> take pump
+[OK: matches /(Taken|take)/i]
+
+> inventory
+[OK: contains "pump"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Get and inflate boat at Dam Base
+# ============================================================================
+
+[GOAL: Get and inflate boat]
+
+> gdt
+[OK: contains "GDT"]
+
+> ah Dam Base
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+> look
+[OK: matches /(dam|plastic|boat|stick)/i]
+
+> take plastic
+[OK: matches /(Taken|take)/i]
+
+# Inflate the boat with the pump
+> inflate boat
+[OK: matches /(inflate|rubber|boat|now)/i]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Get buoy with emerald from Frigid River
+# The buoy is at Frigid River-2
+# ============================================================================
+
+[GOAL: Get emerald from buoy]
+[ENSURES: inventory contains "emerald"]
+
+> gdt
+[OK: contains "GDT"]
+
+> ah Frigid River-2
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+> look
+[OK: matches /(river|buoy|cliffs)/i]
+
+> take buoy
+[OK: matches /(Taken|take)/i]
+
+# Open buoy to get emerald
+> open buoy
+[OK: matches /(open|Opening)/i]
+
+> take emerald
+[OK: matches /(Taken|take)/i]
+
+> inventory
+[OK: contains "emerald"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Get sharp stick (sceptre) for rainbow puzzle
+# The stick is at Dam Base - can't take on boat (punctures it)
+# ============================================================================
+
+[GOAL: Get sharp stick]
+[ENSURES: inventory contains "stick"]
+
+> gdt
+[OK: contains "GDT"]
+
+> ah Dam Base
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+> take stick
+[OK: matches /(Taken|take)/i]
+
+> inventory
+[OK: contains "stick"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Go to Aragain Falls and wave stick to create rainbow bridge
+# ============================================================================
+
+[GOAL: Create rainbow bridge]
+
+> gdt
+[OK: contains "GDT"]
+
+> ah Aragain Falls
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+> look
+[OK: matches /(falls|rainbow|waterfall)/i]
+
+# Wave the sharp stick to make rainbow solid
+> wave stick
+[OK: matches /(rainbow|solid|bridge|appears|shimmer)/i]
+
+# Now we can cross the rainbow going east
+> east
+[OK: matches /(rainbow|top|magnificent|falls)/i]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Get pot of gold at End of Rainbow
+# ============================================================================
+
+[GOAL: Get pot of gold]
+[ENSURES: inventory contains "pot"]
+
+> east
+[OK: matches /(end.*rainbow|beach|cliffs|sunlight)/i]
+
+> look
+[OK: matches /(pot|gold|rainbow)/i]
+
+> take pot
+[OK: matches /(Taken|take)/i]
+
+> inventory
+[OK: contains "pot"]
+[OK: contains "gold"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Return to Living Room and store treasures
+# ============================================================================
+
+[GOAL: Return to Living Room]
+
+> gdt
+[OK: contains "GDT"]
+
+> ah Living Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Store treasures in trophy case
+# ============================================================================
+
+[GOAL: Store treasures in trophy case]
+
+> open trophy case
+[OK: matches /(open|Opening|already)/i]
+
+> put emerald in trophy case
+[OK: matches /(put|Done|place)/i]
+
+> put pot in trophy case
+[OK: matches /(put|Done|place)/i]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Verify final state for next segment
+# ============================================================================
+
+[GOAL: Verify inventory for next segment]
+
+> inventory
+[OK: contains "torch"]
+[OK: contains "lantern"]
+
+> look
+[OK: contains "Living Room"]
+[OK: contains "trophy case"]
+
+[END GOAL]
+
+# SUCCESS! River & Rainbow complete
+# Treasures stored: emerald, pot of gold
+# Player in Living Room with torch + lantern
+# Ready for next segment (well-tea-room)

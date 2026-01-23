@@ -176,7 +176,7 @@ Organized by light source to maximize torch usage before glacier destruction.
 | wt-04 | wt-04-dam-reservoir.transcript | ✅ Done | Dam puzzle, get matchbook & boat | Trunk (23) |
 | wt-05 | wt-05-egyptian-room.transcript | ✅ Done | Temple area, coffin & sceptre | Coffin (10) |
 | wt-06 | wt-06-exorcism.transcript | ✅ Done | Bell/book/candle ritual at Hades | — |
-| wt-07 | wt-07-river-rainbow.transcript | 🚧 Next | Boat ride, emerald, wave sceptre | Emerald (15), Pot of gold (20) |
+| wt-07 | wt-07-river-rainbow.transcript | 🚧 Draft | Boat ride, emerald, wave sceptre | Emerald (15), Pot of gold (20) |
 | wt-08 | wt-08-well-tea-room.transcript | ⬜ Todo | Bucket puzzle, cakes, pearl | Pearl (14), Spices (10) |
 | wt-09 | wt-09-royal-puzzle.transcript | ⬜ Todo | Sliding block puzzle | Gold card (25) |
 | wt-10 | wt-10-canvas-puzzle.transcript | ⬜ Todo | Kill thief, ghost ritual | Canvas (34), Canary (8), Bauble (2) |
