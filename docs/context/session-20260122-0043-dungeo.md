@@ -115,7 +115,51 @@ node dist/sharpee.js --test-all stories/dungeo
 - troll-combat, troll-interactions
 - save-test, bucket-well
 
-### 7. Issue Cataloging and Analysis
+### 7. Website Documentation Updates
+
+Updated existing documentation and created new comprehensive guides for the sharpee.net website.
+
+**Quick-start and creating-stories updates:**
+- Added `AuthorModel` usage examples for world initialization
+- Documented pattern for placing objects in closed containers during setup
+- Clarified difference between `WorldModel` (game rules enforced) and `AuthorModel` (setup mode)
+
+**New comprehensive guides created:**
+
+1. **`website/src/content/docs/authoring/rooms.md`** (7.4KB):
+   - Rooms and Regions guide
+   - Room creation patterns
+   - Connection management
+   - Region organization
+
+2. **`website/src/content/docs/authoring/objects.md`** (8.6KB):
+   - Objects and Traits guide
+   - Creating game objects
+   - Trait system usage
+   - Common patterns
+
+3. **`website/src/content/docs/authoring/npcs.md`** (406 lines):
+   - NPCs and Behaviors guide
+   - NPC entity creation
+   - Behavior implementation
+   - Message handling
+
+4. **`website/src/content/docs/tutorials/cloak-of-darkness.md`** (607 lines):
+   - Complete step-by-step tutorial
+   - Classic IF benchmark game
+   - Demonstrates core patterns
+   - Working example code
+
+**Website structure updates:**
+- Added Tutorials section to `DocsSidebar.astro`
+- Added Tutorials link to `Navigation.astro`
+- Created `tutorials/index.astro` page
+- Updated content schema enum with 'tutorials' category
+- Added `.gitkeep` to `website/src/content/docs/games/` directory
+
+**Result**: Website now has comprehensive authoring documentation from beginner tutorial through advanced topics.
+
+### 8. Issue Cataloging and Analysis
 
 Cataloged 6 new issues in `issues-list-02.md` with impact analysis:
 
@@ -272,6 +316,13 @@ Remote tagged `v0.9.50-beta` with npm publish workflow.
 - `website/public/games/dungeo/index.html` - Demo entry point
 - `website/public/games/dungeo/dungeo.js` - Game bundle
 - `website/public/games/dungeo/styles.css` - Demo styles
+- `website/src/content/docs/authoring/rooms.md` - Rooms and Regions guide (7.4KB)
+- `website/src/content/docs/authoring/objects.md` - Objects and Traits guide (8.6KB)
+- `website/src/content/docs/authoring/npcs.md` - NPCs guide (406 lines)
+- `website/src/content/docs/tutorials/cloak-of-darkness.md` - Step-by-step tutorial (607 lines)
+- `website/src/components/DocsSidebar.astro` - Added tutorials section
+- `website/src/components/Navigation.astro` - Added tutorials link
+- `website/src/pages/tutorials/index.astro` - Tutorials landing page
 - (Multiple additional website improvements from remote)
 
 **Documentation** (committed, pushed):
@@ -397,7 +448,7 @@ The transcript testing system has proven robust:
 
 ## Notes
 
-**Session duration**: ~1 hour 15 minutes
+**Session duration**: ~4 hours
 
 **Approach**:
 1. Read previous session summary (meta-command work)
@@ -409,12 +460,16 @@ The transcript testing system has proven robust:
 7. Ran comprehensive transcript test suite
 8. Analyzed results and cataloged new issues
 9. Identified critical path to completion (GDT fixes)
+10. Updated website quick-start and creating-stories docs with AuthorModel usage
+11. Created comprehensive documentation guides (rooms, objects, NPCs, tutorial)
+12. Added Tutorials section to website navigation
 
 **Session highlights**:
 - First complete transcript test run across all 89 tests
 - Clear picture of remaining work (6 active issues, 24 deferred features)
 - Critical insight: 2 bugs blocking 66% of failures
 - Issue tracking workflow ready for final implementation push
+- Comprehensive website documentation created (4 major guides, ~30KB content)
 
 **Collaboration**:
 - Remote commits by ChicagoDave improved website significantly
@@ -432,4 +487,4 @@ The transcript testing system has proven robust:
 
 ---
 
-**Progressive update**: Session completed 2026-01-22 03:04
+**Progressive update**: Session completed 2026-01-22 15:59
