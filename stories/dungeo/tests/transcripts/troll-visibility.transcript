@@ -1,65 +1,60 @@
-title: Troll Axe Visibility via Capability Dispatch
+title: Troll Axe Visibility
 story: dungeo
-author: Sharpee Team
-description: Tests that the axe is hidden when troll is unconscious (via if.scope.visible capability)
+description: Tests that the axe is held by troll, can't be taken (white-hot), and both vanish on death
 
 ---
 
-# This verifies the generic capability dispatch for visibility works correctly.
+# Get lantern first
+> GDT
+[OK: contains "GDT"]
 
-# Get to the Troll Room via GDT teleport
+> tk brass lantern
+[OK: contains "Taken"]
+
+> ex
+[OK: contains "Returning"]
+
+> turn on lantern
+[OK: contains "on"]
+
+# Get to the Troll Room
 > GDT
 [OK: contains "GDT"]
 
 > AH Troll Room
 [OK: contains "Teleported"]
 
+> ex
+[OK: contains "Returning"]
+
 > look
 [OK: contains "Troll Room"]
-[OK: contains "bloody axe"]
 [OK: contains "troll"]
 
-# Verify axe is mentioned while troll is conscious
+# Verify axe can be examined (it's held by troll)
 > examine axe
 [OK: contains "bloody axe"]
 
-# Knock out the troll - should hide the axe
-> KO troll
-[OK: contains "Knocked out"]
-[OK: contains "isConscious: false"]
-
-# Now look again - axe should NOT be visible
-> look
-[OK: contains "Troll Room"]
-[OK: contains "troll"]
-[FAIL: contains "bloody axe"]
-
-# Try to take the axe - should fail since it's not visible
-> take axe
-[OK: contains "can't see"]
-
-# Wake up the troll - axe should reappear
-> WU troll
-[OK: contains "Woke up"]
-[OK: contains "isConscious: true"]
-
-# Axe should be visible again
-> look
-[OK: contains "bloody axe"]
-
-# But still can't take it (white-hot)
+# Can't take it - white-hot while troll lives
 > take axe
 [OK: contains "white-hot"]
 
-# Kill the troll - axe becomes takeable
+# Kill the troll
+> GDT
+[OK: contains "GDT"]
+
 > KL troll
 [OK: contains "Killed"]
 
-> take axe
-[OK: contains "Taken"]
+> ex
+[OK: contains "Returning"]
 
-> inventory
-[OK: contains "bloody axe"]
+# Both troll and axe should be gone
+> look
+[OK: contains "Troll Room"]
+[FAIL: contains "troll"]
+[FAIL: contains "axe"]
 
-> EX
-[OK: contains "Returning to game"]
+# Can't examine axe - it's gone
+> examine axe
+[OK: contains "can't see"]

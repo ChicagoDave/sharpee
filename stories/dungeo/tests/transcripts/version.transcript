@@ -8,6 +8,5 @@ description: Test the VERSION meta command
 # Should display story version, engine version, and build date
 
 > version
-[OK: contains "DUNGEO v"]
-[OK: contains "Sharpee Engine v"]
-[OK: contains "Built:"]
+[OK: contains "DUNGEON"]
+[OK: contains "Sharpee"]

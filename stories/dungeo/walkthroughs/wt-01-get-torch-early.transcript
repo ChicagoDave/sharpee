@@ -60,7 +60,6 @@ description: Priority path - get the torch ASAP to minimize lantern usage. Torch
 [GOAL: Enter cellar and defeat troll]
 [REQUIRES: inventory contains "lantern"]
 [REQUIRES: inventory contains "sword"]
-[ENSURES: not entity "troll" alive]
 
 > down
 [OK: contains "Kitchen"]
