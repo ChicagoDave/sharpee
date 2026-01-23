@@ -1,8 +1,6 @@
 ---
 title: "Quick Start"
 description: "Create your first interactive fiction story with Sharpee"
-section: "getting-started"
-order: 2
 ---
 
 ## Your First Story

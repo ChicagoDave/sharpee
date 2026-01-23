@@ -1,8 +1,6 @@
 ---
 title: "Objects and Traits"
 description: "Creating interactive objects using the trait system"
-section: "author-guide"
-order: 3
 ---
 
 # Objects and Traits

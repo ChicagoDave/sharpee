@@ -1,8 +1,6 @@
 ---
 title: "NPCs"
 description: "Creating non-player characters with behaviors and conversations"
-section: "author-guide"
-order: 4
 ---
 
 # Non-Player Characters (NPCs)

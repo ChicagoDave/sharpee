@@ -1,8 +1,6 @@
 ---
 title: "Rooms and Regions"
 description: "Creating rooms, connecting them, and organizing your world into regions"
-section: "author-guide"
-order: 2
 ---
 
 # Rooms and Regions

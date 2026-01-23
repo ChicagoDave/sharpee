@@ -1,8 +1,6 @@
 ---
 title: "Cloak of Darkness Tutorial"
 description: "Build the classic IF tutorial game step by step"
-section: "tutorials"
-order: 1
 ---
 
 # Cloak of Darkness Tutorial

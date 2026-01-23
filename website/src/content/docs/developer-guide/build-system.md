@@ -1,8 +1,6 @@
 ---
 title: "Build System"
 description: "How to build Sharpee platform packages, stories, and client bundles"
-section: "developer-guide"
-order: 2
 ---
 
 # Sharpee Build System

@@ -1,8 +1,6 @@
 ---
 title: "Project Structure"
 description: "Guide to Sharpee's repository layout and story organization"
-section: "developer-guide"
-order: 1
 ---
 
 # Sharpee Project Structure Guide

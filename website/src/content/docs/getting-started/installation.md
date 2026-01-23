@@ -1,8 +1,6 @@
 ---
 title: "Installation"
 description: "Install Sharpee and set up your development environment"
-section: "getting-started"
-order: 1
 ---
 
 ## Prerequisites

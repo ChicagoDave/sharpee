@@ -1,8 +1,6 @@
 ---
 title: "Creating Stories"
 description: "A comprehensive guide to creating interactive fiction stories with Sharpee"
-section: "author-guide"
-order: 1
 ---
 
 # Creating Stories with Sharpee

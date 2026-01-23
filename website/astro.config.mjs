@@ -1,11 +1,47 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
+import starlight from '@astrojs/starlight';
 
-import tailwindcss from '@tailwindcss/vite';
-
-// https://astro.build/config
 export default defineConfig({
-  vite: {
-    plugins: [tailwindcss()]
-  }
+  site: 'https://sharpee.net',
+  integrations: [
+    starlight({
+      title: 'Sharpee',
+      description: 'Interactive Fiction Engine for TypeScript',
+      social: [
+        { icon: 'github', label: 'GitHub', href: 'https://github.com/ChicagoDave/sharpee' },
+      ],
+      sidebar: [
+        {
+          label: 'Getting Started',
+          items: [
+            { label: 'Installation', slug: 'getting-started/installation' },
+            { label: 'Quick Start', slug: 'getting-started/quick-start' },
+          ],
+        },
+        {
+          label: 'Tutorials',
+          items: [
+            { label: 'Cloak of Darkness', slug: 'tutorials/cloak-of-darkness' },
+          ],
+        },
+        {
+          label: 'Author Guide',
+          items: [
+            { label: 'Creating Stories', slug: 'author-guide/creating-stories' },
+            { label: 'Rooms', slug: 'author-guide/rooms' },
+            { label: 'Objects', slug: 'author-guide/objects' },
+            { label: 'NPCs', slug: 'author-guide/npcs' },
+          ],
+        },
+        {
+          label: 'Developer Guide',
+          items: [
+            { label: 'Project Structure', slug: 'developer-guide/project-structure' },
+            { label: 'Build System', slug: 'developer-guide/build-system' },
+          ],
+        },
+      ],
+    }),
+  ],
 });
