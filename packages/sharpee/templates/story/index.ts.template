@@ -1,0 +1,74 @@
+/**
+ * {{STORY_TITLE}}
+ *
+ * A Sharpee Interactive Fiction story
+ */
+
+import {
+  Story,
+  StoryConfig,
+  WorldModel,
+  IFEntity,
+  Parser,
+  LanguageProvider,
+} from '@sharpee/sharpee';
+
+export const config: StoryConfig = {
+  id: '{{STORY_ID}}',
+  title: '{{STORY_TITLE}}',
+  author: '{{AUTHOR}}',
+  version: '1.0.0',
+  description: '{{DESCRIPTION}}',
+};
+
+export const story: Story = {
+  config,
+
+  initializeWorld(world: WorldModel): IFEntity {
+    // Get the player entity
+    const player = world.getPlayer();
+
+    // === CREATE YOUR ROOMS ===
+
+    // Starting room
+    const startRoom = world.createRoom('start-room', {
+      name: 'Starting Room',
+      description: 'You are in a small, dimly lit room. This is where your adventure begins.',
+    });
+
+    // === CREATE YOUR OBJECTS ===
+
+    // Example: a simple object
+    // const key = world.createEntity('key', 'object', {
+    //   name: 'brass key',
+    //   description: 'A small brass key.',
+    // });
+    // world.moveEntity(key.id, startRoom.id);
+
+    // === CONNECT YOUR ROOMS ===
+
+    // Example: connect rooms
+    // world.connectRooms(startRoom.id, 'north', anotherRoom.id);
+
+    // Place player in starting room
+    world.moveEntity(player.id, startRoom.id);
+
+    // Return the starting room
+    return startRoom;
+  },
+
+  // Optional: extend the parser with custom vocabulary
+  extendParser(parser: Parser): void {
+    // const grammar = parser.getStoryGrammar();
+    // grammar.define('custom command').mapsTo('story.action.custom').build();
+  },
+
+  // Optional: extend the language with custom messages
+  extendLanguage(language: LanguageProvider): void {
+    // language.addMessages({
+    //   'story.message.custom': 'A custom message.',
+    // });
+  },
+};
+
+export default story;
