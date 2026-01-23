@@ -140,61 +140,44 @@ export const scoringAction: Action & { metadata: ActionMetadata } = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
-      reason: result.error,
-      params: result.params || {}
+    return [context.event('if.event.score_displayed', {
+      messageId: `if.action.scoring.${result.error}`,
+      params: result.params || {},
+      blocked: true,
+      reason: result.error
     })];
   },
 
   report(context: ActionContext): ISemanticEvent[] {
-    const events: ISemanticEvent[] = [];
     const sharedData = getScoringSharedData(context);
 
     // Handle disabled scoring
     if (!sharedData.enabled) {
-      events.push(context.event('action.success', {
-        actionId: this.id,
-        messageId: 'no_scoring',
-        params: {}
-      }));
-      return events;
+      return [context.event('if.event.score_displayed', {
+        messageId: 'if.action.scoring.no_scoring',
+        params: {},
+        enabled: false
+      })];
     }
 
     if (!sharedData.eventData) {
-      return events;
+      return [];
     }
 
-    // Emit score_displayed event
-    events.push(context.event('if.event.score_displayed', sharedData.eventData));
+    // Determine primary messageId
+    const messageId = `if.action.scoring.${sharedData.messageId || 'score_simple'}`;
 
-    // Emit main score message
-    events.push(context.event('action.success', {
-      actionId: context.action.id,
-      messageId: sharedData.messageId || 'score_simple',
-      params: sharedData.params || {}
-    }));
-
-    // Emit achievements message if any
-    if (sharedData.achievements && sharedData.achievements.length > 0) {
-      events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: 'with_achievements',
-        params: sharedData.params || {}
-      }));
-    }
-
-    // Emit progress message if determined
-    if (sharedData.progressMessage) {
-      events.push(context.event('action.success', {
-        actionId: context.action.id,
-        messageId: sharedData.progressMessage,
-        params: sharedData.params || {}
-      }));
-    }
-
-    return events;
+    // Emit single domain event with all data
+    return [context.event('if.event.score_displayed', {
+      messageId,
+      params: sharedData.params || {},
+      // Domain data
+      ...sharedData.eventData,
+      // Additional rendering hints
+      hasAchievements: sharedData.achievements && sharedData.achievements.length > 0,
+      achievements: sharedData.achievements,
+      progressMessage: sharedData.progressMessage
+    })];
   },
 
   group: "meta",

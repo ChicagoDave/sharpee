@@ -4,35 +4,50 @@
 
 /**
  * Event data for when score is displayed
+ * Uses domain event pattern with embedded messageId (ADR-097)
  */
 export interface ScoreDisplayedEventData {
+  /** Message ID for text-service lookup */
+  messageId?: string;
+  /** Parameters for message template substitution */
+  params?: Record<string, any>;
+
+  // Domain data
   /** Current score */
-  score: number;
-  
+  score?: number;
+
   /** Maximum possible score */
-  maxScore: number;
-  
+  maxScore?: number;
+
   /** Number of moves/turns taken */
-  moves: number;
-  
+  moves?: number;
+
   /** Percentage of completion (if maxScore > 0) */
   percentage?: number;
-  
+
   /** Player's rank based on score */
   rank?: string;
-  
+
   /** List of achievements earned */
   achievements?: string[];
-  
+
   /** Current game progress state */
   progress?: 'early_game' | 'mid_game' | 'late_game' | 'game_complete';
-}
 
-/**
- * Error data for scoring failures
- */
-export interface ScoringErrorData {
-  reason: 'scoring_not_enabled';
+  /** Whether scoring is enabled */
+  enabled?: boolean;
+
+  /** Whether this is a blocked/error case */
+  blocked?: boolean;
+
+  /** Reason for block (if blocked) */
+  reason?: string;
+
+  /** Whether achievements should be displayed */
+  hasAchievements?: boolean;
+
+  /** Progress message ID */
+  progressMessage?: string;
 }
 
 /**
@@ -40,14 +55,4 @@ export interface ScoringErrorData {
  */
 export interface ScoringEventMap {
   'if.event.score_displayed': ScoreDisplayedEventData;
-  'action.success': {
-    actionId: string;
-    messageId: string;
-    params?: Record<string, any>;
-  };
-  'action.error': {
-    actionId: string;
-    messageId: string;
-    params?: Record<string, any>;
-  };
 }

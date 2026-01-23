@@ -4,15 +4,27 @@
 
 /**
  * Event data for when about information is displayed
- * Empty object since the text service constructs everything from story config
+ * Uses domain event pattern with embedded messageId (ADR-097)
  */
 export interface AboutDisplayedEventData {
-  // No data needed - text service reads from story config
+  /** Message ID for text-service lookup */
+  messageId: string;
+  /** Parameters for message template substitution */
+  params: {
+    title?: string;
+    author?: string;
+    version?: string;
+    description?: string;
+  };
+  /** Whether this is a blocked/error case */
+  blocked?: boolean;
+  /** Reason for block (if blocked) */
+  reason?: string;
 }
 
 /**
  * Complete event map for about action
  */
 export interface AboutEventMap {
-  'if.action.about': AboutDisplayedEventData;
+  'if.event.about_displayed': AboutDisplayedEventData;
 }

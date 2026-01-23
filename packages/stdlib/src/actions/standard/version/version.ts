@@ -37,11 +37,11 @@ export const versionAction: Action & { metadata: ActionMetadata } = {
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     // Version always succeeds, but include blocked for consistency
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
-      reason: result.error,
-      params: result.params || {}
+    return [context.event('if.event.version_displayed', {
+      messageId: `if.action.version.${result.error}`,
+      params: result.params || {},
+      blocked: true,
+      reason: result.error
     })];
   },
 
@@ -58,21 +58,35 @@ export const versionAction: Action & { metadata: ActionMetadata } = {
     const buildDate = versionInfo.buildDate;
     const author = storyConfig.author || 'Unknown';
 
-    // Event data matches banner template params for consistency
+    // Determine messageId based on available data
+    // Use existing lang-en-us keys: version_full, version_no_date
+    const messageId = buildDate
+      ? 'if.action.version.version_full'
+      : 'if.action.version.version_no_date';
+
+    // Event data with messageId for text-service lookup
     const eventData: VersionDisplayedEventData = {
+      messageId,
+      params: {
+        storyTitle,
+        storyVersion,
+        engineVersion,
+        clientVersion,
+        buildDate,
+        title: storyTitle,
+        version: storyVersion,
+        author: Array.isArray(author) ? author.join(', ') : author
+      },
+      // Domain data for event handlers
       storyTitle,
       storyVersion,
       engineVersion,
       clientVersion,
-      buildDate,
-      // Template params matching game.started.banner format
-      title: storyTitle,
-      version: storyVersion,
-      author: Array.isArray(author) ? author.join(', ') : author
+      buildDate
     };
 
     return [
-      context.event('if.action.version', eventData)
+      context.event('if.event.version_displayed', eventData)
     ];
   },
 

@@ -35,20 +35,31 @@ export const aboutAction: Action & { metadata: ActionMetadata } = {
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     // About always succeeds, but include blocked for consistency
-    return [context.event('action.blocked', {
-      actionId: this.id,
-      messageId: result.error,
-      reason: result.error,
-      params: result.params || {}
+    return [context.event('if.event.about_displayed', {
+      messageId: `if.action.about.${result.error}`,
+      params: result.params || {},
+      blocked: true,
+      reason: result.error
     })];
   },
 
   report(context: ActionContext): ISemanticEvent[] {
-    // Simply emit an event signaling that about info should be displayed
-    const eventData: AboutDisplayedEventData = {};
+    // Get story config for about info
+    const world = context.world;
+    const storyConfig = (world as any).storyConfig || {};
+
+    const eventData: AboutDisplayedEventData = {
+      messageId: 'if.action.about.success',
+      params: {
+        title: storyConfig.title || 'Unknown',
+        author: Array.isArray(storyConfig.author) ? storyConfig.author.join(', ') : (storyConfig.author || 'Unknown'),
+        version: storyConfig.version || '0.0.0',
+        description: storyConfig.description || ''
+      }
+    };
 
     return [
-      context.event('if.action.about', eventData)
+      context.event('if.event.about_displayed', eventData)
     ];
   },
   

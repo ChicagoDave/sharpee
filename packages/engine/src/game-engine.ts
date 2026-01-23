@@ -840,14 +840,16 @@ export class GameEngine {
       const validationResult = (this.commandExecutor as any).validator.validate(parsedCommand);
 
       if (!validationResult.success) {
-        // Validation failed - emit error event
+        // Validation failed - emit error event using domain event pattern
         const errorEvent: ISemanticEvent = {
           id: `meta_error_${Date.now()}`,
-          type: 'action.error',
+          type: 'if.event.command_error',
           timestamp: Date.now(),
           data: {
-            messageId: validationResult.error?.code || 'validation_failed',
-            params: validationResult.error?.details || {}
+            messageId: `if.action.command.${validationResult.error?.code || 'validation_failed'}`,
+            params: validationResult.error?.details || {},
+            blocked: true,
+            reason: validationResult.error?.code || 'validation_failed'
           },
           entities: {}
         };
@@ -872,11 +874,13 @@ export class GameEngine {
       if (!action) {
         const errorEvent: ISemanticEvent = {
           id: `meta_error_${Date.now()}`,
-          type: 'action.error',
+          type: 'if.event.command_error',
           timestamp: Date.now(),
           data: {
-            messageId: 'action_not_found',
-            params: { actionId: command.actionId }
+            messageId: 'if.action.command.action_not_found',
+            params: { actionId: command.actionId },
+            blocked: true,
+            reason: 'action_not_found'
           },
           entities: {}
         };
@@ -912,11 +916,13 @@ export class GameEngine {
           ? action.blocked(actionContext, actionValidation)
           : [{
               id: `meta_blocked_${Date.now()}`,
-              type: 'action.error',
+              type: 'if.event.command_error',
               timestamp: Date.now(),
               data: {
-                messageId: actionValidation.error || 'validation_failed',
-                params: actionValidation.params || {}
+                messageId: `if.action.command.${actionValidation.error || 'validation_failed'}`,
+                params: actionValidation.params || {},
+                blocked: true,
+                reason: actionValidation.error || 'validation_failed'
               },
               entities: {}
             }];
@@ -980,6 +986,11 @@ export class GameEngine {
   private processMetaEvents(events: ISemanticEvent[]): void {
     if (!this.textService || events.length === 0) {
       return;
+    }
+
+    // Emit individual events through engine's event system (for tests/listeners)
+    for (const event of events) {
+      this.emit('event', event as any);
     }
 
     // Process events through text service
