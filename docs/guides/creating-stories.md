@@ -204,17 +204,19 @@ cave.add({
 
 ## Creating Objects
 
-### Portable Object
+**Important:** All objects are portable by default. You don't need to add a `PORTABLE` trait. To make something non-portable, use `SceneryTrait` or handle it in action validation.
+
+### Basic Object
 
 ```typescript
 const lamp = world.createEntity('brass lamp', EntityType.OBJECT);
-lamp.add({ type: TraitType.PORTABLE });
 lamp.add({
   type: TraitType.IDENTITY,
   description: 'A well-worn brass lamp.',
   shortDescription: 'a brass lamp'
 });
 world.moveEntity(lamp.id, room.id);
+// Player can take this - objects are portable by default
 ```
 
 ### Container
@@ -231,12 +233,10 @@ chest.add({
   isOpen: false,
   canClose: true
 });
-chest.add({ type: TraitType.PORTABLE });
 world.moveEntity(chest.id, room.id);
 
 // Put item in chest
 const coin = world.createEntity('gold coin', EntityType.OBJECT);
-coin.add({ type: TraitType.PORTABLE });
 world.moveEntity(coin.id, chest.id);
 ```
 
@@ -252,7 +252,6 @@ safe.add({
 
 // Create key first to get its ID
 const key = world.createEntity('brass key', EntityType.OBJECT);
-key.add({ type: TraitType.PORTABLE });
 
 safe.add({
   type: TraitType.LOCKABLE,
@@ -265,7 +264,6 @@ safe.add({
 
 ```typescript
 const cloak = world.createEntity('velvet cloak', EntityType.OBJECT);
-cloak.add({ type: TraitType.PORTABLE });
 cloak.add({
   type: TraitType.WEARABLE,
   isWorn: false,
@@ -277,7 +275,6 @@ cloak.add({
 
 ```typescript
 const lantern = world.createEntity('lantern', EntityType.OBJECT);
-lantern.add({ type: TraitType.PORTABLE });
 lantern.add({
   type: TraitType.SWITCHABLE,
   isOn: false
@@ -293,7 +290,6 @@ lantern.add({
 
 ```typescript
 const apple = world.createEntity('red apple', EntityType.OBJECT);
-apple.add({ type: TraitType.PORTABLE });
 apple.add({
   type: TraitType.EDIBLE,
   nutrition: 10,
@@ -301,7 +297,6 @@ apple.add({
 });
 
 const potion = world.createEntity('healing potion', EntityType.OBJECT);
-potion.add({ type: TraitType.PORTABLE });
 potion.add({
   type: TraitType.DRINKABLE,
   drinkMessage: 'You feel refreshed.'
@@ -340,11 +335,12 @@ world.moveEntity(lamp.id, table.id);
 
 ## Common Traits Reference
 
+**Note:** All objects are portable by default. Use `SCENERY` to make something non-portable.
+
 | Trait | Purpose | Key Properties |
 |-------|---------|----------------|
 | `ROOM` | Location | `isDark`, `description` |
 | `EXIT` | Room connection | `direction`, `destination` |
-| `PORTABLE` | Can be picked up | (none) |
 | `CONTAINER` | Holds items | `capacity`, `isTransparent` |
 | `SUPPORTER` | Items placed on | `capacity` |
 | `OPENABLE` | Can open/close | `isOpen`, `canClose` |
@@ -354,7 +350,7 @@ world.moveEntity(lamp.id, table.id);
 | `DRINKABLE` | Can be drunk | `drinkMessage` |
 | `SWITCHABLE` | On/off device | `isOn` |
 | `LIGHT_SOURCE` | Provides light | `brightness`, `requiresOn` |
-| `SCENERY` | Fixed in place | `isFixed` |
+| `SCENERY` | Fixed in place, non-portable | `isFixed` |
 | `READABLE` | Has text | `text`, `isReadable` |
 | `DOOR` | Connects rooms | `connectsTo`, `blocksDirection` |
 | `ACTOR` | NPC or player | `health`, `inventory` |
@@ -721,7 +717,6 @@ cave.add({ type: TraitType.ROOM, isDark: true });
 
 // Lantern provides light when on
 const lantern = world.createEntity('lantern', EntityType.OBJECT);
-lantern.add({ type: TraitType.PORTABLE });
 lantern.add({ type: TraitType.SWITCHABLE, isOn: false });
 lantern.add({
   type: TraitType.LIGHT_SOURCE,
@@ -779,8 +774,9 @@ function connectRooms(
 - Check action is exported and registered
 
 ### "Can't take that"
-- Add `TraitType.PORTABLE` to the object
+- Object may have `SceneryTrait` (non-portable by design)
 - Check object is in scope (visible, reachable)
+- A trait behavior may be blocking the take action
 
 ### "It's too dark"
 - Room has `isDark: true`

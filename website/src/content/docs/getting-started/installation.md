@@ -78,4 +78,4 @@ Sharpee is written in TypeScript and provides full type definitions. Here's a re
 
 ## Next Steps
 
-Once installed, continue to the [Quick Start](/docs/getting-started/quick-start) guide to create your first room.
+Once installed, continue to the [Quick Start](/getting-started/quick-start/) guide to create your first room.
