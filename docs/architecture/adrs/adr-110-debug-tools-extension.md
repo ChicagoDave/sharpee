@@ -1,10 +1,11 @@
 # ADR-110: Debug & Testing Tools Extension
 
 Date: 2026-01-22
+Implemented: 2026-01-23
 
 ## Status
 
-Proposed
+Accepted (Implemented)
 
 ## Context
 
@@ -284,8 +285,25 @@ Walkthroughs can be split into independent segments using save/restore:
 |---------|----------|-------------|-------------|
 | Save | -- | `$save <name>` | Save game state to named checkpoint |
 | Restore | -- | `$restore <name>` | Restore game state from checkpoint |
-| List Saves | -- | `$saves` | List available checkpoints |
+| List Saves | SL | `$saves` | List available checkpoints |
 | Delete Save | -- | `$delete-save <name>` | Remove a checkpoint |
+
+### Annotation Commands (ADR-109)
+
+Playtesters can annotate sessions with bugs, notes, and observations:
+
+| Command | GDT Code | Test Syntax | Description |
+|---------|----------|-------------|-------------|
+| Bug | BG | `$bug <description>` | Flag a bug with description |
+| Note | NT | `$note <text>` | Add a general note |
+| Confusing | CF | `$confusing` | Mark last interaction as confusing |
+| Expected | EP | `$expected <text>` | Document what was expected |
+| Bookmark | BM | `$bookmark <name>` | Create named save point |
+| Session | SS | `$session start/end` | Start or end annotation session |
+| Review | RV | `$review` | Show current session annotations |
+| Export | XP | `$export` | Export annotations as markdown |
+
+Annotations are also captured from `# comment` lines in transcripts.
 
 **Save File Location**: `stories/{story}/saves/{name}.json`
 
@@ -394,59 +412,51 @@ stories/dungeo/
 
 ## Package Structure
 
+**Note:** Package is at `packages/extensions/testing/` (npm: `@sharpee/ext-testing`)
+
+### Implemented Structure
+
 ```
-packages/ext-testing/
+packages/extensions/testing/
 ├── src/
-│   ├── index.ts                  # Extension entry point
-│   ├── extension.ts              # TestingExtension class
-│   ├── types.ts                  # Shared types
+│   ├── index.ts                  # Package exports
+│   ├── extension.ts              # TestingExtension class (22 commands)
+│   ├── types.ts                  # Shared types and interfaces
 │   │
-│   ├── debug/                    # Interactive debug mode (GDT)
-│   │   ├── context.ts            # Debug context helpers
-│   │   ├── parser.ts             # Two-letter command parsing
-│   │   ├── grammar.ts            # Grammar registration
-│   │   └── commands/
-│   │       ├── index.ts
-│   │       ├── help.ts
-│   │       ├── exit.ts
-│   │       ├── display-*.ts
-│   │       ├── alter-*.ts
-│   │       └── toggle-*.ts
+│   ├── context/                  # Debug context
+│   │   ├── index.ts
+│   │   └── debug-context.ts      # DebugContext implementation
 │   │
-│   ├── test/                     # Test mode features
-│   │   ├── command-parser.ts     # $command parsing
-│   │   ├── assertions.ts         # Assertion evaluation
-│   │   ├── conditions.ts         # Condition DSL parser
-│   │   ├── random-control.ts     # Deterministic randomness
-│   │   └── checkpoints/          # Save/restore system
-│   │       ├── serializer.ts     # WorldModel state serialization
-│   │       ├── checkpoint-store.ts # File-based save storage
-│   │       └── commands.ts       # $save, $restore commands
+│   ├── commands/                 # Command registry
+│   │   ├── index.ts
+│   │   └── registry.ts           # Command lookup by code/$syntax
 │   │
-│   ├── walkthrough/              # Walkthrough-specific features
-│   │   ├── directive-parser.ts   # GOAL, WHILE, etc. parsing
-│   │   ├── navigator.ts          # NAVIGATE TO pathfinding
-│   │   ├── goal-tracker.ts       # Goal state management
-│   │   └── loop-executor.ts      # WHILE loop execution
+│   ├── checkpoints/              # Save/restore system
+│   │   ├── index.ts
+│   │   ├── serializer.ts         # WorldModel state serialization
+│   │   └── store.ts              # Memory and file-based storage
 │   │
-│   ├── runner/                   # Test execution
-│   │   ├── transcript-runner.ts  # Run .transcript files
-│   │   ├── walkthrough-runner.ts # Run .walkthrough files
-│   │   └── cli.ts                # Command-line interface
-│   │
-│   └── actions/
-│       ├── debug-enter.ts        # Enter GDT mode
-│       ├── debug-command.ts      # GDT command execution
-│       └── test-command.ts       # $command execution
-│
-├── tests/
-│   ├── debug-commands.test.ts
-│   ├── assertions.test.ts
-│   ├── walkthrough-directives.test.ts
-│   └── transcripts/
-│       └── self-test.transcript
+│   └── annotations/              # Playtester annotation system (ADR-109)
+│       ├── index.ts
+│       ├── store.ts              # Annotation storage and sessions
+│       └── context.ts            # Context capture helper
 │
 └── package.json
+```
+
+### Planned Additions
+
+```
+├── src/
+│   ├── assertions/               # $assert commands (Phase 7)
+│   │   ├── evaluator.ts          # Assertion evaluation
+│   │   └── conditions.ts         # Condition DSL parser
+│   │
+│   └── walkthrough/              # Smart directives (Phase 6)
+│       ├── directive-parser.ts   # GOAL, WHILE, etc. parsing
+│       ├── navigator.ts          # NAVIGATE TO pathfinding
+│       ├── goal-tracker.ts       # Goal state management
+│       └── loop-executor.ts      # WHILE loop execution
 ```
 
 ---
@@ -625,40 +635,149 @@ story: dungeo
 
 ---
 
-## Implementation Plan
+## Implementation Status
+
+### Completed (2026-01-23)
+
+The following phases have been implemented:
+
+#### Phase 1: Core Infrastructure ✓
+
+Package created at `packages/extensions/testing/`:
+
+- **types.ts**: Core interfaces (`TestingExtensionConfig`, `DebugContext`, `DebugCommand`, `CommandRegistry`, `CheckpointStore`, `AnnotationStore`)
+- **extension.ts**: Main `TestingExtension` class
+- **commands/registry.ts**: Command registry with GDT and test syntax parsing
+- **context/debug-context.ts**: Debug context helpers wrapping WorldModel
+
+#### Phase 2: Debug Commands ✓
+
+22 commands implemented with both GDT codes and `$` test syntax:
+
+**Display Commands:**
+| Code | $syntax | Description |
+|------|---------|-------------|
+| DA | player | Show player state and inventory |
+| DR | room | Show current room details |
+| DO | object | Show object details |
+| DE | describe | Full entity dump with all traits |
+| DS | state | Show game state (turn, score, counts) |
+| DX | exits | Show room exits in detail |
+
+**Alter Commands:**
+| Code | $syntax | Description |
+|------|---------|-------------|
+| AH | teleport | Teleport player to a room |
+| TK | take | Give item to player |
+| AO | move | Move object to location |
+| RO | remove | Remove object from game |
+| KL | kill | Kill entity |
+
+**Toggle Commands:**
+| Code | $syntax | Description |
+|------|---------|-------------|
+| ND | immortal | Enable immortality |
+| RD | mortal | Disable immortality |
+
+**Utility Commands:**
+| Code | $syntax | Description |
+|------|---------|-------------|
+| HE | help | Display available commands |
+| SL | saves | List available checkpoints |
+| EX | exit | Exit debug mode |
+
+#### Phase 3: Checkpoint System ✓
+
+Full checkpoint support for save/restore:
+
+- **checkpoints/serializer.ts**: WorldModel state serialization
+- **checkpoints/store.ts**: Memory and file-based storage backends
+- Supports saving turn, score, entity state, traits
+
+#### Phase 4: Annotation System ✓ (ADR-109)
+
+Playtester annotation commands:
+
+| Code | $syntax | Description |
+|------|---------|-------------|
+| BG | bug | Flag a bug |
+| NT | note | Add a general note |
+| CF | confusing | Mark interaction as confusing |
+| EP | expected | Document expected behavior |
+| BM | bookmark | Create named save point |
+| SS | session | Start/end annotation session |
+| RV | review | Show session annotations |
+| XP | export | Export annotations as markdown |
+
+**Supporting Files:**
+- **annotations/store.ts**: Annotation storage and session management
+- **annotations/context.ts**: Context capture (room, turn, inventory)
+
+#### Phase 5: Transcript-Tester Integration ✓
+
+Wired ext-testing commands to transcript-tester:
+
+- `$` commands execute via TestingExtension
+- `#` comments captured as annotations
+- Context tracking for annotation capture
+
+### Remaining Work
+
+#### Phase 6: Walkthrough Mode (Not Started)
+
+Smart directives for walkthrough tests:
+- `[GOAL: name]` / `[END GOAL]`
+- `[REQUIRES: condition]` / `[ENSURES: condition]`
+- `[WHILE: condition]` / `[END WHILE]`
+- `[IF: condition]` / `[END IF]`
+- `[NAVIGATE TO: "Room"]` (pathfinding)
+
+#### Phase 7: Assertion System (Not Started)
+
+- `$assert location = "Room Name"`
+- `$assert inventory contains "item"`
+- `$assert room contains "entity"`
+- `$assert score >= N`
+- `$assert not <condition>`
+
+#### Phase 8: Dungeo Migration (Not Started)
+
+- Update Dungeo to use `@sharpee/ext-testing`
+- Register Dungeo-specific commands
+- Convert existing GDT code
+
+---
+
+## Implementation Plan (Original)
 
 ### Phase 1: Core Infrastructure
-1. Create `packages/ext-testing/` package
-2. Define types and interfaces
-3. Implement basic extension scaffold
-4. Port GDT context helpers (generalized)
+1. Create `packages/ext-testing/` package ✓
+2. Define types and interfaces ✓
+3. Implement basic extension scaffold ✓
+4. Port GDT context helpers (generalized) ✓
 
 ### Phase 2: Debug Mode (GDT)
-1. Port display commands (DA, DR, DO, DE, DS, DX, DC)
-2. Port alter commands (AH, TK, AO)
-3. Port toggle commands (ND, RD, NR, RR)
-4. Implement help system
-5. Register grammar patterns
+1. Port display commands (DA, DR, DO, DE, DS, DX) ✓
+2. Port alter commands (AH, TK, AO, RO, KL) ✓
+3. Port toggle commands (ND, RD) ✓
+4. Implement help system ✓
+5. Register grammar patterns (deferred - using $syntax instead)
 
 ### Phase 3: Test Mode (Transcripts)
-1. Implement `$` command parser
-2. Implement assertion evaluator
-3. Add random seed control
-4. Create transcript runner
-5. Implement save/restore checkpoint system:
-   - WorldModel state serialization (entities, traits, relationships)
-   - Scheduler state serialization (fuses, daemons, turn counter)
-   - File-based checkpoint storage (`stories/{story}/saves/`)
-   - `$save`, `$restore`, `$saves`, `$delete-save` commands
+1. Implement `$` command parser ✓
+2. Implement assertion evaluator (pending)
+3. Add random seed control (pending)
+4. Create transcript runner (in transcript-tester package) ✓
+5. Implement save/restore checkpoint system ✓
 
-### Phase 4: Walkthrough Mode
+### Phase 4: Walkthrough Mode (pending)
 1. Implement directive parser (GOAL, WHILE, IF, NAVIGATE)
 2. Implement condition evaluator
 3. Implement navigator (pathfinding)
 4. Create walkthrough runner
 5. Add safety limits (max iterations, max depth)
 
-### Phase 5: Dungeo Migration
+### Phase 5: Dungeo Migration (pending)
 1. Update Dungeo to use `@sharpee/ext-testing`
 2. Register Dungeo-specific commands (PZ, TQ, DL, KL, KO, WU)
 3. Convert existing tests to new format
@@ -768,5 +887,6 @@ New approach (single walkthrough file):
 ## Related ADRs
 
 - ADR-022: Extension Architecture (how extensions integrate)
-- ADR-073: Transcript Story Testing (original transcript format - superseded by this ADR for file format)
+- ADR-073: Transcript Story Testing (original transcript format - enhanced by this ADR with `$` commands)
 - ADR-092: Smart Transcript Directives (walkthrough directives - incorporated into this ADR)
+- ADR-109: Playtester Annotation System (annotation commands implemented in this extension)
