@@ -3,6 +3,9 @@
  *
  * This file is the entry point for the React browser client bundle.
  * It creates the game engine and passes it to the React client.
+ *
+ * Styling is handled by external theme CSS files that are embedded
+ * in the HTML during build. See packages/client-react/themes/
  */
 
 import { createRoot } from 'react-dom/client';
@@ -10,14 +13,9 @@ import { GameEngine } from '@sharpee/engine';
 import { WorldModel, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { LanguageProvider } from '@sharpee/lang-en-us';
-import { GameProvider, GameShell, gameShellStyles } from '@sharpee/client-react';
+import { GameProvider, GameShell } from '@sharpee/client-react';
 import { PerceptionService } from '@sharpee/stdlib';
 import { story } from './index';
-
-// Inject styles
-const styleSheet = document.createElement('style');
-styleSheet.textContent = gameShellStyles;
-document.head.appendChild(styleSheet);
 
 // Create the game engine
 const world = new WorldModel();
@@ -58,6 +56,6 @@ if (!container) {
 const root = createRoot(container);
 root.render(
   <GameProvider engine={engine}>
-    <GameShell theme="infocom" storyId="dungeo" />
+    <GameShell storyId="dungeo" />
   </GameProvider>
 );

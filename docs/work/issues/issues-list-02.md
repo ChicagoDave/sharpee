@@ -17,7 +17,7 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-035 | React client save not implemented/working | Medium | client-react | 2026-01-23 | - | - |
 | ISSUE-036 | Auto-map boxes rendered on top of each other | Medium | client-react | 2026-01-23 | - | - |
 | ISSUE-037 | Troll death text not displaying (story messages) | Medium | client-react | 2026-01-23 | - | 2026-01-24 |
-| ISSUE-038 | React client needs modern styling and fonts | Low | client-react | 2026-01-23 | - | - |
+| ISSUE-038 | React client needs modern styling and fonts | Low | client-react | 2026-01-23 | - | 2026-01-24 |
 | ISSUE-039 | Text ordering: game.message duplicating stdlib messages | Critical | Platform | 2026-01-24 | - | 2026-01-24 |
 
 ---
@@ -238,9 +238,22 @@ The React client UI needs updated styling with modern fonts and visual design. C
 - Appropriate spacing and contrast
 - Consistent component styling
 
-**Notes**: Consider CSS variables for theming support, dark mode compatibility.
+**Fix Applied**:
+Implemented complete theme system with 4 themes in `packages/client-react/themes/`:
+- `classic-light` - Literata font, warm book-like tones (default)
+- `modern-dark` - Inter font, Catppuccin Mocha colors
+- `retro-terminal` - JetBrains Mono, green phosphor CRT effect
+- `paper` - Crimson Text, high contrast
 
-**Status**: Open - Needs discussion on default style and author customization approach.
+Each theme includes:
+- CSS variables for all colors, fonts, spacing
+- Full component styling (transcript, panels, map, status line)
+- Google Fonts integration
+- Responsive adjustments
+
+Build-time theme selection via `./build.sh -c react -t <theme-name>`
+
+**Status**: Fixed 2026-01-24
 
 ---
 

@@ -6,13 +6,13 @@
  */
 
 /** Client version */
-export const CLIENT_VERSION = '1.0.0-beta.20260124.0052';
+export const CLIENT_VERSION = '1.0.0-beta.20260124.0331';
 
 /** Build timestamp (ISO 8601) */
-export const BUILD_DATE = '2026-01-24T00:52:27Z';
+export const BUILD_DATE = '2026-01-24T03:31:01Z';
 
 /** Engine version at build time */
-export const ENGINE_VERSION = '0.9.56-beta.20260124.0052';
+export const ENGINE_VERSION = '0.9.56-beta.20260124.0331';
 
 /** Combined version info object for easy access */
 export const VERSION_INFO = {

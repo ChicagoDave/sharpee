@@ -1,0 +1,488 @@
+/**
+ * Sharpee React Client - Paper Theme
+ *
+ * Crimson Text font with high contrast, book-like appearance.
+ * Clean, minimalist design focused on readability.
+ */
+
+/* Google Fonts - Crimson Text for transcript, Inter for UI, JetBrains Mono for input */
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ============================================================================
+   CSS Variables - Theme Colors and Typography
+   ============================================================================ */
+
+:root {
+  /* Typography */
+  --sharpee-font-transcript: 'Crimson Text', Georgia, 'Times New Roman', serif;
+  --sharpee-font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+  --sharpee-font-input: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+  --sharpee-font-size: 17px;
+  --sharpee-line-height: 1.7;
+
+  /* High contrast paper colors */
+  --sharpee-bg: #f5f5f0;
+  --sharpee-bg-secondary: #eaeae5;
+  --sharpee-text: #1a1a1a;
+  --sharpee-text-muted: #555555;
+  --sharpee-accent: #2c2c2c;
+  --sharpee-room-title: #000000;
+  --sharpee-command: #0055aa;
+  --sharpee-border: #cccccc;
+  --sharpee-link: #0055aa;
+  --sharpee-error: #cc0000;
+
+  /* Status bar */
+  --sharpee-status-bg: #2c2c2c;
+  --sharpee-status-text: #f5f5f0;
+
+  /* Side panel */
+  --sharpee-panel-bg: #f0f0eb;
+  --sharpee-panel-header: #e5e5e0;
+  --sharpee-tab-active: #1a1a1a;
+  --sharpee-tab-inactive: #888888;
+
+  /* Map */
+  --sharpee-map-room: #ffffff;
+  --sharpee-map-room-current: #ffffcc;
+  --sharpee-map-room-border: #2c2c2c;
+  --sharpee-map-connection: #666666;
+
+  /* Spacing */
+  --sharpee-spacing-xs: 4px;
+  --sharpee-spacing-sm: 8px;
+  --sharpee-spacing-md: 16px;
+  --sharpee-spacing-lg: 24px;
+  --sharpee-spacing-xl: 32px;
+
+  /* Layout */
+  --sharpee-max-width: 720px;
+  --sharpee-sidebar-width: 35%;
+  --sharpee-border-radius: 2px;
+}
+
+/* ============================================================================
+   Base Reset and Layout
+   ============================================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: var(--sharpee-font-ui);
+  font-size: var(--sharpee-font-size);
+  line-height: var(--sharpee-line-height);
+  background-color: var(--sharpee-bg);
+  color: var(--sharpee-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================================
+   Game Shell Layout
+   ============================================================================ */
+
+.game-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: var(--sharpee-bg);
+  color: var(--sharpee-text);
+}
+
+.game-shell__status {
+  flex-shrink: 0;
+}
+
+.game-shell__content {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.game-shell__main {
+  flex: 0 0 calc(100% - var(--sharpee-sidebar-width));
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.game-shell__main--full {
+  flex: 1;
+}
+
+.game-shell__transcript-container {
+  flex: 1;
+  overflow: hidden;
+}
+
+.game-shell__transcript {
+  height: 100%;
+  overflow-y: auto;
+  padding: var(--sharpee-spacing-xl) var(--sharpee-spacing-lg);
+}
+
+.game-shell__input-container {
+  flex-shrink: 0;
+  padding: var(--sharpee-spacing-md) var(--sharpee-spacing-lg);
+  border-top: 2px solid var(--sharpee-border);
+  background-color: var(--sharpee-bg);
+}
+
+.game-shell__sidebar {
+  flex: 0 0 var(--sharpee-sidebar-width);
+  border-left: 2px solid var(--sharpee-border);
+  overflow: hidden;
+  background-color: var(--sharpee-panel-bg);
+}
+
+/* ============================================================================
+   Status Line
+   ============================================================================ */
+
+.status-line {
+  background-color: var(--sharpee-status-bg);
+  color: var(--sharpee-status-text);
+  padding: var(--sharpee-spacing-sm) var(--sharpee-spacing-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--sharpee-font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.status-line__location {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.status-line__stats {
+  display: flex;
+  gap: var(--sharpee-spacing-lg);
+}
+
+/* ============================================================================
+   Transcript
+   ============================================================================ */
+
+.transcript {
+  font-family: var(--sharpee-font-transcript);
+  max-width: var(--sharpee-max-width);
+  margin: 0 auto;
+}
+
+.transcript-entry {
+  margin-bottom: var(--sharpee-spacing-xl);
+}
+
+.transcript-entry:last-child {
+  margin-bottom: 0;
+}
+
+.transcript-command {
+  color: var(--sharpee-command);
+  font-family: var(--sharpee-font-input);
+  font-size: 15px;
+  margin-bottom: var(--sharpee-spacing-md);
+}
+
+.transcript-prompt {
+  color: var(--sharpee-text-muted);
+}
+
+.transcript-text p {
+  margin: 0 0 var(--sharpee-spacing-md) 0;
+  text-indent: 1.5em;
+}
+
+.transcript-text p:first-child {
+  text-indent: 0;
+}
+
+.transcript-text p:last-child {
+  margin-bottom: 0;
+}
+
+/* Room titles */
+.transcript-text p:first-child strong,
+.transcript-text p:first-child b {
+  color: var(--sharpee-room-title);
+  font-size: 19px;
+  font-weight: 700;
+  display: block;
+  margin-bottom: var(--sharpee-spacing-sm);
+  border-bottom: 1px solid var(--sharpee-border);
+  padding-bottom: var(--sharpee-spacing-sm);
+}
+
+/* ============================================================================
+   Command Input
+   ============================================================================ */
+
+.command-input-form {
+  display: flex;
+  align-items: center;
+  gap: var(--sharpee-spacing-sm);
+  max-width: var(--sharpee-max-width);
+  margin: 0 auto;
+}
+
+.command-input-prompt {
+  color: var(--sharpee-command);
+  font-family: var(--sharpee-font-input);
+  font-weight: 500;
+}
+
+.command-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--sharpee-text);
+  font-family: var(--sharpee-font-input);
+  font-size: 15px;
+  outline: none;
+  padding: var(--sharpee-spacing-xs) 0;
+}
+
+.command-input::placeholder {
+  color: var(--sharpee-text-muted);
+  opacity: 0.6;
+}
+
+/* ============================================================================
+   Tab Panel
+   ============================================================================ */
+
+.tab-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.tab-panel__header {
+  display: flex;
+  background-color: var(--sharpee-panel-header);
+  border-bottom: 2px solid var(--sharpee-border);
+}
+
+.tab-panel__tab {
+  padding: var(--sharpee-spacing-sm) var(--sharpee-spacing-md);
+  border: none;
+  background: transparent;
+  color: var(--sharpee-tab-inactive);
+  font-family: var(--sharpee-font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.tab-panel__tab:hover {
+  color: var(--sharpee-text);
+}
+
+.tab-panel__tab--active {
+  color: var(--sharpee-tab-active);
+  border-bottom-color: var(--sharpee-tab-active);
+}
+
+.tab-panel__content {
+  flex: 1;
+  overflow: auto;
+  padding: var(--sharpee-spacing-md);
+}
+
+/* ============================================================================
+   Map Panel
+   ============================================================================ */
+
+.map-panel {
+  height: 100%;
+  position: relative;
+}
+
+.map-panel__container {
+  width: 100%;
+  height: 100%;
+}
+
+.map-room {
+  fill: var(--sharpee-map-room);
+  stroke: var(--sharpee-map-room-border);
+  stroke-width: 2;
+}
+
+.map-room--current {
+  fill: var(--sharpee-map-room-current);
+  stroke-width: 3;
+}
+
+.map-room-label {
+  font-family: var(--sharpee-font-ui);
+  font-size: 9px;
+  fill: var(--sharpee-text);
+  text-anchor: middle;
+  font-weight: 500;
+}
+
+.map-connection {
+  stroke: var(--sharpee-map-connection);
+  stroke-width: 2;
+  fill: none;
+}
+
+/* ============================================================================
+   Notes Panel
+   ============================================================================ */
+
+.notes-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.notes-panel__textarea {
+  flex: 1;
+  width: 100%;
+  border: 2px solid var(--sharpee-border);
+  border-radius: var(--sharpee-border-radius);
+  padding: var(--sharpee-spacing-sm);
+  font-family: var(--sharpee-font-transcript);
+  font-size: 15px;
+  line-height: 1.6;
+  resize: none;
+  background-color: var(--sharpee-bg);
+  color: var(--sharpee-text);
+}
+
+.notes-panel__textarea:focus {
+  outline: none;
+  border-color: var(--sharpee-accent);
+}
+
+/* ============================================================================
+   Commentary Panel
+   ============================================================================ */
+
+.commentary-panel {
+  font-family: var(--sharpee-font-ui);
+  font-size: 13px;
+}
+
+.commentary-entry {
+  padding: var(--sharpee-spacing-sm) 0;
+  border-bottom: 1px solid var(--sharpee-border);
+}
+
+.commentary-entry:last-child {
+  border-bottom: none;
+}
+
+.commentary-entry__type {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--sharpee-text-muted);
+  margin-bottom: 2px;
+}
+
+.commentary-entry__text {
+  color: var(--sharpee-text);
+}
+
+/* ============================================================================
+   Progress Panel
+   ============================================================================ */
+
+.progress-panel {
+  font-family: var(--sharpee-font-ui);
+}
+
+.progress-panel__score {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--sharpee-accent);
+  margin-bottom: var(--sharpee-spacing-md);
+  font-family: var(--sharpee-font-transcript);
+}
+
+.progress-panel__stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sharpee-spacing-sm);
+}
+
+.progress-panel__stat {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.progress-panel__stat-label {
+  color: var(--sharpee-text-muted);
+}
+
+.progress-panel__stat-value {
+  font-weight: 600;
+}
+
+/* ============================================================================
+   Scrollbar Styling
+   ============================================================================ */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--sharpee-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--sharpee-border);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--sharpee-text-muted);
+}
+
+/* ============================================================================
+   Responsive Adjustments
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  :root {
+    --sharpee-sidebar-width: 0;
+    --sharpee-font-size: 16px;
+  }
+
+  .game-shell__sidebar {
+    display: none;
+  }
+
+  .game-shell__main {
+    flex: 1;
+  }
+
+  .transcript-text p {
+    text-indent: 0;
+  }
+}
