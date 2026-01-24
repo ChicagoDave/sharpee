@@ -4,3 +4,9 @@
 [19:14:32] EDIT: docs/architecture/adrs/adr-110-debug-tools-extension.md
 [19:17:22] EDIT: .gitignore
 [19:23:31] WRITE: docs/context/session-20260123-1917-ext-testing-final.md
+[19:25:32] GIT: git commit -m "$(cat <<'EOF'
+feat: Add React client package and finalize ext-tes
+[19:25:44] GIT: git push origin ext-testing
+[19:26:04] EDIT: stories/dungeo/src/react-entry.tsx
+[19:27:07] EDIT: stories/dungeo/src/react-entry.tsx
+[19:27:16] EDIT: packages/client-react/src/context/GameContext.tsx

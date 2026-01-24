@@ -33,9 +33,8 @@ const engine = new GameEngine({
   language,
 });
 
-// Set story and start
+// Set story (but don't start yet - GameProvider will handle that)
 engine.setStory(story);
-engine.start();
 
 // Mount the app
 const container = document.getElementById('root');

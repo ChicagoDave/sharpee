@@ -225,6 +225,11 @@ export function GameProvider({ engine, children }: GameProviderProps) {
     // Mark engine as ready
     dispatch({ type: 'ENGINE_READY', engine: eng as unknown as GameState['engine'] });
 
+    // Start engine and execute initial look (if not already started)
+    // This ensures React is listening before events fire
+    eng.start();
+    eng.executeTurn('look');
+
     return () => {
       eng.off('text:output', handleTextOutput);
       eng.off('event', handleEvent);
