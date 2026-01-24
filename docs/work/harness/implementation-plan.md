@@ -2,7 +2,7 @@
 
 **Branch**: `ext-testing`
 **Date**: 2026-01-23
-**Last Updated**: 2026-01-23
+**Last Updated**: 2026-01-23 18:00
 
 ## Overview
 
@@ -21,9 +21,9 @@ Create `@sharpee/ext-testing` package that provides:
 | 1 | **DONE** | Package structure created |
 | 2 | **DONE** | Commands implemented in ext-testing |
 | 3 | **DONE** | Checkpoint system via SaveRestoreService |
-| 4 | **PENDING** | Wire ext-testing $commands to transcript-tester |
+| 4 | **DONE** | ext-testing $commands wired to transcript-tester |
 | 5 | **CANCELLED** | Dungeo keeps its own GDT system |
-| 6 | **PENDING** | Playtester annotations |
+| 6 | **DONE** | Playtester annotations (ADR-109) |
 
 ---
 
@@ -117,40 +117,48 @@ The transcript-tester's $save/$restore already uses SaveRestoreService which han
 
 ---
 
-### Phase 4: Transcript-Tester Integration - PENDING
+### Phase 4: Transcript-Tester Integration - DONE
+
+**Status**: Completed 2026-01-23
 
 **Goal**: Wire ext-testing $commands into transcript runner
 
-**Current state**:
-- Transcript-tester has $save/$restore (Phase 0)
-- ext-testing has executeTestCommand() API
-- NOT YET CONNECTED
+**Issues Fixed**:
 
-**To implement**:
+1. **ESM/CommonJS Module Conflict**
+   - Removed `"type": "module"` from `packages/extensions/testing/package.json`
+   - Bundle builder outputs CommonJS; package.json must match
 
-1. Add ext-testing as optional dependency to transcript-tester
-2. In runner.ts, detect $command syntax and route to ext-testing:
+2. **Multi-Word Entity Names**
+   - Changed `args[0]` to `args.join(' ')` in cmdTake, cmdRemove, cmdDisplayObject
+   - Now `$take brass lantern` works correctly
 
-```typescript
-// In command execution
-if (input.startsWith('$') && !['$save', '$restore'].includes(input.split(' ')[0])) {
-  if (testingExtension) {
-    const result = testingExtension.executeTestCommand(input, world);
-    return createResult(result);
-  }
-}
-```
+3. **Hyphen vs Space Name Matching**
+   - Added normalization in `findEntity()`: `query.replace(/-/g, ' ')`
+   - Matches natural language (`brass lantern`) against IDs (`brass-lantern`)
 
-3. New $commands available in transcripts:
-   - `$teleport <room>` - instant travel
-   - `$take <item>` - give item to player
-   - `$move <obj> <loc>` - move object
-   - `$kill <entity>` - kill NPC
-   - `$immortal` / `$mortal` - toggle death
-   - `$state` - show game state
-   - `$describe <entity>` - full entity dump
+**Files Modified**:
+- `packages/extensions/testing/package.json` - Removed ESM declaration
+- `packages/extensions/testing/src/context/debug-context.ts` - Hyphen normalization
+- `packages/extensions/testing/src/extension.ts` - Multi-word arg joining
 
-**Effort**: 2-4 hours
+**Verified $commands** (all working in transcripts):
+- `$teleport <room>` - instant travel
+- `$take <item>` - give item to player (multi-word support)
+- `$remove <item>` - remove from inventory
+- `$kill <entity>` - kill NPC
+- `$immortal` / `$mortal` - toggle death
+- `$state` - show game state
+- `$describe <entity>` - full entity dump
+- `$exits` - list room exits
+- `$light` / `$extinguish` - light source control
+- `$open` / `$close` - openable control
+- `$lock` / `$unlock` - lockable control
+- `$break` - break breakable entities
+
+**Test Coverage**:
+- `stories/dungeo/tests/transcripts/ext-testing-commands.transcript` - 5/5 pass
+- `stories/dungeo/tests/transcripts/gdt-commands.transcript` - 25/25 pass
 
 ---
 
@@ -174,31 +182,46 @@ if (input.startsWith('$') && !['$save', '$restore'].includes(input.split(' ')[0]
 
 ---
 
-### Phase 6: Playtester Annotations (ADR-109) - PENDING
+### Phase 6: Playtester Annotations (ADR-109) - DONE
+
+**Status**: Completed 2026-01-23
 
 **Goal**: Add annotation support for playtester feedback
 
-**Features**:
+**Implemented** (all 3 tiers from ADR-109):
 
-- `# comment` - Silent comment with context logging
-- `$bug text` - Flag a bug
-- `$note text` - General note
-- `$confusing` - Mark confusion
-- `$bookmark name` - Named save point
-- `$session start/end` - Session management
-- `$export` - Export annotations
+**Tier 1: Silent Comments**
+- `# comment` lines in transcripts are now captured with game context
+- Context includes: room, turn, score, last command, last response, inventory
 
-**New files** (to create in ext-testing):
+**Tier 2: Annotation Commands**
+- `$bug <text>` - Flag a bug with context
+- `$note <text>` - General note
+- `$confusing` - Mark last interaction as confusing
+- `$expected <text>` - Document expected behavior
+- `$bookmark <name>` - Named save point (also saves checkpoint)
 
-```
-src/annotations/
-├── types.ts
-├── parser.ts
-├── store.ts
-└── export.ts
-```
+**Tier 3: Session Management**
+- `$session start <name>` - Begin named session
+- `$session end` - End session with summary
+- `$review` - Show current session annotations
+- `$export` - Export as markdown report
 
-**Effort**: 4-6 hours
+**Files Created**:
+- `packages/extensions/testing/src/annotations/store.ts` - Annotation storage with export
+- `packages/extensions/testing/src/annotations/context.ts` - Context capture utility
+- `packages/extensions/testing/src/annotations/index.ts` - Module exports
+
+**Files Modified**:
+- `packages/extensions/testing/src/types.ts` - Added annotation types
+- `packages/extensions/testing/src/extension.ts` - Added 8 annotation commands
+- `packages/extensions/testing/src/index.ts` - Export annotation module
+- `packages/transcript-tester/src/types.ts` - Added 'comment' to TranscriptItem
+- `packages/transcript-tester/src/parser.ts` - Comments added to items array
+- `packages/transcript-tester/src/runner.ts` - Handle comments, context tracking
+
+**Test Coverage**:
+- `stories/dungeo/tests/transcripts/annotations.transcript` - 5/5 pass
 
 ---
 
@@ -206,25 +229,52 @@ src/annotations/
 
 | File | Purpose |
 |------|---------|
-| `packages/extensions/testing/src/extension.ts` | TestingExtension class |
+| `packages/extensions/testing/src/extension.ts` | TestingExtension class, all command handlers |
+| `packages/extensions/testing/src/context/debug-context.ts` | Entity resolution with normalization |
+| `packages/extensions/testing/src/annotations/store.ts` | Annotation storage and export |
+| `packages/extensions/testing/src/annotations/context.ts` | Game state capture for annotations |
 | `packages/transcript-tester/src/runner.ts` | Main test execution loop |
+| `packages/transcript-tester/src/parser.ts` | Transcript parsing with comment support |
 | `packages/engine/src/save-restore-service.ts` | State serialization |
 | `stories/dungeo/src/actions/gdt/` | Dungeo's GDT (reference) |
+| `stories/dungeo/tests/transcripts/ext-testing-commands.transcript` | ext-testing validation tests |
+| `stories/dungeo/tests/transcripts/annotations.transcript` | Annotation system tests |
 
 ## Verification
 
-After each phase:
+All tests should pass:
 
 1. Build succeeds: `./scripts/build.sh -s dungeo`
-2. GDT tests pass: `node dist/sharpee.js --test stories/dungeo/tests/transcripts/gdt-commands.transcript`
-3. Walkthrough passes: `node dist/sharpee.js --test stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript`
+2. ext-testing tests pass: `node dist/sharpee.js --test stories/dungeo/tests/transcripts/ext-testing-commands.transcript`
+3. GDT tests pass: `node dist/sharpee.js --test stories/dungeo/tests/transcripts/gdt-commands.transcript`
+4. Annotation tests pass: `node dist/sharpee.js --test stories/dungeo/tests/transcripts/annotations.transcript`
+5. Walkthrough passes: `node dist/sharpee.js --test stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript`
 
 ## Remaining Work
 
-**Phase 4** (2-4 hours):
-- Wire ext-testing to transcript-tester for $command syntax
+**All phases complete!** The ext-testing package now provides:
 
-**Phase 6** (4-6 hours):
-- Implement playtester annotation system
+- 16+ debug commands ($teleport, $take, $kill, $immortal, etc.)
+- 8 annotation commands ($bug, $note, $confusing, $expected, $bookmark, $session, $review, $export)
+- Tier 1-3 playtester annotation support per ADR-109
+- Checkpoint save/restore integration
+- Session management with markdown export
 
-**Total remaining**: 6-10 hours
+## Completion Notes
+
+**Phases 0-6**: All testing infrastructure complete. The ext-testing extension provides 24+ commands accessible via `$command` syntax in transcript tests.
+
+**Key Architecture Insights**:
+
+1. **Module format consistency**: The bundle uses CommonJS, so all packages including extensions must avoid `"type": "module"` in package.json to prevent silent load failures.
+
+2. **Context tracking**: Annotations capture game state at the moment of creation, providing valuable debugging context (room, turn, last command/response, inventory).
+
+3. **Three-tier annotation design**: Separates silent comments (# lines), structured feedback ($commands), and session management for flexible playtesting workflows.
+
+## Future Enhancements (Optional)
+
+- Privacy modes for public beta testing
+- Integration with bug tracking systems (GitHub Issues, Linear)
+- Analytics/heatmaps for confusion points
+- Voice note support

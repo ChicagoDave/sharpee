@@ -1,0 +1,59 @@
+title: Annotation System Test
+story: dungeo
+description: Tests ADR-109 playtester annotation system (all 3 tiers)
+
+---
+
+# Test annotation commands - All 3 Tiers (ADR-109)
+#
+# This transcript tests the playtester annotation system:
+# - Tier 1: # comments with context
+# - Tier 2: $bug, $note, $confusing, $expected, $bookmark
+# - Tier 3: $session start/end, $review, $export
+
+# === TIER 3: Start Session ===
+$session start annotation-test
+[ENSURES: output contains "annotation-test"]
+
+# === Basic game setup ===
+> look
+[OK: contains "West of House"]
+
+# === TIER 1: # Comments with Context ===
+# This is a comment that should be captured with context
+
+# === TIER 2: Annotation Commands ===
+> take mailbox
+[OK: contains "fixed in place"]
+$note mailbox is scenery as expected
+
+> open mailbox
+[OK: contains "leaflet"]
+$note opening mailbox works well
+# Another comment after opening
+
+> take leaflet
+[OK: contains "take leaflet"]
+$confusing
+
+> read leaflet
+[OK: contains "DUNGEON"]
+$bug the leaflet text could be more descriptive
+$expected detailed game instructions with hints
+
+# === TIER 3: Bookmark (saves checkpoint too) ===
+$bookmark after-leaflet
+
+# === TIER 3: Review ===
+$review
+[ENSURES: output contains "Notes"]
+[ENSURES: output contains "after-leaflet"]
+
+# === TIER 3: End Session and Export ===
+$session end
+[ENSURES: output contains "annotation-test"]
+
+$export
+[ENSURES: output contains "# Play Test Session"]
+[ENSURES: output contains "Bugs"]
+[ENSURES: output contains "mailbox is scenery"]

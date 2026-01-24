@@ -14,11 +14,15 @@ import type {
   DebugContext,
   CommandResult,
   DebugCommand,
+  AnnotationStore,
+  AnnotationType,
+  Annotation,
 } from './types.js';
 import { createDebugContext } from './context/debug-context.js';
 import { createCommandRegistry, parseGdtInput, parseTestInput } from './commands/registry.js';
 import { createMemoryStore, createFileStore } from './checkpoints/store.js';
 import { serializeCheckpoint, deserializeCheckpoint } from './checkpoints/serializer.js';
+import { createAnnotationStore, captureContext } from './annotations/index.js';
 
 /**
  * Default configuration
@@ -47,8 +51,13 @@ export class TestingExtension implements ITestingExtension {
   readonly config: TestingExtensionConfig;
   readonly commands: CommandRegistry;
   readonly checkpoints: CheckpointStore;
+  readonly annotations: AnnotationStore;
 
   private isDebugModeActive: boolean = false;
+
+  // Context tracking for annotations
+  private lastCommand: string = '';
+  private lastResponse: string = '';
 
   constructor(config: TestingExtensionConfig = {}) {
     // Merge config with defaults
@@ -77,6 +86,9 @@ export class TestingExtension implements ITestingExtension {
     } else {
       this.checkpoints = createMemoryStore();
     }
+
+    // Initialize annotation store
+    this.annotations = createAnnotationStore();
   }
 
   /**
@@ -250,6 +262,95 @@ export class TestingExtension implements ITestingExtension {
       category: 'utility',
       execute: (context, args) => this.cmdExit(context, args),
     });
+
+    // =========================================================================
+    // Annotation Commands (ADR-109)
+    // =========================================================================
+
+    // Bug annotation
+    this.commands.register({
+      code: 'BG',
+      testSyntax: 'bug',
+      name: 'Bug',
+      description: 'Flag a bug',
+      category: 'annotation',
+      usage: 'bug <description>',
+      execute: (context, args) => this.cmdBug(context, args),
+    });
+
+    // Note annotation
+    this.commands.register({
+      code: 'NT',
+      testSyntax: 'note',
+      name: 'Note',
+      description: 'Add a general note',
+      category: 'annotation',
+      usage: 'note <text>',
+      execute: (context, args) => this.cmdNote(context, args),
+    });
+
+    // Confusing annotation
+    this.commands.register({
+      code: 'CF',
+      testSyntax: 'confusing',
+      name: 'Confusing',
+      description: 'Mark last interaction as confusing',
+      category: 'annotation',
+      execute: (context, args) => this.cmdConfusing(context, args),
+    });
+
+    // Expected behavior annotation
+    this.commands.register({
+      code: 'EP',
+      testSyntax: 'expected',
+      name: 'Expected',
+      description: 'Document expected behavior',
+      category: 'annotation',
+      usage: 'expected <what was expected>',
+      execute: (context, args) => this.cmdExpected(context, args),
+    });
+
+    // Bookmark annotation
+    this.commands.register({
+      code: 'BM',
+      testSyntax: 'bookmark',
+      name: 'Bookmark',
+      description: 'Create a named save point',
+      category: 'annotation',
+      usage: 'bookmark <name>',
+      execute: (context, args) => this.cmdBookmark(context, args),
+    });
+
+    // Session management
+    this.commands.register({
+      code: 'SS',
+      testSyntax: 'session',
+      name: 'Session',
+      description: 'Start or end annotation session',
+      category: 'annotation',
+      usage: 'session start <name> | session end',
+      execute: (context, args) => this.cmdSession(context, args),
+    });
+
+    // Review annotations
+    this.commands.register({
+      code: 'RV',
+      testSyntax: 'review',
+      name: 'Review',
+      description: 'Show current session annotations',
+      category: 'annotation',
+      execute: (context, args) => this.cmdReview(context, args),
+    });
+
+    // Export annotations
+    this.commands.register({
+      code: 'XP',
+      testSyntax: 'export',
+      name: 'Export',
+      description: 'Export annotations as markdown',
+      category: 'annotation',
+      execute: (context, args) => this.cmdExport(context, args),
+    });
   }
 
   // =========================================================================
@@ -329,6 +430,22 @@ export class TestingExtension implements ITestingExtension {
 
     deserializeCheckpoint(data, world);
     return true;
+  }
+
+  /**
+   * Set context for annotation commands (called by transcript-tester after each command)
+   */
+  setCommandContext(command: string, response: string): void {
+    this.lastCommand = command;
+    this.lastResponse = response;
+  }
+
+  /**
+   * Add an annotation directly (for # comments from transcript-tester)
+   */
+  addAnnotation(type: AnnotationType, text: string, world: WorldModel): Annotation {
+    const context = captureContext(world, this.lastCommand, this.lastResponse);
+    return this.annotations.addAnnotation(type, text, context);
   }
 
   // =========================================================================
@@ -758,6 +875,190 @@ export class TestingExtension implements ITestingExtension {
   private cmdExit(context: DebugContext, _args: string[]): CommandResult {
     context.setFlag('active', false);
     return { success: true, output: ['Returning to game.'] };
+  }
+
+  // =========================================================================
+  // Annotation Command Implementations (ADR-109)
+  // =========================================================================
+
+  private cmdBug(context: DebugContext, args: string[]): CommandResult {
+    if (args.length === 0) {
+      return { success: false, output: [], error: 'Usage: bug <description>' };
+    }
+
+    const text = args.join(' ');
+    const annotationContext = captureContext(context.world, this.lastCommand, this.lastResponse);
+    const annotation = this.annotations.addAnnotation('bug', text, annotationContext);
+
+    return {
+      success: true,
+      output: [`Bug logged: "${text}" [Turn ${annotation.context.turn}, ${annotation.context.roomName}]`],
+    };
+  }
+
+  private cmdNote(context: DebugContext, args: string[]): CommandResult {
+    if (args.length === 0) {
+      return { success: false, output: [], error: 'Usage: note <text>' };
+    }
+
+    const text = args.join(' ');
+    const annotationContext = captureContext(context.world, this.lastCommand, this.lastResponse);
+    const annotation = this.annotations.addAnnotation('note', text, annotationContext);
+
+    return {
+      success: true,
+      output: [`Note added: "${text}" [Turn ${annotation.context.turn}]`],
+    };
+  }
+
+  private cmdConfusing(context: DebugContext, _args: string[]): CommandResult {
+    const annotationContext = captureContext(context.world, this.lastCommand, this.lastResponse);
+    const annotation = this.annotations.addAnnotation('confusing', '', annotationContext);
+
+    return {
+      success: true,
+      output: [`Marked as confusing: "${this.lastCommand}" [Turn ${annotation.context.turn}]`],
+    };
+  }
+
+  private cmdExpected(context: DebugContext, args: string[]): CommandResult {
+    if (args.length === 0) {
+      return { success: false, output: [], error: 'Usage: expected <what was expected>' };
+    }
+
+    const text = args.join(' ');
+    const annotationContext = captureContext(context.world, this.lastCommand, this.lastResponse);
+    const annotation = this.annotations.addAnnotation('expected', text, annotationContext);
+
+    return {
+      success: true,
+      output: [`Expected: "${text}" (Got: "${this.lastResponse.substring(0, 50)}...")`],
+      data: { annotation },
+    };
+  }
+
+  private cmdBookmark(context: DebugContext, args: string[]): CommandResult {
+    if (args.length === 0) {
+      return { success: false, output: [], error: 'Usage: bookmark <name>' };
+    }
+
+    const name = args.join(' ');
+    const annotationContext = captureContext(context.world, this.lastCommand, this.lastResponse);
+    const annotation = this.annotations.addAnnotation('bookmark', name, annotationContext);
+
+    // Also save a checkpoint with this name
+    const checkpointData = serializeCheckpoint(context.world, name);
+    this.checkpoints.save(name, checkpointData).catch(() => {
+      // Silently ignore checkpoint save errors
+    });
+
+    return {
+      success: true,
+      output: [`Bookmark "${name}" created at Turn ${annotation.context.turn}, ${annotation.context.roomName}`],
+    };
+  }
+
+  private cmdSession(_context: DebugContext, args: string[]): CommandResult {
+    if (args.length === 0) {
+      return { success: false, output: [], error: 'Usage: session start <name> | session end' };
+    }
+
+    const subcommand = args[0].toLowerCase();
+
+    if (subcommand === 'start') {
+      if (args.length < 2) {
+        return { success: false, output: [], error: 'Usage: session start <name>' };
+      }
+      const name = args.slice(1).join(' ');
+      const sessionId = this.annotations.startSession(name);
+      return {
+        success: true,
+        output: [`Session "${name}" started (ID: ${sessionId})`],
+      };
+    }
+
+    if (subcommand === 'end') {
+      const ended = this.annotations.endSession();
+      if (!ended) {
+        return { success: false, output: [], error: 'No active session to end' };
+      }
+      const duration = ended.endTime
+        ? Math.round((ended.endTime - ended.startTime) / 60000)
+        : 0;
+      return {
+        success: true,
+        output: [
+          `Session "${ended.name}" ended`,
+          `Duration: ${duration} minutes`,
+          `Annotations: ${ended.annotations.length}`,
+        ],
+      };
+    }
+
+    return { success: false, output: [], error: 'Usage: session start <name> | session end' };
+  }
+
+  private cmdReview(_context: DebugContext, _args: string[]): CommandResult {
+    const session = this.annotations.getCurrentSession();
+    const annotations = this.annotations.getAnnotations();
+
+    const output: string[] = [];
+
+    if (session) {
+      output.push(`=== Session: ${session.name} ===`);
+      output.push(`Started: ${new Date(session.startTime).toLocaleTimeString()}`);
+    } else {
+      output.push('=== Annotations (no active session) ===');
+    }
+    output.push('');
+
+    if (annotations.length === 0) {
+      output.push('No annotations yet.');
+    } else {
+      // Group by type
+      const bugs = annotations.filter((a) => a.type === 'bug');
+      const notes = annotations.filter((a) => a.type === 'note');
+      const confusing = annotations.filter((a) => a.type === 'confusing');
+      const expected = annotations.filter((a) => a.type === 'expected');
+      const bookmarks = annotations.filter((a) => a.type === 'bookmark');
+      const comments = annotations.filter((a) => a.type === 'comment');
+
+      if (bugs.length > 0) {
+        output.push(`Bugs: ${bugs.length}`);
+        bugs.forEach((b) => output.push(`  - [T${b.context.turn}] ${b.text}`));
+      }
+      if (notes.length > 0) {
+        output.push(`Notes: ${notes.length}`);
+        notes.forEach((n) => output.push(`  - [T${n.context.turn}] ${n.text}`));
+      }
+      if (confusing.length > 0) {
+        output.push(`Confusion points: ${confusing.length}`);
+      }
+      if (expected.length > 0) {
+        output.push(`Expected behavior: ${expected.length}`);
+      }
+      if (bookmarks.length > 0) {
+        output.push(`Bookmarks: ${bookmarks.length}`);
+        bookmarks.forEach((b) => output.push(`  - "${b.text}" at T${b.context.turn}`));
+      }
+      if (comments.length > 0) {
+        output.push(`Comments: ${comments.length}`);
+      }
+    }
+
+    output.push('');
+    output.push(`Total: ${annotations.length} annotations`);
+
+    return { success: true, output };
+  }
+
+  private cmdExport(_context: DebugContext, _args: string[]): CommandResult {
+    const markdown = this.annotations.exportMarkdown();
+
+    return {
+      success: true,
+      output: markdown.split('\n'),
+    };
   }
 }
 

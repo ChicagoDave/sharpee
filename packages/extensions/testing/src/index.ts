@@ -47,6 +47,12 @@ export type {
   CheckpointStore,
   SerializedDaemon,
   SerializedFuse,
+  // Annotation types (ADR-109)
+  AnnotationType,
+  Annotation,
+  AnnotationContext,
+  AnnotationSession,
+  AnnotationStore,
 } from './types.js';
 
 // Context utilities
@@ -58,3 +64,6 @@ export { createCommandRegistry, parseGdtInput, parseTestInput } from './commands
 // Checkpoint utilities
 export { serializeCheckpoint, deserializeCheckpoint, validateCheckpoint } from './checkpoints/serializer.js';
 export { createFileStore, createMemoryStore, createLocalStorageStore } from './checkpoints/store.js';
+
+// Annotation utilities (ADR-109)
+export { createAnnotationStore, captureContext, createEmptyContext } from './annotations/index.js';

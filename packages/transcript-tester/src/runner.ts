@@ -158,8 +158,19 @@ async function runSmartTranscript(
       const result = await runCommand(item.command!, engine, options);
       results.push(result);
 
+      // Update annotation context for ext-testing
+      if (options.testingExtension?.setCommandContext) {
+        options.testingExtension.setCommandContext(result.command.input, result.actualOutput);
+      }
+
       if (options.stopOnFailure && !result.passed && !result.expectedFailure && !result.skipped) {
         break;
+      }
+      i++;
+    } else if (item.type === 'comment') {
+      // Handle comment annotation for ext-testing
+      if (options.testingExtension?.addAnnotation && item.comment) {
+        options.testingExtension.addAnnotation('comment', item.comment.text, engine.world);
       }
       i++;
     } else if (item.type === 'directive') {

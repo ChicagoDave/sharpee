@@ -164,7 +164,7 @@ export interface CommandResult {
 /**
  * Categories for organizing commands
  */
-export type CommandCategory = 'display' | 'alter' | 'toggle' | 'utility' | 'test';
+export type CommandCategory = 'display' | 'alter' | 'toggle' | 'utility' | 'test' | 'annotation';
 
 /**
  * A debug/test command handler
@@ -319,6 +319,100 @@ export interface CheckpointStore {
 }
 
 // ============================================================================
+// Annotation System (ADR-109)
+// ============================================================================
+
+/**
+ * Types of annotations playtesters can create
+ */
+export type AnnotationType = 'comment' | 'bug' | 'note' | 'confusing' | 'expected' | 'bookmark';
+
+/**
+ * Context captured with each annotation
+ */
+export interface AnnotationContext {
+  /** Current room ID */
+  roomId: string;
+  /** Current room name */
+  roomName: string;
+  /** Current turn number */
+  turn: number;
+  /** Current score */
+  score: number;
+  /** The command that was just executed */
+  lastCommand: string;
+  /** The game's response to that command */
+  lastResponse: string;
+  /** Items currently in player's inventory */
+  inventory: string[];
+}
+
+/**
+ * A single annotation from a playtester
+ */
+export interface Annotation {
+  /** Unique identifier */
+  id: string;
+  /** When the annotation was created */
+  timestamp: number;
+  /** Type of annotation */
+  type: AnnotationType;
+  /** The annotation text */
+  text: string;
+  /** Game state context when annotation was made */
+  context: AnnotationContext;
+  /** Session this annotation belongs to (if any) */
+  sessionId?: string;
+}
+
+/**
+ * A playtest session containing multiple annotations
+ */
+export interface AnnotationSession {
+  /** Unique session identifier */
+  id: string;
+  /** Human-readable session name */
+  name: string;
+  /** When session started */
+  startTime: number;
+  /** When session ended (undefined if still active) */
+  endTime?: number;
+  /** All annotations in this session */
+  annotations: Annotation[];
+}
+
+/**
+ * Storage interface for annotations
+ */
+export interface AnnotationStore {
+  // Session management
+  /** Start a new annotation session */
+  startSession(name: string): string;
+  /** End the current session */
+  endSession(): AnnotationSession | undefined;
+  /** Get the current active session */
+  getCurrentSession(): AnnotationSession | undefined;
+
+  // Annotation capture
+  /** Add an annotation with context */
+  addAnnotation(type: AnnotationType, text: string, context: AnnotationContext): Annotation;
+  /** Get all annotations (current session or all if no session) */
+  getAnnotations(): Annotation[];
+  /** Get annotations filtered by type */
+  getAnnotationsByType(type: AnnotationType): Annotation[];
+
+  // Export
+  /** Export annotations as markdown report */
+  exportMarkdown(): string;
+  /** Export annotations as JSON */
+  exportJson(): string;
+
+  // Cleanup
+  /** Clear all annotations */
+  clear(): void;
+}
+
+// ============================================================================
 // Extension Interface
 // ============================================================================
 
@@ -334,6 +428,9 @@ export interface ITestingExtension {
 
   /** Checkpoint store */
   readonly checkpoints: CheckpointStore;
+
+  /** Annotation store */
+  readonly annotations: AnnotationStore;
 
   /**
    * Execute a GDT-style command (e.g., "AH room-id")
@@ -359,4 +456,14 @@ export interface ITestingExtension {
    * Restore state from checkpoint
    */
   restoreCheckpoint(name: string, world: WorldModel): Promise<boolean>;
+
+  /**
+   * Set context for annotation commands (called by transcript-tester after each command)
+   */
+  setCommandContext(command: string, response: string): void;
+
+  /**
+   * Add an annotation directly (for # comments from transcript-tester)
+   */
+  addAnnotation(type: AnnotationType, text: string, world: WorldModel): Annotation;
 }

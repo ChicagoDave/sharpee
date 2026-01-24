@@ -81,12 +81,21 @@ export interface NavigateResult {
 }
 
 /**
- * A transcript item - either a command or a directive
+ * A comment annotation from the transcript (# lines)
+ */
+export interface TranscriptComment {
+  lineNumber: number;
+  text: string;
+}
+
+/**
+ * A transcript item - either a command, directive, or comment
  */
 export interface TranscriptItem {
-  type: 'command' | 'directive';
+  type: 'command' | 'directive' | 'comment';
   command?: TranscriptCommand;
   directive?: Directive;
+  comment?: TranscriptComment;
 }
 
 // ============================================================================
@@ -211,6 +220,10 @@ export interface TestRunResult {
  */
 export interface TestingExtensionInterface {
   executeTestCommand(input: string, world: any): { success: boolean; output: string[]; error?: string };
+  /** Set context for annotation commands (called after each command execution) */
+  setCommandContext?(command: string, response: string): void;
+  /** Add an annotation directly (for # comments) */
+  addAnnotation?(type: string, text: string, world: any): any;
 }
 
 export interface RunnerOptions {

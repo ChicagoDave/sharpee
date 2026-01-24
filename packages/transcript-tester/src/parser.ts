@@ -61,9 +61,15 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
       continue;
     }
 
-    // Comments
+    // Comments - add to both comments array (legacy) and items array (for annotation context)
     if (trimmed.startsWith('#') && !trimmed.startsWith('#[')) {
-      transcript.comments.push(trimmed.slice(1).trim());
+      const commentText = trimmed.slice(1).trim();
+      transcript.comments.push(commentText);
+      // Also add as item for annotation processing
+      transcript.items!.push({
+        type: 'comment',
+        comment: { lineNumber, text: commentText },
+      });
       continue;
     }
 
