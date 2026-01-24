@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sharpee React Client - Font & Style Options</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Fira+Code:wght@400;500&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Sans:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,500;1,400&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Nunito:ital,wght@0,400;0,600;1,400&family=Source+Code+Pro:ital,wght@0,400;0,500;1,400&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=Literata:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+    }
+
+    .section {
+      margin-bottom: 40px;
+    }
+
+    .section h2 {
+      border-bottom: 2px solid #333;
+      padding-bottom: 8px;
+      margin-bottom: 20px;
+    }
+
+    .font-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 20px;
+    }
+
+    .font-card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .font-card.dark {
+      background: #1a1a2e;
+      color: #e0e0e0;
+    }
+
+    .font-card h3 {
+      margin: 0 0 5px 0;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+    }
+
+    .font-card.dark h3 {
+      color: #888;
+    }
+
+    .font-name {
+      font-size: 12px;
+      color: #aaa;
+      margin-bottom: 15px;
+    }
+
+    .transcript {
+      padding: 15px;
+      border-radius: 4px;
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+    }
+
+    .dark .transcript {
+      background: #0d0d1a;
+      border-color: #333;
+    }
+
+    .room-name {
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .room-desc {
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+
+    .contents {
+      color: #666;
+      margin-bottom: 12px;
+    }
+
+    .dark .contents {
+      color: #999;
+    }
+
+    .command {
+      color: #0066cc;
+      margin: 8px 0;
+    }
+
+    .dark .command {
+      color: #6699ff;
+    }
+
+    .response {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    /* Theme Cards */
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 20px;
+    }
+
+    .theme-card {
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .theme-header {
+      padding: 15px 20px;
+      font-weight: 600;
+    }
+
+    .theme-body {
+      padding: 20px;
+    }
+
+    /* CSS Variables Demo */
+    .css-demo {
+      background: #2d2d2d;
+      color: #f8f8f2;
+      padding: 20px;
+      border-radius: 8px;
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      overflow-x: auto;
+    }
+
+    .css-demo .comment {
+      color: #6272a4;
+    }
+
+    .css-demo .property {
+      color: #8be9fd;
+    }
+
+    .css-demo .value {
+      color: #f1fa8c;
+    }
+
+    .css-demo .selector {
+      color: #ff79c6;
+    }
+
+    /* Recommendations */
+    .recommendation {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+
+    .recommendation h3 {
+      margin: 0 0 10px 0;
+    }
+
+    .recommendation-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .rec-item {
+      background: rgba(255,255,255,0.15);
+      padding: 12px;
+      border-radius: 6px;
+    }
+
+    .rec-item strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Sharpee React Client - Font & Style Options</h1>
+  <p class="subtitle">Evaluating fonts and themes for interactive fiction</p>
+
+  <!-- Serif Fonts -->
+  <div class="section">
+    <h2>Serif Fonts (Classic, Literary Feel)</h2>
+    <div class="font-grid">
+
+      <div class="font-card">
+        <h3>Option 1</h3>
+        <div class="font-name">Literata (Google's reading font)</div>
+        <div class="transcript" style="font-family: 'Literata', serif; font-size: 16px;">
+          <div class="room-name">West of House</div>
+          <div class="room-desc">This is an open field west of a white house with a boarded front door.</div>
+          <div class="contents">You can see a small mailbox here.</div>
+          <div class="command">> open mailbox</div>
+          <div class="response">Opening the small mailbox reveals a leaflet.</div>
+        </div>
+      </div>
+
+      <div class="font-card">
+        <h3>Option 2</h3>
+        <div class="font-name">Libre Baskerville</div>
+        <div class="transcript" style="font-family: 'Libre Baskerville', serif; font-size: 15px;">
+          <div class="room-name">West of House</div>
+          <div class="room-desc">This is an open field west of a white house with a boarded front door.</div>
+          <div class="contents">You can see a small mailbox here.</div>
+          <div class="command">> open mailbox</div>
+          <div class="response">Opening the small mailbox reveals a leaflet.</div>
+        </div>
+      </div>
+
+      <div class="font-card">
+        <h3>Option 3</h3>
+        <div class="font-name">Crimson Text</div>
+        <div class="transcript" style="font-family: 'Crimson Text', serif; font-size: 17px;">
+          <div class="room-name">West of House</div>
+          <div class="room-desc">This is an open field west of a white house with a boarded front door.</div>
+          <div class="contents">You can see a small mailbox here.</div>
+          <div class="command">> open mailbox</div>
+          <div class="response">Opening the small mailbox reveals a leaflet.</div>
+        </div>
+      </div>
+
+      <div class="font-card">
+        <h3>Option 4</h3>
+        <div class="font-name">Lora</div>
+        <div class="transcript" style="font-family: 'Lora', serif; font-size: 16px;">
+          <div class="room-name">West of House</div>
+          <div class="room-desc">This is an open field west of a white house with a boarded front door.</div>
+          <div class="contents">You can see a small mailbox here.</div>
+          <div class="command">> open mailbox</div>
+          <div class="response">Opening the small mailbox reveals a leaflet.</div>
+        </div>
+      </div>
+
+      <div class="font-card">
+        <h3>Option 5</h3>
+        <div class="font-name">EB Garamond</div>
+        <div class="transcript" style="font-family: 'EB Garamond', serif; font-size: 17px;">
+          <div class="room-name">West of House</div>
+          <div class="room-desc">This is an open field west of a white house with a boarded front door.</div>
+          <div class="contents">You can see a small mailbox here.</div>
+          <div class="command">> open mailbox</div>
+          <div class="response">Opening the small mailbox reveals a leaflet.</div>
+        </div>
+      </div>
+
+      <div class="font-card">
+        <h3>Option 6</h3>
+        <div class="font-name">Merriweather</div>
+        <div class="transcript" style="font-family: 'Merriweather', serif; font-size: 15px;">
+          <div class="room-name">West of House</div>
+          <div class="room-desc">This is an open field west of a white house with a boarded front door.</div>
+          <div class="contents">You can see a small mailbox here.</div>
+          <div class="command">> open mailbox</div>
+          <div class="response">Opening the small mailbox reveals a leaflet.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Sans-Serif Fonts -->
+  <div class="section">
+    <h2>Sans-Serif Fonts (Modern, Clean)</h2>
+    <div class="font-grid">
+
+      <div class="font-card">
+        <h3>Option 1</h3>
+        <div class="font-name">Inter</div>
+        <div class="transcript" style="font-family: 'Inter', sans-serif; font-size: 15px;">
+          <div class="room-name">West of House</div>
+          <div class="room-desc">This is an open field west of a white house with a boarded front door.</div>
+          <div class="contents">You can see a small mailbox here.</div>
+          <div class="command">> open mailbox</div>
+          <div class="response">Opening the small mailbox reveals a leaflet.</div>
+        </div>
+      </div>
+
+      <div class="font-card">
+        <h3>Option 2</h3>
+        <div class="font-name">Source Sans 3</div>
+        <div class="transcript" style="font-family: 'Source Sans 3', sans-serif; font-size: 16px;">
+          <div class="room-name">West of House</div>
+          <div class="room-desc">This is an open field west of a white house with a boarded front door.</div>
+          <div class="contents">You can see a small mailbox here.</div>
+          <div class="command">> open mailbox</div>
+          <div class="response">Opening the small mailbox reveals a leaflet.</div>
+        </div>
+      </div>
+
+      <div class="font-card">
+        <h3>Option 3</h3>
+        <div class="font-name">IBM Plex Sans</div>
+        <div class="transcript" style="font-family: 'IBM Plex Sans', sans-serif; font-size: 15px;">
+          <div class="room-name">West of House</div>
+          <div class="room-desc">This is an open field west of a white house with a boarded front door.</div>
+          <div class="contents">You can see a small mailbox here.</div>
+          <div class="command">> open mailbox</div>
+          <div class="response">Opening the small mailbox reveals a leaflet.</div>
+        </div>
+      </div>
+
+      <div class="font-card">
+        <h3>Option 4</h3>
+        <div class="font-name">Nunito</div>
+        <div class="transcript" style="font-family: 'Nunito', sans-serif; font-size: 15px;">
+          <div class="room-name">West of House</div>
+          <div class="room-desc">This is an open field west of a white house with a boarded front door.</div>
+          <div class="contents">You can see a small mailbox here.</div>
+          <div class="command">> open mailbox</div>
+          <div class="response">Opening the small mailbox reveals a leaflet.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Monospace Fonts -->
+  <div class="section">
+    <h2>Monospace Fonts (Traditional IF/Terminal)</h2>
+    <div class="font-grid">
+
+      <div class="font-card">
+        <h3>Option 1</h3>
+        <div class="font-name">JetBrains Mono</div>
+        <div class="transcript" style="font-family: 'JetBrains Mono', monospace; font-size: 14px;">
+          <div class="room-name">West of House</div>
+          <div class="room-desc">This is an open field west of a white house with a boarded front door.</div>
+          <div class="contents">You can see a small mailbox here.</div>
+          <div class="command">> open mailbox</div>
+          <div class="response">Opening the small mailbox reveals a leaflet.</div>
+        </div>
+      </div>
+
+      <div class="font-card">
+        <h3>Option 2</h3>
+        <div class="font-name">Fira Code</div>
+        <div class="transcript" style="font-family: 'Fira Code', monospace; font-size: 14px;">
+          <div class="room-name">West of House</div>
+          <div class="room-desc">This is an open field west of a white house with a boarded front door.</div>
+          <div class="contents">You can see a small mailbox here.</div>
+          <div class="command">> open mailbox</div>
+          <div class="response">Opening the small mailbox reveals a leaflet.</div>
+        </div>
+      </div>
+
+      <div class="font-card">
+        <h3>Option 3</h3>
+        <div class="font-name">IBM Plex Mono</div>
+        <div class="transcript" style="font-family: 'IBM Plex Mono', monospace; font-size: 14px;">
+          <div class="room-name">West of House</div>
+          <div class="room-desc">This is an open field west of a white house with a boarded front door.</div>
+          <div class="contents">You can see a small mailbox here.</div>
+          <div class="command">> open mailbox</div>
+          <div class="response">Opening the small mailbox reveals a leaflet.</div>
+        </div>
+      </div>
+
+      <div class="font-card">
+        <h3>Option 4</h3>
+        <div class="font-name">Source Code Pro</div>
+        <div class="transcript" style="font-family: 'Source Code Pro', monospace; font-size: 14px;">
+          <div class="room-name">West of House</div>
+          <div class="room-desc">This is an open field west of a white house with a boarded front door.</div>
+          <div class="contents">You can see a small mailbox here.</div>
+          <div class="command">> open mailbox</div>
+          <div class="response">Opening the small mailbox reveals a leaflet.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Complete Theme Examples -->
+  <div class="section">
+    <h2>Complete Theme Examples</h2>
+    <div class="theme-grid">
+
+      <!-- Classic Light -->
+      <div class="theme-card" style="background: #fffef9;">
+        <div class="theme-header" style="background: #8b7355; color: white;">
+          Classic Light (Literata + warm tones)
+        </div>
+        <div class="theme-body" style="font-family: 'Literata', serif; font-size: 16px; color: #3d3d3d; line-height: 1.7;">
+          <div style="font-weight: 600; font-size: 18px; margin-bottom: 10px; color: #5c4033;">Troll Room</div>
+          <div style="margin-bottom: 15px;">This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.</div>
+          <div style="color: #666; margin-bottom: 15px;">You can see a nasty-looking troll here.</div>
+          <div style="color: #6b4423; margin: 10px 0;">> attack troll with sword</div>
+          <div>You land a solid blow on the troll, dealing 4 damage!</div>
+          <div style="margin-top: 8px;">The troll swings his axe, but it misses.</div>
+        </div>
+      </div>
+
+      <!-- Modern Dark -->
+      <div class="theme-card" style="background: #1e1e2e;">
+        <div class="theme-header" style="background: #89b4fa; color: #1e1e2e;">
+          Modern Dark (Inter + Catppuccin Mocha)
+        </div>
+        <div class="theme-body" style="font-family: 'Inter', sans-serif; font-size: 15px; color: #cdd6f4; line-height: 1.6;">
+          <div style="font-weight: 600; font-size: 17px; margin-bottom: 10px; color: #f5e0dc;">Troll Room</div>
+          <div style="margin-bottom: 15px;">This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.</div>
+          <div style="color: #a6adc8; margin-bottom: 15px;">You can see a nasty-looking troll here.</div>
+          <div style="color: #89b4fa; margin: 10px 0;">> attack troll with sword</div>
+          <div>You land a solid blow on the troll, dealing 4 damage!</div>
+          <div style="margin-top: 8px;">The troll swings his axe, but it misses.</div>
+        </div>
+      </div>
+
+      <!-- Terminal Green -->
+      <div class="theme-card" style="background: #0a0a0a;">
+        <div class="theme-header" style="background: #00ff00; color: #0a0a0a;">
+          Retro Terminal (JetBrains Mono + green phosphor)
+        </div>
+        <div class="theme-body" style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #00ff00; line-height: 1.5;">
+          <div style="font-weight: 500; margin-bottom: 10px;">TROLL ROOM</div>
+          <div style="margin-bottom: 15px;">This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.</div>
+          <div style="color: #00aa00; margin-bottom: 15px;">You can see a nasty-looking troll here.</div>
+          <div style="color: #ffff00; margin: 10px 0;">> attack troll with sword</div>
+          <div>You land a solid blow on the troll, dealing 4 damage!</div>
+          <div style="margin-top: 8px;">The troll swings his axe, but it misses.</div>
+        </div>
+      </div>
+
+      <!-- Paper -->
+      <div class="theme-card" style="background: #f5f5f0;">
+        <div class="theme-header" style="background: #2c2c2c; color: #f5f5f0;">
+          Paper (Crimson Text + high contrast)
+        </div>
+        <div class="theme-body" style="font-family: 'Crimson Text', serif; font-size: 17px; color: #1a1a1a; line-height: 1.7;">
+          <div style="font-weight: 600; font-size: 19px; margin-bottom: 10px;">Troll Room</div>
+          <div style="margin-bottom: 15px;">This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.</div>
+          <div style="color: #555; margin-bottom: 15px;">You can see a nasty-looking troll here.</div>
+          <div style="color: #0055aa; margin: 10px 0;">> attack troll with sword</div>
+          <div>You land a solid blow on the troll, dealing 4 damage!</div>
+          <div style="margin-top: 8px;">The troll swings his axe, but it misses.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Recommendations -->
+  <div class="section">
+    <h2>Recommendations</h2>
+
+    <div class="recommendation">
+      <h3>Suggested Default: Literata + Warm Light Theme</h3>
+      <p>Literata was designed by Google specifically for comfortable reading. It has excellent legibility at various sizes and works well for long-form text like IF transcripts.</p>
+      <div class="recommendation-grid">
+        <div class="rec-item">
+          <strong>Transcript Font</strong>
+          Literata, 16px
+        </div>
+        <div class="rec-item">
+          <strong>UI Font</strong>
+          Inter or system-ui
+        </div>
+        <div class="rec-item">
+          <strong>Command Input</strong>
+          JetBrains Mono, 14px
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CSS Variables -->
+  <div class="section">
+    <h2>CSS Variables for Author Customization</h2>
+
+    <div class="css-demo">
+<span class="comment">/* Default theme - authors override these in their story */</span>
+<span class="selector">:root</span> {
+  <span class="comment">/* Typography */</span>
+  <span class="property">--sharpee-font-transcript</span>: <span class="value">'Literata', Georgia, serif</span>;
+  <span class="property">--sharpee-font-ui</span>: <span class="value">'Inter', system-ui, sans-serif</span>;
+  <span class="property">--sharpee-font-input</span>: <span class="value">'JetBrains Mono', monospace</span>;
+  <span class="property">--sharpee-font-size</span>: <span class="value">16px</span>;
+  <span class="property">--sharpee-line-height</span>: <span class="value">1.7</span>;
+
+  <span class="comment">/* Colors - Light theme */</span>
+  <span class="property">--sharpee-bg</span>: <span class="value">#fffef9</span>;
+  <span class="property">--sharpee-text</span>: <span class="value">#3d3d3d</span>;
+  <span class="property">--sharpee-text-muted</span>: <span class="value">#666666</span>;
+  <span class="property">--sharpee-accent</span>: <span class="value">#6b4423</span>;
+  <span class="property">--sharpee-room-title</span>: <span class="value">#5c4033</span>;
+  <span class="property">--sharpee-command</span>: <span class="value">#6b4423</span>;
+  <span class="property">--sharpee-border</span>: <span class="value">#e0d8c8</span>;
+
+  <span class="comment">/* Spacing */</span>
+  <span class="property">--sharpee-spacing-sm</span>: <span class="value">8px</span>;
+  <span class="property">--sharpee-spacing-md</span>: <span class="value">16px</span>;
+  <span class="property">--sharpee-spacing-lg</span>: <span class="value">24px</span>;
+
+  <span class="comment">/* Layout */</span>
+  <span class="property">--sharpee-max-width</span>: <span class="value">800px</span>;
+  <span class="property">--sharpee-transcript-padding</span>: <span class="value">20px</span>;
+}
+
+<span class="comment">/* Example: Author's dark theme override */</span>
+<span class="selector">.theme-dark</span> {
+  <span class="property">--sharpee-bg</span>: <span class="value">#1e1e2e</span>;
+  <span class="property">--sharpee-text</span>: <span class="value">#cdd6f4</span>;
+  <span class="property">--sharpee-text-muted</span>: <span class="value">#a6adc8</span>;
+  <span class="property">--sharpee-accent</span>: <span class="value">#89b4fa</span>;
+  <span class="property">--sharpee-room-title</span>: <span class="value">#f5e0dc</span>;
+  <span class="property">--sharpee-command</span>: <span class="value">#89b4fa</span>;
+  <span class="property">--sharpee-border</span>: <span class="value">#313244</span>;
+}
+
+<span class="comment">/* Example: Author's retro theme override */</span>
+<span class="selector">.theme-retro</span> {
+  <span class="property">--sharpee-font-transcript</span>: <span class="value">'JetBrains Mono', monospace</span>;
+  <span class="property">--sharpee-font-size</span>: <span class="value">14px</span>;
+  <span class="property">--sharpee-bg</span>: <span class="value">#0a0a0a</span>;
+  <span class="property">--sharpee-text</span>: <span class="value">#00ff00</span>;
+  <span class="property">--sharpee-command</span>: <span class="value">#ffff00</span>;
+}
+    </div>
+
+    <p style="margin-top: 20px; color: #666;">
+      <strong>How authors use this:</strong> Add a <code>&lt;style&gt;</code> block in their story's HTML template,
+      or provide a <code>theme.css</code> file that overrides these variables. The React client applies
+      these variables to all components automatically.
+    </p>
+  </div>
+
+  <!-- Longer Text Sample -->
+  <div class="section">
+    <h2>Extended Reading Test</h2>
+    <div class="font-card" style="max-width: 700px; margin: 0 auto;">
+      <div class="transcript" style="font-family: 'Literata', serif; font-size: 16px; line-height: 1.7; background: #fffef9; border-color: #e0d8c8;">
+        <div class="room-name" style="color: #5c4033; font-size: 18px;">Living Room</div>
+        <div class="room-desc">This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A large oriental rug covers the center of the room, and a trophy case stands against one wall.</div>
+        <div class="contents" style="color: #666; margin: 15px 0;">You can see a trophy case (which is closed), an elvish sword, a brass lantern, and an oriental rug here.</div>
+
+        <div class="command" style="color: #6b4423;">> move rug</div>
+        <div class="response">Moving the rug reveals a trap door.</div>
+
+        <div class="command" style="color: #6b4423;">> open trap door</div>
+        <div class="response">The door reluctantly opens to reveal a rickety staircase descending into darkness.</div>
+
+        <div class="command" style="color: #6b4423;">> take lantern and sword</div>
+        <div class="response">brass lantern: Taken.<br>elvish sword: Taken.</div>
+
+        <div class="command" style="color: #6b4423;">> down</div>
+        <div class="room-name" style="color: #5c4033; font-size: 18px; margin-top: 15px;">Cellar</div>
+        <div class="room-desc">This is a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. To the west is the bottom of a steep metal ramp which is unclimbable.</div>
+        <div style="color: #884422; font-style: italic; margin-top: 10px;">The door crashes shut, and you hear someone barring it.</div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

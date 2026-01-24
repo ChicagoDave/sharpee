@@ -44,3 +44,11 @@ feat: Add React client package and finalize ext-tes
 [22:37:09] EDIT: docs/context/session-20260123-2152-dungeo.md
 [22:37:21] EDIT: docs/context/session-20260123-2152-dungeo.md
 [22:37:36] EDIT: docs/context/session-20260123-2152-dungeo.md
+[22:38:34] GIT: git commit -m "$(cat <<'EOF'
+fix(event-processor): Implement game.message overri
+[22:38:42] GIT: git push origin dungeo
+[22:41:10] EDIT: docs/work/issues/issues-list-02.md
+[22:41:16] EDIT: docs/work/issues/issues-list-02.md
+[22:41:23] EDIT: docs/work/issues/issues-list-02.md
+[22:45:52] WRITE: docs/design/react-design.html
+[22:52:22] EDIT: docs/context/session-20260123-2152-dungeo.md

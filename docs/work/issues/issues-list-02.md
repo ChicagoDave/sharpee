@@ -15,9 +15,9 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-033 | AGAIN command fails after second NORTH | Low | Platform | 2026-01-22 | - | - |
 | ISSUE-034 | Inventory message test expects different format | Low | Test | 2026-01-22 | - | - |
 | ISSUE-035 | React client save not implemented/working | Medium | client-react | 2026-01-23 | - | - |
-| ISSUE-036 | Auto-map boxes rendered on top of each other | Medium | client-react | 2026-01-23 | - | 2026-01-24 |
+| ISSUE-036 | Auto-map boxes rendered on top of each other | Medium | client-react | 2026-01-23 | - | - |
 | ISSUE-037 | Troll death text not displaying (story messages) | Medium | client-react | 2026-01-23 | - | 2026-01-24 |
-| ISSUE-038 | React client needs modern styling and fonts | Low | client-react | 2026-01-23 | - | 2026-01-24 |
+| ISSUE-038 | React client needs modern styling and fonts | Low | client-react | 2026-01-23 | - | - |
 | ISSUE-039 | Text ordering: game.message duplicating stdlib messages | Critical | Platform | 2026-01-24 | - | 2026-01-24 |
 
 ---
@@ -182,7 +182,7 @@ The auto-mapping feature in the React client renders all room boxes stacked on t
 
 **Notes**: Likely a CSS/positioning issue in the map component, or room coordinates not being calculated/applied.
 
-**Status**: Fixed 2026-01-24 - Added fallback positioning for unknown directions in useMap.ts.
+**Status**: Open - Fallback positioning added but root cause not fixed. Map boxes still overlap.
 
 ---
 
@@ -240,7 +240,7 @@ The React client UI needs updated styling with modern fonts and visual design. C
 
 **Notes**: Consider CSS variables for theming support, dark mode compatibility.
 
-**Status**: Fixed 2026-01-24 - Set default font to 13px in GameShell.tsx.
+**Status**: Open - Needs discussion on default style and author customization approach.
 
 ---
 

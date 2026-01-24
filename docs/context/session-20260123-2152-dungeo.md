@@ -235,7 +235,58 @@ Missing any step = missing features. This should be documented in client templat
 
 ---
 
-**Progressive update**: Session completed 2026-01-23 21:52
+**Progressive update**: Session started 2026-01-23 21:52
+
+---
+
+## Session Continuation (2026-01-24)
+
+### React Client Theme System Design
+
+Created `docs/design/react-design.html` - a comprehensive font and theme showcase for the React client.
+
+**Fonts Evaluated:**
+
+| Category | Fonts |
+|----------|-------|
+| Serif (Literary) | Literata, Libre Baskerville, Crimson Text, Lora, EB Garamond, Merriweather |
+| Sans-Serif (Modern) | Inter, Source Sans 3, IBM Plex Sans, Nunito |
+| Monospace (Terminal) | JetBrains Mono, Fira Code, IBM Plex Mono, Source Code Pro |
+
+**Recommended Default:** Literata (Google's reading font) + warm light theme
+
+**Complete Themes Designed:**
+1. `classic-light` - Literata + warm tones (recommended default)
+2. `modern-dark` - Inter + Catppuccin Mocha colors
+3. `retro-terminal` - JetBrains Mono + green phosphor
+4. `paper` - Crimson Text + high contrast
+
+**CSS Variables System:**
+```css
+:root {
+  --sharpee-font-transcript: 'Literata', Georgia, serif;
+  --sharpee-font-ui: 'Inter', system-ui, sans-serif;
+  --sharpee-font-input: 'JetBrains Mono', monospace;
+  --sharpee-font-size: 16px;
+  --sharpee-bg: #fffef9;
+  --sharpee-text: #3d3d3d;
+  --sharpee-accent: #6b4423;
+  /* ... etc */
+}
+```
+
+**Proposed Build Integration:**
+```bash
+./scripts/build.sh -s dungeo -c react --theme classic-light
+./scripts/build.sh -s dungeo -c react --theme modern-dark
+./scripts/build.sh -s dungeo -c react --theme custom  # uses stories/{story}/theme.css
+```
+
+**Next Steps (ISSUE-038):**
+1. Create theme CSS files in `packages/client-react/themes/`
+2. Update `build-client.sh` to accept `--theme` flag
+3. Update React components to use CSS variables consistently
+4. Document theme customization for authors
 
 ---
 
