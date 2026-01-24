@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/lang-en-us",
-  "version": "0.9.50-beta",
+  "version": "0.9.56-beta",
   "description": "English language implementation for Sharpee IF Engine",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

@@ -83,7 +83,8 @@ description: Test Studio chimney restriction per MDL source (act1.254) - lamp + 
 [OK: contains "Dropped"]
 
 > inventory
-[OK: contains "empty"]
+[OK: not contains "lantern"]
+[OK: not contains "sword"]
 
 # Try to go up - should fail with empty-handed message
 > up

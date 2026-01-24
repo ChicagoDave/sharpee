@@ -1,42 +1,47 @@
-title: Implicit Inference and Implicit Take (ADR-104)
+title: Implicit Take for Reading (ADR-104 - Inference Disabled)
 story: dungeo
-description: Test implicit inference and implicit take for reading action
+description: Test implicit take for reading action (inference feature is disabled)
 
 ---
+
+# Note: ADR-104 implicit inference has been intentionally disabled.
+# Pronouns now always refer to the pronoun context, even if the entity
+# doesn't meet action requirements. This makes pronouns predictable.
 
 # Open the mailbox to set pronoun context
 > open mailbox
 [OK: contains "open"]
-[EVENT: true, type="if.event.opened"]
 
-# "read it" where "it" = mailbox (not readable)
-# Should infer the leaflet (only readable thing in scope)
-# AND do implicit take (leaflet is in mailbox, not held)
+# "read it" where "it" = mailbox - should fail (mailbox not readable)
+# No inference happens - pronoun respects player intent
 > read it
-[OK: contains "first taking"]
-[OK: contains "DUNGEO"]
-[EVENT: true, type="if.event.implicit_take"]
-[EVENT: true, type="if.event.read"]
+[OK: contains "nothing written"]
 
-# Verify pronoun still refers to mailbox (inference doesn't change pronoun context)
+# Verify pronoun still refers to mailbox
 > examine it
 [OK: contains "mailbox"]
 
-# Explicit "read mailbox" should NOT infer - should fail
+# Explicit "read mailbox" should also fail (not readable)
 > read mailbox
-[EVENT: true, type="if.event.read" blocked="true"]
+[OK: contains "nothing written"]
 
-# Drop the leaflet to test implicit take with explicit noun
+# Take the leaflet explicitly first
+> take leaflet
+[OK: contains "take leaflet"]
+
+# Now reading leaflet works (already holding it)
+> read leaflet
+[OK: contains "DUNGEO"]
+
+# Drop leaflet to test implicit take
 > drop leaflet
 [OK: contains "Dropped"]
 
-# Explicit "read leaflet" should do implicit take (no inference needed)
+# "read leaflet" should do implicit take (not holding, but in scope)
 > read leaflet
 [OK: contains "first taking"]
 [OK: contains "DUNGEO"]
-[EVENT: true, type="if.event.implicit_take"]
 
 # Reading again should NOT do implicit take (already holding)
 > read leaflet
 [OK: contains "DUNGEO"]
-[EVENT: false, type="if.event.implicit_take"]

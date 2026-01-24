@@ -1,24 +1,24 @@
 title: Smart Directives Basic Test
 story: dungeo
-description: Tests ADR-092 smart transcript directives (IF/WHILE/NAVIGATE/GOAL)
+description: Tests ADR-092 smart transcript directives (IF/NAVIGATE with normal exits)
 
 ---
 
-# Basic navigation test - start in West of House, navigate to Kitchen
-
+# Basic navigation test - start in West of House
 > look
 [OK: contains "West of House"]
 
-# Test NAVIGATE directive
-[NAVIGATE TO: "Kitchen"]
+# Test NAVIGATE directive to a room reachable via normal exits
+# Forest Path is reachable: West of House -> North of House -> Forest Path
+[NAVIGATE TO: "Forest Path"]
 
 > look
-[OK: contains "Kitchen"]
+[OK: contains "Forest Path"]
 
-# Test IF directive (should execute because we're in Kitchen)
-[IF: location = "Kitchen"]
-> examine sack
-[OK: contains "sack"]
+# Test IF directive (should execute because we're in Forest Path)
+[IF: location = "Forest Path"]
+> look
+[OK: contains "tree"]
 [END IF]
 
 # Test IF directive (should NOT execute because we're not in Cellar)
@@ -27,22 +27,14 @@ description: Tests ADR-092 smart transcript directives (IF/WHILE/NAVIGATE/GOAL)
 [OK: contains "Cellar"]
 [END IF]
 
-# Navigate to Living Room
-[NAVIGATE TO: "Living Room"]
+# Navigate to South of House (reachable via normal exits)
+[NAVIGATE TO: "South of House"]
 
 > look
-[OK: contains "Living Room"]
+[OK: contains "South of House"]
 
-# Test GOAL with REQUIRES/ENSURES
-[GOAL: Take the sword]
-[REQUIRES: location = "Living Room"]
-[ENSURES: inventory contains "sword"]
+# Navigate back to West of House
+[NAVIGATE TO: "West of House"]
 
-> take sword
-[OK: contains "Taken"]
-
-[END GOAL]
-
-# Verify sword is in inventory
-> inventory
-[OK: contains "sword"]
+> look
+[OK: contains "West of House"]

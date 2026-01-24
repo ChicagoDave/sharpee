@@ -106,7 +106,7 @@ for pkg in "${PACKAGES[@]}"; do
     echo ""
     echo -e "${YELLOW}Publishing @sharpee/$pkg...${NC}"
     cd "$PKG_DIR"
-    npm publish --access public $DRY_RUN || {
+    pnpm publish --access public --no-git-checks --tag beta $DRY_RUN || {
       echo -e "${RED}Failed to publish @sharpee/$pkg${NC}"
       cd ../..
       exit 1

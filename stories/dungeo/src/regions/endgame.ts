@@ -125,12 +125,12 @@ export function createEndgameRegion(world: WorldModel): EndgameRoomIds {
     exits: {},
     isDark: true,
     isOutdoors: false,
-    blockedExits: { [Direction.SOUTH]: SPIRITS_BLOCK_MESSAGE }
+    blockedExits: { [Direction.EAST]: SPIRITS_BLOCK_MESSAGE }
   }));
   entryToHades.add(new IdentityTrait({
     name: 'Entrance to Hades',
     aliases: ['entrance to hades', 'hades entrance', 'gates of hades'],
-    description: 'You are at the entrance to Hades, the land of the dead. An eerie mist swirls around you. Ghostly figures seem to hover in the air, blocking passage to the south. A corridor leads north.',
+    description: 'You are at the entrance to Hades, the land of the dead. An eerie mist swirls around you. Ghostly figures seem to hover in the air, blocking passage to the east. A corridor leads north.',
     properName: true,
     article: 'the'
   }));

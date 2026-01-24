@@ -162,8 +162,24 @@ This lays groundwork for full agent mode in the IDE:
 - State exploration and verification
 - Integration with AI reasoning
 
+## Integration with ext-testing
+
+The `@sharpee/ext-testing` package provides additional testing capabilities:
+
+### Debug Commands
+Test commands (`$teleport`, `$take`, `$kill`, etc.) are routed to ext-testing for execution, enabling quick state manipulation during tests.
+
+### Annotation Commands (ADR-109)
+Playtester feedback commands (`$bug`, `$note`, `$confusing`, etc.) capture context and generate reports.
+
+### Context Tracking
+The runner calls `testingExtension.setCommandContext()` after each command, enabling annotations to capture the last command/response context.
+
 ## References
 
 - Existing transcript tester: `packages/transcript-tester/src/`
+- Testing extension: `packages/extensions/testing/src/`
 - WorldModel pathfinding: `packages/world-model/src/world/WorldModel.ts`
 - GDT introspection patterns: `stories/dungeo/src/actions/gdt/`
+- ADR-073: Transcript Story Testing
+- ADR-109: Playtester Annotation System

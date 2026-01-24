@@ -393,5 +393,5 @@ The message has been carelessly trampled...
 ## Resources
 
 - [Cloak of Darkness specification](https://www.firthworks.com/roger/cloak/)
-- [Rooms and Regions Guide](/docs/author-guide/rooms)
-- [Objects and Traits Guide](/docs/author-guide/objects)
+- [Rooms and Regions Guide](/author-guide/rooms/)
+- [Objects and Traits Guide](/author-guide/objects/)

@@ -110,6 +110,6 @@ You can now explore your world with commands like:
 
 ## Next Steps
 
-- Learn about [Rooms and Regions](/docs/author-guide/rooms) in the Author Guide
-- Add [Objects and Traits](/docs/author-guide/objects) for interactive items
-- Create [NPCs](/docs/author-guide/npcs) with conversations
+- Learn about [Rooms and Regions](/author-guide/rooms/) in the Author Guide
+- Add [Objects and Traits](/author-guide/objects/) for interactive items
+- Create [NPCs](/author-guide/npcs/) with conversations

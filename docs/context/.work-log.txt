@@ -1,89 +1,12 @@
-[17:42:02] EDIT: stories/dungeo/src/browser-entry.ts
-[17:44:21] TRANSCRIPT FAIL: ./scripts/build.sh --skip transcript-tester -s dungeo -c browser 2>&1 | tail -30
-[17:47:49] EDIT: packages/stdlib/src/actions/standard/version/version.ts
-[17:48:02] EDIT: packages/stdlib/src/actions/standard/version/version-events.ts
-[17:48:17] EDIT: stories/dungeo/src/messages/index.ts
-[18:02:18] EDIT: stories/dungeo/src/index.ts
-[18:02:30] EDIT: stories/dungeo/src/index.ts
-[18:05:26] TRANSCRIPT FAIL: ./scripts/build.sh --skip transcript-tester -s dungeo -c browser 2>&1 | tail -20
-[18:13:05] EDIT: packages/engine/src/game-engine.ts
-[18:35:10] EDIT: packages/engine/src/game-engine.ts
-[18:35:25] EDIT: packages/engine/src/game-engine.ts
-[18:40:33] WRITE: docs/context/session-20260121-1838-dungeo.md
-[18:42:35] GIT: git commit -m "$(cat <<'EOF'
-refactor: Modular build system and meta-command fix
-[18:42:51] GIT: git push
-[19:02:51] WRITE: docs/work/platform/meta-commands.md
-[19:07:57] EDIT: docs/work/platform/meta-commands.md
-[19:09:34] EDIT: docs/work/platform/meta-commands.md
-[19:10:13] EDIT: docs/work/platform/meta-commands.md
-[19:10:25] EDIT: docs/work/platform/meta-commands.md
-[19:10:32] EDIT: docs/work/platform/meta-commands.md
-[19:11:00] EDIT: docs/work/platform/meta-commands.md
-[19:11:05] EDIT: docs/work/platform/meta-commands.md
-[19:17:57] EDIT: docs/work/platform/meta-commands.md
-[19:18:04] EDIT: docs/work/platform/meta-commands.md
-[19:18:18] EDIT: docs/work/platform/meta-commands.md
-[19:18:28] EDIT: docs/work/platform/meta-commands.md
-[19:23:07] WRITE: docs/context/session-20260121-1854-dungeo.md
-[19:25:04] EDIT: packages/engine/src/types.ts
-[19:25:19] EDIT: packages/engine/src/types.ts
-[19:25:47] EDIT: packages/engine/src/game-engine.ts
-[19:26:33] EDIT: packages/engine/src/game-engine.ts
-[19:27:09] EDIT: packages/engine/src/game-engine.ts
-[19:27:20] EDIT: packages/engine/src/game-engine.ts
-[19:27:56] EDIT: packages/engine/src/game-engine.ts
-[19:28:01] EDIT: packages/engine/src/game-engine.ts
-[19:28:07] EDIT: packages/engine/src/game-engine.ts
-[19:30:30] EDIT: packages/engine/src/game-engine.ts
-[19:30:50] EDIT: packages/engine/src/game-engine.ts
-[19:30:59] EDIT: packages/engine/src/game-engine.ts
-[19:41:14] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --play 2>&1 <<'EOF'
-l
-[19:42:33] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --play 2>&1 <<'EOF'
-/
-[19:44:57] GIT: git commit -m "$(cat <<'EOF'
-feat: Scaffold sharpee.net website with Astro
-
-- In
-[19:44:58] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[19:45:03] GIT: git push
-[19:52:10] TRANSCRIPT FAIL: cat > /tmp/meta-test.transcript << 'ENDTRANSCRIPT'
-# Test that meta-commands wor
-[20:53:22] EDIT: packages/parser-en-us/src/grammar.ts
-[20:58:59] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo /tmp/turn-count-test.
-[21:01:17] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&1 | tail -30
-[21:02:22] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[21:03:27] WRITE: docs/context/session-20260121-1924-dungeo.md
-[21:03:33] EDIT: docs/work/platform/meta-commands.md
-[00:46:29] GIT: git commit -m "$(cat <<'EOF'
-feat: Meta-command early divergence architecture
-
-I
-[00:46:34] GIT: git push
-[01:05:05] EDIT: docs/context/session-20260122-0043-dungeo.md
-[01:05:42] GIT: git commit -m "$(cat <<'EOF'
-feat: Add Dungeo browser demo to website
-
-Copy buil
-[01:05:47] GIT: git push
-[02:36:12] GIT: git commit -m "$(cat <<'EOF'
-chore: Remove redundant demos folder
-
-Demo moved to
-[02:39:48] WRITE: docs/work/issues/issues-list-02.md
-[02:41:35] WRITE: docs/work/issues/README.md
-[02:45:50] EDIT: docs/work/issues/issues-list-01.md
-[02:46:05] EDIT: docs/work/issues/issues-list-01.md
-[02:49:20] GIT: git commit -m "$(cat <<'EOF'
-chore: Reorganize issue tracking
-
-- Rename issues-l
-[02:53:27] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&1 | head -30
-[02:54:47] TRANSCRIPT FAIL: node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/
-[02:57:44] TRANSCRIPT FAIL: ./scripts/build.sh --skip transcript-tester -s dungeo 2>&1 | tail -50
-[03:01:06] TRANSCRIPT FAIL: timeout 300 node packages/transcript-tester/dist/cli.js stories/dungeo --all 2>&
-[03:02:19] WRITE: docs/work/issues/issues-list-02.md
-[03:03:49] EDIT: docs/work/issues/issues-list-02.md
-[03:03:53] EDIT: docs/work/issues/issues-list-02.md
-[03:08:03] WRITE: docs/context/session-20260122-0043-dungeo.md
+[19:13:44] EDIT: docs/architecture/adrs/adr-110-debug-tools-extension.md
+[19:14:08] EDIT: docs/architecture/adrs/adr-110-debug-tools-extension.md
+[19:14:23] EDIT: docs/architecture/adrs/adr-110-debug-tools-extension.md
+[19:14:32] EDIT: docs/architecture/adrs/adr-110-debug-tools-extension.md
+[19:17:22] EDIT: .gitignore
+[19:23:31] WRITE: docs/context/session-20260123-1917-ext-testing-final.md
+[19:25:32] GIT: git commit -m "$(cat <<'EOF'
+feat: Add React client package and finalize ext-tes
+[19:25:44] GIT: git push origin ext-testing
+[19:26:04] EDIT: stories/dungeo/src/react-entry.tsx
+[19:27:07] EDIT: stories/dungeo/src/react-entry.tsx
+[19:27:16] EDIT: packages/client-react/src/context/GameContext.tsx

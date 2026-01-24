@@ -86,6 +86,7 @@ packages/forge/forge
 
 # Build artifacts in src directories (but not in node_modules)
 packages/**/src/**/*.d.ts
+packages/**/src/**/*.d.ts.map
 packages/**/src/**/*.js
 packages/**/src/**/*.js.map
 # But keep actual source files

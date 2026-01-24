@@ -36,12 +36,12 @@ description: Tests WAVE action and rainbow exit mechanics at Aragain Falls
 
 # Try to go east onto rainbow before waving - should be blocked
 > east
-[OK: matches /insubstantial|no_exit_that_way/i]
+[OK: contains "can't go that way"]
 
 # Wave the stick to create solid rainbow
 > wave stick
 [OK: contains "rainbow"]
-[OK: matches /appears|shimmering/i]
+[OK: contains "appears to become solid"]
 
 # Now we should be able to go east onto the rainbow
 > east
@@ -65,8 +65,8 @@ description: Tests WAVE action and rainbow exit mechanics at Aragain Falls
 # Wave again to dismiss rainbow
 > wave stick
 [OK: contains "rainbow"]
-[OK: matches /run of the mill|fades|gone|disappears/i]
+[OK: contains "run of the mill"]
 
 # Should no longer be able to go east
 > east
-[OK: matches /insubstantial|no_exit_that_way/i]
+[OK: contains "can't go that way"]

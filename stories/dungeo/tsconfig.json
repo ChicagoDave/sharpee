@@ -25,5 +25,5 @@
     }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "src/browser-entry.ts"]
+  "exclude": ["node_modules", "dist", "src/browser-entry.ts", "src/react-entry.tsx"]
 }

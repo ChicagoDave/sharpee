@@ -44,9 +44,9 @@ description: Tests throwing lit torch at glacier to melt it and reveal north pas
 [OK: contains "Glacier Room"]
 [OK: contains "glacier"]
 
-# Try to go north - should be blocked (no exit exists yet)
+# Try to go north - should be blocked (glacier blocks the passage)
 > north
-[OK: contains "no_exit"]
+[OK: contains "can't go that way"]
 
 # Throw the lit torch at the glacier
 > throw torch at glacier

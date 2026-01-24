@@ -391,57 +391,58 @@ Main controller script with modular components:
 - Always use `--skip` when possible to avoid slow full rebuilds
 - Always use `dist/sharpee.js` for testing - much faster than loading individual packages
 
-### Fast Testing (Use This!)
+### Transcript Testing - ALWAYS USE THE BUNDLE
 
-After building, use the bundle for all testing:
+**CRITICAL**: Always use the bundle (`dist/sharpee.js`) for transcript testing. It loads instantly (~170ms) vs the slow package version (~5+ seconds).
 
 ```bash
-# Interactive play (uses bundle)
+# CORRECT - Use bundle for ALL transcript testing
+node dist/sharpee.js --test stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript
+
+# Run walkthrough chain (state persists between transcripts)
+node dist/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
+
+# Interactive play mode
 node dist/sharpee.js --play
 
-# Run specific transcript
-node dist/sharpee.js --test stories/dungeo/tests/transcripts/rug-trapdoor.transcript
-
-# Or use transcript-tester directly (slower, loads packages)
-node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/transcripts/rug-trapdoor.transcript
+# WRONG - Don't use this (5x slower, loads all packages)
+# node packages/transcript-tester/dist/cli.js stories/dungeo ...
 ```
 
-**Prefer**: `node dist/sharpee.js` over `node packages/transcript-tester/dist/cli.js`
-
-### Transcript Testing (ADR-073)
-
-Story integration tests use `.transcript` files run by `@sharpee/transcript-tester`:
-
+**Walkthrough Testing:**
 ```bash
-# Run all transcripts for a story
-node packages/transcript-tester/dist/cli.js stories/dungeo --all
+# Run single walkthrough
+node dist/sharpee.js --test stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript
 
-# Run specific transcript
-node packages/transcript-tester/dist/cli.js stories/dungeo stories/dungeo/tests/transcripts/navigation.transcript
-
-# Chain multiple transcripts (game state persists between them)
-node packages/transcript-tester/dist/cli.js stories/dungeo --chain \
-  stories/dungeo/tests/transcripts/wt-01-get-torch-early.transcript \
-  stories/dungeo/tests/transcripts/wt-02-bank-puzzle.transcript
-
-# Verbose output (show all output and events)
-node packages/transcript-tester/dist/cli.js stories/dungeo --all --verbose
+# Run walkthrough chain (MUST use --chain for walkthroughs that depend on prior state)
+node dist/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript stories/dungeo/walkthroughs/wt-02-bank-puzzle.transcript
 
 # Stop on first failure
-node packages/transcript-tester/dist/cli.js stories/dungeo --all --stop-on-failure
-
-# Interactive play mode (REPL)
-node packages/transcript-tester/dist/cli.js stories/dungeo --play
+node dist/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript --stop-on-failure
 ```
 
-**CLI Flags:**
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--all` | `-a` | Run all transcripts in story's tests/ directory |
-| `--chain` | `-c` | Chain transcripts (don't reset game state between them) |
-| `--verbose` | `-v` | Show detailed output for each command |
-| `--stop-on-failure` | `-s` | Stop on first failure |
-| `--play` | `-p` | Interactive play mode (REPL) |
+**Unit Transcript Testing:**
+```bash
+# Run single unit test transcript
+node dist/sharpee.js --test stories/dungeo/tests/transcripts/rug-trapdoor.transcript
+
+# Run all unit test transcripts
+node dist/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
+```
+
+**CLI Flags for `node dist/sharpee.js`:**
+| Flag | Description |
+|------|-------------|
+| `--test <file>` | Run transcript test(s) |
+| `--chain` | Chain transcripts (game state persists between them) |
+| `--stop-on-failure` | Stop on first failure |
+| `--play` | Interactive play mode (REPL) |
+| `--verbose` | Show detailed output |
+
+**IMPORTANT - Don't modify working transcripts:**
+- If a transcript was passing before, don't add WHILE loops or change commands
+- Combat randomness is handled by having enough attack commands (6 is usually sufficient)
+- The `[ENSURES: not entity "X" alive]` postcondition works correctly - don't remove it
 | `--output-dir <dir>` | `-o` | Write timestamped results to directory |
 
 **Important**: Walkthrough transcripts (wt-\*) must be run with `--chain` flag to preserve game state.

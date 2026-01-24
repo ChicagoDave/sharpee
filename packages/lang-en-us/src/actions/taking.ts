@@ -21,7 +21,8 @@ export const takingLanguage = {
     'cant_take_room': "{You} {can't} take {item}.",
     'fixed_in_place': "{item} is fixed in place.",
     'container_full': "{You're} carrying too much already.",
-    'too_heavy': "{item} is too heavy to carry.",
+    'too_heavy': "Your load is too heavy. You will have to leave something behind.",
+    'cannot_take': "{You} {can't} take {item}.",
     'taken': "Taken.",
     'taken_from': "{You} {take} {item} from {container}.",
     'taken_multi': "{item}: Taken."

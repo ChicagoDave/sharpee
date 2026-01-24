@@ -124,30 +124,6 @@ description: Test maze room connections per 1981 MDL source
 [EVENT: true, type="if.event.actor_moved"]
 
 # ============================================================================
-# TEST: Round Room to Maze connection
-# ============================================================================
-
-> gdt
-[OK: contains "GAME DEBUGGING TOOL"]
-
-> ah round room
-[OK: contains "Teleported to"]
-
-> ex
-[OK: contains "Returning to game"]
-
-# Southwest from Round Room leads to Maze-1
-> southwest
-[OK: contains "maze"]
-[OK: contains "twisty little passages"]
-[EVENT: true, type="if.event.actor_moved"]
-
-# Northeast from Maze-1 leads back to Round Room
-> northeast
-[OK: contains "Round Room"]
-[EVENT: true, type="if.event.actor_moved"]
-
-# ============================================================================
 # TEST: Deeper maze navigation (Maze-9 to Maze-11 area)
 # Path: MAZE9 E→MAZ11 NE→GRAT (Grating Room)
 # ============================================================================

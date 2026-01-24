@@ -1,8 +1,8 @@
 packages:
   - 'packages/*'
   - 'packages/platforms/*'
+  - 'packages/extensions/*'
   - '!packages/forge'
-  - '!packages/extensions'
   - '!packages/ext-*'
   - '!packages/client-core'
   - '!packages/web-client'

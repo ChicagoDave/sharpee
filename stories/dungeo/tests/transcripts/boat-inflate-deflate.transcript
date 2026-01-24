@@ -36,7 +36,7 @@ description: Tests inflating and deflating the rubber boat
 
 # Try to deflate when already deflated - should fail
 > deflate boat
-[OK: contains "already_deflated"]
+[OK: contains "already deflated"]
 
 # Now inflate the boat with the pump in inventory
 > inflate boat
@@ -52,7 +52,7 @@ description: Tests inflating and deflating the rubber boat
 
 # Try to inflate again - should fail
 > inflate boat
-[OK: contains "already_inflated"]
+[OK: contains "already inflated"]
 
 # Deflate the boat
 > deflate boat

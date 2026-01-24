@@ -1,46 +1,41 @@
-title: Dam and Reservoir (Loud Room, Dam Puzzle, Trunk)
+title: Dam and Reservoir (Loud Room, Dam Puzzle, Trunk, Pump)
 story: dungeo
-description: Get platinum bar from Loud Room, drain reservoir, get trunk. Chain after maze-cyclops-goal.
+description: Get platinum bar from Loud Room, drain reservoir, get trunk and pump. Chain after maze-cyclops-goal.
 ---
 
 # ============================================================================
-# Starting state: Living Room with torch only (10 weight)
-# Items in Living Room: lantern, incense, skeleton key (dropped from wt-03)
-# Treasures in trophy case: portrait, painting, zorkmid bills
+# Starting state after wt-03:
+# - Location: Living Room
+# - Inventory: torch (lit)
+# - Dropped in Living Room: lantern, incense, key
+# - Trophy case: portrait, painting, zorkmid bills
 # ============================================================================
-
-# Pick up lantern - need light source for underground
-> take lantern
-[OK: matches /(Taken|take)/i]
 
 # ============================================================================
 # GOAL: Navigate to Loud Room for platinum bar
-# Path: Living Room → Cellar → Troll Room → E/W Passage → Round Room
-#       → N/S Passage → Loud Room
+# Route: Living Room → Cellar → Troll Room → E-W Passage → Round Room → Loud Room
 # ============================================================================
 
 [GOAL: Get to Loud Room]
 
-> open trapdoor
-[OK: matches /(open|Opening|already)/i]
+# Pick up lantern for backup light
+> take lantern
+[OK: matches /(Taken|take)/i]
 
+# Go down through trapdoor to Cellar
 > down
 [OK: contains "Cellar"]
 
 > east
 [OK: contains "Troll Room"]
 
-# Troll was killed in wt-01, passage should be clear
 > north
-[OK: contains "Passage"]
+[OK: contains "East-West Passage"]
 
-> east
-[OK: contains "Round Room"]
+# Navigate through Round Room (handles carousel randomness)
+[NAVIGATE TO: "Loud Room"]
 
-> northeast
-[OK: contains "Passage"]
-
-> northeast
+> look
 [OK: contains "Loud Room"]
 
 [END GOAL]
@@ -57,7 +52,6 @@ description: Get platinum bar from Loud Room, drain reservoir, get trunk. Chain 
 [OK: contains "platinum"]
 
 # Say "echo" to silence the room - required before taking the bar
-# Use bare "echo" command (mainframe Zork style)
 > echo
 [OK: matches /(echo|quiet|silence|safe|acoustic|dissipate)/i]
 
@@ -70,25 +64,33 @@ description: Get platinum bar from Loud Room, drain reservoir, get trunk. Chain 
 [END GOAL]
 
 # ============================================================================
-# GOAL: Navigate to Dam area
-# Path: Loud Room → N/S Passage → Round Room → Deep Canyon → Dam Lobby
+# GOAL: Navigate to Dam area via Round Room and Deep Canyon
+# Route: Loud Room → N/S Passage → Round Room → Deep Canyon → Dam → Dam Lobby → Maintenance
 # ============================================================================
 
 [GOAL: Get to Maintenance Room]
 
-> southwest
-[OK: contains "Passage"]
+# Back to Round Room area
+> west
+[OK: contains "North-South Passage"]
 
-> southwest
+> south
 [OK: contains "Round Room"]
 
+# Northwest to Deep Canyon
 > northwest
-[OK: contains "Canyon"]
+[OK: contains "Deep Canyon"]
 
+# East to Dam
+> east
+[OK: contains "Dam"]
+
+# North to Dam Lobby
 > north
 [OK: contains "Dam Lobby"]
 
-> east
+# North to Maintenance Room
+> north
 [OK: contains "Maintenance Room"]
 
 [END GOAL]
@@ -97,7 +99,7 @@ description: Get platinum bar from Loud Room, drain reservoir, get trunk. Chain 
 # GOAL: Press yellow button to enable dam bolt, get wrench
 # ============================================================================
 
-[GOAL: Enable dam controls]
+[GOAL: Enable dam controls and get wrench]
 
 > look
 [OK: contains "panel"]
@@ -113,86 +115,46 @@ description: Get platinum bar from Loud Room, drain reservoir, get trunk. Chain 
 [END GOAL]
 
 # ============================================================================
-# GOAL: Go to Dam and turn bolt to start draining
+# GOAL: Go to Dam and turn bolt to drain reservoir
 # ============================================================================
 
-[GOAL: Start reservoir draining]
+[GOAL: Drain reservoir]
 
-> west
+# Back to Dam
+> south
 [OK: contains "Dam Lobby"]
 
-> north
+> south
 [OK: contains "Dam"]
 
-# Turn the bolt with the wrench to open sluice gates
+# Turn the bolt with the wrench to open sluice gates (instant drain)
 > turn bolt
 [OK: matches /(sluice|gates|drain|open)/i]
 
 [END GOAL]
 
 # ============================================================================
-# GOAL: Wait for reservoir to drain (10 turns total)
-# Stage 2 at turn 5, Stage 3 at turn 8, Complete at turn 10
+# GOAL: Get trunk from drained Reservoir
+# Route: Dam → Deep Canyon → Reservoir South → Reservoir
 # ============================================================================
 
-[GOAL: Wait for draining to complete]
-
-# Drop wrench - no longer needed (saves weight)
-> drop wrench
-[OK: matches /(drop|Dropped)/i]
-
-# Wait for draining - 10 turns needed
-> wait
-[OK: matches /(time passes|wait)/i]
-
-> wait
-[OK: matches /(time passes|wait)/i]
-
-> wait
-[OK: matches /(time passes|wait)/i]
-
-> wait
-[OK: matches /(time passes|wait)/i]
-
-# Turn 5 - water dropping message
-> wait
-[OK: matches /(time passes|wait|dropping|draining)/i]
-
-> wait
-[OK: matches /(time passes|wait)/i]
-
-> wait
-[OK: matches /(time passes|wait)/i]
-
-# Turn 8 - nearly empty message
-> wait
-[OK: matches /(time passes|wait|nearly|almost)/i]
-
-> wait
-[OK: matches /(time passes|wait)/i]
-
-# Turn 10 - trunk revealed
-> wait
-[OK: matches /(time passes|wait|trunk|revealed|drained)/i]
-
-[END GOAL]
-
-# ============================================================================
-# GOAL: Navigate through reservoir and get trunk
-# ============================================================================
-
-[GOAL: Get trunk of jewels]
+[GOAL: Get trunk from reservoir]
 [ENSURES: inventory contains "trunk"]
 
+# Back to Deep Canyon
+> south
+[OK: contains "Deep Canyon"]
+
+# Northwest to Reservoir South
+> northwest
+[OK: contains "Reservoir"]
+
+# North to Reservoir (where trunk is)
 > north
 [OK: contains "Reservoir"]
 
-> north
-[OK: contains "Reservoir"]
-
-# The trunk should be visible now
 > look
-[OK: contains "trunk"]
+[OK: matches /(trunk|drained|mud)/i]
 
 > take trunk
 [OK: matches /(Taken|take)/i]
@@ -200,44 +162,58 @@ description: Get platinum bar from Loud Room, drain reservoir, get trunk. Chain 
 [END GOAL]
 
 # ============================================================================
+# GOAL: Get pump from Reservoir North
+# ============================================================================
+
+[GOAL: Get pump from Reservoir North]
+[ENSURES: inventory contains "pump"]
+
+> north
+[OK: contains "Reservoir North"]
+
+> look
+[OK: contains "pump"]
+
+> take pump
+[OK: matches /(Taken|take)/i]
+
+> inventory
+[OK: contains "pump"]
+
+[END GOAL]
+
+# ============================================================================
 # GOAL: Return to Living Room
-# Path: Reservoir → Reservoir South → Dam → Dam Lobby → Deep Canyon
-#       → Round Room → E/W Passage → Troll Room → Cellar → Living Room
+# Route: Reservoir North → Reservoir → Reservoir South → Deep Canyon → Round Room → navigate
 # ============================================================================
 
 [GOAL: Return to Living Room]
 
+# Back south through reservoir
 > south
 [OK: contains "Reservoir"]
 
 > south
-[OK: contains "Dam"]
+[OK: contains "Reservoir South"]
 
-> south
-[OK: contains "Dam Lobby"]
-
-> south
-[OK: contains "Canyon"]
-
+# Southeast to Deep Canyon
 > southeast
+[OK: contains "Deep Canyon"]
+
+# South to Round Room
+> south
 [OK: contains "Round Room"]
 
-> west
-[OK: contains "Passage"]
+# Navigate back to Living Room (handles Round Room carousel)
+[NAVIGATE TO: "Living Room"]
 
-> south
-[OK: contains "Troll Room"]
-
-> west
-[OK: contains "Cellar"]
-
-> up
+> look
 [OK: contains "Living Room"]
 
 [END GOAL]
 
 # ============================================================================
-# GOAL: Store treasures and setup for next segment
+# GOAL: Store platinum bar in trophy case
 # ============================================================================
 
 [GOAL: Store treasures in trophy case]
@@ -245,35 +221,32 @@ description: Get platinum bar from Loud Room, drain reservoir, get trunk. Chain 
 > open trophy case
 [OK: matches /(open|Opening|already)/i]
 
-> put trunk in trophy case
-[OK: matches /(put|Done|place)/i]
-
 > put bar in trophy case
 [OK: matches /(put|Done|place)/i]
 
 [END GOAL]
 
 # ============================================================================
-# GOAL: Verify final state - torch and lantern only
+# GOAL: Verify final state for next segment
 # ============================================================================
 
 [GOAL: Verify inventory for next segment]
 
-# Keep torch (primary light, treasure)
-# Keep lantern (backup light source for gas room later)
 > inventory
 [OK: contains "torch"]
 [OK: contains "lantern"]
+[OK: contains "trunk"]
+[OK: contains "pump"]
+[OK: contains "wrench"]
 
-# Verify treasures were stored (put commands passed above)
-# Trophy case now has: portrait, painting, zorkmid bills, trunk, platinum bar
 > look
 [OK: contains "Living Room"]
 [OK: contains "trophy case"]
 
 [END GOAL]
 
-# SUCCESS! Dam & Reservoir complete
-# Treasures stored: trunk of jewels, platinum bar (+ previous 3)
-# Player in Living Room with torch + lantern
-# Ready for next segment (Temple & Coffin)
+# SUCCESS! Dam puzzle complete
+# Treasure stored: platinum bar
+# Inventory: torch, lantern, trunk, pump, wrench
+# Player in Living Room
+# Ready for next segment

@@ -17,6 +17,9 @@ description: Tests RVAL points for room entry and LIGHT-SHAFT achievement
 > e
 [OK: contains "Behind House"]
 
+> open window
+[OK: contains "open"]
+
 # Enter kitchen through window (west) - should get 10 points for first visit
 > w
 [OK: contains "Kitchen"]

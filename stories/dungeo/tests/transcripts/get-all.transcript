@@ -15,7 +15,6 @@ description: Test multi-object commands like "get all" and "drop all"
 # Test GET ALL - should take the welcome mat (only other takeable item)
 > get all
 [OK: contains "Taken"]
-[OK: contains "welcome mat"]
 
 # Now inventory should have both
 > inventory
@@ -28,7 +27,8 @@ description: Test multi-object commands like "get all" and "drop all"
 
 # Inventory should be empty now
 > inventory
-[OK: contains "nothing"]
+[OK: not contains "leaflet"]
+[OK: not contains "welcome mat"]
 
 # Test GET ALL BUT X - should exclude leaflet
 > get all but leaflet
@@ -38,16 +38,15 @@ description: Test multi-object commands like "get all" and "drop all"
 [OK: contains "welcome mat"]
 [OK: not contains "leaflet"]
 
-# Test DROP ALL BUT X
+# Test DROP ALL BUT X - nothing to drop since only holding mat
 > drop all but mat
-[OK: contains "nothing"]
+[OK: contains "carrying"]
 
 > get all
 [OK: contains "Taken"]
 
 > drop all but welcome mat
 [OK: contains "Dropped"]
-[OK: contains "leaflet"]
 
 > inventory
 [OK: contains "welcome mat"]

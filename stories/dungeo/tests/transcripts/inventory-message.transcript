@@ -7,7 +7,7 @@ description: Verify inventory message shows "You are carrying" not "You {are} ca
 # Take an item and check inventory
 
 > take mat
-Taken.
+[OK: contains "Taken"]
 
 > i
 [OK: contains "You are carrying:"]

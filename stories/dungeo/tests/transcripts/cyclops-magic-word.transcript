@@ -11,6 +11,9 @@ description: Test saying "odysseus" or "ulysses" to scare away the cyclops
 > east
 [OK: contains "Behind House"]
 
+> open window
+[OK: contains "open"]
+
 > west
 [OK: contains "Kitchen"]
 

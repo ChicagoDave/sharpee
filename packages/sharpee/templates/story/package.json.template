@@ -1,0 +1,25 @@
+{
+  "name": "{{STORY_ID}}",
+  "version": "1.0.0",
+  "description": "{{DESCRIPTION}}",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "build:browser": "npx sharpee build-browser",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@sharpee/sharpee": "^0.9.52-beta"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "interactive-fiction",
+    "sharpee",
+    "text-adventure"
+  ],
+  "author": "{{AUTHOR}}",
+  "license": "MIT"
+}

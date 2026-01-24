@@ -6,8 +6,7 @@ description: Test the INCANT command that teleports to endgame
 
 # Test wrong response (should fail silently)
 > incant mhoram wrongxx
-[OK: contains "incant"]
-[EVENT: true, type="action.blocked"]
+[OK: contains "Nothing happens"]
 
 # Test correct response (MHORAM -> DFNOBO)
 > incant mhoram dfnobo

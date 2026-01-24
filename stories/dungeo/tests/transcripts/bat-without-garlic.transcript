@@ -11,6 +11,9 @@ description: Test entering the Squeaky Room without garlic - bat should carry pl
 > east
 [OK: contains "Behind House"]
 
+> open window
+[OK: contains "open"]
+
 > west
 [OK: contains "Kitchen"]
 

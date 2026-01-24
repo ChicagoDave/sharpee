@@ -63,4 +63,4 @@ description: Verifies that the player cannot carry more than 100 weight units
 # Current weight: 92. Coffin weighs 10, would make 102 > 100
 # This should fail because we're over capacity
 > take coffin
-[OK: contains "can't"]
+[OK: contains "too heavy"]

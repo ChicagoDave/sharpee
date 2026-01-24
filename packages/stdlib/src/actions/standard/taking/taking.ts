@@ -16,7 +16,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, SceneryBehavior, ActorBehavior, WearableBehavior, IFEntity } from '@sharpee/world-model';
+import { TraitType, SceneryBehavior, ActorBehavior, WearableBehavior, ContainerBehavior, IdentityBehavior, IFEntity } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
 import { TakingMessages } from './taking-messages';
@@ -88,17 +88,29 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
     // Check if it's a container capacity issue
     if (actor.has(TraitType.CONTAINER)) {
       const containerTrait = actor.get(TraitType.CONTAINER);
-      if (hasCapacityLimit(containerTrait) && containerTrait.capacity.maxItems !== undefined) {
-        const contents = context.world.getContents(actor.id);
-        const currentCount = contents.filter((item: any) => {
-          if (!item.has || !item.has(TraitType.WEARABLE)) {
-            return true;
+      if (hasCapacityLimit(containerTrait)) {
+        // Check item count limit
+        if (containerTrait.capacity.maxItems !== undefined) {
+          const contents = context.world.getContents(actor.id);
+          const currentCount = contents.filter((item: any) => {
+            if (!item.has || !item.has(TraitType.WEARABLE)) {
+              return true;
+            }
+            const wearableTrait = item.get(TraitType.WEARABLE);
+            return !isWearableTrait(wearableTrait) || (!wearableTrait.isWorn && !(wearableTrait as any).worn);
+          }).length;
+          if (currentCount >= containerTrait.capacity.maxItems) {
+            return { valid: false, error: TakingMessages.CONTAINER_FULL };
           }
-          const wearableTrait = item.get(TraitType.WEARABLE);
-          return !isWearableTrait(wearableTrait) || (!wearableTrait.isWorn && !(wearableTrait as any).worn);
-        }).length;
-        if (currentCount >= containerTrait.capacity.maxItems) {
-          return { valid: false, error: TakingMessages.CONTAINER_FULL };
+        }
+
+        // Check weight limit
+        if (containerTrait.capacity.maxWeight !== undefined) {
+          const currentWeight = ContainerBehavior.getTotalWeight(actor, context.world);
+          const itemWeight = IdentityBehavior.getWeight(noun);
+          if (currentWeight + itemWeight > containerTrait.capacity.maxWeight) {
+            return { valid: false, error: TakingMessages.TOO_HEAVY };
+          }
         }
       }
     }

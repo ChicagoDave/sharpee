@@ -1,0 +1,43 @@
+title: ext-testing Commands Integration
+story: dungeo
+description: Test that $commands from ext-testing work in transcripts
+
+---
+
+# Start at West of House
+> look
+[OK: contains "West of House"]
+
+# Use $teleport to instantly go to Kitchen
+$teleport kitchen
+> look
+[OK: contains "Kitchen"]
+
+# Use $take to give brass lantern to player (multi-word name support)
+$take brass lantern
+> inventory
+[OK: contains "brass lantern"]
+
+# Use $state to display game state (verbose output)
+$state
+
+# Turn on the lantern so we can see in dark rooms
+> turn on lantern
+[OK: contains "on"]
+
+# Use $teleport again to go to Cellar (a dark room)
+$teleport cellar
+> look
+[OK: contains "Cellar"]
+
+# Use $immortal to enable immortality
+$immortal
+
+# Use $mortal to disable immortality
+$mortal
+
+# Use $describe to inspect an entity (multi-word name support)
+$describe brass lantern
+
+# Use $exits to show room exits
+$exits

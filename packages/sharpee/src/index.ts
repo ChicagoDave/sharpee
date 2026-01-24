@@ -66,3 +66,6 @@ export {
 
 // Text blocks (ADR-096)
 export type { ITextBlock, IDecoration, TextContent } from '@sharpee/text-blocks';
+
+// Testing extension (ADR-109/110)
+export { TestingExtension, createDebugContext } from '@sharpee/ext-testing';

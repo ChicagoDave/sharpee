@@ -61,9 +61,32 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
       continue;
     }
 
-    // Comments
+    // Comments - add to both comments array (legacy) and items array (for annotation context)
     if (trimmed.startsWith('#') && !trimmed.startsWith('#[')) {
-      transcript.comments.push(trimmed.slice(1).trim());
+      const commentText = trimmed.slice(1).trim();
+      transcript.comments.push(commentText);
+      // Also add as item for annotation processing
+      transcript.items!.push({
+        type: 'comment',
+        comment: { lineNumber, text: commentText },
+      });
+      continue;
+    }
+
+    // $ directives ($save, $restore) - these are standalone directives
+    if (trimmed.startsWith('$')) {
+      // Save any pending command first
+      if (currentCommand) {
+        finalizeCommand(currentCommand);
+        transcript.commands.push(currentCommand);
+        transcript.items!.push({ type: 'command', command: currentCommand });
+        currentCommand = null;
+      }
+
+      const directive = parseDollarDirective(trimmed, lineNumber);
+      if (directive) {
+        transcript.items!.push({ type: 'directive', directive });
+      }
       continue;
     }
 
@@ -197,6 +220,34 @@ function parseDirective(tag: string, lineNumber: number): Directive | null {
   }
 
   // Not a directive
+  return null;
+}
+
+/**
+ * Parse a $ directive like $save <name>, $restore <name>, or ext-testing commands
+ */
+function parseDollarDirective(line: string, lineNumber: number): Directive | null {
+  const trimmed = line.trim();
+
+  // $save <name>
+  const saveMatch = trimmed.match(/^\$save\s+(.+)$/i);
+  if (saveMatch) {
+    return { type: 'save', lineNumber, saveName: saveMatch[1].trim() };
+  }
+
+  // $restore <name>
+  const restoreMatch = trimmed.match(/^\$restore\s+(.+)$/i);
+  if (restoreMatch) {
+    return { type: 'restore', lineNumber, saveName: restoreMatch[1].trim() };
+  }
+
+  // Any other $ directive is a test command (ext-testing)
+  // Valid test commands: $teleport, $take, $move, $kill, $immortal, $mortal, $state, $describe, etc.
+  const testCommandMatch = trimmed.match(/^\$(\w+)(.*)$/);
+  if (testCommandMatch) {
+    return { type: 'test-command', lineNumber, testCommand: trimmed };
+  }
+
   return null;
 }
 

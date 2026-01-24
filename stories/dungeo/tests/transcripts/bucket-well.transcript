@@ -19,7 +19,7 @@ description: Tests the VehicleTrait counterweight mechanism for bucket and well
 
 > turn on lantern
 [OK: contains "switches on"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="if.event.switched_on"]
 
 # Get the bottle with water from kitchen
 > gdt
@@ -40,7 +40,7 @@ description: Tests the VehicleTrait counterweight mechanism for bucket and well
 
 > take bottle
 [OK: contains "Taken"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="if.event.taken"]
 
 # Go to Well Bottom where bucket starts
 > gdt
@@ -62,12 +62,12 @@ description: Tests the VehicleTrait counterweight mechanism for bucket and well
 # The bucket should be here
 > examine bucket
 [OK: contains "bucket"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="if.event.examined"]
 
 # Enter the bucket
 > enter bucket
 [OK: contains "bucket"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="if.event.entered"]
 
 # Now pour water to make bucket rise
 > pour water
@@ -92,4 +92,4 @@ description: Tests the VehicleTrait counterweight mechanism for bucket and well
 # Exit the bucket
 > exit bucket
 [OK: contains "bucket"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="if.event.exited"]

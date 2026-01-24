@@ -33,7 +33,7 @@ description: Test the AGAIN (G) command for repeating last action
 [OK: contains "North of House"]
 
 > g
-[OK: contains "clearing"]
+[OK: contains "Forest"]
 
 # Test AGAIN at start of game with no history
 # (This requires starting fresh - we'll test the error message separately)

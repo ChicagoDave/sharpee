@@ -20,7 +20,10 @@ export type DirectiveType =
   | 'end_if'      // [END IF]
   | 'while'       // [WHILE: condition]
   | 'end_while'   // [END WHILE]
-  | 'navigate';   // [NAVIGATE TO: "Room Name"]
+  | 'navigate'    // [NAVIGATE TO: "Room Name"]
+  | 'save'        // $save <name>
+  | 'restore'     // $restore <name>
+  | 'test-command'; // $teleport, $take, $kill, etc. (ext-testing)
 
 /**
  * A control flow directive in the transcript
@@ -31,6 +34,8 @@ export interface Directive {
   condition?: string;   // For IF/WHILE/REQUIRES/ENSURES: the condition expression
   target?: string;      // For NAVIGATE: the target room name
   goalName?: string;    // For GOAL: the goal name
+  saveName?: string;    // For SAVE/RESTORE: the checkpoint name
+  testCommand?: string; // For test-command: the full $command input (e.g., "$teleport kitchen")
 }
 
 /**
@@ -76,12 +81,21 @@ export interface NavigateResult {
 }
 
 /**
- * A transcript item - either a command or a directive
+ * A comment annotation from the transcript (# lines)
+ */
+export interface TranscriptComment {
+  lineNumber: number;
+  text: string;
+}
+
+/**
+ * A transcript item - either a command, directive, or comment
  */
 export interface TranscriptItem {
-  type: 'command' | 'directive';
+  type: 'command' | 'directive' | 'comment';
   command?: TranscriptCommand;
   directive?: Directive;
+  comment?: TranscriptComment;
 }
 
 // ============================================================================
@@ -201,11 +215,24 @@ export interface TestRunResult {
 /**
  * Options for the test runner
  */
+/**
+ * Interface for ext-testing extension (optional)
+ */
+export interface TestingExtensionInterface {
+  executeTestCommand(input: string, world: any): { success: boolean; output: string[]; error?: string };
+  /** Set context for annotation commands (called after each command execution) */
+  setCommandContext?(command: string, response: string): void;
+  /** Add an annotation directly (for # comments) */
+  addAnnotation?(type: string, text: string, world: any): any;
+}
+
 export interface RunnerOptions {
   verbose?: boolean;
   stopOnFailure?: boolean;
   updateExpected?: boolean;
   filter?: string;  // Only run commands matching this pattern
+  savesDirectory?: string;  // Directory for $save/$restore checkpoints
+  testingExtension?: TestingExtensionInterface;  // Optional ext-testing integration
 }
 
 /**

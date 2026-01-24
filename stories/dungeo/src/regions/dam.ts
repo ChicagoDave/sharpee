@@ -183,13 +183,13 @@ export function connectDamToFrigidRiver(world: WorldModel, ids: DamRoomIds, frig
 
 /**
  * Connect Stream View to Glacier Room (volcano region)
- * Stream View: S→Glacier Room, Glacier Room: N→Stream View
+ * Stream View: S→Glacier Room (one-way until glacier melts)
+ * Note: Glacier Room NORTH is reserved for Volcano View (opens when glacier melts)
  */
 export function connectStreamViewToGlacier(world: WorldModel, ids: DamRoomIds, glacierRoomId: string): void {
   const sv = world.getEntity(ids.streamView);
-  const gr = world.getEntity(glacierRoomId);
   if (sv) sv.get(RoomTrait)!.exits[Direction.SOUTH] = { destination: glacierRoomId };
-  if (gr) gr.get(RoomTrait)!.exits[Direction.NORTH] = { destination: ids.streamView };
+  // Don't set Glacier Room NORTH here - that's reserved for Volcano View when glacier melts
 }
 
 export function connectSmallCaveToMirrorRoom(world: WorldModel, ids: DamRoomIds, mirrorRoomId: string): void {

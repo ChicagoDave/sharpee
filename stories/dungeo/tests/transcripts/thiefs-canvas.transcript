@@ -11,6 +11,9 @@ description: Test ADR-078 ghost ritual puzzle actions (pray, burn) and Basin Roo
 > east
 [OK: contains "Behind House"]
 
+> open window
+[OK: contains "open"]
+
 > west
 [OK: contains "Kitchen"]
 
