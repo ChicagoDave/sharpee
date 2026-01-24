@@ -322,6 +322,33 @@ export function useMap(storyId: string): MapState & {
         y = existing.y;
         z = existing.z;
         newLevel = z;
+      } else if (prevRoom && rooms.has(prevRoom.id) && currentRoom.arrivedViaMapHint) {
+        // Use map hint from exit definition (ADR-113)
+        const prevMapRoom = rooms.get(prevRoom.id)!;
+        const hint = currentRoom.arrivedViaMapHint;
+        const hintX = prevMapRoom.x + (hint.dx ?? 0);
+        const hintY = prevMapRoom.y + (hint.dy ?? 0);
+        const hintZ = prevMapRoom.z + (hint.dz ?? 0);
+
+        // Use hint position if not occupied
+        if (!isOccupied(hintX, hintY, hintZ)) {
+          x = hintX;
+          y = hintY;
+          z = hintZ;
+        } else if (direction) {
+          // Hint position occupied, fall back to direction-based from hint position
+          const pos = findDirectionalPosition(hintX, hintY, hintZ, direction);
+          x = pos.x;
+          y = pos.y;
+          z = pos.z;
+        } else {
+          // No direction, find any adjacent from hint position
+          const pos = findAnyAdjacentPosition(hintX, hintY, hintZ);
+          x = pos.x;
+          y = pos.y;
+          z = pos.z;
+        }
+        newLevel = z;
       } else if (prevRoom && rooms.has(prevRoom.id) && direction) {
         // Position relative to previous room, respecting compass direction
         const prevMapRoom = rooms.get(prevRoom.id)!;

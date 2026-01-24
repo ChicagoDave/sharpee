@@ -5,11 +5,26 @@ import { TraitType } from '../trait-types';
 import { EntityId } from '@sharpee/core';
 import { DirectionType } from '../../constants/directions';
 
+/**
+ * Map position hint for an exit (ADR-113).
+ * Overrides direction-based positioning in the auto-mapper.
+ */
+export interface IExitMapHint {
+  /** Grid offset X (-1 = west, +1 = east) */
+  dx?: number;
+  /** Grid offset Y (-1 = north, +1 = south) */
+  dy?: number;
+  /** Grid offset Z (-1 = down, +1 = up) */
+  dz?: number;
+}
+
 export interface IExitInfo {
   /** The destination room ID (must be an entity ID, not a name) */
   destination: string;
   /** Optional door/portal entity ID that must be traversed (must be an entity ID, not a name) */
   via?: string;
+  /** Optional map positioning hint (ADR-113) */
+  mapHint?: IExitMapHint;
 }
 
 export interface IRoomData {

@@ -183,6 +183,7 @@ export function GameProvider({ engine, children }: GameProviderProps) {
           destinationRoom?: { id: string; name?: string };
           firstVisit?: boolean;
           direction?: string;
+          mapHint?: { dx?: number; dy?: number; dz?: number };
         };
         if (data.toRoom || data.destinationRoom?.id) {
           const roomId = data.toRoom || data.destinationRoom!.id;
@@ -191,6 +192,10 @@ export function GameProvider({ engine, children }: GameProviderProps) {
             room.firstVisit = data.firstVisit ?? false;
             // Include the direction traveled to reach this room
             room.arrivedFrom = data.direction?.toLowerCase();
+            // Include map hint if present (ADR-113)
+            if (data.mapHint) {
+              room.arrivedViaMapHint = data.mapHint;
+            }
             dispatch({ type: 'ROOM_CHANGED', room });
           }
         }

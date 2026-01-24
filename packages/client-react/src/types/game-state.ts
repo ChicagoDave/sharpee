@@ -17,6 +17,15 @@ export interface TranscriptEntry {
 }
 
 /**
+ * Map position hint for auto-mapper (ADR-113)
+ */
+export interface MapHint {
+  dx?: number;  // Grid offset X (-1 = west, +1 = east)
+  dy?: number;  // Grid offset Y (-1 = north, +1 = south)
+  dz?: number;  // Grid offset Z (-1 = down, +1 = up)
+}
+
+/**
  * Exit information for a room
  */
 export interface RoomExit {
@@ -24,6 +33,7 @@ export interface RoomExit {
   destination: string;
   destinationName?: string;
   via?: string; // Door/gate entity ID
+  mapHint?: MapHint; // Map positioning hint (ADR-113)
 }
 
 /**
@@ -36,6 +46,8 @@ export interface CurrentRoom {
   firstVisit: boolean;
   /** Direction traveled to reach this room (from previous room) */
   arrivedFrom?: string;
+  /** Map hint from the exit used to reach this room (ADR-113) */
+  arrivedViaMapHint?: MapHint;
 }
 
 /**

@@ -1,6 +1,6 @@
 # ADR-113: Map Position Hints
 
-## Status: Proposed
+## Status: Accepted (Phase 1 Implemented)
 
 ## Context
 
