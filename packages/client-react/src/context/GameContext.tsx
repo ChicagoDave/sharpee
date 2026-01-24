@@ -182,12 +182,15 @@ export function GameProvider({ engine, children }: GameProviderProps) {
           toRoom?: string;
           destinationRoom?: { id: string; name?: string };
           firstVisit?: boolean;
+          direction?: string;
         };
         if (data.toRoom || data.destinationRoom?.id) {
           const roomId = data.toRoom || data.destinationRoom!.id;
           const room = extractCurrentRoom(world, roomId);
           if (room) {
             room.firstVisit = data.firstVisit ?? false;
+            // Include the direction traveled to reach this room
+            room.arrivedFrom = data.direction?.toLowerCase();
             dispatch({ type: 'ROOM_CHANGED', room });
           }
         }

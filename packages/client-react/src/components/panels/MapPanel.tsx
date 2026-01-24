@@ -17,11 +17,11 @@ interface MapPanelProps {
   className?: string;
 }
 
-// Layout constants
-const ROOM_WIDTH = 100;
-const ROOM_HEIGHT = 40;
-const GRID_SPACING_X = 140;
-const GRID_SPACING_Y = 70;
+// Layout constants - smaller boxes for better map density
+const ROOM_WIDTH = 80;
+const ROOM_HEIGHT = 32;
+const GRID_SPACING_X = 100;
+const GRID_SPACING_Y = 52;
 const PADDING = 20;
 
 /**
@@ -53,9 +53,9 @@ function RoomBox({
   const x = svgX - ROOM_WIDTH / 2;
   const y = svgY - ROOM_HEIGHT / 2;
 
-  // Truncate long names
+  // Truncate long names to fit smaller boxes
   const displayName =
-    room.name.length > 14 ? room.name.substring(0, 12) + '...' : room.name;
+    room.name.length > 12 ? room.name.substring(0, 10) + '...' : room.name;
 
   return (
     <g className={`map-room ${isCurrent ? 'map-room--current' : ''}`}>
@@ -312,49 +312,53 @@ export function MapPanel({ storyId, className = '' }: MapPanelProps) {
         </button>
       </div>
 
-      {/* Map SVG */}
-      <svg
-        ref={svgRef}
-        className="map-panel__svg"
-        viewBox={`0 0 ${width} ${height}`}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onWheel={handleWheel}
-      >
-        <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
-          {/* Connections first (behind rooms) */}
-          {connections.map((conn, i) => (
-            <ConnectionLine
-              key={`${conn.fromId}-${conn.toId}-${i}`}
-              connection={conn}
-              rooms={rooms}
-              bounds={bounds}
-            />
-          ))}
+      {/* Map container for scrolling/centering */}
+      <div className="map-panel__canvas">
+        <svg
+          ref={svgRef}
+          className="map-panel__svg"
+          width={width}
+          height={height}
+          viewBox={`0 0 ${width} ${height}`}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onWheel={handleWheel}
+        >
+          <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
+            {/* Connections first (behind rooms) */}
+            {connections.map((conn, i) => (
+              <ConnectionLine
+                key={`${conn.fromId}-${conn.toId}-${i}`}
+                connection={conn}
+                rooms={rooms}
+                bounds={bounds}
+              />
+            ))}
 
-          {/* Exit stubs */}
-          {visibleRooms.map((room) => (
-            <ExitStubs
-              key={`stubs-${room.id}`}
-              room={room}
-              bounds={bounds}
-              connections={connections}
-            />
-          ))}
+            {/* Exit stubs */}
+            {visibleRooms.map((room) => (
+              <ExitStubs
+                key={`stubs-${room.id}`}
+                room={room}
+                bounds={bounds}
+                connections={connections}
+              />
+            ))}
 
-          {/* Room boxes */}
-          {visibleRooms.map((room) => (
-            <RoomBox
-              key={room.id}
-              room={room}
-              bounds={bounds}
-              isCurrent={room.id === currentRoomId}
-            />
-          ))}
-        </g>
-      </svg>
+            {/* Room boxes */}
+            {visibleRooms.map((room) => (
+              <RoomBox
+                key={room.id}
+                room={room}
+                bounds={bounds}
+                isCurrent={room.id === currentRoomId}
+              />
+            ))}
+          </g>
+        </svg>
+      </div>
 
       {/* Legend */}
       <div className="map-panel__legend">

@@ -1,54 +1,67 @@
-[19:13:44] EDIT: docs/architecture/adrs/adr-110-debug-tools-extension.md
-[19:14:08] EDIT: docs/architecture/adrs/adr-110-debug-tools-extension.md
-[19:14:23] EDIT: docs/architecture/adrs/adr-110-debug-tools-extension.md
-[19:14:32] EDIT: docs/architecture/adrs/adr-110-debug-tools-extension.md
-[19:17:22] EDIT: .gitignore
-[19:23:31] WRITE: docs/context/session-20260123-1917-ext-testing-final.md
-[19:25:32] GIT: git commit -m "$(cat <<'EOF'
-feat: Add React client package and finalize ext-tes
-[19:25:44] GIT: git push origin ext-testing
-[19:26:04] EDIT: stories/dungeo/src/react-entry.tsx
-[19:27:07] EDIT: stories/dungeo/src/react-entry.tsx
-[19:27:16] EDIT: packages/client-react/src/context/GameContext.tsx
-[19:44:51] WRITE: docs/context/session-20260123-1944-dungeo.md
-[19:48:45] EDIT: docs/work/issues/issues-list-02.md
-[19:48:59] EDIT: docs/work/issues/issues-list-02.md
-[19:52:32] TRANSCRIPT FAIL: ls /mnt/c/repotemp/sharpee/packages/transcript-tester/src/
-[20:00:48] EDIT: docs/work/issues/issues-list-02.md
-[20:00:58] EDIT: docs/work/issues/issues-list-02.md
-[20:25:36] EDIT: stories/dungeo/src/react-entry.tsx
-[20:25:50] EDIT: docs/work/issues/issues-list-02.md
-[20:26:03] EDIT: stories/dungeo/src/react-entry.tsx
-[20:26:09] EDIT: stories/dungeo/src/react-entry.tsx
-[20:30:21] EDIT: scripts/build.sh
-[20:30:25] EDIT: scripts/build.sh
-[20:30:31] EDIT: scripts/build.sh
-[20:30:38] EDIT: scripts/build.sh
-[20:30:45] EDIT: scripts/build.sh
-[20:31:54] EDIT: scripts/update-versions.sh
-[20:58:32] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/client-react' build 2>&1
-[21:53:52] WRITE: docs/context/session-20260123-2152-dungeo.md
-[21:58:15] EDIT: packages/event-processor/src/processor.ts
-[21:58:30] EDIT: packages/event-processor/src/processor.ts
-[22:00:29] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/event-processor' build 2>&1
-[22:00:41] EDIT: packages/text-service/src/stages/sort.ts
-[22:01:16] EDIT: packages/text-service/src/text-service.ts
-[22:01:32] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/text-service' build 2>&1
-[22:13:02] EDIT: stories/dungeo/tests/transcripts/rug-trapdoor.transcript
-[22:17:50] EDIT: stories/dungeo/tests/transcripts/troll-blocking.transcript
-[22:27:25] EDIT: packages/client-react/src/hooks/useMap.ts
-[22:36:25] EDIT: docs/work/issues/issues-list-02.md
-[22:36:31] EDIT: docs/work/issues/issues-list-02.md
-[22:36:47] EDIT: docs/work/issues/issues-list-02.md
-[22:36:54] EDIT: docs/work/issues/issues-list-02.md
-[22:37:09] EDIT: docs/context/session-20260123-2152-dungeo.md
-[22:37:21] EDIT: docs/context/session-20260123-2152-dungeo.md
-[22:37:36] EDIT: docs/context/session-20260123-2152-dungeo.md
-[22:38:34] GIT: git commit -m "$(cat <<'EOF'
-fix(event-processor): Implement game.message overri
-[22:38:42] GIT: git push origin dungeo
-[22:41:10] EDIT: docs/work/issues/issues-list-02.md
-[22:41:16] EDIT: docs/work/issues/issues-list-02.md
 [22:41:23] EDIT: docs/work/issues/issues-list-02.md
 [22:45:52] WRITE: docs/design/react-design.html
 [22:52:22] EDIT: docs/context/session-20260123-2152-dungeo.md
+[22:53:10] GIT: git commit -m "$(cat <<'EOF'
+docs: Add React client theme design and font showca
+[22:53:19] GIT: git push origin dungeo
+[23:13:42] WRITE: build.sh
+[23:14:50] WRITE: packages/client-react/themes/classic-light.css
+[23:15:34] WRITE: packages/client-react/themes/modern-dark.css
+[23:16:22] WRITE: packages/client-react/themes/retro-terminal.css
+[23:17:06] WRITE: packages/client-react/themes/paper.css
+[23:17:46] EDIT: packages/client-react/src/components/GameShell.tsx
+[23:18:03] EDIT: packages/client-react/src/components/GameShell.tsx
+[23:18:26] EDIT: packages/client-react/src/components/panels/index.ts
+[23:18:32] EDIT: packages/client-react/src/components/index.ts
+[23:18:38] EDIT: packages/client-react/src/index.ts
+[23:18:50] EDIT: stories/dungeo/src/react-entry.tsx
+[23:18:56] EDIT: stories/dungeo/src/react-entry.tsx
+[23:19:11] EDIT: packages/client-react/src/components/panels/TabPanel.tsx
+[23:19:37] EDIT: packages/client-react/src/components/panels/MapPanel.tsx
+[23:19:47] EDIT: packages/client-react/src/components/panels/NotesPanel.tsx
+[23:19:57] EDIT: packages/client-react/src/components/panels/ProgressPanel.tsx
+[23:20:19] EDIT: packages/client-react/src/components/panels/CommentaryPanel.tsx
+[23:21:10] WRITE: scripts/play-dungeo.sh
+[23:23:50] TRANSCRIPT FAIL: ./build.sh --skip transcript-tester -s dungeo 2>&1 | head -50
+[23:26:52] TRANSCRIPT FAIL: ./build.sh --skip transcript-tester -s dungeo -c react -t modern-dark 2>&1 | hea
+[23:27:42] EDIT: CLAUDE.md
+[23:38:23] WRITE: docs/context/session-20260123-2336-dungeo.md
+[23:38:47] EDIT: docs/work/issues/issues-list-02.md
+[23:39:02] EDIT: docs/work/issues/issues-list-02.md
+[23:40:22] GIT: git commit -m "$(cat <<'EOF'
+feat: Unified build system and React theme support
+
+[23:40:33] GIT: git push origin dungeo
+[23:48:22] WRITE: docs/design/react-map.html
+[00:03:44] EDIT: packages/client-react/themes/modern-dark.css
+[00:03:45] EDIT: packages/client-react/themes/modern-dark.css
+[00:04:00] EDIT: packages/client-react/themes/classic-light.css
+[00:04:01] EDIT: packages/client-react/themes/paper.css
+[00:04:02] EDIT: packages/client-react/themes/retro-terminal.css
+[00:04:15] EDIT: packages/client-react/themes/classic-light.css
+[00:04:32] EDIT: packages/client-react/themes/retro-terminal.css
+[00:04:45] EDIT: packages/client-react/themes/paper.css
+[00:04:55] EDIT: packages/client-react/src/components/panels/MapPanel.tsx
+[00:05:05] EDIT: packages/client-react/src/components/panels/MapPanel.tsx
+[00:05:21] EDIT: packages/client-react/themes/classic-light.css
+[00:14:21] EDIT: packages/client-react/src/components/panels/MapPanel.tsx
+[00:14:28] EDIT: packages/client-react/themes/modern-dark.css
+[00:14:39] EDIT: packages/client-react/themes/modern-dark.css
+[00:14:55] EDIT: packages/client-react/src/components/panels/MapPanel.tsx
+[00:15:01] EDIT: packages/client-react/themes/modern-dark.css
+[00:15:08] EDIT: packages/client-react/themes/classic-light.css
+[00:15:16] EDIT: packages/client-react/themes/retro-terminal.css
+[00:15:24] EDIT: packages/client-react/themes/paper.css
+[00:15:37] EDIT: packages/client-react/src/hooks/useMap.ts
+[00:15:46] EDIT: packages/client-react/src/hooks/useMap.ts
+[00:22:22] EDIT: packages/client-react/src/types/game-state.ts
+[00:22:32] EDIT: packages/client-react/src/context/GameContext.tsx
+[00:22:41] EDIT: packages/client-react/src/hooks/useMap.ts
+[00:22:51] EDIT: packages/client-react/src/hooks/useMap.ts
+[00:22:59] EDIT: packages/client-react/src/hooks/useMap.ts
+[00:23:25] EDIT: packages/client-react/src/hooks/useMap.ts
+[00:28:51] EDIT: packages/client-react/src/hooks/useMap.ts
+[00:29:03] EDIT: packages/client-react/src/hooks/useMap.ts
+[00:34:46] EDIT: packages/client-react/src/hooks/useMap.ts
+[00:34:56] EDIT: packages/client-react/src/hooks/useMap.ts
+[00:42:31] WRITE: docs/context/session-20260124-0041-dungeo.md

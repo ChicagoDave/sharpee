@@ -34,6 +34,8 @@ export interface CurrentRoom {
   name: string;
   exits: RoomExit[];
   firstVisit: boolean;
+  /** Direction traveled to reach this room (from previous room) */
+  arrivedFrom?: string;
 }
 
 /**

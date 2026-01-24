@@ -182,19 +182,11 @@ export function useMap(storyId: string): MapState & {
     };
   });
 
-  // Track direction from last command (simplified: check transcript for movement)
-  // In a full implementation, we'd get this from the event data
-  const inferDirection = useCallback(
-    (fromRoom: CurrentRoom | null, toRoom: CurrentRoom): string | null => {
-      if (!fromRoom) return null;
-
-      // Check if the destination matches one of our exits
-      const exitToNew = fromRoom.exits.find((e) => e.destination === toRoom.id);
-      if (exitToNew) {
-        return exitToNew.direction.toLowerCase();
-      }
-
-      return null;
+  // Get direction from event data (arrivedFrom) - no need to infer
+  const getArrivalDirection = useCallback(
+    (toRoom: CurrentRoom): string | null => {
+      // The direction is provided by the if.event.actor_moved event
+      return toRoom.arrivedFrom || null;
     },
     []
   );
@@ -203,14 +195,38 @@ export function useMap(storyId: string): MapState & {
   useEffect(() => {
     if (!currentRoom) return;
 
+    // IMPORTANT: Capture prevRoom BEFORE setMapState to avoid ref timing issues
+    const prevRoom = previousRoomRef.current;
+    const direction = getArrivalDirection(currentRoom);
+
+    // Debug: log room changes
+    console.log('[useMap] Room changed:', {
+      currentRoom: currentRoom.id,
+      currentRoomName: currentRoom.name,
+      prevRoom: prevRoom?.id,
+      prevRoomName: prevRoom?.name,
+      direction,
+    });
+
     setMapState((prev) => {
+      // Debug: log previous state
+      console.log('[useMap] prev.rooms:', {
+        size: prev.rooms.size,
+        keys: Array.from(prev.rooms.keys()),
+        isMap: prev.rooms instanceof Map,
+      });
+
       const rooms = new Map(prev.rooms);
       const connections = [...prev.connections];
       let newLevel = prev.currentLevel;
 
-      // Get the previous room
-      const prevRoom = previousRoomRef.current;
-      const direction = inferDirection(prevRoom, currentRoom);
+      // Debug: log map state (prevRoom and direction captured outside callback)
+      const mapKeys = Array.from(rooms.keys());
+      console.log('[useMap] Checking prev room in map:', {
+        prevRoomId: prevRoom?.id,
+        mapKeys,
+        hasPrevInMap: prevRoom ? rooms.has(prevRoom.id) : false,
+      });
 
       // Calculate position for new room
       let x = 0,
@@ -254,8 +270,11 @@ export function useMap(storyId: string): MapState & {
           }
         }
         newLevel = z;
+      }
+      // else: first room, position at origin (0,0,0)
 
-        // Add connection if not exists
+      // Add connection if moving from a previous room (regardless of known direction)
+      if (prevRoom && rooms.has(prevRoom.id) && !rooms.has(currentRoom.id)) {
         const connectionExists = connections.some(
           (c) =>
             (c.fromId === prevRoom.id && c.toId === currentRoom.id) ||
@@ -269,7 +288,6 @@ export function useMap(storyId: string): MapState & {
           });
         }
       }
-      // else: first room, position at origin (0,0,0)
 
       // Add or update room
       rooms.set(currentRoom.id, {
@@ -280,6 +298,15 @@ export function useMap(storyId: string): MapState & {
         z,
         exits: currentRoom.exits,
         visited: true,
+      });
+
+      // Debug: log final position
+      console.log('[useMap] Room added/updated:', {
+        id: currentRoom.id,
+        name: currentRoom.name,
+        position: { x, y, z },
+        totalRooms: rooms.size,
+        allRooms: Array.from(rooms.values()).map(r => ({ id: r.id, name: r.name, x: r.x, y: r.y })),
       });
 
       const newState: MapState = {
@@ -298,7 +325,7 @@ export function useMap(storyId: string): MapState & {
 
     // Track previous room for next move
     previousRoomRef.current = currentRoom;
-  }, [currentRoom, storyId, inferDirection]);
+  }, [currentRoom, storyId, getArrivalDirection]);
 
   // Clear map function
   const clearMap = useCallback(() => {
