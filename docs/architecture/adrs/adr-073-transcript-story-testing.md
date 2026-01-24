@@ -339,6 +339,23 @@ story: dungeo
 - [ ] VS Code syntax highlighting
 - [ ] Diff output on failures
 
+## Related ADRs
+
+- ADR-056: Story Testing Framework (replaced by this ADR)
+- ADR-092: Smart Transcript Directives (control flow extensions)
+- ADR-109: Playtester Annotation System (annotation commands)
+
+## Implementation Notes
+
+The transcript testing system is implemented in:
+- `packages/transcript-tester/` - Core parser and runner
+- `packages/extensions/testing/` - Debug commands ($teleport, $take, etc.) and annotations
+
+Integration with ext-testing provides:
+- `$command` syntax for debug operations during tests
+- Annotation capture (# comments, $bug, $note, etc.)
+- Context tracking for playtester feedback
+
 ## References
 
 - Inform 7 test scripts

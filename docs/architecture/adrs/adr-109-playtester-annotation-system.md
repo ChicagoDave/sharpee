@@ -1,7 +1,8 @@
 # ADR-109: Play-Tester Annotation System
 
-**Status**: Proposed
+**Status**: Accepted (Implemented)
 **Date**: 2026-01-22
+**Implemented**: 2026-01-23
 **Context**: Dungeo dog-fooding and beta testing
 
 ## Problem
@@ -195,8 +196,53 @@ Modal UI for feedback:
 3. **Phase 3**: Session management and export
 4. **Phase 4**: Analytics and integrations
 
+## Implementation Notes (2026-01-23)
+
+All three tiers implemented in `@sharpee/ext-testing` package:
+
+### Tier 1: Silent Comments
+- Transcript parser adds `# comment` lines to items array with line number
+- Runner passes comments to `testingExtension.addAnnotation('comment', text, world)`
+- Context captured: room, turn, score, last command/response, inventory
+
+### Tier 2: Annotation Commands
+Commands registered in `TestingExtension.registerBuiltInCommands()`:
+
+| Command | GDT Code | Implementation |
+|---------|----------|----------------|
+| `$bug <text>` | BG | `cmdBug()` |
+| `$note <text>` | NT | `cmdNote()` |
+| `$confusing` | CF | `cmdConfusing()` |
+| `$expected <text>` | EP | `cmdExpected()` |
+| `$bookmark <name>` | BM | `cmdBookmark()` + checkpoint save |
+
+### Tier 3: Session Management
+| Command | GDT Code | Implementation |
+|---------|----------|----------------|
+| `$session start/end` | SS | `cmdSession()` |
+| `$review` | RV | `cmdReview()` |
+| `$export` | XP | `cmdExport()` |
+
+### Key Files
+- `packages/extensions/testing/src/annotations/store.ts` - Storage with markdown export
+- `packages/extensions/testing/src/annotations/context.ts` - Context capture
+- `packages/extensions/testing/src/extension.ts` - Command handlers
+- `packages/transcript-tester/src/runner.ts` - Context tracking integration
+
+### Design Decisions
+1. **Annotations in ext-testing, not transcript-tester** - Keeps transcript-tester focused on test execution
+2. **Context tracking via setCommandContext()** - Runner calls this after each command
+3. **Comments as first-class items** - Preserves order for context association
+
+### Not Yet Implemented
+- Privacy modes (`$ anonymous on`)
+- Cloud sync for coordinated testing
+- GitHub Issues/Linear/Jira integration
+- Voice notes
+
 ## References
 
 - Infocom's internal play-testing practices
 - Modern game analytics (Unity Analytics, GameAnalytics)
 - ADR-073: Transcript Story Testing (related testing infrastructure)
+- ADR-092: Smart Transcript Directives (control flow)
