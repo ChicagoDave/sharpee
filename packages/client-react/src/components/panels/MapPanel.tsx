@@ -6,10 +6,9 @@
  * - Connections shown as lines
  * - Current room highlighted
  * - Pan and zoom controls
- * - Level selector for multi-floor areas
  */
 
-import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useRef, useCallback } from 'react';
 import { useMap, type MapRoom, type MapConnection } from '../../hooks/useMap';
 
 interface MapPanelProps {
@@ -196,43 +195,26 @@ function ExitStubs({
 }
 
 export function MapPanel({ storyId, className = '' }: MapPanelProps) {
-  const { rooms, connections, currentRoomId, currentLevel, bounds, clearMap } =
-    useMap(storyId);
-  const [viewLevel, setViewLevel] = useState(currentLevel);
+  const { rooms, connections, currentRoomId, bounds, clearMap } = useMap(storyId);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const svgRef = useRef<SVGSVGElement>(null);
   const isDragging = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
 
-  // Update view level when player moves to new level
-  useEffect(() => {
-    setViewLevel(currentLevel);
-  }, [currentLevel]);
-
   // Calculate SVG viewBox dimensions
-  const { viewBox, width, height } = useMemo(() => {
+  const { width, height } = useMemo(() => {
     const w = (bounds.maxX - bounds.minX + 1) * GRID_SPACING_X + PADDING * 2;
     const h = (bounds.maxY - bounds.minY + 1) * GRID_SPACING_Y + PADDING * 2;
     return {
-      viewBox: `${-pan.x / zoom} ${-pan.y / zoom} ${w / zoom} ${h / zoom}`,
       width: Math.max(w, 200),
       height: Math.max(h, 150),
     };
-  }, [bounds, zoom, pan]);
+  }, [bounds]);
 
-  // Filter rooms by current view level
+  // All rooms are visible (single-level map)
   const visibleRooms = useMemo(() => {
-    return Array.from(rooms.values()).filter((r) => r.z === viewLevel);
-  }, [rooms, viewLevel]);
-
-  // Get unique levels
-  const levels = useMemo(() => {
-    const lvls = new Set<number>();
-    for (const room of rooms.values()) {
-      lvls.add(room.z);
-    }
-    return Array.from(lvls).sort((a, b) => b - a); // Highest first
+    return Array.from(rooms.values());
   }, [rooms]);
 
   // Pan handlers
@@ -280,22 +262,6 @@ export function MapPanel({ storyId, className = '' }: MapPanelProps) {
     <div className={`map-panel ${className}`}>
       {/* Controls */}
       <div className="map-panel__controls">
-        {levels.length > 1 && (
-          <div className="map-panel__level-select">
-            <label htmlFor="map-level">Level:</label>
-            <select
-              id="map-level"
-              value={viewLevel}
-              onChange={(e) => setViewLevel(Number(e.target.value))}
-            >
-              {levels.map((lvl) => (
-                <option key={lvl} value={lvl}>
-                  {lvl === 0 ? 'Ground' : lvl > 0 ? `Up ${lvl}` : `Down ${Math.abs(lvl)}`}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
         <div className="map-panel__zoom-controls">
           <button type="button" onClick={() => setZoom((z) => Math.min(3, z * 1.2))}>
             +

@@ -158,146 +158,221 @@ function getCategoryIcon(category: CommentaryCategory): string {
 }
 
 /**
- * Format event type to human-readable text
+ * Format event into a complete human-readable sentence
  */
-function formatEventType(eventType: string): string {
-  // Remove namespace prefix (if.event., game., etc.)
-  let text = eventType.replace(/^(if\.event\.|game\.|if\.action\.)/, '');
+function formatEventText(eventType: string, data: unknown): { text: string; details?: string } {
+  const d = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
 
-  // Convert snake_case to Title Case
-  text = text
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+  // Helper to get names from data
+  const getName = (field: string): string | undefined => {
+    const val = d[field];
+    if (typeof val === 'string') return val;
+    if (val && typeof val === 'object' && 'name' in val) return String((val as { name: unknown }).name);
+    return undefined;
+  };
 
-  return text;
-}
-
-/**
- * Extract entity name from event data
- */
-function getEntityName(data: unknown): string | undefined {
-  if (!data || typeof data !== 'object') return undefined;
-
-  const d = data as Record<string, unknown>;
-
-  // Try various common fields
-  if (typeof d.name === 'string') return d.name;
-  if (typeof d.entityName === 'string') return d.entityName;
-  if (typeof d.targetName === 'string') return d.targetName;
-  if (typeof d.itemName === 'string') return d.itemName;
-  if (typeof d.objectName === 'string') return d.objectName;
-
-  // Try nested entity objects
-  if (d.entity && typeof d.entity === 'object') {
-    const entity = d.entity as Record<string, unknown>;
-    if (typeof entity.name === 'string') return entity.name;
-  }
-
-  if (d.target && typeof d.target === 'object') {
-    const target = d.target as Record<string, unknown>;
-    if (typeof target.name === 'string') return target.name;
-  }
-
-  if (d.item && typeof d.item === 'object') {
-    const item = d.item as Record<string, unknown>;
-    if (typeof item.name === 'string') return item.name;
-  }
-
-  // Fall back to ID fields
-  if (typeof d.entityId === 'string') return d.entityId;
-  if (typeof d.targetId === 'string') return d.targetId;
-  if (typeof d.itemId === 'string') return d.itemId;
-
-  return undefined;
-}
-
-/**
- * Format event data to details string
- */
-function formatEventDetails(eventType: string, data: unknown): string | undefined {
-  if (!data || typeof data !== 'object') return undefined;
-
-  const d = data as Record<string, unknown>;
+  const entityName = getName('entityName') || getName('name') || getName('targetName') || getName('itemName');
+  const direction = getName('direction');
+  const toRoom = getName('toRoom') || (d.destinationRoom as { name?: string })?.name;
+  const fromRoom = getName('fromRoom') || getName('from');
 
   // Movement events
-  if (eventType.includes('actor_moved') || eventType.includes('room_entered')) {
-    const from = (d.fromRoom as string) || (d.from as string);
-    const to =
-      (d.toRoom as string) ||
-      (d.to as string) ||
-      ((d.destinationRoom as { id?: string })?.id as string);
-    const direction = d.direction as string;
-
-    if (direction && to) {
-      return `${direction} to ${to}`;
+  if (eventType === 'if.event.actor_moved') {
+    if (direction && toRoom) {
+      return { text: `Moved ${direction} to ${toRoom}` };
     }
-    if (from && to) {
-      return `${from} \u2192 ${to}`;
+    if (toRoom) {
+      return { text: `Entered ${toRoom}` };
     }
-    if (to) {
-      return `to ${to}`;
-    }
+    return { text: 'Moved to a new location' };
   }
 
-  // Taking/dropping events
-  if (eventType.includes('taken') || eventType.includes('dropped')) {
-    const name = getEntityName(d);
-    return name || undefined;
+  if (eventType === 'if.event.room_entered') {
+    return { text: toRoom ? `Arrived at ${toRoom}` : 'Entered a room' };
+  }
+
+  // Taking/dropping
+  if (eventType === 'if.event.taken') {
+    return { text: entityName ? `Picked up ${entityName}` : 'Picked up something' };
+  }
+
+  if (eventType === 'if.event.dropped') {
+    return { text: entityName ? `Dropped ${entityName}` : 'Dropped something' };
   }
 
   // Container events
-  if (eventType.includes('put_in') || eventType.includes('put_on')) {
-    const item = getEntityName(d) || (d.itemId as string);
-    const container = (d.containerName as string) || (d.containerId as string);
-    const supporter = (d.supporterName as string) || (d.supporterId as string);
-    const target = container || supporter;
-
-    if (item && target) {
-      return `${item} \u2192 ${target}`;
+  if (eventType === 'if.event.put_in') {
+    const item = getName('itemName') || getName('entityName');
+    const container = getName('containerName') || getName('targetName');
+    if (item && container) {
+      return { text: `Put ${item} in ${container}` };
     }
+    return { text: 'Put something in a container' };
   }
 
-  // Score events
-  if (eventType.includes('score')) {
-    const points = (d.points as number) || (d.amount as number);
-    const newScore = d.newScore as number;
-    const reason = d.reason as string;
+  if (eventType === 'if.event.put_on') {
+    const item = getName('itemName') || getName('entityName');
+    const supporter = getName('supporterName') || getName('targetName');
+    if (item && supporter) {
+      return { text: `Put ${item} on ${supporter}` };
+    }
+    return { text: 'Put something on a surface' };
+  }
 
+  if (eventType === 'if.event.removed_from') {
+    const item = getName('itemName') || getName('entityName');
+    const container = getName('containerName') || getName('targetName');
+    if (item && container) {
+      return { text: `Took ${item} from ${container}` };
+    }
+    return { text: 'Removed something from a container' };
+  }
+
+  // Opening/closing
+  if (eventType === 'if.event.opened') {
+    return { text: entityName ? `Opened ${entityName}` : 'Opened something' };
+  }
+
+  if (eventType === 'if.event.closed') {
+    return { text: entityName ? `Closed ${entityName}` : 'Closed something' };
+  }
+
+  // Locking/unlocking
+  if (eventType === 'if.event.locked') {
+    const key = getName('keyName');
+    if (entityName && key) {
+      return { text: `Locked ${entityName} with ${key}` };
+    }
+    return { text: entityName ? `Locked ${entityName}` : 'Locked something' };
+  }
+
+  if (eventType === 'if.event.unlocked') {
+    const key = getName('keyName');
+    if (entityName && key) {
+      return { text: `Unlocked ${entityName} with ${key}` };
+    }
+    return { text: entityName ? `Unlocked ${entityName}` : 'Unlocked something' };
+  }
+
+  // Switching on/off
+  if (eventType === 'if.event.switched_on') {
+    return { text: entityName ? `Turned on ${entityName}` : 'Turned something on' };
+  }
+
+  if (eventType === 'if.event.switched_off') {
+    return { text: entityName ? `Turned off ${entityName}` : 'Turned something off' };
+  }
+
+  // Perception
+  if (eventType === 'if.event.examined') {
+    return { text: entityName ? `Examined ${entityName}` : 'Looked at something' };
+  }
+
+  if (eventType === 'if.event.searched') {
+    return { text: entityName ? `Searched ${entityName}` : 'Searched something' };
+  }
+
+  if (eventType === 'if.event.listened') {
+    return { text: entityName ? `Listened to ${entityName}` : 'Listened' };
+  }
+
+  if (eventType === 'if.event.smelled') {
+    return { text: entityName ? `Smelled ${entityName}` : 'Smelled the air' };
+  }
+
+  if (eventType === 'if.event.touched') {
+    return { text: entityName ? `Touched ${entityName}` : 'Touched something' };
+  }
+
+  if (eventType === 'if.event.read') {
+    return { text: entityName ? `Read ${entityName}` : 'Read something' };
+  }
+
+  // Wearing
+  if (eventType === 'if.event.worn') {
+    return { text: entityName ? `Put on ${entityName}` : 'Wore something' };
+  }
+
+  if (eventType === 'if.event.taken_off') {
+    return { text: entityName ? `Took off ${entityName}` : 'Removed clothing' };
+  }
+
+  // Eating/drinking
+  if (eventType === 'if.event.eaten') {
+    return { text: entityName ? `Ate ${entityName}` : 'Ate something' };
+  }
+
+  if (eventType === 'if.event.drunk') {
+    return { text: entityName ? `Drank ${entityName}` : 'Drank something' };
+  }
+
+  // Combat
+  if (eventType.includes('attack')) {
+    const target = getName('targetName') || getName('victimName');
+    const weapon = getName('weaponName');
+    if (target && weapon) {
+      return { text: `Attacked ${target} with ${weapon}` };
+    }
+    return { text: target ? `Attacked ${target}` : 'Attacked' };
+  }
+
+  if (eventType.includes('damage')) {
+    const amount = d.amount as number;
+    const target = getName('targetName');
+    if (amount && target) {
+      return { text: `${target} took ${amount} damage` };
+    }
+    return { text: 'Damage dealt' };
+  }
+
+  if (eventType.includes('killed') || eventType.includes('died')) {
+    const victim = getName('victimName') || getName('entityName');
+    return { text: victim ? `${victim} was killed` : 'Something died' };
+  }
+
+  // Score
+  if (eventType === 'game.score_changed') {
+    const newScore = d.newScore as number;
+    const points = d.points as number;
+    const reason = d.reason as string;
     if (points !== undefined) {
       const prefix = points >= 0 ? '+' : '';
-      return reason ? `${prefix}${points} (${reason})` : `${prefix}${points}`;
+      const reasonText = reason ? ` for ${reason}` : '';
+      return { text: `${prefix}${points} points${reasonText}`, details: `Total: ${newScore}` };
     }
-    if (newScore !== undefined) {
-      return `Score: ${newScore}`;
-    }
+    return { text: `Score: ${newScore}` };
   }
 
-  // Light events
-  if (eventType.includes('light') || eventType.includes('illuminat') || eventType.includes('darken')) {
-    const source = (d.sourceName as string) || (d.sourceId as string);
-    if (source) return source;
+  // Light
+  if (eventType.includes('illuminated') || eventType.includes('light_on')) {
+    return { text: 'Area is now lit' };
   }
 
-  // Opening/closing events
-  if (eventType.includes('opened') || eventType.includes('closed')) {
-    const name = getEntityName(d);
-    return name || undefined;
+  if (eventType.includes('darkened') || eventType.includes('light_off')) {
+    return { text: 'Area is now dark' };
   }
 
-  // Locking/unlocking events
-  if (eventType.includes('locked') || eventType.includes('unlocked')) {
-    const name = getEntityName(d);
-    const key = (d.keyName as string) || (d.keyId as string);
-    if (name && key) {
-      return `${name} with ${key}`;
-    }
-    return name || undefined;
+  // Game lifecycle
+  if (eventType === 'game.started') {
+    return { text: 'Game started' };
   }
 
-  // Generic entity name fallback
-  const name = getEntityName(d);
-  return name || undefined;
+  if (eventType === 'game.saved') {
+    return { text: 'Game saved' };
+  }
+
+  if (eventType === 'game.restored') {
+    return { text: 'Game restored' };
+  }
+
+  // Fallback: convert event type to readable format
+  let text = eventType.replace(/^(if\.event\.|game\.|if\.action\.)/, '');
+  text = text
+    .split(/[._]/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+
+  return { text, details: entityName };
 }
 
 /**
@@ -306,8 +381,7 @@ function formatEventDetails(eventType: string, data: unknown): string | undefine
 function formatEvent(event: GameEvent, index: number): CommentaryEntry {
   const category = getEventCategory(event.type);
   const icon = getCategoryIcon(category);
-  const text = formatEventType(event.type);
-  const details = formatEventDetails(event.type, event.data);
+  const { text, details } = formatEventText(event.type, event.data);
 
   return {
     id: `event-${event.turn}-${index}-${Date.now()}`,

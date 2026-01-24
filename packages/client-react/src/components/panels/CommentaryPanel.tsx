@@ -70,7 +70,6 @@ export function CommentaryPanel({ className = '', autoScroll = true }: Commentar
     filter,
     toggleCategory,
     toggleSystemEvents,
-    clearHistory,
     totalCount,
     filteredCount,
   } = useCommentary();
@@ -105,36 +104,23 @@ export function CommentaryPanel({ className = '', autoScroll = true }: Commentar
     <div className={`commentary-panel ${className}`}>
       {/* Filter bar */}
       <div className="commentary-filter">
-        <div className="commentary-filter__categories">
-          {categories.map(({ category, icon, label }) => (
-            <CategoryButton
-              key={category}
-              category={category}
-              icon={icon}
-              label={label}
-              active={filter.categories.has(category)}
-              onClick={() => toggleCategory(category)}
-            />
-          ))}
-        </div>
-        <div className="commentary-filter__actions">
-          <button
-            className={`commentary-filter__btn commentary-filter__btn--system ${
-              filter.showSystemEvents ? 'commentary-filter__btn--active' : ''
-            }`}
-            onClick={toggleSystemEvents}
-            title="Show system events"
-          >
-            <span className="commentary-filter__icon">{'\u2139'}</span>
-          </button>
-          <button
-            className="commentary-filter__btn commentary-filter__btn--clear"
-            onClick={clearHistory}
-            title="Clear history"
-          >
-            <span className="commentary-filter__icon">{'\u2715'}</span>
-          </button>
-        </div>
+        {categories.map(({ category, icon, label }) => (
+          <CategoryButton
+            key={category}
+            category={category}
+            icon={icon}
+            label={label}
+            active={filter.categories.has(category)}
+            onClick={() => toggleCategory(category)}
+          />
+        ))}
+        <CategoryButton
+          category="system"
+          icon={'\u2139'}
+          label="System"
+          active={filter.showSystemEvents}
+          onClick={toggleSystemEvents}
+        />
       </div>
 
       {/* Status bar */}
