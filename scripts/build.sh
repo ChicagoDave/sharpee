@@ -5,13 +5,14 @@
 #   ./scripts/build.sh                                    # Platform only
 #   ./scripts/build.sh -s dungeo                          # Platform + story
 #   ./scripts/build.sh -s dungeo -c browser               # Platform + story + browser client
+#   ./scripts/build.sh -s dungeo -c react                 # Platform + story + React client
 #   ./scripts/build.sh -s reflections -c electron         # Platform + story + electron client
 #   ./scripts/build.sh --skip stdlib -s dungeo            # Skip to stdlib, then story
 #   ./scripts/build.sh --all dungeo browser               # Everything (shorthand)
 #
 # Options:
 #   -s, --story <name>      Build a story (dungeo, reflections, etc.)
-#   -c, --client <type>     Build a client (browser, electron)
+#   -c, --client <type>     Build a client (browser, react, electron)
 #   --skip <package>        Skip to package in platform build
 #   --all <story> <client>  Build everything for story/client combo
 #   -h, --help              Show this help message
@@ -53,6 +54,7 @@ while [[ $# -gt 0 ]]; do
             if [ -z "$STORY" ] || [ -z "$CLIENT" ]; then
                 echo "Error: --all requires story and client arguments"
                 echo "Example: --all dungeo browser"
+                echo "         --all dungeo react"
                 exit 1
             fi
             shift 3
@@ -73,6 +75,7 @@ done
 if [ -n "$CLIENT" ] && [ -z "$STORY" ]; then
     echo "Error: --client requires --story"
     echo "Example: ./scripts/build.sh -s dungeo -c browser"
+    echo "         ./scripts/build.sh -s dungeo -c react"
     exit 1
 fi
 
@@ -131,6 +134,9 @@ echo "========================================"
 if [ -n "$CLIENT" ] && [ "$CLIENT" = "browser" ]; then
     echo ""
     echo "To test browser: npx serve dist/web/$STORY"
+elif [ -n "$CLIENT" ] && [ "$CLIENT" = "react" ]; then
+    echo ""
+    echo "To test React client: npx serve dist/web/$STORY-react"
 elif [ -n "$STORY" ]; then
     echo ""
     echo "To test CLI: node dist/sharpee.js --play"

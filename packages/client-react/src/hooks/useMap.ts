@@ -225,12 +225,34 @@ export function useMap(storyId: string): MapState & {
         z = existing.z;
         newLevel = z;
       } else if (prevRoom && rooms.has(prevRoom.id) && direction) {
-        // Position relative to previous room
+        // Position relative to previous room based on known direction
         const prevMapRoom = rooms.get(prevRoom.id)!;
         const offset = DIRECTION_OFFSETS[direction] || { dx: 0, dy: 0, dz: 0 };
         x = prevMapRoom.x + offset.dx;
         y = prevMapRoom.y + offset.dy;
         z = prevMapRoom.z + offset.dz;
+        newLevel = z;
+      } else if (prevRoom && rooms.has(prevRoom.id)) {
+        // Direction unknown - find an unoccupied adjacent position
+        const prevMapRoom = rooms.get(prevRoom.id)!;
+        const occupiedPositions = new Set(
+          Array.from(rooms.values()).map((r) => `${r.x},${r.y},${r.z}`)
+        );
+
+        // Try directions in order: E, S, W, N, SE, SW, NE, NW
+        const fallbackDirections = ['east', 'south', 'west', 'north', 'southeast', 'southwest', 'northeast', 'northwest'];
+        for (const dir of fallbackDirections) {
+          const offset = DIRECTION_OFFSETS[dir];
+          const testX = prevMapRoom.x + offset.dx;
+          const testY = prevMapRoom.y + offset.dy;
+          const testZ = prevMapRoom.z + offset.dz;
+          if (!occupiedPositions.has(`${testX},${testY},${testZ}`)) {
+            x = testX;
+            y = testY;
+            z = testZ;
+            break;
+          }
+        }
         newLevel = z;
 
         // Add connection if not exists
@@ -243,7 +265,7 @@ export function useMap(storyId: string): MapState & {
           connections.push({
             fromId: prevRoom.id,
             toId: currentRoom.id,
-            direction,
+            direction: direction || 'unknown',
           });
         }
       }

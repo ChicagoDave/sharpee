@@ -11,6 +11,7 @@ import { WorldModel, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { LanguageProvider } from '@sharpee/lang-en-us';
 import { GameProvider, GameShell, gameShellStyles } from '@sharpee/client-react';
+import { PerceptionService } from '@sharpee/stdlib';
 import { story } from './index';
 
 // Inject styles
@@ -26,11 +27,23 @@ world.setPlayer(player.id);
 const language = new LanguageProvider();
 const parser = new Parser(language);
 
+// Extend parser and language with story-specific vocabulary
+if (story.extendParser) {
+  story.extendParser(parser);
+}
+if (story.extendLanguage) {
+  story.extendLanguage(language);
+}
+
+// Create perception service
+const perceptionService = new PerceptionService();
+
 const engine = new GameEngine({
   world,
   player,
   parser,
   language,
+  perceptionService,
 });
 
 // Set story (but don't start yet - GameProvider will handle that)

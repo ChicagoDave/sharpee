@@ -101,6 +101,7 @@ export const gameShellStyles = `
   flex-direction: column;
   height: 100vh;
   font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 13px;
 }
 
 .game-shell__status {

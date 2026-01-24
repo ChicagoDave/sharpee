@@ -121,12 +121,21 @@ EOF
 # Update client version and generate version.ts
 update_client_version() {
     local CLIENT_TYPE="$1"
-    local CLIENT_PKG="packages/platforms/${CLIENT_TYPE}-en-us/package.json"
-    local VERSION_FILE="packages/platforms/${CLIENT_TYPE}-en-us/src/version.ts"
+    local CLIENT_PKG=""
+    local VERSION_FILE=""
+
+    # Handle different client package locations
+    if [ "$CLIENT_TYPE" = "react" ]; then
+        CLIENT_PKG="packages/client-react/package.json"
+        VERSION_FILE="packages/client-react/src/version.ts"
+    else
+        CLIENT_PKG="packages/platforms/${CLIENT_TYPE}-en-us/package.json"
+        VERSION_FILE="packages/platforms/${CLIENT_TYPE}-en-us/src/version.ts"
+    fi
 
     if [ ! -f "$CLIENT_PKG" ]; then
-        echo "[${CLIENT_TYPE}] package.json not found"
-        return 1
+        echo "[${CLIENT_TYPE}] package.json not found at $CLIENT_PKG"
+        return 0  # Don't fail - client version is optional
     fi
 
     local CURRENT=$(node -p "require('./$CLIENT_PKG').version")

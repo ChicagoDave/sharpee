@@ -149,6 +149,9 @@ export function GameProvider({ engine, children }: GameProviderProps) {
 
     // Text output handler - fires at end of turn with collected events
     const handleTextOutput = (text: unknown, turn: unknown) => {
+      // Log text output to console (matching thin web client behavior)
+      console.log('[text:output]', { text, turn });
+
       // Capture buffered events and clear buffer
       const turnEvents = [...turnEventsBuffer.current];
       turnEventsBuffer.current = [];
@@ -166,6 +169,9 @@ export function GameProvider({ engine, children }: GameProviderProps) {
     // Event handler - collects all events during a turn
     const handleEvent = (event: unknown) => {
       const evt = event as GameEvent;
+
+      // Log events to console (matching thin web client behavior)
+      console.log('[event]', evt.type, evt.data);
 
       // Add to buffer for Commentary panel
       turnEventsBuffer.current.push(evt);

@@ -21,6 +21,12 @@ import type { IGameEvent, StoryEventHandler, AnyEventHandler } from './handler-t
 export type { StoryEventHandler, IGameEvent } from './handler-types';
 export type { Effect, WorldQuery } from './effects';
 
+// Simple ID generator for error events
+let eventCounter = 0;
+function generateEventId(): string {
+  return `evt_${Date.now()}_${(++eventCounter).toString(36)}`;
+}
+
 export class EventProcessor {
   private world: WorldModel;
   private options: Required<ProcessorOptions>;
@@ -306,8 +312,67 @@ export class EventProcessor {
       }
     }
 
-    // Return legacy reactions for backward compatibility
-    return legacyReactions;
+    // 4. Process game.message overrides
+    // When entity handlers return game.message, it overrides the original event's message
+    // rather than being rendered as a separate event (ADR-106 domain events)
+    const gameMessages = legacyReactions.filter(r => r.type === 'game.message');
+    let filteredReactions = legacyReactions;
+
+    if (gameMessages.length > 1) {
+      // Error: multiple game.message reactions - this should never happen
+      console.error(
+        `Multiple game.message reactions for ${event.type} on ${event.entities?.target}:`,
+        gameMessages.map(m => (m.data as Record<string, unknown>)?.messageId)
+      );
+      filteredReactions.push({
+        id: generateEventId(),
+        type: 'if.event.error',
+        entities: event.entities,
+        data: {
+          message: `Multiple game.message reactions returned for ${event.type}`,
+          sourceEvent: event.type,
+          targetId: event.entities?.target,
+          count: gameMessages.length,
+          messageIds: gameMessages.map(m => (m.data as Record<string, unknown>)?.messageId)
+        },
+        timestamp: Date.now()
+      });
+      // Filter out the game.message events - use first one as override
+      const firstOverride = gameMessages[0];
+      const overrideData = firstOverride.data as { messageId?: string; text?: string; params?: Record<string, unknown> };
+      const eventData = event.data as Record<string, unknown>;
+      if (overrideData.messageId) {
+        eventData.messageId = overrideData.messageId;
+      }
+      if (overrideData.text) {
+        eventData.text = overrideData.text;
+      }
+      if (overrideData.params) {
+        eventData.params = overrideData.params;
+      }
+      filteredReactions = legacyReactions.filter(r => r.type !== 'game.message');
+    } else if (gameMessages.length === 1) {
+      // Normal case: single game.message overrides original event's message
+      const override = gameMessages[0];
+      const overrideData = override.data as { messageId?: string; text?: string; params?: Record<string, unknown> };
+      const eventData = event.data as Record<string, unknown>;
+
+      if (overrideData.messageId) {
+        eventData.messageId = overrideData.messageId;
+      }
+      if (overrideData.text) {
+        eventData.text = overrideData.text;
+      }
+      if (overrideData.params) {
+        eventData.params = overrideData.params;
+      }
+
+      // Filter out game.message - it's been consumed as an override
+      filteredReactions = legacyReactions.filter(r => r.type !== 'game.message');
+    }
+
+    // Return filtered reactions (game.message consumed as override)
+    return filteredReactions;
   }
 
   /**

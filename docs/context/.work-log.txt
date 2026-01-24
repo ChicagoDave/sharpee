@@ -10,3 +10,37 @@ feat: Add React client package and finalize ext-tes
 [19:26:04] EDIT: stories/dungeo/src/react-entry.tsx
 [19:27:07] EDIT: stories/dungeo/src/react-entry.tsx
 [19:27:16] EDIT: packages/client-react/src/context/GameContext.tsx
+[19:44:51] WRITE: docs/context/session-20260123-1944-dungeo.md
+[19:48:45] EDIT: docs/work/issues/issues-list-02.md
+[19:48:59] EDIT: docs/work/issues/issues-list-02.md
+[19:52:32] TRANSCRIPT FAIL: ls /mnt/c/repotemp/sharpee/packages/transcript-tester/src/
+[20:00:48] EDIT: docs/work/issues/issues-list-02.md
+[20:00:58] EDIT: docs/work/issues/issues-list-02.md
+[20:25:36] EDIT: stories/dungeo/src/react-entry.tsx
+[20:25:50] EDIT: docs/work/issues/issues-list-02.md
+[20:26:03] EDIT: stories/dungeo/src/react-entry.tsx
+[20:26:09] EDIT: stories/dungeo/src/react-entry.tsx
+[20:30:21] EDIT: scripts/build.sh
+[20:30:25] EDIT: scripts/build.sh
+[20:30:31] EDIT: scripts/build.sh
+[20:30:38] EDIT: scripts/build.sh
+[20:30:45] EDIT: scripts/build.sh
+[20:31:54] EDIT: scripts/update-versions.sh
+[20:58:32] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/client-react' build 2>&1
+[21:53:52] WRITE: docs/context/session-20260123-2152-dungeo.md
+[21:58:15] EDIT: packages/event-processor/src/processor.ts
+[21:58:30] EDIT: packages/event-processor/src/processor.ts
+[22:00:29] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/event-processor' build 2>&1
+[22:00:41] EDIT: packages/text-service/src/stages/sort.ts
+[22:01:16] EDIT: packages/text-service/src/text-service.ts
+[22:01:32] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/text-service' build 2>&1
+[22:13:02] EDIT: stories/dungeo/tests/transcripts/rug-trapdoor.transcript
+[22:17:50] EDIT: stories/dungeo/tests/transcripts/troll-blocking.transcript
+[22:27:25] EDIT: packages/client-react/src/hooks/useMap.ts
+[22:36:25] EDIT: docs/work/issues/issues-list-02.md
+[22:36:31] EDIT: docs/work/issues/issues-list-02.md
+[22:36:47] EDIT: docs/work/issues/issues-list-02.md
+[22:36:54] EDIT: docs/work/issues/issues-list-02.md
+[22:37:09] EDIT: docs/context/session-20260123-2152-dungeo.md
+[22:37:21] EDIT: docs/context/session-20260123-2152-dungeo.md
+[22:37:36] EDIT: docs/context/session-20260123-2152-dungeo.md

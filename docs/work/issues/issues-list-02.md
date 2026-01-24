@@ -14,6 +14,11 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-032 | Version transcript needs update for DUNGEON name | Low | Test | 2026-01-22 | - | - |
 | ISSUE-033 | AGAIN command fails after second NORTH | Low | Platform | 2026-01-22 | - | - |
 | ISSUE-034 | Inventory message test expects different format | Low | Test | 2026-01-22 | - | - |
+| ISSUE-035 | React client save not implemented/working | Medium | client-react | 2026-01-23 | - | - |
+| ISSUE-036 | Auto-map boxes rendered on top of each other | Medium | client-react | 2026-01-23 | - | 2026-01-24 |
+| ISSUE-037 | Troll death text not displaying (story messages) | Medium | client-react | 2026-01-23 | - | 2026-01-24 |
+| ISSUE-038 | React client needs modern styling and fonts | Low | client-react | 2026-01-23 | - | 2026-01-24 |
+| ISSUE-039 | Text ordering: game.message duplicating stdlib messages | Critical | Platform | 2026-01-24 | - | 2026-01-24 |
 
 ---
 
@@ -134,6 +139,147 @@ In again.transcript, after going NORTH twice, the `g` (again) command goes to "F
 The inventory-message.transcript expects specific inventory format that doesn't match current output.
 
 **Resolution**: Update test or update inventory message format.
+
+---
+
+### ISSUE-035: React client save not implemented/working
+
+**Reported**: 2026-01-23
+**Severity**: Medium
+**Component**: client-react
+
+**Description**:
+The save game functionality in the React client (`@sharpee/client-react`) is either not implemented or not working correctly.
+
+**Reproduction**:
+1. Play game in React client
+2. Attempt to save game
+3. Save fails or produces no effect
+
+**Expected**: Game state saved to browser storage (localStorage or IndexedDB).
+
+**Notes**: Need to verify if save command is wired up to storage, or if it's a UI/backend disconnect.
+
+---
+
+### ISSUE-036: Auto-map boxes rendered on top of each other
+
+**Reported**: 2026-01-23
+**Severity**: Medium
+**Component**: client-react
+
+**Description**:
+The auto-mapping feature in the React client renders all room boxes stacked on top of each other instead of in their proper spatial positions.
+
+**Reproduction**:
+1. Play game in React client with auto-map enabled
+2. Navigate to multiple rooms
+3. Observe map display
+
+**Expected**: Rooms arranged spatially based on navigation directions (N/S/E/W/U/D).
+
+**Actual**: All room boxes overlapping at same position.
+
+**Notes**: Likely a CSS/positioning issue in the map component, or room coordinates not being calculated/applied.
+
+**Status**: Fixed 2026-01-24 - Added fallback positioning for unknown directions in useMap.ts.
+
+---
+
+### ISSUE-037: Troll death text not displaying (story messages)
+
+**Reported**: 2026-01-23
+**Severity**: Medium
+**Component**: client-react
+
+**Description**:
+During the troll combat sequence in the React client, the text describing the troll's death is not being displayed. This may indicate a problem with the reveal/streaming mechanism.
+
+**Reproduction**:
+1. Navigate to Troll Room
+2. Fight troll until death
+3. Observe missing death description text
+
+**Expected**: Full combat narrative including troll death description.
+
+**Actual**: Death text not shown; player may not realize troll is dead.
+
+**Notes**: Check if this is a reveal timing issue, event handling issue, or text not being emitted properly. Terminal client works correctly, so likely React-specific rendering issue.
+
+**Root Cause (Investigated 2026-01-23)**:
+The React entry point (`stories/dungeo/src/react-entry.tsx`) was missing calls to `story.extendParser()` and `story.extendLanguage()`. Without these, story-specific messages (troll death smoke, sword glow, etc.) were not registered with the language provider.
+
+**Fix Applied**: Added the missing extension calls to react-entry.tsx:
+```typescript
+if (story.extendParser) {
+  story.extendParser(parser);
+}
+if (story.extendLanguage) {
+  story.extendLanguage(language);
+}
+```
+
+**Status**: Fixed 2026-01-24 - story.extendParser/extendLanguage calls added.
+
+---
+
+### ISSUE-038: React client needs modern styling and fonts
+
+**Reported**: 2026-01-23
+**Severity**: Low
+**Component**: client-react
+
+**Description**:
+The React client UI needs updated styling with modern fonts and visual design. Current styling is basic/placeholder.
+
+**Expected**:
+- Modern, readable font (e.g., Inter, system-ui stack)
+- Clean visual hierarchy
+- Appropriate spacing and contrast
+- Consistent component styling
+
+**Notes**: Consider CSS variables for theming support, dark mode compatibility.
+
+**Status**: Fixed 2026-01-24 - Set default font to 13px in GameShell.tsx.
+
+---
+
+### ISSUE-039: Text ordering - game.message duplicating stdlib messages
+
+**Reported**: 2026-01-24
+**Severity**: Critical
+**Component**: Platform (event-processor, text-service)
+
+**Description**:
+When entity handlers return `game.message` events as reactions to domain events (e.g., `if.event.opened`), both the story message AND the stdlib message were being rendered, resulting in duplicate/confusing output.
+
+**Example before fix**:
+```
+> open trapdoor
+The door reluctantly opens to reveal a rickety staircase descending into darkness.
+You open trap door.
+```
+
+**Expected**:
+```
+> open trapdoor
+The door reluctantly opens to reveal a rickety staircase descending into darkness.
+```
+
+**Root Cause**:
+1. **Sorting bug** (commit 9e549b3): Text-service sorted ALL `game.*` events first (intended for `game.started` banner only), causing story messages to appear before stdlib messages
+2. **No override semantics**: Entity handler `game.message` reactions were rendered alongside the original `if.event.*` instead of replacing them
+
+**Fix Applied**:
+1. **event-processor**: When entity handlers return `game.message` reactions, the messageId/text is copied to the original domain event, and the `game.message` is consumed (not forwarded). Multiple `game.message` reactions emit `if.event.error`.
+2. **text-service**: Changed `game.*` sorting to only match specific lifecycle events (`game.started`, `game.starting`, etc.), not `game.message`.
+
+**Files Modified**:
+- `packages/event-processor/src/processor.ts` - game.message override logic
+- `packages/text-service/src/stages/sort.ts` - Specific lifecycle event sorting
+- `packages/text-service/src/text-service.ts` - Removed incomplete suppression logic
+
+**Status**: Fixed 2026-01-24
 
 ---
 
