@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+// Note: CommentaryCategory is still used for styling individual entries
 import { useGameState } from '../context/GameContext';
 import type { GameEvent } from '../types/game-state';
 
@@ -35,19 +36,6 @@ export type CommentaryCategory =
   | 'score'
   | 'system'
   | 'error';
-
-/**
- * Filter options for the commentary display
- */
-export interface CommentaryFilter {
-  categories: Set<CommentaryCategory>;
-  showSystemEvents: boolean;
-}
-
-const DEFAULT_FILTER: CommentaryFilter = {
-  categories: new Set(['movement', 'manipulation', 'state', 'perception', 'combat', 'score']),
-  showSystemEvents: false,
-};
 
 /**
  * Maximum entries to keep in history
@@ -178,26 +166,31 @@ function formatEventText(eventType: string, data: unknown): { text: string; deta
 
   // Movement events
   if (eventType === 'if.event.actor_moved') {
+    const firstVisit = d.firstVisit as boolean;
     if (direction && toRoom) {
-      return { text: `Moved ${direction} to ${toRoom}` };
+      const details = fromRoom ? `from ${fromRoom}${firstVisit ? ' (first visit)' : ''}` : undefined;
+      return { text: `Moved ${direction} to ${toRoom}`, details };
     }
     if (toRoom) {
-      return { text: `Entered ${toRoom}` };
+      return { text: `Entered ${toRoom}`, details: firstVisit ? 'first visit' : undefined };
     }
     return { text: 'Moved to a new location' };
   }
 
   if (eventType === 'if.event.room_entered') {
-    return { text: toRoom ? `Arrived at ${toRoom}` : 'Entered a room' };
+    return { text: toRoom ? `Arrived at ${toRoom}` : 'Entered a room', details: fromRoom ? `from ${fromRoom}` : undefined };
   }
 
   // Taking/dropping
   if (eventType === 'if.event.taken') {
-    return { text: entityName ? `Picked up ${entityName}` : 'Picked up something' };
+    const container = getName('container') || getName('previousLocation');
+    const details = container ? `from ${container}` : undefined;
+    return { text: entityName ? `Picked up ${entityName}` : 'Picked up something', details };
   }
 
   if (eventType === 'if.event.dropped') {
-    return { text: entityName ? `Dropped ${entityName}` : 'Dropped something' };
+    const location = getName('toLocationName') || getName('toLocation');
+    return { text: entityName ? `Dropped ${entityName}` : 'Dropped something', details: location ? `in ${location}` : undefined };
   }
 
   // Container events
@@ -230,11 +223,24 @@ function formatEventText(eventType: string, data: unknown): { text: string; deta
 
   // Opening/closing
   if (eventType === 'if.event.opened') {
-    return { text: entityName ? `Opened ${entityName}` : 'Opened something' };
+    const messageId = d.messageId as string;
+    const customMsg = messageId && !messageId.includes('if.action') ? messageId.split('.').pop() : undefined;
+    return { text: entityName ? `Opened ${entityName}` : 'Opened something', details: customMsg };
   }
 
   if (eventType === 'if.event.closed') {
     return { text: entityName ? `Closed ${entityName}` : 'Closed something' };
+  }
+
+  // Revealed contents (after opening container)
+  if (eventType === 'if.event.revealed') {
+    const containerName = getName('containerName');
+    const items = d.items as Array<{ name?: string }>;
+    const itemNames = items?.map(i => i.name).filter(Boolean).join(', ');
+    if (containerName && itemNames) {
+      return { text: `${containerName} contains`, details: itemNames };
+    }
+    return { text: 'Contents revealed' };
   }
 
   // Locking/unlocking
@@ -256,11 +262,27 @@ function formatEventText(eventType: string, data: unknown): { text: string; deta
 
   // Switching on/off
   if (eventType === 'if.event.switched_on') {
-    return { text: entityName ? `Turned on ${entityName}` : 'Turned something on' };
+    const isLightSource = d.isLightSource as boolean;
+    const willIlluminate = d.willIlluminateLocation as boolean;
+    const details = isLightSource && willIlluminate ? 'area now lit' : undefined;
+    return { text: entityName ? `Turned on ${entityName}` : 'Turned something on', details };
   }
 
   if (eventType === 'if.event.switched_off') {
-    return { text: entityName ? `Turned off ${entityName}` : 'Turned something off' };
+    const willDarken = d.willDarkenLocation as boolean;
+    const details = willDarken ? 'area now dark' : undefined;
+    return { text: entityName ? `Turned off ${entityName}` : 'Turned something off', details };
+  }
+
+  // NPC movement
+  if (eventType === 'npc.moved') {
+    const npcName = getName('npcName') || getName('npc');
+    const npcDirection = d.direction as string;
+    const to = getName('to');
+    if (npcName && npcDirection) {
+      return { text: `${npcName} moved ${npcDirection.toLowerCase()}`, details: to ? `to ${to}` : undefined };
+    }
+    return { text: 'NPC moved' };
   }
 
   // Perception
@@ -307,13 +329,21 @@ function formatEventText(eventType: string, data: unknown): { text: string; deta
   }
 
   // Combat
-  if (eventType.includes('attack')) {
-    const target = getName('targetName') || getName('victimName');
+  if (eventType.includes('attack') || eventType.includes('combat')) {
+    const npc = getName('npc') || getName('npcName');
+    const target = getName('target') || getName('targetName') || getName('victimName');
     const weapon = getName('weaponName');
+    const hit = d.hit as boolean;
+    const damage = d.damage as number;
+
+    if (npc && target) {
+      const result = hit ? (damage ? `hit for ${damage} damage` : 'hit') : 'missed';
+      return { text: `${npc} attacked ${target}`, details: result };
+    }
     if (target && weapon) {
       return { text: `Attacked ${target} with ${weapon}` };
     }
-    return { text: target ? `Attacked ${target}` : 'Attacked' };
+    return { text: target ? `Attacked ${target}` : 'Combat action' };
   }
 
   if (eventType.includes('damage')) {
@@ -365,14 +395,30 @@ function formatEventText(eventType: string, data: unknown): { text: string; deta
     return { text: 'Game restored' };
   }
 
-  // Fallback: convert event type to readable format
-  let text = eventType.replace(/^(if\.event\.|game\.|if\.action\.)/, '');
+  // Fallback: convert event type to readable format and extract key details
+  let text = eventType.replace(/^(if\.event\.|game\.|if\.action\.|system\.)/, '');
   text = text
     .split(/[._]/)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
 
-  return { text, details: entityName };
+  // Build details from available data
+  const detailParts: string[] = [];
+  if (entityName) detailParts.push(entityName);
+  if (direction) detailParts.push(direction);
+  if (toRoom) detailParts.push(`→ ${toRoom}`);
+
+  // For system events, show command info if available
+  const searchTerm = d.searchTerm as string;
+  if (searchTerm) detailParts.push(`"${searchTerm}"`);
+
+  const resolved = d.resolved as boolean;
+  const entity = d.entity as string;
+  if (resolved !== undefined) {
+    detailParts.push(resolved ? `found: ${entity || 'yes'}` : 'not found');
+  }
+
+  return { text, details: detailParts.length > 0 ? detailParts.join(' ') : undefined };
 }
 
 /**
@@ -401,7 +447,6 @@ function formatEvent(event: GameEvent, index: number): CommentaryEntry {
 export function useCommentary() {
   const gameState = useGameState();
   const [entries, setEntries] = useState<CommentaryEntry[]>([]);
-  const [filter, setFilter] = useState<CommentaryFilter>(DEFAULT_FILTER);
   const processedTurns = useRef(new Set<number>());
 
   // Process new events when they arrive
@@ -427,35 +472,6 @@ export function useCommentary() {
     });
   }, [gameState.lastTurnEvents, gameState.turns]);
 
-  // Filter entries based on current filter
-  const filteredEntries = entries.filter((entry) => {
-    if (entry.category === 'system' && !filter.showSystemEvents) {
-      return false;
-    }
-    return filter.categories.has(entry.category);
-  });
-
-  // Toggle category filter
-  const toggleCategory = useCallback((category: CommentaryCategory) => {
-    setFilter((prev) => {
-      const newCategories = new Set(prev.categories);
-      if (newCategories.has(category)) {
-        newCategories.delete(category);
-      } else {
-        newCategories.add(category);
-      }
-      return { ...prev, categories: newCategories };
-    });
-  }, []);
-
-  // Toggle system events
-  const toggleSystemEvents = useCallback(() => {
-    setFilter((prev) => ({
-      ...prev,
-      showSystemEvents: !prev.showSystemEvents,
-    }));
-  }, []);
-
   // Clear history
   const clearHistory = useCallback(() => {
     setEntries([]);
@@ -463,13 +479,8 @@ export function useCommentary() {
   }, []);
 
   return {
-    entries: filteredEntries,
-    allEntries: entries,
-    filter,
-    toggleCategory,
-    toggleSystemEvents,
+    entries,
     clearHistory,
     totalCount: entries.length,
-    filteredCount: filteredEntries.length,
   };
 }

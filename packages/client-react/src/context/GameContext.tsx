@@ -196,13 +196,14 @@ export function GameProvider({ engine, children }: GameProviderProps) {
         }
       }
 
-      // Handle score changes
-      if (evt.type === 'game.score_changed') {
-        const data = evt.data as { newScore?: number; maxScore?: number };
-        if (data.newScore !== undefined) {
+      // Handle score changes (from both score_changed and score_displayed events)
+      if (evt.type === 'game.score_changed' || evt.type === 'if.event.score_displayed') {
+        const data = evt.data as { newScore?: number; score?: number; maxScore?: number };
+        const newScore = data.newScore ?? data.score;
+        if (newScore !== undefined) {
           dispatch({
             type: 'SCORE_CHANGED',
-            score: data.newScore,
+            score: newScore,
             maxScore: data.maxScore,
           });
         }

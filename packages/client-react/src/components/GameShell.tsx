@@ -28,6 +28,8 @@ interface GameShellProps {
   className?: string;
   /** Show side panel (default: true) */
   showSidePanel?: boolean;
+  /** Show Map tab - requires author-defined map hints (default: false) */
+  mapEnabled?: boolean;
 }
 
 export function GameShell({
@@ -35,15 +37,21 @@ export function GameShell({
   storyId = 'default',
   className = '',
   showSidePanel = true,
+  mapEnabled = false,
 }: GameShellProps) {
-  // Default tabs
-  const defaultTabs = useMemo<TabConfig[]>(
-    () => [
-      {
+  // Default tabs - Map tab only shown if author has enabled it (has map hints)
+  const defaultTabs = useMemo<TabConfig[]>(() => {
+    const tabs: TabConfig[] = [];
+
+    if (mapEnabled) {
+      tabs.push({
         id: 'map',
         label: 'Map',
         content: <MapPanel storyId={storyId} />,
-      },
+      });
+    }
+
+    tabs.push(
       {
         id: 'commentary',
         label: 'Events',
@@ -58,13 +66,15 @@ export function GameShell({
         id: 'progress',
         label: 'Progress',
         content: <ProgressPanel />,
-      },
-    ],
-    [storyId]
-  );
+      }
+    );
 
+    return tabs;
+  }, [storyId, mapEnabled]);
+
+  const defaultTab = mapEnabled ? 'map' : 'commentary';
   const sidePanelContent = sidePanel ?? (
-    <TabPanel tabs={defaultTabs} defaultTab="map" />
+    <TabPanel tabs={defaultTabs} defaultTab={defaultTab} />
   );
 
   return (

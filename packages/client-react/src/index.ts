@@ -26,7 +26,6 @@ export {
   type MapState,
   type CommentaryEntry,
   type CommentaryCategory,
-  type CommentaryFilter,
 } from './hooks';
 
 // Components

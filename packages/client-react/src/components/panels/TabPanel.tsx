@@ -20,8 +20,6 @@ interface TabPanelProps {
 export function TabPanel({ tabs, defaultTab, className = '' }: TabPanelProps) {
   const [activeTab, setActiveTab] = useState(defaultTab || tabs[0]?.id || '');
 
-  const activeTabConfig = tabs.find((t) => t.id === activeTab);
-
   return (
     <div className={`tab-panel ${className}`}>
       <div className="tab-panel__header">
@@ -37,9 +35,16 @@ export function TabPanel({ tabs, defaultTab, className = '' }: TabPanelProps) {
           </button>
         ))}
       </div>
-      <div className="tab-panel__content">
-        {activeTabConfig?.content}
-      </div>
+      {/* Render all tabs but hide inactive ones to preserve state */}
+      {tabs.map((tab) => (
+        <div
+          key={tab.id}
+          className="tab-panel__content"
+          style={{ display: activeTab === tab.id ? 'flex' : 'none' }}
+        >
+          {tab.content}
+        </div>
+      ))}
     </div>
   );
 }

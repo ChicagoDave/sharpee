@@ -36,7 +36,8 @@ export function isGlacierMelted(world: IWorldModel): boolean {
 export function registerGlacierHandler(
   world: WorldModel,
   glacierRoomId: string,
-  volcanoViewId: string
+  volcanoViewId: string,
+  streamViewId: string
 ): void {
   world.registerEventHandler('if.event.thrown', (event: ISemanticEvent, w: IWorldModel): void => {
     // Already melted - nothing to do
@@ -87,7 +88,7 @@ export function registerGlacierHandler(
     }
 
     // SUCCESS! Lit torch thrown at glacier - melt it!
-    meltGlacier(w, glacierRoomId, volcanoViewId, itemId);
+    meltGlacier(w, glacierRoomId, volcanoViewId, streamViewId, itemId);
   });
 }
 
@@ -98,6 +99,7 @@ function meltGlacier(
   world: IWorldModel,
   glacierRoomId: string,
   volcanoViewId: string,
+  streamViewId: string,
   torchId: string
 ): void {
   // Mark glacier as melted
@@ -140,9 +142,27 @@ function meltGlacier(
     }
   }
 
-  // Remove/destroy the torch - it's consumed by melting the glacier
-  // In classic Zork, the torch melts into the glacier
-  world.removeEntity(torchId);
+  // Torch is carried downstream by melting glacier - move to Stream View
+  // and extinguish it (becomes "burned out ivory torch")
+  const torch = world.getEntity(torchId);
+  if (torch) {
+    // Extinguish the torch
+    const lightSource = torch.get(LightSourceTrait);
+    if (lightSource) {
+      lightSource.isLit = false;
+    }
+
+    // Update descriptions to "burned out" state
+    const identity = torch.get(IdentityTrait);
+    if (identity) {
+      identity.name = 'burned out ivory torch';
+      identity.description = 'A burned out ivory torch. The flame has been extinguished.';
+      identity.aliases = ['torch', 'ivory torch', 'burned out torch', 'ivory'];
+    }
+
+    // Move torch to Stream View (carried downstream by glacier melt)
+    world.moveEntity(torchId, streamViewId);
+  }
 
   // Set flag for messaging
   world.setStateValue('dungeo.glacier.just_melted', true);

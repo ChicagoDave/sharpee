@@ -371,7 +371,8 @@ export class DungeoStory implements Story {
     this.initializeMirrorRoomHandler(world);
 
     // Register glacier handler (throw torch at glacier puzzle)
-    registerGlacierHandler(world, this.volcanoIds.glacierRoom, this.volcanoIds.volcanoView);
+    // Torch ends up in Stream View when glacier melts
+    registerGlacierHandler(world, this.volcanoIds.glacierRoom, this.volcanoIds.volcanoView, this.damIds.streamView);
 
     // Register boat puncture handler (carrying sharp stick into boat deflates it)
     registerBoatPunctureHandler(world);

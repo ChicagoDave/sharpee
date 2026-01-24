@@ -19,6 +19,11 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-037 | Troll death text not displaying (story messages) | Medium | client-react | 2026-01-23 | - | 2026-01-24 |
 | ISSUE-038 | React client needs modern styling and fonts | Low | client-react | 2026-01-23 | - | 2026-01-24 |
 | ISSUE-039 | Text ordering: game.message duplicating stdlib messages | Critical | Platform | 2026-01-24 | - | 2026-01-24 |
+| ISSUE-040 | Web Client version shows "N/A" | Low | client-react | 2026-01-24 | - | - |
+| ISSUE-041 | Version format should separate build timestamp from version | Low | Build | 2026-01-24 | - | - |
+| ISSUE-042 | HELP and ABOUT commands not working in React client | Medium | client-react | 2026-01-24 | - | - |
+| ISSUE-043 | Events panel not using full width of right panel | Low | client-react | 2026-01-24 | - | - |
+| ISSUE-044 | Notes panel not using full width of right panel | Low | client-react | 2026-01-24 | - | - |
 
 ---
 
@@ -293,6 +298,107 @@ The door reluctantly opens to reveal a rickety staircase descending into darknes
 - `packages/text-service/src/text-service.ts` - Removed incomplete suppression logic
 
 **Status**: Fixed 2026-01-24
+
+---
+
+### ISSUE-040: Web Client version shows "N/A"
+
+**Reported**: 2026-01-24
+**Severity**: Low
+**Component**: client-react
+
+**Description**:
+In the React client, the game banner displays "Web Client version: N/A" instead of the actual client version.
+
+**Reproduction**:
+1. Load React client
+2. Observe banner text
+
+**Expected**: "Web Client version: 0.1.0-beta.20260124.0838" or similar.
+
+**Actual**: "Web Client version: N/A"
+
+**Notes**: The client version needs to be injected at build time or read from package.json.
+
+---
+
+### ISSUE-041: Version format should separate build timestamp from version
+
+**Reported**: 2026-01-24
+**Severity**: Low
+**Component**: Build System
+
+**Description**:
+The current version format embeds date-time suffix directly in the version number (e.g., `0.9.56-beta.20260124.0838`). This makes versions hard to read and compare.
+
+**Proposed Change**:
+- Keep clean semantic versions: `0.9.56-beta`, `1.0.64`
+- Add separate build timestamp field: `Build: 2026-01-24 08:38`
+
+**Affected**:
+- Platform version (sharpee)
+- Story version (dungeo)
+- Client version (client-react)
+
+---
+
+### ISSUE-042: HELP and ABOUT commands not working in React client
+
+**Reported**: 2026-01-24
+**Severity**: Medium
+**Component**: client-react
+
+**Description**:
+The HELP and ABOUT commands do not produce output in the React client.
+
+**Reproduction**:
+1. Load React client
+2. Type `help` or `about`
+3. No output appears
+
+**Expected**: Help text and about/credits information displayed.
+
+**Notes**: These may be client-handled commands that need implementation in the React client, or they may be parser commands that aren't being processed correctly.
+
+---
+
+### ISSUE-043: Events panel not using full width of right panel
+
+**Reported**: 2026-01-24
+**Severity**: Low
+**Component**: client-react (CSS)
+
+**Description**:
+The Events (Commentary) panel only uses approximately half the width of the right sidebar panel area.
+
+**Reproduction**:
+1. Load React client
+2. Switch to Events tab
+3. Observe panel width
+
+**Expected**: Events panel fills the full width of the sidebar.
+
+**Notes**: Likely a CSS flex/grid issue in the tab panel or commentary panel styles.
+
+---
+
+### ISSUE-044: Notes panel not using full width of right panel
+
+**Reported**: 2026-01-24
+**Severity**: Low
+**Component**: client-react (CSS)
+
+**Description**:
+The Notes panel only uses approximately half the width of the right sidebar panel area.
+
+**Reproduction**:
+1. Load React client
+2. Switch to Notes tab
+3. Observe panel width
+
+**Expected**: Notes panel fills the full width of the sidebar.
+
+**Notes**: Same root cause as ISSUE-043 - likely a CSS flex/grid issue in the tab panel.
 
 ---
 

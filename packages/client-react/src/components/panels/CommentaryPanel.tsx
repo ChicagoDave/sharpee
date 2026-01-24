@@ -1,42 +1,17 @@
 /**
  * CommentaryPanel - Streaming event log display
  *
- * Shows real-time game events in a scrolling, filterable log.
+ * Shows real-time game events in a scrolling log.
  * Each event is categorized and formatted for easy reading.
  */
 
 import React, { useEffect, useRef } from 'react';
-import { useCommentary, type CommentaryCategory, type CommentaryEntry } from '../../hooks/useCommentary';
+import { useCommentary, type CommentaryEntry } from '../../hooks/useCommentary';
 
 interface CommentaryPanelProps {
   className?: string;
   /** Auto-scroll to latest entry (default: true) */
   autoScroll?: boolean;
-}
-
-/**
- * Category button for filtering
- */
-interface CategoryButtonProps {
-  category: CommentaryCategory;
-  icon: string;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}
-
-function CategoryButton({ category, icon, label, active, onClick }: CategoryButtonProps) {
-  return (
-    <button
-      className={`commentary-filter__btn ${active ? 'commentary-filter__btn--active' : ''}`}
-      onClick={onClick}
-      title={label}
-      aria-pressed={active}
-    >
-      <span className="commentary-filter__icon">{icon}</span>
-      <span className="commentary-filter__label">{label}</span>
-    </button>
-  );
 }
 
 /**
@@ -65,14 +40,7 @@ function EntryRow({ entry }: EntryRowProps) {
  * CommentaryPanel component
  */
 export function CommentaryPanel({ className = '', autoScroll = true }: CommentaryPanelProps) {
-  const {
-    entries,
-    filter,
-    toggleCategory,
-    toggleSystemEvents,
-    totalCount,
-    filteredCount,
-  } = useCommentary();
+  const { entries, totalCount } = useCommentary();
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const isAtBottom = useRef(true);
@@ -91,47 +59,11 @@ export function CommentaryPanel({ className = '', autoScroll = true }: Commentar
     }
   }, [entries, autoScroll]);
 
-  const categories: { category: CommentaryCategory; icon: string; label: string }[] = [
-    { category: 'movement', icon: '\u2192', label: 'Movement' },
-    { category: 'manipulation', icon: '\u270B', label: 'Items' },
-    { category: 'state', icon: '\u2699', label: 'State' },
-    { category: 'perception', icon: '\u{1F441}', label: 'Look' },
-    { category: 'combat', icon: '\u2694', label: 'Combat' },
-    { category: 'score', icon: '\u2605', label: 'Score' },
-  ];
-
   return (
     <div className={`commentary-panel ${className}`}>
-      {/* Filter bar */}
-      <div className="commentary-filter">
-        {categories.map(({ category, icon, label }) => (
-          <CategoryButton
-            key={category}
-            category={category}
-            icon={icon}
-            label={label}
-            active={filter.categories.has(category)}
-            onClick={() => toggleCategory(category)}
-          />
-        ))}
-        <CategoryButton
-          category="system"
-          icon={'\u2139'}
-          label="System"
-          active={filter.showSystemEvents}
-          onClick={toggleSystemEvents}
-        />
-      </div>
-
       {/* Status bar */}
       <div className="commentary-status">
-        {filteredCount < totalCount ? (
-          <span>
-            Showing {filteredCount} of {totalCount} events
-          </span>
-        ) : (
-          <span>{totalCount} events</span>
-        )}
+        <span>{totalCount} events</span>
       </div>
 
       {/* Event log */}

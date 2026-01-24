@@ -1,54 +1,3 @@
-[22:41:23] EDIT: docs/work/issues/issues-list-02.md
-[22:45:52] WRITE: docs/design/react-design.html
-[22:52:22] EDIT: docs/context/session-20260123-2152-dungeo.md
-[22:53:10] GIT: git commit -m "$(cat <<'EOF'
-docs: Add React client theme design and font showca
-[22:53:19] GIT: git push origin dungeo
-[23:13:42] WRITE: build.sh
-[23:14:50] WRITE: packages/client-react/themes/classic-light.css
-[23:15:34] WRITE: packages/client-react/themes/modern-dark.css
-[23:16:22] WRITE: packages/client-react/themes/retro-terminal.css
-[23:17:06] WRITE: packages/client-react/themes/paper.css
-[23:17:46] EDIT: packages/client-react/src/components/GameShell.tsx
-[23:18:03] EDIT: packages/client-react/src/components/GameShell.tsx
-[23:18:26] EDIT: packages/client-react/src/components/panels/index.ts
-[23:18:32] EDIT: packages/client-react/src/components/index.ts
-[23:18:38] EDIT: packages/client-react/src/index.ts
-[23:18:50] EDIT: stories/dungeo/src/react-entry.tsx
-[23:18:56] EDIT: stories/dungeo/src/react-entry.tsx
-[23:19:11] EDIT: packages/client-react/src/components/panels/TabPanel.tsx
-[23:19:37] EDIT: packages/client-react/src/components/panels/MapPanel.tsx
-[23:19:47] EDIT: packages/client-react/src/components/panels/NotesPanel.tsx
-[23:19:57] EDIT: packages/client-react/src/components/panels/ProgressPanel.tsx
-[23:20:19] EDIT: packages/client-react/src/components/panels/CommentaryPanel.tsx
-[23:21:10] WRITE: scripts/play-dungeo.sh
-[23:23:50] TRANSCRIPT FAIL: ./build.sh --skip transcript-tester -s dungeo 2>&1 | head -50
-[23:26:52] TRANSCRIPT FAIL: ./build.sh --skip transcript-tester -s dungeo -c react -t modern-dark 2>&1 | hea
-[23:27:42] EDIT: CLAUDE.md
-[23:38:23] WRITE: docs/context/session-20260123-2336-dungeo.md
-[23:38:47] EDIT: docs/work/issues/issues-list-02.md
-[23:39:02] EDIT: docs/work/issues/issues-list-02.md
-[23:40:22] GIT: git commit -m "$(cat <<'EOF'
-feat: Unified build system and React theme support
-
-[23:40:33] GIT: git push origin dungeo
-[23:48:22] WRITE: docs/design/react-map.html
-[00:03:44] EDIT: packages/client-react/themes/modern-dark.css
-[00:03:45] EDIT: packages/client-react/themes/modern-dark.css
-[00:04:00] EDIT: packages/client-react/themes/classic-light.css
-[00:04:01] EDIT: packages/client-react/themes/paper.css
-[00:04:02] EDIT: packages/client-react/themes/retro-terminal.css
-[00:04:15] EDIT: packages/client-react/themes/classic-light.css
-[00:04:32] EDIT: packages/client-react/themes/retro-terminal.css
-[00:04:45] EDIT: packages/client-react/themes/paper.css
-[00:04:55] EDIT: packages/client-react/src/components/panels/MapPanel.tsx
-[00:05:05] EDIT: packages/client-react/src/components/panels/MapPanel.tsx
-[00:05:21] EDIT: packages/client-react/themes/classic-light.css
-[00:14:21] EDIT: packages/client-react/src/components/panels/MapPanel.tsx
-[00:14:28] EDIT: packages/client-react/themes/modern-dark.css
-[00:14:39] EDIT: packages/client-react/themes/modern-dark.css
-[00:14:55] EDIT: packages/client-react/src/components/panels/MapPanel.tsx
-[00:15:01] EDIT: packages/client-react/themes/modern-dark.css
 [00:15:08] EDIT: packages/client-react/themes/classic-light.css
 [00:15:16] EDIT: packages/client-react/themes/retro-terminal.css
 [00:15:24] EDIT: packages/client-react/themes/paper.css
@@ -65,3 +14,54 @@ feat: Unified build system and React theme support
 [00:34:46] EDIT: packages/client-react/src/hooks/useMap.ts
 [00:34:56] EDIT: packages/client-react/src/hooks/useMap.ts
 [00:42:31] WRITE: docs/context/session-20260124-0041-dungeo.md
+[00:43:30] GIT: git commit -m "$(cat <<'EOF'
+feat(client-react): Fix map panel layout and room a
+[00:43:40] GIT: git push
+[00:46:45] EDIT: packages/client-react/src/hooks/useMap.ts
+[00:46:53] EDIT: packages/client-react/src/hooks/useMap.ts
+[00:46:57] EDIT: packages/client-react/src/hooks/useMap.ts
+[00:47:15] EDIT: packages/client-react/src/components/panels/MapPanel.tsx
+[00:47:31] EDIT: packages/client-react/src/components/panels/MapPanel.tsx
+[00:47:39] EDIT: packages/client-react/src/components/panels/MapPanel.tsx
+[00:48:19] EDIT: packages/client-react/src/hooks/useMap.ts
+[01:10:14] EDIT: packages/client-react/src/hooks/useMap.ts
+[01:24:52] EDIT: packages/client-react/src/hooks/useMap.ts
+[01:35:14] WRITE: docs/architecture/adrs/adr-113-map-position-hints.md
+[01:36:39] EDIT: packages/client-react/src/hooks/useCommentary.ts
+[01:37:04] EDIT: packages/client-react/src/hooks/useCommentary.ts
+[01:37:14] EDIT: packages/client-react/src/components/panels/CommentaryPanel.tsx
+[01:37:22] EDIT: packages/client-react/src/components/panels/CommentaryPanel.tsx
+[01:37:55] EDIT: packages/client-react/themes/modern-dark.css
+[01:44:50] EDIT: docs/architecture/adrs/adr-113-map-position-hints.md
+[01:45:05] EDIT: docs/architecture/adrs/adr-113-map-position-hints.md
+[01:45:15] EDIT: docs/architecture/adrs/adr-113-map-position-hints.md
+[01:48:11] WRITE: docs/context/session-20260124-0146-dungeo.md
+[01:49:51] GIT: git commit -m "$(cat <<'EOF'
+feat(client-react): Improve map collision detection
+[01:50:01] GIT: git push
+[01:55:55] EDIT: packages/client-react/src/hooks/useCommentary.ts
+[01:56:09] EDIT: packages/client-react/src/hooks/useCommentary.ts
+[01:56:16] EDIT: packages/client-react/src/hooks/useCommentary.ts
+[01:56:31] EDIT: packages/client-react/src/components/panels/CommentaryPanel.tsx
+[01:56:47] EDIT: packages/client-react/src/components/panels/CommentaryPanel.tsx
+[01:56:56] EDIT: packages/client-react/src/components/GameShell.tsx
+[01:57:07] EDIT: packages/client-react/src/components/GameShell.tsx
+[02:02:30] EDIT: packages/client-react/src/hooks/index.ts
+[02:06:53] EDIT: packages/client-react/src/index.ts
+[02:20:58] EDIT: stories/dungeo/src/regions/underground.ts
+[02:25:13] EDIT: stories/dungeo/src/handlers/glacier-handler.ts
+[02:25:19] EDIT: stories/dungeo/src/handlers/glacier-handler.ts
+[02:25:40] EDIT: stories/dungeo/src/handlers/glacier-handler.ts
+[02:25:59] EDIT: stories/dungeo/src/index.ts
+[02:31:43] EDIT: packages/client-react/src/components/panels/TabPanel.tsx
+[02:31:50] EDIT: packages/client-react/src/components/panels/TabPanel.tsx
+[02:32:03] EDIT: packages/client-react/src/hooks/useCommentary.ts
+[02:32:14] EDIT: packages/client-react/src/hooks/useCommentary.ts
+[02:32:23] EDIT: packages/client-react/src/hooks/useCommentary.ts
+[02:32:36] EDIT: packages/client-react/src/hooks/useCommentary.ts
+[02:32:52] EDIT: packages/client-react/src/hooks/useCommentary.ts
+[02:38:30] EDIT: packages/client-react/src/context/GameContext.tsx
+[02:50:04] EDIT: docs/work/issues/issues-list-02.md
+[02:50:23] EDIT: docs/work/issues/issues-list-02.md
+[02:58:50] EDIT: scripts/publish-npm.sh
+[02:59:07] EDIT: scripts/publish-npm.sh
