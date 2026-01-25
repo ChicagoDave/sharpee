@@ -60,13 +60,12 @@ export function registerAllMessages(language: LanguageProvider): void {
  */
 function registerGameMessages(language: LanguageProvider): void {
   // Opening banner - displayed when game starts
-  // Uses story config params: {title}, {author}, {version}, {engineVersion}, {clientVersion}
-  // Custom params can be added via story config's `custom` field
+  // Uses story config params: {title}, {author}, {version}, {buildDate}, {engineVersion}, {clientVersion}
   language.addMessage('game.started.banner',
     `{title}
 
-Story v{version} built on Sharpee v{engineVersion}
-Web Client version: {clientVersion}
+Story v{version} (built {buildDate})
+Sharpee v{engineVersion}
 
 A port of Mainframe Zork (1981)
 By {author}
@@ -79,8 +78,8 @@ Type HELP for instructions, ABOUT for credits.`
   language.addMessage('if.action.version',
     `{title}
 
-Story v{version} built on Sharpee v{engineVersion}
-Web Client version: {clientVersion}
+Story v{version} (built {buildDate})
+Sharpee v{engineVersion}
 
 A port of Mainframe Zork (1981)
 By {author}

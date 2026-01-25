@@ -195,16 +195,22 @@ update_versions() {
 
     log_step "Updating Versions"
 
-    # Generate date-based prerelease tag
-    DATE_TAG=$(date -u +"%Y%m%d.%H%M")
+    # Generate build date (ISO 8601 format)
     BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
     # Update sharpee package.json
+    # Version is now simple semantic version with optional prerelease tag (no timestamp)
     local SHARPEE_PKG="packages/sharpee/package.json"
     if [ -f "$SHARPEE_PKG" ]; then
         local CURRENT=$(node -p "require('./$SHARPEE_PKG').version")
+        # Extract base version and prerelease tag (e.g., "0.9.60-beta" -> base="0.9.60", tag="beta")
         local BASE=$(echo "$CURRENT" | sed 's/-.*//')
-        SHARPEE_VERSION="${BASE}-beta.${DATE_TAG}"
+        local TAG=$(echo "$CURRENT" | grep -oE '\-[a-zA-Z]+' | sed 's/-//' || echo "")
+        if [ -n "$TAG" ]; then
+            SHARPEE_VERSION="${BASE}-${TAG}"
+        else
+            SHARPEE_VERSION="${BASE}"
+        fi
 
         node -e "
           const fs = require('fs');
@@ -212,7 +218,7 @@ update_versions() {
           pkg.version = '$SHARPEE_VERSION';
           fs.writeFileSync('$SHARPEE_PKG', JSON.stringify(pkg, null, 2) + '\n');
         "
-        log_ok "sharpee $SHARPEE_VERSION"
+        log_ok "sharpee $SHARPEE_VERSION (built $BUILD_DATE)"
     fi
 
     # Update story if specified
@@ -223,7 +229,12 @@ update_versions() {
         if [ -f "$STORY_PKG" ]; then
             local CURRENT=$(node -p "require('./$STORY_PKG').version")
             local BASE=$(echo "$CURRENT" | sed 's/-.*//')
-            local NEW="${BASE}-beta.${DATE_TAG}"
+            local TAG=$(echo "$CURRENT" | grep -oE '\-[a-zA-Z]+' | sed 's/-//' || echo "")
+            if [ -n "$TAG" ]; then
+                local NEW="${BASE}-${TAG}"
+            else
+                local NEW="${BASE}"
+            fi
 
             node -e "
               const fs = require('fs');
@@ -243,7 +254,7 @@ export const BUILD_DATE = '${BUILD_DATE}';
 export const ENGINE_VERSION = '${SHARPEE_VERSION}';
 export const VERSION_INFO = { version: STORY_VERSION, buildDate: BUILD_DATE, engineVersion: ENGINE_VERSION } as const;
 EOF
-            log_ok "$STORY $NEW"
+            log_ok "$STORY $NEW (built $BUILD_DATE)"
         fi
     fi
 
@@ -263,7 +274,12 @@ EOF
         if [ -f "$CLIENT_PKG" ]; then
             local CURRENT=$(node -p "require('./$CLIENT_PKG').version")
             local BASE=$(echo "$CURRENT" | sed 's/-.*//')
-            local NEW="${BASE}-beta.${DATE_TAG}"
+            local TAG=$(echo "$CURRENT" | grep -oE '\-[a-zA-Z]+' | sed 's/-//' || echo "")
+            if [ -n "$TAG" ]; then
+                local NEW="${BASE}-${TAG}"
+            else
+                local NEW="${BASE}"
+            fi
 
             node -e "
               const fs = require('fs');
@@ -283,7 +299,7 @@ export const BUILD_DATE = '${BUILD_DATE}';
 export const ENGINE_VERSION = '${SHARPEE_VERSION}';
 export const VERSION_INFO = { version: CLIENT_VERSION, buildDate: BUILD_DATE, engineVersion: ENGINE_VERSION } as const;
 EOF
-            log_ok "$CLIENT client $NEW"
+            log_ok "$CLIENT client $NEW (built $BUILD_DATE)"
         fi
     done
 

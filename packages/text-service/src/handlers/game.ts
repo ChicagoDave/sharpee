@@ -45,6 +45,11 @@ export function handleGameStarted(
   const engineVersion = data?.engineVersion || 'unknown';
   const clientVersion = data?.clientVersion || 'N/A';
 
+  // Format buildDate for display (show date only, not full ISO timestamp)
+  const buildDate = story.buildDate
+    ? new Date(story.buildDate).toISOString().split('T')[0]
+    : '';
+
   const params: Record<string, string> = {
     title: story.title || 'Unknown',
     author: story.author || 'Unknown',
@@ -52,6 +57,7 @@ export function handleGameStarted(
     id: story.id || 'unknown',
     engineVersion: engineVersion,
     clientVersion: clientVersion,
+    buildDate: buildDate,
   };
 
   // Look up banner message via language provider

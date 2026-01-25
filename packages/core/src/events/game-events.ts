@@ -15,6 +15,7 @@ export interface GameEventStoryData {
   title?: string;
   author?: string;
   version?: string;
+  buildDate?: string;
 }
 
 /** Session tracking data */

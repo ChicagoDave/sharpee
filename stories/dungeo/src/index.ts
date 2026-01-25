@@ -121,6 +121,7 @@ export const config: StoryConfig = {
   title: "DUNGEON",
   author: "Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling",
   version: VERSION_INFO.version,
+  buildDate: VERSION_INFO.buildDate,
   description: "A port of Mainframe Zork (1981)",
   custom: {
     portedBy: "David Cornelson"

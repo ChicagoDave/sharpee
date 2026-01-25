@@ -391,7 +391,8 @@ export class GameEngine {
       id: this.story?.config.id,
       title: this.context.metadata.title,
       author: this.context.metadata.author,
-      version: this.context.metadata.version
+      version: this.context.metadata.version,
+      buildDate: this.story?.config.buildDate
     }, this.sessionStartTime, engineVersion, clientVersion);
     this.emitGameEvent(startedEvent);
 
