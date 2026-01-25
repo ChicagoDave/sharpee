@@ -317,6 +317,7 @@ build_platform() {
         "@sharpee/text-service:text-service"
         "@sharpee/stdlib:stdlib"
         "@sharpee/engine:engine"
+        "@sharpee/platform-browser:platform-browser"
         "@sharpee/sharpee:sharpee"
         "@sharpee/transcript-tester:transcript-tester"
     )
