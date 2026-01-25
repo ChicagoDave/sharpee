@@ -25,6 +25,19 @@ const SHARPEE_VERSION = ENGINE_VERSION;
 // localStorage keys for save/restore
 const STORAGE_INDEX_KEY = 'dungeo-saves-index';  // Array of save slot names
 const SAVE_PREFIX = 'dungeo-save-';              // Per-slot: dungeo-save-{name}
+const THEME_STORAGE_KEY = 'dungeo-theme';        // Theme preference
+
+// Apply saved theme immediately to prevent flash of default theme
+(function applyThemeEarly() {
+  try {
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    if (savedTheme) {
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+  } catch {
+    // localStorage not available, use default
+  }
+})();
 
 // Save slot metadata (stored in index)
 interface SaveSlotMeta {
@@ -566,6 +579,178 @@ function setupDialogHandlers(): void {
   });
 }
 
+// ============================================
+// Menu Bar Handlers
+// ============================================
+
+/**
+ * Close all menu dropdowns
+ */
+function closeAllMenus(): void {
+  document.querySelectorAll('.menu-dropdown').forEach(menu => {
+    menu.classList.remove('show');
+  });
+  document.querySelectorAll('.menu-button').forEach(btn => {
+    btn.classList.remove('active');
+  });
+}
+
+/**
+ * Toggle a menu dropdown
+ */
+function toggleMenu(menuBtn: HTMLElement, dropdown: HTMLElement): void {
+  const isOpen = dropdown.classList.contains('show');
+  closeAllMenus();
+  if (!isOpen) {
+    dropdown.classList.add('show');
+    menuBtn.classList.add('active');
+  }
+}
+
+/**
+ * Get saved theme from localStorage
+ */
+function getSavedTheme(): string {
+  try {
+    return localStorage.getItem(THEME_STORAGE_KEY) || 'dos-classic';
+  } catch {
+    return 'dos-classic';
+  }
+}
+
+/**
+ * Save theme to localStorage
+ */
+function saveTheme(theme: string): void {
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch {
+    // localStorage not available, ignore
+  }
+}
+
+/**
+ * Apply a theme
+ */
+function applyTheme(theme: string): void {
+  document.documentElement.setAttribute('data-theme', theme);
+
+  // Update theme option checkmarks
+  document.querySelectorAll('.theme-option').forEach(opt => {
+    const optTheme = (opt as HTMLElement).dataset.theme;
+    if (optTheme === theme) {
+      opt.classList.add('active');
+    } else {
+      opt.classList.remove('active');
+    }
+  });
+
+  saveTheme(theme);
+  console.log('[theme] Applied:', theme);
+}
+
+/**
+ * Set up menu bar event handlers
+ */
+function setupMenuHandlers(): void {
+  const fileMenuBtn = document.getElementById('file-menu-btn');
+  const fileMenu = document.getElementById('file-menu');
+  const settingsMenuBtn = document.getElementById('settings-menu-btn');
+  const settingsMenu = document.getElementById('settings-menu');
+  const helpMenuBtn = document.getElementById('help-menu-btn');
+  const helpMenu = document.getElementById('help-menu');
+
+  // Menu button clicks
+  fileMenuBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (fileMenu) toggleMenu(fileMenuBtn, fileMenu);
+  });
+
+  settingsMenuBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (settingsMenu) toggleMenu(settingsMenuBtn, settingsMenu);
+  });
+
+  helpMenuBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (helpMenu) toggleMenu(helpMenuBtn, helpMenu);
+  });
+
+  // Close menus on outside click
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest('.menu-item')) {
+      closeAllMenus();
+    }
+  });
+
+  // Close menus on Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeAllMenus();
+    }
+  });
+
+  // File menu actions
+  document.getElementById('menu-save')?.addEventListener('click', async () => {
+    closeAllMenus();
+    await showSaveDialog();
+  });
+
+  document.getElementById('menu-restore')?.addEventListener('click', async () => {
+    closeAllMenus();
+    // The hook handles showing the dialog and performing the restore
+    await saveRestoreHooks.onRestoreRequested();
+  });
+
+  document.getElementById('menu-restart')?.addEventListener('click', async () => {
+    closeAllMenus();
+    if (confirm('Are you sure you want to restart? All unsaved progress will be lost.')) {
+      await saveRestoreHooks.onRestartRequested({});
+    }
+  });
+
+  document.getElementById('menu-quit')?.addEventListener('click', () => {
+    closeAllMenus();
+    if (confirm('Are you sure you want to quit?')) {
+      // Try to close window (works in popup windows)
+      window.close();
+      // If that doesn't work, show message
+      displayText('[Close this browser tab to quit]');
+    }
+  });
+
+  // Theme selection
+  document.querySelectorAll('.theme-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const theme = (opt as HTMLElement).dataset.theme;
+      if (theme) {
+        applyTheme(theme);
+        closeAllMenus();
+      }
+    });
+  });
+
+  // Help menu actions
+  document.getElementById('menu-help')?.addEventListener('click', () => {
+    closeAllMenus();
+    displayText(getHelpText());
+    scrollToBottom();
+  });
+
+  document.getElementById('menu-about')?.addEventListener('click', () => {
+    closeAllMenus();
+    displayText(getTitleInfo());
+    scrollToBottom();
+  });
+
+  // Apply saved theme on startup
+  const savedTheme = getSavedTheme();
+  applyTheme(savedTheme);
+
+  console.log('[menu] Handlers set up');
+}
+
 /**
  * Perform the actual save to localStorage
  * Captures locations and traits without full serialization
@@ -1070,6 +1255,9 @@ function setupDOM(): void {
 
   // Set up dialog handlers
   setupDialogHandlers();
+
+  // Set up menu bar handlers
+  setupMenuHandlers();
 
   // Handle keyboard input
   commandInput.addEventListener('keydown', (e: KeyboardEvent) => {

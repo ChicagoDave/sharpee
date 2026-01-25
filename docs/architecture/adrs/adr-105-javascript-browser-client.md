@@ -1,8 +1,12 @@
 # ADR-105: JavaScript Browser Client
 
-## Status: PROPOSED
+## Status: SUPERSEDED by [ADR-114](adr-114-browser-platform-package.md)
 
 ## Date: 2026-01-16
+
+## Superseded Date: 2026-01-24
+
+> **Note**: This ADR described a per-story browser entry approach. ADR-114 replaces this with a shared `@sharpee/platform-browser` package to eliminate code duplication.
 
 ## Context
 
