@@ -1,6 +1,8 @@
 # ADR-113: Map Position Hints
 
-## Status: Accepted (Phase 1 Implemented)
+## Status: Superseded by ADR-115
+
+ADR-115 (Map Export CLI) takes a different approach: export rich map data to established tools like Trizbort rather than building a competing visual editor.
 
 ## Context
 
