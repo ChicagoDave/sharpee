@@ -60,7 +60,7 @@ fi
 PACKAGES=(
   "core"
   "if-domain"
-  "world-model"
+  "world=model"
   "event-processor"
   "lang-en-us"
   "parser-en-us"
@@ -88,14 +88,10 @@ for pkg in "${PACKAGES[@]}"; do
   fi
 done
 
-# Build all packages
+# Build all packages (skip version updates since we already set them)
 echo ""
 echo -e "${GREEN}=== Building packages ===${NC}"
-if command -v pnpm &> /dev/null; then
-  ./scripts/build-platform.sh
-else
-  ./scripts/build-platform-ubuntu.sh
-fi
+./build.sh --no-version
 
 # Publish each package
 echo ""

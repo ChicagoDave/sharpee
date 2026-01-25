@@ -149,6 +149,9 @@ export function GameProvider({ engine, children }: GameProviderProps) {
 
     // Text output handler - fires at end of turn with collected events
     const handleTextOutput = (text: unknown, turn: unknown) => {
+      // Log text output to console (matching thin web client behavior)
+      console.log('[text:output]', { text, turn });
+
       // Capture buffered events and clear buffer
       const turnEvents = [...turnEventsBuffer.current];
       turnEventsBuffer.current = [];
@@ -167,6 +170,9 @@ export function GameProvider({ engine, children }: GameProviderProps) {
     const handleEvent = (event: unknown) => {
       const evt = event as GameEvent;
 
+      // Log events to console (matching thin web client behavior)
+      console.log('[event]', evt.type, evt.data);
+
       // Add to buffer for Commentary panel
       turnEventsBuffer.current.push(evt);
 
@@ -176,24 +182,33 @@ export function GameProvider({ engine, children }: GameProviderProps) {
           toRoom?: string;
           destinationRoom?: { id: string; name?: string };
           firstVisit?: boolean;
+          direction?: string;
+          mapHint?: { dx?: number; dy?: number; dz?: number };
         };
         if (data.toRoom || data.destinationRoom?.id) {
           const roomId = data.toRoom || data.destinationRoom!.id;
           const room = extractCurrentRoom(world, roomId);
           if (room) {
             room.firstVisit = data.firstVisit ?? false;
+            // Include the direction traveled to reach this room
+            room.arrivedFrom = data.direction?.toLowerCase();
+            // Include map hint if present (ADR-113)
+            if (data.mapHint) {
+              room.arrivedViaMapHint = data.mapHint;
+            }
             dispatch({ type: 'ROOM_CHANGED', room });
           }
         }
       }
 
-      // Handle score changes
-      if (evt.type === 'game.score_changed') {
-        const data = evt.data as { newScore?: number; maxScore?: number };
-        if (data.newScore !== undefined) {
+      // Handle score changes (from both score_changed and score_displayed events)
+      if (evt.type === 'game.score_changed' || evt.type === 'if.event.score_displayed') {
+        const data = evt.data as { newScore?: number; score?: number; maxScore?: number };
+        const newScore = data.newScore ?? data.score;
+        if (newScore !== undefined) {
           dispatch({
             type: 'SCORE_CHANGED',
-            score: data.newScore,
+            score: newScore,
             maxScore: data.maxScore,
           });
         }

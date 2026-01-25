@@ -26,10 +26,10 @@ description: Test moving the rug to reveal the trap door and descending to the C
 [OK: contains "rug"]
 
 # Move the rug to reveal trap door
+# Note: game.message events are consumed as overrides (copied to if.event.pushed messageId)
 > push rug
 [OK: contains "Moving the rug reveals a trap door"]
 [EVENT: true, type="if.event.pushed"]
-[EVENT: true, type="game.message" messageId="dungeo.rug.moved.reveal_trapdoor"]
 [EVENT: false, type="if.event.destroyed"]
 [STATE: true, y08.location = r06]
 

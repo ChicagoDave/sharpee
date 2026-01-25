@@ -35,6 +35,9 @@ export interface ActorMovedEventData {
   
   /** True if this is the first visit to the destination */
   firstVisit?: boolean;
+
+  /** Map positioning hint from exit definition (ADR-113) */
+  mapHint?: { dx?: number; dy?: number; dz?: number };
 }
 
 /**

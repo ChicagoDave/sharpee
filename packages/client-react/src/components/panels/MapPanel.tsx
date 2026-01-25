@@ -6,10 +6,9 @@
  * - Connections shown as lines
  * - Current room highlighted
  * - Pan and zoom controls
- * - Level selector for multi-floor areas
  */
 
-import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useRef, useCallback } from 'react';
 import { useMap, type MapRoom, type MapConnection } from '../../hooks/useMap';
 
 interface MapPanelProps {
@@ -17,11 +16,11 @@ interface MapPanelProps {
   className?: string;
 }
 
-// Layout constants
-const ROOM_WIDTH = 100;
-const ROOM_HEIGHT = 40;
-const GRID_SPACING_X = 140;
-const GRID_SPACING_Y = 70;
+// Layout constants - smaller boxes for better map density
+const ROOM_WIDTH = 80;
+const ROOM_HEIGHT = 32;
+const GRID_SPACING_X = 100;
+const GRID_SPACING_Y = 52;
 const PADDING = 20;
 
 /**
@@ -53,9 +52,9 @@ function RoomBox({
   const x = svgX - ROOM_WIDTH / 2;
   const y = svgY - ROOM_HEIGHT / 2;
 
-  // Truncate long names
+  // Truncate long names to fit smaller boxes
   const displayName =
-    room.name.length > 14 ? room.name.substring(0, 12) + '...' : room.name;
+    room.name.length > 12 ? room.name.substring(0, 10) + '...' : room.name;
 
   return (
     <g className={`map-room ${isCurrent ? 'map-room--current' : ''}`}>
@@ -196,43 +195,26 @@ function ExitStubs({
 }
 
 export function MapPanel({ storyId, className = '' }: MapPanelProps) {
-  const { rooms, connections, currentRoomId, currentLevel, bounds, clearMap } =
-    useMap(storyId);
-  const [viewLevel, setViewLevel] = useState(currentLevel);
+  const { rooms, connections, currentRoomId, bounds, clearMap } = useMap(storyId);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const svgRef = useRef<SVGSVGElement>(null);
   const isDragging = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
 
-  // Update view level when player moves to new level
-  useEffect(() => {
-    setViewLevel(currentLevel);
-  }, [currentLevel]);
-
   // Calculate SVG viewBox dimensions
-  const { viewBox, width, height } = useMemo(() => {
+  const { width, height } = useMemo(() => {
     const w = (bounds.maxX - bounds.minX + 1) * GRID_SPACING_X + PADDING * 2;
     const h = (bounds.maxY - bounds.minY + 1) * GRID_SPACING_Y + PADDING * 2;
     return {
-      viewBox: `${-pan.x / zoom} ${-pan.y / zoom} ${w / zoom} ${h / zoom}`,
       width: Math.max(w, 200),
       height: Math.max(h, 150),
     };
-  }, [bounds, zoom, pan]);
+  }, [bounds]);
 
-  // Filter rooms by current view level
+  // All rooms are visible (single-level map)
   const visibleRooms = useMemo(() => {
-    return Array.from(rooms.values()).filter((r) => r.z === viewLevel);
-  }, [rooms, viewLevel]);
-
-  // Get unique levels
-  const levels = useMemo(() => {
-    const lvls = new Set<number>();
-    for (const room of rooms.values()) {
-      lvls.add(room.z);
-    }
-    return Array.from(lvls).sort((a, b) => b - a); // Highest first
+    return Array.from(rooms.values());
   }, [rooms]);
 
   // Pan handlers
@@ -280,22 +262,6 @@ export function MapPanel({ storyId, className = '' }: MapPanelProps) {
     <div className={`map-panel ${className}`}>
       {/* Controls */}
       <div className="map-panel__controls">
-        {levels.length > 1 && (
-          <div className="map-panel__level-select">
-            <label htmlFor="map-level">Level:</label>
-            <select
-              id="map-level"
-              value={viewLevel}
-              onChange={(e) => setViewLevel(Number(e.target.value))}
-            >
-              {levels.map((lvl) => (
-                <option key={lvl} value={lvl}>
-                  {lvl === 0 ? 'Ground' : lvl > 0 ? `Up ${lvl}` : `Down ${Math.abs(lvl)}`}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
         <div className="map-panel__zoom-controls">
           <button type="button" onClick={() => setZoom((z) => Math.min(3, z * 1.2))}>
             +
@@ -312,49 +278,53 @@ export function MapPanel({ storyId, className = '' }: MapPanelProps) {
         </button>
       </div>
 
-      {/* Map SVG */}
-      <svg
-        ref={svgRef}
-        className="map-panel__svg"
-        viewBox={`0 0 ${width} ${height}`}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onWheel={handleWheel}
-      >
-        <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
-          {/* Connections first (behind rooms) */}
-          {connections.map((conn, i) => (
-            <ConnectionLine
-              key={`${conn.fromId}-${conn.toId}-${i}`}
-              connection={conn}
-              rooms={rooms}
-              bounds={bounds}
-            />
-          ))}
+      {/* Map container for scrolling/centering */}
+      <div className="map-panel__canvas">
+        <svg
+          ref={svgRef}
+          className="map-panel__svg"
+          width={width}
+          height={height}
+          viewBox={`0 0 ${width} ${height}`}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onWheel={handleWheel}
+        >
+          <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
+            {/* Connections first (behind rooms) */}
+            {connections.map((conn, i) => (
+              <ConnectionLine
+                key={`${conn.fromId}-${conn.toId}-${i}`}
+                connection={conn}
+                rooms={rooms}
+                bounds={bounds}
+              />
+            ))}
 
-          {/* Exit stubs */}
-          {visibleRooms.map((room) => (
-            <ExitStubs
-              key={`stubs-${room.id}`}
-              room={room}
-              bounds={bounds}
-              connections={connections}
-            />
-          ))}
+            {/* Exit stubs */}
+            {visibleRooms.map((room) => (
+              <ExitStubs
+                key={`stubs-${room.id}`}
+                room={room}
+                bounds={bounds}
+                connections={connections}
+              />
+            ))}
 
-          {/* Room boxes */}
-          {visibleRooms.map((room) => (
-            <RoomBox
-              key={room.id}
-              room={room}
-              bounds={bounds}
-              isCurrent={room.id === currentRoomId}
-            />
-          ))}
-        </g>
-      </svg>
+            {/* Room boxes */}
+            {visibleRooms.map((room) => (
+              <RoomBox
+                key={room.id}
+                room={room}
+                bounds={bounds}
+                isCurrent={room.id === currentRoomId}
+              />
+            ))}
+          </g>
+        </svg>
+      </div>
 
       {/* Legend */}
       <div className="map-panel__legend">
@@ -372,154 +342,3 @@ export function MapPanel({ storyId, className = '' }: MapPanelProps) {
   );
 }
 
-/**
- * CSS styles for MapPanel
- */
-export const mapPanelStyles = `
-.map-panel {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  gap: 0.5rem;
-}
-
-.map-panel--empty {
-  justify-content: center;
-  align-items: center;
-}
-
-.map-panel__empty-message {
-  opacity: 0.7;
-  font-style: italic;
-  text-align: center;
-}
-
-.map-panel__controls {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  flex-wrap: wrap;
-  padding: 0 0.5rem;
-}
-
-.map-panel__level-select {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.map-panel__level-select select {
-  background: transparent;
-  color: inherit;
-  border: 1px solid currentColor;
-  padding: 0.125rem 0.25rem;
-  font: inherit;
-  font-size: 0.85em;
-}
-
-.map-panel__zoom-controls {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.map-panel__zoom-controls button,
-.map-panel__clear {
-  background: transparent;
-  color: inherit;
-  border: 1px solid currentColor;
-  padding: 0.125rem 0.5rem;
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.85em;
-}
-
-.map-panel__zoom-controls button:hover,
-.map-panel__clear:hover {
-  opacity: 0.8;
-}
-
-.map-panel__clear {
-  margin-left: auto;
-  opacity: 0.7;
-}
-
-.map-panel__svg {
-  flex: 1;
-  min-height: 0;
-  cursor: grab;
-  user-select: none;
-}
-
-.map-panel__svg:active {
-  cursor: grabbing;
-}
-
-.map-panel__legend {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  font-size: 0.75em;
-  opacity: 0.8;
-  padding: 0.25rem;
-}
-
-/* Room styling */
-.map-room__box {
-  fill: transparent;
-  stroke: currentColor;
-  stroke-width: 1.5;
-}
-
-.map-room--current .map-room__box {
-  stroke-width: 2.5;
-}
-
-.map-room__name {
-  fill: currentColor;
-  font-size: 11px;
-  font-family: inherit;
-}
-
-.map-room__level {
-  fill: currentColor;
-  opacity: 0.7;
-}
-
-/* Connection styling */
-.map-connection {
-  stroke: currentColor;
-  stroke-width: 1;
-  opacity: 0.5;
-}
-
-/* Exit stub styling */
-.map-exit-stub line {
-  stroke: currentColor;
-  stroke-width: 1;
-  stroke-dasharray: 3,2;
-  opacity: 0.4;
-}
-
-.map-exit-stub circle {
-  fill: currentColor;
-  opacity: 0.4;
-}
-
-/* Infocom theme specifics */
-.game-shell--infocom .map-room--current .map-room__box {
-  fill: rgba(0, 170, 170, 0.3);
-}
-
-.game-shell--infocom .map-panel__legend-item--current {
-  color: #00aaaa;
-}
-
-/* Modern theme specifics */
-.game-shell--modern .map-room--current .map-room__box {
-  fill: rgba(233, 69, 96, 0.2);
-}
-
-.game-shell--modern .map-panel__legend-item--current {
-  color: #e94560;
-}
-`;

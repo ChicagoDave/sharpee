@@ -1,3 +1,3 @@
 #!/bin/bash
-# Play Dungeo interactively
-node packages/transcript-tester/dist/cli.js stories/dungeo --play
+# Play Dungeo interactively (uses fast bundle)
+node dist/sharpee.js --play

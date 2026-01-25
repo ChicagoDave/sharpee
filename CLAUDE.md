@@ -347,44 +347,36 @@ Since "turn switch" is puzzle-specific (not a generic IF verb), Option B is corr
 - **DO NOT** use `2>&1` with pnpm commands - they don't work together properly
 - Preferred format: `pnpm --filter '@sharpee/stdlib' test <test-name>`
 
-### Build Scripts (Use These!)
+### Build Script
 
-**IMPORTANT**: Use these scripts instead of manual `pnpm build` commands to avoid WSL permission issues.
-
-Main controller script with modular components:
+**IMPORTANT**: Use `./build.sh` instead of manual `pnpm build` commands to avoid issues.
 
 ```bash
-# Controller script - use this for all builds
-./scripts/build.sh                                    # Platform only
-./scripts/build.sh -s dungeo                          # Platform + dungeo story
-./scripts/build.sh -s dungeo -c browser               # Platform + story + browser client
-./scripts/build.sh -s reflections -c electron         # Platform + different story/client
-./scripts/build.sh --skip stdlib -s dungeo            # Skip to stdlib, then story
-./scripts/build.sh --all dungeo browser               # Shorthand for full web build
+# Run without arguments to see help
+./build.sh
 
-# Individual scripts (called by controller, can use directly)
-./scripts/build-platform.sh                           # Platform packages + node bundle
-./scripts/build-platform.sh --skip stdlib             # Skip to stdlib
-./scripts/build-story.sh dungeo                       # Build specific story
-./scripts/build-client.sh dungeo browser              # Build browser client for story
-./scripts/update-versions.sh --story dungeo --client browser  # Update version.ts files
+# Common workflows
+./build.sh -s dungeo                          # Build platform + story
+./build.sh -s dungeo -c browser               # Build for web browser
+./build.sh -s dungeo -c react                 # Build React client (default theme)
+./build.sh -s dungeo -c react -t modern-dark  # React with dark theme
+./build.sh -s dungeo -c browser -c react      # Build both clients
+./build.sh --skip stdlib -s dungeo            # Resume from stdlib package
 ```
 
-**Workflow**:
-
-1. Platform changes: `./scripts/build.sh --skip <first-changed-package> -s dungeo`
-2. Story-only changes: `./scripts/build.sh --skip transcript-tester -s dungeo`
-3. Browser deployment: `./scripts/build.sh -s dungeo -c browser`
-4. Full rebuild: `./scripts/build.sh --all dungeo browser`
+**Available Themes** (for `-t` flag):
+- `classic-light` - Literata font, warm light tones (default)
+- `modern-dark` - Inter font, Catppuccin Mocha colors
+- `retro-terminal` - JetBrains Mono, green phosphor
+- `paper` - Crimson Text, high contrast
 
 **Outputs**:
-- Platform build → `dist/sharpee.js` (node bundle)
-- Story build → `stories/{story}/dist/` (compiled story)
-- Browser client → `dist/web/{story}/` (HTML + JS + CSS)
+- `dist/sharpee.js` - Platform bundle (CLI, testing)
+- `dist/web/{story}/` - Browser client
+- `dist/web/{story}-react/` - React client
 
 **Version System**:
 - Versions auto-update on every build with format `X.Y.Z-beta.YYYYMMDD.HHMM`
-- `update-versions.sh` generates `version.ts` files for story and client
 - Version update runs FIRST, before any compilation
 
 **IMPORTANT**:

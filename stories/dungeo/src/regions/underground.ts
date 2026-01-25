@@ -588,24 +588,25 @@ function createDomeRoomObjects(world: WorldModel, roomId: string): void {
 // ============= Torch Room Objects =============
 
 function createTorchRoomObjects(world: WorldModel, roomId: string): void {
-  // Ivory torch - treasure (6 pts), permanent light source once lit
+  // Ivory torch - treasure, permanent light source (always lit, cannot be switched)
+  // Only extinguished when thrown at glacier
   const torch = world.createEntity('ivory torch', EntityType.ITEM);
   torch.add(new IdentityTrait({
     name: 'ivory torch',
     aliases: ['torch', 'ivory', 'white torch'],
-    description: 'A beautiful torch made of polished ivory. It is not currently lit.',
+    description: 'A beautiful torch of polished ivory, its flame burning brightly.',
     properName: false,
     article: 'an',
     weight: 5
   }));
   torch.add(new LightSourceTrait({
-    isLit: false,
+    isLit: true,  // Always lit - permanent light source
     brightness: 3,
     fuelRemaining: 1000,
     maxFuel: 1000,
     fuelConsumptionRate: 0  // Never burns out
   }));
-  torch.add(new SwitchableTrait({ isOn: false }));
+  // No SwitchableTrait - player cannot turn it on/off
   (torch as any).isTreasure = true;
   (torch as any).treasureId = 'ivory-torch';
   (torch as any).treasureValue = 14;       // OFVAL from mdlzork_810722

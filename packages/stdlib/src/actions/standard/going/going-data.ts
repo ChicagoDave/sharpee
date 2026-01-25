@@ -12,27 +12,35 @@ import { captureRoomSnapshot, captureEntitySnapshot } from '../../base/snapshot-
 import { GoingSharedData, getGoingSharedData } from './going';
 
 /**
- * Find the source room (where we came from)
+ * Result from finding the source room
+ */
+interface SourceRoomResult {
+  room: IFEntity;
+  mapHint?: { dx?: number; dy?: number; dz?: number };
+}
+
+/**
+ * Find the source room (where we came from) and the exit configuration used
  * Since we've already moved, we need to find which room has an exit to our current location
  */
-function findSourceRoom(
+function findSourceRoomAndExit(
   currentRoom: IFEntity,
   direction: DirectionType,
   world: WorldModel
-): IFEntity {
+): SourceRoomResult {
   const allEntities = world.getAllEntities();
   const allRooms = allEntities.filter(e => e.has(TraitType.ROOM));
-  
+
   // Find the room that has an exit leading to our current location
   for (const room of allRooms) {
     const exitConfig = RoomBehavior.getExit(room, direction);
     if (exitConfig && exitConfig.destination === currentRoom.id) {
-      return room;
+      return { room, mapHint: exitConfig.mapHint };
     }
   }
-  
+
   // If we can't find source room, use the current room as a fallback
-  return currentRoom;
+  return { room: currentRoom };
 }
 
 /**
@@ -62,20 +70,20 @@ export const buildActorMovedData: ActionDataBuilder<Record<string, unknown>> = (
   // Get actual current location after movement (not the cached one from context)
   const currentLocationId = context.world.getLocation(actor.id);
   const currentRoom = context.world.getEntity(currentLocationId!)!;
-  
-  // Find source room
-  const sourceRoom = findSourceRoom(currentRoom, direction, context.world);
-  
+
+  // Find source room and exit configuration (includes mapHint)
+  const { room: sourceRoom, mapHint } = findSourceRoomAndExit(currentRoom, direction, context.world);
+
   // Capture room snapshots for atomic events
   const sourceSnapshot = captureRoomSnapshot(sourceRoom, context.world, false);
   const destinationSnapshot = captureRoomSnapshot(currentRoom, context.world, false);
   const actorSnapshot = captureEntitySnapshot(actor, context.world, true); // Include inventory for darkness checks
-  
+
   // Check if this was the first visit (stored during execute phase via sharedData)
   const sharedData = getGoingSharedData(context);
   const firstVisit = sharedData.isFirstVisit === true;
-  
-  return {
+
+  const result: Record<string, unknown> = {
     // New atomic structure
     actor: actorSnapshot,
     sourceRoom: sourceSnapshot,
@@ -87,6 +95,13 @@ export const buildActorMovedData: ActionDataBuilder<Record<string, unknown>> = (
     oppositeDirection: oppositeDir,
     firstVisit: firstVisit
   };
+
+  // Include mapHint if present on the exit (ADR-113)
+  if (mapHint) {
+    result.mapHint = mapHint;
+  }
+
+  return result;
 };
 
 /**
@@ -152,7 +167,7 @@ export const buildActorEnteredData: ActionDataBuilder<Record<string, unknown>> =
   const currentRoom = context.world.getEntity(currentLocationId!)!;
   
   // Find source room
-  const sourceRoom = findSourceRoom(currentRoom, direction, context.world);
+  const { room: sourceRoom } = findSourceRoomAndExit(currentRoom, direction, context.world);
   
   return {
     actorId: actor.id,

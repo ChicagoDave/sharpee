@@ -42,10 +42,10 @@ description: Test that the troll blocks passage north in the Troll Room (to E/W 
 [EVENT: true, type="if.event.room.description"]
 
 # Push the rug to reveal trapdoor
+# Note: game.message is consumed as override to if.event.pushed
 > push rug
 [OK: contains "Moving the rug reveals a trap door"]
 [EVENT: true, type="if.event.pushed"]
-[EVENT: true, type="game.message" messageId="dungeo.rug.moved.reveal_trapdoor"]
 
 # Open trapdoor to go down
 > open trapdoor

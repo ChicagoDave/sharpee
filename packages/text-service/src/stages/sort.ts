@@ -38,10 +38,12 @@ export function sortEventsForProse(events: ISemanticEvent[]): ISemanticEvent[] {
     const aTxnId = aData?._transactionId;
     const bTxnId = bData?._transactionId;
 
-    // Game lifecycle events (game.started banner) come first, before everything
+    // Game lifecycle events come first, before everything
     // This ensures the banner displays before the first room description
-    const aIsGameLifecycle = a.type.startsWith('game.');
-    const bIsGameLifecycle = b.type.startsWith('game.');
+    // Note: Only match specific lifecycle events, NOT game.message (which is handled elsewhere)
+    const LIFECYCLE_EVENTS = ['game.started', 'game.starting', 'game.loading', 'game.loaded', 'game.initialized'];
+    const aIsGameLifecycle = LIFECYCLE_EVENTS.includes(a.type);
+    const bIsGameLifecycle = LIFECYCLE_EVENTS.includes(b.type);
     if (aIsGameLifecycle && !bIsGameLifecycle) return -1;
     if (!aIsGameLifecycle && bIsGameLifecycle) return 1;
 

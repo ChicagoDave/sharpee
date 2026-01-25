@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dos-classic">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +8,45 @@
 </head>
 <body>
   <div id="game-container">
+    <!-- Menu Bar -->
+    <div id="menu-bar">
+      <span id="menu-title">{{TITLE}}</span>
+      <div id="menu-items">
+        <div class="menu-item">
+          <button class="menu-button" id="file-menu-btn">File</button>
+          <div class="menu-dropdown" id="file-menu">
+            <div class="menu-option" id="menu-save">Save Game...</div>
+            <div class="menu-option" id="menu-restore">Restore Game...</div>
+            <div class="menu-separator"></div>
+            <div class="menu-option" id="menu-restart">Restart</div>
+            <div class="menu-option" id="menu-quit">Quit</div>
+          </div>
+        </div>
+        <div class="menu-item">
+          <button class="menu-button" id="settings-menu-btn">Settings</button>
+          <div class="menu-dropdown" id="settings-menu">
+            <div class="menu-submenu">
+              <div class="menu-option menu-has-submenu">Theme &#9656;</div>
+              <div class="menu-dropdown submenu" id="theme-menu">
+                <div class="menu-option theme-option" data-theme="dos-classic">DOS Classic</div>
+                <div class="menu-option theme-option" data-theme="modern-dark">Modern Dark</div>
+                <div class="menu-option theme-option" data-theme="retro-terminal">Retro Terminal</div>
+                <div class="menu-option theme-option" data-theme="paper">Paper</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="menu-item">
+          <button class="menu-button" id="help-menu-btn">Help</button>
+          <div class="menu-dropdown" id="help-menu">
+            <div class="menu-option" id="menu-help">Commands...</div>
+            <div class="menu-separator"></div>
+            <div class="menu-option" id="menu-about">About...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="status-line">
       <span id="location-name"></span>
       <span id="score-turns">Score: 0 | Turns: 0</span>

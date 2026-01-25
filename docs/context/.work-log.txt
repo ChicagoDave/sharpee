@@ -1,12 +1,13 @@
-[19:13:44] EDIT: docs/architecture/adrs/adr-110-debug-tools-extension.md
-[19:14:08] EDIT: docs/architecture/adrs/adr-110-debug-tools-extension.md
-[19:14:23] EDIT: docs/architecture/adrs/adr-110-debug-tools-extension.md
-[19:14:32] EDIT: docs/architecture/adrs/adr-110-debug-tools-extension.md
-[19:17:22] EDIT: .gitignore
-[19:23:31] WRITE: docs/context/session-20260123-1917-ext-testing-final.md
-[19:25:32] GIT: git commit -m "$(cat <<'EOF'
-feat: Add React client package and finalize ext-tes
-[19:25:44] GIT: git push origin ext-testing
-[19:26:04] EDIT: stories/dungeo/src/react-entry.tsx
-[19:27:07] EDIT: stories/dungeo/src/react-entry.tsx
-[19:27:16] EDIT: packages/client-react/src/context/GameContext.tsx
+[16:44:54] WRITE: docs/context/session-20260124-1642-maphints.md
+[16:58:38] EDIT: packages/map-editor/package.json
+[16:58:50] WRITE: packages/map-editor/src/components/Canvas/RoomNode.tsx
+[16:59:18] WRITE: packages/map-editor/src/components/Canvas/Canvas.tsx
+[16:59:49] WRITE: packages/map-editor/src/components/Canvas/Canvas.css
+[19:18:14] EDIT: stories/dungeo/src/browser-entry.ts
+[19:18:36] EDIT: stories/dungeo/src/browser-entry.ts
+[19:18:42] EDIT: stories/dungeo/src/browser-entry.ts
+[19:18:53] EDIT: stories/dungeo/src/browser-entry.ts
+[19:19:02] EDIT: stories/dungeo/src/browser-entry.ts
+[19:47:13] WRITE: docs/architecture/adrs/adr-114-browser-platform-package.md
+[19:47:21] EDIT: docs/architecture/adrs/adr-105-javascript-browser-client.md
+[19:52:04] WRITE: docs/context/session-20260124-1950-maphints.md

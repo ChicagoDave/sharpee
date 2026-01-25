@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sharpee React Client - Map Panel Design</title>
+
+  <!-- Google Fonts - Map-friendly options -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@400;500&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&family=Roboto+Condensed:wght@400;500&family=Source+Code+Pro:wght@400;500&family=Space+Mono:wght@400&family=Literata:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #1a1a2e;
+      color: #cdd6f4;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 5px;
+      color: #f5e0dc;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #a6adc8;
+      margin-bottom: 30px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #2a2a3e;
+      border-radius: 12px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .control-group label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #a6adc8;
+    }
+
+    .control-group select,
+    .control-group input {
+      padding: 8px 12px;
+      border: 1px solid #45475a;
+      border-radius: 6px;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      font-size: 14px;
+    }
+
+    .control-group select:focus,
+    .control-group input:focus {
+      outline: none;
+      border-color: #89b4fa;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #89b4fa;
+      color: #1e1e2e;
+    }
+
+    .btn-primary:hover {
+      background: #b4befe;
+    }
+
+    .btn-secondary {
+      background: #45475a;
+      color: #cdd6f4;
+    }
+
+    .btn-secondary:hover {
+      background: #585b70;
+    }
+
+    .btn-danger {
+      background: #f38ba8;
+      color: #1e1e2e;
+    }
+
+    .btn-danger:hover {
+      background: #eba0ac;
+    }
+
+    .room-counter {
+      font-size: 24px;
+      font-weight: 600;
+      color: #a6e3a1;
+      min-width: 60px;
+      text-align: center;
+    }
+
+    .map-container {
+      background: #0d0d1a;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+      overflow: auto;
+      max-height: 600px;
+    }
+
+    .map-svg {
+      display: block;
+      margin: 0 auto;
+    }
+
+    /* Map Theme Variants */
+    .map-theme-dark .map-room__box {
+      fill: #313244;
+      stroke: #585b70;
+      stroke-width: 1.5;
+    }
+    .map-theme-dark .map-room--current .map-room__box {
+      fill: #45475a;
+      stroke: #89b4fa;
+      stroke-width: 2;
+    }
+    .map-theme-dark .map-room__name {
+      fill: #cdd6f4;
+    }
+    .map-theme-dark .map-room--current .map-room__name {
+      fill: #f5e0dc;
+    }
+    .map-theme-dark .map-connection {
+      stroke: #585b70;
+      stroke-width: 1.5;
+    }
+    .map-theme-dark .map-exit-stub line {
+      stroke: #6c7086;
+      stroke-width: 1;
+      stroke-dasharray: 3,2;
+    }
+    .map-theme-dark .map-exit-stub circle {
+      fill: #6c7086;
+    }
+
+    .map-theme-terminal .map-room__box {
+      fill: #0a1810;
+      stroke: #00aa00;
+      stroke-width: 1.5;
+    }
+    .map-theme-terminal .map-room--current .map-room__box {
+      fill: #0a2818;
+      stroke: #00ff41;
+      stroke-width: 2;
+    }
+    .map-theme-terminal .map-room__name {
+      fill: #00cc33;
+    }
+    .map-theme-terminal .map-room--current .map-room__name {
+      fill: #00ff41;
+    }
+    .map-theme-terminal .map-connection {
+      stroke: #00aa00;
+      stroke-width: 1;
+    }
+    .map-theme-terminal .map-exit-stub line {
+      stroke: #006600;
+      stroke-width: 1;
+      stroke-dasharray: 3,2;
+    }
+    .map-theme-terminal .map-exit-stub circle {
+      fill: #006600;
+    }
+
+    .map-theme-light .map-room__box {
+      fill: #f5f5f0;
+      stroke: #8b7355;
+      stroke-width: 1.5;
+    }
+    .map-theme-light .map-room--current .map-room__box {
+      fill: #fff;
+      stroke: #5c4033;
+      stroke-width: 2;
+    }
+    .map-theme-light .map-room__name {
+      fill: #3d3d3d;
+    }
+    .map-theme-light .map-room--current .map-room__name {
+      fill: #1a1a1a;
+    }
+    .map-theme-light .map-connection {
+      stroke: #b8a88a;
+      stroke-width: 1.5;
+    }
+    .map-theme-light .map-exit-stub line {
+      stroke: #c8b89a;
+      stroke-width: 1;
+      stroke-dasharray: 3,2;
+    }
+    .map-theme-light .map-exit-stub circle {
+      fill: #c8b89a;
+    }
+
+    /* Comparison Grid */
+    .comparison-section {
+      margin-top: 40px;
+    }
+
+    .comparison-section h2 {
+      border-bottom: 2px solid #45475a;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+
+    .font-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    .font-card {
+      background: #2a2a3e;
+      border-radius: 8px;
+      padding: 15px;
+    }
+
+    .font-card h3 {
+      margin: 0 0 5px 0;
+      font-size: 14px;
+      color: #89b4fa;
+    }
+
+    .font-card .font-name {
+      font-size: 12px;
+      color: #6c7086;
+      margin-bottom: 15px;
+    }
+
+    .mini-map {
+      background: #0d0d1a;
+      border-radius: 6px;
+      padding: 10px;
+    }
+
+    .size-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .size-card {
+      background: #2a2a3e;
+      border-radius: 8px;
+      padding: 15px;
+    }
+
+    .size-card h3 {
+      margin: 0 0 5px 0;
+      font-size: 14px;
+      color: #a6e3a1;
+    }
+
+    .size-card .size-info {
+      font-size: 12px;
+      color: #6c7086;
+      margin-bottom: 15px;
+    }
+
+    .recommendation-box {
+      background: linear-gradient(135deg, #45475a 0%, #313244 100%);
+      border-left: 4px solid #89b4fa;
+      padding: 20px;
+      border-radius: 0 8px 8px 0;
+      margin-top: 30px;
+    }
+
+    .recommendation-box h3 {
+      margin: 0 0 10px 0;
+      color: #f5e0dc;
+    }
+  </style>
+</head>
+<body>
+  <h1>Map Panel Design Test</h1>
+  <p class="subtitle">Testing fonts, box sizes, and layout for the exploration map</p>
+
+  <!-- Interactive Controls -->
+  <div class="controls">
+    <div class="control-group">
+      <label>Rooms</label>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button class="btn btn-secondary" onclick="removeRoom()">-</button>
+        <span class="room-counter" id="roomCount">5</span>
+        <button class="btn btn-primary" onclick="addRoom()">+</button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Map Font</label>
+      <select id="fontSelect" onchange="updateMap()">
+        <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+        <option value="'Fira Code', monospace">Fira Code</option>
+        <option value="'Source Code Pro', monospace">Source Code Pro</option>
+        <option value="'IBM Plex Mono', monospace">IBM Plex Mono</option>
+        <option value="'Space Mono', monospace">Space Mono</option>
+        <option value="'IBM Plex Sans Condensed', sans-serif">IBM Plex Sans Condensed</option>
+        <option value="'Roboto Condensed', sans-serif">Roboto Condensed</option>
+        <option value="'Inter', sans-serif">Inter</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label>Font Size</label>
+      <select id="fontSizeSelect" onchange="updateMap()">
+        <option value="9">9px</option>
+        <option value="10" selected>10px</option>
+        <option value="11">11px</option>
+        <option value="12">12px</option>
+        <option value="13">13px</option>
+        <option value="14">14px</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label>Box Size</label>
+      <select id="boxSizeSelect" onchange="updateMap()">
+        <option value="60,24">Tiny (60x24)</option>
+        <option value="70,28">Small (70x28)</option>
+        <option value="80,32" selected>Medium (80x32)</option>
+        <option value="90,36">Large (90x36)</option>
+        <option value="100,40">Original (100x40)</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label>Theme</label>
+      <select id="themeSelect" onchange="updateMap()">
+        <option value="dark">Dark (Catppuccin)</option>
+        <option value="terminal">Terminal (Green)</option>
+        <option value="light">Light (Classic)</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label>&nbsp;</label>
+      <button class="btn btn-danger" onclick="resetMap()">Reset</button>
+    </div>
+  </div>
+
+  <!-- Main Interactive Map -->
+  <div class="map-container" id="mapContainer">
+    <svg id="mainMap" class="map-svg map-theme-dark"></svg>
+  </div>
+
+  <!-- Font Comparison -->
+  <div class="comparison-section">
+    <h2>Font Comparison (at 10px)</h2>
+    <div class="font-grid" id="fontComparison"></div>
+  </div>
+
+  <!-- Size Comparison -->
+  <div class="comparison-section">
+    <h2>Box Size Comparison</h2>
+    <div class="size-grid" id="sizeComparison"></div>
+  </div>
+
+  <!-- Recommendations -->
+  <div class="recommendation-box">
+    <h3>Recommendations</h3>
+    <p><strong>Font:</strong> Use a condensed or monospace font for map labels. JetBrains Mono or IBM Plex Sans Condensed work well for compact labels while remaining readable.</p>
+    <p><strong>Size:</strong> Medium (80x32) or Small (70x28) boxes provide good density without sacrificing readability. The original 100x40 is too large for maps with many rooms.</p>
+    <p><strong>Font Size:</strong> 10-11px is the sweet spot for map labels. Smaller than 9px becomes hard to read; larger than 12px makes boxes feel cramped.</p>
+    <p><strong>Key Insight:</strong> The map font should be different from the transcript font. While Literata works great for reading prose, a condensed sans-serif or monospace font is better for map labels where space is at a premium.</p>
+  </div>
+
+  <script>
+    // Sample room data - Zork-like layout
+    const ROOM_DATA = [
+      { id: 'west-house', name: 'West of House', x: 0, y: 0, exits: ['n', 'e', 's'] },
+      { id: 'north-house', name: 'North of House', x: 0, y: -1, exits: ['s', 'e', 'w'] },
+      { id: 'behind-house', name: 'Behind House', x: 1, y: -1, exits: ['w', 's'] },
+      { id: 'south-house', name: 'South of House', x: 0, y: 1, exits: ['n', 'w'] },
+      { id: 'forest-1', name: 'Forest', x: -1, y: 0, exits: ['e', 'n', 'w'] },
+      { id: 'forest-2', name: 'Forest Path', x: -1, y: -1, exits: ['s', 'e'] },
+      { id: 'clearing', name: 'Clearing', x: -2, y: 0, exits: ['e', 'n'] },
+      { id: 'glade', name: 'Glade', x: -2, y: -1, exits: ['s', 'e'] },
+      { id: 'kitchen', name: 'Kitchen', x: 1, y: 0, exits: ['w', 'e', 'u'] },
+      { id: 'living-room', name: 'Living Room', x: 2, y: 0, exits: ['w', 'd'] },
+      { id: 'attic', name: 'Attic', x: 1, y: -2, exits: ['d'] },
+      { id: 'cellar', name: 'Cellar', x: 2, y: 1, exits: ['u', 'e'] },
+      { id: 'troll-room', name: 'Troll Room', x: 3, y: 1, exits: ['w', 'e', 's'] },
+      { id: 'maze-1', name: 'Maze', x: 4, y: 1, exits: ['w', 'e', 'n'] },
+      { id: 'maze-2', name: 'Maze', x: 4, y: 0, exits: ['s', 'e'] },
+      { id: 'maze-3', name: 'Maze', x: 5, y: 0, exits: ['w', 's'] },
+      { id: 'maze-4', name: 'Maze', x: 5, y: 1, exits: ['n', 'w'] },
+      { id: 'coal-mine', name: 'Coal Mine', x: 3, y: 2, exits: ['n', 'e'] },
+      { id: 'mine-shaft', name: 'Shaft', x: 4, y: 2, exits: ['w', 'd'] },
+      { id: 'loud-room', name: 'Loud Room', x: 3, y: 0, exits: ['s', 'e'] },
+    ];
+
+    // Connections between rooms (derived from exits)
+    const CONNECTIONS = [
+      { from: 'west-house', to: 'north-house', dir: 'n' },
+      { from: 'west-house', to: 'south-house', dir: 's' },
+      { from: 'west-house', to: 'forest-1', dir: 'w' },
+      { from: 'north-house', to: 'behind-house', dir: 'e' },
+      { from: 'north-house', to: 'forest-2', dir: 'w' },
+      { from: 'forest-1', to: 'forest-2', dir: 'n' },
+      { from: 'forest-1', to: 'clearing', dir: 'w' },
+      { from: 'forest-2', to: 'glade', dir: 'w' },
+      { from: 'clearing', to: 'glade', dir: 'n' },
+      { from: 'behind-house', to: 'kitchen', dir: 's' },
+      { from: 'kitchen', to: 'living-room', dir: 'e' },
+      { from: 'living-room', to: 'cellar', dir: 'd' },
+      { from: 'cellar', to: 'troll-room', dir: 'e' },
+      { from: 'troll-room', to: 'maze-1', dir: 'e' },
+      { from: 'troll-room', to: 'coal-mine', dir: 's' },
+      { from: 'troll-room', to: 'loud-room', dir: 'n' },
+      { from: 'maze-1', to: 'maze-2', dir: 'n' },
+      { from: 'maze-2', to: 'maze-3', dir: 'e' },
+      { from: 'maze-3', to: 'maze-4', dir: 's' },
+      { from: 'maze-4', to: 'maze-1', dir: 'w' },
+      { from: 'coal-mine', to: 'mine-shaft', dir: 'e' },
+      { from: 'loud-room', to: 'maze-2', dir: 'e' },
+    ];
+
+    let currentRoomCount = 5;
+    let currentRoomIndex = 0; // Index of current (highlighted) room
+
+    function addRoom() {
+      if (currentRoomCount < ROOM_DATA.length) {
+        currentRoomCount++;
+        currentRoomIndex = currentRoomCount - 1;
+        document.getElementById('roomCount').textContent = currentRoomCount;
+        updateMap();
+      }
+    }
+
+    function removeRoom() {
+      if (currentRoomCount > 1) {
+        currentRoomCount--;
+        if (currentRoomIndex >= currentRoomCount) {
+          currentRoomIndex = currentRoomCount - 1;
+        }
+        document.getElementById('roomCount').textContent = currentRoomCount;
+        updateMap();
+      }
+    }
+
+    function resetMap() {
+      currentRoomCount = 5;
+      currentRoomIndex = 0;
+      document.getElementById('roomCount').textContent = currentRoomCount;
+      document.getElementById('fontSelect').value = "'JetBrains Mono', monospace";
+      document.getElementById('fontSizeSelect').value = "10";
+      document.getElementById('boxSizeSelect').value = "80,32";
+      document.getElementById('themeSelect').value = "dark";
+      updateMap();
+    }
+
+    function updateMap() {
+      const font = document.getElementById('fontSelect').value;
+      const fontSize = parseInt(document.getElementById('fontSizeSelect').value);
+      const [boxW, boxH] = document.getElementById('boxSizeSelect').value.split(',').map(Number);
+      const theme = document.getElementById('themeSelect').value;
+
+      renderMap('mainMap', currentRoomCount, font, fontSize, boxW, boxH, theme, currentRoomIndex);
+    }
+
+    function renderMap(svgId, roomCount, font, fontSize, boxW, boxH, theme, currentIdx) {
+      const svg = document.getElementById(svgId);
+      const rooms = ROOM_DATA.slice(0, roomCount);
+
+      // Calculate spacing based on box size
+      const spacingX = boxW + 20;
+      const spacingY = boxH + 20;
+      const padding = 30;
+
+      // Calculate bounds
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      rooms.forEach(r => {
+        minX = Math.min(minX, r.x);
+        maxX = Math.max(maxX, r.x);
+        minY = Math.min(minY, r.y);
+        maxY = Math.max(maxY, r.y);
+      });
+
+      const width = (maxX - minX + 1) * spacingX + padding * 2;
+      const height = (maxY - minY + 1) * spacingY + padding * 2;
+
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+      svg.setAttribute('width', Math.min(width, 900));
+      svg.setAttribute('height', Math.min(height, 500));
+      svg.className.baseVal = `map-svg map-theme-${theme}`;
+
+      // Build room map for connections
+      const roomMap = new Map(rooms.map(r => [r.id, r]));
+
+      // Generate SVG content
+      let content = '';
+
+      // Connections first (behind rooms)
+      CONNECTIONS.forEach(conn => {
+        const fromRoom = roomMap.get(conn.from);
+        const toRoom = roomMap.get(conn.to);
+        if (fromRoom && toRoom) {
+          const x1 = (fromRoom.x - minX) * spacingX + padding + boxW / 2;
+          const y1 = (fromRoom.y - minY) * spacingY + padding + boxH / 2;
+          const x2 = (toRoom.x - minX) * spacingX + padding + boxW / 2;
+          const y2 = (toRoom.y - minY) * spacingY + padding + boxH / 2;
+          content += `<line class="map-connection" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+        }
+      });
+
+      // Rooms
+      rooms.forEach((room, idx) => {
+        const x = (room.x - minX) * spacingX + padding;
+        const y = (room.y - minY) * spacingY + padding;
+        const isCurrent = idx === currentIdx;
+        const className = isCurrent ? 'map-room map-room--current' : 'map-room';
+
+        // Truncate name to fit
+        const maxChars = Math.floor(boxW / (fontSize * 0.6));
+        const displayName = room.name.length > maxChars
+          ? room.name.substring(0, maxChars - 1) + '…'
+          : room.name;
+
+        content += `
+          <g class="${className}">
+            <rect class="map-room__box" x="${x}" y="${y}" width="${boxW}" height="${boxH}" rx="3"/>
+            <text class="map-room__name" x="${x + boxW/2}" y="${y + boxH/2}"
+                  text-anchor="middle" dominant-baseline="middle"
+                  style="font-family: ${font}; font-size: ${fontSize}px;">
+              ${displayName}
+            </text>
+          </g>
+        `;
+      });
+
+      svg.innerHTML = content;
+    }
+
+    // Font comparison mini-maps
+    function renderFontComparison() {
+      const fonts = [
+        { name: 'JetBrains Mono', value: "'JetBrains Mono', monospace" },
+        { name: 'Fira Code', value: "'Fira Code', monospace" },
+        { name: 'Source Code Pro', value: "'Source Code Pro', monospace" },
+        { name: 'IBM Plex Mono', value: "'IBM Plex Mono', monospace" },
+        { name: 'Space Mono', value: "'Space Mono', monospace" },
+        { name: 'IBM Plex Sans Condensed', value: "'IBM Plex Sans Condensed', sans-serif" },
+        { name: 'Roboto Condensed', value: "'Roboto Condensed', sans-serif" },
+        { name: 'Inter', value: "'Inter', sans-serif" },
+      ];
+
+      const container = document.getElementById('fontComparison');
+      container.innerHTML = fonts.map((font, i) => `
+        <div class="font-card">
+          <h3>${font.name}</h3>
+          <div class="font-name">${font.value}</div>
+          <div class="mini-map">
+            <svg id="fontMap${i}" class="map-svg map-theme-dark"></svg>
+          </div>
+        </div>
+      `).join('');
+
+      fonts.forEach((font, i) => {
+        renderMap(`fontMap${i}`, 6, font.value, 10, 80, 32, 'dark', 0);
+      });
+    }
+
+    // Size comparison mini-maps
+    function renderSizeComparison() {
+      const sizes = [
+        { name: 'Tiny', w: 60, h: 24, desc: 'Maximum density, short names only' },
+        { name: 'Small', w: 70, h: 28, desc: 'Good for large maps' },
+        { name: 'Medium', w: 80, h: 32, desc: 'Balanced density and readability' },
+        { name: 'Large', w: 90, h: 36, desc: 'Comfortable reading' },
+        { name: 'Original', w: 100, h: 40, desc: 'Current implementation' },
+      ];
+
+      const container = document.getElementById('sizeComparison');
+      container.innerHTML = sizes.map((size, i) => `
+        <div class="size-card">
+          <h3>${size.name} (${size.w}x${size.h})</h3>
+          <div class="size-info">${size.desc}</div>
+          <div class="mini-map">
+            <svg id="sizeMap${i}" class="map-svg map-theme-dark"></svg>
+          </div>
+        </div>
+      `).join('');
+
+      sizes.forEach((size, i) => {
+        renderMap(`sizeMap${i}`, 6, "'JetBrains Mono', monospace", 10, size.w, size.h, 'dark', 0);
+      });
+    }
+
+    // Initialize
+    updateMap();
+    renderFontComparison();
+    renderSizeComparison();
+  </script>
+</body>
+</html>

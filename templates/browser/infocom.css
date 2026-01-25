@@ -1,12 +1,100 @@
-/* Infocom DOS-era styling for Sharpee IF games */
+/* Sharpee IF Browser Client - Multi-theme support */
 
-/* DOS Color Palette */
+/* ============================================
+   Theme: DOS Classic (default)
+   ============================================ */
+:root,
+[data-theme="dos-classic"] {
+  --theme-bg: #0000aa;
+  --theme-bg-alt: #000088;
+  --theme-text: #ffffff;
+  --theme-text-muted: #aaaaaa;
+  --theme-accent: #00aaaa;
+  --theme-accent-text: #000000;
+  --theme-border: #00aaaa;
+  --theme-input-bg: transparent;
+  --theme-menu-bg: #0000aa;
+  --theme-menu-hover: #000088;
+  --theme-font: "Perfect DOS VGA 437", "Consolas", "Courier New", monospace;
+  --theme-font-size: 16px;
+  --theme-line-height: 1.4;
+}
+
+/* ============================================
+   Theme: Modern Dark (Catppuccin Mocha)
+   ============================================ */
+[data-theme="modern-dark"] {
+  --theme-bg: #1e1e2e;
+  --theme-bg-alt: #181825;
+  --theme-text: #cdd6f4;
+  --theme-text-muted: #a6adc8;
+  --theme-accent: #89b4fa;
+  --theme-accent-text: #1e1e2e;
+  --theme-border: #313244;
+  --theme-input-bg: #11111b;
+  --theme-menu-bg: #181825;
+  --theme-menu-hover: #313244;
+  --theme-font: "Inter", system-ui, -apple-system, sans-serif;
+  --theme-font-size: 15px;
+  --theme-line-height: 1.6;
+}
+
+/* ============================================
+   Theme: Retro Terminal (Green Phosphor)
+   ============================================ */
+[data-theme="retro-terminal"] {
+  --theme-bg: #0a0a0a;
+  --theme-bg-alt: #0f0f0f;
+  --theme-text: #00ff00;
+  --theme-text-muted: #00aa00;
+  --theme-accent: #00ff00;
+  --theme-accent-text: #000000;
+  --theme-border: #003300;
+  --theme-input-bg: transparent;
+  --theme-menu-bg: #0f0f0f;
+  --theme-menu-hover: #001100;
+  --theme-font: "JetBrains Mono", "Consolas", monospace;
+  --theme-font-size: 14px;
+  --theme-line-height: 1.5;
+}
+
+[data-theme="retro-terminal"] body {
+  text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+}
+
+/* ============================================
+   Theme: Paper (High Contrast Book Style)
+   ============================================ */
+[data-theme="paper"] {
+  --theme-bg: #f5f5f0;
+  --theme-bg-alt: #eaeae5;
+  --theme-text: #1a1a1a;
+  --theme-text-muted: #555555;
+  --theme-accent: #2c2c2c;
+  --theme-accent-text: #f5f5f0;
+  --theme-border: #cccccc;
+  --theme-input-bg: #ffffff;
+  --theme-menu-bg: #eaeae5;
+  --theme-menu-hover: #ddddd8;
+  --theme-font: "Crimson Text", Georgia, serif;
+  --theme-font-size: 17px;
+  --theme-line-height: 1.7;
+}
+
+/* Legacy DOS variable aliases for compatibility */
 :root {
-  --dos-blue: #0000aa;
-  --dos-cyan: #00aaaa;
-  --dos-white: #aaaaaa;
-  --dos-bright-white: #ffffff;
-  --dos-black: #000000;
+  --dos-blue: var(--theme-bg);
+  --dos-cyan: var(--theme-accent);
+  --dos-white: var(--theme-text-muted);
+  --dos-bright-white: var(--theme-text);
+  --dos-black: var(--theme-accent-text);
 }
 
 * {
@@ -21,11 +109,127 @@ html, body {
 }
 
 body {
-  background: var(--dos-blue);
-  color: var(--dos-bright-white);
-  font-family: "Perfect DOS VGA 437", "Consolas", "Courier New", monospace;
-  font-size: 16px;
-  line-height: 1.4;
+  background: var(--theme-bg);
+  color: var(--theme-text);
+  font-family: var(--theme-font);
+  font-size: var(--theme-font-size);
+  line-height: var(--theme-line-height);
+}
+
+/* ============================================
+   Menu Bar
+   ============================================ */
+
+#menu-bar {
+  display: flex;
+  align-items: center;
+  background: var(--theme-bg-alt);
+  border-bottom: 1px solid var(--theme-border);
+  padding: 0 8px;
+  height: 28px;
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+#menu-title {
+  font-weight: bold;
+  margin-right: 16px;
+  text-transform: uppercase;
+}
+
+#menu-items {
+  display: flex;
+  gap: 2px;
+}
+
+.menu-item {
+  position: relative;
+}
+
+.menu-button {
+  background: transparent;
+  border: none;
+  color: var(--theme-text);
+  font-family: inherit;
+  font-size: inherit;
+  padding: 4px 10px;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.menu-button:hover,
+.menu-button.active {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+.menu-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 160px;
+  background: var(--theme-menu-bg);
+  border: 1px solid var(--theme-border);
+  z-index: 1000;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+}
+
+.menu-item:hover .menu-dropdown,
+.menu-dropdown.show {
+  display: block;
+}
+
+.menu-option {
+  padding: 6px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.menu-option:hover {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+.menu-option.checked::before {
+  content: "\2713";
+  margin-right: 8px;
+}
+
+.menu-separator {
+  height: 1px;
+  background: var(--theme-border);
+  margin: 4px 8px;
+}
+
+.menu-submenu {
+  position: relative;
+}
+
+.menu-has-submenu::after {
+  content: "";
+}
+
+.menu-submenu .submenu {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 100%;
+}
+
+.menu-submenu:hover .submenu {
+  display: block;
+}
+
+.theme-option.active {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+.theme-option.active::before {
+  content: "\2713 ";
 }
 
 #game-container {
@@ -37,10 +241,10 @@ body {
   padding: 0;
 }
 
-/* Status Line - Cyan background, black text */
+/* Status Line */
 #status-line {
-  background: var(--dos-cyan);
-  color: var(--dos-black);
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
   padding: 4px 8px;
   display: flex;
   justify-content: space-between;
@@ -70,7 +274,7 @@ body {
 
 /* Command echo styling */
 .command-echo {
-  color: var(--dos-white);
+  color: var(--theme-text-muted);
   margin-top: 1em;
   margin-bottom: 0.5em;
 }
@@ -80,30 +284,30 @@ body {
   display: flex;
   align-items: center;
   padding: 4px 8px;
-  border-top: 2px solid var(--dos-cyan);
+  border-top: 2px solid var(--theme-border);
   flex-shrink: 0;
-  background: var(--dos-blue);
+  background: var(--theme-bg);
 }
 
 .prompt {
-  color: var(--dos-bright-white);
+  color: var(--theme-text);
   margin-right: 4px;
 }
 
 #command-input {
   flex: 1;
-  background: transparent;
+  background: var(--theme-input-bg);
   border: none;
-  color: var(--dos-bright-white);
+  color: var(--theme-text);
   font-family: inherit;
   font-size: inherit;
   line-height: inherit;
   outline: none;
-  caret-color: var(--dos-bright-white);
+  caret-color: var(--theme-text);
 }
 
 #command-input::placeholder {
-  color: var(--dos-white);
+  color: var(--theme-text-muted);
   opacity: 0.5;
 }
 
@@ -113,32 +317,32 @@ body {
 }
 
 #main-window::-webkit-scrollbar-track {
-  background: var(--dos-blue);
+  background: var(--theme-bg);
 }
 
 #main-window::-webkit-scrollbar-thumb {
-  background: var(--dos-cyan);
+  background: var(--theme-accent);
 }
 
 /* Firefox scrollbar */
 #main-window {
   scrollbar-width: thin;
-  scrollbar-color: var(--dos-cyan) var(--dos-blue);
+  scrollbar-color: var(--theme-accent) var(--theme-bg);
 }
 
 /* System messages */
 .system-message {
-  color: var(--dos-cyan);
+  color: var(--theme-accent);
 }
 
 /* Game over / victory */
 .game-status {
-  color: var(--dos-bright-white);
+  color: var(--theme-text);
   text-align: center;
   font-weight: bold;
   margin: 1em 0;
   padding: 0.5em;
-  border: 1px solid var(--dos-cyan);
+  border: 1px solid var(--theme-border);
 }
 
 /* Mobile adjustments */
@@ -274,7 +478,7 @@ body {
 }
 
 #command-input:focus {
-  caret-color: var(--dos-bright-white);
+  caret-color: var(--theme-text);
 }
 
 /* ============================================
@@ -299,8 +503,8 @@ body {
 }
 
 .modal-dialog {
-  background: var(--dos-blue);
-  border: 2px solid var(--dos-cyan);
+  background: var(--theme-bg);
+  border: 2px solid var(--theme-border);
   min-width: 300px;
   max-width: 90vw;
   max-height: 80vh;
@@ -309,8 +513,8 @@ body {
 }
 
 .modal-title {
-  background: var(--dos-cyan);
-  color: var(--dos-black);
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
   padding: 4px 8px;
   font-weight: bold;
   text-align: center;
@@ -335,9 +539,9 @@ body {
 
 #save-name-input {
   flex: 1;
-  background: var(--dos-black);
-  border: 1px solid var(--dos-cyan);
-  color: var(--dos-bright-white);
+  background: var(--theme-bg-alt);
+  border: 1px solid var(--theme-border);
+  color: var(--theme-text);
   font-family: inherit;
   font-size: inherit;
   padding: 4px 6px;
@@ -345,18 +549,18 @@ body {
 }
 
 #save-name-input:focus {
-  border-color: var(--dos-bright-white);
+  border-color: var(--theme-accent);
 }
 
 .saves-list-label {
-  color: var(--dos-white);
+  color: var(--theme-text-muted);
   margin-bottom: 8px;
   font-size: 0.9em;
 }
 
 .saves-list {
-  background: var(--dos-black);
-  border: 1px solid var(--dos-cyan);
+  background: var(--theme-bg-alt);
+  border: 1px solid var(--theme-border);
   max-height: 200px;
   overflow-y: auto;
 }
@@ -375,12 +579,12 @@ body {
 }
 
 .save-slot:hover {
-  background: var(--dos-blue);
+  background: var(--theme-menu-hover);
 }
 
 .save-slot.selected {
-  background: var(--dos-bright-white);
-  color: var(--dos-blue);
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
 }
 
 .save-slot-name {
@@ -392,17 +596,17 @@ body {
 }
 
 .save-slot-info {
-  color: var(--dos-white);
+  color: var(--theme-text-muted);
   font-size: 0.85em;
   white-space: nowrap;
 }
 
 .save-slot.selected .save-slot-info {
-  color: var(--dos-blue);
+  color: var(--theme-accent-text);
 }
 
 .no-saves-message {
-  color: var(--dos-white);
+  color: var(--theme-text-muted);
   font-style: italic;
   padding: 12px;
   text-align: center;
@@ -413,13 +617,13 @@ body {
   justify-content: center;
   gap: 16px;
   padding: 12px;
-  border-top: 1px solid var(--dos-cyan);
+  border-top: 1px solid var(--theme-border);
 }
 
 .modal-btn {
-  background: var(--dos-black);
-  border: 1px solid var(--dos-cyan);
-  color: var(--dos-bright-white);
+  background: var(--theme-bg-alt);
+  border: 1px solid var(--theme-border);
+  color: var(--theme-text);
   font-family: inherit;
   font-size: inherit;
   padding: 6px 20px;
@@ -428,30 +632,31 @@ body {
 }
 
 .modal-btn:hover {
-  background: var(--dos-blue);
-  border-color: var(--dos-bright-white);
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+  border-color: var(--theme-accent);
 }
 
 .modal-btn:focus {
-  outline: 1px solid var(--dos-bright-white);
+  outline: 1px solid var(--theme-accent);
   outline-offset: 2px;
 }
 
 .modal-btn:disabled {
-  color: var(--dos-white);
+  color: var(--theme-text-muted);
   opacity: 0.5;
   cursor: not-allowed;
 }
 
 /* Startup dialog */
 .startup-info {
-  color: var(--dos-cyan);
+  color: var(--theme-accent);
   margin: 0 0 12px 0;
   line-height: 1.4;
 }
 
 .startup-question {
-  color: var(--dos-bright-white);
+  color: var(--theme-text);
   margin: 0;
 }
 
@@ -463,12 +668,12 @@ body {
 
 .saves-list::-webkit-scrollbar-track,
 .modal-content::-webkit-scrollbar-track {
-  background: var(--dos-black);
+  background: var(--theme-bg-alt);
 }
 
 .saves-list::-webkit-scrollbar-thumb,
 .modal-content::-webkit-scrollbar-thumb {
-  background: var(--dos-cyan);
+  background: var(--theme-accent);
 }
 
 /* Mobile modal adjustments */
