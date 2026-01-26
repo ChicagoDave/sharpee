@@ -26,7 +26,8 @@ const exports = {
   ...require('../packages/text-blocks/dist/index.js'),
   ...require('../packages/text-service/dist/index.js'),
   ...require('../packages/if-services/dist/index.js'),
-  ...require('../packages/extensions/testing/dist/index.js')
+  // TODO: Testing extension package not yet created
+  // ...require('../packages/extensions/testing/dist/index.js')
 };
 
 module.exports = exports;

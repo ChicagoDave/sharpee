@@ -744,6 +744,9 @@ importers:
       '@sharpee/parser-en-us':
         specifier: workspace:*
         version: link:../../packages/parser-en-us
+      '@sharpee/platform-browser':
+        specifier: workspace:*
+        version: link:../../packages/platform-browser
       '@sharpee/stdlib':
         specifier: workspace:*
         version: link:../../packages/stdlib

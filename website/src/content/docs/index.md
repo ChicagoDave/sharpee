@@ -5,10 +5,13 @@ template: splash
 hero:
   tagline: Build text adventures with TypeScript. Parser-based interactive fiction for the modern web.
   actions:
+    - text: Play Dungeo
+      link: /play/dungeo
+      icon: rocket
+      variant: primary
     - text: Get Started
       link: /getting-started/installation/
       icon: right-arrow
-      variant: primary
     - text: View on GitHub
       link: https://github.com/ChicagoDave/sharpee
       icon: external

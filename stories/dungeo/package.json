@@ -29,6 +29,7 @@
     "@sharpee/if-domain": "workspace:*",
     "@sharpee/lang-en-us": "workspace:*",
     "@sharpee/parser-en-us": "workspace:*",
+    "@sharpee/platform-browser": "workspace:*",
     "@sharpee/stdlib": "workspace:*",
     "@sharpee/text-service": "workspace:*",
     "@sharpee/world-model": "workspace:*",
