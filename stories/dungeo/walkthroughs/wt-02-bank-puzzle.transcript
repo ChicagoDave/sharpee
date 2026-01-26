@@ -1,7 +1,10 @@
 title: Bank of Zork Walkthrough
 story: dungeo
-description: Get portrait and zorkmid bills from Bank. Chains after wt-get-torch-early (starts at Gallery).
+description: Get portrait and zorkmid bills from Bank. Restores from wt-01 (starts at Gallery).
 ---
+
+# Restore state from wt-01 (player at Gallery with torch, lantern, sword, rope)
+$restore wt-01
 
 # Start at Gallery (from torch transcript)
 # Path to Bank: Gallery → W → Bank Entrance
@@ -74,3 +77,6 @@ description: Get portrait and zorkmid bills from Bank. Chains after wt-get-torch
 [OK: contains "portrait"]
 [OK: contains "zorkmid"]
 [OK: contains "torch"]
+
+# Save checkpoint for next walkthrough
+$save wt-02

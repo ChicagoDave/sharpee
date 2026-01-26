@@ -1,7 +1,10 @@
 title: Exorcism (Bell/Book/Candle Ritual)
 story: dungeo
-description: Perform exorcism ritual at Entry to Hades. Chain after egyptian-room.
+description: Perform exorcism ritual at Entry to Hades. Restores from wt-05.
 ---
+
+# Restore state from wt-05 (player at Living Room)
+$restore wt-05
 
 # ============================================================================
 # GOAL: Setup - Ensure correct state from previous segment
@@ -9,18 +12,9 @@ description: Perform exorcism ritual at Entry to Hades. Chain after egyptian-roo
 
 [GOAL: Verify starting state]
 
-> gdt
-[OK: contains "GDT"]
-
 # Ensure we have torch and lantern
-> tk torch
-[OK: matches /(Taken|already)/i]
-
-> tk brass lantern
-[OK: matches /(Taken|already)/i]
-
-> ex
-[OK: contains "Returning"]
+$take torch
+$take brass lantern
 
 # Turn on light source
 > turn on torch
@@ -35,14 +29,7 @@ description: Perform exorcism ritual at Entry to Hades. Chain after egyptian-roo
 [GOAL: Get matchbook]
 [ENSURES: inventory contains "matchbook"]
 
-> gdt
-[OK: contains "GDT"]
-
-> ah Dam Lobby
-[OK: contains "Teleported"]
-
-> ex
-[OK: contains "Returning"]
+$teleport Dam Lobby
 
 > look
 [OK: matches /(lobby|hall|guidebook|matchbook)/i]
@@ -64,14 +51,7 @@ description: Perform exorcism ritual at Entry to Hades. Chain after egyptian-roo
 [ENSURES: inventory contains "book"]
 [ENSURES: inventory contains "candles"]
 
-> gdt
-[OK: contains "GDT"]
-
-> ah Altar
-[OK: contains "Teleported"]
-
-> ex
-[OK: contains "Returning"]
+$teleport Altar
 
 > look
 [OK: matches /(altar|bell|book|candles)/i]
@@ -98,14 +78,7 @@ description: Perform exorcism ritual at Entry to Hades. Chain after egyptian-roo
 
 [GOAL: Get to Entry to Hades]
 
-> gdt
-[OK: contains "GDT"]
-
-> ah Entrance to Hades
-[OK: contains "Teleported"]
-
-> ex
-[OK: contains "Returning"]
+$teleport Entrance to Hades
 
 > look
 [OK: matches /(Hades|spirits|ghostly|entrance)/i]
@@ -163,14 +136,10 @@ description: Perform exorcism ritual at Entry to Hades. Chain after egyptian-roo
 
 [GOAL: Return to Living Room]
 
-> gdt
-[OK: contains "GDT"]
+$teleport Living Room
 
-> ah Living Room
-[OK: contains "Teleported"]
-
-> ex
-[OK: contains "Returning"]
+> look
+[OK: contains "Living Room"]
 
 [END GOAL]
 
@@ -188,6 +157,9 @@ description: Perform exorcism ritual at Entry to Hades. Chain after egyptian-roo
 [OK: contains "Living Room"]
 
 [END GOAL]
+
+# Save checkpoint for next walkthrough
+$save wt-06
 
 # SUCCESS! Exorcism complete
 # Spirits banished, passage to Land of Dead now open

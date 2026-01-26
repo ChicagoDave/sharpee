@@ -474,10 +474,11 @@ export class TestingExtension implements ITestingExtension {
 
   private cmdTeleport(context: DebugContext, args: string[]): CommandResult {
     if (args.length === 0) {
-      return { success: false, output: [], error: 'Usage: teleport <room-id>' };
+      return { success: false, output: [], error: 'Usage: teleport <room-name>' };
     }
 
-    const roomId = args[0];
+    // Join args to support multi-word room names like "Reservoir North"
+    const roomId = args.join(' ');
     const room = context.findRoom(roomId);
 
     if (!room) {

@@ -1,7 +1,10 @@
 title: River & Rainbow (Emerald, Pot of Gold)
 story: dungeo
-description: Get emerald from buoy, wave stick for rainbow, get pot of gold. Chain after exorcism.
+description: Get emerald from buoy, wave stick for rainbow, get pot of gold. Restores from wt-06.
 ---
+
+# Restore state from wt-06 (player at Living Room)
+$restore wt-06
 
 # ============================================================================
 # GOAL: Setup - Ensure correct state from previous segment
@@ -9,18 +12,9 @@ description: Get emerald from buoy, wave stick for rainbow, get pot of gold. Cha
 
 [GOAL: Verify starting state]
 
-> gdt
-[OK: contains "GDT"]
-
 # Ensure we have torch and lantern
-> tk torch
-[OK: matches /(Taken|already)/i]
-
-> tk brass lantern
-[OK: matches /(Taken|already)/i]
-
-> ex
-[OK: contains "Returning"]
+$take torch
+$take brass lantern
 
 # Turn on light source
 > turn on torch
@@ -35,14 +29,7 @@ description: Get emerald from buoy, wave stick for rainbow, get pot of gold. Cha
 [GOAL: Get hand pump]
 [ENSURES: inventory contains "pump"]
 
-> gdt
-[OK: contains "GDT"]
-
-> ah Reservoir North
-[OK: contains "Teleported"]
-
-> ex
-[OK: contains "Returning"]
+$teleport Reservoir North
 
 > look
 [OK: matches /(reservoir|pump)/i]
@@ -61,14 +48,7 @@ description: Get emerald from buoy, wave stick for rainbow, get pot of gold. Cha
 
 [GOAL: Get and inflate boat]
 
-> gdt
-[OK: contains "GDT"]
-
-> ah Dam Base
-[OK: contains "Teleported"]
-
-> ex
-[OK: contains "Returning"]
+$teleport Dam Base
 
 > look
 [OK: matches /(dam|plastic|boat|stick)/i]
@@ -90,14 +70,7 @@ description: Get emerald from buoy, wave stick for rainbow, get pot of gold. Cha
 [GOAL: Get emerald from buoy]
 [ENSURES: inventory contains "emerald"]
 
-> gdt
-[OK: contains "GDT"]
-
-> ah Frigid River-2
-[OK: contains "Teleported"]
-
-> ex
-[OK: contains "Returning"]
+$teleport Frigid River-2
 
 > look
 [OK: matches /(river|buoy|cliffs)/i]
@@ -125,14 +98,7 @@ description: Get emerald from buoy, wave stick for rainbow, get pot of gold. Cha
 [GOAL: Get sharp stick]
 [ENSURES: inventory contains "stick"]
 
-> gdt
-[OK: contains "GDT"]
-
-> ah Dam Base
-[OK: contains "Teleported"]
-
-> ex
-[OK: contains "Returning"]
+$teleport Dam Base
 
 > take stick
 [OK: matches /(Taken|take)/i]
@@ -148,14 +114,7 @@ description: Get emerald from buoy, wave stick for rainbow, get pot of gold. Cha
 
 [GOAL: Create rainbow bridge]
 
-> gdt
-[OK: contains "GDT"]
-
-> ah Aragain Falls
-[OK: contains "Teleported"]
-
-> ex
-[OK: contains "Returning"]
+$teleport Aragain Falls
 
 > look
 [OK: matches /(falls|rainbow|waterfall)/i]
@@ -198,14 +157,10 @@ description: Get emerald from buoy, wave stick for rainbow, get pot of gold. Cha
 
 [GOAL: Return to Living Room]
 
-> gdt
-[OK: contains "GDT"]
+$teleport Living Room
 
-> ah Living Room
-[OK: contains "Teleported"]
-
-> ex
-[OK: contains "Returning"]
+> look
+[OK: contains "Living Room"]
 
 [END GOAL]
 

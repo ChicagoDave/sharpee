@@ -67,3 +67,23 @@ feat: Add buildDate to Story config, simplify versi
 [23:30:55] GIT: git push origin main
 [23:32:32] GIT: git stash && git pull --rebase && git stash pop && git push
 [23:44:49] WRITE: /mnt/c/repotemp/sharpee-dslm/patterns/README.md
+[22:09:43] EDIT: stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript
+[22:09:51] EDIT: stories/dungeo/walkthroughs/wt-02-bank-puzzle.transcript
+[22:09:55] EDIT: stories/dungeo/walkthroughs/wt-02-bank-puzzle.transcript
+[22:10:01] EDIT: stories/dungeo/walkthroughs/wt-03-maze-cyclops-goal.transcript
+[22:10:07] EDIT: stories/dungeo/walkthroughs/wt-03-maze-cyclops-goal.transcript
+[22:10:14] EDIT: stories/dungeo/walkthroughs/wt-04-dam-reservoir.transcript
+[22:10:20] EDIT: stories/dungeo/walkthroughs/wt-04-dam-reservoir.transcript
+[22:10:31] WRITE: stories/dungeo/walkthroughs/wt-05-egyptian-room.transcript
+[22:10:50] WRITE: stories/dungeo/walkthroughs/wt-06-exorcism.transcript
+[22:11:09] WRITE: stories/dungeo/walkthroughs/wt-07-river-rainbow.transcript
+[22:16:14] EDIT: stories/dungeo/walkthroughs/wt-04-dam-reservoir.transcript
+[22:19:00] WRITE: stories/dungeo/walkthroughs/wt-04-dam-reservoir.transcript
+[22:19:28] EDIT: stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript
+[22:19:40] EDIT: stories/dungeo/walkthroughs/wt-03-maze-cyclops-goal.transcript
+[22:22:12] EDIT: packages/sharpee/src/index.ts
+[22:26:46] EDIT: scripts/bundle-entry.js
+[22:37:17] EDIT: stories/dungeo/walkthroughs/wt-04-dam-reservoir.transcript
+[22:38:11] EDIT: packages/extensions/testing/src/extension.ts
+[22:50:19] EDIT: stories/dungeo/walkthroughs/wt-04-dam-reservoir.transcript
+[22:54:28] WRITE: docs/context/session-20260125-2252-main.md

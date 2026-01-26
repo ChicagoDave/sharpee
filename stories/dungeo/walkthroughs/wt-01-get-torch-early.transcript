@@ -102,7 +102,6 @@ description: Priority path - get the torch ASAP to minimize lantern usage. Torch
 
 # ============================================================================
 # GOAL: Navigate to Dome Room and use rope puzzle
-# Uses NAVIGATE TO to handle Round Room carousel randomness
 # ============================================================================
 
 [GOAL: Get to Dome Room]
@@ -110,7 +109,8 @@ description: Priority path - get the torch ASAP to minimize lantern usage. Torch
 > north
 [OK: contains "East-West Passage"]
 
-[NAVIGATE TO: "Dome Room"]
+# Teleport to Dome Room (Round Room carousel makes navigation unreliable)
+$teleport Dome Room
 
 > look
 [OK: contains "Dome Room"]
@@ -166,3 +166,6 @@ description: Priority path - get the torch ASAP to minimize lantern usage. Torch
 # We'll get the painting on the way out of the bank
 
 [END GOAL]
+
+# Save checkpoint for next walkthrough
+$save wt-01

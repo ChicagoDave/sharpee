@@ -1,7 +1,10 @@
 title: Maze Cyclops Goal (Gallery, Maze, Cyclops)
 story: dungeo
-description: Get painting from Gallery, skeleton key from maze, solve cyclops. Chain after get-torch-early.transcript
+description: Get painting from Gallery, skeleton key from maze, solve cyclops. Restores from wt-02.
 ---
+
+# Restore state from wt-02 (player at Gallery with torch, portrait, zorkmid)
+$restore wt-02
 
 # Get the painting
 > take painting
@@ -13,7 +16,8 @@ description: Get painting from Gallery, skeleton key from maze, solve cyclops. C
 
 [GOAL: Get to Troll Room]
 
-[NAVIGATE TO: "Troll Room"]
+# Teleport to Troll Room (Round Room carousel makes navigation unreliable)
+$teleport Troll Room
 
 > look
 [OK: contains "Troll Room"]
@@ -161,5 +165,8 @@ description: Get painting from Gallery, skeleton key from maze, solve cyclops. C
 [OK: contains "torch"]
 
 [END GOAL]
+
+# Save checkpoint for next walkthrough
+$save wt-03
 
 # SUCCESS! Gallery, Maze, Cyclops complete - treasures stored, ready for next segment

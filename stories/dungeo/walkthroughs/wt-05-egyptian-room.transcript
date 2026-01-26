@@ -1,43 +1,33 @@
 title: Egyptian Room (Gold Coffin)
 story: dungeo
-description: Get gold coffin from Egyptian Room. Chain after dam-reservoir.
+description: Get gold coffin from Egyptian Room. Restores from wt-04.
 ---
 
-# ============================================================================
-# Use GDT to ensure correct state for this segment
-# ============================================================================
+# Restore state from wt-04 (player at Living Room)
+$restore wt-04
 
-> gdt
-[OK: contains "GDT"]
+# ============================================================================
+# Ensure correct state for this segment
+# ============================================================================
 
 # Ensure we have torch and lantern
-> tk torch
-[OK: matches /(Taken|already)/i]
-
-> tk brass lantern
-[OK: matches /(Taken|already)/i]
-
-> ex
-[OK: contains "Returning"]
+$take torch
+$take brass lantern
 
 # Turn on light source
 > turn on lantern
 [OK: matches /(on|lit|light|already)/i]
 
 # ============================================================================
-# GOAL: Navigate to Egyptian Room (using GDT)
+# GOAL: Navigate to Egyptian Room
 # ============================================================================
 
 [GOAL: Get to Egyptian Room]
 
-> gdt
-[OK: contains "GDT"]
+$teleport Egyptian Room
 
-> ah Egyptian Room
-[OK: contains "Teleported"]
-
-> ex
-[OK: contains "Returning"]
+> look
+[OK: contains "Egyptian"]
 
 [END GOAL]
 
@@ -60,19 +50,15 @@ description: Get gold coffin from Egyptian Room. Chain after dam-reservoir.
 [END GOAL]
 
 # ============================================================================
-# GOAL: Return to Living Room (using GDT)
+# GOAL: Return to Living Room
 # ============================================================================
 
 [GOAL: Return to Living Room]
 
-> gdt
-[OK: contains "GDT"]
+$teleport Living Room
 
-> ah Living Room
-[OK: contains "Teleported"]
-
-> ex
-[OK: contains "Returning"]
+> look
+[OK: contains "Living Room"]
 
 [END GOAL]
 
@@ -105,6 +91,9 @@ description: Get gold coffin from Egyptian Room. Chain after dam-reservoir.
 [OK: contains "trophy case"]
 
 [END GOAL]
+
+# Save checkpoint for next walkthrough
+$save wt-05
 
 # SUCCESS! Egyptian Room complete
 # Treasures stored: coffin (+ previous)
