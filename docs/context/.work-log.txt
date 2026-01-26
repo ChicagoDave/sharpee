@@ -1,50 +1,66 @@
-[22:17:54] GIT: git commit -m "$(cat <<'EOF'
-feat: Implement ADR-114 @sharpee/platform-browser p
-[22:18:55] GIT: git push origin main
-[23:08:59] EDIT: packages/engine/src/story.ts
-[23:09:09] EDIT: packages/engine/src/story.ts
-[23:10:01] EDIT: packages/text-service/src/handlers/game.ts
-[23:14:02] EDIT: build.sh
-[23:14:17] EDIT: stories/dungeo/src/messages/index.ts
-[23:14:51] EDIT: stories/dungeo/src/index.ts
-[23:15:40] EDIT: packages/core/src/events/game-events.ts
-[23:15:47] EDIT: packages/engine/src/game-engine.ts
-[23:15:58] EDIT: packages/core/src/events/game-events.d.ts
-[23:26:21] WRITE: docs/context/session-20260125-0515-main.md
-[23:29:59] GIT: git commit -m "$(cat <<'EOF'
-feat: Add buildDate to Story config, simplify versi
-[23:30:55] GIT: git push origin main
-[23:32:32] GIT: git stash && git pull --rebase && git stash pop && git push
-[23:44:49] WRITE: /mnt/c/repotemp/sharpee-dslm/patterns/README.md
-[22:09:43] EDIT: stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript
-[22:09:51] EDIT: stories/dungeo/walkthroughs/wt-02-bank-puzzle.transcript
-[22:09:55] EDIT: stories/dungeo/walkthroughs/wt-02-bank-puzzle.transcript
-[22:10:01] EDIT: stories/dungeo/walkthroughs/wt-03-maze-cyclops-goal.transcript
-[22:10:07] EDIT: stories/dungeo/walkthroughs/wt-03-maze-cyclops-goal.transcript
-[22:10:14] EDIT: stories/dungeo/walkthroughs/wt-04-dam-reservoir.transcript
-[22:10:20] EDIT: stories/dungeo/walkthroughs/wt-04-dam-reservoir.transcript
-[22:10:31] WRITE: stories/dungeo/walkthroughs/wt-05-egyptian-room.transcript
-[22:10:50] WRITE: stories/dungeo/walkthroughs/wt-06-exorcism.transcript
-[22:11:09] WRITE: stories/dungeo/walkthroughs/wt-07-river-rainbow.transcript
-[22:16:14] EDIT: stories/dungeo/walkthroughs/wt-04-dam-reservoir.transcript
-[22:19:00] WRITE: stories/dungeo/walkthroughs/wt-04-dam-reservoir.transcript
-[22:19:28] EDIT: stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript
-[22:19:40] EDIT: stories/dungeo/walkthroughs/wt-03-maze-cyclops-goal.transcript
-[22:22:12] EDIT: packages/sharpee/src/index.ts
-[22:26:46] EDIT: scripts/bundle-entry.js
-[22:37:17] EDIT: stories/dungeo/walkthroughs/wt-04-dam-reservoir.transcript
-[22:38:11] EDIT: packages/extensions/testing/src/extension.ts
-[22:50:19] EDIT: stories/dungeo/walkthroughs/wt-04-dam-reservoir.transcript
-[22:54:28] WRITE: docs/context/session-20260125-2252-main.md
-[22:56:10] GIT: git commit -m "$(cat <<'EOF'
-feat: Migrate walkthroughs to checkpoint-based test
-[22:56:16] GIT: git push origin main
-[23:00:51] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/parser-en-us' test colored-buttons 2>&1 | head -100
-[23:13:28] EDIT: stories/dungeo/src/regions/dam.ts
-[23:13:39] EDIT: stories/dungeo/src/regions/dam.ts
-[23:13:45] EDIT: stories/dungeo/src/regions/dam.ts
-[23:13:52] EDIT: stories/dungeo/src/regions/dam.ts
-[23:13:58] EDIT: stories/dungeo/src/regions/dam.ts
-[23:14:09] EDIT: stories/dungeo/src/actions/press-button/press-button-action.ts
-[23:14:16] EDIT: stories/dungeo/src/actions/press-button/press-button-action.ts
-[23:27:50] WRITE: docs/context/session-20260125-2326-main.md
+[00:14:17] EDIT: stories/dungeo/src/objects/thiefs-canvas-objects.ts
+[00:14:56] EDIT: stories/dungeo/src/regions/round-room.ts
+[00:14:57] EDIT: stories/dungeo/src/regions/round-room.ts
+[00:15:09] EDIT: stories/dungeo/src/regions/temple.ts
+[00:15:10] EDIT: stories/dungeo/src/regions/temple.ts
+[00:15:11] EDIT: stories/dungeo/src/regions/temple.ts
+[00:15:20] EDIT: stories/dungeo/src/regions/maze.ts
+[00:15:21] EDIT: stories/dungeo/src/regions/maze.ts
+[00:15:33] EDIT: stories/dungeo/src/regions/frigid-river.ts
+[00:15:34] EDIT: stories/dungeo/src/regions/frigid-river.ts
+[00:15:35] EDIT: stories/dungeo/src/regions/frigid-river.ts
+[00:15:36] EDIT: stories/dungeo/src/regions/frigid-river.ts
+[00:21:23] EDIT: stories/dungeo/src/npcs/thief/thief-helpers.ts
+[00:21:31] EDIT: stories/dungeo/src/actions/gdt/commands/de.ts
+[00:21:33] EDIT: stories/dungeo/src/scheduler/bank-alarm-daemon.ts
+[00:27:49] WRITE: docs/context/session-20260126-0615-main.md
+[00:29:35] EDIT: stories/dungeo/walkthroughs/wt-06-exorcism.transcript
+[00:29:57] EDIT: stories/dungeo/walkthroughs/wt-06-exorcism.transcript
+[00:29:58] EDIT: stories/dungeo/walkthroughs/wt-06-exorcism.transcript
+[00:29:59] EDIT: stories/dungeo/walkthroughs/wt-06-exorcism.transcript
+[00:30:00] EDIT: stories/dungeo/walkthroughs/wt-06-exorcism.transcript
+[00:30:01] EDIT: stories/dungeo/walkthroughs/wt-06-exorcism.transcript
+[00:30:02] EDIT: stories/dungeo/walkthroughs/wt-06-exorcism.transcript
+[00:30:03] EDIT: stories/dungeo/walkthroughs/wt-06-exorcism.transcript
+[00:30:04] EDIT: stories/dungeo/walkthroughs/wt-06-exorcism.transcript
+[00:30:05] EDIT: stories/dungeo/walkthroughs/wt-06-exorcism.transcript
+[00:30:06] EDIT: stories/dungeo/walkthroughs/wt-06-exorcism.transcript
+[00:33:01] EDIT: stories/dungeo/walkthroughs/wt-06-exorcism.transcript
+[00:33:43] EDIT: stories/dungeo/walkthroughs/wt-06-exorcism.transcript
+[00:33:58] EDIT: stories/dungeo/walkthroughs/wt-07-river-rainbow.transcript
+[00:33:59] EDIT: stories/dungeo/walkthroughs/wt-07-river-rainbow.transcript
+[00:34:24] EDIT: stories/dungeo/walkthroughs/wt-07-river-rainbow.transcript
+[00:34:25] EDIT: stories/dungeo/walkthroughs/wt-07-river-rainbow.transcript
+[00:34:26] EDIT: stories/dungeo/walkthroughs/wt-07-river-rainbow.transcript
+[00:34:27] EDIT: stories/dungeo/walkthroughs/wt-07-river-rainbow.transcript
+[00:34:29] EDIT: stories/dungeo/walkthroughs/wt-07-river-rainbow.transcript
+[00:34:30] EDIT: stories/dungeo/walkthroughs/wt-07-river-rainbow.transcript
+[00:35:26] EDIT: stories/dungeo/walkthroughs/wt-07-river-rainbow.transcript
+[00:35:27] EDIT: stories/dungeo/walkthroughs/wt-07-river-rainbow.transcript
+[00:35:29] EDIT: stories/dungeo/walkthroughs/wt-07-river-rainbow.transcript
+[00:36:27] EDIT: docs/context/session-20260126-0615-main.md
+[01:30:22] GIT: git commit -m "$(cat <<'EOF'
+feat: Migrate all treasures to TreasureTrait for ch
+[01:30:32] GIT: git push
+[14:45:48] WRITE: stories/dungeo/src/traits/inflatable-trait.ts
+[14:45:54] EDIT: stories/dungeo/src/traits/index.ts
+[14:46:08] EDIT: stories/dungeo/src/regions/dam.ts
+[14:46:12] EDIT: stories/dungeo/src/regions/dam.ts
+[14:46:21] EDIT: stories/dungeo/src/regions/volcano.ts
+[14:46:30] EDIT: stories/dungeo/src/regions/volcano.ts
+[14:46:36] EDIT: stories/dungeo/src/actions/inflate/inflate-action.ts
+[14:46:42] EDIT: stories/dungeo/src/actions/inflate/inflate-action.ts
+[14:46:48] EDIT: stories/dungeo/src/actions/inflate/inflate-action.ts
+[14:46:53] EDIT: stories/dungeo/src/actions/deflate/deflate-action.ts
+[14:46:58] EDIT: stories/dungeo/src/actions/deflate/deflate-action.ts
+[14:47:03] EDIT: stories/dungeo/src/actions/deflate/deflate-action.ts
+[14:47:09] EDIT: stories/dungeo/src/handlers/balloon-handler.ts
+[14:47:14] EDIT: stories/dungeo/src/handlers/balloon-handler.ts
+[14:47:20] EDIT: stories/dungeo/src/handlers/boat-puncture-handler.ts
+[14:47:26] EDIT: stories/dungeo/src/handlers/boat-puncture-handler.ts
+[14:47:31] EDIT: stories/dungeo/src/handlers/boat-puncture-handler.ts
+[15:04:20] WRITE: docs/architecture/adrs/adr-117-event-handlers-vs-capability-behaviors.md
+[15:04:54] WRITE: docs/work/dungeo/handler-to-behavior-migration.md
+[15:15:22] WRITE: docs/work/platform/handler-options.md
+[15:28:07] WRITE: docs/architecture/adrs/adr-117-event-handlers-vs-capability-behaviors.md
+[15:30:57] WRITE: docs/context/session-20260126-1529-main.md

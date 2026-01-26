@@ -9,6 +9,7 @@
  */
 
 import { WorldModel, IWorldModel, IdentityTrait, IFEntity, TraitType } from '@sharpee/world-model';
+import { InflatableTrait } from '../traits';
 import { ISemanticEvent } from '@sharpee/core';
 
 // Message IDs for boat puncture
@@ -28,7 +29,8 @@ function puncturesBoat(entity: IFEntity): boolean {
  * Check if entity is the inflatable boat
  */
 function isInflatedBoat(entity: IFEntity): boolean {
-  if (!(entity as any).isInflated) return false;
+  const inflatableTrait = entity.get(InflatableTrait);
+  if (!inflatableTrait?.isInflated) return false;
 
   const identity = entity.get(IdentityTrait);
   if (!identity) return false;
@@ -52,7 +54,10 @@ function punctureBoat(world: IWorldModel, boat: IFEntity, actorId: string): void
   }
 
   // Deflate the boat
-  (boat as any).isInflated = false;
+  const inflatableTrait = boat.get(InflatableTrait);
+  if (inflatableTrait) {
+    inflatableTrait.isInflated = false;
+  }
 
   // Update name and description
   const identity = boat.get(IdentityTrait);

@@ -10,6 +10,7 @@
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity, VehicleTrait, EnterableTrait, TraitType } from '@sharpee/world-model';
+import { InflatableTrait } from '../../traits';
 import { INFLATE_ACTION_ID, InflateMessages } from './types';
 
 /**
@@ -87,7 +88,8 @@ export const inflateAction: Action = {
     }
 
     // Check if boat is already inflated
-    if ((boat as any).isInflated) {
+    const inflatableTrait = boat.get(InflatableTrait);
+    if (inflatableTrait?.isInflated) {
       return {
         valid: false,
         error: InflateMessages.ALREADY_INFLATED
@@ -113,7 +115,10 @@ export const inflateAction: Action = {
     const boat = sharedData.boat as IFEntity;
 
     // Inflate the boat
-    (boat as any).isInflated = true;
+    const inflatableTrait = boat.get(InflatableTrait);
+    if (inflatableTrait) {
+      inflatableTrait.isInflated = true;
+    }
 
     // Update name and description to reflect inflated state
     const identity = boat.get(IdentityTrait);

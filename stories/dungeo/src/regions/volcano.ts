@@ -21,7 +21,7 @@ import {
   VehicleTrait,
   EnterableTrait
 } from '@sharpee/world-model';
-import { TreasureTrait } from '../traits';
+import { TreasureTrait, InflatableTrait } from '../traits';
 
 export interface VolcanoRoomIds {
   egyptianRoom: string;
@@ -471,7 +471,7 @@ function createBalloonObjects(world: WorldModel, roomIds: VolcanoRoomIds): Volca
     article: 'a'
   }));
   clothBag.add(new SceneryTrait());
-  (clothBag as any).isInflated = false;
+  clothBag.add(new InflatableTrait({ isInflated: false }));
   world.moveEntity(clothBag.id, balloon.id);
 
   // Hook 1 - for tying rope at ledge positions

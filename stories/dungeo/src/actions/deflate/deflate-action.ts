@@ -10,6 +10,7 @@
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity, TraitType } from '@sharpee/world-model';
+import { InflatableTrait } from '../../traits';
 import { DEFLATE_ACTION_ID, DeflateMessages } from './types';
 
 /**
@@ -71,7 +72,8 @@ export const deflateAction: Action = {
     }
 
     // Check if boat is already deflated
-    if (!(boat as any).isInflated) {
+    const inflatableTrait = boat.get(InflatableTrait);
+    if (!inflatableTrait?.isInflated) {
       return {
         valid: false,
         error: DeflateMessages.ALREADY_DEFLATED
@@ -97,7 +99,10 @@ export const deflateAction: Action = {
     }
 
     // Deflate the boat
-    (boat as any).isInflated = false;
+    const inflatableTrait = boat.get(InflatableTrait);
+    if (inflatableTrait) {
+      inflatableTrait.isInflated = false;
+    }
 
     // Update name and description to reflect deflated state
     const identity = boat.get(IdentityTrait);

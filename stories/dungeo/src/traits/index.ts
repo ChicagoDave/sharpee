@@ -63,3 +63,10 @@ export {
   TreasureTraitConfig,
   TreasureTraitConstructor
 } from './treasure-trait';
+
+// Inflatable (boat and balloon cloth bag)
+export {
+  InflatableTrait,
+  InflatableTraitConfig,
+  InflatableTraitConstructor
+} from './inflatable-trait';

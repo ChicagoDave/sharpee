@@ -19,7 +19,7 @@ import {
   ReadableTrait,
   ButtonTrait
 } from '@sharpee/world-model';
-import { TreasureTrait } from '../traits';
+import { TreasureTrait, InflatableTrait } from '../traits';
 
 export interface DamRoomIds {
   deepCanyon: string;
@@ -440,7 +440,7 @@ function createDamBaseObjects(world: WorldModel, roomId: string): void {
     weight: 2
   }));
   boat.add(new ContainerTrait({ capacity: { maxItems: 10, maxWeight: 100 } }));
-  (boat as any).isInflated = false;
+  boat.add(new InflatableTrait({ isInflated: false }));
   world.moveEntity(boat.id, roomId);
 
   // Tan label - instructions for the boat (inside boat when inflated)

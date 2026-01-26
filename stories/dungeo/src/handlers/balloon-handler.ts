@@ -8,6 +8,7 @@
  */
 
 import { WorldModel, IWorldModel, IdentityTrait, OpenableTrait, ContainerTrait, VehicleTrait, IParsedCommand } from '@sharpee/world-model';
+import { InflatableTrait } from '../traits';
 import { ISemanticEvent } from '@sharpee/core';
 import { ISchedulerService, Daemon, Fuse, SchedulerContext, GameEngine } from '@sharpee/engine';
 import { DungeoSchedulerMessages } from '../scheduler/scheduler-messages';
@@ -59,7 +60,10 @@ function updateClothBagState(world: IWorldModel, isInflated: boolean): void {
   });
 
   if (clothBag) {
-    (clothBag as any).isInflated = isInflated;
+    const inflatableTrait = clothBag.get(InflatableTrait);
+    if (inflatableTrait) {
+      inflatableTrait.isInflated = isInflated;
+    }
     const identity = clothBag.get(IdentityTrait);
     if (identity) {
       if (isInflated) {
