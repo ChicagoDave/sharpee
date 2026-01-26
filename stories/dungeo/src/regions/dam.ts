@@ -16,7 +16,8 @@ import {
   SceneryTrait,
   ContainerTrait,
   OpenableTrait,
-  ReadableTrait
+  ReadableTrait,
+  ButtonTrait
 } from '@sharpee/world-model';
 
 export interface DamRoomIds {
@@ -327,7 +328,7 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
-  (yellowButton as any).buttonColor = 'yellow';
+  yellowButton.add(new ButtonTrait({ color: 'yellow', label: 'DANGER' }));
   world.moveEntity(yellowButton.id, roomId);
 
   const brownButton = world.createEntity('brown button', EntityType.ITEM);
@@ -339,7 +340,7 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
-  (brownButton as any).buttonColor = 'brown';
+  brownButton.add(new ButtonTrait({ color: 'brown' }));
   world.moveEntity(brownButton.id, roomId);
 
   const redButton = world.createEntity('red button', EntityType.ITEM);
@@ -351,7 +352,7 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
-  (redButton as any).buttonColor = 'red';
+  redButton.add(new ButtonTrait({ color: 'red' }));
   world.moveEntity(redButton.id, roomId);
 
   const blueButton = world.createEntity('blue button', EntityType.ITEM);
@@ -363,7 +364,7 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
-  (blueButton as any).buttonColor = 'blue';
+  blueButton.add(new ButtonTrait({ color: 'blue' }));
   world.moveEntity(blueButton.id, roomId);
 }
 

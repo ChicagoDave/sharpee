@@ -10,7 +10,7 @@
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
-import { IFEntity, RoomTrait } from '@sharpee/world-model';
+import { IFEntity, RoomTrait, ButtonTrait, TraitType } from '@sharpee/world-model';
 import { PRESS_BUTTON_ACTION_ID, PressButtonMessages } from './types';
 import { DAM_STATE_KEY, DamState, startFlooding, FloodingMessages } from '../../scheduler/dam-fuse';
 
@@ -29,17 +29,19 @@ export function setPressButtonScheduler(scheduler: any, maintenanceRoomId: strin
 }
 
 /**
- * Check if an entity is a button
+ * Check if an entity is a button (has ButtonTrait with color)
  */
 function isButton(entity: IFEntity): boolean {
-  return (entity as any).buttonColor !== undefined;
+  const buttonTrait = entity.get(TraitType.BUTTON) as ButtonTrait | undefined;
+  return buttonTrait?.color !== undefined;
 }
 
 /**
- * Get button color
+ * Get button color from ButtonTrait
  */
 function getButtonColor(entity: IFEntity): string | undefined {
-  return (entity as any).buttonColor;
+  const buttonTrait = entity.get(TraitType.BUTTON) as ButtonTrait | undefined;
+  return buttonTrait?.color;
 }
 
 /**
