@@ -11,3 +11,59 @@
 [19:47:13] WRITE: docs/architecture/adrs/adr-114-browser-platform-package.md
 [19:47:21] EDIT: docs/architecture/adrs/adr-105-javascript-browser-client.md
 [19:52:04] WRITE: docs/context/session-20260124-1950-maphints.md
+[20:17:20] GIT: git merge main -m "Merge main into dungeo - sync browser client and build system
+[20:17:30] GIT: git push origin dungeo
+[20:21:18] WRITE: docs/context/session-20260124-2020-main.md
+[20:36:53] WRITE: /home/dave/.claude/plans/recursive-dancing-goblet.md
+[20:37:51] WRITE: packages/platform-browser/package.json
+[20:37:53] WRITE: packages/platform-browser/tsconfig.json
+[20:37:55] WRITE: packages/platform-browser/src/index.ts
+[20:38:06] EDIT: build.sh
+[20:44:41] WRITE: packages/platform-browser/src/types.ts
+[20:45:20] WRITE: packages/platform-browser/src/managers/ThemeManager.ts
+[20:45:21] WRITE: packages/platform-browser/src/audio/AudioManager.ts
+[20:45:23] WRITE: packages/platform-browser/src/display/TextDisplay.ts
+[20:45:25] WRITE: packages/platform-browser/src/display/StatusLine.ts
+[20:45:32] WRITE: packages/platform-browser/src/managers/index.ts
+[20:45:34] WRITE: packages/platform-browser/src/display/index.ts
+[20:46:43] WRITE: packages/platform-browser/src/managers/SaveManager.ts
+[20:47:29] WRITE: packages/platform-browser/src/managers/DialogManager.ts
+[20:47:55] WRITE: packages/platform-browser/src/managers/InputManager.ts
+[20:47:56] WRITE: packages/platform-browser/src/managers/MenuManager.ts
+[20:49:15] WRITE: packages/platform-browser/src/BrowserClient.ts
+[20:49:29] EDIT: packages/platform-browser/src/index.ts
+[20:50:19] WRITE: stories/dungeo/src/browser-entry.ts
+[20:55:55] EDIT: packages/platform-browser/src/BrowserClient.ts
+[20:55:58] WRITE: docs/architecture/adrs/adr-115-map-export-cli.md
+[20:56:05] EDIT: docs/architecture/adrs/adr-113-map-position-hints.md
+[20:56:18] EDIT: packages/platform-browser/src/managers/SaveManager.ts
+[20:56:43] EDIT: packages/platform-browser/src/managers/SaveManager.ts
+[20:57:43] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/platform-browser' build
+[21:04:52] WRITE: docs/architecture/adrs/adr-116-prompt-to-playable.md
+[22:02:34] EDIT: docs/architecture/adrs/adr-116-prompt-to-playable.md
+[22:02:45] EDIT: docs/architecture/adrs/adr-116-prompt-to-playable.md
+[22:02:54] EDIT: docs/architecture/adrs/adr-116-prompt-to-playable.md
+[22:03:23] EDIT: docs/architecture/adrs/adr-116-prompt-to-playable.md
+[22:04:16] WRITE: docs/context/session-20260124-2157-main.md
+[22:16:01] WRITE: /mnt/c/repotemp/sharpee-dslm/README.md
+[22:16:10] WRITE: /mnt/c/repotemp/sharpee-dslm/.gitignore
+[22:16:50] WRITE: /mnt/c/repotemp/sharpee-dslm/docs/training-data-strategy.md
+[22:17:35] WRITE: /mnt/c/repotemp/sharpee-dslm/docs/evaluation-harness.md
+[22:17:54] GIT: git commit -m "$(cat <<'EOF'
+feat: Implement ADR-114 @sharpee/platform-browser p
+[22:18:55] GIT: git push origin main
+[23:08:59] EDIT: packages/engine/src/story.ts
+[23:09:09] EDIT: packages/engine/src/story.ts
+[23:10:01] EDIT: packages/text-service/src/handlers/game.ts
+[23:14:02] EDIT: build.sh
+[23:14:17] EDIT: stories/dungeo/src/messages/index.ts
+[23:14:51] EDIT: stories/dungeo/src/index.ts
+[23:15:40] EDIT: packages/core/src/events/game-events.ts
+[23:15:47] EDIT: packages/engine/src/game-engine.ts
+[23:15:58] EDIT: packages/core/src/events/game-events.d.ts
+[23:26:21] WRITE: docs/context/session-20260125-0515-main.md
+[23:29:59] GIT: git commit -m "$(cat <<'EOF'
+feat: Add buildDate to Story config, simplify versi
+[23:30:55] GIT: git push origin main
+[23:32:32] GIT: git stash && git pull --rebase && git stash pop && git push
+[23:44:49] WRITE: /mnt/c/repotemp/sharpee-dslm/patterns/README.md

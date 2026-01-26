@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/platform-browser-en-us",
-  "version": "1.0.0-beta.20260125.0258",
+  "version": "1.0.0-beta",
   "description": "Browser platform for Sharpee IF engine with English language support",
   "main": "dist/index.js",
   "type": "module",

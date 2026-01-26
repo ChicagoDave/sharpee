@@ -1,0 +1,52 @@
+.welcome-screen {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--base);
+}
+
+.welcome-content {
+  text-align: center;
+  max-width: 400px;
+}
+
+.welcome-content h1 {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+.welcome-subtitle {
+  color: var(--subtext0);
+  margin-bottom: 32px;
+}
+
+.open-button {
+  padding: 12px 32px;
+  font-size: 16px;
+}
+
+.welcome-hint {
+  margin-top: 24px;
+  font-size: 13px;
+  color: var(--overlay1);
+}
+
+.welcome-hint code {
+  background: var(--surface0);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.welcome-error {
+  margin-top: 24px;
+  padding: 12px 16px;
+  background: rgba(243, 139, 168, 0.15);
+  border: 1px solid var(--red);
+  border-radius: 6px;
+  color: var(--red);
+  text-align: left;
+}

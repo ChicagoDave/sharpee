@@ -1,0 +1,144 @@
+.room-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+
+.room-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.room-list-count {
+  font-size: 13px;
+  color: var(--subtext0);
+  font-weight: 500;
+}
+
+.room-search {
+  flex: 1;
+  max-width: 120px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.room-list-hint {
+  font-size: 12px;
+  color: var(--overlay1);
+  font-style: italic;
+  padding: 8px;
+  background: var(--surface0);
+  border-radius: 4px;
+}
+
+.room-list-empty {
+  font-size: 13px;
+  color: var(--green);
+  font-style: italic;
+}
+
+.room-list-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.room-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--surface0);
+  border-radius: 4px;
+  opacity: 0.7;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.room-card.assignable {
+  cursor: grab;
+  opacity: 1;
+}
+
+.room-card.assignable:hover {
+  background: var(--surface1);
+}
+
+.room-card.assignable:active {
+  cursor: grabbing;
+}
+
+.room-name {
+  font-size: 12px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.room-exits {
+  font-size: 11px;
+  color: var(--subtext0);
+  flex-shrink: 0;
+  margin-left: 8px;
+  background: var(--surface1);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.room-list-expand {
+  padding: 6px;
+  font-size: 12px;
+  background: transparent;
+  color: var(--blue);
+  border: 1px dashed var(--surface1);
+}
+
+.room-list-expand:hover {
+  background: var(--surface0);
+  border-color: var(--blue);
+}
+
+/* Room tooltip in sidebar */
+.room-tooltip-sidebar {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  margin-bottom: 8px;
+  background: var(--mantle);
+  border: 1px solid var(--surface1);
+  border-radius: 6px;
+  padding: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  z-index: 100;
+}
+
+.room-tooltip-name {
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.room-tooltip-id {
+  font-size: 10px;
+  color: var(--subtext0);
+  font-family: monospace;
+  margin-bottom: 6px;
+}
+
+.room-tooltip-desc {
+  font-size: 11px;
+  color: var(--subtext1);
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+
+.room-tooltip-exits {
+  font-size: 10px;
+  color: var(--overlay1);
+}

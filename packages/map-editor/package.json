@@ -1,0 +1,50 @@
+{
+  "name": "@sharpee/map-editor",
+  "version": "0.1.0",
+  "description": "Visual map region editor for Sharpee stories",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "dev:electron": "tsc -p tsconfig.node.json && concurrently -k \"vite\" \"electron . --dev\"",
+    "build": "tsc && vite build && tsc -p tsconfig.node.json",
+    "build:electron": "npm run build && electron-builder",
+    "preview": "vite preview",
+    "lint": "eslint src electron --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "@xyflow/react": "^12.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "zustand": "^4.4.7"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.18",
+    "@vitejs/plugin-react": "^4.2.1",
+    "concurrently": "^8.2.2",
+    "electron": "^40.0.0",
+    "electron-builder": "^26.4.0",
+    "typescript": "^5.3.3",
+    "vite": "^7.3.1"
+  },
+  "build": {
+    "appId": "com.sharpee.map-editor",
+    "productName": "Sharpee Map Editor",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}

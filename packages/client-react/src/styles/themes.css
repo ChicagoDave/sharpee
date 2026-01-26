@@ -1,0 +1,1024 @@
+/**
+ * Sharpee React Client - Combined Themes
+ *
+ * Supports runtime theme switching via data-theme attribute on html element.
+ * Available themes: classic-light, modern-dark, retro-terminal, paper
+ */
+
+/* Google Fonts - All fonts used across themes */
+@import url('https://fonts.googleapis.com/css2?family=Literata:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+/* ============================================================================
+   Theme Variables - Classic Light (Default)
+   ============================================================================ */
+
+:root,
+[data-theme="classic-light"] {
+  /* Typography */
+  --sharpee-font-transcript: 'Literata', Georgia, 'Times New Roman', serif;
+  --sharpee-font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+  --sharpee-font-input: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+  --sharpee-font-size: 16px;
+  --sharpee-line-height: 1.7;
+
+  /* Colors */
+  --sharpee-bg: #fffef9;
+  --sharpee-bg-secondary: #f5f3eb;
+  --sharpee-text: #3d3d3d;
+  --sharpee-text-muted: #666666;
+  --sharpee-accent: #6b4423;
+  --sharpee-room-title: #5c4033;
+  --sharpee-command: #6b4423;
+  --sharpee-border: #e0d8c8;
+  --sharpee-link: #4a6da7;
+  --sharpee-error: #a94442;
+
+  /* Status bar */
+  --sharpee-status-bg: #8b7355;
+  --sharpee-status-text: #ffffff;
+
+  /* Side panel */
+  --sharpee-panel-bg: #f9f7f2;
+  --sharpee-panel-header: #e8e4db;
+  --sharpee-tab-active: #6b4423;
+  --sharpee-tab-inactive: #999;
+
+  /* Map */
+  --sharpee-map-room: #fff;
+  --sharpee-map-room-current: #fffacd;
+  --sharpee-map-room-border: #8b7355;
+  --sharpee-map-connection: #8b7355;
+
+  /* Spacing */
+  --sharpee-spacing-xs: 4px;
+  --sharpee-spacing-sm: 8px;
+  --sharpee-spacing-md: 16px;
+  --sharpee-spacing-lg: 24px;
+  --sharpee-spacing-xl: 32px;
+
+  /* Layout */
+  --sharpee-max-width: 800px;
+  --sharpee-sidebar-width: 50%;
+  --sharpee-border-radius: 4px;
+}
+
+/* ============================================================================
+   Theme Variables - Modern Dark (Catppuccin Mocha)
+   ============================================================================ */
+
+[data-theme="modern-dark"] {
+  --sharpee-font-transcript: 'Inter', system-ui, -apple-system, sans-serif;
+  --sharpee-font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+  --sharpee-font-input: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+  --sharpee-font-size: 15px;
+  --sharpee-line-height: 1.6;
+
+  --sharpee-bg: #1e1e2e;
+  --sharpee-bg-secondary: #181825;
+  --sharpee-text: #cdd6f4;
+  --sharpee-text-muted: #a6adc8;
+  --sharpee-accent: #89b4fa;
+  --sharpee-room-title: #f5e0dc;
+  --sharpee-command: #89b4fa;
+  --sharpee-border: #313244;
+  --sharpee-link: #89dceb;
+  --sharpee-error: #f38ba8;
+
+  --sharpee-status-bg: #11111b;
+  --sharpee-status-text: #89b4fa;
+
+  --sharpee-panel-bg: #181825;
+  --sharpee-panel-header: #11111b;
+  --sharpee-tab-active: #89b4fa;
+  --sharpee-tab-inactive: #6c7086;
+
+  --sharpee-map-room: #313244;
+  --sharpee-map-room-current: #45475a;
+  --sharpee-map-room-border: #89b4fa;
+  --sharpee-map-connection: #6c7086;
+
+  --sharpee-border-radius: 6px;
+}
+
+/* ============================================================================
+   Theme Variables - Retro Terminal (Green Phosphor)
+   ============================================================================ */
+
+[data-theme="retro-terminal"] {
+  --sharpee-font-transcript: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+  --sharpee-font-ui: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+  --sharpee-font-input: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+  --sharpee-font-size: 14px;
+  --sharpee-line-height: 1.5;
+
+  --sharpee-bg: #0a0a0a;
+  --sharpee-bg-secondary: #0f0f0f;
+  --sharpee-text: #00ff00;
+  --sharpee-text-muted: #00aa00;
+  --sharpee-accent: #00ff00;
+  --sharpee-room-title: #00ff00;
+  --sharpee-command: #ffff00;
+  --sharpee-border: #003300;
+  --sharpee-link: #00ffff;
+  --sharpee-error: #ff0000;
+
+  --sharpee-status-bg: #001100;
+  --sharpee-status-text: #00ff00;
+
+  --sharpee-panel-bg: #050505;
+  --sharpee-panel-header: #001100;
+  --sharpee-tab-active: #00ff00;
+  --sharpee-tab-inactive: #006600;
+
+  --sharpee-map-room: #001100;
+  --sharpee-map-room-current: #003300;
+  --sharpee-map-room-border: #00ff00;
+  --sharpee-map-connection: #00aa00;
+
+  --sharpee-border-radius: 0;
+}
+
+/* ============================================================================
+   Theme Variables - Paper (High Contrast Book Style)
+   ============================================================================ */
+
+[data-theme="paper"] {
+  --sharpee-font-transcript: 'Crimson Text', Georgia, 'Times New Roman', serif;
+  --sharpee-font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+  --sharpee-font-input: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+  --sharpee-font-size: 17px;
+  --sharpee-line-height: 1.7;
+
+  --sharpee-bg: #f5f5f0;
+  --sharpee-bg-secondary: #eaeae5;
+  --sharpee-text: #1a1a1a;
+  --sharpee-text-muted: #555555;
+  --sharpee-accent: #2c2c2c;
+  --sharpee-room-title: #000000;
+  --sharpee-command: #0055aa;
+  --sharpee-border: #cccccc;
+  --sharpee-link: #0055aa;
+  --sharpee-error: #cc0000;
+
+  --sharpee-status-bg: #2c2c2c;
+  --sharpee-status-text: #f5f5f0;
+
+  --sharpee-panel-bg: #f0f0eb;
+  --sharpee-panel-header: #e5e5e0;
+  --sharpee-tab-active: #1a1a1a;
+  --sharpee-tab-inactive: #888888;
+
+  --sharpee-map-room: #ffffff;
+  --sharpee-map-room-current: #ffffcc;
+  --sharpee-map-room-border: #2c2c2c;
+  --sharpee-map-connection: #666666;
+
+  --sharpee-border-radius: 2px;
+}
+
+/* ============================================================================
+   Base Reset and Layout
+   ============================================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: var(--sharpee-font-ui);
+  font-size: var(--sharpee-font-size);
+  line-height: var(--sharpee-line-height);
+  background-color: var(--sharpee-bg);
+  color: var(--sharpee-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Retro terminal CRT effect */
+[data-theme="retro-terminal"] body {
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+}
+
+[data-theme="retro-terminal"] .game-shell {
+  text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+}
+
+/* ============================================================================
+   Menu Bar
+   ============================================================================ */
+
+.menu-bar {
+  display: flex;
+  align-items: center;
+  background-color: var(--sharpee-panel-header);
+  border-bottom: 1px solid var(--sharpee-border);
+  padding: 0 var(--sharpee-spacing-md);
+  height: 32px;
+  font-family: var(--sharpee-font-ui);
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.menu-bar__title {
+  font-weight: 600;
+  color: var(--sharpee-text);
+  margin-right: var(--sharpee-spacing-lg);
+}
+
+.menu-bar__menus {
+  display: flex;
+  gap: 2px;
+}
+
+.menu-bar__menu {
+  position: relative;
+}
+
+.menu-bar__button {
+  background: transparent;
+  border: none;
+  padding: 4px 10px;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--sharpee-text);
+  cursor: pointer;
+  border-radius: var(--sharpee-border-radius);
+}
+
+.menu-bar__button:hover {
+  background-color: var(--sharpee-bg-secondary);
+}
+
+.menu-bar__button--active {
+  background-color: var(--sharpee-accent);
+  color: var(--sharpee-bg);
+}
+
+.menu-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 160px;
+  background-color: var(--sharpee-bg);
+  border: 1px solid var(--sharpee-border);
+  border-radius: var(--sharpee-border-radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 4px 0;
+  z-index: 1000;
+}
+
+.menu-dropdown--submenu {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  margin-left: 2px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  cursor: pointer;
+  color: var(--sharpee-text);
+  gap: 8px;
+}
+
+.menu-item:hover {
+  background-color: var(--sharpee-accent);
+  color: var(--sharpee-bg);
+}
+
+.menu-item--disabled {
+  color: var(--sharpee-text-muted);
+  cursor: default;
+}
+
+.menu-item--disabled:hover {
+  background-color: transparent;
+  color: var(--sharpee-text-muted);
+}
+
+.menu-item--has-submenu {
+  position: relative;
+}
+
+.menu-item--has-submenu .menu-dropdown {
+  display: none;
+}
+
+.menu-item--has-submenu:hover .menu-dropdown {
+  display: block;
+}
+
+.menu-item__check {
+  width: 16px;
+  font-size: 12px;
+}
+
+.menu-item__label {
+  flex: 1;
+}
+
+.menu-item__arrow {
+  font-size: 10px;
+  margin-left: auto;
+}
+
+.menu-separator {
+  height: 1px;
+  background-color: var(--sharpee-border);
+  margin: 4px 8px;
+}
+
+/* Modal styles for About dialog */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal-dialog {
+  background-color: var(--sharpee-bg);
+  border: 1px solid var(--sharpee-border);
+  border-radius: var(--sharpee-border-radius);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  min-width: 300px;
+  max-width: 400px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sharpee-spacing-md);
+  border-bottom: 1px solid var(--sharpee-border);
+}
+
+.modal-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--sharpee-text);
+  margin: 0;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--sharpee-text-muted);
+  padding: 0;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: var(--sharpee-text);
+}
+
+.modal-body {
+  padding: var(--sharpee-spacing-md);
+}
+
+.modal-body p {
+  margin: 0 0 var(--sharpee-spacing-sm) 0;
+  color: var(--sharpee-text);
+}
+
+.modal-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================================================
+   Game Shell Layout
+   ============================================================================ */
+
+.game-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: var(--sharpee-bg);
+  color: var(--sharpee-text);
+}
+
+.game-shell__status {
+  flex-shrink: 0;
+}
+
+.game-shell__content {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.game-shell__main {
+  flex: 0 0 calc(100% - var(--sharpee-sidebar-width));
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.game-shell__main--full {
+  flex: 1;
+}
+
+.game-shell__transcript-container {
+  flex: 1;
+  overflow: hidden;
+}
+
+.game-shell__transcript {
+  height: 100%;
+  overflow-y: auto;
+  padding: var(--sharpee-spacing-lg);
+}
+
+.game-shell__input-container {
+  flex-shrink: 0;
+  padding: var(--sharpee-spacing-sm) var(--sharpee-spacing-lg);
+  border-top: 1px solid var(--sharpee-border);
+  background-color: var(--sharpee-bg-secondary);
+}
+
+.game-shell__sidebar {
+  flex: 0 0 var(--sharpee-sidebar-width);
+  border-left: 1px solid var(--sharpee-border);
+  overflow: hidden;
+  background-color: var(--sharpee-panel-bg);
+}
+
+/* ============================================================================
+   Status Line
+   ============================================================================ */
+
+.status-line {
+  background-color: var(--sharpee-status-bg);
+  color: var(--sharpee-status-text);
+  padding: var(--sharpee-spacing-sm) var(--sharpee-spacing-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--sharpee-font-ui);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.status-line__location {
+  font-weight: 600;
+}
+
+.status-line__stats {
+  display: flex;
+  gap: var(--sharpee-spacing-lg);
+}
+
+/* ============================================================================
+   Transcript
+   ============================================================================ */
+
+.transcript {
+  font-family: var(--sharpee-font-transcript);
+  max-width: var(--sharpee-max-width);
+}
+
+.transcript-entry {
+  margin-bottom: var(--sharpee-spacing-lg);
+}
+
+.transcript-entry:last-child {
+  margin-bottom: 0;
+}
+
+.transcript-command {
+  color: var(--sharpee-command);
+  font-family: var(--sharpee-font-input);
+  font-size: 15px;
+  margin-bottom: var(--sharpee-spacing-sm);
+}
+
+.transcript-prompt {
+  color: var(--sharpee-text-muted);
+}
+
+.transcript-text p {
+  margin: 0 0 var(--sharpee-spacing-md) 0;
+}
+
+.transcript-text p:last-child {
+  margin-bottom: 0;
+}
+
+/* Room titles */
+.transcript-text p:first-child strong,
+.transcript-text p:first-child b {
+  color: var(--sharpee-room-title);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Paper theme special styling */
+[data-theme="paper"] .transcript-text p {
+  text-indent: 1.5em;
+}
+
+[data-theme="paper"] .transcript-text p:first-child {
+  text-indent: 0;
+}
+
+[data-theme="paper"] .transcript-text p:first-child strong,
+[data-theme="paper"] .transcript-text p:first-child b {
+  display: block;
+  margin-bottom: var(--sharpee-spacing-sm);
+  border-bottom: 1px solid var(--sharpee-border);
+  padding-bottom: var(--sharpee-spacing-sm);
+}
+
+/* Retro terminal special styling */
+[data-theme="retro-terminal"] .transcript-command {
+  text-shadow: 0 0 5px rgba(255, 255, 0, 0.5);
+}
+
+[data-theme="retro-terminal"] .transcript-text p:first-child strong,
+[data-theme="retro-terminal"] .transcript-text p:first-child b {
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+/* ============================================================================
+   Command Input
+   ============================================================================ */
+
+.command-input-form {
+  display: flex;
+  align-items: center;
+  gap: var(--sharpee-spacing-sm);
+}
+
+.command-input-prompt {
+  color: var(--sharpee-command);
+  font-family: var(--sharpee-font-input);
+  font-weight: 500;
+}
+
+.command-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--sharpee-text);
+  font-family: var(--sharpee-font-input);
+  font-size: 15px;
+  outline: none;
+  padding: var(--sharpee-spacing-xs) 0;
+}
+
+.command-input::placeholder {
+  color: var(--sharpee-text-muted);
+  opacity: 0.6;
+}
+
+/* Modern dark rounded input */
+[data-theme="modern-dark"] .command-input-form {
+  background: var(--sharpee-bg);
+  border-radius: var(--sharpee-border-radius);
+  padding: var(--sharpee-spacing-sm) var(--sharpee-spacing-md);
+}
+
+/* Retro terminal input glow */
+[data-theme="retro-terminal"] .command-input {
+  color: var(--sharpee-command);
+  text-shadow: 0 0 5px rgba(255, 255, 0, 0.5);
+}
+
+/* ============================================================================
+   Tab Panel
+   ============================================================================ */
+
+.tab-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.tab-panel__header {
+  display: flex;
+  background-color: var(--sharpee-panel-header);
+  border-bottom: 1px solid var(--sharpee-border);
+}
+
+.tab-panel__tab {
+  padding: var(--sharpee-spacing-sm) var(--sharpee-spacing-md);
+  border: none;
+  background: transparent;
+  color: var(--sharpee-tab-inactive);
+  font-family: var(--sharpee-font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.tab-panel__tab:hover {
+  color: var(--sharpee-text);
+}
+
+.tab-panel__tab--active {
+  color: var(--sharpee-tab-active);
+  border-bottom-color: var(--sharpee-tab-active);
+}
+
+.tab-panel__content {
+  flex: 1;
+  overflow: auto;
+  padding: var(--sharpee-spacing-md);
+}
+
+/* ============================================================================
+   Map Panel
+   ============================================================================ */
+
+.map-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.map-panel--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-panel__empty-message {
+  color: var(--sharpee-text-muted);
+  font-style: italic;
+}
+
+.map-panel__controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--sharpee-spacing-sm);
+  background: var(--sharpee-panel-header);
+  border-bottom: 1px solid var(--sharpee-border);
+  flex-shrink: 0;
+}
+
+.map-panel__level-select {
+  display: flex;
+  align-items: center;
+  gap: var(--sharpee-spacing-xs);
+  font-size: 12px;
+}
+
+.map-panel__level-select select {
+  background: var(--sharpee-bg);
+  color: var(--sharpee-text);
+  border: 1px solid var(--sharpee-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+.map-panel__zoom-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.map-panel__zoom-controls button,
+.map-panel__clear {
+  background: var(--sharpee-bg);
+  color: var(--sharpee-text);
+  border: 1px solid var(--sharpee-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.map-panel__zoom-controls button:hover,
+.map-panel__clear:hover {
+  background: var(--sharpee-border);
+}
+
+.map-panel__canvas {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+  background: var(--sharpee-bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-panel__svg {
+  cursor: grab;
+  display: block;
+  flex-shrink: 0;
+}
+
+.map-panel__svg:active {
+  cursor: grabbing;
+}
+
+.map-panel__legend {
+  display: flex;
+  gap: var(--sharpee-spacing-md);
+  padding: var(--sharpee-spacing-sm);
+  font-size: 11px;
+  color: var(--sharpee-text-muted);
+  background: var(--sharpee-panel-header);
+  border-top: 1px solid var(--sharpee-border);
+  flex-shrink: 0;
+}
+
+.map-panel__legend-item--current {
+  color: var(--sharpee-accent);
+}
+
+/* Map SVG Elements */
+.map-room__box {
+  fill: var(--sharpee-map-room);
+  stroke: var(--sharpee-map-room-border);
+  stroke-width: 1.5;
+}
+
+.map-room--current .map-room__box {
+  fill: var(--sharpee-map-room-current);
+  stroke-width: 2;
+}
+
+.map-room__name {
+  font-family: var(--sharpee-font-ui);
+  font-size: 9px;
+  fill: var(--sharpee-text);
+}
+
+.map-room--current .map-room__name {
+  fill: var(--sharpee-room-title);
+  font-weight: 500;
+}
+
+.map-room__level {
+  font-family: var(--sharpee-font-ui);
+  font-size: 8px;
+  fill: var(--sharpee-text-muted);
+}
+
+.map-connection {
+  stroke: var(--sharpee-map-connection);
+  stroke-width: 1.5;
+}
+
+.map-exit-stub line {
+  stroke: var(--sharpee-map-connection);
+  stroke-width: 1;
+  stroke-dasharray: 3, 2;
+}
+
+.map-exit-stub circle {
+  fill: var(--sharpee-map-connection);
+}
+
+/* ============================================================================
+   Notes Panel
+   ============================================================================ */
+
+.notes-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.notes-panel__textarea {
+  flex: 1;
+  width: 100%;
+  border: 1px solid var(--sharpee-border);
+  border-radius: var(--sharpee-border-radius);
+  padding: var(--sharpee-spacing-sm);
+  font-family: var(--sharpee-font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+  resize: none;
+  background-color: var(--sharpee-bg);
+  color: var(--sharpee-text);
+}
+
+.notes-panel__textarea:focus {
+  outline: none;
+  border-color: var(--sharpee-accent);
+}
+
+/* ============================================================================
+   Commentary Panel
+   ============================================================================ */
+
+.commentary-panel {
+  font-family: var(--sharpee-font-ui);
+  font-size: 13px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.commentary-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: var(--sharpee-spacing-sm);
+  background: var(--sharpee-bg-secondary);
+  border-bottom: 1px solid var(--sharpee-border);
+  flex-shrink: 0;
+}
+
+.commentary-filter__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--sharpee-border);
+  border-radius: 16px;
+  background: transparent;
+  color: var(--sharpee-text-muted);
+  font-family: var(--sharpee-font-ui);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.commentary-filter__btn:hover {
+  background: var(--sharpee-border);
+  color: var(--sharpee-text);
+}
+
+.commentary-filter__btn--active {
+  background: var(--sharpee-accent);
+  border-color: var(--sharpee-accent);
+  color: var(--sharpee-bg);
+}
+
+.commentary-status {
+  padding: 4px var(--sharpee-spacing-sm);
+  font-size: 11px;
+  color: var(--sharpee-text-muted);
+  background: var(--sharpee-bg);
+  border-bottom: 1px solid var(--sharpee-border);
+  flex-shrink: 0;
+}
+
+.commentary-log {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sharpee-spacing-sm);
+  min-height: 0;
+}
+
+.commentary-empty {
+  color: var(--sharpee-text-muted);
+  font-style: italic;
+  text-align: center;
+  padding: var(--sharpee-spacing-lg);
+}
+
+.commentary-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sharpee-spacing-sm);
+  padding: var(--sharpee-spacing-sm);
+  margin-bottom: 2px;
+  border-radius: 4px;
+  background: var(--sharpee-bg-secondary);
+}
+
+.commentary-entry:hover {
+  background: var(--sharpee-border);
+}
+
+.commentary-entry__icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  border-radius: 4px;
+  background: var(--sharpee-bg);
+}
+
+.commentary-entry__turn {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--sharpee-text-muted);
+  background: var(--sharpee-bg);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: var(--sharpee-font-input);
+}
+
+.commentary-entry__text {
+  flex: 1;
+  color: var(--sharpee-text);
+  line-height: 1.4;
+}
+
+.commentary-entry__type {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--sharpee-text-muted);
+  margin-bottom: 2px;
+}
+
+/* ============================================================================
+   Progress Panel
+   ============================================================================ */
+
+.progress-panel {
+  font-family: var(--sharpee-font-ui);
+}
+
+.progress-panel__score {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--sharpee-accent);
+  margin-bottom: var(--sharpee-spacing-md);
+}
+
+.progress-panel__stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sharpee-spacing-sm);
+}
+
+.progress-panel__stat {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.progress-panel__stat-label {
+  color: var(--sharpee-text-muted);
+}
+
+.progress-panel__stat-value {
+  font-weight: 500;
+}
+
+/* ============================================================================
+   Scrollbar Styling
+   ============================================================================ */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--sharpee-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--sharpee-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--sharpee-text-muted);
+}
+
+/* ============================================================================
+   Responsive Adjustments
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  :root {
+    --sharpee-sidebar-width: 0;
+  }
+
+  .game-shell__sidebar {
+    display: none;
+  }
+
+  .game-shell__main {
+    flex: 1;
+  }
+}

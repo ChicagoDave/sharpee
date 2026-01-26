@@ -1,0 +1,47 @@
+.sidebar {
+  width: 280px;
+  min-width: 280px;
+  background: var(--mantle);
+  border-right: 1px solid var(--surface0);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-section {
+  padding: 16px;
+  border-bottom: 1px solid var(--surface0);
+}
+
+.sidebar-section-grow {
+  flex: 1;
+  overflow-y: auto;
+  border-bottom: none;
+}
+
+.sidebar-heading {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--subtext0);
+  margin-bottom: 12px;
+}
+
+.new-region-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.new-region-form input {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.new-region-form button {
+  padding: 6px 12px;
+  font-size: 16px;
+  font-weight: bold;
+}
