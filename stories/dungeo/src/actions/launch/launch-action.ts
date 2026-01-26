@@ -17,6 +17,7 @@ import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import { VehicleTrait, TraitType, RoomTrait, Direction } from '@sharpee/world-model';
 import { LAUNCH_ACTION_ID, LaunchMessages } from './types';
+import { RiverNavigationTrait, InflatableTrait } from '../../traits';
 
 /**
  * Check if player is in an inflated boat
@@ -57,14 +58,15 @@ function getLaunchDestination(context: ActionContext): string | null {
   const containingRoom = world.getContainingRoom(player.id);
   if (!containingRoom) return null;
 
-  // Check if this room is a launch point
-  if (!(containingRoom as any).canLaunchBoat) {
+  // Check if this room is a launch point via RiverNavigationTrait
+  const riverNav = containingRoom.get(RiverNavigationTrait);
+  if (!riverNav?.canLaunchBoat) {
     return null;
   }
 
   // Check for explicit launch destination (Dam Base)
-  if ((containingRoom as any).launchDestination) {
-    return (containingRoom as any).launchDestination;
+  if (riverNav.launchDestination) {
+    return riverNav.launchDestination;
   }
 
   // Otherwise, look for an exit to a water room (E or W)
@@ -76,7 +78,8 @@ function getLaunchDestination(context: ActionContext): string | null {
     const exit = roomTrait.exits[dir];
     if (exit?.destination) {
       const destRoom = world.getEntity(exit.destination);
-      if (destRoom && (destRoom as any).isWaterRoom) {
+      const destRiverNav = destRoom?.get(RiverNavigationTrait);
+      if (destRoom && destRiverNav?.isWaterRoom) {
         return exit.destination;
       }
     }
@@ -101,17 +104,19 @@ export const launchAction: Action = {
       };
     }
 
-    // Check if boat is inflated
-    if (!(boat as any).isInflated) {
+    // Check if boat is inflated via InflatableTrait
+    const inflatable = boat.get(InflatableTrait);
+    if (!inflatable?.isInflated) {
       return {
         valid: false,
         error: LaunchMessages.BOAT_NOT_INFLATED
       };
     }
 
-    // Check if already on river (water room)
+    // Check if already on river (water room) via RiverNavigationTrait
     const containingRoom = world.getContainingRoom(player.id);
-    if (containingRoom && (containingRoom as any).isWaterRoom) {
+    const riverNav = containingRoom?.get(RiverNavigationTrait);
+    if (containingRoom && riverNav?.isWaterRoom) {
       return {
         valid: false,
         error: LaunchMessages.ALREADY_ON_RIVER

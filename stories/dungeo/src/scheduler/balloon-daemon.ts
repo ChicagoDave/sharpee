@@ -29,6 +29,7 @@ import {
   isMidairPosition,
   isLedgePosition
 } from '../regions/volcano';
+import { BurnableTrait } from '../traits';
 
 // Daemon ID
 const BALLOON_DAEMON_ID = 'dungeo.balloon.movement';
@@ -54,9 +55,9 @@ function hasHeatSource(world: WorldModel): boolean {
   const openable = receptacle.get(OpenableTrait);
   if (!openable?.isOpen) return false;
 
-  // Check for burning objects inside
+  // Check for burning objects inside via BurnableTrait
   const contents = world.getContents(receptacleEntityId);
-  return contents.some(item => (item as any).isBurning === true);
+  return contents.some(item => item.get(BurnableTrait)?.isBurning === true);
 }
 
 /**

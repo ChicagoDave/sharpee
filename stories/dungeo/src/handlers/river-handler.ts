@@ -12,6 +12,7 @@ import { WorldModel, IParsedCommand, VehicleTrait, TraitType, RoomTrait, Directi
 import { ParsedCommandTransformer, GameEngine } from '@sharpee/engine';
 import { ISemanticEvent } from '@sharpee/core';
 import { RIVER_BLOCKED_ACTION_ID } from '../actions/river-blocked/types';
+import { RiverNavigationTrait } from '../traits';
 
 // Set of water room IDs
 let waterRoomIds: Set<string> = new Set();
@@ -90,8 +91,9 @@ function isPlayerOnRainbow(world: WorldModel): boolean {
   const containingRoom = world.getContainingRoom(player.id);
   if (!containingRoom) return false;
 
-  // Rainbow rooms have special marker
-  return (containingRoom as any).isRainbowRoom === true;
+  // Check RiverNavigationTrait for rainbow room marker
+  const riverNav = containingRoom.get(RiverNavigationTrait);
+  return riverNav?.isRainbowRoom === true;
 }
 
 /**
@@ -113,9 +115,10 @@ export function createRiverEntryTransformer(): ParsedCommandTransformer {
     const destination = getDestinationRoom(world, direction);
     if (!destination) return parsed;
 
-    // Check if destination is a water room
+    // Check if destination is a water room via RiverNavigationTrait
     const destRoom = world.getEntity(destination);
-    if (!destRoom || !(destRoom as any).isWaterRoom) {
+    const riverNav = destRoom?.get(RiverNavigationTrait);
+    if (!destRoom || !riverNav?.isWaterRoom) {
       return parsed;
     }
 

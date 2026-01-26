@@ -12,6 +12,7 @@ import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity } from '@sharpee/world-model';
 import { LIGHT_ACTION_ID, LightMessages } from './types';
+import { BurnableTrait } from '../../traits';
 
 // Objects that can be set on fire
 const FLAMMABLE_NAMES = ['guidebook', 'book', 'newspaper', 'leaves', 'paper', 'coal'];
@@ -115,13 +116,14 @@ export const lightAction: Action = {
       return { valid: false, error: LightMessages.NOT_FLAMMABLE };
     }
 
-    // Check if already burning
-    if ((target as any).isBurning) {
+    // Check if already burning (via BurnableTrait or name-based flammable)
+    const burnable = target.get(BurnableTrait);
+    if (burnable?.isBurning) {
       return { valid: false, error: LightMessages.ALREADY_BURNING };
     }
 
-    // Check if flammable
-    if (!isFlammable(target)) {
+    // Check if flammable (has BurnableTrait or matches flammable names)
+    if (!burnable && !isFlammable(target)) {
       return { valid: false, error: LightMessages.NOT_FLAMMABLE };
     }
 
@@ -148,13 +150,27 @@ export const lightAction: Action = {
 
     if (!target) return;
 
+    // Get or create BurnableTrait
+    let burnable = target.get(BurnableTrait);
+    if (!burnable) {
+      // Add BurnableTrait dynamically for name-matched flammables
+      const identity = target.get(IdentityTrait);
+      const size = identity?.weight ?? 2; // Use weight as size proxy, default 2
+      target.add(new BurnableTrait({
+        burnableType: 'flammable',
+        isBurning: false,
+        burnedOut: false,
+        size: size
+      }));
+      burnable = target.get(BurnableTrait)!;
+    }
+
     // Set the object on fire
-    (target as any).isBurning = true;
+    burnable.isBurning = true;
 
     // Calculate burn duration based on object size
     // FORTRAN: OSIZE(object) * 20 turns
-    const size = (target as any).size || 2; // Default size 2 (guidebook)
-    (target as any).burnTurnsRemaining = size * 20;
+    burnable.burnTurnsRemaining = burnable.size * 20;
 
     // Store success for report
     context.sharedData.lightSuccess = true;

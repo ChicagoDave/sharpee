@@ -70,3 +70,17 @@ export {
   InflatableTraitConfig,
   InflatableTraitConstructor
 } from './inflatable-trait';
+
+// Burnable (incense, candles, guidebook, etc.)
+export {
+  BurnableTrait,
+  BurnableTraitConfig,
+  BurnableTraitConstructor
+} from './burnable-trait';
+
+// River Navigation (water rooms, launch points, rainbow)
+export {
+  RiverNavigationTrait,
+  RiverNavigationTraitConfig,
+  RiverNavigationTraitConstructor
+} from './river-navigation-trait';

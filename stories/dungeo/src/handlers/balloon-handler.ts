@@ -8,7 +8,7 @@
  */
 
 import { WorldModel, IWorldModel, IdentityTrait, OpenableTrait, ContainerTrait, VehicleTrait, IParsedCommand } from '@sharpee/world-model';
-import { InflatableTrait } from '../traits';
+import { InflatableTrait, BurnableTrait } from '../traits';
 import { ISemanticEvent } from '@sharpee/core';
 import { ISchedulerService, Daemon, Fuse, SchedulerContext, GameEngine } from '@sharpee/engine';
 import { DungeoSchedulerMessages } from '../scheduler/scheduler-messages';
@@ -112,8 +112,9 @@ export function registerBalloonPutHandler(
     const item = world.getEntity(itemId);
     if (!item) return [];
 
-    // Check if item is burning
-    const isBurning = (item as any).isBurning === true;
+    // Check if item is burning via BurnableTrait
+    const burnable = item.get(BurnableTrait);
+    const isBurning = burnable?.isBurning === true;
 
     // Get balloon state
     const balloonState = getBalloonState(world);
@@ -156,7 +157,7 @@ export function registerBalloonPutHandler(
       const receptacle = world.getEntity(receptacleEntityId!);
       if (receptacle) {
         const contents = world.getContents(receptacleEntityId!);
-        const stillHasBurning = contents.some(e => (e as any).isBurning === true);
+        const stillHasBurning = contents.some(e => e.get(BurnableTrait)?.isBurning === true);
 
         if (!stillHasBurning) {
           world.setStateValue(BALLOON_INFLATED_KEY, false);
@@ -195,21 +196,21 @@ function createBurnDaemon(): Daemon {
       const allEntities = world.getAllEntities();
 
       for (const entity of allEntities) {
-        const isBurning = (entity as any).isBurning === true;
-        if (!isBurning) continue;
+        const burnable = entity.get(BurnableTrait);
+        if (!burnable?.isBurning) continue;
 
-        const burnTurnsRemaining = (entity as any).burnTurnsRemaining;
-        if (typeof burnTurnsRemaining !== 'number') continue;
+        const burnTurnsRemaining = burnable.burnTurnsRemaining;
+        if (typeof burnTurnsRemaining !== 'number' || burnTurnsRemaining <= 0) continue;
 
         // Decrement burn time
         const newBurnTime = burnTurnsRemaining - 1;
-        (entity as any).burnTurnsRemaining = newBurnTime;
+        burnable.burnTurnsRemaining = newBurnTime;
 
         if (newBurnTime <= 0) {
           // Object has burned out
-          (entity as any).isBurning = false;
-          (entity as any).burnTurnsRemaining = 0;
-          (entity as any).isBurnedOut = true;
+          burnable.isBurning = false;
+          burnable.burnTurnsRemaining = 0;
+          burnable.burnedOut = true;
 
           // Check if this was in the receptacle
           const location = world.getLocation(entity.id);

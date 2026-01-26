@@ -12,6 +12,7 @@ import { ISemanticEvent, EntityId } from '@sharpee/core';
 import { WorldModel, IdentityTrait } from '@sharpee/world-model';
 import { ISchedulerService, Fuse, SchedulerContext } from '@sharpee/engine';
 import { DungeoSchedulerMessages } from './scheduler-messages';
+import { BurnableTrait } from '../traits';
 
 // Fuse ID
 const INCENSE_BURN_FUSE = 'dungeo.incense.burn';
@@ -33,7 +34,9 @@ function createIncenseBurnFuse(incenseId: EntityId, basinRoomId: EntityId): Fuse
     // Always tick when incense is burning (no pause mechanism)
     tickCondition: (ctx: SchedulerContext): boolean => {
       const incense = ctx.world.getEntity(incenseId);
-      return (incense as any)?.isBurning === true;
+      if (!incense) return false;
+      const burnable = incense.get(BurnableTrait);
+      return burnable?.isBurning === true;
     },
 
     // When incense burns out
@@ -41,9 +44,12 @@ function createIncenseBurnFuse(incenseId: EntityId, basinRoomId: EntityId): Fuse
       const incense = ctx.world.getEntity(incenseId);
       if (!incense) return [];
 
-      // Mark incense as burned out
-      (incense as any).isBurning = false;
-      (incense as any).burnedOut = true;
+      // Mark incense as burned out via BurnableTrait
+      const burnable = incense.get(BurnableTrait);
+      if (burnable) {
+        burnable.isBurning = false;
+        burnable.burnedOut = true;
+      }
 
       // Update description
       const identity = incense.get(IdentityTrait);
@@ -86,8 +92,11 @@ export function registerIncenseFuse(
   scheduler: ISchedulerService,
   world: WorldModel
 ): void {
-  // Find the incense entity
-  const incense = world.getAllEntities().find(e => (e as any).isIncense === true);
+  // Find the incense entity by BurnableTrait with type 'incense'
+  const incense = world.getAllEntities().find(e => {
+    const burnable = e.get(BurnableTrait);
+    return burnable?.burnableType === 'incense';
+  });
   if (!incense) {
     console.warn('Incense not found - incense fuse not registered');
     return;

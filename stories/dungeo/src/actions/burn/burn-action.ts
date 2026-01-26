@@ -11,26 +11,30 @@ import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity } from '@sharpee/world-model';
 import { BURN_ACTION_ID, BurnMessages } from './types';
+import { BurnableTrait } from '../../traits';
 
 /**
- * Check if an entity is incense
+ * Check if an entity is incense (has BurnableTrait with burnableType 'incense')
  */
 function isIncense(entity: IFEntity): boolean {
-  return (entity as any).isIncense === true;
+  const burnable = entity.get(BurnableTrait);
+  return burnable?.burnableType === 'incense';
 }
 
 /**
- * Check if incense is already burning
+ * Check if entity is already burning
  */
 function isBurning(entity: IFEntity): boolean {
-  return (entity as any).isBurning === true;
+  const burnable = entity.get(BurnableTrait);
+  return burnable?.isBurning === true;
 }
 
 /**
- * Check if incense is burned out
+ * Check if entity is burned out
  */
 function isBurnedOut(entity: IFEntity): boolean {
-  return (entity as any).burnedOut === true;
+  const burnable = entity.get(BurnableTrait);
+  return burnable?.burnedOut === true;
 }
 
 /**
@@ -169,9 +173,12 @@ export const burnAction: Action = {
       return;
     }
 
-    // Set incense to burning state
+    // Set incense to burning state via BurnableTrait
     // The fuse will be registered separately
-    (target as any).isBurning = true;
+    const burnable = target.get(BurnableTrait);
+    if (burnable) {
+      burnable.isBurning = true;
+    }
 
     // Store incense ID for the fuse registration
     world.setStateValue('dungeo.incense.burning_id', target.id);

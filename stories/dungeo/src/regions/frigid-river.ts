@@ -25,7 +25,7 @@ import {
   OpenableTrait,
   AuthorModel
 } from '@sharpee/world-model';
-import { TreasureTrait } from '../traits';
+import { TreasureTrait, RiverNavigationTrait } from '../traits';
 
 export interface FrigidRiverRoomIds {
   frigidRiver1: string;
@@ -73,8 +73,10 @@ export function createFrigidRiverRegion(world: WorldModel): FrigidRiverRoomIds {
     properName: true,
     article: 'the'
   }));
-  (frigidRiver1 as any).isWaterRoom = true;
-  (frigidRiver1 as any).riverPosition = 1;
+  frigidRiver1.add(new RiverNavigationTrait({
+    isWaterRoom: true,
+    riverPosition: 1
+  }));
 
   // FR2: No landings - rocks and cliffs
   const frigidRiver2 = world.createEntity('Frigid River-2', EntityType.ROOM);
@@ -86,8 +88,10 @@ export function createFrigidRiverRegion(world: WorldModel): FrigidRiverRoomIds {
     properName: true,
     article: 'the'
   }));
-  (frigidRiver2 as any).isWaterRoom = true;
-  (frigidRiver2 as any).riverPosition = 2;
+  frigidRiver2.add(new RiverNavigationTrait({
+    isWaterRoom: true,
+    riverPosition: 2
+  }));
 
   // FR3: Landings E (White Cliffs Beach 1) and W (Rocky Shore)
   const frigidRiver3 = world.createEntity('Frigid River-3', EntityType.ROOM);
@@ -99,8 +103,10 @@ export function createFrigidRiverRegion(world: WorldModel): FrigidRiverRoomIds {
     properName: true,
     article: 'the'
   }));
-  (frigidRiver3 as any).isWaterRoom = true;
-  (frigidRiver3 as any).riverPosition = 3;
+  frigidRiver3.add(new RiverNavigationTrait({
+    isWaterRoom: true,
+    riverPosition: 3
+  }));
 
   // FR4: Landings E (White Cliffs Beach 2) and W (Sandy Beach) - buoy here
   const frigidRiver4 = world.createEntity('Frigid River-4', EntityType.ROOM);
@@ -112,8 +118,10 @@ export function createFrigidRiverRegion(world: WorldModel): FrigidRiverRoomIds {
     properName: true,
     article: 'the'
   }));
-  (frigidRiver4 as any).isWaterRoom = true;
-  (frigidRiver4 as any).riverPosition = 4;
+  frigidRiver4.add(new RiverNavigationTrait({
+    isWaterRoom: true,
+    riverPosition: 4
+  }));
 
   // FR5: Landing W only (Shore) - death if continue downstream
   const frigidRiver5 = world.createEntity('Frigid River-5', EntityType.ROOM);
@@ -125,16 +133,18 @@ export function createFrigidRiverRegion(world: WorldModel): FrigidRiverRoomIds {
     properName: true,
     article: 'the'
   }));
-  (frigidRiver5 as any).isWaterRoom = true;
-  (frigidRiver5 as any).riverPosition = 5;
-  (frigidRiver5 as any).isLastBeforeFalls = true;
+  frigidRiver5.add(new RiverNavigationTrait({
+    isWaterRoom: true,
+    riverPosition: 5
+    // Note: isLastBeforeFalls was tracked but never read - removed
+  }));
 
   // === Create Shore/Beach Rooms ===
 
   // Rocky Shore - west of FR3, has Small Cave NW
   const rockyShore = createRoom(world, 'Rocky Shore',
     'This is the west shore of the river. An entrance to a cave is to the northwest. The shore is very rocky here.');
-  (rockyShore as any).canLaunchBoat = true;
+  rockyShore.add(new RiverNavigationTrait({ canLaunchBoat: true }));
 
   // Small Cave - NW of Rocky Shore, has shovel and guano
   const smallCave = createRoom(world, 'Small Cave',
@@ -144,7 +154,7 @@ export function createFrigidRiverRegion(world: WorldModel): FrigidRiverRoomIds {
   // White Cliffs Beach 1 - east of FR3, narrow beach below cliffs
   const whiteCliffsBeach1 = createRoom(world, 'White Cliffs Beach',
     'This is a rocky, narrow strip of beach beside the cliffs. A narrow path leads north along the shore.');
-  (whiteCliffsBeach1 as any).canLaunchBoat = true;
+  whiteCliffsBeach1.add(new RiverNavigationTrait({ canLaunchBoat: true }));
 
   // White Cliffs Beach 2 - east of FR4, north of WCB1
   const whiteCliffsBeach2 = world.createEntity('White Cliffs Beach-2', EntityType.ROOM);
@@ -156,17 +166,17 @@ export function createFrigidRiverRegion(world: WorldModel): FrigidRiverRoomIds {
     properName: true,
     article: ''
   }));
-  (whiteCliffsBeach2 as any).canLaunchBoat = true;
+  whiteCliffsBeach2.add(new RiverNavigationTrait({ canLaunchBoat: true }));
 
   // Sandy Beach - west of FR4
   const sandyBeach = createRoom(world, 'Sandy Beach',
     'This is a large sandy beach at the shore of the river, which is flowing quickly by. A path runs beside the river to the south here.');
-  (sandyBeach as any).canLaunchBoat = true;
+  sandyBeach.add(new RiverNavigationTrait({ canLaunchBoat: true }));
 
   // Shore - west of FR5, between Sandy Beach and Aragain Falls
   const shore = createRoom(world, 'Shore',
     'This is the shore of the river. The river here seems somewhat treacherous. A path travels from north to south here, the south end quickly turning around a sharp corner.');
-  (shore as any).canLaunchBoat = true;
+  shore.add(new RiverNavigationTrait({ canLaunchBoat: true }));
 
   // Aragain Falls - south of Shore, rainbow puzzle
   const aragainFalls = world.createEntity('Aragain Falls', EntityType.ROOM);
@@ -196,11 +206,11 @@ export function createFrigidRiverRegion(world: WorldModel): FrigidRiverRoomIds {
     properName: true,
     article: ''
   }));
-  (onTheRainbow as any).isRainbowRoom = true;
+  onTheRainbow.add(new RiverNavigationTrait({ isRainbowRoom: true }));
 
   const endOfRainbow = createRoom(world, 'End of Rainbow',
     'You are on a small, rocky beach on the continuation of the Frigid River past the falls. The beach is narrow due to the presence of the White Cliffs. The river canyon opens here, and sunlight shines in from above. A rainbow crosses over the falls to the west, and a narrow path continues to the southeast.');
-  (endOfRainbow as any).isRainbowRoom = true;
+  endOfRainbow.add(new RiverNavigationTrait({ isRainbowRoom: true }));
 
   // === Set up connections ===
 
@@ -296,9 +306,11 @@ export function connectFrigidRiverToDam(
 ): void {
   const damBase = world.getEntity(damBaseId);
   if (damBase) {
-    // Mark Dam Base as a launch point
-    (damBase as any).canLaunchBoat = true;
-    (damBase as any).launchDestination = frigidRiverIds.frigidRiver1;
+    // Mark Dam Base as a launch point with explicit destination
+    damBase.add(new RiverNavigationTrait({
+      canLaunchBoat: true,
+      launchDestination: frigidRiverIds.frigidRiver1
+    }));
   }
 }
 

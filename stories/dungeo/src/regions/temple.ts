@@ -21,7 +21,7 @@ import {
   LightSourceTrait,
   SwitchableTrait
 } from '@sharpee/world-model';
-import { TreasureTrait } from '../traits';
+import { TreasureTrait, BurnableTrait } from '../traits';
 
 export interface TempleRoomIds {
   temple: string;
@@ -299,6 +299,12 @@ Only then shall the gates of Hades be opened to the living."`
     fuelConsumptionRate: 1
   }));
   candles.add(new SwitchableTrait({ isOn: false }));
+  // Burnable trait for candles - burns via fuse (50 turns total)
+  candles.add(new BurnableTrait({
+    burnableType: 'candle',
+    isBurning: false,
+    burnedOut: false
+  }));
   (candles as any).isExorcismItem = true;
   (candles as any).exorcismRole = 'candles';
   world.moveEntity(candles.id, roomId);

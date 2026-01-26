@@ -14,6 +14,7 @@ import { ISemanticEvent, EntityId } from '@sharpee/core';
 import { WorldModel, LightSourceTrait, SwitchableTrait, IdentityTrait } from '@sharpee/world-model';
 import { ISchedulerService, Fuse, SchedulerContext } from '@sharpee/engine';
 import { DungeoSchedulerMessages } from './scheduler-messages';
+import { BurnableTrait } from '../traits';
 
 // Fuse IDs
 const CANDLE_BURN_FUSE = 'dungeo.candles.burn';
@@ -69,8 +70,12 @@ function createCandleBurnFuse(candleId: EntityId): Fuse {
         identity.name = 'burned-out candles';
       }
 
-      // Mark as no longer lightable
-      (candles as any).burnedOut = true;
+      // Mark as no longer lightable via BurnableTrait
+      const burnable = candles.get(BurnableTrait);
+      if (burnable) {
+        burnable.burnedOut = true;
+        burnable.isBurning = false;
+      }
 
       return [{
         id: `candles-out-${ctx.turn}`,
@@ -193,9 +198,10 @@ export function registerCandleFuse(
     const targetId = data?.target as string | undefined;
 
     if (targetId === candleId) {
-      // Check if candles are burned out
+      // Check if candles are burned out via BurnableTrait
       const candleEntity = w.getEntity(candleId);
-      if ((candleEntity as any)?.burnedOut) {
+      const burnable = candleEntity?.get(BurnableTrait);
+      if (burnable?.burnedOut) {
         // Cannot light burned out candles - this should be handled by the action
         return;
       }

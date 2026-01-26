@@ -14,7 +14,7 @@ import {
   IdentityTrait,
   EntityType
 } from '@sharpee/world-model';
-import { TreasureTrait } from '../traits';
+import { TreasureTrait, BurnableTrait } from '../traits';
 
 /**
  * Create the empty picture frame
@@ -80,10 +80,12 @@ export function createIncense(world: WorldModel): IFEntity {
     weight: 5
   }));
 
-  // State for burning
-  (incense as any).isIncense = true;
-  (incense as any).isBurning = false;
-  (incense as any).burnedOut = false;
+  // Burnable trait for incense - burns for 3 turns via fuse
+  incense.add(new BurnableTrait({
+    burnableType: 'incense',
+    isBurning: false,
+    burnedOut: false
+  }));
 
   return incense;
 }
