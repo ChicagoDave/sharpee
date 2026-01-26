@@ -25,6 +25,7 @@ import {
   LockableTrait,
   AuthorModel
 } from '@sharpee/world-model';
+import { TreasureTrait } from '../traits';
 
 export interface BankRoomIds {
   eastOfChasm: string;
@@ -250,10 +251,11 @@ function createPortrait(world: WorldModel, roomId: string): IFEntity {
     article: 'a',
     weight: 20
   }));
-  (portrait as any).isTreasure = true;
-  (portrait as any).treasureId = 'portrait';
-  (portrait as any).treasureValue = 10;    // OFVAL from mdlzork_810722
-  (portrait as any).trophyCaseValue = 5;   // OTVAL from mdlzork_810722
+  portrait.add(new TreasureTrait({
+    treasureId: 'portrait',
+    treasureValue: 10,    // OFVAL from mdlzork_810722
+    trophyCaseValue: 5    // OTVAL from mdlzork_810722
+  }));
   world.moveEntity(portrait.id, roomId);
   return portrait;
 }
@@ -268,10 +270,11 @@ function createZorkmidBills(world: WorldModel, roomId: string): IFEntity {
     article: 'a',
     weight: 20
   }));
-  (bills as any).isTreasure = true;
-  (bills as any).treasureId = 'zorkmid-bills';
-  (bills as any).treasureValue = 10;       // OFVAL from mdlzork_810722
-  (bills as any).trophyCaseValue = 15;     // OTVAL from mdlzork_810722
+  bills.add(new TreasureTrait({
+    treasureId: 'zorkmid-bills',
+    treasureValue: 10,       // OFVAL from mdlzork_810722
+    trophyCaseValue: 15      // OTVAL from mdlzork_810722
+  }));
   world.moveEntity(bills.id, roomId);
   return bills;
 }
@@ -286,10 +289,11 @@ function createZorkmidCoin(world: WorldModel, roomId: string): IFEntity {
     article: 'a',
     weight: 5
   }));
-  (coin as any).isTreasure = true;
-  (coin as any).treasureId = 'zorkmid-coin';
-  (coin as any).treasureValue = 10;        // OFVAL from mdlzork_810722
-  (coin as any).trophyCaseValue = 12;      // OTVAL from mdlzork_810722
+  coin.add(new TreasureTrait({
+    treasureId: 'zorkmid-coin',
+    treasureValue: 10,        // OFVAL from mdlzork_810722
+    trophyCaseValue: 12       // OTVAL from mdlzork_810722
+  }));
   world.moveEntity(coin.id, roomId);
   return coin;
 }
@@ -324,10 +328,11 @@ function createSafe(world: WorldModel, roomId: string): IFEntity {
     article: 'a',
     weight: 10
   }));
-  (crown as any).isTreasure = true;
-  (crown as any).treasureId = 'crown';
-  (crown as any).treasureValue = 15;       // OFVAL from mdlzork_810722
-  (crown as any).trophyCaseValue = 10;     // OTVAL from mdlzork_810722
+  crown.add(new TreasureTrait({
+    treasureId: 'crown',
+    treasureValue: 15,       // OFVAL from mdlzork_810722
+    trophyCaseValue: 10      // OTVAL from mdlzork_810722
+  }));
 
   // Use AuthorModel to place crown in closed safe (bypasses validation)
   const author = new AuthorModel(world.getDataStore(), world);

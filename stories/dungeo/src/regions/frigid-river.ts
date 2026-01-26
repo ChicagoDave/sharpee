@@ -25,6 +25,7 @@ import {
   OpenableTrait,
   AuthorModel
 } from '@sharpee/world-model';
+import { TreasureTrait } from '../traits';
 
 export interface FrigidRiverRoomIds {
   frigidRiver1: string;
@@ -374,10 +375,11 @@ function createPotOfGold(world: WorldModel, roomId: string): IFEntity {
     article: 'a',
     weight: 5
   }));
-  (pot as any).isTreasure = true;
-  (pot as any).treasureId = 'pot-of-gold';
-  (pot as any).treasureValue = 10;
-  (pot as any).trophyCaseValue = 10;
+  pot.add(new TreasureTrait({
+    treasureId: 'pot-of-gold',
+    treasureValue: 10,     // OFVAL from mdlzork_810722
+    trophyCaseValue: 10,   // OTVAL from mdlzork_810722
+  }));
   world.moveEntity(pot.id, roomId);
   return pot;
 }
@@ -407,10 +409,11 @@ function createBuoy(world: WorldModel, roomId: string): IFEntity {
     article: 'a',
     weight: 5
   }));
-  (emerald as any).isTreasure = true;
-  (emerald as any).treasureId = 'buoy-emerald';
-  (emerald as any).treasureValue = 5;      // OFVAL from mdlzork_810722
-  (emerald as any).trophyCaseValue = 10;   // OTVAL from mdlzork_810722
+  emerald.add(new TreasureTrait({
+    treasureId: 'buoy-emerald',
+    treasureValue: 5,      // OFVAL from mdlzork_810722
+    trophyCaseValue: 10,   // OTVAL from mdlzork_810722
+  }));
 
   // Use AuthorModel to place emerald in closed buoy (bypasses validation)
   const author = new AuthorModel(world.getDataStore(), world);
@@ -431,10 +434,11 @@ function createStatue(world: WorldModel, roomId: string): IFEntity {
     article: 'a',
     weight: 2
   }));
-  (statue as any).isTreasure = true;
-  (statue as any).treasureId = 'statue';
-  (statue as any).treasureValue = 10;      // OFVAL from mdlzork_810722
-  (statue as any).trophyCaseValue = 13;    // OTVAL from mdlzork_810722
+  statue.add(new TreasureTrait({
+    treasureId: 'statue',
+    treasureValue: 10,     // OFVAL from mdlzork_810722
+    trophyCaseValue: 13,   // OTVAL from mdlzork_810722
+  }));
   (statue as any).isBuried = true;
   (statue as any).isVisible = false;
   world.setStateValue('dungeo.statue.locationId', roomId);

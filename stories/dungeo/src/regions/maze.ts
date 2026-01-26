@@ -24,6 +24,7 @@ import {
 } from '@sharpee/world-model';
 
 import { createIncense } from '../objects/thiefs-canvas-objects';
+import { TreasureTrait } from '../traits';
 
 export interface MazeRoomIds {
   gratingRoom: string;
@@ -575,10 +576,11 @@ function createMaze5Objects(world: WorldModel, roomId: string): void {
   }));
   bag.add(new ContainerTrait({ capacity: { maxItems: 10 } }));
   // Mark as treasure
-  (bag as any).isTreasure = true;
-  (bag as any).treasureId = 'bag-of-coins';
-  (bag as any).treasureValue = 10;        // OFVAL from mdlzork_810722
-  (bag as any).trophyCaseValue = 5;       // OTVAL from mdlzork_810722
+  bag.add(new TreasureTrait({
+    treasureId: 'bag-of-coins',
+    treasureValue: 10,     // OFVAL from mdlzork_810722
+    trophyCaseValue: 5,    // OTVAL from mdlzork_810722
+  }));
   world.moveEntity(bag.id, roomId);
 
   // Skeleton key (tool for unlocking grating) - KEYS in MDL

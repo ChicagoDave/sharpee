@@ -213,8 +213,7 @@ function createStilettoForThief(world: WorldModel, thiefId: string): IFEntity {
     weaponType: 'piercing'
   }));
 
-  // Mark as not a treasure (thief won't try to "steal" his own weapon)
-  (stiletto as any).isTreasure = false;
+  // Not a treasure (no TreasureTrait) - thief won't try to "steal" his own weapon
 
   // Place in thief's inventory
   world.moveEntity(stiletto.id, thiefId);

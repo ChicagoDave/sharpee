@@ -10,6 +10,7 @@ import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity, EntityType } from '@sharpee/world-model';
 import { WIND_ACTION_ID, WindMessages } from './types';
+import { TreasureTrait } from '../../traits';
 
 // Room patterns that count as "forest"
 const FOREST_PATTERNS = ['forest', 'clearing', 'path'];
@@ -154,10 +155,11 @@ export const windAction: Action = {
           article: 'a'
         }));
         // Treasure scoring (1 take + 1 case = 2 points)
-        (bauble as any).isTreasure = true;
-        (bauble as any).treasureId = 'brass-bauble';
-        (bauble as any).treasureValue = 1;
-        (bauble as any).trophyCaseValue = 1;
+        bauble.add(new TreasureTrait({
+          treasureId: 'brass-bauble',
+          treasureValue: 1,      // OFVAL from mdlzork_810722
+          trophyCaseValue: 1,    // OTVAL from mdlzork_810722
+        }));
         world.moveEntity(bauble.id, playerLocation);
       }
     }

@@ -21,6 +21,7 @@ import {
   LightSourceTrait,
   SwitchableTrait
 } from '@sharpee/world-model';
+import { TreasureTrait } from '../traits';
 
 export interface TempleRoomIds {
   temple: string;
@@ -328,10 +329,11 @@ function createGrailRoomObjects(world: WorldModel, roomId: string): void {
     article: 'a',
     weight: 5
   }));
-  (grail as any).isTreasure = true;
-  (grail as any).treasureId = 'grail';
-  (grail as any).treasureValue = 2;        // OFVAL from mdlzork_810722
-  (grail as any).trophyCaseValue = 5;      // OTVAL from mdlzork_810722
+  grail.add(new TreasureTrait({
+    treasureId: 'grail',
+    treasureValue: 2,      // OFVAL from mdlzork_810722
+    trophyCaseValue: 5,    // OTVAL from mdlzork_810722
+  }));
   world.moveEntity(grail.id, roomId);
 }
 
@@ -398,9 +400,10 @@ function createLoudRoomObjects(world: WorldModel, roomId: string): void {
     article: 'a',
     weight: 20
   }));
-  (bar as any).isTreasure = true;
-  (bar as any).treasureId = 'platinum-bar';
-  (bar as any).treasureValue = 12;         // OFVAL from mdlzork_810722
-  (bar as any).trophyCaseValue = 10;       // OTVAL from mdlzork_810722
+  bar.add(new TreasureTrait({
+    treasureId: 'platinum-bar',
+    treasureValue: 12,     // OFVAL from mdlzork_810722
+    trophyCaseValue: 10,   // OTVAL from mdlzork_810722
+  }));
   world.moveEntity(bar.id, roomId);
 }

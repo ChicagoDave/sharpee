@@ -26,7 +26,7 @@ import {
   OpenableTrait
 } from '@sharpee/world-model';
 
-import { BasketElevatorTrait } from '../traits';
+import { BasketElevatorTrait, TreasureTrait } from '../traits';
 
 export interface CoalMineRoomIds {
   // Mirror Room entrance area
@@ -576,11 +576,11 @@ function createJadeFigurine(world: WorldModel, roomId: string): IFEntity {
     article: 'a',
     weight: 5
   }));
-
-  (figurine as any).isTreasure = true;
-  (figurine as any).treasureId = 'jade-figurine';
-  (figurine as any).treasureValue = 5;
-  (figurine as any).trophyCaseValue = 5;
+  figurine.add(new TreasureTrait({
+    treasureId: 'jade-figurine',
+    treasureValue: 5,
+    trophyCaseValue: 5
+  }));
 
   world.moveEntity(figurine.id, roomId);
   return figurine;
@@ -599,11 +599,11 @@ function createSapphireBracelet(world: WorldModel, roomId: string): IFEntity {
     article: 'a',
     weight: 5
   }));
-
-  (bracelet as any).isTreasure = true;
-  (bracelet as any).treasureId = 'sapphire-bracelet';
-  (bracelet as any).treasureValue = 5;     // OFVAL from mdlzork_810722
-  (bracelet as any).trophyCaseValue = 3;   // OTVAL from mdlzork_810722
+  bracelet.add(new TreasureTrait({
+    treasureId: 'sapphire-bracelet',
+    treasureValue: 5,     // OFVAL from mdlzork_810722
+    trophyCaseValue: 3    // OTVAL from mdlzork_810722
+  }));
 
   world.moveEntity(bracelet.id, roomId);
   return bracelet;
@@ -622,11 +622,11 @@ function createRedCrystalSphere(world: WorldModel, roomId: string): IFEntity {
     article: 'a',
     weight: 5
   }));
-
-  (sphere as any).isTreasure = true;
-  (sphere as any).treasureId = 'red-crystal-sphere';
-  (sphere as any).treasureValue = 10;      // OFVAL from mdlzork_810722
-  (sphere as any).trophyCaseValue = 5;     // OTVAL from mdlzork_810722
+  sphere.add(new TreasureTrait({
+    treasureId: 'red-crystal-sphere',
+    treasureValue: 10,      // OFVAL from mdlzork_810722
+    trophyCaseValue: 5      // OTVAL from mdlzork_810722
+  }));
 
   world.moveEntity(sphere.id, roomId);
   return sphere;

@@ -12,6 +12,7 @@ import { ISchedulerService, SchedulerContext, Daemon } from '@sharpee/engine';
 import { WorldModel, RoomBehavior, Direction, ContainerTrait } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
 import { BankRoomIds } from '../regions/bank-of-zork';
+import { TreasureTrait } from '../traits';
 
 // Treasure IDs we check for
 const BANK_TREASURE_IDS = ['portrait', 'zorkmid-bills'];
@@ -33,8 +34,8 @@ function isCarryingBankTreasures(world: WorldModel, playerId: string): boolean {
   const contents = world.getContents(playerId);
 
   for (const item of contents) {
-    const treasureId = (item as any).treasureId;
-    if (treasureId && BANK_TREASURE_IDS.includes(treasureId)) {
+    const treasure = item.get(TreasureTrait);
+    if (treasure && BANK_TREASURE_IDS.includes(treasure.treasureId)) {
       return true;
     }
   }

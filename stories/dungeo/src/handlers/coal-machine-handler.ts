@@ -13,6 +13,7 @@
 
 import { WorldModel, IWorldModel, IdentityTrait, EntityType } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
+import { TreasureTrait } from '../traits';
 
 // Message IDs for coal machine puzzle
 export const CoalMachineMessages = {
@@ -116,10 +117,11 @@ export function createDiamond(world: WorldModel, roomId: string): void {
   }));
 
   // Treasure scoring - 10 take + 6 case = 16 points (DIAMO in mdlzork_810722)
-  (diamond as any).isTreasure = true;
-  (diamond as any).treasureId = 'huge-diamond';
-  (diamond as any).treasureValue = 10;    // OFVAL from mdlzork_810722
-  (diamond as any).trophyCaseValue = 6;   // OTVAL from mdlzork_810722
+  diamond.add(new TreasureTrait({
+    treasureId: 'huge-diamond',
+    treasureValue: 10,     // OFVAL from mdlzork_810722
+    trophyCaseValue: 6,    // OTVAL from mdlzork_810722
+  }));
 
   world.moveEntity(diamond.id, roomId);
 }

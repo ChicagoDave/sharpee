@@ -13,6 +13,7 @@ import {
   OpenableTrait,
   AuthorModel
 } from '@sharpee/world-model';
+import { TreasureTrait } from '../traits';
 
 export interface RoundRoomIds {
   roundRoom: string;
@@ -66,10 +67,11 @@ export function createRoundRoomObjects(world: WorldModel, roomIds: RoundRoomIds)
     article: 'a',
     weight: 10
   }));
-  (violin as any).isTreasure = true;
-  (violin as any).treasureId = 'stradivarius';
-  (violin as any).treasureValue = 10;     // OTVAL from 1981 MDL
-  (violin as any).trophyCaseValue = 10;   // OFVAL from 1981 MDL
+  violin.add(new TreasureTrait({
+    treasureId: 'stradivarius',
+    treasureValue: 10,     // OFVAL from mdlzork_810722
+    trophyCaseValue: 10,   // OTVAL from mdlzork_810722
+  }));
 
   // Use AuthorModel to place violin in closed box (bypasses validation)
   const author = new AuthorModel(world.getDataStore(), world);

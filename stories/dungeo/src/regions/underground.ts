@@ -28,7 +28,7 @@ import {
   WeaponTrait
 } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
-import { TrollAxeTrait, TrollTrait } from '../traits';
+import { TrollAxeTrait, TrollTrait, TreasureTrait } from '../traits';
 import { TrollMessages } from '../npcs/troll';
 
 export interface UndergroundRoomIds {
@@ -534,10 +534,11 @@ function createGalleryObjects(world: WorldModel, roomId: string): void {
     article: 'a',
     weight: 20
   }));
-  (painting as any).isTreasure = true;
-  (painting as any).treasureId = 'painting';
-  (painting as any).treasureValue = 4;     // OFVAL from mdlzork_810722
-  (painting as any).trophyCaseValue = 7;   // OTVAL from mdlzork_810722
+  painting.add(new TreasureTrait({
+    treasureId: 'painting',
+    treasureValue: 4,      // OFVAL from mdlzork_810722
+    trophyCaseValue: 7,    // OTVAL from mdlzork_810722
+  }));
   world.moveEntity(painting.id, roomId);
 }
 
@@ -607,10 +608,11 @@ function createTorchRoomObjects(world: WorldModel, roomId: string): void {
     fuelConsumptionRate: 0  // Never burns out
   }));
   // No SwitchableTrait - player cannot turn it on/off
-  (torch as any).isTreasure = true;
-  (torch as any).treasureId = 'ivory-torch';
-  (torch as any).treasureValue = 14;       // OFVAL from mdlzork_810722
-  (torch as any).trophyCaseValue = 6;      // OTVAL from mdlzork_810722
+  torch.add(new TreasureTrait({
+    treasureId: 'ivory-torch',
+    treasureValue: 14,     // OFVAL from mdlzork_810722
+    trophyCaseValue: 6,    // OTVAL from mdlzork_810722
+  }));
   world.moveEntity(torch.id, roomId);
 }
 
@@ -668,9 +670,10 @@ function createDrearyRoomObjects(world: WorldModel, roomId: string): void {
     article: 'a',
     weight: 5
   }));
-  (sphere as any).isTreasure = true;
-  (sphere as any).treasureId = 'blue-crystal-sphere';
-  (sphere as any).treasureValue = 10;      // OFVAL from mdlzork_810722
-  (sphere as any).trophyCaseValue = 5;     // OTVAL from mdlzork_810722
+  sphere.add(new TreasureTrait({
+    treasureId: 'blue-crystal-sphere',
+    treasureValue: 10,     // OFVAL from mdlzork_810722
+    trophyCaseValue: 5,    // OTVAL from mdlzork_810722
+  }));
   world.moveEntity(sphere.id, roomId);
 }

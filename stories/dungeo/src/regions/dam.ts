@@ -19,6 +19,7 @@ import {
   ReadableTrait,
   ButtonTrait
 } from '@sharpee/world-model';
+import { TreasureTrait } from '../traits';
 
 export interface DamRoomIds {
   deepCanyon: string;
@@ -401,10 +402,11 @@ function createReservoirObjects(world: WorldModel, roomId: string): void {
     capacity: { maxItems: 10, maxWeight: 50 }
   }));
   trunk.add(new OpenableTrait({ isOpen: true }));
-  (trunk as any).isTreasure = true;
-  (trunk as any).treasureId = 'trunk-of-jewels';
-  (trunk as any).treasureValue = 15;       // OFVAL from mdlzork_810722
-  (trunk as any).trophyCaseValue = 8;      // OTVAL from mdlzork_810722
+  trunk.add(new TreasureTrait({
+    treasureId: 'trunk-of-jewels',
+    treasureValue: 15,       // OFVAL from mdlzork_810722
+    trophyCaseValue: 8       // OTVAL from mdlzork_810722
+  }));
   world.moveEntity(trunk.id, roomId);
 }
 
@@ -515,10 +517,11 @@ function createAtlantisRoomObjects(world: WorldModel, roomId: string): void {
     article: 'a',
     weight: 5
   }));
-  (trident as any).isTreasure = true;
-  (trident as any).treasureId = 'crystal-trident';
-  (trident as any).treasureValue = 4;      // OFVAL from mdlzork_810722
-  (trident as any).trophyCaseValue = 11;   // OTVAL from mdlzork_810722
+  trident.add(new TreasureTrait({
+    treasureId: 'crystal-trident',
+    treasureValue: 4,      // OFVAL from mdlzork_810722
+    trophyCaseValue: 11    // OTVAL from mdlzork_810722
+  }));
   world.moveEntity(trident.id, roomId);
 
   // Tin of rare spices (Saffron) - treasure (5 take + 5 case = 10 pts)
@@ -532,9 +535,10 @@ function createAtlantisRoomObjects(world: WorldModel, roomId: string): void {
     article: 'a',
     weight: 8
   }));
-  (saffron as any).isTreasure = true;
-  (saffron as any).treasureId = 'saffron';
-  (saffron as any).treasureValue = 5;      // OFVAL from mdlzork_810722
-  (saffron as any).trophyCaseValue = 5;    // OTVAL from mdlzork_810722
+  saffron.add(new TreasureTrait({
+    treasureId: 'saffron',
+    treasureValue: 5,      // OFVAL from mdlzork_810722
+    trophyCaseValue: 5     // OTVAL from mdlzork_810722
+  }));
   world.moveEntity(saffron.id, roomId);
 }

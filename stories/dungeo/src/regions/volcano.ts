@@ -21,6 +21,7 @@ import {
   VehicleTrait,
   EnterableTrait
 } from '@sharpee/world-model';
+import { TreasureTrait } from '../traits';
 
 export interface VolcanoRoomIds {
   egyptianRoom: string;
@@ -300,10 +301,11 @@ function createEgyptianRoomObjects(world: WorldModel, roomId: string): void {
     article: 'a',
     weight: 10
   }));
-  (coffin as any).isTreasure = true;
-  (coffin as any).treasureId = 'gold-coffin';
-  (coffin as any).treasureValue = 3;       // OFVAL from mdlzork_810722
-  (coffin as any).trophyCaseValue = 7;     // OTVAL from mdlzork_810722
+  coffin.add(new TreasureTrait({
+    treasureId: 'gold-coffin',
+    treasureValue: 3,      // OFVAL from mdlzork_810722
+    trophyCaseValue: 7,    // OTVAL from mdlzork_810722
+  }));
   world.moveEntity(coffin.id, roomId);
 }
 
@@ -337,10 +339,11 @@ function createDustyRoomObjects(world: WorldModel, roomId: string): void {
     article: 'a',
     weight: 5
   }));
-  (emerald as any).isTreasure = true;
-  (emerald as any).treasureId = 'large-emerald';
-  (emerald as any).treasureValue = 5;      // OFVAL from mdlzork_810722
-  (emerald as any).trophyCaseValue = 10;   // OTVAL from mdlzork_810722
+  emerald.add(new TreasureTrait({
+    treasureId: 'large-emerald',
+    treasureValue: 5,      // OFVAL from mdlzork_810722
+    trophyCaseValue: 10,   // OTVAL from mdlzork_810722
+  }));
   world.moveEntity(emerald.id, roomId);
 }
 
@@ -357,10 +360,11 @@ function createRubyRoomObjects(world: WorldModel, roomId: string): void {
     article: 'a',
     weight: 5
   }));
-  (ruby as any).isTreasure = true;
-  (ruby as any).treasureId = 'ruby';
-  (ruby as any).treasureValue = 15;        // OFVAL from mdlzork_810722
-  (ruby as any).trophyCaseValue = 8;       // OTVAL from mdlzork_810722
+  ruby.add(new TreasureTrait({
+    treasureId: 'ruby',
+    treasureValue: 15,     // OFVAL from mdlzork_810722
+    trophyCaseValue: 8,    // OTVAL from mdlzork_810722
+  }));
   world.moveEntity(ruby.id, roomId);
 }
 
@@ -397,10 +401,11 @@ A stamp falls out of the book as you read it.`
     article: 'a',
     weight: 2
   }));
-  (stamp as any).isTreasure = true;
-  (stamp as any).treasureId = 'flathead-stamp';
-  (stamp as any).treasureValue = 4;        // OFVAL from mdlzork_810722
-  (stamp as any).trophyCaseValue = 10;     // OTVAL from mdlzork_810722
+  stamp.add(new TreasureTrait({
+    treasureId: 'flathead-stamp',
+    treasureValue: 4,      // OFVAL from mdlzork_810722
+    trophyCaseValue: 10,   // OTVAL from mdlzork_810722
+  }));
   world.moveEntity(stamp.id, book.id);
 }
 

@@ -19,6 +19,7 @@ import { IFEntity, NpcTrait, CombatantTrait, OpenableTrait, IdentityTrait, Entit
 import { ISemanticEvent } from '@sharpee/core';
 
 import { ThiefMessages } from './thief-messages';
+import { TreasureTrait } from '../../traits';
 import { ThiefCustomProperties, ThiefState } from './thief-entity';
 import {
   getThiefProps,
@@ -534,10 +535,11 @@ function checkEggOpening(context: NpcContext, props: ThiefCustomProperties): Npc
                 properName: false,
                 article: 'a'
               }));
-              (canary as any).isTreasure = true;
-              (canary as any).treasureId = 'clockwork-canary';
-              (canary as any).treasureValue = 6;       // OFVAL from mdlzork_810722
-              (canary as any).trophyCaseValue = 2;     // OTVAL from mdlzork_810722
+              canary.add(new TreasureTrait({
+                treasureId: 'clockwork-canary',
+                treasureValue: 6,      // OFVAL from mdlzork_810722
+                trophyCaseValue: 2,    // OTVAL from mdlzork_810722
+              }));
             }
 
             // Drop canary in thief's current room

@@ -9,6 +9,7 @@
 
 import { GDTCommandHandler, GDTContext, GDTCommandResult } from '../types';
 import { TraitType } from '@sharpee/world-model';
+import { TreasureTrait } from '../../../traits';
 
 export const deHandler: GDTCommandHandler = {
   code: 'DE',
@@ -74,6 +75,7 @@ export const deHandler: GDTCommandHandler = {
 
     // Computed Properties (getters)
     output.push('┌─ COMPUTED PROPERTIES ─────────────────────────────────────────┐');
+    const treasure = entity.get(TreasureTrait);
     const computedProps = [
       ['enterable', (entity as any).enterable],
       ['portable', (entity as any).portable],
@@ -82,7 +84,7 @@ export const deHandler: GDTCommandHandler = {
       ['isOn', (entity as any).isOn],
       ['isSwitchable', (entity as any).isSwitchable],
       ['isInflated', (entity as any).isInflated],
-      ['isTreasure', (entity as any).isTreasure],
+      ['isTreasure', treasure !== undefined],
     ];
 
     for (const [name, value] of computedProps) {

@@ -16,9 +16,9 @@ $restore wt-06
 $take torch
 $take brass lantern
 
-# Turn on light source
-> turn on torch
-[OK: matches /(on|lit|light|already)/i]
+# Ivory torch is always lit, just verify we have light
+> look
+[OK: contains "Living Room"]
 
 [END GOAL]
 
@@ -32,10 +32,10 @@ $take brass lantern
 $teleport Reservoir North
 
 > look
-[OK: matches /(reservoir|pump)/i]
+[OK: contains "Reservoir"]
 
-> take pump
-[OK: matches /(Taken|take)/i]
+# Pump may already be in inventory from previous walkthrough
+$take pump
 
 > inventory
 [OK: contains "pump"]
@@ -51,14 +51,14 @@ $teleport Reservoir North
 $teleport Dam Base
 
 > look
-[OK: matches /(dam|plastic|boat|stick)/i]
+[OK: contains "Dam"]
 
 > take plastic
-[OK: matches /(Taken|take)/i]
+[OK: contains "Taken"]
 
 # Inflate the boat with the pump
 > inflate boat
-[OK: matches /(inflate|rubber|boat|now)/i]
+[OK: contains "inflate"]
 
 [END GOAL]
 
@@ -73,17 +73,17 @@ $teleport Dam Base
 $teleport Frigid River-2
 
 > look
-[OK: matches /(river|buoy|cliffs)/i]
+[OK: contains "river"]
 
 > take buoy
-[OK: matches /(Taken|take)/i]
+[OK: contains "Taken"]
 
 # Open buoy to get emerald
 > open buoy
-[OK: matches /(open|Opening)/i]
+[OK: contains "open"]
 
 > take emerald
-[OK: matches /(Taken|take)/i]
+[OK: contains "emerald"]
 
 > inventory
 [OK: contains "emerald"]
@@ -101,7 +101,7 @@ $teleport Frigid River-2
 $teleport Dam Base
 
 > take stick
-[OK: matches /(Taken|take)/i]
+[OK: contains "Taken"]
 
 > inventory
 [OK: contains "stick"]
@@ -117,15 +117,15 @@ $teleport Dam Base
 $teleport Aragain Falls
 
 > look
-[OK: matches /(falls|rainbow|waterfall)/i]
+[OK: contains "Falls"]
 
 # Wave the sharp stick to make rainbow solid
 > wave stick
-[OK: matches /(rainbow|solid|bridge|appears|shimmer)/i]
+[OK: contains "rainbow"]
 
 # Now we can cross the rainbow going east
 > east
-[OK: matches /(rainbow|top|magnificent|falls)/i]
+[OK: contains "Rainbow"]
 
 [END GOAL]
 
@@ -137,13 +137,13 @@ $teleport Aragain Falls
 [ENSURES: inventory contains "pot"]
 
 > east
-[OK: matches /(end.*rainbow|beach|cliffs|sunlight)/i]
+[OK: contains "End of Rainbow"]
 
 > look
-[OK: matches /(pot|gold|rainbow)/i]
+[OK: contains "pot of gold"]
 
 > take pot
-[OK: matches /(Taken|take)/i]
+[OK: contains "Taken"]
 
 > inventory
 [OK: contains "pot"]
@@ -171,13 +171,13 @@ $teleport Living Room
 [GOAL: Store treasures in trophy case]
 
 > open trophy case
-[OK: matches /(open|Opening|already)/i]
+[OK: contains "open"]
 
 > put emerald in trophy case
-[OK: matches /(put|Done|place)/i]
+[OK: contains "put"]
 
 > put pot in trophy case
-[OK: matches /(put|Done|place)/i]
+[OK: contains "put"]
 
 [END GOAL]
 

@@ -21,6 +21,7 @@ import {
   ActorTrait,
   NpcTrait
 } from '@sharpee/world-model';
+import { TreasureTrait } from '../traits';
 
 export interface WellRoomIds {
   engravingsCave: string;
@@ -278,10 +279,11 @@ function createSilverChalice(world: WorldModel, roomId: string): IFEntity {
     article: 'a',
     weight: 40
   }));
-  (chalice as any).isTreasure = true;
-  (chalice as any).treasureId = 'silver-chalice';
-  (chalice as any).treasureValue = 10;    // OTVAL from 1981 MDL
-  (chalice as any).trophyCaseValue = 10;  // OFVAL from 1981 MDL
+  chalice.add(new TreasureTrait({
+    treasureId: 'silver-chalice',
+    treasureValue: 10,     // OFVAL from mdlzork_810722
+    trophyCaseValue: 10,   // OTVAL from mdlzork_810722
+  }));
   world.moveEntity(chalice.id, roomId);
   return chalice;
 }
@@ -298,10 +300,11 @@ function createPearlNecklace(world: WorldModel, roomId: string): IFEntity {
     article: 'a',
     weight: 5
   }));
-  (necklace as any).isTreasure = true;
-  (necklace as any).treasureId = 'pearl-necklace';
-  (necklace as any).treasureValue = 9;        // OFVAL from mdlzork_810722
-  (necklace as any).trophyCaseValue = 5;      // OTVAL from mdlzork_810722
+  necklace.add(new TreasureTrait({
+    treasureId: 'pearl-necklace',
+    treasureValue: 9,      // OFVAL from mdlzork_810722
+    trophyCaseValue: 5,    // OTVAL from mdlzork_810722
+  }));
   world.moveEntity(necklace.id, roomId);
   return necklace;
 }
@@ -477,9 +480,10 @@ function createDingyClosetObjects(world: WorldModel, roomId: string): void {
     article: 'a',
     weight: 5
   }));
-  (sphere as any).isTreasure = true;
-  (sphere as any).treasureId = 'white-crystal-sphere';
-  (sphere as any).treasureValue = 6;
-  (sphere as any).trophyCaseValue = 6;
+  sphere.add(new TreasureTrait({
+    treasureId: 'white-crystal-sphere',
+    treasureValue: 6,      // OFVAL from mdlzork_810722
+    trophyCaseValue: 6,    // OTVAL from mdlzork_810722
+  }));
   world.moveEntity(sphere.id, roomId);
 }

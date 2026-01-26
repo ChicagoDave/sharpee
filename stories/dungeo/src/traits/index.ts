@@ -56,3 +56,10 @@ export {
   EggOpeningBehavior,
   EggMessages
 } from './egg-behaviors';
+
+// Treasure (scoring and trophy case)
+export {
+  TreasureTrait,
+  TreasureTraitConfig,
+  TreasureTraitConstructor
+} from './treasure-trait';

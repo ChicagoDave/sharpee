@@ -11,6 +11,7 @@
 import { IFEntity, WorldModel, NpcTrait, IdentityTrait } from '@sharpee/world-model';
 import { NpcContext } from '@sharpee/stdlib';
 import { ThiefCustomProperties, ThiefState } from './thief-entity';
+import { TreasureTrait } from '../../traits';
 
 // Key for storing thief disabled state in world data store
 const THIEF_DISABLED_KEY = 'dungeo.thief.disabled';
@@ -19,34 +20,17 @@ const THIEF_DISABLED_KEY = 'dungeo.thief.disabled';
  * Check if an entity is a treasure (something worth stealing)
  */
 export function isTreasure(entity: IFEntity): boolean {
-  const entityAny = entity as any;
-
-  // Check for explicit treasure marking
-  if (entityAny.isTreasure === true) {
-    return true;
-  }
-
-  // Check for treasure value
-  if (typeof entityAny.treasureValue === 'number' && entityAny.treasureValue > 0) {
-    return true;
-  }
-
-  // Check for trophy case value
-  if (typeof entityAny.trophyCaseValue === 'number' && entityAny.trophyCaseValue > 0) {
-    return true;
-  }
-
-  return false;
+  const treasure = entity.get(TreasureTrait);
+  return treasure !== undefined;
 }
 
 /**
  * Get the value of a treasure (for prioritization)
  */
 export function getTreasureValue(entity: IFEntity): number {
-  const entityAny = entity as any;
-  const baseValue = entityAny.treasureValue ?? 0;
-  const caseValue = entityAny.trophyCaseValue ?? 0;
-  return baseValue + caseValue;
+  const treasure = entity.get(TreasureTrait);
+  if (!treasure) return 0;
+  return treasure.treasureValue + treasure.trophyCaseValue;
 }
 
 /**
@@ -89,7 +73,8 @@ export function isCarryingEgg(context: NpcContext): boolean {
   return context.npcInventory.some(item => {
     const identity = item.get(IdentityTrait);
     const name = identity?.name?.toLowerCase() ?? '';
-    return name.includes('egg') || (item as any).treasureId === 'egg';
+    const treasure = item.get(TreasureTrait);
+    return name.includes('egg') || treasure?.treasureId === 'jewel-encrusted-egg';
   });
 }
 
@@ -100,7 +85,8 @@ export function getEggFromInventory(context: NpcContext): IFEntity | undefined {
   return context.npcInventory.find(item => {
     const identity = item.get(IdentityTrait);
     const name = identity?.name?.toLowerCase() ?? '';
-    return name.includes('egg') || (item as any).treasureId === 'egg';
+    const treasure = item.get(TreasureTrait);
+    return name.includes('egg') || treasure?.treasureId === 'jewel-encrusted-egg';
   });
 }
 

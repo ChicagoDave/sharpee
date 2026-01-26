@@ -18,6 +18,7 @@ import {
   EntityType
 } from '@sharpee/world-model';
 import { SEND_ACTION_ID, SendMessages } from './types';
+import { TreasureTrait } from '../../traits';
 
 /**
  * Create the brochure with the Don Woods stamp inside
@@ -87,10 +88,11 @@ Enclosed please find a valuable collector's stamp as a FREE gift!
   }));
 
   // Treasure scoring (1 take + 0 case = 1 point) - DSTMP in 1981 MDL
-  (stamp as any).isTreasure = true;
-  (stamp as any).treasureId = 'don-woods-stamp';
-  (stamp as any).treasureValue = 1;       // OTVAL from 1981 MDL
-  (stamp as any).trophyCaseValue = 0;     // OFVAL from 1981 MDL
+  stamp.add(new TreasureTrait({
+    treasureId: 'don-woods-stamp',
+    treasureValue: 1,      // OFVAL from mdlzork_810722
+    trophyCaseValue: 0,    // OTVAL from mdlzork_810722
+  }));
 
   // Place stamp inside brochure
   world.moveEntity(stamp.id, brochure.id);

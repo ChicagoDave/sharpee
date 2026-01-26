@@ -19,7 +19,7 @@ import {
   OpenableTrait,
   SceneryTrait
 } from '@sharpee/world-model';
-import { EggTrait } from '../traits';
+import { EggTrait, TreasureTrait } from '../traits';
 
 export interface ForestRoomIds {
   forestPath1: string;  // North of North of House
@@ -289,10 +289,11 @@ function createTreeObjects(world: WorldModel, roomId: string): void {
   egg.add(new ContainerTrait({ capacity: { maxItems: 1 } }));
   egg.add(new OpenableTrait({ isOpen: false }));
   egg.add(new EggTrait());  // Player can't open - only thief can
-  (egg as any).isTreasure = true;
-  (egg as any).treasureId = 'jewel-encrusted-egg';
-  (egg as any).treasureValue = 5;
-  (egg as any).trophyCaseValue = 5;
+  egg.add(new TreasureTrait({
+    treasureId: 'jewel-encrusted-egg',
+    treasureValue: 5,
+    trophyCaseValue: 5
+  }));
   world.moveEntity(egg.id, nest.id);
 
   const canary = world.createEntity('golden canary', EntityType.ITEM);
@@ -304,10 +305,11 @@ function createTreeObjects(world: WorldModel, roomId: string): void {
     article: 'a',
     weight: 10
   }));
-  (canary as any).isTreasure = true;
-  (canary as any).treasureId = 'clockwork-canary';
-  (canary as any).treasureValue = 6;       // OFVAL from mdlzork_810722
-  (canary as any).trophyCaseValue = 2;     // OTVAL from mdlzork_810722
+  canary.add(new TreasureTrait({
+    treasureId: 'clockwork-canary',
+    treasureValue: 6,       // OFVAL from mdlzork_810722
+    trophyCaseValue: 2      // OTVAL from mdlzork_810722
+  }));
 
   const eggOpenable = egg.get(OpenableTrait);
   if (eggOpenable) {

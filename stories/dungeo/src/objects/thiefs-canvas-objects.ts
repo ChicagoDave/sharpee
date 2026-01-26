@@ -14,6 +14,7 @@ import {
   IdentityTrait,
   EntityType
 } from '@sharpee/world-model';
+import { TreasureTrait } from '../traits';
 
 /**
  * Create the empty picture frame
@@ -105,10 +106,11 @@ export function createThiefsCanvas(world: WorldModel): IFEntity {
   }));
 
   // Treasure scoring - 10 take + 24 case = 34 total
-  (canvas as any).isTreasure = true;
-  (canvas as any).treasureId = 'thiefs-canvas';
-  (canvas as any).treasureValue = 10;
-  (canvas as any).trophyCaseValue = 24;
+  canvas.add(new TreasureTrait({
+    treasureId: 'thiefs-canvas',
+    treasureValue: 10,     // OFVAL from mdlzork_810722
+    trophyCaseValue: 24,   // OTVAL from mdlzork_810722
+  }));
 
   return canvas;
 }

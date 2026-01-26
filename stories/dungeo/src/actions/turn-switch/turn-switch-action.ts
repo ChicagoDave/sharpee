@@ -11,6 +11,7 @@ import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity, EntityType } from '@sharpee/world-model';
 import { TURN_SWITCH_ACTION_ID, TurnSwitchMessages } from './types';
+import { TreasureTrait } from '../../traits';
 
 /**
  * Check if an entity is the machine
@@ -74,10 +75,11 @@ function createDiamond(context: ActionContext, machineId: string): IFEntity {
   }));
 
   // Treasure scoring (10 take + 6 case = 16 total) - DIAMO in mdlzork_810722
-  (diamond as any).isTreasure = true;
-  (diamond as any).treasureId = 'huge-diamond';
-  (diamond as any).treasureValue = 10;    // OFVAL from mdlzork_810722
-  (diamond as any).trophyCaseValue = 6;   // OTVAL from mdlzork_810722
+  diamond.add(new TreasureTrait({
+    treasureId: 'huge-diamond',
+    treasureValue: 10,     // OFVAL from mdlzork_810722
+    trophyCaseValue: 6,    // OTVAL from mdlzork_810722
+  }));
 
   // Place diamond in machine (player will need to take it)
   world.moveEntity(diamond.id, machineId);
