@@ -24,6 +24,12 @@ import {
 } from '@sharpee/world-model';
 import { InflatableTrait } from '../traits/inflatable-trait';
 
+// Message IDs for boat puncture
+export const BoatPunctureMessages = {
+  PUNCTURED: 'dungeo.boat.punctured',
+  STICK_POKES: 'dungeo.boat.stick_pokes'
+};
+
 /**
  * Check if an entity punctures the boat (sharp/pointy items)
  */

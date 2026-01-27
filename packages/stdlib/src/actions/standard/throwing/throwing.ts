@@ -6,17 +6,28 @@
  * - Object hitting and possibly breaking
  * - Target reacting to being hit
  *
- * Uses four-phase pattern:
- * 1. validate: Check if item can be thrown at target/direction
- * 2. execute: Calculate outcome, store result in sharedData
- * 3. blocked: Generate events when validation fails
- * 4. report: Generate success events from sharedData
+ * Uses four-phase pattern with interceptor support (ADR-118):
+ * 1. validate: preValidate hook → standard checks → postValidate hook
+ * 2. execute: standard mutation → postExecute hook
+ * 3. blocked: onBlocked hook (if validation failed)
+ * 4. report: standard events → postReport hook (additional effects)
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, IdentityBehavior, ActorBehavior, RoomBehavior, OpenableBehavior, Direction, DirectionType } from '@sharpee/world-model';
+import {
+  TraitType,
+  IdentityBehavior,
+  ActorBehavior,
+  RoomBehavior,
+  OpenableBehavior,
+  Direction,
+  DirectionType,
+  getInterceptorForAction,
+  ActionInterceptor,
+  InterceptorSharedData
+} from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
 import { ThrowingEventMap } from './throwing-events';
@@ -56,7 +67,8 @@ function parseDirectionString(dir: string | undefined): DirectionType | null {
 }
 
 /**
- * Shared data passed between execute and report phases
+ * Shared data passed between execute and report phases.
+ * Now includes interceptor data for ADR-118 support.
  */
 interface ThrowingSharedData {
   itemId: string;
@@ -79,6 +91,10 @@ interface ThrowingSharedData {
   // Message info
   messageId: string;
   params: Record<string, any>;
+  /** Interceptor found during validate, if any */
+  interceptor?: ActionInterceptor;
+  /** Shared data for interceptor phases */
+  interceptorData?: InterceptorSharedData;
 }
 
 function getThrowingSharedData(context: ActionContext): ThrowingSharedData {
@@ -133,9 +149,37 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     const item = context.command.directObject?.entity;
     const target = context.command.indirectObject?.entity;
     const direction = context.command.parsed.extras?.direction as string;
+    const sharedData = getThrowingSharedData(context);
 
     if (!item) {
       return { valid: false, error: 'no_item' };
+    }
+
+    // Check for interceptor on the target entity (ADR-118)
+    // Interceptors are on the thing being thrown AT, not the item being thrown
+    const interceptorResult = target ? getInterceptorForAction(target, IFActions.THROWING) : undefined;
+    const interceptor = interceptorResult?.interceptor;
+    const interceptorData: InterceptorSharedData = {
+      // Pass item info to interceptor so it knows what's being thrown
+      itemId: item.id,
+      itemName: item.name
+    };
+
+    // Store for later phases
+    sharedData.interceptor = interceptor;
+    sharedData.interceptorData = interceptorData;
+
+    // === PRE-VALIDATE HOOK ===
+    // Called before standard validation - can block early
+    if (interceptor?.preValidate && target) {
+      const result = interceptor.preValidate(target, context.world, actor.id, interceptorData);
+      if (result !== null) {
+        return {
+          valid: result.valid,
+          error: result.error,
+          params: result.params
+        };
+      }
     }
 
     // Item must be carried (or implicitly takeable)
@@ -189,6 +233,19 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
           valid: false,
           error: 'too_heavy',
           params: { item: item.name, weight: itemWeight }
+        };
+      }
+    }
+
+    // === POST-VALIDATE HOOK ===
+    // Called after standard validation passes - can add entity-specific conditions
+    if (interceptor?.postValidate && target) {
+      const result = interceptor.postValidate(target, context.world, actor.id, interceptorData);
+      if (result !== null) {
+        return {
+          valid: result.valid,
+          error: result.error,
+          params: result.params
         };
       }
     }
@@ -345,11 +402,34 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
       // The event system will handle actual removal if needed
       context.world.moveEntity(item.id, ''); // Empty string = nowhere
     }
+
+    // === POST-EXECUTE HOOK ===
+    // Called after standard execution - can perform additional mutations
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.postExecute && target) {
+      interceptor.postExecute(target, context.world, actor.id, interceptorData);
+    }
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const item = context.command.directObject?.entity;
     const target = context.command.indirectObject?.entity;
+    const sharedData = getThrowingSharedData(context);
+
+    // === ON-BLOCKED HOOK ===
+    // Called when action is blocked - can provide custom blocked handling
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.onBlocked && target && result.error) {
+      const customEffects = interceptor.onBlocked(target, context.world, context.player.id, result.error, interceptorData);
+      if (customEffects !== null) {
+        // Interceptor provided custom blocked effects
+        return customEffects.map(effect => context.event(effect.type, effect.payload));
+      }
+    }
+
+    // Standard blocked handling
     return [context.event('if.event.throw_blocked', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
@@ -421,6 +501,21 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
         target: sharedData.targetId,
         targetName: sharedData.targetName
       }));
+    }
+
+    // === POST-REPORT HOOK ===
+    // Called after standard report - can add additional effects
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.postReport) {
+      const target = context.command.indirectObject?.entity;
+      if (target) {
+        const additionalEffects = interceptor.postReport(target, context.world, context.player.id, interceptorData);
+        // Convert CapabilityEffects to ISemanticEvents
+        for (const effect of additionalEffects) {
+          events.push(context.event(effect.type, effect.payload));
+        }
+      }
     }
 
     return events;

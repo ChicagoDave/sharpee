@@ -72,7 +72,17 @@ export {
 } from './inflatable-trait';
 
 // Inflatable Entering Interceptor (ADR-118)
-export { InflatableEnteringInterceptor } from '../interceptors/inflatable-entering-interceptor';
+export { InflatableEnteringInterceptor, BoatPunctureMessages } from '../interceptors/inflatable-entering-interceptor';
+
+// Glacier (meltable by lit torch)
+export {
+  GlacierTrait,
+  GlacierTraitConfig,
+  GlacierTraitConstructor
+} from './glacier-trait';
+
+// Glacier Throwing Interceptor (ADR-118)
+export { GlacierThrowingInterceptor, GlacierMessages } from '../interceptors/glacier-throwing-interceptor';
 
 // Burnable (incense, candles, guidebook, etc.)
 export {

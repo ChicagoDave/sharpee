@@ -1,13 +1,14 @@
 /**
  * Going action - movement through exits
- * 
+ *
  * This action handles movement in cardinal directions and through named exits.
  * It validates all conditions and returns appropriate events.
- * 
- * Uses three-phase pattern:
- * 1. validate: Check exit exists, door state, destination availability
- * 2. execute: Move the actor and mark room visited
- * 3. report: Generate events with before/after room snapshots
+ *
+ * Uses four-phase pattern with interceptor support (ADR-118):
+ * 1. validate: preValidate hook → standard checks → postValidate hook
+ * 2. execute: standard mutation → postExecute hook
+ * 3. blocked: onBlocked hook (if validation failed)
+ * 4. report: standard events → postReport hook (additional effects)
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -21,7 +22,10 @@ import {
   VisibilityBehavior,
   Direction,
   DirectionType,
-  canActorWalkInVehicle
+  canActorWalkInVehicle,
+  getInterceptorForAction,
+  ActionInterceptor,
+  InterceptorSharedData
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
@@ -41,7 +45,8 @@ import {
 // Note: Room description is now built directly in report() using sharedData.currentLocation
 
 /**
- * Shared data passed between execute and report phases
+ * Shared data passed between execute and report phases.
+ * Now includes interceptor data for ADR-118 support.
  */
 export interface GoingSharedData {
   isFirstVisit?: boolean;
@@ -49,6 +54,12 @@ export interface GoingSharedData {
   currentLocation?: string;   // Room we're now in
   direction?: DirectionType;
   vehicleId?: string;         // If player is in a walkable vehicle, the vehicle ID
+  /** Interceptor found during validate, if any */
+  interceptor?: ActionInterceptor;
+  /** Shared data for interceptor phases */
+  interceptorData?: InterceptorSharedData;
+  /** Source room entity for interceptor lookups */
+  sourceRoom?: IFEntity;
 }
 
 export function getGoingSharedData(context: ActionContext): GoingSharedData {
@@ -75,6 +86,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
   
   validate(context: ActionContext): ValidationResult {
     const actor = context.player;
+    const sharedData = getGoingSharedData(context);
 
     // Get the direction from the parsed command (should already be a Direction constant)
     // Direction can come from extras or from directObject name
@@ -115,7 +127,6 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       if (containingRoom) {
         currentRoom = containingRoom;
         // Store vehicle ID so execute() can move the vehicle instead of the player
-        const sharedData = getGoingSharedData(context);
         sharedData.vehicleId = context.world.getLocation(actor.id);
       }
     }
@@ -126,6 +137,33 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
         valid: false,
         error: GoingMessages.NOT_IN_ROOM
       };
+    }
+
+    // Check for interceptor on the source room (ADR-118)
+    // Interceptors on rooms can block or modify movement attempts
+    const interceptorResult = getInterceptorForAction(currentRoom, IFActions.GOING);
+    const interceptor = interceptorResult?.interceptor;
+    const interceptorData: InterceptorSharedData = {
+      // Pass direction info to interceptor
+      direction: direction
+    };
+
+    // Store for later phases
+    sharedData.interceptor = interceptor;
+    sharedData.interceptorData = interceptorData;
+    sharedData.sourceRoom = currentRoom;
+
+    // === PRE-VALIDATE HOOK ===
+    // Called before standard validation - can block early
+    if (interceptor?.preValidate) {
+      const result = interceptor.preValidate(currentRoom, context.world, actor.id, interceptorData);
+      if (result !== null) {
+        return {
+          valid: result.valid,
+          error: result.error,
+          params: result.params
+        };
+      }
     }
 
     // Use RoomBehavior to get exit information
@@ -204,6 +242,19 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     // Darkness affects visibility (looking), not movement.
     // This matches traditional IF behavior (e.g., Cloak of Darkness).
 
+    // === POST-VALIDATE HOOK ===
+    // Called after standard validation passes - can add entity-specific conditions
+    if (interceptor?.postValidate) {
+      const result = interceptor.postValidate(currentRoom, context.world, actor.id, interceptorData);
+      if (result !== null) {
+        return {
+          valid: result.valid,
+          error: result.error,
+          params: result.params
+        };
+      }
+    }
+
     return { valid: true };
   },
   
@@ -258,8 +309,16 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     if (isFirstVisit) {
       RoomBehavior.markVisited(destination, actor);
     }
+
+    // === POST-EXECUTE HOOK ===
+    // Called after standard execution - can perform additional mutations
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.postExecute && sharedData.sourceRoom) {
+      interceptor.postExecute(sharedData.sourceRoom, context.world, actor.id, interceptorData);
+    }
   },
-  
+
   /**
    * Report events after successful movement
    * Only called on success path - validation has already passed
@@ -342,6 +401,18 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       }));
     }
 
+    // === POST-REPORT HOOK ===
+    // Called after standard report - can add additional effects
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.postReport && sharedData.sourceRoom) {
+      const additionalEffects = interceptor.postReport(sharedData.sourceRoom, context.world, context.player.id, interceptorData);
+      // Convert CapabilityEffects to ISemanticEvents
+      for (const effect of additionalEffects) {
+        events.push(context.event(effect.type, effect.payload));
+      }
+    }
+
     return events;
   },
 
@@ -350,6 +421,21 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
    * Called instead of execute/report when validate returns invalid
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    const sharedData = getGoingSharedData(context);
+
+    // === ON-BLOCKED HOOK ===
+    // Called when action is blocked - can provide custom blocked handling
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.onBlocked && sharedData.sourceRoom && result.error) {
+      const customEffects = interceptor.onBlocked(sharedData.sourceRoom, context.world, context.player.id, result.error, interceptorData);
+      if (customEffects !== null) {
+        // Interceptor provided custom blocked effects
+        return customEffects.map(effect => context.event(effect.type, effect.payload));
+      }
+    }
+
+    // Standard blocked handling
     return [context.event('if.event.went', {
       blocked: true,
       reason: result.error,

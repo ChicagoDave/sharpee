@@ -19,11 +19,12 @@ import type { LanguageProvider } from '@sharpee/lang-en-us';
 
 // Import message constants from handlers
 import {
-  GlacierMessages,
-  BoatPunctureMessages,
   DeathPenaltyMessages,
   TrapdoorMessages
 } from '../handlers';
+
+// Import from traits (ADR-118 interceptors)
+import { BoatPunctureMessages, GlacierMessages } from '../traits';
 import { RiverMessages } from '../handlers/river-handler';
 import { FallsDeathMessages } from '../handlers/falls-death-handler';
 import { TinyRoomMessages } from '../handlers/tiny-room-handler';
