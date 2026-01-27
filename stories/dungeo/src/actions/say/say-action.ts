@@ -18,6 +18,7 @@ import { SAY_ACTION_ID, SayMessages } from './types';
 // Import cyclops-specific helpers
 import { makeCyclopsFlee, CyclopsCustomProperties } from '../../npcs/cyclops/cyclops-entity';
 import { CyclopsMessages } from '../../npcs/cyclops/cyclops-messages';
+import { RiddleRoomTrait } from '../../traits';
 
 /**
  * Extract the words spoken from the command
@@ -144,10 +145,10 @@ function handleLoudRoomEcho(context: ActionContext): ISemanticEvent[] {
  */
 function handleRiddleAnswer(context: ActionContext, words: string): ISemanticEvent[] {
   const events: ISemanticEvent[] = [];
-  const room = context.currentLocation as any;
+  const riddleTrait = context.currentLocation.get(RiddleRoomTrait);
 
   // Check if already solved
-  if (room.riddleSolved) {
+  if (riddleTrait?.riddleSolved) {
     events.push(context.event('action.success', {
       actionId: SAY_ACTION_ID,
       messageId: SayMessages.RIDDLE_ALREADY_SOLVED,
@@ -164,7 +165,9 @@ function handleRiddleAnswer(context: ActionContext, words: string): ISemanticEve
 
   // Check for correct answer
   if (answer === 'well' || answer === 'a well') {
-    room.riddleSolved = true;
+    if (riddleTrait) {
+      riddleTrait.riddleSolved = true;
+    }
 
     // Open the east exit - we need to find what room is east
     // For now, we'll store that the riddle is solved and let the room

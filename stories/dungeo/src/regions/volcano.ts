@@ -274,7 +274,6 @@ function createGlacierRoomObjects(world: WorldModel, roomId: string): void {
     article: 'a'
   }));
   glacier.add(new SceneryTrait());
-  (glacier as any).isMelted = false;
   world.moveEntity(glacier.id, roomId);
 }
 
@@ -461,7 +460,6 @@ function createBalloonObjects(world: WorldModel, roomIds: VolcanoRoomIds): Volca
     article: 'a'
   }));
   wire.add(new SceneryTrait());
-  (wire as any).tiedTo = null;
   world.moveEntity(wire.id, balloon.id);
 
   // Dead balloon template - spawned on crash

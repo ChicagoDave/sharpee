@@ -115,8 +115,6 @@ function meltGlacier(
     });
 
     if (glacier) {
-      (glacier as any).isMelted = true;
-
       // Update glacier description
       const identity = glacier.get(IdentityTrait);
       if (identity) {

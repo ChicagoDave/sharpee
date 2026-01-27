@@ -27,6 +27,7 @@ import {
   DirectionType,
   ReadableTrait
 } from '@sharpee/world-model';
+import { RoyalPuzzleTrait } from '../traits';
 
 export interface RoyalPuzzleRoomIds {
   squareRoom: string;
@@ -110,23 +111,25 @@ function createPuzzleController(world: WorldModel): IFEntity {
     article: 'the'
   }));
 
-  // Initialize puzzle state
-  const state: RoyalPuzzleState = {
+  // Initialize puzzle state via trait
+  controller.add(new RoyalPuzzleTrait({
     grid: [...INITIAL_GRID],
     playerPos: ENTRY_POSITION,
     cardTaken: false,
     hasExited: false,
     inPuzzle: false,
     pushCount: 0
-  };
-
-  (controller as any).puzzleState = state;
+  }));
 
   return controller;
 }
 
 export function getPuzzleState(controller: IFEntity): RoyalPuzzleState {
-  return (controller as any).puzzleState;
+  const trait = controller.get(RoyalPuzzleTrait);
+  if (!trait) {
+    throw new Error('Royal Puzzle Controller missing RoyalPuzzleTrait');
+  }
+  return trait;
 }
 
 export function resetPuzzle(controller: IFEntity): void {

@@ -116,3 +116,60 @@ export {
   UnderDoorTraitConfig,
   UnderDoorTraitConstructor
 } from './under-door-trait';
+
+// Machine State (coal machine activation)
+export {
+  MachineStateTrait,
+  MachineStateTraitConfig,
+  MachineStateTraitConstructor
+} from './machine-state-trait';
+
+// Round Room (spinning carousel state)
+export {
+  RoundRoomTrait,
+  RoundRoomTraitConfig,
+  RoundRoomTraitConstructor
+} from './round-room-trait';
+
+// Rope State (dome room rope attachment)
+export {
+  RopeStateTrait,
+  RopeStateTraitConfig,
+  RopeStateTraitConstructor
+} from './rope-state-trait';
+
+// Riddle Room (puzzle solved state)
+export {
+  RiddleRoomTrait,
+  RiddleRoomTraitConfig,
+  RiddleRoomTraitConstructor
+} from './riddle-room-trait';
+
+// Bucket (water container state)
+export {
+  BucketTrait,
+  BucketTraitConfig,
+  BucketTraitConstructor
+} from './bucket-trait';
+
+// Hades Entry (spirits blocking state)
+export {
+  HadesEntryTrait,
+  HadesEntryTraitConfig,
+  HadesEntryTraitConstructor
+} from './hades-entry-trait';
+
+// Basin Room (ritual basin trap state)
+export {
+  BasinRoomTrait,
+  BasinRoomTraitConfig,
+  BasinRoomTraitConstructor,
+  BasinState
+} from './basin-room-trait';
+
+// Royal Puzzle (sliding block puzzle state)
+export {
+  RoyalPuzzleTrait,
+  RoyalPuzzleTraitConfig,
+  RoyalPuzzleTraitConstructor
+} from './royal-puzzle-trait';

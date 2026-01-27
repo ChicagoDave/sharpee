@@ -21,7 +21,7 @@ import {
   LightSourceTrait,
   SwitchableTrait
 } from '@sharpee/world-model';
-import { TreasureTrait, BurnableTrait } from '../traits';
+import { TreasureTrait, BurnableTrait, BasinRoomTrait } from '../traits';
 
 export interface TempleRoomIds {
   temple: string;
@@ -76,7 +76,6 @@ export function createTempleRegion(world: WorldModel): TempleRoomIds {
 
   const mirrorRoom = createRoom(world, 'Mirror Room',
     'You are in a large room with a great mirror on the wall. Passages lead northeast and west.');
-  (mirrorRoom as any).mirrorRubCount = 0;
 
   const narrowCrawlway = createRoom(world, 'Narrow Crawlway',
     'This is a narrow crawlway. Passages lead north, south, and southwest.');
@@ -92,6 +91,7 @@ export function createTempleRegion(world: WorldModel): TempleRoomIds {
 
   const basinRoom = createRoom(world, 'Basin Room',
     'You are in a small room with a stone basin in the center.');
+  basinRoom.add(new BasinRoomTrait({ basinState: 'normal' }));
 
   const deadEnd1 = createRoom(world, 'Dead End',
     'You are at a dead end in the passage.');

@@ -451,8 +451,6 @@ function createStatue(world: WorldModel, roomId: string): IFEntity {
     treasureValue: 10,     // OFVAL from mdlzork_810722
     trophyCaseValue: 13,   // OTVAL from mdlzork_810722
   }));
-  (statue as any).isBuried = true;
-  (statue as any).isVisible = false;
   world.setStateValue('dungeo.statue.locationId', roomId);
   return statue;
 }
@@ -497,7 +495,6 @@ function createRainbow(world: WorldModel, roomId: string): IFEntity {
     article: 'a'
   }));
   rainbow.add(new SceneryTrait());
-  (rainbow as any).isSolid = false;
   world.moveEntity(rainbow.id, roomId);
   return rainbow;
 }

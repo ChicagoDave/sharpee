@@ -27,6 +27,7 @@ import {
   SceneryTrait,
   OpenableTrait
 } from '@sharpee/world-model';
+import { HadesEntryTrait } from '../traits';
 
 export interface EndgameRoomIds {
   topOfStairs: string;
@@ -134,7 +135,7 @@ export function createEndgameRegion(world: WorldModel): EndgameRoomIds {
     properName: true,
     article: 'the'
   }));
-  (entryToHades as any).spiritsBlocking = true;
+  entryToHades.add(new HadesEntryTrait({ spiritsBlocking: true }));
 
   const landOfDead = world.createEntity('Land of the Dead', EntityType.ROOM);
   landOfDead.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));

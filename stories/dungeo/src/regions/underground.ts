@@ -28,7 +28,7 @@ import {
   WeaponTrait
 } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
-import { TrollAxeTrait, TrollTrait, TreasureTrait, TinyRoomDoorTrait, TinyRoomKeyTrait } from '../traits';
+import { TrollAxeTrait, TrollTrait, TreasureTrait, TinyRoomDoorTrait, TinyRoomKeyTrait, RopeStateTrait } from '../traits';
 import { TrollMessages } from '../npcs/troll';
 
 export interface UndergroundRoomIds {
@@ -93,8 +93,6 @@ export function createUndergroundRegion(world: WorldModel): UndergroundRoomIds {
 
   const domeRoom = createRoom(world, 'Dome Room',
     'This is the periphery of a large dome, which forms the ceiling of another room below. Protecting you from a precipitous drop is a wooden railing which circles the dome.');
-  (domeRoom as any).ropeAttached = false;
-  (domeRoom as any).hasRailing = true;
 
   const tinyRoom = createRoom(world, 'Tiny Room',
     'This is a tiny room with passages leading east and west.');
@@ -111,8 +109,12 @@ export function createUndergroundRegion(world: WorldModel): UndergroundRoomIds {
   const torchRoom = createRoom(world, 'Torch Room',
     'This is a large room with a prominent doorway leading to a down staircase. To the west is a narrow twisting tunnel, covered with a thin layer of dust. Above you is a large dome painted with scenes depicting elfin hacking rites. Up around the edge of the dome (20 feet up) is a wooden railing. In the center of the room there is a white marble pedestal.');
 
-  // Link Dome Room to Torch Room for rope puzzle
-  (domeRoom as any).torchRoomId = torchRoom.id;
+  // Add rope state trait to Dome Room for rope puzzle
+  domeRoom.add(new RopeStateTrait({
+    ropeAttached: false,
+    hasRailing: true,
+    torchRoomId: torchRoom.id
+  }));
 
   // === Set up connections ===
 

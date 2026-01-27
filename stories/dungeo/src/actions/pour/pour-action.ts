@@ -10,6 +10,7 @@ import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity, VehicleTrait } from '@sharpee/world-model';
 import { moveVehicle, isActorInVehicle, getActorVehicle } from '@sharpee/world-model';
 import { POUR_ACTION_ID, PourMessages } from './types';
+import { BucketTrait } from '../../traits';
 
 /**
  * Find water in player's inventory (directly or in bottle)
@@ -124,7 +125,10 @@ export const pourAction: Action = {
       if (vehicleTrait && vehicleTrait.vehicleType === 'counterweight') {
         // Move water into bucket
         world.moveEntity(water.id, bucket.id);
-        (bucket as any).hasWater = true;
+        const bucketTrait = bucket.get(BucketTrait);
+        if (bucketTrait) {
+          bucketTrait.hasWater = true;
+        }
         sharedData.pouredIntoBucket = true;
 
         // If bucket is at bottom and water was poured in, it rises

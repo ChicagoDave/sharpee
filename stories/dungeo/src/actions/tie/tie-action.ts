@@ -17,7 +17,7 @@ import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity, RoomTrait, Direction } from '@sharpee/world-model';
 import { TIE_ACTION_ID, TieMessages } from './types';
-import { BalloonStateTrait, isLedgePosition } from '../../traits';
+import { BalloonStateTrait, isLedgePosition, RopeStateTrait } from '../../traits';
 
 /**
  * Check if entity is the braided wire (FORTRAN calls it BROPE but game text says "wire")
@@ -79,14 +79,16 @@ function isRope(entity: IFEntity): boolean {
  * Check if room has a railing (Dome Room)
  */
 function hasRailing(room: IFEntity): boolean {
-  return (room as any).hasRailing === true;
+  const trait = room.get(RopeStateTrait);
+  return trait?.hasRailing === true;
 }
 
 /**
  * Check if rope is already attached to railing
  */
 function isRopeAttached(room: IFEntity): boolean {
-  return (room as any).ropeAttached === true;
+  const trait = room.get(RopeStateTrait);
+  return trait?.ropeAttached === true;
 }
 
 /**
@@ -225,8 +227,11 @@ export const tieAction: Action = {
 
       if (!room || !rope) return;
 
-      // Mark rope as attached
-      (room as any).ropeAttached = true;
+      // Mark rope as attached via trait
+      const ropeStateTrait = room.get(RopeStateTrait);
+      if (ropeStateTrait) {
+        ropeStateTrait.ropeAttached = true;
+      }
 
       // Move rope to the room (it's now tied there)
       world.moveEntity(rope.id, room.id);
@@ -237,13 +242,11 @@ export const tieAction: Action = {
         identity.description = 'A rope is tied to the railing, dangling down into the darkness below.';
       }
 
-      // Enable DOWN exit - find Torch Room
-      // The room should have torchRoomId set when created
-      const torchRoomId = (room as any).torchRoomId;
-      if (torchRoomId) {
+      // Enable DOWN exit - find Torch Room from trait
+      if (ropeStateTrait?.torchRoomId) {
         const roomTrait = room.get(RoomTrait);
         if (roomTrait) {
-          roomTrait.exits[Direction.DOWN] = { destination: torchRoomId };
+          roomTrait.exits[Direction.DOWN] = { destination: ropeStateTrait.torchRoomId };
         }
       }
 

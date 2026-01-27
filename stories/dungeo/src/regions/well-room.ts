@@ -21,7 +21,7 @@ import {
   ActorTrait,
   NpcTrait
 } from '@sharpee/world-model';
-import { TreasureTrait } from '../traits';
+import { TreasureTrait, RiddleRoomTrait, BucketTrait } from '../traits';
 
 export interface WellRoomIds {
   engravingsCave: string;
@@ -67,7 +67,7 @@ round as a cup,
 and all the king's horses can't draw it up?'
 
 (Reply via 'ANSWER "answer"')`);
-  (riddleRoom as any).riddleSolved = false;
+  riddleRoom.add(new RiddleRoomTrait({ riddleSolved: false }));
 
   const pearlRoom = createRoom(world, 'Broom Closet',
     'This is a former broom closet. The exits are to the east and west.');
@@ -95,7 +95,6 @@ and all the king's horses can't draw it up?'
 
   const cave = createRoom(world, 'Cave',
     'This is a tiny cave with entrances west and north, and a dark, forbidding staircase leading down.');
-  (cave as any).mirrorRubCount = 0; // Even = Hades, Odd = Atlantis
 
   // === Set up connections ===
 
@@ -262,7 +261,7 @@ function createBucket(
     },
     isOperational: true
   }));
-  (bucket as any).hasWater = false;
+  bucket.add(new BucketTrait({ hasWater: false }));
   world.moveEntity(bucket.id, startRoomId);
   return bucket;
 }
@@ -449,7 +448,6 @@ function createTriangularButton(world: WorldModel, roomId: string): IFEntity {
     article: 'a'
   }));
   button.add(new SceneryTrait());
-  (button as any).isPushed = false;
   world.moveEntity(button.id, roomId);
   return button;
 }
@@ -467,7 +465,6 @@ function createDingyClosetObjects(world: WorldModel, roomId: string): void {
     article: 'a'
   }));
   cage.add(new SceneryTrait());
-  (cage as any).isLifted = false;
   world.moveEntity(cage.id, roomId);
 
   // White crystal sphere - treasure (6 take + 6 case = 12 total)

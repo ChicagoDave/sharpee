@@ -26,7 +26,7 @@ import {
   OpenableTrait
 } from '@sharpee/world-model';
 
-import { BasketElevatorTrait, TreasureTrait } from '../traits';
+import { BasketElevatorTrait, TreasureTrait, MachineStateTrait } from '../traits';
 
 export interface CoalMineRoomIds {
   // Mirror Room entrance area
@@ -531,8 +531,7 @@ function createMachine(world: WorldModel, roomId: string): IFEntity {
 
   machine.add(new OpenableTrait({ isOpen: true }));
   machine.add(new SceneryTrait());
-
-  (machine as any).machineActivated = false;
+  machine.add(new MachineStateTrait({ isActivated: false }));
 
   world.moveEntity(machine.id, roomId);
   return machine;

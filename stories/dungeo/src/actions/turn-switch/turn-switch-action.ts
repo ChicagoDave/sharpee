@@ -11,7 +11,7 @@ import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity, EntityType } from '@sharpee/world-model';
 import { TURN_SWITCH_ACTION_ID, TurnSwitchMessages } from './types';
-import { TreasureTrait } from '../../traits';
+import { TreasureTrait, MachineStateTrait } from '../../traits';
 
 /**
  * Check if an entity is the machine
@@ -106,7 +106,8 @@ export const turnSwitchAction: Action = {
     }
 
     // Check if machine was already used
-    if ((machine as any).machineActivated) {
+    const machineState = machine.get(MachineStateTrait);
+    if (machineState?.isActivated) {
       return {
         valid: false,
         error: TurnSwitchMessages.ALREADY_USED
@@ -146,7 +147,10 @@ export const turnSwitchAction: Action = {
     sharedData.diamond = diamond;
 
     // Mark machine as activated (one-time use)
-    (machine as any).machineActivated = true;
+    const machineState = machine.get(MachineStateTrait);
+    if (machineState) {
+      machineState.isActivated = true;
+    }
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {

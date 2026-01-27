@@ -18,6 +18,7 @@
 import { ISemanticEvent, EntityId } from '@sharpee/core';
 import { WorldModel, IdentityTrait, LightSourceTrait, SwitchableTrait, RoomTrait, RoomBehavior, Direction } from '@sharpee/world-model';
 import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/engine';
+import { HadesEntryTrait } from '../traits';
 
 export const ExorcismMessages = {
   SPIRITS_BLOCK: 'dungeo.exorcism.spirits_block',
@@ -121,7 +122,10 @@ function completeExorcism(
   // Get the Entry to Hades room and clear the spirits flag
   const entryRoom = world.getEntity(entryToHadesId);
   if (entryRoom) {
-    (entryRoom as any).spiritsBlocking = false;
+    const hadesTrait = entryRoom.get(HadesEntryTrait);
+    if (hadesTrait) {
+      hadesTrait.spiritsBlocking = false;
+    }
 
     // Clear the blocked east exit
     RoomBehavior.unblockExit(entryRoom, Direction.EAST);
@@ -270,7 +274,8 @@ export function registerExorcismHandler(
  */
 export function areSpiritsBlocking(world: WorldModel, entryToHadesId: EntityId): boolean {
   const room = world.getEntity(entryToHadesId);
-  return (room as any)?.spiritsBlocking === true;
+  const trait = room?.get(HadesEntryTrait);
+  return trait?.spiritsBlocking === true;
 }
 
 /**

@@ -14,6 +14,7 @@ import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, NpcTrait, RoomTrait, Direction } from '@sharpee/world-model';
 import { ANSWER_ACTION_ID, AnswerMessages } from './types';
+import { RiddleRoomTrait } from '../../traits';
 import {
   processAnswer,
   getCurrentQuestionMessageId,
@@ -55,7 +56,8 @@ function isInRiddleRoom(context: ActionContext): boolean {
  * Check if the riddle has already been solved
  */
 function isRiddleSolved(context: ActionContext): boolean {
-  return (context.currentLocation as any).riddleSolved === true;
+  const trait = context.currentLocation.get(RiddleRoomTrait);
+  return trait?.riddleSolved === true;
 }
 
 /**
@@ -233,7 +235,10 @@ export const answerAction: Action = {
 
       if (answer === 'well' || answer === 'a well') {
         // Correct! Mark riddle as solved
-        (context.currentLocation as any).riddleSolved = true;
+        const riddleTrait = context.currentLocation.get(RiddleRoomTrait);
+        if (riddleTrait) {
+          riddleTrait.riddleSolved = true;
+        }
 
         // Open the east exit to the Pearl Room (Broom Closet)
         const roomTrait = context.currentLocation.get(RoomTrait);

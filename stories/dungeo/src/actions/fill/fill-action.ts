@@ -10,6 +10,7 @@ import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity, VehicleTrait, OpenableTrait } from '@sharpee/world-model';
 import { moveVehicle, isActorInVehicle, getActorVehicle } from '@sharpee/world-model';
 import { FILL_ACTION_ID, FillMessages } from './types';
+import { BucketTrait } from '../../traits';
 
 /**
  * Find bottle in player's inventory
@@ -53,7 +54,8 @@ function findBucketWithWater(context: ActionContext): IFEntity | undefined {
   if (vehicle) {
     const identity = vehicle.get(IdentityTrait);
     if (identity?.name?.toLowerCase().includes('bucket')) {
-      if ((vehicle as any).hasWater) {
+      const bucketTrait = vehicle.get(BucketTrait);
+      if (bucketTrait?.hasWater) {
         return vehicle;
       }
     }
@@ -71,7 +73,8 @@ function findBucketWithWater(context: ActionContext): IFEntity | undefined {
   for (const item of roomContents) {
     const identity = item.get(IdentityTrait);
     if (identity?.name?.toLowerCase().includes('bucket')) {
-      if ((item as any).hasWater) {
+      const bucketTrait = item.get(BucketTrait);
+      if (bucketTrait?.hasWater) {
         return item;
       }
     }
@@ -146,7 +149,10 @@ export const fillAction: Action = {
         // Restore bottle state
         if (openable) openable.isOpen = wasOpen;
 
-        (bucket as any).hasWater = false;
+        const bucketTrait = bucket.get(BucketTrait);
+        if (bucketTrait) {
+          bucketTrait.hasWater = false;
+        }
         sharedData.filledFromBucket = true;
 
         // If bucket is at top and water was removed, it descends

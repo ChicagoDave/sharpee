@@ -54,12 +54,6 @@ export function isDamOpen(world: IWorldModel): boolean {
  * Called by turn-bolt action after draining completes
  */
 export function openDam(world: IWorldModel): void {
-  // Update dam room state
-  const dam = world.getEntity(damRoomId);
-  if (dam) {
-    (dam as any).damOpen = true;
-  }
-
   // Unblock reservoir exits
   unblockReservoirExits(world);
 
@@ -71,12 +65,6 @@ export function openDam(world: IWorldModel): void {
  * Close the dam (refill reservoir) - not typically used but available
  */
 export function closeDam(world: IWorldModel): void {
-  // Update dam room state
-  const dam = world.getEntity(damRoomId);
-  if (dam) {
-    (dam as any).damOpen = false;
-  }
-
   // Block reservoir exits again
   blockReservoirExits(world);
 

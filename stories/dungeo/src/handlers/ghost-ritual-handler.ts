@@ -11,6 +11,7 @@
 import { ISemanticEvent, EntityId } from '@sharpee/core';
 import { WorldModel, IdentityTrait } from '@sharpee/world-model';
 import { createThiefsCanvas } from '../objects/thiefs-canvas-objects';
+import { BasinRoomTrait } from '../traits';
 
 export const GhostRitualMessages = {
   GHOST_APPEARS: 'dungeo.ghost.appears',
@@ -91,8 +92,8 @@ export function registerGhostRitualHandler(world: WorldModel): void {
     const basinRoom = world.getEntity(basinRoomId);
     if (!basinRoom) return;
 
-    const basinState = (basinRoom as any).basinState;
-    if (basinState !== 'disarmed') {
+    const basinTrait = basinRoom.get(BasinRoomTrait);
+    if (basinTrait?.basinState !== 'disarmed') {
       // Basin trap not disarmed - the item just sits there
       return;
     }

@@ -11,7 +11,7 @@ import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity } from '@sharpee/world-model';
 import { BURN_ACTION_ID, BurnMessages } from './types';
-import { BurnableTrait } from '../../traits';
+import { BurnableTrait, BasinRoomTrait } from '../../traits';
 
 /**
  * Check if an entity is incense (has BurnableTrait with burnableType 'incense')
@@ -189,9 +189,9 @@ export const burnAction: Action = {
     const playerLocation = world.getLocation(context.player.id);
     if (playerLocation) {
       const room = world.getEntity(playerLocation);
-      const roomIdentity = room?.get(IdentityTrait);
-      if (roomIdentity?.name === 'Basin Room') {
-        (room as any).basinState = 'disarmed';
+      const basinTrait = room?.get(BasinRoomTrait);
+      if (basinTrait) {
+        basinTrait.basinState = 'disarmed';
         sharedData.basinDisarmed = true;
       }
     }

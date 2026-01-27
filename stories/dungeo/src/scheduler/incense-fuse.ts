@@ -12,7 +12,7 @@ import { ISemanticEvent, EntityId } from '@sharpee/core';
 import { WorldModel, IdentityTrait } from '@sharpee/world-model';
 import { ISchedulerService, Fuse, SchedulerContext } from '@sharpee/engine';
 import { DungeoSchedulerMessages } from './scheduler-messages';
-import { BurnableTrait } from '../traits';
+import { BurnableTrait, BasinRoomTrait } from '../traits';
 
 // Fuse ID
 const INCENSE_BURN_FUSE = 'dungeo.incense.burn';
@@ -60,9 +60,10 @@ function createIncenseBurnFuse(incenseId: EntityId, basinRoomId: EntityId): Fuse
 
       // Reset basin room state if applicable
       const basinRoom = ctx.world.getEntity(basinRoomId);
-      if (basinRoom && (basinRoom as any).basinState === 'disarmed') {
+      const basinTrait = basinRoom?.get(BasinRoomTrait);
+      if (basinTrait?.basinState === 'disarmed') {
         // Basin trap re-arms when incense burns out
-        (basinRoom as any).basinState = 'normal';
+        basinTrait.basinState = 'normal';
       }
 
       // Clear the burning state

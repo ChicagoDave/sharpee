@@ -15,6 +15,7 @@ import {
 } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
 import { RobotMessages } from './robot-messages';
+import { RoundRoomTrait } from '../../traits';
 
 /**
  * Robot state stored in NpcTrait.customProperties
@@ -92,7 +93,10 @@ export function makeRobotPushButton(
   // Fix the Round Room
   const roundRoom = world.getEntity(roundRoomId);
   if (roundRoom) {
-    (roundRoom as any).isFixed = true;
+    const trait = roundRoom.get(RoundRoomTrait);
+    if (trait) {
+      trait.isFixed = true;
+    }
   }
 
   // Emit success events

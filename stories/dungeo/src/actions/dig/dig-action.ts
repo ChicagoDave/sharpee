@@ -131,10 +131,8 @@ export const digAction: Action = {
       });
 
       if (statue && statueLocationId) {
-        // Move statue to the room and mark as visible
+        // Move statue to the room (now visible)
         world.moveEntity(statue.id, statueLocationId);
-        (statue as any).isBuried = false;
-        (statue as any).isVisible = true;
       }
 
       world.setStateValue(`dungeo.${diggableInfo.treasure}.revealed`, true);

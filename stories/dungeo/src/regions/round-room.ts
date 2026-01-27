@@ -13,7 +13,7 @@ import {
   OpenableTrait,
   AuthorModel
 } from '@sharpee/world-model';
-import { TreasureTrait } from '../traits';
+import { TreasureTrait, RoundRoomTrait } from '../traits';
 
 export interface RoundRoomIds {
   roundRoom: string;
@@ -29,7 +29,7 @@ export function createRoundRoomRegion(world: WorldModel): RoundRoomIds {
     properName: true,
     article: 'the'
   }));
-  (room as any).isFixed = false; // Spinning state - false = randomized exits (until robot fixes it)
+  room.add(new RoundRoomTrait({ isFixed: false })); // Spinning state - false = randomized exits (until robot fixes it)
   // Compass message "Your compass needle spins wildly, and you can't get your bearings."
   // is added dynamically by the room handler when isFixed is false
 

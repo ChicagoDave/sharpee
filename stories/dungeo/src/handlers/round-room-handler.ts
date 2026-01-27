@@ -11,6 +11,7 @@
 import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel, RoomTrait, IdentityTrait, Direction, DirectionType } from '@sharpee/world-model';
 import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/engine';
+import { RoundRoomTrait } from '../traits';
 
 export const RoundRoomMessages = {
   COMPASS_SPINNING: 'dungeo.round_room.compass_spinning',
@@ -73,8 +74,9 @@ function isRoomFixed(world: WorldModel, roundRoomId: string): boolean {
   const roundRoom = world.getEntity(roundRoomId);
   if (!roundRoom) return true; // Default to fixed if room not found
 
-  // Check the isFixed flag on the room
-  return (roundRoom as any).isFixed === true;
+  // Check the isFixed flag via RoundRoomTrait
+  const trait = roundRoom.get(RoundRoomTrait);
+  return trait?.isFixed === true;
 }
 
 /**
