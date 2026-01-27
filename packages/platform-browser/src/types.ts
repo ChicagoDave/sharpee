@@ -129,6 +129,10 @@ export interface SaveSlotMeta {
 /**
  * Browser-specific save data format.
  * Captures state without replacing entities - allows restoring state to existing world.
+ *
+ * v3.0.0-delta: Only stores entities whose locations or traits changed from
+ * the initial world state (baseline). The entire payload is lz-string
+ * compressed before writing to localStorage.
  */
 export interface BrowserSaveData {
   /** Save format version */
@@ -139,9 +143,9 @@ export interface BrowserSaveData {
   turnCount: number;
   /** Score at save time */
   score: number;
-  /** Entity locations: entityId -> locationId */
+  /** Entity locations: entityId -> locationId (delta: only changed entries) */
   locations: Record<string, string | null>;
-  /** Entity trait states: entityId -> { traitName -> traitData } */
+  /** Entity trait states: entityId -> { traitName -> traitData } (delta: only changed entries) */
   traits: Record<string, Record<string, unknown>>;
   /** Compressed HTML transcript (innerHTML of #text-content) */
   transcriptHtml?: string;
