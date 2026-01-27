@@ -4,11 +4,11 @@
  * This action handles entering objects that have the ENTRY trait or
  * are containers/supporters marked as enterable.
  *
- * Uses four-phase pattern:
- * 1. validate: Check target exists and is enterable
- * 2. execute: Move actor into/onto the target
- * 3. blocked: Generate error events when validation fails
- * 4. report: Generate success events with entered data
+ * Uses four-phase pattern with interceptor support (ADR-118):
+ * 1. validate: preValidate hook → standard checks → postValidate hook
+ * 2. execute: standard mutation → postExecute hook
+ * 3. blocked: onBlocked hook (if validation failed)
+ * 4. report: standard events → postReport hook (additional effects)
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -16,7 +16,11 @@ import { ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
   OpenableBehavior,
-  EnterableTrait
+  EnterableTrait,
+  getInterceptorForAction,
+  ActionInterceptor,
+  InterceptorSharedData,
+  createEffect
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { EnteredEventData } from './entering-events';
@@ -30,10 +34,15 @@ interface EnteringExecutionState {
 }
 
 /**
- * Shared data passed between execute and report phases
+ * Shared data passed between execute and report phases.
+ * Now includes interceptor data for ADR-118 support.
  */
 interface EnteringSharedData {
   enteringState?: EnteringExecutionState;
+  /** Interceptor found during validate, if any */
+  interceptor?: ActionInterceptor;
+  /** Shared data for interceptor phases */
+  interceptorData?: InterceptorSharedData;
 }
 
 function getEnteringSharedData(context: ActionContext): EnteringSharedData {
@@ -66,6 +75,7 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
   validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     const target = context.command.directObject?.entity;
+    const sharedData = getEnteringSharedData(context);
 
     // Validate target
     if (!target) {
@@ -73,6 +83,28 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
         valid: false,
         error: EnteringMessages.NO_TARGET
       };
+    }
+
+    // Check for interceptor on the target entity (ADR-118)
+    const interceptorResult = getInterceptorForAction(target, IFActions.ENTERING);
+    const interceptor = interceptorResult?.interceptor;
+    const interceptorData: InterceptorSharedData = {};
+
+    // Store for later phases
+    sharedData.interceptor = interceptor;
+    sharedData.interceptorData = interceptorData;
+
+    // === PRE-VALIDATE HOOK ===
+    // Called before standard validation - can block early
+    if (interceptor?.preValidate) {
+      const result = interceptor.preValidate(target, context.world, actor.id, interceptorData);
+      if (result !== null) {
+        return {
+          valid: result.valid,
+          error: result.error,
+          params: result.params
+        };
+      }
     }
 
     // Check scope - must be able to reach the target
@@ -109,7 +141,19 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Capacity checks are author responsibility via event handlers
+    // === POST-VALIDATE HOOK ===
+    // Called after standard validation passes - can add entity-specific conditions
+    if (interceptor?.postValidate) {
+      const result = interceptor.postValidate(target, context.world, actor.id, interceptorData);
+      if (result !== null) {
+        return {
+          valid: result.valid,
+          error: result.error,
+          params: result.params
+        };
+      }
+    }
+
     return { valid: true };
   },
 
@@ -121,6 +165,7 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
     const actor = context.player;
     const target = context.command.directObject!.entity!; // Safe because validate ensures it exists
     const currentLocation = context.world.getLocation(actor.id);
+    const sharedData = getEnteringSharedData(context);
 
     // Get preposition from EnterableTrait (required by validate)
     const enterableTrait = target.get(TraitType.ENTERABLE) as EnterableTrait;
@@ -136,8 +181,15 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       fromLocation: currentLocation,
       preposition
     };
-    const sharedData = getEnteringSharedData(context);
     sharedData.enteringState = state;
+
+    // === POST-EXECUTE HOOK ===
+    // Called after standard execution - can perform additional mutations
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.postExecute) {
+      interceptor.postExecute(target, context.world, actor.id, interceptorData);
+    }
   },
 
   /**
@@ -162,7 +214,7 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
     const messageId = state.preposition === 'on' ? EnteringMessages.ENTERED_ON : EnteringMessages.ENTERED;
 
     // Create the ENTERED event with messageId for text rendering
-    return [context.event('if.event.entered', {
+    const events: ISemanticEvent[] = [context.event('if.event.entered', {
       messageId: `${context.action.id}.${messageId}`,
       params: { place: state.targetName },
       targetId: state.targetId,
@@ -170,6 +222,23 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       fromLocation: state.fromLocation,
       preposition: state.preposition
     } as EnteredEventData & { messageId: string; params: Record<string, any>; targetName: string })];
+
+    // === POST-REPORT HOOK ===
+    // Called after standard report - can add additional effects
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.postReport) {
+      const target = context.command.directObject?.entity;
+      if (target) {
+        const additionalEffects = interceptor.postReport(target, context.world, context.player.id, interceptorData);
+        // Convert CapabilityEffects to ISemanticEvents
+        for (const effect of additionalEffects) {
+          events.push(context.event(effect.type, effect.payload));
+        }
+      }
+    }
+
+    return events;
   },
 
   /**
@@ -178,7 +247,21 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const target = context.command.directObject?.entity;
+    const sharedData = getEnteringSharedData(context);
 
+    // === ON-BLOCKED HOOK ===
+    // Called when action is blocked - can provide custom blocked handling
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.onBlocked && target && result.error) {
+      const customEffects = interceptor.onBlocked(target, context.world, context.player.id, result.error, interceptorData);
+      if (customEffects !== null) {
+        // Interceptor provided custom blocked effects
+        return customEffects.map(effect => context.event(effect.type, effect.payload));
+      }
+    }
+
+    // Standard blocked handling
     return [context.event('if.event.entered', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,

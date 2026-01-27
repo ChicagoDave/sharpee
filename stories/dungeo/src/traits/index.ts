@@ -71,6 +71,9 @@ export {
   InflatableTraitConstructor
 } from './inflatable-trait';
 
+// Inflatable Entering Interceptor (ADR-118)
+export { InflatableEnteringInterceptor } from '../interceptors/inflatable-entering-interceptor';
+
 // Burnable (incense, candles, guidebook, etc.)
 export {
   BurnableTrait,

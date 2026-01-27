@@ -22,6 +22,8 @@ export interface ITraitConstructor<T extends ITrait = ITrait> {
   readonly type: TraitType | string;
   /** Action IDs this trait handles via capability dispatch (ADR-090) */
   readonly capabilities?: readonly string[];
+  /** Action IDs this trait intercepts via interceptor hooks (ADR-118) */
+  readonly interceptors?: readonly string[];
 }
 
 /**

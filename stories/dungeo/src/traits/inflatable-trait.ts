@@ -6,6 +6,9 @@
  *
  * Replaces the anti-pattern of (entity as any).isInflated = true/false.
  * This trait persists through checkpoint save/restore, unlike custom properties.
+ *
+ * ADR-118: This trait declares an interceptor for ENTERING to handle
+ * the boat puncture mechanic (entering with sharp object deflates the boat).
  */
 
 import { ITrait, ITraitConstructor } from '@sharpee/world-model';
@@ -27,9 +30,15 @@ export interface InflatableTraitConfig {
  *
  * The inflate/deflate actions check for this trait to determine
  * if an entity can be inflated/deflated.
+ *
+ * Interceptors:
+ * - if.action.entering: Checks for sharp objects when entering inflated boat
  */
 export class InflatableTrait implements ITrait {
   static readonly type = 'dungeo.trait.inflatable' as const;
+
+  /** Declare interceptor for ENTERING action (ADR-118) */
+  static readonly interceptors = ['if.action.entering'] as const;
 
   readonly type = InflatableTrait.type;
 
