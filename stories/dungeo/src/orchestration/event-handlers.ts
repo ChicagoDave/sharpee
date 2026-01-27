@@ -20,7 +20,7 @@ import { ScoringEventProcessor } from '@sharpee/stdlib';
 // Handlers
 import { createMirrorTouchHandler, MirrorRoomConfig } from '../handlers/mirror-room-handler';
 import { createDeathPenaltyHandler } from '../handlers/death-penalty-handler';
-import { registerBalloonPutHandler } from '../scheduler';
+// Note: registerBalloonPutHandler removed - now handled via interceptor (ADR-118)
 
 // Scoring
 import { DungeoScoringService } from '../scoring';
@@ -90,19 +90,8 @@ export function registerEventHandlers(
     createDeathPenaltyHandler(world, scoringService)
   );
 
-  // ==========================================================================
-  // Balloon PUT Handler
-  // ==========================================================================
-
-  // Track burning objects placed in balloon receptacle
-  if (config.balloonIds) {
-    registerBalloonPutHandler(
-      engine,
-      world,
-      config.balloonIds.balloonId,
-      config.balloonIds.receptacleId
-    );
-  }
+  // Note: Balloon PUT handling is now done via interceptor (ADR-118)
+  // See ReceptaclePuttingInterceptor in stories/dungeo/src/interceptors/
 }
 
 /**

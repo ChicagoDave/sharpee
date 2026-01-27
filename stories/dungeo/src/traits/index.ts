@@ -111,6 +111,16 @@ export {
   ledgeToMidair
 } from './balloon-state-trait';
 
+// Balloon Receptacle (brazier in balloon basket)
+export {
+  BalloonReceptacleTrait,
+  BalloonReceptacleTraitConfig,
+  BalloonReceptacleTraitConstructor
+} from './balloon-receptacle-trait';
+
+// Receptacle Putting Interceptor (ADR-118)
+export { ReceptaclePuttingInterceptor, ReceptacleMessages } from '../interceptors/receptacle-putting-interceptor';
+
 // Tiny Room Door Puzzle (key-in-lock puzzle)
 export {
   TinyRoomDoorTrait,

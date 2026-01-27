@@ -4,11 +4,11 @@
  * This action handles putting objects into containers or onto supporters.
  * It determines the appropriate preposition based on the target's traits.
  *
- * Uses four-phase pattern:
- * 1. validate: Check item and destination exist and are compatible
- * 2. execute: Delegate to ContainerBehavior or SupporterBehavior
- * 3. blocked: Generate error events when validation fails
- * 4. report: Generate success events with put data
+ * Uses four-phase pattern with interceptor support (ADR-118):
+ * 1. validate: preValidate hook → standard checks → postValidate hook
+ * 2. execute: standard mutation → postExecute hook
+ * 3. blocked: onBlocked hook (if validation failed)
+ * 4. report: standard events → postReport hook (additional effects)
  *
  * Supports multi-object commands:
  * - "put all in box" - puts all carried items in box
@@ -20,7 +20,18 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, ContainerBehavior, SupporterBehavior, OpenableBehavior, IAddItemResult, IAddItemToSupporterResult, IFEntity } from '@sharpee/world-model';
+import {
+  TraitType,
+  ContainerBehavior,
+  SupporterBehavior,
+  OpenableBehavior,
+  IAddItemResult,
+  IAddItemToSupporterResult,
+  IFEntity,
+  getInterceptorForAction,
+  ActionInterceptor,
+  InterceptorSharedData
+} from '@sharpee/world-model';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
 import { IFActions } from '../../constants';
 import { PuttingMessages } from './putting-messages';
@@ -347,9 +358,11 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
     }
 
     // Single object validation
+    const actor = context.player;
     const item = context.command.directObject?.entity;
     const target = context.command.indirectObject?.entity;
     const preposition = context.command.parsed.structure.preposition?.text;
+    const sharedData = getPuttingSharedData(context);
 
     // Validate we have an item
     if (!item) {
@@ -365,6 +378,36 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
+    // Check for interceptor on the target entity (ADR-118)
+    // Interceptors are on the container/supporter receiving the item
+    const interceptorResult = getInterceptorForAction(target, IFActions.PUTTING);
+    const interceptor = interceptorResult?.interceptor;
+    const interceptorData: InterceptorSharedData = {
+      // Pass item info to interceptor so it knows what's being put
+      itemId: item.id,
+      itemName: item.name,
+      targetId: target.id,
+      targetName: target.name,
+      preposition: preposition
+    };
+
+    // Store for later phases
+    sharedData.interceptor = interceptor;
+    sharedData.interceptorData = interceptorData;
+
+    // === PRE-VALIDATE HOOK ===
+    // Called before standard validation - can block early
+    if (interceptor?.preValidate) {
+      const result = interceptor.preValidate(target, context.world, actor.id, interceptorData);
+      if (result !== null) {
+        return {
+          valid: result.valid,
+          error: result.error,
+          params: result.params
+        };
+      }
+    }
+
     // Item must be carried (or implicitly takeable)
     // This enables "put apple in box" when apple is on the ground
     const carryCheck = context.requireCarriedOrImplicitTake(item);
@@ -372,10 +415,30 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       return carryCheck.error!;
     }
 
-    return validateSingleEntity(context, item, target, preposition);
+    // Standard validation
+    const standardResult = validateSingleEntity(context, item, target, preposition);
+    if (!standardResult.valid) {
+      return standardResult;
+    }
+
+    // === POST-VALIDATE HOOK ===
+    // Called after standard validation passes - can add entity-specific conditions
+    if (interceptor?.postValidate) {
+      const result = interceptor.postValidate(target, context.world, actor.id, interceptorData);
+      if (result !== null) {
+        return {
+          valid: result.valid,
+          error: result.error,
+          params: result.params
+        };
+      }
+    }
+
+    return standardResult;
   },
 
   execute(context: ActionContext): void {
+    const actor = context.player;
     const sharedData = getPuttingSharedData(context);
     const target = context.command.indirectObject!.entity!;
     const preposition = context.command.parsed.structure.preposition?.text;
@@ -391,6 +454,7 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
           executeSingleEntity(context, result.entity, target, result, targetPreposition);
         }
       }
+      // Note: Multi-object commands don't support interceptors currently
       return;
     }
 
@@ -414,6 +478,14 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
 
     // Actually move the item to the target
     context.world.moveEntity(item.id, target.id);
+
+    // === POST-EXECUTE HOOK ===
+    // Called after standard execution - can perform additional mutations
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.postExecute) {
+      interceptor.postExecute(target, context.world, actor.id, interceptorData);
+    }
   },
 
   report(context: ActionContext): ISemanticEvent[] {
@@ -478,6 +550,18 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       }));
     }
 
+    // === POST-REPORT HOOK ===
+    // Called after standard report - can add additional effects
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.postReport) {
+      const additionalEffects = interceptor.postReport(target, context.world, context.player.id, interceptorData);
+      // Convert CapabilityEffects to ISemanticEvents
+      for (const effect of additionalEffects) {
+        events.push(context.event(effect.type, effect.payload));
+      }
+    }
+
     return events;
   },
 
@@ -489,7 +573,21 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const item = context.command.directObject?.entity;
     const target = context.command.indirectObject?.entity;
+    const sharedData = getPuttingSharedData(context);
 
+    // === ON-BLOCKED HOOK ===
+    // Called when action is blocked - can provide custom blocked handling
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.onBlocked && target && result.error) {
+      const customEffects = interceptor.onBlocked(target, context.world, context.player.id, result.error, interceptorData);
+      if (customEffects !== null) {
+        // Interceptor provided custom blocked effects
+        return customEffects.map(effect => context.event(effect.type, effect.payload));
+      }
+    }
+
+    // Standard blocked handling
     return [context.event('if.event.put_blocked', {
       // Rendering data
       messageId: `${context.action.id}.${result.error}`,

@@ -30,7 +30,8 @@ export { registerForestAmbienceDaemon, isForestAmbienceActive } from './forest-d
 export { registerBankAlarmDaemon, isBankAlarmActive } from './bank-alarm-daemon';
 export { registerIncenseFuse, getIncenseBurnRemaining } from './incense-fuse';
 export { registerBalloonDaemon, isBalloonDaemonActive, getBalloonPosition, resetBalloonDaemonTimer } from './balloon-daemon';
-export { registerBalloonPutHandler, registerBurnDaemon, isBalloonInflated, getBurningObjectId, BalloonHandlerMessages } from '../handlers/balloon-handler';
+// Note: registerBalloonPutHandler removed - now handled via interceptor (ADR-118)
+export { registerBurnDaemon, isBalloonInflated, getBurningObjectId, BalloonHandlerMessages } from '../handlers/balloon-handler';
 export { registerTrollRecoveryDaemon, isTrollRecoveryActive, getTrollState } from './troll-daemon';
 export { registerSwordGlowDaemon, getSwordGlowState, resetSwordGlowState, SwordGlowMessages } from './sword-glow-daemon';
 

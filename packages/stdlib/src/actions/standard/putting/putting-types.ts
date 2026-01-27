@@ -2,10 +2,11 @@
  * Type definitions for the putting action
  *
  * Provides type-safe access to shared data for multi-object support
+ * and interceptor integration (ADR-118)
  */
 
 import { EntityId } from '@sharpee/core';
-import { IFEntity, IAddItemResult, IAddItemToSupporterResult } from '@sharpee/world-model';
+import { IFEntity, IAddItemResult, IAddItemToSupporterResult, ActionInterceptor, InterceptorSharedData } from '@sharpee/world-model';
 
 /**
  * Result of validating/executing a single entity in multi-object command
@@ -31,6 +32,11 @@ export interface PuttingSharedData {
    * When set, indicates this is a multi-object command
    */
   multiObjectResults?: PuttingItemResult[];
+
+  /** Interceptor found during validate, if any (ADR-118) */
+  interceptor?: ActionInterceptor;
+  /** Shared data for interceptor phases (ADR-118) */
+  interceptorData?: InterceptorSharedData;
 }
 
 /**

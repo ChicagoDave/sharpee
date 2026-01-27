@@ -30,7 +30,8 @@ import {
   isMidairPosition,
   nextPositionUp,
   nextPositionDown,
-  ledgeToMidair
+  ledgeToMidair,
+  BalloonReceptacleTrait
 } from '../traits';
 
 // Re-export BalloonState types for backward compatibility with existing imports
@@ -409,6 +410,7 @@ function createBalloonObjects(world: WorldModel, roomIds: VolcanoRoomIds): Volca
   receptacle.add(new ContainerTrait({ capacity: { maxItems: 1, maxWeight: 10 }, enterable: false }));
   receptacle.add(new OpenableTrait({ isOpen: false }));
   receptacle.add(new SceneryTrait());
+  receptacle.add(new BalloonReceptacleTrait({ balloonId: balloon.id }));
   world.moveEntity(receptacle.id, balloon.id);
 
   // Cloth bag - visual component
