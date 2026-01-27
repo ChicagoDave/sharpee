@@ -21,7 +21,21 @@ import {
   VehicleTrait,
   EnterableTrait
 } from '@sharpee/world-model';
-import { TreasureTrait, InflatableTrait } from '../traits';
+import {
+  TreasureTrait,
+  InflatableTrait,
+  BalloonStateTrait,
+  BalloonPosition,
+  isLedgePosition,
+  isMidairPosition,
+  nextPositionUp,
+  nextPositionDown,
+  ledgeToMidair
+} from '../traits';
+
+// Re-export BalloonState types for backward compatibility with existing imports
+export type { BalloonPosition };
+export { isLedgePosition, isMidairPosition, nextPositionUp, nextPositionDown, ledgeToMidair };
 
 export interface VolcanoRoomIds {
   egyptianRoom: string;
@@ -193,70 +207,8 @@ export function connectVolcanoToUnderground(world: WorldModel, ids: VolcanoRoomI
 // OBJECTS - Created near their default room locations
 // ============================================================================
 
-/**
- * Balloon state stored on the balloon entity
- */
-export interface BalloonState {
-  position: BalloonPosition;
-  tetheredTo: 'hook1' | 'hook2' | null;
-  burningObject: string | null;
-  daemonEnabled: boolean;
-}
-
-export type BalloonPosition =
-  | 'vlbot'   // Volcano Bottom - ground level
-  | 'vair1'   // Mid-air 1 - just above bottom
-  | 'vair2'   // Mid-air 2 - near Narrow Ledge
-  | 'vair3'   // Mid-air 3
-  | 'vair4'   // Mid-air 4 - TOP, crash zone!
-  | 'ledg2'   // Ledge 2 - dockable, W to Narrow Ledge
-  | 'ledg3'   // Ledge 3 - dockable
-  | 'ledg4';  // Ledge 4 - dockable, W to Wide Ledge
-
-export function isLedgePosition(pos: BalloonPosition): boolean {
-  return pos === 'ledg2' || pos === 'ledg3' || pos === 'ledg4';
-}
-
-export function isMidairPosition(pos: BalloonPosition): boolean {
-  return pos === 'vair1' || pos === 'vair2' || pos === 'vair3' || pos === 'vair4';
-}
-
-export function nextPositionUp(pos: BalloonPosition): BalloonPosition | null {
-  const upMap: Record<BalloonPosition, BalloonPosition | null> = {
-    'vlbot': 'vair1',
-    'vair1': 'vair2',
-    'vair2': 'vair3',
-    'vair3': 'vair4',
-    'vair4': null, // Crash!
-    'ledg2': 'vair2',
-    'ledg3': 'vair3',
-    'ledg4': 'vair4',
-  };
-  return upMap[pos];
-}
-
-export function nextPositionDown(pos: BalloonPosition): BalloonPosition | null {
-  const downMap: Record<BalloonPosition, BalloonPosition | null> = {
-    'vlbot': null,
-    'vair1': 'vlbot',
-    'vair2': 'vair1',
-    'vair3': 'vair2',
-    'vair4': 'vair3',
-    'ledg2': 'vair2',
-    'ledg3': 'vair3',
-    'ledg4': 'vair4',
-  };
-  return downMap[pos];
-}
-
-export function ledgeToMidair(pos: BalloonPosition): BalloonPosition {
-  const ledgeMap: Record<string, BalloonPosition> = {
-    'ledg2': 'vair2',
-    'ledg3': 'vair3',
-    'ledg4': 'vair4',
-  };
-  return ledgeMap[pos] || pos;
-}
+// BalloonState types and helpers are now in balloon-state-trait.ts
+// See re-exports at top of file for backward compatibility
 
 export interface VolcanoObjectIds {
   balloonId: string;
@@ -438,13 +390,12 @@ function createBalloonObjects(world: WorldModel, roomIds: VolcanoRoomIds): Volca
       'ledg4': roomIds.wideLedge,
     }
   }));
-  const balloonState: BalloonState = {
+  balloon.add(new BalloonStateTrait({
     position: 'vlbot',
     tetheredTo: null,
     burningObject: null,
     daemonEnabled: true,
-  };
-  (balloon as any).balloonState = balloonState;
+  }));
   world.moveEntity(balloon.id, roomIds.volcanoBottom);
 
   // Receptacle - brazier for burning objects

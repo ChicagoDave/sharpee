@@ -12,7 +12,7 @@ import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity } from '@sharpee/world-model';
 import { UNTIE_ACTION_ID, UntieMessages } from './types';
-import { BalloonState } from '../../regions/volcano';
+import { BalloonStateTrait } from '../../traits';
 
 /**
  * Check if entity is the braided wire (FORTRAN calls it BROPE but game text says "wire")
@@ -64,7 +64,7 @@ export const untieAction: Action = {
     }
 
     const balloon = locationEntity;
-    const balloonState = (balloon as any).balloonState as BalloonState | undefined;
+    const balloonState = balloon.get(BalloonStateTrait);
 
     // Check if balloon is actually tied
     if (!balloonState || !balloonState.tetheredTo) {
@@ -92,7 +92,9 @@ export const untieAction: Action = {
     if (!balloon) return;
 
     // Get balloon state
-    const balloonState = (balloon as any).balloonState as BalloonState;
+    const balloonState = balloon.get(BalloonStateTrait);
+
+    if (!balloonState) return;
 
     // Untie the balloon
     balloonState.tetheredTo = null;

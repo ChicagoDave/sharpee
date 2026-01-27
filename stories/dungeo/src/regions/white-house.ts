@@ -21,6 +21,7 @@ import {
   SceneryTrait,
   IGameEvent
 } from '@sharpee/world-model';
+import { UnderDoorTrait } from '../traits';
 
 // Simple ID generator for events
 let eventCounter = 0;
@@ -352,6 +353,9 @@ function createWelcomeMat(world: WorldModel): IFEntity {
     article: 'a',
     weight: 5
   }));
+
+  // Track whether mat is positioned under a door (for Tiny Room puzzle)
+  mat.add(new UnderDoorTrait({ isUnderDoor: false }));
 
   return mat;
 }

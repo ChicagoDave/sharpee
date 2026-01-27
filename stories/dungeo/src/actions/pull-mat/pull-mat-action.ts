@@ -12,6 +12,7 @@ import {
   findTinyRoomDoor,
   handlePullMat
 } from '../../handlers/tiny-room-handler';
+import { TinyRoomDoorTrait } from '../../traits';
 
 // Event ID counter
 let eventCounter = 0;
@@ -45,7 +46,8 @@ export const pullMatAction: Action = {
     }
 
     // Check if mat is actually under door
-    if (!(door as any).matUnderDoor) {
+    const doorTrait = door.get(TinyRoomDoorTrait);
+    if (!doorTrait?.matUnderDoor) {
       return {
         valid: false,
         error: PullMatMessages.MAT_NOT_UNDER_DOOR

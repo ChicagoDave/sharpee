@@ -12,6 +12,7 @@ import {
   findScrewdriver,
   handlePushKeyWithScrewdriver
 } from '../../handlers/tiny-room-handler';
+import { TinyRoomDoorTrait } from '../../traits';
 
 // Event ID counter
 let eventCounter = 0;
@@ -57,7 +58,8 @@ export const pushKeyAction: Action = {
     }
 
     // Check if key is still in lock
-    if (!(door as any).keyInLock) {
+    const doorTrait = door.get(TinyRoomDoorTrait);
+    if (!doorTrait?.keyInLock) {
       return {
         valid: false,
         error: PushKeyMessages.KEY_ALREADY_PUSHED

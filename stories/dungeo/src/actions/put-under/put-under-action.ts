@@ -12,6 +12,7 @@ import {
   findMat,
   handlePutMatUnderDoor
 } from '../../handlers/tiny-room-handler';
+import { TinyRoomDoorTrait } from '../../traits';
 
 // Event ID counter
 let eventCounter = 0;
@@ -45,7 +46,8 @@ export const putUnderAction: Action = {
     }
 
     // Check if mat already placed (before checking inventory!)
-    if ((door as any).matUnderDoor) {
+    const doorTrait = door.get(TinyRoomDoorTrait);
+    if (doorTrait?.matUnderDoor) {
       return {
         valid: false,
         error: PutUnderMessages.MAT_ALREADY_PLACED

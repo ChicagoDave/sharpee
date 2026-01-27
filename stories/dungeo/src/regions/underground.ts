@@ -28,7 +28,7 @@ import {
   WeaponTrait
 } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
-import { TrollAxeTrait, TrollTrait, TreasureTrait } from '../traits';
+import { TrollAxeTrait, TrollTrait, TreasureTrait, TinyRoomDoorTrait, TinyRoomKeyTrait } from '../traits';
 import { TrollMessages } from '../npcs/troll';
 
 export interface UndergroundRoomIds {
@@ -631,15 +631,16 @@ function createTinyRoomObjects(world: WorldModel, tinyRoomId: string, drearyRoom
   door.add(new OpenableTrait({ isOpen: false }));
   door.add(new SceneryTrait());
   door.add(new LockableTrait({ isLocked: true }));
-  (door as any).keyInLock = true;
-  (door as any).matUnderDoor = false;
-  (door as any).keyOnMat = false;
-  (door as any).connectsRooms = [tinyRoomId, drearyRoomId];
-  (door as any).blocksDirection = {
-    [tinyRoomId]: 'NORTH',
-    [drearyRoomId]: 'SOUTH'
-  };
-  (door as any).isTinyRoomDoor = true;
+  door.add(new TinyRoomDoorTrait({
+    keyInLock: true,
+    matUnderDoor: false,
+    keyOnMat: false,
+    connectsRooms: [tinyRoomId, drearyRoomId],
+    blocksDirection: {
+      [tinyRoomId]: 'NORTH',
+      [drearyRoomId]: 'SOUTH'
+    }
+  }));
   world.moveEntity(door.id, tinyRoomId);
 
   // Small key - initially "in the lock" on Dreary Room side
@@ -652,8 +653,7 @@ function createTinyRoomObjects(world: WorldModel, tinyRoomId: string, drearyRoom
     article: 'a',
     weight: 25
   }));
-  (key as any).isHidden = true;
-  (key as any).isTinyRoomKey = true;
+  key.add(new TinyRoomKeyTrait({ isHidden: true }));
   world.moveEntity(key.id, tinyRoomId);
 }
 

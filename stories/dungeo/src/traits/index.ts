@@ -84,3 +84,35 @@ export {
   RiverNavigationTraitConfig,
   RiverNavigationTraitConstructor
 } from './river-navigation-trait';
+
+// Balloon State (hot air balloon in volcano region)
+export {
+  BalloonStateTrait,
+  BalloonStateTraitConfig,
+  BalloonStateTraitConstructor,
+  BalloonPosition,
+  isLedgePosition,
+  isMidairPosition,
+  nextPositionUp,
+  nextPositionDown,
+  ledgeToMidair
+} from './balloon-state-trait';
+
+// Tiny Room Door Puzzle (key-in-lock puzzle)
+export {
+  TinyRoomDoorTrait,
+  TinyRoomDoorTraitConfig,
+  TinyRoomDoorTraitConstructor
+} from './tiny-room-door-trait';
+
+export {
+  TinyRoomKeyTrait,
+  TinyRoomKeyTraitConfig,
+  TinyRoomKeyTraitConstructor
+} from './tiny-room-key-trait';
+
+export {
+  UnderDoorTrait,
+  UnderDoorTraitConfig,
+  UnderDoorTraitConstructor
+} from './under-door-trait';

@@ -16,6 +16,7 @@ import { WorldModel, IFEntity, IdentityTrait, Direction, RoomTrait, OpenableTrai
 import { ParsedCommandTransformer } from '@sharpee/engine';
 import { DOOR_BLOCKED_ACTION_ID } from '../actions/door-blocked';
 import { PULL_MAT_ACTION_ID } from '../actions/pull-mat';
+import { TinyRoomDoorTrait, TinyRoomKeyTrait, UnderDoorTrait } from '../traits';
 
 // Message IDs
 export const TinyRoomMessages = {
@@ -46,11 +47,11 @@ export const TinyRoomMessages = {
 export function findTinyRoomDoor(world: WorldModel, roomId: string): IFEntity | undefined {
   // First try getContents
   const contents = world.getContents(roomId);
-  let door = contents.find(e => (e as any).isTinyRoomDoor === true);
+  let door = contents.find(e => e.get(TinyRoomDoorTrait) !== undefined);
   if (door) return door;
 
   // If not found, search all entities (door might not be in spatial index yet)
-  const allDoors = world.findWhere((e: IFEntity) => (e as any).isTinyRoomDoor === true);
+  const allDoors = world.findWhere((e: IFEntity) => e.get(TinyRoomDoorTrait) !== undefined);
   if (allDoors.length > 0) {
     // Check if the door is in the specified room
     door = allDoors.find(d => world.getLocation(d.id) === roomId);
@@ -66,14 +67,9 @@ export function findTinyRoomDoor(world: WorldModel, roomId: string): IFEntity | 
  * Find the tiny room key
  */
 export function findTinyRoomKey(world: WorldModel): IFEntity | undefined {
-  // Search everywhere for the key
-  const allEntities = (world as any).entities?.values?.() || [];
-  for (const entity of allEntities) {
-    if ((entity as any).isTinyRoomKey === true) {
-      return entity;
-    }
-  }
-  return undefined;
+  // Search everywhere for the key using the trait
+  const keys = world.findWhere((e: IFEntity) => e.get(TinyRoomKeyTrait) !== undefined);
+  return keys.length > 0 ? keys[0] : undefined;
 }
 
 /**
@@ -139,7 +135,16 @@ export function handlePutMatUnderDoor(
     };
   }
 
-  if ((door as any).matUnderDoor) {
+  const doorTrait = door.get(TinyRoomDoorTrait);
+  if (!doorTrait) {
+    return {
+      success: false,
+      messageId: TinyRoomMessages.NO_DOOR_HERE,
+      events: []
+    };
+  }
+
+  if (doorTrait.matUnderDoor) {
     return {
       success: false,
       messageId: TinyRoomMessages.MAT_ALREADY_PLACED,
@@ -148,10 +153,13 @@ export function handlePutMatUnderDoor(
   }
 
   // Place mat under door
-  (door as any).matUnderDoor = true;
+  doorTrait.matUnderDoor = true;
   // Remove mat from player inventory - it's now "under the door"
   world.moveEntity(mat.id, roomId);
-  (mat as any).isUnderDoor = true;
+  const matTrait = mat.get(UnderDoorTrait);
+  if (matTrait) {
+    matTrait.isUnderDoor = true;
+  }
 
   return {
     success: true,
@@ -192,8 +200,17 @@ export function handlePushKeyWithScrewdriver(
     };
   }
 
+  const doorTrait = door.get(TinyRoomDoorTrait);
+  if (!doorTrait) {
+    return {
+      success: false,
+      messageId: TinyRoomMessages.NO_DOOR_HERE,
+      events: []
+    };
+  }
+
   // Check if key is still in lock
-  if (!(door as any).keyInLock) {
+  if (!doorTrait.keyInLock) {
     return {
       success: false,
       messageId: TinyRoomMessages.KEY_ALREADY_PUSHED,
@@ -202,11 +219,11 @@ export function handlePushKeyWithScrewdriver(
   }
 
   // Push key out
-  (door as any).keyInLock = false;
+  doorTrait.keyInLock = false;
 
   // Check if mat is under door
-  if ((door as any).matUnderDoor) {
-    (door as any).keyOnMat = true;
+  if (doorTrait.matUnderDoor) {
+    doorTrait.keyOnMat = true;
     return {
       success: true,
       messageId: TinyRoomMessages.KEY_PUSHED,
@@ -251,7 +268,16 @@ export function handlePullMat(
     };
   }
 
-  if (!(door as any).matUnderDoor) {
+  const doorTrait = door.get(TinyRoomDoorTrait);
+  if (!doorTrait) {
+    return {
+      success: false,
+      messageId: TinyRoomMessages.NO_DOOR_HERE,
+      events: []
+    };
+  }
+
+  if (!doorTrait.matUnderDoor) {
     return {
       success: false,
       messageId: TinyRoomMessages.MAT_NOT_UNDER_DOOR,
@@ -259,9 +285,9 @@ export function handlePullMat(
     };
   }
 
-  // Find the mat in the room
+  // Find the mat in the room (by UnderDoorTrait)
   const roomContents = world.getContents(roomId);
-  const mat = roomContents.find(e => (e as any).isUnderDoor === true);
+  const mat = roomContents.find(e => e.get(UnderDoorTrait)?.isUnderDoor === true);
 
   if (!mat) {
     return {
@@ -272,16 +298,22 @@ export function handlePullMat(
   }
 
   // Pull mat out
-  (door as any).matUnderDoor = false;
-  (mat as any).isUnderDoor = false;
+  doorTrait.matUnderDoor = false;
+  const matTrait = mat.get(UnderDoorTrait);
+  if (matTrait) {
+    matTrait.isUnderDoor = false;
+  }
   world.moveEntity(mat.id, playerId); // Give mat back to player
 
   // If key was on mat, give key to player too
-  if ((door as any).keyOnMat) {
-    (door as any).keyOnMat = false;
+  if (doorTrait.keyOnMat) {
+    doorTrait.keyOnMat = false;
     const key = findTinyRoomKey(world);
     if (key) {
-      (key as any).isHidden = false;
+      const keyTrait = key.get(TinyRoomKeyTrait);
+      if (keyTrait) {
+        keyTrait.isHidden = false;
+      }
       world.moveEntity(key.id, playerId);
     }
     return {
@@ -328,8 +360,8 @@ export function handleUnlockDoor(
     };
   }
 
-  // Check if it's the right key
-  if (!(keyEntity as any).isTinyRoomKey) {
+  // Check if it's the right key (must have TinyRoomKeyTrait)
+  if (!keyEntity.get(TinyRoomKeyTrait)) {
     return {
       success: false,
       messageId: TinyRoomMessages.WRONG_KEY,
@@ -370,19 +402,21 @@ export function isNorthBlocked(world: WorldModel, roomId: string): boolean {
  * Get door description based on state
  */
 export function getDoorDescription(door: IFEntity): string {
-  if (!(door as any).isLocked) {
+  const doorTrait = door.get(TinyRoomDoorTrait);
+
+  if (!door.isLocked) {
     return 'A small wooden door leads north. It is unlocked.';
   }
 
-  if ((door as any).keyOnMat) {
+  if (doorTrait?.keyOnMat) {
     return 'A small wooden door leads north. There is a keyhole at eye level. A small key sits on the mat beneath the door.';
   }
 
-  if ((door as any).matUnderDoor) {
+  if (doorTrait?.matUnderDoor) {
     return 'A small wooden door leads north. There is a keyhole at eye level. The mat has been slid under the door.';
   }
 
-  if ((door as any).keyInLock) {
+  if (doorTrait?.keyInLock) {
     return 'A small wooden door leads north. There is a keyhole at eye level. Looking through, you can see a key in the lock on the other side.';
   }
 
@@ -497,7 +531,8 @@ function isMatUnderDoor(world: WorldModel): boolean {
   const door = findTinyRoomDoor(world, playerLocation);
   if (!door) return false;
 
-  return (door as any).matUnderDoor === true;
+  const doorTrait = door.get(TinyRoomDoorTrait);
+  return doorTrait?.matUnderDoor === true;
 }
 
 /**

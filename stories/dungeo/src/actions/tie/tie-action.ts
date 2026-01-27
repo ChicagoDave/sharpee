@@ -17,7 +17,7 @@ import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity, RoomTrait, Direction } from '@sharpee/world-model';
 import { TIE_ACTION_ID, TieMessages } from './types';
-import { BalloonState, isLedgePosition } from '../../regions/volcano';
+import { BalloonStateTrait, isLedgePosition } from '../../traits';
 
 /**
  * Check if entity is the braided wire (FORTRAN calls it BROPE but game text says "wire")
@@ -102,7 +102,7 @@ function validateBalloonTie(context: ActionContext): ValidationResult | null {
   if (!locationEntity || !isBalloon(locationEntity)) return null;
 
   const balloon = locationEntity;
-  const balloonState = (balloon as any).balloonState as BalloonState | undefined;
+  const balloonState = balloon.get(BalloonStateTrait);
 
   // Check if balloon is at a ledge position
   if (!balloonState || !isLedgePosition(balloonState.position)) {
@@ -208,8 +208,10 @@ export const tieAction: Action = {
 
       if (!balloon || !hook) return;
 
-      const balloonState = (balloon as any).balloonState as BalloonState;
+      const balloonState = balloon.get(BalloonStateTrait);
       const hookId = (hook as any).hookId || 'hook1';
+
+      if (!balloonState) return;
 
       balloonState.tetheredTo = hookId;
       balloonState.daemonEnabled = false;

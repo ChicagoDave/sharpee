@@ -8,11 +8,10 @@
  */
 
 import { WorldModel, IWorldModel, IdentityTrait, OpenableTrait, ContainerTrait, VehicleTrait, IParsedCommand } from '@sharpee/world-model';
-import { InflatableTrait, BurnableTrait } from '../traits';
+import { InflatableTrait, BurnableTrait, BalloonStateTrait, isLedgePosition, isMidairPosition } from '../traits';
 import { ISemanticEvent } from '@sharpee/core';
 import { ISchedulerService, Daemon, Fuse, SchedulerContext, GameEngine } from '@sharpee/engine';
 import { DungeoSchedulerMessages } from '../scheduler/scheduler-messages';
-import { BalloonState, isLedgePosition, isMidairPosition } from '../regions/volcano';
 
 // State keys
 const BALLOON_BURNING_OBJECT_KEY = 'dungeo.balloon.burningObject';
@@ -35,15 +34,15 @@ let balloonEntityId: string | null = null;
 let receptacleEntityId: string | null = null;
 
 /**
- * Get the balloon state from the balloon entity
+ * Get the balloon state trait from the balloon entity
  */
-function getBalloonState(world: IWorldModel): BalloonState | null {
+function getBalloonState(world: IWorldModel): BalloonStateTrait | null {
   if (!balloonEntityId) return null;
 
   const balloon = world.getEntity(balloonEntityId);
   if (!balloon) return null;
 
-  return (balloon as any).balloonState as BalloonState | undefined || null;
+  return balloon.get(BalloonStateTrait) || null;
 }
 
 /**
@@ -319,7 +318,7 @@ export function createBalloonExitTransformer() {
     const balloon = world.getEntity(balloonEntityId);
     if (!balloon) return parsed;
 
-    const balloonState = (balloon as any).balloonState as BalloonState | undefined;
+    const balloonState = balloon.get(BalloonStateTrait);
     if (!balloonState) return parsed;
 
     const position = balloonState.position;
@@ -373,7 +372,7 @@ export const balloonExitAction: Action = {
       return { valid: false, error: 'balloon_not_found' };
     }
 
-    const balloonState = (balloon as any).balloonState as BalloonState | undefined;
+    const balloonState = balloon.get(BalloonStateTrait);
     if (!balloonState) {
       return { valid: false, error: 'balloon_state_not_found' };
     }

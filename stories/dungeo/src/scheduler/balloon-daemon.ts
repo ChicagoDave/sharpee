@@ -22,14 +22,14 @@ import { WorldModel, IdentityTrait, OpenableTrait, ContainerTrait, VehicleTrait 
 import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/engine';
 import { DungeoSchedulerMessages } from './scheduler-messages';
 import {
-  BalloonState,
+  BurnableTrait,
+  BalloonStateTrait,
   BalloonPosition,
   nextPositionUp,
   nextPositionDown,
   isMidairPosition,
   isLedgePosition
-} from '../regions/volcano';
-import { BurnableTrait } from '../traits';
+} from '../traits';
 
 // Daemon ID
 const BALLOON_DAEMON_ID = 'dungeo.balloon.movement';
@@ -61,15 +61,15 @@ function hasHeatSource(world: WorldModel): boolean {
 }
 
 /**
- * Get the balloon entity and its state
+ * Get the balloon entity and its state trait
  */
-function getBalloonState(world: WorldModel): { entity: any; state: BalloonState } | null {
+function getBalloonState(world: WorldModel): { entity: any; state: BalloonStateTrait } | null {
   if (!balloonEntityId) return null;
 
   const balloon = world.getEntity(balloonEntityId);
   if (!balloon) return null;
 
-  const state = (balloon as any).balloonState as BalloonState | undefined;
+  const state = balloon.get(BalloonStateTrait);
   if (!state) return null;
 
   return { entity: balloon, state };
