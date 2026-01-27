@@ -7,49 +7,28 @@
  * - Revealing hidden passages
  * - General pushing feedback
  *
- * Uses four-phase pattern:
- * 1. validate: Check if target exists and is pushable
- * 2. execute: Toggle switchable state if applicable, store data
- * 3. blocked: Generate events when validation fails
- * 4. report: Generate success events
+ * Uses four-phase pattern with interceptor support (ADR-118):
+ * 1. validate: preValidate hook → standard checks → postValidate hook
+ * 2. execute: standard mutation → postExecute hook
+ * 3. blocked: onBlocked hook (if validation failed)
+ * 4. report: standard events → postReport hook (additional effects)
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, PushableTrait, SwitchableTrait, SwitchableBehavior } from '@sharpee/world-model';
+import {
+  TraitType,
+  PushableTrait,
+  SwitchableTrait,
+  SwitchableBehavior,
+  getInterceptorForAction,
+  InterceptorSharedData
+} from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
 import { PushedEventData } from './pushing-events';
-
-/**
- * Shared data passed between execute and report phases
- */
-interface PushingSharedData {
-  targetId: string;
-  targetName: string;
-  direction?: string;
-  pushType?: 'button' | 'heavy' | 'moveable';
-  // For button types
-  activated?: boolean;
-  willToggle?: boolean;
-  currentState?: boolean;
-  newState?: boolean;
-  sound?: string;
-  // For heavy/moveable
-  moved?: boolean;
-  moveDirection?: string;
-  nudged?: boolean;
-  revealsPassage?: boolean;
-  requiresStrength?: number;
-  // Message data
-  messageId: string;
-  messageParams: Record<string, any>;
-}
-
-function getPushingSharedData(context: ActionContext): PushingSharedData {
-  return context.sharedData as PushingSharedData;
-}
+import { getPushingSharedData, PushingSharedData } from './pushing-types';
 
 export const pushingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.PUSHING,
@@ -86,6 +65,7 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
   validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     const target = context.command.directObject?.entity;
+    const sharedData = getPushingSharedData(context);
 
     // Must have something to push
     if (!target) {
@@ -93,6 +73,31 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
         valid: false,
         error: 'no_target'
       };
+    }
+
+    // Check for interceptor on the target entity (ADR-118)
+    const interceptorResult = getInterceptorForAction(target, IFActions.PUSHING);
+    const interceptor = interceptorResult?.interceptor;
+    const interceptorData: InterceptorSharedData = {
+      targetId: target.id,
+      targetName: target.name
+    };
+
+    // Store for later phases
+    sharedData.interceptor = interceptor;
+    sharedData.interceptorData = interceptorData;
+
+    // === PRE-VALIDATE HOOK ===
+    // Called before standard validation - can block early
+    if (interceptor?.preValidate) {
+      const result = interceptor.preValidate(target, context.world, actor.id, interceptorData);
+      if (result !== null) {
+        return {
+          valid: result.valid,
+          error: result.error,
+          params: result.params
+        };
+      }
     }
 
     // Check scope - must be able to reach the target
@@ -126,6 +131,19 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
         valid: false,
         error: 'pushing_does_nothing'
       };
+    }
+
+    // === POST-VALIDATE HOOK ===
+    // Called after standard validation passes - can add entity-specific conditions
+    if (interceptor?.postValidate) {
+      const result = interceptor.postValidate(target, context.world, actor.id, interceptorData);
+      if (result !== null) {
+        return {
+          valid: result.valid,
+          error: result.error,
+          params: result.params
+        };
+      }
     }
 
     return { valid: true };
@@ -240,6 +258,14 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
         sharedData.messageParams.target = target.name;
         break;
     }
+
+    // === POST-EXECUTE HOOK ===
+    // Called after standard execution - can perform additional mutations
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.postExecute) {
+      interceptor.postExecute(target, context.world, context.player.id, interceptorData);
+    }
   },
 
   /**
@@ -247,6 +273,21 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const target = context.command.directObject?.entity;
+    const sharedData = getPushingSharedData(context);
+
+    // === ON-BLOCKED HOOK ===
+    // Called when action is blocked - can provide custom blocked handling
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.onBlocked && target && result.error) {
+      const customEffects = interceptor.onBlocked(target, context.world, context.player.id, result.error, interceptorData);
+      if (customEffects !== null) {
+        // Interceptor provided custom blocked effects
+        return customEffects.map(effect => context.event(effect.type, effect.payload));
+      }
+    }
+
+    // Standard blocked handling
     return [context.event('if.event.pushed', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
@@ -263,6 +304,7 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
   report(context: ActionContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
     const sharedData = getPushingSharedData(context);
+    const target = context.command.directObject!.entity!;
 
     // Emit pushed event with messageId for text rendering
     events.push(context.event('if.event.pushed', {
@@ -283,6 +325,18 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
       revealsPassage: sharedData.revealsPassage,
       requiresStrength: sharedData.requiresStrength
     }));
+
+    // === POST-REPORT HOOK ===
+    // Called after standard report - can add additional effects
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.postReport) {
+      const additionalEffects = interceptor.postReport(target, context.world, context.player.id, interceptorData);
+      // Convert CapabilityEffects to ISemanticEvents
+      for (const effect of additionalEffects) {
+        events.push(context.event(effect.type, effect.payload));
+      }
+    }
 
     return events;
   },
