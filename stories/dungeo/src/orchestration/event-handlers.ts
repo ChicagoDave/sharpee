@@ -20,7 +20,7 @@ import { ScoringEventProcessor } from '@sharpee/stdlib';
 // Handlers
 import { createMirrorTouchHandler, MirrorRoomConfig } from '../handlers/mirror-room-handler';
 import { createDeathPenaltyHandler } from '../handlers/death-penalty-handler';
-// Note: registerBalloonPutHandler removed - now handled via interceptor (ADR-118)
+
 
 // Scoring
 import { DungeoScoringService } from '../scoring';
