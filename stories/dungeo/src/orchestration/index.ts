@@ -15,6 +15,7 @@
 import type { GameEngine } from '@sharpee/engine';
 import type { WorldModel } from '@sharpee/world-model';
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
+import { NpcPlugin } from '@sharpee/plugin-npc';
 import { ScoringEventProcessor } from '@sharpee/stdlib';
 
 import { registerCommandTransformers, TransformerConfig } from './command-transformers';
@@ -137,25 +138,25 @@ export function initializeOrchestration(
   };
   registerPuzzleHandlers(engine, world, puzzleConfig, schedulerPlugin.getScheduler());
 
-  // 4. NPC Registration
-  // Register NPC behaviors with the NPC service
-  const npcService = engine.getNpcService();
-  if (npcService) {
-    // Calculate surface rooms (thief forbidden from surface)
-    const surfaceRoomIds = [
-      ...Object.values(config.whiteHouseIds),
-      ...Object.values(config.houseInteriorIds),
-      ...Object.values(config.forestIds)
-    ];
+  // 4. NPC Registration (ADR-120 Phase 3)
+  // Register NPC plugin and set up behaviors
+  const npcPlugin = new NpcPlugin();
+  engine.getPluginRegistry().register(npcPlugin);
 
-    const npcConfig: NpcConfig = {
-      surfaceRoomIds,
-      treasureRoomId: config.mazeIds.treasureRoom,
-      cyclopsRoomId: config.mazeIds.cyclopsRoom,
-      dungeonEntranceId: config.endgameIds.dungeonEntrance
-    };
-    registerNpcs(engine, npcService, world, npcConfig);
-  }
+  // Calculate surface rooms (thief forbidden from surface)
+  const surfaceRoomIds = [
+    ...Object.values(config.whiteHouseIds),
+    ...Object.values(config.houseInteriorIds),
+    ...Object.values(config.forestIds)
+  ];
+
+  const npcConfig: NpcConfig = {
+    surfaceRoomIds,
+    treasureRoomId: config.mazeIds.treasureRoom,
+    cyclopsRoomId: config.mazeIds.cyclopsRoom,
+    dungeonEntranceId: config.endgameIds.dungeonEntrance
+  };
+  registerNpcs(engine, npcPlugin.getNpcService(), world, npcConfig);
 
   // 5. Event Handlers
   // Register event processor handlers for scoring, achievements, etc.

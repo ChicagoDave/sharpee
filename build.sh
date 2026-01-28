@@ -334,6 +334,7 @@ build_platform() {
         "@sharpee/text-blocks:text-blocks"
         "@sharpee/text-service:text-service"
         "@sharpee/stdlib:stdlib"
+        "@sharpee/plugin-npc:plugin-npc"
         "@sharpee/engine:engine"
         "@sharpee/ext-testing:ext-testing"
         "@sharpee/platform-browser:platform-browser"

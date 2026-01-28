@@ -37,7 +37,7 @@ import { ITextService, createTextService, renderToString } from '@sharpee/text-s
 import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, getUntypedEventData, createSeededRandom, SeededRandom } from '@sharpee/core';
 
 import { PluginRegistry, TurnPluginContext } from '@sharpee/plugins';
-import { INpcService, createNpcService, guardBehavior, passiveBehavior } from '@sharpee/stdlib';
+
 
 import {
   GameContext,
@@ -105,7 +105,6 @@ export class GameEngine {
   private pendingPlatformOps: IPlatformEvent[] = [];
   private perceptionService?: IPerceptionService;
   private pluginRegistry: PluginRegistry;
-  private npcService: INpcService;
   private random: SeededRandom;
   private narrativeSettings: NarrativeSettings;
 
@@ -199,7 +198,6 @@ export class GameEngine {
 
     this.pluginRegistry = new PluginRegistry();
     this.random = createSeededRandom();
-    this.npcService = createNpcService();
     this.narrativeSettings = buildNarrativeSettings(); // Default: 2nd person
 
     // Initialize extracted services (Phase 4 remediation)
@@ -208,10 +206,6 @@ export class GameEngine {
       maxSnapshots: this.config.maxUndoSnapshots ?? 10
     });
     this.turnEventProcessor = createTurnEventProcessor(this.perceptionService);
-
-    // Register standard NPC behaviors (ADR-070)
-    this.npcService.registerBehavior(guardBehavior);
-    this.npcService.registerBehavior(passiveBehavior);
 
     // Set provided dependencies
     this.languageProvider = options.language;
@@ -642,66 +636,8 @@ export class GameEngine {
       if (result.success) {
         const playerLocation = this.world.getLocation(this.context.player.id);
 
-        // NPC turn phase (ADR-070)
-        // NPCs act after player action but before scheduler
-        const npcEvents = this.npcService.tick({
-          world: this.world,
-          turn,
-          random: this.random,
-          playerLocation: playerLocation || '',
-          playerId: this.context.player.id
-        });
-
-        // Process NPC events through the same pipeline as action events
-        if (npcEvents.length > 0) {
-          const npcEnrichmentContext = {
-            turn,
-            playerId: this.context.player.id,
-            locationId: playerLocation
-          };
-
-          let npcSemanticEvents = npcEvents.map(e =>
-            processEvent(e, npcEnrichmentContext)
-          );
-
-          // Apply perception filtering if service is configured
-          if (this.perceptionService) {
-            npcSemanticEvents = this.perceptionService.filterEvents(
-              npcSemanticEvents,
-              this.context.player,
-              this.world
-            );
-          }
-
-          // Add NPC events to turn events
-          const existingEvents = this.turnEvents.get(turn) || [];
-          this.turnEvents.set(turn, [...existingEvents, ...npcSemanticEvents]);
-
-          // Track in event source for save/restore
-          for (const event of npcSemanticEvents) {
-            this.eventSource.emit(event);
-
-            if (isPlatformRequestEvent(event)) {
-              this.pendingPlatformOps.push(event as IPlatformEvent);
-            }
-          }
-
-          // Emit events if configured
-          if (this.config.onEvent) {
-            for (const event of npcSemanticEvents) {
-              this.config.onEvent(event as any);
-            }
-          }
-
-          // Emit through engine's event system
-          for (const event of npcSemanticEvents) {
-            this.emit('event', event as any);
-            this.dispatchEntityHandlers(event as any);
-          }
-        }
-
         // Plugin tick loop (ADR-120)
-        // Plugins run in priority order after NPC phase
+        // Plugins run in priority order (NPC at 100, state machines at 75, scheduler at 50)
         const pluginContext: TurnPluginContext = {
           world: this.world,
           turn,
@@ -1173,13 +1109,6 @@ export class GameEngine {
    */
   getPluginRegistry(): PluginRegistry {
     return this.pluginRegistry;
-  }
-
-  /**
-   * Get NPC service for NPC behavior management (ADR-070)
-   */
-  getNpcService(): INpcService {
-    return this.npcService;
   }
 
   /**

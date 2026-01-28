@@ -124,6 +124,9 @@ importers:
       '@sharpee/parser-en-us':
         specifier: workspace:*
         version: link:../parser-en-us
+      '@sharpee/plugins':
+        specifier: workspace:*
+        version: link:../plugins
       '@sharpee/stdlib':
         specifier: workspace:*
         version: link:../stdlib
@@ -441,6 +444,72 @@ importers:
         specifier: ^1.0.0
         version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(lightningcss@1.30.2)(terser@5.44.1)
 
+  packages/plugin-npc:
+    dependencies:
+      '@sharpee/core':
+        specifier: workspace:*
+        version: link:../core
+      '@sharpee/plugins':
+        specifier: workspace:*
+        version: link:../plugins
+      '@sharpee/stdlib':
+        specifier: workspace:*
+        version: link:../stdlib
+      '@sharpee/world-model':
+        specifier: workspace:*
+        version: link:../world-model
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.19
+        version: 20.19.27
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
+  packages/plugin-scheduler:
+    dependencies:
+      '@sharpee/core':
+        specifier: workspace:*
+        version: link:../core
+      '@sharpee/plugins':
+        specifier: workspace:*
+        version: link:../plugins
+      '@sharpee/world-model':
+        specifier: workspace:*
+        version: link:../world-model
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.19
+        version: 20.19.27
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
+  packages/plugins:
+    dependencies:
+      '@sharpee/core':
+        specifier: workspace:*
+        version: link:../core
+      '@sharpee/world-model':
+        specifier: workspace:*
+        version: link:../world-model
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.19
+        version: 20.19.27
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
   packages/sharpee:
     dependencies:
       '@sharpee/core':
@@ -747,6 +816,12 @@ importers:
       '@sharpee/platform-browser':
         specifier: workspace:*
         version: link:../../packages/platform-browser
+      '@sharpee/plugin-npc':
+        specifier: workspace:*
+        version: link:../../packages/plugin-npc
+      '@sharpee/plugin-scheduler':
+        specifier: workspace:*
+        version: link:../../packages/plugin-scheduler
       '@sharpee/stdlib':
         specifier: workspace:*
         version: link:../../packages/stdlib
@@ -6214,6 +6289,7 @@ snapshots:
       '@sharpee/if-services': link:packages/if-services
       '@sharpee/lang-en-us': link:packages/lang-en-us
       '@sharpee/parser-en-us': link:packages/parser-en-us
+      '@sharpee/plugins': link:packages/plugins
       '@sharpee/stdlib': link:packages/stdlib
       '@sharpee/text-blocks': link:packages/text-blocks
       '@sharpee/text-service': link:packages/text-service
