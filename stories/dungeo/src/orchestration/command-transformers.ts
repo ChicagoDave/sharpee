@@ -23,7 +23,7 @@ import { createBalloonExitTransformer } from '../handlers/balloon-handler';
 import { createTinyRoomDoorTransformer, createTinyRoomMatTransformer } from '../handlers/tiny-room-handler';
 
 // Movement restriction transformers
-import { createRiverEntryTransformer, registerBoatMovementHandler } from '../handlers/river-handler';
+import { createRiverEntryTransformer } from '../handlers/river-handler';
 import { createChimneyCommandTransformer } from '../handlers/chimney-handler';
 
 // Death transformers
@@ -124,10 +124,6 @@ export function registerCommandTransformers(
   // Chimney restriction transformer
   // Studio to Kitchen requires lamp + max 1 other item per MDL act1.254
   engine.registerParsedCommandTransformer(createChimneyCommandTransformer());
-
-  // Boat movement handler
-  // Moves boat with player when navigating river
-  registerBoatMovementHandler(engine, world);
 
   // ==========================================================================
   // Death Transformers

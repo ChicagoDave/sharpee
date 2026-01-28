@@ -15,7 +15,16 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, ContainerBehavior, WearableBehavior, ActorBehavior, IDropItemResult, IFEntity } from '@sharpee/world-model';
+import {
+  TraitType,
+  ContainerBehavior,
+  WearableBehavior,
+  ActorBehavior,
+  IDropItemResult,
+  IFEntity,
+  getInterceptorForAction,
+  InterceptorSharedData
+} from '@sharpee/world-model';
 import { buildEventData } from '../../data-builder-types';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
@@ -294,7 +303,36 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: DroppingMessages.NO_TARGET };
     }
 
-    return validateSingleEntity(context, noun);
+    const sharedData = getDroppingSharedData(context);
+
+    // Check for interceptor on the item being dropped (ADR-118)
+    const interceptorResult = getInterceptorForAction(noun, IFActions.DROPPING);
+    const interceptor = interceptorResult?.interceptor;
+    const interceptorData: InterceptorSharedData = {};
+
+    sharedData.interceptor = interceptor;
+    sharedData.interceptorData = interceptorData;
+
+    // === PRE-VALIDATE HOOK ===
+    if (interceptor?.preValidate) {
+      const result = interceptor.preValidate(noun, context.world, context.player.id, interceptorData);
+      if (result !== null) {
+        return { valid: result.valid, error: result.error, params: result.params };
+      }
+    }
+
+    const validation = validateSingleEntity(context, noun);
+    if (!validation.valid) return validation;
+
+    // === POST-VALIDATE HOOK ===
+    if (interceptor?.postValidate) {
+      const result = interceptor.postValidate(noun, context.world, context.player.id, interceptorData);
+      if (result !== null) {
+        return { valid: result.valid, error: result.error, params: result.params };
+      }
+    }
+
+    return { valid: true };
   },
 
   execute(context: ActionContext): void {
@@ -326,6 +364,13 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
 
     // Store result for report phase using sharedData
     sharedData.dropResult = result;
+
+    // === POST-EXECUTE HOOK ===
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.postExecute) {
+      interceptor.postExecute(noun, context.world, actor.id, interceptorData);
+    }
   },
 
   report(context: ActionContext): ISemanticEvent[] {
@@ -355,8 +400,8 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     // Determine success message
     const { messageId, params } = determineDroppingMessage(droppedData, context);
 
-    // Return domain event with messageId (simplified pattern - ADR-097)
-    return [
+    // Build events array
+    const events: ISemanticEvent[] = [
       context.event('if.event.dropped', {
         // Rendering data (messageId + params for text-service)
         messageId: `${context.action.id}.${messageId}`,
@@ -368,12 +413,33 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
         actorId: actor.id
       })
     ];
+
+    // === POST-REPORT HOOK ===
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.postReport) {
+      const additionalEffects = interceptor.postReport(noun, context.world, actor.id, interceptorData);
+      for (const effect of additionalEffects) {
+        events.push(context.event(effect.type, effect.payload));
+      }
+    }
+
+    return events;
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    // blocked() is called when validation fails
-    // Uses simplified event pattern (ADR-097)
     const noun = context.command.directObject?.entity;
+    const sharedData = getDroppingSharedData(context);
+
+    // === ON-BLOCKED HOOK ===
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.onBlocked && noun && result.error) {
+      const customEffects = interceptor.onBlocked(noun, context.world, context.player.id, result.error, interceptorData);
+      if (customEffects !== null) {
+        return customEffects.map(effect => context.event(effect.type, effect.payload));
+      }
+    }
 
     return [context.event('if.event.drop_blocked', {
       // Rendering data

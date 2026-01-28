@@ -1,6 +1,6 @@
 # ADR-118: Stdlib Action Interceptors
 
-## Status: PROPOSED
+## Status: ACCEPTED
 
 ## Date: 2026-01-26
 
@@ -366,6 +366,7 @@ Priority order based on Dungeo needs:
 | THROWING | Glacier melt, weapon effects | High |
 | PUTTING | Coal machine, altar offerings | Medium |
 | DROPPING | Basin ritual, pit falling | Medium |
+| SWITCHING_ON | Coal machine transformation | Medium |
 | PUSHING | Button effects | Low |
 | TAKING | (Already has capability check?) | Check |
 
@@ -386,6 +387,12 @@ Priority order based on Dungeo needs:
 - **Safe by default**: Forgetting an interceptor just means standard behavior
 - **Testable**: Interceptors can be unit tested in isolation
 - **Checkpoint-safe**: Interceptor state stored in traits, not closures
+
+### Edge Case: Utility Modules With Mutations
+
+Some files (e.g., `tiny-room-handler.ts`) are not true handlers or interceptor candidates — they export helper functions called from story-specific actions. The mutations are correct (actions may mutate in their execute phase), but the indirection through a utility module obscures ownership.
+
+**Resolution:** These don't need interceptors. Inline the mutations into each story action's execute phase so ownership is clear. The utility module can be deleted once its callers own their own mutations. This is a refactoring task, not an architectural pattern.
 
 ### Negative
 

@@ -14,7 +14,7 @@ import {
   IdentityTrait,
   EntityType
 } from '@sharpee/world-model';
-import { TreasureTrait, BurnableTrait } from '../traits';
+import { TreasureTrait, BurnableTrait, FramePieceTrait } from '../traits';
 
 /**
  * Create the empty picture frame
@@ -57,8 +57,8 @@ export function createFramePiece(world: WorldModel): IFEntity {
     weight: 2
   }));
 
-  // Marks for puzzle logic
-  (piece as any).isFramePiece = true;
+  // Mark as frame piece for ghost ritual interceptor (ADR-118)
+  piece.add(new FramePieceTrait());
 
   return piece;
 }

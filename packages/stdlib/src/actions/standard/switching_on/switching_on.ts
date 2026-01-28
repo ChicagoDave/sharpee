@@ -4,16 +4,25 @@
  * This action validates conditions for switching something on and returns
  * appropriate events. It delegates state changes to SwitchableBehavior.
  *
- * Uses three-phase pattern:
- * 1. validate: Check if target is switchable and can be turned on
- * 2. execute: Call SwitchableBehavior.switchOn(), store result in sharedData
- * 3. report: Generate events from sharedData
+ * Uses four-phase pattern with interceptor support (ADR-118):
+ * 1. validate: preValidate hook → standard checks → postValidate hook
+ * 2. execute: standard mutation → postExecute hook
+ * 3. report: standard events → postReport hook
+ * 4. blocked: onBlocked hook (if validation failed)
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, SwitchableBehavior, LightSourceBehavior, VisibilityBehavior } from '@sharpee/world-model';
+import {
+  TraitType,
+  SwitchableBehavior,
+  LightSourceBehavior,
+  VisibilityBehavior,
+  getInterceptorForAction,
+  ActionInterceptor,
+  InterceptorSharedData
+} from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { SwitchedOnEventData } from './switching_on-events';
@@ -51,6 +60,9 @@ interface SwitchingOnSharedData {
   // In case of behavior failure
   failed?: boolean;
   errorMessageId?: string;
+  // Interceptor support (ADR-118)
+  interceptor?: ActionInterceptor;
+  interceptorData?: InterceptorSharedData;
 }
 
 function getSwitchingOnSharedData(context: ActionContext): SwitchingOnSharedData {
@@ -83,9 +95,27 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
 
   validate(context: ActionContext): ValidationResult {
     const noun = context.command.directObject?.entity;
+    const sharedData = getSwitchingOnSharedData(context);
 
     if (!noun) {
       return { valid: false, error: MESSAGES.NO_TARGET };
+    }
+
+    // Check for interceptor on the target entity (ADR-118)
+    const interceptorResult = getInterceptorForAction(noun, IFActions.SWITCHING_ON);
+    const interceptor = interceptorResult?.interceptor;
+    const interceptorData: InterceptorSharedData = {};
+
+    // Store for later phases
+    sharedData.interceptor = interceptor;
+    sharedData.interceptorData = interceptorData;
+
+    // === PRE-VALIDATE HOOK ===
+    if (interceptor?.preValidate) {
+      const result = interceptor.preValidate(noun, context.world, context.player.id, interceptorData);
+      if (result !== null) {
+        return { valid: result.valid, error: result.error, params: result.params };
+      }
     }
 
     // Check scope - must be able to reach the target
@@ -105,6 +135,14 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       }
       if (switchable.requiresPower && !switchable.hasPower) {
         return { valid: false, error: MESSAGES.NO_POWER, params: { target: noun.name } };
+      }
+    }
+
+    // === POST-VALIDATE HOOK ===
+    if (interceptor?.postValidate) {
+      const result = interceptor.postValidate(noun, context.world, context.player.id, interceptorData);
+      if (result !== null) {
+        return { valid: result.valid, error: result.error, params: result.params };
       }
     }
 
@@ -217,6 +255,13 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       undefined, // no running sound when turning on
       willOpen
     );
+
+    // === POST-EXECUTE HOOK ===
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.postExecute) {
+      interceptor.postExecute(noun, context.world, context.player.id, interceptorData);
+    }
   },
 
   /**
@@ -305,6 +350,19 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
+    // === POST-REPORT HOOK ===
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.postReport) {
+      const noun = context.command.directObject?.entity;
+      if (noun) {
+        const additionalEffects = interceptor.postReport(noun, context.world, context.player.id, interceptorData);
+        for (const effect of additionalEffects) {
+          events.push(context.event(effect.type, effect.payload));
+        }
+      }
+    }
+
     return events;
   },
 
@@ -315,6 +373,17 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const noun = context.command.directObject?.entity;
+    const sharedData = getSwitchingOnSharedData(context);
+
+    // === ON-BLOCKED HOOK ===
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.onBlocked && noun && result.error) {
+      const customEffects = interceptor.onBlocked(noun, context.world, context.player.id, result.error, interceptorData);
+      if (customEffects !== null) {
+        return customEffects.map(effect => context.event(effect.type, effect.payload));
+      }
+    }
 
     return [context.event('if.event.switch_on_blocked', {
       // Rendering data

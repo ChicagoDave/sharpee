@@ -5,7 +5,7 @@
  */
 
 import { EntityId } from '@sharpee/core';
-import { IFEntity } from '@sharpee/world-model';
+import { IFEntity, ActionInterceptor, InterceptorSharedData } from '@sharpee/world-model';
 
 /**
  * Result of validating/executing a single entity in multi-object command
@@ -38,6 +38,11 @@ export interface DroppingSharedData {
    * When set, indicates this is a multi-object command
    */
   multiObjectResults?: DroppingItemResult[];
+
+  /** Interceptor found during validate, if any (ADR-118) */
+  interceptor?: ActionInterceptor;
+  /** Shared data for interceptor phases */
+  interceptorData?: InterceptorSharedData;
 }
 
 /**

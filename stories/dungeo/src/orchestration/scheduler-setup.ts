@@ -24,7 +24,7 @@ import { registerExorcismHandler } from '../handlers/exorcism-handler';
 import { registerRoundRoomHandler } from '../handlers/round-room-handler';
 import { registerTrapdoorHandler } from '../handlers/trapdoor-handler';
 import { registerRoyalPuzzleHandler } from '../handlers/royal-puzzle';
-import { registerGhostRitualHandler } from '../handlers/ghost-ritual-handler';
+
 import { registerRealityAlteredDaemon } from '../handlers/reality-altered-handler';
 import { registerEndgameTriggerHandler } from '../handlers/endgame-trigger-handler';
 import { registerVictoryHandler } from '../handlers/victory-handler';
@@ -151,8 +151,7 @@ export function registerSchedulerEvents(
   // Royal Puzzle handler (sliding block puzzle)
   registerRoyalPuzzleHandler(scheduler, config.royalPuzzleIds);
 
-  // Ghost Ritual handler (ADR-078 Thief's Canvas puzzle)
-  registerGhostRitualHandler(world);
+  // Ghost Ritual now handled by GhostRitualDroppingInterceptor (ADR-118)
 
   // Reality Altered daemon (ADR-078 hidden max points)
   registerRealityAlteredDaemon(scheduler);
