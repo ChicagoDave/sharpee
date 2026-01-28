@@ -10,7 +10,7 @@
 
 import { ISemanticEvent, EntityId } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
-import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/engine';
+import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 
 export const VictoryMessages = {
   ENTER_TREASURY: 'dungeo.victory.enter_treasury',

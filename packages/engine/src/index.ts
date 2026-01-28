@@ -35,8 +35,8 @@ export * from './shared-data-keys';
 // Main engine
 export * from './game-engine';
 
-// Scheduler (Daemons and Fuses - ADR-071)
-export * from './scheduler';
+// Plugin system (ADR-120)
+export { PluginRegistry, TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
 
 // Extracted services (Phase 4 remediation)
 export * from './vocabulary-manager';

@@ -10,7 +10,7 @@
 
 import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel, RoomTrait, IdentityTrait, Direction, DirectionType } from '@sharpee/world-model';
-import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/engine';
+import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 import { RoundRoomTrait } from '../traits';
 
 export const RoundRoomMessages = {

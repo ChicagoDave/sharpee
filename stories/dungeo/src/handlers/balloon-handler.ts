@@ -10,7 +10,7 @@
 import { WorldModel, IWorldModel, IdentityTrait, OpenableTrait, ContainerTrait, VehicleTrait, IParsedCommand } from '@sharpee/world-model';
 import { InflatableTrait, BurnableTrait, BalloonStateTrait, isLedgePosition, isMidairPosition } from '../traits';
 import { ISemanticEvent } from '@sharpee/core';
-import { ISchedulerService, Daemon, Fuse, SchedulerContext } from '@sharpee/engine';
+import { ISchedulerService, Daemon, Fuse, SchedulerContext } from '@sharpee/plugin-scheduler';
 import { DungeoSchedulerMessages } from '../scheduler/scheduler-messages';
 
 // State keys

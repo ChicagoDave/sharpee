@@ -15,7 +15,7 @@ import {
   WorldModel,
   IdentityTrait
 } from '@sharpee/world-model';
-import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/engine';
+import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 
 export const LaserPuzzleMessages = {
   BEAM_BROKEN: 'dungeo.endgame.beam_broken',

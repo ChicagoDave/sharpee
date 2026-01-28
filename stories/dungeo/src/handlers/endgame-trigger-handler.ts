@@ -23,7 +23,7 @@ import {
   LightSourceTrait,
   RoomTrait
 } from '@sharpee/world-model';
-import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/engine';
+import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 
 export const EndgameTriggerMessages = {
   DARKNESS_DESCENDS: 'dungeo.endgame.darkness_descends',

@@ -18,7 +18,7 @@
 
 import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel, IdentityTrait, CombatantTrait, RoomTrait, ActorTrait } from '@sharpee/world-model';
-import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/engine';
+import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 
 // Daemon ID
 const SWORD_GLOW_DAEMON = 'dungeo.sword.glow';

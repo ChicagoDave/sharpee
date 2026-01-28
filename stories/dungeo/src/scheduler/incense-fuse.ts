@@ -10,7 +10,7 @@
 
 import { ISemanticEvent, EntityId } from '@sharpee/core';
 import { WorldModel, IdentityTrait } from '@sharpee/world-model';
-import { ISchedulerService, Fuse, SchedulerContext } from '@sharpee/engine';
+import { ISchedulerService, Fuse, SchedulerContext } from '@sharpee/plugin-scheduler';
 import { DungeoSchedulerMessages } from './scheduler-messages';
 import { BurnableTrait, BasinRoomTrait } from '../traits';
 

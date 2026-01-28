@@ -1,7 +1,7 @@
 {
-  "name": "@sharpee/engine",
+  "name": "@sharpee/plugin-scheduler",
   "version": "0.9.60-beta",
-  "description": "Runtime engine for Sharpee IF Platform - game loop, command execution, and turn management",
+  "description": "Scheduler plugin for Sharpee engine - daemons and fuses (ADR-071, ADR-120)",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -14,49 +14,35 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "vitest",
-    "test:ci": "vitest run",
-    "test:verbose": "vitest run --reporter=verbose",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
     "clean": "rimraf dist"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",
-    "@sharpee/event-processor": "workspace:*",
-    "@sharpee/plugins": "workspace:*",
-    "@sharpee/if-domain": "workspace:*",
-    "@sharpee/if-services": "workspace:*",
-    "@sharpee/lang-en-us": "workspace:*",
-    "@sharpee/parser-en-us": "workspace:*",
-    "@sharpee/stdlib": "workspace:*",
-    "@sharpee/text-blocks": "workspace:*",
-    "@sharpee/text-service": "workspace:*",
-    "@sharpee/world-model": "workspace:*"
+    "@sharpee/world-model": "workspace:*",
+    "@sharpee/plugins": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.11.19",
-    "cross-env": "^7.0.3",
-    "rimraf": "^5.0.5",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "rimraf": "^5.0.5"
   },
   "files": [
     "dist"
   ],
   "keywords": [
     "interactive-fiction",
-    "if",
-    "text-adventure",
     "sharpee",
-    "engine",
-    "game-engine"
+    "plugin",
+    "scheduler",
+    "daemons",
+    "fuses"
   ],
   "author": "Sharpee Team",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/ChicagoDave/sharpee.git",
-    "directory": "packages/engine"
+    "directory": "packages/plugin-scheduler"
   },
   "homepage": "https://github.com/ChicagoDave/sharpee#readme",
   "bugs": {

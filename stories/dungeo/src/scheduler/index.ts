@@ -36,7 +36,7 @@ export { registerTrollRecoveryDaemon, isTrollRecoveryActive, getTrollState } fro
 export { registerSwordGlowDaemon, getSwordGlowState, resetSwordGlowState, SwordGlowMessages } from './sword-glow-daemon';
 
 import { WorldModel } from '@sharpee/world-model';
-import { ISchedulerService } from '@sharpee/engine';
+import { ISchedulerService } from '@sharpee/plugin-scheduler';
 import { registerLanternFuse } from './lantern-fuse';
 import { registerCandleFuse } from './candle-fuse';
 import { initializeDamState, registerYellowButtonHandler } from './dam-state';

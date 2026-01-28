@@ -58,8 +58,11 @@ export interface IEngineState {
   /** Optional: Parser state if needed */
   parserState?: ISerializedParserState;
 
-  /** Optional: Scheduler state (daemons and fuses) */
+  /** Optional: Scheduler state (daemons and fuses) - legacy, use pluginStates */
   schedulerState?: ISerializedSchedulerState;
+
+  /** Optional: Plugin states for all registered plugins (ADR-120) */
+  pluginStates?: Record<string, unknown>;
 }
 
 /**

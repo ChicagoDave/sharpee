@@ -15,7 +15,7 @@
 
 import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel, CombatantTrait, IdentityTrait, RoomBehavior, Direction } from '@sharpee/world-model';
-import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/engine';
+import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 import { DungeoSchedulerMessages } from './scheduler-messages';
 
 // Daemon ID

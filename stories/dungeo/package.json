@@ -25,6 +25,7 @@
   "dependencies": {
     "@sharpee/core": "workspace:*",
     "@sharpee/engine": "workspace:*",
+    "@sharpee/plugin-scheduler": "workspace:*",
     "@sharpee/event-processor": "workspace:*",
     "@sharpee/if-domain": "workspace:*",
     "@sharpee/lang-en-us": "workspace:*",

@@ -325,6 +325,8 @@ build_platform() {
         "@sharpee/core:core"
         "@sharpee/if-domain:if-domain"
         "@sharpee/world-model:world-model"
+        "@sharpee/plugins:plugins"
+        "@sharpee/plugin-scheduler:plugin-scheduler"
         "@sharpee/event-processor:event-processor"
         "@sharpee/lang-en-us:lang-en-us"
         "@sharpee/parser-en-us:parser-en-us"

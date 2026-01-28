@@ -9,7 +9,7 @@
 
 import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel, IdentityTrait } from '@sharpee/world-model';
-import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/engine';
+import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 
 export const BatMessages = {
   ATTACKS: 'dungeo.bat.attacks',

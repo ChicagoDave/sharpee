@@ -8,7 +8,7 @@
  * The alarm message: "An alarm rings briefly, and an invisible force prevents you from leaving."
  */
 
-import { ISchedulerService, SchedulerContext, Daemon } from '@sharpee/engine';
+import { ISchedulerService, SchedulerContext, Daemon } from '@sharpee/plugin-scheduler';
 import { WorldModel, RoomBehavior, Direction, ContainerTrait } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
 import { BankRoomIds } from '../regions/bank-of-zork';

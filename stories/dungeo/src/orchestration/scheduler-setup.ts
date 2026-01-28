@@ -10,7 +10,7 @@
  * - Puzzle state changes
  */
 
-import type { ISchedulerService } from '@sharpee/engine';
+import type { ISchedulerService } from '@sharpee/plugin-scheduler';
 import type { WorldModel } from '@sharpee/world-model';
 
 // Core scheduler events

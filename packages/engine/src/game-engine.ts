@@ -34,9 +34,9 @@ import {
 } from '@sharpee/stdlib';
 import { LanguageProvider, IEventProcessorWiring } from '@sharpee/if-domain';
 import { ITextService, createTextService, renderToString } from '@sharpee/text-service';
-import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, ISerializedSchedulerState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, getUntypedEventData } from '@sharpee/core';
+import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, getUntypedEventData, createSeededRandom, SeededRandom } from '@sharpee/core';
 
-import { ISchedulerService, createSchedulerService } from './scheduler';
+import { PluginRegistry, TurnPluginContext } from '@sharpee/plugins';
 import { INpcService, createNpcService, guardBehavior, passiveBehavior } from '@sharpee/stdlib';
 
 import {
@@ -104,8 +104,9 @@ export class GameEngine {
   private systemEventSource: IGenericEventSource<ISystemEvent>;
   private pendingPlatformOps: IPlatformEvent[] = [];
   private perceptionService?: IPerceptionService;
-  private scheduler: ISchedulerService;
+  private pluginRegistry: PluginRegistry;
   private npcService: INpcService;
+  private random: SeededRandom;
   private narrativeSettings: NarrativeSettings;
 
   // Extracted services (Phase 4 remediation)
@@ -196,7 +197,8 @@ export class GameEngine {
       } as SequencedEvent);
     });
 
-    this.scheduler = createSchedulerService();
+    this.pluginRegistry = new PluginRegistry();
+    this.random = createSeededRandom();
     this.npcService = createNpcService();
     this.narrativeSettings = buildNarrativeSettings(); // Default: 2nd person
 
@@ -645,7 +647,7 @@ export class GameEngine {
         const npcEvents = this.npcService.tick({
           world: this.world,
           turn,
-          random: this.scheduler.getRandom(),
+          random: this.random,
           playerLocation: playerLocation || '',
           playerId: this.context.player.id
         });
@@ -698,61 +700,19 @@ export class GameEngine {
           }
         }
 
-        // Scheduler tick (ADR-071)
-        // Daemons run, fuses count down - after NPCs
-        const schedulerResult = this.scheduler.tick(
-          this.world,
+        // Plugin tick loop (ADR-120)
+        // Plugins run in priority order after NPC phase
+        const pluginContext: TurnPluginContext = {
+          world: this.world,
           turn,
-          this.context.player.id
-        );
-
-        // Process scheduler events through the same pipeline as action events
-        if (schedulerResult.events.length > 0) {
-          const schedulerEnrichmentContext = {
-            turn,
-            playerId: this.context.player.id,
-            locationId: playerLocation
-          };
-
-          // Scheduler events are already ISemanticEvent, so just process them
-          let schedulerSemanticEvents = schedulerResult.events.map(e =>
-            processEvent(e, schedulerEnrichmentContext)
-          );
-
-          // Apply perception filtering if service is configured
-          if (this.perceptionService) {
-            schedulerSemanticEvents = this.perceptionService.filterEvents(
-              schedulerSemanticEvents,
-              this.context.player,
-              this.world
-            );
-          }
-
-          // Add scheduler events to turn events
-          const existingEvents = this.turnEvents.get(turn) || [];
-          this.turnEvents.set(turn, [...existingEvents, ...schedulerSemanticEvents]);
-
-          // Track in event source for save/restore
-          for (const event of schedulerSemanticEvents) {
-            this.eventSource.emit(event);
-
-            // Check for platform request events
-            if (isPlatformRequestEvent(event)) {
-              this.pendingPlatformOps.push(event as IPlatformEvent);
-            }
-          }
-
-          // Emit events if configured
-          if (this.config.onEvent) {
-            for (const event of schedulerSemanticEvents) {
-              this.config.onEvent(event as any);
-            }
-          }
-
-          // Emit through engine's event system
-          for (const event of schedulerSemanticEvents) {
-            this.emit('event', event as any);
-            this.dispatchEntityHandlers(event as any);
+          playerId: this.context.player.id,
+          playerLocation: playerLocation || '',
+          random: this.random
+        };
+        for (const plugin of this.pluginRegistry.getAll()) {
+          const pluginEvents = plugin.onAfterAction(pluginContext);
+          if (pluginEvents.length > 0) {
+            this.processPluginEvents(pluginEvents, turn, playerLocation);
           }
         }
       }
@@ -1209,10 +1169,10 @@ export class GameEngine {
   }
 
   /**
-   * Get scheduler service for daemons and fuses (ADR-071)
+   * Get plugin registry for registering turn-cycle plugins (ADR-120)
    */
-  getScheduler(): ISchedulerService {
-    return this.scheduler;
+  getPluginRegistry(): PluginRegistry {
+    return this.pluginRegistry;
   }
 
   /**
@@ -1350,6 +1310,55 @@ export class GameEngine {
    */
   getUndoLevels(): number {
     return this.saveRestoreService.getUndoLevels();
+  }
+
+  /**
+   * Process events from a plugin through the shared pipeline (ADR-120)
+   * Enriches, filters, stores, and emits events.
+   */
+  private processPluginEvents(
+    events: ISemanticEvent[],
+    turn: number,
+    playerLocation: string | null | undefined
+  ): void {
+    const enrichmentContext = {
+      turn,
+      playerId: this.context.player.id,
+      locationId: playerLocation ?? undefined
+    };
+
+    let processed = events.map(e => processEvent(e, enrichmentContext));
+
+    if (this.perceptionService) {
+      processed = this.perceptionService.filterEvents(
+        processed,
+        this.context.player,
+        this.world
+      );
+    }
+
+    // Add to turn events
+    const existing = this.turnEvents.get(turn) || [];
+    this.turnEvents.set(turn, [...existing, ...processed]);
+
+    // Track in event source and check for platform requests
+    for (const event of processed) {
+      this.eventSource.emit(event);
+      if (isPlatformRequestEvent(event)) {
+        this.pendingPlatformOps.push(event as IPlatformEvent);
+      }
+    }
+
+    // Emit through callbacks and event system
+    if (this.config.onEvent) {
+      for (const event of processed) {
+        this.config.onEvent(event as any);
+      }
+    }
+    for (const event of processed) {
+      this.emit('event', event as any);
+      this.dispatchEntityHandlers(event as any);
+    }
   }
 
   /**

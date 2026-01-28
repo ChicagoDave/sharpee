@@ -14,7 +14,8 @@
 
 import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel, IdentityTrait, Direction, DirectionType, IParsedCommand } from '@sharpee/world-model';
-import { ISchedulerService, Daemon, SchedulerContext, ParsedCommandTransformer } from '@sharpee/engine';
+import { ParsedCommandTransformer } from '@sharpee/engine';
+import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 import {
   getPuzzleState,
   canMove,

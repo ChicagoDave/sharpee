@@ -17,7 +17,7 @@
  */
 
 import { GDTCommandHandler, GDTContext, GDTCommandResult } from '../types';
-import { ISchedulerService } from '@sharpee/engine';
+import { ISchedulerService } from '@sharpee/plugin-scheduler';
 
 // We'll get the scheduler through the world's capability system
 const SCHEDULER_CAPABILITY_KEY = 'dungeo.scheduler.ref';

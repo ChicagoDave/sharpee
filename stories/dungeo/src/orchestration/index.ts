@@ -14,6 +14,7 @@
 
 import type { GameEngine } from '@sharpee/engine';
 import type { WorldModel } from '@sharpee/world-model';
+import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 import { ScoringEventProcessor } from '@sharpee/stdlib';
 
 import { registerCommandTransformers, TransformerConfig } from './command-transformers';
@@ -103,26 +104,25 @@ export function initializeOrchestration(
   };
   registerCommandTransformers(engine, world, transformerConfig);
 
-  // 2. Scheduler Events
-  // Register daemons and fuses for timed events
-  const scheduler = engine.getScheduler();
-  if (scheduler) {
-    const schedulerConfig: SchedulerConfig = {
-      forestIds: config.forestIds,
-      damIds: config.damIds,
-      bankIds: config.bankIds,
-      balloonIds: config.balloonIds,
-      undergroundIds: config.undergroundIds,
-      roundRoomIds: config.roundRoomIds,
-      coalMineIds: config.coalMineIds,
-      templeIds: config.templeIds,
-      endgameIds: config.endgameIds,
-      mazeIds: config.mazeIds,
-      houseInteriorIds: config.houseInteriorIds,
-      royalPuzzleIds: config.royalPuzzleIds
-    };
-    registerSchedulerEvents(scheduler, world, schedulerConfig);
-  }
+  // 2. Scheduler Plugin (ADR-120)
+  // Register scheduler plugin and set up daemons and fuses
+  const schedulerPlugin = new SchedulerPlugin();
+  engine.getPluginRegistry().register(schedulerPlugin);
+  const schedulerConfig: SchedulerConfig = {
+    forestIds: config.forestIds,
+    damIds: config.damIds,
+    bankIds: config.bankIds,
+    balloonIds: config.balloonIds,
+    undergroundIds: config.undergroundIds,
+    roundRoomIds: config.roundRoomIds,
+    coalMineIds: config.coalMineIds,
+    templeIds: config.templeIds,
+    endgameIds: config.endgameIds,
+    mazeIds: config.mazeIds,
+    houseInteriorIds: config.houseInteriorIds,
+    royalPuzzleIds: config.royalPuzzleIds
+  };
+  registerSchedulerEvents(schedulerPlugin.getScheduler(), world, schedulerConfig);
 
   // 3. Puzzle Handlers
   // Register complex multi-room puzzle handlers
@@ -135,7 +135,7 @@ export function initializeOrchestration(
       dungeonEntrance: config.endgameIds.dungeonEntrance
     }
   };
-  registerPuzzleHandlers(engine, world, puzzleConfig);
+  registerPuzzleHandlers(engine, world, puzzleConfig, schedulerPlugin.getScheduler());
 
   // 4. NPC Registration
   // Register NPC behaviors with the NPC service

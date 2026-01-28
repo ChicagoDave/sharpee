@@ -12,6 +12,7 @@
   "references": [
     { "path": "../core" },
     { "path": "../event-processor" },
+    { "path": "../plugins" },
     { "path": "../if-domain" },
     { "path": "../if-services" },
     { "path": "../lang-en-us" },

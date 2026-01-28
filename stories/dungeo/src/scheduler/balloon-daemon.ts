@@ -19,7 +19,7 @@
 
 import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel, IdentityTrait, OpenableTrait, ContainerTrait, VehicleTrait } from '@sharpee/world-model';
-import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/engine';
+import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 import { DungeoSchedulerMessages } from './scheduler-messages';
 import {
   BurnableTrait,

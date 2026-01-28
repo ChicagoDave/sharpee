@@ -8,7 +8,8 @@
  * - Command interception for special movement
  */
 
-import type { GameEngine, ISchedulerService } from '@sharpee/engine';
+import type { GameEngine } from '@sharpee/engine';
+import type { ISchedulerService } from '@sharpee/plugin-scheduler';
 import type { WorldModel } from '@sharpee/world-model';
 
 // Puzzle handlers
@@ -40,9 +41,9 @@ export interface PuzzleConfig {
 export function registerPuzzleHandlers(
   engine: GameEngine,
   world: WorldModel,
-  config: PuzzleConfig
+  config: PuzzleConfig,
+  scheduler?: ISchedulerService
 ): void {
-  const scheduler = engine.getScheduler();
 
   // Laser Puzzle (Small Room / Stone Room)
   // Player must direct laser beam through mirrors to open passage
@@ -51,7 +52,7 @@ export function registerPuzzleHandlers(
     world,
     config.endgameIds.smallRoom,
     config.endgameIds.stoneRoom,
-    scheduler || undefined
+    scheduler
   );
 
   // Inside Mirror (rotating/sliding box puzzle)
@@ -62,6 +63,6 @@ export function registerPuzzleHandlers(
     config.endgameIds.hallway,
     config.endgameIds.insideMirror,
     config.endgameIds.dungeonEntrance,
-    scheduler || undefined
+    scheduler
   );
 }

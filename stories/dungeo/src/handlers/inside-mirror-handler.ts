@@ -20,7 +20,7 @@ import {
   RoomTrait,
   Direction
 } from '@sharpee/world-model';
-import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/engine';
+import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 
 export const InsideMirrorMessages = {
   // Pole operations

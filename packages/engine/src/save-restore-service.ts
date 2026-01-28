@@ -22,11 +22,10 @@ import {
   ISerializedRelationship,
   ISerializedTurn,
   ISerializedParserState,
-  ISerializedSchedulerState,
   ISemanticEventSource,
   createSemanticEventSource
 } from '@sharpee/core';
-import { ISchedulerService } from './scheduler';
+import { PluginRegistry } from '@sharpee/plugins';
 import { TurnResult, GameContext } from './types';
 import { Story } from './story';
 import { toSequencedEvent } from './event-adapter';
@@ -39,7 +38,7 @@ export interface ISaveRestoreStateProvider {
   getContext(): GameContext;
   getStory(): Story | undefined;
   getEventSource(): ISemanticEventSource;
-  getScheduler(): ISchedulerService;
+  getPluginRegistry(): PluginRegistry;
   getParser(): unknown | undefined;
 }
 
@@ -131,7 +130,7 @@ export class SaveRestoreService {
     const context = provider.getContext();
     const story = provider.getStory();
     const eventSource = provider.getEventSource();
-    const scheduler = provider.getScheduler();
+    const pluginRegistry = provider.getPluginRegistry();
     const world = provider.getWorld();
     const parser = provider.getParser();
 
@@ -148,7 +147,7 @@ export class SaveRestoreService {
       spatialIndex: this.serializeSpatialIndex(world),
       turnHistory: this.serializeTurnHistory(context.history),
       parserState: this.serializeParserState(parser),
-      schedulerState: this.serializeSchedulerState(scheduler)
+      pluginStates: pluginRegistry.getStates()
     };
 
     return {
@@ -200,12 +199,9 @@ export class SaveRestoreService {
     const world = provider.getWorld();
     this.deserializeSpatialIndex(saveData.engineState.spatialIndex, world);
 
-    // Restore scheduler state if present
-    if (saveData.engineState.schedulerState) {
-      this.deserializeSchedulerState(
-        saveData.engineState.schedulerState,
-        provider.getScheduler()
-      );
+    // Restore plugin states if present (ADR-120)
+    if (saveData.engineState.pluginStates) {
+      provider.getPluginRegistry().setStates(saveData.engineState.pluginStates);
     }
 
     // Clear undo snapshots after restore
@@ -456,52 +452,6 @@ export class SaveRestoreService {
     // Parser state serialization is parser-specific
     // For now, return empty object
     return {};
-  }
-
-  /**
-   * Serialize scheduler state (daemons and fuses)
-   */
-  private serializeSchedulerState(scheduler: ISchedulerService): ISerializedSchedulerState {
-    const state = scheduler.getState();
-    return {
-      turn: state.turn,
-      daemons: state.daemons.map((d) => ({
-        id: d.id,
-        isPaused: d.isPaused,
-        runCount: d.runCount
-      })),
-      fuses: state.fuses.map((f) => ({
-        id: f.id,
-        turnsRemaining: f.turnsRemaining,
-        isPaused: f.isPaused,
-        entityId: f.entityId
-      })),
-      randomSeed: state.randomSeed
-    };
-  }
-
-  /**
-   * Deserialize scheduler state
-   */
-  private deserializeSchedulerState(
-    state: ISerializedSchedulerState,
-    scheduler: ISchedulerService
-  ): void {
-    scheduler.setState({
-      turn: state.turn,
-      daemons: state.daemons.map((d) => ({
-        id: d.id,
-        isPaused: d.isPaused,
-        runCount: d.runCount
-      })),
-      fuses: state.fuses.map((f) => ({
-        id: f.id,
-        turnsRemaining: f.turnsRemaining,
-        isPaused: f.isPaused,
-        entityId: f.entityId
-      })),
-      randomSeed: state.randomSeed
-    });
   }
 
   /**

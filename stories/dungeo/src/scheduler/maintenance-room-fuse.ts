@@ -11,7 +11,7 @@
 
 import { ISemanticEvent, EntityId } from '@sharpee/core';
 import { WorldModel, IdentityTrait } from '@sharpee/world-model';
-import { ISchedulerService, SchedulerContext } from '@sharpee/engine';
+import { ISchedulerService, SchedulerContext } from '@sharpee/plugin-scheduler';
 
 // Flooding state key
 export const FLOODING_STATE_KEY = 'dungeo.maintenance.flooding.state';
