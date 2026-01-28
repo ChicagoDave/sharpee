@@ -189,7 +189,7 @@ export {
 } from './frame-piece-trait';
 
 // Ghost Ritual Dropping Interceptor (ADR-118)
-export { GhostRitualDroppingInterceptor, GhostRitualInterceptorMessages } from '../interceptors/ghost-ritual-dropping-interceptor';
+export { GhostRitualDroppingInterceptor, GhostRitualInterceptorMessages, GhostRitualMessages } from '../interceptors/ghost-ritual-dropping-interceptor';
 
 // Basin Room (ritual basin trap state)
 export {

@@ -63,78 +63,27 @@ These are event handlers (not daemons, not NPCs) that directly mutate world stat
 
 ## Violation Details
 
-### 1. `coal-machine-handler.ts`
+### ~~1. `coal-machine-handler.ts`~~ — NEVER EXISTED
 
-**Registered as**: Event handler on `if.event.switched_on`
-**Trigger**: Player turns on the machine switch while coal is inside
-**Mutations**:
-- `world.removeEntity(coalId)` — destroys coal
-- `world.createEntity('huge diamond', ...)` — creates treasure
-- Adds `IdentityTrait`, `TreasureTrait` to diamond
-- `world.moveEntity(diamond.id, roomId)` — places diamond
-- `world.setStateValue()` x2 — tracking flags
-
-**Game logic**: Coal→diamond transformation puzzle. Single entity (machine), single action (SWITCH ON).
-
-**Migration path**: **Interceptor on SWITCHING_ON action**. Create `CoalMachineTrait` on the machine. `SwitchingOnInterceptor` checks for coal inside, transforms in `postExecute`.
-
-**Complexity**: Medium — entity creation/destruction in interceptor is new pattern, but architecturally clean.
+**Status**: ✅ No violation. The coal→diamond puzzle was implemented as a story-specific action (`turn-switch-action.ts`) with proper four-phase pattern. All mutations happen in `execute`. No event handler was ever created for this. Assessment entry was incorrect.
 
 ---
 
-### 2. `ghost-ritual-handler.ts`
+### ~~2. `ghost-ritual-handler.ts`~~ — ALREADY MIGRATED
 
-**Registered as**: Event handler on `if.event.dropped`
-**Trigger**: Player drops frame piece in Basin Room while incense is burning
-**Mutations**:
-- `world.removeEntity(framePieceId)` — consumes frame piece
-- `createThiefsCanvas(world)` — creates treasure entity
-- `world.moveEntity(canvas.id, galleryId)` — places canvas in Gallery
-- `world.setStateValue()` x2 — completion flags
-
-**Game logic**: Ghost appears, frame piece consumed, canvas spawns in Gallery. Single action (DROP), specific location + item combo.
-
-**Migration path**: **Interceptor on DROPPING action**. Create `GhostRitualTrait` on the Basin Room (or frame piece). `DroppingInterceptor` checks location + item + incense state, transforms in `postExecute`.
-
-**Complexity**: Medium — needs DROPPING action interceptor support (not yet implemented).
+**Status**: ✅ Interceptor replacement (`ghost-ritual-dropping-interceptor.ts`) already exists and is registered. `registerGhostRitualHandler()` is exported but never called — dead code. Handler file can be deleted.
 
 ---
 
-### 3. `dam-handler.ts`
+### ~~3. `dam-handler.ts`~~ — MIGRATED
 
-**Registered as**: Event handler on custom events `dungeo.dam.opened` / `dungeo.dam.closed`
-**Trigger**: Dam bolt is turned, emitting custom domain events
-**Mutations**:
-- `RoomBehavior.blockExit()` x4 — blocks reservoir room exits
-- `RoomBehavior.unblockExit()` x4 — unblocks reservoir room exits
-- `identity.description = ...` x6 — updates room descriptions for flooded/drained state
-
-**Game logic**: When dam opens/closes, 4 reservoir rooms change accessibility and descriptions.
-
-**Migration path**: This is the hardest case. It reacts to custom domain events (not stdlib action events) and coordinates 4 rooms. Options:
-- **Option A**: Move mutations into the dam's TURNING capability behavior (the bolt turn that emits the events should also do the room updates).
-- **Option B**: Keep as handler but return effects instead of mutating directly. Requires an effect type that can block/unblock exits and update descriptions.
-- **Option C**: Convert to daemon that watches dam state and applies room changes.
-
-**Recommended**: **Option A** — the bolt-turning behavior already knows the dam state. It should own the downstream room mutations rather than emitting events for a separate handler to mutate.
-
-**Complexity**: High — touches 4 rooms, needs coordination with existing bolt-turning behavior.
+**Status**: ✅ Completed 2026-01-27. Handler deleted, mutations moved into `turn-bolt-action.ts` execute phase. See `docs/context/session-20260127-2055-main.md`.
 
 ---
 
-### 4. `river-handler.ts`
+### ~~4. `river-handler.ts`~~ — MIGRATED
 
-**Registered as**: Event handler on `if.event.actor_moved` + command transformer
-**Trigger**: Player moves while in boat on river
-**Mutations**:
-- `world.moveEntity(boat.id, newRoom)` — moves boat to follow player
-- `world.moveEntity(player.id, boat.id)` — re-seats player in boat
-
-**Game logic**: Boat follows player through river rooms. Command transformer blocks entering water without boat.
-
-**Migration path**: **Interceptor on GOING action**. Create `WatercraftFollowTrait` on the boat. `GoingInterceptor` in `postExecute` moves the boat to follow the player when navigating river rooms. The command transformer can remain (it's read-only, just redirects commands).
-
-**Complexity**: Low-Medium — GOING already has interceptor support. Need to check for conflicts with existing `InflatableEnteringInterceptor` (boat puncture). May need interceptor chaining or a combined boat interceptor.
+**Status**: ✅ Completed 2026-01-27. `registerBoatMovementHandler()` was dead code — the stdlib GOING action already handles vehicle movement natively (line 302-303 of `going.ts`). The function was exported but never called. Deleted the dead function and unused imports. Command transformer (read-only, not a violation) remains.
 
 ---
 
@@ -179,14 +128,14 @@ These are event handlers (not daemons, not NPCs) that directly mutate world stat
 
 | Handler | Violation | Migration Strategy | Complexity | New Interceptor Action Needed? |
 |---------|-----------|-------------------|------------|-------------------------------|
-| `coal-machine-handler` | Entity lifecycle + state | Interceptor (SWITCHING_ON) | Medium | Yes — SWITCHING_ON |
-| `ghost-ritual-handler` | Entity lifecycle + state | Interceptor (DROPPING) | Medium | Yes — DROPPING |
-| `dam-handler` | Exit blocking + descriptions | Move to bolt-turning behavior | High | No |
-| `river-handler` | Entity movement | Interceptor (GOING) | Low-Med | No — GOING supported |
+| ~~`coal-machine-handler`~~ | ~~Entity lifecycle + state~~ | ~~Interceptor (SWITCHING_ON)~~ | ✅ NEVER EXISTED (was story action) | — |
+| ~~`ghost-ritual-handler`~~ | ~~Entity lifecycle + state~~ | ~~Interceptor (DROPPING)~~ | ✅ ALREADY MIGRATED (interceptor active) | — |
+| ~~`dam-handler`~~ | ~~Exit blocking + descriptions~~ | ~~Move to bolt-turning behavior~~ | ✅ MIGRATED | — |
+| ~~`river-handler`~~ | ~~Entity movement~~ | ~~Interceptor (GOING)~~ | ✅ MIGRATED (dead code) | — |
 | `tiny-room-handler` | Trait props + movement | Move mutations into story actions | Medium | No |
 | `balloon-handler` | (remaining = daemon + action) | **None — already correct** | — | — |
 
-**Actual violations requiring migration: 5** (not 6 — balloon is clean)
+**Actual violations requiring migration: 1** (dam-handler migrated, river-handler was dead code, coal-machine-handler never existed, ghost-ritual already had interceptor, balloon was already clean). Only `tiny-room-handler` remains.
 
 ### New Stdlib Interceptor Support Needed
 
@@ -202,7 +151,7 @@ GOING, THROWING, PUTTING, PUSHING already have interceptor support.
 2. **`coal-machine-handler`** — clear entity+action pattern, needs SWITCHING_ON hooks
 3. **`ghost-ritual-handler`** — clear entity+action pattern, needs DROPPING hooks
 4. **`tiny-room-handler`** — refactor utility into action execute phases
-5. **`dam-handler`** — most complex, architectural decision needed
+5. ~~**`dam-handler`**~~ — ✅ MIGRATED 2026-01-27
 
 ### Daemon Cleanup (Separate Track)
 

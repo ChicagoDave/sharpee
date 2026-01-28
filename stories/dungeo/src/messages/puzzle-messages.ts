@@ -20,13 +20,13 @@ import type { LanguageProvider } from '@sharpee/lang-en-us';
 import {
   BatMessages,
   ExorcismMessages,
-  GhostRitualMessages,
   RealityAlteredMessages,
   EndgameTriggerMessages,
   LaserPuzzleMessages,
   InsideMirrorMessages,
   VictoryMessages
 } from '../handlers';
+import { GhostRitualMessages } from '../traits';
 import { MirrorRoomMessages } from '../handlers/mirror-room-handler';
 import { PuzzleHandlerMessages } from '../handlers/royal-puzzle';
 import { BankPuzzleMessages } from '../actions';

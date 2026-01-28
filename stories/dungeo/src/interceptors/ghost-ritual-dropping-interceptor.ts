@@ -30,6 +30,14 @@ export const GhostRitualInterceptorMessages = {
   CANVAS_SPAWNS: 'dungeo.ghost.canvas_spawns',
 } as const;
 
+/** Legacy message IDs (kept for language layer registration) */
+export const GhostRitualMessages = {
+  GHOST_APPEARS: 'dungeo.ghost.appears',
+  CANVAS_SPAWNS: 'dungeo.ghost.canvas_spawns',
+  WRONG_ITEM: 'dungeo.ghost.wrong_item',
+  NOT_BLESSED: 'dungeo.ghost.not_blessed',
+} as const;
+
 export const GhostRitualDroppingInterceptor: ActionInterceptor = {
   /**
    * Post-validate: Check if we're in Basin Room with basin disarmed.

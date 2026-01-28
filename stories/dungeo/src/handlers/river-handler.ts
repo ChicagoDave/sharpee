@@ -9,8 +9,7 @@
  */
 
 import { WorldModel, IParsedCommand, VehicleTrait, TraitType, RoomTrait, DirectionType } from '@sharpee/world-model';
-import { ParsedCommandTransformer, GameEngine } from '@sharpee/engine';
-import { ISemanticEvent } from '@sharpee/core';
+import { ParsedCommandTransformer } from '@sharpee/engine';
 import { RIVER_BLOCKED_ACTION_ID } from '../actions/river-blocked/types';
 import { RiverNavigationTrait } from '../traits';
 
@@ -143,48 +142,6 @@ export function createRiverEntryTransformer(): ParsedCommandTransformer {
       }
     };
   };
-}
-
-/**
- * Register boat movement handler
- *
- * When player moves while in boat, boat moves too.
- * Listens for actor_moved events and moves the boat to follow.
- */
-export function registerBoatMovementHandler(engine: GameEngine, world: WorldModel): void {
-  const eventProcessor = engine.getEventProcessor();
-
-  eventProcessor.registerHandler('if.event.actor_moved', (event: ISemanticEvent): any[] => {
-    const data = event.data as Record<string, any> | undefined;
-    if (!data) return [];
-
-    const actorId = data.actorId as string | undefined;
-    if (!actorId) return [];
-
-    // Check if it's the player
-    const player = world.getPlayer();
-    if (!player || actorId !== player.id) return [];
-
-    // Check if player WAS in a vehicle (boat)
-    const previousLocation = data.previousLocation as string | undefined;
-    if (!previousLocation) return [];
-
-    const prevEntity = world.getEntity(previousLocation);
-    if (!prevEntity || !prevEntity.has(TraitType.VEHICLE)) return [];
-
-    const vehicleTrait = prevEntity.get(VehicleTrait);
-    if (!vehicleTrait || vehicleTrait.vehicleType !== 'watercraft') return [];
-
-    // Move boat to new room
-    const newRoom = data.currentLocation as string | undefined;
-    if (newRoom) {
-      world.moveEntity(prevEntity.id, newRoom);
-      // Also move player back into boat
-      world.moveEntity(player.id, prevEntity.id);
-    }
-
-    return [];
-  });
 }
 
 // Message IDs for river navigation
