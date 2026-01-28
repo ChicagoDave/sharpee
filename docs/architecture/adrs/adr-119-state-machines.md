@@ -2,6 +2,8 @@
 
 ## Status: PROPOSED
 
+## Depends On: ADR-120 (Engine Plugin Architecture)
+
 ## Date: 2026-01-27
 
 ## Context
@@ -451,16 +453,11 @@ The `history` array enables "undo" or narrative callbacks ("remember when you...
 
 ## Open Questions
 
-### 1. Package Location
+### 1. Package Location — RESOLVED
 
-Where does the state machine runtime live?
+**Decision**: `@sharpee/plugin-state-machine`, implementing the `TurnPlugin` interface from ADR-120.
 
-| Option | Pros | Cons |
-|--------|------|------|
-| **stdlib** | Close to actions, easy integration | Adds complexity to stdlib |
-| **engine** | Engine already manages turn cycle, natural fit for transition evaluation | Tight coupling |
-| **New package (sharpee-fsm)** | Clean separation, reusable | Another dependency, coordination overhead |
-| **world-model** | State is world state, already has traits/behaviors | world-model should be passive data |
+The state machine runtime lives in its own plugin package. Engine calls it via the plugin contract after each successful player action. See ADR-120 for the plugin architecture and `docs/work/platform/state-machine.md` for the full location assessment.
 
 ### 2. Declarative vs Programmatic
 
@@ -523,5 +520,6 @@ Declarative state machines enable visual editing. A future Sharpee Forge tool co
 - ADR-090: Capability Dispatch
 - ADR-117: Event Handlers vs Capability Behaviors
 - ADR-118: Stdlib Action Interceptors
+- ADR-120: Engine Plugin Architecture (prerequisite — defines `TurnPlugin` contract)
 - `stories/dungeo/src/handlers/tiny-room-handler.ts` — canonical example of hand-coded orchestration
 - `stories/dungeo/src/handlers/basket-handler.ts` — simpler two-state example
