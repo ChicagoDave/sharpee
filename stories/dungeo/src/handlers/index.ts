@@ -17,7 +17,6 @@ export * from './victory-handler';
 export * from './rainbow-handler';
 export * from './balloon-handler';
 export * from './tiny-room-handler';
-export * from './dam-handler';
 export * from './river-handler';
 export * from './falls-death-handler';
 export * from './death-penalty-handler';

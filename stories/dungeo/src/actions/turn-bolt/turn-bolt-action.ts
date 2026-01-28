@@ -1,39 +1,173 @@
 /**
  * Turn Bolt Action - Opens/closes Flood Control Dam #3
  *
- * When the player turns the bolt with a wrench:
- * - If gate not enabled (yellow button not pressed), bolt won't turn
- * - If player doesn't have wrench, can't turn bolt
- * - Otherwise, starts dam draining sequence (via dam-fuse)
- *
- * Per FORTRAN source:
+ * Per FORTRAN source (objects.f lines 1050-1068):
  * - GATEF must be TRUE (yellow button pressed) for bolt to turn
  * - Wrench required to turn the bolt
+ * - Dam draining is INSTANT: LWTIDF flag toggle, no fuses
+ * - When opened: reservoir becomes land, trunk materializes
+ * - When closed: reservoir becomes water, trunk hidden
+ *
+ * All reservoir mutations (exit blocking, descriptions, trunk visibility)
+ * are owned by this action's execute phase — no event handler needed.
  */
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
-import { WorldModel, IdentityTrait, IFEntity } from '@sharpee/world-model';
-import { ISchedulerService } from '@sharpee/engine';
+import {
+  WorldModel,
+  IdentityTrait,
+  IFEntity,
+  RoomBehavior,
+  Direction
+} from '@sharpee/world-model';
 import { TURN_BOLT_ACTION_ID, TurnBoltMessages } from './types';
 import {
   isYellowButtonPressed,
   isDamDrained,
-  isDamDraining,
-  startDamDraining,
-  closeDamGate
-} from '../../scheduler/dam-fuse';
+  setDamDrained
+} from '../../scheduler/dam-state';
 
-// Scheduler reference for starting draining sequence
-let schedulerRef: ISchedulerService | null = null;
-let reservoirIdRef: string = '';
+// Room IDs for reservoir mutations (set during registration)
+let reservoirSouthId: string = '';
+let reservoirId: string = '';
+let reservoirNorthId: string = '';
 
 /**
- * Set the scheduler reference for starting draining sequence
+ * Configure the turn-bolt action with reservoir room IDs.
+ * Called during story initialization.
  */
-export function setTurnBoltScheduler(scheduler: ISchedulerService, reservoirId: string): void {
-  schedulerRef = scheduler;
-  reservoirIdRef = reservoirId;
+export function setTurnBoltReservoirIds(ids: {
+  reservoirSouth: string;
+  reservoir: string;
+  reservoirNorth: string;
+}): void {
+  reservoirSouthId = ids.reservoirSouth;
+  reservoirId = ids.reservoir;
+  reservoirNorthId = ids.reservoirNorth;
+}
+
+/**
+ * Block all reservoir exits (dam closed / flooded state).
+ * Called at world setup and when dam is closed.
+ */
+export function blockReservoirExits(world: WorldModel): void {
+  const rSouth = world.getEntity(reservoirSouthId);
+  const rMid = world.getEntity(reservoirId);
+  const rNorth = world.getEntity(reservoirNorthId);
+
+  if (rSouth) {
+    RoomBehavior.blockExit(rSouth, Direction.NORTH,
+      'The reservoir is full of water. You cannot walk that way.');
+  }
+  if (rMid) {
+    RoomBehavior.blockExit(rMid, Direction.NORTH,
+      'The reservoir is full of water. You cannot continue north.');
+    RoomBehavior.blockExit(rMid, Direction.SOUTH,
+      'The reservoir is full of water. You cannot continue south.');
+  }
+  if (rNorth) {
+    RoomBehavior.blockExit(rNorth, Direction.SOUTH,
+      'The reservoir is full of water. You cannot walk that way.');
+  }
+}
+
+/**
+ * Unblock all reservoir exits (dam opened / drained state).
+ */
+function unblockReservoirExits(world: WorldModel): void {
+  const rSouth = world.getEntity(reservoirSouthId);
+  const rMid = world.getEntity(reservoirId);
+  const rNorth = world.getEntity(reservoirNorthId);
+
+  if (rSouth) {
+    RoomBehavior.unblockExit(rSouth, Direction.NORTH);
+  }
+  if (rMid) {
+    RoomBehavior.unblockExit(rMid, Direction.NORTH);
+    RoomBehavior.unblockExit(rMid, Direction.SOUTH);
+  }
+  if (rNorth) {
+    RoomBehavior.unblockExit(rNorth, Direction.SOUTH);
+  }
+}
+
+/**
+ * Update reservoir room descriptions based on dam state.
+ */
+function updateReservoirDescriptions(world: WorldModel, drained: boolean): void {
+  const rSouth = world.getEntity(reservoirSouthId);
+  const rMid = world.getEntity(reservoirId);
+  const rNorth = world.getEntity(reservoirNorthId);
+
+  if (drained) {
+    if (rSouth) {
+      const identity = rSouth.get(IdentityTrait);
+      if (identity) {
+        identity.description = 'You are on the southern edge of what was once a reservoir. The water has drained away, leaving a muddy expanse stretching north. A path leads south.';
+      }
+    }
+    if (rMid) {
+      const identity = rMid.get(IdentityTrait);
+      if (identity) {
+        identity.description = 'You are on the muddy bottom of a drained reservoir. The exposed lake bed stretches in all directions. Various objects that were once submerged are now visible.';
+      }
+    }
+    if (rNorth) {
+      const identity = rNorth.get(IdentityTrait);
+      if (identity) {
+        identity.description = 'You are at the north end of a drained reservoir. The muddy bottom extends to the south, and a dark passage leads north.';
+      }
+    }
+  } else {
+    if (rSouth) {
+      const identity = rSouth.get(IdentityTrait);
+      if (identity) {
+        identity.description = 'You are on the southern shore of a large reservoir. The water extends north as far as you can see. A path leads south.';
+      }
+    }
+    if (rMid) {
+      const identity = rMid.get(IdentityTrait);
+      if (identity) {
+        identity.description = 'You are on what used to be a large reservoir, now drained. The muddy bottom is exposed, and you can see various objects that were once submerged.';
+      }
+    }
+    if (rNorth) {
+      const identity = rNorth.get(IdentityTrait);
+      if (identity) {
+        identity.description = 'You are at the north end of a large reservoir. A passage leads north into darkness, and the reservoir extends to the south.';
+      }
+    }
+  }
+}
+
+/**
+ * Make the trunk visible in the reservoir (FORTRAN: VISIBT flag on TRUNK).
+ */
+function revealTrunk(world: WorldModel): void {
+  const trunk = world.getAllEntities().find(e => {
+    const id = e.get(IdentityTrait);
+    return id?.name === 'trunk';
+  });
+  if (trunk) {
+    (trunk as any).revealed = true;
+  }
+}
+
+/**
+ * Hide the trunk if it's still in the reservoir (FORTRAN: clear VISIBT on TRUNK if in RESER).
+ */
+function hideTrunkIfInReservoir(world: WorldModel): void {
+  const trunk = world.getAllEntities().find(e => {
+    const id = e.get(IdentityTrait);
+    return id?.name === 'trunk';
+  });
+  if (trunk) {
+    const trunkLocation = world.getLocation(trunk.id);
+    if (trunkLocation === reservoirId) {
+      (trunk as any).revealed = false;
+    }
+  }
 }
 
 /**
@@ -42,7 +176,6 @@ export function setTurnBoltScheduler(scheduler: ISchedulerService, reservoirId: 
 function isBolt(entity: IFEntity): boolean {
   const identity = entity.get(IdentityTrait);
   if (!identity) return false;
-
   const name = identity.name?.toLowerCase() || '';
   return name === 'bolt' || name.includes('bolt');
 }
@@ -53,10 +186,8 @@ function isBolt(entity: IFEntity): boolean {
 function isWrench(entity: IFEntity): boolean {
   const identity = entity.get(IdentityTrait);
   if (!identity) return false;
-
   const name = identity.name?.toLowerCase() || '';
   const aliases = identity.aliases || [];
-
   return name.includes('wrench') || aliases.some((a: string) => a.toLowerCase().includes('wrench'));
 }
 
@@ -67,7 +198,6 @@ function findBoltInRoom(context: ActionContext): IFEntity | undefined {
   const { world, player } = context;
   const playerLocation = world.getLocation(player.id);
   if (!playerLocation) return undefined;
-
   const roomContents = world.getContents(playerLocation);
   return roomContents.find(e => isBolt(e));
 }
@@ -89,73 +219,45 @@ export const turnBoltAction: Action = {
   group: 'manipulation',
 
   validate(context: ActionContext): ValidationResult {
-    // Find bolt in current room
     const bolt = findBoltInRoom(context);
 
     if (!bolt) {
-      return {
-        valid: false,
-        error: TurnBoltMessages.NO_BOLT
-      };
+      return { valid: false, error: TurnBoltMessages.NO_BOLT };
     }
 
-    // Check if player has wrench
     if (!playerHasWrench(context)) {
-      return {
-        valid: false,
-        error: TurnBoltMessages.NO_WRENCH
-      };
+      return { valid: false, error: TurnBoltMessages.NO_WRENCH };
     }
 
-    // Check if gate is enabled (yellow button was pressed)
     if (!isYellowButtonPressed(context.world as WorldModel)) {
-      return {
-        valid: false,
-        error: TurnBoltMessages.GATE_LOCKED
-      };
+      return { valid: false, error: TurnBoltMessages.GATE_LOCKED };
     }
 
-    // Check if dam is already drained or draining
     const alreadyDrained = isDamDrained(context.world as WorldModel);
-    const currentlyDraining = isDamDraining(context.world as WorldModel);
-
-    // Store for execute phase
     context.sharedData.bolt = bolt;
     context.sharedData.alreadyDrained = alreadyDrained;
-    context.sharedData.currentlyDraining = currentlyDraining;
 
     return { valid: true };
   },
 
   execute(context: ActionContext): void {
     const { world, sharedData } = context;
+    const w = world as WorldModel;
     const alreadyDrained = sharedData.alreadyDrained as boolean;
-    const currentlyDraining = sharedData.currentlyDraining as boolean;
 
-    // If currently draining, bolt turns but nothing happens
-    if (currentlyDraining) {
-      sharedData.startedDraining = false;
-      sharedData.closedDam = false;
-      return;
-    }
-
-    // If already drained, close the dam (refill reservoir)
     if (alreadyDrained) {
-      closeDamGate(world as WorldModel);
+      // Close the dam (refill reservoir) — FORTRAN line 27200
+      setDamDrained(w, false);
+      blockReservoirExits(w);
+      updateReservoirDescriptions(w, false);
+      hideTrunkIfInReservoir(w);
       sharedData.closedDam = true;
-      sharedData.startedDraining = false;
-      return;
-    }
-
-    // Start the draining sequence
-    if (schedulerRef && reservoirIdRef) {
-      const events = startDamDraining(schedulerRef, world as WorldModel, reservoirIdRef);
-      sharedData.drainingEvents = events;
-      sharedData.startedDraining = true;
-      sharedData.closedDam = false;
     } else {
-      // No scheduler configured - just report success without draining
-      sharedData.startedDraining = true;
+      // Open the dam (drain reservoir) — FORTRAN line 27100
+      setDamDrained(w, true);
+      unblockReservoirExits(w);
+      updateReservoirDescriptions(w, true);
+      revealTrunk(w);
       sharedData.closedDam = false;
     }
   },
@@ -170,32 +272,12 @@ export const turnBoltAction: Action = {
 
   report(context: ActionContext): ISemanticEvent[] {
     const { sharedData } = context;
-    const currentlyDraining = sharedData.currentlyDraining as boolean;
-    const startedDraining = sharedData.startedDraining as boolean;
     const closedDam = sharedData.closedDam as boolean;
 
-    const events: ISemanticEvent[] = [];
+    const messageId = closedDam
+      ? TurnBoltMessages.DAM_CLOSED
+      : TurnBoltMessages.DAM_OPENED;
 
-    // Choose appropriate message and emit state change event
-    let messageId: string;
-    if (closedDam) {
-      messageId = TurnBoltMessages.DAM_CLOSED;
-      // Emit event for dam-handler to re-block reservoir exits
-      events.push(context.event('dungeo.dam.closed', {
-        actionId: TURN_BOLT_ACTION_ID
-      }));
-    } else if (currentlyDraining) {
-      messageId = TurnBoltMessages.DAM_OPENED; // Bolt turns but draining already in progress
-    } else if (startedDraining) {
-      messageId = TurnBoltMessages.DAM_OPENED;
-    } else {
-      messageId = TurnBoltMessages.DAM_OPENED;
-    }
-
-    events.push(context.event('game.message', {
-      messageId
-    }));
-
-    return events;
+    return [context.event('game.message', { messageId })];
   }
 };

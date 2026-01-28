@@ -38,14 +38,14 @@ import { DungeoScoringService } from './scoring';
 import { ScoringEventProcessor, MetaCommandRegistry } from '@sharpee/stdlib';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, TURN_SWITCH_ACTION_ID, TurnSwitchMessages, PUT_UNDER_ACTION_ID, PutUnderMessages, PUSH_KEY_ACTION_ID, PushKeyMessages, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages, INFLATE_ACTION_ID, InflateMessages, DEFLATE_ACTION_ID, DeflateMessages, COMMANDING_ACTION_ID, CommandingMessages, LAUNCH_ACTION_ID, LaunchMessages, TALK_TO_TROLL_ACTION_ID, TalkToTrollMessages, DIAGNOSE_ACTION_ID, DiagnoseMessages, ROOM_ACTION_ID, RNAME_ACTION_ID, OBJECTS_ACTION_ID, RoomInfoMessages, GRUE_DEATH_ACTION_ID, GrueDeathMessages, CHIMNEY_BLOCKED_ACTION_ID, ChimneyBlockedMessages } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltReservoirIds, blockReservoirExits, TURN_SWITCH_ACTION_ID, TurnSwitchMessages, PUT_UNDER_ACTION_ID, PutUnderMessages, PUSH_KEY_ACTION_ID, PushKeyMessages, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages, INFLATE_ACTION_ID, InflateMessages, DEFLATE_ACTION_ID, DeflateMessages, COMMANDING_ACTION_ID, CommandingMessages, LAUNCH_ACTION_ID, LaunchMessages, TALK_TO_TROLL_ACTION_ID, TalkToTrollMessages, DIAGNOSE_ACTION_ID, DiagnoseMessages, ROOM_ACTION_ID, RNAME_ACTION_ID, OBJECTS_ACTION_ID, RoomInfoMessages, GRUE_DEATH_ACTION_ID, GrueDeathMessages, CHIMNEY_BLOCKED_ACTION_ID, ChimneyBlockedMessages } from './actions';
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages, FloodingMessages, BalloonHandlerMessages, registerTrollRecoveryDaemon, SwordGlowMessages } from './scheduler';
 import { setSchedulerForGDT, setEngineForKL } from './actions/gdt/commands';
 
 // Import handlers
-import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages, registerReservoirExitHandler, createDeathPenaltyHandler, DeathPenaltyMessages, registerTrapdoorHandler, TrapdoorMessages } from './handlers';
+import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, GhostRitualMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages, createDeathPenaltyHandler, DeathPenaltyMessages, registerTrapdoorHandler, TrapdoorMessages } from './handlers';
 import { initializeMirrorRoom, createMirrorTouchHandler, MirrorRoomConfig, MirrorRoomMessages } from './handlers/mirror-room-handler';
 import { MIRROR_ID } from './regions/temple';
 
@@ -440,14 +440,13 @@ export class DungeoStory implements Story {
     world.setStateValue('dungeo.ghost_ritual.basin_room_id', this.templeIds.basinRoom);
     world.setStateValue('dungeo.ghost_ritual.gallery_id', this.undergroundIds.gallery);
 
-    // Register reservoir exit handler (dam draining opens reservoir path)
-    registerReservoirExitHandler(world, {
-      dam: this.damIds.dam,
-      maintenanceRoom: this.damIds.maintenanceRoom,
+    // Configure turn-bolt action with reservoir room IDs and block exits initially (dam starts closed)
+    setTurnBoltReservoirIds({
       reservoirSouth: this.damIds.reservoirSouth,
       reservoir: this.damIds.reservoir,
       reservoirNorth: this.damIds.reservoirNorth
     });
+    blockReservoirExits(world);
 
     // Register room entry scoring (RVAL) - points for first visiting certain rooms
     // From 1981 MDL source: 13 rooms worth 215 total points

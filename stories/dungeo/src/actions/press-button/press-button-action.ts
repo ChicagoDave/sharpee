@@ -12,7 +12,8 @@ import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import { IFEntity, RoomTrait, ButtonTrait, TraitType } from '@sharpee/world-model';
 import { PRESS_BUTTON_ACTION_ID, PressButtonMessages } from './types';
-import { DAM_STATE_KEY, DamState, startFlooding, FloodingMessages } from '../../scheduler/dam-fuse';
+import { setYellowButtonPressed } from '../../scheduler/dam-state';
+import { startFlooding, FloodingMessages } from '../../scheduler/maintenance-room-fuse';
 
 // Scheduler reference for flooding
 let schedulerRef: any = null;
@@ -86,23 +87,16 @@ export const pressButtonAction: Action = {
       return;
     }
 
-    // Get or create dam state
-    let damState = world.getCapability(DAM_STATE_KEY) as DamState | null;
-    if (!damState) {
-      damState = { isDraining: false, isDrained: false, buttonPressed: false, floodingLevel: 0, isFlooded: false };
-      world.registerCapability(DAM_STATE_KEY, { initialData: damState });
-    }
-
     switch (buttonColor) {
       case 'yellow':
         // Enable bolt (GATEF=TRUE)
-        damState.buttonPressed = true;
+        setYellowButtonPressed(world as any, true);
         sharedData.resultMessage = PressButtonMessages.CLICK;
         break;
 
       case 'brown':
         // Disable bolt (GATEF=FALSE)
-        damState.buttonPressed = false;
+        setYellowButtonPressed(world as any, false);
         sharedData.resultMessage = PressButtonMessages.CLICK;
         break;
 
