@@ -22,6 +22,7 @@ export class SaveManager {
   private savePrefix: string;
   private world: WorldModel;
   private onStateChange?: () => void;
+  private baseline: { locations: Record<string, string | null>; traits: Record<string, Record<string, unknown>> } | null = null;
 
   constructor(config: SaveManagerConfig) {
     this.storagePrefix = config.storagePrefix;
@@ -29,6 +30,15 @@ export class SaveManager {
     this.savePrefix = `${config.storagePrefix}save-`;
     this.world = config.world;
     this.onStateChange = config.onStateChange;
+  }
+
+  /**
+   * Capture the initial world state as baseline for delta saves.
+   * Call after initializeWorld() completes but before the first turn.
+   */
+  captureBaseline(): void {
+    this.baseline = this.captureWorldState();
+    console.log('[save] Baseline captured:', Object.keys(this.baseline.locations).length, 'entities');
   }
 
   /**
@@ -138,6 +148,54 @@ export class SaveManager {
   }
 
   /**
+   * Capture only the state that changed from the baseline.
+   * Falls back to full capture if no baseline is set.
+   */
+  private captureDelta(): { locations: Record<string, string | null>; traits: Record<string, Record<string, unknown>> } {
+    const current = this.captureWorldState();
+    if (!this.baseline) {
+      return current;
+    }
+
+    const deltaLocations: Record<string, string | null> = {};
+    const deltaTraits: Record<string, Record<string, unknown>> = {};
+
+    // Diff locations
+    for (const [id, loc] of Object.entries(current.locations)) {
+      if (loc !== this.baseline.locations[id]) {
+        deltaLocations[id] = loc;
+      }
+    }
+
+    // Diff traits
+    for (const [id, entityTraits] of Object.entries(current.traits)) {
+      const baseEntityTraits = this.baseline.traits[id] || {};
+      for (const [traitName, traitData] of Object.entries(entityTraits)) {
+        const baseTrait = baseEntityTraits[traitName] as Record<string, unknown> | undefined;
+        if (!baseTrait || !this.shallowEqual(traitData as Record<string, unknown>, baseTrait)) {
+          if (!deltaTraits[id]) deltaTraits[id] = {};
+          deltaTraits[id][traitName] = traitData;
+        }
+      }
+    }
+
+    return { locations: deltaLocations, traits: deltaTraits };
+  }
+
+  /**
+   * Shallow equality check for trait data objects.
+   */
+  private shallowEqual(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
+    const keysA = Object.keys(a);
+    const keysB = Object.keys(b);
+    if (keysA.length !== keysB.length) return false;
+    for (const key of keysA) {
+      if (a[key] !== b[key]) return false;
+    }
+    return true;
+  }
+
+  /**
    * Restore world state (locations and traits) to existing entities.
    * This preserves entity handlers unlike world.loadJSON().
    */
@@ -177,14 +235,14 @@ export class SaveManager {
    */
   performSave(slotName: string, context: SaveContext, silent = false): { success: boolean; error?: string } {
     try {
-      // Capture state without full serialization
-      const { locations, traits } = this.captureWorldState();
+      // Capture only changed state (delta from baseline)
+      const { locations, traits } = this.captureDelta();
 
       // Compress the transcript HTML for storage
       const compressedHtml = compressToUTF16(context.transcriptHtml);
 
       const saveData: BrowserSaveData = {
-        version: '2.0.0-browser',
+        version: '3.0.0-delta',
         timestamp: Date.now(),
         turnCount: context.turnCount,
         score: context.score,
@@ -193,8 +251,10 @@ export class SaveManager {
         transcriptHtml: compressedHtml,
       };
 
+      // Compress entire payload to obscure contents and reduce size
       const key = this.savePrefix + slotName;
-      localStorage.setItem(key, JSON.stringify(saveData));
+      const compressed = compressToUTF16(JSON.stringify(saveData));
+      localStorage.setItem(key, compressed);
 
       // Update index
       const meta: SaveSlotMeta = {
@@ -225,12 +285,12 @@ export class SaveManager {
    */
   performAutoSave(context: SaveContext): void {
     try {
-      const { locations, traits } = this.captureWorldState();
+      const { locations, traits } = this.captureDelta();
 
       const compressedHtml = compressToUTF16(context.transcriptHtml);
 
       const saveData: BrowserSaveData = {
-        version: '2.0.0-browser',
+        version: '3.0.0-delta',
         timestamp: Date.now(),
         turnCount: context.turnCount,
         score: context.score,
@@ -240,7 +300,8 @@ export class SaveManager {
       };
 
       const key = this.savePrefix + AUTOSAVE_SLOT;
-      localStorage.setItem(key, JSON.stringify(saveData));
+      const compressed = compressToUTF16(JSON.stringify(saveData));
+      localStorage.setItem(key, compressed);
 
       const meta: SaveSlotMeta = {
         name: AUTOSAVE_SLOT,
@@ -271,8 +332,20 @@ export class SaveManager {
   loadSaveSlot(slotName: string): BrowserSaveData | null {
     try {
       const key = this.savePrefix + slotName;
-      const json = localStorage.getItem(key);
-      if (!json) return null;
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+
+      // v3 saves are lz-string compressed; v2 saves are raw JSON
+      let json: string;
+      if (raw.startsWith('{')) {
+        // Legacy v2 uncompressed JSON
+        json = raw;
+      } else {
+        const decompressed = decompressFromUTF16(raw);
+        if (!decompressed) return null;
+        json = decompressed;
+      }
+
       return JSON.parse(json) as BrowserSaveData;
     } catch (error) {
       console.error('[load] Failed to load slot:', slotName, error);

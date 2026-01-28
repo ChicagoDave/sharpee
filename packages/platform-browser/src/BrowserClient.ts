@@ -252,8 +252,11 @@ export class BrowserClient implements BrowserClientInterface {
         (this.world as unknown as Record<string, unknown>).clientVersion = this.config.storyInfo.version;
       }
 
-      // Start the engine first
+      // Start the engine first (builds the world)
       await this.engine.start();
+
+      // Capture baseline state for delta saves (before any commands or restore)
+      this.saveManager.captureBaseline();
 
       // Sync localStorage saves to world
       this.saveManager.syncSavesToWorld();
