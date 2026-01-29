@@ -1,6 +1,6 @@
 # ADR-123: Typed Daemon Hierarchy
 
-## Status: PROPOSED
+## Status: ACCEPTED
 
 ## Depends On: ADR-071 (Daemons and Fuses), ADR-120 (Engine Plugin Architecture)
 

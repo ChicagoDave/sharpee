@@ -333,7 +333,9 @@ export class SchedulerService implements ISchedulerService {
     const fuses: FuseState[] = [];
 
     for (const state of this.daemonStates.values()) {
-      daemons.push({ ...state });
+      const daemon = this.daemons.get(state.id);
+      const runnerState = daemon?.getRunnerState?.();
+      daemons.push({ ...state, ...(runnerState !== undefined ? { runnerState } : {}) });
     }
 
     for (const state of this.fuseStates.values()) {
@@ -356,6 +358,9 @@ export class SchedulerService implements ISchedulerService {
     for (const daemonState of state.daemons) {
       if (this.daemons.has(daemonState.id)) {
         this.daemonStates.set(daemonState.id, { ...daemonState });
+        if (daemonState.runnerState) {
+          this.daemons.get(daemonState.id)?.restoreRunnerState?.(daemonState.runnerState);
+        }
       }
     }
 

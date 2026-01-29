@@ -52,6 +52,12 @@ export interface Daemon {
 
   /** If true, daemon removes itself after first successful run */
   runOnce?: boolean;
+
+  /** Optional: return runner-specific state for serialization (ADR-123) */
+  getRunnerState?: () => Record<string, unknown>;
+
+  /** Optional: restore runner-specific state after deserialization (ADR-123) */
+  restoreRunnerState?: (state: Record<string, unknown>) => void;
 }
 
 /**
@@ -96,6 +102,8 @@ export interface DaemonState {
   id: string;
   isPaused: boolean;
   runCount: number;
+  /** Runner-specific state for typed daemons (ADR-123) */
+  runnerState?: Record<string, unknown>;
 }
 
 /**
