@@ -85,3 +85,5 @@ feat: ADR-123 typed daemon hierarchy base classes w
 [05:17:07] WRITE: docs/work/blog-20260129.md
 [05:50:52] TEST/BUILD FAIL (exit -1): npm view esbuild version 2>&1
 [05:52:15] WRITE: /home/dave/.claude/plans/glittery-wobbling-firefly.md
+[05:53:33] GIT: git add build.sh docs/work/zifmia/implementation-plan.md docs/context/.work-log.
+[05:54:53] WRITE: docs/context/session-20260129-0554-main.md
