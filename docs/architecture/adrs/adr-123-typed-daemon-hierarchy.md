@@ -1,6 +1,12 @@
 # ADR-123: Typed Daemon Hierarchy
 
-## Status: ACCEPTED
+## Status: PARTIALLY ACCEPTED (Serialization adopted, class hierarchy rejected)
+
+## Implementation Notes (2026-01-29)
+
+**Serialization infrastructure — ACCEPTED**: `getRunnerState()`/`restoreRunnerState()` on the Daemon interface and `runnerState` on DaemonState were implemented and kept. The scheduler saves and restores daemon internal state across save/load.
+
+**Class hierarchy — REJECTED**: The five base classes (DaemonRunner, WatchdogDaemon, LocationDaemon, AmbienceDaemon, CountdownDaemon) were implemented, migrated to, and then reverted. Each daemon is quirky enough that base classes provided minimal reuse. Factory functions + serialization hooks is simpler and sufficient. See `docs/work/platform/undo-daemon-work.md` for rationale.
 
 ## Depends On: ADR-071 (Daemons and Fuses), ADR-120 (Engine Plugin Architecture)
 

@@ -164,6 +164,11 @@ function createSwordGlowDaemon(): Daemon {
     name: 'Sword Glow',
     priority: 5, // Lower priority - cosmetic effect
 
+    getRunnerState: () => ({ currentGlowLevel }),
+    restoreRunnerState: (state: Record<string, unknown>) => {
+      currentGlowLevel = (state.currentGlowLevel as number) ?? GLOW_OFF;
+    },
+
     // Only run when sword is carried by player
     condition: (ctx: SchedulerContext): boolean => {
       // Find entities if not cached

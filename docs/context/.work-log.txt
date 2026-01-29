@@ -1,34 +1,67 @@
-[16:44:54] WRITE: docs/context/session-20260124-1642-maphints.md
-[16:58:38] EDIT: packages/map-editor/package.json
-[16:58:50] WRITE: packages/map-editor/src/components/Canvas/RoomNode.tsx
-[16:59:18] WRITE: packages/map-editor/src/components/Canvas/Canvas.tsx
-[16:59:49] WRITE: packages/map-editor/src/components/Canvas/Canvas.css
-[19:18:14] EDIT: stories/dungeo/src/browser-entry.ts
-[19:18:36] EDIT: stories/dungeo/src/browser-entry.ts
-[19:18:42] EDIT: stories/dungeo/src/browser-entry.ts
-[19:18:53] EDIT: stories/dungeo/src/browser-entry.ts
-[19:19:02] EDIT: stories/dungeo/src/browser-entry.ts
-[19:47:13] WRITE: docs/architecture/adrs/adr-114-browser-platform-package.md
-[19:47:21] EDIT: docs/architecture/adrs/adr-105-javascript-browser-client.md
-[19:52:04] WRITE: docs/context/session-20260124-1950-maphints.md
-[20:02:46] GIT: git commit -m "$(cat <<'EOF'
-feat: Browser client menu handlers and ADR-114 plat
-[20:03:02] GIT: git push origin maphints
-[18:53:59] WRITE: docs/context/session-20260128-1853-main.md
-[18:55:54] GIT: git commit -m "$(cat <<'EOF'
-feat: ADR-121/122 Zifmia client, ADR-120 state mach
-[18:56:03] GIT: git push 2>&1
-[19:02:50] WRITE: stories/dungeo/src/state-machines/death-penalty-machine.ts
-[19:02:54] EDIT: stories/dungeo/src/orchestration/index.ts
-[19:02:58] EDIT: stories/dungeo/src/orchestration/index.ts
-[19:03:06] EDIT: stories/dungeo/src/orchestration/event-handlers.ts
-[19:03:11] EDIT: stories/dungeo/src/orchestration/event-handlers.ts
-[19:10:58] WRITE: docs/context/session-20260128-2330-main.md
-[01:14:42] WRITE: /home/dave/.claude/plans/noble-cooking-church.md
-[01:17:26] WRITE: stories/dungeo/src/state-machines/rainbow-machine.ts
-[01:17:31] EDIT: stories/dungeo/src/actions/wave/wave-action.ts
-[01:17:43] EDIT: stories/dungeo/src/actions/wave/wave-action.ts
-[01:18:05] EDIT: stories/dungeo/src/actions/wave/wave-action.ts
-[01:18:11] EDIT: stories/dungeo/src/orchestration/index.ts
-[01:18:17] EDIT: stories/dungeo/src/orchestration/index.ts
-[02:07:01] WRITE: docs/context/session-20260129-0206-main.md
+[02:58:43] EDIT: docs/work/platform/end-game-assessment.md
+[03:01:08] WRITE: docs/architecture/adrs/adr-123-typed-daemon-hierarchy.md
+[03:02:32] EDIT: docs/context/session-20260129-0300-main.md
+[03:02:55] EDIT: docs/context/session-20260129-0300-main.md
+[03:03:11] EDIT: docs/context/session-20260129-0300-main.md
+[03:03:19] EDIT: docs/context/session-20260129-0300-main.md
+[03:03:27] EDIT: docs/context/session-20260129-0300-main.md
+[03:03:41] EDIT: docs/context/session-20260129-0300-main.md
+[03:03:58] EDIT: docs/context/session-20260129-0300-main.md
+[03:04:25] GIT: git add docs/architecture/adrs/adr-123-typed-daemon-hierarchy.md docs/work/platf
+[03:09:57] WRITE: /home/dave/.claude/plans/curious-shimmying-sun.md
+[03:10:32] WRITE: packages/plugin-scheduler/src/daemons/daemon-runner.ts
+[03:10:32] WRITE: packages/plugin-scheduler/src/daemons/watchdog-daemon.ts
+[03:10:33] WRITE: packages/plugin-scheduler/src/daemons/location-daemon.ts
+[03:10:33] WRITE: packages/plugin-scheduler/src/daemons/ambience-daemon.ts
+[03:10:33] WRITE: packages/plugin-scheduler/src/daemons/countdown-daemon.ts
+[03:10:33] WRITE: packages/plugin-scheduler/src/daemons/index.ts
+[03:10:37] EDIT: packages/plugin-scheduler/src/index.ts
+[03:15:40] EDIT: packages/plugin-scheduler/src/types.ts
+[03:15:44] EDIT: packages/plugin-scheduler/src/types.ts
+[03:15:49] EDIT: packages/plugin-scheduler/src/scheduler-service.ts
+[03:15:53] EDIT: packages/plugin-scheduler/src/scheduler-service.ts
+[03:16:05] EDIT: packages/plugin-scheduler/src/daemons/daemon-runner.ts
+[03:16:10] EDIT: packages/plugin-scheduler/src/daemons/watchdog-daemon.ts
+[03:16:14] EDIT: packages/plugin-scheduler/src/daemons/ambience-daemon.ts
+[03:16:19] EDIT: packages/plugin-scheduler/src/daemons/countdown-daemon.ts
+[03:22:22] EDIT: docs/architecture/adrs/adr-123-typed-daemon-hierarchy.md
+[03:23:26] GIT: git commit -m "$(cat <<'EOF'
+feat: ADR-123 typed daemon hierarchy base classes w
+[03:24:14] WRITE: docs/context/session-20260129-0323-main.md
+[03:24:32] GIT: git add docs/context/session-20260129-0323-main.md && git commit -m "$(cat <<'EO
+[03:24:37] GIT: git push
+[03:25:39] WRITE: stories/dungeo/src/handlers/crypt-ritual-daemon.ts
+[03:25:58] EDIT: stories/dungeo/src/handlers/index.ts
+[03:26:03] EDIT: stories/dungeo/src/orchestration/scheduler-setup.ts
+[03:26:08] EDIT: stories/dungeo/src/orchestration/scheduler-setup.ts
+[03:26:12] EDIT: stories/dungeo/src/index.ts
+[03:44:57] WRITE: stories/dungeo/src/scheduler/troll-recovery-runner.ts
+[03:45:06] EDIT: stories/dungeo/src/scheduler/index.ts
+[03:45:13] EDIT: stories/dungeo/src/orchestration/scheduler-setup.ts
+[03:45:24] EDIT: stories/dungeo/src/orchestration/scheduler-setup.ts
+[03:45:28] EDIT: stories/dungeo/src/index.ts
+[03:53:55] EDIT: stories/dungeo/src/scheduler/index.ts
+[04:03:18] WRITE: stories/dungeo/src/scheduler/forest-ambience-runner.ts
+[04:03:22] EDIT: stories/dungeo/src/scheduler/index.ts
+[04:03:26] EDIT: stories/dungeo/src/scheduler/index.ts
+[04:03:35] EDIT: stories/dungeo/src/scheduler/index.ts
+[04:08:43] WRITE: stories/dungeo/src/handlers/bat-room-runner.ts
+[04:08:56] EDIT: stories/dungeo/src/handlers/index.ts
+[04:09:00] EDIT: stories/dungeo/src/orchestration/scheduler-setup.ts
+[04:09:08] EDIT: stories/dungeo/src/orchestration/scheduler-setup.ts
+[04:09:12] EDIT: stories/dungeo/src/index.ts
+[04:14:24] WRITE: stories/dungeo/src/scheduler/sword-glow-runner.ts
+[04:14:29] EDIT: stories/dungeo/src/scheduler/index.ts
+[04:14:33] EDIT: stories/dungeo/src/scheduler/index.ts
+[04:14:38] EDIT: stories/dungeo/src/scheduler/index.ts
+[04:19:59] WRITE: stories/dungeo/src/handlers/exorcism-runner.ts
+[04:20:14] EDIT: stories/dungeo/src/handlers/index.ts
+[04:20:18] EDIT: stories/dungeo/src/orchestration/scheduler-setup.ts
+[04:20:27] EDIT: stories/dungeo/src/orchestration/scheduler-setup.ts
+[04:20:31] EDIT: stories/dungeo/src/index.ts
+[04:32:42] WRITE: docs/work/platform/undo-daemon-work.md
+[04:34:29] WRITE: docs/context/session-20260129-0433-main.md
+[04:36:25] EDIT: packages/plugin-scheduler/src/index.ts
+[04:36:35] EDIT: stories/dungeo/src/scheduler/sword-glow-daemon.ts
+[04:38:12] EDIT: docs/architecture/adrs/adr-123-typed-daemon-hierarchy.md
+[04:47:31] WRITE: docs/context/session-20260129-0446-main.md

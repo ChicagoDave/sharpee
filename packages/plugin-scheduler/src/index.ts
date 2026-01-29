@@ -6,4 +6,3 @@ export * from './types';
 export * from './seeded-random';
 export * from './scheduler-service';
 export * from './scheduler-plugin';
-export * from './daemons';
