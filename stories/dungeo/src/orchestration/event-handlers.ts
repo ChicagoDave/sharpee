@@ -19,8 +19,6 @@ import { ScoringEventProcessor } from '@sharpee/stdlib';
 
 // Handlers
 import { createMirrorTouchHandler, MirrorRoomConfig } from '../handlers/mirror-room-handler';
-import { createDeathPenaltyHandler } from '../handlers/death-penalty-handler';
-
 
 // Scoring
 import { DungeoScoringService } from '../scoring';
@@ -79,16 +77,7 @@ export function registerEventHandlers(
     scoringProcessor
   );
 
-  // ==========================================================================
-  // Death Penalty Handler
-  // ==========================================================================
-
-  // Deduct 10 points per death, game over after 2 deaths
-  // From FORTRAN source (subr.f): CALL SCRUPD(-10), IF(DEATHS.GE.2) GO TO 1000
-  eventProcessor.registerHandler(
-    'if.event.player.died',
-    createDeathPenaltyHandler(world, scoringService)
-  );
+  // Note: Death penalty is now handled by state machine (death-penalty-machine.ts)
 
   // Note: Balloon PUT handling is now done via interceptor (ADR-118)
   // See ReceptaclePuttingInterceptor in stories/dungeo/src/interceptors/

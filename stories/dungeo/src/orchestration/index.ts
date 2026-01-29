@@ -21,6 +21,7 @@ import { ScoringEventProcessor } from '@sharpee/stdlib';
 import { IdentityTrait } from '@sharpee/world-model';
 
 import { createTrapdoorMachine } from '../state-machines/trapdoor-machine';
+import { createDeathPenaltyMachine } from '../state-machines/death-penalty-machine';
 
 import { registerCommandTransformers, TransformerConfig } from './command-transformers';
 import { registerSchedulerEvents, SchedulerConfig } from './scheduler-setup';
@@ -184,6 +185,11 @@ export function initializeOrchestration(
       }
     );
   }
+
+  // Death Penalty: tracks deaths, deducts points, game over after 2
+  smRegistry.register(
+    createDeathPenaltyMachine(scoringService),
+  );
 
   // 6. Event Handlers
   // Register event processor handlers for scoring, achievements, etc.
