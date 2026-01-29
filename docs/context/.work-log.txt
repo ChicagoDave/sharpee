@@ -15,3 +15,20 @@
 feat: Browser client menu handlers and ADR-114 plat
 [20:03:02] GIT: git push origin maphints
 [18:53:59] WRITE: docs/context/session-20260128-1853-main.md
+[18:55:54] GIT: git commit -m "$(cat <<'EOF'
+feat: ADR-121/122 Zifmia client, ADR-120 state mach
+[18:56:03] GIT: git push 2>&1
+[19:02:50] WRITE: stories/dungeo/src/state-machines/death-penalty-machine.ts
+[19:02:54] EDIT: stories/dungeo/src/orchestration/index.ts
+[19:02:58] EDIT: stories/dungeo/src/orchestration/index.ts
+[19:03:06] EDIT: stories/dungeo/src/orchestration/event-handlers.ts
+[19:03:11] EDIT: stories/dungeo/src/orchestration/event-handlers.ts
+[19:10:58] WRITE: docs/context/session-20260128-2330-main.md
+[01:14:42] WRITE: /home/dave/.claude/plans/noble-cooking-church.md
+[01:17:26] WRITE: stories/dungeo/src/state-machines/rainbow-machine.ts
+[01:17:31] EDIT: stories/dungeo/src/actions/wave/wave-action.ts
+[01:17:43] EDIT: stories/dungeo/src/actions/wave/wave-action.ts
+[01:18:05] EDIT: stories/dungeo/src/actions/wave/wave-action.ts
+[01:18:11] EDIT: stories/dungeo/src/orchestration/index.ts
+[01:18:17] EDIT: stories/dungeo/src/orchestration/index.ts
+[02:07:01] WRITE: docs/context/session-20260129-0206-main.md

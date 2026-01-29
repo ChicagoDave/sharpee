@@ -7,8 +7,9 @@
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
-import { IdentityTrait, IFEntity, RoomTrait, Direction } from '@sharpee/world-model';
+import { IdentityTrait, IFEntity } from '@sharpee/world-model';
 import { WAVE_ACTION_ID, WaveMessages } from './types';
+import { RAINBOW_SOLIDIFIED_EVENT, RAINBOW_DISMISSED_EVENT } from '../../state-machines/rainbow-machine';
 
 // Room name patterns where waving the stick has effect
 const FALLS_ROOM_PATTERNS = ['aragain falls', 'on the rainbow', 'end of rainbow', 'rainbow'];
@@ -109,50 +110,15 @@ export const waveAction: Action = {
 
     // Check if waving stick at falls
     if (isStickTarget && isAtFalls) {
-      // Toggle rainbow state
+      // Toggle rainbow state — emit event for state machine to handle exit manipulation
       const rainbowActive = (world.getStateValue('dungeo.rainbow.active') as boolean) || false;
 
-      // Find the rainbow rooms by name
-      const aragainFalls = world.getAllEntities().find(e => {
-        const identity = e.get(IdentityTrait);
-        return identity?.name === 'Aragain Falls';
-      });
-      const onTheRainbow = world.getAllEntities().find(e => {
-        const identity = e.get(IdentityTrait);
-        return identity?.name === 'On the Rainbow';
-      });
-
       if (rainbowActive) {
-        // Dismiss the rainbow
-        world.setStateValue('dungeo.rainbow.active', false);
         sharedData.rainbowDismissed = true;
-
-        // Remove exit from Aragain Falls to rainbow (EAST direction)
-        if (aragainFalls) {
-          const roomTrait = aragainFalls.get(RoomTrait);
-          if (roomTrait) {
-            delete roomTrait.exits[Direction.EAST];
-            // Restore blocked message
-            if (!roomTrait.blockedExits) roomTrait.blockedExits = {};
-            roomTrait.blockedExits[Direction.EAST] = 'The rainbow is beautiful, but it looks far too insubstantial to walk on.';
-          }
-        }
+        sharedData.rainbowEvent = RAINBOW_DISMISSED_EVENT;
       } else {
-        // Create the rainbow - solidify it so player can walk on it
-        world.setStateValue('dungeo.rainbow.active', true);
         sharedData.rainbowCreated = true;
-
-        // Add exit from Aragain Falls to On the Rainbow (EAST direction)
-        if (aragainFalls && onTheRainbow) {
-          const roomTrait = aragainFalls.get(RoomTrait);
-          if (roomTrait) {
-            roomTrait.exits[Direction.EAST] = { destination: onTheRainbow.id };
-            // Remove blocked message since exit is now open
-            if (roomTrait.blockedExits) {
-              delete roomTrait.blockedExits[Direction.EAST];
-            }
-          }
-        }
+        sharedData.rainbowEvent = RAINBOW_SOLIDIFIED_EVENT;
       }
     }
   },
@@ -176,11 +142,13 @@ export const waveAction: Action = {
     const targetName = identity?.name || 'item';
 
     if (sharedData.rainbowCreated) {
+      events.push(context.event(RAINBOW_SOLIDIFIED_EVENT, {}));
       events.push(context.event('game.message', {
         messageId: WaveMessages.RAINBOW_APPEARS,
         params: { target: targetName }
       }));
     } else if (sharedData.rainbowDismissed) {
+      events.push(context.event(RAINBOW_DISMISSED_EVENT, {}));
       events.push(context.event('game.message', {
         messageId: WaveMessages.RAINBOW_GONE,
         params: { target: targetName }

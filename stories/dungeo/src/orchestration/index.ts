@@ -22,6 +22,7 @@ import { IdentityTrait } from '@sharpee/world-model';
 
 import { createTrapdoorMachine } from '../state-machines/trapdoor-machine';
 import { createDeathPenaltyMachine } from '../state-machines/death-penalty-machine';
+import { createRainbowMachine } from '../state-machines/rainbow-machine';
 
 import { registerCommandTransformers, TransformerConfig } from './command-transformers';
 import { registerSchedulerEvents, SchedulerConfig } from './scheduler-setup';
@@ -189,6 +190,15 @@ export function initializeOrchestration(
   // Death Penalty: tracks deaths, deducts points, game over after 2
   smRegistry.register(
     createDeathPenaltyMachine(scoringService),
+  );
+
+  // Rainbow: tracks solid/insubstantial state, manages Aragain Falls east exit
+  smRegistry.register(
+    createRainbowMachine(),
+    {
+      '$aragainFalls': config.frigidRiverIds.aragainFalls,
+      '$onTheRainbow': config.frigidRiverIds.onTheRainbow,
+    }
   );
 
   // 6. Event Handlers
