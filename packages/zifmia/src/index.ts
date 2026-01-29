@@ -27,6 +27,20 @@ export {
   StatusLine,
 } from './components';
 
+// Loader
+export {
+  loadBundle,
+  releaseBundle,
+} from './loader';
+
+export type {
+  LoadedBundle,
+} from './loader';
+
+// Runner
+export { ZifmiaRunner } from './runner';
+export type { ZifmiaRunnerProps } from './runner';
+
 // Types
 export type {
   GameState,

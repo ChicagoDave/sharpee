@@ -27,6 +27,7 @@ NO_VERSION=false
 VERBOSE=false
 SHOW_HELP=false
 STORY_BUNDLE=false
+BUILD_RUNNER=false
 
 # ============================================================================
 # Help
@@ -49,6 +50,7 @@ Options:
       --skip PKG       Resume platform build from package
       --no-version     Skip version updates
   -b, --story-bundle   Create .sharpee story bundle (requires -s)
+      --runner         Build Zifmia runner (loads .sharpee bundles in browser)
   -v, --verbose        Show build details
   -h, --help           Show this help
 
@@ -65,11 +67,13 @@ Examples:
   ./build.sh -s dungeo -c react -t modern-dark   React with dark theme
   ./build.sh -s dungeo -c browser -c react   Build both clients
   ./build.sh -s dungeo -b                    Create .sharpee story bundle
+  ./build.sh --runner                        Build Zifmia runner
   ./build.sh --skip stdlib -s dungeo         Resume from stdlib package
 
 Output:
   dist/sharpee.js          Platform bundle (CLI, testing)
   dist/stories/{story}.sharpee  Story bundle (with -b)
+  dist/runner/                       Zifmia runner (with --runner)
   dist/web/{story}/             Browser client
   dist/web/{story}-react/       React client
 
@@ -108,6 +112,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -b|--story-bundle)
             STORY_BUNDLE=true
+            shift
+            ;;
+        --runner)
+            BUILD_RUNNER=true
             shift
             ;;
         --no-version)
@@ -419,6 +427,7 @@ build_story() {
 build_story_bundle() {
     local STORY_NAME="$1"
     local STORY_DIR="stories/${STORY_NAME}"
+    local STORY_SRC="${STORY_DIR}/src/index.ts"
     local STORY_DIST="${STORY_DIR}/dist/index.js"
     local OUT_DIR="dist/stories"
     local OUT_FILE="${OUT_DIR}/${STORY_NAME}.sharpee"
@@ -426,15 +435,16 @@ build_story_bundle() {
 
     log_step "Building Story Bundle: ${STORY_NAME}.sharpee"
 
-    if [ ! -f "$STORY_DIST" ]; then
-        echo -e "${RED}Error: Story not built: $STORY_DIST${NC}"
-        echo "Run ./build.sh -s $STORY_NAME first"
+    if [ ! -f "$STORY_SRC" ]; then
+        echo -e "${RED}Error: Story source not found: $STORY_SRC${NC}"
         rm -rf "$STAGING"
         exit 1
     fi
 
-    # 1. Bundle story code with @sharpee/* as external
-    run_build "story.js" "npx esbuild '$STORY_DIST' --bundle --platform=browser --format=esm --target=es2020 --outfile='$STAGING/story.js' --external:@sharpee/*"
+    # 1. Bundle story code from TS source → ESM with @sharpee/* as external
+    #    Using src/index.ts (not dist/) so esbuild emits true ES module imports
+    #    for @sharpee/* externals, which the runner resolves via importmap.
+    run_build "story.js" "npx esbuild '$STORY_SRC' --bundle --platform=browser --format=esm --target=es2020 --outfile='$STAGING/story.js' --external:@sharpee/* --tsconfig='${STORY_DIR}/tsconfig.json'"
 
     # 2. Generate meta.json from package.json
     node -e "
@@ -602,6 +612,125 @@ EOF
 }
 
 # ============================================================================
+# Zifmia Runner Build
+# ============================================================================
+
+build_runner() {
+    local OUTDIR="dist/runner"
+    local MODULES_DIR="$OUTDIR/modules"
+    local RUNNER_ENTRY="packages/zifmia/src/runner/runner-entry.tsx"
+    local THEMES_FILE="packages/client-react/src/styles/themes.css"
+
+    log_step "Building Zifmia Runner"
+
+    if [ ! -f "$RUNNER_ENTRY" ]; then
+        echo -e "${RED}Error: Runner entry not found: $RUNNER_ENTRY${NC}"
+        exit 1
+    fi
+
+    mkdir -p "$MODULES_DIR"
+
+    # 1. Build each @sharpee/* platform package as an individual ESM module.
+    #    The story bundle imports from @sharpee/*; the importmap resolves these
+    #    to the ESM files we produce here.
+    #
+    #    We build a single platform.js that re-exports everything, then point
+    #    all importmap entries to it. This avoids cross-package import issues
+    #    (e.g. @sharpee/stdlib importing from @sharpee/world-model).
+
+    # Create a platform entry that re-exports all packages
+    local PLATFORM_ENTRY=$(mktemp --suffix=.ts)
+    cat > "$PLATFORM_ENTRY" << 'ENTRY'
+export * from "@sharpee/core";
+export * from "@sharpee/world-model";
+export * from "@sharpee/engine";
+export * from "@sharpee/stdlib";
+export * from "@sharpee/parser-en-us";
+export * from "@sharpee/lang-en-us";
+export * from "@sharpee/plugin-npc";
+export * from "@sharpee/plugin-scheduler";
+export * from "@sharpee/plugin-state-machine";
+export * from "@sharpee/if-domain";
+export * from "@sharpee/if-services";
+ENTRY
+
+    run_build "platform.js" "npx esbuild '$PLATFORM_ENTRY' \
+        --bundle --platform=browser --format=esm --target=es2020 \
+        --outfile='$MODULES_DIR/platform.js' \
+        --sourcemap --minify \
+        --define:process.env.PARSER_DEBUG=undefined \
+        --define:process.env.DEBUG_PRONOUNS=undefined \
+        --define:process.env.NODE_ENV=\\\"production\\\""
+
+    rm -f "$PLATFORM_ENTRY"
+
+    # 2. Build the runner shell (React app that loads bundles).
+    #    The runner itself bundles all @sharpee/* packages inline (not external)
+    #    because it needs them to bootstrap the engine.
+    run_build "runner.js" "npx esbuild '$RUNNER_ENTRY' \
+        --bundle --platform=browser --format=iife --target=es2020 \
+        --global-name=ZifmiaRunner \
+        --outfile='$OUTDIR/runner.js' \
+        --sourcemap --minify \
+        --loader:.tsx=tsx --jsx=automatic \
+        --define:process.env.PARSER_DEBUG=undefined \
+        --define:process.env.DEBUG_PRONOUNS=undefined \
+        --define:process.env.NODE_ENV=\\\"production\\\""
+
+    # 3. Generate index.html with importmap
+    #    The importmap maps each @sharpee/* specifier to platform.js.
+    #    When a story bundle does `import { X } from "@sharpee/world-model"`,
+    #    the browser resolves it to platform.js which exports X.
+    local THEMES_CSS=""
+    if [ -f "$THEMES_FILE" ]; then
+        THEMES_CSS=$(cat "$THEMES_FILE")
+    fi
+
+    cat > "$OUTDIR/index.html" << HTMLEOF
+<!DOCTYPE html>
+<html lang="en" data-theme="classic-light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zifmia Story Runner</title>
+  <script type="importmap">
+  {
+    "imports": {
+      "@sharpee/core": "./modules/platform.js",
+      "@sharpee/world-model": "./modules/platform.js",
+      "@sharpee/engine": "./modules/platform.js",
+      "@sharpee/stdlib": "./modules/platform.js",
+      "@sharpee/parser-en-us": "./modules/platform.js",
+      "@sharpee/lang-en-us": "./modules/platform.js",
+      "@sharpee/plugin-npc": "./modules/platform.js",
+      "@sharpee/plugin-scheduler": "./modules/platform.js",
+      "@sharpee/plugin-state-machine": "./modules/platform.js",
+      "@sharpee/if-domain": "./modules/platform.js",
+      "@sharpee/if-services": "./modules/platform.js"
+    }
+  }
+  </script>
+  <style>
+${THEMES_CSS}
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="runner.js"></script>
+</body>
+</html>
+HTMLEOF
+    log_ok "index.html (with importmap)"
+
+    local RUNNER_SIZE=$(ls -lh "$OUTDIR/runner.js" | awk '{print $5}')
+    local PLATFORM_SIZE=$(ls -lh "$MODULES_DIR/platform.js" | awk '{print $5}')
+    echo "Output: $OUTDIR/"
+    echo "  runner.js   ($RUNNER_SIZE)"
+    echo "  platform.js ($PLATFORM_SIZE)"
+    echo ""
+}
+
+# ============================================================================
 # Main Build Flow
 # ============================================================================
 
@@ -618,6 +747,9 @@ if [ -n "$STORY" ]; then
 fi
 if [ "$STORY_BUNDLE" = true ]; then
     echo "  5. Bundle story: ${STORY}.sharpee"
+fi
+if [ "$BUILD_RUNNER" = true ]; then
+    echo "  6. Build Zifmia runner"
 fi
 for CLIENT in "${CLIENTS[@]}"; do
     if [ "$CLIENT" = "react" ]; then
@@ -639,6 +771,10 @@ fi
 
 if [ "$STORY_BUNDLE" = true ]; then
     build_story_bundle "$STORY"
+fi
+
+if [ "$BUILD_RUNNER" = true ]; then
+    build_runner
 fi
 
 for CLIENT in "${CLIENTS[@]}"; do
@@ -668,6 +804,9 @@ echo "  dist/sharpee.js - Platform bundle"
 
 if [ "$STORY_BUNDLE" = true ]; then
     echo "  dist/stories/${STORY}.sharpee - Story bundle"
+fi
+if [ "$BUILD_RUNNER" = true ]; then
+    echo "  dist/runner/ - Zifmia runner"
 fi
 
 if [ -n "$STORY" ]; then
