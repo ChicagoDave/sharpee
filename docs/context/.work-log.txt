@@ -65,3 +65,23 @@ feat: ADR-123 typed daemon hierarchy base classes w
 [04:36:35] EDIT: stories/dungeo/src/scheduler/sword-glow-daemon.ts
 [04:38:12] EDIT: docs/architecture/adrs/adr-123-typed-daemon-hierarchy.md
 [04:47:31] WRITE: docs/context/session-20260129-0446-main.md
+[04:47:58] GIT: git add docs/context/session-20260129-0446-main.md && git commit -m "$(cat <<'EO
+[04:48:07] GIT: git push
+[05:06:51] WRITE: /home/dave/.claude/plans/glittery-wobbling-firefly.md
+[05:07:13] EDIT: docs/work/zifmia/implementation-plan.md
+[05:07:16] EDIT: build.sh
+[05:07:21] EDIT: build.sh
+[05:07:25] EDIT: build.sh
+[05:07:29] EDIT: build.sh
+[05:07:33] EDIT: build.sh
+[05:07:38] EDIT: build.sh
+[05:07:55] EDIT: build.sh
+[05:07:59] EDIT: build.sh
+[05:08:03] EDIT: build.sh
+[05:08:08] EDIT: build.sh
+[05:13:16] EDIT: build.sh
+[05:14:58] WRITE: docs/work/blog-20260129.md
+[05:15:16] TRANSCRIPT FAIL: ./build.sh -s dungeo --story-bundle --no-version --skip transcript-tester
+[05:17:07] WRITE: docs/work/blog-20260129.md
+[05:50:52] TEST/BUILD FAIL (exit -1): npm view esbuild version 2>&1
+[05:52:15] WRITE: /home/dave/.claude/plans/glittery-wobbling-firefly.md

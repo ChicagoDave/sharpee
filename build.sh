@@ -26,6 +26,7 @@ SKIP_TO=""
 NO_VERSION=false
 VERBOSE=false
 SHOW_HELP=false
+STORY_BUNDLE=false
 
 # ============================================================================
 # Help
@@ -47,6 +48,7 @@ Options:
   -t, --theme NAME     React theme (default: classic-light)
       --skip PKG       Resume platform build from package
       --no-version     Skip version updates
+  -b, --story-bundle   Create .sharpee story bundle (requires -s)
   -v, --verbose        Show build details
   -h, --help           Show this help
 
@@ -62,12 +64,14 @@ Examples:
   ./build.sh -s dungeo -c react              Build React client
   ./build.sh -s dungeo -c react -t modern-dark   React with dark theme
   ./build.sh -s dungeo -c browser -c react   Build both clients
+  ./build.sh -s dungeo -b                    Create .sharpee story bundle
   ./build.sh --skip stdlib -s dungeo         Resume from stdlib package
 
 Output:
   dist/sharpee.js          Platform bundle (CLI, testing)
-  dist/web/{story}/        Browser client
-  dist/web/{story}-react/  React client
+  dist/stories/{story}.sharpee  Story bundle (with -b)
+  dist/web/{story}/             Browser client
+  dist/web/{story}-react/       React client
 
 For more information, see docs/reference/building.md
 
@@ -102,6 +106,10 @@ while [[ $# -gt 0 ]]; do
             SKIP_TO="$2"
             shift 2
             ;;
+        -b|--story-bundle)
+            STORY_BUNDLE=true
+            shift
+            ;;
         --no-version)
             NO_VERSION=true
             shift
@@ -121,6 +129,13 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Validate: story-bundle requires story
+if [ "$STORY_BUNDLE" = true ] && [ -z "$STORY" ]; then
+    echo -e "${RED}Error: --story-bundle requires --story${NC}"
+    echo "Example: ./build.sh -s dungeo --story-bundle"
+    exit 1
+fi
 
 # Validate: client requires story
 if [ ${#CLIENTS[@]} -gt 0 ] && [ -z "$STORY" ]; then
@@ -398,6 +413,79 @@ build_story() {
 }
 
 # ============================================================================
+# Story Bundle (.sharpee)
+# ============================================================================
+
+build_story_bundle() {
+    local STORY_NAME="$1"
+    local STORY_DIR="stories/${STORY_NAME}"
+    local STORY_DIST="${STORY_DIR}/dist/index.js"
+    local OUT_DIR="dist/stories"
+    local OUT_FILE="${OUT_DIR}/${STORY_NAME}.sharpee"
+    local STAGING=$(mktemp -d)
+
+    log_step "Building Story Bundle: ${STORY_NAME}.sharpee"
+
+    if [ ! -f "$STORY_DIST" ]; then
+        echo -e "${RED}Error: Story not built: $STORY_DIST${NC}"
+        echo "Run ./build.sh -s $STORY_NAME first"
+        rm -rf "$STAGING"
+        exit 1
+    fi
+
+    # 1. Bundle story code with @sharpee/* as external
+    run_build "story.js" "npx esbuild '$STORY_DIST' --bundle --platform=browser --format=esm --target=es2020 --outfile='$STAGING/story.js' --external:@sharpee/*"
+
+    # 2. Generate meta.json from package.json
+    node -e "
+      const fs = require('fs');
+      const pkg = require('./${STORY_DIR}/package.json');
+      const s = pkg.sharpee || {};
+      const meta = {
+        format: 'sharpee-story',
+        formatVersion: 1,
+        title: s.title || pkg.name,
+        author: s.author || 'Unknown',
+        version: pkg.version,
+        description: s.headline || pkg.description || '',
+        sharpeeVersion: '>=' + require('./packages/sharpee/package.json').version,
+        ifid: s.ifid || '',
+        hasAssets: fs.existsSync('${STORY_DIR}/assets'),
+        hasTheme: fs.existsSync('${STORY_DIR}/theme.css'),
+        preferredTheme: s.preferredTheme || 'classic-light'
+      };
+      fs.writeFileSync('$STAGING/meta.json', JSON.stringify(meta, null, 2) + '\n');
+    "
+    log_ok "meta.json"
+
+    # 3. Copy optional assets
+    if [ -d "${STORY_DIR}/assets" ]; then
+        cp -r "${STORY_DIR}/assets" "$STAGING/assets"
+        log_ok "assets"
+    fi
+
+    # 4. Copy optional theme
+    if [ -f "${STORY_DIR}/theme.css" ]; then
+        cp "${STORY_DIR}/theme.css" "$STAGING/theme.css"
+        log_ok "theme.css"
+    fi
+
+    # 5. Create .sharpee zip
+    mkdir -p "$OUT_DIR"
+    rm -f "$OUT_FILE"
+    (cd "$STAGING" && zip -r "$REPO_ROOT/$OUT_FILE" . -q)
+    log_ok "zip"
+
+    # 6. Report
+    local BUNDLE_SIZE=$(ls -lh "$OUT_FILE" | awk '{print $5}')
+    echo "Output: $OUT_FILE ($BUNDLE_SIZE)"
+
+    # Cleanup
+    rm -rf "$STAGING"
+    echo ""
+}
+
+# ============================================================================
 # Browser Client Build
 # ============================================================================
 
@@ -528,6 +616,9 @@ echo "  3. Bundle -> dist/sharpee.js"
 if [ -n "$STORY" ]; then
     echo "  4. Build story: $STORY"
 fi
+if [ "$STORY_BUNDLE" = true ]; then
+    echo "  5. Bundle story: ${STORY}.sharpee"
+fi
 for CLIENT in "${CLIENTS[@]}"; do
     if [ "$CLIENT" = "react" ]; then
         echo "  5. Build $CLIENT client (theme: $THEME)"
@@ -544,6 +635,10 @@ build_bundle
 
 if [ -n "$STORY" ]; then
     build_story "$STORY"
+fi
+
+if [ "$STORY_BUNDLE" = true ]; then
+    build_story_bundle "$STORY"
 fi
 
 for CLIENT in "${CLIENTS[@]}"; do
@@ -570,6 +665,10 @@ echo "=============="
 echo ""
 echo "Outputs:"
 echo "  dist/sharpee.js - Platform bundle"
+
+if [ "$STORY_BUNDLE" = true ]; then
+    echo "  dist/stories/${STORY}.sharpee - Story bundle"
+fi
 
 if [ -n "$STORY" ]; then
     for CLIENT in "${CLIENTS[@]}"; do

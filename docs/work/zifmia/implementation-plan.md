@@ -243,6 +243,12 @@ These phases touch `packages/` (platform code) and require discussion:
 | 5     | `packages/zifmia`                      | CSS scoping, theme cascade       |
 | 6     | `packages/zifmia` (src-tauri/)         | Tauri shell                      |
 
+## Note: Daemon Serialization (ADR-123, Jan 2026)
+
+ADR-123 added `getRunnerState()`/`restoreRunnerState()` to the `Daemon` interface and `runnerState` to `DaemonState`. The scheduler now captures daemon internal state during save and restores it on load. This flows through `SchedulerService.getState()` into the save format.
+
+**Impact on Zifmia**: No effect on the bundle format (Phases 1-2). Phase 3's `StorageProvider` will carry this additional state transparently — it's just more JSON in the existing save data structure. No special handling needed.
+
 ## Resolved Decisions
 
 1. **Module resolution**: **Importmap**. Story bundles use ES module imports for `@sharpee/*`; runner HTML provides an importmap pointing to runner-bundled modules.
