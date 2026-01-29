@@ -14,7 +14,9 @@ import {
   IdentityTrait,
   EntityType
 } from '@sharpee/world-model';
-import { TreasureTrait, BurnableTrait, FramePieceTrait } from '../traits';
+import { TreasureTrait } from '../traits/treasure-trait';
+import { BurnableTrait } from '../traits/burnable-trait';
+import { FramePieceTrait } from '../traits/frame-piece-trait';
 
 /**
  * Create the empty picture frame

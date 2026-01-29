@@ -195,22 +195,15 @@ update_versions() {
 
     log_step "Updating Versions"
 
-    # Generate build date (ISO 8601 format)
+    # Generate build date for version.ts files
     BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
     # Update sharpee package.json
-    # Version is now simple semantic version with optional prerelease tag (no timestamp)
     local SHARPEE_PKG="packages/sharpee/package.json"
     if [ -f "$SHARPEE_PKG" ]; then
         local CURRENT=$(node -p "require('./$SHARPEE_PKG').version")
-        # Extract base version and prerelease tag (e.g., "0.9.60-beta" -> base="0.9.60", tag="beta")
         local BASE=$(echo "$CURRENT" | sed 's/-.*//')
-        local TAG=$(echo "$CURRENT" | grep -oE '\-[a-zA-Z]+' | sed 's/-//' || echo "")
-        if [ -n "$TAG" ]; then
-            SHARPEE_VERSION="${BASE}-${TAG}"
-        else
-            SHARPEE_VERSION="${BASE}"
-        fi
+        SHARPEE_VERSION="${BASE}-beta"
 
         node -e "
           const fs = require('fs');
@@ -218,7 +211,7 @@ update_versions() {
           pkg.version = '$SHARPEE_VERSION';
           fs.writeFileSync('$SHARPEE_PKG', JSON.stringify(pkg, null, 2) + '\n');
         "
-        log_ok "sharpee $SHARPEE_VERSION (built $BUILD_DATE)"
+        log_ok "sharpee $SHARPEE_VERSION"
     fi
 
     # Update story if specified
@@ -229,12 +222,7 @@ update_versions() {
         if [ -f "$STORY_PKG" ]; then
             local CURRENT=$(node -p "require('./$STORY_PKG').version")
             local BASE=$(echo "$CURRENT" | sed 's/-.*//')
-            local TAG=$(echo "$CURRENT" | grep -oE '\-[a-zA-Z]+' | sed 's/-//' || echo "")
-            if [ -n "$TAG" ]; then
-                local NEW="${BASE}-${TAG}"
-            else
-                local NEW="${BASE}"
-            fi
+            local NEW="${BASE}-beta"
 
             node -e "
               const fs = require('fs');
@@ -254,7 +242,7 @@ export const BUILD_DATE = '${BUILD_DATE}';
 export const ENGINE_VERSION = '${SHARPEE_VERSION}';
 export const VERSION_INFO = { version: STORY_VERSION, buildDate: BUILD_DATE, engineVersion: ENGINE_VERSION } as const;
 EOF
-            log_ok "$STORY $NEW (built $BUILD_DATE)"
+            log_ok "$STORY $NEW"
         fi
     fi
 
@@ -274,12 +262,7 @@ EOF
         if [ -f "$CLIENT_PKG" ]; then
             local CURRENT=$(node -p "require('./$CLIENT_PKG').version")
             local BASE=$(echo "$CURRENT" | sed 's/-.*//')
-            local TAG=$(echo "$CURRENT" | grep -oE '\-[a-zA-Z]+' | sed 's/-//' || echo "")
-            if [ -n "$TAG" ]; then
-                local NEW="${BASE}-${TAG}"
-            else
-                local NEW="${BASE}"
-            fi
+            local NEW="${BASE}-beta"
 
             node -e "
               const fs = require('fs');
@@ -299,7 +282,7 @@ export const BUILD_DATE = '${BUILD_DATE}';
 export const ENGINE_VERSION = '${SHARPEE_VERSION}';
 export const VERSION_INFO = { version: CLIENT_VERSION, buildDate: BUILD_DATE, engineVersion: ENGINE_VERSION } as const;
 EOF
-            log_ok "$CLIENT client $NEW (built $BUILD_DATE)"
+            log_ok "$CLIENT client $NEW"
         fi
     done
 
@@ -325,8 +308,6 @@ build_platform() {
         "@sharpee/core:core"
         "@sharpee/if-domain:if-domain"
         "@sharpee/world-model:world-model"
-        "@sharpee/plugins:plugins"
-        "@sharpee/plugin-scheduler:plugin-scheduler"
         "@sharpee/event-processor:event-processor"
         "@sharpee/lang-en-us:lang-en-us"
         "@sharpee/parser-en-us:parser-en-us"
@@ -334,10 +315,7 @@ build_platform() {
         "@sharpee/text-blocks:text-blocks"
         "@sharpee/text-service:text-service"
         "@sharpee/stdlib:stdlib"
-        "@sharpee/plugin-npc:plugin-npc"
         "@sharpee/engine:engine"
-        "@sharpee/ext-testing:ext-testing"
-        "@sharpee/platform-browser:platform-browser"
         "@sharpee/sharpee:sharpee"
         "@sharpee/transcript-tester:transcript-tester"
     )
@@ -477,17 +455,17 @@ build_react_client() {
     local THEME_NAME="$2"
     local ENTRY="stories/${STORY_NAME}/src/react-entry.tsx"
     local OUTDIR="dist/web/${STORY_NAME}-react"
-    local THEME_FILE="packages/client-react/themes/${THEME_NAME}.css"
+    local THEMES_FILE="packages/client-react/src/styles/themes.css"
 
-    log_step "Building React Client: ${STORY_NAME} (theme: ${THEME_NAME})"
+    log_step "Building React Client: ${STORY_NAME} (default theme: ${THEME_NAME})"
 
     if [ ! -f "$ENTRY" ]; then
         echo -e "${RED}Error: React entry not found: $ENTRY${NC}"
         exit 1
     fi
 
-    if [ ! -f "$THEME_FILE" ]; then
-        echo -e "${RED}Error: Theme not found: $THEME_FILE${NC}"
+    if [ ! -f "$THEMES_FILE" ]; then
+        echo -e "${RED}Error: Combined themes file not found: $THEMES_FILE${NC}"
         exit 1
     fi
 
@@ -499,18 +477,18 @@ build_react_client() {
     # Bundle
     run_build "bundle" "npx esbuild '$ENTRY' --bundle --platform=browser --target=es2020 --format=iife --global-name=SharpeeGame --outfile='$OUTDIR/${STORY_NAME}.js' --sourcemap --minify --loader:.tsx=tsx --jsx=automatic --define:process.env.PARSER_DEBUG=undefined --define:process.env.DEBUG_PRONOUNS=undefined --define:process.env.NODE_ENV=\\\"production\\\""
 
-    # Generate HTML with embedded theme CSS
-    local THEME_CSS=$(cat "$THEME_FILE")
+    # Generate HTML with combined themes CSS (supports runtime switching)
+    local THEMES_CSS=$(cat "$THEMES_FILE")
 
     cat > "$OUTDIR/index.html" << EOF
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="${THEME_NAME}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${STORY_NAME}</title>
   <style>
-${THEME_CSS}
+${THEMES_CSS}
   </style>
 </head>
 <body>
@@ -519,7 +497,7 @@ ${THEME_CSS}
 </body>
 </html>
 EOF
-    log_ok "html + theme"
+    log_ok "html + themes (runtime switching enabled)"
 
     # Copy to website
     local WEBSITE_DIR="website/public/games/${STORY_NAME}-react"

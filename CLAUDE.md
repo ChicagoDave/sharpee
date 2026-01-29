@@ -347,6 +347,20 @@ Since "turn switch" is puzzle-specific (not a generic IF verb), Option B is corr
 - **DO NOT** use `2>&1` with pnpm commands - they don't work together properly
 - Preferred format: `pnpm --filter '@sharpee/stdlib' test <test-name>`
 
+### Circular Dependency Detection
+
+If the CLI hangs on startup (process blocks but no CPU usage), it's likely a **circular dependency** in `require()` chains. Use `madge` to find cycles:
+
+```bash
+# Check story entry point (most common — cross-file cycles in story code)
+npx madge --circular stories/dungeo/dist/index.js
+
+# Check a specific package
+npx madge --circular packages/world-model/src/index.ts
+```
+
+**Fix**: Change barrel imports (`from '../traits'`) to direct file imports (`from '../traits/specific-trait'`) to break the cycle.
+
 ### Build Script
 
 **IMPORTANT**: Use `./build.sh` instead of manual `pnpm build` commands to avoid issues.
@@ -376,7 +390,7 @@ Since "turn switch" is puzzle-specific (not a generic IF verb), Option B is corr
 - `dist/web/{story}-react/` - React client
 
 **Version System**:
-- Versions auto-update on every build with format `X.Y.Z-beta.YYYYMMDD.HHMM`
+- Versions use format `X.Y.Z-beta` (no timestamp)
 - Version update runs FIRST, before any compilation
 
 **IMPORTANT**:

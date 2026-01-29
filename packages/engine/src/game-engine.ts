@@ -643,7 +643,13 @@ export class GameEngine {
           turn,
           playerId: this.context.player.id,
           playerLocation: playerLocation || '',
-          random: this.random
+          random: this.random,
+          actionResult: {
+            actionId: result.actionId || '',
+            success: result.success,
+            targetId: result.validatedCommand?.directObject?.entity?.id,
+          },
+          actionEvents: semanticEvents,
         };
         for (const plugin of this.pluginRegistry.getAll()) {
           const pluginEvents = plugin.onAfterAction(pluginContext);

@@ -27,6 +27,7 @@
     "@sharpee/engine": "workspace:*",
     "@sharpee/plugin-scheduler": "workspace:*",
     "@sharpee/plugin-npc": "workspace:*",
+    "@sharpee/plugin-state-machine": "workspace:*",
     "@sharpee/event-processor": "workspace:*",
     "@sharpee/if-domain": "workspace:*",
     "@sharpee/lang-en-us": "workspace:*",

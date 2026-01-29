@@ -23,7 +23,8 @@
       "@sharpee/text-services": ["./node_modules/@sharpee/text-services"],
       "@sharpee/engine": ["./node_modules/@sharpee/engine"],
       "@sharpee/plugin-scheduler": ["./node_modules/@sharpee/plugin-scheduler"],
-      "@sharpee/plugin-npc": ["./node_modules/@sharpee/plugin-npc"]
+      "@sharpee/plugin-npc": ["./node_modules/@sharpee/plugin-npc"],
+      "@sharpee/plugin-state-machine": ["./node_modules/@sharpee/plugin-state-machine"]
     }
   },
   "include": ["src/**/*"],

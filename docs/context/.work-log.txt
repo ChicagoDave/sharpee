@@ -1,87 +1,17 @@
-[22:18:53] EDIT: packages/stdlib/src/actions/standard/going/going.ts
-[22:19:11] EDIT: packages/stdlib/src/actions/standard/going/going.ts
-[22:19:38] EDIT: packages/stdlib/src/actions/standard/going/going.ts
-[22:30:19] WRITE: docs/context/session-20260126-2229-main.md
-[22:31:17] GIT: git commit -m "$(cat <<'EOF'
-feat: Add interceptor support to THROWING/GOING act
-[22:31:25] GIT: git push
-[22:38:47] EDIT: packages/stdlib/src/actions/standard/putting/putting.ts
-[22:38:58] EDIT: packages/stdlib/src/actions/standard/putting/putting-types.ts
-[22:39:05] EDIT: packages/stdlib/src/actions/standard/putting/putting-types.ts
-[22:39:24] EDIT: packages/stdlib/src/actions/standard/putting/putting.ts
-[22:39:39] EDIT: packages/stdlib/src/actions/standard/putting/putting.ts
-[22:39:59] EDIT: packages/stdlib/src/actions/standard/putting/putting.ts
-[22:40:10] EDIT: packages/stdlib/src/actions/standard/putting/putting.ts
-[22:41:23] WRITE: stories/dungeo/src/traits/balloon-receptacle-trait.ts
-[22:41:47] WRITE: stories/dungeo/src/interceptors/receptacle-putting-interceptor.ts
-[22:41:57] EDIT: stories/dungeo/src/traits/index.ts
-[22:42:08] EDIT: stories/dungeo/src/regions/volcano.ts
-[22:42:20] EDIT: stories/dungeo/src/regions/volcano.ts
-[22:42:47] EDIT: stories/dungeo/src/index.ts
-[22:42:54] EDIT: stories/dungeo/src/index.ts
-[22:43:16] EDIT: stories/dungeo/src/orchestration/event-handlers.ts
-[22:43:27] EDIT: stories/dungeo/src/orchestration/event-handlers.ts
-[22:43:56] EDIT: stories/dungeo/src/scheduler/index.ts
-[22:44:06] EDIT: stories/dungeo/src/index.ts
-[22:44:33] EDIT: stories/dungeo/src/interceptors/receptacle-putting-interceptor.ts
-[22:52:11] WRITE: stories/dungeo/tests/transcripts/balloon-receptacle-put.transcript
-[22:52:58] EDIT: stories/dungeo/tests/transcripts/balloon-receptacle-put.transcript
-[22:54:06] WRITE: stories/dungeo/tests/transcripts/balloon-receptacle-put.transcript
-[22:54:58] WRITE: stories/dungeo/tests/transcripts/balloon-receptacle-put.transcript
-[22:55:58] WRITE: stories/dungeo/tests/transcripts/balloon-receptacle-put.transcript
-[22:56:48] WRITE: stories/dungeo/tests/transcripts/balloon-receptacle-put.transcript
-[22:59:23] WRITE: stories/dungeo/tests/transcripts/balloon-receptacle-put.transcript
-[23:02:49] WRITE: docs/context/session-20260126-2302-main.md
-[23:03:32] GIT: git commit -m "$(cat <<'EOF'
-feat: Add interceptor support to PUTTING action, mi
-[23:03:40] GIT: git push
-[23:06:24] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:06:30] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:06:38] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:06:45] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:06:52] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:07:05] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:07:13] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:07:40] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:07:48] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:10:56] WRITE: packages/stdlib/src/actions/standard/pushing/pushing-types.ts
-[23:11:10] EDIT: packages/stdlib/src/actions/standard/pushing/pushing.ts
-[23:11:26] EDIT: packages/stdlib/src/actions/standard/pushing/pushing.ts
-[23:11:33] EDIT: packages/stdlib/src/actions/standard/pushing/pushing.ts
-[23:11:43] EDIT: packages/stdlib/src/actions/standard/pushing/pushing.ts
-[23:11:54] EDIT: packages/stdlib/src/actions/standard/pushing/pushing.ts
-[23:17:15] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:17:29] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:17:42] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:17:52] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:20:01] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/stdlib' test 2>&1 | tail -30
-[23:23:00] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/stdlib' test pushing 2>&1 | tail -50
-[23:24:07] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/stdlib' test throwing 2>&1 | tail -20
-[23:32:16] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:32:26] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:32:35] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:33:44] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:33:55] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:34:00] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:34:10] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:48:54] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:49:00] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:49:07] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:49:16] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:52:16] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:52:24] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:52:32] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:52:37] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[23:52:47] EDIT: docs/work/dungeo/handler-to-behavior-migration.md
-[00:00:50] WRITE: docs/context/session-20260126-2359-main.md
-[00:01:35] GIT: git add docs/work/dungeo/handler-to-behavior-migration.md packages/stdlib/src/ac
-[00:01:52] GIT: git commit -m "$(cat <<'EOF'
-feat: Add PUSHING interceptor support, complete han
-[00:02:03] GIT: git push
-[00:03:32] EDIT: stories/dungeo/src/handlers/balloon-handler.ts
-[00:03:51] EDIT: stories/dungeo/src/handlers/balloon-handler.ts
-[00:04:16] EDIT: stories/dungeo/src/orchestration/event-handlers.ts
-[00:04:21] EDIT: stories/dungeo/src/scheduler/index.ts
-[00:04:32] EDIT: stories/dungeo/src/index.ts
-[00:29:09] WRITE: docs/work/dungeo/handler-assessment.md
-[00:33:19] WRITE: docs/context/session-20260127-0032-main.md
+[16:44:54] WRITE: docs/context/session-20260124-1642-maphints.md
+[16:58:38] EDIT: packages/map-editor/package.json
+[16:58:50] WRITE: packages/map-editor/src/components/Canvas/RoomNode.tsx
+[16:59:18] WRITE: packages/map-editor/src/components/Canvas/Canvas.tsx
+[16:59:49] WRITE: packages/map-editor/src/components/Canvas/Canvas.css
+[19:18:14] EDIT: stories/dungeo/src/browser-entry.ts
+[19:18:36] EDIT: stories/dungeo/src/browser-entry.ts
+[19:18:42] EDIT: stories/dungeo/src/browser-entry.ts
+[19:18:53] EDIT: stories/dungeo/src/browser-entry.ts
+[19:19:02] EDIT: stories/dungeo/src/browser-entry.ts
+[19:47:13] WRITE: docs/architecture/adrs/adr-114-browser-platform-package.md
+[19:47:21] EDIT: docs/architecture/adrs/adr-105-javascript-browser-client.md
+[19:52:04] WRITE: docs/context/session-20260124-1950-maphints.md
+[20:02:46] GIT: git commit -m "$(cat <<'EOF'
+feat: Browser client menu handlers and ADR-114 plat
+[20:03:02] GIT: git push origin maphints
+[18:53:59] WRITE: docs/context/session-20260128-1853-main.md

@@ -30,6 +30,53 @@ const exports = {
   ...require('../packages/extensions/testing/dist/index.js')
 };
 
+/**
+ * Create an editor session for the map editor.
+ * Initializes a story's world without starting the game engine.
+ *
+ * @param {string} storyId - The story ID (e.g., 'dungeo')
+ * @param {string} [projectPath] - Optional project root path (defaults to cwd)
+ * @returns {{ world: WorldModel, story: any }} The initialized world and story
+ */
+exports.createEditorSession = function createEditorSession(storyId, projectPath) {
+  const path = require('path');
+  const fs = require('fs');
+
+  // Find story in stories/ folder
+  const basePath = projectPath || process.cwd();
+  const storyPath = path.resolve(basePath, 'stories', storyId);
+  const distPath = path.join(storyPath, 'dist', 'index.js');
+
+  if (!fs.existsSync(distPath)) {
+    throw new Error(`Story not found: ${storyId}. Expected at ${distPath}`);
+  }
+
+  // Clear require cache to get fresh story
+  delete require.cache[require.resolve(distPath)];
+
+  const storyModule = require(distPath);
+  const story = storyModule.story || storyModule.default;
+
+  if (!story) {
+    throw new Error(`Story module '${storyId}' does not export 'story' or 'default'`);
+  }
+
+  // Create world and initialize
+  const { WorldModel, EntityType } = exports;
+  const world = new WorldModel();
+
+  // Create player entity (required for world initialization)
+  const player = world.createEntity('player', EntityType.ACTOR);
+  world.setPlayer(player.id);
+
+  // Initialize the story's world
+  if (story.initializeWorld) {
+    story.initializeWorld(world);
+  }
+
+  return { world, story };
+};
+
 module.exports = exports;
 
 // CLI functionality - only runs when executed directly (not when required as library)

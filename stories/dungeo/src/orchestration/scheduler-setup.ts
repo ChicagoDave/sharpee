@@ -22,7 +22,7 @@ import { setPressButtonScheduler } from '../actions/press-button';
 import { registerBatHandler } from '../handlers/bat-handler';
 import { registerExorcismHandler } from '../handlers/exorcism-handler';
 import { registerRoundRoomHandler } from '../handlers/round-room-handler';
-import { registerTrapdoorHandler } from '../handlers/trapdoor-handler';
+
 import { registerRoyalPuzzleHandler } from '../handlers/royal-puzzle';
 
 import { registerRealityAlteredDaemon } from '../handlers/reality-altered-handler';
@@ -141,12 +141,7 @@ export function registerSchedulerEvents(
   // Round Room randomization handler (carousel room)
   registerRoundRoomHandler(scheduler, config.roundRoomIds.roundRoom);
 
-  // Trapdoor auto-close handler (Living Room to Cellar)
-  registerTrapdoorHandler(
-    scheduler,
-    config.houseInteriorIds.livingRoom,
-    config.undergroundIds.cellar
-  );
+  // Trapdoor: migrated to state machine (ADR-119)
 
   // Royal Puzzle handler (sliding block puzzle)
   registerRoyalPuzzleHandler(scheduler, config.royalPuzzleIds);

@@ -16,7 +16,11 @@ import type { GameEngine } from '@sharpee/engine';
 import type { WorldModel } from '@sharpee/world-model';
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 import { NpcPlugin } from '@sharpee/plugin-npc';
+import { StateMachinePlugin } from '@sharpee/plugin-state-machine';
 import { ScoringEventProcessor } from '@sharpee/stdlib';
+import { IdentityTrait } from '@sharpee/world-model';
+
+import { createTrapdoorMachine } from '../state-machines/trapdoor-machine';
 
 import { registerCommandTransformers, TransformerConfig } from './command-transformers';
 import { registerSchedulerEvents, SchedulerConfig } from './scheduler-setup';
@@ -158,7 +162,30 @@ export function initializeOrchestration(
   };
   registerNpcs(engine, npcPlugin.getNpcService(), world, npcConfig);
 
-  // 5. Event Handlers
+  // 5. State Machine Plugin (ADR-119, ADR-120 Phase 4)
+  // Register state machine plugin for declarative puzzle orchestration
+  const stateMachinePlugin = new StateMachinePlugin();
+  engine.getPluginRegistry().register(stateMachinePlugin);
+
+  // Register state machines
+  const smRegistry = stateMachinePlugin.getRegistry();
+
+  // Trapdoor: slams shut when player descends from Living Room to Cellar
+  const trapdoorId = findEntityByName(world, 'trap door');
+  if (trapdoorId) {
+    smRegistry.register(
+      createTrapdoorMachine(
+        config.houseInteriorIds.livingRoom,
+        config.undergroundIds.cellar
+      ),
+      {
+        '$trapdoor': trapdoorId,
+        '$cellar': config.undergroundIds.cellar,
+      }
+    );
+  }
+
+  // 6. Event Handlers
   // Register event processor handlers for scoring, achievements, etc.
   const eventConfig: EventHandlerConfig = {
     mirrorConfig: config.mirrorConfig,
@@ -166,6 +193,15 @@ export function initializeOrchestration(
     balloonIds: config.balloonIds
   };
   registerEventHandlers(engine, world, eventConfig, scoringProcessor, scoringService);
+}
+
+/** Find an entity by its IdentityTrait name */
+function findEntityByName(world: WorldModel, name: string): string | null {
+  for (const entity of world.getAllEntities()) {
+    const identity = entity.get(IdentityTrait);
+    if (identity?.name === name) return entity.id;
+  }
+  return null;
 }
 
 // Re-export types and functions for direct access if needed

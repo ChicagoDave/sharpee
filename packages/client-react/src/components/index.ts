@@ -9,3 +9,4 @@ export {
   CommentaryPanel,
   type TabConfig,
 } from './panels';
+export { MenuBar, type MenuBarProps } from './menu';

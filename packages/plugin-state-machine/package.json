@@ -1,0 +1,57 @@
+{
+  "name": "@sharpee/plugin-state-machine",
+  "version": "0.9.60-beta",
+  "description": "State machine plugin for Sharpee engine - declarative puzzle and narrative orchestration (ADR-119, ADR-120)",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@sharpee/core": "workspace:*",
+    "@sharpee/world-model": "workspace:*",
+    "@sharpee/plugins": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "typescript": "^5.3.3",
+    "rimraf": "^5.0.5"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "interactive-fiction",
+    "sharpee",
+    "plugin",
+    "state-machine",
+    "puzzle",
+    "narrative"
+  ],
+  "author": "Sharpee Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ChicagoDave/sharpee.git",
+    "directory": "packages/plugin-state-machine"
+  },
+  "homepage": "https://github.com/ChicagoDave/sharpee#readme",
+  "bugs": {
+    "url": "https://github.com/ChicagoDave/sharpee/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

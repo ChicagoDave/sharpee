@@ -1,11 +1,18 @@
 packages:
-  - 'packages/*'
-  - 'packages/platforms/*'
-  - 'packages/extensions/*'
+  - packages/*
+  - packages/platforms/*
+  - packages/extensions/*
   - '!packages/forge'
   - '!packages/ext-*'
   - '!packages/client-core'
   - '!packages/web-client'
   - '!packages/cli'
   - '!packages/dev-tools'
-  - 'stories/*'
+  - stories/*
+
+ignoredBuiltDependencies:
+  - electron
+
+onlyBuiltDependencies:
+  - esbuild
+  - nx

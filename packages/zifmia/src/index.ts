@@ -1,7 +1,7 @@
 /**
- * @sharpee/client-react
+ * @sharpee/zifmia
  *
- * Rich React web client for Sharpee interactive fiction
+ * Zifmia - Sharpee story runner
  */
 
 // Context and providers
@@ -17,18 +17,6 @@ export {
 export {
   useCommandHistory,
   useTranscript,
-  useNotes,
-  useProgress,
-  useMap,
-  useCommentary,
-  useTheme,
-  AVAILABLE_THEMES,
-  type MapRoom,
-  type MapConnection,
-  type MapState,
-  type CommentaryEntry,
-  type CommentaryCategory,
-  type ThemeId,
 } from './hooks';
 
 // Components
@@ -37,14 +25,6 @@ export {
   Transcript,
   CommandInput,
   StatusLine,
-  TabPanel,
-  NotesPanel,
-  ProgressPanel,
-  MapPanel,
-  CommentaryPanel,
-  MenuBar,
-  type TabConfig,
-  type MenuBarProps,
 } from './components';
 
 // Types
@@ -54,4 +34,5 @@ export type {
   TranscriptEntry,
   CurrentRoom,
   RoomExit,
+  StoryMetadata,
 } from './types';
