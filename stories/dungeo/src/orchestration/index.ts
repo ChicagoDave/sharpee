@@ -23,6 +23,8 @@ import { IdentityTrait } from '@sharpee/world-model';
 import { createTrapdoorMachine } from '../state-machines/trapdoor-machine';
 import { createDeathPenaltyMachine } from '../state-machines/death-penalty-machine';
 import { createRainbowMachine } from '../state-machines/rainbow-machine';
+import { createRealityAlteredMachine } from '../state-machines/reality-altered-machine';
+import { createVictoryMachine } from '../state-machines/victory-machine';
 
 import { registerCommandTransformers, TransformerConfig } from './command-transformers';
 import { registerSchedulerEvents, SchedulerConfig } from './scheduler-setup';
@@ -200,6 +202,12 @@ export function initializeOrchestration(
       '$onTheRainbow': config.frigidRiverIds.onTheRainbow,
     }
   );
+
+  // Reality Altered: shows message after thief dies and player checks score (ADR-078)
+  smRegistry.register(createRealityAlteredMachine());
+
+  // Victory: triggers when player enters Treasury of Zork during endgame
+  smRegistry.register(createVictoryMachine(config.endgameIds.treasury));
 
   // 6. Event Handlers
   // Register event processor handlers for scoring, achievements, etc.

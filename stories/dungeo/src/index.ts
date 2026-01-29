@@ -281,8 +281,7 @@ export class DungeoStory implements Story {
       );
     }
 
-    // Register reality altered handler (ADR-078 hidden max points)
-    registerRealityAlteredHandler(world);
+    // Reality Altered: migrated to state machine (ADR-119)
 
     // Create all rooms
     this.whiteHouseIds = createWhiteHouseRegion(world);

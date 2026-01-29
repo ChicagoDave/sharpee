@@ -25,9 +25,9 @@ import { registerRoundRoomHandler } from '../handlers/round-room-handler';
 
 import { registerRoyalPuzzleHandler } from '../handlers/royal-puzzle';
 
-import { registerRealityAlteredDaemon } from '../handlers/reality-altered-handler';
+
 import { registerEndgameTriggerHandler } from '../handlers/endgame-trigger-handler';
-import { registerVictoryHandler } from '../handlers/victory-handler';
+
 import { registerTrollRecoveryDaemon } from '../scheduler';
 
 // Import region types to ensure type compatibility
@@ -148,8 +148,7 @@ export function registerSchedulerEvents(
 
   // Ghost Ritual now handled by GhostRitualDroppingInterceptor (ADR-118)
 
-  // Reality Altered daemon (ADR-078 hidden max points)
-  registerRealityAlteredDaemon(scheduler);
+  // Reality Altered: migrated to state machine (ADR-119)
 
   // Endgame Trigger handler (Tomb darkness ritual)
   registerEndgameTriggerHandler(
@@ -159,8 +158,7 @@ export function registerSchedulerEvents(
     config.endgameIds.topOfStairs
   );
 
-  // Victory handler (Treasury of Zork entry)
-  registerVictoryHandler(scheduler, config.endgameIds.treasury);
+  // Victory: migrated to state machine (ADR-119)
 
   // ==========================================================================
   // NPC Recovery Daemons
