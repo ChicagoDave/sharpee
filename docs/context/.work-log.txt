@@ -1,65 +1,64 @@
-[04:09:12] EDIT: stories/dungeo/src/index.ts
-[04:14:24] WRITE: stories/dungeo/src/scheduler/sword-glow-runner.ts
-[04:14:29] EDIT: stories/dungeo/src/scheduler/index.ts
-[04:14:33] EDIT: stories/dungeo/src/scheduler/index.ts
-[04:14:38] EDIT: stories/dungeo/src/scheduler/index.ts
-[04:19:59] WRITE: stories/dungeo/src/handlers/exorcism-runner.ts
-[04:20:14] EDIT: stories/dungeo/src/handlers/index.ts
-[04:20:18] EDIT: stories/dungeo/src/orchestration/scheduler-setup.ts
-[04:20:27] EDIT: stories/dungeo/src/orchestration/scheduler-setup.ts
-[04:20:31] EDIT: stories/dungeo/src/index.ts
-[04:32:42] WRITE: docs/work/platform/undo-daemon-work.md
-[04:34:29] WRITE: docs/context/session-20260129-0433-main.md
-[04:36:25] EDIT: packages/plugin-scheduler/src/index.ts
-[04:36:35] EDIT: stories/dungeo/src/scheduler/sword-glow-daemon.ts
-[04:38:12] EDIT: docs/architecture/adrs/adr-123-typed-daemon-hierarchy.md
-[04:47:31] WRITE: docs/context/session-20260129-0446-main.md
-[04:47:58] GIT: git add docs/context/session-20260129-0446-main.md && git commit -m "$(cat <<'EO
-[04:48:07] GIT: git push
-[05:06:51] WRITE: /home/dave/.claude/plans/glittery-wobbling-firefly.md
-[05:07:13] EDIT: docs/work/zifmia/implementation-plan.md
-[05:07:16] EDIT: build.sh
-[05:07:21] EDIT: build.sh
-[05:07:25] EDIT: build.sh
-[05:07:29] EDIT: build.sh
-[05:07:33] EDIT: build.sh
-[05:07:38] EDIT: build.sh
-[05:07:55] EDIT: build.sh
-[05:07:59] EDIT: build.sh
-[05:08:03] EDIT: build.sh
-[05:08:08] EDIT: build.sh
-[05:13:16] EDIT: build.sh
-[05:14:58] WRITE: docs/work/blog-20260129.md
-[05:15:16] TRANSCRIPT FAIL: ./build.sh -s dungeo --story-bundle --no-version --skip transcript-tester
-[05:17:07] WRITE: docs/work/blog-20260129.md
-[05:50:52] TEST/BUILD FAIL (exit -1): npm view esbuild version 2>&1
-[05:52:15] WRITE: /home/dave/.claude/plans/glittery-wobbling-firefly.md
-[05:53:33] GIT: git add build.sh docs/work/zifmia/implementation-plan.md docs/context/.work-log.
-[05:54:53] WRITE: docs/context/session-20260129-0554-main.md
-[05:55:23] GIT: git add docs/context/session-20260129-0554-main.md docs/work/zifmia/phase-2.md d
-[05:55:33] GIT: git push
-[06:10:19] EDIT: build.sh
-[06:10:29] EDIT: build.sh
-[06:10:34] EDIT: packages/zifmia/package.json
-[06:16:10] WRITE: packages/zifmia/src/loader/bundle-loader.ts
-[06:16:13] WRITE: packages/zifmia/src/loader/index.ts
-[14:31:14] WRITE: packages/zifmia/src/runner/index.tsx
-[14:33:02] EDIT: build.sh
-[14:33:06] EDIT: build.sh
-[14:33:10] EDIT: build.sh
-[14:33:14] EDIT: build.sh
-[14:33:17] EDIT: build.sh
-[14:33:34] WRITE: packages/zifmia/src/runner/runner-entry.tsx
-[14:33:56] EDIT: build.sh
-[14:34:04] EDIT: build.sh
-[14:34:08] EDIT: build.sh
-[14:34:12] EDIT: build.sh
-[14:34:21] EDIT: packages/zifmia/src/index.ts
-[14:36:26] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/zifmia' build 2>&1 | tail -20
-[14:36:31] EDIT: packages/zifmia/src/loader/bundle-loader.ts
-[14:36:35] EDIT: packages/zifmia/src/loader/bundle-loader.ts
-[14:36:54] EDIT: packages/zifmia/src/runner/index.tsx
-[14:37:01] EDIT: packages/zifmia/src/runner/index.tsx
-[14:37:05] EDIT: packages/zifmia/src/runner/index.tsx
-[14:37:45] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/zifmia' build 2>&1 | tail -15
-[15:02:54] WRITE: docs/context/session-20260129-1030-main.md
+[15:32:50] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/zifmia' build 2>&1 | head -40
+[15:32:59] EDIT: packages/zifmia/src/runner/index.tsx
+[15:33:39] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/zifmia' build 2>&1 | head -40
+[15:50:03] EDIT: packages/core/package.json
+[15:50:04] EDIT: packages/core/package.json
+[15:50:43] EDIT: packages/engine/package.json
+[15:50:44] EDIT: packages/engine/package.json
+[15:50:45] EDIT: packages/if-domain/package.json
+[15:50:45] EDIT: packages/if-domain/package.json
+[15:50:46] EDIT: packages/lang-en-us/package.json
+[15:50:47] EDIT: packages/lang-en-us/package.json
+[15:50:48] EDIT: packages/parser-en-us/package.json
+[15:50:48] EDIT: packages/parser-en-us/package.json
+[15:50:49] EDIT: packages/plugin-npc/package.json
+[15:50:53] EDIT: packages/plugin-npc/package.json
+[15:50:54] EDIT: packages/plugin-scheduler/package.json
+[15:50:55] EDIT: packages/plugin-scheduler/package.json
+[15:50:59] EDIT: packages/plugin-state-machine/package.json
+[15:51:00] EDIT: packages/plugin-state-machine/package.json
+[15:51:01] EDIT: packages/plugins/package.json
+[15:51:01] EDIT: packages/plugins/package.json
+[15:51:03] EDIT: packages/sharpee/package.json
+[15:51:03] EDIT: packages/sharpee/package.json
+[15:51:04] EDIT: packages/stdlib/package.json
+[15:51:05] EDIT: packages/stdlib/package.json
+[15:51:06] EDIT: packages/world-model/package.json
+[15:51:07] EDIT: packages/world-model/package.json
+[16:12:40] WRITE: docs/context/session-20260129-1400-main.md
+[00:45:26] GIT: git commit -m "$(cat <<'EOF'
+feat: Zifmia Phase 3 — runner application shell wit
+[00:46:00] GIT: git push
+[01:17:06] WRITE: /home/dave/.claude/plans/fuzzy-knitting-rain.md
+[01:17:26] EDIT: tsconfig.base.json
+[01:33:29] WRITE: /home/dave/.claude/plans/fuzzy-knitting-rain.md
+[01:33:51] EDIT: stories/dungeo/tsconfig.json
+[01:33:53] EDIT: stories/dungeo/package.json
+[01:33:54] EDIT: scripts/bundle-entry.js
+[01:39:47] EDIT: stories/dungeo/package.json
+[01:43:10] TRANSCRIPT FAIL: grep "require.*transcript-tester" /mnt/c/repotemp/sharpee/dist/sharpee.js | head
+[01:43:46] EDIT: packages/transcript-tester/src/story-loader.ts
+[01:43:47] EDIT: packages/transcript-tester/src/fast-cli.ts
+[01:46:03] TRANSCRIPT FAIL: ./build.sh --skip transcript-tester -s dungeo 2>&1
+[01:49:05] WRITE: /home/dave/.claude/plans/fuzzy-knitting-rain.md
+[01:51:14] TRANSCRIPT FAIL: git checkout -- tsconfig.base.json stories/dungeo/tsconfig.json stories/dungeo/p
+[01:51:28] WRITE: tsconfig.base-esm.json
+[01:54:43] TRANSCRIPT FAIL: for pkg in core if-domain world-model event-processor lang-en-us parser-en-us if
+[01:55:23] TRANSCRIPT FAIL: for pkg in core if-domain world-model event-processor lang-en-us parser-en-us if
+[01:55:40] TRANSCRIPT FAIL: for pkg in core if-domain world-model event-processor lang-en-us parser-en-us if
+[01:55:47] WRITE: stories/dungeo/tsconfig.esm.json
+[01:55:53] TRANSCRIPT FAIL: for pkg in core if-domain world-model event-processor lang-en-us parser-en-us if
+[01:56:00] TRANSCRIPT FAIL: for pkg in core if-domain world-model event-processor lang-en-us parser-en-us if
+[01:56:16] EDIT: build.sh
+[01:56:37] EDIT: build.sh
+[01:56:53] EDIT: .gitignore
+[02:24:08] EDIT: build.sh
+[02:24:55] EDIT: build.sh
+[02:25:07] EDIT: build.sh
+[02:30:55] TRANSCRIPT FAIL: ./build.sh --runner --skip transcript-tester -s dungeo 2>&1
+[02:34:05] WRITE: docs/context/session-20260130-0233-main.md
+[02:45:21] EDIT: docs/context/session-20260130-0233-main.md
+[02:45:31] EDIT: docs/context/session-20260130-0233-main.md
+[02:45:47] EDIT: docs/context/session-20260130-0233-main.md
+[02:45:58] EDIT: docs/context/session-20260130-0233-main.md
+[02:46:10] EDIT: docs/context/session-20260130-0233-main.md

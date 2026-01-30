@@ -359,6 +359,50 @@ build_platform() {
         run_build "$name" "pnpm --filter '$pkg' build"
     done
 
+    # ESM build pass (only when browser/runner targets are requested)
+    if [ "$BUILD_RUNNER" = true ] || [ ${#CLIENTS[@]} -gt 0 ] || [ "$STORY_BUNDLE" = true ]; then
+        echo ""
+        echo "Building ESM outputs..."
+        SKIPPING=true
+        if [ -z "$SKIP_TO" ]; then
+            SKIPPING=false
+        fi
+        for entry in "${PACKAGES[@]}"; do
+            local pkg="${entry%%:*}"
+            local name="${entry##*:}"
+
+            if [ "$SKIPPING" = true ]; then
+                if [ "$name" = "$SKIP_TO" ]; then
+                    SKIPPING=false
+                else
+                    log_skip "$name (esm)"
+                    continue
+                fi
+            fi
+
+            local pkg_dir="packages/$name"
+            if [ -f "$pkg_dir/tsconfig.esm.json" ]; then
+                run_build "$name (esm)" "pnpm --filter '$pkg' exec tsc -p tsconfig.esm.json"
+            fi
+        done
+
+        # Also build plugin packages (not in main build order but needed for platform.js)
+        local EXTRA_ESM_PACKAGES=(
+            "@sharpee/plugins:plugins"
+            "@sharpee/plugin-npc:plugin-npc"
+            "@sharpee/plugin-scheduler:plugin-scheduler"
+            "@sharpee/plugin-state-machine:plugin-state-machine"
+        )
+        for entry in "${EXTRA_ESM_PACKAGES[@]}"; do
+            local pkg="${entry%%:*}"
+            local name="${entry##*:}"
+            local pkg_dir="packages/$name"
+            if [ -f "$pkg_dir/tsconfig.esm.json" ]; then
+                run_build "$name (esm)" "pnpm --filter '$pkg' exec tsc -p tsconfig.esm.json"
+            fi
+        done
+    fi
+
     echo ""
 }
 
@@ -416,6 +460,13 @@ build_story() {
     fi
 
     run_build "$STORY_NAME" "pnpm --filter '$STORY_PKG' build"
+
+    # ESM build for story (needed by .sharpee bundle and runner)
+    if [ "$BUILD_RUNNER" = true ] || [ "$STORY_BUNDLE" = true ] || [ ${#CLIENTS[@]} -gt 0 ]; then
+        if [ -f "$STORY_DIR/tsconfig.esm.json" ]; then
+            run_build "$STORY_NAME (esm)" "pnpm --filter '$STORY_PKG' exec tsc -p tsconfig.esm.json"
+        fi
+    fi
 
     echo ""
 }
@@ -638,20 +689,22 @@ build_runner() {
     #    all importmap entries to it. This avoids cross-package import issues
     #    (e.g. @sharpee/stdlib importing from @sharpee/world-model).
 
-    # Create a platform entry that re-exports all packages
-    local PLATFORM_ENTRY=$(mktemp --suffix=.ts)
-    cat > "$PLATFORM_ENTRY" << 'ENTRY'
-export * from "@sharpee/core";
-export * from "@sharpee/world-model";
-export * from "@sharpee/engine";
-export * from "@sharpee/stdlib";
-export * from "@sharpee/parser-en-us";
-export * from "@sharpee/lang-en-us";
-export * from "@sharpee/plugin-npc";
-export * from "@sharpee/plugin-scheduler";
-export * from "@sharpee/plugin-state-machine";
-export * from "@sharpee/if-domain";
-export * from "@sharpee/if-services";
+    # Create a platform entry that re-exports all packages from dist-esm
+    # Uses direct paths to dist-esm/ to bypass pnpm's .pnpm store (which
+    # may not contain dist-esm/ if it was created after pnpm install).
+    local PLATFORM_ENTRY=$(mktemp --suffix=.js)
+    cat > "$PLATFORM_ENTRY" << ENTRY
+export * from "$REPO_ROOT/packages/core/dist-esm/index.js";
+export * from "$REPO_ROOT/packages/world-model/dist-esm/index.js";
+export * from "$REPO_ROOT/packages/engine/dist-esm/index.js";
+export * from "$REPO_ROOT/packages/stdlib/dist-esm/index.js";
+export * from "$REPO_ROOT/packages/parser-en-us/dist-esm/index.js";
+export * from "$REPO_ROOT/packages/lang-en-us/dist-esm/index.js";
+export * from "$REPO_ROOT/packages/if-domain/dist-esm/index.js";
+export * from "$REPO_ROOT/packages/if-services/dist-esm/index.js";
+export * from "$REPO_ROOT/packages/plugin-npc/dist-esm/index.js";
+export * from "$REPO_ROOT/packages/plugin-scheduler/dist-esm/index.js";
+export * from "$REPO_ROOT/packages/plugin-state-machine/dist-esm/index.js";
 ENTRY
 
     run_build "platform.js" "npx esbuild '$PLATFORM_ENTRY' \

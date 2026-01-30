@@ -37,5 +37,12 @@
     "transcript"
   ],
   "author": "Sharpee Team",
-  "license": "MIT"
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist-esm/index.js",
+      "require": "./dist/index.js"
+    }
+  }
 }

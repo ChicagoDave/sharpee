@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "outDir": "./dist-esm",
+    "rootDir": "./src",
+    "declaration": true,
+    "sourceMap": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@sharpee/core": ["./node_modules/@sharpee/core"],
+      "@sharpee/world-model": ["./node_modules/@sharpee/world-model"],
+      "@sharpee/stdlib": ["./node_modules/@sharpee/stdlib"],
+      "@sharpee/lang-en-us": ["./node_modules/@sharpee/lang-en-us"],
+      "@sharpee/parser-en-us": ["./node_modules/@sharpee/parser-en-us"],
+      "@sharpee/text-services": ["./node_modules/@sharpee/text-services"],
+      "@sharpee/engine": ["./node_modules/@sharpee/engine"],
+      "@sharpee/plugin-scheduler": ["./node_modules/@sharpee/plugin-scheduler"],
+      "@sharpee/plugin-npc": ["./node_modules/@sharpee/plugin-npc"],
+      "@sharpee/plugin-state-machine": ["./node_modules/@sharpee/plugin-state-machine"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "dist-esm", "src/browser-entry.ts", "src/react-entry.tsx"]
+}
