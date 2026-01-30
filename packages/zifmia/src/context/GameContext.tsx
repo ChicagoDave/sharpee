@@ -91,11 +91,23 @@ export function useGameDispatch(): Dispatch<GameAction> {
 }
 
 /**
+ * Handle to GameProvider internals, exposed via ref for save/restore integration
+ */
+export interface GameProviderHandle {
+  getState(): GameState;
+  dispatch: Dispatch<GameAction>;
+}
+
+/**
  * Props for GameProvider
  */
 interface GameProviderProps {
   /** Pre-created game engine (story creates this) */
   engine: GameEngineInterface;
+  /** Ref to access state/dispatch from outside the provider (for save/restore) */
+  handleRef?: React.MutableRefObject<GameProviderHandle | null>;
+  /** Called after each turn completes (for auto-save) */
+  onTurnCompleted?: (state: GameState) => void;
   children: ReactNode;
 }
 
@@ -135,11 +147,23 @@ function extractCurrentRoom(world: WorldInterface, roomId: string): CurrentRoom 
  * The engine is created externally (by the story's entry point) and passed in.
  * This component subscribes to engine events and updates React state.
  */
-export function GameProvider({ engine, children }: GameProviderProps) {
+export function GameProvider({ engine, children, handleRef, onTurnCompleted }: GameProviderProps) {
   const [state, dispatch] = useReducer(gameReducer, initialGameState);
   const pendingCommand = useRef<string | undefined>();
   const engineRef = useRef(engine);
   const turnEventsBuffer = useRef<GameEvent[]>([]);
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  // Expose handle for external access (save/restore)
+  useEffect(() => {
+    if (handleRef) {
+      handleRef.current = {
+        getState: () => stateRef.current,
+        dispatch,
+      };
+    }
+  }, [handleRef]);
 
   // Connect to engine on mount
   useEffect(() => {
@@ -163,6 +187,11 @@ export function GameProvider({ engine, children }: GameProviderProps) {
         events: turnEvents,
       });
       pendingCommand.current = undefined;
+
+      // Notify parent for auto-save (state updates asynchronously, use next tick)
+      if (onTurnCompleted) {
+        setTimeout(() => onTurnCompleted(stateRef.current), 0);
+      }
     };
 
     // Event handler - collects all events during a turn

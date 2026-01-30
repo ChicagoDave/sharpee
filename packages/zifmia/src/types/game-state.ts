@@ -6,6 +6,11 @@
  */
 
 /**
+ * ADR-109 play-tester annotation types
+ */
+export type AnnotationType = 'comment' | 'bug' | 'note' | 'confusing' | 'expected' | 'bookmark';
+
+/**
  * A single entry in the game transcript
  */
 export interface TranscriptEntry {
@@ -14,6 +19,11 @@ export interface TranscriptEntry {
   command?: string;
   text: string;
   timestamp: number;
+  /** ADR-109 play-tester annotation (when this entry is an annotation rather than game output) */
+  annotation?: {
+    type: AnnotationType;
+    text: string;
+  };
 }
 
 /**
@@ -93,6 +103,7 @@ export type GameAction =
   | { type: 'SCORE_CHANGED'; score: number; maxScore?: number }
   | { type: 'TURN_COMPLETED'; turn: number; text: string; command?: string; events: GameEvent[] }
   | { type: 'TRANSCRIPT_CLEARED' }
+  | { type: 'TRANSCRIPT_RESTORED'; transcript: TranscriptEntry[]; turns: number; score: number }
   | { type: 'ENGINE_STOPPED' };
 
 /**
@@ -161,6 +172,14 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         transcript: [],
+      };
+
+    case 'TRANSCRIPT_RESTORED':
+      return {
+        ...state,
+        transcript: action.transcript,
+        turns: action.turns,
+        score: action.score,
       };
 
     case 'ENGINE_STOPPED':

@@ -8,6 +8,8 @@ export interface MenuBarProps {
   onSave?: () => void;
   onRestore?: () => void;
   onQuit?: () => void;
+  onExportTranscript?: () => void;
+  onExportWalkthrough?: () => void;
   onThemeChange?: (theme: string) => void;
   currentTheme?: string;
   storyTitle?: string;
@@ -33,6 +35,8 @@ export function MenuBar({
   onSave,
   onRestore,
   onQuit,
+  onExportTranscript,
+  onExportWalkthrough,
   onThemeChange,
   currentTheme = 'classic-light',
   storyTitle = 'Sharpee',
@@ -67,6 +71,9 @@ export function MenuBar({
   const fileMenu: MenuItem[] = [
     { label: 'Save Game...', action: onSave, disabled: !onSave },
     { label: 'Restore Game...', action: onRestore, disabled: !onRestore },
+    { separator: true, label: '' },
+    { label: 'Save Transcript...', action: onExportTranscript, disabled: !onExportTranscript },
+    { label: 'Export Walkthrough...', action: onExportWalkthrough, disabled: !onExportWalkthrough },
     { separator: true, label: '' },
     { label: 'Quit', action: onQuit, disabled: !onQuit },
   ];

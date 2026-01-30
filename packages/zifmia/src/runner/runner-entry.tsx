@@ -1,15 +1,99 @@
 /**
  * Zifmia Runner — Browser entry point
  *
- * Reads ?bundle= query parameter and loads the .sharpee story bundle.
- * Served from dist/runner/index.html with an importmap for @sharpee/* packages.
+ * App shell state machine:
+ *   library  → loading  (user selects story)
+ *   loading  → playing  (bundle loaded)
+ *   loading  → error    (load failed)
+ *   playing  → library  (user quits)
+ *   error    → library  (user clicks back)
+ *
+ * ?bundle= query param skips the library and loads directly.
  */
 
+import React, { useState, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ZifmiaRunner } from './index';
+import { StoryLibrary, addRecentStory } from './StoryLibrary';
+import type { LoadedBundle } from '../loader';
 
-const params = new URLSearchParams(window.location.search);
-const bundleUrl = params.get('bundle');
+type AppState =
+  | { phase: 'library' }
+  | { phase: 'playing'; bundleUrl?: string; bundleData?: ArrayBuffer }
+  | { phase: 'error'; error: string };
+
+function App() {
+  // If ?bundle= is in the URL, go straight to playing
+  const params = new URLSearchParams(window.location.search);
+  const initialBundleUrl = params.get('bundle');
+
+  const [state, setState] = useState<AppState>(
+    initialBundleUrl
+      ? { phase: 'playing', bundleUrl: initialBundleUrl }
+      : { phase: 'library' }
+  );
+
+  const handleSelectUrl = useCallback((url: string) => {
+    setState({ phase: 'playing', bundleUrl: url });
+  }, []);
+
+  const handleSelectFile = useCallback((data: ArrayBuffer, _filename: string) => {
+    setState({ phase: 'playing', bundleData: data });
+  }, []);
+
+  const handleClose = useCallback(() => {
+    setState({ phase: 'library' });
+  }, []);
+
+  const handleError = useCallback((error: Error) => {
+    setState({ phase: 'error', error: error.message });
+  }, []);
+
+  const handleLoaded = useCallback((metadata: LoadedBundle['metadata']) => {
+    document.title = `${metadata.title} — Zifmia`;
+
+    // Track in recent stories
+    const url = state.phase === 'playing' ? state.bundleUrl : undefined;
+    addRecentStory({
+      title: metadata.title,
+      author: Array.isArray(metadata.author) ? metadata.author.join(', ') : metadata.author,
+      storyId: metadata.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      source: url ? 'url' : 'file',
+      url,
+    });
+  }, [state]);
+
+  if (state.phase === 'library') {
+    return (
+      <StoryLibrary
+        onSelectUrl={handleSelectUrl}
+        onSelectFile={handleSelectFile}
+      />
+    );
+  }
+
+  if (state.phase === 'error') {
+    return (
+      <div className="zifmia-error" style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
+        <h2>Error</h2>
+        <p>{state.error}</p>
+        <button onClick={() => setState({ phase: 'library' })}>Back to Library</button>
+      </div>
+    );
+  }
+
+  return (
+    <ZifmiaRunner
+      bundleUrl={state.bundleUrl}
+      bundleData={state.bundleData}
+      onClose={handleClose}
+      onError={handleError}
+      onLoaded={handleLoaded}
+    />
+  );
+}
+
+// --- Mount ---
 
 const container = document.getElementById('root');
 if (!container) {
@@ -17,24 +101,4 @@ if (!container) {
 }
 
 const root = createRoot(container);
-
-if (!bundleUrl) {
-  root.render(
-    <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-      <h1>Zifmia Story Runner</h1>
-      <p>No story bundle specified. Use <code>?bundle=path/to/story.sharpee</code></p>
-      <p>Or drag and drop a <code>.sharpee</code> file here.</p>
-    </div>
-  );
-} else {
-  root.render(
-    <ZifmiaRunner
-      bundleUrl={bundleUrl}
-      onError={(err) => console.error('Zifmia load error:', err)}
-      onLoaded={(meta) => {
-        document.title = `${meta.title} — Zifmia`;
-        console.log('Story loaded:', meta.title, 'v' + meta.version);
-      }}
-    />
-  );
-}
+root.render(<App />);

@@ -41,11 +41,16 @@ export type {
 export { ZifmiaRunner } from './runner';
 export type { ZifmiaRunnerProps } from './runner';
 
+// Storage
+export type { StorageProvider, SaveSlotInfo } from './storage';
+export { BrowserStorageProvider } from './storage';
+
 // Types
 export type {
   GameState,
   GameAction,
   TranscriptEntry,
+  AnnotationType,
   CurrentRoom,
   RoomExit,
   StoryMetadata,

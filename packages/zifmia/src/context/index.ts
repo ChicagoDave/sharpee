@@ -5,3 +5,4 @@ export {
   useGameState,
   useGameDispatch,
 } from './GameContext';
+export type { GameProviderHandle } from './GameContext';

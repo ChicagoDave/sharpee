@@ -33,49 +33,6 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(@vitest/ui@3.2.4)(lightningcss@1.30.2)(terser@5.44.1)
 
-  packages/client-react:
-    dependencies:
-      '@sharpee/core':
-        specifier: workspace:*
-        version: link:../core
-      '@sharpee/engine':
-        specifier: workspace:*
-        version: link:../engine
-      '@sharpee/lang-en-us':
-        specifier: workspace:*
-        version: link:../lang-en-us
-      '@sharpee/parser-en-us':
-        specifier: workspace:*
-        version: link:../parser-en-us
-      '@sharpee/stdlib':
-        specifier: workspace:*
-        version: link:../stdlib
-      '@sharpee/world-model':
-        specifier: workspace:*
-        version: link:../world-model
-      lz-string:
-        specifier: ^1.5.0
-        version: 1.5.0
-    devDependencies:
-      '@types/lz-string':
-        specifier: ^1.5.0
-        version: 1.5.0
-      '@types/react':
-        specifier: ^18.2.0
-        version: 18.3.27
-      '@types/react-dom':
-        specifier: ^18.2.0
-        version: 18.3.7(@types/react@18.3.27)
-      react:
-        specifier: ^18.2.0
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.2.0
-        version: 18.3.1(react@18.3.1)
-      typescript:
-        specifier: ^5.3.0
-        version: 5.9.3
-
   packages/core:
     dependencies:
       eventemitter3:
