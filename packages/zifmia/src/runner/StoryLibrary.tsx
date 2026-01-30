@@ -19,6 +19,8 @@ export interface RecentStory {
 export interface StoryLibraryProps {
   onSelectUrl: (url: string) => void;
   onSelectFile: (data: ArrayBuffer, filename: string) => void;
+  /** When running in Tauri, opens native file picker instead of browser <input> */
+  onTauriOpen?: () => void;
 }
 
 const RECENTS_KEY = 'zifmia-recent-stories';
@@ -49,7 +51,7 @@ export function addRecentStory(story: Omit<RecentStory, 'lastPlayed'>): void {
   saveRecents(recents.slice(0, 20));
 }
 
-export function StoryLibrary({ onSelectUrl, onSelectFile }: StoryLibraryProps) {
+export function StoryLibrary({ onSelectUrl, onSelectFile, onTauriOpen }: StoryLibraryProps) {
   const [recents, setRecents] = useState<RecentStory[]>([]);
   const [urlInput, setUrlInput] = useState('');
   const [dragOver, setDragOver] = useState(false);
@@ -124,7 +126,7 @@ export function StoryLibrary({ onSelectUrl, onSelectFile }: StoryLibraryProps) {
       <div className="zifmia-library__actions">
         <button
           className="zifmia-library__open-btn"
-          onClick={() => fileInputRef.current?.click()}
+          onClick={onTauriOpen ?? (() => fileInputRef.current?.click())}
         >
           Open Story File
         </button>

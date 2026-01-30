@@ -16,6 +16,10 @@ import { createRoot } from 'react-dom/client';
 import { ZifmiaRunner } from './index';
 import { StoryLibrary, addRecentStory } from './StoryLibrary';
 import type { LoadedBundle } from '../loader';
+import { isTauri, TauriStorageProvider } from '../storage/tauri-storage-provider';
+import { BrowserStorageProvider } from '../storage/index.js';
+
+const storageProvider = isTauri() ? new TauriStorageProvider() : new BrowserStorageProvider();
 
 type AppState =
   | { phase: 'library' }
@@ -39,6 +43,22 @@ function App() {
 
   const handleSelectFile = useCallback((data: ArrayBuffer, _filename: string) => {
     setState({ phase: 'playing', bundleData: data });
+  }, []);
+
+  const handleTauriOpen = useCallback(async () => {
+    try {
+      // @ts-ignore — Tauri injects __TAURI__ at runtime
+      const bytes: number[] = await window.__TAURI__.core.invoke('open_bundle');
+      const buffer = new Uint8Array(bytes).buffer;
+      setState({ phase: 'playing', bundleData: buffer });
+    } catch (e: unknown) {
+      if (e && typeof e === 'object' && 'toString' in e) {
+        const msg = String(e);
+        if (msg !== 'No file selected') {
+          setState({ phase: 'error', error: msg });
+        }
+      }
+    }
   }, []);
 
   const handleClose = useCallback(() => {
@@ -68,6 +88,7 @@ function App() {
       <StoryLibrary
         onSelectUrl={handleSelectUrl}
         onSelectFile={handleSelectFile}
+        onTauriOpen={isTauri() ? handleTauriOpen : undefined}
       />
     );
   }

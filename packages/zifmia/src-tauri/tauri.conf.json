@@ -1,0 +1,44 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicedoc/tauri/main/crates/tauri-utils/schema.json",
+  "productName": "Sharpee",
+  "version": "0.1.0",
+  "identifier": "com.sharpee.runner",
+  "build": {
+    "frontendDist": "../../../dist/runner"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "Sharpee Story Runner",
+        "width": 900,
+        "height": 700,
+        "minWidth": 600,
+        "minHeight": 400,
+        "resizable": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": ["sharpee"],
+        "mimeType": "application/x-sharpee-story",
+        "description": "Sharpee Story Bundle"
+      }
+    ]
+  },
+  "plugins": {}
+}

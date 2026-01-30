@@ -69,6 +69,9 @@ packages/clients/*/dist/
 packages/clients/electron/release/
 packages/clients/electron/app/dist/
 
+# Tauri build artifacts
+packages/zifmia/src-tauri/target/
+
 # Generated code
 **/*.generated.*
 
