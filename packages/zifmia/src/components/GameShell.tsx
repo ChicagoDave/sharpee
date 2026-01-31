@@ -62,11 +62,13 @@ export function GameShell({
 
       <div className="game-shell__content">
         <div className="game-shell__main game-shell__main--full">
-          <div className="game-shell__transcript-container">
-            <Transcript className="game-shell__transcript" />
-          </div>
-          <div className="game-shell__input-container">
-            <CommandInput className="game-shell__input" />
+          <div className="story-content">
+            <div className="game-shell__transcript-container">
+              <Transcript className="game-shell__transcript" />
+            </div>
+            <div className="game-shell__input-container">
+              <CommandInput className="game-shell__input" />
+            </div>
           </div>
         </div>
       </div>

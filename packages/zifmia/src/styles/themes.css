@@ -1038,6 +1038,14 @@ body {
   width: 100%;
 }
 
+/* Player preference: illustration sizes */
+.illustration--size-small { max-width: 25%; }
+.illustration--size-medium { max-width: 40%; }
+.illustration--size-large { max-width: 65%; }
+.illustration--full-width.illustration--size-small,
+.illustration--full-width.illustration--size-medium,
+.illustration--full-width.illustration--size-large { max-width: 100%; }
+
 /* ============================================================================
    Responsive Adjustments
    ============================================================================ */

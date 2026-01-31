@@ -4,8 +4,10 @@
 
 import React from 'react';
 import { useTranscript } from '../../hooks/useTranscript';
+import { usePreferences } from '../../hooks/usePreferences';
 import { useAssetMap } from '../../context';
 import type { TranscriptIllustration } from '../../types/game-state';
+import type { IllustrationSize } from '../../hooks/usePreferences';
 
 interface TranscriptProps {
   className?: string;
@@ -14,12 +16,14 @@ interface TranscriptProps {
 export function Transcript({ className = '' }: TranscriptProps) {
   const { entries, containerRef } = useTranscript();
   const assetMap = useAssetMap();
+  const { preferences } = usePreferences();
 
   return (
     <div className={`transcript ${className}`} ref={containerRef}>
       {entries.map((entry) => {
-        const hasIllustrations = entry.illustrations && entry.illustrations.length > 0;
-        const entryClass = hasIllustrations
+        const showIllustrations = preferences.illustrationsEnabled
+          && entry.illustrations && entry.illustrations.length > 0;
+        const entryClass = showIllustrations
           ? 'transcript-entry illustrated-passage'
           : 'transcript-entry';
 
@@ -31,9 +35,14 @@ export function Transcript({ className = '' }: TranscriptProps) {
                 {entry.command}
               </div>
             )}
-            {hasIllustrations &&
+            {showIllustrations &&
               entry.illustrations!.map((ill, i) => (
-                <IllustrationImage key={i} illustration={ill} assetMap={assetMap} />
+                <IllustrationImage
+                  key={i}
+                  illustration={ill}
+                  assetMap={assetMap}
+                  sizeClass={preferences.illustrationSize}
+                />
               ))}
             <div
               className="transcript-text"
@@ -49,9 +58,11 @@ export function Transcript({ className = '' }: TranscriptProps) {
 function IllustrationImage({
   illustration,
   assetMap,
+  sizeClass,
 }: {
   illustration: TranscriptIllustration;
   assetMap: Map<string, string>;
+  sizeClass: IllustrationSize;
 }) {
   const blobUrl = assetMap.get(illustration.src) ?? assetMap.get(`assets/${illustration.src}`);
   if (!blobUrl) return null;
@@ -60,10 +71,9 @@ function IllustrationImage({
 
   return (
     <img
-      className={`illustration ${positionClass}`}
+      className={`illustration ${positionClass} illustration--size-${sizeClass}`}
       src={blobUrl}
       alt={illustration.alt}
-      style={{ width: illustration.width }}
     />
   );
 }

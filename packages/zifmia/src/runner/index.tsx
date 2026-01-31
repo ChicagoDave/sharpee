@@ -12,9 +12,11 @@ import { Parser } from '@sharpee/parser-en-us';
 import { LanguageProvider } from '@sharpee/lang-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
 import { GameProvider } from '../context';
+import { scopeCSS, rewriteCSSUrls } from '../utils/scope-css';
 import type { GameProviderHandle } from '../context';
 import type { GameState } from '../types/game-state';
 import { GameShell } from '../components';
+import { PreferencesProvider } from '../hooks/usePreferences';
 import { loadBundle, releaseBundle } from '../loader';
 import type { LoadedBundle } from '../loader';
 import type { Story } from '@sharpee/engine';
@@ -118,11 +120,15 @@ export function ZifmiaRunner({ bundleUrl, bundleData, onClose, onError, onLoaded
         srm.captureBaseline();
         saveManagerRef.current = srm;
 
-        // 6. Apply story theme CSS
+        // 6. Apply story theme CSS (scoped to .story-content)
         if (loadedBundle.themeCSS) {
           const style = document.createElement('style');
           style.setAttribute('data-sharpee-story-theme', story.config.id);
-          style.textContent = loadedBundle.themeCSS;
+          let css = scopeCSS(loadedBundle.themeCSS, '.story-content');
+          if (loadedBundle.assets.size > 0) {
+            css = rewriteCSSUrls(css, loadedBundle.assets);
+          }
+          style.textContent = css;
           document.head.appendChild(style);
         }
 
@@ -252,6 +258,7 @@ export function ZifmiaRunner({ bundleUrl, bundleData, onClose, onError, onLoaded
 
   return (
     <>
+      <PreferencesProvider>
       <GameProvider
         engine={state.engine as unknown as Parameters<typeof GameProvider>[0]['engine']}
         handleRef={gameHandleRef}
@@ -268,6 +275,7 @@ export function ZifmiaRunner({ bundleUrl, bundleData, onClose, onError, onLoaded
           onExportWalkthrough={handleExportWalkthrough}
         />
       </GameProvider>
+      </PreferencesProvider>
 
       {showSaveDialog && (
         <SaveDialog

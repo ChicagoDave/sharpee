@@ -3,6 +3,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
+import { usePreferences, ILLUSTRATION_SIZES } from '../../hooks/usePreferences';
 
 export interface MenuBarProps {
   onSave?: () => void;
@@ -41,6 +42,7 @@ export function MenuBar({
   currentTheme = 'classic-light',
   storyTitle = 'Sharpee',
 }: MenuBarProps) {
+  const { preferences, setPreference } = usePreferences();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [showAbout, setShowAbout] = useState(false);
   const menuBarRef = useRef<HTMLDivElement>(null);
@@ -86,6 +88,22 @@ export function MenuBar({
         action: () => onThemeChange?.(theme.id),
         checked: currentTheme === theme.id,
       })),
+    },
+    {
+      label: 'Illustrations',
+      submenu: [
+        {
+          label: 'Show Illustrations',
+          action: () => setPreference('illustrationsEnabled', !preferences.illustrationsEnabled),
+          checked: preferences.illustrationsEnabled,
+        },
+        { separator: true, label: '' },
+        ...ILLUSTRATION_SIZES.map(size => ({
+          label: size.label,
+          action: () => setPreference('illustrationSize', size.id),
+          checked: preferences.illustrationSize === size.id,
+        })),
+      ],
     },
   ];
 
