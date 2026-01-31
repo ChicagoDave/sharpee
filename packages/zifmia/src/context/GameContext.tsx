@@ -61,6 +61,7 @@ interface GameContextValue {
   state: GameState;
   dispatch: Dispatch<GameAction>;
   executeCommand: (command: string) => Promise<void>;
+  assetMap: Map<string, string>;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -91,6 +92,13 @@ export function useGameDispatch(): Dispatch<GameAction> {
 }
 
 /**
+ * Hook to access the asset map (path → blob URL)
+ */
+export function useAssetMap(): Map<string, string> {
+  return useGameContext().assetMap;
+}
+
+/**
  * Handle to GameProvider internals, exposed via ref for save/restore integration
  */
 export interface GameProviderHandle {
@@ -108,6 +116,8 @@ interface GameProviderProps {
   handleRef?: React.MutableRefObject<GameProviderHandle | null>;
   /** Called after each turn completes (for auto-save) */
   onTurnCompleted?: (state: GameState) => void;
+  /** Asset map from bundle (path → blob URL) */
+  assetMap?: Map<string, string>;
   children: ReactNode;
 }
 
@@ -147,7 +157,9 @@ function extractCurrentRoom(world: WorldInterface, roomId: string): CurrentRoom 
  * The engine is created externally (by the story's entry point) and passed in.
  * This component subscribes to engine events and updates React state.
  */
-export function GameProvider({ engine, children, handleRef, onTurnCompleted }: GameProviderProps) {
+const EMPTY_ASSET_MAP = new Map<string, string>();
+
+export function GameProvider({ engine, children, handleRef, onTurnCompleted, assetMap }: GameProviderProps) {
   const [state, dispatch] = useReducer(gameReducer, initialGameState);
   const pendingCommand = useRef<string | undefined>();
   const engineRef = useRef(engine);
@@ -291,13 +303,15 @@ export function GameProvider({ engine, children, handleRef, onTurnCompleted }: G
   );
 
   // Memoize context value
+  const resolvedAssetMap = assetMap ?? EMPTY_ASSET_MAP;
   const contextValue = useMemo(
     () => ({
       state,
       dispatch,
       executeCommand,
+      assetMap: resolvedAssetMap,
     }),
-    [state, executeCommand]
+    [state, executeCommand, resolvedAssetMap]
   );
 
   return (

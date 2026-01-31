@@ -256,6 +256,7 @@ export function ZifmiaRunner({ bundleUrl, bundleData, onClose, onError, onLoaded
         engine={state.engine as unknown as Parameters<typeof GameProvider>[0]['engine']}
         handleRef={gameHandleRef}
         onTurnCompleted={handleTurnCompleted}
+        assetMap={state.bundle.assets}
       >
         <GameShell
           storyId={storyId}

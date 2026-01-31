@@ -4,5 +4,6 @@ export {
   useGameContext,
   useGameState,
   useGameDispatch,
+  useAssetMap,
 } from './GameContext';
 export type { GameProviderHandle } from './GameContext';

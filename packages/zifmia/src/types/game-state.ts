@@ -13,6 +13,16 @@ export type AnnotationType = 'comment' | 'bug' | 'note' | 'confusing' | 'expecte
 /**
  * A single entry in the game transcript
  */
+/**
+ * An illustration associated with a transcript entry (ADR-124)
+ */
+export interface TranscriptIllustration {
+  src: string;       // Asset path (resolved at render time via assetMap)
+  alt: string;
+  position: string;  // 'right' | 'left' | 'center' | 'full-width'
+  width: string;     // e.g. '40%'
+}
+
 export interface TranscriptEntry {
   id: string;
   turn: number;
@@ -24,6 +34,8 @@ export interface TranscriptEntry {
     type: AnnotationType;
     text: string;
   };
+  /** ADR-124 illustrations paired with this entry */
+  illustrations?: TranscriptIllustration[];
 }
 
 /**
@@ -153,12 +165,28 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       };
 
     case 'TURN_COMPLETED': {
+      // Extract illustration events (ADR-124)
+      const illustrationEvents = action.events.filter(e => e.type === 'if.event.illustrated');
+      const illustrations: TranscriptIllustration[] | undefined =
+        illustrationEvents.length > 0
+          ? illustrationEvents.map(e => {
+              const d = e.data as Record<string, unknown>;
+              return {
+                src: d.src as string,
+                alt: (d.alt as string) ?? '',
+                position: (d.position as string) ?? 'right',
+                width: (d.width as string) ?? '40%',
+              };
+            })
+          : undefined;
+
       const entry: TranscriptEntry = {
         id: `turn-${action.turn}-${Date.now()}`,
         turn: action.turn,
         command: action.command,
         text: action.text,
         timestamp: Date.now(),
+        illustrations,
       };
       return {
         ...state,

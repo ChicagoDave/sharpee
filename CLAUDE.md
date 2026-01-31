@@ -372,9 +372,9 @@ npx madge --circular packages/world-model/src/index.ts
 # Common workflows
 ./build.sh -s dungeo                          # Build platform + story
 ./build.sh -s dungeo -c browser               # Build for web browser
-./build.sh -s dungeo -c react                 # Build React client (default theme)
-./build.sh -s dungeo -c react -t modern-dark  # React with dark theme
-./build.sh -s dungeo -c browser -c react      # Build both clients
+./build.sh -s dungeo -c zifmia                # Build Zifmia client (bundle + runner)
+./build.sh -s dungeo -c zifmia -t modern-dark # Zifmia with dark theme
+./build.sh -s dungeo -c browser -c zifmia     # Build both clients
 ./build.sh --skip stdlib -s dungeo            # Resume from stdlib package
 ```
 

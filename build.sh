@@ -45,8 +45,8 @@ Usage: ./build.sh [options]
 
 Options:
   -s, --story NAME     Build a story (dungeo, reflections, etc.)
-  -c, --client TYPE    Build client (browser, react) - can specify multiple
-  -t, --theme NAME     React theme (default: classic-light)
+  -c, --client TYPE    Build client (browser, zifmia) - can specify multiple
+  -t, --theme NAME     Zifmia theme (default: classic-light)
       --skip PKG       Resume platform build from package
       --no-version     Skip version updates
   -b, --story-bundle   Create .sharpee story bundle (requires -s)
@@ -63,9 +63,9 @@ Available Themes:
 Examples:
   ./build.sh -s dungeo                       Build platform + dungeo story
   ./build.sh -s dungeo -c browser            Build for web browser
-  ./build.sh -s dungeo -c react              Build React client
-  ./build.sh -s dungeo -c react -t modern-dark   React with dark theme
-  ./build.sh -s dungeo -c browser -c react   Build both clients
+  ./build.sh -s dungeo -c zifmia             Build Zifmia client (bundle + runner)
+  ./build.sh -s dungeo -c zifmia -t modern-dark  Zifmia with dark theme
+  ./build.sh -s dungeo -c browser -c zifmia  Build both clients
   ./build.sh -s dungeo -b                    Create .sharpee story bundle
   ./build.sh --runner                        Build Zifmia runner
   ./build.sh --skip stdlib -s dungeo         Resume from stdlib package
@@ -73,9 +73,8 @@ Examples:
 Output:
   dist/sharpee.js          Platform bundle (CLI, testing)
   dist/stories/{story}.sharpee  Story bundle (with -b)
-  dist/runner/                       Zifmia runner (with --runner)
+  dist/runner/                       Zifmia client (with -c zifmia or --runner)
   dist/web/{story}/             Browser client
-  dist/web/{story}-react/       React client
 
 For more information, see docs/reference/building.md
 
@@ -274,9 +273,9 @@ EOF
         local CLIENT_PKG=""
         local VERSION_FILE=""
 
-        if [ "$CLIENT" = "react" ]; then
-            CLIENT_PKG="packages/client-react/package.json"
-            VERSION_FILE="packages/client-react/src/version.ts"
+        if [ "$CLIENT" = "zifmia" ]; then
+            CLIENT_PKG="packages/zifmia/package.json"
+            VERSION_FILE="packages/zifmia/src/version.ts"
         else
             CLIENT_PKG="packages/platforms/${CLIENT}-en-us/package.json"
             VERSION_FILE="packages/platforms/${CLIENT}-en-us/src/version.ts"
@@ -596,73 +595,6 @@ build_browser_client() {
 }
 
 # ============================================================================
-# React Client Build
-# ============================================================================
-
-build_react_client() {
-    local STORY_NAME="$1"
-    local THEME_NAME="$2"
-    local ENTRY="stories/${STORY_NAME}/src/react-entry.tsx"
-    local OUTDIR="dist/web/${STORY_NAME}-react"
-    local THEMES_FILE="packages/client-react/src/styles/themes.css"
-
-    log_step "Building React Client: ${STORY_NAME} (default theme: ${THEME_NAME})"
-
-    if [ ! -f "$ENTRY" ]; then
-        echo -e "${RED}Error: React entry not found: $ENTRY${NC}"
-        exit 1
-    fi
-
-    if [ ! -f "$THEMES_FILE" ]; then
-        echo -e "${RED}Error: Combined themes file not found: $THEMES_FILE${NC}"
-        exit 1
-    fi
-
-    # Build client-react package
-    run_build "client-react" "pnpm --filter '@sharpee/client-react' build"
-
-    mkdir -p "$OUTDIR"
-
-    # Bundle
-    run_build "bundle" "npx esbuild '$ENTRY' --bundle --platform=browser --target=es2020 --format=iife --global-name=SharpeeGame --outfile='$OUTDIR/${STORY_NAME}.js' --sourcemap --minify --loader:.tsx=tsx --jsx=automatic --define:process.env.PARSER_DEBUG=undefined --define:process.env.DEBUG_PRONOUNS=undefined --define:process.env.NODE_ENV=\\\"production\\\""
-
-    # Generate HTML with combined themes CSS (supports runtime switching)
-    local THEMES_CSS=$(cat "$THEMES_FILE")
-
-    cat > "$OUTDIR/index.html" << EOF
-<!DOCTYPE html>
-<html lang="en" data-theme="${THEME_NAME}">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${STORY_NAME}</title>
-  <style>
-${THEMES_CSS}
-  </style>
-</head>
-<body>
-  <div id="root"></div>
-  <script src="${STORY_NAME}.js"></script>
-</body>
-</html>
-EOF
-    log_ok "html + themes (runtime switching enabled)"
-
-    # Copy to website
-    local WEBSITE_DIR="website/public/games/${STORY_NAME}-react"
-    if [ -d "website/public" ]; then
-        mkdir -p "$WEBSITE_DIR"
-        cp "$OUTDIR/${STORY_NAME}.js" "$WEBSITE_DIR/"
-        cp "$OUTDIR/index.html" "$WEBSITE_DIR/"
-        log_ok "website"
-    fi
-
-    local BUNDLE_SIZE=$(ls -lh "$OUTDIR/${STORY_NAME}.js" | awk '{print $5}')
-    echo "Output: $OUTDIR/ ($BUNDLE_SIZE)"
-    echo ""
-}
-
-# ============================================================================
 # Zifmia Runner Build
 # ============================================================================
 
@@ -670,7 +602,7 @@ build_runner() {
     local OUTDIR="dist/runner"
     local MODULES_DIR="$OUTDIR/modules"
     local RUNNER_ENTRY="packages/zifmia/src/runner/runner-entry.tsx"
-    local THEMES_FILE="packages/client-react/src/styles/themes.css"
+    local THEMES_FILE="packages/zifmia/src/styles/themes.css"
 
     log_step "Building Zifmia Runner"
 
@@ -805,8 +737,8 @@ if [ "$BUILD_RUNNER" = true ]; then
     echo "  6. Build Zifmia runner"
 fi
 for CLIENT in "${CLIENTS[@]}"; do
-    if [ "$CLIENT" = "react" ]; then
-        echo "  5. Build $CLIENT client (theme: $THEME)"
+    if [ "$CLIENT" = "zifmia" ]; then
+        echo "  5. Build Zifmia client (theme: $THEME)"
     else
         echo "  5. Build $CLIENT client"
     fi
@@ -835,8 +767,9 @@ for CLIENT in "${CLIENTS[@]}"; do
         browser)
             build_browser_client "$STORY"
             ;;
-        react)
-            build_react_client "$STORY" "$THEME"
+        zifmia)
+            build_story_bundle "$STORY"
+            build_runner
             ;;
         *)
             echo -e "${RED}Unknown client type: $CLIENT${NC}"
@@ -864,8 +797,8 @@ fi
 
 if [ -n "$STORY" ]; then
     for CLIENT in "${CLIENTS[@]}"; do
-        if [ "$CLIENT" = "react" ]; then
-            echo "  dist/web/${STORY}-react/ - React client"
+        if [ "$CLIENT" = "zifmia" ]; then
+            echo "  dist/runner/ - Zifmia client"
         else
             echo "  dist/web/${STORY}/ - Browser client"
         fi
@@ -877,8 +810,8 @@ echo "Next steps:"
 echo "  Test CLI:     node dist/sharpee.js --play"
 if [ -n "$STORY" ]; then
     for CLIENT in "${CLIENTS[@]}"; do
-        if [ "$CLIENT" = "react" ]; then
-            echo "  Test React:   npx serve dist/web/${STORY}-react"
+        if [ "$CLIENT" = "zifmia" ]; then
+            echo "  Test Zifmia:  npx serve dist/runner"
         else
             echo "  Test Browser: npx serve dist/web/${STORY}"
         fi

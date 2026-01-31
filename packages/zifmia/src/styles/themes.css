@@ -1006,6 +1006,39 @@ body {
 }
 
 /* ============================================================================
+   Illustrations (ADR-124)
+   ============================================================================ */
+
+.illustrated-passage {
+  overflow: hidden; /* clearfix for floats */
+}
+
+.illustration {
+  max-width: 100%;
+  border-radius: var(--sharpee-border-radius);
+  margin: var(--sharpee-spacing-sm) 0;
+}
+
+.illustration--right {
+  float: right;
+  margin-left: var(--sharpee-spacing-md);
+}
+
+.illustration--left {
+  float: left;
+  margin-right: var(--sharpee-spacing-md);
+}
+
+.illustration--center {
+  display: block;
+  margin: var(--sharpee-spacing-md) auto;
+}
+
+.illustration--full-width {
+  width: 100%;
+}
+
+/* ============================================================================
    Responsive Adjustments
    ============================================================================ */
 
