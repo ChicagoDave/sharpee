@@ -181,7 +181,7 @@ extendParser(parser: Parser): void {
   // Command with trait constraint
   grammar
     .define('turn :dial to :number')
-    .where('dial', (scope) => scope.visible().matching({ type: 'dial' }))
+    .hasTrait('dial', TraitType.SWITCHABLE)
     .mapsTo('dungeo.action.turn_dial')
     .withPriority(150)
     .build();
