@@ -15,24 +15,36 @@ Sharpee is organized as a monorepo with platform packages and story implementati
 
 ```
 sharpee/
-├── packages/                 # Platform packages
-│   ├── core/                 # Core types and events
-│   ├── engine/               # Game engine runtime
-│   ├── world-model/          # Entity system, traits, behaviors
-│   ├── stdlib/               # Standard actions and patterns
-│   ├── parser-en-us/         # English parser and grammar
-│   ├── lang-en-us/           # English language messages
-│   ├── event-processor/      # Event handling pipeline
-│   ├── text-service/         # Output rendering
-│   └── sharpee/              # Bundled distribution
-├── stories/                  # Story implementations
-│   └── dungeo/               # Example: Mainframe Zork port
-├── docs/                     # Documentation
-│   ├── architecture/         # ADRs and design docs
-│   ├── guides/               # Author guides
-│   ├── reference/            # API reference
-│   └── work/                 # Work-in-progress tracking
-└── scripts/                  # Build and utility scripts
+├── packages/                     # Platform packages
+│   ├── core/                     # Core types and events
+│   ├── engine/                   # Game engine runtime
+│   ├── world-model/              # Entity system, traits, behaviors
+│   ├── stdlib/                   # Standard actions and patterns
+│   ├── parser-en-us/             # English parser and grammar
+│   ├── lang-en-us/               # English language messages
+│   ├── event-processor/          # Event handling pipeline
+│   ├── text-service/             # Output rendering
+│   ├── text-blocks/              # Text block processing
+│   ├── if-domain/                # IF domain types
+│   ├── if-services/              # IF service interfaces
+│   ├── plugin-npc/               # NPC turn plugin
+│   ├── plugin-scheduler/         # Daemon/fuse scheduler plugin
+│   ├── plugin-state-machine/     # State machine plugin
+│   ├── plugins/                  # Plugin registry and interfaces
+│   ├── platform-browser/         # Browser platform adapter
+│   ├── extensions/
+│   │   └── testing/              # Test utilities
+│   ├── transcript-tester/        # Transcript test runner
+│   └── sharpee/                  # Umbrella package (CLI + re-exports)
+├── stories/                      # Story implementations
+│   └── dungeo/                   # Mainframe Zork port (~191 rooms)
+├── website/                      # Documentation site (Astro/Starlight)
+├── docs/                         # Internal documentation
+│   ├── architecture/adrs/        # Architecture Decision Records
+│   ├── reference/                # API reference
+│   └── work/                     # Work-in-progress tracking
+├── build.sh                      # Main build script
+└── scripts/                      # Utility scripts
 ```
 
 ## Story Structure
@@ -41,17 +53,17 @@ Each story lives in `stories/{story-name}/` and follows a canonical structure:
 
 ```
 stories/{story}/
-├── package.json              # Story package config
-├── tsconfig.json             # TypeScript config
+├── package.json
+├── tsconfig.json
 ├── src/
 │   ├── index.ts              # Story class and entry point
-│   ├── grammar/              # Parser extensions (one file per feature)
-│   ├── messages/             # Language extensions (one file per feature)
-│   ├── orchestration/        # Engine registrations (one file per subsystem)
 │   ├── regions/              # Room definitions (one file per region)
 │   ├── npcs/                 # NPC entities and behaviors (one folder per NPC)
 │   ├── actions/              # Story-specific actions (one folder per action)
 │   ├── handlers/             # Event handlers and puzzles
+│   ├── grammar/              # Parser extensions
+│   ├── messages/             # Language extensions
+│   ├── orchestration/        # Engine registrations
 │   ├── scheduler/            # Daemons and fuses
 │   ├── traits/               # Custom traits
 │   └── scoring/              # Scoring system (if needed)
@@ -59,55 +71,70 @@ stories/{story}/
     └── transcripts/          # Integration test transcripts
 ```
 
-**Key principle:** Flat file organization within each folder. Regions are single files, not nested directories.
+**Key principle:** Flat file organization within each folder. Regions are single files containing all rooms and objects for that area, not nested directories.
 
 ## Core Files
 
-### `src/index.ts` - Story Entry Point
+### `src/index.ts` — Story Entry Point
 
 The main story file implements the `Story` interface:
 
 ```typescript
 import { Story, StoryConfig, GameEngine } from '@sharpee/engine';
-import { WorldModel } from '@sharpee/world-model';
+import { WorldModel, IFEntity, EntityType, IdentityTrait, ActorTrait, ContainerTrait } from '@sharpee/world-model';
 import type { Parser } from '@sharpee/parser-en-us';
 import type { LanguageProvider } from '@sharpee/lang-en-us';
 
-import { registerAllGrammar } from './grammar';
-import { registerAllMessages } from './messages';
-import { initializeOrchestration } from './orchestration';
-
 export const config: StoryConfig = {
-  id: "my-story",
-  title: "My Story Title",
-  author: "Your Name",
-  version: "1.0.0",
-  description: "A brief description of your story"
+  id: 'my-story',
+  title: 'My Story Title',
+  author: 'Your Name',
+  version: '1.0.0',
+  description: 'A brief description of your story',
 };
 
 export class MyStory implements Story {
   config = config;
   private world!: WorldModel;
 
+  // Required: set up all rooms, objects, connections
   initializeWorld(world: WorldModel): void {
     this.world = world;
-    // Create rooms, objects, connections
+    // Create regions, objects, event handlers...
   }
 
-  extendParser(parser: Parser): void {
-    registerAllGrammar(parser);
+  // Required: create the player entity
+  createPlayer(world: WorldModel): IFEntity {
+    const player = world.createEntity('yourself', EntityType.ACTOR);
+    player.add(new IdentityTrait({
+      name: 'yourself',
+      aliases: ['self', 'me'],
+      description: 'As good-looking as ever.',
+      properName: false,
+    }));
+    player.add(new ActorTrait({ isPlayer: true }));
+    player.add(new ContainerTrait({ capacity: 100 }));
+    return player;
   }
 
-  extendLanguage(language: LanguageProvider): void {
-    registerAllMessages(language);
+  // Optional: extend parser with story-specific grammar
+  extendParser?(parser: Parser): void {
+    // Add custom commands...
   }
 
-  getCustomActions(): Action[] {
-    return customActions;
+  // Optional: add story-specific messages
+  extendLanguage?(language: LanguageProvider): void {
+    // Add custom messages...
   }
 
-  onEngineReady(engine: GameEngine): void {
-    initializeOrchestration(engine, this.world, { ... });
+  // Optional: provide story-specific actions
+  getCustomActions?(): any[] {
+    return [];
+  }
+
+  // Optional: post-engine initialization (register NPCs, daemons, etc.)
+  onEngineReady?(engine: GameEngine): void {
+    // Access plugin registry, register NPC behaviors, etc.
   }
 }
 
@@ -115,31 +142,7 @@ export const story = new MyStory();
 export default story;
 ```
 
-### `src/grammar/` - Parser Extensions
-
-Organize grammar patterns by feature:
-
-```
-src/grammar/
-├── index.ts              # Exports registerAllGrammar()
-├── puzzle-grammar.ts     # Puzzle-specific commands
-├── speech-grammar.ts     # SAY, TALK TO patterns
-└── debug-grammar.ts      # Debug commands (optional)
-```
-
-### `src/messages/` - Language Extensions
-
-Organize messages by feature:
-
-```
-src/messages/
-├── index.ts              # Exports registerAllMessages()
-├── npc-messages.ts       # NPC dialogue and actions
-├── puzzle-messages.ts    # Puzzle feedback
-└── action-messages.ts    # Custom action messages
-```
-
-### `src/regions/` - Room Definitions
+### `src/regions/` — Room Definitions
 
 Each region is a **single file** containing all rooms and objects for that area:
 
@@ -153,27 +156,27 @@ src/regions/
 ```
 
 **Pattern:**
-1. **Type export** - `XxxRoomIds` interface for type-safe room references
-2. **`createXxxRegion()`** - Creates all rooms, returns ID map
-3. **`createXxxObjects()`** - Creates and places objects in rooms
-4. **`connectXxxTo...()`** - Cross-region connections
+1. **Type export** — `XxxRoomIds` interface for type-safe room references
+2. **`createXxxRegion()`** — Creates all rooms, returns ID map
+3. **`createXxxObjects()`** — Creates and places objects in rooms
+4. **`connectXxxTo...()`** — Cross-region connections
 
-### `src/npcs/` - Non-Player Characters
+### `src/npcs/` — Non-Player Characters
 
 Each NPC gets its own folder:
 
 ```
 src/npcs/
 ├── guard/
-│   ├── index.ts
-│   ├── guard-entity.ts
-│   ├── guard-behavior.ts
-│   └── guard-messages.ts
+│   ├── index.ts            # Registration function
+│   ├── guard-entity.ts     # Entity creation
+│   ├── guard-behavior.ts   # Turn logic
+│   └── guard-messages.ts   # Message IDs
 └── merchant/
     └── ...
 ```
 
-### `src/actions/` - Story-Specific Actions
+### `src/actions/` — Story-Specific Actions
 
 Each action gets its own folder:
 
@@ -185,6 +188,28 @@ src/actions/
 │   └── ring-messages.ts
 └── pray/
     └── ...
+```
+
+### `src/grammar/` — Parser Extensions
+
+Organize grammar patterns by feature:
+
+```
+src/grammar/
+├── index.ts              # Exports registerAllGrammar()
+├── puzzle-grammar.ts     # Puzzle-specific commands
+└── speech-grammar.ts     # SAY, TALK TO patterns
+```
+
+### `src/messages/` — Language Extensions
+
+Organize messages by feature:
+
+```
+src/messages/
+├── index.ts              # Exports registerAllMessages()
+├── npc-messages.ts       # NPC dialogue and actions
+└── puzzle-messages.ts    # Puzzle feedback
 ```
 
 ## Best Practices

@@ -1,0 +1,475 @@
+---
+import patternsData from '../../data/patterns.json';
+const data = JSON.stringify(patternsData);
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Design Patterns - Sharpee</title>
+  <meta name="description" content="Interactive map of 124 Interactive Fiction design patterns">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .header {
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      z-index: 10;
+      position: relative;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .back-link {
+      color: #059669;
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .back-link:hover { color: #34d399; }
+    h1 { font-size: 1.125rem; font-weight: 600; white-space: nowrap; }
+    .count { color: #64748b; font-size: 0.8rem; margin-left: 0.5rem; }
+
+    /* Search */
+    .search-box {
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      padding: 0.375rem 0.75rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      width: 220px;
+    }
+    .search-box::placeholder { color: #475569; }
+    .search-box:focus { outline: none; border-color: #059669; }
+
+    /* Legend */
+    .legend {
+      display: flex;
+      gap: 0.25rem;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      user-select: none;
+      border: 1px solid transparent;
+      transition: opacity 0.2s;
+    }
+    .legend-item:hover { border-color: #475569; }
+    .legend-item.disabled { opacity: 0.3; }
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    /* Graph canvas */
+    #graph {
+      width: 100vw;
+      height: calc(100vh - 3.5rem);
+    }
+
+    /* Detail panel */
+    .detail-panel {
+      position: fixed;
+      top: 3.5rem;
+      right: 0;
+      width: 380px;
+      height: calc(100vh - 3.5rem);
+      background: #1e293b;
+      border-left: 1px solid #334155;
+      padding: 1.5rem;
+      overflow-y: auto;
+      transform: translateX(100%);
+      transition: transform 0.25s ease;
+      z-index: 20;
+    }
+    .detail-panel.open { transform: translateX(0); }
+    .detail-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 1.25rem;
+      cursor: pointer;
+    }
+    .detail-close:hover { color: #e2e8f0; }
+    .detail-id {
+      font-size: 0.75rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .detail-name {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0.25rem 0 0.75rem;
+    }
+    .detail-category {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+    .detail-section h3 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      margin: 1rem 0 0.375rem;
+    }
+    .detail-section p {
+      font-size: 0.875rem;
+      line-height: 1.5;
+      color: #cbd5e1;
+    }
+    .detail-connections {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.375rem;
+      margin-top: 0.375rem;
+    }
+    .detail-conn {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 0.25rem;
+      color: #94a3b8;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .detail-conn:hover {
+      border-color: #059669;
+      color: #e2e8f0;
+    }
+
+    /* Node tooltip */
+    .tooltip {
+      position: fixed;
+      pointer-events: none;
+      background: #1e293b;
+      border: 1px solid #475569;
+      padding: 0.375rem 0.625rem;
+      border-radius: 0.375rem;
+      font-size: 0.8rem;
+      color: #e2e8f0;
+      z-index: 30;
+      display: none;
+      white-space: nowrap;
+    }
+
+    /* SVG styles */
+    .link { stroke: #334155; stroke-opacity: 0.4; }
+    .link.highlighted { stroke-opacity: 0.9; stroke-width: 2px; }
+    .node-circle { stroke: #0f172a; stroke-width: 1.5px; cursor: pointer; }
+    .node-circle.dimmed { opacity: 0.15; }
+    .node-circle.highlighted { stroke: #fff; stroke-width: 2.5px; }
+    .node-label {
+      font-size: 9px;
+      fill: #94a3b8;
+      pointer-events: none;
+      text-anchor: middle;
+    }
+    .node-label.dimmed { opacity: 0.1; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <a href="/" class="back-link">&larr; Sharpee</a>
+      <h1>Design Patterns<span class="count">124 patterns</span></h1>
+    </div>
+    <div class="legend" id="legend"></div>
+    <input type="text" class="search-box" id="search" placeholder="Search patterns...">
+  </div>
+  <svg id="graph"></svg>
+  <div class="detail-panel" id="detail">
+    <button class="detail-close" id="detail-close">&times;</button>
+    <div id="detail-content"></div>
+  </div>
+  <div class="tooltip" id="tooltip"></div>
+
+  <script define:vars={{ data }}>
+    const patternsData = JSON.parse(data);
+    const { categories, nodes, edges } = patternsData;
+
+    // Build lookup
+    const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
+    // Adjacency for highlight
+    const adj = new Map();
+    nodes.forEach(n => adj.set(n.id, new Set()));
+    edges.forEach(e => {
+      adj.get(e.source)?.add(e.target);
+      adj.get(e.target)?.add(e.source);
+    });
+
+    // Category filter state
+    const enabledCategories = new Set(Object.keys(categories));
+
+    // --- Legend ---
+    const legendEl = document.getElementById('legend');
+    Object.entries(categories).forEach(([cat, color]) => {
+      const item = document.createElement('div');
+      item.className = 'legend-item';
+      item.innerHTML = `<span class="legend-dot" style="background:${color}"></span>${cat}`;
+      item.addEventListener('click', () => {
+        if (enabledCategories.has(cat)) {
+          enabledCategories.delete(cat);
+          item.classList.add('disabled');
+        } else {
+          enabledCategories.add(cat);
+          item.classList.remove('disabled');
+        }
+        updateVisibility();
+      });
+      legendEl.appendChild(item);
+    });
+
+    // --- SVG setup ---
+    const svg = d3.select('#graph');
+    const width = window.innerWidth;
+    const height = window.innerHeight - 56; // header height
+    svg.attr('width', width).attr('height', height);
+
+    const g = svg.append('g');
+
+    // Zoom
+    const zoom = d3.zoom()
+      .scaleExtent([0.3, 4])
+      .on('zoom', (event) => g.attr('transform', event.transform));
+    svg.call(zoom);
+
+    // --- Simulation ---
+    const simulation = d3.forceSimulation(nodes)
+      .force('link', d3.forceLink(edges).id(d => d.id).distance(80).strength(0.3))
+      .force('charge', d3.forceManyBody().strength(-120))
+      .force('center', d3.forceCenter(width / 2, height / 2))
+      .force('collision', d3.forceCollide(18))
+      // cluster by category
+      .force('x', d3.forceX(d => {
+        const cats = Object.keys(categories);
+        const i = cats.indexOf(d.category);
+        const angle = (i / cats.length) * 2 * Math.PI;
+        return width / 2 + Math.cos(angle) * 200;
+      }).strength(0.15))
+      .force('y', d3.forceY(d => {
+        const cats = Object.keys(categories);
+        const i = cats.indexOf(d.category);
+        const angle = (i / cats.length) * 2 * Math.PI;
+        return height / 2 + Math.sin(angle) * 200;
+      }).strength(0.15));
+
+    // --- Links ---
+    const link = g.append('g')
+      .selectAll('line')
+      .data(edges)
+      .join('line')
+      .attr('class', 'link');
+
+    // --- Nodes ---
+    const node = g.append('g')
+      .selectAll('circle')
+      .data(nodes)
+      .join('circle')
+      .attr('class', 'node-circle')
+      .attr('r', 8)
+      .attr('fill', d => categories[d.category])
+      .call(d3.drag()
+        .on('start', dragStarted)
+        .on('drag', dragged)
+        .on('end', dragEnded));
+
+    // --- Labels ---
+    const label = g.append('g')
+      .selectAll('text')
+      .data(nodes)
+      .join('text')
+      .attr('class', 'node-label')
+      .attr('dy', '1.6em')
+      .text(d => d.id);
+
+    // --- Tick ---
+    simulation.on('tick', () => {
+      link
+        .attr('x1', d => d.source.x)
+        .attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x)
+        .attr('y2', d => d.target.y);
+      node
+        .attr('cx', d => d.x)
+        .attr('cy', d => d.y);
+      label
+        .attr('x', d => d.x)
+        .attr('y', d => d.y);
+    });
+
+    // --- Tooltip ---
+    const tooltip = document.getElementById('tooltip');
+    node.on('mouseover', (event, d) => {
+      tooltip.style.display = 'block';
+      tooltip.textContent = `${d.id}: ${d.name}`;
+      tooltip.style.left = (event.clientX + 12) + 'px';
+      tooltip.style.top = (event.clientY - 8) + 'px';
+
+      // Highlight connected
+      const connected = adj.get(d.id);
+      node.classed('dimmed', n => n.id !== d.id && !connected.has(n.id));
+      node.classed('highlighted', n => n.id === d.id);
+      link.classed('highlighted', l => l.source.id === d.id || l.target.id === d.id);
+      link.style('stroke', l => {
+        if (l.source.id === d.id || l.target.id === d.id) {
+          return categories[d.category];
+        }
+        return null;
+      });
+      label.classed('dimmed', n => n.id !== d.id && !connected.has(n.id));
+    })
+    .on('mousemove', (event) => {
+      tooltip.style.left = (event.clientX + 12) + 'px';
+      tooltip.style.top = (event.clientY - 8) + 'px';
+    })
+    .on('mouseout', () => {
+      tooltip.style.display = 'none';
+      node.classed('dimmed', false).classed('highlighted', false);
+      link.classed('highlighted', false).style('stroke', null);
+      label.classed('dimmed', false);
+    });
+
+    // --- Click → detail panel ---
+    const detailPanel = document.getElementById('detail');
+    const detailContent = document.getElementById('detail-content');
+    document.getElementById('detail-close').addEventListener('click', () => {
+      detailPanel.classList.remove('open');
+    });
+
+    node.on('click', (event, d) => {
+      event.stopPropagation();
+      showDetail(d);
+    });
+
+    svg.on('click', () => detailPanel.classList.remove('open'));
+
+    function showDetail(d) {
+      const connected = adj.get(d.id);
+      const connNodes = [...connected].map(id => nodeMap.get(id)).filter(Boolean);
+      const color = categories[d.category];
+
+      detailContent.innerHTML = `
+        <div class="detail-id">${d.id}</div>
+        <div class="detail-name">${d.name}</div>
+        <span class="detail-category" style="background:${color}22;color:${color};border:1px solid ${color}55">${d.category}</span>
+        <div class="detail-section">
+          <h3>Intent</h3>
+          <p>${d.intent || 'No description available.'}</p>
+        </div>
+        ${connNodes.length > 0 ? `
+        <div class="detail-section">
+          <h3>Connections (${connNodes.length})</h3>
+          <div class="detail-connections">
+            ${connNodes.map(cn => `<span class="detail-conn" data-id="${cn.id}" style="border-left:3px solid ${categories[cn.category]}">${cn.id}: ${cn.name}</span>`).join('')}
+          </div>
+        </div>` : ''}
+      `;
+
+      // Make connection chips clickable
+      detailContent.querySelectorAll('.detail-conn').forEach(el => {
+        el.addEventListener('click', () => {
+          const target = nodeMap.get(el.dataset.id);
+          if (target) showDetail(target);
+        });
+      });
+
+      detailPanel.classList.add('open');
+    }
+
+    // --- Search ---
+    const searchInput = document.getElementById('search');
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value.toLowerCase();
+      if (!q) {
+        node.classed('dimmed', false).classed('highlighted', false);
+        label.classed('dimmed', false);
+        link.classed('highlighted', false).style('stroke', null);
+        return;
+      }
+      const matches = new Set(
+        nodes.filter(n =>
+          n.id.toLowerCase().includes(q) ||
+          n.name.toLowerCase().includes(q) ||
+          n.category.toLowerCase().includes(q) ||
+          (n.intent && n.intent.toLowerCase().includes(q))
+        ).map(n => n.id)
+      );
+      node.classed('dimmed', n => !matches.has(n.id));
+      node.classed('highlighted', n => matches.has(n.id));
+      label.classed('dimmed', n => !matches.has(n.id));
+    });
+
+    // --- Category filter ---
+    function updateVisibility() {
+      node.style('display', d => enabledCategories.has(d.category) ? null : 'none');
+      label.style('display', d => enabledCategories.has(d.category) ? null : 'none');
+      link.style('display', l => {
+        const s = typeof l.source === 'object' ? l.source : nodeMap.get(l.source);
+        const t = typeof l.target === 'object' ? l.target : nodeMap.get(l.target);
+        return (s && enabledCategories.has(s.category) && t && enabledCategories.has(t.category)) ? null : 'none';
+      });
+    }
+
+    // --- Drag ---
+    function dragStarted(event, d) {
+      if (!event.active) simulation.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    }
+    function dragged(event, d) {
+      d.fx = event.x;
+      d.fy = event.y;
+    }
+    function dragEnded(event, d) {
+      if (!event.active) simulation.alphaTarget(0);
+      d.fx = null;
+      d.fy = null;
+    }
+
+    // --- Resize ---
+    window.addEventListener('resize', () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight - 56;
+      svg.attr('width', w).attr('height', h);
+      simulation.force('center', d3.forceCenter(w / 2, h / 2));
+      simulation.alpha(0.3).restart();
+    });
+  </script>
+</body>
+</html>

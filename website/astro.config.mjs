@@ -13,6 +13,10 @@ export default defineConfig({
       ],
       sidebar: [
         {
+          label: 'Design Patterns',
+          link: '/design-patterns/',
+        },
+        {
           label: 'Getting Started',
           items: [
             { label: 'Installation', slug: 'getting-started/installation' },

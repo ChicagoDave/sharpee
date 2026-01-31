@@ -3,8 +3,6 @@ title: "Objects and Traits"
 description: "Creating interactive objects using the trait system"
 ---
 
-# Objects and Traits
-
 Objects are things players can interact with. Traits define what an object can do.
 
 ## The Trait System
@@ -12,9 +10,11 @@ Objects are things players can interact with. Traits define what an object can d
 Instead of inheritance, Sharpee uses composition. Objects gain capabilities by adding traits:
 
 ```typescript
+import { EntityType, IdentityTrait, SwitchableTrait, LightSourceTrait } from '@sharpee/world-model';
+
 // A lamp that can be picked up and turned on
-const lamp = world.createEntity('lamp', EntityType.OBJECT);
-lamp.add(new IdentityTrait({ name: 'brass lamp', description: '...' }));
+const lamp = world.createEntity('lamp', EntityType.ITEM);
+lamp.add(new IdentityTrait({ name: 'brass lamp', description: 'A well-worn brass lamp.' }));
 lamp.add(new SwitchableTrait({ isOn: false }));
 lamp.add(new LightSourceTrait({ brightness: 5, requiresOn: true }));
 ```
@@ -23,20 +23,16 @@ lamp.add(new LightSourceTrait({ brightness: 5, requiresOn: true }));
 
 ### Basic Portable Object
 
-All objects are portable by default (can be picked up):
+All items are portable by default (can be picked up):
 
 ```typescript
-import {
-  WorldModel,
-  EntityType,
-  IdentityTrait
-} from '@sharpee/world-model';
+import { EntityType, IdentityTrait } from '@sharpee/world-model';
 
-const key = world.createEntity('key', EntityType.OBJECT);
+const key = world.createEntity('key', EntityType.ITEM);
 key.add(new IdentityTrait({
   name: 'brass key',
   description: 'A small brass key with an ornate handle.',
-  shortDescription: 'a brass key'
+  aliases: ['key', 'brass key'],
 }));
 world.moveEntity(key.id, room.id);
 ```
@@ -46,32 +42,15 @@ world.moveEntity(key.id, room.id);
 Use `SceneryTrait` to make something fixed in place:
 
 ```typescript
-import { SceneryTrait } from '@sharpee/world-model';
+import { EntityType, IdentityTrait, SceneryTrait } from '@sharpee/world-model';
 
 const fountain = world.createEntity('fountain', EntityType.SCENERY);
 fountain.add(new IdentityTrait({
   name: 'marble fountain',
-  description: 'Water splashes gently in the ornate fountain.'
+  description: 'Water splashes gently in the ornate fountain.',
 }));
 fountain.add(new SceneryTrait());
 world.moveEntity(fountain.id, courtyard.id);
-```
-
-## Common Traits Reference
-
-### Identity and Description
-
-Every object needs `IdentityTrait`:
-
-```typescript
-item.add(new IdentityTrait({
-  name: 'golden crown',           // Display name
-  aliases: ['crown', 'diadem'],   // Alternative names
-  description: 'A magnificent golden crown encrusted with jewels.',
-  shortDescription: 'a golden crown',  // For inventory lists
-  properName: false,              // Use articles (a/the)
-  article: 'a'                    // Default article
-}));
 ```
 
 ### Containers
@@ -84,16 +63,10 @@ import { ContainerTrait, OpenableTrait } from '@sharpee/world-model';
 const chest = world.createEntity('chest', EntityType.CONTAINER);
 chest.add(new IdentityTrait({
   name: 'wooden chest',
-  description: 'A sturdy wooden chest with iron bands.'
+  description: 'A sturdy wooden chest with iron bands.',
 }));
-chest.add(new ContainerTrait({
-  capacity: 100,
-  isTransparent: false  // Can't see contents when closed
-}));
-chest.add(new OpenableTrait({
-  isOpen: false,
-  canClose: true
-}));
+chest.add(new ContainerTrait({ capacity: { maxItems: 10 }, isTransparent: false }));
+chest.add(new OpenableTrait({ isOpen: false }));
 ```
 
 ### Supporters
@@ -103,11 +76,8 @@ Objects you can put things ON (not IN):
 ```typescript
 import { SupporterTrait } from '@sharpee/world-model';
 
-const table = world.createEntity('table', EntityType.SUPPORTER);
-table.add(new IdentityTrait({
-  name: 'oak table',
-  description: 'A solid oak table.'
-}));
+const table = world.createEntity('table', EntityType.SCENERY);
+table.add(new IdentityTrait({ name: 'oak table', description: 'A solid oak table.' }));
 table.add(new SupporterTrait({ capacity: 50 }));
 table.add(new SceneryTrait());  // Can't pick up the table
 ```
@@ -117,16 +87,10 @@ table.add(new SceneryTrait());  // Can't pick up the table
 ```typescript
 import { SwitchableTrait, LightSourceTrait } from '@sharpee/world-model';
 
-const lantern = world.createEntity('lantern', EntityType.OBJECT);
-lantern.add(new IdentityTrait({
-  name: 'brass lantern',
-  description: 'A well-crafted brass lantern.'
-}));
+const lantern = world.createEntity('lantern', EntityType.ITEM);
+lantern.add(new IdentityTrait({ name: 'brass lantern', description: 'A well-crafted brass lantern.' }));
 lantern.add(new SwitchableTrait({ isOn: false }));
-lantern.add(new LightSourceTrait({
-  brightness: 5,
-  requiresOn: true  // Only lights when switched on
-}));
+lantern.add(new LightSourceTrait({ brightness: 5, requiresOn: true }));
 ```
 
 ### Lockable Items
@@ -135,17 +99,14 @@ lantern.add(new LightSourceTrait({
 import { LockableTrait, OpenableTrait } from '@sharpee/world-model';
 
 // Create key first
-const key = world.createEntity('key', EntityType.OBJECT);
+const key = world.createEntity('key', EntityType.ITEM);
 key.add(new IdentityTrait({ name: 'iron key' }));
 
 // Create lockable door
-const door = world.createEntity('door', EntityType.OBJECT);
+const door = world.createEntity('door', EntityType.DOOR);
 door.add(new IdentityTrait({ name: 'iron door' }));
 door.add(new OpenableTrait({ isOpen: false }));
-door.add(new LockableTrait({
-  isLocked: true,
-  keyId: key.id
-}));
+door.add(new LockableTrait({ isLocked: true, keyId: key.id }));
 ```
 
 ### Readable Items
@@ -153,15 +114,19 @@ door.add(new LockableTrait({
 ```typescript
 import { ReadableTrait } from '@sharpee/world-model';
 
-const book = world.createEntity('book', EntityType.OBJECT);
-book.add(new IdentityTrait({
-  name: 'leather journal',
-  description: 'A worn leather journal.'
-}));
-book.add(new ReadableTrait({
-  text: 'Day 1: The expedition begins...',
-  isReadable: true
-}));
+const book = world.createEntity('book', EntityType.ITEM);
+book.add(new IdentityTrait({ name: 'leather journal', description: 'A worn leather journal.' }));
+book.add(new ReadableTrait({ text: 'Day 1: The expedition begins...' }));
+```
+
+### Wearable Items
+
+```typescript
+import { WearableTrait } from '@sharpee/world-model';
+
+const cloak = world.createEntity('cloak', EntityType.ITEM);
+cloak.add(new IdentityTrait({ name: 'velvet cloak', description: 'A rich velvet cloak.' }));
+cloak.add(new WearableTrait({ isWorn: false }));
 ```
 
 ### Edible Items
@@ -169,74 +134,9 @@ book.add(new ReadableTrait({
 ```typescript
 import { EdibleTrait } from '@sharpee/world-model';
 
-const apple = world.createEntity('apple', EntityType.OBJECT);
-apple.add(new IdentityTrait({
-  name: 'red apple',
-  description: 'A crisp red apple.'
-}));
-apple.add(new EdibleTrait({
-  nutrition: 10,
-  consumedOnEat: true
-}));
-```
-
-### Wearable Items
-
-```typescript
-import { WearableTrait, ClothingTrait } from '@sharpee/world-model';
-
-const cloak = world.createEntity('cloak', EntityType.OBJECT);
-cloak.add(new IdentityTrait({
-  name: 'velvet cloak',
-  description: 'A rich velvet cloak.'
-}));
-cloak.add(new WearableTrait({ isWorn: false }));
-cloak.add(new ClothingTrait({ slot: 'back' }));
-```
-
-## All Available Traits
-
-| Trait | Purpose | Key Properties |
-|-------|---------|----------------|
-| `IdentityTrait` | Name and description | `name`, `aliases`, `description` |
-| `SceneryTrait` | Fixed in place | - |
-| `ContainerTrait` | Holds items inside | `capacity`, `isTransparent` |
-| `SupporterTrait` | Items placed on top | `capacity` |
-| `OpenableTrait` | Can open/close | `isOpen`, `canClose` |
-| `LockableTrait` | Can lock/unlock | `isLocked`, `keyId` |
-| `SwitchableTrait` | On/off toggle | `isOn` |
-| `LightSourceTrait` | Provides illumination | `brightness`, `requiresOn` |
-| `ReadableTrait` | Has text to read | `text`, `isReadable` |
-| `EdibleTrait` | Can be eaten | `nutrition`, `consumedOnEat` |
-| `WearableTrait` | Can be worn | `isWorn` |
-| `ClothingTrait` | Clothing slot | `slot` |
-| `DoorTrait` | Connects rooms | - |
-| `AttachedTrait` | Attached to something | `attachedTo` |
-| `PushableTrait` | Can be pushed | `isPushable` |
-| `PullableTrait` | Can be pulled | `isPullable` |
-| `ClimbableTrait` | Can climb on | - |
-| `BreakableTrait` | Can be broken | `isBroken`, `breakMessage` |
-| `EnterableTrait` | Can enter (vehicle) | - |
-| `VehicleTrait` | Transportation | `isMoving` |
-| `WeaponTrait` | Combat weapon | `damage`, `weaponType` |
-| `CombatantTrait` | Can fight | `health`, `hostile` |
-| `NpcTrait` | Non-player character | `isAlive`, `isConscious` |
-
-## Combining Traits
-
-Build complex objects by combining traits:
-
-```typescript
-// A treasure chest: container + openable + lockable + portable
-const treasureChest = world.createEntity('treasure-chest', EntityType.CONTAINER);
-treasureChest.add(new IdentityTrait({
-  name: 'treasure chest',
-  description: 'An ornate chest bound in gold.'
-}));
-treasureChest.add(new ContainerTrait({ capacity: 50 }));
-treasureChest.add(new OpenableTrait({ isOpen: false }));
-treasureChest.add(new LockableTrait({ isLocked: true, keyId: goldKey.id }));
-// Note: No SceneryTrait, so it can be picked up
+const apple = world.createEntity('apple', EntityType.ITEM);
+apple.add(new IdentityTrait({ name: 'red apple', description: 'A crisp red apple.' }));
+apple.add(new EdibleTrait({ nutrition: 10, consumedOnEat: true }));
 ```
 
 ## Placing Items in Containers
@@ -249,12 +149,62 @@ world.moveEntity(coin.id, chest.id);  // Works if chest is open
 
 ### Closed Container (Use AuthorModel)
 
+During world setup, use `AuthorModel` to bypass "container is closed" validation:
+
 ```typescript
 import { AuthorModel } from '@sharpee/world-model';
 
-// Bypass "container is closed" validation during setup
 const author = new AuthorModel(world.getDataStore(), world);
-author.moveEntity(gem.id, closedChest.id);
+author.moveEntity(gem.id, closedChest.id);  // Works even though chest is closed
+```
+
+Use `AuthorModel` when:
+- Placing items in closed containers during setup
+- Implementing special mechanics (magic, teleportation)
+- Writing tests that need to bypass game rules
+
+## All Available Traits
+
+| Trait | Purpose | Key Properties |
+|-------|---------|----------------|
+| `IdentityTrait` | Name and description | `name`, `aliases`, `description` |
+| `SceneryTrait` | Fixed in place, non-portable | — |
+| `ContainerTrait` | Holds items inside | `capacity`, `isTransparent` |
+| `SupporterTrait` | Items placed on top | `capacity` |
+| `OpenableTrait` | Can open/close | `isOpen` |
+| `LockableTrait` | Can lock/unlock | `isLocked`, `keyId` |
+| `SwitchableTrait` | On/off toggle | `isOn` |
+| `LightSourceTrait` | Provides illumination | `brightness`, `requiresOn` |
+| `ReadableTrait` | Has text to read | `text` |
+| `EdibleTrait` | Can be eaten | `nutrition`, `consumedOnEat` |
+| `WearableTrait` | Can be worn | `isWorn` |
+| `DoorTrait` | Connects rooms | — |
+| `ClimbableTrait` | Can climb on | — |
+| `PushableTrait` | Can be pushed | — |
+| `PullableTrait` | Can be pulled | — |
+| `BreakableTrait` | Can be broken | `isBroken` |
+| `EnterableTrait` | Can enter (vehicle, bed) | — |
+| `WeaponTrait` | Combat weapon | `damage`, `weaponType` |
+| `CombatantTrait` | Can fight | `health`, `skill`, `hostile` |
+| `NpcTrait` | Non-player character | `isAlive`, `isConscious` |
+| `AttachedTrait` | Attached to something | `attachedTo` |
+| `ButtonTrait` | Pressable button | — |
+
+## Combining Traits
+
+Build complex objects by combining traits:
+
+```typescript
+// A treasure chest: container + openable + lockable + portable
+const treasureChest = world.createEntity('treasure-chest', EntityType.CONTAINER);
+treasureChest.add(new IdentityTrait({
+  name: 'treasure chest',
+  description: 'An ornate chest bound in gold.',
+}));
+treasureChest.add(new ContainerTrait({ capacity: { maxItems: 50 } }));
+treasureChest.add(new OpenableTrait({ isOpen: false }));
+treasureChest.add(new LockableTrait({ isLocked: true, keyId: goldKey.id }));
+// No SceneryTrait — so it can be picked up
 ```
 
 ## Custom Traits
@@ -269,30 +219,29 @@ export class MagicalTrait implements ITrait {
   static readonly type = 'mystory.trait.magical';
   readonly type = MagicalTrait.type;
 
-  constructor(
-    public spellName: string,
-    public charges: number = 3
-  ) {}
+  spellName: string;
+  charges: number;
 
-  static is(trait: ITrait): trait is MagicalTrait {
-    return trait.type === MagicalTrait.type;
+  constructor(data?: { spellName?: string; charges?: number }) {
+    this.spellName = data?.spellName ?? 'unknown';
+    this.charges = data?.charges ?? 3;
   }
 }
 
 // Usage
-wand.add(new MagicalTrait('fireball', 5));
+wand.add(new MagicalTrait({ spellName: 'fireball', charges: 5 }));
 ```
 
 ## Checking Traits
 
 ```typescript
 // Check if entity has a trait
-if (entity.has(ContainerTrait)) {
-  const container = entity.get(ContainerTrait);
+const container = entity.get(ContainerTrait);
+if (container) {
   console.log('Capacity:', container.capacity);
 }
 
-// Get trait or undefined
+// Check openable state
 const openable = entity.get(OpenableTrait);
 if (openable?.isOpen) {
   // Container is open
@@ -301,9 +250,9 @@ if (openable?.isOpen) {
 
 ## Best Practices
 
-1. **Use IdentityTrait for everything**: Every object needs a name and description
-2. **Combine traits thoughtfully**: A locked door needs both `OpenableTrait` and `LockableTrait`
-3. **Use SceneryTrait sparingly**: Most objects should be portable
-4. **Use AuthorModel for setup**: Bypass validation when placing items in closed containers
-5. **Create custom traits**: For story-specific mechanics
-6. **Test interactions**: Write transcript tests for key objects
+1. **Every object needs `IdentityTrait`** — name and description are required
+2. **Combine traits thoughtfully** — a locked door needs both `OpenableTrait` and `LockableTrait`
+3. **Use `SceneryTrait` for fixed objects** — furniture, fixtures, landscape features
+4. **Use `AuthorModel` for setup** — bypass validation when placing items in closed containers
+5. **Create custom traits** for story-specific mechanics
+6. **Keep objects in their region file** — don't separate rooms and objects into different directories
