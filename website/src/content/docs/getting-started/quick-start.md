@@ -18,33 +18,57 @@ The scaffolded project gives you a single starting room. Let's expand it into a 
 Create `src/regions/house.ts` with a few connected rooms and objects:
 
 ```typescript
-import { WorldModel } from '@sharpee/sharpee';
+import {
+  WorldModel,
+  IFEntity,
+  EntityType,
+  IdentityTrait,
+  RoomTrait,
+  PortableTrait,
+  Direction,
+} from '@sharpee/world-model';
 
 export function createHouse(world: WorldModel) {
   // Rooms
-  const foyer = world.createRoom('foyer', {
+  const foyer = world.createEntity('foyer', EntityType.ROOM);
+  foyer.add(new IdentityTrait({
     name: 'Foyer',
     description: 'A grand entrance hall with marble floors. A doorway leads north to the library. The front door is to the south.',
-  });
+  }));
+  foyer.add(new RoomTrait());
 
-  const library = world.createRoom('library', {
+  const library = world.createEntity('library', EntityType.ROOM);
+  library.add(new IdentityTrait({
     name: 'Library',
     description: 'Dusty bookshelves line every wall. A reading desk sits beneath a window. The foyer is south.',
-  });
+  }));
+  library.add(new RoomTrait());
 
-  world.connectRooms(foyer.id, 'north', library.id);
+  // Connect rooms via RoomTrait exits
+  const foyerTrait = foyer.get(RoomTrait);
+  if (foyerTrait) {
+    foyerTrait.exits[Direction.NORTH] = { destination: library.id };
+  }
+  const libraryTrait = library.get(RoomTrait);
+  if (libraryTrait) {
+    libraryTrait.exits[Direction.SOUTH] = { destination: foyer.id };
+  }
 
   // Objects in this region
-  const book = world.createEntity('dusty-book', 'object', {
+  const book = world.createEntity('dusty-book', EntityType.OBJECT);
+  book.add(new IdentityTrait({
     name: 'dusty book',
     description: 'An ancient tome with faded gold lettering. The title reads "A History of the Valley".',
-  });
+  }));
+  book.add(new PortableTrait());
   world.moveEntity(book.id, library.id);
 
-  const key = world.createEntity('brass-key', 'object', {
+  const key = world.createEntity('brass-key', EntityType.OBJECT);
+  key.add(new IdentityTrait({
     name: 'brass key',
     description: 'A small brass key with an ornate handle.',
-  });
+  }));
+  key.add(new PortableTrait());
   world.moveEntity(key.id, foyer.id);
 
   return { foyer, library };
@@ -58,7 +82,15 @@ Everything for the house — rooms, connections, objects — lives in one file.
 Update `src/index.ts` to use the region:
 
 ```typescript
-import { Story, StoryConfig, WorldModel, IFEntity } from '@sharpee/sharpee';
+import { Story, StoryConfig, GameEngine } from '@sharpee/engine';
+import {
+  WorldModel,
+  IFEntity,
+  EntityType,
+  IdentityTrait,
+  ActorTrait,
+  ContainerTrait,
+} from '@sharpee/world-model';
 import { createHouse } from './regions/house';
 
 export const config: StoryConfig = {
@@ -69,22 +101,34 @@ export const config: StoryConfig = {
   description: 'A short adventure in a mysterious house.',
 };
 
-export const story: Story = {
-  config,
+export class MyAdventure implements Story {
+  config = config;
 
-  initializeWorld(world: WorldModel): IFEntity {
-    const player = world.getPlayer();
-
-    // Set up regions
+  initializeWorld(world: WorldModel): void {
     const house = createHouse(world);
 
-    // Place the player
-    world.moveEntity(player.id, house.foyer.id);
+    // Place the player in the foyer
+    const player = world.getPlayer();
+    if (player) {
+      world.moveEntity(player.id, house.foyer.id);
+    }
+  }
 
-    return house.foyer;
-  },
-};
+  createPlayer(world: WorldModel): IFEntity {
+    const player = world.createEntity('yourself', EntityType.ACTOR);
+    player.add(new IdentityTrait({
+      name: 'yourself',
+      aliases: ['self', 'me'],
+      description: 'As good-looking as ever.',
+      properName: false,
+    }));
+    player.add(new ActorTrait({ isPlayer: true }));
+    player.add(new ContainerTrait({ capacity: 100 }));
+    return player;
+  }
+}
 
+export const story = new MyAdventure();
 export default story;
 ```
 
@@ -93,21 +137,34 @@ export default story;
 When placing items inside closed containers during world setup, normal game rules block the action ("the chest is closed"). Use `AuthorModel` to bypass validation:
 
 ```typescript
-import { WorldModel, AuthorModel } from '@sharpee/sharpee';
+import {
+  WorldModel,
+  EntityType,
+  IdentityTrait,
+  ContainerTrait,
+  OpenableTrait,
+  PortableTrait,
+  AuthorModel,
+} from '@sharpee/world-model';
 
 export function createHouse(world: WorldModel) {
   // ... rooms ...
 
-  const chest = world.createEntity('chest', 'container', {
+  const chest = world.createEntity('chest', EntityType.OBJECT);
+  chest.add(new IdentityTrait({
     name: 'wooden chest',
-    isOpen: false,
-  });
+    description: 'A sturdy wooden chest with iron bands.',
+  }));
+  chest.add(new ContainerTrait({ capacity: 10 }));
+  chest.add(new OpenableTrait({ isOpen: false }));
   world.moveEntity(chest.id, library.id);
 
-  const gem = world.createEntity('gem', 'object', {
+  const gem = world.createEntity('gem', EntityType.OBJECT);
+  gem.add(new IdentityTrait({
     name: 'sparkling gem',
     description: 'A gem that catches the light.',
-  });
+  }));
+  gem.add(new PortableTrait());
 
   // AuthorModel skips "container is closed" validation
   const author = new AuthorModel(world.getDataStore(), world);
@@ -123,7 +180,7 @@ Build and run:
 
 ```bash
 npm run build
-npx sharpee --play
+node dist/index.js --play
 ```
 
 Try these commands:
@@ -136,14 +193,18 @@ Try these commands:
 
 ## Add a Browser Client
 
-To play in a web browser:
+If working from the Sharpee monorepo, build a browser client:
 
 ```bash
-npx sharpee init-browser
-npx sharpee build-browser
+./build.sh -s my-adventure -c browser
+npx serve dist/web/my-adventure
 ```
 
-This generates a web bundle you can open in any browser.
+Or build the React client with a theme:
+
+```bash
+./build.sh -s my-adventure -c react -t modern-dark
+```
 
 ## Next Steps
 

@@ -83,30 +83,53 @@ my-adventure/
         └── walkthrough.transcript
 ```
 
-Each region file exports a setup function:
+Each region file exports a setup function that creates entities with traits:
 
 ```typescript
 // src/regions/village.ts
-import { WorldModel, IFEntity } from '@sharpee/sharpee';
+import {
+  WorldModel,
+  IFEntity,
+  EntityType,
+  IdentityTrait,
+  RoomTrait,
+  PortableTrait,
+  Direction,
+} from '@sharpee/world-model';
 
 export function createVillage(world: WorldModel) {
-  const square = world.createRoom('village-square', {
+  // Create rooms as entities with traits
+  const square = world.createEntity('village-square', EntityType.ROOM);
+  square.add(new IdentityTrait({
     name: 'Village Square',
     description: 'A bustling square with a fountain at its center.',
-  });
+  }));
+  square.add(new RoomTrait());
 
-  const tavern = world.createRoom('tavern', {
+  const tavern = world.createEntity('tavern', EntityType.ROOM);
+  tavern.add(new IdentityTrait({
     name: 'The Rusty Mug',
     description: 'A warm tavern smelling of ale and roasted meat.',
-  });
+  }));
+  tavern.add(new RoomTrait());
 
-  world.connectRooms(square.id, 'east', tavern.id);
+  // Connect rooms via RoomTrait exits
+  const squareTrait = square.get(RoomTrait);
+  if (squareTrait) {
+    squareTrait.exits[Direction.EAST] = { destination: tavern.id };
+  }
+  const tavernTrait = tavern.get(RoomTrait);
+  if (tavernTrait) {
+    tavernTrait.exits[Direction.WEST] = { destination: square.id };
+  }
 
   // Objects in this region
-  const coin = world.createEntity('coin', 'object', {
+  const coin = world.createEntity('coin', EntityType.OBJECT);
+  coin.add(new IdentityTrait({
     name: 'silver coin',
     description: 'A tarnished silver coin.',
-  });
+  }));
+  coin.add(new PortableTrait());
   world.moveEntity(coin.id, square.id);
 
   return { square, tavern };
