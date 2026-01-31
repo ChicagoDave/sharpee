@@ -48,6 +48,23 @@ const data = JSON.stringify(patternsData);
     h1 { font-size: 1.125rem; font-weight: 600; white-space: nowrap; }
     .count { color: #64748b; font-size: 0.8rem; margin-left: 0.5rem; }
 
+    /* Breadcrumb */
+    .breadcrumb {
+      display: none;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+    }
+    .breadcrumb.visible { display: flex; }
+    .breadcrumb a {
+      color: #059669;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .breadcrumb a:hover { color: #34d399; }
+    .breadcrumb .sep { color: #475569; }
+    .breadcrumb .current { color: #e2e8f0; font-weight: 500; }
+
     /* Search */
     .search-box {
       background: #0f172a;
@@ -62,60 +79,93 @@ const data = JSON.stringify(patternsData);
     .search-box::placeholder { color: #475569; }
     .search-box:focus { outline: none; border-color: #059669; }
 
-    /* Main content */
+    /* Content */
     .content {
       padding: 1.5rem;
       max-width: 1200px;
       margin: 0 auto;
     }
 
-    /* Category section */
-    .category-section {
-      margin-bottom: 2rem;
+    /* Category cards (top level) */
+    .categories-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
     }
-    .category-heading {
+    .category-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .category-card:hover {
+      border-color: #475569;
+      transform: translateY(-2px);
+    }
+    .category-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+    }
+    .cat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+    .cat-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      margin-bottom: 0.75rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid #334155;
     }
-    .category-dot {
-      width: 12px;
-      height: 12px;
+    .cat-dot {
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
       flex-shrink: 0;
     }
-    .category-name {
-      font-size: 1rem;
-      font-weight: 600;
-      color: #fff;
-    }
-    .category-count {
-      font-size: 0.75rem;
+    .cat-count {
+      font-size: 0.8rem;
       color: #64748b;
-      background: #1e293b;
-      padding: 0.1rem 0.5rem;
+      background: #0f172a;
+      padding: 0.2rem 0.6rem;
       border-radius: 9999px;
     }
+    .cat-preview {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+    .cat-preview-item {
+      display: inline;
+    }
+    .cat-preview-item + .cat-preview-item::before {
+      content: ' · ';
+      color: #475569;
+    }
+    .cat-arrow {
+      color: #475569;
+      font-size: 1.25rem;
+      margin-top: 0.75rem;
+      text-align: right;
+    }
 
-    /* Pattern cards grid */
-    .cards-grid {
+    /* Pattern cards (drill-down) */
+    .patterns-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 0.75rem;
     }
-    @media (max-width: 640px) {
-      .cards-grid {
-        grid-template-columns: 1fr;
-      }
-      .header { padding: 0.5rem 0.75rem; }
-      .content { padding: 1rem 0.75rem; }
-      .search-box { width: 100%; }
-    }
-
-    /* Individual pattern card */
     .pattern-card {
       background: #1e293b;
       border: 1px solid #334155;
@@ -155,6 +205,16 @@ const data = JSON.stringify(patternsData);
       overflow: hidden;
     }
 
+    /* Mobile */
+    @media (max-width: 640px) {
+      .categories-grid { grid-template-columns: 1fr; }
+      .patterns-grid { grid-template-columns: 1fr; }
+      .header { padding: 0.5rem 0.75rem; }
+      .content { padding: 1rem 0.75rem; }
+      .search-box { width: 100%; }
+      .detail-panel { width: 100vw; }
+    }
+
     /* Detail panel */
     .detail-panel {
       position: fixed;
@@ -169,11 +229,6 @@ const data = JSON.stringify(patternsData);
       transform: translateX(100%);
       transition: transform 0.25s ease;
       z-index: 20;
-    }
-    @media (max-width: 640px) {
-      .detail-panel {
-        width: 100vw;
-      }
     }
     .detail-panel.open { transform: translateX(0); }
     .detail-close {
@@ -240,7 +295,7 @@ const data = JSON.stringify(patternsData);
       color: #e2e8f0;
     }
 
-    /* Overlay for mobile */
+    /* Overlay */
     .overlay {
       display: none;
       position: fixed;
@@ -249,6 +304,15 @@ const data = JSON.stringify(patternsData);
       z-index: 15;
     }
     .overlay.active { display: block; }
+
+    /* Transitions */
+    .fade-in {
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
@@ -256,6 +320,12 @@ const data = JSON.stringify(patternsData);
     <div class="header-left">
       <a href="/" class="back-link">&larr; Sharpee</a>
       <h1>Design Patterns<span class="count" id="count">124 patterns</span></h1>
+      <div class="breadcrumb" id="breadcrumb">
+        <span class="sep">/</span>
+        <a id="bc-home">All Categories</a>
+        <span class="sep" id="bc-sep2" style="display:none">/</span>
+        <span class="current" id="bc-current" style="display:none"></span>
+      </div>
     </div>
     <input type="text" class="search-box" id="search" placeholder="Search patterns...">
   </div>
@@ -273,7 +343,6 @@ const data = JSON.stringify(patternsData);
     const patternsData = JSON.parse(data);
     const { categories, nodes, edges } = patternsData;
 
-    // Build lookups
     const nodeMap = new Map(nodes.map(n => [n.id, n]));
     const adj = new Map();
     nodes.forEach(n => adj.set(n.id, new Set()));
@@ -282,63 +351,34 @@ const data = JSON.stringify(patternsData);
       adj.get(e.target)?.add(e.source);
     });
 
-    // Group by category
     const byCategory = {};
     Object.keys(categories).forEach(cat => { byCategory[cat] = []; });
     nodes.forEach(n => {
       if (byCategory[n.category]) byCategory[n.category].push(n);
     });
 
-    // Render categories and cards
     const content = document.getElementById('content');
-
-    Object.entries(byCategory).forEach(([cat, patterns]) => {
-      const section = document.createElement('div');
-      section.className = 'category-section';
-      section.dataset.category = cat;
-
-      section.innerHTML = `
-        <div class="category-heading">
-          <span class="category-dot" style="background:${categories[cat]}"></span>
-          <span class="category-name">${cat}</span>
-          <span class="category-count">${patterns.length}</span>
-        </div>
-        <div class="cards-grid">
-          ${patterns.map(p => `
-            <div class="pattern-card" data-id="${p.id}">
-              <div class="card-top">
-                <span class="card-id">${p.id}</span>
-                <span class="card-name">${p.name}</span>
-              </div>
-              <div class="card-intent">${p.intent || ''}</div>
-            </div>
-          `).join('')}
-        </div>
-      `;
-
-      section.querySelectorAll('.pattern-card').forEach(card => {
-        card.addEventListener('click', () => {
-          const pattern = nodeMap.get(card.dataset.id);
-          if (pattern) showDetail(pattern);
-        });
-      });
-
-      content.appendChild(section);
-    });
-
-    // Detail panel
+    const breadcrumb = document.getElementById('breadcrumb');
+    const bcHome = document.getElementById('bc-home');
+    const bcSep2 = document.getElementById('bc-sep2');
+    const bcCurrent = document.getElementById('bc-current');
+    const searchInput = document.getElementById('search');
+    const countEl = document.getElementById('count');
     const detailPanel = document.getElementById('detail');
     const detailContent = document.getElementById('detail-content');
     const overlay = document.getElementById('overlay');
 
+    let currentView = 'categories'; // 'categories' or category name
+
+    // Close detail
     function closeDetail() {
       detailPanel.classList.remove('open');
       overlay.classList.remove('active');
     }
-
     document.getElementById('detail-close').addEventListener('click', closeDetail);
     overlay.addEventListener('click', closeDetail);
 
+    // Show detail panel
     function showDetail(d) {
       const connected = adj.get(d.id);
       const connNodes = [...connected].map(id => nodeMap.get(id)).filter(Boolean);
@@ -372,36 +412,132 @@ const data = JSON.stringify(patternsData);
       overlay.classList.add('active');
     }
 
-    // Search
-    const searchInput = document.getElementById('search');
-    const countEl = document.getElementById('count');
+    // Render category cards (top level)
+    function showCategories() {
+      currentView = 'categories';
+      closeDetail();
+      searchInput.value = '';
+      breadcrumb.classList.remove('visible');
+      countEl.textContent = `${nodes.length} patterns`;
 
+      content.innerHTML = '';
+      const grid = document.createElement('div');
+      grid.className = 'categories-grid fade-in';
+
+      Object.entries(byCategory).forEach(([cat, patterns]) => {
+        const card = document.createElement('div');
+        card.className = 'category-card';
+        const color = categories[cat];
+        card.style.cssText = `border-top: 3px solid ${color}`;
+
+        const previewItems = patterns.slice(0, 5).map(p => p.name);
+        const more = patterns.length > 5 ? ` and ${patterns.length - 5} more` : '';
+
+        card.innerHTML = `
+          <div class="cat-header">
+            <div class="cat-name">
+              <span class="cat-dot" style="background:${color}"></span>
+              ${cat}
+            </div>
+            <span class="cat-count">${patterns.length}</span>
+          </div>
+          <div class="cat-preview">
+            ${previewItems.map(n => `<span class="cat-preview-item">${n}</span>`).join('')}${more ? `<span class="cat-preview-item" style="color:#64748b">${more}</span>` : ''}
+          </div>
+          <div class="cat-arrow">&rarr;</div>
+        `;
+
+        card.addEventListener('click', () => showCategoryPatterns(cat));
+        grid.appendChild(card);
+      });
+
+      content.appendChild(grid);
+    }
+
+    // Render pattern cards for a category
+    function showCategoryPatterns(cat) {
+      currentView = cat;
+      closeDetail();
+      searchInput.value = '';
+
+      breadcrumb.classList.add('visible');
+      bcSep2.style.display = '';
+      bcCurrent.style.display = '';
+      bcCurrent.textContent = cat;
+      countEl.textContent = `${byCategory[cat].length} patterns`;
+
+      content.innerHTML = '';
+      const grid = document.createElement('div');
+      grid.className = 'patterns-grid fade-in';
+
+      byCategory[cat].forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'pattern-card';
+        card.dataset.id = p.id;
+        card.innerHTML = `
+          <div class="card-top">
+            <span class="card-id">${p.id}</span>
+            <span class="card-name">${p.name}</span>
+          </div>
+          <div class="card-intent">${p.intent || ''}</div>
+        `;
+        card.addEventListener('click', () => showDetail(p));
+        grid.appendChild(card);
+      });
+
+      content.appendChild(grid);
+    }
+
+    // Breadcrumb navigation
+    bcHome.addEventListener('click', showCategories);
+
+    // Search — if on categories view, filter categories; if on patterns view, filter patterns
     searchInput.addEventListener('input', () => {
       const q = searchInput.value.toLowerCase();
-      let total = 0;
 
-      document.querySelectorAll('.category-section').forEach(section => {
-        const cards = section.querySelectorAll('.pattern-card');
+      if (currentView === 'categories') {
+        // Search across all patterns, show matching categories
+        const cards = content.querySelectorAll('.category-card');
+        let idx = 0;
+        let totalVisible = 0;
+        Object.entries(byCategory).forEach(([cat, patterns]) => {
+          const card = cards[idx++];
+          if (!card) return;
+          if (!q) {
+            card.style.display = '';
+            totalVisible += patterns.length;
+            return;
+          }
+          const match = cat.toLowerCase().includes(q) ||
+            patterns.some(p =>
+              p.name.toLowerCase().includes(q) ||
+              p.id.toLowerCase().includes(q) ||
+              (p.intent && p.intent.toLowerCase().includes(q))
+            );
+          card.style.display = match ? '' : 'none';
+          if (match) totalVisible += patterns.length;
+        });
+        countEl.textContent = q ? `matching categories` : `${nodes.length} patterns`;
+      } else {
+        // Filter pattern cards in current category
+        const cards = content.querySelectorAll('.pattern-card');
         let visible = 0;
         cards.forEach(card => {
           const p = nodeMap.get(card.dataset.id);
           const match = !q || (
             p.id.toLowerCase().includes(q) ||
             p.name.toLowerCase().includes(q) ||
-            p.category.toLowerCase().includes(q) ||
             (p.intent && p.intent.toLowerCase().includes(q))
           );
           card.style.display = match ? '' : 'none';
           if (match) visible++;
         });
-        section.style.display = visible > 0 ? '' : 'none';
-        const cnt = section.querySelector('.category-count');
-        if (cnt) cnt.textContent = q ? visible : byCategory[section.dataset.category].length;
-        total += visible;
-      });
-
-      countEl.textContent = `${total} pattern${total !== 1 ? 's' : ''}`;
+        countEl.textContent = `${visible} pattern${visible !== 1 ? 's' : ''}`;
+      }
     });
+
+    // Initial render
+    showCategories();
   </script>
 </body>
 </html>

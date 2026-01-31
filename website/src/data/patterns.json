@@ -10,745 +10,745 @@
   },
   "nodes": [
     {
-      "id": "DP-001",
+      "id": "PUZ-001",
       "name": "Lock and Key",
       "category": "Puzzles",
       "intent": "Gate player progress behind acquisition of a specific item or condition."
     },
     {
-      "id": "DP-002",
+      "id": "PUZ-002",
       "name": "Light Dependency",
       "category": "Puzzles",
       "intent": "Require player to manage light source to access or interact with dark areas."
     },
     {
-      "id": "DP-003",
+      "id": "PUZ-003",
       "name": "Container Puzzle",
       "category": "Puzzles",
       "intent": "Hide important items inside, under, or behind other objects requiring discovery."
     },
     {
-      "id": "DP-004",
+      "id": "PUZ-004",
       "name": "Guardian",
       "category": "Puzzles",
       "intent": "Block player progress with an NPC that must be dealt with through non-trivial means."
     },
     {
-      "id": "DP-005",
+      "id": "PUZ-005",
       "name": "Sequence Puzzle",
       "category": "Puzzles",
       "intent": "Require player to perform actions in a specific order."
     },
     {
-      "id": "DP-006",
+      "id": "PUZ-006",
       "name": "State Machine",
       "category": "Puzzles",
       "intent": "Create a system with multiple states that player manipulates to achieve goal."
     },
     {
-      "id": "DP-007",
+      "id": "PUZ-007",
       "name": "Information Puzzle",
       "category": "Puzzles",
       "intent": "Require player to learn something in one location and apply it elsewhere."
     },
     {
-      "id": "DP-008",
+      "id": "PUZ-008",
       "name": "Transformation",
       "category": "Puzzles",
       "intent": "Change an item's form to make it useful for a different purpose."
     },
     {
-      "id": "DP-009",
+      "id": "PUZ-009",
       "name": "Timing / Fuse",
       "category": "Puzzles",
       "intent": "Create puzzles where timing and sequencing within a time window matter."
     },
     {
-      "id": "DP-010",
+      "id": "PUZ-010",
       "name": "Weight / Balance",
       "category": "Puzzles",
       "intent": "Use weight or balance mechanics to trigger mechanisms or solve puzzles."
     },
     {
-      "id": "DP-011",
+      "id": "PUZ-011",
       "name": "Tool Use",
       "category": "Puzzles",
       "intent": "Require player to apply an object as a tool to solve a problem."
     },
     {
-      "id": "DP-012",
+      "id": "PUZ-012",
       "name": "Environmental Manipulation",
       "category": "Puzzles",
       "intent": "Change the environment itself to enable progress."
     },
     {
-      "id": "DP-013",
+      "id": "PUZ-013",
       "name": "Combination/Dial",
       "category": "Puzzles",
       "intent": "Gate progress behind a code or sequence that must be discovered elsewhere, testing information gathering."
     },
     {
-      "id": "DP-014",
+      "id": "PUZ-014",
       "name": "Assembly",
       "category": "Puzzles",
       "intent": "Require the player to construct a functional item from scattered components."
     },
     {
-      "id": "DP-015",
+      "id": "PUZ-015",
       "name": "Reflection/Redirect",
       "category": "Puzzles",
       "intent": "Require the player to aim, redirect, or reflect beams, sound, or projectiles to reach a target."
     },
     {
-      "id": "DP-016",
+      "id": "PUZ-016",
       "name": "Sound/Music",
       "category": "Puzzles",
       "intent": "Use audio cues, musical patterns, or sound production as puzzle mechanics."
     },
     {
-      "id": "DP-017",
+      "id": "PUZ-017",
       "name": "Temperature",
       "category": "Puzzles",
       "intent": "Use heating or cooling to change object states or enable actions."
     },
     {
-      "id": "DP-018",
+      "id": "PUZ-018",
       "name": "Fluid Dynamics",
       "category": "Puzzles",
       "intent": "Use liquid or gas behavior—filling, draining, pressure, displacement—as puzzle mechanics."
     },
     {
-      "id": "DP-019",
+      "id": "PUZ-019",
       "name": "Rope/Pulley",
       "category": "Puzzles",
       "intent": "Use rope, mechanical advantage, or counterweight systems for vertical movement or force multiplication."
     },
     {
-      "id": "DP-020",
+      "id": "PUZ-020",
       "name": "Substitution",
       "category": "Puzzles",
       "intent": "Allow or require replacing one item with an equivalent to bypass a constraint or fool a mechanism."
     },
     {
-      "id": "DP-021",
+      "id": "PUZ-021",
       "name": "Dialogue Puzzle",
       "category": "Puzzles",
       "intent": "Progress requires extracting or conveying specific information through conversation with an NPC. The player must ask the right questions, choose the right topics, or say the right thing — the puzzle is in the *conversation itself*, not in applying knowledge learned elsewhere (see DP-007 for that)."
     },
     {
-      "id": "DP-022",
+      "id": "PUZ-022",
       "name": "Disguise/Deception",
       "category": "Puzzles",
       "intent": "The player must present themselves as someone or something else to bypass a check. This involves acquiring the right appearance, credentials, or behavior to fool an NPC or system."
     },
     {
-      "id": "DP-023",
+      "id": "PUZ-023",
       "name": "Inventory Constraint",
       "category": "Puzzles",
       "intent": "Limited carrying capacity forces the player to make strategic decisions about which items to bring. The constraint creates resource tension — the player can't carry everything and must plan trips, stash items, or prioritize."
     },
     {
-      "id": "DP-100",
+      "id": "GEO-001",
       "name": "Hub and Spoke",
       "category": "Geography",
       "intent": "Provide player with choices about exploration order while maintaining a sense of place."
     },
     {
-      "id": "DP-101",
+      "id": "GEO-002",
       "name": "Linear Progression",
       "category": "Geography",
       "intent": "Guide player through story in controlled sequence with clear forward direction."
     },
     {
-      "id": "DP-102",
+      "id": "GEO-003",
       "name": "Gated Regions",
       "category": "Geography",
       "intent": "Unlock areas progressively to control pacing and complexity."
     },
     {
-      "id": "DP-103",
+      "id": "GEO-004",
       "name": "Vertical Layers",
       "category": "Geography",
       "intent": "Add depth to geography through vertical connections (up/down, climbing/descending)."
     },
     {
-      "id": "DP-104",
+      "id": "GEO-005",
       "name": "Hidden Exits",
       "category": "Geography",
       "intent": "Create secret or initially invisible connections that reward exploration."
     },
     {
-      "id": "DP-105",
+      "id": "GEO-006",
       "name": "Maze",
       "category": "Geography",
       "intent": "Create disorienting geography that challenges navigation."
     },
     {
-      "id": "DP-106",
+      "id": "GEO-007",
       "name": "Non-Euclidean Geography",
       "category": "Geography",
       "intent": "Create impossible or reality-bending geography for surreal or magical settings."
     },
     {
-      "id": "DP-107",
+      "id": "GEO-008",
       "name": "One-Way Passage",
       "category": "Geography",
       "intent": "Create paths that can only be traversed in one direction, introducing commitment and preventing easy backtracking."
     },
     {
-      "id": "DP-108",
+      "id": "GEO-009",
       "name": "Portal/Teleport",
       "category": "Geography",
       "intent": "Connect non-adjacent locations through instantaneous travel, breaking normal spatial rules."
     },
     {
-      "id": "DP-109",
+      "id": "GEO-010",
       "name": "Environmental Hazard",
       "category": "Geography",
       "intent": "Create regions that damage or kill the player without protection, requiring preparation before entry."
     },
     {
-      "id": "DP-110",
+      "id": "GEO-011",
       "name": "Parallel Worlds",
       "category": "Geography",
       "intent": "Create multiple versions of the same geography with different states, enabling puzzles that span realities."
     },
     {
-      "id": "DP-111",
+      "id": "GEO-012",
       "name": "Dream Sequence",
       "category": "Geography",
       "intent": "Create non-physical spaces where normal rules don't apply, enabling surreal exploration and symbolic storytelling."
     },
     {
-      "id": "DP-112",
+      "id": "GEO-013",
       "name": "Loop/Circuit",
       "category": "Geography",
       "intent": "Create a circular path that returns to its starting point, enabling traversal-based puzzles and natural exploration flow."
     },
     {
-      "id": "DP-113",
+      "id": "GEO-014",
       "name": "Grid",
       "category": "Geography",
       "intent": "Organize space in a regular rectangular pattern, providing predictable navigation and systematic exploration."
     },
     {
-      "id": "DP-114",
+      "id": "GEO-015",
       "name": "Bottleneck/Chokepoint",
       "category": "Geography",
       "intent": "Funnel all traffic through a single location, creating natural encounter points, gatekeeping opportunities, and narrative focus."
     },
     {
-      "id": "DP-115",
+      "id": "GEO-016",
       "name": "Shortcut/Fast Travel",
       "category": "Geography",
       "intent": "Reward exploration by providing faster routes between distant locations, reducing tedious backtracking."
     },
     {
-      "id": "DP-116",
+      "id": "GEO-017",
       "name": "Dead End",
       "category": "Geography",
       "intent": "Create paths that lead nowhere, serving as locations for secrets, treasure, traps, atmosphere, or misdirection."
     },
     {
-      "id": "DP-117",
+      "id": "GEO-018",
       "name": "Dynamic/Shifting Geography",
       "category": "Geography",
       "intent": "Create geography that changes based on events, time, or player action, enabling puzzles based on spatial transformation."
     },
     {
-      "id": "DP-118",
+      "id": "GEO-019",
       "name": "Nested/Contained Geography",
       "category": "Geography",
       "intent": "Create spaces within spaces at different scales, providing natural organization and enabling scale-based puzzles."
     },
     {
-      "id": "DP-119",
+      "id": "GEO-020",
       "name": "Wraparound",
       "category": "Geography",
       "intent": "Create bounded space where edges connect, enabling continuous movement without barriers."
     },
     {
-      "id": "DP-120",
+      "id": "GEO-021",
       "name": "Connection Puzzle",
       "category": "Geography",
       "intent": "Require player to create or enable geographic connections, making path-building itself a puzzle."
     },
     {
-      "id": "DP-121",
+      "id": "GEO-022",
       "name": "Vehicle/Conveyance",
       "category": "Geography",
       "intent": "A vehicle moves the player (and potentially cargo) between locations. Unlike walking, the room itself moves — the player stays inside the vehicle while it changes position. This enables traversal of otherwise impassable terrain (water, air, underground rails)."
     },
     {
-      "id": "DP-200",
+      "id": "NPC-001",
       "name": "Information Source",
       "category": "NPCs",
       "intent": "Provide player with knowledge through NPC interaction rather than environmental discovery."
     },
     {
-      "id": "DP-201",
+      "id": "NPC-002",
       "name": "Follower / Companion",
       "category": "NPCs",
       "intent": "Provide player with an accompanying character who travels with them and may assist or complicate puzzles."
     },
     {
-      "id": "DP-202",
+      "id": "NPC-003",
       "name": "Patrol / Scheduled NPC",
       "category": "NPCs",
       "intent": "Create NPCs that move on predictable schedules, enabling stealth and timing puzzles."
     },
     {
-      "id": "DP-203",
+      "id": "NPC-004",
       "name": "Trader / Merchant",
       "category": "NPCs",
       "intent": "Create an NPC who exchanges items with the player, enabling resource management and acquisition puzzles."
     },
     {
-      "id": "DP-204",
+      "id": "NPC-005",
       "name": "Antagonist",
       "category": "NPCs",
       "intent": "Create active opposition to the player, providing conflict, stakes, and a personal face to obstacles."
     },
     {
-      "id": "DP-205",
+      "id": "NPC-006",
       "name": "Gatekeeper",
       "category": "NPCs",
       "intent": "Control access to areas, information, or resources through an NPC who requires something before granting passage."
     },
     {
-      "id": "DP-206",
+      "id": "NPC-007",
       "name": "Companion",
       "category": "NPCs",
       "intent": "Provide ongoing assistance, commentary, and emotional connection through an NPC who travels with the player."
     },
     {
-      "id": "DP-207",
+      "id": "NPC-008",
       "name": "Shapeshifter",
       "category": "NPCs",
       "intent": "Create uncertainty and dynamic interactions through an NPC whose form, identity, or nature changes."
     },
     {
-      "id": "DP-208",
+      "id": "NPC-009",
       "name": "Schedule Bound",
       "category": "NPCs",
       "intent": "Create time-based puzzle opportunities and world believability through NPCs who follow predictable schedules."
     },
     {
-      "id": "DP-209",
+      "id": "NPC-010",
       "name": "Quest Giver",
       "category": "NPCs",
       "intent": "Provide player with explicit objectives and motivation through NPC-assigned tasks."
     },
     {
-      "id": "DP-210",
+      "id": "NPC-011",
       "name": "Victim/Rescuee",
       "category": "NPCs",
       "intent": "Create urgency and emotional stakes by presenting an NPC who needs to be saved or helped."
     },
     {
-      "id": "DP-211",
+      "id": "NPC-012",
       "name": "Witness/Reactor",
       "category": "NPCs",
       "intent": "Provide feedback and consequences for player actions through NPC observation and response."
     },
     {
-      "id": "DP-212",
+      "id": "NPC-013",
       "name": "Mentor/Teacher",
       "category": "NPCs",
       "intent": "Teach player mechanics, abilities, or world knowledge through in-world instruction."
     },
     {
-      "id": "DP-213",
+      "id": "NPC-014",
       "name": "Distracted",
       "category": "NPCs",
       "intent": "Create a puzzle gate through an NPC who won't interact meaningfully until their distraction is resolved."
     },
     {
-      "id": "DP-214",
+      "id": "NPC-015",
       "name": "Relationship-Tracked",
       "category": "NPCs",
       "intent": "Create NPCs whose behavior changes based on accumulated history with the player, enabling relationship-building gameplay."
     },
     {
-      "id": "DP-215",
+      "id": "NPC-016",
       "name": "Multi-State",
       "category": "NPCs",
       "intent": "Create NPCs with distinct behavioral modes, enabling different interactions based on their current state."
     },
     {
-      "id": "DP-216",
+      "id": "NPC-017",
       "name": "Crowd/Group",
       "category": "NPCs",
       "intent": "Represent multiple NPCs as a collective entity, enabling interactions with groups rather than individuals."
     },
     {
-      "id": "DP-217",
+      "id": "NPC-018",
       "name": "Hidden Identity",
       "category": "NPCs",
       "intent": "Create NPCs whose true nature is concealed, enabling revelations, twists, and investigative gameplay."
     },
     {
-      "id": "DP-218",
+      "id": "NPC-019",
       "name": "Animal/Non-Verbal",
       "category": "NPCs",
       "intent": "Create NPCs who communicate through behavior rather than language, requiring different interaction approaches."
     },
     {
-      "id": "DP-219",
+      "id": "NPC-020",
       "name": "Authority Figure",
       "category": "NPCs",
       "intent": "Create social constraints through NPCs with power to permit, forbid, or command within the game world."
     },
     {
-      "id": "DP-220",
+      "id": "NPC-021",
       "name": "Rival/Competitor",
       "category": "NPCs",
       "intent": "Create urgency and parallel agency through an NPC pursuing similar goals to the player."
     },
     {
-      "id": "DP-221",
+      "id": "NPC-022",
       "name": "Comic Relief",
       "category": "NPCs",
       "intent": "Increase player engagement and manage tension through humor, providing emotional contrast and memorable moments."
     },
     {
-      "id": "DP-222",
+      "id": "NPC-023",
       "name": "Dramatic Amplifier",
       "category": "NPCs",
       "intent": "Heighten emotional stakes and atmosphere through NPCs whose purpose is to intensify feeling, whether authentically or as misdirection."
     },
     {
-      "id": "DP-300",
+      "id": "OBJ-001",
       "name": "Key Item",
       "category": "Objects",
       "intent": "Provide essential objects that gate progress and cannot be substituted."
     },
     {
-      "id": "DP-301",
+      "id": "OBJ-002",
       "name": "Consumable / Limited-Use Item",
       "category": "Objects",
       "intent": "Create items with limited uses, adding resource management and strategic decisions."
     },
     {
-      "id": "DP-302",
+      "id": "OBJ-003",
       "name": "Container",
       "category": "Objects",
       "intent": "Provide objects that hold other objects, enabling inventory organization and puzzle mechanics."
     },
     {
-      "id": "DP-303",
+      "id": "OBJ-004",
       "name": "Multi-State",
       "category": "Objects",
       "intent": "Provide objects with multiple configurations or modes, enabling state-based puzzles."
     },
     {
-      "id": "DP-304",
+      "id": "OBJ-005",
       "name": "Scenery",
       "category": "Objects",
       "intent": "Provide examinable environmental details that add richness without being portable or manipulable."
     },
     {
-      "id": "DP-305",
+      "id": "OBJ-006",
       "name": "Treasure",
       "category": "Objects",
       "intent": "Provide collectible valuables that reward exploration and may contribute to scoring."
     },
     {
-      "id": "DP-306",
+      "id": "OBJ-007",
       "name": "Readable",
       "category": "Objects",
       "intent": "Provide text-containing objects that deliver information, clues, or narrative through reading."
     },
     {
-      "id": "DP-307",
+      "id": "OBJ-008",
       "name": "Wearable",
       "category": "Objects",
       "intent": "Provide clothing and accessories that modify player capabilities when worn."
     },
     {
-      "id": "DP-308",
+      "id": "OBJ-009",
       "name": "Light Source",
       "category": "Objects",
       "intent": "Provide portable illumination for dark areas, often with limited duration."
     },
     {
-      "id": "DP-309",
+      "id": "OBJ-010",
       "name": "Combination",
       "category": "Objects",
       "intent": "Provide objects that can be merged or combined with others to create new items."
     },
     {
-      "id": "DP-310",
+      "id": "OBJ-011",
       "name": "Degradable",
       "category": "Objects",
       "intent": "Provide objects that wear out through use or time, creating resource management decisions."
     },
     {
-      "id": "DP-311",
+      "id": "OBJ-012",
       "name": "Weapon",
       "category": "Objects",
       "intent": "Provide combat or threat-oriented objects for dealing with hostile NPCs or obstacles."
     },
     {
-      "id": "DP-312",
+      "id": "OBJ-013",
       "name": "Vehicle",
       "category": "Objects",
       "intent": "An object the player can board that transports them between locations. Vehicles are enterable containers that change location — the player rides inside rather than walking."
     },
     {
-      "id": "DP-313",
+      "id": "OBJ-014",
       "name": "Currency/Money",
       "category": "Objects",
       "intent": "Items with numeric value used for exchange. Currency enables trading (DP-203) with a fungible medium rather than direct barter. Money creates resource management decisions — spend now or save for later."
     },
     {
-      "id": "DP-314",
+      "id": "OBJ-015",
       "name": "Enchantable/Magical",
       "category": "Objects",
       "intent": "An object that can gain, lose, or change properties through spells, rituals, or other transformative actions. Unlike DP-008 (Transformation) which covers the puzzle mechanic, this pattern describes the *object type* — items designed to be targets of magical modification."
     },
     {
-      "id": "DP-400",
+      "id": "NARR-001",
       "name": "Ticking Clock",
       "category": "Narrative",
       "intent": "Create urgency and tension through time pressure."
     },
     {
-      "id": "DP-401",
+      "id": "NARR-002",
       "name": "In Medias Res",
       "category": "Narrative",
       "intent": "Begin the story in the middle of action, revealing context through play rather than exposition."
     },
     {
-      "id": "DP-402",
+      "id": "NARR-003",
       "name": "Discovery",
       "category": "Narrative",
       "intent": "Reveal backstory, world history, and context through player exploration rather than upfront exposition."
     },
     {
-      "id": "DP-403",
+      "id": "NARR-004",
       "name": "Multiple Endings",
       "category": "Narrative",
       "intent": "Provide narrative closure that reflects player choices, creating replayability and meaningful consequences."
     },
     {
-      "id": "DP-404",
+      "id": "NARR-005",
       "name": "Point of No Return",
       "category": "Narrative",
       "intent": "Create dramatic weight and commitment through irreversible progression points."
     },
     {
-      "id": "DP-405",
+      "id": "NARR-006",
       "name": "Multiple Solutions",
       "category": "Narrative",
       "intent": "Reward player creativity and support different playstyles by allowing various approaches to challenges."
     },
     {
-      "id": "DP-406",
+      "id": "NARR-007",
       "name": "Flashback",
       "category": "Narrative",
       "intent": "Reveal past events through playable sequences, providing context and dramatic irony."
     },
     {
-      "id": "DP-407",
+      "id": "NARR-008",
       "name": "Unreliable Frame",
       "category": "Narrative",
       "intent": "Create narrative complexity by making the presentation of events untrustworthy, enabling twists and thematic depth."
     },
     {
-      "id": "DP-408",
+      "id": "NARR-009",
       "name": "Epistolary",
       "category": "Narrative",
       "intent": "Tell story through in-world documents, enabling discovery-based narrative and multiple perspectives."
     },
     {
-      "id": "DP-409",
+      "id": "NARR-010",
       "name": "Red Herring",
       "category": "Narrative",
       "intent": "Misdirect player attention, creating suspense, surprise, and investigative depth."
     },
     {
-      "id": "DP-410",
+      "id": "NARR-011",
       "name": "Foreshadowing",
       "category": "Narrative",
       "intent": "Create narrative satisfaction and replayability by planting hints that pay off later."
     },
     {
-      "id": "DP-411",
+      "id": "NARR-012",
       "name": "Dramatic Irony",
       "category": "Narrative",
       "intent": "Create tension and emotional engagement through information asymmetry between player and character."
     },
     {
-      "id": "DP-412",
+      "id": "NARR-013",
       "name": "Parallel Storylines",
       "category": "Narrative",
       "intent": "Create narrative complexity and dramatic resonance through multiple interwoven narrative threads."
     },
     {
-      "id": "DP-413",
+      "id": "NARR-014",
       "name": "Frame Narrative",
       "category": "Narrative",
       "intent": "Create narrative depth through story-within-story structure, enabling meta-commentary and perspective shifts."
     },
     {
-      "id": "DP-414",
+      "id": "NARR-015",
       "name": "Non-Linear Chronology",
       "category": "Narrative",
       "intent": "Create narrative intrigue and thematic resonance by presenting events out of temporal order."
     },
     {
-      "id": "DP-415",
+      "id": "NARR-016",
       "name": "Moral Choice",
       "category": "Narrative",
       "intent": "Create meaningful player agency and thematic depth through decisions with ethical weight."
     },
     {
-      "id": "DP-416",
+      "id": "NARR-017",
       "name": "Character Arc",
       "category": "Narrative",
       "intent": "Create emotional depth and narrative satisfaction through PC transformation over the course of the story."
     },
     {
-      "id": "DP-417",
+      "id": "NARR-018",
       "name": "Twist/Reversal",
       "category": "Narrative",
       "intent": "Create memorable impact by subverting player expectations while remaining fair and meaningful."
     },
     {
-      "id": "DP-418",
+      "id": "NARR-019",
       "name": "Environmental Storytelling",
       "category": "Narrative",
       "intent": "Convey narrative through world design rather than exposition, enabling player discovery and immersion."
     },
     {
-      "id": "DP-419",
+      "id": "NARR-020",
       "name": "Recurring Motif",
       "category": "Narrative",
       "intent": "Create thematic coherence and resonance through repeated images, ideas, or elements."
     },
     {
-      "id": "DP-420",
+      "id": "NARR-021",
       "name": "Mystery Structure",
       "category": "Narrative",
       "intent": "Drive narrative through central question that player investigates, creating engagement through discovery."
     },
     {
-      "id": "DP-421",
+      "id": "NARR-022",
       "name": "Prophecy/Destiny",
       "category": "Narrative",
       "intent": "Create narrative drive and thematic weight through predetermined fate that player moves toward (or against)."
     },
     {
-      "id": "DP-422",
+      "id": "NARR-023",
       "name": "PC Voice/Personality",
       "category": "Narrative",
       "intent": "The player character has a distinct voice, personality, or attitude that colors all interactions. Rather than a neutral \"You see a room\" narrator, the PC's perspective shapes descriptions, responses, and even which actions are available."
     },
     {
-      "id": "DP-423",
+      "id": "NARR-024",
       "name": "Collaborative Storytelling",
       "category": "Narrative",
       "intent": "The player contributes narrative elements beyond action commands — naming things, choosing backstory details, defining relationships, or selecting motivations. The game incorporates player-authored content into the story."
     },
     {
-      "id": "DP-500",
+      "id": "STRUC-001",
       "name": "Tutorial Integration",
       "category": "Structure",
       "intent": "Teach game mechanics through play rather than documentation."
     },
     {
-      "id": "DP-501",
+      "id": "STRUC-002",
       "name": "Difficulty Curve",
       "category": "Structure",
       "intent": "Progressively increase challenge as the player gains skill and understanding."
     },
     {
-      "id": "DP-502",
+      "id": "STRUC-003",
       "name": "Optional Content",
       "category": "Structure",
       "intent": "Provide rewarding non-required content that enriches the experience for thorough players."
     },
     {
-      "id": "DP-503",
+      "id": "STRUC-004",
       "name": "Chapter Structure",
       "category": "Structure",
       "intent": "Divide the game into distinct acts or segments with clear transitions."
     },
     {
-      "id": "DP-504",
+      "id": "STRUC-005",
       "name": "Scoring System",
       "category": "Structure",
       "intent": "Track player achievement numerically, rewarding progress and encouraging thoroughness."
     },
     {
-      "id": "DP-505",
+      "id": "STRUC-006",
       "name": "Hint Integration",
       "category": "Structure",
       "intent": "Provide built-in assistance for stuck players without breaking immersion."
     },
     {
-      "id": "DP-506",
+      "id": "STRUC-007",
       "name": "Prologue/Epilogue",
       "category": "Structure",
       "intent": "Frame the main game with opening and closing sequences that establish and resolve context."
     },
     {
-      "id": "DP-507",
+      "id": "STRUC-008",
       "name": "Meta-Mechanics",
       "category": "Structure",
       "intent": "Game mechanics that exist *outside* the fiction — UNDO, SAVE/RESTORE, RESTART, or awareness of being in a game — are incorporated as design elements rather than just utilities. The game acknowledges or manipulates the player's relationship with the system."
     },
     {
-      "id": "DP-508",
+      "id": "STRUC-009",
       "name": "New Game Plus / Replay Value",
       "category": "Structure",
       "intent": "The game changes on subsequent playthroughs. Content, puzzles, dialogue, or mechanics differ based on prior completions, encouraging replay and rewarding mastery."
     },
     {
-      "id": "DP-509",
+      "id": "STRUC-010",
       "name": "Adaptive Difficulty",
       "category": "Structure",
       "intent": "The game adjusts challenge level based on player behavior. Struggling players receive more hints or easier puzzles; skilled players face tighter constraints or harder variants. The adaptation may be invisible or transparent."
     },
     {
-      "id": "DP-510",
+      "id": "STRUC-011",
       "name": "Accessibility Patterns",
       "category": "Structure",
       "intent": "Structural design decisions that make the game playable by the widest possible audience. Accessibility is not an afterthought — it's a design pattern that affects parser behavior, output formatting, difficulty options, and interaction modes."
     },
     {
-      "id": "DP-600",
+      "id": "CONV-001",
       "name": "ASK/TELL Topic Model",
       "category": "Conversation",
       "intent": "NPCs respond to specific topics raised by the player via ASK [NPC] ABOUT [TOPIC] or TELL [NPC] ABOUT [TOPIC] commands. This is the foundational conversation mechanic in parser IF — simple, flexible, and well-understood by players."
     },
     {
-      "id": "DP-601",
+      "id": "CONV-002",
       "name": "Menu Dialogue",
       "category": "Conversation",
       "intent": "Instead of free-text input, the player selects from a list of numbered or lettered options during conversation. This eliminates guess-the-topic frustration and allows authors to control conversation flow precisely."
     },
     {
-      "id": "DP-602",
+      "id": "CONV-003",
       "name": "Keyword Recognition",
       "category": "Conversation",
       "intent": "The NPC listens for specific words or phrases in player input, regardless of command structure. Instead of requiring formal ASK/TELL syntax, the NPC reacts to keywords spoken in their presence. This creates a more natural conversation feel."
     },
     {
-      "id": "DP-603",
+      "id": "CONV-004",
       "name": "Mood-Influenced Responses",
       "category": "Conversation",
       "intent": "NPC conversation output varies based on the NPC's current emotional state or disposition toward the player. The same topic produces different responses depending on mood — a friendly NPC shares freely while an angry NPC withholds or attacks."
     },
     {
-      "id": "DP-604",
+      "id": "CONV-005",
       "name": "Conversation State Tracking",
       "category": "Conversation",
       "intent": "The conversation system remembers what has been discussed, enabling continuity across multiple interactions with the same NPC. Topics can reference prior exchanges, NPCs can recall what the player told them, and conversation evolves over time."
     },
     {
-      "id": "DP-605",
+      "id": "CONV-006",
       "name": "Multi-Party Conversation",
       "category": "Conversation",
       "intent": "Conversations involving more than two participants. Multiple NPCs may be present and react to what the player says, interrupt each other, agree or disagree, or carry on their own dialogue that the player observes or joins."
@@ -756,896 +756,896 @@
   ],
   "edges": [
     {
-      "source": "DP-001",
-      "target": "DP-001"
+      "source": "PUZ-001",
+      "target": "PUZ-001"
     },
     {
-      "source": "DP-001",
-      "target": "DP-007"
+      "source": "PUZ-001",
+      "target": "PUZ-007"
     },
     {
-      "source": "DP-002",
-      "target": "DP-002"
+      "source": "PUZ-002",
+      "target": "PUZ-002"
     },
     {
-      "source": "DP-002",
-      "target": "DP-009"
+      "source": "PUZ-002",
+      "target": "PUZ-009"
     },
     {
-      "source": "DP-003",
-      "target": "DP-003"
+      "source": "PUZ-003",
+      "target": "PUZ-003"
     },
     {
-      "source": "DP-003",
-      "target": "DP-001"
+      "source": "PUZ-003",
+      "target": "PUZ-001"
     },
     {
-      "source": "DP-004",
-      "target": "DP-004"
+      "source": "PUZ-004",
+      "target": "PUZ-004"
     },
     {
-      "source": "DP-004",
-      "target": "DP-001"
+      "source": "PUZ-004",
+      "target": "PUZ-001"
     },
     {
-      "source": "DP-005",
-      "target": "DP-005"
+      "source": "PUZ-005",
+      "target": "PUZ-005"
     },
     {
-      "source": "DP-005",
-      "target": "DP-007"
+      "source": "PUZ-005",
+      "target": "PUZ-007"
     },
     {
-      "source": "DP-006",
-      "target": "DP-006"
+      "source": "PUZ-006",
+      "target": "PUZ-006"
     },
     {
-      "source": "DP-006",
-      "target": "DP-005"
+      "source": "PUZ-006",
+      "target": "PUZ-005"
     },
     {
-      "source": "DP-007",
-      "target": "DP-007"
+      "source": "PUZ-007",
+      "target": "PUZ-007"
     },
     {
-      "source": "DP-007",
-      "target": "DP-200"
+      "source": "PUZ-007",
+      "target": "NPC-001"
     },
     {
-      "source": "DP-008",
-      "target": "DP-008"
+      "source": "PUZ-008",
+      "target": "PUZ-008"
     },
     {
-      "source": "DP-008",
-      "target": "DP-011"
+      "source": "PUZ-008",
+      "target": "PUZ-011"
     },
     {
-      "source": "DP-009",
-      "target": "DP-009"
+      "source": "PUZ-009",
+      "target": "PUZ-009"
     },
     {
-      "source": "DP-010",
-      "target": "DP-010"
+      "source": "PUZ-010",
+      "target": "PUZ-010"
     },
     {
-      "source": "DP-010",
-      "target": "DP-011"
+      "source": "PUZ-010",
+      "target": "PUZ-011"
     },
     {
-      "source": "DP-011",
-      "target": "DP-011"
+      "source": "PUZ-011",
+      "target": "PUZ-011"
     },
     {
-      "source": "DP-011",
-      "target": "DP-001"
+      "source": "PUZ-011",
+      "target": "PUZ-001"
     },
     {
-      "source": "DP-012",
-      "target": "DP-012"
+      "source": "PUZ-012",
+      "target": "PUZ-012"
     },
     {
-      "source": "DP-012",
-      "target": "DP-006"
+      "source": "PUZ-012",
+      "target": "PUZ-006"
     },
     {
-      "source": "DP-013",
-      "target": "DP-013"
+      "source": "PUZ-013",
+      "target": "PUZ-013"
     },
     {
-      "source": "DP-013",
-      "target": "DP-007"
+      "source": "PUZ-013",
+      "target": "PUZ-007"
     },
     {
-      "source": "DP-014",
-      "target": "DP-014"
+      "source": "PUZ-014",
+      "target": "PUZ-014"
     },
     {
-      "source": "DP-014",
-      "target": "DP-001"
+      "source": "PUZ-014",
+      "target": "PUZ-001"
     },
     {
-      "source": "DP-015",
-      "target": "DP-015"
+      "source": "PUZ-015",
+      "target": "PUZ-015"
     },
     {
-      "source": "DP-015",
-      "target": "DP-002"
+      "source": "PUZ-015",
+      "target": "PUZ-002"
     },
     {
-      "source": "DP-016",
-      "target": "DP-016"
+      "source": "PUZ-016",
+      "target": "PUZ-016"
     },
     {
-      "source": "DP-016",
-      "target": "DP-007"
+      "source": "PUZ-016",
+      "target": "PUZ-007"
     },
     {
-      "source": "DP-017",
-      "target": "DP-017"
+      "source": "PUZ-017",
+      "target": "PUZ-017"
     },
     {
-      "source": "DP-017",
-      "target": "DP-008"
+      "source": "PUZ-017",
+      "target": "PUZ-008"
     },
     {
-      "source": "DP-018",
-      "target": "DP-018"
+      "source": "PUZ-018",
+      "target": "PUZ-018"
     },
     {
-      "source": "DP-018",
-      "target": "DP-017"
+      "source": "PUZ-018",
+      "target": "PUZ-017"
     },
     {
-      "source": "DP-019",
-      "target": "DP-019"
+      "source": "PUZ-019",
+      "target": "PUZ-019"
     },
     {
-      "source": "DP-019",
-      "target": "DP-103"
+      "source": "PUZ-019",
+      "target": "GEO-004"
     },
     {
-      "source": "DP-020",
-      "target": "DP-020"
+      "source": "PUZ-020",
+      "target": "PUZ-020"
     },
     {
-      "source": "DP-020",
-      "target": "DP-010"
+      "source": "PUZ-020",
+      "target": "PUZ-010"
     },
     {
-      "source": "DP-021",
-      "target": "DP-007"
+      "source": "PUZ-021",
+      "target": "PUZ-007"
     },
     {
-      "source": "DP-022",
-      "target": "DP-001"
+      "source": "PUZ-022",
+      "target": "PUZ-001"
     },
     {
-      "source": "DP-023",
-      "target": "DP-305"
+      "source": "PUZ-023",
+      "target": "OBJ-006"
     },
     {
-      "source": "DP-100",
-      "target": "DP-100"
+      "source": "GEO-001",
+      "target": "GEO-001"
     },
     {
-      "source": "DP-100",
-      "target": "DP-102"
+      "source": "GEO-001",
+      "target": "GEO-003"
     },
     {
-      "source": "DP-101",
-      "target": "DP-101"
+      "source": "GEO-002",
+      "target": "GEO-002"
     },
     {
-      "source": "DP-101",
-      "target": "DP-400"
+      "source": "GEO-002",
+      "target": "NARR-001"
     },
     {
-      "source": "DP-102",
-      "target": "DP-102"
+      "source": "GEO-003",
+      "target": "GEO-003"
     },
     {
-      "source": "DP-102",
-      "target": "DP-001"
+      "source": "GEO-003",
+      "target": "PUZ-001"
     },
     {
-      "source": "DP-103",
-      "target": "DP-103"
+      "source": "GEO-004",
+      "target": "GEO-004"
     },
     {
-      "source": "DP-103",
-      "target": "DP-002"
+      "source": "GEO-004",
+      "target": "PUZ-002"
     },
     {
-      "source": "DP-104",
-      "target": "DP-104"
+      "source": "GEO-005",
+      "target": "GEO-005"
     },
     {
-      "source": "DP-104",
-      "target": "DP-007"
+      "source": "GEO-005",
+      "target": "PUZ-007"
     },
     {
-      "source": "DP-105",
-      "target": "DP-105"
+      "source": "GEO-006",
+      "target": "GEO-006"
     },
     {
-      "source": "DP-105",
-      "target": "DP-002"
+      "source": "GEO-006",
+      "target": "PUZ-002"
     },
     {
-      "source": "DP-106",
-      "target": "DP-106"
+      "source": "GEO-007",
+      "target": "GEO-007"
     },
     {
-      "source": "DP-106",
-      "target": "DP-105"
+      "source": "GEO-007",
+      "target": "GEO-006"
     },
     {
-      "source": "DP-107",
-      "target": "DP-107"
+      "source": "GEO-008",
+      "target": "GEO-008"
     },
     {
-      "source": "DP-107",
-      "target": "DP-404"
+      "source": "GEO-008",
+      "target": "NARR-005"
     },
     {
-      "source": "DP-108",
-      "target": "DP-108"
+      "source": "GEO-009",
+      "target": "GEO-009"
     },
     {
-      "source": "DP-108",
-      "target": "DP-110"
+      "source": "GEO-009",
+      "target": "GEO-011"
     },
     {
-      "source": "DP-109",
-      "target": "DP-109"
+      "source": "GEO-010",
+      "target": "GEO-010"
     },
     {
-      "source": "DP-109",
-      "target": "DP-002"
+      "source": "GEO-010",
+      "target": "PUZ-002"
     },
     {
-      "source": "DP-110",
-      "target": "DP-110"
+      "source": "GEO-011",
+      "target": "GEO-011"
     },
     {
-      "source": "DP-111",
-      "target": "DP-111"
+      "source": "GEO-012",
+      "target": "GEO-012"
     },
     {
-      "source": "DP-111",
-      "target": "DP-106"
+      "source": "GEO-012",
+      "target": "GEO-007"
     },
     {
-      "source": "DP-112",
-      "target": "DP-112"
+      "source": "GEO-013",
+      "target": "GEO-013"
     },
     {
-      "source": "DP-112",
-      "target": "DP-202"
+      "source": "GEO-013",
+      "target": "NPC-003"
     },
     {
-      "source": "DP-113",
-      "target": "DP-113"
+      "source": "GEO-014",
+      "target": "GEO-014"
     },
     {
-      "source": "DP-113",
-      "target": "DP-105"
+      "source": "GEO-014",
+      "target": "GEO-006"
     },
     {
-      "source": "DP-114",
-      "target": "DP-114"
+      "source": "GEO-015",
+      "target": "GEO-015"
     },
     {
-      "source": "DP-114",
-      "target": "DP-004"
+      "source": "GEO-015",
+      "target": "PUZ-004"
     },
     {
-      "source": "DP-115",
-      "target": "DP-115"
+      "source": "GEO-016",
+      "target": "GEO-016"
     },
     {
-      "source": "DP-115",
-      "target": "DP-104"
+      "source": "GEO-016",
+      "target": "GEO-005"
     },
     {
-      "source": "DP-116",
-      "target": "DP-116"
+      "source": "GEO-017",
+      "target": "GEO-017"
     },
     {
-      "source": "DP-116",
-      "target": "DP-300"
+      "source": "GEO-017",
+      "target": "OBJ-001"
     },
     {
-      "source": "DP-117",
-      "target": "DP-117"
+      "source": "GEO-018",
+      "target": "GEO-018"
     },
     {
-      "source": "DP-117",
-      "target": "DP-009"
+      "source": "GEO-018",
+      "target": "PUZ-009"
     },
     {
-      "source": "DP-118",
-      "target": "DP-118"
+      "source": "GEO-019",
+      "target": "GEO-019"
     },
     {
-      "source": "DP-118",
-      "target": "DP-008"
+      "source": "GEO-019",
+      "target": "PUZ-008"
     },
     {
-      "source": "DP-119",
-      "target": "DP-119"
+      "source": "GEO-020",
+      "target": "GEO-020"
     },
     {
-      "source": "DP-119",
-      "target": "DP-113"
+      "source": "GEO-020",
+      "target": "GEO-014"
     },
     {
-      "source": "DP-120",
-      "target": "DP-120"
+      "source": "GEO-021",
+      "target": "GEO-021"
     },
     {
-      "source": "DP-120",
-      "target": "DP-011"
+      "source": "GEO-021",
+      "target": "PUZ-011"
     },
     {
-      "source": "DP-121",
-      "target": "DP-009"
+      "source": "GEO-022",
+      "target": "PUZ-009"
     },
     {
-      "source": "DP-200",
-      "target": "DP-200"
+      "source": "NPC-001",
+      "target": "NPC-001"
     },
     {
-      "source": "DP-200",
-      "target": "DP-004"
+      "source": "NPC-001",
+      "target": "PUZ-004"
     },
     {
-      "source": "DP-201",
-      "target": "DP-201"
+      "source": "NPC-002",
+      "target": "NPC-002"
     },
     {
-      "source": "DP-201",
-      "target": "DP-200"
+      "source": "NPC-002",
+      "target": "NPC-001"
     },
     {
-      "source": "DP-202",
-      "target": "DP-202"
+      "source": "NPC-003",
+      "target": "NPC-003"
     },
     {
-      "source": "DP-203",
-      "target": "DP-203"
+      "source": "NPC-004",
+      "target": "NPC-004"
     },
     {
-      "source": "DP-203",
-      "target": "DP-007"
+      "source": "NPC-004",
+      "target": "PUZ-007"
     },
     {
-      "source": "DP-204",
-      "target": "DP-204"
+      "source": "NPC-005",
+      "target": "NPC-005"
     },
     {
-      "source": "DP-204",
-      "target": "DP-217"
+      "source": "NPC-005",
+      "target": "NPC-018"
     },
     {
-      "source": "DP-205",
-      "target": "DP-205"
+      "source": "NPC-006",
+      "target": "NPC-006"
     },
     {
-      "source": "DP-205",
-      "target": "DP-007"
+      "source": "NPC-006",
+      "target": "PUZ-007"
     },
     {
-      "source": "DP-206",
-      "target": "DP-206"
+      "source": "NPC-007",
+      "target": "NPC-007"
     },
     {
-      "source": "DP-206",
-      "target": "DP-201"
+      "source": "NPC-007",
+      "target": "NPC-002"
     },
     {
-      "source": "DP-207",
-      "target": "DP-207"
+      "source": "NPC-008",
+      "target": "NPC-008"
     },
     {
-      "source": "DP-207",
-      "target": "DP-217"
+      "source": "NPC-008",
+      "target": "NPC-018"
     },
     {
-      "source": "DP-208",
-      "target": "DP-208"
+      "source": "NPC-009",
+      "target": "NPC-009"
     },
     {
-      "source": "DP-208",
-      "target": "DP-202"
+      "source": "NPC-009",
+      "target": "NPC-003"
     },
     {
-      "source": "DP-209",
-      "target": "DP-209"
+      "source": "NPC-010",
+      "target": "NPC-010"
     },
     {
-      "source": "DP-209",
-      "target": "DP-203"
+      "source": "NPC-010",
+      "target": "NPC-004"
     },
     {
-      "source": "DP-210",
-      "target": "DP-210"
+      "source": "NPC-011",
+      "target": "NPC-011"
     },
     {
-      "source": "DP-210",
-      "target": "DP-009"
+      "source": "NPC-011",
+      "target": "PUZ-009"
     },
     {
-      "source": "DP-211",
-      "target": "DP-211"
+      "source": "NPC-012",
+      "target": "NPC-012"
     },
     {
-      "source": "DP-211",
-      "target": "DP-214"
+      "source": "NPC-012",
+      "target": "NPC-015"
     },
     {
-      "source": "DP-212",
-      "target": "DP-212"
+      "source": "NPC-013",
+      "target": "NPC-013"
     },
     {
-      "source": "DP-212",
-      "target": "DP-500"
+      "source": "NPC-013",
+      "target": "STRUC-001"
     },
     {
-      "source": "DP-213",
-      "target": "DP-213"
+      "source": "NPC-014",
+      "target": "NPC-014"
     },
     {
-      "source": "DP-213",
-      "target": "DP-200"
+      "source": "NPC-014",
+      "target": "NPC-001"
     },
     {
-      "source": "DP-214",
-      "target": "DP-214"
+      "source": "NPC-015",
+      "target": "NPC-015"
     },
     {
-      "source": "DP-215",
-      "target": "DP-215"
+      "source": "NPC-016",
+      "target": "NPC-016"
     },
     {
-      "source": "DP-215",
-      "target": "DP-006"
+      "source": "NPC-016",
+      "target": "PUZ-006"
     },
     {
-      "source": "DP-216",
-      "target": "DP-216"
+      "source": "NPC-017",
+      "target": "NPC-017"
     },
     {
-      "source": "DP-216",
-      "target": "DP-211"
+      "source": "NPC-017",
+      "target": "NPC-012"
     },
     {
-      "source": "DP-217",
-      "target": "DP-217"
+      "source": "NPC-018",
+      "target": "NPC-018"
     },
     {
-      "source": "DP-217",
-      "target": "DP-007"
+      "source": "NPC-018",
+      "target": "PUZ-007"
     },
     {
-      "source": "DP-218",
-      "target": "DP-218"
+      "source": "NPC-019",
+      "target": "NPC-019"
     },
     {
-      "source": "DP-218",
-      "target": "DP-201"
+      "source": "NPC-019",
+      "target": "NPC-002"
     },
     {
-      "source": "DP-219",
-      "target": "DP-219"
+      "source": "NPC-020",
+      "target": "NPC-020"
     },
     {
-      "source": "DP-219",
-      "target": "DP-205"
+      "source": "NPC-020",
+      "target": "NPC-006"
     },
     {
-      "source": "DP-220",
-      "target": "DP-220"
+      "source": "NPC-021",
+      "target": "NPC-021"
     },
     {
-      "source": "DP-220",
-      "target": "DP-009"
+      "source": "NPC-021",
+      "target": "PUZ-009"
     },
     {
-      "source": "DP-221",
-      "target": "DP-221"
+      "source": "NPC-022",
+      "target": "NPC-022"
     },
     {
-      "source": "DP-221",
-      "target": "DP-201"
+      "source": "NPC-022",
+      "target": "NPC-002"
     },
     {
-      "source": "DP-222",
-      "target": "DP-222"
+      "source": "NPC-023",
+      "target": "NPC-023"
     },
     {
-      "source": "DP-222",
-      "target": "DP-400"
+      "source": "NPC-023",
+      "target": "NARR-001"
     },
     {
-      "source": "DP-300",
-      "target": "DP-300"
+      "source": "OBJ-001",
+      "target": "OBJ-001"
     },
     {
-      "source": "DP-300",
-      "target": "DP-001"
+      "source": "OBJ-001",
+      "target": "PUZ-001"
     },
     {
-      "source": "DP-301",
-      "target": "DP-301"
+      "source": "OBJ-002",
+      "target": "OBJ-002"
     },
     {
-      "source": "DP-301",
-      "target": "DP-002"
+      "source": "OBJ-002",
+      "target": "PUZ-002"
     },
     {
-      "source": "DP-302",
-      "target": "DP-302"
+      "source": "OBJ-003",
+      "target": "OBJ-003"
     },
     {
-      "source": "DP-302",
-      "target": "DP-001"
+      "source": "OBJ-003",
+      "target": "PUZ-001"
     },
     {
-      "source": "DP-303",
-      "target": "DP-303"
+      "source": "OBJ-004",
+      "target": "OBJ-004"
     },
     {
-      "source": "DP-303",
-      "target": "DP-006"
+      "source": "OBJ-004",
+      "target": "PUZ-006"
     },
     {
-      "source": "DP-304",
-      "target": "DP-304"
+      "source": "OBJ-005",
+      "target": "OBJ-005"
     },
     {
-      "source": "DP-304",
-      "target": "DP-302"
+      "source": "OBJ-005",
+      "target": "OBJ-003"
     },
     {
-      "source": "DP-305",
-      "target": "DP-305"
+      "source": "OBJ-006",
+      "target": "OBJ-006"
     },
     {
-      "source": "DP-305",
-      "target": "DP-504"
+      "source": "OBJ-006",
+      "target": "STRUC-005"
     },
     {
-      "source": "DP-306",
-      "target": "DP-306"
+      "source": "OBJ-007",
+      "target": "OBJ-007"
     },
     {
-      "source": "DP-306",
-      "target": "DP-007"
+      "source": "OBJ-007",
+      "target": "PUZ-007"
     },
     {
-      "source": "DP-307",
-      "target": "DP-307"
+      "source": "OBJ-008",
+      "target": "OBJ-008"
     },
     {
-      "source": "DP-307",
-      "target": "DP-109"
+      "source": "OBJ-008",
+      "target": "GEO-010"
     },
     {
-      "source": "DP-308",
-      "target": "DP-308"
+      "source": "OBJ-009",
+      "target": "OBJ-009"
     },
     {
-      "source": "DP-308",
-      "target": "DP-002"
+      "source": "OBJ-009",
+      "target": "PUZ-002"
     },
     {
-      "source": "DP-309",
-      "target": "DP-309"
+      "source": "OBJ-010",
+      "target": "OBJ-010"
     },
     {
-      "source": "DP-309",
-      "target": "DP-014"
+      "source": "OBJ-010",
+      "target": "PUZ-014"
     },
     {
-      "source": "DP-310",
-      "target": "DP-310"
+      "source": "OBJ-011",
+      "target": "OBJ-011"
     },
     {
-      "source": "DP-310",
-      "target": "DP-301"
+      "source": "OBJ-011",
+      "target": "OBJ-002"
     },
     {
-      "source": "DP-311",
-      "target": "DP-311"
+      "source": "OBJ-012",
+      "target": "OBJ-012"
     },
     {
-      "source": "DP-311",
-      "target": "DP-204"
+      "source": "OBJ-012",
+      "target": "NPC-005"
     },
     {
-      "source": "DP-312",
-      "target": "DP-121"
+      "source": "OBJ-013",
+      "target": "GEO-022"
     },
     {
-      "source": "DP-313",
-      "target": "DP-203"
+      "source": "OBJ-014",
+      "target": "NPC-004"
     },
     {
-      "source": "DP-314",
-      "target": "DP-006"
+      "source": "OBJ-015",
+      "target": "PUZ-006"
     },
     {
-      "source": "DP-400",
-      "target": "DP-400"
+      "source": "NARR-001",
+      "target": "NARR-001"
     },
     {
-      "source": "DP-400",
-      "target": "DP-002"
+      "source": "NARR-001",
+      "target": "PUZ-002"
     },
     {
-      "source": "DP-401",
-      "target": "DP-401"
+      "source": "NARR-002",
+      "target": "NARR-002"
     },
     {
-      "source": "DP-401",
-      "target": "DP-402"
+      "source": "NARR-002",
+      "target": "NARR-003"
     },
     {
-      "source": "DP-402",
-      "target": "DP-402"
+      "source": "NARR-003",
+      "target": "NARR-003"
     },
     {
-      "source": "DP-403",
-      "target": "DP-403"
+      "source": "NARR-004",
+      "target": "NARR-004"
     },
     {
-      "source": "DP-403",
-      "target": "DP-416"
+      "source": "NARR-004",
+      "target": "NARR-017"
     },
     {
-      "source": "DP-404",
-      "target": "DP-404"
+      "source": "NARR-005",
+      "target": "NARR-005"
     },
     {
-      "source": "DP-404",
-      "target": "DP-403"
+      "source": "NARR-005",
+      "target": "NARR-004"
     },
     {
-      "source": "DP-405",
-      "target": "DP-405"
+      "source": "NARR-006",
+      "target": "NARR-006"
     },
     {
-      "source": "DP-405",
-      "target": "DP-011"
+      "source": "NARR-006",
+      "target": "PUZ-011"
     },
     {
-      "source": "DP-406",
-      "target": "DP-406"
+      "source": "NARR-007",
+      "target": "NARR-007"
     },
     {
-      "source": "DP-406",
-      "target": "DP-413"
+      "source": "NARR-007",
+      "target": "NARR-014"
     },
     {
-      "source": "DP-407",
-      "target": "DP-407"
+      "source": "NARR-008",
+      "target": "NARR-008"
     },
     {
-      "source": "DP-407",
-      "target": "DP-406"
+      "source": "NARR-008",
+      "target": "NARR-007"
     },
     {
-      "source": "DP-408",
-      "target": "DP-408"
+      "source": "NARR-009",
+      "target": "NARR-009"
     },
     {
-      "source": "DP-408",
-      "target": "DP-402"
+      "source": "NARR-009",
+      "target": "NARR-003"
     },
     {
-      "source": "DP-409",
-      "target": "DP-409"
+      "source": "NARR-010",
+      "target": "NARR-010"
     },
     {
-      "source": "DP-409",
-      "target": "DP-421"
+      "source": "NARR-010",
+      "target": "NARR-022"
     },
     {
-      "source": "DP-410",
-      "target": "DP-410"
+      "source": "NARR-011",
+      "target": "NARR-011"
     },
     {
-      "source": "DP-410",
-      "target": "DP-418"
+      "source": "NARR-011",
+      "target": "NARR-019"
     },
     {
-      "source": "DP-411",
-      "target": "DP-411"
+      "source": "NARR-012",
+      "target": "NARR-012"
     },
     {
-      "source": "DP-411",
-      "target": "DP-217"
+      "source": "NARR-012",
+      "target": "NPC-018"
     },
     {
-      "source": "DP-412",
-      "target": "DP-412"
+      "source": "NARR-013",
+      "target": "NARR-013"
     },
     {
-      "source": "DP-412",
-      "target": "DP-413"
+      "source": "NARR-013",
+      "target": "NARR-014"
     },
     {
-      "source": "DP-413",
-      "target": "DP-413"
+      "source": "NARR-014",
+      "target": "NARR-014"
     },
     {
-      "source": "DP-413",
-      "target": "DP-407"
+      "source": "NARR-014",
+      "target": "NARR-008"
     },
     {
-      "source": "DP-414",
-      "target": "DP-414"
+      "source": "NARR-015",
+      "target": "NARR-015"
     },
     {
-      "source": "DP-414",
-      "target": "DP-406"
+      "source": "NARR-015",
+      "target": "NARR-007"
     },
     {
-      "source": "DP-415",
-      "target": "DP-415"
+      "source": "NARR-016",
+      "target": "NARR-016"
     },
     {
-      "source": "DP-415",
-      "target": "DP-403"
+      "source": "NARR-016",
+      "target": "NARR-004"
     },
     {
-      "source": "DP-416",
-      "target": "DP-416"
+      "source": "NARR-017",
+      "target": "NARR-017"
     },
     {
-      "source": "DP-416",
-      "target": "DP-407"
+      "source": "NARR-017",
+      "target": "NARR-008"
     },
     {
-      "source": "DP-417",
-      "target": "DP-417"
+      "source": "NARR-018",
+      "target": "NARR-018"
     },
     {
-      "source": "DP-417",
-      "target": "DP-410"
+      "source": "NARR-018",
+      "target": "NARR-011"
     },
     {
-      "source": "DP-418",
-      "target": "DP-418"
+      "source": "NARR-019",
+      "target": "NARR-019"
     },
     {
-      "source": "DP-418",
-      "target": "DP-402"
+      "source": "NARR-019",
+      "target": "NARR-003"
     },
     {
-      "source": "DP-419",
-      "target": "DP-419"
+      "source": "NARR-020",
+      "target": "NARR-020"
     },
     {
-      "source": "DP-419",
-      "target": "DP-410"
+      "source": "NARR-020",
+      "target": "NARR-011"
     },
     {
-      "source": "DP-420",
-      "target": "DP-420"
+      "source": "NARR-021",
+      "target": "NARR-021"
     },
     {
-      "source": "DP-420",
-      "target": "DP-409"
+      "source": "NARR-021",
+      "target": "NARR-010"
     },
     {
-      "source": "DP-421",
-      "target": "DP-421"
+      "source": "NARR-022",
+      "target": "NARR-022"
     },
     {
-      "source": "DP-421",
-      "target": "DP-411"
+      "source": "NARR-022",
+      "target": "NARR-012"
     },
     {
-      "source": "DP-422",
-      "target": "DP-416"
+      "source": "NARR-023",
+      "target": "NARR-017"
     },
     {
-      "source": "DP-423",
-      "target": "DP-422"
+      "source": "NARR-024",
+      "target": "NARR-023"
     },
     {
-      "source": "DP-500",
-      "target": "DP-500"
+      "source": "STRUC-001",
+      "target": "STRUC-001"
     },
     {
-      "source": "DP-500",
-      "target": "DP-100"
+      "source": "STRUC-001",
+      "target": "GEO-001"
     },
     {
-      "source": "DP-501",
-      "target": "DP-501"
+      "source": "STRUC-002",
+      "target": "STRUC-002"
     },
     {
-      "source": "DP-501",
-      "target": "DP-500"
+      "source": "STRUC-002",
+      "target": "STRUC-001"
     },
     {
-      "source": "DP-502",
-      "target": "DP-502"
+      "source": "STRUC-003",
+      "target": "STRUC-003"
     },
     {
-      "source": "DP-502",
-      "target": "DP-305"
+      "source": "STRUC-003",
+      "target": "OBJ-006"
     },
     {
-      "source": "DP-503",
-      "target": "DP-503"
+      "source": "STRUC-004",
+      "target": "STRUC-004"
     },
     {
-      "source": "DP-503",
-      "target": "DP-501"
+      "source": "STRUC-004",
+      "target": "STRUC-002"
     },
     {
-      "source": "DP-504",
-      "target": "DP-504"
+      "source": "STRUC-005",
+      "target": "STRUC-005"
     },
     {
-      "source": "DP-505",
-      "target": "DP-505"
+      "source": "STRUC-006",
+      "target": "STRUC-006"
     },
     {
-      "source": "DP-505",
-      "target": "DP-200"
+      "source": "STRUC-006",
+      "target": "NPC-001"
     },
     {
-      "source": "DP-506",
-      "target": "DP-506"
+      "source": "STRUC-007",
+      "target": "STRUC-007"
     },
     {
-      "source": "DP-506",
-      "target": "DP-401"
+      "source": "STRUC-007",
+      "target": "NARR-002"
     },
     {
-      "source": "DP-507",
-      "target": "DP-407"
+      "source": "STRUC-008",
+      "target": "NARR-008"
     },
     {
-      "source": "DP-508",
-      "target": "DP-403"
+      "source": "STRUC-009",
+      "target": "NARR-004"
     },
     {
-      "source": "DP-509",
-      "target": "DP-501"
+      "source": "STRUC-010",
+      "target": "STRUC-002"
     },
     {
-      "source": "DP-510",
-      "target": "DP-505"
+      "source": "STRUC-011",
+      "target": "STRUC-006"
     },
     {
-      "source": "DP-600",
-      "target": "DP-021"
+      "source": "CONV-001",
+      "target": "PUZ-021"
     },
     {
-      "source": "DP-601",
-      "target": "DP-021"
+      "source": "CONV-002",
+      "target": "PUZ-021"
     },
     {
-      "source": "DP-602",
-      "target": "DP-021"
+      "source": "CONV-003",
+      "target": "PUZ-021"
     },
     {
-      "source": "DP-603",
-      "target": "DP-214"
+      "source": "CONV-004",
+      "target": "NPC-015"
     },
     {
-      "source": "DP-604",
-      "target": "DP-600"
+      "source": "CONV-005",
+      "target": "CONV-001"
     },
     {
-      "source": "DP-605",
-      "target": "DP-600"
+      "source": "CONV-006",
+      "target": "CONV-001"
     }
   ]
 }

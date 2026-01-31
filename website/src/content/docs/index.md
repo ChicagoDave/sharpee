@@ -1,6 +1,11 @@
 ---
-title: Sharpee Documentation
+title: Getting Started
 description: Interactive Fiction Engine for TypeScript
-slug: ''
-redirect: /getting-started/installation/
+head:
+  - tag: meta
+    attrs:
+      http-equiv: refresh
+      content: '0;url=/getting-started/installation/'
 ---
+
+Redirecting to [Getting Started](/getting-started/installation/)...
