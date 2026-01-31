@@ -4,6 +4,7 @@ import { IEntity, EntityId, IEntityCreationParams } from '@sharpee/core';
 import { ITrait, ITraitConstructor, isTrait } from '../traits/trait';
 import { TraitType } from '../traits/trait-types';
 import { IEventHandlers } from '../events/types';
+import { Annotation, AnnotationCondition } from '../annotations/types';
 
 /**
  * Interactive Fiction Entity with trait-based composition.
@@ -36,6 +37,13 @@ export class IFEntity implements IEntity {
    * - butterfly.setMinimumScope(3, ['garden']) - reachable in garden
    */
   private minimumScopes: Map<string, number> = new Map();
+
+  /**
+   * Presentation metadata annotations (ADR-124).
+   * Keyed by kind (e.g., 'illustration', 'portrait', 'voice').
+   * Multiple annotations per kind are supported.
+   */
+  private annotations: Map<string, Annotation[]> = new Map();
 
   /**
    * Event handlers for this entity
@@ -273,6 +281,117 @@ export class IFEntity implements IEntity {
     return Object.fromEntries(this.minimumScopes);
   }
 
+  // ========== Annotations (ADR-124) ==========
+
+  /**
+   * Add a presentation annotation to this entity.
+   *
+   * @param kind - Annotation kind (e.g., 'illustration', 'portrait')
+   * @param data - Kind-specific payload. Must include an `id` field.
+   * @param condition - Optional condition for when this annotation is active
+   *
+   * @example
+   * entity.annotate('illustration', {
+   *   id: 'dam-exterior',
+   *   src: 'dam-dry.jpg',
+   *   alt: 'The massive concrete face of Flood Control Dam #3',
+   *   trigger: 'on-enter',
+   *   position: 'right',
+   * });
+   */
+  annotate(kind: string, data: Record<string, unknown> & { id: string }, condition?: AnnotationCondition): this {
+    const annotation: Annotation = { kind, id: data.id, data, condition };
+    const existing = this.annotations.get(kind);
+    if (existing) {
+      existing.push(annotation);
+    } else {
+      this.annotations.set(kind, [annotation]);
+    }
+    return this;
+  }
+
+  /**
+   * Get all annotations of a given kind (unfiltered).
+   */
+  getAnnotations(kind: string): Annotation[] {
+    return this.annotations.get(kind) ?? [];
+  }
+
+  /**
+   * Get annotations whose conditions are currently met.
+   * Requires a world model reference to resolve trait state on self/player/location.
+   *
+   * @param kind - Annotation kind to query
+   * @param world - World model for condition evaluation (must have getEntity, getPlayer, getLocation)
+   */
+  getActiveAnnotations(kind: string, world: { getEntity(id: string): IFEntity | undefined; getPlayer(): IFEntity | undefined; getLocation(entityId: string): string | undefined }): Annotation[] {
+    const all = this.annotations.get(kind);
+    if (!all) return [];
+
+    return all.filter(a => {
+      if (!a.condition) return true;
+      return this.evaluateCondition(a.condition, world);
+    });
+  }
+
+  /**
+   * Remove a specific annotation by kind and id.
+   * @returns true if the annotation was found and removed
+   */
+  removeAnnotation(kind: string, id: string): boolean {
+    const list = this.annotations.get(kind);
+    if (!list) return false;
+
+    const idx = list.findIndex(a => a.id === id);
+    if (idx === -1) return false;
+
+    list.splice(idx, 1);
+    if (list.length === 0) {
+      this.annotations.delete(kind);
+    }
+    return true;
+  }
+
+  /**
+   * Check if entity has any annotations of a given kind.
+   */
+  hasAnnotations(kind: string): boolean {
+    const list = this.annotations.get(kind);
+    return !!list && list.length > 0;
+  }
+
+  /**
+   * Evaluate an annotation condition against current world state.
+   */
+  private evaluateCondition(
+    condition: AnnotationCondition,
+    world: { getEntity(id: string): IFEntity | undefined; getPlayer(): IFEntity | undefined; getLocation(entityId: string): string | undefined }
+  ): boolean {
+    const scope = condition.scope ?? 'self';
+    let target: IFEntity | undefined;
+
+    switch (scope) {
+      case 'self':
+        target = this as IFEntity;
+        break;
+      case 'player':
+        target = world.getPlayer();
+        break;
+      case 'location': {
+        const locId = world.getLocation(this.id);
+        target = locId ? world.getEntity(locId) : undefined;
+        break;
+      }
+    }
+
+    if (!target) return false;
+
+    const trait = target.get(condition.trait);
+    if (!trait) return false;
+
+    return (trait as any)[condition.property] === condition.value;
+  }
+
   /**
    * Clone this entity with all its traits
    */
@@ -295,6 +414,11 @@ export class IFEntity implements IEntity {
     // Clone minimum scopes
     for (const [roomId, level] of this.minimumScopes) {
       cloned.minimumScopes.set(roomId, level);
+    }
+
+    // Clone annotations (deep copy)
+    for (const [kind, list] of this.annotations) {
+      cloned.annotations.set(kind, JSON.parse(JSON.stringify(list)));
     }
 
     return cloned;
@@ -324,6 +448,13 @@ export class IFEntity implements IEntity {
     // Include minimum scopes if any
     if (this.minimumScopes.size > 0) {
       json.minimumScopes = Object.fromEntries(this.minimumScopes);
+    }
+
+    // Include annotations if any
+    if (this.annotations.size > 0) {
+      json.annotations = Object.fromEntries(
+        Array.from(this.annotations.entries()).map(([kind, list]) => [kind, list])
+      );
     }
 
     return json;
@@ -380,6 +511,15 @@ export class IFEntity implements IEntity {
     if (json.minimumScopes && typeof json.minimumScopes === 'object') {
       for (const [roomId, level] of Object.entries(json.minimumScopes)) {
         entity.minimumScopes.set(roomId, level as number);
+      }
+    }
+
+    // Restore annotations
+    if (json.annotations && typeof json.annotations === 'object') {
+      for (const [kind, list] of Object.entries(json.annotations)) {
+        if (Array.isArray(list)) {
+          entity.annotations.set(kind, list as Annotation[]);
+        }
       }
     }
 

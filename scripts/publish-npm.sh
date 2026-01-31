@@ -5,7 +5,7 @@
 set -e
 
 # Default version (can be overridden with --version)
-VERSION="0.9.50-beta"
+VERSION="0.9.61-beta"
 DRY_RUN=""
 
 # Parse arguments
@@ -56,20 +56,27 @@ if [ -z "$DRY_RUN" ]; then
   echo ""
 fi
 
-# Packages in dependency order (excludes alpha/experimental packages)
+# Packages in dependency order
 PACKAGES=(
   "core"
   "if-domain"
-  "world=model"
+  "world-model"
   "event-processor"
+  "text-blocks"
+  "text-service"
   "lang-en-us"
   "parser-en-us"
   "if-services"
-  "text-blocks"
-  "text-service"
+  "plugin-npc"
+  "plugin-scheduler"
+  "plugin-state-machine"
+  "plugins"
   "stdlib"
   "engine"
   "sharpee"
+  "platform-browser"
+  "transcript-tester"
+  "extensions/testing"
 )
 
 # Update versions in all packages
@@ -85,29 +92,32 @@ for pkg in "${PACKAGES[@]}"; do
       fs.writeFileSync('$PKG_JSON', JSON.stringify(pkg, null, 2) + '\n');
     "
     echo "  Updated $pkg"
+  else
+    echo -e "  ${RED}Missing: $PKG_JSON${NC}"
   fi
 done
 
-# Build all packages (skip version updates since we already set them)
+# Build all packages
 echo ""
 echo -e "${GREEN}=== Building packages ===${NC}"
-./build.sh --no-version
+pnpm -r build:npm
 
 # Publish each package
 echo ""
 echo -e "${GREEN}=== Publishing packages ===${NC}"
+ROOT_DIR=$(pwd)
 for pkg in "${PACKAGES[@]}"; do
   PKG_DIR="packages/$pkg"
   if [ -d "$PKG_DIR" ]; then
     echo ""
     echo -e "${YELLOW}Publishing @sharpee/$pkg...${NC}"
-    cd "$PKG_DIR"
-    pnpm publish --access public --no-git-checks --tag beta $DRY_RUN || {
+    cd "$ROOT_DIR/$PKG_DIR"
+    pnpm publish --access public --no-git-checks --tag latest $DRY_RUN || {
       echo -e "${RED}Failed to publish @sharpee/$pkg${NC}"
-      cd ../..
+      cd "$ROOT_DIR"
       exit 1
     }
-    cd ../..
+    cd "$ROOT_DIR"
   fi
 done
 

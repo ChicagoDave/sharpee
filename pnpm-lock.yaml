@@ -515,6 +515,21 @@ importers:
       '@sharpee/parser-en-us':
         specifier: workspace:*
         version: link:../parser-en-us
+      '@sharpee/platform-browser':
+        specifier: workspace:*
+        version: link:../platform-browser
+      '@sharpee/plugin-npc':
+        specifier: workspace:*
+        version: link:../plugin-npc
+      '@sharpee/plugin-scheduler':
+        specifier: workspace:*
+        version: link:../plugin-scheduler
+      '@sharpee/plugin-state-machine':
+        specifier: workspace:*
+        version: link:../plugin-state-machine
+      '@sharpee/plugins':
+        specifier: workspace:*
+        version: link:../plugins
       '@sharpee/stdlib':
         specifier: workspace:*
         version: link:../stdlib

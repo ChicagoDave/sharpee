@@ -1,21 +1,22 @@
 {
   "name": "@sharpee/platform-browser",
-  "version": "0.1.0-beta",
+  "version": "0.9.61-beta",
   "description": "Browser client infrastructure for Sharpee interactive fiction",
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist-npm/index.js",
+  "module": "dist-npm/index.js",
+  "types": "dist-npm/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "import": "./dist-npm/index.js",
+      "types": "./dist-npm/index.d.ts"
     }
   },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "build:npm": "tsc --outDir dist-npm"
   },
   "peerDependencies": {
     "@sharpee/core": "workspace:*",
@@ -30,7 +31,7 @@
     "typescript": "^5.3.0"
   },
   "files": [
-    "dist",
+    "dist-npm",
     "src"
   ],
   "keywords": [

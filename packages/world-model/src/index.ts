@@ -61,3 +61,6 @@ export * from './events/types';
 
 // Capability dispatch system (ADR-090)
 export * from './capabilities';
+
+// Annotations (ADR-124)
+export * from './annotations';

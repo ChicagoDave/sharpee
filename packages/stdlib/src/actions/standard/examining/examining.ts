@@ -17,6 +17,7 @@ import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
+import { emitIllustrations } from '../../helpers/emit-illustrations';
 import { buildEventData } from '../../data-builder-types';
 
 // Import our data builder
@@ -86,13 +87,15 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
     const { messageId, params, contentsMessage } = buildExaminingMessageParams(eventData, noun);
 
     // Build events array - emit domain event with messageId for text rendering
-    const events: ISemanticEvent[] = [
-      context.event('if.event.examined', {
-        messageId: `${context.action.id}.${messageId}`,
-        params,
-        ...eventData
-      })
-    ];
+    const examinedEvent = context.event('if.event.examined', {
+      messageId: `${context.action.id}.${messageId}`,
+      params,
+      ...eventData
+    });
+    const events: ISemanticEvent[] = [examinedEvent];
+
+    // Emit illustration events for the examined entity (ADR-124)
+    events.push(...emitIllustrations(noun, 'on-examine', examinedEvent.id, context));
 
     // Add contents message for containers/supporters with visible items
     if (contentsMessage) {

@@ -1,15 +1,15 @@
 {
   "name": "@sharpee/engine",
-  "version": "0.9.60-beta",
+  "version": "0.9.61-beta",
   "description": "Runtime engine for Sharpee IF Platform - game loop, command execution, and turn management",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist-npm/index.js",
+  "module": "dist-npm/index.js",
+  "types": "dist-npm/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist-esm/index.js",
-      "require": "./dist/index.js"
+      "types": "./dist-npm/index.d.ts",
+      "import": "./dist-npm/index.js",
+      "require": "./dist-npm/index.js"
     }
   },
   "scripts": {
@@ -19,7 +19,8 @@
     "test:verbose": "vitest run --reporter=verbose",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "build:npm": "tsc --outDir dist-npm"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",
@@ -41,7 +42,7 @@
     "typescript": "^5.3.3"
   },
   "files": [
-    "dist"
+    "dist-npm"
   ],
   "keywords": [
     "interactive-fiction",

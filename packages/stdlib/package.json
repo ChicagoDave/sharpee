@@ -1,15 +1,15 @@
 {
   "name": "@sharpee/stdlib",
-  "version": "0.9.60-beta",
+  "version": "0.9.61-beta",
   "description": "Standard library for Sharpee IF Platform - actions, commands, and game mechanics",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist-npm/index.js",
+  "module": "dist-npm/index.js",
+  "types": "dist-npm/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist-esm/index.js",
-      "require": "./dist/index.js"
+      "types": "./dist-npm/index.d.ts",
+      "import": "./dist-npm/index.js",
+      "require": "./dist-npm/index.js"
     }
   },
   "scripts": {
@@ -18,7 +18,8 @@
     "test:ci": "CI=true vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "clean": "rimraf dist coverage"
+    "clean": "rimraf dist coverage",
+    "build:npm": "tsc --outDir dist-npm"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",
@@ -36,7 +37,7 @@
     "vitest": "^3.2.4"
   },
   "files": [
-    "dist"
+    "dist-npm"
   ],
   "keywords": [
     "interactive-fiction",

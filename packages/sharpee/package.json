@@ -1,23 +1,24 @@
 {
   "name": "@sharpee/sharpee",
-  "version": "0.9.60-beta",
+  "version": "0.9.61-beta",
   "description": "Sharpee - Interactive Fiction Engine for TypeScript",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist-npm/index.js",
+  "module": "dist-npm/index.js",
+  "types": "dist-npm/index.d.ts",
   "bin": {
-    "sharpee": "./dist/cli/index.js"
+    "sharpee": "./dist-npm/cli/index.js"
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist-esm/index.js",
-      "require": "./dist/index.js"
+      "types": "./dist-npm/index.d.ts",
+      "import": "./dist-npm/index.js",
+      "require": "./dist-npm/index.js"
     }
   },
   "scripts": {
     "build": "tsc",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "build:npm": "tsc --outDir dist-npm"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",
@@ -31,7 +32,12 @@
     "@sharpee/stdlib": "workspace:*",
     "@sharpee/text-blocks": "workspace:*",
     "@sharpee/text-service": "workspace:*",
-    "@sharpee/world-model": "workspace:*"
+    "@sharpee/world-model": "workspace:*",
+    "@sharpee/plugin-npc": "workspace:*",
+    "@sharpee/plugin-scheduler": "workspace:*",
+    "@sharpee/plugin-state-machine": "workspace:*",
+    "@sharpee/plugins": "workspace:*",
+    "@sharpee/platform-browser": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
@@ -39,7 +45,7 @@
     "rimraf": "^5.0.5"
   },
   "files": [
-    "dist",
+    "dist-npm",
     "templates"
   ],
   "keywords": [

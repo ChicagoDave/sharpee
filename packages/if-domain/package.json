@@ -1,20 +1,21 @@
 {
   "name": "@sharpee/if-domain",
-  "version": "0.9.60-beta",
+  "version": "0.9.61-beta",
   "description": "Core domain model and contracts for Sharpee Interactive Fiction Platform",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist-npm/index.js",
+  "module": "dist-npm/index.js",
+  "types": "dist-npm/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist-esm/index.js",
-      "require": "./dist/index.js"
+      "types": "./dist-npm/index.d.ts",
+      "import": "./dist-npm/index.js",
+      "require": "./dist-npm/index.js"
     }
   },
   "scripts": {
     "build": "tsc",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "build:npm": "tsc --outDir dist-npm"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*"
@@ -25,7 +26,7 @@
     "rimraf": "^5.0.5"
   },
   "files": [
-    "dist"
+    "dist-npm"
   ],
   "keywords": [
     "interactive-fiction",

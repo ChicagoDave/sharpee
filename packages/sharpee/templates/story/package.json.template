@@ -10,7 +10,7 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
-    "@sharpee/sharpee": "^0.9.52-beta"
+    "@sharpee/sharpee": "^0.9.61-beta"
   },
   "devDependencies": {
     "typescript": "^5.0.0"

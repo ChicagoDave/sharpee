@@ -14,6 +14,7 @@ import { TraitType } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { captureRoomSnapshot } from '../../base/snapshot-utils';
+import { emitIllustrations } from '../../helpers/emit-illustrations';
 import { buildEventData } from '../../data-builder-types';
 import {
   lookingEventDataConfig,
@@ -81,11 +82,18 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
     }
 
     // Emit looked event as domain event (no messageId - specialized handler handles room description)
-    events.push(context.event('if.event.looked', lookedEventData));
+    const lookedEvent = context.event('if.event.looked', lookedEventData);
+    events.push(lookedEvent);
 
     // Build and emit room description event (specialized handler renders this)
     const roomDescData = buildEventData(roomDescriptionDataConfig, context);
     events.push(context.event('if.event.room.description', roomDescData));
+
+    // Emit illustration events for the room (ADR-124)
+    const room = context.world.getContainingRoom(context.player.id);
+    if (room) {
+      events.push(...emitIllustrations(room, 'on-enter', lookedEvent.id, context));
+    }
 
     // Build list contents data
     const listData = buildEventData(listContentsDataConfig, context);

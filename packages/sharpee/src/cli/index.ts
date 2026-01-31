@@ -10,7 +10,8 @@ import { runInitCommand } from './init';
 import { runInitBrowserCommand } from './init-browser';
 import { runBuildBrowserCommand } from './build-browser';
 
-const VERSION = '0.9.52-beta';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { version: VERSION } = require('../../package.json');
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);

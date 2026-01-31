@@ -16,6 +16,11 @@
     { "path": "../stdlib" },
     { "path": "../text-blocks" },
     { "path": "../text-service" },
-    { "path": "../world-model" }
+    { "path": "../world-model" },
+    { "path": "../plugins" },
+    { "path": "../plugin-npc" },
+    { "path": "../plugin-scheduler" },
+    { "path": "../plugin-state-machine" },
+    { "path": "../extensions/testing" }
   ]
 }

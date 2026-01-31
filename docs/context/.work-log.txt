@@ -1,64 +1,75 @@
-[15:32:50] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/zifmia' build 2>&1 | head -40
-[15:32:59] EDIT: packages/zifmia/src/runner/index.tsx
-[15:33:39] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/zifmia' build 2>&1 | head -40
-[15:50:03] EDIT: packages/core/package.json
-[15:50:04] EDIT: packages/core/package.json
-[15:50:43] EDIT: packages/engine/package.json
-[15:50:44] EDIT: packages/engine/package.json
-[15:50:45] EDIT: packages/if-domain/package.json
-[15:50:45] EDIT: packages/if-domain/package.json
-[15:50:46] EDIT: packages/lang-en-us/package.json
-[15:50:47] EDIT: packages/lang-en-us/package.json
-[15:50:48] EDIT: packages/parser-en-us/package.json
-[15:50:48] EDIT: packages/parser-en-us/package.json
-[15:50:49] EDIT: packages/plugin-npc/package.json
-[15:50:53] EDIT: packages/plugin-npc/package.json
-[15:50:54] EDIT: packages/plugin-scheduler/package.json
-[15:50:55] EDIT: packages/plugin-scheduler/package.json
-[15:50:59] EDIT: packages/plugin-state-machine/package.json
-[15:51:00] EDIT: packages/plugin-state-machine/package.json
-[15:51:01] EDIT: packages/plugins/package.json
-[15:51:01] EDIT: packages/plugins/package.json
-[15:51:03] EDIT: packages/sharpee/package.json
-[15:51:03] EDIT: packages/sharpee/package.json
-[15:51:04] EDIT: packages/stdlib/package.json
-[15:51:05] EDIT: packages/stdlib/package.json
-[15:51:06] EDIT: packages/world-model/package.json
-[15:51:07] EDIT: packages/world-model/package.json
-[16:12:40] WRITE: docs/context/session-20260129-1400-main.md
-[00:45:26] GIT: git commit -m "$(cat <<'EOF'
-feat: Zifmia Phase 3 — runner application shell wit
-[00:46:00] GIT: git push
-[01:17:06] WRITE: /home/dave/.claude/plans/fuzzy-knitting-rain.md
-[01:17:26] EDIT: tsconfig.base.json
-[01:33:29] WRITE: /home/dave/.claude/plans/fuzzy-knitting-rain.md
-[01:33:51] EDIT: stories/dungeo/tsconfig.json
-[01:33:53] EDIT: stories/dungeo/package.json
-[01:33:54] EDIT: scripts/bundle-entry.js
-[01:39:47] EDIT: stories/dungeo/package.json
-[01:43:10] TRANSCRIPT FAIL: grep "require.*transcript-tester" /mnt/c/repotemp/sharpee/dist/sharpee.js | head
-[01:43:46] EDIT: packages/transcript-tester/src/story-loader.ts
-[01:43:47] EDIT: packages/transcript-tester/src/fast-cli.ts
-[01:46:03] TRANSCRIPT FAIL: ./build.sh --skip transcript-tester -s dungeo 2>&1
-[01:49:05] WRITE: /home/dave/.claude/plans/fuzzy-knitting-rain.md
-[01:51:14] TRANSCRIPT FAIL: git checkout -- tsconfig.base.json stories/dungeo/tsconfig.json stories/dungeo/p
-[01:51:28] WRITE: tsconfig.base-esm.json
-[01:54:43] TRANSCRIPT FAIL: for pkg in core if-domain world-model event-processor lang-en-us parser-en-us if
-[01:55:23] TRANSCRIPT FAIL: for pkg in core if-domain world-model event-processor lang-en-us parser-en-us if
-[01:55:40] TRANSCRIPT FAIL: for pkg in core if-domain world-model event-processor lang-en-us parser-en-us if
-[01:55:47] WRITE: stories/dungeo/tsconfig.esm.json
-[01:55:53] TRANSCRIPT FAIL: for pkg in core if-domain world-model event-processor lang-en-us parser-en-us if
-[01:56:00] TRANSCRIPT FAIL: for pkg in core if-domain world-model event-processor lang-en-us parser-en-us if
-[01:56:16] EDIT: build.sh
-[01:56:37] EDIT: build.sh
-[01:56:53] EDIT: .gitignore
-[02:24:08] EDIT: build.sh
-[02:24:55] EDIT: build.sh
-[02:25:07] EDIT: build.sh
-[02:30:55] TRANSCRIPT FAIL: ./build.sh --runner --skip transcript-tester -s dungeo 2>&1
-[02:34:05] WRITE: docs/context/session-20260130-0233-main.md
-[02:45:21] EDIT: docs/context/session-20260130-0233-main.md
-[02:45:31] EDIT: docs/context/session-20260130-0233-main.md
-[02:45:47] EDIT: docs/context/session-20260130-0233-main.md
-[02:45:58] EDIT: docs/context/session-20260130-0233-main.md
-[02:46:10] EDIT: docs/context/session-20260130-0233-main.md
+[15:56:28] EDIT: docs/work/fluent/research-ideas.md
+[15:57:11] EDIT: docs/work/fluent/research-ideas.md
+[15:57:33] EDIT: docs/work/fluent/research-ideas.md
+[15:57:54] EDIT: docs/work/fluent/research-ideas.md
+[15:58:21] EDIT: docs/work/fluent/research-ideas.md
+[15:58:24] WRITE: docs/architecture/adrs/adr-124-entity-annotations.md
+[16:02:52] WRITE: docs/context/session-20260130-1601-main.md
+[16:04:08] WRITE: docs/context/session-20260130-1602-main.md
+[16:10:39] WRITE: /home/dave/.claude/plans/wise-soaring-umbrella.md
+[16:11:04] WRITE: /home/dave/.claude/plans/streamed-watching-manatee.md
+[16:11:08] WRITE: packages/world-model/src/annotations/types.ts
+[16:11:09] WRITE: packages/world-model/src/annotations/index.ts
+[16:14:49] WRITE: website/scripts/extract-patterns.mjs
+[16:15:54] WRITE: website/src/pages/design-patterns/index.astro
+[16:15:59] EDIT: website/astro.config.mjs
+[16:17:16] WRITE: docs/work/annotations/plan.md
+[16:24:14] WRITE: /home/dave/.claude/plans/streamed-watching-manatee.md
+[16:24:36] WRITE: scripts/publish-npm.sh
+[16:33:18] WRITE: docs/work/npm/build-options.md
+[16:38:21] EDIT: scripts/publish-npm.sh
+[16:42:43] TEST/BUILD FAIL (exit -1): pnpm -r build:npm
+[16:45:21] EDIT: packages/sharpee/package.json
+[16:45:25] EDIT: packages/sharpee/package.json
+[16:45:30] EDIT: packages/sharpee/src/cli/index.ts
+[16:45:42] EDIT: packages/sharpee/src/index.ts
+[16:46:47] EDIT: packages/sharpee/tsconfig.json
+[16:47:41] EDIT: packages/sharpee/tsconfig.json
+[16:49:33] WRITE: docs/architecture/adrs/adr-125-zifmia-panels.md
+[16:49:41] TEST/BUILD FAIL (exit -1): cd /mnt/c/repotemp/sharpee/packages/plugins && pnpm build:npm && cd /mnt/c/repot
+[16:54:00] WRITE: docs/context/session-20260130-1653-main.md
+[17:42:52] WRITE: packages/world-model/src/annotations/types.ts
+[17:42:53] WRITE: packages/world-model/src/annotations/index.ts
+[17:43:23] EDIT: packages/world-model/src/entities/if-entity.ts
+[17:43:29] EDIT: packages/world-model/src/entities/if-entity.ts
+[17:43:47] EDIT: packages/world-model/src/entities/if-entity.ts
+[17:43:53] EDIT: packages/world-model/src/entities/if-entity.ts
+[17:43:58] EDIT: packages/world-model/src/entities/if-entity.ts
+[17:44:05] EDIT: packages/world-model/src/entities/if-entity.ts
+[17:44:12] EDIT: packages/world-model/src/index.ts
+[17:45:11] WRITE: packages/world-model/tests/annotations.test.ts
+[17:46:18] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/world-model' test annotations
+[17:46:56] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/world-model' build
+[17:47:59] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/world-model' test annotations
+[17:51:30] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/world-model' test run annotations 2>&1 | tail -40
+[17:52:19] EDIT: packages/world-model/tests/annotations.test.ts
+[17:53:19] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/world-model' test run annotations 2>&1 | tail -30
+[17:57:00] WRITE: packages/stdlib/src/actions/helpers/emit-illustrations.ts
+[17:57:05] EDIT: packages/stdlib/src/actions/standard/looking/looking.ts
+[17:57:13] EDIT: packages/stdlib/src/actions/standard/looking/looking.ts
+[17:57:18] EDIT: packages/stdlib/src/actions/standard/examining/examining.ts
+[17:57:23] EDIT: packages/stdlib/src/actions/standard/examining/examining.ts
+[17:58:37] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/world-model' build && pnpm --filter '@sharpee/stdlib' bu
+[17:59:37] TEST/BUILD FAIL (exit -1): rm -f /mnt/c/repotemp/sharpee/packages/stdlib/tsconfig.tsbuildinfo && pnpm --fil
+[18:00:36] TEST/BUILD FAIL (exit -1): rm -f /mnt/c/repotemp/sharpee/packages/world-model/tsconfig.tsbuildinfo /mnt/c/r
+[18:01:43] WRITE: website/src/content/docs/author-guide/npcs.md
+[18:02:13] WRITE: website/src/content/docs/developer-guide/build-system.md
+[18:02:48] WRITE: website/src/content/docs/developer-guide/project-structure.md
+[18:03:33] WRITE: website/src/content/docs/tutorials/cloak-of-darkness.md
+[18:07:51] GIT: git commit -m "$(cat <<'EOF'
+docs: rewrite website documentation to match actual
+[18:07:57] GIT: git push
+[18:09:25] WRITE: docs/context/session-20260130-1807-main.md
+[18:16:30] WRITE: website/src/content/docs/getting-started/installation.md
+[18:16:46] WRITE: website/src/content/docs/getting-started/quick-start.md
+[18:17:05] GIT: git add website/src/content/docs/getting-started/installation.md website/src/con
+[18:21:00] EDIT: website/src/pages/design-patterns/index.astro
+[18:21:07] EDIT: website/src/pages/design-patterns/index.astro
+[18:21:12] EDIT: website/src/pages/design-patterns/index.astro
+[18:21:28] GIT: git add website/src/pages/design-patterns/index.astro && git commit -m "$(cat <<
+[18:24:28] WRITE: /home/dave/.claude/plans/lucky-skipping-cupcake.md
+[18:26:05] WRITE: website/src/pages/design-patterns/index.astro
+[18:26:23] GIT: git add website/src/pages/design-patterns/index.astro && git commit -m "$(cat <<
+[18:28:01] EDIT: website/src/pages/design-patterns/index.astro
+[18:28:18] GIT: git add website/src/pages/design-patterns/index.astro && git commit -m "$(cat <<
+[18:35:29] WRITE: docs/context/session-20260130-1834-main.md
