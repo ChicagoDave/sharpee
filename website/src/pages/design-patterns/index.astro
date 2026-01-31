@@ -10,7 +10,6 @@ const data = JSON.stringify(patternsData);
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Design Patterns - Sharpee</title>
   <meta name="description" content="Interactive map of 124 Interactive Fiction design patterns">
-  <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -219,6 +218,13 @@ const data = JSON.stringify(patternsData);
   <div class="tooltip" id="tooltip"></div>
 
   <script define:vars={{ data }}>
+    // Load D3 dynamically to avoid Astro script processing issues
+    const script = document.createElement('script');
+    script.src = 'https://d3js.org/d3.v7.min.js';
+    script.onload = initGraph;
+    document.head.appendChild(script);
+
+    function initGraph() {
     const patternsData = JSON.parse(data);
     const { categories, nodes, edges } = patternsData;
 
@@ -470,6 +476,7 @@ const data = JSON.stringify(patternsData);
       simulation.force('center', d3.forceCenter(w / 2, h / 2));
       simulation.alpha(0.3).restart();
     });
+    } // end initGraph
   </script>
 </body>
 </html>
