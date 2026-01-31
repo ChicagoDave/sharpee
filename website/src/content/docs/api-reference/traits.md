@@ -1,16 +1,21 @@
 ---
 title: Traits Reference
-description: Complete reference for all Sharpee platform traits
+description: Complete reference for all Sharpee platform traits and their behaviors
 ---
 
-All traits are imported from `@sharpee/world-model`. Traits are pure data structures — all logic belongs in behaviors and actions.
+All traits are imported from `@sharpee/world-model`. Traits are pure data structures — logic lives in the associated behavior class.
 
 ```typescript
 import { RoomTrait, ContainerTrait, OpenableTrait } from '@sharpee/world-model';
+import { ContainerBehavior, OpenableBehavior } from '@sharpee/world-model';
 
 const chest = world.createEntity('chest', 'object');
 chest.addTrait(new ContainerTrait({ capacity: { maxItems: 10 } }));
 chest.addTrait(new OpenableTrait({ isOpen: false }));
+
+// Behaviors provide the logic
+OpenableBehavior.open(chest);   // → IOpenResult
+OpenableBehavior.isOpen(chest); // → true
 ```
 
 ## Core
@@ -33,6 +38,17 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 | `adjectives` | `string[]` | `[]` | Adjectives the parser recognizes |
 | `grammaticalNumber` | `'singular' \| 'plural'` | `'singular'` | For verb conjugation |
 
+**Behavior — `IdentityBehavior`:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getPossessiveName(entity)` | `string` | Possessive form of name |
+| `isConcealed(entity)` | `boolean` | Whether entity is hidden |
+| `getWeight(entity)` | `number` | Entity weight |
+| `getVolume(entity)` | `number` | Entity volume |
+| `getSize(entity)` | `string` | Size category |
+| `getTotalWeight(entity, getContents?)` | `number` | Weight including contents |
+
 ### ActorTrait
 
 **Type:** `'actor'` — Marks entities that can act in the world (players, NPCs).
@@ -45,6 +61,24 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 | `pronouns` | `PronounSet \| PronounSet[]` | — | Pronoun sets for this actor |
 | `capacity` | `{ maxItems?, maxWeight?, maxVolume? }` | — | Inventory capacity limits |
 | `isTransparent` | `boolean` | `false` | Whether contents are visible |
+
+**Behavior — `ActorBehavior`:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `isPlayer(entity)` | `boolean` | Check if player character |
+| `isPlayable(entity)` | `boolean` | Check if switchable |
+| `getPronouns(entity)` | `PronounSet` | Get pronoun set |
+| `canCarry(actor, item, world)` | `boolean` | Check inventory capacity |
+| `canTakeItem(actor, item, world)` | `boolean` | Full take validation |
+| `takeItem(actor, item, world)` | `ITakeItemResult` | Move item to inventory |
+| `dropItem(actor, item, world)` | `IDropItemResult` | Move item to location |
+| `isHolding(actor, itemId, world)` | `boolean` | Check if holding item |
+| `getCarriedWeight(actor, world)` | `number` | Total carried weight |
+| `getRemainingCapacity(actor, world)` | `object` | Remaining weight/volume/items |
+| `getState(entity)` | `string` | Get actor state |
+| `setState(entity, state)` | `void` | Set actor state |
+| `findPlayer(entities)` | `IFEntity` | Find player in entity list |
 
 ### RoomTrait
 
@@ -63,6 +97,21 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 | `region` | `string` | — | Region grouping |
 | `tags` | `string[]` | `[]` | Arbitrary tags |
 
+**Behavior — `RoomBehavior`:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getExit(room, direction)` | `IExitInfo \| null` | Get exit in direction |
+| `isExitBlocked(room, direction)` | `boolean` | Check if exit is blocked |
+| `getBlockedMessage(room, direction)` | `string` | Get blocked exit message |
+| `removeExit(room, direction)` | `void` | Remove an exit |
+| `getAllExits(room)` | `Map<DirectionType, IExitInfo>` | All exits |
+| `getAvailableExits(room)` | `Map<DirectionType, IExitInfo>` | Unblocked exits only |
+| `isOutdoors(room)` | `boolean` | Check outdoor flag |
+| `isUnderground(room)` | `boolean` | Check underground flag |
+| `addTag(room, tag)` | `void` | Add a tag |
+| `removeTag(room, tag)` | `void` | Remove a tag |
+
 ### ContainerTrait
 
 **Type:** `'container'` — Allows entities to hold other entities inside.
@@ -75,6 +124,21 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 | `allowedTypes` | `string[]` | `[]` | Only these types allowed (empty = all) |
 | `excludedTypes` | `string[]` | `[]` | These types blocked |
 
+**Behavior — `ContainerBehavior`:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `addItem(container, item, world)` | `IAddItemResult` | Add item to container |
+| `removeItem(container, item, world)` | `IRemoveItemResult` | Remove item from container |
+| `checkCapacity(container, item, world)` | `boolean` | Check if item fits |
+| `getTotalWeight(container, world)` | `number` | Weight of contents |
+| `getTotalVolume(container, world)` | `number` | Volume of contents |
+| `getRemainingCapacity(container, world)` | `object` | Remaining capacity |
+| `isTransparent(container)` | `boolean` | Check transparency |
+| `isEnterable(container)` | `boolean` | Check enterability |
+| `getAllowedTypes(container)` | `string[]` | Get allowed types |
+| `getExcludedTypes(container)` | `string[]` | Get excluded types |
+
 ### SupporterTrait
 
 **Type:** `'supporter'` — Allows entities to have items placed on top.
@@ -86,6 +150,18 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 | `allowedTypes` | `string[]` | `[]` | Only these types allowed |
 | `excludedTypes` | `string[]` | `[]` | These types blocked |
 
+**Behavior — `SupporterBehavior`:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `addItem(supporter, item, world)` | `IAddItemToSupporterResult` | Place item on supporter |
+| `removeItem(supporter, item, world)` | `IRemoveItemFromSupporterResult` | Remove item from supporter |
+| `canAccept(supporter, item, world)` | `boolean` | Check if item allowed |
+| `checkCapacity(supporter, item, world)` | `boolean` | Check if item fits |
+| `getTotalWeight(supporter, world)` | `number` | Weight of items on top |
+| `getRemainingCapacity(supporter, world)` | `object` | Remaining capacity |
+| `isEnterable(supporter)` | `boolean` | Check enterability |
+
 ### SceneryTrait
 
 **Type:** `'scenery'` — Marks items as fixed in place (not takeable).
@@ -95,6 +171,14 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 | `cantTakeMessage` | `string` | — | Message ID when player tries to take |
 | `mentioned` | `boolean` | `false` | Already mentioned in room description |
 | `visible` | `boolean` | `true` | Whether visible in room |
+
+**Behavior — `SceneryBehavior`:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getUntakeableReason(entity)` | `string` | Reason entity can't be taken |
+| `getCantTakeMessage(entity)` | `string` | Custom can't-take message |
+| `isMentioned(entity)` | `boolean` | Already mentioned in description |
 
 ## Interactive
 
@@ -111,6 +195,18 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 | `openMessage` | `string` | — | Custom open message ID |
 | `closeMessage` | `string` | — | Custom close message ID |
 
+**Behavior — `OpenableBehavior`:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `canOpen(entity)` | `boolean` | Check if can be opened |
+| `canClose(entity)` | `boolean` | Check if can be closed |
+| `open(entity)` | `IOpenResult` | Open the entity |
+| `close(entity)` | `ICloseResult` | Close the entity |
+| `toggle(entity)` | `IOpenResult \| ICloseResult` | Toggle open/closed |
+| `isOpen(entity)` | `boolean` | Check current state |
+| `revealsContents(entity)` | `boolean` | Check if contents shown |
+
 ### LockableTrait
 
 **Type:** `'lockable'` — Entities that can be locked/unlocked. Usually paired with OpenableTrait.
@@ -124,6 +220,15 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 | `acceptsMasterKey` | `boolean` | `false` | Whether a master key works |
 | `autoLock` | `boolean` | `false` | Re-locks automatically |
 
+**Behavior — `LockableBehavior`:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `lock(entity, keyEntity?)` | `ILockResult` | Lock the entity |
+| `unlock(entity, keyEntity?)` | `IUnlockResult` | Unlock the entity |
+| `isLocked(entity)` | `boolean` | Check locked state |
+| `getLockedMessage(entity)` | `string` | Get locked message |
+
 ### SwitchableTrait
 
 **Type:** `'switchable'` — Objects that can be turned on and off.
@@ -135,6 +240,21 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 | `requiresPower` | `boolean` | `false` | Needs external power |
 | `hasPower` | `boolean` | `true` | Currently has power |
 | `autoOffTime` | `number` | — | Turns until auto-off |
+
+**Behavior — `SwitchableBehavior`:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `canSwitchOn(entity)` | `boolean` | Check if can turn on |
+| `canSwitchOff(entity)` | `boolean` | Check if can turn off |
+| `switchOn(entity)` | `ISwitchOnResult` | Turn on |
+| `switchOff(entity)` | `ISwitchOffResult` | Turn off |
+| `toggle(entity)` | `ISwitchOnResult \| ISwitchOffResult` | Toggle on/off |
+| `setPower(entity, hasPower)` | `ISemanticEvent[]` | Set power state |
+| `updateTurn(entity)` | `ISemanticEvent[]` | Tick auto-off timer |
+| `isOn(entity)` | `boolean` | Check current state |
+| `getTimeRemaining(entity)` | `number` | Turns until auto-off |
+| `getPowerConsumption(entity)` | `number` | Power usage |
 
 ### ReadableTrait
 
@@ -150,6 +270,14 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 | `currentPage` | `number` | — | Current page |
 | `pageContent` | `string[]` | `[]` | Content per page |
 
+**Behavior — `ReadableBehavior`:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getText(entity)` | `string` | Get full text |
+| `getPreview(entity)` | `string` | Get preview text |
+| `read(reader, readable)` | `ISemanticEvent[]` | Read the entity (emits events) |
+
 ### LightSourceTrait
 
 **Type:** `'lightSource'` — Allows entities to provide illumination.
@@ -162,9 +290,21 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 | `maxFuel` | `number` | — | Maximum fuel capacity |
 | `fuelConsumptionRate` | `number` | — | Fuel used per turn |
 
+**Behavior — `LightSourceBehavior`:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `light(source)` | `boolean` | Light the source |
+| `extinguish(source)` | `void` | Extinguish the source |
+| `isLit(source)` | `boolean` | Check if lit |
+| `getBrightness(source)` | `number` | Get brightness level |
+| `getFuelRemaining(source)` | `number` | Get remaining fuel |
+| `consumeFuel(source, amount?)` | `boolean` | Consume fuel (returns false if empty) |
+| `getFuelPercentage(source)` | `number` | Fuel remaining as percentage |
+
 ### PushableTrait
 
-**Type:** `'pushable'` — Objects that can be pushed.
+**Type:** `'pushable'` — Objects that can be pushed. *No dedicated behavior — handled by the pushing stdlib action.*
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -176,7 +316,7 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 
 ### PullableTrait
 
-**Type:** `'pullable'` — Objects that can be pulled.
+**Type:** `'pullable'` — Objects that can be pulled. *No dedicated behavior — handled by the pulling stdlib action.*
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -188,7 +328,7 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 
 ### ButtonTrait
 
-**Type:** `'button'` — Button-specific properties. Should also have PushableTrait.
+**Type:** `'button'` — Button-specific properties. Should also have PushableTrait. *No dedicated behavior.*
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -208,9 +348,18 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 | `destination` | `string` | — | Room ID reached by climbing |
 | `blockedMessage` | `string` | — | Message when climb is blocked |
 
+**Behavior — `ClimbableBehavior`:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `isClimbable(entity)` | `boolean` | Check if can be climbed |
+| `climb(entity)` | `IClimbResult` | Perform climb |
+| `getDirection(entity)` | `string` | Get allowed direction |
+| `getDestination(entity)` | `string` | Get destination room ID |
+
 ### AttachedTrait
 
-**Type:** `'attached'` — Objects fastened to something.
+**Type:** `'attached'` — Objects fastened to something. *No dedicated behavior.*
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -221,7 +370,7 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 
 ### MoveableSceneryTrait
 
-**Type:** `'moveableScenery'` — Large pushable/pullable objects. Should also have PushableTrait/PullableTrait.
+**Type:** `'moveableScenery'` — Large pushable/pullable objects. Should also have PushableTrait/PullableTrait. *No dedicated behavior.*
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -244,6 +393,16 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 | `room2` | `string` | — | Second connected room entity ID |
 | `bidirectional` | `boolean` | `true` | Accessible from both sides |
 
+**Behavior — `DoorBehavior`:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getRooms(door)` | `[string, string]` | Get both room IDs |
+| `getOtherRoom(door, currentRoom)` | `string` | Get room on other side |
+| `isBidirectional(door)` | `boolean` | Check bidirectionality |
+| `getEntryRoom(door)` | `string` | Get room1 |
+| `getExitRoom(door)` | `string` | Get room2 |
+
 ### ExitTrait
 
 **Type:** `'exit'` — Represents passages between locations.
@@ -259,9 +418,20 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 | `conditionId` | `string` | — | Condition identifier |
 | `blockedMessage` | `string` | — | Message when blocked |
 
+**Behavior — `ExitBehavior`:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getBlockedReason(exit)` | `string` | Get blocked message |
+| `getExitsFrom(locationId, world)` | `IFEntity[]` | All exits from a location |
+| `getVisibleExitsFrom(locationId, world)` | `IFEntity[]` | Only visible exits |
+| `getListedExitsFrom(locationId, world)` | `IFEntity[]` | Only listed exits |
+| `getReverseDirection(direction)` | `string` | Opposite direction |
+| `getReverseCommand(command)` | `string` | Reverse command string |
+
 ### EnterableTrait
 
-**Type:** `'enterable'` — Objects that can be entered by actors.
+**Type:** `'enterable'` — Objects that can be entered by actors. *No dedicated behavior.*
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -279,6 +449,19 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 | `isOperational` | `boolean` | `true` | Currently working |
 | `notOperationalReason` | `string` | — | Why it's broken |
 
+**Behavior — standalone functions:**
+
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `isVehicle(entity)` | `boolean` | Check if entity is a vehicle |
+| `isActorInVehicle(world, actorId)` | `boolean` | Check if actor is in any vehicle |
+| `getActorVehicle(world, actorId)` | `IFEntity` | Get actor's current vehicle |
+| `getVehicleOccupants(world, vehicleId)` | `IFEntity[]` | Get all occupants |
+| `moveVehicle(...)` | — | Move vehicle and contents |
+| `canVehicleMove(vehicle)` | `{ canMove, reason? }` | Check if vehicle can move |
+| `canActorLeaveLocation(...)` | — | Check if actor can leave via walking |
+| `canActorWalkInVehicle(...)` | — | Check if walking is blocked |
+
 ## Items
 
 ### WearableTrait
@@ -293,9 +476,23 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 | `layer` | `number` | `0` | Layer order (higher = outer) |
 | `canRemove` | `boolean` | `true` | Whether it can be taken off |
 
+**Behavior — `WearableBehavior`:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `canWear(item, actor)` | `boolean` | Check if item can be worn |
+| `canRemove(item, actor)` | `boolean` | Check if item can be removed |
+| `wear(item, actor)` | `IWearResult` | Put on item |
+| `remove(item, actor)` | `IRemoveResult` | Take off item |
+| `isWorn(item)` | `boolean` | Check if currently worn |
+| `getWearer(item)` | `string` | Get wearer entity ID |
+| `getSlot(item)` | `string` | Get body slot |
+| `getLayer(item)` | `number` | Get layer number |
+| `getBlockedSlots(item)` | `string[]` | Get slots this blocks |
+
 ### ClothingTrait
 
-**Type:** `'clothing'` — Specialized wearable for clothing with condition tracking. Extends WearableTrait properties.
+**Type:** `'clothing'` — Specialized wearable for clothing with condition tracking. Extends WearableTrait properties. *Uses WearableBehavior.*
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -316,6 +513,21 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 | `consumeMessage` | `string` | — | Custom consumption message ID |
 | `effects` | `string[]` | `[]` | Effect IDs applied on consumption |
 
+**Behavior — `EdibleBehavior`:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `canConsume(item)` | `boolean` | Check if consumable (has servings) |
+| `consume(item, actor)` | `ISemanticEvent[]` | Consume a serving |
+| `isEmpty(item)` | `boolean` | Check if all servings used |
+| `isLiquid(item)` | `boolean` | Check if liquid |
+| `getNutrition(item)` | `number` | Get nutrition value |
+| `getServings(item)` | `number` | Get remaining servings |
+| `getTaste(item)` | `TasteQuality` | Get taste quality |
+| `getEffects(item)` | `string[]` | Get effect IDs |
+| `hasEffect(item)` | `boolean` | Check if has effects |
+| `satisfiesHunger(item)` | `boolean` | Check hunger satisfaction |
+
 ### WeaponTrait
 
 **Type:** `'weapon'` — Objects that can be used to attack.
@@ -331,9 +543,20 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 | `breakable` | `boolean` | `false` | Can break from use |
 | `durability` | `number` | — | Current durability |
 
+**Behavior — `WeaponBehavior`:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `calculateDamage(weapon)` | `IWeaponDamageResult` | Roll damage |
+| `canDamage(weapon, targetType?)` | `boolean` | Check if weapon works on target |
+| `getWeaponType(weapon)` | `string` | Get weapon type |
+| `isTwoHanded(weapon)` | `boolean` | Check two-handed |
+| `repair(weapon)` | `boolean` | Repair weapon |
+| `isBroken(weapon)` | `boolean` | Check if broken |
+
 ### EquippedTrait
 
-**Type:** `'equipped'` — Indicates item is currently equipped by an actor.
+**Type:** `'equipped'` — Indicates item is currently equipped by an actor. *No dedicated behavior.*
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -360,6 +583,20 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 | `canRetaliate` | `boolean` | `true` | Fights back when attacked |
 | `dropsInventory` | `boolean` | `true` | Drops items on death |
 
+**Behavior — `CombatBehavior`:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `canAttack(entity)` | `boolean` | Check if can attack |
+| `attack(entity, damage, world)` | `ICombatResult` | Apply damage to entity |
+| `heal(entity, amount)` | `number` | Heal entity, returns new health |
+| `resurrect(entity)` | `boolean` | Bring back to life |
+| `isAlive(entity)` | `boolean` | Check if alive |
+| `getHealth(entity)` | `number` | Get current health |
+| `getHealthPercentage(entity)` | `number` | Health as percentage |
+| `isHostile(entity)` | `boolean` | Check hostility |
+| `setHostile(entity, hostile)` | `void` | Set hostility |
+
 ### BreakableTrait
 
 **Type:** `'breakable'` — Objects that can be broken with a single hit.
@@ -367,6 +604,13 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `broken` | `boolean` | `false` | Currently broken |
+
+**Behavior — `BreakableBehavior`:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `break(entity, world)` | `IBreakResult` | Break the entity |
+| `isBroken(entity)` | `boolean` | Check if broken |
 
 ### DestructibleTrait
 
@@ -382,11 +626,21 @@ chest.addTrait(new OpenableTrait({ isOpen: false }));
 | `transformTo` | `string` | — | Becomes this entity when destroyed |
 | `revealExit` | `string` | — | Exit revealed when destroyed |
 
+**Behavior — `DestructibleBehavior`:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `canDamage(entity, weaponType?)` | `boolean` | Check if can be damaged |
+| `damage(entity, damage, weaponType, world)` | `IDamageResult` | Apply damage |
+| `isDestroyed(entity)` | `boolean` | Check if HP reached zero |
+| `getHitPoints(entity)` | `number` | Get current HP |
+| `repair(entity)` | `boolean` | Restore to max HP |
+
 ## NPC
 
 ### NpcTrait
 
-**Type:** `'npc'` — Marks entity as an autonomous NPC with turn cycle participation.
+**Type:** `'npc'` — Marks entity as an autonomous NPC with turn cycle participation. *NPC behavior is handled by the plugin-npc package via registered behavior plugins, not a world-model behavior class.*
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
