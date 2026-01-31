@@ -13,10 +13,6 @@ export default defineConfig({
       ],
       sidebar: [
         {
-          label: 'Design Patterns',
-          link: '/design-patterns/',
-        },
-        {
           label: 'Getting Started',
           items: [
             { label: 'Installation', slug: 'getting-started/installation' },
@@ -52,6 +48,16 @@ export default defineConfig({
             { label: 'Project Structure', slug: 'developer-guide/project-structure' },
             { label: 'Build System', slug: 'developer-guide/build-system' },
           ],
+        },
+        {
+          label: 'Games',
+          items: [
+            { label: 'Dungeon', link: '/play/dungeo/' },
+          ],
+        },
+        {
+          label: 'Design Patterns',
+          link: '/design-patterns/',
         },
       ],
     }),
