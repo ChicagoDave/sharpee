@@ -39,6 +39,14 @@ export default defineConfig({
           ],
         },
         {
+          label: 'API Reference',
+          items: [
+            { label: 'Traits', slug: 'api-reference/traits' },
+            { label: 'Standard Actions', slug: 'api-reference/actions' },
+            { label: 'Grammar & Commands', slug: 'api-reference/grammar' },
+          ],
+        },
+        {
           label: 'Developer Guide',
           items: [
             { label: 'Project Structure', slug: 'developer-guide/project-structure' },
