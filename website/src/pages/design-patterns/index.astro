@@ -47,6 +47,32 @@ const data = JSON.stringify(patternsData);
     h1 { font-size: 1.125rem; font-weight: 600; white-space: nowrap; }
     .count { color: #64748b; font-size: 0.8rem; margin-left: 0.5rem; }
 
+    /* Tabs */
+    .tab-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      background: #0f172a;
+      border-radius: 0.5rem;
+      padding: 0.2rem;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      color: #64748b;
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 0.375rem 0.875rem;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tab-btn:hover { color: #e2e8f0; }
+    .tab-btn.active {
+      background: #334155;
+      color: #fff;
+    }
+
     /* Search */
     .search-box {
       background: #0f172a;
@@ -60,7 +86,7 @@ const data = JSON.stringify(patternsData);
     .search-box::placeholder { color: #475569; }
     .search-box:focus { outline: none; border-color: #059669; }
 
-    /* Legend */
+    /* Legend (graph view only) */
     .legend {
       display: flex;
       gap: 0.25rem;
@@ -86,13 +112,120 @@ const data = JSON.stringify(patternsData);
       border-radius: 50%;
     }
 
-    /* Graph canvas */
+    /* View containers */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* === CATALOG VIEW === */
+    #catalog-view {
+      height: calc(100vh - 3.5rem);
+      overflow-y: auto;
+      padding: 1.5rem;
+    }
+    .catalog-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 1.25rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .cat-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 0.75rem;
+      overflow: hidden;
+    }
+    .cat-card-header {
+      padding: 0.875rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #334155;
+    }
+    .cat-card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .cat-card-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .cat-card-count {
+      font-size: 0.75rem;
+      color: #64748b;
+      background: #0f172a;
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+    }
+    .cat-card-body {
+      padding: 0.5rem 0;
+    }
+    .pattern-row {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      padding: 0.4rem 1rem;
+      cursor: pointer;
+      transition: background 0.1s;
+      position: relative;
+    }
+    .pattern-row:hover {
+      background: #334155;
+    }
+    .pattern-id {
+      font-size: 0.7rem;
+      color: #64748b;
+      font-family: monospace;
+      flex-shrink: 0;
+      width: 3rem;
+    }
+    .pattern-name {
+      font-size: 0.85rem;
+      color: #fff;
+      flex: 1;
+    }
+
+    /* Catalog tooltip */
+    .cat-tooltip {
+      position: fixed;
+      pointer-events: none;
+      background: #1e293b;
+      border: 1px solid #475569;
+      padding: 0.625rem 0.875rem;
+      border-radius: 0.5rem;
+      font-size: 0.8rem;
+      color: #e2e8f0;
+      line-height: 1.4;
+      z-index: 30;
+      display: none;
+      max-width: 360px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    .cat-tooltip-title {
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 0.25rem;
+    }
+    .cat-tooltip-intent {
+      color: #cbd5e1;
+    }
+
+    /* === GRAPH VIEW === */
+    #graph-view {
+      position: relative;
+    }
     #graph {
       width: 100vw;
       height: calc(100vh - 3.5rem);
     }
 
-    /* Detail panel */
+    /* Detail panel (shared) */
     .detail-panel {
       position: fixed;
       top: 3.5rem;
@@ -128,6 +261,7 @@ const data = JSON.stringify(patternsData);
     .detail-name {
       font-size: 1.25rem;
       font-weight: 600;
+      color: #fff;
       margin: 0.25rem 0 0.75rem;
     }
     .detail-category {
@@ -171,19 +305,29 @@ const data = JSON.stringify(patternsData);
       color: #e2e8f0;
     }
 
-    /* Node tooltip */
+    /* Graph tooltip */
     .tooltip {
       position: fixed;
       pointer-events: none;
       background: #1e293b;
       border: 1px solid #475569;
-      padding: 0.375rem 0.625rem;
-      border-radius: 0.375rem;
+      padding: 0.625rem 0.875rem;
+      border-radius: 0.5rem;
       font-size: 0.8rem;
       color: #e2e8f0;
+      line-height: 1.4;
       z-index: 30;
       display: none;
-      white-space: nowrap;
+      max-width: 360px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    .tooltip-title {
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 0.25rem;
+    }
+    .tooltip-intent {
+      color: #cbd5e1;
     }
 
     /* SVG styles */
@@ -194,7 +338,7 @@ const data = JSON.stringify(patternsData);
     .node-circle.highlighted { stroke: #fff; stroke-width: 2.5px; }
     .node-label {
       font-size: 9px;
-      fill: #94a3b8;
+      fill: #fff;
       pointer-events: none;
       text-anchor: middle;
     }
@@ -206,32 +350,41 @@ const data = JSON.stringify(patternsData);
     <div class="header-left">
       <a href="/" class="back-link">&larr; Sharpee</a>
       <h1>Design Patterns<span class="count">124 patterns</span></h1>
+      <div class="tab-bar">
+        <button class="tab-btn active" data-view="catalog">Catalog</button>
+        <button class="tab-btn" data-view="graph">Graph</button>
+      </div>
     </div>
-    <div class="legend" id="legend"></div>
+    <div class="legend" id="legend" style="display:none"></div>
     <input type="text" class="search-box" id="search" placeholder="Search patterns...">
   </div>
-  <svg id="graph"></svg>
+
+  <!-- Catalog View -->
+  <div id="catalog-view" class="view active">
+    <div class="catalog-grid" id="catalog-grid"></div>
+  </div>
+
+  <!-- Graph View -->
+  <div id="graph-view" class="view">
+    <svg id="graph"></svg>
+  </div>
+
+  <!-- Shared detail panel -->
   <div class="detail-panel" id="detail">
     <button class="detail-close" id="detail-close">&times;</button>
     <div id="detail-content"></div>
   </div>
+
+  <!-- Tooltips -->
   <div class="tooltip" id="tooltip"></div>
+  <div class="cat-tooltip" id="cat-tooltip"></div>
 
   <script define:vars={{ data }}>
-    // Load D3 dynamically to avoid Astro script processing issues
-    const script = document.createElement('script');
-    script.src = 'https://d3js.org/d3.v7.min.js';
-    script.onload = initGraph;
-    document.head.appendChild(script);
-
-    function initGraph() {
     const patternsData = JSON.parse(data);
     const { categories, nodes, edges } = patternsData;
 
-    // Build lookup
+    // Build lookups
     const nodeMap = new Map(nodes.map(n => [n.id, n]));
-
-    // Adjacency for highlight
     const adj = new Map();
     nodes.forEach(n => adj.set(n.id, new Set()));
     edges.forEach(e => {
@@ -239,151 +392,19 @@ const data = JSON.stringify(patternsData);
       adj.get(e.target)?.add(e.source);
     });
 
-    // Category filter state
-    const enabledCategories = new Set(Object.keys(categories));
-
-    // --- Legend ---
-    const legendEl = document.getElementById('legend');
-    Object.entries(categories).forEach(([cat, color]) => {
-      const item = document.createElement('div');
-      item.className = 'legend-item';
-      item.innerHTML = `<span class="legend-dot" style="background:${color}"></span>${cat}`;
-      item.addEventListener('click', () => {
-        if (enabledCategories.has(cat)) {
-          enabledCategories.delete(cat);
-          item.classList.add('disabled');
-        } else {
-          enabledCategories.add(cat);
-          item.classList.remove('disabled');
-        }
-        updateVisibility();
-      });
-      legendEl.appendChild(item);
+    // Group by category
+    const byCategory = {};
+    Object.keys(categories).forEach(cat => { byCategory[cat] = []; });
+    nodes.forEach(n => {
+      if (byCategory[n.category]) byCategory[n.category].push(n);
     });
 
-    // --- SVG setup ---
-    const svg = d3.select('#graph');
-    const width = window.innerWidth;
-    const height = window.innerHeight - 56; // header height
-    svg.attr('width', width).attr('height', height);
-
-    const g = svg.append('g');
-
-    // Zoom
-    const zoom = d3.zoom()
-      .scaleExtent([0.3, 4])
-      .on('zoom', (event) => g.attr('transform', event.transform));
-    svg.call(zoom);
-
-    // --- Simulation ---
-    const simulation = d3.forceSimulation(nodes)
-      .force('link', d3.forceLink(edges).id(d => d.id).distance(80).strength(0.3))
-      .force('charge', d3.forceManyBody().strength(-120))
-      .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide(18))
-      // cluster by category
-      .force('x', d3.forceX(d => {
-        const cats = Object.keys(categories);
-        const i = cats.indexOf(d.category);
-        const angle = (i / cats.length) * 2 * Math.PI;
-        return width / 2 + Math.cos(angle) * 200;
-      }).strength(0.15))
-      .force('y', d3.forceY(d => {
-        const cats = Object.keys(categories);
-        const i = cats.indexOf(d.category);
-        const angle = (i / cats.length) * 2 * Math.PI;
-        return height / 2 + Math.sin(angle) * 200;
-      }).strength(0.15));
-
-    // --- Links ---
-    const link = g.append('g')
-      .selectAll('line')
-      .data(edges)
-      .join('line')
-      .attr('class', 'link');
-
-    // --- Nodes ---
-    const node = g.append('g')
-      .selectAll('circle')
-      .data(nodes)
-      .join('circle')
-      .attr('class', 'node-circle')
-      .attr('r', 8)
-      .attr('fill', d => categories[d.category])
-      .call(d3.drag()
-        .on('start', dragStarted)
-        .on('drag', dragged)
-        .on('end', dragEnded));
-
-    // --- Labels ---
-    const label = g.append('g')
-      .selectAll('text')
-      .data(nodes)
-      .join('text')
-      .attr('class', 'node-label')
-      .attr('dy', '1.6em')
-      .text(d => d.id);
-
-    // --- Tick ---
-    simulation.on('tick', () => {
-      link
-        .attr('x1', d => d.source.x)
-        .attr('y1', d => d.source.y)
-        .attr('x2', d => d.target.x)
-        .attr('y2', d => d.target.y);
-      node
-        .attr('cx', d => d.x)
-        .attr('cy', d => d.y);
-      label
-        .attr('x', d => d.x)
-        .attr('y', d => d.y);
-    });
-
-    // --- Tooltip ---
-    const tooltip = document.getElementById('tooltip');
-    node.on('mouseover', (event, d) => {
-      tooltip.style.display = 'block';
-      tooltip.textContent = `${d.id}: ${d.name}`;
-      tooltip.style.left = (event.clientX + 12) + 'px';
-      tooltip.style.top = (event.clientY - 8) + 'px';
-
-      // Highlight connected
-      const connected = adj.get(d.id);
-      node.classed('dimmed', n => n.id !== d.id && !connected.has(n.id));
-      node.classed('highlighted', n => n.id === d.id);
-      link.classed('highlighted', l => l.source.id === d.id || l.target.id === d.id);
-      link.style('stroke', l => {
-        if (l.source.id === d.id || l.target.id === d.id) {
-          return categories[d.category];
-        }
-        return null;
-      });
-      label.classed('dimmed', n => n.id !== d.id && !connected.has(n.id));
-    })
-    .on('mousemove', (event) => {
-      tooltip.style.left = (event.clientX + 12) + 'px';
-      tooltip.style.top = (event.clientY - 8) + 'px';
-    })
-    .on('mouseout', () => {
-      tooltip.style.display = 'none';
-      node.classed('dimmed', false).classed('highlighted', false);
-      link.classed('highlighted', false).style('stroke', null);
-      label.classed('dimmed', false);
-    });
-
-    // --- Click → detail panel ---
+    // === SHARED: Detail panel ===
     const detailPanel = document.getElementById('detail');
     const detailContent = document.getElementById('detail-content');
     document.getElementById('detail-close').addEventListener('click', () => {
       detailPanel.classList.remove('open');
     });
-
-    node.on('click', (event, d) => {
-      event.stopPropagation();
-      showDetail(d);
-    });
-
-    svg.on('click', () => detailPanel.classList.remove('open'));
 
     function showDetail(d) {
       const connected = adj.get(d.id);
@@ -407,7 +428,6 @@ const data = JSON.stringify(patternsData);
         </div>` : ''}
       `;
 
-      // Make connection chips clickable
       detailContent.querySelectorAll('.detail-conn').forEach(el => {
         el.addEventListener('click', () => {
           const target = nodeMap.get(el.dataset.id);
@@ -418,10 +438,145 @@ const data = JSON.stringify(patternsData);
       detailPanel.classList.add('open');
     }
 
-    // --- Search ---
+    // === TAB SWITCHING ===
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const catalogView = document.getElementById('catalog-view');
+    const graphView = document.getElementById('graph-view');
+    const legendEl = document.getElementById('legend');
+    let graphInitialized = false;
+
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const view = btn.dataset.view;
+
+        detailPanel.classList.remove('open');
+
+        if (view === 'catalog') {
+          catalogView.classList.add('active');
+          graphView.classList.remove('active');
+          legendEl.style.display = 'none';
+          document.body.style.overflow = 'hidden';
+        } else {
+          catalogView.classList.remove('active');
+          graphView.classList.add('active');
+          legendEl.style.display = 'flex';
+          document.body.style.overflow = 'hidden';
+          if (!graphInitialized) loadGraph();
+        }
+      });
+    });
+
+    // === CATALOG VIEW ===
+    const catalogGrid = document.getElementById('catalog-grid');
+    const catTooltip = document.getElementById('cat-tooltip');
+
+    Object.entries(byCategory).forEach(([cat, patterns]) => {
+      const card = document.createElement('div');
+      card.className = 'cat-card';
+      card.dataset.category = cat;
+
+      card.innerHTML = `
+        <div class="cat-card-header">
+          <div class="cat-card-title">
+            <span class="cat-card-dot" style="background:${categories[cat]}"></span>
+            ${cat}
+          </div>
+          <span class="cat-card-count">${patterns.length}</span>
+        </div>
+        <div class="cat-card-body">
+          ${patterns.map(p => `
+            <div class="pattern-row" data-id="${p.id}">
+              <span class="pattern-id">${p.id}</span>
+              <span class="pattern-name">${p.name}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      // Click → detail panel
+      card.querySelectorAll('.pattern-row').forEach(row => {
+        row.addEventListener('click', () => {
+          const pattern = nodeMap.get(row.dataset.id);
+          if (pattern) showDetail(pattern);
+        });
+
+        // Hover → tooltip with intent
+        row.addEventListener('mouseenter', (e) => {
+          const pattern = nodeMap.get(row.dataset.id);
+          if (!pattern) return;
+          catTooltip.innerHTML = `
+            <div class="cat-tooltip-title">${pattern.id}: ${pattern.name}</div>
+            <div class="cat-tooltip-intent">${pattern.intent || 'No description available.'}</div>
+          `;
+          catTooltip.style.display = 'block';
+          positionCatTooltip(e);
+        });
+        row.addEventListener('mousemove', positionCatTooltip);
+        row.addEventListener('mouseleave', () => {
+          catTooltip.style.display = 'none';
+        });
+      });
+
+      catalogGrid.appendChild(card);
+    });
+
+    function positionCatTooltip(e) {
+      const tt = catTooltip;
+      const x = e.clientX + 16;
+      const y = e.clientY - 8;
+      // Keep on screen
+      const maxX = window.innerWidth - 380;
+      tt.style.left = Math.min(x, maxX) + 'px';
+      tt.style.top = Math.max(8, y) + 'px';
+    }
+
+    // === CATALOG SEARCH ===
     const searchInput = document.getElementById('search');
     searchInput.addEventListener('input', () => {
       const q = searchInput.value.toLowerCase();
+
+      if (catalogView.classList.contains('active')) {
+        // Filter catalog cards
+        document.querySelectorAll('.cat-card').forEach(card => {
+          const rows = card.querySelectorAll('.pattern-row');
+          let visibleCount = 0;
+          rows.forEach(row => {
+            const pattern = nodeMap.get(row.dataset.id);
+            const match = !q || (
+              pattern.id.toLowerCase().includes(q) ||
+              pattern.name.toLowerCase().includes(q) ||
+              pattern.category.toLowerCase().includes(q) ||
+              (pattern.intent && pattern.intent.toLowerCase().includes(q))
+            );
+            row.style.display = match ? '' : 'none';
+            if (match) visibleCount++;
+          });
+          card.style.display = visibleCount > 0 ? '' : 'none';
+          const countEl = card.querySelector('.cat-card-count');
+          if (countEl && q) countEl.textContent = visibleCount;
+          if (countEl && !q) countEl.textContent = byCategory[card.dataset.category].length;
+        });
+      } else if (graphInitialized) {
+        // Filter graph nodes
+        searchGraph(q);
+      }
+    });
+
+    // === GRAPH VIEW (lazy loaded) ===
+    let graphRefs = {};
+
+    function loadGraph() {
+      const script = document.createElement('script');
+      script.src = 'https://d3js.org/d3.v7.min.js';
+      script.onload = initGraph;
+      document.head.appendChild(script);
+    }
+
+    function searchGraph(q) {
+      if (!graphRefs.node) return;
+      const { node, label, link } = graphRefs;
       if (!q) {
         node.classed('dimmed', false).classed('highlighted', false);
         label.classed('dimmed', false);
@@ -439,44 +594,196 @@ const data = JSON.stringify(patternsData);
       node.classed('dimmed', n => !matches.has(n.id));
       node.classed('highlighted', n => matches.has(n.id));
       label.classed('dimmed', n => !matches.has(n.id));
-    });
+    }
 
-    // --- Category filter ---
-    function updateVisibility() {
-      node.style('display', d => enabledCategories.has(d.category) ? null : 'none');
-      label.style('display', d => enabledCategories.has(d.category) ? null : 'none');
-      link.style('display', l => {
-        const s = typeof l.source === 'object' ? l.source : nodeMap.get(l.source);
-        const t = typeof l.target === 'object' ? l.target : nodeMap.get(l.target);
-        return (s && enabledCategories.has(s.category) && t && enabledCategories.has(t.category)) ? null : 'none';
+    function initGraph() {
+      graphInitialized = true;
+
+      const enabledCategories = new Set(Object.keys(categories));
+
+      // Legend
+      Object.entries(categories).forEach(([cat, color]) => {
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        item.innerHTML = `<span class="legend-dot" style="background:${color}"></span>${cat}`;
+        item.addEventListener('click', () => {
+          if (enabledCategories.has(cat)) {
+            enabledCategories.delete(cat);
+            item.classList.add('disabled');
+          } else {
+            enabledCategories.add(cat);
+            item.classList.remove('disabled');
+          }
+          updateVisibility();
+        });
+        legendEl.appendChild(item);
       });
-    }
 
-    // --- Drag ---
-    function dragStarted(event, d) {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
-      d.fx = d.x;
-      d.fy = d.y;
-    }
-    function dragged(event, d) {
-      d.fx = event.x;
-      d.fy = event.y;
-    }
-    function dragEnded(event, d) {
-      if (!event.active) simulation.alphaTarget(0);
-      d.fx = null;
-      d.fy = null;
-    }
+      // SVG setup
+      const svg = d3.select('#graph');
+      const width = window.innerWidth;
+      const height = window.innerHeight - 56;
+      svg.attr('width', width).attr('height', height);
 
-    // --- Resize ---
-    window.addEventListener('resize', () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight - 56;
-      svg.attr('width', w).attr('height', h);
-      simulation.force('center', d3.forceCenter(w / 2, h / 2));
-      simulation.alpha(0.3).restart();
-    });
-    } // end initGraph
+      const g = svg.append('g');
+
+      const zoom = d3.zoom()
+        .scaleExtent([0.3, 4])
+        .on('zoom', (event) => g.attr('transform', event.transform));
+      svg.call(zoom);
+
+      // Simulation
+      const simulation = d3.forceSimulation(nodes)
+        .force('link', d3.forceLink(edges).id(d => d.id).distance(80).strength(0.3))
+        .force('charge', d3.forceManyBody().strength(-120))
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('collision', d3.forceCollide(18))
+        .force('x', d3.forceX(d => {
+          const cats = Object.keys(categories);
+          const i = cats.indexOf(d.category);
+          const angle = (i / cats.length) * 2 * Math.PI;
+          return width / 2 + Math.cos(angle) * 200;
+        }).strength(0.15))
+        .force('y', d3.forceY(d => {
+          const cats = Object.keys(categories);
+          const i = cats.indexOf(d.category);
+          const angle = (i / cats.length) * 2 * Math.PI;
+          return height / 2 + Math.sin(angle) * 200;
+        }).strength(0.15));
+
+      // Links
+      const link = g.append('g')
+        .selectAll('line')
+        .data(edges)
+        .join('line')
+        .attr('class', 'link');
+
+      // Nodes
+      const node = g.append('g')
+        .selectAll('circle')
+        .data(nodes)
+        .join('circle')
+        .attr('class', 'node-circle')
+        .attr('r', 8)
+        .attr('fill', d => categories[d.category])
+        .call(d3.drag()
+          .on('start', dragStarted)
+          .on('drag', dragged)
+          .on('end', dragEnded));
+
+      // Labels
+      const label = g.append('g')
+        .selectAll('text')
+        .data(nodes)
+        .join('text')
+        .attr('class', 'node-label')
+        .attr('dy', '1.6em')
+        .text(d => d.id);
+
+      // Store refs for search
+      graphRefs = { node, label, link };
+
+      // Tick
+      simulation.on('tick', () => {
+        link
+          .attr('x1', d => d.source.x)
+          .attr('y1', d => d.source.y)
+          .attr('x2', d => d.target.x)
+          .attr('y2', d => d.target.y);
+        node
+          .attr('cx', d => d.x)
+          .attr('cy', d => d.y);
+        label
+          .attr('x', d => d.x)
+          .attr('y', d => d.y);
+      });
+
+      // Tooltip
+      const tooltip = document.getElementById('tooltip');
+      node.on('mouseover', (event, d) => {
+        tooltip.innerHTML = `
+          <div class="tooltip-title">${d.id}: ${d.name}</div>
+          <div class="tooltip-intent">${d.intent || ''}</div>
+        `;
+        tooltip.style.display = 'block';
+        const x = event.clientX + 16;
+        const maxX = window.innerWidth - 380;
+        tooltip.style.left = Math.min(x, maxX) + 'px';
+        tooltip.style.top = (event.clientY - 8) + 'px';
+
+        const connected = adj.get(d.id);
+        node.classed('dimmed', n => n.id !== d.id && !connected.has(n.id));
+        node.classed('highlighted', n => n.id === d.id);
+        link.classed('highlighted', l => l.source.id === d.id || l.target.id === d.id);
+        link.style('stroke', l => {
+          if (l.source.id === d.id || l.target.id === d.id) {
+            return categories[d.category];
+          }
+          return null;
+        });
+        label.classed('dimmed', n => n.id !== d.id && !connected.has(n.id));
+      })
+      .on('mousemove', (event) => {
+        const x = event.clientX + 16;
+        const maxX = window.innerWidth - 380;
+        tooltip.style.left = Math.min(x, maxX) + 'px';
+        tooltip.style.top = (event.clientY - 8) + 'px';
+      })
+      .on('mouseout', () => {
+        tooltip.style.display = 'none';
+        node.classed('dimmed', false).classed('highlighted', false);
+        link.classed('highlighted', false).style('stroke', null);
+        label.classed('dimmed', false);
+      });
+
+      // Click → detail
+      node.on('click', (event, d) => {
+        event.stopPropagation();
+        showDetail(d);
+      });
+
+      svg.on('click', () => detailPanel.classList.remove('open'));
+
+      // Category filter
+      function updateVisibility() {
+        node.style('display', d => enabledCategories.has(d.category) ? null : 'none');
+        label.style('display', d => enabledCategories.has(d.category) ? null : 'none');
+        link.style('display', l => {
+          const s = typeof l.source === 'object' ? l.source : nodeMap.get(l.source);
+          const t = typeof l.target === 'object' ? l.target : nodeMap.get(l.target);
+          return (s && enabledCategories.has(s.category) && t && enabledCategories.has(t.category)) ? null : 'none';
+        });
+      }
+
+      // Drag
+      function dragStarted(event, d) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      }
+      function dragged(event, d) {
+        d.fx = event.x;
+        d.fy = event.y;
+      }
+      function dragEnded(event, d) {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+      }
+
+      // Resize
+      window.addEventListener('resize', () => {
+        const w = window.innerWidth;
+        const h = window.innerHeight - 56;
+        svg.attr('width', w).attr('height', h);
+        simulation.force('center', d3.forceCenter(w / 2, h / 2));
+        simulation.alpha(0.3).restart();
+      });
+
+      // Apply current search to graph
+      const q = searchInput.value.toLowerCase();
+      if (q) searchGraph(q);
+    }
   </script>
 </body>
 </html>
