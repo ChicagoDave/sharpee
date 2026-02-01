@@ -39,3 +39,10 @@ feat: add connectRooms and createDoor convenience m
 [03:34:42] EDIT: website/src/pages/docs/getting-started/installation.mdx
 [03:37:40] WRITE: docs/context/session-20260201-0530-main.md
 [03:38:55] EDIT: website/src/pages/docs/getting-started/quick-start.mdx
+[03:39:14] GIT: git add docs/context/session-20260201-0530-main.md docs/context/.work-log.txt we
+[03:41:20] EDIT: website/src/layouts/BaseLayout.astro
+[03:41:43] GIT: git add website/src/layouts/BaseLayout.astro && git commit -m "$(cat <<'EOF'
+fix
+[03:44:04] EDIT: docs/context/session-20260201-0530-main.md
+[03:44:14] EDIT: docs/context/session-20260201-0530-main.md
+[03:44:23] EDIT: docs/context/session-20260201-0530-main.md
