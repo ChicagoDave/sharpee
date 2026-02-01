@@ -11,6 +11,7 @@ const nav = [
   { label: 'Design Patterns', href: '/design-patterns/' },
   { label: 'Games', href: '/games/' },
   { label: 'Downloads', href: '/downloads/' },
+  { label: 'GitHub', href: 'https://github.com/ChicagoDave/sharpee' },
 ];
 ---
 
@@ -33,7 +34,7 @@ const nav = [
     <nav class="header-nav">
       <div class="nav-inner">
         {nav.map(item => (
-          <a href={item.href} class:list={['nav-link', { active: currentPath.startsWith(item.href) && item.href !== '/' || currentPath === item.href }]}>
+          <a href={item.href} class:list={['nav-link', { active: !item.href.startsWith('http') && (currentPath.startsWith(item.href) && item.href !== '/' || currentPath === item.href) }]} {...(item.href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
             {item.label}
           </a>
         ))}
