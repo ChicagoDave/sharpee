@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/plugin-scheduler",
-  "version": "0.9.61-beta",
+  "version": "0.9.62-beta",
   "description": "Scheduler plugin for Sharpee engine - daemons and fuses (ADR-071, ADR-120)",
   "main": "dist-npm/index.js",
   "module": "dist-npm/index.js",

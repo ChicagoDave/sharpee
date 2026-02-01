@@ -9,3 +9,17 @@
 [20:18:07] EDIT: packages/zifmia/src-tauri/Cargo.toml
 [20:18:20] EDIT: packages/zifmia/src-tauri/src/main.rs
 [20:27:01] WRITE: docs/context/session-20260131-2026-main.md
+[20:42:09] EDIT: packages/zifmia/src/version.ts
+[20:42:13] EDIT: packages/zifmia/src-tauri/tauri.conf.json
+[20:42:15] EDIT: packages/zifmia/src-tauri/Cargo.toml
+[20:43:18] EDIT: packages/zifmia/package.json
+[20:55:48] EDIT: packages/world-model/src/world/WorldModel.ts
+[20:56:00] EDIT: packages/world-model/src/world/WorldModel.ts
+[20:56:14] EDIT: packages/world-model/src/world/WorldModel.ts
+[21:45:46] WRITE: docs/context/session-20260131-2144-main.md
+[21:46:14] GIT: git commit -m "$(cat <<'EOF'
+feat: add connectRooms and createDoor convenience m
+[21:46:19] GIT: git push
+[21:54:57] EDIT: packages/sharpee/package.json
+[22:58:38] WRITE: packages/zifmia/src/version.ts
+[22:58:39] WRITE: stories/dungeo/src/version.ts

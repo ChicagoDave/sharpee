@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/transcript-tester",
-  "version": "0.9.61-beta",
+  "version": "0.9.62-beta",
   "description": "Transcript-based testing tool for Sharpee interactive fiction",
   "main": "dist-npm/index.js",
   "types": "dist-npm/index.d.ts",
