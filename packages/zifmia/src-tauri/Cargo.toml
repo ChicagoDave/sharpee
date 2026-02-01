@@ -1,12 +1,12 @@
 [package]
-name = "sharpee"
+name = "zifmia"
 version = "0.1.0"
-description = "Sharpee Story Runner"
+description = "Zifmia Story Runner"
 authors = ["ChicagoDave"]
 edition = "2021"
 
 [lib]
-name = "sharpee_lib"
+name = "zifmia_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
