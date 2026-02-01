@@ -23,3 +23,4 @@ feat: add connectRooms and createDoor convenience m
 [21:54:57] EDIT: packages/sharpee/package.json
 [22:58:38] WRITE: packages/zifmia/src/version.ts
 [22:58:39] WRITE: stories/dungeo/src/version.ts
+[00:00:09] EDIT: packages/zifmia/src-tauri/tauri.conf.json
