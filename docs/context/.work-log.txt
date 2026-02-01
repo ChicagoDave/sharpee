@@ -37,3 +37,5 @@ feat: add connectRooms and createDoor convenience m
 [03:29:50] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/sharpee' build:npm 2>&1 | tail -20
 [03:34:35] EDIT: website/src/pages/docs/getting-started/quick-start.mdx
 [03:34:42] EDIT: website/src/pages/docs/getting-started/installation.mdx
+[03:37:40] WRITE: docs/context/session-20260201-0530-main.md
+[03:38:55] EDIT: website/src/pages/docs/getting-started/quick-start.mdx
