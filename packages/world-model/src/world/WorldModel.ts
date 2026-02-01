@@ -4,11 +4,16 @@ import { IFEntity } from '../entities/if-entity';
 import { EntityType, isEntityType } from '../entities/entity-types';
 import { TraitType } from '../traits/trait-types';
 import { RoomTrait } from '../traits/room';
+import { RoomBehavior } from '../traits/room/roomBehavior';
 import { ContainerTrait } from '../traits/container';
 import { SupporterTrait } from '../traits/supporter';
 import { ActorTrait } from '../traits/actor';
 import { DoorTrait } from '../traits/door';
 import { SceneryTrait } from '../traits/scenery';
+import { IdentityTrait } from '../traits/identity/identityTrait';
+import { OpenableTrait } from '../traits/openable/openableTrait';
+import { LockableTrait } from '../traits/lockable/lockableTrait';
+import { DirectionType, getOppositeDirection } from '../constants/directions';
 import { ISemanticEvent, ISemanticEventSource } from '@sharpee/core';
 import { SpatialIndex } from './SpatialIndex';
 import { VisibilityBehavior } from './VisibilityBehavior';
@@ -143,6 +148,19 @@ export interface IWorldModel {
   findPath(fromRoomId: string, toRoomId: string): string[] | null;
   getPlayer(): IFEntity | undefined;
   setPlayer(entityId: string): void;
+
+  // Convenience Creators
+  connectRooms(room1Id: string, room2Id: string, direction: DirectionType): void;
+  createDoor(displayName: string, opts: {
+    room1Id: string;
+    room2Id: string;
+    direction: DirectionType;
+    description?: string;
+    aliases?: string[];
+    isOpen?: boolean;
+    isLocked?: boolean;
+    keyId?: string;
+  }): IFEntity;
 
   // Persistence
   toJSON(): string;
@@ -1369,5 +1387,74 @@ export class WorldModel implements IWorldModel {
     const target = this.getEntity(targetId);
     if (!observer || !target) return false;
     return VisibilityBehavior.canSee(observer, target, this);
+  }
+
+  // ========== Convenience Creators ==========
+
+  /**
+   * Create a bidirectional connection between two rooms.
+   * Sets exits in both directions (e.g. NORTH on room1, SOUTH on room2).
+   */
+  connectRooms(room1Id: string, room2Id: string, direction: DirectionType): void {
+    const room1 = this.getEntity(room1Id);
+    const room2 = this.getEntity(room2Id);
+    if (!room1 || !room2) {
+      throw new Error(`connectRooms: both rooms must exist (${room1Id}, ${room2Id})`);
+    }
+
+    const opposite = getOppositeDirection(direction);
+    RoomBehavior.setExit(room1, direction, room2Id);
+    RoomBehavior.setExit(room2, opposite, room1Id);
+  }
+
+  /**
+   * Create a door entity and wire it into both rooms' exit data.
+   * The door is placed in room1 spatially (for scope resolution).
+   */
+  createDoor(displayName: string, opts: {
+    room1Id: string;
+    room2Id: string;
+    direction: DirectionType;
+    description?: string;
+    aliases?: string[];
+    isOpen?: boolean;
+    isLocked?: boolean;
+    keyId?: string;
+  }): IFEntity {
+    const room1 = this.getEntity(opts.room1Id);
+    const room2 = this.getEntity(opts.room2Id);
+    if (!room1 || !room2) {
+      throw new Error(`createDoor: both rooms must exist (${opts.room1Id}, ${opts.room2Id})`);
+    }
+
+    const door = this.createEntity(displayName, EntityType.DOOR);
+    door.add(new IdentityTrait({
+      name: displayName,
+      aliases: opts.aliases,
+      description: opts.description,
+    }));
+    door.add(new DoorTrait({
+      room1: opts.room1Id,
+      room2: opts.room2Id,
+    }));
+    door.add(new SceneryTrait());
+    door.add(new OpenableTrait({ isOpen: opts.isOpen ?? false }));
+
+    if (opts.isLocked !== undefined || opts.keyId) {
+      door.add(new LockableTrait({
+        isLocked: opts.isLocked ?? true,
+        ...(opts.keyId ? { requiredKey: opts.keyId } : {}),
+      }));
+    }
+
+    // Wire exits through the door
+    const opposite = getOppositeDirection(opts.direction);
+    RoomBehavior.setExit(room1, opts.direction, opts.room2Id, door.id);
+    RoomBehavior.setExit(room2, opposite, opts.room1Id, door.id);
+
+    // Place door in room1 for scope resolution
+    this.moveEntity(door.id, opts.room1Id);
+
+    return door;
   }
 }
