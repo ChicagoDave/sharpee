@@ -159,6 +159,25 @@ The scaffolded project includes a working `tsconfig.json`. If setting up manuall
 }
 ```
 
+## Building
+
+Once you've written your story, build it with the CLI:
+
+```bash
+npx @sharpee/sharpee build
+```
+
+This creates two outputs:
+
+- **`dist/<story>.sharpee`** — Bundle for the [Zifmia](/downloads/) desktop runner
+- **`dist/web/`** — Static browser client you can deploy anywhere
+
+To add browser support to your project (required for the browser output):
+
+```bash
+npx @sharpee/sharpee init-browser
+```
+
 ## Next Steps
 
 Continue to the [Quick Start](/docs/getting-started/quick-start/) guide to build your first playable story.

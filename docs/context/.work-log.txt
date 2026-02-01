@@ -24,3 +24,16 @@ feat: add connectRooms and createDoor convenience m
 [22:58:38] WRITE: packages/zifmia/src/version.ts
 [22:58:39] WRITE: stories/dungeo/src/version.ts
 [00:00:09] EDIT: packages/zifmia/src-tauri/tauri.conf.json
+[03:13:48] EDIT: website/src/pages/docs/getting-started/installation.mdx
+[03:13:50] EDIT: website/src/pages/docs/getting-started/quick-start.mdx
+[03:14:14] EDIT: website/src/pages/docs/tutorials/cloak-of-darkness.mdx
+[03:14:15] EDIT: website/src/pages/docs/api-reference/actions.mdx
+[03:25:30] EDIT: packages/sharpee/package.json
+[03:27:19] WRITE: /home/dave/.claude/plans/shimmering-napping-sprout.md
+[03:29:01] WRITE: packages/sharpee/src/cli/build.ts
+[03:29:06] EDIT: packages/sharpee/src/cli/index.ts
+[03:29:11] EDIT: packages/sharpee/src/cli/index.ts
+[03:29:19] EDIT: packages/sharpee/src/cli/index.ts
+[03:29:50] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/sharpee' build:npm 2>&1 | tail -20
+[03:34:35] EDIT: website/src/pages/docs/getting-started/quick-start.mdx
+[03:34:42] EDIT: website/src/pages/docs/getting-started/installation.mdx

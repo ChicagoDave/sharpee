@@ -9,6 +9,7 @@ import { runIfidCommand } from './ifid';
 import { runInitCommand } from './init';
 import { runInitBrowserCommand } from './init-browser';
 import { runBuildBrowserCommand } from './build-browser';
+import { runBuildCommand } from './build';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { version: VERSION } = require('../../package.json');
@@ -24,6 +25,9 @@ async function main(): Promise<void> {
         break;
       case 'init-browser':
         await runInitBrowserCommand(args.slice(1));
+        break;
+      case 'build':
+        await runBuildCommand(args.slice(1));
         break;
       case 'build-browser':
         await runBuildBrowserCommand(args.slice(1));
@@ -62,7 +66,8 @@ Usage: sharpee <command> [options]
 Commands:
   init              Create a new Sharpee story project
   init-browser      Add browser client to an existing project
-  build-browser     Build a web browser bundle
+  build             Build .sharpee bundle and browser client
+  build-browser     Build a web browser bundle only
   ifid              IFID utilities (generate, validate)
   version           Show version
   help              Show this help
@@ -70,7 +75,8 @@ Commands:
 Examples:
   sharpee init my-adventure       Create new project in ./my-adventure/
   sharpee init-browser            Add browser support to current project
-  sharpee build-browser           Build web bundle in dist/web/
+  sharpee build                   Build story bundle + browser client
+  sharpee build-browser           Build web bundle only in dist/web/
 
 Run 'sharpee <command> --help' for command-specific help.
 `);

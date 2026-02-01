@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/sharpee",
-  "version": "0.9.62-beta",
+  "version": "0.9.63-beta",
   "description": "Sharpee - Interactive Fiction Engine for TypeScript",
   "main": "dist-npm/index.js",
   "module": "dist-npm/index.js",
@@ -29,20 +29,21 @@
     "@sharpee/if-services": "workspace:*",
     "@sharpee/lang-en-us": "workspace:*",
     "@sharpee/parser-en-us": "workspace:*",
-    "@sharpee/stdlib": "workspace:*",
-    "@sharpee/text-blocks": "workspace:*",
-    "@sharpee/text-service": "workspace:*",
-    "@sharpee/world-model": "workspace:*",
+    "@sharpee/platform-browser": "workspace:*",
     "@sharpee/plugin-npc": "workspace:*",
     "@sharpee/plugin-scheduler": "workspace:*",
     "@sharpee/plugin-state-machine": "workspace:*",
     "@sharpee/plugins": "workspace:*",
-    "@sharpee/platform-browser": "workspace:*"
+    "@sharpee/stdlib": "workspace:*",
+    "@sharpee/text-blocks": "workspace:*",
+    "@sharpee/text-service": "workspace:*",
+    "@sharpee/world-model": "workspace:*",
+    "fflate": "^0.8.2"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
-    "typescript": "^5.3.3",
-    "rimraf": "^5.0.5"
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3"
   },
   "files": [
     "dist-npm",

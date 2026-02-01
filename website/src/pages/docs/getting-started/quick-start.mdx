@@ -177,37 +177,32 @@ export function createHouse(world: WorldModel) {
 }
 ```
 
-## Play Your Story
+## Build Your Story
 
-Build and run:
+Build the `.sharpee` bundle and browser client:
 
 ```bash
-npm run build
-node dist/index.js --play
+npx @sharpee/sharpee build
 ```
 
-Try these commands:
+This produces:
+
+- `dist/my-adventure.sharpee` — Story bundle for the [Zifmia](/downloads/) desktop runner
+- `dist/web/` — Browser client you can host anywhere
+
+To test the browser client locally:
+
+```bash
+npx serve dist/web
+```
+
+Try these commands in the game:
 
 - `look` — describe the current room
 - `north` or `n` — move north
 - `examine book` — look at something
 - `take key` — pick up an item
 - `inventory` — see what you're carrying
-
-## Add a Browser Client
-
-If working from the Sharpee monorepo, build a browser client:
-
-```bash
-./build.sh -s my-adventure -c browser
-npx serve dist/web/my-adventure
-```
-
-Or build the React client with a theme:
-
-```bash
-./build.sh -s my-adventure -c react -t modern-dark
-```
 
 ## Next Steps
 
