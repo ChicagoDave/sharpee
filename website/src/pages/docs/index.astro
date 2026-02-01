@@ -1,0 +1,44 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import { Code } from 'astro-expressive-code/components';
+---
+
+<DocsLayout title="Documentation">
+  <h1>Documentation</h1>
+  <p class="subtitle">Get started building interactive fiction with Sharpee.</p>
+
+  <section class="doc-section">
+    <h2>Quick Example</h2>
+    <p>Create a room and add an item:</p>
+    <Code code={`import { WorldModel } from '@sharpee/world-model';
+
+const world = new WorldModel();
+const room = world.createEntity('kitchen', 'room');
+room.name = 'Kitchen';
+room.description = 'A warm kitchen with copper pots hanging from the ceiling.';
+
+const knife = world.createEntity('knife', 'object');
+knife.name = 'bread knife';
+world.moveEntity(knife.id, room.id);`} lang="typescript" />
+  </section>
+
+  <section class="doc-section">
+    <h2>Sections</h2>
+    <ul>
+      <li><a href="/docs/getting-started/installation/">Installation</a></li>
+      <li><a href="/docs/getting-started/quick-start/">Quick Start</a></li>
+      <li><a href="/docs/tutorials/cloak-of-darkness/">Cloak of Darkness Tutorial</a></li>
+      <li><a href="/docs/author-guide/creating-stories/">Author Guide</a></li>
+      <li><a href="/docs/developer-guide/project-structure/">Developer Guide</a></li>
+      <li><a href="/docs/api-reference/actions/">API Reference</a></li>
+    </ul>
+  </section>
+</DocsLayout>
+
+<style>
+  .subtitle { color: var(--color-muted); margin-bottom: 2rem; font-size: 1.1rem; }
+  .doc-section { margin-bottom: 2rem; }
+  .doc-section h2 { font-size: 1.3rem; margin-bottom: 0.75rem; }
+  .doc-section ul { padding-left: 1.5rem; }
+  .doc-section li { margin-bottom: 0.4rem; }
+</style>

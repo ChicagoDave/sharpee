@@ -1,0 +1,156 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+const currentPath = Astro.url.pathname;
+
+const sidebar = [
+  { heading: 'Getting Started', items: [
+    { label: 'Installation', href: '/docs/getting-started/installation/' },
+    { label: 'Quick Start', href: '/docs/getting-started/quick-start/' },
+  ]},
+  { heading: 'Tutorials', items: [
+    { label: 'Cloak of Darkness', href: '/docs/tutorials/cloak-of-darkness/' },
+  ]},
+  { heading: 'Author Guide', items: [
+    { label: 'Creating Stories', href: '/docs/author-guide/creating-stories/' },
+    { label: 'Rooms & Regions', href: '/docs/author-guide/rooms/' },
+    { label: 'Objects & Traits', href: '/docs/author-guide/objects/' },
+    { label: 'NPCs', href: '/docs/author-guide/npcs/' },
+  ]},
+  { heading: 'Developer Guide', items: [
+    { label: 'Project Structure', href: '/docs/developer-guide/project-structure/' },
+    { label: 'Build System', href: '/docs/developer-guide/build-system/' },
+  ]},
+  { heading: 'API Reference', items: [
+    { label: 'Actions', href: '/docs/api-reference/actions/' },
+    { label: 'Traits', href: '/docs/api-reference/traits/' },
+    { label: 'Grammar & Commands', href: '/docs/api-reference/grammar/' },
+  ]},
+];
+---
+
+<BaseLayout title={title}>
+  <div class="docs-wrapper">
+    <aside class="docs-sidebar">
+      {sidebar.map(section => (
+        <div class="sidebar-section">
+          <h3>{section.heading}</h3>
+          <ul>
+            {section.items.map(item => (
+              <li>
+                <a href={item.href} class:list={[{ active: currentPath === item.href }]}>
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </aside>
+    <article class="docs-content">
+      <slot />
+    </article>
+  </div>
+</BaseLayout>
+
+<style>
+  .docs-wrapper {
+    display: flex;
+    gap: 2rem;
+  }
+
+  .docs-sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 5rem;
+    align-self: flex-start;
+    max-height: calc(100vh - 6rem);
+    overflow-y: auto;
+  }
+
+  .sidebar-section {
+    margin-bottom: 1.25rem;
+  }
+
+  .sidebar-section h3 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-muted);
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+  }
+
+  .sidebar-section ul {
+    list-style: none;
+  }
+
+  .sidebar-section li a {
+    display: block;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    text-decoration: none;
+    color: var(--color-text);
+    border-radius: 0.25rem;
+    transition: color 0.15s, background 0.15s;
+  }
+
+  .sidebar-section li a:hover {
+    color: var(--color-accent);
+    background: #f0fdf4;
+  }
+
+  .sidebar-section li a.active {
+    color: var(--color-accent);
+    background: #ecfdf5;
+    font-weight: 600;
+  }
+
+  .docs-content {
+    flex: 1;
+    min-width: 0;
+    max-width: 780px;
+  }
+
+  .docs-content :global(h1) { font-size: 2rem; margin-bottom: 0.5rem; }
+  .docs-content :global(h2) { font-size: 1.4rem; margin-top: 2rem; margin-bottom: 0.5rem; }
+  .docs-content :global(h3) { font-size: 1.15rem; margin-top: 1.5rem; margin-bottom: 0.4rem; }
+  .docs-content :global(p) { margin-bottom: 1rem; line-height: 1.7; }
+  .docs-content :global(ul), .docs-content :global(ol) { margin-bottom: 1rem; padding-left: 1.5rem; }
+  .docs-content :global(li) { margin-bottom: 0.35rem; line-height: 1.6; }
+  .docs-content :global(code) {
+    background: #f1f5f9;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-size: 0.875em;
+  }
+  .docs-content :global(pre code) {
+    background: none;
+    padding: 0;
+  }
+  .docs-content :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+  }
+  .docs-content :global(th), .docs-content :global(td) {
+    border: 1px solid var(--color-border);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+  }
+  .docs-content :global(th) {
+    background: #f8fafc;
+    font-weight: 600;
+  }
+
+  @media (max-width: 768px) {
+    .docs-wrapper { flex-direction: column; }
+    .docs-sidebar { width: 100%; position: static; max-height: none; }
+  }
+</style>

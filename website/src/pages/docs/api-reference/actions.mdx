@@ -1,0 +1,116 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: "Standard Actions Reference"
+---
+
+# Standard Actions Reference
+
+
+All standard actions are provided by `@sharpee/stdlib`. Actions follow a four-phase pattern: **validate** → **execute** → **report** → **blocked**.
+
+## Movement
+
+| Action ID | Verbs | Description | Required Traits |
+|-----------|-------|-------------|-----------------|
+| `if.action.going` | go, north/n, south/s, east/e, west/w, ne, nw, se, sw, up/u, down/d, in, out | Move to adjacent location | — (room exits) |
+| `if.action.entering` | enter, get in, climb in, board, get on | Enter an enterable object or vehicle | EnterableTrait |
+| `if.action.exiting` | exit, get out, leave, climb out, disembark, get off | Exit current container or vehicle | — (player location) |
+| `if.action.climbing` | climb | Climb an object | — (validated by action) |
+
+## Observation
+
+| Action ID | Verbs | Description | Required Traits |
+|-----------|-------|-------------|-----------------|
+| `if.action.looking` | look, l | Describe current location and visible items | — |
+| `if.action.examining` | examine, x, inspect, look at | Examine an object in detail | — (must be visible) |
+| `if.action.searching` | search, look in, rummage | Search containers for items | — |
+| `if.action.listening` | listen, listen to | Listen to surroundings or object | — |
+| `if.action.smelling` | smell | Smell surroundings or object | — |
+| `if.action.touching` | touch, rub, feel, pat, stroke, poke, prod | Touch or feel an object | — (must be reachable) |
+| `if.action.reading` | read, peruse, study | Read text on an object | — (must be visible) |
+
+## Object Manipulation
+
+| Action ID | Verbs | Description | Required Traits |
+|-----------|-------|-------------|-----------------|
+| `if.action.taking` | take, get, grab, pick up | Pick up an object | — (SceneryTrait blocks) |
+| `if.action.dropping` | drop, discard, put down | Put down a held object | — (must be held) |
+| `if.action.putting` | put on | Place item on a supporter | SupporterTrait (target) |
+| `if.action.inserting` | put in, insert | Place item in a container | ContainerTrait (target) |
+| `if.action.removing` | remove from | Remove item from container/supporter | — |
+| `if.action.throwing` | throw at, throw to | Throw an object at a target | — (must be held) |
+
+## Containers & Doors
+
+| Action ID | Verbs | Description | Required Traits |
+|-----------|-------|-------------|-----------------|
+| `if.action.opening` | open | Open a container, door, or openable | OpenableTrait |
+| `if.action.closing` | close | Close a container or door | OpenableTrait |
+| `if.action.locking` | lock, lock with | Lock a door or container | LockableTrait |
+| `if.action.unlocking` | unlock, unlock with | Unlock a door or container | LockableTrait |
+
+## Devices
+
+| Action ID | Verbs | Description | Required Traits |
+|-----------|-------|-------------|-----------------|
+| `if.action.switching_on` | turn on, switch on, flip on | Turn on a device | SwitchableTrait |
+| `if.action.switching_off` | turn off, switch off, flip off | Turn off a device | SwitchableTrait |
+| `if.action.pushing` | push, press, shove, move | Push or press an object | — |
+| `if.action.pulling` | pull, drag, yank | Pull an object | — |
+
+## Wearing
+
+| Action ID | Verbs | Description | Required Traits |
+|-----------|-------|-------------|-----------------|
+| `if.action.wearing` | wear, put on | Put on a wearable item | WearableTrait |
+| `if.action.taking_off` | take off, remove, doff | Remove a worn item | WearableTrait |
+
+## Consumption
+
+| Action ID | Verbs | Description | Required Traits |
+|-----------|-------|-------------|-----------------|
+| `if.action.eating` | eat | Eat a food item | — |
+| `if.action.drinking` | drink, quaff | Drink a liquid | — |
+
+## Communication
+
+| Action ID | Verbs | Description | Required Traits |
+|-----------|-------|-------------|-----------------|
+| `if.action.talking` | talk, talk to | Talk to an NPC | — |
+| `if.action.giving` | give to, offer to | Give an item to an NPC | ActorTrait (recipient) |
+| `if.action.showing` | show to | Show an item to an NPC | ActorTrait (recipient) |
+| `if.action.asking` | ask about | Ask an NPC about a topic | ActorTrait (NPC) |
+| `if.action.telling` | tell about | Tell an NPC about a topic | ActorTrait (NPC) |
+
+## Combat
+
+| Action ID | Verbs | Description | Required Traits |
+|-----------|-------|-------------|-----------------|
+| `if.action.attacking` | attack, kill, fight, slay, murder, hit, strike | Attack a creature or object | — |
+
+## Capability Dispatch
+
+These actions have no standard semantics — the target entity's trait determines what happens. See [Capability Dispatch](/developer-guide/project-structure/) for details.
+
+| Action ID | Verbs | Description |
+|-----------|-------|-------------|
+| `if.action.lowering` | lower | Lower an object (entity-specific behavior) |
+| `if.action.raising` | raise, lift | Raise or lift an object (entity-specific behavior) |
+
+## Meta / System
+
+| Action ID | Verbs | Description |
+|-----------|-------|-------------|
+| `if.action.inventory` | inventory, inv, i | Display player inventory |
+| `if.action.waiting` | wait, z | Wait one turn |
+| `if.action.sleeping` | sleep | Attempt to sleep |
+| `if.action.scoring` | score | Display current score |
+| `if.action.saving` | save | Save game state |
+| `if.action.restoring` | restore | Restore saved game |
+| `if.action.restarting` | restart | Restart the game |
+| `if.action.undoing` | undo | Undo last command |
+| `if.action.again` | again, g | Repeat last command |
+| `if.action.quitting` | quit, q | Exit the game |
+| `if.action.help` | help | Show help information |
+| `if.action.about` | about | Show game information |
+| `if.action.version` | version | Show version number |
