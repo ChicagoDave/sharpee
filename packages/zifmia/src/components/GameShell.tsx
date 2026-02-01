@@ -11,12 +11,19 @@ import { MenuBar } from './menu/MenuBar';
 import { StatusLine } from './status/StatusLine';
 import { Transcript } from './transcript/Transcript';
 import { CommandInput } from './transcript/CommandInput';
+import type { StoryMetadata } from '../types/story-metadata';
 
 export interface GameShellProps {
   /** Story ID for persistence */
   storyId?: string;
   /** Story title for menu bar display */
   storyTitle?: string;
+  /** Bundle metadata for About dialog */
+  storyMetadata?: StoryMetadata;
+  /** Zifmia client version */
+  zifmiaVersion?: string;
+  /** Engine version */
+  engineVersion?: string;
   /** Additional class name */
   className?: string;
   /** Save/restore/export callbacks — MenuBar renders when any are provided */
@@ -32,6 +39,9 @@ export interface GameShellProps {
 export function GameShell({
   storyId = 'default',
   storyTitle,
+  storyMetadata,
+  zifmiaVersion,
+  engineVersion,
   className = '',
   onSave,
   onRestore,
@@ -48,6 +58,9 @@ export function GameShell({
       {showMenuBar && (
         <MenuBar
           storyTitle={storyTitle}
+          storyMetadata={storyMetadata}
+          zifmiaVersion={zifmiaVersion}
+          engineVersion={engineVersion}
           onSave={onSave}
           onRestore={onRestore}
           onQuit={onQuit}

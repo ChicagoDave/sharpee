@@ -707,6 +707,17 @@ ${THEMES_CSS}
 HTMLEOF
     log_ok "index.html (with importmap)"
 
+    # 4. Copy runner assets (logo, fonts)
+    mkdir -p "$OUTDIR/assets/fonts"
+    if [ -f "docs/design/sharpee-logo.png" ]; then
+        cp "docs/design/sharpee-logo.png" "$OUTDIR/assets/sharpee-logo.png"
+        log_ok "sharpee-logo.png"
+    fi
+    if [ -f "docs/design/fonts/Enchanted Land DS D.otf" ]; then
+        cp "docs/design/fonts/Enchanted Land DS D.otf" "$OUTDIR/assets/fonts/enchanted-land.otf"
+        log_ok "enchanted-land.otf"
+    fi
+
     local RUNNER_SIZE=$(ls -lh "$OUTDIR/runner.js" | awk '{print $5}')
     local PLATFORM_SIZE=$(ls -lh "$MODULES_DIR/platform.js" | awk '{print $5}')
     echo "Output: $OUTDIR/"

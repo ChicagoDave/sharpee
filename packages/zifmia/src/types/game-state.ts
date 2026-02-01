@@ -116,6 +116,7 @@ export type GameAction =
   | { type: 'TURN_COMPLETED'; turn: number; text: string; command?: string; events: GameEvent[] }
   | { type: 'TRANSCRIPT_CLEARED' }
   | { type: 'TRANSCRIPT_RESTORED'; transcript: TranscriptEntry[]; turns: number; score: number }
+  | { type: 'SYSTEM_MESSAGE'; text: string }
   | { type: 'ENGINE_STOPPED' };
 
 /**
@@ -209,6 +210,19 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         turns: action.turns,
         score: action.score,
       };
+
+    case 'SYSTEM_MESSAGE': {
+      const sysEntry: TranscriptEntry = {
+        id: `sys-${Date.now()}`,
+        turn: state.turns,
+        text: action.text,
+        timestamp: Date.now(),
+      };
+      return {
+        ...state,
+        transcript: [...state.transcript, sysEntry],
+      };
+    }
 
     case 'ENGINE_STOPPED':
       return {

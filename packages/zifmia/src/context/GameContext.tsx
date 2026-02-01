@@ -116,6 +116,10 @@ interface GameProviderProps {
   handleRef?: React.MutableRefObject<GameProviderHandle | null>;
   /** Called after each turn completes (for auto-save) */
   onTurnCompleted?: (state: GameState) => void;
+  /** Called immediately when the engine emits a save-requested event */
+  onSaveRequested?: () => void;
+  /** Called immediately when the engine emits a restore-requested event */
+  onRestoreRequested?: () => void;
   /** Asset map from bundle (path → blob URL) */
   assetMap?: Map<string, string>;
   children: ReactNode;
@@ -159,13 +163,21 @@ function extractCurrentRoom(world: WorldInterface, roomId: string): CurrentRoom 
  */
 const EMPTY_ASSET_MAP = new Map<string, string>();
 
-export function GameProvider({ engine, children, handleRef, onTurnCompleted, assetMap }: GameProviderProps) {
+export function GameProvider({ engine, children, handleRef, onTurnCompleted, onSaveRequested, onRestoreRequested, assetMap }: GameProviderProps) {
   const [state, dispatch] = useReducer(gameReducer, initialGameState);
   const pendingCommand = useRef<string | undefined>();
   const engineRef = useRef(engine);
   const turnEventsBuffer = useRef<GameEvent[]>([]);
   const stateRef = useRef(state);
   stateRef.current = state;
+
+  // Keep callback refs current to avoid stale closures in engine event handlers
+  const onSaveRequestedRef = useRef(onSaveRequested);
+  onSaveRequestedRef.current = onSaveRequested;
+  const onRestoreRequestedRef = useRef(onRestoreRequested);
+  onRestoreRequestedRef.current = onRestoreRequested;
+  const onTurnCompletedRef = useRef(onTurnCompleted);
+  onTurnCompletedRef.current = onTurnCompleted;
 
   // Expose handle for external access (save/restore)
   useEffect(() => {
@@ -191,18 +203,35 @@ export function GameProvider({ engine, children, handleRef, onTurnCompleted, ass
       const turnEvents = [...turnEventsBuffer.current];
       turnEventsBuffer.current = [];
 
+      // Detect save/restore by events OR by command (events may not fire if action validate fails)
+      const isSaveRestore = turnEvents.some(e =>
+        e.type === 'if.event.save_requested' || e.type === 'if.event.restore_requested'
+      );
+      const cmd = pendingCommand.current?.trim().toLowerCase();
+      const isSaveCommand = cmd === 'save';
+      const isRestoreCommand = cmd === 'restore';
+      const suppressText = isSaveRestore || isSaveCommand || isRestoreCommand;
+
+      // Fire save/restore dialogs from command detection (fallback when events don't fire)
+      if (isSaveCommand && !isSaveRestore && onSaveRequestedRef.current) {
+        onSaveRequestedRef.current();
+      }
+      if (isRestoreCommand && !isSaveRestore && onRestoreRequestedRef.current) {
+        onRestoreRequestedRef.current();
+      }
+
       dispatch({
         type: 'TURN_COMPLETED',
         turn: turn as number,
-        text: text as string,
+        text: suppressText ? '' : text as string,
         command: pendingCommand.current,
         events: turnEvents,
       });
       pendingCommand.current = undefined;
 
       // Notify parent for auto-save (state updates asynchronously, use next tick)
-      if (onTurnCompleted) {
-        setTimeout(() => onTurnCompleted(stateRef.current), 0);
+      if (onTurnCompletedRef.current) {
+        setTimeout(() => onTurnCompletedRef.current?.(stateRef.current), 0);
       }
     };
 
@@ -252,6 +281,14 @@ export function GameProvider({ engine, children, handleRef, onTurnCompleted, ass
             maxScore: data.maxScore,
           });
         }
+      }
+
+      // Handle save/restore requests — fire immediately (before text:output)
+      if (evt.type === 'if.event.save_requested' && onSaveRequestedRef.current) {
+        onSaveRequestedRef.current();
+      }
+      if (evt.type === 'if.event.restore_requested' && onRestoreRequestedRef.current) {
+        onRestoreRequestedRef.current();
       }
 
       // Handle game start

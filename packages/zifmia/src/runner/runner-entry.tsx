@@ -45,11 +45,14 @@ function App() {
     setState({ phase: 'playing', bundleData: data });
   }, []);
 
+  const lastFilePathRef = React.useRef<string | undefined>();
+
   const handleTauriOpen = useCallback(async () => {
     try {
       // @ts-ignore — Tauri injects __TAURI__ at runtime
-      const bytes: number[] = await window.__TAURI__.core.invoke('open_bundle');
-      const buffer = new Uint8Array(bytes).buffer;
+      const result: [number[], string] = await window.__TAURI__.core.invoke('open_bundle');
+      const buffer = new Uint8Array(result[0]).buffer;
+      lastFilePathRef.current = result[1];
       setState({ phase: 'playing', bundleData: buffer });
     } catch (e: unknown) {
       if (e && typeof e === 'object' && 'toString' in e) {
@@ -58,6 +61,18 @@ function App() {
           setState({ phase: 'error', error: msg });
         }
       }
+    }
+  }, []);
+
+  const handleReloadPath = useCallback(async (path: string) => {
+    try {
+      // @ts-ignore — Tauri injects __TAURI__ at runtime
+      const bytes: number[] = await window.__TAURI__.core.invoke('read_bundle_path', { path });
+      const buffer = new Uint8Array(bytes).buffer;
+      lastFilePathRef.current = path;
+      setState({ phase: 'playing', bundleData: buffer });
+    } catch (e: unknown) {
+      setState({ phase: 'error', error: String(e) });
     }
   }, []);
 
@@ -80,6 +95,7 @@ function App() {
       storyId: metadata.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       source: url ? 'url' : 'file',
       url,
+      filePath: lastFilePathRef.current,
     });
   }, [state]);
 
@@ -89,6 +105,7 @@ function App() {
         onSelectUrl={handleSelectUrl}
         onSelectFile={handleSelectFile}
         onTauriOpen={isTauri() ? handleTauriOpen : undefined}
+        onReloadPath={isTauri() ? handleReloadPath : undefined}
       />
     );
   }

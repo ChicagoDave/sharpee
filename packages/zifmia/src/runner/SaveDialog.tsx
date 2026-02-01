@@ -18,6 +18,7 @@ export function SaveDialog({ storageProvider, storyId, suggestedName, onSave, on
   const [slots, setSlots] = useState<SaveSlotInfo[]>([]);
   const [overwriting, setOverwriting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const saveButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     storageProvider.listSlots(storyId).then(setSlots);
@@ -42,13 +43,20 @@ export function SaveDialog({ storageProvider, storyId, suggestedName, onSave, on
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Enter') handleSave();
+    if (e.key === 'Enter') { handleSave(); e.preventDefault(); }
     if (e.key === 'Escape') onCancel();
+  }
+
+  function handleSlotClick(slotName: string) {
+    setName(slotName);
+    setOverwriting(false);
+    // Move focus to save button for quick Enter
+    setTimeout(() => saveButtonRef.current?.focus(), 0);
   }
 
   return (
     <div className="zifmia-dialog-overlay" onClick={onCancel}>
-      <div className="zifmia-dialog" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Save Game">
+      <div className="zifmia-dialog" onClick={(e) => e.stopPropagation()} onKeyDown={handleKeyDown} role="dialog" aria-label="Save Game">
         <h2>Save Game</h2>
 
         <label>
@@ -58,7 +66,6 @@ export function SaveDialog({ storageProvider, storyId, suggestedName, onSave, on
             type="text"
             value={name}
             onChange={(e) => { setName(e.target.value); setOverwriting(false); }}
-            onKeyDown={handleKeyDown}
             maxLength={30}
             autoFocus
           />
@@ -66,7 +73,7 @@ export function SaveDialog({ storageProvider, storyId, suggestedName, onSave, on
 
         {overwriting && existingSlot && (
           <p className="zifmia-dialog-warning">
-            A save named "{existingSlot.name}" already exists (turn {existingSlot.turnCount}).
+            A save named &ldquo;{existingSlot.name}&rdquo; already exists (turn {existingSlot.turnCount}).
             Press Save again to overwrite.
           </p>
         )}
@@ -79,7 +86,8 @@ export function SaveDialog({ storageProvider, storyId, suggestedName, onSave, on
                 <li
                   key={slot.name}
                   className={slot.name === name ? 'selected' : ''}
-                  onClick={() => { setName(slot.name); setOverwriting(false); }}
+                  onClick={() => handleSlotClick(slot.name)}
+                  tabIndex={0}
                 >
                   <strong>{slot.name}</strong>
                   <span> — Turn {slot.turnCount}, {slot.location}</span>
@@ -93,7 +101,7 @@ export function SaveDialog({ storageProvider, storyId, suggestedName, onSave, on
         )}
 
         <div className="zifmia-dialog-buttons">
-          <button onClick={handleSave} disabled={!name.trim()}>
+          <button ref={saveButtonRef} onClick={handleSave} disabled={!name.trim()}>
             {overwriting ? 'Overwrite' : 'Save'}
           </button>
           <button onClick={onCancel}>Cancel</button>

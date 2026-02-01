@@ -1,54 +1,3 @@
-[17:58:37] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/world-model' build && pnpm --filter '@sharpee/stdlib' bu
-[17:59:37] TEST/BUILD FAIL (exit -1): rm -f /mnt/c/repotemp/sharpee/packages/stdlib/tsconfig.tsbuildinfo && pnpm --fil
-[18:00:36] TEST/BUILD FAIL (exit -1): rm -f /mnt/c/repotemp/sharpee/packages/world-model/tsconfig.tsbuildinfo /mnt/c/r
-[18:01:43] WRITE: website/src/content/docs/author-guide/npcs.md
-[18:02:13] WRITE: website/src/content/docs/developer-guide/build-system.md
-[18:02:48] WRITE: website/src/content/docs/developer-guide/project-structure.md
-[18:03:33] WRITE: website/src/content/docs/tutorials/cloak-of-darkness.md
-[18:07:51] GIT: git commit -m "$(cat <<'EOF'
-docs: rewrite website documentation to match actual
-[18:07:57] GIT: git push
-[18:09:25] WRITE: docs/context/session-20260130-1807-main.md
-[18:16:30] WRITE: website/src/content/docs/getting-started/installation.md
-[18:16:46] WRITE: website/src/content/docs/getting-started/quick-start.md
-[18:17:05] GIT: git add website/src/content/docs/getting-started/installation.md website/src/con
-[18:21:00] EDIT: website/src/pages/design-patterns/index.astro
-[18:21:07] EDIT: website/src/pages/design-patterns/index.astro
-[18:21:12] EDIT: website/src/pages/design-patterns/index.astro
-[18:21:28] GIT: git add website/src/pages/design-patterns/index.astro && git commit -m "$(cat <<
-[18:24:28] WRITE: /home/dave/.claude/plans/lucky-skipping-cupcake.md
-[18:26:05] WRITE: website/src/pages/design-patterns/index.astro
-[18:26:23] GIT: git add website/src/pages/design-patterns/index.astro && git commit -m "$(cat <<
-[18:28:01] EDIT: website/src/pages/design-patterns/index.astro
-[18:28:18] GIT: git add website/src/pages/design-patterns/index.astro && git commit -m "$(cat <<
-[18:35:29] WRITE: docs/context/session-20260130-1834-main.md
-[18:36:21] GIT: git commit -m "$(cat <<'EOF'
-feat: ADR-124 entity annotations with illustration 
-[18:36:30] GIT: git push
-[18:50:13] WRITE: /home/dave/.claude/plans/lucky-skipping-cupcake.md
-[18:50:37] WRITE: /home/dave/.claude/plans/logical-kindling-prism.md
-[18:51:07] EDIT: packages/zifmia/src/context/GameContext.tsx
-[18:51:12] EDIT: packages/zifmia/src/context/GameContext.tsx
-[18:51:18] EDIT: packages/zifmia/src/context/GameContext.tsx
-[18:51:23] EDIT: packages/zifmia/src/context/GameContext.tsx
-[18:51:27] EDIT: packages/zifmia/src/context/GameContext.tsx
-[18:51:32] EDIT: packages/zifmia/src/runner/index.tsx
-[18:51:37] EDIT: packages/zifmia/src/context/index.ts
-[18:53:05] WRITE: docs/context/session-20260130-1852-main.md
-[19:00:13] WRITE: website/src/content/docs/api-reference/traits.md
-[19:00:28] WRITE: website/src/content/docs/api-reference/actions.md
-[19:00:55] WRITE: website/src/content/docs/api-reference/grammar.md
-[19:01:01] EDIT: website/astro.config.mjs
-[19:01:35] GIT: git commit -m "$(cat <<'EOF'
-docs: add API Reference section with traits, action
-[19:05:48] EDIT: website/src/content/docs/api-reference/grammar.md
-[19:06:01] GIT: git add website/src/content/docs/api-reference/grammar.md && git commit -m "$(ca
-[19:14:26] WRITE: website/src/content/docs/api-reference/traits.md
-[19:14:42] GIT: git add website/src/content/docs/api-reference/traits.md && git commit -m "$(cat
-[03:22:51] WRITE: /home/dave/.claude/plans/iridescent-dreaming-whale.md
-[03:24:02] EDIT: website/astro.config.mjs
-[03:24:07] EDIT: website/astro.config.mjs
-[03:24:50] WRITE: website/src/pages/design-patterns/index.astro
 [03:25:03] WRITE: website/src/content/docs/index.md
 [03:26:51] GIT: git commit -m "$(cat <<'EOF'
 feat: reorganize website with content-first landing
@@ -90,3 +39,17 @@ feat: Zifmia illustration rendering and build syste
 [04:44:28] EDIT: packages/zifmia/src/runner/index.tsx
 [04:44:35] EDIT: packages/zifmia/src/runner/index.tsx
 [04:55:15] EDIT: docs/work/platform/helpers.md
+[04:59:32] GIT: git commit -m "$(cat <<'EOF'
+feat: story CSS scoping and illustration player pre
+[04:59:38] GIT: git push
+[05:00:42] WRITE: docs/context/session-20260131-0458-main.md
+[05:01:11] GIT: git add docs/context/session-20260131-0458-main.md && git commit -m "$(cat <<'EO
+[05:13:02] EDIT: packages/zifmia/src/runner/index.tsx
+[05:13:10] EDIT: packages/zifmia/src/runner/index.tsx
+[05:13:15] EDIT: packages/zifmia/src/runner/index.tsx
+[05:13:26] EDIT: packages/zifmia/src/components/menu/MenuBar.tsx
+[05:13:30] EDIT: packages/zifmia/src/components/menu/MenuBar.tsx
+[05:13:34] EDIT: packages/zifmia/src/components/menu/MenuBar.tsx
+[05:13:45] EDIT: packages/zifmia/src/components/menu/MenuBar.tsx
+[05:14:00] EDIT: packages/zifmia/src/styles/themes.css
+[05:14:28] EDIT: packages/zifmia/src/styles/themes.css

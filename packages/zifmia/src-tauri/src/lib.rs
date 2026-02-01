@@ -22,9 +22,9 @@ pub struct SaveSlotInfo {
     pub story_id: String,
 }
 
-/// Open a native file picker for .sharpee files, return the file bytes
+/// Open a native file picker for .sharpee files, return the file bytes and path
 #[tauri::command]
-async fn open_bundle(app: tauri::AppHandle) -> Result<Vec<u8>, String> {
+async fn open_bundle(app: tauri::AppHandle) -> Result<(Vec<u8>, String), String> {
     use tauri_plugin_dialog::DialogExt;
 
     let file_path = app
@@ -37,7 +37,15 @@ async fn open_bundle(app: tauri::AppHandle) -> Result<Vec<u8>, String> {
     let path = file_path.as_path()
         .ok_or_else(|| "Invalid file path".to_string())?;
 
-    fs::read(path).map_err(|e| format!("Failed to read file: {}", e))
+    let bytes = fs::read(path).map_err(|e| format!("Failed to read file: {}", e))?;
+    let path_str = path.to_string_lossy().to_string();
+    Ok((bytes, path_str))
+}
+
+/// Read a bundle from a known file path (for re-opening recent stories)
+#[tauri::command]
+async fn read_bundle_path(path: String) -> Result<Vec<u8>, String> {
+    fs::read(&path).map_err(|e| format!("Failed to read file: {}", e))
 }
 
 /// List all save slots for a story
@@ -187,6 +195,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .invoke_handler(tauri::generate_handler![
             open_bundle,
+            read_bundle_path,
             list_saves,
             save_game,
             restore_game,

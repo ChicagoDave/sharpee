@@ -14,6 +14,8 @@ export interface RecentStory {
   lastPlayed: number;
   source: 'file' | 'url';
   url?: string;
+  /** Native file path (Tauri only) for re-opening without file dialog */
+  filePath?: string;
 }
 
 export interface StoryLibraryProps {
@@ -21,6 +23,8 @@ export interface StoryLibraryProps {
   onSelectFile: (data: ArrayBuffer, filename: string) => void;
   /** When running in Tauri, opens native file picker instead of browser <input> */
   onTauriOpen?: () => void;
+  /** When running in Tauri, re-open a story from a known file path */
+  onReloadPath?: (path: string) => void;
 }
 
 const RECENTS_KEY = 'zifmia-recent-stories';
@@ -51,7 +55,7 @@ export function addRecentStory(story: Omit<RecentStory, 'lastPlayed'>): void {
   saveRecents(recents.slice(0, 20));
 }
 
-export function StoryLibrary({ onSelectUrl, onSelectFile, onTauriOpen }: StoryLibraryProps) {
+export function StoryLibrary({ onSelectUrl, onSelectFile, onTauriOpen, onReloadPath }: StoryLibraryProps) {
   const [recents, setRecents] = useState<RecentStory[]>([]);
   const [urlInput, setUrlInput] = useState('');
   const [dragOver, setDragOver] = useState(false);
@@ -73,54 +77,76 @@ export function StoryLibrary({ onSelectUrl, onSelectFile, onTauriOpen }: StoryLi
     });
   }, [storageProvider]);
 
-  const handleFileSelect = useCallback((file: File) => {
-    if (!file.name.endsWith('.sharpee')) {
-      alert('Please select a .sharpee file');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (reader.result instanceof ArrayBuffer) {
-        onSelectFile(reader.result, file.name);
+  const handleFileSelect = useCallback(
+    (file: File) => {
+      if (!file.name.endsWith('.sharpee')) {
+        alert('Please select a .sharpee file');
+        return;
       }
-    };
-    reader.readAsArrayBuffer(file);
-  }, [onSelectFile]);
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (reader.result instanceof ArrayBuffer) {
+          onSelectFile(reader.result, file.name);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    },
+    [onSelectFile]
+  );
 
-  const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleFileSelect(file);
-  }, [handleFileSelect]);
+  const handleFileInput = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) handleFileSelect(file);
+    },
+    [handleFileSelect]
+  );
 
-  const handleUrlSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = urlInput.trim();
-    if (trimmed) onSelectUrl(trimmed);
-  }, [urlInput, onSelectUrl]);
+  const handleUrlSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      const trimmed = urlInput.trim();
+      if (trimmed) onSelectUrl(trimmed);
+    },
+    [urlInput, onSelectUrl]
+  );
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFileSelect(file);
-  }, [handleFileSelect]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOver(false);
+      const file = e.dataTransfer.files[0];
+      if (file) handleFileSelect(file);
+    },
+    [handleFileSelect]
+  );
 
-  const handleRemoveRecent = useCallback((storyId: string) => {
-    const updated = recents.filter((r) => r.storyId !== storyId);
-    setRecents(updated);
-    saveRecents(updated);
-  }, [recents]);
+  const handleRemoveRecent = useCallback(
+    (storyId: string) => {
+      const updated = recents.filter((r) => r.storyId !== storyId);
+      setRecents(updated);
+      saveRecents(updated);
+    },
+    [recents]
+  );
 
   return (
     <div
       className="zifmia-library"
-      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragOver(true);
+      }}
       onDragLeave={() => setDragOver(false)}
       onDrop={handleDrop}
     >
       <header className="zifmia-library__header">
-        <h1>Zifmia Story Runner</h1>
-        <p>Open a <code>.sharpee</code> story bundle to play.</p>
+        <img className="zifmia-library__logo" src="assets/sharpee-logo.png" alt="Sharpee" />
+        <h1 className="zifmia-library__title">Zifmia</h1>
+        <p className="zifmia-library__subtitle">Story Runner</p>
+        <p>
+          Open a <code>.sharpee</code> story bundle to play.
+        </p>
       </header>
 
       <div className="zifmia-library__actions">
@@ -145,7 +171,9 @@ export function StoryLibrary({ onSelectUrl, onSelectFile, onTauriOpen }: StoryLi
             value={urlInput}
             onChange={(e) => setUrlInput(e.target.value)}
           />
-          <button type="submit" disabled={!urlInput.trim()}>Load</button>
+          <button type="submit" disabled={!urlInput.trim()}>
+            Load
+          </button>
         </form>
       </div>
 
@@ -159,35 +187,42 @@ export function StoryLibrary({ onSelectUrl, onSelectFile, onTauriOpen }: StoryLi
         <div className="zifmia-library__recents">
           <h2>Recent Stories</h2>
           <ul>
-            {recents.sort((a, b) => b.lastPlayed - a.lastPlayed).map((story) => (
-              <li key={story.storyId} className="zifmia-library__recent-item">
-                <div className="zifmia-library__recent-info">
-                  <strong>{story.title}</strong>
-                  {story.author && <span className="zifmia-library__author"> by {story.author}</span>}
-                  <span className="zifmia-library__date">
-                    {new Date(story.lastPlayed).toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="zifmia-library__recent-actions">
-                  {story.source === 'url' && story.url && (
-                    <button onClick={() => onSelectUrl(story.url!)}>
-                      {autoSaveStatus[story.storyId] ? 'Continue' : 'Play'}
+            {recents
+              .sort((a, b) => b.lastPlayed - a.lastPlayed)
+              .map((story) => (
+                <li key={story.storyId} className="zifmia-library__recent-item">
+                  <div className="zifmia-library__recent-info">
+                    <strong>{story.title}</strong>
+                    {story.author && (
+                      <span className="zifmia-library__author"> by {story.author}</span>
+                    )}
+                    <span className="zifmia-library__date">
+                      {new Date(story.lastPlayed).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="zifmia-library__recent-actions">
+                    {story.source === 'url' && story.url && (
+                      <button onClick={() => onSelectUrl(story.url!)}>
+                        {autoSaveStatus[story.storyId] ? 'Continue' : 'Play'}
+                      </button>
+                    )}
+                    {story.source === 'file' && story.filePath && onTauriOpen && (
+                      <button onClick={() => onReloadPath?.(story.filePath!)}>
+                        {autoSaveStatus[story.storyId] ? 'Continue' : 'Play'}
+                      </button>
+                    )}
+                    {story.source === 'file' && !story.filePath && (
+                      <button onClick={onTauriOpen ?? (() => fileInputRef.current?.click())}>Re-open File</button>
+                    )}
+                    <button
+                      className="zifmia-library__remove"
+                      onClick={() => handleRemoveRecent(story.storyId)}
+                    >
+                      Remove
                     </button>
-                  )}
-                  {story.source === 'file' && (
-                    <button onClick={() => fileInputRef.current?.click()}>
-                      Re-open File
-                    </button>
-                  )}
-                  <button
-                    className="zifmia-library__remove"
-                    onClick={() => handleRemoveRecent(story.storyId)}
-                  >
-                    Remove
-                  </button>
-                </div>
-              </li>
-            ))}
+                  </div>
+                </li>
+              ))}
           </ul>
         </div>
       )}

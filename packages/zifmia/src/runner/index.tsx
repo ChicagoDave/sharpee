@@ -17,6 +17,7 @@ import type { GameProviderHandle } from '../context';
 import type { GameState } from '../types/game-state';
 import { GameShell } from '../components';
 import { PreferencesProvider } from '../hooks/usePreferences';
+import { useTheme } from '../hooks/useTheme';
 import { loadBundle, releaseBundle } from '../loader';
 import type { LoadedBundle } from '../loader';
 import type { Story } from '@sharpee/engine';
@@ -26,6 +27,7 @@ import type { SaveData } from './save-integration.js';
 import { SaveDialog } from './SaveDialog.js';
 import { RestoreDialog } from './RestoreDialog.js';
 import { exportTranscriptMarkdown, exportWalkthrough, downloadFile } from './transcript-export.js';
+import { CLIENT_VERSION, ENGINE_VERSION } from '../version';
 
 export interface ZifmiaRunnerProps {
   /** URL to fetch the .sharpee bundle from */
@@ -47,6 +49,7 @@ export function ZifmiaRunner({ bundleUrl, bundleData, onClose, onError, onLoaded
   const [state, setState] = useState<RunnerState>({ phase: 'loading' });
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
+  const { theme, setTheme } = useTheme();
 
   const gameHandleRef = useRef<GameProviderHandle | null>(null);
   const saveManagerRef = useRef<SaveRestoreManager | null>(null);
@@ -112,6 +115,13 @@ export function ZifmiaRunner({ bundleUrl, bundleData, onClose, onError, onLoaded
 
         engine.setStory(story);
 
+        // Register platform save/restore hooks (no-op - actual save handled via UI dialogs)
+        // This prevents the engine from emitting platform.save_failed errors
+        (engine as any).registerSaveRestoreHooks({
+          onSaveRequested: async () => { /* handled by UI dialog via if.event.save_requested */ },
+          onRestoreRequested: async () => null, /* handled by UI dialog */
+        });
+
         if (cancelled) return;
 
         // 5. Set up save/restore manager with baseline
@@ -158,6 +168,8 @@ export function ZifmiaRunner({ bundleUrl, bundleData, onClose, onError, onLoaded
 
   // --- Callbacks ---
 
+  const hasAutoRestored = useRef(false);
+
   const getStoryId = useCallback(() => {
     return saveManagerRef.current?.getStoryId() ?? 'unknown';
   }, []);
@@ -191,6 +203,7 @@ export function ZifmiaRunner({ bundleUrl, bundleData, onClose, onError, onLoaded
     const saveData = srm.captureState(gameState.transcript, gameState.turns, gameState.score);
     await storageProvider.save(srm.getStoryId(), slotName, saveData);
     setShowSaveDialog(false);
+    handle.dispatch({ type: 'SYSTEM_MESSAGE', text: `Game saved to "${slotName}".` });
   }, [storageProvider]);
 
   const handleRestoreConfirm = useCallback(async (slotName: string) => {
@@ -209,6 +222,7 @@ export function ZifmiaRunner({ bundleUrl, bundleData, onClose, onError, onLoaded
       score: restored.score,
     });
     setShowRestoreDialog(false);
+    handle.dispatch({ type: 'SYSTEM_MESSAGE', text: `Game restored from "${slotName}".` });
   }, [storageProvider]);
 
   const handleExportTranscript = useCallback(() => {
@@ -232,7 +246,26 @@ export function ZifmiaRunner({ bundleUrl, bundleData, onClose, onError, onLoaded
 
   const handleTurnCompleted = useCallback((gameState: GameState) => {
     const srm = saveManagerRef.current;
-    if (!srm) return;
+    const handle = gameHandleRef.current;
+    if (!srm || !handle) return;
+
+    // On first turn completion, check for autosave to restore
+    if (!hasAutoRestored.current) {
+      hasAutoRestored.current = true;
+      storageProvider.loadAutoSave(srm.getStoryId()).then((raw) => {
+        if (!raw) return;
+        const restored = srm.restoreState(raw as SaveData);
+        handle.dispatch({
+          type: 'TRANSCRIPT_RESTORED',
+          transcript: restored.transcript,
+          turns: restored.turnCount,
+          score: restored.score,
+        });
+        handle.dispatch({ type: 'SYSTEM_MESSAGE', text: 'Session restored from auto-save.' });
+      });
+      return; // Don't auto-save the initial look
+    }
+
     const saveData = srm.captureState(gameState.transcript, gameState.turns, gameState.score);
     storageProvider.autoSave(srm.getStoryId(), saveData);
   }, [storageProvider]);
@@ -263,16 +296,23 @@ export function ZifmiaRunner({ bundleUrl, bundleData, onClose, onError, onLoaded
         engine={state.engine as unknown as Parameters<typeof GameProvider>[0]['engine']}
         handleRef={gameHandleRef}
         onTurnCompleted={handleTurnCompleted}
+        onSaveRequested={handleSave}
+        onRestoreRequested={handleRestore}
         assetMap={state.bundle.assets}
       >
         <GameShell
           storyId={storyId}
           storyTitle={storyTitle}
+          storyMetadata={state.bundle.metadata}
+          zifmiaVersion={CLIENT_VERSION}
+          engineVersion={ENGINE_VERSION}
           onSave={handleSave}
           onRestore={handleRestore}
           onQuit={handleQuit}
           onExportTranscript={handleExportTranscript}
           onExportWalkthrough={handleExportWalkthrough}
+          onThemeChange={setTheme as (theme: string) => void}
+          currentTheme={theme}
         />
       </GameProvider>
       </PreferencesProvider>

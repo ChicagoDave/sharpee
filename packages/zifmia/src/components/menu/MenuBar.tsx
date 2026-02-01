@@ -3,7 +3,8 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { usePreferences, ILLUSTRATION_SIZES } from '../../hooks/usePreferences';
+import { usePreferences, ILLUSTRATION_SIZES, FONT_FAMILIES, FONT_SIZES } from '../../hooks/usePreferences';
+import type { StoryMetadata } from '../../types/story-metadata';
 
 export interface MenuBarProps {
   onSave?: () => void;
@@ -14,6 +15,9 @@ export interface MenuBarProps {
   onThemeChange?: (theme: string) => void;
   currentTheme?: string;
   storyTitle?: string;
+  storyMetadata?: StoryMetadata;
+  zifmiaVersion?: string;
+  engineVersion?: string;
 }
 
 interface MenuItem {
@@ -41,10 +45,14 @@ export function MenuBar({
   onThemeChange,
   currentTheme = 'classic-light',
   storyTitle = 'Sharpee',
+  storyMetadata,
+  zifmiaVersion,
+  engineVersion,
 }: MenuBarProps) {
   const { preferences, setPreference } = usePreferences();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [showAbout, setShowAbout] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const menuBarRef = useRef<HTMLDivElement>(null);
 
   // Close menu when clicking outside
@@ -64,6 +72,7 @@ export function MenuBar({
       if (event.key === 'Escape') {
         setOpenMenu(null);
         setShowAbout(false);
+        setShowShortcuts(false);
       }
     }
     document.addEventListener('keydown', handleKeyDown);
@@ -90,6 +99,22 @@ export function MenuBar({
       })),
     },
     {
+      label: 'Font',
+      submenu: [
+        ...FONT_FAMILIES.map(f => ({
+          label: f.label,
+          action: () => setPreference('fontFamily', f.id),
+          checked: preferences.fontFamily === f.id,
+        })),
+        { separator: true, label: '' },
+        ...FONT_SIZES.map(s => ({
+          label: s.label,
+          action: () => setPreference('fontSize', s.id),
+          checked: preferences.fontSize === s.id,
+        })),
+      ],
+    },
+    {
       label: 'Illustrations',
       submenu: [
         {
@@ -108,7 +133,7 @@ export function MenuBar({
   ];
 
   const helpMenu: MenuItem[] = [
-    { label: 'Keyboard Shortcuts', action: () => alert('Arrow Up/Down: Command history\nEnter: Execute command') },
+    { label: 'Keyboard Shortcuts', action: () => setShowShortcuts(true) },
     { separator: true, label: '' },
     { label: 'About...', action: () => setShowAbout(true) },
   ];
@@ -195,20 +220,52 @@ export function MenuBar({
         </div>
       </div>
 
+      {/* Keyboard Shortcuts Dialog */}
+      {showShortcuts && (
+        <div className="modal-overlay" onClick={() => setShowShortcuts(false)}>
+          <div className="modal-dialog" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Keyboard Shortcuts</h2>
+              <button className="modal-close" onClick={() => setShowShortcuts(false)}>&times;</button>
+            </div>
+            <div className="modal-body">
+              <table className="shortcuts-table">
+                <tbody>
+                  <tr><td className="shortcut-key">Enter</td><td>Execute command</td></tr>
+                  <tr><td className="shortcut-key">Up / Down</td><td>Command history</td></tr>
+                  <tr><td className="shortcut-key">Escape</td><td>Close menus and dialogs</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* About Dialog */}
       {showAbout && (
         <div className="modal-overlay" onClick={() => setShowAbout(false)}>
           <div className="modal-dialog" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>About {storyTitle}</h2>
+              <h2>About</h2>
               <button className="modal-close" onClick={() => setShowAbout(false)}>&times;</button>
             </div>
             <div className="modal-body">
-              <p><strong>Sharpee Interactive Fiction Engine</strong></p>
-              <p>A modern parser-based IF authoring system.</p>
-              <p style={{ marginTop: '16px', fontSize: '12px', color: 'var(--sharpee-text-muted)' }}>
-                Built with React and TypeScript.
+              <p><strong>{storyTitle}</strong>{storyMetadata?.version ? ` v${storyMetadata.version}` : ''}</p>
+              {storyMetadata?.author && (
+                <p style={{ fontSize: '13px', color: 'var(--sharpee-text-muted)' }}>
+                  by {Array.isArray(storyMetadata.author) ? storyMetadata.author.join(', ') : storyMetadata.author}
+                </p>
+              )}
+              <p style={{ marginTop: '16px', borderTop: '1px solid var(--sharpee-border)', paddingTop: '12px', fontSize: '13px' }}>
+                Powered by <strong>Sharpee</strong> &mdash; a parser-based interactive fiction engine.
               </p>
+              <table className="shortcuts-table" style={{ marginTop: '8px' }}>
+                <tbody>
+                  {engineVersion && <tr><td style={{ color: 'var(--sharpee-text-muted)', fontSize: '12px' }}>Sharpee Engine</td><td style={{ fontSize: '12px' }}>{engineVersion}</td></tr>}
+                  {zifmiaVersion && <tr><td style={{ color: 'var(--sharpee-text-muted)', fontSize: '12px' }}>Zifmia Runner</td><td style={{ fontSize: '12px' }}>{zifmiaVersion}</td></tr>}
+                  {storyMetadata?.version && <tr><td style={{ color: 'var(--sharpee-text-muted)', fontSize: '12px' }}>Story</td><td style={{ fontSize: '12px' }}>{storyMetadata.version}</td></tr>}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

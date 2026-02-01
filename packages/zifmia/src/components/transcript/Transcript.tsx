@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { useTranscript } from '../../hooks/useTranscript';
-import { usePreferences } from '../../hooks/usePreferences';
+import { usePreferences, FONT_FAMILIES, FONT_SIZES } from '../../hooks/usePreferences';
 import { useAssetMap } from '../../context';
 import type { TranscriptIllustration } from '../../types/game-state';
 import type { IllustrationSize } from '../../hooks/usePreferences';
@@ -18,8 +18,15 @@ export function Transcript({ className = '' }: TranscriptProps) {
   const assetMap = useAssetMap();
   const { preferences } = usePreferences();
 
+  const fontCSS = FONT_FAMILIES.find(f => f.id === preferences.fontFamily)?.css;
+  const sizeCSS = FONT_SIZES.find(s => s.id === preferences.fontSize)?.css;
+  const transcriptStyle: React.CSSProperties = {
+    ...(fontCSS ? { fontFamily: fontCSS } : {}),
+    ...(sizeCSS ? { fontSize: sizeCSS } : {}),
+  };
+
   return (
-    <div className={`transcript ${className}`} ref={containerRef}>
+    <div className={`transcript ${className}`} ref={containerRef} style={transcriptStyle}>
       {entries.map((entry) => {
         const showIllustrations = preferences.illustrationsEnabled
           && entry.illustrations && entry.illustrations.length > 0;

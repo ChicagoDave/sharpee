@@ -8,6 +8,15 @@
 /* Google Fonts - All fonts used across themes */
 @import url('https://fonts.googleapis.com/css2?family=Literata:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
+/* Enchanted Land font for Zifmia branding */
+@font-face {
+  font-family: 'Enchanted Land';
+  src: url('assets/fonts/enchanted-land.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* ============================================================================
    Theme Variables - Classic Light (Default)
    ============================================================================ */
@@ -220,11 +229,12 @@ body {
    Menu Bar
    ============================================================================ */
 
+/* Menu bar uses fixed colors so themes only affect story content */
 .menu-bar {
   display: flex;
   align-items: center;
-  background-color: var(--sharpee-panel-header);
-  border-bottom: 1px solid var(--sharpee-border);
+  background-color: #2b2b3d;
+  border-bottom: 1px solid #3a3a50;
   padding: 0 var(--sharpee-spacing-md);
   height: 32px;
   font-family: var(--sharpee-font-ui);
@@ -234,7 +244,7 @@ body {
 
 .menu-bar__title {
   font-weight: 600;
-  color: var(--sharpee-text);
+  color: #c9a84c;
   margin-right: var(--sharpee-spacing-lg);
 }
 
@@ -253,18 +263,18 @@ body {
   padding: 4px 10px;
   font-family: inherit;
   font-size: inherit;
-  color: var(--sharpee-text);
+  color: #d0d0d8;
   cursor: pointer;
   border-radius: var(--sharpee-border-radius);
 }
 
 .menu-bar__button:hover {
-  background-color: var(--sharpee-bg-secondary);
+  background-color: #3a3a50;
 }
 
 .menu-bar__button--active {
-  background-color: var(--sharpee-accent);
-  color: var(--sharpee-bg);
+  background-color: #c9a84c;
+  color: #1a1a2e;
 }
 
 .menu-dropdown {
@@ -272,10 +282,10 @@ body {
   top: 100%;
   left: 0;
   min-width: 160px;
-  background-color: var(--sharpee-bg);
-  border: 1px solid var(--sharpee-border);
+  background-color: #2b2b3d;
+  border: 1px solid #3a3a50;
   border-radius: var(--sharpee-border-radius);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   padding: 4px 0;
   z-index: 1000;
 }
@@ -292,23 +302,23 @@ body {
   align-items: center;
   padding: 6px 12px;
   cursor: pointer;
-  color: var(--sharpee-text);
+  color: #d0d0d8;
   gap: 8px;
 }
 
 .menu-item:hover {
-  background-color: var(--sharpee-accent);
-  color: var(--sharpee-bg);
+  background-color: #c9a84c;
+  color: #1a1a2e;
 }
 
 .menu-item--disabled {
-  color: var(--sharpee-text-muted);
+  color: #5a5a70;
   cursor: default;
 }
 
 .menu-item--disabled:hover {
   background-color: transparent;
-  color: var(--sharpee-text-muted);
+  color: #5a5a70;
 }
 
 .menu-item--has-submenu {
@@ -339,8 +349,189 @@ body {
 
 .menu-separator {
   height: 1px;
-  background-color: var(--sharpee-border);
+  background-color: #3a3a50;
   margin: 4px 8px;
+}
+
+/* Save/Restore Dialog Styles */
+.zifmia-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.zifmia-dialog {
+  background-color: #2b2b3d;
+  border: 1px solid #3a3a50;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  min-width: 360px;
+  max-width: 480px;
+  padding: 20px;
+  color: #d0d0d8;
+  font-family: var(--sharpee-font-ui);
+}
+
+.zifmia-dialog h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #c9a84c;
+  margin: 0 0 16px;
+}
+
+.zifmia-dialog label {
+  display: block;
+  font-size: 13px;
+  color: #7a8ba8;
+  margin-bottom: 12px;
+}
+
+.zifmia-dialog label input[type="text"] {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px 10px;
+  font-family: var(--sharpee-font-input);
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  color: #d0d0d8;
+}
+
+.zifmia-dialog label input[type="text"]:focus {
+  outline: none;
+  border-color: #4ecdc4;
+  box-shadow: 0 0 0 2px rgba(78, 205, 196, 0.2);
+}
+
+.zifmia-dialog-warning {
+  color: #e74c3c;
+  font-size: 13px;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  background: rgba(231, 76, 60, 0.1);
+  border-radius: 4px;
+}
+
+.zifmia-dialog-slots {
+  margin-bottom: 16px;
+}
+
+.zifmia-dialog-slots h3 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #5a6a80;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+
+.zifmia-dialog-slots ul {
+  list-style: none;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.zifmia-dialog-slots li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #c8c8d0;
+  transition: background 0.1s;
+}
+
+.zifmia-dialog-slots li:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.zifmia-dialog-slots li.selected {
+  background: rgba(201, 168, 76, 0.12);
+  border-color: rgba(201, 168, 76, 0.3);
+}
+
+.zifmia-dialog-slots li strong {
+  color: #e0e0e8;
+}
+
+.zifmia-dialog-slots li span {
+  color: #7a8ba8;
+}
+
+.zifmia-dialog-date {
+  margin-left: auto;
+  font-size: 12px;
+  color: #5a6a80 !important;
+}
+
+.zifmia-dialog-delete {
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-family: var(--sharpee-font-ui);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  background: transparent;
+  color: #5a6a80;
+  cursor: pointer;
+}
+
+.zifmia-dialog-delete:hover {
+  color: #e74c3c;
+  border-color: rgba(231, 76, 60, 0.3);
+}
+
+.zifmia-dialog-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.zifmia-dialog-buttons button {
+  padding: 8px 18px;
+  font-family: var(--sharpee-font-ui);
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.zifmia-dialog-buttons button:first-child {
+  background: linear-gradient(135deg, #c9a84c, #a8893a);
+  color: #1a1a2e;
+  border: none;
+  font-weight: 600;
+}
+
+.zifmia-dialog-buttons button:first-child:hover {
+  background: linear-gradient(135deg, #dbb85c, #c9a84c);
+}
+
+.zifmia-dialog-buttons button:first-child:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.zifmia-dialog-buttons button:last-child {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #7a8ba8;
+}
+
+.zifmia-dialog-buttons button:last-child:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #d0d0d8;
 }
 
 /* Modal styles for About dialog */
@@ -405,6 +596,32 @@ body {
   margin-bottom: 0;
 }
 
+/* Keyboard shortcuts table */
+.shortcuts-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.shortcuts-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--sharpee-border);
+  color: var(--sharpee-text);
+}
+
+.shortcuts-table tr:last-child td {
+  border-bottom: none;
+}
+
+.shortcut-key {
+  font-family: var(--sharpee-font-input);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  width: 1%;
+  padding-right: 24px !important;
+  color: var(--sharpee-accent);
+}
+
 /* ============================================================================
    Game Shell Layout
    ============================================================================ */
@@ -436,6 +653,13 @@ body {
 
 .game-shell__main--full {
   flex: 1;
+}
+
+.story-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .game-shell__transcript-container {
@@ -1045,6 +1269,295 @@ body {
 .illustration--full-width.illustration--size-small,
 .illustration--full-width.illustration--size-medium,
 .illustration--full-width.illustration--size-large { max-width: 100%; }
+
+/* ============================================================================
+   Story Library (Landing Page)
+   Dark theme inspired by the Sharpee sword: charcoal, silver, gold, teal
+   ============================================================================ */
+
+.zifmia-library {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+  font-family: var(--sharpee-font-ui);
+  background: linear-gradient(170deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+  color: #c8c8d0;
+}
+
+.zifmia-library__header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.zifmia-library__logo {
+  display: block;
+  width: 340px;
+  max-width: 80vw;
+  margin: 0 auto 1.25rem;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+}
+
+.zifmia-library__title {
+  font-family: 'Enchanted Land', serif;
+  font-size: 3.5rem;
+  font-weight: normal;
+  letter-spacing: 0.15em;
+  color: #c9a84c;
+  text-shadow: 0 0 20px rgba(201, 168, 76, 0.3);
+  margin-bottom: 0.25rem;
+}
+
+.zifmia-library__subtitle {
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7a8ba8;
+  margin-bottom: 0.5rem;
+}
+
+.zifmia-library__header p {
+  color: #7a8ba8;
+  font-size: 0.95rem;
+}
+
+.zifmia-library__header code {
+  font-family: var(--sharpee-font-input);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.9em;
+  color: #4ecdc4;
+}
+
+.zifmia-library__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  width: 100%;
+  max-width: 400px;
+}
+
+.zifmia-library__open-btn {
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 1rem;
+  font-family: var(--sharpee-font-ui);
+  font-weight: 600;
+  background: linear-gradient(135deg, #c9a84c, #a8893a);
+  color: #1a1a2e;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.02em;
+}
+
+.zifmia-library__open-btn:hover {
+  background: linear-gradient(135deg, #dbb85c, #c9a84c);
+  box-shadow: 0 4px 16px rgba(201, 168, 76, 0.3);
+}
+
+.zifmia-library__url-form {
+  display: flex;
+  width: 100%;
+  gap: 0.5rem;
+}
+
+.zifmia-library__url-form input[type="text"] {
+  flex: 1;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  font-family: var(--sharpee-font-input);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #c8c8d0;
+}
+
+.zifmia-library__url-form input[type="text"]::placeholder {
+  color: #5a6a80;
+}
+
+.zifmia-library__url-form input[type="text"]:focus {
+  outline: none;
+  border-color: #4ecdc4;
+  box-shadow: 0 0 0 2px rgba(78, 205, 196, 0.2);
+}
+
+.zifmia-library__url-form button {
+  padding: 10px 18px;
+  font-family: var(--sharpee-font-ui);
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  cursor: pointer;
+  color: #c8c8d0;
+  transition: background 0.15s;
+}
+
+.zifmia-library__url-form button:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.zifmia-library__url-form button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.zifmia-library__dropzone {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 52, 96, 0.85);
+  color: #4ecdc4;
+  font-size: 1.5rem;
+  font-weight: 600;
+  z-index: 100;
+  border: 3px dashed #4ecdc4;
+}
+
+.zifmia-library__recents {
+  width: 100%;
+  max-width: 500px;
+}
+
+.zifmia-library__recents h2 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #5a6a80;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.75rem;
+}
+
+.zifmia-library__recents ul {
+  list-style: none;
+}
+
+.zifmia-library__recent-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  transition: background 0.15s;
+}
+
+.zifmia-library__recent-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.zifmia-library__recent-info strong {
+  color: #e0e0e8;
+}
+
+.zifmia-library__author {
+  color: #7a8ba8;
+  font-size: 0.9em;
+}
+
+.zifmia-library__date {
+  display: block;
+  font-size: 0.8em;
+  color: #5a6a80;
+}
+
+.zifmia-library__recent-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.zifmia-library__recent-actions button {
+  padding: 6px 14px;
+  font-family: var(--sharpee-font-ui);
+  font-size: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #c8c8d0;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.zifmia-library__recent-actions button:hover {
+  background: rgba(201, 168, 76, 0.2);
+  border-color: rgba(201, 168, 76, 0.4);
+  color: #c9a84c;
+}
+
+.zifmia-library__remove {
+  color: #5a6a80 !important;
+  border-color: transparent !important;
+  background: transparent !important;
+}
+
+.zifmia-library__remove:hover {
+  color: #e74c3c !important;
+  background: transparent !important;
+}
+
+/* Loading and Error States */
+
+.zifmia-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-family: var(--sharpee-font-ui);
+  font-size: 1.1rem;
+  color: var(--sharpee-text-muted);
+  background: var(--sharpee-bg);
+}
+
+.zifmia-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+  font-family: var(--sharpee-font-ui);
+  background: var(--sharpee-bg);
+  color: var(--sharpee-text);
+  text-align: center;
+}
+
+.zifmia-error h2 {
+  color: var(--sharpee-error);
+  margin-bottom: 0.75rem;
+}
+
+.zifmia-error p {
+  color: var(--sharpee-text-muted);
+  margin-bottom: 1.5rem;
+  max-width: 400px;
+}
+
+.zifmia-error button {
+  padding: 8px 20px;
+  font-family: var(--sharpee-font-ui);
+  font-size: 0.95rem;
+  border: 1px solid var(--sharpee-border);
+  border-radius: 4px;
+  background: var(--sharpee-bg-secondary);
+  color: var(--sharpee-text);
+  cursor: pointer;
+}
+
+.zifmia-error button:hover {
+  background: var(--sharpee-panel-header);
+}
 
 /* ============================================================================
    Responsive Adjustments
