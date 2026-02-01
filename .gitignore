@@ -6,6 +6,7 @@ node_modules/
 # Build outputs
 dist/
 dist-esm/
+dist-npm
 build/
 lib/
 out/
@@ -71,6 +72,7 @@ packages/clients/electron/app/dist/
 
 # Tauri build artifacts
 packages/zifmia/src-tauri/target/
+packages/zifmia/src-tauri/Cargo.lock
 
 # Generated code
 **/*.generated.*
@@ -108,6 +110,9 @@ packages/extensions/blood-magic/
 
 # Transcript test results
 test-results/
+
+# Generated source maps
+website/public/games/dungeo/dungeo.js.map
 
 # Reference source code (not ours to distribute)
 docs/dungeon-ref/
