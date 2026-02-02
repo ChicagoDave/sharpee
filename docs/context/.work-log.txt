@@ -33,3 +33,5 @@ feat: add connectRooms and createDoor convenience m
 [23:47:40] EDIT: build-macos.sh
 [23:48:51] EDIT: scripts/mac-release.sh
 [23:51:56] EDIT: scripts/mac-release.sh
+[16:15:59] GIT: git commit -m "$(cat <<'EOF'
+feat: add macOS build support with release scripts 
