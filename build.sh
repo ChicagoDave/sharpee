@@ -419,7 +419,26 @@ build_bundle() {
 
     mkdir -p dist
 
-    run_build "sharpee.js" "npx esbuild scripts/bundle-entry.js --bundle --platform=node --target=node18 --outfile=dist/sharpee.js --external:readline --format=cjs --sourcemap"
+    # Use --alias to resolve @sharpee/* to dist/ (CJS project-references output)
+    # instead of dist-npm/ (ESM npm-publish output) which may be stale.
+    # This does NOT affect npm packages — those still use dist-npm/ per package.json.
+    run_build "sharpee.js" "npx esbuild scripts/bundle-entry.js --bundle --platform=node --target=node18 --outfile=dist/sharpee.js --external:readline --format=cjs --sourcemap \
+      --alias:@sharpee/core=./packages/core/dist/index.js \
+      --alias:@sharpee/if-domain=./packages/if-domain/dist/index.js \
+      --alias:@sharpee/world-model=./packages/world-model/dist/index.js \
+      --alias:@sharpee/stdlib=./packages/stdlib/dist/index.js \
+      --alias:@sharpee/engine=./packages/engine/dist/index.js \
+      --alias:@sharpee/parser-en-us=./packages/parser-en-us/dist/index.js \
+      --alias:@sharpee/lang-en-us=./packages/lang-en-us/dist/index.js \
+      --alias:@sharpee/event-processor=./packages/event-processor/dist/index.js \
+      --alias:@sharpee/text-blocks=./packages/text-blocks/dist/index.js \
+      --alias:@sharpee/text-service=./packages/text-service/dist/index.js \
+      --alias:@sharpee/if-services=./packages/if-services/dist/index.js \
+      --alias:@sharpee/plugins=./packages/plugins/dist/index.js \
+      --alias:@sharpee/plugin-npc=./packages/plugin-npc/dist/index.js \
+      --alias:@sharpee/plugin-scheduler=./packages/plugin-scheduler/dist/index.js \
+      --alias:@sharpee/plugin-state-machine=./packages/plugin-state-machine/dist/index.js \
+      --alias:@sharpee/transcript-tester=./packages/transcript-tester/dist/index.js"
 
     # Generate type declarations
     cat > dist/sharpee.d.ts << 'EOF'

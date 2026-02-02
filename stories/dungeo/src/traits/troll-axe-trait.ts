@@ -33,8 +33,10 @@ export interface TrollAxeConfig {
  */
 export class TrollAxeTrait implements ITrait {
   static readonly type = 'dungeo.trait.troll_axe' as const;
+  static readonly interceptors = [
+    'if.action.taking'    // Block taking while troll alive (ADR-118)
+  ] as const;
   static readonly capabilities = [
-    'if.action.taking',   // Block taking while troll alive
     'if.scope.visible'    // Hide when troll unconscious
   ] as const;
 

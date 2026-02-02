@@ -1,20 +1,26 @@
 /**
  * Troll Axe Behaviors
  *
- * Capability behaviors for the troll's axe (ADR-090 universal dispatch).
- * These handle the taking action for the axe, blocking it while the troll
- * is alive with a "white-hot" message.
+ * Action interceptor for the troll's axe (ADR-118) + capability behavior
+ * for visibility (ADR-090).
+ *
+ * The axe is a real visible object (not scenery) that blocks taking
+ * while the troll is alive with a "white-hot" message.
  *
  * From MDL source (act1.254:176-180):
- * "The troll's axe seems white-hot. You can't hold on to it."
+ * <DEFINE AXE-FUNCTION ()
+ *   <COND (<VERB? "TAKE">
+ *          <TELL "The troll's axe seems white-hot. You can't hold on to it.">
+ *          T)>>
  */
 
 import {
+  ActionInterceptor,
+  InterceptorSharedData,
+  InterceptorResult,
   CapabilityBehavior,
   CapabilityValidationResult,
-  CapabilityEffect,
   CapabilitySharedData,
-  createEffect,
   IFEntity,
   WorldModel,
   CombatantTrait,
@@ -35,22 +41,21 @@ export const TrollAxeMessages = {
 } as const;
 
 /**
- * Behavior for taking the troll's axe
+ * Action interceptor for taking the troll's axe (ADR-118)
  *
- * When the troll is alive, the axe appears "white-hot" and cannot be taken.
- * When the troll is dead, the axe can be picked up normally.
+ * preValidate blocks taking while the troll is alive.
+ * When the troll is dead, returns null to allow stdlib taking to proceed normally.
  */
-export const TrollAxeTakingBehavior: CapabilityBehavior = {
-  validate(
+export const TrollAxeTakingInterceptor: ActionInterceptor = {
+  preValidate(
     entity: IFEntity,
     world: WorldModel,
     actorId: string,
-    sharedData: CapabilitySharedData
-  ): CapabilityValidationResult {
+    _sharedData: InterceptorSharedData
+  ): InterceptorResult | null {
     const trait = entity.get(TrollAxeTrait);
     if (!trait) {
-      // Shouldn't happen - trait declares capability
-      return { valid: true };
+      return null; // No trait, continue with standard logic
     }
 
     // Check if guardian (troll) is alive
@@ -66,70 +71,13 @@ export const TrollAxeTakingBehavior: CapabilityBehavior = {
       }
     }
 
-    // Troll is dead or doesn't exist - axe can be taken
-    // Store info for report phase
-    sharedData.entityName = entity.name;
-    return { valid: true };
-  },
-
-  execute(
-    entity: IFEntity,
-    world: WorldModel,
-    actorId: string,
-    sharedData: CapabilitySharedData
-  ): void {
-    // Move the axe to the player's inventory
-    world.moveEntity(entity.id, actorId);
-  },
-
-  report(
-    entity: IFEntity,
-    world: WorldModel,
-    actorId: string,
-    sharedData: CapabilitySharedData
-  ): CapabilityEffect[] {
-    const effects: CapabilityEffect[] = [];
-
-    // Report the taking success
-    effects.push(
-      createEffect('if.event.taken', {
-        messageId: TrollAxeMessages.TAKEN,
-        targetId: entity.id,
-        targetName: entity.name
-      })
-    );
-
-    // Emit action.success for language rendering
-    effects.push(
-      createEffect('action.success', {
-        actionId: 'if.action.taking',
-        messageId: TrollAxeMessages.TAKEN,
-        params: { target: entity.name }
-      })
-    );
-
-    return effects;
-  },
-
-  blocked(
-    entity: IFEntity,
-    world: WorldModel,
-    actorId: string,
-    error: string,
-    sharedData: CapabilitySharedData
-  ): CapabilityEffect[] {
-    return [
-      createEffect('action.blocked', {
-        actionId: 'if.action.taking',
-        messageId: error,
-        params: { target: entity.name }
-      })
-    ];
+    // Troll is dead or doesn't exist - allow stdlib taking to handle it
+    return null;
   }
 };
 
 /**
- * Behavior for visibility of the troll's axe
+ * Behavior for visibility of the troll's axe (ADR-090 capability dispatch)
  *
  * When the troll is unconscious (knocked out but not dead), the axe is hidden.
  * This matches MDL's <TRZ .A ,OVISON> (hide axe) during OUT! state.

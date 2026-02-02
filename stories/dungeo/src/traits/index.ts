@@ -26,7 +26,7 @@ export {
 } from './troll-axe-trait';
 
 export {
-  TrollAxeTakingBehavior,
+  TrollAxeTakingInterceptor,
   TrollAxeVisibilityBehavior,
   TrollAxeMessages
 } from './troll-axe-behaviors';

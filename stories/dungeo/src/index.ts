@@ -91,7 +91,7 @@ import {
   BasketRaisingBehavior,
   BasketElevatorMessages,
   TrollAxeTrait,
-  TrollAxeTakingBehavior,
+  TrollAxeTakingInterceptor,
   TrollAxeVisibilityBehavior,
   TrollAxeMessages,
   TrollTrait,
@@ -231,12 +231,12 @@ export class DungeoStory implements Story {
       );
     }
 
-    // Troll axe uses universal dispatch for taking (blocks while troll is alive)
-    if (!hasCapabilityBehavior(TrollAxeTrait.type, 'if.action.taking')) {
-      registerCapabilityBehavior(
+    // Troll axe uses action interceptor for taking (ADR-118: blocks while troll is alive)
+    if (!hasActionInterceptor(TrollAxeTrait.type, 'if.action.taking')) {
+      registerActionInterceptor(
         TrollAxeTrait.type,
         'if.action.taking',
-        TrollAxeTakingBehavior
+        TrollAxeTakingInterceptor
       );
     }
 

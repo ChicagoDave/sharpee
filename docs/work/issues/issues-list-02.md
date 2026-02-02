@@ -2,14 +2,14 @@
 
 Catalog of known bugs and issues to be addressed.
 
-**Test Summary (2026-01-22):** 599 passed, 756 failed, 11 expected failures, 49 skipped across 89 transcripts.
+**Test Summary (2026-02-01):** 1291 passed, 28 failed, 10 expected failures, 3 skipped across 87 transcripts.
 
 ## Summary
 
 | Issue | Description | Severity | Component | Identified | Deferred | Fixed |
 |-------|-------------|----------|-----------|------------|----------|-------|
-| ISSUE-029 | GDT TK (telekinesis) command produces no output | Critical | GDT/Story | 2026-01-22 | - | - |
-| ISSUE-030 | GDT AH (teleport) command produces no output | Critical | GDT/Story | 2026-01-22 | - | - |
+| ISSUE-029 | GDT TK (telekinesis) command produces no output | Critical | GDT/Story | 2026-01-22 | - | 2026-02-01 |
+| ISSUE-030 | GDT AH (teleport) command produces no output | Critical | GDT/Story | 2026-01-22 | - | 2026-02-01 |
 | ISSUE-031 | UNDO command not implemented | Medium | Platform | 2026-01-22 | - | - |
 | ISSUE-032 | Version transcript needs update for DUNGEON name | Low | Test | 2026-01-22 | - | - |
 | ISSUE-033 | AGAIN command fails after second NORTH | Low | Platform | 2026-01-22 | - | - |
@@ -24,6 +24,8 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-042 | HELP and ABOUT commands not working in React client | Medium | client-react | 2026-01-24 | - | - |
 | ISSUE-043 | Events panel not using full width of right panel | Low | client-react | 2026-01-24 | - | - |
 | ISSUE-044 | Notes panel not using full width of right panel | Low | client-react | 2026-01-24 | - | - |
+| ISSUE-045 | README sample code references nonexistent PortableTrait | Low | Docs | 2026-02-01 | - | - |
+| ISSUE-046 | CLI bundle uses stale dist-npm/ instead of dist/ | Critical | Build | 2026-02-01 | - | 2026-02-01 |
 
 ---
 
@@ -52,6 +54,8 @@ The GDT `tk` (telekinesis/take) command produces empty output instead of taking 
 
 **Affected transcripts**: wind-canary, weight-capacity, wave-rainbow, troll-visibility, troll-recovery, and many more.
 
+**Status**: Fixed 2026-02-01 — GDT commands were already working; original report was based on transcript assertion mismatches.
+
 ---
 
 ### ISSUE-030: GDT AH (teleport) command produces no output
@@ -76,6 +80,8 @@ West of House [still at starting location]
 **Expected**: "Teleported to Troll Room." and player moves to that room.
 
 **Impact**: Blocks ~300+ test assertions across 40+ transcripts.
+
+**Status**: Fixed 2026-02-01 — GDT commands were already working; original report was based on transcript assertion mismatches.
 
 ---
 
@@ -402,6 +408,36 @@ The Notes panel only uses approximately half the width of the right sidebar pane
 
 ---
 
+### ISSUE-046: CLI bundle uses stale dist-npm/ instead of dist/
+
+**Reported**: 2026-02-01
+**Severity**: Critical
+**Component**: Build System
+
+**Description**:
+The esbuild bundler for `dist/sharpee.js` was resolving `@sharpee/*` package imports via `package.json` `main`/`exports` fields, which point to `dist-npm/` (ESM builds for npm publish). These are built separately from `dist/` (CJS project-references output) and can be stale. This caused the bundle to contain old code missing recent features (e.g., action interceptors).
+
+The bundle contained **two complete copies** of every package — one from `dist/` (current) and one from `dist-npm/` (stale) — with the stale `dist-npm/` versions winning because they were exported last in the spread.
+
+**Root Cause**: `package.json` `main` field points to `dist-npm/index.js`. esbuild follows this when resolving transitive `require('@sharpee/...')` calls within bundled packages.
+
+**Fix Applied**: Added `--alias` flags to the esbuild command in `build.sh` to force resolution of all `@sharpee/*` packages to their `dist/` directories. This ensures the bundle always uses the current CJS build output. npm packages are unaffected — they still use `dist-npm/` per `package.json`.
+
+**Status**: Fixed 2026-02-01
+
+---
+
+### ISSUE-045: README sample code references nonexistent PortableTrait
+
+**Reported**: 2026-02-01
+**Severity**: Low
+**Component**: Docs (README)
+
+**Description**:
+The README contains sample code that references `PortableTrait`, which does not exist. Items are portable by default in Sharpee — there is no `PortableTrait`. To make something non-portable, use `SceneryTrait` or handle it in the taking action's validation. The sample code needs to be rewritten to reflect the actual architecture.
+
+---
+
 ## Deferred Issues
 
 *Issues deferred because they test features not yet implemented.*
@@ -458,6 +494,7 @@ These transcripts pass completely:
 - trophy-case-scoring
 - troll-combat
 - troll-interactions
+- troll-visibility
 - save-test
 - bucket-well
 
@@ -465,12 +502,16 @@ These transcripts pass completely:
 
 ## Test Statistics
 
-**By failure category:**
-- GDT command failures: ~500 assertions
-- Unimplemented features: ~200 assertions
-- Minor format/message issues: ~50 assertions
+**By failure category (2026-02-01):**
+- Basket elevator: 7 failures
+- Trophy case scoring: 7 failures
+- Troll recovery: 5 failures
+- Flooding: 4 failures
+- Troll interactions: 3 failures
+- Egg opening: 2 failures
+- Save/restore: 1 failure
 
 **Priority order:**
-1. Fix ISSUE-029 and ISSUE-030 (GDT commands) - unblocks majority of tests
-2. Implement remaining story features
+1. Fix bundle/build issues (ISSUE-046 - FIXED)
+2. Implement remaining story features (basket, trophy, flooding, etc.)
 3. Update test assertions for format changes
