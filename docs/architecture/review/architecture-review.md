@@ -395,7 +395,7 @@ Player: "throw torch at glacier"
   Source Packages (pnpm workspace)
          │
          ├──► build-platform.sh
-         │    └──► dist/sharpee.js (Node bundle for CLI/testing)
+         │    └──► dist/cli/sharpee.js (Node bundle for CLI/testing)
          │
          ├──► build-dungeo.sh
          │    └──► Platform + Story bundle

@@ -146,7 +146,7 @@ Builds all platform packages in dependency order and creates the node bundle.
 13. transcript-tester
 14. Bundle creation
 
-**Output:** `dist/sharpee.js` (node bundle)
+**Output:** `dist/cli/sharpee.js` (node bundle)
 
 ### `build-story.sh`
 
@@ -182,7 +182,7 @@ Creates a client bundle for a story.
 
 | Build | Output Location | Contents |
 |-------|-----------------|----------|
-| Platform | `dist/sharpee.js` | Node bundle with all platform packages |
+| Platform | `dist/cli/sharpee.js` | Node bundle with all platform packages |
 | Story | `stories/{story}/dist/` | Compiled story code |
 | Browser | `dist/web/{story}/` | HTML, JS bundle, CSS, sourcemap |
 | Electron | TBD | Desktop application |
@@ -195,7 +195,7 @@ When only changing story code:
 
 ```bash
 ./scripts/build.sh --skip transcript-tester -s dungeo
-node dist/sharpee.js --play
+node dist/cli/sharpee.js --play
 ```
 
 ### Development (Platform Changes)
@@ -222,19 +222,19 @@ After any build:
 
 ```bash
 # CLI testing
-node dist/sharpee.js --play
+node dist/cli/sharpee.js --play
 
 # Run transcript tests
-node dist/sharpee.js --test stories/dungeo/tests/transcripts/navigation.transcript
+node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/navigation.transcript
 
 # Run all transcripts
-node dist/sharpee.js --test stories/dungeo --all
+node dist/cli/sharpee.js --test stories/dungeo --all
 ```
 
 ## Performance Tips
 
 1. **Use `--skip`** - Always skip unchanged packages
-2. **Use the bundle** - `node dist/sharpee.js` is faster than loading packages
+2. **Use the bundle** - `node dist/cli/sharpee.js` is faster than loading packages
 3. **Skip to transcript-tester** - For story-only changes: `--skip transcript-tester`
 
 ## Troubleshooting

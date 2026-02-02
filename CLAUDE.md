@@ -385,7 +385,7 @@ npx madge --circular packages/world-model/src/index.ts
 - `paper` - Crimson Text, high contrast
 
 **Outputs**:
-- `dist/sharpee.js` - Platform bundle (CLI, testing)
+- `dist/cli/sharpee.js` - Platform bundle (CLI, testing)
 - `dist/web/{story}/` - Browser client
 - `dist/web/{story}-react/` - React client
 
@@ -395,21 +395,21 @@ npx madge --circular packages/world-model/src/index.ts
 
 **IMPORTANT**:
 - Always use `--skip` when possible to avoid slow full rebuilds
-- Always use `dist/sharpee.js` for testing - much faster than loading individual packages
+- Always use `dist/cli/sharpee.js` for testing - much faster than loading individual packages
 
 ### Transcript Testing - ALWAYS USE THE BUNDLE
 
-**CRITICAL**: Always use the bundle (`dist/sharpee.js`) for transcript testing. It loads instantly (~170ms) vs the slow package version (~5+ seconds).
+**CRITICAL**: Always use the bundle (`dist/cli/sharpee.js`) for transcript testing. It loads instantly (~170ms) vs the slow package version (~5+ seconds).
 
 ```bash
 # CORRECT - Use bundle for ALL transcript testing
-node dist/sharpee.js --test stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript
+node dist/cli/sharpee.js --test stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript
 
 # Run walkthrough chain (state persists between transcripts)
-node dist/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
+node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
 
 # Interactive play mode
-node dist/sharpee.js --play
+node dist/cli/sharpee.js --play
 
 # WRONG - Don't use this (5x slower, loads all packages)
 # node packages/transcript-tester/dist/cli.js stories/dungeo ...
@@ -418,25 +418,25 @@ node dist/sharpee.js --play
 **Walkthrough Testing:**
 ```bash
 # Run single walkthrough
-node dist/sharpee.js --test stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript
+node dist/cli/sharpee.js --test stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript
 
 # Run walkthrough chain (MUST use --chain for walkthroughs that depend on prior state)
-node dist/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript stories/dungeo/walkthroughs/wt-02-bank-puzzle.transcript
+node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript stories/dungeo/walkthroughs/wt-02-bank-puzzle.transcript
 
 # Stop on first failure
-node dist/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript --stop-on-failure
+node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript --stop-on-failure
 ```
 
 **Unit Transcript Testing:**
 ```bash
 # Run single unit test transcript
-node dist/sharpee.js --test stories/dungeo/tests/transcripts/rug-trapdoor.transcript
+node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/rug-trapdoor.transcript
 
 # Run all unit test transcripts
-node dist/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
+node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
 ```
 
-**CLI Flags for `node dist/sharpee.js`:**
+**CLI Flags for `node dist/cli/sharpee.js`:**
 | Flag | Description |
 |------|-------------|
 | `--test <file>` | Run transcript test(s) |

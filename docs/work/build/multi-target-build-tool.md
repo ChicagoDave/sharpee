@@ -376,7 +376,7 @@ Running `tsmulti init --sync-package-json` generates these fields from the confi
 **Targets needed:**
 - `local` — CJS, workspace imports preserved, for story `tsc` and local testing
 - `npm` — CJS, workspace imports as peer dependencies, for npm publish
-- `bundle` — single-file IIFE/CJS, all workspace imports bundled, for CLI (`dist/sharpee.js`)
+- `bundle` — single-file IIFE/CJS, all workspace imports bundled, for CLI (`dist/cli/sharpee.js`)
 - `browser` — ESM bundle, for web client
 
 **Config:**
@@ -386,7 +386,7 @@ Running `tsmulti init --sync-package-json` generates these fields from the confi
   "targets": {
     "local": { "module": "commonjs", "outDir": "dist", "imports": "preserve" },
     "npm": { "module": "commonjs", "outDir": "dist-npm", "imports": "relative", "condition": "publish" },
-    "bundle": { "format": "cjs", "outFile": "dist/sharpee.js", "imports": "bundle", "bundler": "esbuild", "condition": "bundle" },
+    "bundle": { "format": "cjs", "outFile": "dist/cli/sharpee.js", "imports": "bundle", "bundler": "esbuild", "condition": "bundle" },
     "browser": { "format": "esm", "outDir": "dist/web", "imports": "bundle", "bundler": "esbuild", "condition": "browser" }
   }
 }

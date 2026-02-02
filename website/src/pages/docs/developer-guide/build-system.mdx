@@ -112,7 +112,7 @@ Version updates run first, before any compilation.
 
 | Build | Output Location | Contents |
 |-------|-----------------|----------|
-| Platform | `dist/sharpee.js` | Node bundle with all platform packages |
+| Platform | `dist/cli/sharpee.js` | Node bundle with all platform packages |
 | Story | `stories/{story}/dist/` | Compiled story code |
 | Browser | `dist/web/{story}/` | HTML, JS bundle, CSS |
 | React | `dist/web/{story}-react/` | React client with selected theme |
@@ -136,7 +136,7 @@ When only changing story code, skip to the end of the platform build:
 
 ```bash
 ./build.sh --skip transcript-tester -s dungeo
-node dist/sharpee.js --play
+node dist/cli/sharpee.js --play
 ```
 
 ### Development (Platform Changes)
@@ -162,22 +162,22 @@ After any build:
 
 ```bash
 # Interactive play
-node dist/sharpee.js --play
+node dist/cli/sharpee.js --play
 
 # Run a single transcript test
-node dist/sharpee.js --test stories/dungeo/tests/transcripts/navigation.transcript
+node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/navigation.transcript
 
 # Run all transcript tests
-node dist/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
+node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
 
 # Chained walkthroughs (game state persists between transcripts)
-node dist/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
+node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
 ```
 
 ## Performance Tips
 
 1. **Use `--skip`** — Always skip unchanged packages to avoid slow full rebuilds
-2. **Use the bundle** — `node dist/sharpee.js` loads in ~170ms vs 5+ seconds for individual packages
+2. **Use the bundle** — `node dist/cli/sharpee.js` loads in ~170ms vs 5+ seconds for individual packages
 3. **Skip to transcript-tester** — For story-only changes: `--skip transcript-tester`
 
 ## Troubleshooting

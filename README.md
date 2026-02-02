@@ -174,7 +174,7 @@ pnpm test
 pnpm --filter '@sharpee/stdlib' test
 
 # Run story transcript tests
-node dist/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
+node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
 ```
 
 ## Example Stories

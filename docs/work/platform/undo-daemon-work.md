@@ -67,5 +67,5 @@ Change from ACCEPTED back to PROPOSED. Update to note that the serialization inf
 ## Verification
 
 - `./build.sh -s dungeo`
-- `node dist/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript --stop-on-failure`
+- `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript --stop-on-failure`
 - Expect 148/148 pass

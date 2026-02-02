@@ -450,7 +450,7 @@ The Notes panel only uses approximately half the width of the right sidebar pane
 **Component**: Build System
 
 **Description**:
-The esbuild bundler for `dist/sharpee.js` was resolving `@sharpee/*` package imports via `package.json` `main`/`exports` fields, which point to `dist-npm/` (ESM builds for npm publish). These are built separately from `dist/` (CJS project-references output) and can be stale. This caused the bundle to contain old code missing recent features (e.g., action interceptors).
+The esbuild bundler for `dist/cli/sharpee.js` was resolving `@sharpee/*` package imports via `package.json` `main`/`exports` fields, which point to `dist-npm/` (ESM builds for npm publish). These are built separately from `dist/` (CJS project-references output) and can be stale. This caused the bundle to contain old code missing recent features (e.g., action interceptors).
 
 The bundle contained **two complete copies** of every package — one from `dist/` (current) and one from `dist-npm/` (stale) — with the stale `dist-npm/` versions winning because they were exported last in the spread.
 

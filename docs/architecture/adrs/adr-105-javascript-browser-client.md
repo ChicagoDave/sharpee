@@ -40,7 +40,7 @@ WASM would only make sense if we:
 
 ### What's Missing
 
-1. **Browser-targeted bundle** - Current `dist/sharpee.js` uses `--platform=node`
+1. **Browser-targeted bundle** - Current `dist/cli/sharpee.js` uses `--platform=node`
 2. **Story-specific entry point** - Wire a story to BrowserPlatform
 3. **HTML template** - Minimal shell with required DOM elements
 4. **Hosting strategy** - Static files, no server needed

@@ -156,7 +156,7 @@ foo.add(new FooTrait({ someProperty: initialValue }));
 
 ```bash
 ./build.sh -s dungeo
-node dist/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
+node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
 ```
 
 ## Detailed Migration Notes

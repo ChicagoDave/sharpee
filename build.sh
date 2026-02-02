@@ -71,7 +71,7 @@ Examples:
   ./build.sh --skip stdlib -s dungeo         Resume from stdlib package
 
 Output:
-  dist/sharpee.js          Platform bundle (CLI, testing)
+  dist/cli/sharpee.js          Platform bundle (CLI, testing)
   dist/stories/{story}.sharpee  Story bundle (with -b)
   dist/runner/                       Zifmia client (with -c zifmia or --runner)
   dist/web/{story}/             Browser client
@@ -361,6 +361,12 @@ build_platform() {
         fi
 
         run_build "$name" "pnpm --filter '$pkg' build"
+
+        # TEMP FIX: Sync dist/ → dist-npm/ so downstream tsc resolves fresh types
+        local pkg_dir="packages/$name"
+        if [ -d "$pkg_dir/dist" ] && [ -d "$pkg_dir/dist-npm" ]; then
+            rsync -a --delete "$pkg_dir/dist/" "$pkg_dir/dist-npm/"
+        fi
     done
 
     # ESM build pass (only when browser/runner targets are requested)
@@ -417,12 +423,12 @@ build_platform() {
 build_bundle() {
     log_step "Bundling"
 
-    mkdir -p dist
+    mkdir -p dist/cli
 
     # Use --alias to resolve @sharpee/* to dist/ (CJS project-references output)
     # instead of dist-npm/ (ESM npm-publish output) which may be stale.
     # This does NOT affect npm packages — those still use dist-npm/ per package.json.
-    run_build "sharpee.js" "npx esbuild scripts/bundle-entry.js --bundle --platform=node --target=node18 --outfile=dist/sharpee.js --external:readline --format=cjs --sourcemap \
+    run_build "sharpee.js" "npx esbuild scripts/bundle-entry.js --bundle --platform=node --target=node18 --outfile=dist/cli/sharpee.js --external:readline --format=cjs --sourcemap \
       --alias:@sharpee/core=./packages/core/dist/index.js \
       --alias:@sharpee/if-domain=./packages/if-domain/dist/index.js \
       --alias:@sharpee/world-model=./packages/world-model/dist/index.js \
@@ -441,7 +447,7 @@ build_bundle() {
       --alias:@sharpee/transcript-tester=./packages/transcript-tester/dist/index.js"
 
     # Generate type declarations
-    cat > dist/sharpee.d.ts << 'EOF'
+    cat > dist/cli/sharpee.d.ts << 'EOF'
 // Auto-generated Sharpee type declarations
 export * from '../packages/core/dist/index';
 export * from '../packages/if-domain/dist/index';
@@ -456,12 +462,12 @@ export * from '../packages/text-service/dist/index';
 EOF
 
     # Report size
-    local BUNDLE_SIZE=$(ls -lh dist/sharpee.js | awk '{print $5}')
+    local BUNDLE_SIZE=$(ls -lh dist/cli/sharpee.js | awk '{print $5}')
     echo "Bundle size: $BUNDLE_SIZE"
 
     # Quick load test
     echo -n "Load test: "
-    node -e "const s=Date.now();require('./dist/sharpee.js');console.log((Date.now()-s)+'ms')"
+    node -e "const s=Date.now();require('./dist/cli/sharpee.js');console.log((Date.now()-s)+'ms')"
 
     echo ""
 }
@@ -761,7 +767,7 @@ echo ""
 echo "Plan:"
 echo "  1. Update versions"
 echo "  2. Build platform packages"
-echo "  3. Bundle -> dist/sharpee.js"
+echo "  3. Bundle -> dist/cli/sharpee.js"
 if [ -n "$STORY" ]; then
     echo "  4. Build story: $STORY"
 fi
@@ -821,7 +827,7 @@ echo -e "${GREEN}Build Complete${NC}"
 echo "=============="
 echo ""
 echo "Outputs:"
-echo "  dist/sharpee.js - Platform bundle"
+echo "  dist/cli/sharpee.js - Platform bundle"
 
 if [ "$STORY_BUNDLE" = true ]; then
     echo "  dist/stories/${STORY}.sharpee - Story bundle"
@@ -842,7 +848,7 @@ fi
 
 echo ""
 echo "Next steps:"
-echo "  Test CLI:     node dist/sharpee.js --play"
+echo "  Test CLI:     node dist/cli/sharpee.js --play"
 if [ -n "$STORY" ]; then
     for CLIENT in "${CLIENTS[@]}"; do
         if [ "$CLIENT" = "zifmia" ]; then

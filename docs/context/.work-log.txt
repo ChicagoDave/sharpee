@@ -18,3 +18,27 @@
 [22:15:18] EDIT: packages/world-model/src/index.ts
 [22:15:33] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/world-model' build 2>&1 | tail -5
 [22:29:08] TEST/BUILD FAIL (exit -1): rm -rf /mnt/c/repotemp/sharpee/packages/world-model/dist /mnt/c/repotemp/sharpee
+[22:58:56] GIT: git commit -m "$(cat <<'EOF'
+feat: StoryInfoTrait, HELP/ABOUT text service handl
+[22:59:03] GIT: git push
+[01:14:54] EDIT: build.sh
+[01:24:21] WRITE: stories/dungeo/tests/transcripts/help-about.transcript
+[01:24:52] WRITE: stories/dungeo/tests/transcripts/help-about.transcript
+[01:25:52] WRITE: stories/dungeo/tests/transcripts/help-about.transcript
+[01:30:24] WRITE: docs/work/platform/about-help.md
+[01:35:30] EDIT: build.sh
+[01:35:33] EDIT: build.sh
+[01:35:36] EDIT: build.sh
+[01:35:40] EDIT: build.sh
+[01:35:47] EDIT: build.sh
+[01:35:53] EDIT: scripts/bundle-entry.js
+[01:36:05] EDIT: packages/transcript-tester/src/fast-cli.ts
+[01:36:11] EDIT: scripts/play-dungeo.sh
+[01:36:24] EDIT: scripts/fast-transcript-test.sh
+[01:36:30] EDIT: scripts/use-bundle.js
+[01:36:46] EDIT: packages/map-editor/electron/main.ts
+[01:36:50] EDIT: packages/map-editor/electron/main.ts
+[01:37:00] EDIT: stories/dungeo/test-blocking.js
+[01:37:04] EDIT: CLAUDE.md
+[01:37:14] EDIT: README.md
+[02:08:40] WRITE: docs/context/session-20260202-0207-main.md

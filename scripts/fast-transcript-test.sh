@@ -11,7 +11,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Check bundle exists
-if [ ! -f "$PROJECT_ROOT/dist/sharpee.js" ]; then
+if [ ! -f "$PROJECT_ROOT/dist/cli/sharpee.js" ]; then
   echo "Bundle not found. Run ./scripts/bundle-sharpee.sh first"
   exit 1
 fi
