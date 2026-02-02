@@ -24,7 +24,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["deb"],
+    "targets": ["msi", "deb"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

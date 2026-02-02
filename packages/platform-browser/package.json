@@ -1,15 +1,15 @@
 {
   "name": "@sharpee/platform-browser",
-  "version": "0.9.62-beta",
+  "version": "0.9.70-beta",
   "description": "Browser client infrastructure for Sharpee interactive fiction",
   "type": "module",
-  "main": "dist-npm/index.js",
+  "main": "./dist/index.js",
   "module": "dist-npm/index.js",
-  "types": "dist-npm/index.d.ts",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist-npm/index.js",
-      "types": "./dist-npm/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js"
     }
   },
   "scripts": {

@@ -589,10 +589,10 @@ node packages/transcript-tester/dist/cli.js stories/mystory --all
 ./scripts/build-dungeo.sh --skip mystory
 
 # Play interactively
-node dist/sharpee.js --play
+node dist/cli/sharpee.js --play
 
 # Run tests
-node dist/sharpee.js --test stories/mystory/tests/transcripts/puzzle.transcript
+node dist/cli/sharpee.js --test stories/mystory/tests/transcripts/puzzle.transcript
 ```
 
 ## Quick Start Checklist

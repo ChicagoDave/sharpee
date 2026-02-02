@@ -3,11 +3,11 @@
  * Also provides CLI functionality when run directly with --test or --play.
  *
  * Usage as library:
- *   const sharpee = require('./dist/sharpee.js');
+ *   const sharpee = require('./dist/cli/sharpee.js');
  *
  * Usage as CLI:
- *   node dist/sharpee.js --test <transcript-file>
- *   node dist/sharpee.js --play
+ *   node dist/cli/sharpee.js --test <transcript-file>
+ *   node dist/cli/sharpee.js --play
  *
  * NOTE: Uses direct paths to dist folders to avoid esbuild resolution issues
  * with pnpm symlinks and directory imports (e.g., ./actions, ./grammar).
@@ -140,8 +140,8 @@ if (require.main === module) {
 Sharpee CLI - Fast transcript testing and interactive play
 
 Usage:
-  node dist/sharpee.js --test [transcript-files...] [options]
-  node dist/sharpee.js --play [options]
+  node dist/cli/sharpee.js --test [transcript-files...] [options]
+  node dist/cli/sharpee.js --play [options]
 
 Options:
   --test, -t           Run transcript tests
@@ -153,9 +153,9 @@ Options:
   --help, -h           Show this help message
 
 Examples:
-  node dist/sharpee.js --test stories/dungeo/tests/transcripts/save-restore-basic.transcript
-  node dist/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
-  node dist/sharpee.js --play
+  node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/save-restore-basic.transcript
+  node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
+  node dist/cli/sharpee.js --play
 `);
   }
 

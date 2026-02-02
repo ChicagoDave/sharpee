@@ -1,14 +1,12 @@
 packages:
   - packages/*
-  - packages/platforms/*
-  - packages/extensions/*
-  - '!packages/forge'
-  - '!packages/ext-*'
-  - '!packages/client-core'
-  - '!packages/web-client'
+  - packages/extensions/testing
+  - '!packages/platforms'
+  - '!packages/map-editor'
   - '!packages/cli'
   - '!packages/dev-tools'
-  - stories/*
+  - '!packages/forge'
+  - stories/dungeo
 
 ignoredBuiltDependencies:
   - electron

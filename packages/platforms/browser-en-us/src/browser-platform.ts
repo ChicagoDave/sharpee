@@ -207,10 +207,17 @@ export class BrowserPlatform {
     this.isRunning = true;
     this.client.setInputEnabled(true);
 
-    // Set client version on world model for banner display
+    // Set client version on StoryInfoTrait for banner display
     const world = this.engine.getWorld();
     if (world) {
-      (world as any).clientVersion = VERSION_INFO.version;
+      const storyInfoEntities = world.findByTrait('storyInfo' as any);
+      const trait = storyInfoEntities[0]?.get<any>('storyInfo');
+      if (trait) {
+        trait.clientVersion = VERSION_INFO.version;
+      } else {
+        // Fallback for stories that don't use StoryInfoTrait yet
+        (world as any).clientVersion = VERSION_INFO.version;
+      }
     }
 
     // Start the game engine

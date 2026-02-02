@@ -1,9 +1,9 @@
 {
   "name": "@sharpee/event-processor",
-  "version": "0.9.62-beta",
+  "version": "0.9.70-beta",
   "description": "Event processor for applying semantic events to the world model",
-  "main": "dist-npm/index.js",
-  "types": "dist-npm/index.d.ts",
+  "main": "./dist-npm/index.js",
+  "types": "./dist-npm/index.d.ts",
   "scripts": {
     "build": "tsc",
     "test": "vitest",
@@ -41,7 +41,6 @@
   "exports": {
     ".": {
       "types": "./dist-npm/index.d.ts",
-      "import": "./dist-npm/index.js",
       "require": "./dist-npm/index.js"
     }
   }

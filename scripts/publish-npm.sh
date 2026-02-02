@@ -1,12 +1,15 @@
 #!/bin/bash
 # Publish all @sharpee packages to npm
 # Usage: ./scripts/publish-npm.sh [--dry-run] [--version X.Y.Z]
+#
+# Requires: tsf (npm install -D tsf)
 
 set -e
 
 # Default version (can be overridden with --version)
-VERSION="0.9.61-beta"
+VERSION="0.9.64-beta"
 DRY_RUN=""
+TSF="node /mnt/c/repotemp/tsf/dist/cli/index.js"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -56,77 +59,44 @@ if [ -z "$DRY_RUN" ]; then
   echo ""
 fi
 
-# Packages in dependency order
-PACKAGES=(
-  "core"
-  "if-domain"
-  "world-model"
-  "event-processor"
-  "text-blocks"
-  "text-service"
-  "lang-en-us"
-  "parser-en-us"
-  "if-services"
-  "plugin-npc"
-  "plugin-scheduler"
-  "plugin-state-machine"
-  "plugins"
-  "stdlib"
-  "engine"
-  "sharpee"
-  "platform-browser"
-  "transcript-tester"
-  "extensions/testing"
-)
-
-# Update versions in all packages
+# Version, build, and validate via tsf
 echo -e "${GREEN}=== Updating versions to $VERSION ===${NC}"
-for pkg in "${PACKAGES[@]}"; do
-  PKG_JSON="packages/$pkg/package.json"
-  if [ -f "$PKG_JSON" ]; then
-    # Update version using node to preserve JSON formatting
-    node -e "
-      const fs = require('fs');
-      const pkg = JSON.parse(fs.readFileSync('$PKG_JSON', 'utf8'));
-      pkg.version = '$VERSION';
-      fs.writeFileSync('$PKG_JSON', JSON.stringify(pkg, null, 2) + '\n');
-    "
-    echo "  Updated $pkg"
-  else
-    echo -e "  ${RED}Missing: $PKG_JSON${NC}"
-  fi
-done
+$TSF version "$VERSION" --condition publish
 
-# Build all packages
 echo ""
 echo -e "${GREEN}=== Building packages ===${NC}"
-pnpm -r build:npm
+$TSF build --all
 
-# Publish each package
+echo ""
+echo -e "${GREEN}=== Validating outputs ===${NC}"
+$TSF validate
+
+# Publish each package with publishConfig
 echo ""
 echo -e "${GREEN}=== Publishing packages ===${NC}"
 ROOT_DIR=$(pwd)
-for pkg in "${PACKAGES[@]}"; do
-  PKG_DIR="packages/$pkg"
-  if [ -d "$PKG_DIR" ]; then
-    echo ""
-    echo -e "${YELLOW}Publishing @sharpee/$pkg...${NC}"
-    cd "$ROOT_DIR/$PKG_DIR"
-    pnpm publish --access public --no-git-checks --tag latest $DRY_RUN || {
-      echo -e "${RED}Failed to publish @sharpee/$pkg${NC}"
-      cd "$ROOT_DIR"
-      exit 1
-    }
+for PKG_JSON in packages/*/package.json packages/*/*/package.json; do
+  [ -f "$PKG_JSON" ] || continue
+
+  # Only publish packages that have publishConfig
+  HAS_PUBLISH=$(node -p "!!require('./$PKG_JSON').publishConfig" 2>/dev/null)
+  [ "$HAS_PUBLISH" = "true" ] || continue
+
+  PKG_DIR=$(dirname "$PKG_JSON")
+  PKG_NAME=$(node -p "require('./$PKG_JSON').name" 2>/dev/null)
+
+  echo ""
+  echo -e "${YELLOW}Publishing $PKG_NAME...${NC}"
+  cd "$ROOT_DIR/$PKG_DIR"
+  pnpm publish --access public --no-git-checks --tag latest $DRY_RUN || {
+    echo -e "${RED}Failed to publish $PKG_NAME${NC}"
     cd "$ROOT_DIR"
-  fi
+    exit 1
+  }
+  cd "$ROOT_DIR"
 done
 
 echo ""
 echo -e "${GREEN}=== Done! ===${NC}"
-echo ""
-echo "Published packages:"
-for pkg in "${PACKAGES[@]}"; do
-  echo "  @sharpee/$pkg@$VERSION"
-done
 echo ""
 echo "Install with: npm install @sharpee/sharpee@$VERSION"

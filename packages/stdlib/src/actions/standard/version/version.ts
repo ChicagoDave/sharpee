@@ -46,10 +46,12 @@ export const versionAction: Action & { metadata: ActionMetadata } = {
   },
 
   report(context: ActionContext): ISemanticEvent[] {
-    // Get version info from world/story config
+    // Get version info from StoryInfoTrait (or fall back to legacy (world as any))
     const world = context.world;
-    const storyConfig = (world as any).storyConfig || {};
-    const versionInfo = (world as any).versionInfo || {};
+    const storyInfoEntities = world.findByTrait('storyInfo' as any);
+    const trait = storyInfoEntities[0]?.get<any>('storyInfo');
+    const storyConfig = trait || (world as any).storyConfig || {};
+    const versionInfo = trait || (world as any).versionInfo || {};
 
     const storyTitle = storyConfig.title || 'Unknown';
     const storyVersion = versionInfo.version || storyConfig.version || '0.0.0';

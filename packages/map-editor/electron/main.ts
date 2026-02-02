@@ -64,11 +64,11 @@ ipcMain.handle('project:open', async () => {
   const projectPath = result.filePaths[0];
 
   // Verify this is a Sharpee project
-  const bundlePath = path.join(projectPath, 'dist', 'sharpee.js');
+  const bundlePath = path.join(projectPath, 'dist', 'cli', 'sharpee.js');
   const storiesPath = path.join(projectPath, 'stories');
 
   if (!fs.existsSync(bundlePath)) {
-    return { error: 'No dist/sharpee.js found. Please build the project first.' };
+    return { error: 'No dist/cli/sharpee.js found. Please build the project first.' };
   }
 
   if (!fs.existsSync(storiesPath)) {
@@ -102,7 +102,7 @@ ipcMain.handle('story:load', async (_event, { projectPath, storyId }: { projectP
   console.log('[story:load] Starting...', { projectPath, storyId });
 
   try {
-    const bundlePath = path.join(projectPath, 'dist', 'sharpee.js');
+    const bundlePath = path.join(projectPath, 'dist', 'cli', 'sharpee.js');
     console.log('[story:load] Bundle path:', bundlePath);
 
     // Check if bundle exists

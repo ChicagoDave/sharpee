@@ -1,0 +1,24 @@
+title: Help and About Commands
+story: dungeo
+description: Tests HELP, ABOUT, INFO, and CREDITS commands (ISSUE-042)
+
+---
+
+> help
+[OK: contains "HOW TO PLAY INTERACTIVE FICTION"]
+[OK: contains "MOVING AROUND"]
+[OK: contains "INTERACTING WITH OBJECTS"]
+[OK: contains "ABOUT - Information about this game"]
+
+> about
+[OK: contains "DUNGEON"]
+[OK: contains "Ported by David Cornelson"]
+[OK: contains "Tim Anderson"]
+
+> info
+[OK: contains "DUNGEON"]
+[OK: contains "Mainframe Zork"]
+
+> credits
+[OK: contains "DUNGEON"]
+[OK: contains "Dave Lebling"]

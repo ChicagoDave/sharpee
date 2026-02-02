@@ -43,6 +43,7 @@ export * from './traits/pullable';
 export * from './traits/pushable';
 export * from './traits/npc';
 export * from './traits/vehicle';
+export * from './traits/story-info';
 
 // Extension system
 export * from './extensions';

@@ -39,12 +39,6 @@ export interface StoryInfo {
  * Story-specific callbacks for customizing behavior
  */
 export interface BrowserClientCallbacks {
-  /** Custom help text generator */
-  getHelpText?: () => string;
-
-  /** Custom about text generator */
-  getAboutText?: () => string;
-
   /**
    * Event handler for story-specific events.
    * Return true if handled, false to use default handling.

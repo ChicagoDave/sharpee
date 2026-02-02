@@ -3,7 +3,7 @@
 /**
  * Fast Transcript Tester CLI
  *
- * Uses pre-bundled platform (dist/sharpee.js) and story for instant loading.
+ * Uses pre-bundled platform (dist/cli/sharpee.js) and story for instant loading.
  * Supports --chain flag for walkthrough testing.
  *
  * Usage:

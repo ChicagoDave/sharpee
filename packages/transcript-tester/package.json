@@ -1,9 +1,9 @@
 {
   "name": "@sharpee/transcript-tester",
-  "version": "0.9.62-beta",
+  "version": "0.9.70-beta",
   "description": "Transcript-based testing tool for Sharpee interactive fiction",
-  "main": "dist-npm/index.js",
-  "types": "dist-npm/index.d.ts",
+  "main": "./dist-npm/index.js",
+  "types": "./dist-npm/index.d.ts",
   "bin": {
     "transcript-test": "./dist/cli.js"
   },
@@ -42,8 +42,10 @@
   "exports": {
     ".": {
       "types": "./dist-npm/index.d.ts",
-      "import": "./dist-npm/index.js",
       "require": "./dist-npm/index.js"
     }
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -21,8 +21,31 @@
 feat: add connectRooms and createDoor convenience m
 [21:46:19] GIT: git push
 [21:54:57] EDIT: packages/sharpee/package.json
+[21:58:28] WRITE: docs/context/session-20260201-2030-main.md
+[22:04:13] WRITE: packages/world-model/src/traits/story-info/storyInfoTrait.ts
+[22:04:15] WRITE: packages/world-model/src/traits/story-info/index.ts
+[22:04:20] EDIT: packages/world-model/src/traits/trait-types.ts
+[22:04:23] EDIT: packages/world-model/src/traits/trait-types.ts
+[22:04:27] EDIT: packages/world-model/src/traits/index.ts
+[22:04:31] EDIT: stories/dungeo/src/index.ts
+[22:04:38] EDIT: stories/dungeo/src/index.ts
+[22:04:44] EDIT: packages/engine/src/game-engine.ts
+[22:04:52] EDIT: packages/stdlib/src/actions/standard/about/about.ts
+[22:05:01] EDIT: packages/stdlib/src/actions/standard/version/version.ts
+[22:05:10] EDIT: packages/platforms/browser-en-us/src/browser-platform.ts
+[22:05:19] EDIT: packages/platform-browser/src/BrowserClient.ts
+[22:06:22] EDIT: packages/world-model/src/traits/implementations.ts
+[22:06:25] EDIT: packages/world-model/src/traits/implementations.ts
+[22:06:30] EDIT: packages/world-model/src/traits/implementations.ts
+[22:09:24] EDIT: packages/stdlib/src/actions/standard/about/about-events.ts
+[22:15:18] EDIT: packages/world-model/src/index.ts
+[22:15:33] TEST/BUILD FAIL (exit -1): pnpm --filter '@sharpee/world-model' build 2>&1 | tail -5
+[22:29:08] TEST/BUILD FAIL (exit -1): rm -rf /mnt/c/repotemp/sharpee/packages/world-model/dist /mnt/c/repotemp/sharpee
 [22:58:38] WRITE: packages/zifmia/src/version.ts
 [22:58:39] WRITE: stories/dungeo/src/version.ts
+[22:58:56] GIT: git commit -m "$(cat <<'EOF'
+feat: StoryInfoTrait, HELP/ABOUT text service handl
+[22:59:03] GIT: git push
 [23:06:37] WRITE: build-macos.sh
 [23:06:48] EDIT: build.sh
 [23:35:03] WRITE: scripts/mac-release.sh
@@ -33,5 +56,38 @@ feat: add connectRooms and createDoor convenience m
 [23:47:40] EDIT: build-macos.sh
 [23:48:51] EDIT: scripts/mac-release.sh
 [23:51:56] EDIT: scripts/mac-release.sh
+[01:14:54] EDIT: build.sh
+[01:24:21] WRITE: stories/dungeo/tests/transcripts/help-about.transcript
+[01:24:52] WRITE: stories/dungeo/tests/transcripts/help-about.transcript
+[01:25:52] WRITE: stories/dungeo/tests/transcripts/help-about.transcript
+[01:30:24] WRITE: docs/work/platform/about-help.md
+[01:35:30] EDIT: build.sh
+[01:35:33] EDIT: build.sh
+[01:35:36] EDIT: build.sh
+[01:35:40] EDIT: build.sh
+[01:35:47] EDIT: build.sh
+[01:35:53] EDIT: scripts/bundle-entry.js
+[01:36:05] EDIT: packages/transcript-tester/src/fast-cli.ts
+[01:36:11] EDIT: scripts/play-dungeo.sh
+[01:36:24] EDIT: scripts/fast-transcript-test.sh
+[01:36:30] EDIT: scripts/use-bundle.js
+[01:36:46] EDIT: packages/map-editor/electron/main.ts
+[01:36:50] EDIT: packages/map-editor/electron/main.ts
+[01:37:00] EDIT: stories/dungeo/test-blocking.js
+[01:37:04] EDIT: CLAUDE.md
+[01:37:14] EDIT: README.md
+[02:08:40] WRITE: docs/context/session-20260202-0207-main.md
+[02:09:53] GIT: git commit -m "$(cat <<'EOF'
+fix: build system fixes and dist/ reorganization
+
+-
+[02:10:01] GIT: git push
+[03:16:38] EDIT: packages/world-model/src/world/AuthorModel.ts
+[03:41:30] WRITE: docs/context/session-20260202-0341-main.md
+[04:01:50] EDIT: ts-forge.config.json
+[04:03:07] EDIT: ts-forge.config.json
 [16:15:59] GIT: git commit -m "$(cat <<'EOF'
-feat: add macOS build support with release scripts 
+feat: add macOS build support with release scripts
+[16:17:52] EDIT: docs/context/.work-log.txt
+[16:17:52] EDIT: stories/dungeo/src/version.ts
+[16:18:08] EDIT: ts-forge.config.json

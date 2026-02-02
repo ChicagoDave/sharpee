@@ -132,8 +132,8 @@ export class BrowserClient implements BrowserClientInterface {
       onRestart: () => this.handleRestart(),
       onQuit: () => this.handleQuit(),
       onThemeSelect: (theme) => this.themeManager.applyTheme(theme),
-      onHelp: () => this.displayHelp(),
-      onAbout: () => this.displayAbout(),
+      onHelp: () => this.engine.executeTurn('help'),
+      onAbout: () => this.engine.executeTurn('about'),
     };
 
     this.menuManager = new MenuManager({
@@ -228,15 +228,6 @@ export class BrowserClient implements BrowserClientInterface {
         this.updateStatusLine();
       }
 
-      // Handle ABOUT command
-      if (event.type === 'if.action.about') {
-        this.displayAbout();
-      }
-
-      // Handle HELP command
-      if (event.type === 'if.event.help_displayed') {
-        this.displayHelp();
-      }
     });
   }
 
@@ -247,9 +238,15 @@ export class BrowserClient implements BrowserClientInterface {
     console.log('=== BROWSER CLIENT START ===');
 
     try {
-      // Set client version for banner display
+      // Set client version on StoryInfoTrait for banner display
       if (this.world) {
-        (this.world as unknown as Record<string, unknown>).clientVersion = this.config.storyInfo.version;
+        const storyInfoEntities = this.world.findByTrait('storyInfo' as any);
+        const trait = storyInfoEntities[0]?.get<any>('storyInfo');
+        if (trait) {
+          trait.clientVersion = this.config.storyInfo.version;
+        } else {
+          (this.world as unknown as Record<string, unknown>).clientVersion = this.config.storyInfo.version;
+        }
       }
 
       // Start the engine first (builds the world)
@@ -475,32 +472,4 @@ export class BrowserClient implements BrowserClientInterface {
     }
   }
 
-  private displayHelp(): void {
-    const helpText = this.config.callbacks?.getHelpText?.() ||
-      'Type commands to interact with the game.\nCommon commands: LOOK, INVENTORY, GO [direction], TAKE [item], DROP [item]';
-    this.textDisplay.displayText(helpText);
-    this.textDisplay.scrollToBottom();
-  }
-
-  private displayAbout(): void {
-    const aboutText = this.config.callbacks?.getAboutText?.() ||
-      this.getDefaultAboutText();
-    this.textDisplay.displayText(aboutText);
-    this.textDisplay.scrollToBottom();
-  }
-
-  private getDefaultAboutText(): string {
-    const info = this.config.storyInfo;
-    const authors = Array.isArray(info.authors) ? info.authors.join(', ') : info.authors;
-    const lines = [
-      info.title,
-      info.description || '',
-      `By ${authors}`,
-      info.portedBy ? `Ported by ${info.portedBy}` : '',
-      '',
-      `Sharpee v${info.engineVersion} | Game v${info.version}`,
-      `Built: ${info.buildDate}`,
-    ];
-    return lines.filter(Boolean).join('\n');
-  }
 }

@@ -545,7 +545,7 @@ When revisiting a room:
 
 ## Verification Checklist
 
-Run `node dist/sharpee.js --play` and test:
+Run `node dist/cli/sharpee.js --play` and test:
 
 - [ ] West of House description
 - [ ] Mailbox open/take leaflet

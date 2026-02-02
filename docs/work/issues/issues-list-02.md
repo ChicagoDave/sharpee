@@ -2,14 +2,14 @@
 
 Catalog of known bugs and issues to be addressed.
 
-**Test Summary (2026-01-22):** 599 passed, 756 failed, 11 expected failures, 49 skipped across 89 transcripts.
+**Test Summary (2026-02-01):** 1291 passed, 28 failed, 10 expected failures, 3 skipped across 87 transcripts.
 
 ## Summary
 
 | Issue | Description | Severity | Component | Identified | Deferred | Fixed |
 |-------|-------------|----------|-----------|------------|----------|-------|
-| ISSUE-029 | GDT TK (telekinesis) command produces no output | Critical | GDT/Story | 2026-01-22 | - | - |
-| ISSUE-030 | GDT AH (teleport) command produces no output | Critical | GDT/Story | 2026-01-22 | - | - |
+| ISSUE-029 | GDT TK (telekinesis) command produces no output | Critical | GDT/Story | 2026-01-22 | - | 2026-02-01 |
+| ISSUE-030 | GDT AH (teleport) command produces no output | Critical | GDT/Story | 2026-01-22 | - | 2026-02-01 |
 | ISSUE-031 | UNDO command not implemented | Medium | Platform | 2026-01-22 | - | - |
 | ISSUE-032 | Version transcript needs update for DUNGEON name | Low | Test | 2026-01-22 | - | - |
 | ISSUE-033 | AGAIN command fails after second NORTH | Low | Platform | 2026-01-22 | - | - |
@@ -20,10 +20,14 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-038 | React client needs modern styling and fonts | Low | client-react | 2026-01-23 | - | 2026-01-24 |
 | ISSUE-039 | Text ordering: game.message duplicating stdlib messages | Critical | Platform | 2026-01-24 | - | 2026-01-24 |
 | ISSUE-040 | Web Client version shows "N/A" | Low | client-react | 2026-01-24 | - | - |
-| ISSUE-041 | Version format should separate build timestamp from version | Low | Build | 2026-01-24 | - | - |
-| ISSUE-042 | HELP and ABOUT commands not working in React client | Medium | client-react | 2026-01-24 | - | - |
+| ISSUE-041 | Version format should separate build timestamp from version | Low | Build | 2026-01-24 | - | 2026-02-01 |
+| ISSUE-042a | ABOUT command not working in browser or Zifmia client | Medium | client-react/zifmia | 2026-01-24 | - | - |
+| ISSUE-042b | HELP command evaporates in Zifmia (no response) | Medium | client-zifmia | 2026-02-01 | - | - |
+| ISSUE-047 | Zifmia client needs console output panel without full Dev Tools | Medium | client-zifmia | 2026-02-01 | - | - |
 | ISSUE-043 | Events panel not using full width of right panel | Low | client-react | 2026-01-24 | - | - |
 | ISSUE-044 | Notes panel not using full width of right panel | Low | client-react | 2026-01-24 | - | - |
+| ISSUE-045 | README sample code references nonexistent PortableTrait | Low | Docs | 2026-02-01 | - | - |
+| ISSUE-046 | CLI bundle uses stale dist-npm/ instead of dist/ | Critical | Build | 2026-02-01 | - | 2026-02-01 |
 
 ---
 
@@ -52,6 +56,8 @@ The GDT `tk` (telekinesis/take) command produces empty output instead of taking 
 
 **Affected transcripts**: wind-canary, weight-capacity, wave-rainbow, troll-visibility, troll-recovery, and many more.
 
+**Status**: Fixed 2026-02-01 — GDT commands were already working; original report was based on transcript assertion mismatches.
+
 ---
 
 ### ISSUE-030: GDT AH (teleport) command produces no output
@@ -76,6 +82,8 @@ West of House [still at starting location]
 **Expected**: "Teleported to Troll Room." and player moves to that room.
 
 **Impact**: Blocks ~300+ test assertions across 40+ transcripts.
+
+**Status**: Fixed 2026-02-01 — GDT commands were already working; original report was based on transcript assertion mismatches.
 
 ---
 
@@ -340,25 +348,58 @@ The current version format embeds date-time suffix directly in the version numbe
 - Story version (dungeo)
 - Client version (client-react)
 
+**Status**: Fixed 2026-02-01 — Versions now use clean `X.Y.Z-beta` format without timestamp suffix.
+
 ---
 
-### ISSUE-042: HELP and ABOUT commands not working in React client
+### ISSUE-042a: ABOUT command not working in browser or Zifmia client
 
 **Reported**: 2026-01-24
 **Severity**: Medium
-**Component**: client-react
+**Component**: client-react / client-zifmia
 
 **Description**:
-The HELP and ABOUT commands do not produce output in the React client.
+The ABOUT command does not work in either client. In browser, no output appears. In Zifmia, responds with "I don't understand that." HELP works correctly in browser.
 
 **Reproduction**:
-1. Load React client
-2. Type `help` or `about`
+1. Load browser or Zifmia client
+2. Type `about`
+3. Browser: no output. Zifmia: "I don't understand that."
+
+**Expected**: About/credits information displayed.
+
+---
+
+### ISSUE-042b: HELP command evaporates in Zifmia (no response)
+
+**Reported**: 2026-02-01
+**Severity**: Medium
+**Component**: client-zifmia
+
+**Description**:
+In the Zifmia client, typing `help` produces no response at all — the command silently evaporates. HELP works correctly in the browser client.
+
+**Reproduction**:
+1. Load Zifmia client
+2. Type `help`
 3. No output appears
 
-**Expected**: Help text and about/credits information displayed.
+**Expected**: Help text displayed.
 
-**Notes**: These may be client-handled commands that need implementation in the React client, or they may be parser commands that aren't being processed correctly.
+**Notes**: Different failure mode from ABOUT (which returns "I don't understand that."). HELP may be intercepted somewhere and swallowed without producing output.
+
+---
+
+### ISSUE-047: Zifmia client needs console output panel without full Dev Tools
+
+**Reported**: 2026-02-01
+**Severity**: Medium
+**Component**: client-zifmia
+
+**Description**:
+When debugging issues in the Zifmia client, there is no way to see console output (console.log, console.warn, errors) without enabling the full browser Dev Tools. A lightweight console/log panel built into the Zifmia UI would make debugging much easier.
+
+**Expected**: A toggleable panel in the Zifmia client that displays console output, errors, and warnings without requiring Dev Tools.
 
 ---
 
@@ -399,6 +440,36 @@ The Notes panel only uses approximately half the width of the right sidebar pane
 **Expected**: Notes panel fills the full width of the sidebar.
 
 **Notes**: Same root cause as ISSUE-043 - likely a CSS flex/grid issue in the tab panel.
+
+---
+
+### ISSUE-046: CLI bundle uses stale dist-npm/ instead of dist/
+
+**Reported**: 2026-02-01
+**Severity**: Critical
+**Component**: Build System
+
+**Description**:
+The esbuild bundler for `dist/cli/sharpee.js` was resolving `@sharpee/*` package imports via `package.json` `main`/`exports` fields, which point to `dist-npm/` (ESM builds for npm publish). These are built separately from `dist/` (CJS project-references output) and can be stale. This caused the bundle to contain old code missing recent features (e.g., action interceptors).
+
+The bundle contained **two complete copies** of every package — one from `dist/` (current) and one from `dist-npm/` (stale) — with the stale `dist-npm/` versions winning because they were exported last in the spread.
+
+**Root Cause**: `package.json` `main` field points to `dist-npm/index.js`. esbuild follows this when resolving transitive `require('@sharpee/...')` calls within bundled packages.
+
+**Fix Applied**: Added `--alias` flags to the esbuild command in `build.sh` to force resolution of all `@sharpee/*` packages to their `dist/` directories. This ensures the bundle always uses the current CJS build output. npm packages are unaffected — they still use `dist-npm/` per `package.json`.
+
+**Status**: Fixed 2026-02-01
+
+---
+
+### ISSUE-045: README sample code references nonexistent PortableTrait
+
+**Reported**: 2026-02-01
+**Severity**: Low
+**Component**: Docs (README)
+
+**Description**:
+The README contains sample code that references `PortableTrait`, which does not exist. Items are portable by default in Sharpee — there is no `PortableTrait`. To make something non-portable, use `SceneryTrait` or handle it in the taking action's validation. The sample code needs to be rewritten to reflect the actual architecture.
 
 ---
 
@@ -458,6 +529,7 @@ These transcripts pass completely:
 - trophy-case-scoring
 - troll-combat
 - troll-interactions
+- troll-visibility
 - save-test
 - bucket-well
 
@@ -465,12 +537,16 @@ These transcripts pass completely:
 
 ## Test Statistics
 
-**By failure category:**
-- GDT command failures: ~500 assertions
-- Unimplemented features: ~200 assertions
-- Minor format/message issues: ~50 assertions
+**By failure category (2026-02-01):**
+- Basket elevator: 7 failures
+- Trophy case scoring: 7 failures
+- Troll recovery: 5 failures
+- Flooding: 4 failures
+- Troll interactions: 3 failures
+- Egg opening: 2 failures
+- Save/restore: 1 failure
 
 **Priority order:**
-1. Fix ISSUE-029 and ISSUE-030 (GDT commands) - unblocks majority of tests
-2. Implement remaining story features
+1. Fix bundle/build issues (ISSUE-046 - FIXED)
+2. Implement remaining story features (basket, trophy, flooding, etc.)
 3. Update test assertions for format changes

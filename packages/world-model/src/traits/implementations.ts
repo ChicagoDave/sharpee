@@ -54,6 +54,9 @@ import { NpcTrait } from './npc/npcTrait';
 import { VehicleTrait } from './vehicle/vehicleTrait';
 import { EnterableTrait } from './enterable/enterableTrait';
 
+// System traits
+import { StoryInfoTrait } from './story-info/storyInfoTrait';
+
 /**
  * Map of trait types to their constructors
  */
@@ -105,6 +108,9 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
   // Transport traits
   [TraitType.VEHICLE]: VehicleTrait,
   [TraitType.ENTERABLE]: EnterableTrait,
+
+  // System traits
+  [TraitType.STORY_INFO]: StoryInfoTrait,
 
   // Object property traits
 
@@ -180,7 +186,10 @@ export {
 
   // Transport traits
   VehicleTrait,
-  EnterableTrait
+  EnterableTrait,
+
+  // System traits
+  StoryInfoTrait
 
   // Object property traits
 };

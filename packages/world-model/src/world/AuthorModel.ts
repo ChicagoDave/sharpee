@@ -132,7 +132,7 @@ export class AuthorModel {
     if (recordEvent) {
       this.emitEvent('author:entity:removed', {
         entityId,
-        name
+        name: entity.name
       });
     }
   }

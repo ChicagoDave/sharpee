@@ -1,9 +1,9 @@
 {
   "name": "@sharpee/story-dungeo",
-  "version": "1.0.64-beta",
+  "version": "0.9.70-beta",
   "description": "Dungeo - A Sharpee implementation of Mainframe Zork",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "sharpee": {
     "ifid": "621168D1-6D5C-449F-83D5-841D03A1BF78",
     "title": "DUNGEON",
@@ -54,5 +54,11 @@
     "dungeo"
   ],
   "author": "Sharpee Team",
-  "license": "MIT"
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js"
+    }
+  }
 }

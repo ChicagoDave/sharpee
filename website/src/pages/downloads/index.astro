@@ -1,0 +1,100 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Downloads">
+  <h1>Downloads</h1>
+  <p class="subtitle">Get the Zifmia game runner and Sharpee game files.</p>
+
+  <section class="section">
+    <h2 class="zifmia-title">Zifmia</h2>
+    <h3>Game Runner</h3>
+    <p class="section-desc">Desktop application for playing Sharpee games (.sharpee files)</p>
+    <div class="download-grid">
+      <a class="download-card" href="/downloads/Zifmia_0.9.0_x64_en-US.msi">
+        <div class="icon">&#x1f5a5;</div>
+        <div class="label">Windows</div>
+        <div class="meta">Zifmia 0.9.0 &middot; x64 MSI</div>
+      </a>
+      <a class="download-card" href="/downloads/Zifmia_0.9.0_aarch64.dmg">
+        <div class="icon">&#x1f34e;</div>
+        <div class="label">macOS</div>
+        <div class="meta">Zifmia 0.9.0 &middot; Apple Silicon DMG</div>
+      </a>
+      <a class="download-card" href="/downloads/Zifmia_0.9.0_amd64.deb">
+        <div class="icon">&#x1f427;</div>
+        <div class="label">Linux</div>
+        <div class="meta">Zifmia 0.9.0 &middot; amd64 DEB</div>
+      </a>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Game Files</h2>
+    <p class="section-desc">Download .sharpee game files to play in Zifmia</p>
+    <div class="download-grid">
+      <a class="download-card" href="/downloads/dungeo.sharpee">
+        <div class="icon">&#x1f3f0;</div>
+        <div class="label">Dungeon</div>
+        <div class="meta">Mainframe Zork (1981) recreation</div>
+      </a>
+    </div>
+    <div class="note">
+      Download a Zifmia installer above, then open the <code>.sharpee</code> file in Zifmia to play.
+      You can also <a href="/play/dungeo/">play Dungeon in your browser</a>.
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+  .subtitle { color: var(--color-muted); margin-bottom: 2rem; font-size: 1.1rem; }
+  .section {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.5rem;
+  }
+  .section h2 { font-size: 1.25rem; margin-bottom: 0.25rem; }
+  .section h3 { font-size: 1rem; margin-bottom: 0.25rem; color: var(--color-muted); }
+  .zifmia-title {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 0;
+  }
+  .section-desc { color: var(--color-muted); font-size: 0.875rem; margin-bottom: 1.25rem; }
+  .download-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+  .download-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.25rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .download-card:hover {
+    border-color: var(--color-accent);
+    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.1);
+  }
+  .download-card .icon { font-size: 2rem; margin-bottom: 0.5rem; }
+  .download-card .label { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem; }
+  .download-card .meta { color: var(--color-muted); font-size: 0.8rem; }
+  .note {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 0.5rem;
+    padding: 1rem 1.25rem;
+    font-size: 0.875rem;
+    color: #166534;
+    margin-top: 1rem;
+  }
+</style>

@@ -15,6 +15,10 @@ export interface AboutDisplayedEventData {
     author?: string;
     version?: string;
     description?: string;
+    engineVersion?: string;
+    buildDate?: string;
+    clientVersion?: string;
+    portedBy?: string;
   };
   /** Whether this is a blocked/error case */
   blocked?: boolean;

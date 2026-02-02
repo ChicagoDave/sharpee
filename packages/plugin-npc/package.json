@@ -1,14 +1,13 @@
 {
   "name": "@sharpee/plugin-npc",
-  "version": "0.9.62-beta",
+  "version": "0.9.70-beta",
   "description": "NPC plugin for Sharpee engine - NPC behaviors and turn processing (ADR-070, ADR-120)",
-  "main": "dist-npm/index.js",
+  "main": "./dist-npm/index.js",
   "module": "dist-npm/index.js",
-  "types": "dist-npm/index.d.ts",
+  "types": "./dist-npm/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist-npm/index.d.ts",
-      "import": "./dist-npm/index.js",
       "require": "./dist-npm/index.js"
     }
   },

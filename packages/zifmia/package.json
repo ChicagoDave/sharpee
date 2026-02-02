@@ -1,15 +1,15 @@
 {
   "name": "@sharpee/zifmia",
-  "version": "0.9.0-beta",
+  "version": "0.9.70-beta",
   "description": "Zifmia - Sharpee story runner",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "./dist/index.js",
   "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js"
     }
   },
   "scripts": {

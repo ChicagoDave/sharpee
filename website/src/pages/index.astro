@@ -1,0 +1,87 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Home">
+  <div class="hero">
+    <div class="hero-links">
+      <a href="/docs/" class="btn primary">Get Started</a>
+    </div>
+  </div>
+
+  <section class="content-section">
+    <h2>What is Parser IF?</h2>
+    <p>Interactive fiction is a form of storytelling where you play by typing commands in natural language. Instead of clicking buttons or selecting from menus, you type what you want to do:</p>
+    <div class="command-examples">
+      <code>go north</code>
+      <code>take the brass lantern</code>
+      <code>open the trapdoor</code>
+      <code>put the jeweled egg in the trophy case</code>
+    </div>
+    <p>The game understands your words, figures out what you mean, and describes what happens next. It's part puzzle game, part novel, part conversation with a world that reacts to everything you do.</p>
+    <p>Parser IF has a long history stretching back to the 1970s &mdash; Colossal Cave Adventure, Zork, the Infocom catalog &mdash; but the form is very much alive. Modern authors continue to push it in new directions, from literary experiments to intricate puzzle worlds.</p>
+  </section>
+
+  <section class="content-section">
+    <h2>Why Sharpee?</h2>
+    <p>Classic IF development tools were built decades ago. They work, but they carry the weight of their era &mdash; custom languages, limited tooling, and architectures that resist modern development practices.</p>
+    <p>Sharpee takes a different approach. It's built from the ground up in TypeScript, designed around composable traits, modern technical architecture, and a clean separation between game logic and natural language. Authors write in a real programming language with real tooling &mdash; type checking, IDE support, package management, testing frameworks.</p>
+    <p>The engine handles the hard parts: parsing natural language commands, managing a rich world model of objects and their relationships, coordinating complex multi-phase actions, and keeping NPCs acting autonomously. Authors focus on crafting their world and story.</p>
+    <p>Sharpee ships with standard actions, a full English parser and support for other language implementations, support for darkness and sensory restrictions, timed events, container logic, and everything else you'd expect from a mature IF platform. It runs in the browser and on the desktop via the Zifmia game runner.</p>
+    <p>It's currently in beta, being battle-tested against one of the most complex text adventures ever made: a full port of Mainframe Zork's Great Underground Empire with several new stories in the works by Sharpee's creator, David Cornelson.</p>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    text-align: center;
+    padding: 1.5rem 0 2rem;
+  }
+  .hero-links {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+  }
+  .btn {
+    padding: 0.6rem 1.5rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    transition: border-color 0.15s;
+  }
+  .btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
+  .btn.primary {
+    background: var(--color-accent);
+    color: white;
+    border-color: var(--color-accent);
+  }
+  .btn.primary:hover { background: var(--color-accent-hover); color: white; }
+
+  .content-section {
+    max-width: 700px;
+    margin: 0 auto 2.5rem;
+  }
+  .content-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .content-section p {
+    margin-bottom: 1rem;
+    line-height: 1.7;
+  }
+  .command-examples {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 1rem 0 1.25rem;
+    padding-left: 1.5rem;
+  }
+  .command-examples code {
+    font-size: 0.95rem;
+    color: var(--color-accent);
+    font-weight: 600;
+  }
+</style>

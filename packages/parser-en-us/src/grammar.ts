@@ -318,6 +318,25 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .withPriority(100)
     .build();
 
+  // About / Info / Credits
+  grammar
+    .define('about')
+    .mapsTo('if.action.about')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('info')
+    .mapsTo('if.action.about')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('credits')
+    .mapsTo('if.action.about')
+    .withPriority(100)
+    .build();
+
   // Author/debug commands
   // Trace command - enables/disables tracing
   grammar

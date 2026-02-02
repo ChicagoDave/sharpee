@@ -180,5 +180,5 @@ pnpm install
 pnpm build
 
 # Play (requires engine setup)
-# node dist/sharpee.js --story armoured --play
+# node dist/cli/sharpee.js --story armoured --play
 ```

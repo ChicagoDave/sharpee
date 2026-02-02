@@ -2,7 +2,7 @@ const path = require('path');
 const base = '/mnt/c/repotemp/sharpee';
 
 // Load the bundle
-const sharpee = require(path.join(base, 'dist/sharpee.js'));
+const sharpee = require(path.join(base, 'dist/cli/sharpee.js'));
 const { createGame, processCommand } = sharpee;
 
 // Create game

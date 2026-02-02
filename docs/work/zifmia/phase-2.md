@@ -212,5 +212,5 @@ npx serve dist/runner/
 # Open browser, load dungeo.sharpee, verify game starts
 
 # 4. Verify CLI still works (CJS path unchanged)
-node dist/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript --stop-on-failure
+node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript --stop-on-failure
 ```

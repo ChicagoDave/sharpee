@@ -16,7 +16,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, SceneryBehavior, ActorBehavior, WearableBehavior, ContainerBehavior, IdentityBehavior, IFEntity } from '@sharpee/world-model';
+import { TraitType, SceneryBehavior, ActorBehavior, WearableBehavior, ContainerBehavior, IdentityBehavior, IFEntity, getInterceptorForAction, ActionInterceptor, InterceptorSharedData } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
 import { TakingMessages } from './taking-messages';
@@ -42,6 +42,31 @@ import { isMultiObjectCommand, expandMultiObject } from '../../../helpers/multi-
  */
 function validateSingleEntity(context: ActionContext, noun: IFEntity): ValidationResult {
   const actor = context.player;
+
+  // Check for interceptor on the target entity (ADR-118)
+  // This runs first so entity-specific blocks (e.g., white-hot axe) take priority
+  const interceptorResult = getInterceptorForAction(noun, IFActions.TAKING);
+  if (interceptorResult) {
+    const { interceptor } = interceptorResult;
+    const interceptorData: InterceptorSharedData = {};
+
+    // Store interceptor in sharedData for later phases
+    const sharedData = getTakingSharedData(context);
+    (sharedData as any)._interceptor = interceptor;
+    (sharedData as any)._interceptorData = interceptorData;
+
+    // === PRE-VALIDATE HOOK ===
+    if (interceptor.preValidate) {
+      const result = interceptor.preValidate(noun, context.world, actor.id, interceptorData);
+      if (result !== null && !result.valid) {
+        return {
+          valid: false,
+          error: result.error,
+          params: result.params
+        };
+      }
+    }
+  }
 
   // Check scope - must be able to reach the item
   const scopeCheck = context.requireScope(noun, ScopeLevel.REACHABLE);
@@ -81,6 +106,22 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
       error: customMessage || TakingMessages.FIXED_IN_PLACE,
       params: { item: noun.name }
     };
+  }
+
+  // === POST-VALIDATE HOOK ===
+  if (interceptorResult) {
+    const interceptor = (getTakingSharedData(context) as any)._interceptor as ActionInterceptor;
+    const interceptorData = (getTakingSharedData(context) as any)._interceptorData as InterceptorSharedData;
+    if (interceptor?.postValidate) {
+      const result = interceptor.postValidate(noun, context.world, actor.id, interceptorData);
+      if (result !== null && !result.valid) {
+        return {
+          valid: false,
+          error: result.error,
+          params: result.params
+        };
+      }
+    }
   }
 
   // Use ActorBehavior to validate capacity constraints
@@ -383,9 +424,14 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     // Uses simplified event pattern (ADR-097)
     const noun = context.command.directObject?.entity;
 
+    // Fully-qualified message IDs (containing dots) are used as-is;
+    // short keys (e.g., 'fixed_in_place') get the action ID prefix
+    const error = result.error || '';
+    const messageId = error.includes('.') ? error : `${context.action.id}.${error}`;
+
     return [context.event('if.event.take_blocked', {
       // Rendering data
-      messageId: `${context.action.id}.${result.error}`,
+      messageId,
       params: {
         ...result.params,
         item: noun?.name
