@@ -377,10 +377,11 @@ export class GameEngine {
     this.sessionMoves = 0;
     // Keep currentTurn as is (already 1 from constructor)
     
-    // Get version info from world (set by story/platform)
-    const versionInfo = (this.world as any).versionInfo;
-    const engineVersion = versionInfo?.engineVersion;
-    const clientVersion = versionInfo?.clientVersion || (this.world as any).clientVersion;
+    // Get version info from StoryInfoTrait (or fall back to legacy (world as any) for backward compat)
+    const storyInfoEntities = this.world.findByTrait('storyInfo' as any);
+    const storyInfoTrait = storyInfoEntities[0]?.get<any>('storyInfo');
+    const engineVersion = storyInfoTrait?.engineVersion || (this.world as any).versionInfo?.engineVersion;
+    const clientVersion = storyInfoTrait?.clientVersion || (this.world as any).versionInfo?.clientVersion || (this.world as any).clientVersion;
 
     // Emit game started event
     const startedEvent = createGameStartedEvent({

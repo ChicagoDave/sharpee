@@ -1,0 +1,17 @@
+title: Help and About Commands
+story: dungeo
+description: Tests HELP, ABOUT, INFO, and CREDITS commands (ISSUE-042)
+
+---
+
+> help
+HOW TO PLAY INTERACTIVE FICTION
+
+> about
+DUNGEON
+
+> info
+DUNGEON
+
+> credits
+DUNGEON

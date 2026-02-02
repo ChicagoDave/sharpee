@@ -46,6 +46,9 @@ export * from './enterable';
 // NPC traits
 export * from './npc';
 
+// System traits
+export * from './story-info';
+
 // Register function
 export * from './register-all';
 

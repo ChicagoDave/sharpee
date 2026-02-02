@@ -22,6 +22,7 @@ import {
   ReadableTrait,
   SceneryTrait,
   CombatantTrait,
+  StoryInfoTrait,
   EntityType,
   Direction,
   TraitType,
@@ -173,9 +174,17 @@ export class DungeoStory implements Story {
   initializeWorld(world: WorldModel): void {
     this.world = world;
 
-    // Set version info for the VERSION command (ADR-xxx)
-    (world as any).versionInfo = VERSION_INFO;
-    (world as any).storyConfig = config;
+    // Create system entity with story metadata (replaces (world as any) casts)
+    const storyInfoEntity = world.createEntity('story-info', EntityType.OBJECT);
+    storyInfoEntity.add(new StoryInfoTrait({
+      title: config.title,
+      author: Array.isArray(config.author) ? config.author.join(', ') : config.author,
+      version: config.version,
+      description: config.description,
+      buildDate: VERSION_INFO.buildDate,
+      engineVersion: VERSION_INFO.engineVersion,
+      portedBy: config.custom?.portedBy as string | undefined,
+    }));
 
     // Register story-specific meta-commands (don't increment turn or run daemons)
     MetaCommandRegistry.register(DIAGNOSE_ACTION_ID);

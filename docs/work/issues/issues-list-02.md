@@ -20,8 +20,10 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-038 | React client needs modern styling and fonts | Low | client-react | 2026-01-23 | - | 2026-01-24 |
 | ISSUE-039 | Text ordering: game.message duplicating stdlib messages | Critical | Platform | 2026-01-24 | - | 2026-01-24 |
 | ISSUE-040 | Web Client version shows "N/A" | Low | client-react | 2026-01-24 | - | - |
-| ISSUE-041 | Version format should separate build timestamp from version | Low | Build | 2026-01-24 | - | - |
-| ISSUE-042 | HELP and ABOUT commands not working in React client | Medium | client-react | 2026-01-24 | - | - |
+| ISSUE-041 | Version format should separate build timestamp from version | Low | Build | 2026-01-24 | - | 2026-02-01 |
+| ISSUE-042a | ABOUT command not working in browser or Zifmia client | Medium | client-react/zifmia | 2026-01-24 | - | - |
+| ISSUE-042b | HELP command evaporates in Zifmia (no response) | Medium | client-zifmia | 2026-02-01 | - | - |
+| ISSUE-047 | Zifmia client needs console output panel without full Dev Tools | Medium | client-zifmia | 2026-02-01 | - | - |
 | ISSUE-043 | Events panel not using full width of right panel | Low | client-react | 2026-01-24 | - | - |
 | ISSUE-044 | Notes panel not using full width of right panel | Low | client-react | 2026-01-24 | - | - |
 | ISSUE-045 | README sample code references nonexistent PortableTrait | Low | Docs | 2026-02-01 | - | - |
@@ -346,25 +348,58 @@ The current version format embeds date-time suffix directly in the version numbe
 - Story version (dungeo)
 - Client version (client-react)
 
+**Status**: Fixed 2026-02-01 — Versions now use clean `X.Y.Z-beta` format without timestamp suffix.
+
 ---
 
-### ISSUE-042: HELP and ABOUT commands not working in React client
+### ISSUE-042a: ABOUT command not working in browser or Zifmia client
 
 **Reported**: 2026-01-24
 **Severity**: Medium
-**Component**: client-react
+**Component**: client-react / client-zifmia
 
 **Description**:
-The HELP and ABOUT commands do not produce output in the React client.
+The ABOUT command does not work in either client. In browser, no output appears. In Zifmia, responds with "I don't understand that." HELP works correctly in browser.
 
 **Reproduction**:
-1. Load React client
-2. Type `help` or `about`
+1. Load browser or Zifmia client
+2. Type `about`
+3. Browser: no output. Zifmia: "I don't understand that."
+
+**Expected**: About/credits information displayed.
+
+---
+
+### ISSUE-042b: HELP command evaporates in Zifmia (no response)
+
+**Reported**: 2026-02-01
+**Severity**: Medium
+**Component**: client-zifmia
+
+**Description**:
+In the Zifmia client, typing `help` produces no response at all — the command silently evaporates. HELP works correctly in the browser client.
+
+**Reproduction**:
+1. Load Zifmia client
+2. Type `help`
 3. No output appears
 
-**Expected**: Help text and about/credits information displayed.
+**Expected**: Help text displayed.
 
-**Notes**: These may be client-handled commands that need implementation in the React client, or they may be parser commands that aren't being processed correctly.
+**Notes**: Different failure mode from ABOUT (which returns "I don't understand that."). HELP may be intercepted somewhere and swallowed without producing output.
+
+---
+
+### ISSUE-047: Zifmia client needs console output panel without full Dev Tools
+
+**Reported**: 2026-02-01
+**Severity**: Medium
+**Component**: client-zifmia
+
+**Description**:
+When debugging issues in the Zifmia client, there is no way to see console output (console.log, console.warn, errors) without enabling the full browser Dev Tools. A lightweight console/log panel built into the Zifmia UI would make debugging much easier.
+
+**Expected**: A toggleable panel in the Zifmia client that displays console output, errors, and warnings without requiring Dev Tools.
 
 ---
 

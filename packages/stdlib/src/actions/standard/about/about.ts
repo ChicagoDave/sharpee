@@ -44,9 +44,11 @@ export const aboutAction: Action & { metadata: ActionMetadata } = {
   },
 
   report(context: ActionContext): ISemanticEvent[] {
-    // Get story config for about info
+    // Get story info from StoryInfoTrait (or fall back to legacy (world as any))
     const world = context.world;
-    const storyConfig = (world as any).storyConfig || {};
+    const storyInfoEntities = world.findByTrait('storyInfo' as any);
+    const trait = storyInfoEntities[0]?.get<any>('storyInfo');
+    const storyConfig = trait || (world as any).storyConfig || {};
 
     const eventData: AboutDisplayedEventData = {
       messageId: 'if.action.about.success',
@@ -54,7 +56,11 @@ export const aboutAction: Action & { metadata: ActionMetadata } = {
         title: storyConfig.title || 'Unknown',
         author: Array.isArray(storyConfig.author) ? storyConfig.author.join(', ') : (storyConfig.author || 'Unknown'),
         version: storyConfig.version || '0.0.0',
-        description: storyConfig.description || ''
+        description: storyConfig.description || '',
+        engineVersion: storyConfig.engineVersion || '',
+        buildDate: storyConfig.buildDate || '',
+        clientVersion: storyConfig.clientVersion || '',
+        portedBy: storyConfig.portedBy || ''
       }
     };
 

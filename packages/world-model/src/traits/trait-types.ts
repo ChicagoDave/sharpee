@@ -56,7 +56,10 @@ export const TraitType = {
 
   // Transport traits
   VEHICLE: 'vehicle',
-  ENTERABLE: 'enterable'
+  ENTERABLE: 'enterable',
+
+  // System traits
+  STORY_INFO: 'storyInfo'
 } as const;
 
 /**
@@ -128,7 +131,10 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
 
   // Transport traits
   [TraitType.VEHICLE]: TraitCategory.INTERACTIVE,
-  [TraitType.ENTERABLE]: TraitCategory.INTERACTIVE
+  [TraitType.ENTERABLE]: TraitCategory.INTERACTIVE,
+
+  // System traits
+  [TraitType.STORY_INFO]: TraitCategory.STANDARD
 };
 
 /**

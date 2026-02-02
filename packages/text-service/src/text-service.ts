@@ -30,6 +30,8 @@ import { handleActionSuccess, handleActionFailure } from './handlers/action.js';
 import { handleRevealed } from './handlers/revealed.js';
 import { handleGameMessage, handleGenericEvent } from './handlers/generic.js';
 import { handleGameStarted } from './handlers/game.js';
+import { handleHelpDisplayed } from './handlers/help.js';
+import { handleAboutDisplayed } from './handlers/about.js';
 
 /**
  * Text service interface (ADR-096)
@@ -138,6 +140,12 @@ export class TextService implements ITextService {
 
       case 'if.event.revealed':
         return handleRevealed(event, context);
+
+      case 'if.event.help_displayed':
+        return handleHelpDisplayed(event, context);
+
+      case 'if.event.about_displayed':
+        return handleAboutDisplayed(event, context);
 
       case 'if.event.implicit_take':
         return this.handleImplicitTake(event, context);
