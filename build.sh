@@ -629,7 +629,7 @@ build_runner() {
     # Create a platform entry that re-exports all packages from dist-esm
     # Uses direct paths to dist-esm/ to bypass pnpm's .pnpm store (which
     # may not contain dist-esm/ if it was created after pnpm install).
-    local PLATFORM_ENTRY=$(mktemp --suffix=.js)
+    local PLATFORM_ENTRY=$(mktemp /tmp/sharpee-platform-XXXXXX.js)
     cat > "$PLATFORM_ENTRY" << ENTRY
 export * from "$REPO_ROOT/packages/core/dist-esm/index.js";
 export * from "$REPO_ROOT/packages/world-model/dist-esm/index.js";

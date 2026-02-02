@@ -40,5 +40,8 @@
     "browser",
     "sharpee"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
 }

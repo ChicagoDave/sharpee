@@ -1,0 +1,25 @@
+{
+  "projects": [
+    "packages/*/tsconfig.json"
+  ],
+  "targets": {
+    "cjs": {
+      "module": "commonjs",
+      "outDir": "dist",
+      "imports": "relative",
+      "declarations": true
+    },
+    "esm": {
+      "module": "esnext",
+      "outDir": "dist-esm",
+      "imports": "relative",
+      "declarations": true
+    }
+  },
+  "defaults": {
+    "transpiler": "tsc",
+    "typeCheck": true,
+    "sourceMap": true,
+    "clean": false
+  }
+}

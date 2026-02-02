@@ -1,0 +1,55 @@
+{
+  "projects": [
+    "packages/zifmia/tsconfig.json",
+    "packages/world-model/tsconfig.json",
+    "packages/transcript-tester/tsconfig.json",
+    "packages/text-service/tsconfig.json",
+    "packages/text-blocks/tsconfig.json",
+    "packages/stdlib/tsconfig.json",
+    "packages/sharpee/tsconfig.json",
+    "packages/plugins/tsconfig.json",
+    "packages/plugin-state-machine/tsconfig.json",
+    "packages/plugin-scheduler/tsconfig.json",
+    "packages/plugin-npc/tsconfig.json",
+    "packages/platform-browser/tsconfig.json",
+    "packages/parser-en-us/tsconfig.json",
+    "packages/map-editor/tsconfig.json",
+    "packages/lang-en-us/tsconfig.json",
+    "packages/if-services/tsconfig.json",
+    "packages/if-domain/tsconfig.json",
+    "packages/event-processor/tsconfig.json",
+    "packages/engine/tsconfig.json",
+    "packages/core/tsconfig.json",
+    "packages/platforms/test/tsconfig.json",
+    "packages/platforms/cli-en-us/tsconfig.json",
+    "packages/platforms/browser-en-us/tsconfig.json",
+    "packages/extensions/testing/tsconfig.json",
+    "packages/extensions/conversation/tsconfig.json",
+    "stories/secretletter2025/tsconfig.json",
+    "stories/reflections/tsconfig.json",
+    "stories/dungeo/tsconfig.json",
+    "stories/cloak-of-darkness/tsconfig.json",
+    "stories/armoured/tsconfig.json"
+  ],
+  "targets": {
+    "local": {
+      "module": "commonjs",
+      "outDir": "dist",
+      "imports": "preserve",
+      "declarations": true
+    },
+    "npm": {
+      "module": "commonjs",
+      "outDir": "dist-npm",
+      "imports": "relative",
+      "declarations": true,
+      "condition": "publish"
+    }
+  },
+  "defaults": {
+    "transpiler": "tsc",
+    "typeCheck": true,
+    "sourceMap": true,
+    "clean": false
+  }
+}

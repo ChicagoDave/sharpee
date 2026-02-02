@@ -23,3 +23,13 @@ feat: add connectRooms and createDoor convenience m
 [21:54:57] EDIT: packages/sharpee/package.json
 [22:58:38] WRITE: packages/zifmia/src/version.ts
 [22:58:39] WRITE: stories/dungeo/src/version.ts
+[23:06:37] WRITE: build-macos.sh
+[23:06:48] EDIT: build.sh
+[23:35:03] WRITE: scripts/mac-release.sh
+[23:39:22] EDIT: scripts/mac-release.sh
+[23:39:28] EDIT: scripts/mac-release.sh
+[23:46:38] EDIT: scripts/mac-release.sh
+[23:47:29] EDIT: scripts/mac-release.sh
+[23:47:40] EDIT: build-macos.sh
+[23:48:51] EDIT: scripts/mac-release.sh
+[23:51:56] EDIT: scripts/mac-release.sh
