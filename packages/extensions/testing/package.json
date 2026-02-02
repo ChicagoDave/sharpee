@@ -1,9 +1,9 @@
 {
   "name": "@sharpee/ext-testing",
-  "version": "0.9.62-beta",
+  "version": "0.9.70-beta",
   "description": "Debug and testing tools extension for Sharpee IF engine",
-  "main": "dist-npm/index.js",
-  "types": "dist-npm/index.d.ts",
+  "main": "./dist-npm/index.js",
+  "types": "./dist-npm/index.d.ts",
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
@@ -25,7 +25,6 @@
   "exports": {
     ".": {
       "types": "./dist-npm/index.d.ts",
-      "import": "./dist-npm/index.js",
       "require": "./dist-npm/index.js"
     }
   },

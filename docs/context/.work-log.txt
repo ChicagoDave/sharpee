@@ -42,3 +42,12 @@ feat: StoryInfoTrait, HELP/ABOUT text service handl
 [01:37:04] EDIT: CLAUDE.md
 [01:37:14] EDIT: README.md
 [02:08:40] WRITE: docs/context/session-20260202-0207-main.md
+[02:09:53] GIT: git commit -m "$(cat <<'EOF'
+fix: build system fixes and dist/ reorganization
+
+-
+[02:10:01] GIT: git push
+[03:16:38] EDIT: packages/world-model/src/world/AuthorModel.ts
+[03:41:30] WRITE: docs/context/session-20260202-0341-main.md
+[04:01:50] EDIT: ts-forge.config.json
+[04:03:07] EDIT: ts-forge.config.json

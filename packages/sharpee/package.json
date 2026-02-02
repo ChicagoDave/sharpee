@@ -1,17 +1,16 @@
 {
   "name": "@sharpee/sharpee",
-  "version": "0.9.63-beta",
+  "version": "0.9.70-beta",
   "description": "Sharpee - Interactive Fiction Engine for TypeScript",
-  "main": "dist-npm/index.js",
+  "main": "./dist-npm/index.js",
   "module": "dist-npm/index.js",
-  "types": "dist-npm/index.d.ts",
+  "types": "./dist-npm/index.d.ts",
   "bin": {
     "sharpee": "./dist-npm/cli/index.js"
   },
   "exports": {
     ".": {
       "types": "./dist-npm/index.d.ts",
-      "import": "./dist-npm/index.js",
       "require": "./dist-npm/index.js"
     }
   },
