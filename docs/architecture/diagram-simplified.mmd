@@ -1,0 +1,36 @@
+%%{init: {'flowchart': {'rankSpacing': 50, 'nodeSpacing': 30}}}%%
+flowchart TB
+    subgraph L7["CLIENT"]
+        client["Browser / CLI / Zifmia"]
+    end
+
+    subgraph L6["ENGINE"]
+        engine["Turn Cycle & Command Execution"]
+    end
+
+    subgraph L5["STANDARD LIBRARY"]
+        stdlib["Actions, Traits, Behaviors"]
+    end
+
+    subgraph L4["PARSER"]
+        parser["Grammar & Command Parsing"]
+    end
+
+    subgraph L3["LANGUAGE"]
+        lang["Messages & Text Output"]
+    end
+
+    subgraph L2["WORLD MODEL"]
+        world["Entities, Traits, Relationships"]
+    end
+
+    subgraph L1["CORE"]
+        core["Events, Services, Utilities"]
+    end
+
+    L7 --> L6
+    L6 --> L5
+    L5 --> L4
+    L4 --> L3
+    L3 --> L2
+    L2 --> L1
