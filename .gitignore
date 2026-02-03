@@ -114,5 +114,8 @@ test-results/
 # Generated source maps
 website/public/games/dungeo/dungeo.js.map
 
+# Work log (local only)
+docs/context/.work-log.txt
+
 # Reference source code (not ours to distribute)
 docs/dungeon-ref/

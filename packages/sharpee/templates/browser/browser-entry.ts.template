@@ -10,7 +10,7 @@ import { WorldModel, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { LanguageProvider } from '@sharpee/lang-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
-import { story, config } from './index';
+import { story, config } from './index.js';
 
 // DOM elements
 let statusLocation: HTMLElement | null;
