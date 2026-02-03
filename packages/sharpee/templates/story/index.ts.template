@@ -10,7 +10,7 @@ import {
   WorldModel,
   IFEntity,
   Parser,
-  LanguageProvider,
+  EnglishLanguageProvider,
 } from '@sharpee/sharpee';
 
 export const config: StoryConfig = {
@@ -24,25 +24,31 @@ export const config: StoryConfig = {
 export const story: Story = {
   config,
 
-  initializeWorld(world: WorldModel): IFEntity {
+  createPlayer(world: WorldModel): IFEntity {
+    const player = world.createEntity('player', 'actor');
+    player.attributes.name = 'you';
+    player.attributes.description = 'An adventurer.';
+    return player;
+  },
+
+  initializeWorld(world: WorldModel): void {
     // Get the player entity
-    const player = world.getPlayer();
+    const player = world.getPlayer()!;
 
     // === CREATE YOUR ROOMS ===
 
     // Starting room
-    const startRoom = world.createRoom('start-room', {
-      name: 'Starting Room',
-      description: 'You are in a small, dimly lit room. This is where your adventure begins.',
-    });
+    const startRoom = world.createEntity('start-room', 'room');
+    startRoom.attributes.name = 'Starting Room';
+    startRoom.attributes.description =
+      'You are in a small, dimly lit room. This is where your adventure begins.';
 
     // === CREATE YOUR OBJECTS ===
 
     // Example: a simple object
-    // const key = world.createEntity('key', 'object', {
-    //   name: 'brass key',
-    //   description: 'A small brass key.',
-    // });
+    // const key = world.createEntity('key', 'object');
+    // key.attributes.name = 'brass key';
+    // key.attributes.description = 'A small brass key.';
     // world.moveEntity(key.id, startRoom.id);
 
     // === CONNECT YOUR ROOMS ===
@@ -52,19 +58,16 @@ export const story: Story = {
 
     // Place player in starting room
     world.moveEntity(player.id, startRoom.id);
-
-    // Return the starting room
-    return startRoom;
   },
 
-  // Optional: extend the parser with custom vocabulary
+  // Optional: extend the parser with story-specific vocabulary
   extendParser(parser: Parser): void {
     // const grammar = parser.getStoryGrammar();
     // grammar.define('custom command').mapsTo('story.action.custom').build();
   },
 
-  // Optional: extend the language with custom messages
-  extendLanguage(language: LanguageProvider): void {
+  // Optional: extend the language with story-specific messages
+  extendLanguage(language: EnglishLanguageProvider): void {
     // language.addMessages({
     //   'story.message.custom': 'A custom message.',
     // });

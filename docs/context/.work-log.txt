@@ -91,3 +91,6 @@ feat: add macOS build support with release scripts
 [16:17:52] EDIT: docs/context/.work-log.txt
 [16:17:52] EDIT: stories/dungeo/src/version.ts
 [16:18:08] EDIT: ts-forge.config.json
+[20:42:41] WRITE: packages/sharpee/templates/story/index.ts.template
+[20:48:06] EDIT: docs/context/.work-log.txt
+[20:48:12] EDIT: ts-forge.config.json

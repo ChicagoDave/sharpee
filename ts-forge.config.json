@@ -1,6 +1,5 @@
 {
   "projects": [
-    "packages/zifmia/tsconfig.json",
     "packages/world-model/tsconfig.json",
     "packages/transcript-tester/tsconfig.json",
     "packages/text-service/tsconfig.json",
