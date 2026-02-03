@@ -1,6 +1,6 @@
 {
   "name": "@sharpee-stories/secretletter2025",
-  "version": "1.0.0-alpha.1",
+  "version": "0.9.79-beta",
   "private": true,
   "main": "dist/index.js",
   "scripts": {

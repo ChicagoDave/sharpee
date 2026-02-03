@@ -7,8 +7,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-// Template directory relative to this file (will be in dist/cli after build)
-const TEMPLATES_DIR = path.join(__dirname, '..', '..', 'templates', 'browser');
+// In source: src/cli/ → ../../templates. In npm publish: cli/ → ../templates.
+const TEMPLATES_DIR = fs.existsSync(path.join(__dirname, '..', 'templates', 'browser'))
+  ? path.join(__dirname, '..', 'templates', 'browser')
+  : path.join(__dirname, '..', '..', 'templates', 'browser');
 
 interface ProjectInfo {
   storyId: string;

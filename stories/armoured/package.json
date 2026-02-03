@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/story-armoured",
-  "version": "0.1.0",
+  "version": "0.9.79-beta",
   "description": "Sample story demonstrating trait composition for equipment systems",
   "type": "module",
   "main": "dist/index.js",

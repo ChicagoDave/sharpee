@@ -108,6 +108,8 @@ export async function runBuildBrowserCommand(args: string[]): Promise<void> {
     `--global-name=SharpeeGame`,
     `--outfile=${path.join(outDir, info.storyId + '.js')}`,
     '--define:process.env.NODE_ENV=\\"production\\"',
+    '--define:process.env.PARSER_DEBUG=\\"false\\"',
+    '--define:process.env.DEBUG_PRONOUNS=\\"\\"',
   ];
 
   if (minify) {

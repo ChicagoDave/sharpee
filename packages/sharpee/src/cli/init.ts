@@ -8,8 +8,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
 
-// Template directory relative to this file (will be in dist/cli after build)
-const TEMPLATES_DIR = path.join(__dirname, '..', '..', 'templates', 'story');
+// Template directory relative to this file.
+// In source: src/cli/ → ../../templates. In npm publish: cli/ → ../templates.
+const TEMPLATES_DIR = fs.existsSync(path.join(__dirname, '..', 'templates', 'story'))
+  ? path.join(__dirname, '..', 'templates', 'story')
+  : path.join(__dirname, '..', '..', 'templates', 'story');
 
 interface StoryOptions {
   storyId: string;

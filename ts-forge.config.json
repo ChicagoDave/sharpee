@@ -1,5 +1,6 @@
 {
   "projects": [
+    "packages/zifmia/tsconfig.json",
     "packages/world-model/tsconfig.json",
     "packages/transcript-tester/tsconfig.json",
     "packages/text-service/tsconfig.json",
@@ -12,23 +13,14 @@
     "packages/plugin-npc/tsconfig.json",
     "packages/platform-browser/tsconfig.json",
     "packages/parser-en-us/tsconfig.json",
-    "packages/map-editor/tsconfig.json",
     "packages/lang-en-us/tsconfig.json",
     "packages/if-services/tsconfig.json",
     "packages/if-domain/tsconfig.json",
     "packages/event-processor/tsconfig.json",
     "packages/engine/tsconfig.json",
     "packages/core/tsconfig.json",
-    "packages/platforms/test/tsconfig.json",
-    "packages/platforms/cli-en-us/tsconfig.json",
-    "packages/platforms/browser-en-us/tsconfig.json",
     "packages/extensions/testing/tsconfig.json",
-    "packages/extensions/conversation/tsconfig.json",
-    "stories/secretletter2025/tsconfig.json",
-    "stories/reflections/tsconfig.json",
-    "stories/dungeo/tsconfig.json",
-    "stories/cloak-of-darkness/tsconfig.json",
-    "stories/armoured/tsconfig.json"
+    "stories/dungeo/tsconfig.json"
   ],
   "targets": {
     "local": {

@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/story-reflections",
-  "version": "1.0.0-alpha.1",
+  "version": "0.9.79-beta",
   "description": "Reflections - A three-character tragedy involving mirror magic and family secrets",
   "main": "dist/index.js",
   "scripts": {

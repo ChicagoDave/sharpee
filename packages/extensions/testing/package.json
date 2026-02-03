@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/ext-testing",
-  "version": "0.9.70-beta",
+  "version": "0.9.84",
   "description": "Debug and testing tools extension for Sharpee IF engine",
   "main": "./dist-npm/index.js",
   "types": "./dist-npm/index.d.ts",
