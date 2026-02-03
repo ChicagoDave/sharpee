@@ -688,7 +688,22 @@ ENTRY
         --sourcemap --minify \
         --define:process.env.PARSER_DEBUG=undefined \
         --define:process.env.DEBUG_PRONOUNS=undefined \
-        --define:process.env.NODE_ENV=\\\"production\\\""
+        --define:process.env.NODE_ENV=\\\"production\\\" \
+        --alias:@sharpee/core=$REPO_ROOT/packages/core/dist-esm/index.js \
+        --alias:@sharpee/if-domain=$REPO_ROOT/packages/if-domain/dist-esm/index.js \
+        --alias:@sharpee/world-model=$REPO_ROOT/packages/world-model/dist-esm/index.js \
+        --alias:@sharpee/stdlib=$REPO_ROOT/packages/stdlib/dist-esm/index.js \
+        --alias:@sharpee/engine=$REPO_ROOT/packages/engine/dist-esm/index.js \
+        --alias:@sharpee/parser-en-us=$REPO_ROOT/packages/parser-en-us/dist-esm/index.js \
+        --alias:@sharpee/lang-en-us=$REPO_ROOT/packages/lang-en-us/dist-esm/index.js \
+        --alias:@sharpee/event-processor=$REPO_ROOT/packages/event-processor/dist-esm/index.js \
+        --alias:@sharpee/text-blocks=$REPO_ROOT/packages/text-blocks/dist-esm/index.js \
+        --alias:@sharpee/text-service=$REPO_ROOT/packages/text-service/dist-esm/index.js \
+        --alias:@sharpee/if-services=$REPO_ROOT/packages/if-services/dist-esm/index.js \
+        --alias:@sharpee/plugins=$REPO_ROOT/packages/plugins/dist-esm/index.js \
+        --alias:@sharpee/plugin-npc=$REPO_ROOT/packages/plugin-npc/dist-esm/index.js \
+        --alias:@sharpee/plugin-scheduler=$REPO_ROOT/packages/plugin-scheduler/dist-esm/index.js \
+        --alias:@sharpee/plugin-state-machine=$REPO_ROOT/packages/plugin-state-machine/dist-esm/index.js"
 
     rm -f "$PLATFORM_ENTRY"
 
@@ -703,7 +718,22 @@ ENTRY
         --loader:.tsx=tsx --jsx=automatic \
         --define:process.env.PARSER_DEBUG=undefined \
         --define:process.env.DEBUG_PRONOUNS=undefined \
-        --define:process.env.NODE_ENV=\\\"production\\\""
+        --define:process.env.NODE_ENV=\\\"production\\\" \
+        --alias:@sharpee/core=$REPO_ROOT/packages/core/dist-esm/index.js \
+        --alias:@sharpee/if-domain=$REPO_ROOT/packages/if-domain/dist-esm/index.js \
+        --alias:@sharpee/world-model=$REPO_ROOT/packages/world-model/dist-esm/index.js \
+        --alias:@sharpee/stdlib=$REPO_ROOT/packages/stdlib/dist-esm/index.js \
+        --alias:@sharpee/engine=$REPO_ROOT/packages/engine/dist-esm/index.js \
+        --alias:@sharpee/parser-en-us=$REPO_ROOT/packages/parser-en-us/dist-esm/index.js \
+        --alias:@sharpee/lang-en-us=$REPO_ROOT/packages/lang-en-us/dist-esm/index.js \
+        --alias:@sharpee/event-processor=$REPO_ROOT/packages/event-processor/dist-esm/index.js \
+        --alias:@sharpee/text-blocks=$REPO_ROOT/packages/text-blocks/dist-esm/index.js \
+        --alias:@sharpee/text-service=$REPO_ROOT/packages/text-service/dist-esm/index.js \
+        --alias:@sharpee/if-services=$REPO_ROOT/packages/if-services/dist-esm/index.js \
+        --alias:@sharpee/plugins=$REPO_ROOT/packages/plugins/dist-esm/index.js \
+        --alias:@sharpee/plugin-npc=$REPO_ROOT/packages/plugin-npc/dist-esm/index.js \
+        --alias:@sharpee/plugin-scheduler=$REPO_ROOT/packages/plugin-scheduler/dist-esm/index.js \
+        --alias:@sharpee/plugin-state-machine=$REPO_ROOT/packages/plugin-state-machine/dist-esm/index.js"
 
     # 3. Generate index.html with importmap
     #    The importmap maps each @sharpee/* specifier to platform.js.
