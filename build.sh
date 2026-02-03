@@ -318,13 +318,6 @@ EOF
 build_platform() {
     log_step "Building Platform"
 
-    local SKIPPING=true
-    if [ -z "$SKIP_TO" ]; then
-        SKIPPING=false
-    else
-        echo "(resuming from: $SKIP_TO)"
-    fi
-
     # Package build order (based on dependencies)
     local PACKAGES=(
         "@sharpee/core:core"
@@ -341,11 +334,29 @@ build_platform() {
         "@sharpee/plugin-npc:plugin-npc"
         "@sharpee/plugin-scheduler:plugin-scheduler"
         "@sharpee/plugin-state-machine:plugin-state-machine"
-        "@sharpee/ext-testing:ext-testing"
+        "@sharpee/ext-testing:extensions/testing"
         "@sharpee/engine:engine"
         "@sharpee/sharpee:sharpee"
         "@sharpee/transcript-tester:transcript-tester"
     )
+
+    # Pre-sync: ensure dist-npm/ exists for packages with dist/
+    # This allows --skip to work (skipped packages still need resolvable types)
+    for entry in "${PACKAGES[@]}"; do
+        local name="${entry##*:}"
+        local pkg_dir="packages/$name"
+        if [ -d "$pkg_dir/dist" ] && [ ! -d "$pkg_dir/dist-npm" ]; then
+            mkdir -p "$pkg_dir/dist-npm"
+            rsync -a "$pkg_dir/dist/" "$pkg_dir/dist-npm/"
+        fi
+    done
+
+    local SKIPPING=true
+    if [ -z "$SKIP_TO" ]; then
+        SKIPPING=false
+    else
+        echo "(resuming from: $SKIP_TO)"
+    fi
 
     for entry in "${PACKAGES[@]}"; do
         local pkg="${entry%%:*}"
@@ -362,9 +373,11 @@ build_platform() {
 
         run_build "$name" "pnpm --filter '$pkg' build"
 
-        # TEMP FIX: Sync dist/ → dist-npm/ so downstream tsc resolves fresh types
+        # Sync dist/ → dist-npm/ so downstream tsc resolves fresh types
+        # (package.json main/types point to dist-npm/ for npm publish)
         local pkg_dir="packages/$name"
-        if [ -d "$pkg_dir/dist" ] && [ -d "$pkg_dir/dist-npm" ]; then
+        if [ -d "$pkg_dir/dist" ]; then
+            mkdir -p "$pkg_dir/dist-npm"
             rsync -a --delete "$pkg_dir/dist/" "$pkg_dir/dist-npm/"
         fi
     done
