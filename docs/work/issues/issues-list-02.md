@@ -12,21 +12,22 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-030 | GDT AH (teleport) command produces no output | Critical | GDT/Story | 2026-01-22 | - | 2026-02-01 |
 | ISSUE-031 | UNDO command not implemented | Medium | Platform | 2026-01-22 | - | - |
 | ISSUE-032 | Version transcript needs update for DUNGEON name | Low | Test | 2026-01-22 | - | - |
-| ISSUE-033 | AGAIN command fails after second NORTH | Low | Platform | 2026-01-22 | - | - |
-| ISSUE-034 | Inventory message test expects different format | Low | Test | 2026-01-22 | - | - |
-| ISSUE-035 | React client save not implemented/working | Medium | client-react | 2026-01-23 | - | - |
-| ISSUE-036 | Auto-map boxes rendered on top of each other | Medium | client-react | 2026-01-23 | - | - |
+| ISSUE-033 | AGAIN command fails after second NORTH | Low | Platform | 2026-01-22 | - | 2026-02-04 |
+| ISSUE-034 | Inventory message test expects different format | Low | Test | 2026-01-22 | - | 2026-02-04 |
+| ISSUE-035 | React client save not implemented/working | Medium | client-react | 2026-01-23 | - | N/A |
+| ISSUE-036 | Auto-map boxes rendered on top of each other | Medium | client-react | 2026-01-23 | - | N/A |
 | ISSUE-037 | Troll death text not displaying (story messages) | Medium | client-react | 2026-01-23 | - | 2026-01-24 |
 | ISSUE-038 | React client needs modern styling and fonts | Low | client-react | 2026-01-23 | - | 2026-01-24 |
 | ISSUE-039 | Text ordering: game.message duplicating stdlib messages | Critical | Platform | 2026-01-24 | - | 2026-01-24 |
-| ISSUE-040 | Web Client version shows "N/A" | Low | client-react | 2026-01-24 | - | - |
+| ISSUE-040 | Web Client version shows "N/A" | Low | client-react | 2026-01-24 | - | N/A |
 | ISSUE-041 | Version format should separate build timestamp from version | Low | Build | 2026-01-24 | - | 2026-02-01 |
-| ISSUE-042a | ABOUT command not working in browser or Zifmia client | Medium | client-react/zifmia | 2026-01-24 | - | - |
-| ISSUE-042b | HELP command evaporates in Zifmia (no response) | Medium | client-zifmia | 2026-02-01 | - | - |
+| ISSUE-042a | ABOUT command not working in browser or Zifmia client | Medium | client-react/zifmia | 2026-01-24 | - | 2026-02-04 |
+| ISSUE-042b | HELP command evaporates in Zifmia (no response) | Medium | client-zifmia | 2026-02-01 | - | 2026-02-04 |
 | ISSUE-047 | Zifmia client needs console output panel without full Dev Tools | Medium | client-zifmia | 2026-02-01 | - | - |
-| ISSUE-043 | Events panel not using full width of right panel | Low | client-react | 2026-01-24 | - | - |
-| ISSUE-044 | Notes panel not using full width of right panel | Low | client-react | 2026-01-24 | - | - |
-| ISSUE-045 | README sample code references nonexistent PortableTrait | Low | Docs | 2026-02-01 | - | - |
+| ISSUE-048 | Zifmia needs graceful handling for breaking platform changes | Medium | client-zifmia | 2026-02-04 | - | - |
+| ISSUE-043 | Events panel not using full width of right panel | Low | client-react | 2026-01-24 | - | N/A |
+| ISSUE-044 | Notes panel not using full width of right panel | Low | client-react | 2026-01-24 | - | N/A |
+| ISSUE-045 | README sample code references nonexistent PortableTrait | Low | Docs | 2026-02-01 | - | 2026-02-04 |
 | ISSUE-046 | CLI bundle uses stale dist-npm/ instead of dist/ | Critical | Build | 2026-02-01 | - | 2026-02-01 |
 
 ---
@@ -140,6 +141,8 @@ In again.transcript, after going NORTH twice, the `g` (again) command goes to "F
 
 **Notes**: May be correct behavior if NORTH from Forest leads to Forest Path, not Clearing. Needs verification against map.
 
+**Status**: Fixed 2026-02-04 — Verified as correct behavior per map; test updated.
+
 ---
 
 ### ISSUE-034: Inventory message test expects different format
@@ -152,6 +155,8 @@ In again.transcript, after going NORTH twice, the `g` (again) command goes to "F
 The inventory-message.transcript expects specific inventory format that doesn't match current output.
 
 **Resolution**: Update test or update inventory message format.
+
+**Status**: Fixed 2026-02-04 — Test now passes.
 
 ---
 
@@ -172,6 +177,8 @@ The save game functionality in the React client (`@sharpee/client-react`) is eit
 **Expected**: Game state saved to browser storage (localStorage or IndexedDB).
 
 **Notes**: Need to verify if save command is wired up to storage, or if it's a UI/backend disconnect.
+
+**Status**: N/A 2026-02-04 — Standalone React client removed; Zifmia client handles SAVE/RESTORE correctly.
 
 ---
 
@@ -195,7 +202,7 @@ The auto-mapping feature in the React client renders all room boxes stacked on t
 
 **Notes**: Likely a CSS/positioning issue in the map component, or room coordinates not being calculated/applied.
 
-**Status**: Open - Fallback positioning added but root cause not fixed. Map boxes still overlap.
+**Status**: N/A 2026-02-04 — No longer applicable.
 
 ---
 
@@ -328,6 +335,8 @@ In the React client, the game banner displays "Web Client version: N/A" instead 
 
 **Notes**: The client version needs to be injected at build time or read from package.json.
 
+**Status**: N/A 2026-02-04 — Standalone React client removed.
+
 ---
 
 ### ISSUE-041: Version format should separate build timestamp from version
@@ -368,6 +377,8 @@ The ABOUT command does not work in either client. In browser, no output appears.
 
 **Expected**: About/credits information displayed.
 
+**Status**: Fixed 2026-02-04.
+
 ---
 
 ### ISSUE-042b: HELP command evaporates in Zifmia (no response)
@@ -388,6 +399,8 @@ In the Zifmia client, typing `help` produces no response at all — the command 
 
 **Notes**: Different failure mode from ABOUT (which returns "I don't understand that."). HELP may be intercepted somewhere and swallowed without producing output.
 
+**Status**: Fixed 2026-02-04.
+
 ---
 
 ### ISSUE-047: Zifmia client needs console output panel without full Dev Tools
@@ -400,6 +413,25 @@ In the Zifmia client, typing `help` produces no response at all — the command 
 When debugging issues in the Zifmia client, there is no way to see console output (console.log, console.warn, errors) without enabling the full browser Dev Tools. A lightweight console/log panel built into the Zifmia UI would make debugging much easier.
 
 **Expected**: A toggleable panel in the Zifmia client that displays console output, errors, and warnings without requiring Dev Tools.
+
+---
+
+### ISSUE-048: Zifmia needs graceful handling for breaking platform changes
+
+**Reported**: 2026-02-04
+**Severity**: Medium
+**Component**: client-zifmia
+
+**Description**:
+When the platform bundle introduces breaking changes (renamed/removed exports), the Zifmia client crashes with unhelpful errors like:
+
+```
+The requested module '@sharpee/world-model' does not provide an export named 'StoryInfoTrait'
+```
+
+**Expected**: Zifmia should detect version mismatches or missing exports and display a user-friendly message indicating the platform bundle needs to be rebuilt, rather than crashing with a raw module error.
+
+**Notes**: This is a developer experience issue. When iterating on platform code, stale Zifmia bundles break silently. Consider version checking or try/catch wrappers around dynamic imports.
 
 ---
 
@@ -421,6 +453,8 @@ The Events (Commentary) panel only uses approximately half the width of the righ
 
 **Notes**: Likely a CSS flex/grid issue in the tab panel or commentary panel styles.
 
+**Status**: N/A 2026-02-04 — Standalone React client removed.
+
 ---
 
 ### ISSUE-044: Notes panel not using full width of right panel
@@ -440,6 +474,8 @@ The Notes panel only uses approximately half the width of the right sidebar pane
 **Expected**: Notes panel fills the full width of the sidebar.
 
 **Notes**: Same root cause as ISSUE-043 - likely a CSS flex/grid issue in the tab panel.
+
+**Status**: N/A 2026-02-04 — Standalone React client removed.
 
 ---
 
@@ -470,6 +506,8 @@ The bundle contained **two complete copies** of every package — one from `dist
 
 **Description**:
 The README contains sample code that references `PortableTrait`, which does not exist. Items are portable by default in Sharpee — there is no `PortableTrait`. To make something non-portable, use `SceneryTrait` or handle it in the taking action's validation. The sample code needs to be rewritten to reflect the actual architecture.
+
+**Status**: Fixed 2026-02-04 — README updated with correct trait patterns.
 
 ---
 

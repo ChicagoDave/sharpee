@@ -1,6 +1,6 @@
 [package]
 name = "zifmia"
-version = "0.9.0"
+version = "0.9.86"
 description = "Zifmia Story Runner"
 authors = ["ChicagoDave"]
 edition = "2021"
