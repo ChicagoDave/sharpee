@@ -4,21 +4,23 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.2+-blue.svg)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 
-A modern, TypeScript-based platform for creating parser-based interactive fiction.
+**Version 0.9.85** — A modern, TypeScript-based platform for creating parser-based interactive fiction.
+
+**Status**: Available for author/story development. The included Dungeon story (Mainframe Zork port) is still in testing.
 
 **Website**: [sharpee.net](https://sharpee.net)
 
 ## Quick Start
 
+No installation required — use `npx` to scaffold and build:
+
 ```bash
+# Create a new story project
 npx @sharpee/sharpee init my-adventure
 cd my-adventure
 npm install
-```
 
-Write your story, then build:
-
-```bash
+# Build your story
 npx @sharpee/sharpee build
 ```
 
@@ -26,6 +28,18 @@ This produces:
 
 - **`dist/my-adventure.sharpee`** — Story bundle for the [Zifmia](https://sharpee.net/downloads/) desktop runner
 - **`dist/web/`** — Browser client (open `index.html` directly)
+
+### npx Commands
+
+All CLI commands work via `npx @sharpee/sharpee <command>`:
+
+| Command | Description |
+|---------|-------------|
+| `npx @sharpee/sharpee init <name>` | Create a new story project |
+| `npx @sharpee/sharpee init-browser` | Add browser client to existing project |
+| `npx @sharpee/sharpee build` | Build `.sharpee` bundle + browser client |
+| `npx @sharpee/sharpee build-browser` | Build browser client only |
+| `npx @sharpee/sharpee ifid` | Generate or validate an IFID |
 
 ## What's Included
 
@@ -57,15 +71,41 @@ This produces:
 - **Language Layer Separation** — All text output goes through localizable message IDs
 - **Full TypeScript** — Strict typing throughout
 
-## CLI Commands
+## Convenience Helpers
 
-| Command | Description |
-|---------|-------------|
-| `sharpee init <name>` | Create a new story project |
-| `sharpee init-browser` | Add browser client to an existing project |
-| `sharpee build` | Build `.sharpee` bundle + browser client |
-| `sharpee build-browser` | Build browser client only |
-| `sharpee ifid` | Generate or validate an IFID |
+WorldModel provides helper methods to simplify common story setup tasks:
+
+### connectRooms
+
+Create bidirectional connections between rooms:
+
+```typescript
+// Connect kitchen to dining room (north/south)
+world.connectRooms(kitchen.id, diningRoom.id, Direction.NORTH);
+// Player can now GO NORTH from kitchen, GO SOUTH from dining room
+```
+
+### createDoor
+
+Create a door entity with full exit wiring:
+
+```typescript
+const frontDoor = world.createDoor('front door', {
+  room1Id: foyer.id,
+  room2Id: porch.id,
+  direction: Direction.SOUTH,
+  description: 'A sturdy oak door.',
+  isOpen: false,
+  isLocked: true,
+  keyId: brassKey.id,  // optional
+});
+```
+
+The door is automatically:
+- Placed in room1 for scope resolution
+- Wired into both rooms' exits
+- Given OpenableTrait and optionally LockableTrait
+- Marked as scenery (not takeable)
 
 ## Architecture
 
@@ -179,14 +219,14 @@ node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
 
 ## Example Stories
 
-| Story | Description |
-|-------|-------------|
-| `dungeo` | Mainframe Zork implementation (~191 rooms) |
-| `cloak-of-darkness` | Classic IF demo game |
+| Story | Status | Description |
+|-------|--------|-------------|
+| `dungeo` | Testing | Mainframe Zork implementation (~191 rooms) |
+| `cloak-of-darkness` | Complete | Classic IF demo game |
 
 ## License
 
-MIT License — Copyright 2025 David Cornelson
+MIT License — Copyright 2025-2026 David Cornelson
 
 ## Links
 
