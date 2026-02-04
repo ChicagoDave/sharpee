@@ -5,132 +5,82 @@ This guide explains how to build Sharpee platform packages, stories, and client 
 ## Quick Start
 
 ```bash
-# Build platform + story + browser client (most common)
-./scripts/build.sh -s dungeo -c browser
+# Build platform + story (most common)
+./build.sh -s dungeo
 
-# Build platform + story only (for CLI testing)
-./scripts/build.sh -s dungeo
+# Build platform + story + browser client
+./build.sh -s dungeo -c browser
 
-# Build just the platform
-./scripts/build.sh
+# Build platform + story + Zifmia client (desktop runner)
+./build.sh -s dungeo -c zifmia
+
+# Show all options
+./build.sh --help
 ```
 
-## Architecture
-
-The build system is organized into modular scripts:
-
-```
-scripts/
-├── build.sh              # Controller script (use this)
-├── update-versions.sh    # Version file generation
-├── build-platform.sh     # Platform packages + node bundle
-├── build-story.sh        # Individual story compilation
-└── build-client.sh       # Client bundles (browser, electron)
-```
-
-### Build Order
-
-The controller ensures correct build order:
-
-1. **Update versions** - Generates `version.ts` files with timestamps
-2. **Build platform** - Compiles all platform packages
-3. **Build story** - Compiles the specified story (if `-s` provided)
-4. **Build client** - Creates client bundle (if `-c` provided)
-
-## Controller Script (`build.sh`)
-
-The main entry point for all builds.
-
-### Options
+## Build Options
 
 | Flag | Long Form | Description |
 |------|-----------|-------------|
 | `-s` | `--story <name>` | Build a story (dungeo, reflections, etc.) |
-| `-c` | `--client <type>` | Build a client (browser, electron) |
-| | `--skip <package>` | Skip to package in platform build |
-| | `--all <story> <client>` | Build everything (shorthand) |
-| `-h` | `--help` | Show help message |
+| `-c` | `--client <type>` | Build client (browser, zifmia) - can specify multiple |
+| `-t` | `--theme <name>` | Zifmia theme (default: classic-light) |
+| `-b` | `--story-bundle` | Create `.sharpee` story bundle |
+| | `--runner` | Build Zifmia runner only |
+| | `--skip <package>` | Resume platform build from package |
+| | `--no-version` | Skip version updates |
+| `-v` | `--verbose` | Show build details |
+| `-h` | `--help` | Show help |
 
-### Examples
+### Available Themes (for Zifmia)
+
+| Theme | Description |
+|-------|-------------|
+| `classic-light` | Literata font, warm light tones (default) |
+| `modern-dark` | Inter font, Catppuccin Mocha colors |
+| `retro-terminal` | JetBrains Mono, green phosphor |
+| `paper` | Crimson Text, high contrast |
+
+## Examples
 
 ```bash
 # Platform only
-./scripts/build.sh
+./build.sh
 
 # Platform + dungeo story
-./scripts/build.sh -s dungeo
+./build.sh -s dungeo
 
 # Platform + dungeo + browser client
-./scripts/build.sh -s dungeo -c browser
+./build.sh -s dungeo -c browser
 
-# Shorthand for above
-./scripts/build.sh --all dungeo browser
+# Platform + dungeo + Zifmia with dark theme
+./build.sh -s dungeo -c zifmia -t modern-dark
 
-# Skip to stdlib in platform, then build story
-./scripts/build.sh --skip stdlib -s dungeo
+# Both clients
+./build.sh -s dungeo -c browser -c zifmia
 
-# Different story and client
-./scripts/build.sh -s reflections -c electron
+# Create .sharpee story bundle
+./build.sh -s dungeo -b
+
+# Resume from stdlib (skip earlier packages)
+./build.sh --skip stdlib -s dungeo
+
+# Skip version update (faster iteration)
+./build.sh --no-version --skip stdlib -s dungeo
 ```
 
-## Version System
+## Build Order
 
-### Format
+The build system ensures correct dependency order:
 
-Versions use a date-based prerelease format:
+1. **Update versions** - Generates version files (unless `--no-version`)
+2. **Build platform** - Compiles all platform packages in order
+3. **Bundle** - Creates `dist/cli/sharpee.js`
+4. **Build story** - Compiles the specified story (if `-s`)
+5. **Build client** - Creates client bundle (if `-c`)
 
-```
-X.Y.Z-beta.YYYYMMDD.HHMM
-```
+### Platform Package Order
 
-Example: `1.0.64-beta.20260121.2325`
-
-- `X.Y.Z` - Base semantic version (from package.json)
-- `beta` - Prerelease tag
-- `YYYYMMDD.HHMM` - UTC timestamp of build
-
-### Generated Files
-
-The build generates `version.ts` files:
-
-**Story version** (`stories/{story}/src/version.ts`):
-```typescript
-export const STORY_VERSION = '1.0.64-beta.20260121.2325';
-export const BUILD_DATE = '2026-01-21T23:25:00Z';
-export const ENGINE_VERSION = '0.9.50-beta.20260121.2325';
-export const VERSION_INFO = { ... } as const;
-```
-
-**Client version** (`packages/platforms/{client}-en-us/src/version.ts`):
-```typescript
-export const CLIENT_VERSION = '1.0.0-beta.20260121.2325';
-export const BUILD_DATE = '2026-01-21T23:25:00Z';
-export const ENGINE_VERSION = '0.9.50-beta.20260121.2325';
-export const VERSION_INFO = { ... } as const;
-```
-
-### Manual Version Update
-
-To update versions without building:
-
-```bash
-./scripts/update-versions.sh --story dungeo --client browser
-```
-
-## Individual Scripts
-
-These are called by the controller but can be used directly.
-
-### `build-platform.sh`
-
-Builds all platform packages in dependency order and creates the node bundle.
-
-```bash
-./scripts/build-platform.sh              # Full build
-./scripts/build-platform.sh --skip stdlib  # Skip to stdlib
-```
-
-**Build order:**
 1. core
 2. if-domain
 3. world-model
@@ -141,42 +91,35 @@ Builds all platform packages in dependency order and creates the node bundle.
 8. text-blocks
 9. text-service
 10. stdlib
-11. engine
-12. sharpee
-13. transcript-tester
-14. Bundle creation
+11. plugins, plugin-npc, plugin-scheduler, plugin-state-machine
+12. engine
+13. sharpee
+14. transcript-tester
 
-**Output:** `dist/cli/sharpee.js` (node bundle)
+## Version System
 
-### `build-story.sh`
+### Format
 
-Builds a specific story.
+Versions use a simple prerelease format:
 
-```bash
-./scripts/build-story.sh dungeo
-./scripts/build-story.sh reflections
+```
+X.Y.Z-beta
 ```
 
-**Requires:** Platform must be built first.
+Example: `0.9.85-beta`
 
-**Output:** `stories/{story}/dist/`
+- `X.Y.Z` - Base semantic version (from package.json)
+- `beta` - Prerelease tag
 
-### `build-client.sh`
+### Generated Files
 
-Creates a client bundle for a story.
+The build generates `version.ts` files for stories and clients with:
 
-```bash
-./scripts/build-client.sh dungeo browser
-./scripts/build-client.sh reflections electron
+```typescript
+export const STORY_VERSION = '1.0.0-beta';
+export const BUILD_DATE = '2026-02-04T01:00:00Z';
+export const ENGINE_VERSION = '0.9.85-beta';
 ```
-
-**Supported clients:**
-- `browser` - Web browser bundle (HTML + JS + CSS)
-- `electron` - Desktop app (not yet implemented)
-
-**Requires:** Story must be built first.
-
-**Output:** `dist/web/{story}/` (for browser)
 
 ## Outputs
 
@@ -184,85 +127,92 @@ Creates a client bundle for a story.
 |-------|-----------------|----------|
 | Platform | `dist/cli/sharpee.js` | Node bundle with all platform packages |
 | Story | `stories/{story}/dist/` | Compiled story code |
-| Browser | `dist/web/{story}/` | HTML, JS bundle, CSS, sourcemap |
-| Electron | TBD | Desktop application |
+| Story Bundle | `dist/stories/{story}.sharpee` | Portable story bundle |
+| Browser | `dist/web/{story}/` | HTML, JS bundle, CSS |
+| Zifmia | `dist/runner/` | Desktop runner + platform modules |
 
 ## Common Workflows
 
-### Development (Story Changes Only)
+### Story Development (Fastest Iteration)
 
 When only changing story code:
 
 ```bash
-./scripts/build.sh --skip transcript-tester -s dungeo
+./build.sh --no-version --skip transcript-tester -s dungeo
 node dist/cli/sharpee.js --play
 ```
 
-### Development (Platform Changes)
+### Platform Development
 
-When changing platform packages:
-
-```bash
-# Skip to the first package you changed
-./scripts/build.sh --skip stdlib -s dungeo
-```
-
-### Web Deployment
-
-Full build for browser deployment:
+When changing platform packages, skip to the changed package:
 
 ```bash
-./scripts/build.sh -s dungeo -c browser
-npx serve dist/web/dungeo
+./build.sh --skip stdlib -s dungeo
 ```
 
-### Testing
+### Running Tests
 
 After any build:
 
 ```bash
-# CLI testing
+# Interactive play
 node dist/cli/sharpee.js --play
 
-# Run transcript tests
+# Run single transcript test
 node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/navigation.transcript
 
-# Run all transcripts
-node dist/cli/sharpee.js --test stories/dungeo --all
+# Run walkthrough chain (state persists between files)
+node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
+
+# Stop on first failure
+node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/*.transcript --stop-on-failure
+```
+
+### Web Deployment
+
+```bash
+./build.sh -s dungeo -c browser
+npx serve dist/web/dungeo
+```
+
+### Zifmia (Desktop) Deployment
+
+```bash
+./build.sh -s dungeo -c zifmia -t modern-dark
+npx serve dist/runner
+# Open browser, load dist/stories/dungeo.sharpee
 ```
 
 ## Performance Tips
 
 1. **Use `--skip`** - Always skip unchanged packages
-2. **Use the bundle** - `node dist/cli/sharpee.js` is faster than loading packages
-3. **Skip to transcript-tester** - For story-only changes: `--skip transcript-tester`
+2. **Use `--no-version`** - Skip version bumps during rapid iteration
+3. **Use the bundle** - `node dist/cli/sharpee.js` loads in ~170ms vs 5+ seconds for packages
 
 ## Troubleshooting
 
-### Version not updating
+### Build hangs on "Building Platform"
 
-Ensure you're using `build.sh` (the controller), not the individual scripts directly. The controller runs `update-versions.sh` first.
+Could be WSL filesystem sync issue. Try again or run with `-v` for verbose output.
 
-### Build failures
+### Circular dependency detected
 
-Check the error output. Common issues:
-- Missing dependencies: Run `pnpm install`
-- TypeScript errors: Check the failing package
-- Permission errors (WSL): Use the build scripts, not direct `pnpm build`
+Use `madge` to find cycles:
+
+```bash
+npx madge --circular stories/dungeo/dist/index.js
+```
+
+Fix by changing barrel imports to direct file imports.
+
+### TypeScript errors
+
+Check the failing package and ensure dependencies are built first. Use `--skip` to build from a specific package.
 
 ### Stale bundle
 
-If the bundle seems stale, force a full rebuild:
+Force a full rebuild without `--skip`:
 
 ```bash
-./scripts/build.sh -s dungeo -c browser
+./build.sh -s dungeo
 ```
-
-## Ubuntu/Linux Notes
-
-For environments without global pnpm, legacy ubuntu scripts exist that use `npx pnpm`:
-- `build-platform-ubuntu.sh`
-- `build-dungeo-ubuntu.sh`
-- `build-web-ubuntu.sh`
-
-These may be consolidated into the main scripts with auto-detection in the future.

@@ -1,25 +1,38 @@
 # Creating Stories with Sharpee
 
-This guide is designed for developers (and Claude Code) creating new interactive fiction stories with Sharpee.
+This guide covers creating interactive fiction stories with Sharpee.
 
-## Quick Start
+## Quick Start with npx
 
-A minimal Sharpee story needs:
-1. A `package.json` with dependencies
-2. A story class implementing `Story` interface
-3. At least one room and a player location
+No installation required:
+
+```bash
+npx @sharpee/sharpee init my-adventure
+cd my-adventure
+npm install
+npx @sharpee/sharpee build
+```
+
+## Minimal Story
+
+A Sharpee story needs:
+1. A story class implementing `Story` interface
+2. At least one room
+3. A player location
 
 ```typescript
 // stories/my-story/src/index.ts
 import { Story, StoryConfig } from '@sharpee/engine';
-import { WorldModel, EntityType, TraitType } from '@sharpee/world-model';
+import {
+  WorldModel, IFEntity, EntityType,
+  IdentityTrait, RoomTrait, ActorTrait, ContainerTrait,
+} from '@sharpee/world-model';
 
 export const config: StoryConfig = {
-  id: "my-story",
-  title: "My Story",
-  author: "Your Name",
-  version: "1.0.0",
-  description: "A short description"
+  id: 'my-story',
+  title: 'My Story',
+  author: 'Your Name',
+  version: '1.0.0',
 };
 
 export class MyStory implements Story {
@@ -27,25 +40,34 @@ export class MyStory implements Story {
 
   initializeWorld(world: WorldModel): void {
     // Create starting room
-    const room = world.createEntity('Living Room', EntityType.ROOM);
-    room.add({
-      type: TraitType.ROOM,
-      isDark: false,
-      description: 'A cozy living room with worn furniture.'
-    });
+    const room = world.createEntity('start', EntityType.ROOM);
+    room.add(new IdentityTrait({
+      name: 'Living Room',
+      description: 'A cozy living room.',
+    }));
+    room.add(new RoomTrait());
 
     // Place player
     const player = world.getPlayer();
     world.moveEntity(player.id, room.id);
   }
+
+  createPlayer(world: WorldModel): IFEntity {
+    const player = world.createEntity('yourself', EntityType.ACTOR);
+    player.add(new IdentityTrait({ name: 'yourself' }));
+    player.add(new ActorTrait({ isPlayer: true }));
+    player.add(new ContainerTrait({ capacity: 100 }));
+    return player;
+  }
 }
 
-export default MyStory;
+export const story = new MyStory();
+export default story;
 ```
 
 ## Project Structure
 
-### Simple Story (Single File)
+### Simple Story
 
 ```
 stories/my-story/
@@ -53,102 +75,30 @@ stories/my-story/
 ├── tsconfig.json
 ├── src/
 │   └── index.ts         # Everything in one file
-├── tests/
-│   └── transcripts/     # Test transcripts
-└── README.md
+└── tests/
+    └── transcripts/     # Test transcripts
 ```
 
 ### Complex Story (Multi-Region)
 
 ```
 stories/my-story/
-├── package.json
-├── tsconfig.json
 ├── src/
 │   ├── index.ts                 # Main story class
 │   ├── regions/
-│   │   ├── forest/
-│   │   │   ├── index.ts         # Region setup & connections
-│   │   │   ├── rooms/
-│   │   │   │   ├── clearing.ts
-│   │   │   │   └── dense-woods.ts
-│   │   │   └── objects/
-│   │   │       └── index.ts
-│   │   └── village/
-│   │       ├── index.ts
-│   │       ├── rooms/
-│   │       └── objects/
+│   │   ├── forest.ts            # One file per region
+│   │   └── village.ts
 │   ├── npcs/
 │   │   └── merchant/
 │   │       ├── entity.ts
-│   │       ├── behavior.ts
-│   │       └── messages.ts
+│   │       └── behavior.ts
 │   ├── actions/                  # Story-specific actions
 │   │   └── pray/
-│   │       ├── pray-action.ts
-│   │       └── pray-messages.ts
-│   ├── traits/                   # Story-specific traits
-│   │   └── magical-trait.ts
+│   │       └── pray-action.ts
 │   └── handlers/                 # Event handlers
 │       └── index.ts
-├── tests/
-│   └── transcripts/
-└── README.md
-```
-
-## Story Interface
-
-The `Story` interface requires:
-
-```typescript
-interface Story {
-  config: StoryConfig;
-  initializeWorld(world: WorldModel): void;
-  extendParser?(parser: Parser): void;      // Optional
-  getLanguageExtensions?(): object;          // Optional
-}
-```
-
-### initializeWorld(world: WorldModel)
-
-Called once when the game starts. Create all rooms, objects, NPCs here.
-
-### extendParser(parser: Parser)
-
-Optional. Add story-specific grammar patterns:
-
-```typescript
-extendParser(parser: Parser): void {
-  const grammar = parser.getStoryGrammar();
-
-  // Add new verb
-  grammar
-    .define('pray')
-    .mapsTo('mystory.action.pray')
-    .withPriority(150)
-    .build();
-
-  // Add verb with target
-  grammar
-    .define('worship :target')
-    .where('target', scope => scope.visible())
-    .mapsTo('mystory.action.worship')
-    .withPriority(150)
-    .build();
-}
-```
-
-### getLanguageExtensions()
-
-Optional. Provide story-specific messages:
-
-```typescript
-getLanguageExtensions(): object {
-  return {
-    'mystory.pray.success': 'You feel a sense of peace.',
-    'mystory.pray.no_effect': 'Nothing happens.'
-  };
-}
+└── tests/
+    └── transcripts/
 ```
 
 ## Creating Rooms
@@ -156,65 +106,82 @@ getLanguageExtensions(): object {
 ### Basic Room
 
 ```typescript
-const room = world.createEntity('Forest Clearing', EntityType.ROOM);
-room.add({
-  type: TraitType.ROOM,
-  isDark: false,
-  description: 'Sunlight filters through the canopy above.'
-});
+import {
+  WorldModel, EntityType,
+  IdentityTrait, RoomTrait,
+} from '@sharpee/world-model';
+
+const room = world.createEntity('clearing', EntityType.ROOM);
+room.add(new IdentityTrait({
+  name: 'Forest Clearing',
+  description: 'Sunlight filters through the canopy above.',
+}));
+room.add(new RoomTrait());
 ```
 
-### Room with Exits
+### Connecting Rooms (Helper Method)
+
+Use `world.connectRooms()` for bidirectional connections:
 
 ```typescript
-// Create rooms first
-const clearing = world.createEntity('Clearing', EntityType.ROOM);
-const path = world.createEntity('Forest Path', EntityType.ROOM);
-
-// Add room traits
-clearing.add({ type: TraitType.ROOM, isDark: false });
-path.add({ type: TraitType.ROOM, isDark: false });
-
-// Connect rooms (use Direction enum)
 import { Direction } from '@sharpee/world-model';
 
-clearing.add({
-  type: TraitType.EXIT,
-  direction: Direction.NORTH,
-  destination: path.id
-});
+const kitchen = world.createEntity('kitchen', EntityType.ROOM);
+const diningRoom = world.createEntity('dining', EntityType.ROOM);
+// ... add traits ...
 
-path.add({
-  type: TraitType.EXIT,
-  direction: Direction.SOUTH,
-  destination: clearing.id
-});
+// Creates exits in BOTH directions automatically
+world.connectRooms(kitchen.id, diningRoom.id, Direction.NORTH);
+// Player can now GO NORTH from kitchen, GO SOUTH from dining room
 ```
 
 ### Dark Room
 
 ```typescript
-const cave = world.createEntity('Dark Cave', EntityType.ROOM);
-cave.add({
-  type: TraitType.ROOM,
-  isDark: true,  // Requires light source to see
-  description: 'A damp cave with dripping stalactites.'
+const cave = world.createEntity('cave', EntityType.ROOM);
+cave.add(new IdentityTrait({
+  name: 'Dark Cave',
+  description: 'A damp cave with dripping stalactites.',
+}));
+cave.add(new RoomTrait({ isDark: true })); // Requires light source
+```
+
+## Creating Doors
+
+Use `world.createDoor()` to create door entities with full exit wiring:
+
+```typescript
+const frontDoor = world.createDoor('front door', {
+  room1Id: foyer.id,
+  room2Id: porch.id,
+  direction: Direction.SOUTH,
+  description: 'A sturdy oak door.',
+  isOpen: false,
+  isLocked: true,
+  keyId: brassKey.id,  // optional
 });
 ```
 
+The door is automatically:
+- Placed in room1 for scope resolution
+- Wired into both rooms' exits
+- Given OpenableTrait and optionally LockableTrait
+- Marked as scenery (not takeable)
+
 ## Creating Objects
 
-**Important:** All objects are portable by default. You don't need to add a `PORTABLE` trait. To make something non-portable, use `SceneryTrait` or handle it in action validation.
+**All objects are portable by default.** Use `SceneryTrait` to make something non-portable.
 
 ### Basic Object
 
 ```typescript
-const lamp = world.createEntity('brass lamp', EntityType.OBJECT);
-lamp.add({
-  type: TraitType.IDENTITY,
+import { IdentityTrait } from '@sharpee/world-model';
+
+const lamp = world.createEntity('lamp', EntityType.OBJECT);
+lamp.add(new IdentityTrait({
+  name: 'brass lamp',
   description: 'A well-worn brass lamp.',
-  shortDescription: 'a brass lamp'
-});
+}));
 world.moveEntity(lamp.id, room.id);
 // Player can take this - objects are portable by default
 ```
@@ -222,348 +189,177 @@ world.moveEntity(lamp.id, room.id);
 ### Container
 
 ```typescript
-const chest = world.createEntity('wooden chest', EntityType.CONTAINER);
-chest.add({
-  type: TraitType.CONTAINER,
-  capacity: 10,
-  isTransparent: false
-});
-chest.add({
-  type: TraitType.OPENABLE,
-  isOpen: false,
-  canClose: true
-});
+import { ContainerTrait, OpenableTrait } from '@sharpee/world-model';
+
+const chest = world.createEntity('chest', EntityType.OBJECT);
+chest.add(new IdentityTrait({ name: 'wooden chest' }));
+chest.add(new ContainerTrait({ capacity: 10 }));
+chest.add(new OpenableTrait({ isOpen: false }));
 world.moveEntity(chest.id, room.id);
 
 // Put item in chest
-const coin = world.createEntity('gold coin', EntityType.OBJECT);
+const coin = world.createEntity('coin', EntityType.OBJECT);
+coin.add(new IdentityTrait({ name: 'gold coin' }));
 world.moveEntity(coin.id, chest.id);
 ```
 
 ### Lockable Container
 
 ```typescript
-const safe = world.createEntity('wall safe', EntityType.CONTAINER);
-safe.add({ type: TraitType.CONTAINER });
-safe.add({
-  type: TraitType.OPENABLE,
-  isOpen: false
-});
+import { LockableTrait } from '@sharpee/world-model';
 
-// Create key first to get its ID
-const key = world.createEntity('brass key', EntityType.OBJECT);
-
-safe.add({
-  type: TraitType.LOCKABLE,
+const safe = world.createEntity('safe', EntityType.OBJECT);
+safe.add(new IdentityTrait({ name: 'wall safe' }));
+safe.add(new ContainerTrait());
+safe.add(new OpenableTrait({ isOpen: false }));
+safe.add(new LockableTrait({
   isLocked: true,
-  keyId: key.id  // Reference key by ID
-});
-```
-
-### Wearable
-
-```typescript
-const cloak = world.createEntity('velvet cloak', EntityType.OBJECT);
-cloak.add({
-  type: TraitType.WEARABLE,
-  isWorn: false,
-  coverage: ['torso', 'arms']
-});
+  requiredKey: key.id,
+}));
 ```
 
 ### Light Source
 
 ```typescript
+import { SwitchableTrait, LightSourceTrait } from '@sharpee/world-model';
+
 const lantern = world.createEntity('lantern', EntityType.OBJECT);
-lantern.add({
-  type: TraitType.SWITCHABLE,
-  isOn: false
-});
-lantern.add({
-  type: TraitType.LIGHT_SOURCE,
+lantern.add(new IdentityTrait({ name: 'brass lantern' }));
+lantern.add(new SwitchableTrait({ isOn: false }));
+lantern.add(new LightSourceTrait({
   brightness: 5,
-  requiresOn: true  // Only provides light when switched on
-});
-```
-
-### Edible/Drinkable
-
-```typescript
-const apple = world.createEntity('red apple', EntityType.OBJECT);
-apple.add({
-  type: TraitType.EDIBLE,
-  nutrition: 10,
-  eatMessage: 'Delicious and crisp!'
-});
-
-const potion = world.createEntity('healing potion', EntityType.OBJECT);
-potion.add({
-  type: TraitType.DRINKABLE,
-  drinkMessage: 'You feel refreshed.'
-});
+  requiresOn: true,  // Only provides light when switched on
+}));
 ```
 
 ### Scenery (Non-Portable)
 
 ```typescript
-const fountain = world.createEntity('marble fountain', EntityType.SCENERY);
-fountain.add({
-  type: TraitType.SCENERY,
-  isFixed: true
-});
-fountain.add({
-  type: TraitType.IDENTITY,
-  description: 'An ornate fountain with dancing water.'
-});
+import { SceneryTrait } from '@sharpee/world-model';
+
+const fountain = world.createEntity('fountain', EntityType.OBJECT);
+fountain.add(new IdentityTrait({
+  name: 'marble fountain',
+  description: 'An ornate fountain with dancing water.',
+}));
+fountain.add(new SceneryTrait()); // Can't be taken
 world.moveEntity(fountain.id, room.id);
 ```
 
-### Supporter (Things Can Be Placed On)
+### Wearable
 
 ```typescript
-const table = world.createEntity('oak table', EntityType.SUPPORTER);
-table.add({
-  type: TraitType.SUPPORTER,
-  capacity: 5
-});
-table.add({ type: TraitType.SCENERY, isFixed: true });
-world.moveEntity(table.id, room.id);
+import { WearableTrait } from '@sharpee/world-model';
 
-// Put item on table
-world.moveEntity(lamp.id, table.id);
+const cloak = world.createEntity('cloak', EntityType.OBJECT);
+cloak.add(new IdentityTrait({ name: 'velvet cloak' }));
+cloak.add(new WearableTrait({ isWorn: false }));
+```
+
+### Edible/Drinkable
+
+```typescript
+import { EdibleTrait, DrinkableTrait } from '@sharpee/world-model';
+
+const apple = world.createEntity('apple', EntityType.OBJECT);
+apple.add(new IdentityTrait({ name: 'red apple' }));
+apple.add(new EdibleTrait());
+
+const potion = world.createEntity('potion', EntityType.OBJECT);
+potion.add(new IdentityTrait({ name: 'healing potion' }));
+potion.add(new DrinkableTrait());
 ```
 
 ## Common Traits Reference
 
-**Note:** All objects are portable by default. Use `SCENERY` to make something non-portable.
-
-| Trait | Purpose | Key Properties |
-|-------|---------|----------------|
-| `ROOM` | Location | `isDark`, `description` |
-| `EXIT` | Room connection | `direction`, `destination` |
-| `CONTAINER` | Holds items | `capacity`, `isTransparent` |
-| `SUPPORTER` | Items placed on | `capacity` |
-| `OPENABLE` | Can open/close | `isOpen`, `canClose` |
-| `LOCKABLE` | Can lock/unlock | `isLocked`, `keyId`, `keyIds` |
-| `WEARABLE` | Can be worn | `isWorn`, `coverage` |
-| `EDIBLE` | Can be eaten | `nutrition`, `eatMessage` |
-| `DRINKABLE` | Can be drunk | `drinkMessage` |
-| `SWITCHABLE` | On/off device | `isOn` |
-| `LIGHT_SOURCE` | Provides light | `brightness`, `requiresOn` |
-| `SCENERY` | Fixed in place, non-portable | `isFixed` |
-| `READABLE` | Has text | `text`, `isReadable` |
-| `DOOR` | Connects rooms | `connectsTo`, `blocksDirection` |
-| `ACTOR` | NPC or player | `health`, `inventory` |
+| Trait Class | Purpose | Key Properties |
+|-------------|---------|----------------|
+| `RoomTrait` | Location | `isDark`, `exits` |
+| `IdentityTrait` | Name/description | `name`, `description`, `aliases` |
+| `ContainerTrait` | Holds items | `capacity`, `isTransparent` |
+| `SupporterTrait` | Items placed on | `capacity` |
+| `OpenableTrait` | Can open/close | `isOpen` |
+| `LockableTrait` | Can lock/unlock | `isLocked`, `requiredKey` |
+| `WearableTrait` | Can be worn | `isWorn` |
+| `EdibleTrait` | Can be eaten | |
+| `DrinkableTrait` | Can be drunk | |
+| `SwitchableTrait` | On/off device | `isOn` |
+| `LightSourceTrait` | Provides light | `brightness`, `requiresOn` |
+| `SceneryTrait` | Fixed/non-portable | |
+| `DoorTrait` | Connects rooms | `room1`, `room2` |
+| `ActorTrait` | NPC or player | `isPlayer` |
 
 ## Event Handlers
 
-Event handlers let you **react** to domain events - records of what happened in the game world. When an action completes and records a domain event (like `if.event.pulled`), your handlers can execute custom logic.
-
-**Key distinction:** Domain events are records written to event sources for event sourcing and text rendering. Handlers are a separate mechanism that reacts to these events during processing.
-
-### Entity-Level Handler
+React to game events with custom logic:
 
 ```typescript
-const lever = world.createEntity('rusty lever', EntityType.OBJECT);
-lever.add({ type: TraitType.PULLABLE });
-
-lever.on = {
-  'if.event.pulled': (event, world) => {
-    // Open secret door when lever is pulled
-    const secretDoor = world.getEntity('secret_door_id');
-    if (secretDoor) {
-      const openable = secretDoor.get(TraitType.OPENABLE);
-      if (openable) {
-        openable.isOpen = true;
-      }
-    }
-    return []; // Return additional events if needed
-  }
-};
-```
-
-### Story-Level Handler
-
-```typescript
-// In initializeWorld or separate handlers file
+// Story-level handler
 world.registerEventHandler('if.event.taken', (event, world) => {
-  const itemId = event.data.itemId;
-
-  // Check if player took a special item
-  if (itemId === treasureId) {
+  if (event.data.itemId === treasureId) {
     // Update score, trigger event, etc.
   }
 });
 ```
 
-### Common Domain Events to React To
-
-| Domain Event | When Recorded | Data |
-|-------|------------|------|
-| `if.event.taken` | Item picked up | `itemId`, `actorId` |
-| `if.event.dropped` | Item dropped | `itemId`, `actorId` |
-| `if.event.opened` | Container/door opened | `targetId` |
-| `if.event.closed` | Container/door closed | `targetId` |
-| `if.event.locked` | Lock engaged | `targetId`, `keyId` |
-| `if.event.unlocked` | Lock disengaged | `targetId`, `keyId` |
-| `if.event.entered` | Player entered container | `targetId` |
-| `if.event.exited` | Player exited container | `targetId` |
-| `if.event.put_in` | Item put in container | `itemId`, `containerId` |
-| `if.event.put_on` | Item put on supporter | `itemId`, `supporterId` |
+See [Event Handlers Guide](./event-handlers.md) for full details.
 
 ## Story-Specific Actions
 
-When stdlib doesn't have the verb you need, create a story action.
-
-### Action Structure
+When stdlib doesn't have the verb you need:
 
 ```typescript
 // stories/my-story/src/actions/pray/pray-action.ts
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { Action, ActionContext } from '@sharpee/stdlib';
 
 export const PRAY_ACTION_ID = 'mystory.action.pray';
 
 export const prayAction: Action = {
   id: PRAY_ACTION_ID,
   group: 'special',
-  requiredMessages: ['pray_success', 'pray_no_effect'],
 
-  validate(context: ActionContext): ValidationResult {
-    // Check if player is in a holy place
-    const location = context.currentLocation;
-    const isHoly = location?.get('mystory.trait.holy');
-
-    if (!isHoly) {
-      return {
-        valid: false,
-        error: 'pray_no_effect'
-      };
-    }
-
+  validate(context: ActionContext) {
+    // Check conditions
     return { valid: true };
   },
 
-  execute(context: ActionContext): void {
-    // Store data for report phase
-    const sharedData = context.sharedData as any;
-    sharedData.blessed = true;
+  execute(context: ActionContext) {
+    // Perform the action
+    context.sharedData.blessed = true;
   },
 
-  report(context: ActionContext): ISemanticEvent[] {
-    return [
-      context.event('mystory.event.prayed', {}),
-      context.event('action.success', {
-        actionId: PRAY_ACTION_ID,
-        messageId: 'pray_success'
-      })
-    ];
+  report(context: ActionContext) {
+    return [context.event('action.success', {
+      actionId: PRAY_ACTION_ID,
+      messageId: 'mystory.pray.success',
+    })];
   },
 
-  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+  blocked(context: ActionContext, result) {
     return [context.event('action.blocked', {
       actionId: PRAY_ACTION_ID,
       messageId: result.error,
-      params: result.params
     })];
-  }
+  },
 };
-```
-
-### Register Action
-
-```typescript
-// In story's initializeWorld or a separate setup
-import { prayAction } from './actions/pray/pray-action';
-
-// Register with engine (done automatically if exported from index.ts)
 ```
 
 ### Grammar Pattern
 
 ```typescript
 // In extendParser
-grammar
-  .define('pray')
-  .mapsTo(PRAY_ACTION_ID)
-  .withPriority(150)
-  .build();
-```
+extendParser(parser: Parser): void {
+  const grammar = parser.getStoryGrammar();
 
-## Capability Dispatch
-
-For verbs with entity-specific meanings (like "lower" meaning different things for different objects), use capability dispatch.
-
-### Define Trait with Capabilities
-
-```typescript
-// stories/my-story/src/traits/elevator-trait.ts
-import { ITrait } from '@sharpee/world-model';
-
-export class ElevatorTrait implements ITrait {
-  static readonly type = 'mystory.trait.elevator';
-  static readonly capabilities = ['if.action.lowering', 'if.action.raising'];
-
-  position: 'top' | 'bottom' = 'top';
-  topRoomId: string = '';
-  bottomRoomId: string = '';
+  grammar
+    .define('pray')
+    .mapsTo(PRAY_ACTION_ID)
+    .withPriority(150)
+    .build();
 }
 ```
 
-### Implement Behavior
-
-```typescript
-import { CapabilityBehavior, createEffect } from '@sharpee/world-model';
-
-export const ElevatorLoweringBehavior: CapabilityBehavior = {
-  validate(entity, world, actorId) {
-    const trait = entity.get(ElevatorTrait.type) as ElevatorTrait;
-    if (trait.position === 'bottom') {
-      return { valid: false, error: 'mystory.elevator.already_down' };
-    }
-    return { valid: true };
-  },
-
-  execute(entity, world, actorId) {
-    const trait = entity.get(ElevatorTrait.type) as ElevatorTrait;
-    trait.position = 'bottom';
-  },
-
-  report(entity, world, actorId) {
-    return [
-      createEffect('if.event.lowered', { targetId: entity.id }),
-      createEffect('action.success', {
-        actionId: 'if.action.lowering',
-        messageId: 'mystory.elevator.lowered'
-      })
-    ];
-  },
-
-  blocked(entity, world, actorId, error) {
-    return [
-      createEffect('action.blocked', {
-        actionId: 'if.action.lowering',
-        messageId: error
-      })
-    ];
-  }
-};
-```
-
-### Register Behavior
-
-```typescript
-import { registerCapabilityBehavior } from '@sharpee/world-model';
-
-// In initializeWorld
-registerCapabilityBehavior(
-  ElevatorTrait.type,
-  'if.action.lowering',
-  ElevatorLoweringBehavior
-);
-```
-
-## Testing with Transcripts
+## Transcript Testing
 
 Create `.transcript` files to test your story:
 
@@ -582,10 +378,7 @@ Create `.transcript` files to test your story:
 * brass lamp
 
 > north
-* Forest Path
-
-> south
-* Living Room
+* Kitchen
 ```
 
 ### Transcript Syntax
@@ -594,41 +387,30 @@ Create `.transcript` files to test your story:
 - `* pattern` - Output must contain pattern
 - `! pattern` - Output must NOT contain pattern
 - `# comment` - Ignored
-- Blank lines separate test sections
 
-### Running Transcripts
+### Running Tests
 
 ```bash
+# Run single transcript
+node dist/cli/sharpee.js --test stories/my-story/tests/transcripts/basic.transcript
+
 # Run all transcripts
-node packages/transcript-tester/dist/cli.js stories/my-story --all
-
-# Run specific transcript
-node packages/transcript-tester/dist/cli.js stories/my-story tests/transcripts/basic.transcript
-
-# Verbose output
-node packages/transcript-tester/dist/cli.js stories/my-story --all --verbose
+node dist/cli/sharpee.js --test stories/my-story/tests/transcripts/*.transcript
 ```
 
 ## Best Practices
 
-### 1. Separate Concerns
-
-- Rooms in `regions/*/rooms/`
-- Objects in `regions/*/objects/`
-- NPCs in `npcs/*/`
-- Custom actions in `actions/*/`
-
-### 2. Use IDs Consistently
+### 1. Use Helper Methods
 
 ```typescript
-// Store IDs for cross-referencing
-const roomIds = {
-  clearing: clearing.id,
-  path: path.id
-};
+// Use connectRooms for bidirectional connections
+world.connectRooms(room1.id, room2.id, Direction.NORTH);
+
+// Use createDoor for doors with full wiring
+world.createDoor('door', { room1Id, room2Id, direction, ... });
 ```
 
-### 3. Messages Through Language Layer
+### 2. Messages Through Language Layer
 
 Never hardcode output text in actions:
 
@@ -642,146 +424,28 @@ events.push(context.event('action.success', {
 events.push({ text: 'You feel blessed.' });
 ```
 
-### 4. Keep Actions Simple
+### 3. Keep Actions Simple
 
-Actions should coordinate behaviors, not contain complex logic:
+Actions coordinate behaviors, not implement complex logic.
 
-```typescript
-// GOOD - delegate to behavior
-execute(context: ActionContext): void {
-  const result = ElevatorBehavior.lower(entity, world);
-  context.sharedData.result = result;
-}
+### 4. Test Early and Often
 
-// BAD - complex logic in action
-execute(context: ActionContext): void {
-  // 50 lines of state manipulation...
-}
-```
-
-### 5. Test Early and Often
-
-Write transcripts as you build features:
-
-```
-# As you add the lever puzzle
-> pull lever
-* click
-* secret door opens
-
-> north
-* Hidden Chamber
-```
-
-## Common Patterns
-
-### Conditional Exit
-
-```typescript
-// Door blocks exit until opened
-const door = world.createEntity('heavy door', EntityType.OBJECT);
-door.add({
-  type: TraitType.DOOR,
-  connectsTo: nextRoom.id,
-  blocksDirection: Direction.NORTH
-});
-door.add({
-  type: TraitType.OPENABLE,
-  isOpen: false
-});
-world.moveEntity(door.id, room.id);
-```
-
-### Score System
-
-```typescript
-// Track score in world state
-world.setState({ score: 0, maxScore: 100 });
-
-// Update on treasure pickup
-world.registerEventHandler('if.event.taken', (event, world) => {
-  const item = world.getEntity(event.data.itemId);
-  if (item?.has('treasure')) {
-    const state = world.getState();
-    state.score += 10;
-  }
-});
-```
-
-### Darkness with Light Source
-
-```typescript
-// Room is dark
-const cave = world.createEntity('cave', EntityType.ROOM);
-cave.add({ type: TraitType.ROOM, isDark: true });
-
-// Lantern provides light when on
-const lantern = world.createEntity('lantern', EntityType.OBJECT);
-lantern.add({ type: TraitType.SWITCHABLE, isOn: false });
-lantern.add({
-  type: TraitType.LIGHT_SOURCE,
-  brightness: 5,
-  requiresOn: true
-});
-```
-
-### Multi-Room Connection (Region Pattern)
-
-```typescript
-// regions/forest/index.ts
-export function createForestRegion(world: WorldModel) {
-  const clearing = createClearing(world);
-  const path = createPath(world);
-  const stream = createStream(world);
-
-  // Connect rooms
-  connectRooms(world, clearing, Direction.NORTH, path);
-  connectRooms(world, path, Direction.EAST, stream);
-
-  return { clearing, path, stream };
-}
-
-function connectRooms(
-  world: WorldModel,
-  from: IFEntity,
-  direction: Direction,
-  to: IFEntity
-) {
-  from.add({
-    type: TraitType.EXIT,
-    direction,
-    destination: to.id
-  });
-
-  // Add reverse exit
-  const reverseDir = getOppositeDirection(direction);
-  to.add({
-    type: TraitType.EXIT,
-    direction: reverseDir,
-    destination: from.id
-  });
-}
-```
+Write transcripts as you build features.
 
 ## Troubleshooting
 
 ### "Entity not found"
-- Check that you're using the correct ID (entity.id, not a string)
+- Check entity.id is correct
 - Ensure entity was created before referencing
 
 ### "Action not recognized"
-- Verify grammar pattern is registered in `extendParser`
+- Verify grammar pattern in `extendParser`
 - Check action is exported and registered
 
 ### "Can't take that"
-- Object may have `SceneryTrait` (non-portable by design)
-- Check object is in scope (visible, reachable)
-- A trait behavior may be blocking the take action
+- Object may have `SceneryTrait`
+- Check object is visible and reachable
 
 ### "It's too dark"
 - Room has `isDark: true`
 - Player needs a light source with `isOn: true`
-
-### Tests failing silently
-- Run with `--verbose` flag
-- Check transcript syntax (no tabs, correct `>` prefix)
