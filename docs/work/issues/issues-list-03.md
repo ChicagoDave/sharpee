@@ -9,7 +9,7 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-031 | UNDO command not implemented | Medium | Platform | 2026-01-22 | - | - |
 | ISSUE-032 | Version transcript needs update for DUNGEON name | Low | Test | 2026-01-22 | - | - |
 | ISSUE-047 | Zifmia client needs console output panel without full Dev Tools | Medium | client-zifmia | 2026-02-01 | - | - |
-| ISSUE-048 | Zifmia needs graceful handling for breaking platform changes | Medium | client-zifmia | 2026-02-04 | - | - |
+| ISSUE-048 | Zifmia not updated to latest platform | Medium | client-zifmia | 2026-02-04 | - | - |
 
 ---
 
@@ -64,22 +64,22 @@ When debugging issues in the Zifmia client, there is no way to see console outpu
 
 ---
 
-### ISSUE-048: Zifmia needs graceful handling for breaking platform changes
+### ISSUE-048: Zifmia not updated to latest platform
 
 **Reported**: 2026-02-04
 **Severity**: Medium
 **Component**: client-zifmia
 
 **Description**:
-When the platform bundle introduces breaking changes (renamed/removed exports), the Zifmia client crashes with unhelpful errors like:
+Zifmia client was out of sync with the latest platform build, causing import errors like:
 
 ```
 The requested module '@sharpee/world-model' does not provide an export named 'StoryInfoTrait'
 ```
 
-**Expected**: Zifmia should detect version mismatches or missing exports and display a user-friendly message indicating the platform bundle needs to be rebuilt, rather than crashing with a raw module error.
+**Resolution**: Rebuild Zifmia after platform changes using `./build.sh -s dungeo -c zifmia` followed by `tauri build` in PowerShell.
 
-**Notes**: This is a developer experience issue. When iterating on platform code, stale Zifmia bundles break silently. Consider version checking or try/catch wrappers around dynamic imports.
+**Notes**: This is a workflow reminder - Zifmia's Tauri app must be rebuilt separately after platform/runner changes.
 
 ---
 
