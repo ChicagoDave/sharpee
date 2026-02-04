@@ -1,4 +1,6 @@
-# Known Issues
+# Known Issues (CLOSED)
+
+**Status**: Closed 2026-02-04. Open issues moved to `issues-list-03.md`.
 
 Catalog of known bugs and issues to be addressed.
 
