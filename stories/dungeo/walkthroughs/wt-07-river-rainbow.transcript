@@ -1,70 +1,59 @@
-title: River & Rainbow (Emerald, Pot of Gold)
+title: River & Rainbow (Emerald, Statue, Pot of Gold)
 story: dungeo
-description: Get emerald from buoy, wave stick for rainbow, get pot of gold. Restores from wt-06.
+description: Get emerald from buoy, dig up statue at Sandy Beach, wave sceptre for rainbow, get pot of gold. Restores from wt-06.
 ---
 
 # Restore state from wt-06 (player at Living Room)
 $restore wt-06
 
 # ============================================================================
-# GOAL: Setup - Ensure correct state from previous segment
+# GOAL: Setup - Drop heavy items, get essentials
 # ============================================================================
 
-[GOAL: Verify starting state]
+[GOAL: Prepare for river journey]
 
 # Ensure we have torch and lantern
 $take torch
 $take brass lantern
 
-# Ivory torch is always lit, just verify we have light
-> look
-[OK: contains "Living Room"]
-
-[END GOAL]
-
-# ============================================================================
-# GOAL: Get hand pump from Reservoir North
-# ============================================================================
-
-[GOAL: Get hand pump]
-[ENSURES: inventory contains "pump"]
-
-$teleport Reservoir North
-
-> look
-[OK: contains "Reservoir"]
-
-# Pump may already be in inventory from previous walkthrough
-$take pump
+# Drop items we don't need to reduce weight
+$drop trunk
+$drop wrench
+$drop bell
+$drop book
+$drop candles
+$drop matchbook
 
 > inventory
-[OK: contains "pump"]
+[OK: contains "torch"]
+[OK: contains "lantern"]
 
 [END GOAL]
 
 # ============================================================================
-# GOAL: Get and inflate boat at Dam Base
+# GOAL: Get hand pump and inflate boat at Dam Base
 # ============================================================================
 
-[GOAL: Get and inflate boat]
+[GOAL: Get pump and boat]
 
 $teleport Dam Base
 
 > look
 [OK: contains "Dam"]
 
+# Get the plastic boat and inflate it
 > take plastic
 [OK: contains "Taken"]
 
-# Inflate the boat with the pump
+$take pump
+
 > inflate boat
 [OK: contains "inflate"]
 
 [END GOAL]
 
 # ============================================================================
-# GOAL: Get buoy with emerald from Frigid River
-# The buoy is at Frigid River-2
+# GOAL: Get emerald from buoy (FR-2)
 # ============================================================================
 
 [GOAL: Get emerald from buoy]
@@ -78,7 +67,6 @@ $teleport Frigid River-2
 > take buoy
 [OK: contains "Taken"]
 
-# Open buoy to get emerald
 > open buoy
 [OK: contains "open"]
 
@@ -88,79 +76,103 @@ $teleport Frigid River-2
 > inventory
 [OK: contains "emerald"]
 
+# Drop items we don't need to make room
+> drop boat
+[OK: contains "drop"]
+
+> drop pump
+[OK: contains "drop"]
+
+> drop buoy
+[OK: contains "drop"]
+
 [END GOAL]
 
 # ============================================================================
-# GOAL: Get sharp stick (sceptre) for rainbow puzzle
-# The stick is at Dam Base - can't take on boat (punctures it)
+# GOAL: Get shovel and dig up statue
 # ============================================================================
 
-[GOAL: Get sharp stick]
-[ENSURES: inventory contains "stick"]
+[GOAL: Get shovel and dig statue]
+[ENSURES: inventory contains "statue"]
 
+# Land at Rocky Shore from FR-3, then get shovel from Small Cave
+$teleport Rocky Shore
+
+> look
+[OK: contains "Rocky Shore"]
+
+> northwest
+[OK: contains "Small Cave"]
+
+> take shovel
+[OK: contains "Taken"]
+
+# Go to Sandy Beach to dig
+$teleport Sandy Beach
+
+> look
+[OK: contains "Sandy Beach"]
+
+# Dig 4 times to uncover the statue
+> dig
+[OK: contains "sand"]
+
+> dig
+[OK: contains "sand"]
+
+> dig
+[OK: contains "sand"]
+
+> dig
+[OK: contains "statue"]
+
+> take statue
+[OK: contains "Taken"]
+
+# Drop shovel - don't need it anymore
+> drop shovel
+[OK: contains "drop"]
+
+> inventory
+[OK: contains "statue"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Wave sceptre for rainbow, get pot of gold
+# ============================================================================
+
+[GOAL: Create rainbow and get pot of gold]
+[ENSURES: inventory contains "pot"]
+
+# Get the sharp stick (sceptre) from Dam Base
 $teleport Dam Base
 
 > take stick
 [OK: contains "Taken"]
 
-> inventory
-[OK: contains "stick"]
-
-[END GOAL]
-
-# ============================================================================
-# GOAL: Go to Aragain Falls and wave stick to create rainbow bridge
-# ============================================================================
-
-[GOAL: Create rainbow bridge]
-
+# Go to Aragain Falls
 $teleport Aragain Falls
 
 > look
 [OK: contains "Falls"]
 
-# Wave the sharp stick to make rainbow solid
+# Wave the sceptre to make rainbow solid
 > wave stick
 [OK: contains "rainbow"]
 
-# Now we can cross the rainbow going east
+# Cross the rainbow
 > east
 [OK: contains "Rainbow"]
 
-[END GOAL]
-
-# ============================================================================
-# GOAL: Get pot of gold at End of Rainbow
-# ============================================================================
-
-[GOAL: Get pot of gold]
-[ENSURES: inventory contains "pot"]
-
 > east
 [OK: contains "End of Rainbow"]
-
-> look
-[OK: contains "pot of gold"]
 
 > take pot
 [OK: contains "Taken"]
 
 > inventory
 [OK: contains "pot"]
-[OK: contains "gold"]
-
-[END GOAL]
-
-# ============================================================================
-# GOAL: Return to Living Room and store treasures
-# ============================================================================
-
-[GOAL: Return to Living Room]
-
-$teleport Living Room
-
-> look
-[OK: contains "Living Room"]
 
 [END GOAL]
 
@@ -168,12 +180,20 @@ $teleport Living Room
 # GOAL: Store treasures in trophy case
 # ============================================================================
 
-[GOAL: Store treasures in trophy case]
+[GOAL: Store treasures]
+
+$teleport Living Room
+
+> look
+[OK: contains "Living Room"]
 
 > open trophy case
 [OK: contains "open"]
 
 > put emerald in trophy case
+[OK: contains "put"]
+
+> put statue in trophy case
 [OK: contains "put"]
 
 > put pot in trophy case
@@ -182,10 +202,10 @@ $teleport Living Room
 [END GOAL]
 
 # ============================================================================
-# GOAL: Verify final state for next segment
+# GOAL: Verify final state
 # ============================================================================
 
-[GOAL: Verify inventory for next segment]
+[GOAL: Verify state for next segment]
 
 > inventory
 [OK: contains "torch"]
@@ -198,6 +218,6 @@ $teleport Living Room
 [END GOAL]
 
 # SUCCESS! River & Rainbow complete
-# Treasures stored: emerald, pot of gold
+# Treasures stored: emerald, statue, pot of gold
 # Player in Living Room with torch + lantern
-# Ready for next segment (well-tea-room)
+# Ready for next segment

@@ -6,7 +6,7 @@ Catalog of known bugs and issues to be addressed.
 
 | Issue | Description | Severity | Component | Identified | Deferred | Fixed |
 |-------|-------------|----------|-----------|------------|----------|-------|
-| ISSUE-031 | UNDO command not implemented | Medium | Platform | 2026-01-22 | - | - |
+| ISSUE-031 | UNDO command not implemented | Medium | Platform | 2026-01-22 | - | 2026-02-04 |
 | ISSUE-032 | Version transcript needs update for DUNGEON name | Low | Test | 2026-01-22 | - | - |
 | ISSUE-047 | Zifmia client needs console output panel without full Dev Tools | Medium | client-zifmia | 2026-02-01 | - | - |
 | ISSUE-048 | Zifmia not updated to latest platform | Medium | client-zifmia | 2026-02-04 | - | - |
@@ -35,6 +35,8 @@ The UNDO command does not emit a `platform.undo_completed` event. The feature ap
 **Expected**: Previous game state restored, confirmation message.
 
 **Affected transcripts**: undo-basic.transcript
+
+**Status**: Fixed 2026-02-04 — UNDO was implemented in Jan 2026. Test passes. Snapshot-based restoration working correctly.
 
 ---
 
