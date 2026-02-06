@@ -618,11 +618,21 @@ function createMaze5Objects(world: WorldModel, roomId: string): void {
 // ============= Treasure Room Objects =============
 
 function createTreasureRoomObjects(world: WorldModel, roomId: string): void {
-  // NOTE: In 1981 MDL, the Treasure Room is the thief's lair where he stashes
-  // stolen items. There is NO "golden chalice" hardcoded here.
-  // The only chalice in the game is the SILVER chalice (CHALI) from the well.
-  // The thief can steal it and bring it here dynamically.
-  //
-  // Previously we had a "golden chalice" here which was incorrect.
-  // The Treasure Room starts empty - items appear here when the thief steals them.
+  // Silver chalice (CHALI) - starts in the thief's lair per MDL source.
+  // The thief guards it; player can take it after killing the thief.
+  const chalice = world.createEntity('silver chalice', EntityType.ITEM);
+  chalice.add(new IdentityTrait({
+    name: 'silver chalice',
+    aliases: ['chalice', 'silver cup', 'cup', 'goblet'],
+    description: 'A beautiful silver chalice, tarnished with age but still valuable. It bears an inscription in an ancient language.',
+    properName: false,
+    article: 'a',
+    weight: 40
+  }));
+  chalice.add(new TreasureTrait({
+    treasureId: 'silver-chalice',
+    treasureValue: 10,     // OFVAL from mdlzork_810722
+    trophyCaseValue: 10,   // OTVAL from mdlzork_810722
+  }));
+  world.moveEntity(chalice.id, roomId);
 }

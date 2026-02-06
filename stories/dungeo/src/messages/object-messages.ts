@@ -28,6 +28,7 @@ import { BoatPunctureMessages, GlacierMessages } from '../traits';
 import { RiverMessages } from '../handlers/river-handler';
 import { FallsDeathMessages } from '../handlers/falls-death-handler';
 import { TinyRoomMessages } from '../handlers/tiny-room-handler';
+import { CakeMessages } from '../handlers/cake-handler';
 
 // Import action message constants
 import { GDTEventTypes } from '../actions';
@@ -126,6 +127,18 @@ export function registerObjectMessages(language: LanguageProvider): void {
   language.addMessage(DeathPenaltyMessages.PENALTY, 'You have lost 10 points for dying.');
   language.addMessage(DeathPenaltyMessages.GAME_OVER, 'You have died too many times. The Great Underground Empire claims another victim.\n\n    **** GAME OVER ****');
   language.addMessage(DeathPenaltyMessages.DEATH_COUNT, 'Deaths: {deaths}');
+
+  // ==========================================================================
+  // Cake Puzzle Messages (Tea Room / Well Area)
+  // ==========================================================================
+
+  language.addMessage(CakeMessages.EAT_ME_SHRINK, 'Suddenly the room seems to be getting much larger. Or maybe you are getting much smaller... In fact, you seem to have shrunk to the size of a mouse!');
+  language.addMessage(CakeMessages.BLUE_ENLARGE, 'Suddenly, the room around you seems to be getting much smaller. Or maybe you are getting much bigger... In fact, you seem to have grown back to your normal size!');
+  language.addMessage(CakeMessages.BLUE_CRUSH, 'You begin to grow at an alarming rate, but the room is too small to contain you! You are crushed to death.\n\n    **** You have died ****');
+  language.addMessage(CakeMessages.ORANGE_EXPLODE, 'The cake suddenly explodes in a tremendous blast! You are killed instantly.\n\n    **** You have died ****');
+  language.addMessage(CakeMessages.RED_TERRIBLE, 'What a terrible taste!');
+  language.addMessage(CakeMessages.RED_POOL_DISSOLVE, 'The red cake sails through the air and lands with a splash in the pool of goop. As it dissolves, the pool begins to evaporate! In a few moments, the pool is gone, revealing something on the floor.');
+  language.addMessage(CakeMessages.SPICES_REVEALED, 'A tin of rare spices is now visible where the pool used to be.');
 
   // ==========================================================================
   // Basket Elevator Messages (capability dispatch ADR-090)

@@ -1,8 +1,8 @@
 /**
  * Well Room Region - The well puzzle area
  *
- * 11 rooms: Engravings Cave, Riddle Room, Pearl Room, Well Bottom, Top of Well,
- * Low Room, Machine Room, Dingy Closet, Tea Room, Pool Room, Cave
+ * 12 rooms: Engravings Cave, Riddle Room, Pearl Room, Well Bottom, Top of Well,
+ * Low Room, Machine Room, Dingy Closet, Tea Room, Posts Room, Pool Room, Cave
  */
 
 import {
@@ -19,7 +19,8 @@ import {
   VehicleTrait,
   EnterableTrait,
   ActorTrait,
-  NpcTrait
+  NpcTrait,
+  EdibleTrait
 } from '@sharpee/world-model';
 import { TreasureTrait, RiddleRoomTrait, BucketTrait } from '../traits';
 
@@ -33,6 +34,7 @@ export interface WellRoomIds {
   machineRoom: string;
   dingyCloset: string;
   teaRoom: string;
+  postsRoom: string;
   poolRoom: string;
   cave: string;
 }
@@ -85,18 +87,21 @@ and all the king's horses can't draw it up?'
     'This is a large room filled with strange machinery. A small triangular button is set into the wall. A passage leads west.');
 
   const dingyCloset = createRoom(world, 'Dingy Closet',
-    'This is a small, dingy closet. A door leads south.');
+    'This is a small, dingy closet. A door leads north.');
 
   const teaRoom = createRoom(world, 'Tea Room',
-    'This appears to be a tea room. A passage leads north.');
+    'This is a small room with a table. On the table are cakes of various sorts. Passages lead to the west, northwest, and east.');
+
+  const postsRoom = createRoom(world, 'Posts Room',
+    'This is a room with very large and very tall wooden posts in each corner. The room is otherwise featureless.');
 
   const poolRoom = createRoom(world, 'Pool Room',
-    'This is a large room with a pool of water in the center.');
+    'This is a large room, one half of which is depressed. There is a large leak in the ceiling through which brown colored goop is falling. The only exit is to the west.');
 
   const cave = createRoom(world, 'Cave',
     'This is a tiny cave with entrances west and north, and a dark, forbidding staircase leading down.');
 
-  // === Set up connections ===
+  // === Set up connections (canonical from map-connections.md + MDL source) ===
 
   setExits(engravingsCave, {
     [Direction.SOUTHEAST]: riddleRoom.id,
@@ -109,33 +114,42 @@ and all the king's horses can't draw it up?'
     // E → Pearl Room (when riddle solved)
   });
 
-  setExits(pearlRoom, { [Direction.WEST]: riddleRoom.id });
+  setExits(pearlRoom, {
+    [Direction.WEST]: riddleRoom.id,
+    [Direction.EAST]: wellBottom.id,
+  });
 
   setExits(wellBottom, { [Direction.UP]: topOfWell.id });
 
   setExits(topOfWell, {
     [Direction.DOWN]: wellBottom.id,
-    [Direction.NORTH]: lowRoom.id,
+    [Direction.EAST]: teaRoom.id,
   });
 
   setExits(lowRoom, {
-    [Direction.SOUTH]: topOfWell.id,
+    [Direction.SOUTHEAST]: teaRoom.id,
     [Direction.EAST]: machineRoom.id,
-    [Direction.WEST]: teaRoom.id,
   });
 
-  setExits(machineRoom, { [Direction.WEST]: lowRoom.id });
+  setExits(machineRoom, {
+    [Direction.WEST]: lowRoom.id,
+    [Direction.SOUTH]: dingyCloset.id,
+  });
 
   setExits(teaRoom, {
-    [Direction.EAST]: lowRoom.id,
-    [Direction.NORTH]: dingyCloset.id,
+    [Direction.WEST]: topOfWell.id,
+    [Direction.NORTHWEST]: lowRoom.id,
+    [Direction.EAST]: postsRoom.id,
   });
 
-  setExits(dingyCloset, { [Direction.SOUTH]: teaRoom.id });
+  setExits(dingyCloset, { [Direction.NORTH]: machineRoom.id });
 
-  setExits(poolRoom, {
-    // Connections TBD based on map
+  setExits(postsRoom, {
+    [Direction.WEST]: teaRoom.id,
+    [Direction.EAST]: poolRoom.id,
   });
+
+  setExits(poolRoom, { [Direction.WEST]: postsRoom.id });
 
   setExits(cave, {
     // W → Mirror Room connected externally
@@ -152,6 +166,7 @@ and all the king's horses can't draw it up?'
     machineRoom: machineRoom.id,
     dingyCloset: dingyCloset.id,
     teaRoom: teaRoom.id,
+    postsRoom: postsRoom.id,
     poolRoom: poolRoom.id,
     cave: cave.id,
   };
@@ -190,9 +205,6 @@ export function createWellRoomObjects(world: WorldModel, roomIds: WellRoomIds): 
   // Bucket - starts at well bottom
   createBucket(world, roomIds.wellBottom, roomIds.topOfWell, roomIds.wellBottom);
 
-  // Pool Room treasure
-  createSilverChalice(world, roomIds.poolRoom);
-
   // Broom Closet treasure (pearl necklace)
   createPearlNecklace(world, roomIds.pearlRoom);
 
@@ -201,6 +213,13 @@ export function createWellRoomObjects(world: WorldModel, roomIds: WellRoomIds): 
 
   // Tea Room scenery and items
   createTeaRoomObjects(world, roomIds.teaRoom);
+
+  // Store room IDs for cake handler to reference
+  world.setStateValue('dungeo.tea_room.id', roomIds.teaRoom);
+  world.setStateValue('dungeo.posts_room.id', roomIds.postsRoom);
+
+  // Pool Room objects
+  createPoolRoomObjects(world, roomIds.poolRoom);
 
   // Low Room - Robot NPC
   createRobot(world, roomIds.lowRoom);
@@ -264,27 +283,6 @@ function createBucket(
   bucket.add(new BucketTrait({ hasWater: false }));
   world.moveEntity(bucket.id, startRoomId);
   return bucket;
-}
-
-// ============= Pool Room Objects =============
-
-function createSilverChalice(world: WorldModel, roomId: string): IFEntity {
-  const chalice = world.createEntity('silver chalice', EntityType.ITEM);
-  chalice.add(new IdentityTrait({
-    name: 'silver chalice',
-    aliases: ['chalice', 'silver cup', 'cup', 'goblet'],
-    description: 'A beautiful silver chalice, tarnished with age but still valuable. It bears an inscription in an ancient language.',
-    properName: false,
-    article: 'a',
-    weight: 40
-  }));
-  chalice.add(new TreasureTrait({
-    treasureId: 'silver-chalice',
-    treasureValue: 10,     // OFVAL from mdlzork_810722
-    trophyCaseValue: 10,   // OTVAL from mdlzork_810722
-  }));
-  world.moveEntity(chalice.id, roomId);
-  return chalice;
 }
 
 // ============= Pearl Room Objects =============
@@ -368,46 +366,107 @@ function createTeaRoomObjects(world: WorldModel, roomId: string): void {
      ============================================`;
   world.moveEntity(paper.id, roomId);
 
-  // "Eat Me" cake - Alice in Wonderland reference
+  // Eat-Me cake (ECAKE) - icing reads "Eat Me"
+  // Eat in Tea Room → teleport to Posts Room
   const eatMeCake = world.createEntity('eat-me cake', EntityType.ITEM);
   eatMeCake.add(new IdentityTrait({
     name: '"Eat Me" cake',
-    aliases: ['eat me', 'eat-me', 'eat me cake', 'white cake'],
-    description: 'A small cake with "Eat Me" written on it in frosting.',
+    aliases: ['eat me', 'eat-me', 'eat me cake', 'eat-me cake'],
+    description: 'A cake with "Eat Me" written on it in icing. You can make out a capital E on the icing.',
     properName: false,
     article: 'an',
     weight: 5
   }));
-  (eatMeCake as any).isEdible = true;
-  (eatMeCake as any).onEatEffect = 'grow';
+  eatMeCake.add(new EdibleTrait({ servings: 1, taste: 'tasty' }));
+  (eatMeCake as any).cakeType = 'eat-me';
   world.moveEntity(eatMeCake.id, roomId);
 
-  // "Drink Me" cake
-  const drinkMeCake = world.createEntity('drink-me cake', EntityType.ITEM);
-  drinkMeCake.add(new IdentityTrait({
-    name: '"Drink Me" cake',
-    aliases: ['drink me', 'drink-me', 'drink me cake', 'blue cake'],
-    description: 'A small blue cake with "Drink Me" written on it.',
+  // Blue-icing cake (BLICE) - icing reads "Enlarge"
+  // Eat in Posts Room → teleport to Tea Room; Eat in Tea Room → crush death
+  const blueCake = world.createEntity('blue cake', EntityType.ITEM);
+  blueCake.add(new IdentityTrait({
+    name: 'blue cake',
+    aliases: ['blue', 'blue-icing', 'blue icing cake', 'blue-icing cake'],
+    description: 'A cake with blue icing. You can make out a capital E on the icing.',
     properName: false,
     article: 'a',
     weight: 5
   }));
-  (drinkMeCake as any).isEdible = true;
-  (drinkMeCake as any).onEatEffect = 'shrink';
-  world.moveEntity(drinkMeCake.id, roomId);
+  blueCake.add(new EdibleTrait({ servings: 1, taste: 'tasty' }));
+  (blueCake as any).cakeType = 'blue-icing';
+  world.moveEntity(blueCake.id, roomId);
 
-  // Orange cake - just food
+  // Red-icing cake (RDICE) - icing reads "Evaporate"
+  // Eaten → tastes terrible; Thrown in Pool Room → dissolves pool, reveals spices
+  const redCake = world.createEntity('red cake', EntityType.ITEM);
+  redCake.add(new IdentityTrait({
+    name: 'red cake',
+    aliases: ['red', 'red-icing', 'red icing cake', 'red-icing cake'],
+    description: 'A cake with red icing. You can make out a capital E on the icing.',
+    properName: false,
+    article: 'a',
+    weight: 5
+  }));
+  redCake.add(new EdibleTrait({ servings: 1, taste: 'awful' }));
+  (redCake as any).cakeType = 'red-icing';
+  world.moveEntity(redCake.id, roomId);
+
+  // Orange-icing cake (ORICE) - icing reads "Explode"
+  // Eaten or thrown → explosion death
   const orangeCake = world.createEntity('orange cake', EntityType.ITEM);
   orangeCake.add(new IdentityTrait({
     name: 'orange cake',
-    aliases: ['orange', 'orange colored cake', 'cake'],
-    description: 'A small orange-colored cake. It looks delicious.',
+    aliases: ['orange', 'orange-icing', 'orange icing cake', 'orange-icing cake'],
+    description: 'A cake with orange icing. You can make out a capital E on the icing.',
     properName: false,
     article: 'an',
     weight: 5
   }));
-  (orangeCake as any).isEdible = true;
+  orangeCake.add(new EdibleTrait({ servings: 1, effects: ['explode'] }));
+  (orangeCake as any).cakeType = 'orange-icing';
   world.moveEntity(orangeCake.id, roomId);
+}
+
+// ============= Pool Room Objects =============
+
+function createPoolRoomObjects(world: WorldModel, roomId: string): void {
+  // Pool of brown goop (scenery) - covers the spices
+  // Dissolved when red-icing cake is thrown in Pool Room
+  const pool = world.createEntity('pool of goop', EntityType.ITEM);
+  pool.add(new IdentityTrait({
+    name: 'pool of goop',
+    aliases: ['pool', 'goop', 'brown goop', 'brown stuff', 'leak'],
+    description: 'A pool of brown goop covers the depressed half of the room. It appears to be dripping from a leak in the ceiling.',
+    properName: false,
+    article: 'a'
+  }));
+  pool.add(new SceneryTrait());
+  world.moveEntity(pool.id, roomId);
+
+  // Tin of rare spices (SAFFR) - treasure (5 take + 5 case = 10 pts)
+  // Canonical location: ALITR (Alice-Trapped) = Pool Room, not Atlantis Room.
+  // Concealed under pool goop until red cake dissolves it.
+  const saffron = world.createEntity('tin of spices', EntityType.ITEM);
+  saffron.add(new IdentityTrait({
+    name: 'tin of spices',
+    aliases: ['tin', 'spices', 'saffron', 'rare spices', 'tin of rare spices'],
+    description: 'A tin of rare spices. The aroma is exotic and enticing.',
+    properName: false,
+    article: 'a',
+    weight: 8,
+    concealed: true  // Hidden until pool dissolved by red cake
+  }));
+  saffron.add(new TreasureTrait({
+    treasureId: 'saffron',
+    treasureValue: 5,      // OFVAL from mdlzork_810722
+    trophyCaseValue: 5     // OTVAL from mdlzork_810722
+  }));
+  world.moveEntity(saffron.id, roomId);
+  // Store IDs for the cake handler
+  world.setStateValue('dungeo.pool_room.pool_id', pool.id);
+  world.setStateValue('dungeo.pool_room.spices_id', saffron.id);
+  world.setStateValue('dungeo.pool_room.room_id', roomId);
+  world.setStateValue('dungeo.pool.dissolved', false);
 }
 
 // ============= Low Room Objects =============

@@ -24,6 +24,7 @@ import { registerExorcismHandler } from '../handlers/exorcism-handler';
 import { registerRoundRoomHandler } from '../handlers/round-room-handler';
 
 import { registerRoyalPuzzleHandler } from '../handlers/royal-puzzle';
+import { registerCakeEatingHandler, registerCakeThrowingHandler } from '../handlers/cake-handler';
 
 
 import { registerEndgameTriggerHandler } from '../handlers/endgame-trigger-handler';
@@ -145,6 +146,10 @@ export function registerSchedulerEvents(
 
   // Royal Puzzle handler (sliding block puzzle)
   registerRoyalPuzzleHandler(scheduler, config.royalPuzzleIds);
+
+  // Cake handlers (Tea Room / Well Area puzzle)
+  registerCakeEatingHandler(world);
+  registerCakeThrowingHandler(world);
 
   // Ghost Ritual now handled by GhostRitualDroppingInterceptor (ADR-118)
 

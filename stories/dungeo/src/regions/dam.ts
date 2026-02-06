@@ -523,22 +523,7 @@ function createAtlantisRoomObjects(world: WorldModel, roomId: string): void {
     trophyCaseValue: 11    // OTVAL from mdlzork_810722
   }));
   world.moveEntity(trident.id, roomId);
-
-  // Tin of rare spices (Saffron) - treasure (5 take + 5 case = 10 pts)
-  // In 1981 MDL: SAFFR object in ALITR (Atlantis Room)
-  const saffron = world.createEntity('tin of spices', EntityType.ITEM);
-  saffron.add(new IdentityTrait({
-    name: 'tin of spices',
-    aliases: ['tin', 'spices', 'saffron', 'rare spices', 'tin of rare spices'],
-    description: 'A tin of rare spices. The aroma is exotic and enticing.',
-    properName: false,
-    article: 'a',
-    weight: 8
-  }));
-  saffron.add(new TreasureTrait({
-    treasureId: 'saffron',
-    treasureValue: 5,      // OFVAL from mdlzork_810722
-    trophyCaseValue: 5     // OTVAL from mdlzork_810722
-  }));
-  world.moveEntity(saffron.id, roomId);
+  // NOTE: Tin of spices (SAFFR) was incorrectly placed here.
+  // ALITR = Pool Room (Alice-Trapped), not Atlantis Room.
+  // Spices now created in well-room.ts Pool Room.
 }
