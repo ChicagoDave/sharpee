@@ -17,12 +17,12 @@ $take torch
 $take brass lantern
 
 # Drop items we don't need to reduce weight
-$drop trunk
-$drop wrench
-$drop bell
-$drop book
-$drop candles
-$drop matchbook
+> drop trunk
+> drop wrench
+> drop bell
+> drop book
+> drop candles
+> drop matchbook
 
 > inventory
 [OK: contains "torch"]
@@ -216,6 +216,8 @@ $teleport Living Room
 [OK: contains "trophy case"]
 
 [END GOAL]
+
+$save wt-07
 
 # SUCCESS! River & Rainbow complete
 # Treasures stored: emerald, statue, pot of gold

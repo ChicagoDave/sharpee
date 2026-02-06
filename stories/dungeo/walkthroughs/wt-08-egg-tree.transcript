@@ -1,0 +1,69 @@
+title: Egg from Tree
+story: dungeo
+description: Climb the tree in the forest, get the jewel-encrusted egg. Restores from wt-07.
+---
+
+# Restore state from wt-07 (player at Living Room)
+$restore wt-07
+
+# ============================================================================
+# GOAL: Get the egg from Up a Tree
+# ============================================================================
+
+[GOAL: Get the egg from Up a Tree]
+
+# Navigate to the forest tree
+$teleport Up a Tree
+
+> look
+[OK: contains "Up a Tree"]
+[OK: contains "nest"]
+
+# Take the egg from the nest
+> take egg
+[OK: contains "egg"]
+
+> inventory
+[OK: contains "egg"]
+
+> examine egg
+[OK: contains "egg"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Store egg in trophy case
+# ============================================================================
+
+[GOAL: Store egg in trophy case]
+
+$teleport Living Room
+
+> look
+[OK: contains "Living Room"]
+
+> open trophy case
+[OK: contains "open"]
+
+> put egg in trophy case
+[OK: contains "put"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Verify final state
+# ============================================================================
+
+[GOAL: Verify state for next segment]
+
+> inventory
+[OK: contains "torch"]
+[OK: contains "lantern"]
+
+> look
+[OK: contains "Living Room"]
+[OK: contains "trophy case"]
+
+[END GOAL]
+
+$save wt-08
