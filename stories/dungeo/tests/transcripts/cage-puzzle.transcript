@@ -4,12 +4,20 @@ description: Tests the cage trap when taking sphere, robot raising cage, and tak
 
 ---
 
-# Setup - get light and teleport near robot
+# Setup - get light and teleport directly to Dingy Closet
+# (Avoid Low Room navigation since carousel randomizes exits)
 > gdt
 [OK: contains "GDT ready"]
 
 > tk brass lantern
 [OK: contains "Taken"]
+
+# Teleport to Dingy Closet and move robot there
+> ah Dingy Closet
+[OK: contains "Teleported"]
+
+> ao robot here
+[OK: contains "Moved"]
 
 > ex
 [OK: contains "Returning to game"]
@@ -17,45 +25,10 @@ description: Tests the cage trap when taking sphere, robot raising cage, and tak
 > turn on lantern
 [OK: contains "on"]
 
-# Teleport to Low Room (robot's starting location)
-> gdt
-[OK: contains "GDT ready"]
-
-> ah Low Room
-[OK: contains "Teleported"]
-
-> ex
-[OK: contains "Returning to game"]
-
-# Verify robot is here
+# Verify robot, sphere, and cage are visible
 > look
-[OK: contains "Low Room"]
-[OK: contains "robot"]
-
-# ============================================================
-# Move robot to Dingy Closet via Machine Room
-# ============================================================
-
-# Robot goes east to Machine Room
-> tell robot to go east
-[OK: contains "Whirr"]
-
-# Player follows to Machine Room
-> east
-[OK: contains "Machine Room"]
-[OK: contains "robot"]
-
-# Robot goes south to Dingy Closet
-> tell robot to go south
-[OK: contains "Whirr"]
-
-# Player follows to Dingy Closet
-> south
 [OK: contains "Dingy Closet"]
 [OK: contains "robot"]
-
-# Verify sphere and cage are visible
-> look
 [OK: contains "sphere"]
 [OK: contains "cage"]
 

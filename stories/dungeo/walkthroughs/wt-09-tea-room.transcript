@@ -1,0 +1,240 @@
+title: Tea Room Area
+story: dungeo
+description: Solve riddle, get necklace, well puzzle, cake puzzles, carousel fix, cage puzzle. Restores from wt-08.
+---
+
+# Restore state from wt-08 (player at Living Room with torch and lantern)
+$restore wt-08
+
+# ============================================================================
+# GOAL: Get water bottle from Kitchen (needed for well puzzle)
+# ============================================================================
+
+[GOAL: Get water bottle]
+
+> east
+[OK: contains "Kitchen"]
+
+> take bottle
+[OK: contains "Taken"]
+
+> west
+[OK: contains "Living Room"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Solve riddle and get pearl necklace
+# ============================================================================
+
+[GOAL: Solve riddle and get pearl necklace]
+
+# Teleport to Engravings Cave (Round Room carousel makes navigation unreliable)
+$teleport Engravings Cave
+
+> look
+[OK: contains "Engravings Cave"]
+
+# Go down to Riddle Room
+> southeast
+[OK: contains "Riddle Room"]
+[OK: contains "riddle"]
+
+# Solve the riddle
+> answer "a well"
+[OK: contains "stone door"]
+
+# Enter Pearl Room (Broom Closet)
+> east
+[OK: contains "Broom Closet"]
+[OK: contains "pearl necklace"]
+
+> take necklace
+[OK: contains "Taken"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Well puzzle - ride bucket up to Top of Well
+# ============================================================================
+
+[GOAL: Ride bucket to Top of Well]
+
+> east
+[OK: contains "Well Bottom"]
+
+> enter bucket
+[OK: contains "bucket"]
+
+> pour water
+[OK: contains "rises"]
+
+# Should now be at Top of Well
+> look
+[OK: contains "Top of Well"]
+
+> exit bucket
+[OK: contains "bucket"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Tea Room cake puzzle - get spices from Pool Room
+# ============================================================================
+
+[GOAL: Cake puzzle and get spices]
+
+# Go east to Tea Room
+> east
+[OK: contains "Tea Room"]
+[OK: contains "cake"]
+
+# Take the cakes we need before eating eat-me cake
+> take blue cake
+[OK: contains "Taken"]
+
+> take red cake
+[OK: contains "Taken"]
+
+# Eat eat-me cake to shrink and teleport to Posts Room
+> eat eat-me cake
+[OK: matches /(shrunk|smaller|shrink)/i]
+
+> look
+[OK: contains "Posts Room"]
+
+# Go east to Pool Room
+> east
+[OK: contains "Pool Room"]
+[OK: contains "goop"]
+
+# Throw red cake at pool to dissolve it and reveal spices
+> throw red cake at pool
+[OK: matches /(dissolve|evaporate|calciumite)/i]
+
+# Take the revealed spices
+> take spices
+[OK: contains "Taken"]
+
+# Go back to Posts Room
+> west
+[OK: contains "Posts Room"]
+
+# Eat blue cake to grow and return to Tea Room
+> eat blue cake
+[OK: matches /(normal size|enlarge|grow)/i]
+
+> look
+[OK: contains "Tea Room"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Fix carousel and solve cage puzzle - get sphere
+# ============================================================================
+
+[GOAL: Fix carousel and cage puzzle]
+
+# Drop items we don't need for cage puzzle (inventory too full otherwise)
+> drop stick
+[OK: contains "Dropped"]
+
+> drop wrench
+[OK: contains "Dropped"]
+
+> drop matchbook
+[OK: contains "Dropped"]
+
+# Go northwest to Low Room (carousel is active - compass spinning)
+> northwest
+[OK: contains "Low Room"]
+[OK: contains "robot"]
+
+# Send robot to Machine Room
+> tell robot to go east
+[OK: contains "Whirr"]
+
+# Teleport to carousel Machine Room (uses alias to disambiguate from coal mine Machine Room)
+$teleport carousel machine room
+
+> look
+[OK: contains "Machine Room"]
+[OK: contains "robot"]
+
+# Have robot push the triangular button to fix carousel
+> tell robot to push button
+[OK: contains "Whirr"]
+[OK: contains "pushes"]
+
+# Send robot south to Dingy Closet for cage puzzle
+> tell robot to go south
+[OK: contains "Whirr"]
+
+# Follow to Dingy Closet
+> south
+[OK: contains "Dingy Closet"]
+[OK: contains "robot"]
+[OK: contains "sphere"]
+
+# Take sphere - triggers cage trap
+> take sphere
+[OK: contains "steel cage falls"]
+
+# Tell robot to raise cage
+> tell robot to raise cage
+[OK: contains "cage shakes"]
+[OK: contains "hurled across"]
+
+# Now take sphere successfully
+> take sphere
+[OK: contains "Taken"]
+
+> inventory
+[OK: contains "necklace"]
+[OK: contains "spices"]
+[OK: contains "sphere"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Store treasures in trophy case
+# ============================================================================
+
+[GOAL: Store treasures in trophy case]
+
+$teleport Living Room
+
+> look
+[OK: contains "Living Room"]
+
+> open trophy case
+[OK: matches /(open|Opened|already)/i]
+
+> put necklace in trophy case
+[OK: contains "put"]
+
+> put spices in trophy case
+[OK: contains "put"]
+
+> put sphere in trophy case
+[OK: contains "put"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Verify final state
+# ============================================================================
+
+[GOAL: Verify state for next segment]
+
+> inventory
+[OK: contains "torch"]
+[OK: contains "lantern"]
+
+> look
+[OK: contains "Living Room"]
+[OK: contains "trophy case"]
+
+[END GOAL]
+
+$save wt-09

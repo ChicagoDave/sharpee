@@ -6,7 +6,7 @@
  */
 
 import type { WorldModel, IFEntity } from '@sharpee/world-model';
-import { AuthorModel } from '@sharpee/world-model';
+import { AuthorModel, IdentityTrait } from '@sharpee/world-model';
 import type { DebugContext } from '../types.js';
 
 /**
@@ -80,6 +80,15 @@ export function createDebugContext(world: WorldModel): DebugContext {
         (r) => r.name?.toLowerCase() === searchLower
       );
       if (exactMatch) return exactMatch;
+
+      // Check aliases (from IdentityTrait) for exact match
+      const aliasMatch = rooms.find((r) => {
+        const identity = r.get(IdentityTrait);
+        return identity?.aliases?.some(
+          (a: string) => a.toLowerCase() === searchLower
+        );
+      });
+      if (aliasMatch) return aliasMatch;
 
       const partialMatch = rooms.find(
         (r) => r.name?.toLowerCase().includes(searchLower) ||

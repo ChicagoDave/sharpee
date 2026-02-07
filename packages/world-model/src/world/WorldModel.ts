@@ -883,8 +883,18 @@ export class WorldModel implements IWorldModel {
   loadJSON(json: string): void {
     const data = JSON.parse(json);
 
+    // Preserve code registrations that aren't part of serialized state
+    const savedEventChains = new Map(this.eventChains);
+    const savedCapabilities = { ...this.capabilities };
+
     // Clear current state
     this.clear();
+
+    // Restore code registrations
+    for (const [key, value] of savedEventChains) {
+      this.eventChains.set(key, value);
+    }
+    this.capabilities = savedCapabilities;
 
     // Restore entities
     for (const { id, entity } of data.entities) {

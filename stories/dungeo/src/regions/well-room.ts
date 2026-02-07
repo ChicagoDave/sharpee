@@ -390,7 +390,7 @@ function createTeaRoomObjects(world: WorldModel, roomId: string): void {
     weight: 5
   }));
   eatMeCake.add(new EdibleTrait({ servings: 1, taste: 'tasty' }));
-  (eatMeCake as any).cakeType = 'eat-me';
+  eatMeCake.attributes.cakeType = 'eat-me';
   world.moveEntity(eatMeCake.id, roomId);
 
   // Blue-icing cake (BLICE) - icing reads "Enlarge"
@@ -406,7 +406,7 @@ function createTeaRoomObjects(world: WorldModel, roomId: string): void {
     weight: 5
   }));
   blueCake.add(new EdibleTrait({ servings: 1, taste: 'tasty' }));
-  (blueCake as any).cakeType = 'blue-icing';
+  blueCake.attributes.cakeType = 'blue-icing';
   world.moveEntity(blueCake.id, roomId);
 
   // Red-icing cake (RDICE) - icing reads "Evaporate"
@@ -422,7 +422,7 @@ function createTeaRoomObjects(world: WorldModel, roomId: string): void {
     weight: 5
   }));
   redCake.add(new EdibleTrait({ servings: 1, taste: 'awful' }));
-  (redCake as any).cakeType = 'red-icing';
+  redCake.attributes.cakeType = 'red-icing';
   world.moveEntity(redCake.id, roomId);
 
   // Orange-icing cake (ORICE) - icing reads "Explode"
@@ -438,7 +438,7 @@ function createTeaRoomObjects(world: WorldModel, roomId: string): void {
     weight: 5
   }));
   orangeCake.add(new EdibleTrait({ servings: 1, effects: ['explode'] }));
-  (orangeCake as any).cakeType = 'orange-icing';
+  orangeCake.attributes.cakeType = 'orange-icing';
   world.moveEntity(orangeCake.id, roomId);
 }
 

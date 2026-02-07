@@ -281,9 +281,13 @@ The riddle answer is "a well". Must verify:
 21. **Build + test**: carousel.transcript passes (17 tests), 168 walkthrough tests pass
     - Note: robot-commands.transcript and cage-puzzle.transcript need updating for carousel
 
-### Phase 5: Walkthrough
+### Phase 5: Walkthrough ✅ COMPLETE
 
 22. Write wt-09 transcript exercising the full area with real gameplay
+    - Fixed: `cakeType` property lost on save/restore (moved to `entity.attributes`)
+    - Fixed: `WorldModel.loadJSON()` now preserves `eventChains` and `capabilities` across restore
+    - Fixed: `findRoom()` in testing extension now checks IdentityTrait aliases for `$teleport` disambiguation
+    - 44 tests pass in wt-09, full chain 212 pass / 6 skip
 
 ---
 

@@ -69,7 +69,7 @@ export function registerCakeEatingHandler(world: WorldModel): void {
     // Get the eaten entity and check if it's a cake
     const item = w.getEntity(itemId);
     if (!item) return null;
-    const cakeType = (item as any).cakeType as string | undefined;
+    const cakeType = item.attributes.cakeType as string | undefined;
     if (!cakeType) return null;
 
     // Get player location
@@ -161,7 +161,7 @@ export function registerCakeThrowingHandler(world: WorldModel): void {
     // Check if it's a cake being thrown
     const item = w.getEntity(itemId);
     if (!item) return null;
-    const cakeType = (item as any).cakeType as string | undefined;
+    const cakeType = item.attributes.cakeType as string | undefined;
 
     // Get player location
     const player = w.getPlayer();

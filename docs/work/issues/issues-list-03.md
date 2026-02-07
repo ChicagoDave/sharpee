@@ -10,6 +10,7 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-032 | Version transcript needs update for DUNGEON name | Low | Test | 2026-01-22 | - | - |
 | ISSUE-047 | Zifmia client needs console output panel without full Dev Tools | Medium | client-zifmia | 2026-02-01 | - | - |
 | ISSUE-048 | Zifmia not updated to latest platform | Medium | client-zifmia | 2026-02-04 | - | - |
+| ISSUE-049 | `$seed` directive for deterministic randomization testing | Low | transcript-tester | 2026-02-07 | - | - |
 
 ---
 
@@ -82,6 +83,29 @@ The requested module '@sharpee/world-model' does not provide an export named 'St
 **Resolution**: Rebuild Zifmia after platform changes using `./build.sh -s dungeo -c zifmia` followed by `tauri build` in PowerShell.
 
 **Notes**: This is a workflow reminder - Zifmia's Tauri app must be rebuilt separately after platform/runner changes.
+
+---
+
+### ISSUE-049: Transcript tester needs `$seed` directive for deterministic randomization testing
+
+**Reported**: 2026-02-07
+**Severity**: Low
+**Component**: Platform (transcript-tester)
+
+**Description**:
+Games rely on randomization (carousel exits, combat damage, thief behavior) and death/restore puzzle cycles. Currently walkthroughs work around randomization using GDT teleport, extra combat rounds, and path avoidance. A `$seed` directive would make randomized sections deterministic.
+
+**Proposed design**:
+- `$seed <value>` — Sets the RNG seed before the next command, making randomized outcomes deterministic
+- Implementation: `world.setStateValue('rng.seed', value)` or a dedicated RNG service
+- The game's `Math.random()` calls would need to route through a seedable PRNG
+- Walkthroughs stay golden-path only; death/randomization scenarios go in unit transcripts
+
+**Other considered approaches**:
+- `[OK: matches_any "Pattern1" "Pattern2"]` — Accept multiple valid outputs for non-deterministic results
+- `$retry <N>` — Repeat a command block until assertions pass (for combat)
+
+**Priority**: Low — current workarounds (GDT teleport, extra attacks, avoiding carousel) are functional. Implement when more puzzles depend on randomization.
 
 ---
 

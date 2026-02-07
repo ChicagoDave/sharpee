@@ -4,43 +4,29 @@ description: Test commanding the robot - matches FORTRAN timefnc.for behavior
 
 ---
 
-# Get lantern from Living Room first (need light for underground areas)
-> north
-[OK: contains "North of House"]
+# Setup - get lantern and teleport to Dingy Closet with robot
+# (Avoid Low Room entirely since carousel randomizes exits)
+> gdt
+[OK: contains "GDT ready"]
 
-> east
-[OK: contains "Behind House"]
-
-# Window starts slightly ajar but not fully open - must open to enter
-> open window
-[OK: matches /(Opened|open)/i]
-
-> west
-[OK: contains "Kitchen"]
-
-> west
-[OK: contains "Living Room"]
-
-> take lantern
+> tk brass lantern
 [OK: contains "Taken"]
 
-> switch on lantern
-[OK: contains "on"]
-
-# Get to the Low Room where robot is located
-> gdt
-[OK: contains "GAME DEBUGGING TOOL"]
-
-> ah Low Room
+> ah Dingy Closet
 [OK: contains "Teleported"]
-[OK: contains "Low Room"]
+
+> ao robot here
+[OK: contains "Moved"]
 
 > ex
 [OK: contains "Returning to game"]
 
+> switch on lantern
+[OK: contains "on"]
+
 # Verify robot is here
 > look
-[OK: contains "Low Room"]
+[OK: contains "Dingy Closet"]
 [OK: contains "robot"]
 
 # Test FOLLOW/STAY commands - these are DUNGEON MASTER commands, NOT robot commands!
@@ -78,17 +64,18 @@ description: Test commanding the robot - matches FORTRAN timefnc.for behavior
 # Test known verbs that robot CAN execute (WALK, TAKE, DROP, PUSH, etc.)
 # Robot says "Whirr, buzz, click!" then executes the action
 
-# Test robot walk - robot should move to Machine Room (east)
-> tell robot to go east
+# Test robot walk - robot should move to Machine Room (north from Dingy Closet)
+> tell robot to go north
 [OK: contains "Whirr"]
 [EVENT: true, type="game.message" messageId="dungeo.commanding.whirr_buzz_click"]
 
-# Verify robot moved (robot is no longer in Low Room)
+# Verify robot moved (robot is no longer in Dingy Closet)
 > look
-[OK: contains "Low Room"]
+[OK: contains "Dingy Closet"]
 
-# Go to Machine Room to verify robot moved there
-> east
+# Go to Machine Room (north) to verify robot moved there
+# prevLocation = Dingy Closet, so carousel exit daemon won't fire
+> north
 [OK: contains "Machine Room"]
 [OK: contains "robot"]
 
