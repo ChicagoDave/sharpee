@@ -85,6 +85,11 @@ and all the king's horses can't draw it up?'
 
   const machineRoom = createRoom(world, 'Machine Room',
     'This is a large room filled with strange machinery. A small triangular button is set into the wall. A passage leads west.');
+  // Add alias to distinguish from coal mine Machine Room (for GDT and disambiguation)
+  const machineRoomIdentity = machineRoom.get(IdentityTrait);
+  if (machineRoomIdentity) {
+    machineRoomIdentity.aliases = ['button machine room', 'carousel machine room'];
+  }
 
   const dingyCloset = createRoom(world, 'Dingy Closet',
     'This is a small, dingy closet. A door leads north.');
@@ -232,6 +237,9 @@ export function createWellRoomObjects(world: WorldModel, roomIds: WellRoomIds): 
 
   // Store dingy closet ID for cage puzzle handlers
   world.setStateValue('dungeo.cage.dingy_closet_id', roomIds.dingyCloset);
+
+  // Low Room carousel starts active (exits randomized until button is pushed)
+  world.setStateValue('dungeo.carousel.active', true);
 }
 
 // ============= Well Scenery =============

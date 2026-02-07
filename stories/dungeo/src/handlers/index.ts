@@ -23,3 +23,4 @@ export * from './trapdoor-handler';
 export * from './chimney-handler';
 export * from './grue-handler';
 export * from './cake-handler';
+export * from './carousel-handler';

@@ -1,0 +1,89 @@
+title: Low Room Carousel (Magnet Room)
+story: dungeo
+description: Tests the Low Room carousel exit randomization and button fix
+
+---
+
+# Setup - get light source
+> gdt
+[OK: contains "GDT ready"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+# Teleport to Tea Room (adjacent to Low Room via NW)
+> ah Tea Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning to game"]
+
+> turn on lantern
+[OK: contains "on"]
+
+# ============================================================
+# Part 1: Carousel Active - verify entry and exit behavior
+# ============================================================
+
+# Go northwest from Tea Room to Low Room
+# Entry daemon should fire: "compass starts spinning wildly"
+> northwest
+[OK: contains "Low Room"]
+[OK: contains "compass starts spinning"]
+
+# Go east - exit daemon should randomize destination
+# Player ends up in either Machine Room or Tea Room (50/50)
+> east
+[OK: contains "cannot get your bearings"]
+[OK: matches /(Machine Room|Tea Room)/]
+
+# ============================================================
+# Part 2: Fix carousel via robot button push
+# ============================================================
+
+# Teleport to well-area Machine Room (use alias to avoid coal mine one)
+> gdt
+[OK: contains "GDT ready"]
+
+> ah button machine room
+[OK: contains "Teleported"]
+
+# Move robot to current location
+> ao robot here
+[OK: contains "Moved"]
+
+> ex
+[OK: contains "Returning to game"]
+
+# Verify robot is present
+> look
+[OK: contains "Machine Room"]
+[OK: contains "robot"]
+
+# Tell robot to push the triangular button
+> tell robot to push button
+[OK: contains "pushes"]
+[OK: matches /(carousel|grinding|thump)/i]
+
+# ============================================================
+# Part 3: Carousel Fixed - exits work normally
+# ============================================================
+
+# Go west to Low Room - no compass spinning message
+> west
+[OK: contains "Low Room"]
+[OK: not contains "compass"]
+
+# Go east - should reliably reach Machine Room (no randomization)
+> east
+[OK: contains "Machine Room"]
+[OK: not contains "cannot get your bearings"]
+
+# Go back west to Low Room
+> west
+[OK: contains "Low Room"]
+
+# Go southeast - should reliably reach Tea Room
+> southeast
+[OK: contains "Tea Room"]
+[OK: not contains "cannot get your bearings"]

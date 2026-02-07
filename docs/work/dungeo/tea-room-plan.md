@@ -274,11 +274,12 @@ The riddle answer is "a well". Must verify:
 18. Robot "take sphere" → crush death
 19. **Build + test**: cage-puzzle.transcript passes (18 tests)
 
-### Phase 4: Carousel
+### Phase 4: Carousel ✅ COMPLETE
 
-19. Implement Low Room going interceptor (exit randomization)
-20. Implement button push → disable carousel
-21. **Build + test**: Verify carousel works
+19. Carousel handler daemon (3 daemons: exit randomizer, entry message, tracking)
+20. Button push sets `dungeo.carousel.active` to false (shared with Round Room fix)
+21. **Build + test**: carousel.transcript passes (17 tests), 168 walkthrough tests pass
+    - Note: robot-commands.transcript and cage-puzzle.transcript need updating for carousel
 
 ### Phase 5: Walkthrough
 

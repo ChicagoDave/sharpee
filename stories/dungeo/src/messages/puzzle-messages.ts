@@ -30,6 +30,7 @@ import { GhostRitualMessages } from '../traits';
 import { MirrorRoomMessages } from '../handlers/mirror-room-handler';
 import { PuzzleHandlerMessages } from '../handlers/royal-puzzle';
 import { BankPuzzleMessages } from '../actions';
+import { CarouselMessages } from '../handlers/carousel-handler';
 
 /**
  * Register all puzzle-related messages with the language provider
@@ -148,6 +149,13 @@ export function registerPuzzleMessages(language: LanguageProvider): void {
   language.addMessage(BankPuzzleMessages.WALK_THROUGH, 'You feel somewhat disoriented as you pass through...');
   language.addMessage(BankPuzzleMessages.NO_WALL, "I can't see any {direction} wall here.");
   language.addMessage(BankPuzzleMessages.CANT_WALK_THROUGH, "You can't walk through that.");
+
+  // ==========================================================================
+  // Low Room Carousel Messages (magnet room)
+  // ==========================================================================
+
+  language.addMessage(CarouselMessages.COMPASS_SPINNING, 'As you enter, your compass starts spinning wildly.');
+  language.addMessage(CarouselMessages.CANNOT_GET_BEARINGS, 'You cannot get your bearings...');
 
   // Note: Tea Room Cake Messages are registered in object-messages.ts
 }

@@ -99,6 +99,9 @@ export function makeRobotPushButton(
     }
   }
 
+  // Fix the Low Room carousel (shares CAROUSEL-FLIP flag in MDL)
+  world.setStateValue('dungeo.carousel.active', false);
+
   // Emit success events
   events.push({
     id: `robot-push-button-${Date.now()}`,

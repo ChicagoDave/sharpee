@@ -25,6 +25,7 @@ import { registerRoundRoomHandler } from '../handlers/round-room-handler';
 
 import { registerRoyalPuzzleHandler } from '../handlers/royal-puzzle';
 import { registerCakeEatingHandler, registerCakeThrowingHandler } from '../handlers/cake-handler';
+import { registerCarouselHandler } from '../handlers/carousel-handler';
 
 
 import { registerEndgameTriggerHandler } from '../handlers/endgame-trigger-handler';
@@ -156,6 +157,14 @@ export function registerSchedulerEvents(
 
   // Cage poison daemon (sphere puzzle in Dingy Closet)
   registerCagePoisonDaemon(scheduler, world, config.wellRoomIds.dingyCloset);
+
+  // Low Room carousel handler (magnet room exit randomization)
+  registerCarouselHandler(
+    scheduler,
+    config.wellRoomIds.lowRoom,
+    config.wellRoomIds.machineRoom,
+    config.wellRoomIds.teaRoom
+  );
 
   // Ghost Ritual now handled by GhostRitualDroppingInterceptor (ADR-118)
 
