@@ -1,0 +1,94 @@
+title: Cage/Sphere Puzzle (Dingy Closet)
+story: dungeo
+description: Tests the cage trap when taking sphere, robot raising cage, and taking sphere after solved
+
+---
+
+# Setup - get light and teleport near robot
+> gdt
+[OK: contains "GDT ready"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> ex
+[OK: contains "Returning to game"]
+
+> turn on lantern
+[OK: contains "on"]
+
+# Teleport to Low Room (robot's starting location)
+> gdt
+[OK: contains "GDT ready"]
+
+> ah Low Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning to game"]
+
+# Verify robot is here
+> look
+[OK: contains "Low Room"]
+[OK: contains "robot"]
+
+# ============================================================
+# Move robot to Dingy Closet via Machine Room
+# ============================================================
+
+# Robot goes east to Machine Room
+> tell robot to go east
+[OK: contains "Whirr"]
+
+# Player follows to Machine Room
+> east
+[OK: contains "Machine Room"]
+[OK: contains "robot"]
+
+# Robot goes south to Dingy Closet
+> tell robot to go south
+[OK: contains "Whirr"]
+
+# Player follows to Dingy Closet
+> south
+[OK: contains "Dingy Closet"]
+[OK: contains "robot"]
+
+# Verify sphere and cage are visible
+> look
+[OK: contains "sphere"]
+[OK: contains "cage"]
+
+# ============================================================
+# Test: Take sphere with robot present → cage trap
+# ============================================================
+
+> take sphere
+[OK: contains "steel cage falls"]
+[OK: contains "poisonous gas"]
+[EVENT: true, type="if.event.take_blocked"]
+
+# Try to leave - exits should be blocked
+> north
+[OK: contains "cage is too strong"]
+[EVENT: true, type="if.event.went"]
+
+# ============================================================
+# Test: Tell robot to raise cage → puzzle solved
+# ============================================================
+
+> tell robot to raise cage
+[OK: contains "cage shakes"]
+[OK: contains "hurled across"]
+[EVENT: true, type="game.message" messageId="dungeo.cage.raised"]
+
+# ============================================================
+# Test: Take sphere after cage raised → success
+# ============================================================
+
+> take sphere
+[OK: contains "Taken"]
+[EVENT: true, type="if.event.taken"]
+
+> inventory
+[OK: contains "sphere"]

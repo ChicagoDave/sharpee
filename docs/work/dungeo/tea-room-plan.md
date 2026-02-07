@@ -246,7 +246,7 @@ The riddle answer is "a well". Must verify:
 
 ## Implementation Order
 
-### Phase 1: Structure (no new mechanics)
+### Phase 1: Structure (no new mechanics) ✅ COMPLETE
 
 1. Fix all room connections in well-room.ts
 2. Create Posts Room
@@ -257,7 +257,7 @@ The riddle answer is "a well". Must verify:
 7. Add Pearl Room → Well Bottom connection
 8. **Build + test**: Verify rooms are navigable
 
-### Phase 2: Cake Mechanics
+### Phase 2: Cake Mechanics ✅ COMPLETE
 
 9. Create pool scenery entity in Pool Room
 10. Implement cake eating handler (eat-me/blue teleport, orange death)
@@ -265,13 +265,14 @@ The riddle answer is "a well". Must verify:
 12. Hide spices behind pool (not visible until dissolved)
 13. **Build + test**: Verify cake puzzle works
 
-### Phase 3: Robot & Cage Puzzle
+### Phase 3: Robot & Cage Puzzle ✅ COMPLETE
 
-14. Implement/extend robot follow behavior
-15. Implement cage trap on sphere TAKE
-16. Implement robot "raise cage" command
-17. Implement poison gas death (no robot present)
-18. **Build + test**: Verify cage puzzle works
+14. SphereTrait with action interceptor for `if.action.taking` (ADR-118)
+15. SphereTakingInterceptor: cage trap (robot present) or instant death (robot absent)
+16. Robot "raise cage" / "lift cage" commands in commanding-action.ts
+17. Cage poison gas daemon (10-turn countdown, ADR-071)
+18. Robot "take sphere" → crush death
+19. **Build + test**: cage-puzzle.transcript passes (18 tests)
 
 ### Phase 4: Carousel
 
