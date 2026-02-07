@@ -29,7 +29,7 @@ import { registerCakeEatingHandler, registerCakeThrowingHandler } from '../handl
 
 import { registerEndgameTriggerHandler } from '../handlers/endgame-trigger-handler';
 
-import { registerTrollRecoveryDaemon } from '../scheduler';
+import { registerTrollRecoveryDaemon, registerCagePoisonDaemon } from '../scheduler';
 
 // Import region types to ensure type compatibility
 import { ForestRoomIds } from '../regions/forest';
@@ -43,6 +43,7 @@ import { TempleRoomIds } from '../regions/temple';
 import { EndgameRoomIds } from '../regions/endgame';
 import { MazeRoomIds } from '../regions/maze';
 import { HouseInteriorRoomIds } from '../regions/house-interior';
+import { WellRoomIds } from '../regions/well-room';
 
 /**
  * Configuration for scheduler event registration
@@ -77,6 +78,8 @@ export interface SchedulerConfig {
   houseInteriorIds: HouseInteriorRoomIds;
   /** Royal Puzzle room IDs */
   royalPuzzleIds: RoyalPuzzleRoomIds;
+  /** Well Room IDs (cage/sphere puzzle) */
+  wellRoomIds: WellRoomIds;
 }
 
 /**
@@ -150,6 +153,9 @@ export function registerSchedulerEvents(
   // Cake handlers (Tea Room / Well Area puzzle)
   registerCakeEatingHandler(world);
   registerCakeThrowingHandler(world);
+
+  // Cage poison daemon (sphere puzzle in Dingy Closet)
+  registerCagePoisonDaemon(scheduler, world, config.wellRoomIds.dingyCloset);
 
   // Ghost Ritual now handled by GhostRitualDroppingInterceptor (ADR-118)
 

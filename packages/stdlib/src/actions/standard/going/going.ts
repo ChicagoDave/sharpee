@@ -359,9 +359,13 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     // Room has light - build and emit room description
     const roomSnapshot = captureRoomSnapshot(destinationRoom, context.world, false);
 
-    // Get visible contents in the destination room
+    // Get visible contents in the destination room (filter concealed items)
     const destinationContents = context.world.getContents(destinationRoom.id)
-      .filter(e => e.id !== context.player.id);
+      .filter(e => e.id !== context.player.id)
+      .filter(e => {
+        const identity = e.getTrait(TraitType.IDENTITY);
+        return !(identity && (identity as any).concealed === true);
+      });
     const visibleSnapshots = captureEntitySnapshots(destinationContents, context.world);
 
     const roomDescData = {

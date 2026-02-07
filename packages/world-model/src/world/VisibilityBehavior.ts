@@ -184,6 +184,12 @@ export class VisibilityBehavior extends Behavior {
     // Add visible entities in the room
     for (const entity of roomContents) {
       if (entity.id !== observer.id && !seen.has(entity.id)) {
+        // Check if entity is concealed (hidden until revealed via SEARCH or game event)
+        const identity = entity.getTrait(TraitType.IDENTITY);
+        if (identity && (identity as any).concealed === true) {
+          continue;
+        }
+
         // Check if entity is visible via SceneryTrait
         const scenery = entity.getTrait(TraitType.SCENERY);
         if (scenery && (scenery as any).visible === false) {

@@ -205,3 +205,13 @@ export {
   RoyalPuzzleTraitConfig,
   RoyalPuzzleTraitConstructor
 } from './royal-puzzle-trait';
+
+// Sphere (cage puzzle taking interceptor)
+export {
+  SphereTrait,
+  SphereTraitConfig,
+  SphereTraitConstructor
+} from './sphere-trait';
+
+// Sphere Taking Interceptor (ADR-118)
+export { SphereTakingInterceptor, CageMessages } from '../interceptors/sphere-taking-interceptor';

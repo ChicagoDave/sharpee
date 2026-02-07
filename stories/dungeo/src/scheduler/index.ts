@@ -34,6 +34,7 @@ export { registerBalloonDaemon, isBalloonDaemonActive, getBalloonPosition, reset
 export { registerBurnDaemon, isBalloonInflated, getBurningObjectId, BalloonHandlerMessages } from '../handlers/balloon-handler';
 export { registerTrollRecoveryDaemon, isTrollRecoveryActive, getTrollState } from './troll-daemon';
 export { registerSwordGlowDaemon, getSwordGlowState, resetSwordGlowState, SwordGlowMessages } from './sword-glow-daemon';
+export { registerCagePoisonDaemon, CAGE_POISON_DAEMON_ID } from './cage-poison-daemon';
 
 import { WorldModel } from '@sharpee/world-model';
 import { ISchedulerService } from '@sharpee/plugin-scheduler';

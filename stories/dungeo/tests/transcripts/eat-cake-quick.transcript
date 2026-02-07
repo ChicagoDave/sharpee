@@ -1,0 +1,89 @@
+title: Quick eat cake test
+story: dungeo
+description: Tests that eating commands resolve and cake effects fire
+
+---
+
+# Setup - get lantern, teleport to Tea Room
+> gdt
+[OK: contains "GDT ready"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> ex
+[OK: contains "Returning"]
+
+> turn on lantern
+[OK: contains "switches on"]
+
+> gdt
+[OK: contains "GDT ready"]
+
+> ah Tea Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+> look
+[OK: contains "eat-me cake"]
+[OK: contains "blue cake"]
+[OK: contains "red cake"]
+[OK: contains "orange cake"]
+
+# Take blue cake before eating eat-me cake (need it in Posts Room)
+> take blue cake
+[OK: contains "Taken"]
+
+# Test 1: Eat eat-me cake → should shrink and teleport to Posts Room
+> eat eat-me cake
+[OK: contains "smaller"]
+
+> look
+[OK: contains "Posts Room"]
+[OK: contains "wooden posts"]
+
+# Test 2: Navigate east to Pool Room (spices should be hidden)
+> east
+[OK: contains "Pool Room"]
+[OK: not contains "spices"]
+
+# Test 3: Go back west
+> west
+[OK: contains "Posts Room"]
+
+# Test 4: Eat blue cake → should enlarge and teleport back to Tea Room
+> eat blue cake
+[OK: contains "normal size"]
+
+> look
+[OK: contains "Tea Room"]
+
+# Test 5: Eat red cake → tastes awful
+> eat red cake
+[OK: contains "awful"]
+
+> look
+[OK: contains "Tea Room"]
+
+# Test 6: Navigate Tea Room → Posts Room → Pool Room
+> east
+[OK: contains "Posts Room"]
+
+> east
+[OK: contains "Pool Room"]
+
+# Test 7: Navigate back Pool Room → Posts Room → Tea Room
+> west
+[OK: contains "Posts Room"]
+
+> west
+[OK: contains "Tea Room"]
+
+# Test 8: West from Tea Room → Top of Well
+> west
+[OK: contains "Top of Well"]
+
+> east
+[OK: contains "Tea Room"]

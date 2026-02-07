@@ -1128,10 +1128,19 @@ export class CommandValidator implements CommandValidator {
     }
 
     // If all adjectives match for only one entity, use it
-    if (ref && ref.modifiers && ref.modifiers.length > 0) {
+    // Infer modifiers from text vs head (same logic as scoreEntities)
+    let modifiers = ref?.modifiers || [];
+    if (modifiers.length === 0 && ref?.text && ref?.head) {
+      const head = ref.head.toLowerCase();
+      const words = ref.text.toLowerCase().split(/\s+/).filter(w => w !== head);
+      const nonModifiers = ['the', 'a', 'an', 'all', 'some', 'every', 'any', 'my'];
+      modifiers = words.filter(w => !nonModifiers.includes(w));
+    }
+
+    if (modifiers.length > 0) {
       const perfectMatches = matches.filter(m => {
         const adjectives = this.getEntityAdjectives(m.entity).map(a => a.toLowerCase());
-        return ref.modifiers!.every((mod: string) => adjectives.includes(mod.toLowerCase()));
+        return modifiers.every((mod: string) => adjectives.includes(mod.toLowerCase()));
       });
 
       if (perfectMatches.length === 1) {

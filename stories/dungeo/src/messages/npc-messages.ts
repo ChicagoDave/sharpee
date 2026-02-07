@@ -20,7 +20,7 @@ import { DungeonMasterMessages } from '../npcs/dungeon-master';
 import { TrollMessages } from '../npcs/troll';
 
 // Import capability dispatch messages
-import { TrollAxeMessages, EggMessages } from '../traits';
+import { TrollAxeMessages, EggMessages, CageMessages } from '../traits';
 
 // Import action messages for NPC interactions
 import { CommandingMessages, TalkToTrollMessages } from '../actions';
@@ -126,6 +126,15 @@ export function registerNpcMessages(language: LanguageProvider): void {
   language.addMessage(RobotMessages.TAKES_OBJECT, 'The robot takes the {objectName}.');
   language.addMessage(RobotMessages.DROPS_OBJECT, 'The robot drops the {objectName}.');
   language.addMessage(RobotMessages.CAROUSEL_FIXED, 'You hear a grinding noise from somewhere nearby. The carousel mechanism has stopped spinning!');
+  language.addMessage(RobotMessages.RAISES_CAGE, 'The robot reaches up and lifts the cage.');
+
+  // Cage puzzle messages (MDL act3.mud:229-261)
+  language.addMessage(CageMessages.CAGE_FALLS, 'As you reach for the sphere, a steel cage falls from the ceiling to entrap you. To make matters worse, poisonous gas starts coming into the room.');
+  language.addMessage(CageMessages.CAGE_RAISED, 'The cage shakes and is hurled across the room.');
+  language.addMessage(CageMessages.POISON_DEATH, 'Time passes...and you die from some obscure poisoning.');
+  language.addMessage(CageMessages.ROBOT_CRUSH, 'As the robot reaches for the sphere, a steel cage falls from the ceiling. The robot attempts to fend it off, but is trapped below it. Alas, the robot short-circuits in his vain attempt to escape, and crushes the sphere beneath him as he falls to the floor.');
+  language.addMessage(CageMessages.GAS_WARNING, 'The gas is getting thicker.');
+  language.addMessage(CageMessages.POISON_GAS_ROOM, 'You are stopped by a cloud of poisonous gas.');
 
   // Commanding action messages (FORTRAN Zork robot commands)
   language.addMessage(CommandingMessages.NO_TARGET, 'Command whom?');

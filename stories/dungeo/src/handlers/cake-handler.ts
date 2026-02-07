@@ -14,10 +14,12 @@
  * - BLICE: "Enlarge" in ALISM enlarges player back to ALITR
  * - RDICE: "Evaporate" thrown at pool dissolves it, reveals SAFFR (spices)
  * - ORICE: "Explode" causes explosion death
+ *
+ * Uses chainEvent() (ADR-094) to return events that get dispatched and rendered.
  */
 
 import { ISemanticEvent } from '@sharpee/core';
-import { WorldModel, IdentityBehavior, IdentityTrait, TraitType } from '@sharpee/world-model';
+import { WorldModel, IWorldModel, IdentityBehavior, IdentityTrait, TraitType } from '@sharpee/world-model';
 
 // Message IDs for lang layer
 export const CakeMessages = {
@@ -37,26 +39,42 @@ export const CakeMessages = {
 } as const;
 
 /**
- * Register cake eating handler.
- * Listens for 'if.event.eaten' and reacts based on cake type + player location.
+ * Helper to create a semantic event with a messageId for text rendering.
+ */
+function makeEvent(type: string, messageId: string, data: Record<string, any> = {}): ISemanticEvent {
+  return {
+    id: `cake-${type}-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+    type,
+    timestamp: Date.now(),
+    entities: {},
+    data: {
+      messageId,
+      ...data
+    }
+  };
+}
+
+/**
+ * Register cake eating chain handler.
+ * Uses chainEvent (ADR-094) so return values (events) are dispatched.
  */
 export function registerCakeEatingHandler(world: WorldModel): void {
-  world.registerEventHandler('if.event.eaten', (event: ISemanticEvent, w) => {
+  world.chainEvent('if.event.eaten', (event: ISemanticEvent, w: IWorldModel) => {
     const data = event.data as Record<string, any> | undefined;
-    if (!data || data.blocked) return [];
+    if (!data || data.blocked) return null;
 
     const itemId = data.item;
-    if (!itemId) return [];
+    if (!itemId) return null;
 
     // Get the eaten entity and check if it's a cake
     const item = w.getEntity(itemId);
-    if (!item) return [];
+    if (!item) return null;
     const cakeType = (item as any).cakeType as string | undefined;
-    if (!cakeType) return [];
+    if (!cakeType) return null;
 
     // Get player location
     const player = w.getPlayer();
-    if (!player) return [];
+    if (!player) return null;
     const playerLocation = w.getLocation(player.id);
 
     // Get room IDs from state
@@ -68,50 +86,37 @@ export function registerCakeEatingHandler(world: WorldModel): void {
         // In Tea Room → shrink, teleport to Posts Room
         if (playerLocation === teaRoomId) {
           w.moveEntity(player.id, postsRoomId);
-          return [{
-            type: 'message',
-            id: CakeMessages.EAT_ME_SHRINK,
-            data: { destination: 'Posts Room' }
-          }];
+          return makeEvent('dungeo.event.cake_effect', CakeMessages.EAT_ME_SHRINK, {
+            destination: 'Posts Room',
+            cakeType: 'eat-me'
+          });
         }
-        return [];
+        return null;
       }
 
       case 'blue-icing': {
         if (playerLocation === postsRoomId) {
           // In Posts Room → enlarge, teleport back to Tea Room
           w.moveEntity(player.id, teaRoomId);
-          return [{
-            type: 'message',
-            id: CakeMessages.BLUE_ENLARGE,
-            data: { destination: 'Tea Room' }
-          }];
+          return makeEvent('dungeo.event.cake_effect', CakeMessages.BLUE_ENLARGE, {
+            destination: 'Tea Room',
+            cakeType: 'blue-icing'
+          });
         } else if (playerLocation === teaRoomId) {
           // In Tea Room → crush death (already full size, enlarging crushes you)
           w.setStateValue('dungeo.player.dead', true);
           w.setStateValue('dungeo.player.death_cause', 'cake_crush');
           return [
-            {
-              type: 'message',
-              id: CakeMessages.BLUE_CRUSH,
-              data: {}
-            },
-            {
-              type: 'emit',
-              event: {
-                id: `cake-crush-death-${Date.now()}`,
-                type: 'if.event.player.died',
-                timestamp: Date.now(),
-                entities: {},
-                data: {
-                  messageId: CakeMessages.BLUE_CRUSH,
-                  cause: 'cake_crush'
-                }
-              }
-            }
+            makeEvent('dungeo.event.cake_effect', CakeMessages.BLUE_CRUSH, {
+              cakeType: 'blue-icing',
+              cause: 'cake_crush'
+            }),
+            makeEvent('if.event.player.died', CakeMessages.BLUE_CRUSH, {
+              cause: 'cake_crush'
+            })
           ];
         }
-        return [];
+        return null;
       }
 
       case 'orange-icing': {
@@ -119,63 +124,48 @@ export function registerCakeEatingHandler(world: WorldModel): void {
         w.setStateValue('dungeo.player.dead', true);
         w.setStateValue('dungeo.player.death_cause', 'cake_explosion');
         return [
-          {
-            type: 'message',
-            id: CakeMessages.ORANGE_EXPLODE,
-            data: {}
-          },
-          {
-            type: 'emit',
-            event: {
-              id: `cake-explosion-death-${Date.now()}`,
-              type: 'if.event.player.died',
-              timestamp: Date.now(),
-              entities: {},
-              data: {
-                messageId: CakeMessages.ORANGE_EXPLODE,
-                cause: 'cake_explosion'
-              }
-            }
-          }
+          makeEvent('dungeo.event.cake_effect', CakeMessages.ORANGE_EXPLODE, {
+            cakeType: 'orange-icing',
+            cause: 'cake_explosion'
+          }),
+          makeEvent('if.event.player.died', CakeMessages.ORANGE_EXPLODE, {
+            cause: 'cake_explosion'
+          })
         ];
       }
 
       case 'red-icing': {
-        // Tastes terrible, no special effect
-        return [{
-          type: 'message',
-          id: CakeMessages.RED_TERRIBLE,
-          data: {}
-        }];
+        // Tastes terrible - eating action already handles taste message
+        // No additional effect needed
+        return null;
       }
 
       default:
-        return [];
+        return null;
     }
-  });
+  }, { key: 'dungeo.chain.cake-eating', priority: 100 });
 }
 
 /**
- * Register red cake throwing handler.
- * Listens for 'if.event.thrown' - when red cake is thrown in Pool Room,
- * dissolves the pool and reveals the spices.
+ * Register red cake throwing chain handler.
+ * Uses chainEvent (ADR-094) so return values (events) are dispatched.
  */
 export function registerCakeThrowingHandler(world: WorldModel): void {
-  world.registerEventHandler('if.event.thrown', (event: ISemanticEvent, w) => {
+  world.chainEvent('if.event.thrown', (event: ISemanticEvent, w: IWorldModel) => {
     const data = event.data as Record<string, any> | undefined;
-    if (!data) return [];
+    if (!data) return null;
 
     const itemId = data.item;
-    if (!itemId) return [];
+    if (!itemId) return null;
 
     // Check if it's a cake being thrown
     const item = w.getEntity(itemId);
-    if (!item) return [];
+    if (!item) return null;
     const cakeType = (item as any).cakeType as string | undefined;
 
     // Get player location
     const player = w.getPlayer();
-    if (!player) return [];
+    if (!player) return null;
     const playerLocation = w.getLocation(player.id);
     const poolRoomId = w.getStateValue('dungeo.pool_room.room_id') as string;
 
@@ -213,11 +203,9 @@ export function registerCakeThrowingHandler(world: WorldModel): void {
           }
         }
 
-        return [{
-          type: 'message',
-          id: CakeMessages.RED_POOL_DISSOLVE,
-          data: {}
-        }];
+        return makeEvent('dungeo.event.cake_effect', CakeMessages.RED_POOL_DISSOLVE, {
+          cakeType: 'red-icing'
+        });
       }
     }
 
@@ -226,27 +214,16 @@ export function registerCakeThrowingHandler(world: WorldModel): void {
       w.setStateValue('dungeo.player.dead', true);
       w.setStateValue('dungeo.player.death_cause', 'cake_explosion');
       return [
-        {
-          type: 'message',
-          id: CakeMessages.ORANGE_EXPLODE,
-          data: {}
-        },
-        {
-          type: 'emit',
-          event: {
-            id: `cake-throw-explosion-${Date.now()}`,
-            type: 'if.event.player.died',
-            timestamp: Date.now(),
-            entities: {},
-            data: {
-              messageId: CakeMessages.ORANGE_EXPLODE,
-              cause: 'cake_explosion'
-            }
-          }
-        }
+        makeEvent('dungeo.event.cake_effect', CakeMessages.ORANGE_EXPLODE, {
+          cakeType: 'orange-icing',
+          cause: 'cake_explosion'
+        }),
+        makeEvent('if.event.player.died', CakeMessages.ORANGE_EXPLODE, {
+          cause: 'cake_explosion'
+        })
       ];
     }
 
-    return [];
-  });
+    return null;
+  }, { key: 'dungeo.chain.cake-throwing', priority: 100 });
 }

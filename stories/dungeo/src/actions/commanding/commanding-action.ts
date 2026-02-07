@@ -13,10 +13,17 @@
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
-import { IdentityTrait, NpcTrait, RoomTrait } from '@sharpee/world-model';
+import { IdentityTrait, NpcTrait, RoomTrait, RoomBehavior, Direction } from '@sharpee/world-model';
 import { CommandingMessages, COMMANDING_ACTION_ID } from './commanding-messages';
 import { RobotMessages } from '../../npcs/robot/robot-messages';
 import { getRobotProps, makeRobotPushButton } from '../../npcs/robot/robot-entity';
+import {
+  CageMessages,
+  CAGE_TRAPPED_KEY,
+  CAGE_SOLVED_KEY,
+  CAGE_TURNS_KEY,
+  DINGY_CLOSET_ID_KEY
+} from '../../interceptors/sphere-taking-interceptor';
 
 /**
  * Verbs the robot can execute (from FORTRAN timefnc.for lines 2977-2984)
@@ -32,6 +39,7 @@ const ROBOT_EXECUTABLE_VERBS = [
   'push', 'press',
   'throw',
   'turn',
+  'raise', 'lift',
   'leap', 'jump'
 ];
 
@@ -178,6 +186,13 @@ function executeRobotTake(
   }));
 
   if (targetObject) {
+    // Check for sphere - robot taking sphere triggers robot crush death
+    const targetIdentity = targetObject.get(IdentityTrait);
+    if (targetIdentity?.name === 'white crystal sphere' &&
+        !context.world.getStateValue(CAGE_SOLVED_KEY)) {
+      return handleRobotTakeSphere(context, robot);
+    }
+
     // Check if portable
     const isPortable = (targetObject as any).portable !== false;
     if (isPortable) {
@@ -185,7 +200,7 @@ function executeRobotTake(
       context.world.moveEntity(targetObject.id, robot.id);
       events.push(context.event('game.message', {
         messageId: RobotMessages.TAKES_OBJECT,
-        objectName: targetObject.get(IdentityTrait)?.name || 'object'
+        objectName: targetIdentity?.name || 'object'
       }));
     }
   }
@@ -240,6 +255,98 @@ function executeRobotDrop(
       objectName: targetObject.get(IdentityTrait)?.name || 'object'
     }));
   }
+
+  return events;
+}
+
+/**
+ * Unblock all exits from a room (cage puzzle solved)
+ */
+function unblockAllExits(world: any, roomId: string): void {
+  const room = world.getEntity(roomId);
+  if (!room) return;
+  RoomBehavior.unblockExit(room, Direction.NORTH);
+  RoomBehavior.unblockExit(room, Direction.SOUTH);
+  RoomBehavior.unblockExit(room, Direction.EAST);
+  RoomBehavior.unblockExit(room, Direction.WEST);
+  RoomBehavior.unblockExit(room, Direction.UP);
+  RoomBehavior.unblockExit(room, Direction.DOWN);
+  RoomBehavior.unblockExit(room, Direction.NORTHEAST);
+  RoomBehavior.unblockExit(room, Direction.NORTHWEST);
+  RoomBehavior.unblockExit(room, Direction.SOUTHEAST);
+  RoomBehavior.unblockExit(room, Direction.SOUTHWEST);
+}
+
+/**
+ * Handle "raise cage" / "lift cage" command
+ *
+ * From MDL source (act3.mud:270-284):
+ * Robot raises cage → cage hurled across room → sphere now takeable
+ */
+function handleRaiseCage(
+  context: ActionContext,
+  robot: any
+): ISemanticEvent[] {
+  const events: ISemanticEvent[] = [];
+  const trapped = context.world.getStateValue(CAGE_TRAPPED_KEY);
+
+  if (!trapped) {
+    // Not trapped - nothing to raise
+    events.push(context.event('game.message', {
+      npc: robot.id,
+      messageId: CommandingMessages.WHIRR_BUZZ_CLICK,
+      npcName: 'robot'
+    }));
+    return events;
+  }
+
+  // Solve the cage puzzle!
+  context.world.setStateValue(CAGE_TRAPPED_KEY, false);
+  context.world.setStateValue(CAGE_SOLVED_KEY, true);
+  context.world.setStateValue(CAGE_TURNS_KEY, 0);
+
+  // Unblock exits from Dingy Closet
+  const dingyClosetId = context.world.getStateValue(DINGY_CLOSET_ID_KEY) as string;
+  if (dingyClosetId) {
+    unblockAllExits(context.world, dingyClosetId);
+  }
+
+  // Emit cage raised message
+  events.push(context.event('game.message', {
+    npc: robot.id,
+    messageId: CageMessages.CAGE_RAISED,
+    npcName: 'robot'
+  }));
+
+  return events;
+}
+
+/**
+ * Handle robot trying to take the sphere (cage not solved)
+ *
+ * From MDL source (act3.mud:249-255):
+ * Robot reaches for sphere → cage falls → robot crushed + sphere destroyed
+ */
+function handleRobotTakeSphere(
+  context: ActionContext,
+  robot: any
+): ISemanticEvent[] {
+  const events: ISemanticEvent[] = [];
+
+  // Robot crush message
+  events.push(context.event('game.message', {
+    messageId: CageMessages.ROBOT_CRUSH
+  }));
+
+  // Set player death state
+  context.world.setStateValue('dungeo.player.dead', true);
+  context.world.setStateValue('dungeo.player.death_cause', 'robot_crush');
+
+  // Emit death event
+  events.push(context.event('game.player_death', {
+    cause: 'robot_crush',
+    messageId: CageMessages.ROBOT_CRUSH
+  }));
 
   return events;
 }
@@ -310,6 +417,11 @@ function handleRobotCommand(
     }
 
     return events;
+  }
+
+  // Raise/lift cage command (cage puzzle solution)
+  if ((verb === 'raise' || verb === 'lift') && command.includes('cage')) {
+    return handleRaiseCage(context, robot);
   }
 
   // Direction commands (go north, n, walk south, etc.)

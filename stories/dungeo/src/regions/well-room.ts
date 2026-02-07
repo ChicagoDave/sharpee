@@ -22,7 +22,7 @@ import {
   NpcTrait,
   EdibleTrait
 } from '@sharpee/world-model';
-import { TreasureTrait, RiddleRoomTrait, BucketTrait } from '../traits';
+import { TreasureTrait, RiddleRoomTrait, BucketTrait, SphereTrait } from '../traits';
 
 export interface WellRoomIds {
   engravingsCave: string;
@@ -229,6 +229,9 @@ export function createWellRoomObjects(world: WorldModel, roomIds: WellRoomIds): 
 
   // Dingy Closet - Cage and white crystal sphere
   createDingyClosetObjects(world, roomIds.dingyCloset);
+
+  // Store dingy closet ID for cage puzzle handlers
+  world.setStateValue('dungeo.cage.dingy_closet_id', roomIds.dingyCloset);
 }
 
 // ============= Well Scenery =============
@@ -370,8 +373,9 @@ function createTeaRoomObjects(world: WorldModel, roomId: string): void {
   // Eat in Tea Room → teleport to Posts Room
   const eatMeCake = world.createEntity('eat-me cake', EntityType.ITEM);
   eatMeCake.add(new IdentityTrait({
-    name: '"Eat Me" cake',
-    aliases: ['eat me', 'eat-me', 'eat me cake', 'eat-me cake'],
+    name: 'eat-me cake',
+    aliases: ['cake', 'eat me', 'eat-me', 'eat me cake', 'eat-me cake'],
+    adjectives: ['eat-me'],
     description: 'A cake with "Eat Me" written on it in icing. You can make out a capital E on the icing.',
     properName: false,
     article: 'an',
@@ -386,7 +390,8 @@ function createTeaRoomObjects(world: WorldModel, roomId: string): void {
   const blueCake = world.createEntity('blue cake', EntityType.ITEM);
   blueCake.add(new IdentityTrait({
     name: 'blue cake',
-    aliases: ['blue', 'blue-icing', 'blue icing cake', 'blue-icing cake'],
+    aliases: ['cake', 'blue', 'blue-icing', 'blue icing cake', 'blue-icing cake'],
+    adjectives: ['blue'],
     description: 'A cake with blue icing. You can make out a capital E on the icing.',
     properName: false,
     article: 'a',
@@ -401,7 +406,8 @@ function createTeaRoomObjects(world: WorldModel, roomId: string): void {
   const redCake = world.createEntity('red cake', EntityType.ITEM);
   redCake.add(new IdentityTrait({
     name: 'red cake',
-    aliases: ['red', 'red-icing', 'red icing cake', 'red-icing cake'],
+    aliases: ['cake', 'red', 'red-icing', 'red icing cake', 'red-icing cake'],
+    adjectives: ['red'],
     description: 'A cake with red icing. You can make out a capital E on the icing.',
     properName: false,
     article: 'a',
@@ -416,7 +422,8 @@ function createTeaRoomObjects(world: WorldModel, roomId: string): void {
   const orangeCake = world.createEntity('orange cake', EntityType.ITEM);
   orangeCake.add(new IdentityTrait({
     name: 'orange cake',
-    aliases: ['orange', 'orange-icing', 'orange icing cake', 'orange-icing cake'],
+    aliases: ['cake', 'orange', 'orange-icing', 'orange icing cake', 'orange-icing cake'],
+    adjectives: ['orange'],
     description: 'A cake with orange icing. You can make out a capital E on the icing.',
     properName: false,
     article: 'an',
@@ -540,6 +547,9 @@ function createDingyClosetObjects(world: WorldModel, roomId: string): void {
     treasureId: 'white-crystal-sphere',
     treasureValue: 6,      // OFVAL from mdlzork_810722
     trophyCaseValue: 6,    // OTVAL from mdlzork_810722
+  }));
+  sphere.add(new SphereTrait({
+    dingyClosetId: roomId
   }));
   world.moveEntity(sphere.id, roomId);
 }

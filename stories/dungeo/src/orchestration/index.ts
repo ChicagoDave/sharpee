@@ -48,6 +48,7 @@ import { TempleRoomIds } from '../regions/temple';
 import { MazeRoomIds } from '../regions/maze';
 import { EndgameRoomIds } from '../regions/endgame';
 import { RoyalPuzzleRoomIds } from '../regions/royal-puzzle';
+import { WellRoomIds } from '../regions/well-room';
 
 /**
  * Unified configuration for all orchestration registrations
@@ -72,6 +73,7 @@ export interface OrchestrationConfig {
   mazeIds: MazeRoomIds;
   endgameIds: EndgameRoomIds;
   royalPuzzleIds: RoyalPuzzleRoomIds;
+  wellRoomIds: WellRoomIds;
 
   // ==========================================================================
   // Optional Features
@@ -129,7 +131,8 @@ export function initializeOrchestration(
     endgameIds: config.endgameIds,
     mazeIds: config.mazeIds,
     houseInteriorIds: config.houseInteriorIds,
-    royalPuzzleIds: config.royalPuzzleIds
+    royalPuzzleIds: config.royalPuzzleIds,
+    wellRoomIds: config.wellRoomIds
   };
   registerSchedulerEvents(schedulerPlugin.getScheduler(), world, schedulerConfig);
 

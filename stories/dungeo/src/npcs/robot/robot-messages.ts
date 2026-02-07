@@ -23,6 +23,9 @@ export const RobotMessages = {
   TAKES_OBJECT: 'dungeo.robot.takes_object',
   DROPS_OBJECT: 'dungeo.robot.drops_object',
 
+  // Cage puzzle
+  RAISES_CAGE: 'dungeo.robot.raises_cage',
+
   // Round Room fix
   CAROUSEL_FIXED: 'dungeo.robot.carousel_fixed',
 } as const;
