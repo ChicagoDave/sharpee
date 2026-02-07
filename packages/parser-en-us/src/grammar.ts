@@ -113,6 +113,20 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .withPriority(100)
     .build();
 
+  // Eating (ADR-087: using forAction)
+  grammar
+    .forAction('if.action.eating')
+    .verbs(['eat', 'consume', 'devour'])
+    .pattern(':item')
+    .build();
+
+  // Drinking (ADR-087: using forAction)
+  grammar
+    .forAction('if.action.drinking')
+    .verbs(['drink', 'sip', 'quaff'])
+    .pattern(':item')
+    .build();
+
   // ADR-080 Phase 2: Multi-object commands
   // Note: The parser detects "all" and "X and Y" patterns automatically in entity slots.
   // No special grammar patterns needed - existing patterns work because:

@@ -5,8 +5,18 @@
  * based on IF conventions and physical laws.
  */
 
-import { IFEntity, WorldModel, TraitType } from '@sharpee/world-model';
+import { IFEntity, WorldModel, TraitType, IdentityBehavior, IdentityTrait } from '@sharpee/world-model';
 import { ScopeLevel, ScopeResolver } from './types';
+
+/**
+ * Check if an entity is concealed (hidden until SEARCH reveals it).
+ * Safe to call on any entity — returns false if no IdentityTrait.
+ */
+function isConcealed(entity: IFEntity): boolean {
+  if (!entity.has(TraitType.IDENTITY)) return false;
+  const identity = entity.getTrait(TraitType.IDENTITY) as IdentityTrait | null;
+  return identity?.concealed === true;
+}
 
 /**
  * Standard implementation of scope resolution for IF games
@@ -29,6 +39,11 @@ export class StandardScopeResolver implements ScopeResolver {
    * physical scope and the minimum scope (additive only).
    */
   getScope(actor: IFEntity, target: IFEntity): ScopeLevel {
+    // Concealed entities are hidden from scope entirely (must SEARCH to reveal)
+    if (isConcealed(target)) {
+      return ScopeLevel.UNAWARE;
+    }
+
     // Calculate physical scope first
     const physicalScope = this.calculatePhysicalScope(actor, target);
 
@@ -269,6 +284,9 @@ export class StandardScopeResolver implements ScopeResolver {
     for (const entity of entities) {
       if (entity.id === actor.id) continue;
 
+      // Concealed entities are hidden from scope entirely (must SEARCH to reveal)
+      if (isConcealed(entity)) continue;
+
       // Check physical visibility
       if (this.canSee(actor, entity)) {
         visible.push(entity);
@@ -297,6 +315,9 @@ export class StandardScopeResolver implements ScopeResolver {
     for (const entity of entities) {
       if (entity.id === actor.id) continue;
 
+      // Concealed entities are hidden from scope entirely (must SEARCH to reveal)
+      if (isConcealed(entity)) continue;
+
       // Check physical reachability
       if (this.canReach(actor, entity)) {
         reachable.push(entity);
@@ -324,6 +345,9 @@ export class StandardScopeResolver implements ScopeResolver {
 
     for (const entity of entities) {
       if (entity.id === actor.id) continue;
+
+      // Concealed entities are hidden from scope entirely (must SEARCH to reveal)
+      if (isConcealed(entity)) continue;
 
       // Check physical hearing
       if (this.canHear(actor, entity)) {
