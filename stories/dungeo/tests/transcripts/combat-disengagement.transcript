@@ -67,7 +67,7 @@ description: Test flee-and-recover cycle - villain heals when player leaves room
 
 # Diagnose: should show health status (may or may not have wounds depending on RNG)
 > diagnose
-[EVENT: true, type="dungeo.event.diagnose"]
+[OK: contains "You"]
 
 # Re-enter once more to verify troll is still alive
 > east

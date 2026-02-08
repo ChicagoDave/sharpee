@@ -8,7 +8,8 @@ DUNGEO
 A port of Mainframe Zork
 
 > diagnose
-You are in perfect health.
+[OK: contains "perfect health"]
+[OK: contains "strong enough"]
 
 > room
 West of House

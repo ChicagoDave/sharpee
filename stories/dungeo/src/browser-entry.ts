@@ -72,54 +72,6 @@ function getAboutText(): string {
 }
 
 /**
- * Format DIAGNOSE output (1981 MDL-style)
- */
-function formatDiagnose(data: Record<string, unknown>): string {
-  const lines: string[] = [];
-  const woundLevel = data.woundLevel as number | undefined;
-  const turnsToHeal = data.turnsToHeal as number | undefined;
-  const strengthLevel = data.strengthLevel as number | undefined;
-  const deaths = data.deaths as number | undefined;
-
-  // Health status
-  if (woundLevel === 0 || woundLevel === undefined) {
-    lines.push('You are in perfect health.');
-  } else {
-    let woundText = '';
-    switch (woundLevel) {
-      case 1: woundText = 'You have a light wound,'; break;
-      case 2: woundText = 'You have a serious wound,'; break;
-      case 3: woundText = 'You have several wounds,'; break;
-      default: woundText = 'You have serious wounds,'; break;
-    }
-    if (turnsToHeal) {
-      woundText += ` which will be cured after ${turnsToHeal} moves.`;
-    }
-    lines.push(woundText);
-  }
-
-  // Strength/resilience status
-  switch (strengthLevel) {
-    case 0: lines.push("You are at death's door."); break;
-    case 1: lines.push('You can be killed by one more light wound.'); break;
-    case 2: lines.push('You can be killed by a serious wound.'); break;
-    case 3: lines.push('You can survive one serious wound.'); break;
-    default: lines.push('You are strong enough to take several wounds.'); break;
-  }
-
-  // Death count
-  if (deaths === 1) {
-    lines.push('You have been killed once.');
-  } else if (deaths === 2) {
-    lines.push('You have been killed twice.');
-  } else if (deaths && deaths > 2) {
-    lines.push(`You have been killed ${deaths} times.`);
-  }
-
-  return lines.join('\n');
-}
-
-/**
  * Format OBJECTS output
  */
 function formatObjects(data: Record<string, unknown>): string {
@@ -158,12 +110,6 @@ function formatObjects(data: Record<string, unknown>): string {
  * Handle story-specific events
  */
 function handleStoryEvent(event: SequencedEvent, client: BrowserClientInterface): boolean {
-  // Handle DIAGNOSE command
-  if (event.type === 'dungeo.event.diagnose') {
-    client.displayText(formatDiagnose(event.data as Record<string, unknown>));
-    return true;
-  }
-
   // Handle RNAME command (room name only)
   if (event.type === 'dungeo.event.rname') {
     const roomName = (event.data as Record<string, unknown>)?.roomName as string | undefined;

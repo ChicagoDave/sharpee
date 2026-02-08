@@ -431,6 +431,11 @@ export function registerActionMessages(language: LanguageProvider): void {
   language.addMessage(DiagnoseMessages.SERIOUS_WOUND, 'You have a serious wound,');
   language.addMessage(DiagnoseMessages.SEVERAL_WOUNDS, 'You have several wounds,');
   language.addMessage(DiagnoseMessages.WOUNDS_CURE, ' which will be cured after {turns} moves.');
+  // Combined wound + cure messages (canonical MDL outputs these as one sentence)
+  language.addMessage(DiagnoseMessages.LIGHT_WOUND_CURE, 'You have a light wound, which will be cured after {turns} moves.');
+  language.addMessage(DiagnoseMessages.SERIOUS_WOUND_CURE, 'You have a serious wound, which will be cured after {turns} moves.');
+  language.addMessage(DiagnoseMessages.SEVERAL_WOUNDS_CURE, 'You have several wounds, which will be cured after {turns} moves.');
+  language.addMessage(DiagnoseMessages.SERIOUS_WOUNDS_CURE, 'You have serious wounds, which will be cured after {turns} moves.');
   language.addMessage(DiagnoseMessages.DEATHS_DOOR, 'You are at death\'s door.');
   language.addMessage(DiagnoseMessages.ONE_MORE_WOUND, 'You can be killed by one more light wound.');
   language.addMessage(DiagnoseMessages.SERIOUS_WOUND_KILL, 'You can be killed by a serious wound.');
@@ -438,6 +443,7 @@ export function registerActionMessages(language: LanguageProvider): void {
   language.addMessage(DiagnoseMessages.STRONG, 'You are strong enough to take several wounds.');
   language.addMessage(DiagnoseMessages.KILLED_ONCE, 'You have been killed once.');
   language.addMessage(DiagnoseMessages.KILLED_TWICE, 'You have been killed twice.');
+  language.addMessage(DiagnoseMessages.KILLED_MANY, 'You have been killed {count} times.');
 
   // ==========================================================================
   // ROOM/RNAME/OBJECTS Action Messages (Room info)

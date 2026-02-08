@@ -82,13 +82,56 @@ export const diagnoseAction: Action = {
   report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getDiagnoseSharedData(context);
     const events: ISemanticEvent[] = [];
+    const { woundLevel, strengthLevel, deaths, turnsToHeal } = sharedData;
 
-    events.push(context.event('dungeo.event.diagnose', {
-      woundLevel: sharedData.woundLevel,
-      strengthLevel: sharedData.strengthLevel,
-      deaths: sharedData.deaths,
-      turnsToHeal: sharedData.turnsToHeal,
+    // Wound status (canonical MDL melee.137:308-312)
+    if (woundLevel === 0) {
+      events.push(context.event('game.message', {
+        messageId: DiagnoseMessages.PERFECT_HEALTH
+      }));
+    } else {
+      // Wound + cure time as one sentence
+      let woundMsgId: string;
+      switch (woundLevel) {
+        case 1: woundMsgId = DiagnoseMessages.LIGHT_WOUND_CURE; break;
+        case 2: woundMsgId = DiagnoseMessages.SERIOUS_WOUND_CURE; break;
+        case 3: woundMsgId = DiagnoseMessages.SEVERAL_WOUNDS_CURE; break;
+        default: woundMsgId = DiagnoseMessages.SERIOUS_WOUNDS_CURE; break;
+      }
+      events.push(context.event('game.message', {
+        messageId: woundMsgId,
+        params: { turns: turnsToHeal }
+      }));
+    }
+
+    // Strength/resilience status (canonical MDL melee.137:316-320)
+    let strengthMsgId: string;
+    switch (strengthLevel) {
+      case 0: strengthMsgId = DiagnoseMessages.DEATHS_DOOR; break;
+      case 1: strengthMsgId = DiagnoseMessages.ONE_MORE_WOUND; break;
+      case 2: strengthMsgId = DiagnoseMessages.SERIOUS_WOUND_KILL; break;
+      case 3: strengthMsgId = DiagnoseMessages.SURVIVE_SERIOUS; break;
+      default: strengthMsgId = DiagnoseMessages.STRONG; break;
+    }
+    events.push(context.event('game.message', {
+      messageId: strengthMsgId
     }));
+
+    // Death count (canonical MDL melee.137:321-323)
+    if (deaths === 1) {
+      events.push(context.event('game.message', {
+        messageId: DiagnoseMessages.KILLED_ONCE
+      }));
+    } else if (deaths === 2) {
+      events.push(context.event('game.message', {
+        messageId: DiagnoseMessages.KILLED_TWICE
+      }));
+    } else if (deaths > 2) {
+      events.push(context.event('game.message', {
+        messageId: DiagnoseMessages.KILLED_MANY,
+        params: { count: deaths }
+      }));
+    }
 
     return events;
   }
