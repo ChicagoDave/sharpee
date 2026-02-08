@@ -30,7 +30,7 @@ import { registerCarouselHandler } from '../handlers/carousel-handler';
 
 import { registerEndgameTriggerHandler } from '../handlers/endgame-trigger-handler';
 
-import { registerTrollRecoveryDaemon, registerCagePoisonDaemon } from '../scheduler';
+import { registerTrollRecoveryDaemon, registerCagePoisonDaemon, registerCureDaemon } from '../scheduler';
 
 // Import region types to ensure type compatibility
 import { ForestRoomIds } from '../regions/forest';
@@ -186,6 +186,10 @@ export function registerSchedulerEvents(
 
   // Troll Recovery daemon (wake up after knockout)
   registerTrollRecoveryDaemon(scheduler, config.undergroundIds.trollRoom);
+
+  // Wound Healing daemon (CURE-CLOCK, melee.137:295-300)
+  // Heals 1 wound point per 30 turns when player is wounded
+  registerCureDaemon(scheduler);
 
   // ==========================================================================
   // Action Wiring

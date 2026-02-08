@@ -22,6 +22,9 @@ import { TrollMessages } from '../npcs/troll';
 // Import capability dispatch messages
 import { TrollAxeMessages, EggMessages, CageMessages } from '../traits';
 
+// Import melee combat messages
+import { MeleeMessages } from '../combat/melee-messages';
+
 // Import action messages for NPC interactions
 import { CommandingMessages, TalkToTrollMessages } from '../actions';
 
@@ -207,4 +210,18 @@ export function registerNpcMessages(language: LanguageProvider): void {
   // ==========================================================================
 
   language.addMessage(EggMessages.NO_EXPERTISE, 'You have neither the tools nor the expertise.');
+
+  // ==========================================================================
+  // Melee Combat Messages (canonical MDL melee engine)
+  // ==========================================================================
+
+  // These are placeholder registrations — actual combat text is generated
+  // dynamically from message tables (SwordMelee, KnifeMelee, etc.) and
+  // injected via postReport as game.message events with embedded text.
+  language.addMessage(MeleeMessages.HERO_ATTACK, '');
+  language.addMessage(MeleeMessages.VILLAIN_ATTACK, '');
+  language.addMessage(MeleeMessages.STILL_RECOVERING, 'You are still recovering from a staggering blow.');
+  language.addMessage(MeleeMessages.UNARMED_ATTACK, 'Fighting unarmed is suicide.');
+  language.addMessage(MeleeMessages.BACKUP_WEAPON, '');
+  language.addMessage(MeleeMessages.VILLAIN_DISARMED, '');
 }

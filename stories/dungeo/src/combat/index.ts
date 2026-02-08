@@ -43,3 +43,31 @@ export {
   DEF2_RES,
   DEF3_RES,
 } from './melee-tables';
+
+export {
+  // Message constants
+  MeleeMessages,
+
+  // Message tables
+  SwordMelee,
+  KnifeMelee,
+  TrollMelee,
+  ThiefMelee,
+  CyclopsMelee,
+  HeroMeleeTables,
+  VillainMeleeTables,
+
+  // Message selection functions
+  getHeroAttackMessage,
+  getVillainAttackMessage,
+
+  // Types
+  type MeleeMessageTable,
+} from './melee-messages';
+
+export {
+  // Shared melee state keys
+  MELEE_STATE,
+  CURE_STATE,
+  getBaseOstrength,
+} from './melee-state';

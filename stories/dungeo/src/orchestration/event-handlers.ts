@@ -19,6 +19,7 @@ import { ScoringEventProcessor } from '@sharpee/stdlib';
 
 // Handlers
 import { createMirrorTouchHandler, MirrorRoomConfig } from '../handlers/mirror-room-handler';
+import { registerCombatDisengagementHandler } from '../handlers/combat-disengagement-handler';
 
 // Scoring
 import { DungeoScoringService } from '../scoring';
@@ -81,6 +82,13 @@ export function registerEventHandlers(
 
   // Note: Balloon PUT handling is now done via interceptor (ADR-118)
   // See ReceptaclePuttingInterceptor in stories/dungeo/src/interceptors/
+
+  // ==========================================================================
+  // Combat Disengagement Handler (Phase 4a)
+  // ==========================================================================
+
+  // Resets villain combat state when player leaves a room with an active combatant
+  registerCombatDisengagementHandler(eventProcessor, world);
 }
 
 /**

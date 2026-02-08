@@ -1,22 +1,25 @@
 /**
  * Diagnose Action
  *
- * Reports the player's current state of health.
- * Matches the 1981 Mainframe Zork DIAGNOSE output.
+ * Reports the player's current state of health using the canonical
+ * MDL melee wound system (melee.137:302-324).
+ *
+ * Uses meleeWoundAdjust (ASTRENGTH) from player.attributes
+ * and getDiagnosis() from the melee engine.
  */
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
-import { CombatantTrait } from '@sharpee/world-model';
+import { StandardCapabilities } from '@sharpee/world-model';
 import { DIAGNOSE_ACTION_ID, DiagnoseMessages } from './types';
+import { getDiagnosis, CURE_WAIT } from '../../combat/melee';
+import { MELEE_STATE, CURE_STATE } from '../../combat/melee-state';
 
 interface DiagnoseSharedData {
-  health: number;
-  maxHealth: number;
-  woundLevel: number;  // 0 = healthy, 1-4 = wound severity
-  strengthLevel: number;  // How much damage can be taken
+  woundLevel: number;     // 0 = healthy, positive = wound depth
+  strengthLevel: number;  // Remaining fight-strength (base + wounds)
   deaths: number;
-  turnsToHeal?: number;
+  turnsToHeal: number;
 }
 
 function getDiagnoseSharedData(context: ActionContext): DiagnoseSharedData {
@@ -28,7 +31,6 @@ export const diagnoseAction: Action = {
   group: 'meta',
 
   validate(context: ActionContext): ValidationResult {
-    // Diagnose always succeeds
     return { valid: true };
   },
 
@@ -38,66 +40,34 @@ export const diagnoseAction: Action = {
     const sharedData = getDiagnoseSharedData(context);
 
     if (!player) {
-      sharedData.health = 100;
-      sharedData.maxHealth = 100;
       sharedData.woundLevel = 0;
       sharedData.strengthLevel = 4;
       sharedData.deaths = 0;
+      sharedData.turnsToHeal = 0;
       return;
     }
 
-    // Get combatant trait for health info
-    const combatant = player.get<CombatantTrait>('combatant');
+    // Read melee wound state from player attributes
+    const woundAdjust = (player.attributes[MELEE_STATE.WOUND_ADJUST] as number) ?? 0;
 
-    if (combatant) {
-      sharedData.health = combatant.health;
-      sharedData.maxHealth = combatant.maxHealth;
+    // Get current score for fight-strength calculation
+    const scoring = world.getCapability(StandardCapabilities.SCORING);
+    const score = scoring?.scoreValue ?? 0;
 
-      // Calculate wound level based on health percentage
-      // MDL uses negative ASTRENGTH values for wounds
-      // We'll map health percentage to wound levels
-      const healthPercent = combatant.health / combatant.maxHealth;
+    // Calculate cure ticks remaining for current heal cycle
+    const cureTicks = (world.getStateValue(CURE_STATE.TICKS) as number) || 0;
+    const cureTicksRemaining = woundAdjust < 0 ? (CURE_WAIT - cureTicks) : 0;
 
-      if (healthPercent >= 1.0) {
-        sharedData.woundLevel = 0;  // Perfect health
-      } else if (healthPercent >= 0.75) {
-        sharedData.woundLevel = 1;  // Light wound
-      } else if (healthPercent >= 0.5) {
-        sharedData.woundLevel = 2;  // Serious wound
-      } else if (healthPercent >= 0.25) {
-        sharedData.woundLevel = 3;  // Several wounds
-      } else {
-        sharedData.woundLevel = 4;  // Serious wounds
-      }
+    // Get death count
+    const deaths = (world.getStateValue('dungeo.player.deaths') as number) || 0;
 
-      // Strength level indicates how much more damage can be taken
-      // Map remaining health to strength levels
-      if (combatant.health <= 0) {
-        sharedData.strengthLevel = 0;  // Death's door
-      } else if (combatant.health <= 10) {
-        sharedData.strengthLevel = 1;  // One more wound kills
-      } else if (combatant.health <= 25) {
-        sharedData.strengthLevel = 2;  // Serious wound kills
-      } else if (combatant.health <= 50) {
-        sharedData.strengthLevel = 3;  // Can survive one serious
-      } else {
-        sharedData.strengthLevel = 4;  // Strong
-      }
+    // Use canonical diagnosis function
+    const diagnosis = getDiagnosis(score, woundAdjust, cureTicksRemaining, deaths);
 
-      // Calculate turns to heal (30 turns per wound level)
-      if (sharedData.woundLevel > 0) {
-        sharedData.turnsToHeal = 30 * sharedData.woundLevel;
-      }
-    } else {
-      // Default healthy state if no combatant trait
-      sharedData.health = 100;
-      sharedData.maxHealth = 100;
-      sharedData.woundLevel = 0;
-      sharedData.strengthLevel = 4;
-    }
-
-    // Get death count from world state
-    sharedData.deaths = (world.getStateValue('dungeo.player.deaths') as number) || 0;
+    sharedData.woundLevel = diagnosis.woundDepth;
+    sharedData.strengthLevel = diagnosis.remainingStrength;
+    sharedData.turnsToHeal = diagnosis.turnsToHeal;
+    sharedData.deaths = diagnosis.deaths;
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
@@ -113,10 +83,7 @@ export const diagnoseAction: Action = {
     const sharedData = getDiagnoseSharedData(context);
     const events: ISemanticEvent[] = [];
 
-    // Emit diagnose event with all health data
     events.push(context.event('dungeo.event.diagnose', {
-      health: sharedData.health,
-      maxHealth: sharedData.maxHealth,
       woundLevel: sharedData.woundLevel,
       strengthLevel: sharedData.strengthLevel,
       deaths: sharedData.deaths,

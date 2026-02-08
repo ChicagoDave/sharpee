@@ -1,0 +1,75 @@
+title: Combat Disengagement
+story: dungeo
+description: Test flee-and-recover cycle - villain heals when player leaves room, player wounds persist
+
+---
+
+# Get equipment
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> open window
+[OK: contains "open"]
+
+> west
+[OK: contains "Kitchen"]
+
+> west
+[OK: contains "Living Room"]
+
+> take lantern
+[OK: contains "Taken"]
+
+> take sword
+[OK: contains "Taken"]
+
+> switch on lantern
+[OK: contains "on"]
+
+# Go to Troll Room
+> push rug
+[OK: contains "trap door"]
+
+> open trapdoor
+[OK: contains "open"]
+
+> down
+[OK: contains "Cellar"]
+
+> east
+[OK: contains "Troll Room"]
+[OK: contains "troll"]
+
+# Attack the troll to engage melee combat
+> attack troll with sword
+[EVENT: true, type="game.message"]
+
+# Flee combat by going west (back to Cellar)
+> west
+[OK: contains "Cellar"]
+
+# Re-enter troll room: troll should be alive and at full health
+# (disengagement restores villain to base OSTRENGTH)
+> east
+[OK: contains "Troll Room"]
+[OK: contains "troll"]
+
+# Attack again - troll should still be fighting (fully healed)
+> attack troll with sword
+[EVENT: true, type="game.message"]
+
+# Flee again
+> west
+[OK: contains "Cellar"]
+
+# Diagnose: should show health status (may or may not have wounds depending on RNG)
+> diagnose
+[EVENT: true, type="dungeo.event.diagnose"]
+
+# Re-enter once more to verify troll is still alive
+> east
+[OK: contains "Troll Room"]
+[OK: contains "troll"]

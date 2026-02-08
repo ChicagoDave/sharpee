@@ -79,24 +79,41 @@ description: Priority path - get the torch ASAP to minimize lantern usage. Torch
 > east
 [OK: contains "Troll Room"]
 
-# Kill troll - combat (random, may take several hits)
+# Kill troll - melee combat (canonical MDL engine, may take several hits)
+# Troll OSTRENGTH=2, sword is best weapon (penalty -1), so effective DEF=1
+# Hero base strength 2 at low score. With DEF=1 table: 33% miss, 22% stagger,
+# 22% unconscious, 22% kill. 10 attacks gives >99.7% kill probability.
 > attack troll with sword
-[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered)/i]
+[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|curtains|fatal|gash|wound|stagger|dodge|removes|pinks|crashes|charge|knock|nimbly)/i]
 
 > attack troll with sword
-[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|can't see)/i]
+[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|curtains|fatal|gash|wound|stagger|dodge|removes|pinks|crashes|charge|knock|nimbly|can't see)/i]
 
 > attack troll with sword
-[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|can't see)/i]
+[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|curtains|fatal|gash|wound|stagger|dodge|removes|pinks|crashes|charge|knock|nimbly|can't see)/i]
 
 > attack troll with sword
-[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|can't see)/i]
+[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|curtains|fatal|gash|wound|stagger|dodge|removes|pinks|crashes|charge|knock|nimbly|can't see)/i]
 
 > attack troll with sword
-[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|can't see)/i]
+[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|curtains|fatal|gash|wound|stagger|dodge|removes|pinks|crashes|charge|knock|nimbly|can't see)/i]
 
 > attack troll with sword
-[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|can't see)/i]
+[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|curtains|fatal|gash|wound|stagger|dodge|removes|pinks|crashes|charge|knock|nimbly|can't see)/i]
+
+> attack troll with sword
+[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|curtains|fatal|gash|wound|stagger|dodge|removes|pinks|crashes|charge|knock|nimbly|can't see)/i]
+
+> attack troll with sword
+[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|curtains|fatal|gash|wound|stagger|dodge|removes|pinks|crashes|charge|knock|nimbly|can't see)/i]
+
+> attack troll with sword
+[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|curtains|fatal|gash|wound|stagger|dodge|removes|pinks|crashes|charge|knock|nimbly|can't see)/i]
+
+> attack troll with sword
+[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|curtains|fatal|gash|wound|stagger|dodge|removes|pinks|crashes|charge|knock|nimbly|can't see)/i]
+
+[ENSURES: not entity "troll" alive]
 
 [END GOAL]
 
