@@ -32,7 +32,7 @@ function generateEventId(): string {
  */
 function isCarouselActive(world: WorldModel): boolean {
   const active = world.getStateValue(CAROUSEL_ACTIVE_KEY) as boolean | undefined;
-  return active ?? true; // Default to active if not set
+  return active ?? false; // Canonical: Low Room carousel starts inactive (MDL CAROUSEL-FLIP-FLAG = FALSE)
 }
 
 /**

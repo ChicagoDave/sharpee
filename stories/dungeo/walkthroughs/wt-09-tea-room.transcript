@@ -154,10 +154,8 @@ $teleport Engravings Cave
 > tell robot to go east
 [OK: contains "Whirr"]
 
-# Teleport to carousel Machine Room (uses alias to disambiguate from coal mine Machine Room)
-$teleport carousel machine room
-
-> look
+# Follow robot east to Machine Room (exits are deterministic before button push)
+> east
 [OK: contains "Machine Room"]
 [OK: contains "robot"]
 

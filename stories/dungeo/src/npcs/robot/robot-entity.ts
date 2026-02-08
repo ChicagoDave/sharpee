@@ -99,8 +99,9 @@ export function makeRobotPushButton(
     }
   }
 
-  // Fix the Low Room carousel (shares CAROUSEL-FLIP flag in MDL)
-  world.setStateValue('dungeo.carousel.active', false);
+  // Activate Low Room carousel (canonical: button toggles CAROUSEL-FLIP to TRUE,
+  // which fixes Round Room but randomizes Low Room exits — player doesn't need Low Room anymore)
+  world.setStateValue('dungeo.carousel.active', true);
 
   // Emit success events
   events.push({

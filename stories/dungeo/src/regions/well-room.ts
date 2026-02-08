@@ -238,8 +238,9 @@ export function createWellRoomObjects(world: WorldModel, roomIds: WellRoomIds): 
   // Store dingy closet ID for cage puzzle handlers
   world.setStateValue('dungeo.cage.dingy_closet_id', roomIds.dingyCloset);
 
-  // Low Room carousel starts active (exits randomized until button is pushed)
-  world.setStateValue('dungeo.carousel.active', true);
+  // Low Room carousel starts INACTIVE — exits are deterministic before button push
+  // (Canonical: MDL CAROUSEL-FLIP-FLAG starts FALSE; Low Room only randomizes when TRUE)
+  world.setStateValue('dungeo.carousel.active', false);
 }
 
 // ============= Well Scenery =============
