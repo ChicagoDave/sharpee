@@ -11,6 +11,8 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-047 | Zifmia client needs console output panel without full Dev Tools | Medium | client-zifmia | 2026-02-01 | - | - |
 | ISSUE-048 | Zifmia not updated to latest platform | Medium | client-zifmia | 2026-02-04 | - | - |
 | ISSUE-049 | `$seed` directive for deterministic randomization testing | Low | transcript-tester | 2026-02-07 | - | - |
+| ISSUE-050 | Consolidate all Dungeo text into dungeo-en-us.ts for i18n | Low | dungeo | 2026-02-07 | - | - |
+| ISSUE-051 | TrollTrait capability declaration stale after melee interceptor | Low | dungeo | 2026-02-08 | - | - |
 
 ---
 
@@ -106,6 +108,43 @@ Games rely on randomization (carousel exits, combat damage, thief behavior) and 
 - `$retry <N>` — Repeat a command block until assertions pass (for combat)
 
 **Priority**: Low — current workarounds (GDT teleport, extra attacks, avoiding carousel) are functional. Implement when more puzzles depend on randomization.
+
+---
+
+### ISSUE-050: Consolidate all Dungeo text into dungeo-en-us.ts for i18n
+
+**Reported**: 2026-02-07
+**Severity**: Low
+**Component**: dungeo (story)
+
+**Description**:
+All English text strings in the Dungeo story are currently spread across multiple files (melee-messages.ts, npc-messages.ts, object-messages.ts, action-messages.ts, puzzle-messages.ts, etc.). To enable future translation to other languages, all story text should be consolidated into a single `dungeo-en-us.ts` file (or a `dungeo-en-us/` directory) that serves as the single source of truth for all player-facing strings.
+
+**Scope**:
+- Melee combat messages (sword, knife, troll, thief, cyclops tables)
+- NPC messages (thief, troll, cyclops, robot, dungeon master)
+- Action messages (say, ring, break, burn, pray, diagnose, etc.)
+- Puzzle messages (royal puzzle, mirror, laser, exorcism, etc.)
+- Object messages (cakes, boat, dam, etc.)
+- Scheduler messages (lantern, candles, dam, balloon)
+- Room descriptions and entity descriptions
+
+**Priority**: Low — the language layer architecture already supports this via message IDs. This is a refactoring task to group all text in one place, not a functional change.
+
+---
+
+### ISSUE-051: TrollTrait capability declaration stale after melee interceptor
+
+**Reported**: 2026-02-08
+**Severity**: Low
+**Component**: dungeo (story)
+
+**Description**:
+`TrollTrait` still declares `capabilities: ['if.action.attacking']` but no corresponding capability behavior is registered. The melee interceptor now handles all combat resolution, making this declaration vestigial. On each troll attack, stderr logs: `Universal dispatch: trait "dungeo.trait.troll" claims "if.action.attacking" but no behavior registered. Falling back to stdlib action.`
+
+**Resolution**: Remove the stale `capabilities` declaration from `TrollTrait`, or remove the entire capability dispatch registration if no longer needed.
+
+**Priority**: Low — cosmetic. The melee interceptor correctly handles combat; the warning is harmless noise.
 
 ---
 

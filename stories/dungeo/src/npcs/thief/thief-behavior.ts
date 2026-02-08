@@ -33,6 +33,7 @@ import {
   isThiefDisabled,
   decrementCooldowns,
   shouldEscalateToCombat,
+  getThiefCombatDecision,
   isStilettoItem,
   getTreasureValue
 } from './thief-helpers';
@@ -43,7 +44,7 @@ const STEAL_CHANCE = 0.4;           // 40% chance to steal when opportunity aris
 const EGG_OPEN_TURNS = 3;           // Turns before thief opens the egg
 const STEAL_COOLDOWN = 5;           // Turns between steals
 const MAX_CARRY_BEFORE_RETURN = 3;  // Items before heading home
-const FLEE_HEALTH_THRESHOLD = 0.3;  // 30% health triggers flee
+// FLEE_HEALTH_THRESHOLD removed — flee decision now uses canonical WINNING? (melee.137:287-293)
 
 // Event ID counter
 let eventCounter = 0;
@@ -78,24 +79,18 @@ export const thiefBehavior: NpcBehavior = {
     // Decrement cooldowns
     decrementCooldowns(props);
 
-    // Priority 1: Handle fighting state
+    // Priority 1: Handle fighting state (includes WINNING? flee decision)
     if (props.state === 'FIGHTING') {
       return handleFightingState(context, props);
     }
 
-    // Priority 2: Check for fleeing (low health)
-    if (shouldFlee(context)) {
-      props.state = 'FLEEING';
-      return handleFleeingState(context, props);
-    }
-
-    // Priority 3: Check egg opening (special mechanic)
+    // Priority 2: Check egg opening (special mechanic)
     const eggActions = checkEggOpening(context, props);
     if (eggActions.length > 0) {
       return eggActions;
     }
 
-    // Priority 4: Late-game combat escalation
+    // Priority 3: Late-game combat escalation (canonical WINNING?)
     if (shouldEscalateToCombat(context) && !props.hasBeenAttacked) {
       props.state = 'FIGHTING';
       return handleFightingState(context, props);
@@ -399,28 +394,54 @@ function handleReturningState(context: NpcContext, props: ThiefCustomProperties)
 }
 
 /**
- * FIGHTING: In combat with player
+ * FIGHTING: In combat with player (canonical WINNING? AI, melee.137:287-293)
+ *
+ * Each combat turn, the thief evaluates his strength vs the hero's:
+ * - !shouldStay → flee the room (transition back to WANDERING)
+ * - shouldAttack → attack the player
+ * - !shouldAttack but shouldStay → hesitate (circle warily)
  */
 function handleFightingState(context: NpcContext, props: ThiefCustomProperties): NpcAction[] {
-  // Check for flee
-  if (shouldFlee(context)) {
-    props.state = 'FLEEING';
-    return handleFleeingState(context, props);
-  }
-
-  // Attack if player is visible
+  // If player is visible, use WINNING? to decide fight/flee
   if (context.playerVisible) {
-    const player = context.world.getPlayer();
-    if (player) {
-      return [
-        {
-          type: 'emote',
-          messageId: ThiefMessages.ATTACKS,
-          data: { npcName: context.npc.name }
-        },
-        { type: 'attack', target: player.id }
-      ];
+    const { shouldAttack, shouldStay } = getThiefCombatDecision(context);
+
+    if (!shouldStay) {
+      // Flee: emit message, leave room, go back to wandering
+      const actions: NpcAction[] = [{
+        type: 'emote',
+        messageId: ThiefMessages.FLEES,
+        data: { npcName: context.npc.name }
+      }];
+
+      const exits = context.getAvailableExits();
+      if (exits.length > 0) {
+        // Try to head toward lair, otherwise pick random exit
+        const exitToLair = exits.find(e => e.destination === props.lairRoomId);
+        const exit = exitToLair ?? context.random.pick(exits);
+        actions.push({ type: 'move', direction: exit.direction });
+      }
+
+      props.state = 'WANDERING';
+      return actions;
     }
+
+    if (shouldAttack) {
+      const player = context.world.getPlayer();
+      if (player) {
+        return [
+          {
+            type: 'emote',
+            messageId: ThiefMessages.ATTACKS,
+            data: { npcName: context.npc.name }
+          },
+          { type: 'attack', target: player.id }
+        ];
+      }
+    }
+
+    // shouldStay but !shouldAttack — hesitate (no action, just stay in room)
+    return [];
   }
 
   // Player fled - chase them
@@ -485,17 +506,6 @@ function handleFleeingState(context: NpcContext, props: ThiefCustomProperties): 
 // ============= Special Mechanics =============
 
 /**
- * Check if thief should flee (low health)
- */
-function shouldFlee(context: NpcContext): boolean {
-  const combatant = context.npc.get(CombatantTrait);
-  if (!combatant) return false;
-
-  const healthRatio = combatant.health / combatant.maxHealth;
-  return healthRatio <= FLEE_HEALTH_THRESHOLD;
-}
-
-/**
  * Check and handle egg opening (special Zork mechanic)
  *
  * If thief has been carrying the jeweled egg for 3+ turns,
@@ -504,6 +514,9 @@ function shouldFlee(context: NpcContext): boolean {
 function checkEggOpening(context: NpcContext, props: ThiefCustomProperties): NpcAction[] {
   if (isCarryingEgg(context)) {
     props.turnsWithEgg++;
+
+    // Thief is engrossed while working on the egg — caps melee strength at 2
+    context.npc.attributes.thiefEngrossed = true;
 
     if (props.turnsWithEgg >= EGG_OPEN_TURNS) {
       props.turnsWithEgg = 0;
@@ -519,6 +532,9 @@ function checkEggOpening(context: NpcContext, props: ThiefCustomProperties): Npc
           const openable = egg.get(OpenableTrait);
           if (openable && !openable.isOpen) {
             openable.isOpen = true;
+
+            // Egg opened — no longer engrossed
+            context.npc.attributes.thiefEngrossed = false;
 
             // Create the clockwork canary if it doesn't exist
             let canary = context.world.getAllEntities().find(e => {
@@ -562,8 +578,9 @@ function checkEggOpening(context: NpcContext, props: ThiefCustomProperties): Npc
       }];
     }
   } else {
-    // Reset counter if not carrying egg
+    // Reset counter and clear engrossed flag if not carrying egg
     props.turnsWithEgg = 0;
+    context.npc.attributes.thiefEngrossed = false;
   }
 
   return [];

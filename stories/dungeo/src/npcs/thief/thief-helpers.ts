@@ -8,10 +8,12 @@
  * - Room traversal
  */
 
-import { IFEntity, WorldModel, NpcTrait, IdentityTrait } from '@sharpee/world-model';
+import { IFEntity, WorldModel, NpcTrait, IdentityTrait, StandardCapabilities } from '@sharpee/world-model';
 import { NpcContext } from '@sharpee/stdlib';
 import { ThiefCustomProperties, ThiefState } from './thief-entity';
 import { TreasureTrait } from '../../traits';
+import { fightStrength, isVillainWinning, VILLAIN_OSTRENGTH } from '../../combat/melee';
+import { MELEE_STATE } from '../../combat/melee-state';
 
 // Key for storing thief disabled state in world data store
 const THIEF_DISABLED_KEY = 'dungeo.thief.disabled';
@@ -163,28 +165,60 @@ export function decrementCooldowns(props: ThiefCustomProperties): void {
  * Get player's current score (for combat scaling)
  */
 export function getPlayerScore(world: WorldModel): number {
-  // Try to access scoring capability
-  const worldAny = world as any;
-  const scoring = worldAny.getCapability?.('scoring');
+  const scoring = world.getCapability(StandardCapabilities.SCORING);
   return scoring?.scoreValue ?? 0;
 }
 
 /**
- * Check if we should escalate to combat (late-game hostility)
+ * Get the thief's current melee OSTRENGTH from entity attributes.
+ * Falls back to canonical base (5) if not yet initialized.
+ */
+function getThiefOstrength(npc: IFEntity): number {
+  const stored = npc.attributes[MELEE_STATE.VILLAIN_OSTRENGTH];
+  return typeof stored === 'number' ? stored : VILLAIN_OSTRENGTH.THIEF;
+}
+
+/**
+ * Get the hero's current fight-strength (base + wound adjustment).
+ */
+function getHeroFightStrength(world: WorldModel): number {
+  const score = getPlayerScore(world);
+  const player = world.getPlayer();
+  const woundAdjust = (player?.attributes?.[MELEE_STATE.WOUND_ADJUST] as number) ?? 0;
+  return fightStrength(score, woundAdjust);
+}
+
+/**
+ * Canonical WINNING? decision for thief combat AI (melee.137:287-293).
  *
- * Thief becomes aggressive when player has high score.
+ * Uses actual strength comparison between thief and hero to decide:
+ * - shouldAttack: whether the thief attacks this turn
+ * - shouldStay: whether the thief stays in the room (vs flees)
+ *
+ * Replaces the old score-threshold + flat probability approach.
+ */
+export function getThiefCombatDecision(context: NpcContext): { shouldAttack: boolean; shouldStay: boolean } {
+  const vs = getThiefOstrength(context.npc);
+  const heroStr = getHeroFightStrength(context.world);
+
+  return isVillainWinning({
+    villainStrength: vs,
+    heroFightStrength: heroStr,
+    random: context.random,
+  });
+}
+
+/**
+ * Check if thief should escalate to combat (canonical WINNING?).
+ *
+ * The thief initiates combat when he's likely to win, based on actual
+ * strength comparison. Early game (hero weak): very aggressive.
+ * Late game (hero strong): cautious.
  */
 export function shouldEscalateToCombat(context: NpcContext): boolean {
-  const SCORE_THRESHOLD = 150;
-  const ESCALATION_CHANCE = 0.3;
-
-  const playerScore = getPlayerScore(context.world);
-
-  if (playerScore >= SCORE_THRESHOLD && context.playerVisible) {
-    return context.random.chance(ESCALATION_CHANCE);
-  }
-
-  return false;
+  if (!context.playerVisible) return false;
+  const { shouldAttack } = getThiefCombatDecision(context);
+  return shouldAttack;
 }
 
 /**
