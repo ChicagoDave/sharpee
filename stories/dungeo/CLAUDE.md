@@ -37,10 +37,13 @@ src/
 
 ### Treasures
 ```typescript
-(item as any).isTreasure = true;
-(item as any).treasureId = 'unique-id';
-(item as any).treasureValue = 10;      // Points for taking
-(item as any).trophyCaseValue = 5;     // Additional points in case
+import { TreasureTrait } from '@sharpee/world-model';
+
+item.add(new TreasureTrait({
+  treasureId: 'unique-id',
+  treasureValue: 10,      // Points for taking (OFVAL)
+  trophyCaseValue: 5,     // Points in trophy case (OTVAL)
+}));
 ```
 
 ### Room Puzzle State

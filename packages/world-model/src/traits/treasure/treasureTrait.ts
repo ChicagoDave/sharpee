@@ -1,8 +1,7 @@
 /**
  * Treasure Trait
  *
- * Trait for marking entities as treasures with scoring values.
- * Replaces the anti-pattern of (entity as any).isTreasure = true.
+ * Platform trait for marking entities as treasures with scoring values.
  *
  * From MDL source (mdlzork_810722):
  * - OFVAL (Object Find Value) = treasureValue (points for taking)
@@ -11,7 +10,7 @@
  * This trait persists through checkpoint save/restore, unlike custom properties.
  */
 
-import { ITrait, ITraitConstructor } from '@sharpee/world-model';
+import { ITrait } from '../trait';
 
 /**
  * Configuration for the treasure trait
@@ -38,7 +37,7 @@ export interface TreasureTraitConfig {
  * double-scoring.
  */
 export class TreasureTrait implements ITrait {
-  static readonly type = 'dungeo.trait.treasure' as const;
+  static readonly type = 'treasure' as const;
 
   readonly type = TreasureTrait.type;
 
@@ -57,6 +56,3 @@ export class TreasureTrait implements ITrait {
     this.trophyCaseValue = config.trophyCaseValue;
   }
 }
-
-// Ensure the class implements ITraitConstructor
-export const TreasureTraitConstructor: ITraitConstructor<TreasureTrait> = TreasureTrait;

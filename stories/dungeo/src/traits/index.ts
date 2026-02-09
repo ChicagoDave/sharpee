@@ -39,9 +39,8 @@ export {
 } from './troll-trait';
 
 export {
-  TrollTakingBehavior,
-  TrollAttackingBehavior,
-  TrollTalkingBehavior,
+  TrollTakingInterceptor,
+  TrollTalkingInterceptor,
   TrollCapabilityMessages
 } from './troll-capability-behaviors';
 
@@ -57,12 +56,9 @@ export {
   EggMessages
 } from './egg-behaviors';
 
-// Treasure (scoring and trophy case)
-export {
-  TreasureTrait,
-  TreasureTraitConfig,
-  TreasureTraitConstructor
-} from './treasure-trait';
+// Treasure (scoring and trophy case) - now platform-level in @sharpee/world-model
+// Re-export for backward compatibility with existing region imports
+export { TreasureTrait, TreasureTraitConfig } from '@sharpee/world-model';
 
 // Inflatable (boat and balloon cloth bag)
 export {

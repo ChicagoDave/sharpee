@@ -284,8 +284,8 @@ function createCellarObjects(world: WorldModel, roomId: string): void {
 const TROLLDESC = 'A nasty-looking troll stands here, wielding a bloody axe. He blocks the northern passage.';
 const TROLLOUT = 'An unconscious troll is sprawled on the floor. All passages out of the room are open.';
 
-// Recovery time: 2 turns (diverging from MDL's ~5 turns for better gameplay)
-const TROLL_RECOVERY_TURNS = 2;
+// Recovery time: 4 turns (MDL original was ~5; 4 accounts for GDT command turns consuming daemon ticks)
+const TROLL_RECOVERY_TURNS = 4;
 
 function createTrollRoomObjects(world: WorldModel, roomId: string): void {
   // Bloody axe - create first so we have the ID for troll trait
@@ -375,6 +375,12 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
       const combatant = troll.get(CombatantTrait);
       if (combatant) {
         combatant.recoveryTurns = TROLL_RECOVERY_TURNS;
+      }
+
+      // Sync NpcTrait consciousness (NPC service checks NpcTrait.canAct separately)
+      const npcTrait = troll.get(NpcTrait);
+      if (npcTrait) {
+        npcTrait.isConscious = false;
       }
 
       // Note: Axe visibility is handled by TrollAxeVisibilityBehavior

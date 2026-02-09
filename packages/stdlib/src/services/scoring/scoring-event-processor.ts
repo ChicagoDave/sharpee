@@ -12,7 +12,7 @@
  * @see docs/work/scoring/assessment.md
  */
 
-import { IWorldModel } from '@sharpee/world-model';
+import { IWorldModel, TreasureTrait } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
 import { IScoringService } from './scoring-service';
 
@@ -383,16 +383,16 @@ export class ScoringEventProcessor {
       return;
     }
 
-    // Dynamic treasure mode - check entity properties
+    // Dynamic treasure mode - check TreasureTrait
     if (this.dynamicTreasureMode) {
       const item = this.world.getEntity(itemId);
       if (!item) return;
 
-      const itemAny = item as any;
-      if (!itemAny.isTreasure) return;
+      const treasure = item.get(TreasureTrait);
+      if (!treasure) return;
 
-      const treasureValue = itemAny.treasureValue || 0;
-      const treasureId = itemAny.treasureId || item.id;
+      const treasureValue = treasure.treasureValue || 0;
+      const treasureId = treasure.treasureId || item.id;
 
       if (treasureValue > 0 && !this.takenTreasures.has(treasureId)) {
         this.takenTreasures.add(treasureId);
@@ -433,7 +433,7 @@ export class ScoringEventProcessor {
       return;
     }
 
-    // Dynamic treasure mode - check entity properties
+    // Dynamic treasure mode - check TreasureTrait
     if (this.dynamicTreasureMode && this.dynamicContainerName) {
       // Check if target is the scoring container
       const target = this.world.getEntity(targetId);
@@ -446,11 +446,11 @@ export class ScoringEventProcessor {
       const item = this.world.getEntity(itemId);
       if (!item) return;
 
-      const itemAny = item as any;
-      if (!itemAny.isTreasure) return;
+      const treasure = item.get(TreasureTrait);
+      if (!treasure) return;
 
-      const trophyCaseValue = itemAny.trophyCaseValue || 0;
-      const treasureId = itemAny.treasureId || item.id;
+      const trophyCaseValue = treasure.trophyCaseValue || 0;
+      const treasureId = treasure.treasureId || item.id;
 
       if (trophyCaseValue > 0 && !this.containerTreasures.has(treasureId)) {
         this.containerTreasures.add(treasureId);
@@ -468,10 +468,10 @@ export class ScoringEventProcessor {
    * Handle a player_moved event (room entry)
    */
   handlePlayerMoved(event: ISemanticEvent): void {
-    // Get toRoomId - try data property first (IGameEvent), then top-level (raw event)
+    // Get toRoom - try data property first (IGameEvent), then top-level (raw event)
     const eventAny = event as unknown as Record<string, unknown>;
     const data = eventAny.data as Record<string, unknown> | undefined;
-    const toRoomId = (data?.toRoomId ?? eventAny.toRoomId) as string | undefined;
+    const toRoomId = (data?.toRoom ?? eventAny.toRoom) as string | undefined;
     if (!toRoomId) return;
 
     // Check if this room has visit points

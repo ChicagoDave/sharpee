@@ -29,6 +29,7 @@ import {
   StandardCapabilities,
 } from '@sharpee/world-model';
 import { createSeededRandom } from '@sharpee/core';
+import { findWieldedWeapon } from '@sharpee/stdlib';
 
 import {
   fightStrength,
@@ -120,6 +121,15 @@ export const MeleeInterceptor: ActionInterceptor = {
       return {
         valid: false,
         error: MeleeMessages.STILL_RECOVERING,
+      };
+    }
+
+    // Check if hero has a weapon — fighting unarmed is suicide
+    const weapon = findWieldedWeapon(player, world);
+    if (!weapon) {
+      return {
+        valid: false,
+        error: MeleeMessages.UNARMED_ATTACK,
       };
     }
 
@@ -313,6 +323,14 @@ export const MeleeInterceptor: ActionInterceptor = {
         createEffect('game.message', {
           messageId: MeleeMessages.STILL_RECOVERING,
           text: 'You are still recovering from a staggering blow.',
+        }),
+      ];
+    }
+    if (error === MeleeMessages.UNARMED_ATTACK) {
+      return [
+        createEffect('game.message', {
+          messageId: MeleeMessages.UNARMED_ATTACK,
+          text: 'Fighting unarmed is suicide.',
         }),
       ];
     }

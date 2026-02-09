@@ -104,8 +104,8 @@ function registerLightShaftAchievement(
   scoringProcessor: ScoringEventProcessor
 ): void {
   eventProcessor.registerHandler('if.event.actor_moved', (event: ISemanticEvent) => {
-    const data = event.data as { actorId?: string; toRoomId?: string } | undefined;
-    if (!data?.toRoomId || data.toRoomId !== bottomOfShaftId) return [];
+    const data = event.data as { actorId?: string; toRoom?: string } | undefined;
+    if (!data?.toRoom || data.toRoom !== bottomOfShaftId) return [];
 
     // Check if player (not NPC)
     const player = world.getPlayer();

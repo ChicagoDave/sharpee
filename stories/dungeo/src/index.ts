@@ -96,9 +96,8 @@ import {
   TrollAxeVisibilityBehavior,
   TrollAxeMessages,
   TrollTrait,
-  TrollTakingBehavior,
-  TrollAttackingBehavior,
-  TrollTalkingBehavior,
+  TrollTakingInterceptor,
+  TrollTalkingInterceptor,
   TrollCapabilityMessages,
   EggTrait,
   EggOpeningBehavior,
@@ -265,26 +264,20 @@ export class DungeoStory implements Story {
       );
     }
 
-    // Troll NPC uses universal dispatch for TAKE/ATTACK/TALK interception
-    if (!hasCapabilityBehavior(TrollTrait.type, 'if.action.taking')) {
-      registerCapabilityBehavior(
+    // Troll NPC uses action interceptors for TAKE/ATTACK/TALK interception
+    // (Converted from capability behaviors to work around ISSUE-052: cross-module registry bug)
+    if (!hasActionInterceptor(TrollTrait.type, 'if.action.taking')) {
+      registerActionInterceptor(
         TrollTrait.type,
         'if.action.taking',
-        TrollTakingBehavior
+        TrollTakingInterceptor
       );
     }
-    if (!hasCapabilityBehavior(TrollTrait.type, 'if.action.attacking')) {
-      registerCapabilityBehavior(
-        TrollTrait.type,
-        'if.action.attacking',
-        TrollAttackingBehavior
-      );
-    }
-    if (!hasCapabilityBehavior(TrollTrait.type, 'if.action.talking')) {
-      registerCapabilityBehavior(
+    if (!hasActionInterceptor(TrollTrait.type, 'if.action.talking')) {
+      registerActionInterceptor(
         TrollTrait.type,
         'if.action.talking',
-        TrollTalkingBehavior
+        TrollTalkingInterceptor
       );
     }
 

@@ -49,21 +49,21 @@ description: Test troll-specific player action interceptions (TAKE TROLL, unarme
 # Test 1: TAKE TROLL - should be blocked with spitting response
 > take troll
 [OK: contains "spits"]
-[EVENT: true, type="action.blocked"]
+[EVENT: true, type="if.event.take_blocked"]
 
 # Test 2: Drop sword first for unarmed attack test
 > drop sword
 [OK: contains "Dropped"]
 
-# Test 3: ATTACK TROLL without weapon - should be mocked
+# Test 3: ATTACK TROLL without weapon - blocked by MeleeInterceptor (unarmed)
 > attack troll
-[OK: contains "laughs"]
-[EVENT: true, type="action.blocked"]
+[OK: contains "suicide"]
+[EVENT: true, type="game.message"]
 
 # Alternative: kill troll
 > kill troll
-[OK: contains "laughs"]
-[EVENT: true, type="action.blocked"]
+[OK: contains "suicide"]
+[EVENT: true, type="game.message"]
 
 # Pick up sword to verify armed attack goes through to combat system
 > take sword

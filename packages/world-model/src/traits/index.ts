@@ -43,6 +43,9 @@ export * from './equipped';
 export * from './vehicle';
 export * from './enterable';
 
+// Scoring traits
+export * from './treasure';
+
 // NPC traits
 export * from './npc';
 

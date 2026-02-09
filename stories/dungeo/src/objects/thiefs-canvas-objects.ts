@@ -14,7 +14,7 @@ import {
   IdentityTrait,
   EntityType
 } from '@sharpee/world-model';
-import { TreasureTrait } from '../traits/treasure-trait';
+import { TreasureTrait } from '@sharpee/world-model';
 import { BurnableTrait } from '../traits/burnable-trait';
 import { FramePieceTrait } from '../traits/frame-piece-trait';
 

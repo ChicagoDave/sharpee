@@ -1,12 +1,13 @@
 title: Troll Recovery Daemon
 story: dungeo
 author: Sharpee Team
-description: Tests that the troll wakes up after being knocked out, with description change (TROLLDESC -> TROLLOUT), exit blocking/unblocking, and recovery after 2 turns.
+description: Tests that the troll wakes up after being knocked out, with description change (TROLLDESC -> TROLLOUT), exit blocking/unblocking, and recovery after 4 turns.
 
 ---
 
 # From MDL source (act1.254): OUT!/IN! transitions
-# Recovery time: 2 turns (diverged from MDL's 5 turns for better gameplay)
+# Recovery time: 4 daemon ticks (MDL original was ~5; accounts for GDT turns consuming ticks)
+# Note: GDT commands (KO, EX) each count as a game turn, consuming 2 of the 4 ticks
 
 # Get lantern first (Troll Room is dark)
 > GDT
@@ -56,7 +57,8 @@ description: Tests that the troll wakes up after being knocked out, with descrip
 > EX
 [OK: contains "Returning"]
 
-# Description should change to TROLLOUT
+# Description should change to TROLLOUT (troll is unconscious)
+# Recovery daemon has ticked twice during GDT (KO + EX), so 2 ticks remain
 > examine troll
 [OK: contains "unconscious"]
 [OK: contains "sprawled"]
@@ -67,12 +69,12 @@ description: Tests that the troll wakes up after being knocked out, with descrip
 > north
 [OK: contains "East-West Passage"]
 
-# Go back to troll room - this is turn 2, troll wakes up during this move
-# (no wake-up message because player is in transit, not in room when troll wakes)
+# Go back to troll room - daemon ticks consumed all 4 ticks by now
+# Troll wakes up during the "north" turn (tick 4), player has already moved
 > south
 [OK: contains "Troll Room"]
 
-# Troll should now be conscious again (woke up after 2 turns)
+# Troll should now be conscious again (woke up after 4 daemon ticks)
 > examine troll
 [OK: contains "blocks"]
 [OK: contains "northern passage"]

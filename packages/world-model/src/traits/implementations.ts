@@ -54,6 +54,9 @@ import { NpcTrait } from './npc/npcTrait';
 import { VehicleTrait } from './vehicle/vehicleTrait';
 import { EnterableTrait } from './enterable/enterableTrait';
 
+// Scoring traits
+import { TreasureTrait } from './treasure/treasureTrait';
+
 // System traits
 import { StoryInfoTrait } from './story-info/storyInfoTrait';
 
@@ -108,6 +111,9 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
   // Transport traits
   [TraitType.VEHICLE]: VehicleTrait,
   [TraitType.ENTERABLE]: EnterableTrait,
+
+  // Scoring traits
+  [TraitType.TREASURE]: TreasureTrait,
 
   // System traits
   [TraitType.STORY_INFO]: StoryInfoTrait,
@@ -187,6 +193,9 @@ export {
   // Transport traits
   VehicleTrait,
   EnterableTrait,
+
+  // Scoring traits
+  TreasureTrait,
 
   // System traits
   StoryInfoTrait

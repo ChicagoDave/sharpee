@@ -101,7 +101,7 @@ export const koHandler: GDTCommandHandler = {
 
     // Trigger the entity's knocked_out event handler if it exists
     // This handles entity-specific knockout logic (e.g., troll description change, exit unblocking)
-    const entityHandlers = (targetEntity as any).on;
+    const entityHandlers = targetEntity.on;
     if (entityHandlers && typeof entityHandlers['if.event.knocked_out'] === 'function') {
       const knockedOutEvent = {
         id: `gdt-knockout-${Date.now()}`,

@@ -14,7 +14,7 @@
  */
 
 import { ISemanticEvent } from '@sharpee/core';
-import { WorldModel, CombatantTrait, IdentityTrait, RoomBehavior, Direction } from '@sharpee/world-model';
+import { WorldModel, CombatantTrait, IdentityTrait, NpcTrait, RoomBehavior, Direction } from '@sharpee/world-model';
 import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 import { DungeoSchedulerMessages } from './scheduler-messages';
 
@@ -89,6 +89,12 @@ function createTrollRecoveryDaemon(): Daemon {
       if (combatant.recoveryTurns <= 0) {
         // Troll wakes up! (IN! transition)
         combatant.wakeUp();
+
+        // Sync NpcTrait consciousness
+        const npcTrait = troll.get(NpcTrait);
+        if (npcTrait) {
+          npcTrait.isConscious = true;
+        }
 
         // Restore description to TROLLDESC
         const identity = troll.get(IdentityTrait);

@@ -65,30 +65,30 @@ description: Test treasure scoring - take points and trophy case bonus
 [OK: contains "put"]
 [EVENT: true, type="if.event.put_in"]
 
-# Check score - should now be 10 (5 take + 5 case)
+# Check score - should now be 20 (5 take + 5 case + 10 kitchen room visit)
 > score
-[OK: contains "10"]
+[OK: contains "20"]
 
 # Verify the egg is in the trophy case
 > search trophy case
 [OK: contains "egg"]
 
-# Score remains at 10
+# Score remains at 20
 > score
-[OK: contains "10"]
+[OK: contains "20"]
 
 # Take egg from trophy case
 > get egg
 [OK: contains "egg"]
 
-# Score should still be 10 (removing doesn't subtract)
+# Score should still be 20 (removing doesn't subtract)
 > score
-[OK: contains "10"]
+[OK: contains "20"]
 
 # Put egg back in trophy case
 > put egg in trophy case
 [OK: contains "put"]
 
-# Score should still be 10 (no double-scoring)
+# Score should still be 20 (no double-scoring)
 > score
-[OK: contains "10"]
+[OK: contains "20"]

@@ -1,12 +1,16 @@
 /**
  * Troll Trait
  *
- * Trait for the troll NPC that claims capabilities for custom action handling:
- * - 'if.action.giving': Catch/eat items, throw knife back (GIVE TO TROLL)
- * - 'if.action.throwing': Same as giving (THROW AT TROLL)
- * - 'if.action.taking': Block taking the troll ("spits in your face")
- * - 'if.action.attacking': Mock unarmed attacks ("laughs at your puny gesture")
- * - 'if.action.talking': Custom response when incapacitated
+ * Marker trait for the troll NPC. Custom action handling uses interceptors
+ * (ADR-118) registered on this trait type, not capability dispatch.
+ *
+ * Interceptors (in troll-capability-behaviors.ts):
+ * - TrollTakingInterceptor: Block TAKE TROLL ("spits in your face")
+ * - TrollAttackingInterceptor: Block unarmed ATTACK ("laughs at puny gesture")
+ * - TrollTalkingInterceptor: Block TALK when incapacitated ("can't hear you")
+ *
+ * Event handlers (in underground.ts):
+ * - GIVE/THROW: Catch/eat items, throw knife back
  *
  * From MDL source (act1.254, dung.355)
  */
@@ -26,19 +30,11 @@ export interface TrollTraitConfig {
 /**
  * Troll Trait
  *
- * Entities with this trait intercept various player actions and provide
- * custom troll-specific responses via capability dispatch.
+ * Entities with this trait have troll-specific interceptors registered
+ * for taking, attacking, and talking actions.
  */
 export class TrollTrait implements ITrait {
   static readonly type = 'dungeo.trait.troll' as const;
-  // Note: GIVING and THROWING are handled via event handlers on the troll entity
-  // because they need access to both the item and recipient, which capability
-  // dispatch doesn't support well for multi-object actions.
-  static readonly capabilities = [
-    'if.action.taking',    // Block TAKE TROLL
-    'if.action.attacking', // Mock unarmed attacks
-    'if.action.talking'    // Custom response when incapacitated
-  ] as const;
 
   readonly type = TrollTrait.type;
 
