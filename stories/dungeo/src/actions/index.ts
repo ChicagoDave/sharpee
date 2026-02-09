@@ -130,6 +130,9 @@ export * from './launch';
 // Falls Death (any action except LOOK at Aragain Falls)
 export * from './falls-death';
 
+// Gas Explosion Death (open flame in Gas Room)
+export * from './gas-explosion';
+
 // Grue Death (moving in dark room with failed survival roll)
 export * from './grue-death';
 
@@ -196,6 +199,7 @@ import { inflateAction, INFLATE_ACTION_ID, InflateMessages } from './inflate';
 import { deflateAction, DEFLATE_ACTION_ID, DeflateMessages } from './deflate';
 import { riverBlockedAction, RIVER_BLOCKED_ACTION_ID, RiverBlockedMessages } from './river-blocked';
 import { fallsDeathAction, FALLS_DEATH_ACTION_ID, FallsDeathMessages } from './falls-death';
+import { gasExplosionAction, GAS_EXPLOSION_ACTION_ID, GasExplosionMessages } from './gas-explosion';
 import { grueDeathAction, GRUE_DEATH_ACTION_ID, GrueDeathMessages } from './grue-death';
 import { chimneyBlockedAction, CHIMNEY_BLOCKED_ACTION_ID, ChimneyBlockedMessages } from './chimney-blocked';
 import { commandingAction, COMMANDING_ACTION_ID, CommandingMessages } from './commanding';
@@ -233,6 +237,7 @@ export { DEFLATE_ACTION_ID, DeflateMessages } from './deflate';
 // Re-export river navigation actions for use in index.ts
 export { RIVER_BLOCKED_ACTION_ID, RiverBlockedMessages } from './river-blocked';
 export { FALLS_DEATH_ACTION_ID, FallsDeathMessages } from './falls-death';
+export { GAS_EXPLOSION_ACTION_ID, GasExplosionMessages } from './gas-explosion';
 export { GRUE_DEATH_ACTION_ID, GrueDeathMessages } from './grue-death';
 export { CHIMNEY_BLOCKED_ACTION_ID, ChimneyBlockedMessages } from './chimney-blocked';
 export { LAUNCH_ACTION_ID, LaunchMessages } from './launch';
@@ -292,6 +297,7 @@ export const customActions = [
   deflateAction,
   riverBlockedAction,
   fallsDeathAction,
+  gasExplosionAction,
   grueDeathAction,
   chimneyBlockedAction,
   commandingAction,

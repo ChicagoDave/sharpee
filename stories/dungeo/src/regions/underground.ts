@@ -616,6 +616,7 @@ function createTorchRoomObjects(world: WorldModel, roomId: string): void {
     fuelConsumptionRate: 0  // Never burns out
   }));
   // No SwitchableTrait - player cannot turn it on/off
+  torch.attributes.isFlame = true;  // Open flame - dangerous in Gas Room
   torch.add(new TreasureTrait({
     treasureId: 'ivory-torch',
     treasureValue: 14,     // OFVAL from mdlzork_810722

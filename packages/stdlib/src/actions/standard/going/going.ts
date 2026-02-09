@@ -54,12 +54,20 @@ export interface GoingSharedData {
   currentLocation?: string;   // Room we're now in
   direction?: DirectionType;
   vehicleId?: string;         // If player is in a walkable vehicle, the vehicle ID
-  /** Interceptor found during validate, if any */
+  /** Source room interceptor found during validate (ADR-118) */
   interceptor?: ActionInterceptor;
-  /** Shared data for interceptor phases */
+  /** Shared data for source interceptor phases */
   interceptorData?: InterceptorSharedData;
   /** Source room entity for interceptor lookups */
   sourceRoom?: IFEntity;
+  /** Destination room interceptor found during validate (ADR-126) */
+  destinationInterceptor?: ActionInterceptor;
+  /** Shared data for destination interceptor phases */
+  destinationInterceptorData?: InterceptorSharedData;
+  /** Destination room entity for interceptor lookups */
+  destinationRoom?: IFEntity;
+  /** Which interceptor blocked the action, if any */
+  blockedBy?: 'source' | 'destination';
 }
 
 export function getGoingSharedData(context: ActionContext): GoingSharedData {
@@ -153,11 +161,12 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     sharedData.interceptorData = interceptorData;
     sharedData.sourceRoom = currentRoom;
 
-    // === PRE-VALIDATE HOOK ===
+    // === SOURCE PRE-VALIDATE HOOK ===
     // Called before standard validation - can block early
     if (interceptor?.preValidate) {
       const result = interceptor.preValidate(currentRoom, context.world, actor.id, interceptorData);
-      if (result !== null) {
+      if (result !== null && !result.valid) {
+        sharedData.blockedBy = 'source';
         return {
           valid: result.valid,
           error: result.error,
@@ -242,11 +251,54 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     // Darkness affects visibility (looking), not movement.
     // This matches traditional IF behavior (e.g., Cloak of Darkness).
 
-    // === POST-VALIDATE HOOK ===
+    // === DESTINATION INTERCEPTOR LOOKUP (ADR-126) ===
+    // Check if the destination room has an entry condition interceptor
+    const destInterceptorResult = getInterceptorForAction(destination, IFActions.ENTERING_ROOM);
+    const destInterceptor = destInterceptorResult?.interceptor;
+    const destInterceptorData: InterceptorSharedData = {
+      direction: direction,
+      sourceRoomId: currentRoom.id,
+      destinationRoomId: destination.id
+    };
+
+    // Store for later phases
+    sharedData.destinationInterceptor = destInterceptor;
+    sharedData.destinationInterceptorData = destInterceptorData;
+    sharedData.destinationRoom = destination;
+
+    // === DESTINATION PRE-VALIDATE HOOK (ADR-126) ===
+    // Called after destination is resolved but before player moves - can block entry
+    if (destInterceptor?.preValidate) {
+      const result = destInterceptor.preValidate(destination, context.world, actor.id, destInterceptorData);
+      if (result !== null && !result.valid) {
+        sharedData.blockedBy = 'destination';
+        return {
+          valid: result.valid,
+          error: result.error,
+          params: result.params
+        };
+      }
+    }
+
+    // === SOURCE POST-VALIDATE HOOK ===
     // Called after standard validation passes - can add entity-specific conditions
     if (interceptor?.postValidate) {
       const result = interceptor.postValidate(currentRoom, context.world, actor.id, interceptorData);
       if (result !== null) {
+        sharedData.blockedBy = 'source';
+        return {
+          valid: result.valid,
+          error: result.error,
+          params: result.params
+        };
+      }
+    }
+
+    // === DESTINATION POST-VALIDATE HOOK (ADR-126) ===
+    if (destInterceptor?.postValidate) {
+      const result = destInterceptor.postValidate(destination, context.world, actor.id, destInterceptorData);
+      if (result !== null) {
+        sharedData.blockedBy = 'destination';
         return {
           valid: result.valid,
           error: result.error,
@@ -310,12 +362,19 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       RoomBehavior.markVisited(destination, actor);
     }
 
-    // === POST-EXECUTE HOOK ===
+    // === SOURCE POST-EXECUTE HOOK ===
     // Called after standard execution - can perform additional mutations
     const interceptor = sharedData.interceptor;
     const interceptorData = sharedData.interceptorData || {};
     if (interceptor?.postExecute && sharedData.sourceRoom) {
       interceptor.postExecute(sharedData.sourceRoom, context.world, actor.id, interceptorData);
+    }
+
+    // === DESTINATION POST-EXECUTE HOOK (ADR-126) ===
+    const destInterceptor = sharedData.destinationInterceptor;
+    const destInterceptorData = sharedData.destinationInterceptorData || {};
+    if (destInterceptor?.postExecute && sharedData.destinationRoom) {
+      destInterceptor.postExecute(sharedData.destinationRoom, context.world, actor.id, destInterceptorData);
     }
   },
 
@@ -405,13 +464,23 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       }));
     }
 
-    // === POST-REPORT HOOK ===
+    // === SOURCE POST-REPORT HOOK ===
     // Called after standard report - can add additional effects
     const interceptor = sharedData.interceptor;
     const interceptorData = sharedData.interceptorData || {};
     if (interceptor?.postReport && sharedData.sourceRoom) {
       const additionalEffects = interceptor.postReport(sharedData.sourceRoom, context.world, context.player.id, interceptorData);
       // Convert CapabilityEffects to ISemanticEvents
+      for (const effect of additionalEffects) {
+        events.push(context.event(effect.type, effect.payload));
+      }
+    }
+
+    // === DESTINATION POST-REPORT HOOK (ADR-126) ===
+    const destInterceptor = sharedData.destinationInterceptor;
+    const destInterceptorData = sharedData.destinationInterceptorData || {};
+    if (destInterceptor?.postReport && sharedData.destinationRoom) {
+      const additionalEffects = destInterceptor.postReport(sharedData.destinationRoom, context.world, context.player.id, destInterceptorData);
       for (const effect of additionalEffects) {
         events.push(context.event(effect.type, effect.payload));
       }
@@ -427,14 +496,26 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const sharedData = getGoingSharedData(context);
 
-    // === ON-BLOCKED HOOK ===
-    // Called when action is blocked - can provide custom blocked handling
+    // === DESTINATION ON-BLOCKED HOOK (ADR-126) ===
+    // If the destination interceptor blocked entry, let it handle the blocked phase first
+    if (sharedData.blockedBy === 'destination') {
+      const destInterceptor = sharedData.destinationInterceptor;
+      const destInterceptorData = sharedData.destinationInterceptorData || {};
+      if (destInterceptor?.onBlocked && sharedData.destinationRoom && result.error) {
+        const customEffects = destInterceptor.onBlocked(sharedData.destinationRoom, context.world, context.player.id, result.error, destInterceptorData);
+        if (customEffects !== null) {
+          return customEffects.map(effect => context.event(effect.type, effect.payload));
+        }
+      }
+    }
+
+    // === SOURCE ON-BLOCKED HOOK ===
+    // Called when action is blocked by source room or standard checks
     const interceptor = sharedData.interceptor;
     const interceptorData = sharedData.interceptorData || {};
     if (interceptor?.onBlocked && sharedData.sourceRoom && result.error) {
       const customEffects = interceptor.onBlocked(sharedData.sourceRoom, context.world, context.player.id, result.error, interceptorData);
       if (customEffects !== null) {
-        // Interceptor provided custom blocked effects
         return customEffects.map(effect => context.event(effect.type, effect.payload));
       }
     }

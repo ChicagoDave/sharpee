@@ -27,6 +27,8 @@ import {
 import { BoatPunctureMessages, GlacierMessages } from '../traits';
 import { RiverMessages } from '../handlers/river-handler';
 import { FallsDeathMessages } from '../handlers/falls-death-handler';
+import { GasExplosionMessages } from '../actions/gas-explosion/types';
+import { GasRoomEntryMessages } from '../interceptors/gas-room-entry-interceptor';
 import { TinyRoomMessages } from '../handlers/tiny-room-handler';
 import { CakeMessages } from '../handlers/cake-handler';
 
@@ -99,6 +101,13 @@ export function registerObjectMessages(language: LanguageProvider): void {
   // ==========================================================================
 
   language.addMessage(FallsDeathMessages.DEATH, 'You tumble over Aragain Falls, plunging hundreds of feet to your doom in the mist below.\n\n    **** You have died ****');
+
+  // ==========================================================================
+  // Gas Room Explosion
+  // ==========================================================================
+
+  language.addMessage(GasExplosionMessages.DEATH, 'Oh dear, you seem to have let your open flame get too close to the gas. **BOOOOOM**\n\n    **** You have died ****');
+  language.addMessage(GasExplosionMessages.LIGHT_DEATH, 'How sad for an adventurer of your caliber to perish by lighting a flame in a room full of gas. **BOOOOOM**\n\n    **** You have died ****');
 
   // ==========================================================================
   // Tiny Room Puzzle (mat/key/door)

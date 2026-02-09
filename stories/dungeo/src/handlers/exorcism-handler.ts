@@ -16,7 +16,7 @@
  */
 
 import { ISemanticEvent, EntityId } from '@sharpee/core';
-import { WorldModel, IdentityTrait, LightSourceTrait, SwitchableTrait, RoomTrait, RoomBehavior, Direction } from '@sharpee/world-model';
+import { WorldModel, IdentityTrait, LightSourceTrait, SwitchableTrait, RoomTrait, RoomBehavior, Direction, StandardCapabilities } from '@sharpee/world-model';
 import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 import { HadesEntryTrait } from '../traits';
 
@@ -161,17 +161,12 @@ function completeExorcism(
   });
 
   // Award points (exorcism is worth 10 points)
-  events.push({
-    id: `exorcism-score-${Date.now()}`,
-    type: 'game.score_changed',
-    timestamp: Date.now(),
-    entities: {},
-    data: {
-      delta: 10,
-      reason: 'exorcism',
-      newScore: 0 // Will be updated by scoring system
-    }
-  });
+  const scoring = world.getCapability(StandardCapabilities.SCORING);
+  if (scoring) {
+    scoring.scoreValue = (scoring.scoreValue || 0) + 10;
+    if (!scoring.achievements) scoring.achievements = [];
+    scoring.achievements.push('Completed the exorcism');
+  }
 
   return events;
 }
@@ -200,7 +195,7 @@ export function registerExorcismHandler(
     const location = data?.location;
 
     // Check if this is bell being rung at Entry to Hades
-    if (messageId === 'dungeo.ring.bell' && location === entryToHadesId) {
+    if (messageId === 'dungeo.ring.success' && location === entryToHadesId) {
       w.setStateValue(BELL_RUNG_KEY, true);
     }
   });

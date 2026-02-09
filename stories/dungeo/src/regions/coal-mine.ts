@@ -26,7 +26,7 @@ import {
   OpenableTrait
 } from '@sharpee/world-model';
 
-import { BasketElevatorTrait, TreasureTrait, MachineStateTrait } from '../traits';
+import { BasketElevatorTrait, TreasureTrait, MachineStateTrait, GasRoomTrait } from '../traits';
 
 export interface CoalMineRoomIds {
   // Mirror Room entrance area
@@ -156,7 +156,7 @@ export function createCoalMineRegion(world: WorldModel): CoalMineRoomIds {
 
   const gasRoom = createRoom(world, 'Gas Room',
     'This room has a strong, unpleasant smell. The air feels heavy and slightly nauseating. It would be very dangerous to bring an open flame here. Passages lead north and east.');
-  (gasRoom as any).hasGas = true;
+  gasRoom.add(new GasRoomTrait());
 
   // === Mine maze ===
 

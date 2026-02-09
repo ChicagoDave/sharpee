@@ -114,7 +114,11 @@ import {
   // Sphere/Cage puzzle interceptor
   SphereTrait,
   SphereTakingInterceptor,
-  CageMessages
+  CageMessages,
+  // Gas Room destination interceptor (ADR-126)
+  GasRoomTrait,
+  GasRoomEntryInterceptor,
+  GasRoomEntryMessages
 } from './traits';
 
 // Melee combat interceptor (Phase 3)
@@ -451,6 +455,15 @@ export class DungeoStory implements Story {
         SphereTrait.type,
         'if.action.taking',
         SphereTakingInterceptor
+      );
+    }
+
+    // Gas Room destination interceptor (ADR-126: blocks entry with lit flame)
+    if (!hasActionInterceptor(GasRoomTrait.type, 'if.action.entering_room')) {
+      registerActionInterceptor(
+        GasRoomTrait.type,
+        'if.action.entering_room',
+        GasRoomEntryInterceptor
       );
     }
 

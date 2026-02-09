@@ -299,6 +299,7 @@ Only then shall the gates of Hades be opened to the living."`
     fuelConsumptionRate: 1
   }));
   candles.add(new SwitchableTrait({ isOn: false }));
+  candles.attributes.isFlame = true;  // Open flame - dangerous in Gas Room
   // Burnable trait for candles - burns via fuse (50 turns total)
   candles.add(new BurnableTrait({
     burnableType: 'candle',

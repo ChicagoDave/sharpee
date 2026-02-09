@@ -26,6 +26,7 @@ export const ActionIDs = {
 export const IFActions = {
   // Movement actions
   GOING: 'if.action.going',
+  ENTERING_ROOM: 'if.action.entering_room', // ADR-126: destination interceptor for room entry conditions
   ENTERING: 'if.action.entering',
   EXITING: 'if.action.exiting',
   CLIMBING: 'if.action.climbing',

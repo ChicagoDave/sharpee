@@ -211,3 +211,12 @@ export {
 
 // Sphere Taking Interceptor (ADR-118)
 export { SphereTakingInterceptor, CageMessages } from '../interceptors/sphere-taking-interceptor';
+
+// Gas Room (destination entry interceptor, ADR-126)
+export {
+  GasRoomTrait,
+  GasRoomTraitConstructor
+} from './gas-room-trait';
+
+// Gas Room Entry Interceptor (ADR-126)
+export { GasRoomEntryInterceptor, GasRoomEntryMessages } from '../interceptors/gas-room-entry-interceptor';

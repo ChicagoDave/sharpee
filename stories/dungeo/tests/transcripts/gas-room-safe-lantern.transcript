@@ -1,0 +1,36 @@
+title: Gas Room Safe Entry - Lantern Only
+story: dungeo
+author: Sharpee Team
+description: Entering gas room with lantern (electric) is safe
+
+---
+
+# Setup: Get lantern only (no flame sources)
+$teleport Living Room
+> take lantern
+[OK: contains "Taken"]
+> turn on lantern
+[OK: contains "on"]
+
+# Navigate to Smelly Room (above Gas Room)
+$teleport Smelly Room
+> look
+[OK: contains "Smelly Room"]
+
+# Go down to Gas Room with lantern only → safe
+> down
+[OK: contains "Gas Room"]
+[OK: not contains "BOOOOOM"]
+
+# Can act normally in Gas Room
+> look
+[OK: contains "Gas Room"]
+[OK: contains "unpleasant smell"]
+
+# Can take the bracelet
+> take bracelet
+[OK: contains "Taken"]
+
+# Can leave safely
+> up
+[OK: contains "Smelly Room"]

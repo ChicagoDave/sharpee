@@ -1,0 +1,24 @@
+title: Gas Room Explosion - Torch Death
+story: dungeo
+author: Sharpee Team
+description: Entering gas room with lit torch causes explosion death
+
+---
+
+# Setup: Get torch and navigate to Smelly Room
+$teleport Living Room
+> take lantern
+> turn on lantern
+$teleport Torch Room
+> take torch
+[OK: contains "Taken"]
+
+# Navigate to Smelly Room (above Gas Room)
+$teleport Smelly Room
+> look
+[OK: contains "Smelly Room"]
+
+# Go down to Gas Room with lit torch → BOOM
+> down
+[OK: contains "BOOOOOM"]
+[OK: contains "You have died"]

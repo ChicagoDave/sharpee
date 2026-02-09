@@ -134,6 +134,9 @@ export function registerCommandTransformers(
   registerFallsRoom(config.aragainFallsId);
   engine.registerParsedCommandTransformer(createFallsDeathTransformer());
 
+  // Gas room explosion: now handled by ADR-126 destination interceptor
+  // (GasRoomTrait + GasRoomEntryInterceptor on the Gas Room entity)
+
   // Grue death transformer
   // Moving in dark room has 75% death chance per FORTRAN verbs.f
   engine.registerParsedCommandTransformer(createGrueDeathTransformer());
