@@ -1,68 +1,114 @@
 # Session Summary: 2026-02-10 - combat-refactor (2:00 PM CST)
 
-## Status: In Progress (Steps 1-3 of 7 complete)
+## Status: All 7 Steps Complete — Ready for Build + Test
 
 ## Goals
 - Execute the combat system refactor plan from `docs/work/combat/refactor-plan.md`
 - Extract CombatService from stdlib into `@sharpee/ext-basic-combat` extension
 - Add pluggable NpcCombatResolver for NPC→target attacks
 - Remove CombatService coupling from attacking.ts and npc-service.ts
+- Create Dungeo melee NPC resolver so Dungeo owns both combat directions
 
-## Completed
+## Architecture After Refactor
+
+```
+PC attacks NPC:  attacking.ts → ActionInterceptor → MeleeInterceptor (Dungeo)
+                                                  → BasicCombatInterceptor (generic stories)
+
+NPC attacks PC:  npc-service.ts → NpcCombatResolver → meleeNpcResolver (Dungeo)
+                                                    → basicNpcResolver (generic stories)
+
+No combat ext:   attacking.ts → "Violence is not the answer." (validation block)
+                 npc-service.ts → bare npc.attacked event (no resolution)
+```
+
+## Completed Steps
 
 ### Gotcha Analysis (pre-implementation)
-Deep code review found 3 critical gotchas in the original plan:
-1. **Non-combat attack path clobbered** — plan collapsed AttackBehavior (object destruction) branch with "no combat system" branch. Fixed: keep three-branch structure.
-2. **Guard behavior silent failure** — NPC attacks with no resolver produce bare events. Acceptable: document as requirement.
-3. **`canAttack()` inlining incomplete** — actually OK after analysis (unreachable branch).
+3 critical gotchas found and fixed before coding:
+1. **Non-combat attack path clobbered** — kept three-branch structure in attacking.ts
+2. **Guard behavior silent failure** — acceptable: document as requirement
+3. **`canAttack()` inlining** — OK after analysis (unreachable branch)
 
-Design decision: Default attacking response without combat system is "Violence is not the answer." — blocked at validation, not execute.
-
-Plan updated with gotcha logs in Steps 3-6 and new test updates section.
+Design decision: "Violence is not the answer." blocked at validation, not execute.
 
 ### Step 1: Create `packages/extensions/basic-combat/` (8 files)
-- `package.json` — depends on core, world-model, stdlib
-- `tsconfig.json` — refs core, world-model, stdlib
-- `src/combat-messages.ts` — moved from stdlib
-- `src/combat-service.ts` — moved from stdlib (CombatService + applyCombatResult, NOT findWieldedWeapon)
-- `src/basic-combat-interceptor.ts` — NEW: wraps CombatService as ActionInterceptor for PC→NPC
-- `src/basic-npc-resolver.ts` — NEW: wraps CombatService as NpcCombatResolver for NPC→PC
+- `package.json`, `tsconfig.json` — new package with core/world-model/stdlib deps
+- `src/combat-service.ts` — moved CombatService + applyCombatResult from stdlib
+- `src/combat-messages.ts` — moved CombatMessages from stdlib
+- `src/basic-combat-interceptor.ts` — wraps CombatService as ActionInterceptor (PC→NPC)
+- `src/basic-npc-resolver.ts` — wraps CombatService as NpcCombatResolver (NPC→PC)
 - `src/index.ts` — barrel exports + `registerBasicCombat()` entry point
 - `tests/combat-service.test.ts` — moved from stdlib
 
 ### Step 2: Add pluggable NpcCombatResolver to npc-service.ts
-- Added `NpcCombatResolver` type, `registerNpcCombatResolver()`, `clearNpcCombatResolver()`
-- Uses globalThis pattern (matches interceptor registry)
-- Rewrote `executeAttack()`: delegates to resolver or emits bare `npc.attacked` event
-- Removed all CombatService/applyCombatResult/findWieldedWeapon/CombatMessages imports
-- Exported new type + functions from `npc/index.ts`
+- `NpcCombatResolver` type + `registerNpcCombatResolver()` + `clearNpcCombatResolver()`
+- globalThis pattern (matches interceptor registry)
+- `executeAttack()` delegates to resolver or emits bare `npc.attacked` event
+- Removed all CombatService imports from npc-service.ts
 
 ### Step 3: Remove CombatService fallback from attacking.ts
-- Removed imports: CombatService, CombatResult, applyCombatResult, CombatMessages, getHealthStatusMessageId
-- Removed `createSimpleRandom()` function
-- Validate: inlined `canAttack` as `CombatantTrait.isAlive` check + `violence_not_the_answer` block when no interceptor
-- Execute: replaced CombatService fallback with defensive no-op
+- Removed CombatService/CombatResult/applyCombatResult imports
+- Validate: inlined `canAttack` + `violence_not_the_answer` block when no interceptor
+- Execute: defensive no-op for unreachable "no interceptor" path
 - Report: replaced CombatMessages constants with string literals
-- `attacking-types.ts`: changed `combatResult` to `unknown`, removed CombatResult import
+- `attacking-types.ts`: `combatResult` type → `unknown`
 - `lang-en-us/attacking.ts`: added `already_dead` and `violence_not_the_answer` messages
 
-## Files Changed
+### Step 4: Clean up stdlib combat module
+- Created `weapon-utils.ts` with only `findWieldedWeapon()`
+- Deleted `combat-service.ts` and `combat-messages.ts` (moved to basic-combat)
+- Updated `combat/index.ts` — exports only `findWieldedWeapon`
+- Fixed stale `CombatResult` type reference in `attacking.ts:333` → cast to `any`
+
+### Step 5: Create Dungeo melee NPC resolver
+- Created `stories/dungeo/src/combat/melee-npc-attack.ts` — `meleeNpcResolver()`
+- Canonical MDL melee engine for villain→hero attacks
+- Guard: no-op if target is not the player (`target.isPlayer`)
+- Stagger: villain recovers instead of attacking
+- Uses `villainStrength()` / `fightStrength()` / `resolveBlow(isHeroAttacking=false)`
+- Applies all side effects: wounds, stagger, lose weapon, death
+- UNCONSCIOUS hero treated as dead (per MDL)
+- Returns events with `getVillainAttackMessage()` canonical text
+- Module-level SeededRandom (same pattern as melee interceptor)
+
+### Step 6: Register melee resolver in Dungeo init
+- `registerNpcCombatResolver(meleeNpcResolver)` after MeleeInterceptor registration
+- Dungeo owns both directions: PC→NPC (interceptor) + NPC→PC (resolver)
+
+### Step 7: Build system integration
+- `pnpm-workspace.yaml`: added `packages/extensions/basic-combat`
+- `build.sh`: added to PACKAGES (after stdlib), added esbuild alias for CLI bundle
+- `pnpm install` succeeded — workspace recognized new package
+
+## All Files Changed
 
 | File | Action |
 |------|--------|
-| `docs/work/combat/refactor-plan.md` | Updated with gotcha logs in Steps 3-6, test updates section |
 | `packages/extensions/basic-combat/*` | **Created** (8 files) |
 | `packages/stdlib/src/npc/npc-service.ts` | Added NpcCombatResolver, removed CombatService |
 | `packages/stdlib/src/npc/index.ts` | Added new exports |
-| `packages/stdlib/src/actions/standard/attacking/attacking.ts` | Removed CombatService fallback, added violence_not_the_answer |
-| `packages/stdlib/src/actions/standard/attacking/attacking-types.ts` | CombatResult → unknown |
-| `packages/lang-en-us/src/actions/attacking.ts` | Added new messages |
-| `docs/context/session-20260210-1400-combat-refactor.md` | This file |
+| `packages/stdlib/src/actions/standard/attacking/attacking.ts` | Removed CombatService, fixed CombatResult ref |
+| `packages/stdlib/src/actions/standard/attacking/attacking-types.ts` | `combatResult` → `unknown` |
+| `packages/stdlib/src/combat/combat-service.ts` | **Deleted** (moved to basic-combat) |
+| `packages/stdlib/src/combat/combat-messages.ts` | **Deleted** (moved to basic-combat) |
+| `packages/stdlib/src/combat/weapon-utils.ts` | **Created** (`findWieldedWeapon` only) |
+| `packages/stdlib/src/combat/index.ts` | **Updated** (exports weapon-utils only) |
+| `packages/lang-en-us/src/actions/attacking.ts` | Added `already_dead`, `violence_not_the_answer` |
+| `stories/dungeo/src/combat/melee-npc-attack.ts` | **Created** (`meleeNpcResolver`) |
+| `stories/dungeo/src/combat/index.ts` | **Updated** (added export) |
+| `stories/dungeo/src/index.ts` | **Updated** (import + register resolver) |
+| `pnpm-workspace.yaml` | **Updated** (added basic-combat) |
+| `build.sh` | **Updated** (PACKAGES + esbuild alias) |
+| `docs/work/combat/refactor-plan.md` | Updated with gotcha logs |
 
-## Remaining Steps
-4. Clean up stdlib combat module (rename to weapon-utils, delete combat-messages)
-5. Create Dungeo melee NPC resolver (`melee-npc-attack.ts`)
-6. Register melee resolver in Dungeo init
-7. Build system integration (workspace, build.sh, esbuild alias)
+## Next: Build + Test
+```bash
+./build.sh -s dungeo
+node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
+```
 
-Then: build, fix tests, run walkthroughs.
+Expected issues to fix:
+- Compilation errors from new/moved files
+- Stdlib tests expecting old CombatService behavior (now `violence_not_the_answer`)
+- NPC service tests expecting combat resolution (now bare events without resolver)

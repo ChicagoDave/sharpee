@@ -330,7 +330,7 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
     const result = context.sharedData.attackResult as AttackResult;
     const customMessage = context.sharedData.customMessage as string | undefined;
     const usedCombatService = context.sharedData.usedCombatService as boolean | undefined;
-    const combatResult = context.sharedData.combatResult as CombatResult | undefined;
+    const combatResult = context.sharedData.combatResult as any;
     const sharedData = getAttackingSharedData(context);
 
     const events: ISemanticEvent[] = [];

@@ -226,9 +226,10 @@ export function resolveBlow(
   // Stagger can become lose-weapon (melee.137:228-231)
   // 25% chance if hero attacking, 50% chance if villain attacking
   // Only if defender has a weapon (caller must check — we always roll here)
+  // Stagger can become lose-weapon (melee.137:228-231)
+  // PROB 25 — LUCKY!-FLAG is always T, so GOODLUCK (25%) is always used
   if (outcome === MeleeOutcome.STAGGER) {
-    const loseWeaponChance = isHeroAttacking ? 0.25 : 0.50;
-    if (random.chance(loseWeaponChance)) {
+    if (random.chance(0.25)) {
       outcome = MeleeOutcome.LOSE_WEAPON;
     }
   }

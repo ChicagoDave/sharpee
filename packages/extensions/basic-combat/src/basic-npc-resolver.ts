@@ -21,6 +21,8 @@ import { CombatMessages } from './combat-messages.js';
  */
 const npcCombatRandom: SeededRandom = createSeededRandom();
 
+let eventCounter = 0;
+
 /**
  * Create a semantic event (mirrors npc-service's createEvent pattern).
  */
@@ -30,9 +32,12 @@ function createEvent(
   sourceId?: string
 ): ISemanticEvent {
   return {
+    id: `npc-combat-${Date.now()}-${++eventCounter}`,
     type,
     data,
-    sourceId,
+    entities: {
+      actor: sourceId,
+    },
     timestamp: Date.now(),
   };
 }

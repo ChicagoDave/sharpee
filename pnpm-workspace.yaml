@@ -1,6 +1,7 @@
 packages:
   - packages/*
   - packages/extensions/testing
+  - packages/extensions/basic-combat
   - '!packages/platforms'
   - '!packages/map-editor'
   - '!packages/cli'

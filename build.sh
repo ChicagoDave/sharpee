@@ -330,6 +330,7 @@ build_platform() {
         "@sharpee/text-blocks:text-blocks"
         "@sharpee/text-service:text-service"
         "@sharpee/stdlib:stdlib"
+        "@sharpee/ext-basic-combat:extensions/basic-combat"
         "@sharpee/plugins:plugins"
         "@sharpee/plugin-npc:plugin-npc"
         "@sharpee/plugin-scheduler:plugin-scheduler"
@@ -453,6 +454,7 @@ build_bundle() {
       --alias:@sharpee/text-blocks=./packages/text-blocks/dist/index.js \
       --alias:@sharpee/text-service=./packages/text-service/dist/index.js \
       --alias:@sharpee/if-services=./packages/if-services/dist/index.js \
+      --alias:@sharpee/ext-basic-combat=./packages/extensions/basic-combat/dist/index.js \
       --alias:@sharpee/plugins=./packages/plugins/dist/index.js \
       --alias:@sharpee/plugin-npc=./packages/plugin-npc/dist/index.js \
       --alias:@sharpee/plugin-scheduler=./packages/plugin-scheduler/dist/index.js \

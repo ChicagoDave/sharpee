@@ -1,21 +1,8 @@
 /**
- * Combat Module Exports (ADR-072)
+ * Combat Module Exports
  *
- * Provides combat resolution system for IF games.
+ * Weapon utilities for stdlib actions.
+ * Full combat resolution is provided by extensions (e.g., @sharpee/ext-basic-combat).
  */
 
-// Message IDs
-export * from './combat-messages';
-
-// Service
-export {
-  CombatService,
-  createCombatService,
-  applyCombatResult,
-  findWieldedWeapon,
-  type ICombatService,
-  type CombatContext,
-  type CombatResult,
-  type CombatValidation,
-  type ApplyCombatResultInfo,
-} from './combat-service';
+export { findWieldedWeapon } from './weapon-utils';
