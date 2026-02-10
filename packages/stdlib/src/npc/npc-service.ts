@@ -5,7 +5,7 @@
  */
 
 import { ISemanticEvent, EntityId, SeededRandom } from '@sharpee/core';
-import { IFEntity, WorldModel, TraitType, NpcTrait, CombatantTrait } from '@sharpee/world-model';
+import { IFEntity, WorldModel, TraitType, NpcTrait } from '@sharpee/world-model';
 import {
   NpcBehavior,
   NpcContext,
@@ -13,7 +13,49 @@ import {
   Direction,
 } from './types';
 import { NpcMessages } from './npc-messages';
-import { CombatService, applyCombatResult, findWieldedWeapon, CombatMessages } from '../combat';
+
+/**
+ * NPC Combat Resolver function type.
+ *
+ * Stories register a resolver to handle NPC→target combat resolution.
+ * Without a resolver, NPC attack actions emit a bare `npc.attacked` event
+ * with no combat resolution (no damage, no death).
+ */
+export type NpcCombatResolver = (
+  npc: IFEntity,
+  target: IFEntity,
+  world: WorldModel,
+  random: SeededRandom
+) => ISemanticEvent[];
+
+/**
+ * Module-level NPC combat resolver. Set via registerNpcCombatResolver().
+ * Uses globalThis to share across module boundaries (same pattern as interceptor registry).
+ */
+const NPC_COMBAT_RESOLVER_KEY = '__sharpee_npc_combat_resolver__';
+
+function getNpcCombatResolver(): NpcCombatResolver | undefined {
+  return (globalThis as Record<string, unknown>)[NPC_COMBAT_RESOLVER_KEY] as NpcCombatResolver | undefined;
+}
+
+/**
+ * Register an NPC combat resolver.
+ *
+ * Call this in your story's initializeWorld() to provide combat resolution
+ * for NPC attack actions. Without a resolver, NPC attacks produce bare events.
+ *
+ * @param resolver - Function that resolves NPC→target combat and returns events
+ */
+export function registerNpcCombatResolver(resolver: NpcCombatResolver): void {
+  (globalThis as Record<string, unknown>)[NPC_COMBAT_RESOLVER_KEY] = resolver;
+}
+
+/**
+ * Clear the NPC combat resolver. Used for testing cleanup.
+ */
+export function clearNpcCombatResolver(): void {
+  delete (globalThis as Record<string, unknown>)[NPC_COMBAT_RESOLVER_KEY];
+}
 
 /**
  * Context for NPC tick (simplified version of SchedulerContext)
@@ -586,73 +628,23 @@ export class NpcService implements INpcService {
     const target = world.getEntity(targetId);
     if (!target) return [];
 
-    const events: ISemanticEvent[] = [];
-
-    // Check if target is a combatant
-    if (target.has(TraitType.COMBATANT)) {
-      // Use CombatService for actual combat resolution
-      const combatService = new CombatService();
-
-      // Find NPC's weapon (if any)
-      const npcInventory = world.getContents(npc.id);
-      const weapon = findWieldedWeapon(npc, world) ||
-        npcInventory.find(item => (item as any).isWeapon);
-
-      const combatResult = combatService.resolveAttack({
-        attacker: npc,
-        target: target,
-        weapon: weapon,
-        world: world,
-        random: random
-      });
-
-      // Apply combat result to target
-      applyCombatResult(target, combatResult, world);
-
-      // Emit attack event with combat result
-      // Use NPC-specific message IDs (prefix with 'npc.')
-      const npcMessageId = combatResult.messageId.replace('combat.attack.', 'npc.combat.attack.');
-      events.push(createEvent(
-        'npc.attacked',
-        {
-          npc: npc.id,
-          npcName: npc.name,
-          target: targetId,
-          targetName: target.name,
-          hit: combatResult.hit,
-          damage: combatResult.damage,
-          messageId: npcMessageId,
-          targetKilled: combatResult.targetKilled,
-          targetKnockedOut: combatResult.targetKnockedOut,
-        },
-        npc.id
-      ));
-
-      // If target was killed, emit death event
-      if (combatResult.targetKilled) {
-        events.push(createEvent(
-          'if.event.death',
-          {
-            target: targetId,
-            targetName: target.name,
-            killedBy: npc.id
-          },
-          npc.id
-        ));
-      }
-    } else {
-      // Non-combatant target - just emit basic attack event
-      events.push(createEvent(
-        'npc.attacked',
-        {
-          npc: npc.id,
-          target: targetId,
-        },
-        npc.id
-      ));
+    // Delegate to registered combat resolver if available
+    const resolver = getNpcCombatResolver();
+    if (resolver) {
+      return resolver(npc, target, world, random);
     }
 
-    return events;
+    // No resolver registered — emit bare attack event (no combat resolution)
+    return [
+      createEvent(
+        'npc.attacked',
+        {
+          npc: npc.id,
+          target: targetId,
+        },
+        npc.id
+      ),
+    ];
   }
 }
 

@@ -1,0 +1,40 @@
+{
+  "name": "@sharpee/ext-basic-combat",
+  "version": "0.9.84",
+  "description": "Generic skill-based combat extension for Sharpee IF engine",
+  "main": "./dist-npm/index.js",
+  "types": "./dist-npm/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "clean": "rimraf dist",
+    "build:npm": "tsc --outDir dist-npm"
+  },
+  "dependencies": {
+    "@sharpee/core": "workspace:*",
+    "@sharpee/world-model": "workspace:*",
+    "@sharpee/stdlib": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0",
+    "@types/node": "^20.0.0",
+    "rimraf": "^5.0.5"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist-npm/index.d.ts",
+      "require": "./dist-npm/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "sharpee",
+    "interactive-fiction",
+    "combat"
+  ],
+  "license": "MIT"
+}

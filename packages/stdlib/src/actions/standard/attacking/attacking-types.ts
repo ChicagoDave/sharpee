@@ -3,7 +3,6 @@
  */
 
 import { EntityId } from '@sharpee/core';
-import { CombatResult } from '../../../combat';
 
 /**
  * Result from attack behaviors
@@ -47,9 +46,10 @@ export interface AttackingSharedData {
   customMessage?: string;
 
   /**
-   * Full combat result from CombatService (when attacking combatants)
+   * Full combat result from combat extension (when attacking combatants).
+   * Type is opaque — each combat system defines its own result shape.
    */
-  combatResult?: CombatResult;
+  combatResult?: unknown;
 
   /**
    * Whether CombatService was used (vs AttackBehavior)

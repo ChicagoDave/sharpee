@@ -31,7 +31,9 @@ export const attackingLanguage = {
     'wrong_weapon_type': "{target} can't be damaged with that type of weapon.",
     'attack_ineffective': "{Your} attack has no effect on {target}.",
 
-    // Combat validation errors (ADR-072 CombatService)
+    // Combat validation errors
+    'already_dead': "{target} is already dead.",
+    'violence_not_the_answer': "Violence is not the answer.",
     'combat.cannot_attack': "{You} {can't} attack {targetName}.",
     'combat.already_dead': "{targetName} is already dead.",
     'combat.not_hostile': "{targetName} isn't hostile.",
