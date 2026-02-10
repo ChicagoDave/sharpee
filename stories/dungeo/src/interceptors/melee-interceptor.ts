@@ -28,8 +28,16 @@ import {
   CapabilityEffect,
   StandardCapabilities,
 } from '@sharpee/world-model';
-import { createSeededRandom } from '@sharpee/core';
+import { createSeededRandom, SeededRandom } from '@sharpee/core';
 import { findWieldedWeapon } from '@sharpee/stdlib';
+
+/**
+ * Module-level random instance shared across all melee calls.
+ * Creating a new SeededRandom per attack causes identical rolls when
+ * multiple attacks execute within the same Date.now() millisecond
+ * (e.g., transcript tester running 30 attacks in rapid succession).
+ */
+const meleeRandom: SeededRandom = createSeededRandom();
 
 import {
   fightStrength,
@@ -154,7 +162,7 @@ export const MeleeInterceptor: ActionInterceptor = {
     const player = world.getEntity(actorId);
     if (!player) return;
 
-    const random = createSeededRandom();
+    const random = meleeRandom;
     const weaponName = sharedData.weaponName as string | undefined;
     const villainKey = getVillainKey(villain);
     const villainDisplay = getVillainDisplayName(villain);
@@ -195,22 +203,6 @@ export const MeleeInterceptor: ActionInterceptor = {
         targetKilled = true;
         villain.attributes[MELEE_STATE.VILLAIN_OSTRENGTH] = 0;
         villain.attributes[MELEE_STATE.VILLAIN_UNCONSCIOUS] = false;
-        // Mark CombatantTrait as dead
-        {
-          const combatant = villain.get(TraitType.COMBATANT) as CombatantTrait | undefined;
-          if (combatant) {
-            combatant.health = 0;
-          }
-        }
-        // Drop villain's inventory
-        {
-          const villainContents = world.getContents(villain.id);
-          const villainRoom = world.getLocation(villain.id) ?? null;
-          for (const item of villainContents) {
-            world.moveEntity(item.id, villainRoom);
-            droppedItems.push(item.id);
-          }
-        }
         break;
 
       case MeleeOutcome.UNCONSCIOUS:
@@ -223,8 +215,6 @@ export const MeleeInterceptor: ActionInterceptor = {
         villain.attributes[MELEE_STATE.VILLAIN_OSTRENGTH] = blowResult.newDefenderStrength;
         if (blowResult.defenderKilled) {
           targetKilled = true;
-          const combatant = villain.get(TraitType.COMBATANT) as CombatantTrait | undefined;
-          if (combatant) combatant.health = 0;
         }
         break;
 
@@ -232,8 +222,6 @@ export const MeleeInterceptor: ActionInterceptor = {
         villain.attributes[MELEE_STATE.VILLAIN_OSTRENGTH] = blowResult.newDefenderStrength;
         if (blowResult.defenderKilled) {
           targetKilled = true;
-          const combatant = villain.get(TraitType.COMBATANT) as CombatantTrait | undefined;
-          if (combatant) combatant.health = 0;
         }
         break;
 
@@ -255,6 +243,21 @@ export const MeleeInterceptor: ActionInterceptor = {
           }
         }
         break;
+    }
+
+    // Handle all kill outcomes uniformly (direct kills AND wound-kills)
+    if (targetKilled) {
+      const combatant = villain.get(TraitType.COMBATANT) as CombatantTrait | undefined;
+      if (combatant) {
+        combatant.kill();
+      }
+      // Drop villain's inventory to the floor
+      const villainContents = world.getContents(villain.id);
+      const villainRoom = world.getLocation(villain.id) ?? null;
+      for (const item of villainContents) {
+        world.moveEntity(item.id, villainRoom);
+        droppedItems.push(item.id);
+      }
     }
 
     // --- Get the combat message ---

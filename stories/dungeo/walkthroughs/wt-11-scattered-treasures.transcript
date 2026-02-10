@@ -1,0 +1,252 @@
+title: Scattered Treasures (Violin, Coins, Grail, Trident, Blue Sphere, Jade Figurine)
+story: dungeo
+description: Collect 6 scattered treasures from existing regions. Restores from wt-10.
+---
+
+# Restore state from wt-10 (player at Living Room with torch and lantern)
+$restore wt-10
+
+# ============================================================================
+# PASS 1: Easy treasures (no tools needed)
+# ============================================================================
+
+# ============================================================================
+# GOAL: Get violin from Round Room
+# ============================================================================
+
+[GOAL: Get violin]
+[ENSURES: inventory contains "violin"]
+
+$teleport Round Room
+
+> look
+[OK: contains "Round Room"]
+[OK: contains "steel box"]
+
+> open box
+[OK: contains "open"]
+
+> take violin
+[OK: contains "violin"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Get grail from Grail Room
+# ============================================================================
+
+[GOAL: Get grail]
+[ENSURES: inventory contains "grail"]
+
+$teleport Grail Room
+
+> look
+[OK: contains "Grail Room"]
+[OK: contains "grail"]
+
+> take grail
+[OK: contains "Taken"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Get trident from Atlantis Room
+# ============================================================================
+
+[GOAL: Get trident]
+[ENSURES: inventory contains "trident"]
+
+$teleport Atlantis Room
+
+> look
+[OK: contains "Atlantis"]
+[OK: contains "trident"]
+
+> take trident
+[OK: contains "Taken"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Get bag of coins from Maze-5
+# ============================================================================
+
+[GOAL: Get bag of coins]
+[ENSURES: inventory contains "coins"]
+
+$teleport maze 5
+
+> look
+[OK: contains "Maze"]
+[OK: contains "bag"]
+
+> take bag of coins
+[OK: contains "Taken"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Store Pass 1 treasures in trophy case
+# ============================================================================
+
+[GOAL: Store Pass 1 treasures]
+
+$teleport Living Room
+
+> open trophy case
+[OK: contains "open"]
+
+> put violin in trophy case
+[OK: contains "put"]
+
+> put grail in trophy case
+[OK: contains "put"]
+
+> put trident in trophy case
+[OK: contains "put"]
+
+> put bag of coins in trophy case
+[OK: contains "put"]
+
+[END GOAL]
+
+# ============================================================================
+# PASS 2: Puzzle treasures (need tools)
+# ============================================================================
+
+# ============================================================================
+# GOAL: Collect puzzle tools
+# ============================================================================
+
+[GOAL: Collect puzzle tools]
+
+# Welcome mat (for Tiny Room door puzzle)
+$take welcome mat
+
+# Screwdriver (for Tiny Room door puzzle)
+$take screwdriver
+
+# Brown sack contains garlic (bat handler checks containers recursively)
+$take brown sack
+
+> inventory
+[OK: contains "torch"]
+[OK: contains "lantern"]
+[OK: contains "mat"]
+[OK: contains "screwdriver"]
+[OK: contains "sack"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Solve Tiny Room door puzzle and get blue crystal sphere
+# ============================================================================
+
+[GOAL: Get blue crystal sphere]
+[ENSURES: inventory contains "blue"]
+
+$teleport Tiny Room
+
+> look
+[OK: contains "Tiny Room"]
+[OK: contains "door"]
+
+# Try to go north - blocked by locked door
+> north
+[OK: contains "locked"]
+
+# Step 1: Put the mat under the door
+> put mat under door
+[OK: contains "slide the mat under the door"]
+
+# Step 2: Push the key through the keyhole with the screwdriver
+> push key with screwdriver
+[OK: contains "screwdriver"]
+[OK: contains "clink"]
+
+# Step 3: Pull the mat to get the key
+> take mat
+[OK: contains "mat"]
+[OK: contains "key"]
+
+# Step 4: Unlock the door
+> unlock door with key
+[OK: contains "unlock"]
+
+# Step 5: Open the door
+> open door
+[OK: contains "open"]
+
+# Step 6: Go north to Dreary Room
+> north
+[OK: contains "Dreary Room"]
+
+> look
+[OK: contains "blue crystal sphere"]
+
+# Drop tools before taking sphere (weight limit)
+> drop screwdriver
+[OK: contains "Dropped"]
+
+> drop mat
+[OK: contains "Dropped"]
+
+> drop key
+[OK: contains "Dropped"]
+
+> take blue crystal sphere
+[OK: contains "Taken"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Get jade figurine from Squeaky Room (bat room with garlic)
+# ============================================================================
+
+[GOAL: Get jade figurine]
+[ENSURES: inventory contains "figurine"]
+
+$teleport Squeaky Room
+
+> look
+[OK: contains "Squeaky"]
+[OK: contains "figurine"]
+
+> take jade figurine
+[OK: contains "Taken"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Store Pass 2 treasures in trophy case
+# ============================================================================
+
+[GOAL: Store Pass 2 treasures]
+
+$teleport Living Room
+
+> put blue crystal sphere in trophy case
+[OK: contains "put"]
+
+> put jade in trophy case
+[OK: contains "put"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Verify final state
+# ============================================================================
+
+[GOAL: Verify state for next segment]
+
+> inventory
+[OK: contains "torch"]
+[OK: contains "lantern"]
+
+> look
+[OK: contains "Living Room"]
+[OK: contains "trophy case"]
+
+[END GOAL]
+
+$save wt-11

@@ -10,8 +10,7 @@
  * eliminating the need for a prevLocation tracking daemon.
  */
 
-import { StateMachineDefinition, CustomEffect } from '@sharpee/plugin-state-machine';
-import { RoomTrait, Direction } from '@sharpee/world-model';
+import { StateMachineDefinition } from '@sharpee/plugin-state-machine';
 
 export const TrapdoorMessages = {
   SLAMS_SHUT: 'dungeo.trapdoor.slams_shut',
@@ -40,20 +39,9 @@ export function createTrapdoorMachine(
             // Close the trap door
             { type: 'set_trait', entityRef: '$trapdoor', trait: 'openable', property: 'isOpen', value: false },
             { type: 'set_trait', entityRef: '$trapdoor', trait: 'identity', property: 'description', value: 'The dusty cover of a closed trap door.' },
-            // Remove UP exit from Cellar (no declarative effect for exit deletion yet)
-            {
-              type: 'custom',
-              execute: (world, bindings, _playerId) => {
-                const cellar = world.getEntity(bindings['$cellar']);
-                if (cellar) {
-                  const roomTrait = cellar.get(RoomTrait);
-                  if (roomTrait?.exits) {
-                    delete roomTrait.exits[Direction.UP];
-                  }
-                }
-                return {};
-              },
-            } as CustomEffect,
+            // The UP exit from Cellar is gated by the trapdoor's via field.
+            // Closing the trapdoor (above) is sufficient — the going action checks
+            // the via entity's open state and blocks passage when closed.
             // Mark as barred in world state
             { type: 'set_state', key: 'dungeo.trapdoor.barred', value: true },
             // Emit slam message

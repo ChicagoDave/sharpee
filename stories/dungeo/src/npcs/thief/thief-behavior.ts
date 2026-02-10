@@ -398,6 +398,7 @@ function handleReturningState(context: NpcContext, props: ThiefCustomProperties)
  *
  * Each combat turn, the thief evaluates his strength vs the hero's:
  * - !shouldStay → flee the room (transition back to WANDERING)
+ *   BUT: thief NEVER flees from his lair (Treasure Room) — guards it to the death
  * - shouldAttack → attack the player
  * - !shouldAttack but shouldStay → hesitate (circle warily)
  */
@@ -406,7 +407,11 @@ function handleFightingState(context: NpcContext, props: ThiefCustomProperties):
   if (context.playerVisible) {
     const { shouldAttack, shouldStay } = getThiefCombatDecision(context);
 
-    if (!shouldStay) {
+    // Canonical MDL: thief guards his lair (Treasure Room) to the death.
+    // He never flees from his own hideaway. (act1.mud:1387-1420)
+    const inLair = context.npcLocation === props.lairRoomId;
+
+    if (!shouldStay && !inLair) {
       // Flee: emit message, leave room, go back to wandering
       const actions: NpcAction[] = [{
         type: 'emote',

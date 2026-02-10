@@ -25,10 +25,10 @@ $teleport Loud Room
 
 # Say "echo" to silence the room - required before taking the bar
 > echo
-[OK: matches /(echo|quiet|silence|safe|acoustic|dissipate)/i]
+[OK: contains "echo"]
 
 > take bar
-[OK: matches /(Taken|take)/i]
+[OK: contains "Taken"]
 
 > inventory
 [OK: contains "bar"]
@@ -48,11 +48,11 @@ $teleport Maintenance Room
 
 # Press yellow button to enable the bolt at the dam
 > press yellow button
-[OK: matches /(Click|press|button)/i]
+[OK: contains "click"]
 
 # Get the wrench - needed to turn the bolt
 > take wrench
-[OK: matches /(Taken|take)/i]
+[OK: contains "Taken"]
 
 [END GOAL]
 
@@ -66,7 +66,7 @@ $teleport Flood Control Dam #3
 
 # Turn the bolt with the wrench to open sluice gates (instant drain)
 > turn bolt
-[OK: matches /(sluice|gates|drain|open)/i]
+[OK: contains "sluice"]
 
 [END GOAL]
 
@@ -80,10 +80,10 @@ $teleport Flood Control Dam #3
 $teleport Reservoir
 
 > look
-[OK: matches /(trunk|drained|mud)/i]
+[OK: contains "trunk"]
 
 > take trunk
-[OK: matches /(Taken|take)/i]
+[OK: contains "Taken"]
 
 [END GOAL]
 
@@ -100,7 +100,7 @@ $teleport Reservoir North
 [OK: contains "pump"]
 
 > take pump
-[OK: matches /(Taken|take)/i]
+[OK: contains "Taken"]
 
 > inventory
 [OK: contains "pump"]
@@ -116,10 +116,10 @@ $teleport Reservoir North
 $teleport Living Room
 
 > open trophy case
-[OK: matches /(open|Opening|already)/i]
+[OK: contains "open"]
 
 > put bar in trophy case
-[OK: matches /(put|Done|place)/i]
+[OK: contains "put"]
 
 [END GOAL]
 

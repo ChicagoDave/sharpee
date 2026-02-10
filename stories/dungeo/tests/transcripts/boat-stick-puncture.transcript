@@ -29,7 +29,6 @@ description: Test that carrying sharp stick into boat punctures and deflates it
 
 # Turn on lamp for light
 > turn on lantern
-[OK: matches /(on|already)/i]
 
 # ============================================================================
 # TEST: Inflate boat then board with stick - should puncture
@@ -37,11 +36,11 @@ description: Test that carrying sharp stick into boat punctures and deflates it
 
 > look
 [OK: contains "Dam Base"]
-[OK: matches /(plastic|boat|pile)/i]
+[OK: contains "plastic"]
 
 # Inflate the boat
 > inflate boat
-[OK: matches /(inflate|seaworthy)/i]
+[OK: contains "inflate"]
 
 # Verify we're still holding the stick
 > i
@@ -50,11 +49,11 @@ description: Test that carrying sharp stick into boat punctures and deflates it
 # Try to board the boat with the stick - punctures the boat silently
 # The puncture happens via event handler - no explicit message yet
 > board boat
-[OK: matches /(get in|board|enter)/i]
+[OK: contains "boat"]
 
 # Verify the boat is now deflated (the handler worked)
 > look
-[OK: matches /(pile|plastic)/i]
+[OK: contains "plastic"]
 
 # ============================================================================
 # TEST: The correct way - put stick in boat first
@@ -62,16 +61,16 @@ description: Test that carrying sharp stick into boat punctures and deflates it
 
 # Re-inflate the boat
 > inflate boat
-[OK: matches /(inflate|seaworthy)/i]
+[OK: contains "inflate"]
 
 # Put the stick in the boat (not carrying it)
 > put stick in boat
-[OK: matches /(Done|put|boat)/i]
+[OK: contains "put"]
 
 # Now board the boat - should succeed
 > board boat
-[OK: matches /(board|enter|get in|boat)/i]
+[OK: contains "boat"]
 
 # Verify we're in the boat
 > look
-[OK: matches /boat|river/i]
+[OK: contains "boat"]

@@ -20,6 +20,7 @@ import { ScoringEventProcessor } from '@sharpee/stdlib';
 // Handlers
 import { createMirrorTouchHandler, MirrorRoomConfig } from '../handlers/mirror-room-handler';
 import { registerCombatDisengagementHandler } from '../handlers/combat-disengagement-handler';
+import { registerTreasureRoomHandler } from '../handlers/treasure-room-handler';
 
 // Scoring
 import { DungeoScoringService } from '../scoring';
@@ -37,6 +38,8 @@ export interface EventHandlerConfig {
     balloonId: string;
     receptacleId: string;
   };
+  /** Treasure Room ID for thief summoning (optional) */
+  treasureRoomId?: string;
 }
 
 /**
@@ -89,6 +92,15 @@ export function registerEventHandlers(
 
   // Resets villain combat state when player leaves a room with an active combatant
   registerCombatDisengagementHandler(eventProcessor, world);
+
+  // ==========================================================================
+  // Treasure Room Handler (canonical MDL: TREASURE-ROOM room function)
+  // ==========================================================================
+
+  // Summons thief to Treasure Room when player enters (thief rushes to defense)
+  if (config.treasureRoomId) {
+    registerTreasureRoomHandler(eventProcessor, world, config.treasureRoomId);
+  }
 }
 
 /**
@@ -104,12 +116,12 @@ function registerLightShaftAchievement(
   scoringProcessor: ScoringEventProcessor
 ): void {
   eventProcessor.registerHandler('if.event.actor_moved', (event: ISemanticEvent) => {
-    const data = event.data as { actorId?: string; toRoom?: string } | undefined;
+    const data = event.data as { actor?: { id: string }; toRoom?: string } | undefined;
     if (!data?.toRoom || data.toRoom !== bottomOfShaftId) return [];
 
-    // Check if player (not NPC)
+    // Check if player (not NPC) — actor_moved uses actor.id, not actorId
     const player = world.getPlayer();
-    if (!player || data.actorId !== player.id) return [];
+    if (!player || data.actor?.id !== player.id) return [];
 
     // Check if the room is lit (not dark)
     const room = world.getEntity(bottomOfShaftId);

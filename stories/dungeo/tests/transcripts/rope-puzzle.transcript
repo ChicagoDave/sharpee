@@ -14,10 +14,10 @@ description: Test tying rope to railing in Dome Room to access Torch Room
 [OK: contains "Returning"]
 
 > take lantern
-[OK: matches /(Taken|take)/i]
+[OK: contains "Taken"]
 
 > switch on lantern
-[OK: matches /(on|lit|light|switches|banishing)/i]
+[OK: contains "on"]
 
 > gdt
 [OK: contains "GDT"]
@@ -29,7 +29,7 @@ description: Test tying rope to railing in Dome Room to access Torch Room
 [OK: contains "Returning"]
 
 > take rope
-[OK: matches /(Taken|take)/i]
+[OK: contains "Taken"]
 
 # Now teleport to Dome Room
 > gdt
@@ -47,15 +47,15 @@ description: Test tying rope to railing in Dome Room to access Torch Room
 
 # Test the rope puzzle
 > examine railing
-[OK: matches /(railing|shaft|iron|sturdy)/i]
+[OK: contains "railing"]
 
 # Try to go down without rope tied - should fail
 > down
-[OK: matches /(no_exit|can't|cannot)/i]
+[OK: contains "can't"]
 
 # Now tie the rope
 > tie rope to railing
-[OK: matches /(rope|tied|railing|securely|fastened)/i]
+[OK: contains "rope"]
 
 # NOW down should work
 > down
@@ -65,11 +65,11 @@ description: Test tying rope to railing in Dome Room to access Torch Room
 [OK: contains "Torch Room"]
 
 > take torch
-[OK: matches /(Taken|take)/i]
+[OK: contains "Taken"]
 
 # Can go back up via rope
 > up
 [OK: contains "Dome Room"]
 
 > score
-[OK: matches /[0-9]+.*points|scored/i]
+[OK: contains "scored"]

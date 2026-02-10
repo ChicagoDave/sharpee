@@ -12,13 +12,13 @@ description: Test implicit take when reading/putting items not in inventory
 
 # Open the mailbox to reveal leaflet
 > open mailbox
-[OK: matches /(open|leaflet)/i]
+[OK: contains "leaflet"]
 
 # Try to read the leaflet WITHOUT taking it first
 # Reading should implicit-take portable items (leaflet is not scenery)
 > read leaflet
 [OK: contains "first taking"]
-[OK: matches /(ZORK|welcome|leaflet|DUNGEO)/i]
+[OK: contains "welcome"]
 
 # Leaflet was implicitly taken for reading
 > i

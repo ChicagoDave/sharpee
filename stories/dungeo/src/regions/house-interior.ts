@@ -208,7 +208,7 @@ function createLivingRoomObjects(world: WorldModel, livingRoomId: string, cellar
     properName: false,
     article: 'a'
   }));
-  trophyCase.add(new ContainerTrait({ capacity: { maxItems: 20 } }));
+  trophyCase.add(new ContainerTrait({ capacity: { maxItems: 40 } }));
   trophyCase.add(new OpenableTrait({ isOpen: false }));
   trophyCase.add(new SceneryTrait());
   world.moveEntity(trophyCase.id, livingRoomId);

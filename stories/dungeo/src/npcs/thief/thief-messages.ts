@@ -30,6 +30,9 @@ export const ThiefMessages = {
 
   // Post-death
   DROPS_LOOT: 'dungeo.thief.drops_loot',
+  BLACK_FOG: 'dungeo.thief.black_fog',
+  BOOTY_REMAINS: 'dungeo.thief.booty_remains',
+  TREASURES_REAPPEAR: 'dungeo.thief.treasures_reappear',
 
   // ADR-078: Ghost ritual puzzle
   FRAME_SPAWNS: 'dungeo.thief.frame_spawns',

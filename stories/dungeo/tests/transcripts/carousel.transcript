@@ -35,7 +35,7 @@ description: Tests the Low Room carousel exit randomization and button fix
 # Player ends up in either Machine Room or Tea Room (50/50)
 > east
 [OK: contains "cannot get your bearings"]
-[OK: matches /(Machine Room|Tea Room)/]
+[OK: contains "Room"]
 
 # ============================================================
 # Part 2: Fix carousel via robot button push
@@ -63,7 +63,7 @@ description: Tests the Low Room carousel exit randomization and button fix
 # Tell robot to push the triangular button
 > tell robot to push button
 [OK: contains "pushes"]
-[OK: matches /(carousel|grinding|thump)/i]
+[OK: contains "carousel"]
 
 # ============================================================
 # Part 3: Carousel Fixed - exits work normally

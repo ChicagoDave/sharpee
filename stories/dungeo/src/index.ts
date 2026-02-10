@@ -57,7 +57,7 @@ import { createHouseInteriorRegion, createHouseInteriorObjects, connectHouseInte
 import { createForestRegion, createForestObjects, connectForestToExterior, ForestRoomIds } from './regions/forest';
 import { createUndergroundRegion, createUndergroundObjects, connectUndergroundToHouse, connectStudioToKitchen, UndergroundRoomIds } from './regions/underground';
 import { createDamRegion, createDamObjects, connectDamToRoundRoom, connectDamToFrigidRiver, connectStreamViewToGlacier, DamRoomIds } from './regions/dam';
-import { createCoalMineRegion, createCoalMineObjects, CoalMineRoomIds } from './regions/coal-mine';
+import { createCoalMineRegion, createCoalMineObjects, CoalMineRoomIds, connectSlideToCellar } from './regions/coal-mine';
 import { createTempleRegion, createTempleObjects, connectTempleToUnderground, connectTempleToWellRoom, connectTempleToFrigidRiver, TempleRoomIds } from './regions/temple';
 import { createVolcanoRegion, createVolcanoObjects, connectVolcanoToUnderground, VolcanoRoomIds, VolcanoObjectIds } from './regions/volcano';
 import { createBankRegion, connectBankToUnderground, createBankObjects, BankRoomIds } from './regions/bank-of-zork';
@@ -363,6 +363,9 @@ export class DungeoStory implements Story {
 
     // Initialize puzzle state in world
     initializePuzzleState(world, this.royalPuzzleIds);
+
+    // Coal Mine: Slide-3 exits to Cellar (one-way)
+    connectSlideToCellar(world, this.coalMineIds, this.undergroundIds.cellar);
 
     // Connect Well Room Cave to Entry to Hades (default connection - mirror puzzle)
     connectCaveToHades(world, this.wellRoomIds, this.endgameIds.entryToHades);

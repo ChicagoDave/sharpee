@@ -1,0 +1,205 @@
+title: Coal Mine Navigation Verification
+story: dungeo
+description: Verify all coal mine routes needed for wt-10 walkthrough
+---
+
+# Setup: Get to Mirror Room with torch and lantern
+> gdt
+[OK: contains "GDT ready"]
+
+> tk torch
+[OK: contains "Taken"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> ah Mirror Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+> look
+[OK: contains "Mirror Room"]
+
+# Toggle to State B (Coal Mine access)
+> rub mirror
+[OK: contains "mirror"]
+
+# Route 1: Mirror Room → Cold Passage → Slide Room → Mine Entrance
+> west
+[OK: contains "Cold Passage"]
+
+> west
+[OK: contains "Slide Room"]
+
+> north
+[OK: contains "Mine Entrance"]
+
+# Route 2: Mine Entrance → Shaft Room (avoiding Squeaky Room NW - bat!)
+> northeast
+[OK: contains "Shaft Room"]
+
+# Route 3: Shaft Room → Wooden Tunnel → Smelly Room → Gas Room
+> north
+[OK: contains "Wooden Tunnel"]
+
+> west
+[OK: contains "Smelly Room"]
+
+# Drop torch before Gas Room (safety - gas explosion!)
+> drop torch
+[OK: contains "drop"]
+
+> turn on lantern
+[OK: contains "on"]
+
+> down
+[OK: contains "Gas Room"]
+
+# Verify bracelet is here
+> look
+[OK: contains "bracelet"]
+
+> take bracelet
+[OK: contains "Taken"]
+
+# Return from Gas Room
+> up
+[OK: contains "Smelly Room"]
+
+> take torch
+[OK: contains "Taken"]
+
+> turn off lantern
+[OK: contains "off"]
+
+# Route 4: Smelly Room → Wooden Tunnel → Mine Maze path to Ladder
+> east
+[OK: contains "Wooden Tunnel"]
+
+> northeast
+[OK: contains "Maze"]
+
+# Mine Maze 1 → north → Mine Maze 4
+> north
+[OK: contains "Maze"]
+
+# Mine Maze 4 → northeast → Mine Maze 6
+> northeast
+[OK: contains "Maze"]
+
+# Mine Maze 6 → northwest → Mine Maze 7
+> northwest
+[OK: contains "Maze"]
+
+# Mine Maze 7 → down → Ladder Top
+> down
+[OK: contains "Ladder"]
+
+# Ladder Top → down → Ladder Bottom
+> down
+[OK: contains "Ladder"]
+
+# Route 5: Ladder Bottom → Coal Mine Dead End
+> northeast
+[OK: contains "Dead End"]
+
+> take coal
+[OK: contains "Taken"]
+
+# Route 6: Dead End → Ladder Bottom → Timber Room → Bottom of Shaft → Machine Room
+> south
+[OK: contains "Ladder"]
+
+> south
+[OK: contains "Timber"]
+
+> southwest
+[OK: contains "Bottom of Shaft"]
+
+> east
+[OK: contains "Machine Room"]
+
+# Coal machine puzzle
+> put coal in machine
+[OK: contains "put"]
+
+> turn switch
+[OK: contains "diamond"]
+
+> take diamond
+[OK: contains "diamond"]
+
+# Route 7: Machine Room → back through deep mine to maze
+> northwest
+[OK: contains "Bottom of Shaft"]
+
+> northeast
+[OK: contains "Timber"]
+
+> north
+[OK: contains "Ladder"]
+
+> up
+[OK: contains "Ladder"]
+
+> up
+[OK: contains "Maze"]
+
+# Mine Maze 7 → east → Mine Maze 1 → east → Wooden Tunnel
+> east
+[OK: contains "Maze"]
+
+> east
+[OK: contains "Wooden Tunnel"]
+
+# Back to Mine Entrance via Shaft Room
+> south
+[OK: contains "Shaft Room"]
+
+> west
+[OK: contains "Mine Entrance"]
+
+# Route 8: Slide down to Sooty Room (one-way)
+> south
+[OK: contains "Slide Room"]
+
+> down
+[OK: contains "Slide"]
+
+> down
+[OK: contains "Slide"]
+
+> down
+[OK: contains "Slide"]
+
+# Slide-3 → east → Slide Ledge
+> east
+[OK: contains "Slide Ledge"]
+
+> south
+[OK: contains "Sooty Room"]
+
+> take red sphere
+[OK: contains "Taken"]
+
+# Route 9: Exit via Cellar (Slide Ledge → up → Slide-2 → down → Slide-3 → down → Cellar)
+> north
+[OK: contains "Slide Ledge"]
+
+> up
+[OK: contains "Slide"]
+
+> down
+[OK: contains "Slide"]
+
+# Slide-3 → down → Cellar (newly wired connection)
+> down
+[OK: contains "Cellar"]
+
+# Verify we have all treasures
+> inventory
+[OK: contains "diamond"]
+[OK: contains "bracelet"]
+[OK: contains "red"]

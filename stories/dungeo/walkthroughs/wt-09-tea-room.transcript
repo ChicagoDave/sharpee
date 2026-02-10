@@ -98,7 +98,7 @@ $teleport Engravings Cave
 
 # Eat eat-me cake to shrink and teleport to Posts Room
 > eat eat-me cake
-[OK: matches /(shrunk|smaller|shrink)/i]
+[OK: contains "shrunk"]
 
 > look
 [OK: contains "Posts Room"]
@@ -110,7 +110,7 @@ $teleport Engravings Cave
 
 # Throw red cake at pool to dissolve it and reveal spices
 > throw red cake at pool
-[OK: matches /(dissolve|evaporate|calciumite)/i]
+[OK: contains "dissolve"]
 
 # Take the revealed spices
 > take spices
@@ -122,7 +122,7 @@ $teleport Engravings Cave
 
 # Eat blue cake to grow and return to Tea Room
 > eat blue cake
-[OK: matches /(normal size|enlarge|grow)/i]
+[OK: contains "normal size"]
 
 > look
 [OK: contains "Tea Room"]
@@ -206,7 +206,7 @@ $teleport Living Room
 [OK: contains "Living Room"]
 
 > open trophy case
-[OK: matches /(open|Opened|already)/i]
+[OK: contains "open"]
 
 > put necklace in trophy case
 [OK: contains "put"]

@@ -217,7 +217,8 @@ export function initializeOrchestration(
   const eventConfig: EventHandlerConfig = {
     mirrorConfig: config.mirrorConfig,
     bottomOfShaftId: config.coalMineIds.bottomOfShaft,
-    balloonIds: config.balloonIds
+    balloonIds: config.balloonIds,
+    treasureRoomId: config.mazeIds.treasureRoom
   };
   registerEventHandlers(engine, world, eventConfig, scoringProcessor, scoringService);
 }

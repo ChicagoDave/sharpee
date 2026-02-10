@@ -59,6 +59,6 @@ description: Test moving the rug to reveal the trap door and descending to the C
 [OK: contains "crashes shut"]
 [OK: contains "barring"]
 
-# Cannot go back up - trap door is barred from above
+# Cannot go back up - trap door is closed and barred from above
 > up
-[OK: contains "can't go that way"]
+[OK: contains "closed"]

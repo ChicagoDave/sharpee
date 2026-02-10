@@ -16,7 +16,7 @@ $take brass lantern
 
 # Turn on light source
 > turn on lantern
-[OK: matches /(on|lit|light|already)/i]
+[OK: contains "on"]
 
 # ============================================================================
 # GOAL: Navigate to Egyptian Room
@@ -42,7 +42,7 @@ $teleport Egyptian Room
 [OK: contains "coffin"]
 
 > take coffin
-[OK: matches /(Taken|take)/i]
+[OK: contains "Taken"]
 
 > inventory
 [OK: contains "coffin"]
@@ -69,10 +69,10 @@ $teleport Living Room
 [GOAL: Store coffin in trophy case]
 
 > open trophy case
-[OK: matches /(open|Opening|already)/i]
+[OK: contains "open"]
 
 > put coffin in trophy case
-[OK: matches /(put|Done|place)/i]
+[OK: contains "put"]
 
 [END GOAL]
 

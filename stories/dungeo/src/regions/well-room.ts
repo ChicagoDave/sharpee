@@ -547,6 +547,7 @@ function createDingyClosetObjects(world: WorldModel, roomId: string): void {
   sphere.add(new IdentityTrait({
     name: 'white crystal sphere',
     aliases: ['sphere', 'crystal sphere', 'white sphere', 'crystal ball', 'crystal'],
+    adjectives: ['white'],
     description: 'A perfectly smooth sphere of white crystal. It glows with an inner light.',
     properName: false,
     article: 'a',

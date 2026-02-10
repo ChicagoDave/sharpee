@@ -1,0 +1,10 @@
+title: Debug inventory after wt-11
+story: dungeo
+description: Check what items player has after restoring wt-11
+---
+
+$restore wt-11
+
+> inventory
+[OK: contains "torch"]
+

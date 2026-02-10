@@ -674,6 +674,7 @@ function createDrearyRoomObjects(world: WorldModel, roomId: string): void {
   sphere.add(new IdentityTrait({
     name: 'blue crystal sphere',
     aliases: ['sphere', 'crystal sphere', 'blue sphere', 'crystal', 'blue crystal', 'ball'],
+    adjectives: ['blue'],
     description: 'A beautiful sphere of blue crystal. It seems to glow with an inner light.',
     properName: false,
     article: 'a',

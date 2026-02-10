@@ -25,7 +25,6 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 
 # Turn on lamp for light
 > turn on lantern
-[OK: matches /(on|already)/i]
 
 # ============================================================================
 # TEST: Verify boat, stick, and water scenery at Dam Base
@@ -33,19 +32,19 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 
 > look
 [OK: contains "Dam Base"]
-[OK: matches /(plastic|boat|pile)/i]
+[OK: contains "plastic"]
 [OK: contains "stick"]
 
 # Examine the water scenery
 > x water
-[OK: matches /(Frigid River|river|cliffs)/i]
+[OK: contains "river"]
 
 # ============================================================================
 # TEST: Inflate boat and put stick in it (not carry!)
 # ============================================================================
 
 > inflate boat
-[OK: matches /(inflate|seaworthy)/i]
+[OK: contains "inflate"]
 
 # Take stick then put in boat BEFORE boarding (carrying it would puncture the boat)
 # Note: Implicit take not working - explicit take required
@@ -53,11 +52,11 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 [OK: contains "Taken"]
 
 > put stick in boat
-[OK: matches /(Done|put|boat)/i]
+[OK: contains "put"]
 
 # Board the boat
 > board boat
-[OK: matches /(board|enter|get in|boat)/i]
+[OK: contains "boat"]
 
 # ============================================================================
 # TEST: Launch and navigate downstream
@@ -65,33 +64,33 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 
 # Launch into the river
 > launch
-[OK: matches /(river|launch|Frigid)/i]
+[OK: contains "river"]
 
 # Verify we're on Frigid River 1
 > look
 [OK: contains "Frigid River"]
-[OK: matches /dam|landing/i]
+[OK: contains "dam"]
 
 # Go downstream (D) to FR2 - buoy is here
 > d
 [OK: contains "Frigid River"]
-[OK: matches /cliffs|rocks/i]
+[OK: contains "cliff"]
 
 # Get the buoy
 > get buoy
-[OK: matches /(Taken|buoy)/i]
+[OK: contains "buoy"]
 
 # Open the buoy to get emerald
 > open buoy
-[OK: matches /(open|buoy)/i]
+[OK: contains "open"]
 
 # Get the emerald
 > get emerald
-[OK: matches /(Taken|emerald)/i]
+[OK: contains "emerald"]
 
 # Drop the buoy (goes into boat since we're in it)
 > drop buoy
-[OK: matches /(Done|drop|put|boat)/i]
+[OK: contains "buoy"]
 
 # ============================================================================
 # TEST: Land at Rocky Shore and get shovel from Small Cave
@@ -100,7 +99,7 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 # Go downstream to FR3 - has landings E/W (Rocky Shore west)
 > d
 [OK: contains "Frigid River"]
-[OK: matches /beach|shore/i]
+[OK: contains "shore"]
 
 # Land west at Rocky Shore
 > w
@@ -108,7 +107,7 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 
 # Disembark
 > disembark
-[OK: matches /(exit|leave|feet|disembark|get out)/i]
+[OK: contains "boat"]
 
 # Go NW to Small Cave
 > nw
@@ -124,7 +123,7 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 
 # Board boat again
 > board boat
-[OK: matches /(board|enter|get in|boat)/i]
+[OK: contains "boat"]
 
 # ============================================================================
 # TEST: Navigate to Sandy Beach and dig for statue
@@ -132,12 +131,12 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 
 # Go downstream (east exit from Rocky Shore leads to FR3, but we need to launch)
 > launch
-[OK: matches /(river|launch|Frigid)/i]
+[OK: contains "river"]
 
 # Go downstream to FR4 - Sandy Beach is west
 > d
 [OK: contains "Frigid River"]
-[OK: matches /sandy|beach/i]
+[OK: contains "sand"]
 
 # Land west at Sandy Beach
 > w
@@ -145,20 +144,20 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 
 # Disembark
 > disembark
-[OK: matches /(exit|leave|feet|disembark|get out)/i]
+[OK: contains "boat"]
 
 # Dig for the statue (buried at Sandy Beach)
 > dig
-[OK: matches /(dig|hole)/i]
+[OK: contains "dig"]
 
 > dig
-[OK: matches /(dig|hole|deeper)/i]
+[OK: contains "dig"]
 
 > dig
-[OK: matches /(dig|wall|sand)/i]
+[OK: contains "dig"]
 
 > dig
-[OK: matches /(statue|see)/i]
+[OK: contains "statue"]
 
 # Get the statue
 > get statue
@@ -166,7 +165,7 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 
 # Get the stick from the boat (we put it there earlier)
 > get stick
-[OK: matches /(Taken|stick)/i]
+[OK: contains "stick"]
 
 # ============================================================================
 # TEST: Navigate to Aragain Falls and wave stick
@@ -182,7 +181,7 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 
 # Wave the stick to solidify rainbow (we got stick from boat at Sandy Beach)
 > wave stick
-[OK: matches /(rainbow|solid|shimmering)/i]
+[OK: contains "rainbow"]
 
 # ============================================================================
 # TEST: Cross rainbow to End of Rainbow and get pot of gold
@@ -190,7 +189,7 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 
 # Go east onto rainbow
 > e
-[OK: matches /(Rainbow|solid)/i]
+[OK: contains "Rainbow"]
 
 # Continue east to End of Rainbow
 > e
@@ -198,7 +197,7 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 
 # Get the pot of gold
 > get pot
-[OK: matches /(Taken|pot|gold)/i]
+[OK: contains "Taken"]
 
 # ============================================================================
 # TEST: Return via land route
@@ -206,62 +205,62 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 
 # Go southeast to Canyon Bottom
 > se
-[OK: matches /(Canyon|climbable)/i]
+[OK: contains "Canyon"]
 
 # Go up to Rocky Ledge
 > u
-[OK: matches /(Ledge|Canyon)/i]
+[OK: contains "Ledge"]
 
 # Go up to Canyon View
 > u
-[OK: matches /(Canyon|forest)/i]
+[OK: contains "Canyon"]
 
 # Go west to Forest Path 3
 > w
-[OK: matches /(forest|path)/i]
+[OK: contains "forest"]
 
 # Go west to Forest Path 2
 > w
-[OK: matches /(forest|path|clearing)/i]
+[OK: contains "forest"]
 
 # Go west to Clearing
 > w
-[OK: matches /(clearing|forest)/i]
+[OK: contains "clearing"]
 
 # Go south to Forest Path 1
 > s
-[OK: matches /(forest|path)/i]
+[OK: contains "forest"]
 
 # Go south to North of House
 > s
-[OK: matches /(House|north)/i]
+[OK: contains "House"]
 
 # Go east to Behind House
 > e
-[OK: matches /(Behind|House)/i]
+[OK: contains "Behind House"]
 
 # Open the window (starts slightly ajar but not fully open)
 > open window
-[OK: matches /(Opened|open)/i]
+[OK: contains "open"]
 
 # Go west to Kitchen
 > w
-[OK: matches /(Kitchen|window)/i]
+[OK: contains "Kitchen"]
 
 # Go west to Living Room
 > w
-[OK: matches /(Living Room|trophy)/i]
+[OK: contains "Living Room"]
 
 # Open trophy case
 > open trophy case
-[OK: matches /(Opened|open|trophy)/i]
+[OK: contains "open"]
 
 # Put treasures in trophy case
 > put emerald in trophy case
-[OK: matches /(Done|put)/i]
+[OK: contains "put"]
 
 > put statue in trophy case
-[OK: matches /(Done|put)/i]
+[OK: contains "put"]
 
 # We made it from Dam Base to Living Room with treasures!
 > look

@@ -1,0 +1,164 @@
+title: Thief Fight (Chalice + Kill Achievement)
+story: dungeo
+description: Navigate to Attic for knife, through maze to Treasure Room, fight thief, collect chalice. Restores from wt-11.
+---
+
+# Restore state from wt-11 (player at Living Room with torch and lantern)
+$restore wt-11
+
+# ============================================================================
+# GOAL: Get nasty knife from Attic
+# ============================================================================
+
+[GOAL: Get nasty knife from Attic]
+[ENSURES: inventory contains "knife"]
+
+# Living Room → Kitchen → Attic
+> east
+[OK: contains "Kitchen"]
+
+> up
+[OK: contains "Attic"]
+
+> take nasty knife
+[OK: contains "Taken"]
+
+# Attic → Kitchen → Living Room
+> down
+[OK: contains "Kitchen"]
+
+> west
+[OK: contains "Living Room"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Navigate to Treasure Room through maze
+# ============================================================================
+
+[GOAL: Navigate to Treasure Room]
+
+# Open trapdoor if needed (revealed in earlier walkthroughs)
+> open trap door
+[OK: contains "open"]
+
+# Living Room → Cellar
+> down
+[OK: contains "Cellar"]
+
+# Cellar → Troll Room (troll dead from wt-07)
+> east
+[OK: contains "Troll Room"]
+
+# Maze path (same as wt-03): S, E, W, UP, SW, E, S, NE → Cyclops Room
+> south
+[OK: contains "Maze"]
+
+> east
+[OK: contains "Maze"]
+
+> west
+[OK: contains "Maze"]
+
+> up
+[OK: contains "Maze"]
+
+> southwest
+[OK: contains "Maze"]
+
+> east
+[OK: contains "Maze"]
+
+> south
+[OK: contains "Maze"]
+
+> northeast
+[OK: contains "Cyclops Room"]
+
+# Cyclops Room → Treasure Room (thief summoned on entry by handler)
+> up
+[OK: contains "Treasure Room"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Kill the thief
+# ============================================================================
+
+[GOAL: Kill the thief]
+[ENSURES: not entity "seedy-looking thief" alive]
+
+# Thief summoned by treasure room entry handler (treasure-room-handler.ts).
+# Melee combat with nasty knife. ENSURES postcondition verifies thief dies.
+> attack thief with knife
+> attack thief with knife
+> attack thief with knife
+> attack thief with knife
+> attack thief with knife
+> attack thief with knife
+> attack thief with knife
+> attack thief with knife
+> attack thief with knife
+> attack thief with knife
+> attack thief with knife
+> attack thief with knife
+> attack thief with knife
+> attack thief with knife
+> attack thief with knife
+> attack thief with knife
+> attack thief with knife
+> attack thief with knife
+> attack thief with knife
+> attack thief with knife
+> attack thief with knife
+> attack thief with knife
+> attack thief with knife
+> attack thief with knife
+> attack thief with knife
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Collect chalice and store in trophy case
+# ============================================================================
+
+[GOAL: Collect and store chalice]
+
+# Drop knife to free weight for chalice
+> drop knife
+[OK: contains "Dropped"]
+
+> take chalice
+[OK: contains "chalice"]
+
+# Return: Treasure Room → Cyclops Room → Living Room (via Strange Passage)
+> down
+[OK: contains "Cyclops"]
+
+> north
+[OK: contains "Living Room"]
+
+> open trophy case
+
+> put chalice in trophy case
+[OK: contains "put"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Verify final state
+# ============================================================================
+
+[GOAL: Verify state for next segment]
+
+> inventory
+[OK: contains "torch"]
+[OK: contains "lantern"]
+
+> look
+[OK: contains "Living Room"]
+[OK: contains "trophy case"]
+
+[END GOAL]
+
+$save wt-12

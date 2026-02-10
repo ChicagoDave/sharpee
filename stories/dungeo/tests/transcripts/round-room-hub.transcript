@@ -38,7 +38,7 @@ description: Test Round Room hub area rooms and connections (after robot fixes c
 # Have robot push button to fix the carousel
 > tell robot to push button
 [OK: contains "Whirr"]
-[OK: matches /(carousel|fixed)/i]
+[OK: contains "carousel"]
 
 # Now teleport to Round Room - exits should be deterministic
 > gdt

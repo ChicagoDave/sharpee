@@ -21,7 +21,7 @@ $restore wt-01
 [OK: contains "Chairman"]
 
 > take portrait
-[OK: matches /(Taken|take)/i]
+[OK: contains "Taken"]
 
 # Now navigate to Safety Depository for the wall-walk puzzle
 > north
@@ -53,7 +53,7 @@ $restore wt-01
 [OK: contains "Vault"]
 
 > take zorkmid bills
-[OK: matches /(Taken|take)/i]
+[OK: contains "Taken"]
 
 > walk through north wall
 [OK: contains "disoriented"]

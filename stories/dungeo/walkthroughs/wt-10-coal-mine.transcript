@@ -1,0 +1,268 @@
+title: Coal Mine (Diamond, Bracelet, Red Sphere)
+story: dungeo
+description: Navigate coal mine, collect 3 treasures (diamond, bracelet, red sphere), store in trophy case. Restores from wt-09.
+---
+
+# Restore state from wt-09 (player at Living Room with torch and lantern)
+$restore wt-09
+
+# ============================================================================
+# GOAL: Enter the Coal Mine via Mirror Room
+# ============================================================================
+
+[GOAL: Enter Coal Mine]
+
+# Navigate to Mirror Room (fastest route from Living Room)
+$teleport Mirror Room
+
+> look
+[OK: contains "Mirror Room"]
+[OK: contains "mirror"]
+
+# Toggle mirror to State B (Coal Mine connections)
+> rub mirror
+[OK: contains "mirror"]
+
+# Navigate: Mirror Room → Cold Passage → Slide Room → Mine Entrance
+> west
+[OK: contains "Cold Passage"]
+
+> west
+[OK: contains "Slide Room"]
+
+> north
+[OK: contains "Mine Entrance"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Get sapphire bracelet from Gas Room (drop torch first!)
+# ============================================================================
+
+[GOAL: Get sapphire bracelet safely]
+
+# Mine Entrance → NE → Shaft Room (avoid Squeaky Room NW - bat attack!)
+> northeast
+[OK: contains "Shaft Room"]
+
+# Shaft Room → N → Wooden Tunnel → W → Smelly Room
+> north
+[OK: contains "Wooden Tunnel"]
+
+> west
+[OK: contains "Smelly Room"]
+
+# CRITICAL: Drop torch before entering Gas Room (flame + gas = explosion death)
+> drop torch
+[OK: contains "Dropped"]
+
+> turn on lantern
+[OK: contains "on"]
+
+# Enter Gas Room (safe with lantern only)
+> down
+[OK: contains "Gas Room"]
+
+> take bracelet
+[OK: contains "Taken"]
+
+# Return to Smelly Room
+> up
+[OK: contains "Smelly Room"]
+
+# Retrieve torch
+> take torch
+[OK: contains "Taken"]
+
+> turn off lantern
+[OK: contains "off"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Get coal from Dead End and make diamond
+# ============================================================================
+
+[GOAL: Get coal and make diamond]
+
+# Navigate through mine maze to Coal Mine Dead End
+# Smelly Room → E → Wooden Tunnel → NE → Mine Maze path
+> east
+[OK: contains "Wooden Tunnel"]
+
+> northeast
+[OK: contains "Maze"]
+
+> north
+[OK: contains "Maze"]
+
+> northeast
+[OK: contains "Maze"]
+
+> northwest
+[OK: contains "Maze"]
+
+# Mine Maze 7 → down through Ladders to Dead End
+> down
+[OK: contains "Ladder"]
+
+> down
+[OK: contains "Ladder"]
+
+> northeast
+[OK: contains "Dead End"]
+
+> take coal
+[OK: contains "Taken"]
+
+# Navigate to Machine Room: Dead End → S → Ladder Bottom → S → Timber → SW → Bottom of Shaft → E
+> south
+[OK: contains "Ladder"]
+
+> south
+[OK: contains "Timber"]
+
+> southwest
+[OK: contains "Bottom of Shaft"]
+
+> east
+[OK: contains "Machine Room"]
+
+# Coal machine puzzle: put coal in, turn switch, get diamond
+> put coal in machine
+[OK: contains "put"]
+
+> turn switch
+[OK: contains "diamond"]
+
+> take diamond
+[OK: contains "diamond"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Get red crystal sphere from Sooty Room (via slide)
+# ============================================================================
+
+[GOAL: Get red crystal sphere]
+
+# Navigate back through deep mine to Mine Entrance
+# Machine Room → NW → Bottom of Shaft → NE → Timber → N → Ladder Bottom
+> northwest
+[OK: contains "Bottom of Shaft"]
+
+> northeast
+[OK: contains "Timber"]
+
+> north
+[OK: contains "Ladder"]
+
+# Ladder Bottom → Up → Ladder Top → Up → Mine Maze 7
+> up
+[OK: contains "Ladder"]
+
+> up
+[OK: contains "Maze"]
+
+# Mine Maze 7 → E → Mine Maze 1 → E → Wooden Tunnel
+> east
+[OK: contains "Maze"]
+
+> east
+[OK: contains "Wooden Tunnel"]
+
+# Wooden Tunnel → S → Shaft Room → W → Mine Entrance → S → Slide Room
+> south
+[OK: contains "Shaft Room"]
+
+> west
+[OK: contains "Mine Entrance"]
+
+> south
+[OK: contains "Slide Room"]
+
+# Slide down (one-way): Slide Room → Slide-1 → Slide-2 → Slide-3
+> down
+[OK: contains "Slide"]
+
+> down
+[OK: contains "Slide"]
+
+> down
+[OK: contains "Slide"]
+
+# Slide-3 → E → Slide Ledge → S → Sooty Room
+> east
+[OK: contains "Slide Ledge"]
+
+> south
+[OK: contains "Sooty Room"]
+
+> take red sphere
+[OK: contains "Taken"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Exit coal mine and store treasures
+# ============================================================================
+
+[GOAL: Store treasures in trophy case]
+
+# Exit via slide to Cellar
+> north
+[OK: contains "Slide Ledge"]
+
+> up
+[OK: contains "Slide"]
+
+> down
+[OK: contains "Slide"]
+
+> down
+[OK: contains "Cellar"]
+
+# Return to Living Room
+$teleport Living Room
+
+# Store all treasures in trophy case
+> inventory
+[OK: contains "diamond"]
+[OK: contains "bracelet"]
+[OK: contains "red"]
+
+> open trophy case
+[OK: contains "open"]
+
+> put diamond in trophy case
+[OK: contains "put"]
+
+> put bracelet in trophy case
+[OK: contains "put"]
+
+> put red crystal sphere in trophy case
+[OK: contains "put"]
+
+# Also store the trunk (taken in wt-04, still in inventory)
+> put trunk in trophy case
+[OK: contains "put"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Verify final state
+# ============================================================================
+
+[GOAL: Verify state for next segment]
+
+> inventory
+[OK: contains "torch"]
+[OK: contains "lantern"]
+
+> look
+[OK: contains "Living Room"]
+[OK: contains "trophy case"]
+
+[END GOAL]
+
+$save wt-10

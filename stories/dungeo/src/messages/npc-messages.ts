@@ -87,11 +87,17 @@ export function registerNpcMessages(language: LanguageProvider): void {
   language.addMessage(ThiefMessages.FLEES, 'The thief, badly wounded, stumbles away into the darkness.');
   language.addMessage(ThiefMessages.DIES, 'The thief falls to the ground, a look of surprise frozen on his face.');
 
-  // Post-death
+  // Post-death (canonical MDL melee.mud:274-277, act1.mud:1272-1296)
   language.addMessage(ThiefMessages.DROPS_LOOT, 'The thief\'s ill-gotten gains scatter across the floor.');
+  language.addMessage(ThiefMessages.BLACK_FOG, 'Almost as soon as the thief breathes his last breath, a cloud of sinister black fog envelops him, and when the fog lifts, the carcass has disappeared.');
+  language.addMessage(ThiefMessages.BOOTY_REMAINS, 'His booty remains.');
+  language.addMessage(ThiefMessages.TREASURES_REAPPEAR, 'As the thief dies, the power of his magic decreases, and his treasures reappear:');
 
   // Thief frame spawn (ADR-078)
   language.addMessage('dungeo.thief.frame_spawns', 'As the thief falls, an ornate but empty picture frame crashes to the ground.');
+
+  // Treasure Room entry summoning (canonical MDL: TREASURE-ROOM room function)
+  language.addMessage('dungeo.treasure_room.thief_summoned', 'You hear a scream of anguish as you violate the robber\'s hideaway. Using passages unknown to you, he rushes to its defense.');
 
   // ==========================================================================
   // Cyclops NPC Messages

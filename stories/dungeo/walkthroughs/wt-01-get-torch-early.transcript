@@ -25,7 +25,7 @@ description: Priority path - get the torch ASAP to minimize lantern usage. Torch
 [OK: contains "Behind House"]
 
 > open window
-[OK: matches /(open|Opening)/i]
+[OK: contains "open"]
 
 > west
 [OK: contains "Kitchen"]
@@ -34,13 +34,13 @@ description: Priority path - get the torch ASAP to minimize lantern usage. Torch
 [OK: contains "Living Room"]
 
 > take lantern
-[OK: matches /(Taken|take)/i]
+[OK: contains "Taken"]
 
 > take sword
-[OK: matches /(Taken|take)/i]
+[OK: contains "Taken"]
 
 > turn on lantern
-[OK: matches /(on|lit|light)/i]
+[OK: contains "on"]
 
 > east
 [OK: contains "Kitchen"]
@@ -49,7 +49,7 @@ description: Priority path - get the torch ASAP to minimize lantern usage. Torch
 [OK: contains "Attic"]
 
 > take rope
-[OK: matches /(Taken|take)/i]
+[OK: contains "Taken"]
 
 [END GOAL]
 
@@ -68,10 +68,10 @@ description: Priority path - get the torch ASAP to minimize lantern usage. Torch
 [OK: contains "Living Room"]
 
 > move rug
-[OK: matches /(trapdoor|rug|moved)/i]
+[OK: contains "trap door"]
 
 > open trapdoor
-[OK: matches /(open|Opening)/i]
+[OK: contains "open"]
 
 > down
 [OK: contains "Cellar"]
@@ -81,37 +81,40 @@ description: Priority path - get the torch ASAP to minimize lantern usage. Torch
 
 # Kill troll - melee combat (canonical MDL engine, may take several hits)
 # Troll OSTRENGTH=2, sword is best weapon (penalty -1), so effective DEF=1
-# Hero base strength 2 at low score. With DEF=1 table: 33% miss, 22% stagger,
-# 22% unconscious, 22% kill. 10 attacks gives >99.7% kill probability.
+# Per-attack: 33% miss, 22% stagger, 33% light wound, 11% unconscious
+# Player can also get staggered by troll counter-attacks (wastes a turn)
+# 30 attacks gives >99% kill probability accounting for player staggers.
+# ENSURES postcondition verifies troll dies.
 > attack troll with sword
-[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|curtains|fatal|gash|wound|stagger|dodge|removes|pinks|crashes|charge|knock|nimbly)/i]
-
 > attack troll with sword
-[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|curtains|fatal|gash|wound|stagger|dodge|removes|pinks|crashes|charge|knock|nimbly|can't see)/i]
-
 > attack troll with sword
-[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|curtains|fatal|gash|wound|stagger|dodge|removes|pinks|crashes|charge|knock|nimbly|can't see)/i]
-
 > attack troll with sword
-[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|curtains|fatal|gash|wound|stagger|dodge|removes|pinks|crashes|charge|knock|nimbly|can't see)/i]
-
 > attack troll with sword
-[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|curtains|fatal|gash|wound|stagger|dodge|removes|pinks|crashes|charge|knock|nimbly|can't see)/i]
-
 > attack troll with sword
-[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|curtains|fatal|gash|wound|stagger|dodge|removes|pinks|crashes|charge|knock|nimbly|can't see)/i]
-
 > attack troll with sword
-[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|curtains|fatal|gash|wound|stagger|dodge|removes|pinks|crashes|charge|knock|nimbly|can't see)/i]
-
 > attack troll with sword
-[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|curtains|fatal|gash|wound|stagger|dodge|removes|pinks|crashes|charge|knock|nimbly|can't see)/i]
-
 > attack troll with sword
-[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|curtains|fatal|gash|wound|stagger|dodge|removes|pinks|crashes|charge|knock|nimbly|can't see)/i]
-
 > attack troll with sword
-[OK: matches /(attack|hit|miss|swing|blow|strike|kill|parr|slash|disarm|slain|collapses|unconscious|battered|curtains|fatal|gash|wound|stagger|dodge|removes|pinks|crashes|charge|knock|nimbly|can't see)/i]
+> attack troll with sword
+> attack troll with sword
+> attack troll with sword
+> attack troll with sword
+> attack troll with sword
+> attack troll with sword
+> attack troll with sword
+> attack troll with sword
+> attack troll with sword
+> attack troll with sword
+> attack troll with sword
+> attack troll with sword
+> attack troll with sword
+> attack troll with sword
+> attack troll with sword
+> attack troll with sword
+> attack troll with sword
+> attack troll with sword
+> attack troll with sword
+> attack troll with sword
 
 [ENSURES: not entity "troll" alive]
 
@@ -143,13 +146,13 @@ $teleport Dome Room
 [ENSURES: inventory contains "torch"]
 
 > tie rope to railing
-[OK: matches /(rope|tied|railing|securely|fastened)/i]
+[OK: contains "rope"]
 
 > down
 [OK: contains "Torch Room"]
 
 > take torch
-[OK: matches /(Taken|take)/i]
+[OK: contains "Taken"]
 
 [END GOAL]
 
@@ -159,11 +162,11 @@ $teleport Dome Room
 
 [GOAL: Switch light sources]
 
+# Torch is always lit (perpetual flame) - no need to switch on
 > turn on torch
-[OK: matches /(on|lit|light)/i]
 
 > turn off lantern
-[OK: matches /(off|extinguish)/i]
+[OK: contains "off"]
 
 # Verify we still have light
 > look

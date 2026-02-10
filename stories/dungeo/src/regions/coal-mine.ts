@@ -616,6 +616,7 @@ function createRedCrystalSphere(world: WorldModel, roomId: string): IFEntity {
   sphere.add(new IdentityTrait({
     name: 'red crystal sphere',
     aliases: ['sphere', 'crystal sphere', 'red sphere', 'crystal', 'red crystal', 'ball'],
+    adjectives: ['red'],
     description: 'A beautiful sphere of red crystal. It seems to glow with an inner light.',
     properName: false,
     article: 'a',

@@ -8,7 +8,7 @@ $restore wt-02
 
 # Get the painting
 > take painting
-[OK: matches /(Taken|take)/i]
+[OK: contains "Taken"]
 
 # ============================================================================
 # GOAL: Navigate to Troll Room for maze
@@ -25,7 +25,7 @@ $teleport Troll Room
 # Drop sword to make room for skeleton key (weight limit is 100)
 # Sword weighs 10, key weighs 25 - we need to free up space
 > drop sword
-[OK: matches /(drop|Dropped)/i]
+[OK: contains "Dropped"]
 
 [END GOAL]
 
@@ -57,11 +57,11 @@ $teleport Troll Room
 
 # Get the incense first (thief doesn't care about it)
 > take incense
-[OK: matches /(Taken|take)/i]
+[OK: contains "Taken"]
 
 # Get the skeleton key
 > take key
-[OK: matches /(Taken|take)/i]
+[OK: contains "Taken"]
 
 [END GOAL]
 
@@ -99,7 +99,7 @@ $teleport Troll Room
 
 # Solve the cyclops puzzle - say the name of his nemesis
 > say odysseus
-[OK: matches /(cyclops|flee|run|odysseus|ulysses|passage|clear)/i]
+[OK: contains "cyclops"]
 
 # Go north through the Strange Passage to Living Room
 > north
@@ -136,29 +136,29 @@ $teleport Troll Room
 [GOAL: Store treasures in trophy case]
 
 > open trophy case
-[OK: matches /(open|Opening|already)/i]
+[OK: contains "open"]
 
 > put portrait in trophy case
-[OK: matches /(put|Done|place)/i]
+[OK: contains "put"]
 
 > put painting in trophy case
-[OK: matches /(put|Done|place)/i]
+[OK: contains "put"]
 
 > put zorkmid bills in trophy case
-[OK: matches /(put|Done|place)/i]
+[OK: contains "put"]
 
 [END GOAL]
 
 [GOAL: Drop items for next segment - keep only torch]
 
 > drop lantern
-[OK: matches /(drop|Dropped)/i]
+[OK: contains "Dropped"]
 
 > drop incense
-[OK: matches /(drop|Dropped)/i]
+[OK: contains "Dropped"]
 
 > drop key
-[OK: matches /(drop|Dropped)/i]
+[OK: contains "Dropped"]
 
 # Verify we only have torch
 > inventory

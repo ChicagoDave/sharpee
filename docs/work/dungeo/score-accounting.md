@@ -1,13 +1,13 @@
 # Dungeo Score Accounting
 
-**Current score after 9 walkthroughs**: 281/616
+**Current score after 11 walkthroughs**: 410/616
 **Date**: 2026-02-09
 
 ---
 
 ## Treasure Points (33 treasures = 525 pts total)
 
-### Collected (14 taken, 12 cased) = 216 pts earned
+### Collected (23 taken, 22 cased) = 345 pts earned
 
 | Treasure | Take | Case | Status | Walkthrough |
 |----------|------|------|--------|-------------|
@@ -21,29 +21,29 @@
 | Statue | 10 | 13 | Taken + cased | wt-07 |
 | Pot of gold | 10 | 10 | Taken + cased | wt-07 |
 | Jeweled egg | 5 | 5 | Taken + cased | wt-08 |
-| Trunk of jewels | 15 | 8 | Taken only (kept in inv) | wt-04 |
+| Trunk of jewels | 15 | 8 | Taken + cased | wt-04/wt-10 |
 | Pearl necklace | 9 | 5 | Taken + cased | wt-09 |
 | Tin of spices | 5 | 5 | Taken + cased | wt-09 |
 | White crystal sphere | 6 | 6 | Taken + cased | wt-09 |
-| **Subtotal** | **118** | **98** | **= 216** | |
+| Huge diamond | 10 | 6 | Taken + cased | wt-10 |
+| Sapphire bracelet | 5 | 3 | Taken + cased | wt-10 |
+| Red crystal sphere | 10 | 5 | Taken + cased | wt-10 |
+| Fancy violin | 10 | 10 | Taken + cased | wt-11 |
+| Bag of coins | 10 | 5 | Taken + cased | wt-11 |
+| Grail | 2 | 5 | Taken + cased | wt-11 |
+| Crystal trident | 4 | 11 | Taken + cased | wt-11 |
+| Blue crystal sphere | 10 | 5 | Taken + cased | wt-11 |
+| Jade figurine | 5 | 5 | Taken + cased | wt-11 |
+| **Subtotal** | **184** | **161** | **= 345** | |
 
-**Note**: Trunk (8 case pts) and torch (6 case pts) are not yet in the trophy case = 14 pts recoverable.
+**Note**: Torch (6 case pts) is not yet in the trophy case = 6 pts recoverable.
 
-### Not Collected (19 treasures) = 309 pts remaining
+### Not Collected (10 treasures) = 180 pts remaining
 
 | Treasure | Take | Case | Total | Region |
 |----------|------|------|-------|--------|
-| Bag of coins | 10 | 5 | 15 | Maze |
 | Clockwork canary | 6 | 2 | 8 | Inside egg (thief opens) |
-| Fancy violin | 10 | 10 | 20 | Round Room |
-| Grail | 2 | 5 | 7 | Grail Room |
-| Crystal trident | 4 | 11 | 15 | Atlantis |
-| Jade figurine | 5 | 5 | 10 | Bat Room |
 | Chalice | 10 | 10 | 20 | Treasure Room |
-| Blue crystal sphere | 10 | 5 | 15 | Dreary Room |
-| Huge diamond | 10 | 6 | 16 | Coal Mine machine |
-| Sapphire bracelet | 5 | 3 | 8 | Gas Room |
-| Red crystal sphere | 10 | 5 | 15 | Sooty Room |
 | Zorkmid coin | 10 | 12 | 22 | Volcano ledge |
 | Crown | 15 | 10 | 25 | Volcano |
 | Flathead stamp | 4 | 10 | 14 | Volcano library |
@@ -52,7 +52,7 @@
 | Brass bauble | 1 | 1 | 2 | Forest (canary) |
 | Thief's canvas | 10 | 24 | 34 | Ghost ritual |
 | Gold card | 10 | 15 | 25 | Royal Puzzle |
-| **Subtotal** | **147** | **162** | **309** | |
+| **Subtotal** | **81** | **93** | **174** | |
 
 ---
 
@@ -97,11 +97,11 @@
 
 | Category | Earned | Remaining | Max |
 |----------|--------|-----------|-----|
-| Treasures (take) | 118 | 147 | 265 |
-| Treasures (case) | 98 | 162 | 260 |
+| Treasures (take) | 184 | 81 | 265 |
+| Treasures (case) | 161 | 93 | 260 |
 | Room visits | 45 | 170 | 215 |
 | Achievements | 20 | 35 | 55 |
-| **Total** | **281** | **514** | **795** |
+| **Total** | **410** | **379** | **795** |
 
 **Note**: Max 795 > 616 because the game cap is 616 (or 650 after thief dies). The original Zork scoring system uses 616 as the displayed max. Some room visit points (endgame) overlap with the endgame 100-point pool, which is separate from the 616 main game score.
 
@@ -114,6 +114,10 @@
 2. **Land of Dead room visit**: wt-06 uses `$teleport` to reach Land of Dead, which bypasses the `if.event.actor_moved` event that triggers room visit scoring. Walking there after exorcism should award 30 pts.
 
 3. **Top of Well room visit**: wt-09 reaches Top of Well via bucket vehicle (pour action), which may not emit `if.event.actor_moved`. The 10 pts may not be awarded.
+
+4. **Trophy case capacity**: Was maxItems: 20, now fixed to maxItems: 40 (33 treasures need to fit).
+
+5. **Putting action silent failure**: When container is full, putting action returns empty output instead of "container is full" message.
 
 ---
 
@@ -130,6 +134,8 @@
 | wt-07 | Emerald (take+case), Statue (take+case), Pot of gold (take+case) | 58 |
 | wt-08 | Jeweled egg (take+case) | 10 |
 | wt-09 | Necklace (take+case), Spices (take+case), White sphere (take+case) | 46 |
+| wt-10 | Diamond (take+case), Bracelet (take+case), Red sphere (take+case), Trunk (case) | 47 |
+| wt-11 | Violin (take+case), Coins (take+case), Grail (take+case), Trident (take+case), Blue sphere (take+case), Jade figurine (take+case) | 82 |
 
 **Room visits**: Kitchen (10) + Cellar (25) + Torch Room (10) = 45 pts across wt-01.
 **Achievements**: Troll (10, wt-01) + Cyclops (10, wt-03) = 20 pts.
@@ -140,9 +146,8 @@
 
 Priority areas for new walkthroughs (by point value):
 
-1. **Coal Mine** — diamond (16), bracelet (8), red sphere (15) = 39 pts
-2. **Volcano** — crown (25), coin (22), ruby (23), stamp (14) = 84 pts
+1. **Volcano** — crown (25), coin (22), ruby (23), stamp (14) = 84 pts
+2. **Thief combat** — chalice (20) + kill thief achievement (25) + canvas (34) = 79 pts
 3. **Royal Puzzle** — gold card (25) = 25 pts
-4. **Scattered treasures** — coins (15), violin (20), grail (7), trident (15), jade (10), chalice (20), blue sphere (15) = 102 pts
-5. **Special puzzles** — canary/bauble (10), Don Woods stamp (1), canvas (34) = 45 pts
-6. **Trophy case cleanup** — trunk (8) + torch (6) = 14 pts
+4. **Special puzzles** — canary/bauble (10), Don Woods stamp (1) = 11 pts
+5. **Trophy case cleanup** — torch (6) = 6 pts

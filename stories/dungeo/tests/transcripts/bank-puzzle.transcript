@@ -69,7 +69,7 @@ description: Tests room navigation, stone cube, walk-through action, and alarm s
 
 # Get the zorkmid bills
 > take zorkmid bills
-[OK: matches /(Taken|take)/i]
+[OK: contains "Taken"]
 
 # Walk through north wall to return to Safety Depository
 > walk through north wall
@@ -95,7 +95,7 @@ description: Tests room navigation, stone cube, walk-through action, and alarm s
 
 # Get the portrait
 > take portrait
-[OK: matches /(Taken|take)/i]
+[OK: contains "Taken"]
 
 # Verify we have both treasures
 > inventory
