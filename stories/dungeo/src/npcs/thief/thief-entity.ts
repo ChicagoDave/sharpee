@@ -136,6 +136,10 @@ export function createThief(
   (thief as any).on = {
     'if.event.death': (_event: ISemanticEvent, w: WorldModel): ISemanticEvent[] => {
       const events: ISemanticEvent[] = [];
+
+      // Only handle thief's death, not other entities
+      if ((_event.data as Record<string, unknown>)?.target !== thief.id) return events;
+
       const thiefRoom = w.getLocation(thief.id) ?? null;
 
       // Add score for defeating the thief

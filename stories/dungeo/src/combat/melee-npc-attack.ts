@@ -201,8 +201,10 @@ export function meleeNpcResolver(
       break;
 
     case MeleeOutcome.UNCONSCIOUS:
-      // MDL treats unconscious hero as dead
-      emitHeroDeath(events, npc, target);
+      // MDL melee.137:246-248 — UNCONSCIOUS only negates DEF when hero
+      // is the attacker (villain goes unconscious). When villain attacks
+      // hero, DEF is NOT modified, so ASTRENGTH = DEF - OD = 0 (no wound).
+      // The message is dramatic but mechanically it's a no-op.
       break;
 
     case MeleeOutcome.KILLED:

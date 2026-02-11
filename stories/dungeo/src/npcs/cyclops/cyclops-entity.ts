@@ -111,6 +111,9 @@ export function createCyclops(
     'if.event.death': (_event: ISemanticEvent, w: WorldModel): ISemanticEvent[] => {
       const events: ISemanticEvent[] = [];
 
+      // Only handle cyclops's death, not other entities
+      if ((_event.data as Record<string, unknown>)?.target !== cyclops.id) return events;
+
       // Unblock the north passage
       const cyclopsRoom = w.getEntity(roomId);
       if (cyclopsRoom) {

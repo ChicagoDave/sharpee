@@ -393,6 +393,9 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
     'if.event.death': (_event: ISemanticEvent, w: WorldModel): ISemanticEvent[] => {
       const events: ISemanticEvent[] = [];
 
+      // Only handle troll's death, not other entities
+      if ((_event.data as Record<string, unknown>)?.target !== troll.id) return events;
+
       // Unblock passage
       if (trollRoom) {
         RoomBehavior.unblockExit(trollRoom, Direction.NORTH);

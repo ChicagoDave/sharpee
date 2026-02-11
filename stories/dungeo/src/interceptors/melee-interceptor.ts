@@ -24,12 +24,15 @@ import {
   IdentityTrait,
   TraitType,
   CombatantTrait,
+  RoomBehavior,
+  RoomTrait,
+  Direction,
   createEffect,
   CapabilityEffect,
   StandardCapabilities,
 } from '@sharpee/world-model';
 import { createSeededRandom, SeededRandom } from '@sharpee/core';
-import { findWieldedWeapon } from '@sharpee/stdlib';
+
 
 /**
  * Module-level random instance shared across all melee calls.
@@ -107,6 +110,45 @@ function getVillainOstrength(villain: IFEntity): number {
   return base;
 }
 
+/**
+ * Handle villain-specific death side effects.
+ *
+ * Events in Sharpee are messages (not pub/sub), so entity `.on` handlers
+ * don't fire automatically. Death side effects must happen in the
+ * execution flow, not in event handlers.
+ *
+ * @returns true if entity cleanup was handled (skip default inventory drop)
+ */
+function handleVillainDeath(villainKey: string, villain: IFEntity, world: WorldModel): boolean {
+  const villainRoomId = world.getLocation(villain.id);
+  const room = villainRoomId ? world.getEntity(villainRoomId) : undefined;
+
+  switch (villainKey) {
+    case 'troll': {
+      // Unblock north exit (troll was blocking passage)
+      if (room) {
+        RoomBehavior.unblockExit(room, Direction.NORTH);
+      }
+      // Add score: 10 points for defeating the troll
+      const scoring = world.getCapability(StandardCapabilities.SCORING);
+      if (scoring) {
+        scoring.scoreValue = (scoring.scoreValue || 0) + 10;
+        if (!scoring.achievements) scoring.achievements = [];
+        scoring.achievements.push('Defeated the troll');
+      }
+      // Remove troll and its weapon from the game (both disappear in smoke)
+      const contents = world.getContents(villain.id);
+      for (const item of contents) {
+        world.removeEntity(item.id);
+      }
+      world.removeEntity(villain.id);
+      return true; // Entity cleanup handled — skip default inventory drop
+    }
+    // Thief and cyclops death handling will be added when those fights are tested
+  }
+  return false; // Use default inventory drop
+}
+
 // ============= The Interceptor =============
 
 export const MeleeInterceptor: ActionInterceptor = {
@@ -129,15 +171,6 @@ export const MeleeInterceptor: ActionInterceptor = {
       return {
         valid: false,
         error: MeleeMessages.STILL_RECOVERING,
-      };
-    }
-
-    // Check if hero has a weapon — fighting unarmed is suicide
-    const weapon = findWieldedWeapon(player, world);
-    if (!weapon) {
-      return {
-        valid: false,
-        error: MeleeMessages.UNARMED_ATTACK,
       };
     }
 
@@ -249,14 +282,22 @@ export const MeleeInterceptor: ActionInterceptor = {
     if (targetKilled) {
       const combatant = villain.get(TraitType.COMBATANT) as CombatantTrait | undefined;
       if (combatant) {
-        combatant.kill();
+        // Direct assignment instead of combatant.kill() — after world.loadJSON()
+        // traits are plain objects without methods, so kill() would crash.
+        combatant.health = 0;
+        combatant.isAlive = false;
+        combatant.isConscious = false;
       }
-      // Drop villain's inventory to the floor
-      const villainContents = world.getContents(villain.id);
-      const villainRoom = world.getLocation(villain.id) ?? null;
-      for (const item of villainContents) {
-        world.moveEntity(item.id, villainRoom);
-        droppedItems.push(item.id);
+      // Villain-specific death side effects (unblock exits, score, entity removal).
+      // Returns true if the handler cleaned up entities (troll disappears in smoke).
+      if (!handleVillainDeath(villainKey, villain, world)) {
+        // Default: drop villain's inventory to the floor
+        const villainContents = world.getContents(villain.id);
+        const villainRoom = world.getLocation(villain.id) ?? null;
+        for (const item of villainContents) {
+          world.moveEntity(item.id, villainRoom);
+          droppedItems.push(item.id);
+        }
       }
     }
 
@@ -326,14 +367,6 @@ export const MeleeInterceptor: ActionInterceptor = {
         createEffect('game.message', {
           messageId: MeleeMessages.STILL_RECOVERING,
           text: 'You are still recovering from a staggering blow.',
-        }),
-      ];
-    }
-    if (error === MeleeMessages.UNARMED_ATTACK) {
-      return [
-        createEffect('game.message', {
-          messageId: MeleeMessages.UNARMED_ATTACK,
-          text: 'Fighting unarmed is suicide.',
         }),
       ];
     }

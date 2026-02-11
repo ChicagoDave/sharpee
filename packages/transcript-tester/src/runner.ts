@@ -59,13 +59,18 @@ const MAX_BLOCK_DEPTH = 10;
  * Block state for control flow
  */
 interface BlockState {
-  type: 'if' | 'while' | 'goal';
+  type: 'if' | 'while' | 'goal' | 'retry' | 'do';
   condition?: string;
-  startIndex: number;    // For WHILE loop-back
+  startIndex: number;    // For WHILE/DO loop-back
   active: boolean;       // Whether to execute commands
-  iterations: number;    // For WHILE loop safety
+  iterations: number;    // For WHILE/DO loop safety
   goalName?: string;     // For GOAL blocks
   ensures?: string[];    // For GOAL blocks
+  maxRetries?: number;       // For RETRY blocks
+  retryCount?: number;       // For RETRY: current attempt number
+  savedState?: string;       // For RETRY: serialized world snapshot
+  resultsStartIndex?: number; // For RETRY: index in results[] at block entry
+  iterationOutputs?: string[];  // For DO blocks: accumulated outputs this iteration
 }
 
 /**
@@ -154,17 +159,58 @@ async function runSmartTranscript(
     }
 
     if (item.type === 'command') {
-      // Execute command
-      const result = await runCommand(item.command!, engine, options);
+      // For commands inside DO blocks, override auto-SKIP so the command
+      // actually executes and produces output for UNTIL matching
+      let command = item.command!;
+      const doBlock = findDoBlock(blockStack);
+      if (doBlock && command.assertions.length === 1 && command.assertions[0].type === 'skip') {
+        command = { ...command, assertions: [] };
+      }
+
+      const result = await runCommand(command, engine, options);
       results.push(result);
+
+      // Capture output for DO-UNTIL blocks
+      if (doBlock?.iterationOutputs) {
+        doBlock.iterationOutputs.push(result.actualOutput);
+      }
 
       // Update annotation context for ext-testing
       if (options.testingExtension?.setCommandContext) {
         options.testingExtension.setCommandContext(result.command.input, result.actualOutput);
       }
 
-      if (options.stopOnFailure && !result.passed && !result.expectedFailure && !result.skipped) {
-        break;
+      // Check for RETRY block failure recovery
+      if (!result.passed && !result.expectedFailure && !result.skipped) {
+        const retryBlock = findRetryBlock(blockStack);
+        if (retryBlock) {
+          retryBlock.retryCount = (retryBlock.retryCount ?? 0) + 1;
+          if (retryBlock.retryCount <= retryBlock.maxRetries!) {
+            if (options.verbose) {
+              console.log(`  [RETRY] Attempt ${retryBlock.retryCount}/${retryBlock.maxRetries} failed, restoring state...`);
+            }
+            // Restore world state
+            if (retryBlock.savedState && engine.world && (engine.world as any).loadJSON) {
+              (engine.world as any).loadJSON(retryBlock.savedState);
+            }
+            // Remove all results from this retry attempt
+            results.splice(retryBlock.resultsStartIndex!);
+            // Unwind block stack to just above the retry block (remove nested WHILE etc.)
+            while (blockStack.length > 0 && blockStack[blockStack.length - 1] !== retryBlock) {
+              blockStack.pop();
+            }
+            // Record new results start for next attempt
+            retryBlock.resultsStartIndex = results.length;
+            // Jump back to start of retry block
+            i = retryBlock.startIndex + 1;
+            continue;
+          }
+          // Retries exhausted — fall through to normal failure handling
+        }
+
+        if (options.stopOnFailure) {
+          break;
+        }
       }
       i++;
     } else if (item.type === 'comment') {
@@ -175,6 +221,33 @@ async function runSmartTranscript(
       i++;
     } else if (item.type === 'directive') {
       const directive = item.directive!;
+
+      // Handle ENSURES failure inside RETRY block
+      if (directive.type === 'ensures') {
+        const retryBlock = findRetryBlock(blockStack);
+        if (retryBlock && engine.world && directive.condition) {
+          const condResult = evaluateCondition(directive.condition, engine.world as any, playerId);
+          if (!condResult.met) {
+            retryBlock.retryCount = (retryBlock.retryCount ?? 0) + 1;
+            if (retryBlock.retryCount <= retryBlock.maxRetries!) {
+              if (options.verbose) {
+                console.log(`  [RETRY] ENSURES failed (attempt ${retryBlock.retryCount}/${retryBlock.maxRetries}): ${directive.condition}`);
+              }
+              if (retryBlock.savedState && (engine.world as any).loadJSON) {
+                (engine.world as any).loadJSON(retryBlock.savedState);
+              }
+              results.splice(retryBlock.resultsStartIndex!);
+              while (blockStack.length > 0 && blockStack[blockStack.length - 1] !== retryBlock) {
+                blockStack.pop();
+              }
+              retryBlock.resultsStartIndex = results.length;
+              i = retryBlock.startIndex + 1;
+              continue;
+            }
+          }
+        }
+      }
+
       const directiveResult = await handleDirective(
         directive, blockStack, i, items, engine, playerId, options
       );
@@ -188,6 +261,14 @@ async function runSmartTranscript(
       // Add any command results from directive execution (e.g., NAVIGATE)
       if (directiveResult.commandResults) {
         results.push(...directiveResult.commandResults);
+      }
+
+      // After entering a RETRY block, record current results length
+      if (directive.type === 'retry' && blockStack.length > 0) {
+        const topBlock = blockStack[blockStack.length - 1];
+        if (topBlock.type === 'retry') {
+          topBlock.resultsStartIndex = results.length;
+        }
       }
 
       i = directiveResult.nextIndex;
@@ -221,6 +302,30 @@ function getPlayerId(engine: GameEngine): string {
     return player?.id || 'player';
   }
   return 'player';
+}
+
+/**
+ * Find the innermost RETRY block on the stack (if any)
+ */
+function findRetryBlock(blockStack: BlockState[]): BlockState | undefined {
+  for (let i = blockStack.length - 1; i >= 0; i--) {
+    if (blockStack[i].type === 'retry') {
+      return blockStack[i];
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Find the innermost DO block on the stack (if any)
+ */
+function findDoBlock(blockStack: BlockState[]): BlockState | undefined {
+  for (let i = blockStack.length - 1; i >= 0; i--) {
+    if (blockStack[i].type === 'do') {
+      return blockStack[i];
+    }
+  }
+  return undefined;
 }
 
 /**
@@ -425,6 +530,108 @@ async function handleDirective(
         // Exit loop
         blockStack.pop();
         return { nextIndex: currentIndex + 1 };
+      }
+    }
+
+    case 'retry': {
+      if (blockStack.length >= MAX_BLOCK_DEPTH) {
+        return { nextIndex: currentIndex + 1, error: 'Max block depth exceeded' };
+      }
+
+      const maxRetries = directive.maxRetries ?? 3;
+
+      // Snapshot world state in memory
+      let savedState: string | undefined;
+      if (world && (world as any).toJSON) {
+        savedState = (world as any).toJSON();
+      }
+
+      if (verbose) {
+        console.log(`  [RETRY: max=${maxRetries}] Saved state, entering retry block`);
+      }
+
+      blockStack.push({
+        type: 'retry',
+        startIndex: currentIndex,
+        active: true,
+        iterations: 0,
+        maxRetries,
+        retryCount: 0,
+        savedState,
+      });
+
+      return { nextIndex: currentIndex + 1 };
+    }
+
+    case 'end_retry': {
+      const block = blockStack[blockStack.length - 1];
+      if (!block || block.type !== 'retry') {
+        blockStack.pop();
+        return { nextIndex: currentIndex + 1, error: 'END RETRY without matching RETRY' };
+      }
+
+      // Success — all commands in the block passed
+      if (verbose && block.retryCount! > 0) {
+        console.log(`  [END RETRY] Passed after ${block.retryCount} retry(s)`);
+      }
+      blockStack.pop();
+      return { nextIndex: currentIndex + 1 };
+    }
+
+    case 'do': {
+      if (blockStack.length >= MAX_BLOCK_DEPTH) {
+        return { nextIndex: currentIndex + 1, error: 'Max block depth exceeded' };
+      }
+
+      if (verbose) {
+        console.log(`  [DO] Entering do-until loop`);
+      }
+
+      blockStack.push({
+        type: 'do',
+        startIndex: currentIndex,
+        active: true,
+        iterations: 0,
+        iterationOutputs: []
+      });
+
+      return { nextIndex: currentIndex + 1 };
+    }
+
+    case 'until': {
+      const block = blockStack[blockStack.length - 1];
+      if (!block || block.type !== 'do') {
+        return { nextIndex: currentIndex + 1, error: 'UNTIL without matching DO' };
+      }
+
+      block.iterations++;
+      if (block.iterations >= MAX_WHILE_ITERATIONS) {
+        blockStack.pop();
+        return { nextIndex: currentIndex + 1, error: `DO-UNTIL loop exceeded ${MAX_WHILE_ITERATIONS} iterations` };
+      }
+
+      // Check if any output in this iteration contained any of the until texts
+      const untilTexts = directive.untilTexts || [];
+      const matched = block.iterationOutputs?.some(
+        output => {
+          const lower = output.toLowerCase();
+          return untilTexts.some(text => lower.includes(text.toLowerCase()));
+        }
+      ) ?? false;
+
+      if (verbose) {
+        const label = untilTexts.map(t => `"${t}"`).join(' OR ');
+        console.log(`  [UNTIL ${label} iteration ${block.iterations}] -> ${matched ? 'MATCHED (exit loop)' : 'not matched (continue loop)'}`);
+      }
+
+      if (matched) {
+        // Exit loop
+        blockStack.pop();
+        return { nextIndex: currentIndex + 1 };
+      } else {
+        // Clear outputs for next iteration and loop back
+        block.iterationOutputs = [];
+        return { nextIndex: block.startIndex + 1 };
       }
     }
 
@@ -639,13 +846,29 @@ async function handleEndDirective(
       }
       break;
 
+    case 'end_retry':
+      if (blockStack.length > 0 && blockStack[blockStack.length - 1].type === 'retry') {
+        blockStack.pop();
+        return { consumed: true, nextIndex: currentIndex + 1 };
+      }
+      break;
+
+    case 'until':
+      if (blockStack.length > 0 && blockStack[blockStack.length - 1].type === 'do') {
+        blockStack.pop();
+        return { consumed: true, nextIndex: currentIndex + 1 };
+      }
+      break;
+
     // Handle nested block starts within inactive blocks
     case 'if':
     case 'while':
     case 'goal':
+    case 'retry':
+    case 'do':
       // Push inactive block to maintain proper nesting
       blockStack.push({
-        type: directive.type === 'goal' ? 'goal' : directive.type,
+        type: directive.type === 'goal' ? 'goal' : directive.type as any,
         startIndex: currentIndex,
         active: false,
         iterations: 0
@@ -807,6 +1030,16 @@ function checkAssertion(
         passed: notContains,
         message: notContains ? undefined : `Output should not contain "${assertion.value}"`
       };
+
+    case 'ok-contains-any': {
+      const lowerOutput = actualOutput.toLowerCase();
+      const anyMatch = assertion.values!.some(v => lowerOutput.includes(v.toLowerCase()));
+      return {
+        assertion,
+        passed: anyMatch,
+        message: anyMatch ? undefined : `Output does not contain any of: ${assertion.values!.map(v => `"${v}"`).join(', ')}`
+      };
+    }
 
     case 'ok-matches':
       const regexMatches = assertion.pattern!.test(actualOutput);

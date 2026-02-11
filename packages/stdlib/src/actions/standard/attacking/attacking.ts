@@ -137,12 +137,11 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'self' };
     }
 
-    // Check if using a weapon
+    // Check if using a weapon — implicit take if on floor nearby
     if (weapon) {
-      // Check if holding the weapon
-      const weaponLocation = context.world.getLocation(weapon.id);
-      if (weaponLocation !== actor.id) {
-        return { valid: false, error: 'not_holding_weapon', params: { weapon: weapon.name } };
+      const carryCheck = context.requireCarriedOrImplicitTake(weapon);
+      if (!carryCheck.ok) {
+        return carryCheck.error!;
       }
     }
 
@@ -335,6 +334,11 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
 
     const events: ISemanticEvent[] = [];
 
+    // Prepend any implicit take events (from requireCarriedOrImplicitTake)
+    if (context.sharedData.implicitTakeEvents) {
+      events.push(...context.sharedData.implicitTakeEvents);
+    }
+
     // Check if attack failed (for non-combat attacks)
     if (!result.success && !usedCombatService) {
       return [
@@ -455,6 +459,18 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
       }));
     }
 
+    // === POST-REPORT HOOK ===
+    // Run before death/knockout events so attack blow text renders
+    // before consequence messages (e.g., troll disappearance smoke).
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.postReport) {
+      const additionalEffects = interceptor.postReport(target, context.world, context.player.id, interceptorData);
+      for (const effect of additionalEffects) {
+        events.push(context.event(effect.type, effect.payload));
+      }
+    }
+
     // For killed targets, emit a death event
     if (result.targetKilled) {
       events.push(context.event('if.event.death', {
@@ -471,16 +487,6 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
         targetName: target.name,
         knockedOutBy: context.player.id
       }));
-    }
-
-    // === POST-REPORT HOOK ===
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.postReport) {
-      const additionalEffects = interceptor.postReport(target, context.world, context.player.id, interceptorData);
-      for (const effect of additionalEffects) {
-        events.push(context.event(effect.type, effect.payload));
-      }
     }
 
     return events;

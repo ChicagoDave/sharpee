@@ -89,32 +89,13 @@ $restore wt-11
 [ENSURES: not entity "seedy-looking thief" alive]
 
 # Thief summoned by treasure room entry handler (treasure-room-handler.ts).
-# Melee combat with nasty knife. ENSURES postcondition verifies thief dies.
+# Melee combat with nasty knife. DO/UNTIL loops until thief dies or player dies.
+[RETRY: max=5]
+[DO]
 > attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
+[UNTIL "slumps to the floor dead" OR "severs his jugular" OR "He dies" OR "Finishing you off"]
+[ENSURES: not entity "seedy-looking thief" alive]
+[END RETRY]
 
 [END GOAL]
 
@@ -129,7 +110,7 @@ $restore wt-11
 [OK: contains "Dropped"]
 
 > take chalice
-[OK: contains "chalice"]
+[OK: contains "Taken"]
 
 # Return: Treasure Room → Cyclops Room → Living Room (via Strange Passage)
 > down

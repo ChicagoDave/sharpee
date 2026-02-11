@@ -79,44 +79,14 @@ description: Priority path - get the torch ASAP to minimize lantern usage. Torch
 > east
 [OK: contains "Troll Room"]
 
-# Kill troll - melee combat (canonical MDL engine, may take several hits)
-# Troll OSTRENGTH=2, sword is best weapon (penalty -1), so effective DEF=1
-# Per-attack: 33% miss, 22% stagger, 33% light wound, 11% unconscious
-# Player can also get staggered by troll counter-attacks (wastes a turn)
-# 30 attacks gives >99% kill probability accounting for player staggers.
-# ENSURES postcondition verifies troll dies.
+# Kill troll - melee combat with DO/UNTIL loop
+# Loops attack until troll dies or player dies (retry handles player death)
+[RETRY: max=5]
+[DO]
 > attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-> attack troll with sword
-
+[UNTIL "slumps to the floor dead" OR "removes his head" OR "He dies" OR "You are dead"]
 [ENSURES: not entity "troll" alive]
+[END RETRY]
 
 [END GOAL]
 
