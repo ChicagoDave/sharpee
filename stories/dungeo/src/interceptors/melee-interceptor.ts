@@ -182,16 +182,27 @@ function handleVillainDeath(
       const frame = createEmptyFrame(world);
       world.moveEntity(frame.id, lairRoomId);
 
-      // 4. Disable thief daemon permanently
+      // 4. Reveal all concealed treasures in the lair (MDL: OVISON restored on death)
+      if (lairRoomId) {
+        const lairContents = world.getContents(lairRoomId);
+        for (const item of lairContents) {
+          const itemIdentity = item.get(TraitType.IDENTITY) as IdentityTrait | undefined;
+          if (itemIdentity?.concealed) {
+            itemIdentity.concealed = false;
+          }
+        }
+      }
+
+      // 5. Disable thief daemon permanently
       world.getDataStore().state['dungeo.thief.disabled'] = true;
 
-      // 5. Remove stiletto and thief entity (carcass disappears in black fog)
+      // 6. Remove stiletto and thief entity (carcass disappears in black fog)
       if (stilettoId) {
         world.removeEntity(stilettoId);
       }
       world.removeEntity(villain.id);
 
-      // 6. Store death messages for postReport to emit
+      // 7. Store death messages for postReport to emit
       const deathMessages: string[] = [];
       if (hasLoot) {
         deathMessages.push("The thief's ill-gotten gains scatter across the floor.");

@@ -28,7 +28,7 @@ export {
   setThiefDisabled
 } from './thief-helpers';
 
-import { WorldModel, IFEntity } from '@sharpee/world-model';
+import { WorldModel, IFEntity, IdentityTrait } from '@sharpee/world-model';
 import { INpcService } from '@sharpee/stdlib';
 import { thiefBehavior } from './thief-behavior';
 import { createThief } from './thief-entity';
@@ -53,6 +53,17 @@ export function registerThief(
 
   // Create the thief entity
   const thief = createThief(world, lairRoomId, forbiddenRooms);
+
+  // Move the chalice from the lair room into the thief's inventory.
+  // Canon MDL: thief holds the chalice; it drops when he dies (dropsInventory: true).
+  const lairContents = world.getContents(lairRoomId);
+  const chalice = lairContents.find(e => {
+    const identity = e.get(IdentityTrait);
+    return identity?.name === 'silver chalice';
+  });
+  if (chalice) {
+    world.moveEntity(chalice.id, thief.id);
+  }
 
   return thief;
 }

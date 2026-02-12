@@ -45,9 +45,13 @@ export function findTreasuresIn(world: WorldModel, containerId: string): IFEntit
   // Get all entities in this container using getContents
   const contents = world.getContents(containerId);
 
-  // Filter to treasures and sort by value (highest first)
+  // Filter to visible treasures and sort by value (highest first)
   return contents
-    .filter((entity: IFEntity) => isTreasure(entity))
+    .filter((entity: IFEntity) => {
+      if (!isTreasure(entity)) return false;
+      const identity = entity.get(IdentityTrait);
+      return !identity?.concealed;
+    })
     .sort((a: IFEntity, b: IFEntity) => getTreasureValue(b) - getTreasureValue(a));
 }
 
@@ -129,10 +133,13 @@ export function isStilettoItem(entity: IFEntity): boolean {
 }
 
 /**
- * Get all items thief is carrying except the stiletto
+ * Get treasures the thief should deposit at his lair (MDL: OTVAL > 0)
  */
-export function getDroppableItems(context: NpcContext): IFEntity[] {
-  return context.npcInventory.filter(item => !isStilettoItem(item));
+export function depositTreasures(context: NpcContext): IFEntity[] {
+  return context.npcInventory.filter(item => {
+    const treasure = item.get(TreasureTrait);
+    return treasure !== undefined && treasure.trophyCaseValue > 0;
+  });
 }
 
 /**

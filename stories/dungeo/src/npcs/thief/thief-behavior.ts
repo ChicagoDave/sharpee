@@ -29,7 +29,7 @@ import {
   isCarryingEgg,
   getEggFromInventory,
   isAtLair,
-  getDroppableItems,
+  depositTreasures,
   isThiefDisabled,
   decrementCooldowns,
   shouldEscalateToCombat,
@@ -64,6 +64,8 @@ export const thiefBehavior: NpcBehavior = {
   onTurn(context: NpcContext): NpcAction[] {
     const props = getThiefProps(context.npc);
     if (!props) return [];
+
+    console.log(`[THIEF-TURN] state=${props.state} atLair=${context.npcLocation === props.lairRoomId} playerVisible=${context.playerVisible} inventory=[${context.npcInventory.map(i => i.name).join(', ')}]`);
 
     // Check global disabled flag (GDT NR command)
     if (isThiefDisabled(context.world)) {
@@ -318,7 +320,7 @@ function handleStealingState(context: NpcContext, props: ThiefCustomProperties):
       props.stealCooldown = STEAL_COOLDOWN;
 
       // Check if we should return to lair
-      const droppable = getDroppableItems(context);
+      const droppable = depositTreasures(context);
       if (droppable.length >= MAX_CARRY_BEFORE_RETURN) {
         props.state = 'RETURNING';
       } else {
@@ -351,7 +353,7 @@ function handleStealingState(context: NpcContext, props: ThiefCustomProperties):
     props.stealCooldown = STEAL_COOLDOWN;
 
     // Check if we should return to lair
-    const droppable = getDroppableItems(context);
+    const droppable = depositTreasures(context);
     if (droppable.length >= MAX_CARRY_BEFORE_RETURN) {
       props.state = 'RETURNING';
     } else {
@@ -522,10 +524,12 @@ function handleFleeingState(context: NpcContext, props: ThiefCustomProperties): 
 function handleLairDeposit(context: NpcContext, props: ThiefCustomProperties): NpcAction[] {
   // Only fire when at lair AND player is NOT in the room (MDL: <N==? .RM .WROOM>)
   if (!isAtLair(context) || context.playerVisible) {
+    console.log(`[THIEF-DEPOSIT] skipped: atLair=${isAtLair(context)} playerVisible=${context.playerVisible}`);
     return [];
   }
 
-  const droppable = getDroppableItems(context);
+  const droppable = depositTreasures(context);
+  console.log(`[THIEF-DEPOSIT] droppable: ${droppable.length} items: ${droppable.map(i => i.name).join(', ')}`);
   if (droppable.length === 0) {
     return [];
   }
@@ -537,16 +541,23 @@ function handleLairDeposit(context: NpcContext, props: ThiefCustomProperties): N
         // Special egg handling (MDL act1.254:1097-1099):
         // If item is the egg, open it so the canary inside becomes accessible
         const eggTrait = item.get(EggTrait);
+        console.log(`[THIEF-DEPOSIT] item=${item.name} eggTrait=${!!eggTrait}`);
         if (eggTrait && !eggTrait.hasBeenOpened) {
           const openable = item.get(OpenableTrait);
+          console.log(`[THIEF-DEPOSIT] opening egg: openable=${!!openable} isOpen=${openable?.isOpen}`);
           if (openable && !openable.isOpen) {
             openable.isOpen = true;
           }
           eggTrait.hasBeenOpened = true;
         }
 
-        // Drop item in the Treasure Room
+        // Drop item in the Treasure Room, concealed (MDL: OVISON bit cleared)
+        // Items become visible when the thief dies
         context.world.moveEntity(item.id, context.npcLocation);
+        const identity = item.get(IdentityTrait);
+        if (identity) {
+          identity.concealed = true;
+        }
       }
 
       // Clear engrossed flag — treasures deposited

@@ -618,8 +618,8 @@ function createMaze5Objects(world: WorldModel, roomId: string): void {
 // ============= Treasure Room Objects =============
 
 function createTreasureRoomObjects(world: WorldModel, roomId: string): void {
-  // Silver chalice (CHALI) - starts in the thief's lair per MDL source.
-  // The thief guards it; player can take it after killing the thief.
+  // Silver chalice (CHALI) - created here, then moved to thief's inventory
+  // by registerThief(). Drops when thief dies (dropsInventory: true).
   const chalice = world.createEntity('silver chalice', EntityType.ITEM);
   chalice.add(new IdentityTrait({
     name: 'silver chalice',
