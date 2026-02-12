@@ -100,6 +100,7 @@ if (require.main === module) {
       chain: false,
       play: false,
       test: false,
+      restore: null,
       storyPath: 'stories/dungeo',
       help: false
     };
@@ -118,6 +119,15 @@ if (require.main === module) {
         options.play = true;
       } else if (arg === '--test' || arg === '-t') {
         options.test = true;
+      } else if (arg.startsWith('--restore=')) {
+        options.restore = arg.split('=')[1];
+        options.play = true;
+      } else if (arg === '--restore') {
+        i++;
+        if (i < args.length) {
+          options.restore = args[i];
+          options.play = true;
+        }
       } else if (arg === '--story') {
         i++;
         if (i < args.length) {
@@ -146,6 +156,7 @@ Usage:
 Options:
   --test, -t           Run transcript tests
   --play, -p           Interactive play mode (REPL)
+  --restore <name>     Restore from save file and enter play mode
   --chain, -c          Chain transcripts (don't reset game state between them)
   --verbose, -v        Show detailed output for each command
   --stop-on-failure, -s Stop on first failure
@@ -156,6 +167,7 @@ Examples:
   node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/save-restore-basic.transcript
   node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
   node dist/cli/sharpee.js --play
+  node dist/cli/sharpee.js --restore wt-11
 `);
   }
 
@@ -307,6 +319,32 @@ Examples:
     if (options.play) {
       console.log(`Loading story from: ${options.storyPath}`);
       const game = loadStoryAndCreateGame(options.storyPath);
+
+      if (options.restore) {
+        const savesDir = path.join(options.storyPath, 'saves');
+        const savePath = path.join(savesDir, `${options.restore}.json`);
+        if (!fs.existsSync(savePath)) {
+          console.error(`Save file not found: ${savePath}`);
+          if (fs.existsSync(savesDir)) {
+            const files = fs.readdirSync(savesDir).filter(f => f.endsWith('.json'));
+            if (files.length > 0) {
+              console.error(`Available saves:`);
+              for (const f of files) {
+                console.error(`  ${f.replace('.json', '')}`);
+              }
+            }
+          } else {
+            console.error(`No saves directory. Run --chain walkthroughs first to generate saves.`);
+          }
+          process.exit(1);
+        }
+
+        console.log(`Restoring from: ${savePath}`);
+        const worldState = fs.readFileSync(savePath, 'utf-8');
+        game.world.loadJSON(worldState);
+        console.log(`Restored: ${options.restore}`);
+      }
+
       await runInteractiveMode(game);
       return;
     }

@@ -10,16 +10,16 @@
  * - Fleeing: Escaping when wounded
  *
  * Special mechanics:
- * - Opens jeweled egg after carrying it for 3 turns
+ * - Opens jeweled egg when depositing treasures at lair (canonical MDL act1.254:1078-1099)
  * - Combat difficulty scales with player score
  */
 
 import { NpcBehavior, NpcContext, NpcAction } from '@sharpee/stdlib';
-import { IFEntity, NpcTrait, CombatantTrait, OpenableTrait, IdentityTrait, EntityType } from '@sharpee/world-model';
+import { IFEntity, NpcTrait, CombatantTrait, OpenableTrait, IdentityTrait } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
 
 import { ThiefMessages } from './thief-messages';
-import { TreasureTrait } from '../../traits';
+import { TreasureTrait, EggTrait } from '../../traits';
 import { ThiefCustomProperties, ThiefState } from './thief-entity';
 import {
   getThiefProps,
@@ -41,7 +41,6 @@ import {
 // Constants
 const MOVE_CHANCE = 0.33;           // 33% chance to move each turn
 const STEAL_CHANCE = 0.4;           // 40% chance to steal when opportunity arises
-const EGG_OPEN_TURNS = 3;           // Turns before thief opens the egg
 const STEAL_COOLDOWN = 5;           // Turns between steals
 const MAX_CARRY_BEFORE_RETURN = 3;  // Items before heading home
 // FLEE_HEALTH_THRESHOLD removed — flee decision now uses canonical WINNING? (melee.137:287-293)
@@ -79,15 +78,25 @@ export const thiefBehavior: NpcBehavior = {
     // Decrement cooldowns
     decrementCooldowns(props);
 
-    // Priority 1: Handle fighting state (includes WINNING? flee decision)
+    // Priority 1: Lair deposit (canonical MDL act1.254:1078-1099)
+    // When at lair and player absent, deposit treasures and open egg.
+    // This fires regardless of state — even in FIGHTING, the thief deposits
+    // when the player is gone (canonical behavior).
+    const depositActions = handleLairDeposit(context, props);
+    if (depositActions.length > 0) {
+      return depositActions;
+    }
+
+    // Priority 2: Handle fighting state (includes WINNING? flee decision)
     if (props.state === 'FIGHTING') {
       return handleFightingState(context, props);
     }
 
-    // Priority 2: Check egg opening (special mechanic)
-    const eggActions = checkEggOpening(context, props);
-    if (eggActions.length > 0) {
-      return eggActions;
+    // Track engrossed flag: thief is engrossed while carrying the egg
+    if (isCarryingEgg(context)) {
+      context.npc.attributes.thiefEngrossed = true;
+    } else {
+      context.npc.attributes.thiefEngrossed = false;
     }
 
     // Priority 3: Late-game combat escalation (canonical WINNING?)
@@ -359,33 +368,25 @@ function handleStealingState(context: NpcContext, props: ThiefCustomProperties):
 
 /**
  * RETURNING: Heading back to lair with loot
+ *
+ * Deposit is handled by Priority 2 (handleLairDeposit) when the player
+ * is absent. Here we just transition to WANDERING once at lair, or
+ * move toward it if not there yet.
  */
 function handleReturningState(context: NpcContext, props: ThiefCustomProperties): NpcAction[] {
-  // At lair - drop everything except stiletto
+  // At lair — Priority 2 handles deposit when player is absent
   if (isAtLair(context)) {
-    const actions: NpcAction[] = [];
-    const droppable = getDroppableItems(context);
-
-    for (const item of droppable) {
-      actions.push({ type: 'drop', target: item.id });
-    }
-
     props.state = 'WANDERING';
-    return actions;
+    return [];
   }
 
   // Not at lair - move toward it
-  // Note: This is simplified - true pathfinding would need graph traversal
-  // For now, just wander and hope to reach lair eventually
   const exits = context.getAvailableExits();
   if (exits.length > 0) {
-    // Check if any exit leads directly to lair
     const exitToLair = exits.find(e => e.destination === props.lairRoomId);
     if (exitToLair) {
       return [{ type: 'move', direction: exitToLair.direction }];
     }
-
-    // Otherwise pick random exit (simplified pathfinding)
     const exit = context.random.pick(exits);
     return [{ type: 'move', direction: exit.direction }];
   }
@@ -511,82 +512,47 @@ function handleFleeingState(context: NpcContext, props: ThiefCustomProperties): 
 // ============= Special Mechanics =============
 
 /**
- * Check and handle egg opening (special Zork mechanic)
+ * Handle lair deposit (canonical MDL ROBBER function, act1.254:1078-1099)
  *
- * If thief has been carrying the jeweled egg for 3+ turns,
- * he opens it, revealing the clockwork canary.
+ * When the thief is at his lair (Treasure Room) and the player is NOT present,
+ * he deposits all carried treasures in the room. If the egg is among them, he
+ * opens it (sets OpenableTrait.isOpen = true), making the canary inside accessible.
+ * The canary already exists inside the egg from world setup (forest.ts).
  */
-function checkEggOpening(context: NpcContext, props: ThiefCustomProperties): NpcAction[] {
-  if (isCarryingEgg(context)) {
-    props.turnsWithEgg++;
-
-    // Thief is engrossed while working on the egg — caps melee strength at 2
-    context.npc.attributes.thiefEngrossed = true;
-
-    if (props.turnsWithEgg >= EGG_OPEN_TURNS) {
-      props.turnsWithEgg = 0;
-
-      // Custom action to open the egg
-      return [{
-        type: 'custom',
-        handler: (): ISemanticEvent[] => {
-          const egg = getEggFromInventory(context);
-          if (!egg) return [];
-
-          // Check if egg is openable and not already open
-          const openable = egg.get(OpenableTrait);
-          if (openable && !openable.isOpen) {
-            openable.isOpen = true;
-
-            // Egg opened — no longer engrossed
-            context.npc.attributes.thiefEngrossed = false;
-
-            // Create the clockwork canary if it doesn't exist
-            let canary = context.world.getAllEntities().find(e => {
-              const identity = e.get(IdentityTrait);
-              return identity?.name?.includes('canary');
-            });
-
-            if (!canary) {
-              canary = context.world.createEntity('clockwork canary', EntityType.ITEM);
-              canary.add(new IdentityTrait({
-                name: 'clockwork canary',
-                aliases: ['canary', 'bird', 'clockwork bird', 'mechanical bird'],
-                description: 'A beautifully crafted mechanical songbird. Its delicate clockwork is exposed, revealing gears of the finest craftsmanship.',
-                properName: false,
-                article: 'a'
-              }));
-              canary.add(new TreasureTrait({
-                treasureId: 'clockwork-canary',
-                treasureValue: 6,      // OFVAL from mdlzork_810722
-                trophyCaseValue: 2,    // OTVAL from mdlzork_810722
-              }));
-            }
-
-            // Drop canary in thief's current room
-            context.world.moveEntity(canary.id, context.npcLocation);
-
-            return [{
-              id: generateEventId(),
-              type: 'npc.emoted',
-              timestamp: Date.now(),
-              entities: { actor: context.npc.id },
-              data: {
-                npc: context.npc.id,
-                messageId: ThiefMessages.OPENS_EGG
-              }
-            }];
-          }
-
-          return [];
-        }
-      }];
-    }
-  } else {
-    // Reset counter and clear engrossed flag if not carrying egg
-    props.turnsWithEgg = 0;
-    context.npc.attributes.thiefEngrossed = false;
+function handleLairDeposit(context: NpcContext, props: ThiefCustomProperties): NpcAction[] {
+  // Only fire when at lair AND player is NOT in the room (MDL: <N==? .RM .WROOM>)
+  if (!isAtLair(context) || context.playerVisible) {
+    return [];
   }
 
-  return [];
+  const droppable = getDroppableItems(context);
+  if (droppable.length === 0) {
+    return [];
+  }
+
+  return [{
+    type: 'custom',
+    handler: (): ISemanticEvent[] => {
+      for (const item of droppable) {
+        // Special egg handling (MDL act1.254:1097-1099):
+        // If item is the egg, open it so the canary inside becomes accessible
+        const eggTrait = item.get(EggTrait);
+        if (eggTrait && !eggTrait.hasBeenOpened) {
+          const openable = item.get(OpenableTrait);
+          if (openable && !openable.isOpen) {
+            openable.isOpen = true;
+          }
+          eggTrait.hasBeenOpened = true;
+        }
+
+        // Drop item in the Treasure Room
+        context.world.moveEntity(item.id, context.npcLocation);
+      }
+
+      // Clear engrossed flag — treasures deposited
+      context.npc.attributes.thiefEngrossed = false;
+
+      return [];
+    }
+  }];
 }

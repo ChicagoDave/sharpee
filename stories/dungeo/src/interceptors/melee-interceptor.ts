@@ -58,6 +58,7 @@ import {
   MeleeMessages,
 } from '../combat/melee-messages';
 import { MELEE_STATE, getBaseOstrength } from '../combat/melee-state';
+import { createEmptyFrame } from '../objects/thiefs-canvas-objects';
 
 /**
  * Get the villain key for message lookup.
@@ -119,7 +120,12 @@ function getVillainOstrength(villain: IFEntity): number {
  *
  * @returns true if entity cleanup was handled (skip default inventory drop)
  */
-function handleVillainDeath(villainKey: string, villain: IFEntity, world: WorldModel): boolean {
+function handleVillainDeath(
+  villainKey: string,
+  villain: IFEntity,
+  world: WorldModel,
+  sharedData: InterceptorSharedData
+): boolean {
   const villainRoomId = world.getLocation(villain.id);
   const room = villainRoomId ? world.getEntity(villainRoomId) : undefined;
 
@@ -144,7 +150,59 @@ function handleVillainDeath(villainKey: string, villain: IFEntity, world: WorldM
       world.removeEntity(villain.id);
       return true; // Entity cleanup handled — skip default inventory drop
     }
-    // Thief and cyclops death handling will be added when those fights are tested
+
+    case 'thief': {
+      // Canonical MDL thief death (melee.mud:272-280, act1.mud:1272-1296)
+      // 1. Drop all inventory to floor (except stiletto)
+      const stilettoId = villain.attributes.stilettoId as string | undefined;
+      const thiefContents = world.getContents(villain.id);
+      let hasLoot = false;
+      for (const item of thiefContents) {
+        if (item.id === stilettoId) continue; // stiletto disappears with body
+        world.moveEntity(item.id, villainRoomId ?? null);
+        hasLoot = true;
+      }
+
+      // 2. Award 25 points for defeating the thief
+      const scoring = world.getCapability(StandardCapabilities.SCORING);
+      if (scoring) {
+        scoring.scoreValue = (scoring.scoreValue || 0) + 25;
+        if (!scoring.achievements) scoring.achievements = [];
+        scoring.achievements.push('Defeated the thief');
+        // ADR-078: Hidden max points — canvas treasure becomes achievable
+        scoring.thiefDead = true;
+        scoring.maxScore = 650;
+        scoring.realityAlteredPending = true;
+      }
+
+      // 3. Spawn empty frame in the Treasure Room (thief's lair)
+      // The lair ID is stored in the thief's NPC custom properties
+      const npcTrait = villain.get(TraitType.NPC) as any;
+      const lairRoomId = npcTrait?.customProperties?.lairRoomId ?? villainRoomId;
+      const frame = createEmptyFrame(world);
+      world.moveEntity(frame.id, lairRoomId);
+
+      // 4. Disable thief daemon permanently
+      world.getDataStore().state['dungeo.thief.disabled'] = true;
+
+      // 5. Remove stiletto and thief entity (carcass disappears in black fog)
+      if (stilettoId) {
+        world.removeEntity(stilettoId);
+      }
+      world.removeEntity(villain.id);
+
+      // 6. Store death messages for postReport to emit
+      const deathMessages: string[] = [];
+      if (hasLoot) {
+        deathMessages.push("The thief's ill-gotten gains scatter across the floor.");
+      }
+      deathMessages.push(
+        'Almost as soon as the thief breathes his last breath, a cloud of sinister black fog envelops him, and when the fog lifts, the carcass has disappeared.'
+      );
+      sharedData.deathMessages = deathMessages;
+
+      return true; // Entity cleanup handled
+    }
   }
   return false; // Use default inventory drop
 }
@@ -290,7 +348,7 @@ export const MeleeInterceptor: ActionInterceptor = {
       }
       // Villain-specific death side effects (unblock exits, score, entity removal).
       // Returns true if the handler cleaned up entities (troll disappears in smoke).
-      if (!handleVillainDeath(villainKey, villain, world)) {
+      if (!handleVillainDeath(villainKey, villain, world, sharedData)) {
         // Default: drop villain's inventory to the floor
         const villainContents = world.getContents(villain.id);
         const villainRoom = world.getLocation(villain.id) ?? null;
@@ -341,15 +399,27 @@ export const MeleeInterceptor: ActionInterceptor = {
     _actorId: string,
     sharedData: InterceptorSharedData
   ): CapabilityEffect[] {
-    const message = sharedData.meleeMessage as string | undefined;
-    if (!message) return [];
+    const effects: CapabilityEffect[] = [];
 
-    return [
-      createEffect('game.message', {
-        messageId: MeleeMessages.HERO_ATTACK,
-        text: message,
-      }),
-    ];
+    const message = sharedData.meleeMessage as string | undefined;
+    if (message) {
+      effects.push(
+        createEffect('game.message', {
+          messageId: MeleeMessages.HERO_ATTACK,
+          text: message,
+        }),
+      );
+    }
+
+    // Emit villain death messages (e.g., thief's "black fog" / "booty remains")
+    const deathMessages = sharedData.deathMessages as string[] | undefined;
+    if (deathMessages) {
+      for (const text of deathMessages) {
+        effects.push(createEffect('game.message', { text }));
+      }
+    }
+
+    return effects;
   },
 
   /**
