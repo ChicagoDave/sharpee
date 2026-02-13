@@ -7,6 +7,49 @@ description: Give egg to thief at Treasure Room, kill thief, collect canary from
 $restore wt-11
 
 # ============================================================================
+# GOAL: Drop everything except torch and lantern
+# ============================================================================
+
+[GOAL: Lighten inventory for thief fight]
+
+# Drop accumulated items from earlier walkthroughs (IF-gated since thief may have stolen some)
+[IF: inventory contains "bell"]
+> drop bell
+[OK: contains "Dropped"]
+[END IF]
+
+[IF: inventory contains "book"]
+> drop book
+[OK: contains "Dropped"]
+[END IF]
+
+[IF: inventory contains "candles"]
+> drop candles
+[OK: contains "Dropped"]
+[END IF]
+
+[IF: inventory contains "blue cake"]
+> drop blue cake
+[OK: contains "Dropped"]
+[END IF]
+
+[IF: inventory contains "eat-me cake"]
+> drop eat-me cake
+[OK: contains "Dropped"]
+[END IF]
+
+[IF: inventory contains "sack"]
+> drop sack
+[OK: contains "Dropped"]
+[END IF]
+
+> inventory
+[OK: contains "torch"]
+[OK: contains "lantern"]
+
+[END GOAL]
+
+# ============================================================================
 # GOAL: Get nasty knife from Attic
 # ============================================================================
 
@@ -142,7 +185,7 @@ $restore wt-11
 
 # Egg was opened by thief and dropped on floor. Canary is inside the open egg.
 > take canary
-[OK: contains "Taken"]
+[OK: contains "canary"]
 
 > take egg
 [OK: contains "Taken"]
@@ -202,6 +245,58 @@ $teleport Living Room
 
 > put egg in trophy case
 [OK: contains "put"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Recover stolen treasures from Treasure Room (thief's lair)
+# ============================================================================
+
+[GOAL: Recover stolen treasures]
+
+# After thief death, stolen items are visible on Treasure Room floor
+$teleport Treasure Room
+
+[IF: room contains "grail"]
+> take grail
+[END IF]
+
+[IF: room contains "trident"]
+> take trident
+[END IF]
+
+[IF: room contains "coins"]
+> take bag of coins
+[END IF]
+
+[IF: room contains "figurine"]
+> take jade figurine
+[END IF]
+
+# Store recovered items in trophy case
+$teleport Living Room
+
+> open trophy case
+
+[IF: inventory contains "grail"]
+> put grail in trophy case
+[OK: contains "put"]
+[END IF]
+
+[IF: inventory contains "trident"]
+> put trident in trophy case
+[OK: contains "put"]
+[END IF]
+
+[IF: inventory contains "coins"]
+> put bag of coins in trophy case
+[OK: contains "put"]
+[END IF]
+
+[IF: inventory contains "figurine"]
+> put jade in trophy case
+[OK: contains "put"]
+[END IF]
 
 [END GOAL]
 

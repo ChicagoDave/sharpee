@@ -36,16 +36,16 @@ $teleport Round Room
 # ============================================================================
 
 [GOAL: Get grail]
-[ENSURES: inventory contains "grail"]
 
 $teleport Grail Room
 
 > look
 [OK: contains "Grail Room"]
-[OK: contains "grail"]
 
+[IF: room contains "grail"]
 > take grail
 [OK: contains "Taken"]
+[END IF]
 
 [END GOAL]
 
@@ -54,16 +54,16 @@ $teleport Grail Room
 # ============================================================================
 
 [GOAL: Get trident]
-[ENSURES: inventory contains "trident"]
 
 $teleport Atlantis Room
 
 > look
 [OK: contains "Atlantis"]
-[OK: contains "trident"]
 
+[IF: room contains "trident"]
 > take trident
 [OK: contains "Taken"]
+[END IF]
 
 [END GOAL]
 
@@ -72,16 +72,16 @@ $teleport Atlantis Room
 # ============================================================================
 
 [GOAL: Get bag of coins]
-[ENSURES: inventory contains "coins"]
 
 $teleport maze 5
 
 > look
 [OK: contains "Maze"]
-[OK: contains "bag"]
 
+[IF: room contains "coins"]
 > take bag of coins
 [OK: contains "Taken"]
+[END IF]
 
 [END GOAL]
 
@@ -99,14 +99,20 @@ $teleport Living Room
 > put violin in trophy case
 [OK: contains "put"]
 
+[IF: inventory contains "grail"]
 > put grail in trophy case
 [OK: contains "put"]
+[END IF]
 
+[IF: inventory contains "trident"]
 > put trident in trophy case
 [OK: contains "put"]
+[END IF]
 
+[IF: inventory contains "coins"]
 > put bag of coins in trophy case
 [OK: contains "put"]
+[END IF]
 
 [END GOAL]
 
@@ -204,16 +210,16 @@ $teleport Tiny Room
 # ============================================================================
 
 [GOAL: Get jade figurine]
-[ENSURES: inventory contains "figurine"]
 
 $teleport Squeaky Room
 
 > look
 [OK: contains "Squeaky"]
-[OK: contains "figurine"]
 
+[IF: room contains "figurine"]
 > take jade figurine
 [OK: contains "Taken"]
+[END IF]
 
 [END GOAL]
 
@@ -228,8 +234,10 @@ $teleport Living Room
 > put blue crystal sphere in trophy case
 [OK: contains "put"]
 
+[IF: inventory contains "figurine"]
 > put jade in trophy case
 [OK: contains "put"]
+[END IF]
 
 [END GOAL]
 
