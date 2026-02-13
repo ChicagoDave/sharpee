@@ -6,7 +6,6 @@ node_modules/
 # Build outputs
 dist/
 dist-esm/
-dist-npm
 build/
 lib/
 out/

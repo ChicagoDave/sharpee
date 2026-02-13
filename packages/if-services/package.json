@@ -2,13 +2,13 @@
   "name": "@sharpee/if-services",
   "version": "0.9.84",
   "description": "Runtime service interfaces for Sharpee Interactive Fiction Platform",
-  "main": "./dist-npm/index.js",
-  "types": "./dist-npm/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "clean": "rimraf dist",
     "test": "jest",
-    "build:npm": "tsc --outDir dist-npm"
+    "build:npm": "tsc --outDir dist"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",
@@ -21,7 +21,7 @@
     "typescript": "^5.3.3"
   },
   "files": [
-    "dist-npm"
+    "dist"
   ],
   "keywords": [
     "sharpee",
@@ -37,8 +37,8 @@
   },
   "exports": {
     ".": {
-      "types": "./dist-npm/index.d.ts",
-      "require": "./dist-npm/index.js"
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js"
     }
   }
 }

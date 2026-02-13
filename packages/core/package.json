@@ -2,13 +2,13 @@
   "name": "@sharpee/core",
   "version": "0.9.84",
   "description": "Core functionality for the Sharpee interactive fiction engine",
-  "main": "./dist-npm/index.js",
-  "module": "dist-npm/index.js",
-  "types": "./dist-npm/index.d.ts",
+  "main": "./dist/index.js",
+  "module": "dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist-npm/index.d.ts",
-      "require": "./dist-npm/index.js"
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js"
     }
   },
   "scripts": {
@@ -20,7 +20,7 @@
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src --ext .ts",
     "clean": "rimraf dist",
-    "build:npm": "tsc --outDir dist-npm"
+    "build:npm": "tsc --outDir dist"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
@@ -32,7 +32,7 @@
     "typescript": "^5.0.0"
   },
   "files": [
-    "dist-npm"
+    "dist"
   ],
   "keywords": [
     "interactive-fiction",

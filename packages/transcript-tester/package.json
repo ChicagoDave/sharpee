@@ -2,8 +2,8 @@
   "name": "@sharpee/transcript-tester",
   "version": "0.9.84",
   "description": "Transcript-based testing tool for Sharpee interactive fiction",
-  "main": "./dist-npm/index.js",
-  "types": "./dist-npm/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "bin": {
     "transcript-test": "./dist/cli.js"
   },
@@ -12,7 +12,7 @@
     "dev": "tsc --watch",
     "clean": "rimraf dist",
     "test": "vitest",
-    "build:npm": "tsc --outDir dist-npm"
+    "build:npm": "tsc --outDir dist"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",
@@ -41,8 +41,8 @@
   "license": "MIT",
   "exports": {
     ".": {
-      "types": "./dist-npm/index.d.ts",
-      "require": "./dist-npm/index.js"
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js"
     }
   },
   "publishConfig": {

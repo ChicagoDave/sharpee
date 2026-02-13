@@ -171,17 +171,6 @@ if [ "$BUILD_ZIFMIA" = true ]; then
     ensure_zifmia_deps
 fi
 
-# Create dist-npm -> dist symlinks in all packages
-# (package.json points types/main at dist-npm/ for npm publishing,
-# but tsc outputs to dist/ — symlink bridges the gap)
-for pkg_dir in "$REPO_ROOT"/packages/*/ "$REPO_ROOT"/packages/extensions/*/; do
-    if [ -f "$pkg_dir/package.json" ] && grep -q "dist-npm" "$pkg_dir/package.json" 2>/dev/null; then
-        if [ ! -e "$pkg_dir/dist-npm" ]; then
-            ln -sf dist "$pkg_dir/dist-npm"
-        fi
-    fi
-done
-
 # Run the main build script if there are args for it
 if [ ${#BUILD_SH_ARGS[@]} -gt 0 ]; then
     bash "$REPO_ROOT/build.sh" "${BUILD_SH_ARGS[@]}"

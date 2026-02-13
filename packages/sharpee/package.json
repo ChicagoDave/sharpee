@@ -2,22 +2,22 @@
   "name": "@sharpee/sharpee",
   "version": "0.9.85-beta",
   "description": "Sharpee - Interactive Fiction Engine for TypeScript",
-  "main": "./dist-npm/index.js",
-  "module": "dist-npm/index.js",
-  "types": "./dist-npm/index.d.ts",
+  "main": "./dist/index.js",
+  "module": "dist/index.js",
+  "types": "./dist/index.d.ts",
   "bin": {
-    "sharpee": "./dist-npm/cli/index.js"
+    "sharpee": "./dist/cli/index.js"
   },
   "exports": {
     ".": {
-      "types": "./dist-npm/index.d.ts",
-      "require": "./dist-npm/index.js"
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js"
     }
   },
   "scripts": {
     "build": "tsc",
     "clean": "rimraf dist",
-    "build:npm": "tsc --outDir dist-npm"
+    "build:npm": "tsc --outDir dist"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",
@@ -45,7 +45,7 @@
     "typescript": "^5.3.3"
   },
   "files": [
-    "dist-npm",
+    "dist",
     "templates"
   ],
   "keywords": [

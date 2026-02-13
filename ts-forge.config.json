@@ -31,7 +31,7 @@
     },
     "npm": {
       "module": "commonjs",
-      "outDir": "dist-npm",
+      "outDir": "dist",
       "imports": "relative",
       "declarations": true,
       "condition": "publish"

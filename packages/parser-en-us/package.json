@@ -2,13 +2,13 @@
   "name": "@sharpee/parser-en-us",
   "version": "0.9.84",
   "description": "English (US) parser for Sharpee Interactive Fiction Platform",
-  "main": "./dist-npm/index.js",
-  "module": "dist-npm/index.js",
-  "types": "./dist-npm/index.d.ts",
+  "main": "./dist/index.js",
+  "module": "dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist-npm/index.d.ts",
-      "require": "./dist-npm/index.js"
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js"
     }
   },
   "scripts": {
@@ -17,7 +17,7 @@
     "test": "vitest",
     "test:ci": "vitest run",
     "lint": "eslint src --ext .ts",
-    "build:npm": "tsc --outDir dist-npm"
+    "build:npm": "tsc --outDir dist"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",
@@ -34,7 +34,7 @@
     "typescript": "^5.2.2"
   },
   "files": [
-    "dist-npm"
+    "dist"
   ],
   "keywords": [
     "interactive-fiction",

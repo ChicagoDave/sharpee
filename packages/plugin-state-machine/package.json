@@ -2,19 +2,19 @@
   "name": "@sharpee/plugin-state-machine",
   "version": "0.9.84",
   "description": "State machine plugin for Sharpee engine - declarative puzzle and narrative orchestration (ADR-119, ADR-120)",
-  "main": "./dist-npm/index.js",
-  "module": "dist-npm/index.js",
-  "types": "./dist-npm/index.d.ts",
+  "main": "./dist/index.js",
+  "module": "dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist-npm/index.d.ts",
-      "require": "./dist-npm/index.js"
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js"
     }
   },
   "scripts": {
     "build": "tsc",
     "clean": "rimraf dist",
-    "build:npm": "tsc --outDir dist-npm"
+    "build:npm": "tsc --outDir dist"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",
@@ -27,7 +27,7 @@
     "rimraf": "^5.0.5"
   },
   "files": [
-    "dist-npm"
+    "dist"
   ],
   "keywords": [
     "interactive-fiction",

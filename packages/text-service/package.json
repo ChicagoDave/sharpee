@@ -2,12 +2,12 @@
   "name": "@sharpee/text-service",
   "version": "0.9.84",
   "description": "Text service for Sharpee - resolves templates and produces ITextBlock output",
-  "main": "./dist-npm/index.js",
-  "types": "./dist-npm/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist-npm/index.d.ts",
-      "require": "./dist-npm/index.js"
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js"
     }
   },
   "scripts": {
@@ -16,7 +16,7 @@
     "test:ci": "vitest run",
     "lint": "eslint src --ext .ts",
     "clean": "rimraf dist",
-    "build:npm": "tsc --outDir dist-npm"
+    "build:npm": "tsc --outDir dist"
   },
   "dependencies": {
     "@sharpee/text-blocks": "workspace:*",
@@ -34,7 +34,7 @@
     "vitest": "^1.6.0"
   },
   "files": [
-    "dist-npm"
+    "dist"
   ],
   "keywords": [
     "interactive-fiction",

@@ -2,13 +2,13 @@
   "name": "@sharpee/world-model",
   "version": "0.9.84",
   "description": "World model for Sharpee IF platform - entities, traits, and behaviors",
-  "main": "./dist-npm/index.js",
-  "module": "dist-npm/index.js",
-  "types": "./dist-npm/index.d.ts",
+  "main": "./dist/index.js",
+  "module": "dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist-npm/index.d.ts",
-      "require": "./dist-npm/index.js"
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js"
     }
   },
   "scripts": {
@@ -20,7 +20,7 @@
     "test:coverage": "vitest run --coverage",
     "test:verbose": "vitest run --reporter=verbose",
     "lint": "eslint src --ext .ts",
-    "build:npm": "tsc --outDir dist-npm"
+    "build:npm": "tsc --outDir dist"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",
@@ -36,7 +36,7 @@
     "typescript": "^5.2.2"
   },
   "files": [
-    "dist-npm"
+    "dist"
   ],
   "keywords": [
     "interactive-fiction",

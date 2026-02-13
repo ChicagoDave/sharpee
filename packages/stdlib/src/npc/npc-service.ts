@@ -174,7 +174,8 @@ export class NpcService implements INpcService {
     // Process each NPC
     for (const npc of npcs) {
       const npcTrait = npc.get(TraitType.NPC) as NpcTrait;
-      if (!npcTrait || !npcTrait.canAct) continue;
+      // Direct property access — canAct getter doesn't survive loadJSON()
+      if (!npcTrait || !npcTrait.isAlive || !npcTrait.isConscious) continue;
 
       const behavior = this.getBehaviorForNpc(npc);
       if (!behavior) continue;
@@ -216,7 +217,7 @@ export class NpcService implements INpcService {
 
     for (const npc of npcs) {
       const npcTrait = npc.get(TraitType.NPC) as NpcTrait;
-      if (!npcTrait || !npcTrait.canAct) continue;
+      if (!npcTrait || !npcTrait.isAlive || !npcTrait.isConscious) continue;
 
       const behavior = this.getBehaviorForNpc(npc);
       if (!behavior?.onPlayerEnters) continue;
@@ -257,7 +258,7 @@ export class NpcService implements INpcService {
 
     for (const npc of npcs) {
       const npcTrait = npc.get(TraitType.NPC) as NpcTrait;
-      if (!npcTrait || !npcTrait.canAct) continue;
+      if (!npcTrait || !npcTrait.isAlive || !npcTrait.isConscious) continue;
 
       const behavior = this.getBehaviorForNpc(npc);
       if (!behavior?.onPlayerLeaves) continue;
@@ -293,7 +294,7 @@ export class NpcService implements INpcService {
     if (!npc) return [];
 
     const npcTrait = npc.get(TraitType.NPC) as NpcTrait;
-    if (!npcTrait || !npcTrait.canAct) return [];
+    if (!npcTrait || !npcTrait.isAlive || !npcTrait.isConscious) return [];
 
     const behavior = this.getBehaviorForNpc(npc);
     if (!behavior?.onSpokenTo) {
@@ -342,7 +343,7 @@ export class NpcService implements INpcService {
     if (!npc) return [];
 
     const npcTrait = npc.get(TraitType.NPC) as NpcTrait;
-    if (!npcTrait || !npcTrait.canAct) return [];
+    if (!npcTrait || !npcTrait.isAlive || !npcTrait.isConscious) return [];
 
     const behavior = this.getBehaviorForNpc(npc);
     if (!behavior?.onAttacked) return [];
@@ -373,7 +374,8 @@ export class NpcService implements INpcService {
     return allEntities.filter((e) => {
       if (!e.has(TraitType.NPC)) return false;
       const npcTrait = e.get(TraitType.NPC) as NpcTrait;
-      return npcTrait.canAct;
+      // Use direct property access — canAct getter doesn't survive loadJSON() deserialization
+      return npcTrait.isAlive && npcTrait.isConscious;
     });
   }
 
@@ -424,13 +426,16 @@ export class NpcService implements INpcService {
     for (const [direction, exit] of Object.entries(roomTrait.exits)) {
       const exitData = exit as any;
       if (exitData.destination) {
-        // Check if NPC can enter this room
-        if (npcTrait.canEnterRoom(exitData.destination)) {
-          exits.push({
-            direction: direction as Direction,
-            destination: exitData.destination,
-          });
-        }
+        // Inline canEnterRoom() — method doesn't survive loadJSON() deserialization
+        const dest = exitData.destination;
+        if (!npcTrait.canMove) continue;
+        if (npcTrait.forbiddenRooms?.includes(dest)) continue;
+        if (npcTrait.allowedRooms && !npcTrait.allowedRooms.includes(dest)) continue;
+
+        exits.push({
+          direction: direction as Direction,
+          destination: dest,
+        });
       }
     }
 

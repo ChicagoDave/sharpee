@@ -120,13 +120,7 @@ Version updates run first, before any compilation.
 
 ### npm Packages
 
-For publishing to npm, packages use a separate build:
-
-```bash
-pnpm -r build:npm
-```
-
-This outputs to `dist-npm/` in each package (separate from `dist/` used by the bundled app). See `scripts/publish-npm.sh` for the full publishing workflow.
+For publishing to npm, packages use the standard `dist/` output. See `scripts/publish-npm.sh` for the full publishing workflow.
 
 ## Common Workflows
 
