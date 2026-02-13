@@ -119,3 +119,5 @@ docs/context/.work-log.txt
 
 # Reference source code (not ours to distribute)
 docs/dungeon-ref/
+
+.tsf-cache/
