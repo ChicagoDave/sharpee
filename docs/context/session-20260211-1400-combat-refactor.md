@@ -491,3 +491,38 @@ if (roomTrait) {
 [3:20 PM] Fixed wt-12 chalice assertion
 [3:30 PM] Final verification - all tests passing
 ```
+
+## Work Log (auto-captured)
+```
+[13:09:27] EDIT: stories/dungeo/src/interceptors/melee-interceptor.ts
+[13:09:42] EDIT: stories/dungeo/src/actions/gdt/commands/kl.ts
+[13:09:53] EDIT: stories/dungeo/tests/transcripts/troll-combat.transcript
+[13:10:03] EDIT: stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript
+[13:10:22] EDIT: stories/dungeo/walkthroughs/wt-12-thief-fight.transcript
+[13:10:30] EDIT: stories/dungeo/tests/transcripts/debug-combat.transcript
+[13:28:16] EDIT: stories/dungeo/src/interceptors/melee-interceptor.ts
+[13:28:29] EDIT: stories/dungeo/src/interceptors/melee-interceptor.ts
+[13:29:47] EDIT: stories/dungeo/src/interceptors/melee-interceptor.ts
+[13:29:59] EDIT: stories/dungeo/src/interceptors/melee-interceptor.ts
+[13:43:40] EDIT: stories/dungeo/walkthroughs/wt-12-thief-fight.transcript
+[14:00:37] WRITE: docs/context/session-20260211-1400-combat-refactor.md
+[14:01:37] GIT: git commit -m "$(cat <<'EOF'
+fix: combat bugs — kill after deserialization, UNTI
+[14:01:44] GIT: git push
+[14:08:48] EDIT: /home/dave/.claude/projects/-mnt-c-repotemp-sharpee/memory/MEMORY.md
+[14:08:53] EDIT: /home/dave/.claude/projects/-mnt-c-repotemp-sharpee/memory/MEMORY.md
+[15:54:56] WRITE: /home/dave/.claude/plans/eventual-pondering-thacker.md
+[16:16:35] EDIT: stories/dungeo/src/npcs/thief/thief-behavior.ts
+[16:16:42] EDIT: stories/dungeo/src/npcs/thief/thief-behavior.ts
+[16:16:51] EDIT: stories/dungeo/src/npcs/thief/thief-behavior.ts
+[16:17:05] EDIT: stories/dungeo/src/npcs/thief/thief-behavior.ts
+[16:17:22] EDIT: stories/dungeo/src/npcs/thief/thief-behavior.ts
+[16:17:51] EDIT: stories/dungeo/src/interceptors/melee-interceptor.ts
+[16:18:15] EDIT: stories/dungeo/src/interceptors/melee-interceptor.ts
+[16:18:20] EDIT: stories/dungeo/src/interceptors/melee-interceptor.ts
+[16:18:27] EDIT: stories/dungeo/src/interceptors/melee-interceptor.ts
+[16:18:41] EDIT: stories/dungeo/src/npcs/thief/thief-entity.ts
+[16:18:48] EDIT: stories/dungeo/src/npcs/thief/thief-entity.ts
+[16:19:00] EDIT: stories/dungeo/src/npcs/thief/thief-entity.ts
+[16:19:32] WRITE: stories/dungeo/walkthroughs/wt-12-thief-fight.transcript
+```
