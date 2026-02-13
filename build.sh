@@ -330,26 +330,17 @@ build_platform() {
         "@sharpee/text-blocks:text-blocks"
         "@sharpee/text-service:text-service"
         "@sharpee/stdlib:stdlib"
+        "@sharpee/ext-basic-combat:extensions/basic-combat"
         "@sharpee/plugins:plugins"
         "@sharpee/plugin-npc:plugin-npc"
         "@sharpee/plugin-scheduler:plugin-scheduler"
         "@sharpee/plugin-state-machine:plugin-state-machine"
         "@sharpee/ext-testing:extensions/testing"
         "@sharpee/engine:engine"
+        "@sharpee/platform-browser:platform-browser"
         "@sharpee/sharpee:sharpee"
         "@sharpee/transcript-tester:transcript-tester"
     )
-
-    # Pre-sync: ensure dist-npm/ exists for packages with dist/
-    # This allows --skip to work (skipped packages still need resolvable types)
-    for entry in "${PACKAGES[@]}"; do
-        local name="${entry##*:}"
-        local pkg_dir="packages/$name"
-        if [ -d "$pkg_dir/dist" ] && [ ! -d "$pkg_dir/dist-npm" ]; then
-            mkdir -p "$pkg_dir/dist-npm"
-            rsync -a "$pkg_dir/dist/" "$pkg_dir/dist-npm/"
-        fi
-    done
 
     local SKIPPING=true
     if [ -z "$SKIP_TO" ]; then
@@ -372,14 +363,6 @@ build_platform() {
         fi
 
         run_build "$name" "pnpm --filter '$pkg' build"
-
-        # Sync dist/ → dist-npm/ so downstream tsc resolves fresh types
-        # (package.json main/types point to dist-npm/ for npm publish)
-        local pkg_dir="packages/$name"
-        if [ -d "$pkg_dir/dist" ]; then
-            mkdir -p "$pkg_dir/dist-npm"
-            rsync -a --delete "$pkg_dir/dist/" "$pkg_dir/dist-npm/"
-        fi
     done
 
     # ESM build pass (only when browser/runner targets are requested)
@@ -408,22 +391,6 @@ build_platform() {
                 run_build "$name (esm)" "pnpm --filter '$pkg' exec tsc -p tsconfig.esm.json"
             fi
         done
-
-        # Also build plugin packages (not in main build order but needed for platform.js)
-        local EXTRA_ESM_PACKAGES=(
-            "@sharpee/plugins:plugins"
-            "@sharpee/plugin-npc:plugin-npc"
-            "@sharpee/plugin-scheduler:plugin-scheduler"
-            "@sharpee/plugin-state-machine:plugin-state-machine"
-        )
-        for entry in "${EXTRA_ESM_PACKAGES[@]}"; do
-            local pkg="${entry%%:*}"
-            local name="${entry##*:}"
-            local pkg_dir="packages/$name"
-            if [ -f "$pkg_dir/tsconfig.esm.json" ]; then
-                run_build "$name (esm)" "pnpm --filter '$pkg' exec tsc -p tsconfig.esm.json"
-            fi
-        done
     fi
 
     echo ""
@@ -438,9 +405,7 @@ build_bundle() {
 
     mkdir -p dist/cli
 
-    # Use --alias to resolve @sharpee/* to dist/ (CJS project-references output)
-    # instead of dist-npm/ (ESM npm-publish output) which may be stale.
-    # This does NOT affect npm packages — those still use dist-npm/ per package.json.
+    # Use --alias to resolve @sharpee/* to dist/ (project-references output).
     run_build "sharpee.js" "npx esbuild scripts/bundle-entry.js --bundle --platform=node --target=node18 --outfile=dist/cli/sharpee.js --external:readline --format=cjs --sourcemap \
       --alias:@sharpee/core=./packages/core/dist/index.js \
       --alias:@sharpee/if-domain=./packages/if-domain/dist/index.js \
@@ -453,6 +418,7 @@ build_bundle() {
       --alias:@sharpee/text-blocks=./packages/text-blocks/dist/index.js \
       --alias:@sharpee/text-service=./packages/text-service/dist/index.js \
       --alias:@sharpee/if-services=./packages/if-services/dist/index.js \
+      --alias:@sharpee/ext-basic-combat=./packages/extensions/basic-combat/dist/index.js \
       --alias:@sharpee/plugins=./packages/plugins/dist/index.js \
       --alias:@sharpee/plugin-npc=./packages/plugin-npc/dist/index.js \
       --alias:@sharpee/plugin-scheduler=./packages/plugin-scheduler/dist/index.js \

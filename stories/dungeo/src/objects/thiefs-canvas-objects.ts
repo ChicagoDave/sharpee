@@ -14,7 +14,7 @@ import {
   IdentityTrait,
   EntityType
 } from '@sharpee/world-model';
-import { TreasureTrait } from '@sharpee/world-model';
+import { TreasureTrait } from '../traits';
 import { BurnableTrait } from '../traits/burnable-trait';
 import { FramePieceTrait } from '../traits/frame-piece-trait';
 
@@ -106,13 +106,11 @@ export function createThiefsCanvas(world: WorldModel): IFEntity {
     description: 'The thief apparently had a superior artistic streak, for this is one of the greatest creations in all of Zork. It is a faithful rendering of The Implementors, the mythical Gods remembered by all inhabitants.',
     properName: false,
     article: 'a',
-    weight: 5
+    weight: 5,
+    points: 10             // OFVAL from mdlzork_810722
   }));
 
-  // Treasure scoring - 10 take + 24 case = 34 total
   canvas.add(new TreasureTrait({
-    treasureId: 'thiefs-canvas',
-    treasureValue: 10,     // OFVAL from mdlzork_810722
     trophyCaseValue: 24,   // OTVAL from mdlzork_810722
   }));
 

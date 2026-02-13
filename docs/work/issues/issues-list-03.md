@@ -15,6 +15,9 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-051 | TrollTrait capability declaration stale after melee interceptor | Low | dungeo | 2026-02-08 | - | 2026-02-08 |
 | ISSUE-052 | Capability registry uses module-level Map; not shared across require() | High | world-model | 2026-02-08 | - | - |
 | ISSUE-053 | Scoring broken: treasures, room visits, and trophy case award 0 points | Critical | stdlib + dungeo | 2026-02-09 | - | 2026-02-09 |
+| ISSUE-054 | Cyclops say handler emits raw `{npcName}` template instead of "cyclops" | Low | dungeo | 2026-02-11 | - | - |
+| ISSUE-055 | `take canary` fails — scope resolution doesn't find items inside open containers on floor | Medium | stdlib/dungeo | 2026-02-11 | - | - |
+| ISSUE-056 | Treasure Room thief summoning message not displayed on entry | Low | dungeo | 2026-02-11 | - | - |
 
 ---
 
@@ -217,6 +220,66 @@ After completing 9-walkthrough chain (12+ treasures collected and placed in trop
 - Fixed `handlePlayerMoved()` to read `toRoom` field (matching going action events)
 - Fixed light-shaft handler to read `toRoom` field
 - Score after full walkthrough chain: 20/616 → 281/616
+
+---
+
+### ISSUE-054: Cyclops say handler emits raw `{npcName}` template
+
+**Reported**: 2026-02-11
+**Severity**: Low
+**Component**: dungeo (story)
+
+**Description**:
+When the player says "ulysses" or "odysseus" to the cyclops (or types it as a bare word), the response includes the raw template placeholder `{npcName}` instead of "cyclops".
+
+**Reproduction**:
+```
+> say ulysses
+The {npcName} does not respond.
+```
+
+**Expected**: "The cyclops does not respond." (or the cyclops flees if conditions are met)
+
+**Root cause**: The say action's cyclops handler likely returns a message ID with `{npcName}` parameter, but the message rendering isn't substituting the parameter value. Either the message registration is missing the substitution, or the event data doesn't include `npcName`.
+
+---
+
+### ISSUE-056: Treasure Room thief summoning message not displayed on entry
+
+**Reported**: 2026-02-11
+**Severity**: Low
+**Component**: dungeo (story)
+
+**Description**:
+When the player enters the Treasure Room and the thief is summoned from elsewhere, the canonical message "You hear a scream of anguish as you violate the robber's hideaway. Using passages unknown to you, he rushes to its defense." does not appear.
+
+**Root cause**: The `treasure-room-handler.ts` returns `[{ type: 'message', id: 'dungeo.treasure_room.thief_summoned' }]` from the event handler. The message is registered in `npc-messages.ts`. The event handler return value may not be processed by the report/rendering pipeline — event handlers return `ISemanticEvent[]` but the message format may need to match what the text renderer expects.
+
+---
+
+### ISSUE-055: Scope resolution doesn't find items inside open containers on the floor
+
+**Reported**: 2026-02-11
+**Severity**: Medium
+**Component**: stdlib (scope resolver) / dungeo
+
+**Description**:
+After the thief opens the jewel-encrusted egg (via lair deposit) and drops it on the Treasure Room floor, `take canary` fails with "You can't see any such thing." The canary is inside the open egg, which is a container (`ContainerTrait`, `OpenableTrait.isOpen = true`) sitting on the room floor.
+
+**Reproduction**:
+```
+> give egg to thief
+> [leave room, wait for lair deposit]
+> [return, kill thief]
+> take canary
+You can't see any such thing.
+> take egg
+Taken.
+```
+
+**Expected**: The canary should be visible and takeable from inside an open container on the floor.
+
+**Root cause**: The scope resolver may not recursively search into open containers that are on the floor (as opposed to containers the player is holding or containers that are furniture/supporters in the room).
 
 ---
 

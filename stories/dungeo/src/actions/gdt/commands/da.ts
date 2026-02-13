@@ -32,10 +32,10 @@ export const daHandler: GDTCommandHandler = {
       output.push('Location: <none>');
     }
 
-    // Score and moves - read from SCORING capability
+    // Score and moves - read from score ledger and SCORING capability
+    const score = world.getScore();
+    const maxScore = world.getMaxScore();
     const scoring = world.getCapability(StandardCapabilities.SCORING);
-    const score = scoring?.scoreValue ?? 0;
-    const maxScore = scoring?.maxScore ?? 0;
     const moves = scoring?.moves ?? 0;
     output.push(`Score: ${score}/${maxScore}`);
     output.push(`Moves: ${moves}`);

@@ -249,12 +249,11 @@ function createPortrait(world: WorldModel, roomId: string): IFEntity {
     description: 'A magnificent oil portrait of J. Pierpont Flathead, founder of the Bank of Zork. The ornate gilded frame alone must be worth a fortune.',
     properName: false,
     article: 'a',
-    weight: 20
+    weight: 20,
+    points: 10             // OFVAL from mdlzork_810722
   }));
   portrait.add(new TreasureTrait({
-    treasureId: 'portrait',
-    treasureValue: 10,    // OFVAL from mdlzork_810722
-    trophyCaseValue: 5    // OTVAL from mdlzork_810722
+    trophyCaseValue: 5     // OTVAL from mdlzork_810722
   }));
   world.moveEntity(portrait.id, roomId);
   return portrait;
@@ -268,11 +267,10 @@ function createZorkmidBills(world: WorldModel, roomId: string): IFEntity {
     description: 'A thick stack of crisp zorkmid bills in various denominations. The bills bear the stern likeness of Lord Dimwit Flathead.',
     properName: false,
     article: 'a',
-    weight: 20
+    weight: 20,
+    points: 10             // OFVAL from mdlzork_810722
   }));
   bills.add(new TreasureTrait({
-    treasureId: 'zorkmid-bills',
-    treasureValue: 10,       // OFVAL from mdlzork_810722
     trophyCaseValue: 15      // OTVAL from mdlzork_810722
   }));
   world.moveEntity(bills.id, roomId);
@@ -287,11 +285,10 @@ function createZorkmidCoin(world: WorldModel, roomId: string): IFEntity {
     description: 'A large gold zorkmid coin. One side shows a portrait of Lord Dimwit Flathead; the other depicts the great underground dam.',
     properName: false,
     article: 'a',
-    weight: 5
+    weight: 5,
+    points: 10             // OFVAL from mdlzork_810722
   }));
   coin.add(new TreasureTrait({
-    treasureId: 'zorkmid-coin',
-    treasureValue: 10,        // OFVAL from mdlzork_810722
     trophyCaseValue: 12       // OTVAL from mdlzork_810722
   }));
   world.moveEntity(coin.id, roomId);
@@ -326,11 +323,10 @@ function createSafe(world: WorldModel, roomId: string): IFEntity {
     description: "The excessively gaudy crown of Lord Dimwit Flathead. It is encrusted with diamonds, rubies, and other precious gems, all in questionable taste.",
     properName: false,
     article: 'a',
-    weight: 10
+    weight: 10,
+    points: 15             // OFVAL from mdlzork_810722
   }));
   crown.add(new TreasureTrait({
-    treasureId: 'crown',
-    treasureValue: 15,       // OFVAL from mdlzork_810722
     trophyCaseValue: 10      // OTVAL from mdlzork_810722
   }));
 

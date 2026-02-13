@@ -15,15 +15,11 @@ import type { EventProcessor } from '@sharpee/event-processor';
 import { ISemanticEvent } from '@sharpee/core';
 import type { WorldModel } from '@sharpee/world-model';
 import { VisibilityBehavior } from '@sharpee/world-model';
-import { ScoringEventProcessor } from '@sharpee/stdlib';
 
 // Handlers
 import { createMirrorTouchHandler, MirrorRoomConfig } from '../handlers/mirror-room-handler';
 import { registerCombatDisengagementHandler } from '../handlers/combat-disengagement-handler';
 import { registerTreasureRoomHandler } from '../handlers/treasure-room-handler';
-
-// Scoring
-import { DungeoScoringService } from '../scoring';
 
 /**
  * Configuration for event handler registration
@@ -40,6 +36,8 @@ export interface EventHandlerConfig {
   };
   /** Treasure Room ID for thief summoning (optional) */
   treasureRoomId?: string;
+  /** Room visit scoring map: roomId → points (RVAL from MDL) */
+  roomVisitScoring?: Map<string, number>;
 }
 
 /**
@@ -49,8 +47,6 @@ export function registerEventHandlers(
   engine: GameEngine,
   world: WorldModel,
   config: EventHandlerConfig,
-  scoringProcessor: ScoringEventProcessor,
-  scoringService: DungeoScoringService
 ): void {
   const eventProcessor = engine.getEventProcessor();
 
@@ -64,12 +60,8 @@ export function registerEventHandlers(
   }
 
   // ==========================================================================
-  // Scoring Handlers
+  // Scoring Handlers (ADR-129: take-scoring via stdlib, trophy case via interceptor)
   // ==========================================================================
-
-  // Initialize scoring event processor handlers
-  // Registers handlers for if.event.taken and if.event.put_in to score treasures
-  scoringProcessor.initializeHandlers(eventProcessor);
 
   // LIGHT-SHAFT achievement (10 pts)
   // Awarded when player enters Bottom of Shaft while room is lit
@@ -77,9 +69,13 @@ export function registerEventHandlers(
   registerLightShaftAchievement(
     eventProcessor,
     world,
-    config.bottomOfShaftId,
-    scoringProcessor
+    config.bottomOfShaftId
   );
+
+  // Room visit scoring (RVAL from MDL) — points for first visiting certain rooms
+  if (config.roomVisitScoring) {
+    registerRoomVisitScoring(eventProcessor, world, config.roomVisitScoring);
+  }
 
   // Note: Death penalty is now handled by state machine (death-penalty-machine.ts)
 
@@ -113,7 +109,6 @@ function registerLightShaftAchievement(
   eventProcessor: EventProcessor,
   world: WorldModel,
   bottomOfShaftId: string,
-  scoringProcessor: ScoringEventProcessor
 ): void {
   eventProcessor.registerHandler('if.event.actor_moved', (event: ISemanticEvent) => {
     const data = event.data as { actor?: { id: string }; toRoom?: string } | undefined;
@@ -129,7 +124,35 @@ function registerLightShaftAchievement(
 
     const isLit = !VisibilityBehavior.isDark(room, world);
     if (isLit) {
-      scoringProcessor.awardOnce('light-shaft', 10, 'LIGHT-SHAFT achievement');
+      world.awardScore('light-shaft', 10, 'LIGHT-SHAFT achievement');
+    }
+
+    return [];
+  });
+}
+
+/**
+ * Register room visit scoring (RVAL from MDL)
+ *
+ * Awards points the first time the player enters certain rooms.
+ * Uses world.awardScore() with 'room:<roomId>' as the dedup key.
+ */
+function registerRoomVisitScoring(
+  eventProcessor: EventProcessor,
+  world: WorldModel,
+  roomPointsMap: Map<string, number>,
+): void {
+  eventProcessor.registerHandler('if.event.actor_moved', (event: ISemanticEvent) => {
+    const data = event.data as { actor?: { id: string }; toRoom?: string } | undefined;
+    if (!data?.toRoom) return [];
+
+    // Only score player visits, not NPC movement
+    const player = world.getPlayer();
+    if (!player || data.actor?.id !== player.id) return [];
+
+    const points = roomPointsMap.get(data.toRoom);
+    if (points) {
+      world.awardScore(`room:${data.toRoom}`, points, `Visited room`);
     }
 
     return [];

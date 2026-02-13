@@ -16,7 +16,7 @@
  */
 
 import { ISemanticEvent, EntityId } from '@sharpee/core';
-import { WorldModel, IdentityTrait, LightSourceTrait, SwitchableTrait, RoomTrait, RoomBehavior, Direction, StandardCapabilities } from '@sharpee/world-model';
+import { WorldModel, IdentityTrait, LightSourceTrait, SwitchableTrait, RoomTrait, RoomBehavior, Direction } from '@sharpee/world-model';
 import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 import { HadesEntryTrait } from '../traits';
 
@@ -161,12 +161,7 @@ function completeExorcism(
   });
 
   // Award points (exorcism is worth 10 points)
-  const scoring = world.getCapability(StandardCapabilities.SCORING);
-  if (scoring) {
-    scoring.scoreValue = (scoring.scoreValue || 0) + 10;
-    if (!scoring.achievements) scoring.achievements = [];
-    scoring.achievements.push('Completed the exorcism');
-  }
+  world.awardScore('exorcism', 10, 'Completed the exorcism');
 
   return events;
 }

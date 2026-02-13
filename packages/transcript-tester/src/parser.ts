@@ -213,6 +213,35 @@ function parseDirective(tag: string, lineNumber: number): Directive | null {
     return { type: 'end_while', lineNumber };
   }
 
+  // [RETRY: max=N]
+  const retryMatch = inner.match(/^RETRY:\s*max\s*=\s*(\d+)$/i);
+  if (retryMatch) {
+    return { type: 'retry', lineNumber, maxRetries: parseInt(retryMatch[1], 10) };
+  }
+
+  // [END RETRY]
+  if (inner.toUpperCase() === 'END RETRY') {
+    return { type: 'end_retry', lineNumber };
+  }
+
+  // [DO]
+  if (inner.toUpperCase() === 'DO') {
+    return { type: 'do', lineNumber };
+  }
+
+  // [UNTIL "text"] or [UNTIL "text1" OR "text2" OR ...]
+  if (inner.toUpperCase().startsWith('UNTIL ')) {
+    const texts: string[] = [];
+    const textRegex = /"([^"]+)"/g;
+    let m;
+    while ((m = textRegex.exec(inner)) !== null) {
+      texts.push(m[1]);
+    }
+    if (texts.length > 0) {
+      return { type: 'until', lineNumber, untilTexts: texts };
+    }
+  }
+
   // [NAVIGATE TO: "Room Name"]
   const navigateMatch = inner.match(/^NAVIGATE\s+TO:\s*"([^"]+)"$/i);
   if (navigateMatch) {
@@ -346,6 +375,20 @@ function parseAssertion(tag: string): Assertion | null {
   const notContainsMatch = inner.match(/^OK:\s*not\s+contains\s+"([^"]+)"$/i);
   if (notContainsMatch) {
     return { type: 'ok-not-contains', value: notContainsMatch[1] };
+  }
+
+  // [OK: contains_any "text1" "text2" "text3"]
+  const containsAnyMatch = inner.match(/^OK:\s*contains_any\s+(.+)$/i);
+  if (containsAnyMatch) {
+    const values: string[] = [];
+    const valueRegex = /"([^"]+)"/g;
+    let m;
+    while ((m = valueRegex.exec(containsAnyMatch[1])) !== null) {
+      values.push(m[1]);
+    }
+    if (values.length > 0) {
+      return { type: 'ok-contains-any', values };
+    }
   }
 
   // [OK: matches /regex/flags]

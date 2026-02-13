@@ -35,15 +35,16 @@ src/
 
 ## Implementation Patterns
 
-### Treasures
+### Treasures (ADR-129)
 ```typescript
-import { TreasureTrait } from '@sharpee/world-model';
+import { IdentityTrait } from '@sharpee/world-model';
+import { TreasureTrait } from '../traits/treasure-trait';
 
-item.add(new TreasureTrait({
-  treasureId: 'unique-id',
-  treasureValue: 10,      // Points for taking (OFVAL)
-  trophyCaseValue: 5,     // Points in trophy case (OTVAL)
-}));
+// Take-scoring: points on IdentityTrait (OFVAL from MDL)
+item.add(new IdentityTrait({ name: 'gold coin', points: 10, pointsDescription: 'Found the gold coin' }));
+
+// Trophy case scoring: trophyCaseValue on story TreasureTrait (OTVAL from MDL)
+item.add(new TreasureTrait({ trophyCaseValue: 5 }));
 ```
 
 ### Room Puzzle State

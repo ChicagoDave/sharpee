@@ -23,6 +23,7 @@ import {
   WeaponTrait,
   IGameEvent
 } from '@sharpee/world-model';
+import { TrophyCaseTrait } from '../traits';
 
 export interface HouseInteriorRoomIds {
   kitchen: string;
@@ -211,6 +212,7 @@ function createLivingRoomObjects(world: WorldModel, livingRoomId: string, cellar
   trophyCase.add(new ContainerTrait({ capacity: { maxItems: 40 } }));
   trophyCase.add(new OpenableTrait({ isOpen: false }));
   trophyCase.add(new SceneryTrait());
+  trophyCase.add(new TrophyCaseTrait());
   world.moveEntity(trophyCase.id, livingRoomId);
 
   const sword = world.createEntity('elvish sword', EntityType.ITEM);

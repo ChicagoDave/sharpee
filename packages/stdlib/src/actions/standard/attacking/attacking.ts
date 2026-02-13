@@ -2,19 +2,19 @@
  * Attacking action - hostile action against NPCs or objects
  *
  * This action handles combat or destructive actions.
- * - For NPCs with CombatantTrait: Uses CombatService for skill-based combat (ADR-072)
- *   - Stories can override combat via interceptors (ADR-118) to replace CombatService
+ * - For NPCs with CombatantTrait: Requires a registered combat interceptor (ADR-118)
+ *   - Without interceptor, blocks with "Violence is not the answer."
  * - For objects: Uses AttackBehavior for destruction mechanics
  *
  * Uses four-phase pattern with interceptor support (ADR-118):
  * 1. validate: preValidate hook → standard checks → postValidate hook
- * 2. execute: interceptor replaces CombatService OR standard CombatService
+ * 2. execute: interceptor handles combat resolution
  * 3. blocked: onBlocked hook (if validation failed)
  * 4. report: standard events → postReport hook (additional effects)
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { ISemanticEvent, SeededRandom } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
   AttackBehavior,
@@ -30,34 +30,7 @@ import { AttackedEventData } from './attacking-events';
 import { AttackingSharedData, AttackResult } from './attacking-types';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
-import {
-  CombatService,
-  CombatResult,
-  applyCombatResult,
-  findWieldedWeapon
-} from '../../../combat';
-import { CombatMessages, getHealthStatusMessageId } from '../../../combat/combat-messages';
-
-// Simple random implementation for combat (Math.random-based)
-// In future, ActionContext could provide a seeded random
-function createSimpleRandom(): SeededRandom {
-  return {
-    next: () => Math.random(),
-    int: (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min,
-    chance: (probability: number) => Math.random() < probability,
-    pick: <T>(array: T[]) => array[Math.floor(Math.random() * array.length)],
-    shuffle: <T>(array: T[]) => {
-      const result = [...array];
-      for (let i = result.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [result[i], result[j]] = [result[j], result[i]];
-      }
-      return result;
-    },
-    getSeed: () => 0,
-    setSeed: () => {}
-  };
-}
+import { findWieldedWeapon } from '../../../combat';
 
 /**
  * Extended shared data for attacking action with interceptor support.
@@ -164,25 +137,23 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'self' };
     }
 
-    // Check if using a weapon
+    // Check if using a weapon — implicit take if on floor nearby
     if (weapon) {
-      // Check if holding the weapon
-      const weaponLocation = context.world.getLocation(weapon.id);
-      if (weaponLocation !== actor.id) {
-        return { valid: false, error: 'not_holding_weapon', params: { weapon: weapon.name } };
+      const carryCheck = context.requireCarriedOrImplicitTake(weapon);
+      if (!carryCheck.ok) {
+        return carryCheck.error!;
       }
     }
 
-    // For combatants, check if target is already dead
+    // For combatants, check if target is already dead and if combat system is registered
     if (target.has(TraitType.COMBATANT)) {
-      const combatService = new CombatService();
-      const combatValidation = combatService.canAttack(actor, target);
-      if (!combatValidation.valid) {
-        return {
-          valid: false,
-          error: combatValidation.messageId || 'already_dead',
-          params: { target: target.name }
-        };
+      const combatant = target.get(TraitType.COMBATANT) as CombatantTrait | undefined;
+      if (combatant && !combatant.isAlive) {
+        return { valid: false, error: 'already_dead', params: { target: target.name } };
+      }
+      // No combat interceptor registered — block with standard IF response
+      if (!interceptor) {
+        return { valid: false, error: 'violence_not_the_answer', params: { target: target.name } };
       }
     }
 
@@ -205,8 +176,7 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
   /**
    * Execute the attack action
    * Assumes validation has already passed - no validation logic here
-   * - For combatants with interceptor: Interceptor handles combat (replaces CombatService)
-   * - For combatants without interceptor: Uses CombatService for skill-based combat
+   * - For combatants: Interceptor handles combat (validate blocks if no interceptor)
    * - For objects: Uses AttackBehavior for destruction mechanics
    */
   execute(context: ActionContext): void {
@@ -272,45 +242,23 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
           weaponUsed: weapon?.id,
           weaponInferred,
           customMessage: interceptorData.customMessage as string | undefined,
-          combatResult: interceptorData.combatResult as CombatResult | undefined,
+          combatResult: interceptorData.combatResult as unknown,
           usedCombatService: (interceptorData.usedCombatService as boolean | undefined) ?? false,
         } satisfies Partial<AttackingSharedData>);
       } else {
-        // === STANDARD COMBAT SERVICE ===
-        const combatService = new CombatService();
-        const combatResult = combatService.resolveAttack({
-          attacker: context.player,
-          target: target,
-          weapon: weapon,
-          world: context.world,
-          random: createSimpleRandom()
-        });
-
-        // Apply combat result to target (handles health, death, inventory dropping)
-        const combatApplyResult = applyCombatResult(target, combatResult, context.world);
-
-        // Convert to AttackResult type for consistency
-        const attackResult: AttackResult = {
-          success: true, // Combat always "succeeds" even if attack missed
-          type: combatResult.targetKilled ? 'killed' :
-                combatResult.targetKnockedOut ? 'knocked_out' :
-                combatResult.hit ? 'hit' : 'missed',
-          damage: combatResult.damage,
-          remainingHitPoints: combatResult.targetNewHealth,
-          targetDestroyed: false,
-          targetKilled: combatResult.targetKilled,
-          targetKnockedOut: combatResult.targetKnockedOut,
-          itemsDropped: combatApplyResult.droppedItems
-        };
-
-        // Store result for report phase
+        // Should not reach here — validate blocks if no interceptor.
+        // Defensive fallback: treat as missed.
         Object.assign(context.sharedData, {
-          attackResult,
+          attackResult: {
+            success: false,
+            type: 'missed',
+            damage: 0,
+            remainingHitPoints: 0,
+            targetDestroyed: false,
+          } as AttackResult,
           weaponUsed: weapon?.id,
           weaponInferred,
-          customMessage: undefined,
-          combatResult,
-          usedCombatService: true
+          usedCombatService: false,
         } satisfies AttackingSharedData);
       }
     } else {
@@ -381,10 +329,15 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
     const result = context.sharedData.attackResult as AttackResult;
     const customMessage = context.sharedData.customMessage as string | undefined;
     const usedCombatService = context.sharedData.usedCombatService as boolean | undefined;
-    const combatResult = context.sharedData.combatResult as CombatResult | undefined;
+    const combatResult = context.sharedData.combatResult as any;
     const sharedData = getAttackingSharedData(context);
 
     const events: ISemanticEvent[] = [];
+
+    // Prepend any implicit take events (from requireCarriedOrImplicitTake)
+    if (context.sharedData.implicitTakeEvents) {
+      events.push(...context.sharedData.implicitTakeEvents);
+    }
 
     // Check if attack failed (for non-combat attacks)
     if (!result.success && !usedCombatService) {
@@ -461,11 +414,11 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
           }
           break;
         case 'knocked_out':
-          messageId = CombatMessages.ATTACK_KNOCKED_OUT;
+          messageId = 'combat.attack.knocked_out';
           params.damage = result.damage;
           break;
         case 'missed':
-          messageId = CombatMessages.ATTACK_MISSED;
+          messageId = 'combat.attack.missed';
           break;
         case 'hit':
           messageId = weapon ? 'hit_with' : 'hit_target';
@@ -506,6 +459,18 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
       }));
     }
 
+    // === POST-REPORT HOOK ===
+    // Run before death/knockout events so attack blow text renders
+    // before consequence messages (e.g., troll disappearance smoke).
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.postReport) {
+      const additionalEffects = interceptor.postReport(target, context.world, context.player.id, interceptorData);
+      for (const effect of additionalEffects) {
+        events.push(context.event(effect.type, effect.payload));
+      }
+    }
+
     // For killed targets, emit a death event
     if (result.targetKilled) {
       events.push(context.event('if.event.death', {
@@ -522,16 +487,6 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
         targetName: target.name,
         knockedOutBy: context.player.id
       }));
-    }
-
-    // === POST-REPORT HOOK ===
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.postReport) {
-      const additionalEffects = interceptor.postReport(target, context.world, context.player.id, interceptorData);
-      for (const effect of additionalEffects) {
-        events.push(context.event(effect.type, effect.payload));
-      }
     }
 
     return events;

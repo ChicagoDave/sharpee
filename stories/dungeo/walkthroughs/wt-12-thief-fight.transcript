@@ -1,6 +1,6 @@
-title: Thief Fight (Chalice + Kill Achievement)
+title: Thief Fight + Egg/Canary/Bauble
 story: dungeo
-description: Navigate to Attic for knife, through maze to Treasure Room, fight thief, collect chalice. Restores from wt-11.
+description: Give egg to thief at Treasure Room, kill thief, collect canary from opened egg, wind canary in forest for bauble. Restores from wt-11.
 ---
 
 # Restore state from wt-11 (player at Living Room with torch and lantern)
@@ -33,12 +33,26 @@ $restore wt-11
 [END GOAL]
 
 # ============================================================================
-# GOAL: Navigate to Treasure Room through maze
+# GOAL: Take egg from trophy case
 # ============================================================================
 
-[GOAL: Navigate to Treasure Room]
+[GOAL: Take egg from trophy case]
+[ENSURES: inventory contains "egg"]
 
-# Open trapdoor if needed (revealed in earlier walkthroughs)
+> open trophy case
+
+> take egg
+[OK: contains "egg"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Navigate to Treasure Room and give egg to thief
+# ============================================================================
+
+[GOAL: Give egg to thief at Treasure Room]
+
+# Open trapdoor if needed
 > open trap door
 [OK: contains "open"]
 
@@ -46,7 +60,7 @@ $restore wt-11
 > down
 [OK: contains "Cellar"]
 
-# Cellar → Troll Room (troll dead from wt-07)
+# Cellar → Troll Room (troll dead from wt-01)
 > east
 [OK: contains "Troll Room"]
 
@@ -75,9 +89,24 @@ $restore wt-11
 > northeast
 [OK: contains "Cyclops Room"]
 
-# Cyclops Room → Treasure Room (thief summoned on entry by handler)
+# Cyclops Room → Treasure Room (thief summoned by treasure-room-handler)
 > up
 [OK: contains "Treasure Room"]
+
+# Give the egg to the thief
+> give egg to thief
+[OK: contains "egg"]
+
+# Leave immediately so thief deposits at lair on his next turn (player absent)
+> down
+[OK: contains "Cyclops"]
+
+# Wait for thief to process lair deposit (opens egg, drops treasures)
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
 
 [END GOAL]
 
@@ -88,59 +117,90 @@ $restore wt-11
 [GOAL: Kill the thief]
 [ENSURES: not entity "seedy-looking thief" alive]
 
-# Thief summoned by treasure room entry handler (treasure-room-handler.ts).
-# Melee combat with nasty knife. ENSURES postcondition verifies thief dies.
+# Return to Treasure Room for the fight
+> up
+[OK: contains "Treasure Room"]
+
+# Fight thief with nasty knife. DO/UNTIL loops until thief dies or player dies.
+[RETRY: max=5]
+[DO]
 > attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
-> attack thief with knife
+[UNTIL "fog" OR "carcass" OR "Finishing you off"]
+[ENSURES: not entity "seedy-looking thief" alive]
+[END RETRY]
 
 [END GOAL]
 
 # ============================================================================
-# GOAL: Collect chalice and store in trophy case
+# GOAL: Collect canary from opened egg, egg, and chalice
 # ============================================================================
 
-[GOAL: Collect and store chalice]
+[GOAL: Collect canary, egg, and chalice]
 
-# Drop knife to free weight for chalice
 > drop knife
 [OK: contains "Dropped"]
 
-> take chalice
-[OK: contains "chalice"]
+# Egg was opened by thief and dropped on floor. Canary is inside the open egg.
+> take canary
+[OK: contains "Taken"]
 
-# Return: Treasure Room → Cyclops Room → Living Room (via Strange Passage)
+> take egg
+[OK: contains "Taken"]
+
+> take chalice
+[OK: contains "Taken"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Wind canary in forest for bauble
+# ============================================================================
+
+[GOAL: Wind canary for bauble]
+[ENSURES: inventory contains "bauble"]
+
+# Return to Living Room via Strange Passage
 > down
 [OK: contains "Cyclops"]
 
 > north
 [OK: contains "Living Room"]
 
+# Navigate to forest
+$teleport Forest Path
+
+> look
+[OK: contains "Forest"]
+
+# Wind the canary to summon songbird and get bauble
+> wind canary
+[OK: contains "bauble"]
+
+> take bauble
+[OK: contains "Taken"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Store treasures in trophy case
+# ============================================================================
+
+[GOAL: Store treasures in trophy case]
+
+$teleport Living Room
+
 > open trophy case
 
+> put canary in trophy case
+[OK: contains "put"]
+
+> put bauble in trophy case
+[OK: contains "put"]
+
 > put chalice in trophy case
+[OK: contains "put"]
+
+> put egg in trophy case
 [OK: contains "put"]
 
 [END GOAL]

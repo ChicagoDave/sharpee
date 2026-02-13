@@ -20,6 +20,10 @@ export type DirectiveType =
   | 'end_if'      // [END IF]
   | 'while'       // [WHILE: condition]
   | 'end_while'   // [END WHILE]
+  | 'retry'       // [RETRY: max=N]
+  | 'end_retry'   // [END RETRY]
+  | 'do'          // [DO]
+  | 'until'       // [UNTIL "text"]
   | 'navigate'    // [NAVIGATE TO: "Room Name"]
   | 'save'        // $save <name>
   | 'restore'     // $restore <name>
@@ -36,6 +40,8 @@ export interface Directive {
   goalName?: string;    // For GOAL: the goal name
   saveName?: string;    // For SAVE/RESTORE: the checkpoint name
   testCommand?: string; // For test-command: the full $command input (e.g., "$teleport kitchen")
+  maxRetries?: number;  // For RETRY: maximum retry attempts
+  untilTexts?: string[];  // For UNTIL: text(s) to match in command output (contains, OR logic)
 }
 
 /**
@@ -117,9 +123,10 @@ export interface TranscriptHeader {
  * A single assertion about command output, events, or state
  */
 export interface Assertion {
-  type: 'ok' | 'ok-contains' | 'ok-matches' | 'ok-not-contains' | 'fail' | 'skip' | 'todo'
+  type: 'ok' | 'ok-contains' | 'ok-contains-any' | 'ok-matches' | 'ok-not-contains' | 'fail' | 'skip' | 'todo'
       | 'event-count' | 'event-assert' | 'state-assert';
   value?: string;      // For contains/matches
+  values?: string[];   // For contains_any: match any of these
   pattern?: RegExp;    // For regex matches
   reason?: string;     // For fail/todo
 

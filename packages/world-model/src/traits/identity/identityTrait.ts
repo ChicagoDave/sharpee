@@ -85,6 +85,19 @@ export class IdentityTrait implements ITrait {
    */
   nounType?: 'common' | 'proper' | 'mass' | 'unique' | 'plural';
 
+  /**
+   * Points awarded when player first takes this item (ADR-129).
+   * Stdlib taking action calls world.awardScore() with this value.
+   * Deduplication is automatic via entity ID.
+   */
+  points?: number;
+
+  /**
+   * Description for the score ledger entry (ADR-129).
+   * Defaults to the entity name if not set.
+   */
+  pointsDescription?: string;
+
   constructor(data?: Partial<IdentityTrait>) {
     if (data) {
       Object.assign(this, data);

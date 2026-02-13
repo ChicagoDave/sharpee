@@ -8,6 +8,7 @@ Sharpee is a parser-based Interactive Fiction authoring tool built in Typescript
 
 CLAUDE CODE BUG: ESC Interupt is currently broken so you need to STOP at any decision point.
 
+- **One step at a time.** Do NOT queue up multiple steps or plan ahead. Complete one thing, show the result, then ask what's next.
 - Never delete files without confirmation. Not even "to get a build working" or "to get the other tests working".
 - Never use batch scripts (sed/awk/grep) to modify multiple files. One file at a time.
 - We never care about backward compatibility, but discuss code smells or design flaws before changing.

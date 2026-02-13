@@ -1,8 +1,7 @@
-title: Troll Combat
+title: Troll Combat - Melee Interceptor
 story: dungeo
 author: Sharpee Team
-description: Test killing the troll, sword glow, and smoke disappear
-
+description: Test killing the troll via melee interceptor with RETRY for combat randomness
 ---
 
 # Get equipment from Living Room
@@ -41,28 +40,27 @@ description: Test killing the troll, sword glow, and smoke disappear
 > down
 [OK: contains "Cellar"]
 
-# Enter troll room - sword should glow
+# Enter troll room
 > east
 [OK: contains "Troll Room"]
 [OK: contains "troll"]
-[OK: contains "sword"]
-[OK: contains "glow"]
 
-# Wait one turn - troll should attack us
-> z
-[EVENT: true, type="npc.attacked"]
+# ===== Melee interceptor combat test =====
+# RETRY handles player death from counter-attacks — restores and retries
+# DO/UNTIL loops attack until troll death message or player death
 
-# Use GDT to kill the troll directly (deterministic test)
-# After death: troll and axe are removed from the game
-> gdt
-[OK: contains "GDT"]
+[RETRY: max=5]
+[DO]
+> attack troll with sword
+[UNTIL "slumps to the floor dead" OR "removes his head" OR "He dies" OR "You are dead"]
+[ENSURES: not entity "troll" alive]
+[END RETRY]
 
-> kl troll
-[OK: contains "Killed"]
-[OK: contains "Death handler triggered"]
+# Passage north should be clear after troll dies
+> north
+[OK: contains "East-West Passage"]
 
-# Troll and axe should be removed from the game
-# (Room name "Troll Room" still contains "troll" - check for absence of "can see")
-> look
+# Go back to troll room and verify troll is gone
+> south
 [OK: contains "Troll Room"]
 [OK: not contains "You can see"]

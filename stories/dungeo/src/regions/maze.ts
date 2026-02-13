@@ -572,13 +572,11 @@ function createMaze5Objects(world: WorldModel, roomId: string): void {
     description: 'A leather bag containing a quantity of coins of various denominations.',
     properName: false,
     article: 'a',
-    weight: 5
+    weight: 5,
+    points: 10             // OFVAL from mdlzork_810722
   }));
   bag.add(new ContainerTrait({ capacity: { maxItems: 10 } }));
-  // Mark as treasure
   bag.add(new TreasureTrait({
-    treasureId: 'bag-of-coins',
-    treasureValue: 10,     // OFVAL from mdlzork_810722
     trophyCaseValue: 5,    // OTVAL from mdlzork_810722
   }));
   world.moveEntity(bag.id, roomId);
@@ -618,8 +616,8 @@ function createMaze5Objects(world: WorldModel, roomId: string): void {
 // ============= Treasure Room Objects =============
 
 function createTreasureRoomObjects(world: WorldModel, roomId: string): void {
-  // Silver chalice (CHALI) - starts in the thief's lair per MDL source.
-  // The thief guards it; player can take it after killing the thief.
+  // Silver chalice (CHALI) - created here, then moved to thief's inventory
+  // by registerThief(). Drops when thief dies (dropsInventory: true).
   const chalice = world.createEntity('silver chalice', EntityType.ITEM);
   chalice.add(new IdentityTrait({
     name: 'silver chalice',
@@ -627,11 +625,10 @@ function createTreasureRoomObjects(world: WorldModel, roomId: string): void {
     description: 'A beautiful silver chalice, tarnished with age but still valuable. It bears an inscription in an ancient language.',
     properName: false,
     article: 'a',
-    weight: 40
+    weight: 40,
+    points: 10             // OFVAL from mdlzork_810722
   }));
   chalice.add(new TreasureTrait({
-    treasureId: 'silver-chalice',
-    treasureValue: 10,     // OFVAL from mdlzork_810722
     trophyCaseValue: 10,   // OTVAL from mdlzork_810722
   }));
   world.moveEntity(chalice.id, roomId);

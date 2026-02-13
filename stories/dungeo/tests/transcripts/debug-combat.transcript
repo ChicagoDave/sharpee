@@ -1,0 +1,35 @@
+title: Debug Combat
+story: dungeo
+---
+> north
+[OK: contains "North"]
+> east
+[OK: contains "Behind"]
+> open window
+[OK: contains "open"]
+> west
+[OK: contains "Kitchen"]
+> west
+[OK: contains "Living Room"]
+> take sword
+[OK: contains "Taken"]
+> take lantern
+[OK: contains "Taken"]
+> switch on lantern
+[OK: contains "on"]
+> push rug
+[OK: contains "trap door"]
+> open trapdoor
+[OK: contains "open"]
+> down
+[OK: contains "Cellar"]
+> east
+[OK: contains "Troll Room"]
+
+# Test with RETRY (triggers save/restore) + DO/UNTIL
+[RETRY: max=5]
+[DO]
+> attack troll with sword
+[UNTIL "slumps to the floor dead" OR "removes his head" OR "He dies" OR "You are dead"]
+[ENSURES: not entity "troll" alive]
+[END RETRY]

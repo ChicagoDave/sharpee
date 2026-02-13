@@ -11,7 +11,14 @@ export * from './types';
 export * from './npc-messages';
 
 // Service
-export { NpcService, createNpcService, type INpcService } from './npc-service';
+export {
+  NpcService,
+  createNpcService,
+  registerNpcCombatResolver,
+  clearNpcCombatResolver,
+  type INpcService,
+  type NpcCombatResolver,
+} from './npc-service';
 
 // Standard behaviors
 export {

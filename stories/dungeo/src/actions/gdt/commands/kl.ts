@@ -111,7 +111,10 @@ export const klHandler: GDTCommandHandler = {
     // Also update CombatantTrait if present
     const combatant = targetEntity.get<CombatantTrait>(TraitType.COMBATANT);
     if (combatant) {
-      combatant.kill();
+      // Direct assignment — after loadJSON() traits may be plain objects without methods
+      combatant.health = 0;
+      combatant.isAlive = false;
+      combatant.isConscious = false;
     }
 
     // Process through event processor if engine is available

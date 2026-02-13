@@ -71,13 +71,12 @@ function createDiamond(context: ActionContext, machineId: string): IFEntity {
     aliases: ['diamond', 'large diamond', 'gem'],
     description: 'This is an enormous diamond, perfectly cut and dazzlingly brilliant. It must be worth a fortune.',
     properName: false,
-    article: 'a'
+    article: 'a',
+    points: 10,             // OFVAL from mdlzork_810722
   }));
 
-  // Treasure scoring (10 take + 6 case = 16 total) - DIAMO in mdlzork_810722
+  // Trophy case scoring - DIAMO in mdlzork_810722
   diamond.add(new TreasureTrait({
-    treasureId: 'huge-diamond',
-    treasureValue: 10,     // OFVAL from mdlzork_810722
     trophyCaseValue: 6,    // OTVAL from mdlzork_810722
   }));
 

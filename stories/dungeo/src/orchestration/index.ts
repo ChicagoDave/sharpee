@@ -17,7 +17,6 @@ import type { WorldModel } from '@sharpee/world-model';
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 import { NpcPlugin } from '@sharpee/plugin-npc';
 import { StateMachinePlugin } from '@sharpee/plugin-state-machine';
-import { ScoringEventProcessor } from '@sharpee/stdlib';
 import { IdentityTrait } from '@sharpee/world-model';
 
 import { createTrapdoorMachine } from '../state-machines/trapdoor-machine';
@@ -32,7 +31,6 @@ import { registerPuzzleHandlers, PuzzleConfig } from './puzzle-handlers';
 import { registerNpcs, NpcConfig } from './npc-setup';
 import { registerEventHandlers, EventHandlerConfig } from './event-handlers';
 import { MirrorRoomConfig } from '../handlers/mirror-room-handler';
-import { DungeoScoringService } from '../scoring';
 
 // Import region types for type compatibility
 import { WhiteHouseRoomIds } from '../regions/white-house';
@@ -87,6 +85,9 @@ export interface OrchestrationConfig {
 
   /** Mirror room configuration (optional - only if mirror puzzle exists) */
   mirrorConfig?: MirrorRoomConfig;
+
+  /** Room visit scoring: roomId → points (RVAL from MDL) */
+  roomVisitScoring?: Map<string, number>;
 }
 
 /**
@@ -98,15 +99,11 @@ export interface OrchestrationConfig {
  * @param engine - The game engine instance
  * @param world - The world model
  * @param config - Configuration containing all room IDs and feature flags
- * @param scoringProcessor - Event processor for treasure scoring
- * @param scoringService - Scoring service for achievements and penalties
  */
 export function initializeOrchestration(
   engine: GameEngine,
   world: WorldModel,
   config: OrchestrationConfig,
-  scoringProcessor: ScoringEventProcessor,
-  scoringService: DungeoScoringService
 ): void {
   // 1. Command Transformers
   // Intercept and modify parsed commands before execution
@@ -194,7 +191,7 @@ export function initializeOrchestration(
 
   // Death Penalty: tracks deaths, deducts points, game over after 2
   smRegistry.register(
-    createDeathPenaltyMachine(scoringService),
+    createDeathPenaltyMachine(),
   );
 
   // Rainbow: tracks solid/insubstantial state, manages Aragain Falls east exit
@@ -218,9 +215,10 @@ export function initializeOrchestration(
     mirrorConfig: config.mirrorConfig,
     bottomOfShaftId: config.coalMineIds.bottomOfShaft,
     balloonIds: config.balloonIds,
-    treasureRoomId: config.mazeIds.treasureRoom
+    treasureRoomId: config.mazeIds.treasureRoom,
+    roomVisitScoring: config.roomVisitScoring,
   };
-  registerEventHandlers(engine, world, eventConfig, scoringProcessor, scoringService);
+  registerEventHandlers(engine, world, eventConfig);
 }
 
 /** Find an entity by its IdentityTrait name */

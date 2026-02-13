@@ -21,14 +21,7 @@ import {
   ContainerTrait,
   WeaponTrait,
   EntityType,
-  StandardCapabilities
 } from '@sharpee/world-model';
-import { ISemanticEvent } from '@sharpee/core';
-import { ThiefMessages } from './thief-messages';
-import { createEmptyFrame } from '../../objects/thiefs-canvas-objects';
-
-// Thief disabled key (duplicated here to avoid circular import with thief-helpers)
-const THIEF_DISABLED_KEY = 'dungeo.thief.disabled';
 
 /**
  * Thief state machine states
@@ -68,12 +61,6 @@ export function createThiefCustomProperties(lairRoomId: string): ThiefCustomProp
     stealCooldown: 0,
     hasBeenAttacked: false
   };
-}
-
-// Event ID counter
-let eventCounter = 0;
-function generateEventId(): string {
-  return `thief-evt-${Date.now()}-${++eventCounter}`;
 }
 
 /**
@@ -132,88 +119,8 @@ export function createThief(
     capacity: { maxItems: 50, maxWeight: 500 }
   }));
 
-  // Death handler - canonical MDL thief death (melee.mud:272-280, act1.mud:1272-1296)
-  (thief as any).on = {
-    'if.event.death': (_event: ISemanticEvent, w: WorldModel): ISemanticEvent[] => {
-      const events: ISemanticEvent[] = [];
-      const thiefRoom = w.getLocation(thief.id) ?? null;
-
-      // Add score for defeating the thief
-      const scoring = w.getCapability(StandardCapabilities.SCORING);
-      if (scoring) {
-        scoring.scoreValue = (scoring.scoreValue || 0) + 25;
-        if (!scoring.achievements) {
-          scoring.achievements = [];
-        }
-        scoring.achievements.push('Defeated the thief');
-
-        // ADR-078: Hidden max points system
-        // The death of the thief "alters reality" - max score increases from 616 to 650
-        // The canvas treasure (34 pts) becomes achievable
-        scoring.thiefDead = true;
-        scoring.maxScore = 650;
-        scoring.realityAlteredPending = true;  // Will show message on next SCORE
-      }
-
-      // Drop thief's inventory to the floor BEFORE removing the entity.
-      // (Death handler fires from combatant.kill(), which is called BEFORE
-      // the melee interceptor's own inventory drop code. We must do it here
-      // so items are safely on the floor before the entity is removed.)
-      const stilettoId = thief.attributes.stilettoId as string | undefined;
-      const contents = w.getContents(thief.id);
-      const droppedItems: string[] = [];
-      for (const item of contents) {
-        if (item.id === stilettoId) continue; // stiletto disappears with body
-        w.moveEntity(item.id, thiefRoom);
-        droppedItems.push(item.id);
-      }
-
-      if (droppedItems.length > 0) {
-        events.push({
-          id: generateEventId(),
-          type: 'game.message',
-          entities: {},
-          data: { messageId: ThiefMessages.DROPS_LOOT },
-          timestamp: Date.now(),
-          narrate: true
-        });
-      }
-
-      // ADR-078: Spawn the empty frame in the Treasure Room
-      const frame = createEmptyFrame(w);
-      w.moveEntity(frame.id, lairRoomId);
-
-      events.push({
-        id: generateEventId(),
-        type: 'game.message',
-        entities: {},
-        data: { messageId: ThiefMessages.FRAME_SPAWNS },
-        timestamp: Date.now(),
-        narrate: true
-      });
-
-      // Canonical MDL melee.mud:274-277: Body disappears in black fog
-      events.push({
-        id: generateEventId(),
-        type: 'game.message',
-        entities: {},
-        data: { messageId: ThiefMessages.BLACK_FOG },
-        timestamp: Date.now(),
-        narrate: true
-      });
-
-      // Remove stiletto and thief entity (carcass disappears in fog)
-      if (stilettoId) {
-        w.removeEntity(stilettoId);
-      }
-      w.removeEntity(thief.id);
-
-      // Disable thief daemon permanently
-      w.getDataStore().state[THIEF_DISABLED_KEY] = true;
-
-      return events;
-    }
-  };
+  // Death side effects are handled in handleVillainDeath() in melee-interceptor.ts.
+  // Entity `.on` handlers are dead code in Sharpee (events are messages, not pub/sub).
 
   // Place thief in his lair initially
   world.moveEntity(thief.id, lairRoomId);

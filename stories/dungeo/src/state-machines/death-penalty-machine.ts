@@ -16,7 +16,6 @@
 
 import { StateMachineDefinition, CustomEffect } from '@sharpee/plugin-state-machine';
 import { StandardCapabilities } from '@sharpee/world-model';
-import { IDungeoScoringService } from '../scoring';
 
 export const DeathPenaltyMessages = {
   PENALTY: 'dungeo.death.penalty',
@@ -27,21 +26,17 @@ const DEATH_PENALTY_POINTS = 10;
 
 /**
  * Create death penalty state machine.
- *
- * @param scoringService - Scoring service for point deduction (captured in closure)
  */
-export function createDeathPenaltyMachine(
-  scoringService: IDungeoScoringService
-): StateMachineDefinition {
+export function createDeathPenaltyMachine(): StateMachineDefinition {
   // Shared effect: deduct points and update death count
   function makeDeathEffects(deathNumber: number): CustomEffect {
     return {
       type: 'custom',
       execute: (world, _bindings, _playerId) => {
-        // Deduct points
-        scoringService.addPoints(-DEATH_PENALTY_POINTS, 'Death penalty');
+        // Deduct points via score ledger (unique ID per death)
+        world.awardScore(`death-penalty-${deathNumber}`, -DEATH_PENALTY_POINTS, 'Death penalty');
 
-        // Update death count in scoring capability
+        // Update death count in scoring capability (for move/death tracking)
         const scoring = world.getCapability(StandardCapabilities.SCORING);
         if (scoring) {
           scoring.deaths = deathNumber;

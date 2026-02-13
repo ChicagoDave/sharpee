@@ -20,10 +20,10 @@ export const dsHandler: GDTCommandHandler = {
     output.push('=== GAME STATE ===');
     output.push('');
 
-    // Core stats - read from SCORING capability
+    // Core stats - read from score ledger and SCORING capability
+    const score = world.getScore();
+    const maxScore = world.getMaxScore();
     const scoring = world.getCapability(StandardCapabilities.SCORING);
-    const score = scoring?.scoreValue ?? 0;
-    const maxScore = scoring?.maxScore ?? 0;
     const moves = scoring?.moves ?? world.getStateValue('moves') ?? 0;
     const turnCount = world.getStateValue('turnCount') ?? moves;
 

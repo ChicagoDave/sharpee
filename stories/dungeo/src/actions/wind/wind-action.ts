@@ -152,12 +152,11 @@ export const windAction: Action = {
           aliases: ['bauble', 'shiny bauble', 'brass ball', 'ball'],
           description: 'A shiny brass bauble, dropped by an unseen songbird in response to the canary\'s tune.',
           properName: false,
-          article: 'a'
+          article: 'a',
+          points: 1,              // OFVAL from mdlzork_810722
         }));
-        // Treasure scoring (1 take + 1 case = 2 points)
+        // Trophy case scoring
         bauble.add(new TreasureTrait({
-          treasureId: 'brass-bauble',
-          treasureValue: 1,      // OFVAL from mdlzork_810722
           trophyCaseValue: 1,    // OTVAL from mdlzork_810722
         }));
         world.moveEntity(bauble.id, playerLocation);

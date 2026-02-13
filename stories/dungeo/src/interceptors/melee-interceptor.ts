@@ -24,12 +24,14 @@ import {
   IdentityTrait,
   TraitType,
   CombatantTrait,
+  RoomBehavior,
+  RoomTrait,
+  Direction,
   createEffect,
   CapabilityEffect,
-  StandardCapabilities,
 } from '@sharpee/world-model';
 import { createSeededRandom, SeededRandom } from '@sharpee/core';
-import { findWieldedWeapon } from '@sharpee/stdlib';
+
 
 /**
  * Module-level random instance shared across all melee calls.
@@ -55,6 +57,7 @@ import {
   MeleeMessages,
 } from '../combat/melee-messages';
 import { MELEE_STATE, getBaseOstrength } from '../combat/melee-state';
+import { createEmptyFrame } from '../objects/thiefs-canvas-objects';
 
 /**
  * Get the villain key for message lookup.
@@ -88,11 +91,10 @@ function getWeaponType(weaponName: string | undefined): string {
 }
 
 /**
- * Get current player score from the scoring capability.
+ * Get current player score from the score ledger.
  */
 function getPlayerScore(world: WorldModel): number {
-  const scoring = world.getCapability(StandardCapabilities.SCORING);
-  return scoring?.scoreValue ?? 0;
+  return world.getScore();
 }
 
 /**
@@ -105,6 +107,103 @@ function getVillainOstrength(villain: IFEntity): number {
   const base = getBaseOstrength(villain);
   villain.attributes[MELEE_STATE.VILLAIN_OSTRENGTH] = base;
   return base;
+}
+
+/**
+ * Handle villain-specific death side effects.
+ *
+ * Events in Sharpee are messages (not pub/sub), so entity `.on` handlers
+ * don't fire automatically. Death side effects must happen in the
+ * execution flow, not in event handlers.
+ *
+ * @returns true if entity cleanup was handled (skip default inventory drop)
+ */
+function handleVillainDeath(
+  villainKey: string,
+  villain: IFEntity,
+  world: WorldModel,
+  sharedData: InterceptorSharedData
+): boolean {
+  const villainRoomId = world.getLocation(villain.id);
+  const room = villainRoomId ? world.getEntity(villainRoomId) : undefined;
+
+  switch (villainKey) {
+    case 'troll': {
+      // Unblock north exit (troll was blocking passage)
+      if (room) {
+        RoomBehavior.unblockExit(room, Direction.NORTH);
+      }
+      // Add score: 10 points for defeating the troll
+      world.awardScore('troll-killed', 10, 'Defeated the troll');
+      // Remove troll and its weapon from the game (both disappear in smoke)
+      const contents = world.getContents(villain.id);
+      for (const item of contents) {
+        world.removeEntity(item.id);
+      }
+      world.removeEntity(villain.id);
+      return true; // Entity cleanup handled — skip default inventory drop
+    }
+
+    case 'thief': {
+      // Canonical MDL thief death (melee.mud:272-280, act1.mud:1272-1296)
+      // 1. Drop all inventory to floor (except stiletto)
+      const stilettoId = villain.attributes.stilettoId as string | undefined;
+      const thiefContents = world.getContents(villain.id);
+      let hasLoot = false;
+      for (const item of thiefContents) {
+        if (item.id === stilettoId) continue; // stiletto disappears with body
+        world.moveEntity(item.id, villainRoomId ?? null);
+        hasLoot = true;
+      }
+
+      // 2. Award 25 points for defeating the thief
+      world.awardScore('thief-killed', 25, 'Defeated the thief');
+      // ADR-078: Hidden max points — canvas treasure becomes achievable
+      world.setMaxScore(650);
+      world.getDataStore().state['dungeo.thief.dead'] = true;
+      world.getDataStore().state['dungeo.reality_altered_pending'] = true;
+
+      // 3. Spawn empty frame in the Treasure Room (thief's lair)
+      // The lair ID is stored in the thief's NPC custom properties
+      const npcTrait = villain.get(TraitType.NPC) as any;
+      const lairRoomId = npcTrait?.customProperties?.lairRoomId ?? villainRoomId;
+      const frame = createEmptyFrame(world);
+      world.moveEntity(frame.id, lairRoomId);
+
+      // 4. Reveal all concealed treasures in the lair (MDL: OVISON restored on death)
+      if (lairRoomId) {
+        const lairContents = world.getContents(lairRoomId);
+        for (const item of lairContents) {
+          const itemIdentity = item.get(TraitType.IDENTITY) as IdentityTrait | undefined;
+          if (itemIdentity?.concealed) {
+            itemIdentity.concealed = false;
+          }
+        }
+      }
+
+      // 5. Disable thief daemon permanently
+      world.getDataStore().state['dungeo.thief.disabled'] = true;
+
+      // 6. Remove stiletto and thief entity (carcass disappears in black fog)
+      if (stilettoId) {
+        world.removeEntity(stilettoId);
+      }
+      world.removeEntity(villain.id);
+
+      // 7. Store death messages for postReport to emit
+      const deathMessages: string[] = [];
+      if (hasLoot) {
+        deathMessages.push("The thief's ill-gotten gains scatter across the floor.");
+      }
+      deathMessages.push(
+        'Almost as soon as the thief breathes his last breath, a cloud of sinister black fog envelops him, and when the fog lifts, the carcass has disappeared.'
+      );
+      sharedData.deathMessages = deathMessages;
+
+      return true; // Entity cleanup handled
+    }
+  }
+  return false; // Use default inventory drop
 }
 
 // ============= The Interceptor =============
@@ -129,15 +228,6 @@ export const MeleeInterceptor: ActionInterceptor = {
       return {
         valid: false,
         error: MeleeMessages.STILL_RECOVERING,
-      };
-    }
-
-    // Check if hero has a weapon — fighting unarmed is suicide
-    const weapon = findWieldedWeapon(player, world);
-    if (!weapon) {
-      return {
-        valid: false,
-        error: MeleeMessages.UNARMED_ATTACK,
       };
     }
 
@@ -249,14 +339,22 @@ export const MeleeInterceptor: ActionInterceptor = {
     if (targetKilled) {
       const combatant = villain.get(TraitType.COMBATANT) as CombatantTrait | undefined;
       if (combatant) {
-        combatant.kill();
+        // Direct assignment instead of combatant.kill() — after world.loadJSON()
+        // traits are plain objects without methods, so kill() would crash.
+        combatant.health = 0;
+        combatant.isAlive = false;
+        combatant.isConscious = false;
       }
-      // Drop villain's inventory to the floor
-      const villainContents = world.getContents(villain.id);
-      const villainRoom = world.getLocation(villain.id) ?? null;
-      for (const item of villainContents) {
-        world.moveEntity(item.id, villainRoom);
-        droppedItems.push(item.id);
+      // Villain-specific death side effects (unblock exits, score, entity removal).
+      // Returns true if the handler cleaned up entities (troll disappears in smoke).
+      if (!handleVillainDeath(villainKey, villain, world, sharedData)) {
+        // Default: drop villain's inventory to the floor
+        const villainContents = world.getContents(villain.id);
+        const villainRoom = world.getLocation(villain.id) ?? null;
+        for (const item of villainContents) {
+          world.moveEntity(item.id, villainRoom);
+          droppedItems.push(item.id);
+        }
       }
     }
 
@@ -300,15 +398,27 @@ export const MeleeInterceptor: ActionInterceptor = {
     _actorId: string,
     sharedData: InterceptorSharedData
   ): CapabilityEffect[] {
-    const message = sharedData.meleeMessage as string | undefined;
-    if (!message) return [];
+    const effects: CapabilityEffect[] = [];
 
-    return [
-      createEffect('game.message', {
-        messageId: MeleeMessages.HERO_ATTACK,
-        text: message,
-      }),
-    ];
+    const message = sharedData.meleeMessage as string | undefined;
+    if (message) {
+      effects.push(
+        createEffect('game.message', {
+          messageId: MeleeMessages.HERO_ATTACK,
+          text: message,
+        }),
+      );
+    }
+
+    // Emit villain death messages (e.g., thief's "black fog" / "booty remains")
+    const deathMessages = sharedData.deathMessages as string[] | undefined;
+    if (deathMessages) {
+      for (const text of deathMessages) {
+        effects.push(createEffect('game.message', { text }));
+      }
+    }
+
+    return effects;
   },
 
   /**
@@ -326,14 +436,6 @@ export const MeleeInterceptor: ActionInterceptor = {
         createEffect('game.message', {
           messageId: MeleeMessages.STILL_RECOVERING,
           text: 'You are still recovering from a staggering blow.',
-        }),
-      ];
-    }
-    if (error === MeleeMessages.UNARMED_ATTACK) {
-      return [
-        createEffect('game.message', {
-          messageId: MeleeMessages.UNARMED_ATTACK,
-          text: 'Fighting unarmed is suicide.',
         }),
       ];
     }

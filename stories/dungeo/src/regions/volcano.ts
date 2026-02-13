@@ -252,11 +252,10 @@ function createEgyptianRoomObjects(world: WorldModel, roomId: string): void {
     description: 'The solid gold coffin used for the burial of Ramses II is here.',
     properName: false,
     article: 'a',
-    weight: 10
+    weight: 10,
+    points: 3              // OFVAL from mdlzork_810722
   }));
   coffin.add(new TreasureTrait({
-    treasureId: 'gold-coffin',
-    treasureValue: 3,      // OFVAL from mdlzork_810722
     trophyCaseValue: 7,    // OTVAL from mdlzork_810722
   }));
   world.moveEntity(coffin.id, roomId);
@@ -289,11 +288,10 @@ function createDustyRoomObjects(world: WorldModel, roomId: string): void {
     description: 'A large emerald of exceptional clarity. It glows with an inner green fire.',
     properName: false,
     article: 'a',
-    weight: 5
+    weight: 5,
+    points: 5              // OFVAL from mdlzork_810722
   }));
   emerald.add(new TreasureTrait({
-    treasureId: 'large-emerald',
-    treasureValue: 5,      // OFVAL from mdlzork_810722
     trophyCaseValue: 10,   // OTVAL from mdlzork_810722
   }));
   world.moveEntity(emerald.id, roomId);
@@ -310,11 +308,10 @@ function createRubyRoomObjects(world: WorldModel, roomId: string): void {
     description: 'This is an enormous ruby, the size of a robin\'s egg. It sparkles brilliantly in the light.',
     properName: false,
     article: 'a',
-    weight: 5
+    weight: 5,
+    points: 15             // OFVAL from mdlzork_810722
   }));
   ruby.add(new TreasureTrait({
-    treasureId: 'ruby',
-    treasureValue: 15,     // OFVAL from mdlzork_810722
     trophyCaseValue: 8,    // OTVAL from mdlzork_810722
   }));
   world.moveEntity(ruby.id, roomId);
@@ -351,11 +348,10 @@ A stamp falls out of the book as you read it.`
     description: 'This is a rare stamp depicting Lord Dimwit Flathead. It is quite valuable to collectors.',
     properName: false,
     article: 'a',
-    weight: 2
+    weight: 2,
+    points: 4              // OFVAL from mdlzork_810722
   }));
   stamp.add(new TreasureTrait({
-    treasureId: 'flathead-stamp',
-    treasureValue: 4,      // OFVAL from mdlzork_810722
     trophyCaseValue: 10,   // OTVAL from mdlzork_810722
   }));
   world.moveEntity(stamp.id, book.id);

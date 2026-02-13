@@ -385,11 +385,10 @@ function createPotOfGold(world: WorldModel, roomId: string): IFEntity {
     description: 'A small iron pot filled to the brim with gold coins. It is surprisingly heavy for its size.',
     properName: false,
     article: 'a',
-    weight: 5
+    weight: 5,
+    points: 10             // OFVAL from mdlzork_810722
   }));
   pot.add(new TreasureTrait({
-    treasureId: 'pot-of-gold',
-    treasureValue: 10,     // OFVAL from mdlzork_810722
     trophyCaseValue: 10,   // OTVAL from mdlzork_810722
   }));
   world.moveEntity(pot.id, roomId);
@@ -419,11 +418,10 @@ function createBuoy(world: WorldModel, roomId: string): IFEntity {
     description: 'A large emerald of exceptional clarity and color.',
     properName: false,
     article: 'a',
-    weight: 5
+    weight: 5,
+    points: 5              // OFVAL from mdlzork_810722
   }));
   emerald.add(new TreasureTrait({
-    treasureId: 'buoy-emerald',
-    treasureValue: 5,      // OFVAL from mdlzork_810722
     trophyCaseValue: 10,   // OTVAL from mdlzork_810722
   }));
 
@@ -444,11 +442,10 @@ function createStatue(world: WorldModel, roomId: string): IFEntity {
     description: 'A beautiful statue of an ancient adventurer, carved from a single piece of white marble. The craftsmanship is exquisite.',
     properName: false,
     article: 'a',
-    weight: 2
+    weight: 2,
+    points: 10             // OFVAL from mdlzork_810722
   }));
   statue.add(new TreasureTrait({
-    treasureId: 'statue',
-    treasureValue: 10,     // OFVAL from mdlzork_810722
     trophyCaseValue: 13,   // OTVAL from mdlzork_810722
   }));
   world.setStateValue('dungeo.statue.locationId', roomId);

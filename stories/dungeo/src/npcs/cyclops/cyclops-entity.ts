@@ -19,7 +19,6 @@ import {
   NpcTrait,
   CombatantTrait,
   EntityType,
-  StandardCapabilities,
   RoomBehavior,
   Direction
 } from '@sharpee/world-model';
@@ -47,12 +46,6 @@ export function createCyclopsCustomProperties(roomId: string): CyclopsCustomProp
     state: 'GUARDING',
     roomId
   };
-}
-
-// Event ID counter
-let eventCounter = 0;
-function generateEventId(): string {
-  return `cyclops-evt-${Date.now()}-${++eventCounter}`;
 }
 
 /**
@@ -106,42 +99,9 @@ export function createCyclops(
   // Place cyclops in its room
   world.moveEntity(cyclops.id, roomId);
 
-  // Death handler - unblock passage and award points
-  (cyclops as any).on = {
-    'if.event.death': (_event: ISemanticEvent, w: WorldModel): ISemanticEvent[] => {
-      const events: ISemanticEvent[] = [];
-
-      // Unblock the north passage
-      const cyclopsRoom = w.getEntity(roomId);
-      if (cyclopsRoom) {
-        RoomBehavior.unblockExit(cyclopsRoom, Direction.NORTH);
-      }
-
-      // Add score for defeating the cyclops
-      const scoring = w.getCapability(StandardCapabilities.SCORING);
-      if (scoring) {
-        scoring.scoreValue = (scoring.scoreValue || 0) + 10;
-        if (!scoring.achievements) {
-          scoring.achievements = [];
-        }
-        scoring.achievements.push('Defeated the cyclops');
-      }
-
-      // Emit passage opened message
-      events.push({
-        id: generateEventId(),
-        type: 'game.message',
-        entities: {},
-        data: {
-          messageId: CyclopsMessages.PASSAGE_OPENS
-        },
-        timestamp: Date.now(),
-        narrate: true
-      });
-
-      return events;
-    }
-  };
+  // NOTE: .on handlers are dead code (events are messages, not pub/sub).
+  // Cyclops death side effects should be handled via interceptor if needed.
+  // Flee scoring is handled in makeCyclopsFlee() below.
 
   return cyclops;
 }
@@ -163,14 +123,7 @@ export function makeCyclopsFlee(
   }
 
   // Add score for making cyclops flee
-  const scoring = world.getCapability(StandardCapabilities.SCORING);
-  if (scoring) {
-    scoring.scoreValue = (scoring.scoreValue || 0) + 10;
-    if (!scoring.achievements) {
-      scoring.achievements = [];
-    }
-    scoring.achievements.push('Frightened away the cyclops');
-  }
+  world.awardScore('cyclops-fled', 10, 'Frightened away the cyclops');
 
   // Update cyclops state
   const npcTrait = cyclops.get(NpcTrait);
