@@ -45,8 +45,31 @@ export interface TraitBehaviorBinding<T extends ITrait = ITrait> {
 
 /**
  * Registry storage: key = `${traitType}:${capability}`
+ * Uses globalThis to ensure the registry is shared across module boundaries
+ * (e.g., when story modules import from packages but actions run from bundle)
  */
-const behaviorRegistry = new Map<string, TraitBehaviorBinding>();
+const CAPABILITY_REGISTRY_KEY = '__sharpee_capability_behaviors__';
+
+function getCapabilityRegistry(): Map<string, TraitBehaviorBinding> {
+  const global = globalThis as Record<string, unknown>;
+  if (!global[CAPABILITY_REGISTRY_KEY]) {
+    global[CAPABILITY_REGISTRY_KEY] = new Map<string, TraitBehaviorBinding>();
+  }
+  return global[CAPABILITY_REGISTRY_KEY] as Map<string, TraitBehaviorBinding>;
+}
+
+const behaviorRegistry = {
+  get size() { return getCapabilityRegistry().size; },
+  has(key: string) { return getCapabilityRegistry().has(key); },
+  get(key: string) { return getCapabilityRegistry().get(key); },
+  set(key: string, value: TraitBehaviorBinding) { return getCapabilityRegistry().set(key, value); },
+  delete(key: string) { return getCapabilityRegistry().delete(key); },
+  clear() { return getCapabilityRegistry().clear(); },
+  keys() { return getCapabilityRegistry().keys(); },
+  values() { return getCapabilityRegistry().values(); },
+  entries() { return getCapabilityRegistry().entries(); },
+  [Symbol.iterator]() { return getCapabilityRegistry()[Symbol.iterator](); }
+};
 
 /**
  * Generate registry key for trait+capability combination.
@@ -189,5 +212,5 @@ export function clearCapabilityRegistry(): void {
  * Get all registered bindings (for debugging/introspection).
  */
 export function getAllCapabilityBindings(): Map<string, TraitBehaviorBinding> {
-  return new Map(behaviorRegistry);
+  return new Map(getCapabilityRegistry());
 }

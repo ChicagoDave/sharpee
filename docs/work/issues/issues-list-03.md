@@ -13,7 +13,7 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-049 | `$seed` directive for deterministic randomization testing | Low | transcript-tester | 2026-02-07 | - | - |
 | ISSUE-050 | Consolidate all Dungeo text into dungeo-en-us.ts for i18n | Low | dungeo | 2026-02-07 | - | - |
 | ISSUE-051 | TrollTrait capability declaration stale after melee interceptor | Low | dungeo | 2026-02-08 | - | 2026-02-08 |
-| ISSUE-052 | Capability registry uses module-level Map; not shared across require() | High | world-model | 2026-02-08 | - | - |
+| ISSUE-052 | Capability registry uses module-level Map; not shared across require() | High | world-model | 2026-02-08 | - | 2026-02-13 |
 | ISSUE-053 | Scoring broken: treasures, room visits, and trophy case award 0 points | Critical | stdlib + dungeo | 2026-02-09 | - | 2026-02-09 |
 | ISSUE-054 | Cyclops say handler emits raw `{npcName}` template instead of "cyclops" | Low | dungeo | 2026-02-11 | - | - |
 | ISSUE-055 | `take canary` fails — scope resolution doesn't find items inside open containers on floor | Medium | stdlib/dungeo | 2026-02-11 | - | - |
