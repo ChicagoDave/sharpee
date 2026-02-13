@@ -20,7 +20,6 @@
  */
 
 import { StateMachineDefinition, CustomEffect } from '@sharpee/plugin-state-machine';
-import { StandardCapabilities } from '@sharpee/world-model';
 
 export const RealityAlteredMessages = {
   REALITY_ALTERED: 'dungeo.scoring.reality_altered',
@@ -30,11 +29,7 @@ function makeClearPendingAndMessageEffect(): CustomEffect {
   return {
     type: 'custom',
     execute: (world, _bindings, _playerId) => {
-      const scoring = world.getCapability(StandardCapabilities.SCORING);
-      if (scoring) {
-        scoring.realityAlteredPending = false;
-        scoring.realityAlteredQueued = false;
-      }
+      world.getDataStore().state['dungeo.reality_altered_pending'] = false;
 
       return {
         messages: [{
@@ -63,8 +58,7 @@ export function createRealityAlteredMachine(): StateMachineDefinition {
           guard: {
             type: 'custom',
             evaluate: (world, _bindings, _playerId) => {
-              const scoring = world.getCapability(StandardCapabilities.SCORING);
-              return scoring?.realityAlteredPending === true;
+              return world.getDataStore().state['dungeo.reality_altered_pending'] === true;
             },
           },
           effects: [

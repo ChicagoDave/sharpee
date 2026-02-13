@@ -13,7 +13,9 @@ export {
   EventPreviewer,
   // Event chaining types (ADR-094)
   EventChainHandler,
-  ChainEventOptions
+  ChainEventOptions,
+  // Score Ledger (ADR-129)
+  ScoreEntry
 } from './WorldModel';
 
 // Re-export grammar vocabulary types from if-domain for convenience

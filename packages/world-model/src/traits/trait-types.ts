@@ -58,9 +58,6 @@ export const TraitType = {
   VEHICLE: 'vehicle',
   ENTERABLE: 'enterable',
 
-  // Scoring traits
-  TREASURE: 'treasure',
-
   // System traits
   STORY_INFO: 'storyInfo'
 } as const;
@@ -137,7 +134,6 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   [TraitType.ENTERABLE]: TraitCategory.INTERACTIVE,
 
   // Scoring traits
-  [TraitType.TREASURE]: TraitCategory.STANDARD,
 
   // System traits
   [TraitType.STORY_INFO]: TraitCategory.STANDARD

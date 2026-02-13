@@ -9,13 +9,13 @@
  */
 
 import { ISchedulerService, SchedulerContext, Daemon } from '@sharpee/plugin-scheduler';
-import { WorldModel, RoomBehavior, Direction, ContainerTrait } from '@sharpee/world-model';
+import { WorldModel, RoomBehavior, Direction, ContainerTrait, IdentityTrait } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
 import { BankRoomIds } from '../regions/bank-of-zork';
 import { TreasureTrait } from '../traits';
 
-// Treasure IDs we check for
-const BANK_TREASURE_IDS = ['portrait', 'zorkmid-bills'];
+// Names/aliases of treasures that trigger the bank alarm
+const BANK_TREASURE_NAMES = ['portrait', 'zorkmid bills'];
 
 // Alarm message
 const ALARM_MESSAGE = 'An alarm rings briefly, and an invisible force prevents you from leaving.';
@@ -35,7 +35,10 @@ function isCarryingBankTreasures(world: WorldModel, playerId: string): boolean {
 
   for (const item of contents) {
     const treasure = item.get(TreasureTrait);
-    if (treasure && BANK_TREASURE_IDS.includes(treasure.treasureId)) {
+    if (!treasure) continue;
+    const identity = item.get(IdentityTrait);
+    const name = identity?.name?.toLowerCase() ?? '';
+    if (BANK_TREASURE_NAMES.some(n => name.includes(n))) {
       return true;
     }
   }

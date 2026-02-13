@@ -17,7 +17,7 @@
  */
 
 import { ISemanticEvent } from '@sharpee/core';
-import { WorldModel, StandardCapabilities } from '@sharpee/world-model';
+import { WorldModel } from '@sharpee/world-model';
 import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 
 export const RealityAlteredMessages = {
@@ -31,16 +31,15 @@ export const RealityAlteredMessages = {
  */
 export function registerRealityAlteredHandler(world: WorldModel): void {
   world.registerEventHandler('if.event.score_displayed', (_event, w) => {
-    const scoring = w.getCapability(StandardCapabilities.SCORING);
-    if (!scoring) return;
+    const state = w.getDataStore().state;
 
     // Check if we need to show the reality altered message
-    if (scoring.realityAlteredPending) {
+    if (state['dungeo.reality_altered_pending']) {
       // Clear the pending flag
-      scoring.realityAlteredPending = false;
+      state['dungeo.reality_altered_pending'] = false;
 
       // Queue the message to be shown by the daemon
-      scoring.realityAlteredQueued = true;
+      state['dungeo.reality_altered_queued'] = true;
     }
   });
 }
@@ -58,16 +57,12 @@ export function registerRealityAlteredDaemon(scheduler: ISchedulerService): void
     priority: 100,  // High priority - run early in daemon phase
 
     condition: (context: SchedulerContext): boolean => {
-      const scoring = context.world.getCapability(StandardCapabilities.SCORING);
-      return scoring?.realityAlteredQueued === true;
+      return context.world.getDataStore().state['dungeo.reality_altered_queued'] === true;
     },
 
     run: (context: SchedulerContext): ISemanticEvent[] => {
-      const scoring = context.world.getCapability(StandardCapabilities.SCORING);
-      if (!scoring) return [];
-
       // Clear the queued flag
-      scoring.realityAlteredQueued = false;
+      context.world.getDataStore().state['dungeo.reality_altered_queued'] = false;
 
       // Emit the reality altered message
       return [{

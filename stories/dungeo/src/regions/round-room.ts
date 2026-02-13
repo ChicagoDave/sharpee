@@ -65,11 +65,10 @@ export function createRoundRoomObjects(world: WorldModel, roomIds: RoundRoomIds)
     description: 'A Stradivarius! This exquisite instrument is in perfect condition despite its surroundings. It must be worth a fortune.',
     properName: false,
     article: 'a',
-    weight: 10
+    weight: 10,
+    points: 10             // OFVAL from mdlzork_810722
   }));
   violin.add(new TreasureTrait({
-    treasureId: 'stradivarius',
-    treasureValue: 10,     // OFVAL from mdlzork_810722
     trophyCaseValue: 10,   // OTVAL from mdlzork_810722
   }));
 

@@ -29,7 +29,6 @@ import {
   Direction,
   createEffect,
   CapabilityEffect,
-  StandardCapabilities,
 } from '@sharpee/world-model';
 import { createSeededRandom, SeededRandom } from '@sharpee/core';
 
@@ -92,11 +91,10 @@ function getWeaponType(weaponName: string | undefined): string {
 }
 
 /**
- * Get current player score from the scoring capability.
+ * Get current player score from the score ledger.
  */
 function getPlayerScore(world: WorldModel): number {
-  const scoring = world.getCapability(StandardCapabilities.SCORING);
-  return scoring?.scoreValue ?? 0;
+  return world.getScore();
 }
 
 /**
@@ -136,12 +134,7 @@ function handleVillainDeath(
         RoomBehavior.unblockExit(room, Direction.NORTH);
       }
       // Add score: 10 points for defeating the troll
-      const scoring = world.getCapability(StandardCapabilities.SCORING);
-      if (scoring) {
-        scoring.scoreValue = (scoring.scoreValue || 0) + 10;
-        if (!scoring.achievements) scoring.achievements = [];
-        scoring.achievements.push('Defeated the troll');
-      }
+      world.awardScore('troll-killed', 10, 'Defeated the troll');
       // Remove troll and its weapon from the game (both disappear in smoke)
       const contents = world.getContents(villain.id);
       for (const item of contents) {
@@ -164,16 +157,11 @@ function handleVillainDeath(
       }
 
       // 2. Award 25 points for defeating the thief
-      const scoring = world.getCapability(StandardCapabilities.SCORING);
-      if (scoring) {
-        scoring.scoreValue = (scoring.scoreValue || 0) + 25;
-        if (!scoring.achievements) scoring.achievements = [];
-        scoring.achievements.push('Defeated the thief');
-        // ADR-078: Hidden max points — canvas treasure becomes achievable
-        scoring.thiefDead = true;
-        scoring.maxScore = 650;
-        scoring.realityAlteredPending = true;
-      }
+      world.awardScore('thief-killed', 25, 'Defeated the thief');
+      // ADR-078: Hidden max points — canvas treasure becomes achievable
+      world.setMaxScore(650);
+      world.getDataStore().state['dungeo.thief.dead'] = true;
+      world.getDataStore().state['dungeo.reality_altered_pending'] = true;
 
       // 3. Spawn empty frame in the Treasure Room (thief's lair)
       // The lair ID is stored in the thief's NPC custom properties

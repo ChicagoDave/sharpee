@@ -56,9 +56,14 @@ export {
   EggMessages
 } from './egg-behaviors';
 
-// Treasure (scoring and trophy case) - now platform-level in @sharpee/world-model
-// Re-export for backward compatibility with existing region imports
-export { TreasureTrait, TreasureTraitConfig } from '@sharpee/world-model';
+// Treasure (ADR-129: story-level trait for trophy case scoring)
+export { TreasureTrait, TreasureTraitConfig } from './treasure-trait';
+
+// Trophy Case (ADR-129: marker trait for trophy case entity)
+export { TrophyCaseTrait } from './trophy-case-trait';
+
+// Trophy Case Putting Interceptor (ADR-129)
+export { TrophyCasePuttingInterceptor } from '../interceptors/trophy-case-putting-interceptor';
 
 // Inflatable (boat and balloon cloth bag)
 export {

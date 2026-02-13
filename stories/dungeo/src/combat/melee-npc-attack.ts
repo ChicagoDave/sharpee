@@ -21,7 +21,6 @@ import {
   WorldModel,
   TraitType,
   IdentityTrait,
-  StandardCapabilities,
 } from '@sharpee/world-model';
 import { findWieldedWeapon } from '@sharpee/stdlib';
 
@@ -77,11 +76,10 @@ function getVillainKey(villain: IFEntity): string {
 }
 
 /**
- * Get current player score from the scoring capability.
+ * Get current player score from the score ledger.
  */
 function getPlayerScore(world: WorldModel): number {
-  const scoring = world.getCapability(StandardCapabilities.SCORING);
-  return scoring?.scoreValue ?? 0;
+  return world.getScore();
 }
 
 /**

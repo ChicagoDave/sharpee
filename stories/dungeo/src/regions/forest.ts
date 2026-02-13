@@ -284,15 +284,14 @@ function createTreeObjects(world: WorldModel, roomId: string): void {
     description: 'A beautiful jewel-encrusted egg. It appears to open somehow.',
     properName: false,
     article: 'a',
-    weight: 2
+    weight: 2,
+    points: 5              // OFVAL from mdlzork_810722
   }));
   egg.add(new ContainerTrait({ capacity: { maxItems: 1 } }));
   egg.add(new OpenableTrait({ isOpen: false }));
   egg.add(new EggTrait());  // Player can't open - only thief can
   egg.add(new TreasureTrait({
-    treasureId: 'jewel-encrusted-egg',
-    treasureValue: 5,
-    trophyCaseValue: 5
+    trophyCaseValue: 5     // OTVAL from mdlzork_810722
   }));
   world.moveEntity(egg.id, nest.id);
 
@@ -303,12 +302,11 @@ function createTreeObjects(world: WorldModel, roomId: string): void {
     description: 'A beautiful golden clockwork canary. It sings when wound.',
     properName: false,
     article: 'a',
-    weight: 10
+    weight: 10,
+    points: 6              // OFVAL from mdlzork_810722
   }));
   canary.add(new TreasureTrait({
-    treasureId: 'clockwork-canary',
-    treasureValue: 6,       // OFVAL from mdlzork_810722
-    trophyCaseValue: 2      // OTVAL from mdlzork_810722
+    trophyCaseValue: 2     // OTVAL from mdlzork_810722
   }));
 
   const eggOpenable = egg.get(OpenableTrait);

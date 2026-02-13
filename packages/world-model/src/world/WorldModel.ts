@@ -94,6 +94,13 @@ export {
   WorldChange
 } from '@sharpee/if-domain';
 
+// Score Ledger (ADR-129)
+export interface ScoreEntry {
+  id: string;
+  points: number;
+  description: string;
+}
+
 // Interface and class with same name in same file - TypeScript standard pattern
 export interface IWorldModel {
   // Get the data store for sharing with AuthorModel
@@ -161,6 +168,15 @@ export interface IWorldModel {
     isLocked?: boolean;
     keyId?: string;
   }): IFEntity;
+
+  // Score Ledger (ADR-129)
+  awardScore(id: string, points: number, description: string): boolean;
+  revokeScore(id: string): boolean;
+  hasScore(id: string): boolean;
+  getScore(): number;
+  getScoreEntries(): ScoreEntry[];
+  setMaxScore(max: number): void;
+  getMaxScore(): number;
 
   // Persistence
   toJSON(): string;
@@ -233,6 +249,10 @@ export class WorldModel implements IWorldModel {
   private spatialIndex: SpatialIndex;
   private config: WorldConfig;
   private capabilities: ICapabilityStore = {};
+
+  // Score Ledger (ADR-129)
+  private scoreLedger: ScoreEntry[] = [];
+  private scoreMaxScore: number = 0;
 
   // ID generation
   private idCounters: Map<string, number> = new Map();
@@ -851,6 +871,46 @@ export class WorldModel implements IWorldModel {
     this.playerId = entityId;
   }
 
+  // Score Ledger (ADR-129)
+  awardScore(id: string, points: number, description: string): boolean {
+    if (this.scoreLedger.some(e => e.id === id)) {
+      return false;
+    }
+    this.scoreLedger.push({ id, points, description });
+    return true;
+  }
+
+  revokeScore(id: string): boolean {
+    const idx = this.scoreLedger.findIndex(e => e.id === id);
+    if (idx < 0) return false;
+    this.scoreLedger.splice(idx, 1);
+    return true;
+  }
+
+  hasScore(id: string): boolean {
+    return this.scoreLedger.some(e => e.id === id);
+  }
+
+  getScore(): number {
+    let total = 0;
+    for (const entry of this.scoreLedger) {
+      total += entry.points;
+    }
+    return total;
+  }
+
+  getScoreEntries(): ScoreEntry[] {
+    return [...this.scoreLedger];
+  }
+
+  setMaxScore(max: number): void {
+    this.scoreMaxScore = max;
+  }
+
+  getMaxScore(): number {
+    return this.scoreMaxScore;
+  }
+
   // Persistence
   toJSON(): string {
     const data = {
@@ -870,6 +930,9 @@ export class WorldModel implements IWorldModel {
       })),
       // Add ID system data
       idCounters: Array.from(this.idCounters.entries()),
+      // Score Ledger (ADR-129)
+      scoreLedger: this.scoreLedger,
+      scoreMaxScore: this.scoreMaxScore,
       // Add capabilities
       capabilities: Object.entries(this.capabilities).map(([name, cap]) => ({
         name,
@@ -939,6 +1002,14 @@ export class WorldModel implements IWorldModel {
         };
       }
     }
+
+    // Restore score ledger (ADR-129)
+    if (data.scoreLedger) {
+      this.scoreLedger = data.scoreLedger;
+    }
+    if (data.scoreMaxScore !== undefined) {
+      this.scoreMaxScore = data.scoreMaxScore;
+    }
   }
 
   clear(): void {
@@ -950,6 +1021,8 @@ export class WorldModel implements IWorldModel {
     this.appliedEvents = [];
     this.idCounters.clear();
     this.capabilities = {};
+    this.scoreLedger = [];
+    this.scoreMaxScore = 0;
     this.grammarVocabularyProvider.clear();
     this.eventChains.clear();
   }

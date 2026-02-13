@@ -10,7 +10,6 @@
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
-import { StandardCapabilities } from '@sharpee/world-model';
 import { DIAGNOSE_ACTION_ID, DiagnoseMessages } from './types';
 import { getDiagnosis, CURE_WAIT } from '../../combat/melee';
 import { MELEE_STATE, CURE_STATE } from '../../combat/melee-state';
@@ -51,8 +50,7 @@ export const diagnoseAction: Action = {
     const woundAdjust = (player.attributes[MELEE_STATE.WOUND_ADJUST] as number) ?? 0;
 
     // Get current score for fight-strength calculation
-    const scoring = world.getCapability(StandardCapabilities.SCORING);
-    const score = scoring?.scoreValue ?? 0;
+    const score = world.getScore();
 
     // Calculate cure ticks remaining for current heal cycle
     const cureTicks = (world.getStateValue(CURE_STATE.TICKS) as number) || 0;

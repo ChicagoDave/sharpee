@@ -334,11 +334,10 @@ function createGrailRoomObjects(world: WorldModel, roomId: string): void {
     description: 'A plain wooden grail, yet it radiates an aura of ancient holiness. Its simple appearance belies its true value.',
     properName: false,
     article: 'a',
-    weight: 5
+    weight: 5,
+    points: 2              // OFVAL from mdlzork_810722
   }));
   grail.add(new TreasureTrait({
-    treasureId: 'grail',
-    treasureValue: 2,      // OFVAL from mdlzork_810722
     trophyCaseValue: 5,    // OTVAL from mdlzork_810722
   }));
   world.moveEntity(grail.id, roomId);
@@ -405,11 +404,10 @@ function createLoudRoomObjects(world: WorldModel, roomId: string): void {
     description: 'This is a large bar of platinum, stamped "FROBOZZ MAGIC COMPANY".',
     properName: false,
     article: 'a',
-    weight: 20
+    weight: 20,
+    points: 12             // OFVAL from mdlzork_810722
   }));
   bar.add(new TreasureTrait({
-    treasureId: 'platinum-bar',
-    treasureValue: 12,     // OFVAL from mdlzork_810722
     trophyCaseValue: 10,   // OTVAL from mdlzork_810722
   }));
   world.moveEntity(bar.id, roomId);

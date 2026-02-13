@@ -82,20 +82,20 @@ export const scoringAction: Action & { metadata: ActionMetadata } = {
     const sharedData = getScoringSharedData(context);
     const scoringData = context.world.getCapability(StandardCapabilities.SCORING);
 
-    // Check if scoring is enabled
-    if (!scoringData || scoringData.enabled === false) {
+    // Check if scoring is enabled (capability must exist and not be disabled)
+    if (scoringData?.enabled === false) {
       sharedData.enabled = false;
       return;
     }
 
     sharedData.enabled = true;
 
-    // Extract score data from capability
-    const score = scoringData.scoreValue || 0;
-    const maxScore = scoringData.maxScore || 0;
-    const moves = scoringData.moves || 0;
-    const achievements = scoringData.achievements || [];
-    const rank = scoringData.rank || computeRank(score, maxScore);
+    // Read score from ledger (ADR-129), moves from capability
+    const score = context.world.getScore();
+    const maxScore = context.world.getMaxScore();
+    const moves = scoringData?.moves || 0;
+    const achievements = scoringData?.achievements || [];
+    const rank = scoringData?.rank || computeRank(score, maxScore);
 
     const eventData: ScoreDisplayedEventData = { score, maxScore, moves };
     const params: Record<string, any> = { score, maxScore, moves, rank };

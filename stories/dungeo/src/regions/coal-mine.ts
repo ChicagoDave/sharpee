@@ -573,12 +573,11 @@ function createJadeFigurine(world: WorldModel, roomId: string): IFEntity {
     description: 'A beautiful jade figurine of an oriental dragon. It is exquisitely carved.',
     properName: false,
     article: 'a',
-    weight: 5
+    weight: 5,
+    points: 5              // OFVAL from mdlzork_810722
   }));
   figurine.add(new TreasureTrait({
-    treasureId: 'jade-figurine',
-    treasureValue: 5,
-    trophyCaseValue: 5
+    trophyCaseValue: 5     // OTVAL from mdlzork_810722
   }));
 
   world.moveEntity(figurine.id, roomId);
@@ -596,12 +595,11 @@ function createSapphireBracelet(world: WorldModel, roomId: string): IFEntity {
     description: 'A delicate bracelet set with brilliant blue sapphires.',
     properName: false,
     article: 'a',
-    weight: 5
+    weight: 5,
+    points: 5              // OFVAL from mdlzork_810722
   }));
   bracelet.add(new TreasureTrait({
-    treasureId: 'sapphire-bracelet',
-    treasureValue: 5,     // OFVAL from mdlzork_810722
-    trophyCaseValue: 3    // OTVAL from mdlzork_810722
+    trophyCaseValue: 3     // OTVAL from mdlzork_810722
   }));
 
   world.moveEntity(bracelet.id, roomId);
@@ -620,11 +618,10 @@ function createRedCrystalSphere(world: WorldModel, roomId: string): IFEntity {
     description: 'A beautiful sphere of red crystal. It seems to glow with an inner light.',
     properName: false,
     article: 'a',
-    weight: 5
+    weight: 5,
+    points: 10             // OFVAL from mdlzork_810722
   }));
   sphere.add(new TreasureTrait({
-    treasureId: 'red-crystal-sphere',
-    treasureValue: 10,      // OFVAL from mdlzork_810722
     trophyCaseValue: 5      // OTVAL from mdlzork_810722
   }));
 

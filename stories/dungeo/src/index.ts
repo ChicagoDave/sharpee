@@ -35,8 +35,7 @@ import {
   registerActionInterceptor,
   hasActionInterceptor
 } from '@sharpee/world-model';
-import { DungeoScoringService } from './scoring';
-import { ScoringEventProcessor, MetaCommandRegistry, registerNpcCombatResolver } from '@sharpee/stdlib';
+import { MetaCommandRegistry, registerNpcCombatResolver } from '@sharpee/stdlib';
 
 // Import custom actions
 import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltReservoirIds, blockReservoirExits, TURN_SWITCH_ACTION_ID, TurnSwitchMessages, PUT_UNDER_ACTION_ID, PutUnderMessages, PUSH_KEY_ACTION_ID, PushKeyMessages, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages, INFLATE_ACTION_ID, InflateMessages, DEFLATE_ACTION_ID, DeflateMessages, COMMANDING_ACTION_ID, CommandingMessages, LAUNCH_ACTION_ID, LaunchMessages, TALK_TO_TROLL_ACTION_ID, TalkToTrollMessages, DIAGNOSE_ACTION_ID, DiagnoseMessages, ROOM_ACTION_ID, RNAME_ACTION_ID, OBJECTS_ACTION_ID, RoomInfoMessages, GRUE_DEATH_ACTION_ID, GrueDeathMessages, CHIMNEY_BLOCKED_ACTION_ID, ChimneyBlockedMessages } from './actions';
@@ -118,7 +117,10 @@ import {
   // Gas Room destination interceptor (ADR-126)
   GasRoomTrait,
   GasRoomEntryInterceptor,
-  GasRoomEntryMessages
+  GasRoomEntryMessages,
+  // Trophy Case putting interceptor (ADR-129)
+  TrophyCaseTrait,
+  TrophyCasePuttingInterceptor
 } from './traits';
 
 // Melee combat interceptor (Phase 3) + NPC resolver
@@ -159,8 +161,6 @@ export class DungeoStory implements Story {
   config = config;
 
   private world!: WorldModel;
-  private scoringService!: DungeoScoringService;
-  private scoringProcessor!: ScoringEventProcessor;
   private whiteHouseIds: WhiteHouseRoomIds = {} as WhiteHouseRoomIds;
   private houseInteriorIds: HouseInteriorRoomIds = {} as HouseInteriorRoomIds;
   private forestIds: ForestRoomIds = {} as ForestRoomIds;
@@ -178,6 +178,7 @@ export class DungeoStory implements Story {
   private roundRoomIds: RoundRoomIds = {} as RoundRoomIds;
   private balloonIds: VolcanoObjectIds | null = null;
   private mirrorConfig: MirrorRoomConfig | null = null;
+  private roomVisitScoring: Map<string, number> = new Map();
 
   /**
    * Initialize the world for Dungeo
@@ -206,32 +207,17 @@ export class DungeoStory implements Story {
     MetaCommandRegistry.register(RNAME_ACTION_ID);
     MetaCommandRegistry.register(OBJECTS_ACTION_ID);
 
-    // Register scoring capability (Zork max score is 616, includes treasures + room entry points)
+    // Register scoring capability for moves/deaths tracking (score itself is on the ledger)
     world.registerCapability(StandardCapabilities.SCORING, {
       initialData: {
-        scoreValue: 0,
-        maxScore: 616,
         moves: 0,
-        deaths: 0,  // Track death count for -10 penalty per death
-        achievements: [],
-        scoredTreasures: []
+        deaths: 0,
       }
     });
 
-    // Create scoring service
-    this.scoringService = new DungeoScoringService(world);
-
-    // Create scoring event processor with dynamic treasure detection
-    // Uses entity properties (isTreasure, treasureValue, trophyCaseValue) instead of explicit registration
-    // NOTE: initializeHandlers() must be called in onEngineReady(), not here!
-    this.scoringProcessor = new ScoringEventProcessor(this.scoringService, world)
-      .enableDynamicTreasures('trophy case')
-      .setTreasureTakeCallback((treasureId: string, points: number) => {
-        this.scoringService.scoreTreasureTake(treasureId, points);
-      })
-      .setTreasurePlaceCallback((treasureId: string, points: number) => {
-        this.scoringService.scoreTreasureCase(treasureId, points);
-      });
+    // ADR-129: Scoring is now handled by world.awardScore() — no ScoringService needed.
+    // Take-scoring: stdlib taking action reads IdentityTrait.points
+    // Trophy case scoring: TrophyCasePuttingInterceptor reads TreasureTrait.trophyCaseValue
 
     // Register capability behaviors (ADR-090)
     // Basket elevator uses lowering/raising capability dispatch
@@ -471,6 +457,15 @@ export class DungeoStory implements Story {
       );
     }
 
+    // Trophy Case putting interceptor (ADR-129: awards trophy case points)
+    if (!hasActionInterceptor(TrophyCaseTrait.type, 'if.action.putting')) {
+      registerActionInterceptor(
+        TrophyCaseTrait.type,
+        'if.action.putting',
+        TrophyCasePuttingInterceptor
+      );
+    }
+
     // Melee combat interceptor (Phase 3: canonical MDL melee engine)
     // Replaces CombatService with score-scaled, table-based combat for all villains
     if (!hasActionInterceptor(TraitType.COMBATANT, 'if.action.attacking')) {
@@ -496,21 +491,27 @@ export class DungeoStory implements Story {
     });
     blockReservoirExits(world);
 
-    // Register room entry scoring (RVAL) - points for first visiting certain rooms
+    // Room entry scoring (RVAL) - points for first visiting certain rooms
     // From 1981 MDL source: 13 rooms worth 215 total points
-    this.scoringProcessor.registerRoomVisit(this.houseInteriorIds.kitchen, 10);      // KITCH
-    this.scoringProcessor.registerRoomVisit(this.undergroundIds.cellar, 25);         // CELLA
-    this.scoringProcessor.registerRoomVisit(this.volcanoIds.volcanoBottom, 10);      // BLROO (Balloon Room)
-    this.scoringProcessor.registerRoomVisit(this.mazeIds.treasureRoom, 25);          // TREAS (Trophy Room)
-    this.scoringProcessor.registerRoomVisit(this.endgameIds.narrowCorridor, 5);      // PASS1 (Narrow Passage)
-    this.scoringProcessor.registerRoomVisit(this.endgameIds.landOfDead, 30);         // LLD2 (Land of Living Dead)
-    this.scoringProcessor.registerRoomVisit(this.wellRoomIds.topOfWell, 10);         // TWELL (Temple Well)
-    this.scoringProcessor.registerRoomVisit(this.endgameIds.insideMirror, 15);       // INMIR (Inside Mirror)
-    this.scoringProcessor.registerRoomVisit(this.endgameIds.tomb, 5);                // CRYPT
-    this.scoringProcessor.registerRoomVisit(this.undergroundIds.torchRoom, 10);      // TSTRS (Torch Room Stairs)
-    this.scoringProcessor.registerRoomVisit(this.endgameIds.dungeonEntrance, 20);    // BDOOR (Behind Dungeon Door)
-    this.scoringProcessor.registerRoomVisit(this.endgameIds.hallway, 15);            // FDOOR (Front Door/Hallway)
-    this.scoringProcessor.registerRoomVisit(this.endgameIds.treasury, 35);           // NIRVA (Nirvana/Treasury)
+    // Stored as map, registered as event handler in onEngineReady via orchestration
+    this.roomVisitScoring = new Map<string, number>([
+      [this.houseInteriorIds.kitchen, 10],       // KITCH
+      [this.undergroundIds.cellar, 25],           // CELLA
+      [this.volcanoIds.volcanoBottom, 10],        // BLROO (Balloon Room)
+      [this.mazeIds.treasureRoom, 25],            // TREAS (Trophy Room)
+      [this.endgameIds.narrowCorridor, 5],        // PASS1 (Narrow Passage)
+      [this.endgameIds.landOfDead, 30],           // LLD2 (Land of Living Dead)
+      [this.wellRoomIds.topOfWell, 10],           // TWELL (Temple Well)
+      [this.endgameIds.insideMirror, 15],         // INMIR (Inside Mirror)
+      [this.endgameIds.tomb, 5],                  // CRYPT
+      [this.undergroundIds.torchRoom, 10],        // TSTRS (Torch Room Stairs)
+      [this.endgameIds.dungeonEntrance, 20],      // BDOOR (Behind Dungeon Door)
+      [this.endgameIds.hallway, 15],              // FDOOR (Front Door/Hallway)
+      [this.endgameIds.treasury, 35],             // NIRVA (Nirvana/Treasury)
+    ]);
+
+    // Set max score via score ledger (ADR-129)
+    world.setMaxScore(616);
 
     // Set initial player location to West of House
     const player = world.getPlayer();
@@ -708,10 +709,9 @@ export class DungeoStory implements Story {
         royalPuzzleIds: this.royalPuzzleIds,
         wellRoomIds: this.wellRoomIds,
         balloonIds: this.balloonIds || undefined,
-        mirrorConfig: this.mirrorConfig || undefined
+        mirrorConfig: this.mirrorConfig || undefined,
+        roomVisitScoring: this.roomVisitScoring,
       },
-      this.scoringProcessor,
-      this.scoringService
     );
   }
 }

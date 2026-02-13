@@ -24,7 +24,6 @@ import {
   LightSourceTrait,
   SwitchableTrait,
   LockableTrait,
-  StandardCapabilities,
   WeaponTrait
 } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
@@ -401,13 +400,8 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
         RoomBehavior.unblockExit(trollRoom, Direction.NORTH);
       }
 
-      // Add score
-      const scoring = w.getCapability(StandardCapabilities.SCORING);
-      if (scoring) {
-        scoring.scoreValue = (scoring.scoreValue || 0) + 10;
-        if (!scoring.achievements) scoring.achievements = [];
-        scoring.achievements.push('Defeated the troll');
-      }
+      // Add score (NOTE: .on handlers are dead code — scoring handled by melee interceptor)
+      w.awardScore('troll-killed', 10, 'Defeated the troll');
 
       // Show smoke disappear message
       events.push({
@@ -543,11 +537,10 @@ function createGalleryObjects(world: WorldModel, roomId: string): void {
     description: 'A painting of remarkable beauty, depicting a woodland scene. It is the only painting remaining in the gallery.',
     properName: false,
     article: 'a',
-    weight: 20
+    weight: 20,
+    points: 4              // OFVAL from mdlzork_810722
   }));
   painting.add(new TreasureTrait({
-    treasureId: 'painting',
-    treasureValue: 4,      // OFVAL from mdlzork_810722
     trophyCaseValue: 7,    // OTVAL from mdlzork_810722
   }));
   world.moveEntity(painting.id, roomId);
@@ -609,7 +602,8 @@ function createTorchRoomObjects(world: WorldModel, roomId: string): void {
     description: 'A beautiful torch of polished ivory, its flame burning brightly.',
     properName: false,
     article: 'an',
-    weight: 5
+    weight: 5,
+    points: 14             // OFVAL from mdlzork_810722
   }));
   torch.add(new LightSourceTrait({
     isLit: true,  // Always lit - permanent light source
@@ -621,8 +615,6 @@ function createTorchRoomObjects(world: WorldModel, roomId: string): void {
   // No SwitchableTrait - player cannot turn it on/off
   torch.attributes.isFlame = true;  // Open flame - dangerous in Gas Room
   torch.add(new TreasureTrait({
-    treasureId: 'ivory-torch',
-    treasureValue: 14,     // OFVAL from mdlzork_810722
     trophyCaseValue: 6,    // OTVAL from mdlzork_810722
   }));
   world.moveEntity(torch.id, roomId);
@@ -681,11 +673,10 @@ function createDrearyRoomObjects(world: WorldModel, roomId: string): void {
     description: 'A beautiful sphere of blue crystal. It seems to glow with an inner light.',
     properName: false,
     article: 'a',
-    weight: 5
+    weight: 5,
+    points: 10             // OFVAL from mdlzork_810722
   }));
   sphere.add(new TreasureTrait({
-    treasureId: 'blue-crystal-sphere',
-    treasureValue: 10,     // OFVAL from mdlzork_810722
     trophyCaseValue: 5,    // OTVAL from mdlzork_810722
   }));
   world.moveEntity(sphere.id, roomId);

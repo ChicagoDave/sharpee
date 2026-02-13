@@ -396,15 +396,14 @@ function createReservoirObjects(world: WorldModel, roomId: string): void {
     description: 'This is an old trunk, covered in mud. It appears to contain a fortune in jewels!',
     properName: false,
     article: 'a',
-    weight: 5
+    weight: 5,
+    points: 15             // OFVAL from mdlzork_810722
   }));
   trunk.add(new ContainerTrait({
     capacity: { maxItems: 10, maxWeight: 50 }
   }));
   trunk.add(new OpenableTrait({ isOpen: true }));
   trunk.add(new TreasureTrait({
-    treasureId: 'trunk-of-jewels',
-    treasureValue: 15,       // OFVAL from mdlzork_810722
     trophyCaseValue: 8       // OTVAL from mdlzork_810722
   }));
   world.moveEntity(trunk.id, roomId);
@@ -515,11 +514,10 @@ function createAtlantisRoomObjects(world: WorldModel, roomId: string): void {
     description: 'On the shore lies Poseidon\'s own crystal trident.',
     properName: false,
     article: 'a',
-    weight: 5
+    weight: 5,
+    points: 4              // OFVAL from mdlzork_810722
   }));
   trident.add(new TreasureTrait({
-    treasureId: 'crystal-trident',
-    treasureValue: 4,      // OFVAL from mdlzork_810722
     trophyCaseValue: 11    // OTVAL from mdlzork_810722
   }));
   world.moveEntity(trident.id, roomId);

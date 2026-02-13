@@ -8,7 +8,7 @@
  * - Room traversal
  */
 
-import { IFEntity, WorldModel, NpcTrait, IdentityTrait, StandardCapabilities } from '@sharpee/world-model';
+import { IFEntity, WorldModel, NpcTrait, IdentityTrait } from '@sharpee/world-model';
 import { NpcContext } from '@sharpee/stdlib';
 import { ThiefCustomProperties, ThiefState } from './thief-entity';
 import { TreasureTrait } from '../../traits';
@@ -30,9 +30,11 @@ export function isTreasure(entity: IFEntity): boolean {
  * Get the value of a treasure (for prioritization)
  */
 export function getTreasureValue(entity: IFEntity): number {
+  const identity = entity.get(IdentityTrait);
   const treasure = entity.get(TreasureTrait);
-  if (!treasure) return 0;
-  return treasure.treasureValue + treasure.trophyCaseValue;
+  const takePoints = identity?.points ?? 0;
+  const casePoints = treasure?.trophyCaseValue ?? 0;
+  return takePoints + casePoints;
 }
 
 /**
@@ -79,8 +81,7 @@ export function isCarryingEgg(context: NpcContext): boolean {
   return context.npcInventory.some(item => {
     const identity = item.get(IdentityTrait);
     const name = identity?.name?.toLowerCase() ?? '';
-    const treasure = item.get(TreasureTrait);
-    return name.includes('egg') || treasure?.treasureId === 'jewel-encrusted-egg';
+    return name.includes('egg');
   });
 }
 
@@ -91,8 +92,7 @@ export function getEggFromInventory(context: NpcContext): IFEntity | undefined {
   return context.npcInventory.find(item => {
     const identity = item.get(IdentityTrait);
     const name = identity?.name?.toLowerCase() ?? '';
-    const treasure = item.get(TreasureTrait);
-    return name.includes('egg') || treasure?.treasureId === 'jewel-encrusted-egg';
+    return name.includes('egg');
   });
 }
 
@@ -172,8 +172,7 @@ export function decrementCooldowns(props: ThiefCustomProperties): void {
  * Get player's current score (for combat scaling)
  */
 export function getPlayerScore(world: WorldModel): number {
-  const scoring = world.getCapability(StandardCapabilities.SCORING);
-  return scoring?.scoreValue ?? 0;
+  return world.getScore();
 }
 
 /**

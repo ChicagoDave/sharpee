@@ -307,11 +307,10 @@ function createPearlNecklace(world: WorldModel, roomId: string): IFEntity {
     description: 'A pearl necklace with hundreds of large pearls. It must be worth a fortune.',
     properName: false,
     article: 'a',
-    weight: 5
+    weight: 5,
+    points: 9              // OFVAL from mdlzork_810722
   }));
   necklace.add(new TreasureTrait({
-    treasureId: 'pearl-necklace',
-    treasureValue: 9,      // OFVAL from mdlzork_810722
     trophyCaseValue: 5,    // OTVAL from mdlzork_810722
   }));
   world.moveEntity(necklace.id, roomId);
@@ -470,11 +469,10 @@ function createPoolRoomObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a',
     weight: 8,
-    concealed: true  // Hidden until pool dissolved by red cake
+    concealed: true,  // Hidden until pool dissolved by red cake
+    points: 5              // OFVAL from mdlzork_810722
   }));
   saffron.add(new TreasureTrait({
-    treasureId: 'saffron',
-    treasureValue: 5,      // OFVAL from mdlzork_810722
     trophyCaseValue: 5     // OTVAL from mdlzork_810722
   }));
   world.moveEntity(saffron.id, roomId);
@@ -551,11 +549,10 @@ function createDingyClosetObjects(world: WorldModel, roomId: string): void {
     description: 'A perfectly smooth sphere of white crystal. It glows with an inner light.',
     properName: false,
     article: 'a',
-    weight: 5
+    weight: 5,
+    points: 6              // OFVAL from mdlzork_810722
   }));
   sphere.add(new TreasureTrait({
-    treasureId: 'white-crystal-sphere',
-    treasureValue: 6,      // OFVAL from mdlzork_810722
     trophyCaseValue: 6,    // OTVAL from mdlzork_810722
   }));
   sphere.add(new SphereTrait({

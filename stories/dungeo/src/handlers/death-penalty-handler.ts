@@ -14,7 +14,6 @@
 
 import { Effect, WorldQuery, IGameEvent } from '@sharpee/event-processor';
 import { WorldModel, StandardCapabilities } from '@sharpee/world-model';
-import { IDungeoScoringService } from '../scoring';
 
 // Death penalty constants from FORTRAN source
 const DEATH_PENALTY_POINTS = 10;
@@ -31,11 +30,9 @@ export const DeathPenaltyMessages = {
  * Create death penalty handler for event processor
  *
  * @param world - World model (for reading current state)
- * @param scoringService - Dungeo scoring service for point deduction
  */
 export function createDeathPenaltyHandler(
   world: WorldModel,
-  scoringService: IDungeoScoringService
 ): (event: IGameEvent, query: WorldQuery) => Effect[] {
   return (_event: IGameEvent, _query: WorldQuery): Effect[] => {
     const effects: Effect[] = [];
@@ -45,13 +42,13 @@ export function createDeathPenaltyHandler(
     const currentDeaths = scoring?.deaths ?? 0;
     const deaths = currentDeaths + 1;
 
-    // Update death count (direct mutation since scoring service handles this)
+    // Update death count
     if (scoring) {
       scoring.deaths = deaths;
     }
 
-    // Apply -10 point penalty via scoring service
-    scoringService.addPoints(-DEATH_PENALTY_POINTS, 'Death penalty');
+    // Apply -10 point penalty via score ledger
+    world.awardScore(`death-penalty-${deaths}`, -DEATH_PENALTY_POINTS, 'Death penalty');
 
     // Emit score effect for transparency
     effects.push({

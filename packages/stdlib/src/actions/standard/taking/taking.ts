@@ -239,6 +239,16 @@ function executeSingleEntity(
 
   // Perform the actual move
   context.world.moveEntity(noun.id, actor.id);
+
+  // Score points for taking items with points value (ADR-129)
+  const identity = noun.getTrait(TraitType.IDENTITY) as any;
+  if (identity?.points) {
+    context.world.awardScore(
+      noun.id,
+      identity.points,
+      identity.pointsDescription ?? identity.name ?? noun.id
+    );
+  }
 }
 
 /**
