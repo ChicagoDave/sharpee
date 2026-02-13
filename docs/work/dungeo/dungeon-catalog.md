@@ -13,12 +13,15 @@
 | Category            | Points  |
 | ------------------- | ------- |
 | Main Game Treasures | 616     |
+| ADR-078 Extension   | 34      |
 | Endgame             | 100     |
-| **Total**           | **716** |
+| **Total**           | **750** |
+
+> **Note:** The base Fortran game has 32 treasures for 616 points. Our ADR-078 extension adds a 33rd treasure (Thief's Canvas, 34 pts) for 650 main game points. Max score display shows 616 until thief dies, then 650.
 
 ---
 
-## Treasures (32 items, 616 points total)
+## Treasures (33 items, 650 points total)
 
 Points are awarded for: (1) taking the treasure, (2) placing it in the trophy case.
 
@@ -56,8 +59,9 @@ Points are awarded for: (1) taking the treasure, (2) placing it in the trophy ca
 | 30  | Ruby                       | 15   | 8    | 23    | Ruby Room                    |
 | 31  | Don Woods stamp            | --   | 1    | 1     | Brochure (mail order)        |
 | 32  | Brass bauble               | 1    | 1    | 2     | Forest (from canary song)    |
+| 33  | Thief's canvas (ADR-078)   | 10   | 24   | 34    | Gallery (ghost ritual)       |
 
-**Note:** Some treasures require solving puzzles first (egg must be opened by thief, diamond from coal via machine, rainbow from sceptre wave, etc.)
+**Note:** Treasures 1-32 are from the original Fortran DUNGEON. Treasure 33 (Thief's Canvas) is a Sharpee ADR-078 extension. Some treasures require solving puzzles first (egg must be opened by thief, diamond from coal via machine, rainbow from sceptre wave, etc.)
 
 ---
 
@@ -318,65 +322,70 @@ Points are awarded for: (1) taking the treasure, (2) placing it in the trophy ca
 
 ### Food & Consumables
 
-| Object        | Location | Use               |
-| ------------- | -------- | ----------------- |
-| Lunch         | Sack     | Eat (optional)    |
-| Garlic        | Sack     | Repel vampire bat |
-| Water         | Bottle   | Bucket puzzle     |
-| Eat-me cake   | Tea Room | Shrink            |
-| Drink-me cake | (Blue)   | Unused?           |
-| Orange cake   | Tea Room | Grow              |
+| Object        | Location | Use                              |
+| ------------- | -------- | -------------------------------- |
+| Lunch         | Sack     | Eat (optional)                   |
+| Garlic        | Sack     | Repel vampire bat                |
+| Water         | Bottle   | Bucket puzzle                    |
+| Eat-me cake   | Tea Room | Grow (makes player large)        |
+| Blue cake     | Tea Room | Shrink (makes player small)      |
+| Red cake      | Tea Room | Edible, explodes (kills player)  |
+| Orange cake   | Tea Room | Edible, no special effect        |
 
 ### Keys & Access Items
 
-| Object       | Location  | Use              |
-| ------------ | --------- | ---------------- |
-| Skeleton key | Dead End  | Grating          |
-| Iron key     | Tiny Room | Dreary Room door |
-| Gold key     | ?         |                  |
-| Sceptre      | Coffin    | Wave for rainbow |
+| Object       | Location  | Use                                              |
+| ------------ | --------- | ------------------------------------------------ |
+| Skeleton key | Dead End  | Grating                                          |
+| Rusty key    | Tiny Room | In keyhole; push out with screwdriver, catch on mat |
+| Rusty key    | Endgame   | Prison cell door                                 |
+| Sceptre      | Coffin    | Wave for rainbow                                 |
+
+> **Note:** There is NO "gold key" in any version of Zork. The Tiny Room key is pushed through the keyhole with the screwdriver and caught on the welcome mat.
 
 ### Books & Papers
 
-| Object      | Location     | Notes                         |
-| ----------- | ------------ | ----------------------------- |
-| Leaflet     | Mailbox      | Welcome message               |
-| Guidebook   | Dam Lobby    | Dam information, balloon fuel |
-| Matchbook   | Dam Lobby    | Send for brochure             |
-| Black book  | Altar        | Exorcism                      |
-| Green paper | Tea Room     | Robot instructions            |
-| Purple book | Library      | Contains stamp                |
-| Lore book   | Royal Puzzle | Endgame item                  |
+| Object      | Location  | Notes                         |
+| ----------- | --------- | ----------------------------- |
+| Leaflet     | Mailbox   | Welcome message               |
+| Guidebook   | Dam Lobby | Dam information, balloon fuel |
+| Matchbook   | Dam Lobby | Send for brochure             |
+| Black book  | Altar     | Exorcism                      |
+| Green paper | Tea Room  | FROBOZZ MAGIC BOAT instructions |
+| Purple book | Library   | Contains stamp                |
 
 ### Miscellaneous
 
-| Object         | Location        | Use                 |
-| -------------- | --------------- | ------------------- |
-| Rug            | Living Room     | Covers trap door    |
-| Mat            | West of House   | Key puzzle          |
-| Bell           | Temple          | Exorcism            |
-| Coal           | Dead End (mine) | Diamond via machine |
-| Brick          | Attic           | Volcano explosion   |
-| Wire (braided) | Stream View     | Balloon tether      |
-| Wire (shiny)   | (with brick)    | Fuse                |
-| Timber         | Mine            | Slide room anchor   |
-| Brochure       | Mail            | Contains stamp      |
-| Robot          | Low Room        | Push button         |
+| Object         | Location        | Use                                  |
+| -------------- | --------------- | ------------------------------------ |
+| Rug            | Living Room     | Covers trap door                     |
+| Mat            | West of House   | Key puzzle (slide under door)        |
+| Bell           | Temple          | Exorcism                             |
+| Coal           | Dead End (mine) | Diamond via machine                  |
+| Brick          | Attic           | Volcano explosion                    |
+| Wire (braided) | Stream View     | Balloon tether                       |
+| Wire (shiny)   | (with brick)    | Fuse                                 |
+| Timber         | Mine            | Slide room anchor                    |
+| Brochure       | Mail            | Contains stamp (SEND FOR BROCHURE)   |
+| Robot          | Low Room        | Push button (commandable NPC)        |
+| Incense        | Maze (skeleton) | ADR-078: Burns 3 turns, disarms basin |
+| Empty frame    | Treasure Room   | ADR-078: Appears after thief dies    |
+| Frame piece    | (from frame)    | ADR-078: Drop in basin for canvas    |
 
 ---
 
 ## NPCs / Creatures
 
-| Creature       | Location          | Behavior                                     |
-| -------------- | ----------------- | -------------------------------------------- |
-| Troll          | Troll Room        | Guards passage, fight to pass                |
-| Thief          | Wandering         | Steals treasures, opens egg, fight late-game |
-| Cyclops        | Cyclops Room      | Say "Odysseus" or "Ulysses" to scare away    |
-| Vampire bat    | Bat Room          | Attacks without garlic                       |
-| Spirits        | Entrance to Hades | Block passage until exorcised                |
-| Dungeon Master | Endgame           | Ally in final puzzle                         |
-| Robot          | Low Room          | Commandable NPC                              |
-| Gnome          | Bank              | Appears with curtain                         |
+| Creature       | Location          | Behavior                                     | Status |
+| -------------- | ----------------- | -------------------------------------------- | ------ |
+| Troll          | Troll Room        | Guards passage, fight to pass                | Done   |
+| Thief          | Wandering         | Steals treasures, opens egg, fight late-game | Done   |
+| Cyclops        | Cyclops Room      | Say "Odysseus" or "Ulysses" to scare away    | Done   |
+| Vampire bat    | Bat Room          | Attacks without garlic, teleports player     | Done   |
+| Spirits        | Entrance to Hades | Block passage until exorcised                | Done   |
+| Dungeon Master | Endgame           | Trivia questions, opens door after 3 correct | Done   |
+| Robot          | Low Room          | Commandable NPC (walk, take, drop, push)     | Done   |
+| Gnome          | Bank              | Appears with curtain of light                | **TODO** |
 
 ---
 
@@ -497,17 +506,21 @@ Questions asked at the Dungeon Entrance:
 
 ## Death Conditions
 
-- Killed by troll
-- Killed by thief
-- Killed by cyclops
-- Eaten by grue (darkness)
-- Drowned in river/falls
-- Fell in volcano
-- Gas room explosion (torch + gas)
-- Glacier flood
-- Various falls
+| Death                    | Status   | Notes                                  |
+| ------------------------ | -------- | -------------------------------------- |
+| Killed by troll          | Done     | Combat system                          |
+| Killed by thief          | Done     | Combat system                          |
+| Killed by cyclops        | Done     | Combat system                          |
+| Eaten by grue (darkness) | Done     | Darkness handler                       |
+| Drowned at falls         | Done     | Falls death handler                    |
+| Drowned in river         | Done     | River navigation blocking              |
+| Gas room explosion       | Done     | Gas room interceptor (torch + gas)     |
+| Fell in volcano          | **TODO** | Falling off ledge without balloon      |
+| Glacier flood            | **TODO** | Possible death from glacier mechanics  |
+| Slide without rope       | **TODO** | Sliding to cellar                      |
+| Red cake explosion       | **TODO** | Eating red cake                        |
 
-**Prayer:** If killed, you may PRAY at the Altar to be resurrected (once).
+**Resurrection:** If killed, PRAY at Altar to be resurrected (once). **Status: TODO** — PRAY currently only does altar→forest teleport, not resurrection.
 
 ---
 
@@ -535,11 +548,21 @@ Questions asked at the Dungeon Entrance:
 
 ## Implementation Notes for Sharpee
 
-1. **Treasure tracking:** Need OTVAL (take value) and trophy case value separately
-2. **Thief behavior:** Wanders, steals, must open egg, fight difficulty scales with score
-3. **Light timer:** Lantern has ~350 turns of light
-4. **Puzzle room:** See separate Royal Puzzle spec (8x8 grid)
-5. **Robot commands:** Parser must handle "tell robot 'X'" syntax
-6. **Endgame separation:** Score resets to 0/100, save disabled
-7. **Resurrection:** One-time prayer mechanic
-8. **Randomization:** Combat has random elements
+1. **Treasure tracking:** OFVAL → `points` on IdentityTrait, OTVAL → `trophyCaseValue` on TreasureTrait (ADR-129)
+2. **Thief behavior:** Done — wanders, steals, opens egg at lair, fight difficulty scales with score
+3. **Light timer:** Done — lantern has ~330 turns, candles limited
+4. **Puzzle room:** Done — 8x8 grid, push walls, gold card obtainable
+5. **Robot commands:** Done — "tell robot to X" syntax, walk/take/drop/push
+6. **Endgame separation:** Done — score resets to 0/100, INCANT cheat available
+7. **Resurrection:** **TODO** — one-time prayer mechanic after death
+8. **Randomization:** Done — combat has random elements, carousel exits random
+9. **ADR-078 extension:** Done — Thief's Canvas puzzle (ghost ritual, 34 pts)
+10. **Gnome NPC:** **TODO** — bank curtain of light interaction
+
+## Open Issues
+
+See `docs/work/issues/issues-list-03.md` for tracked bugs:
+- ISSUE-052 (High): Capability registry not shared across require() boundaries
+- ISSUE-055 (Medium): Scope resolver doesn't find items in open containers on floor
+- ISSUE-054 (Low): Cyclops say handler emits raw {npcName} template
+- ISSUE-056 (Low): Treasure Room thief summoning message not displayed
