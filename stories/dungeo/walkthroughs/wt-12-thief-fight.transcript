@@ -95,6 +95,10 @@ $restore wt-11
 
 [GOAL: Give egg to thief at Treasure Room]
 
+# Switch to lantern (thief may steal torch underground)
+> turn on lantern
+[OK: contains "on"]
+
 # Open trapdoor if needed
 > open trap door
 [OK: contains "open"]
@@ -192,6 +196,11 @@ $restore wt-11
 
 > take chalice
 [OK: contains "Taken"]
+
+# Recover torch if thief stole it
+[IF: room contains "torch"]
+> take torch
+[END IF]
 
 [END GOAL]
 
