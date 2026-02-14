@@ -77,11 +77,16 @@ export function registerObjectMessages(language: LanguageProvider): void {
   // Glacier Puzzle (throw torch at glacier)
   // ==========================================================================
 
-  language.addMessage(GlacierMessages.GLACIER_MELTS, 'The torch strikes the glacier and begins to melt into it! Steam billows from the ice as a massive section collapses, revealing a passage to the north.');
-  language.addMessage(GlacierMessages.TORCH_CONSUMED, 'The torch is consumed by the melting ice.');
-  language.addMessage(GlacierMessages.PASSAGE_REVEALED, 'A passage north has been revealed!');
+  // MDL GLACIER-WIN message (act1.mud:290-294)
+  language.addMessage(GlacierMessages.GLACIER_MELTS, 'The torch hits the glacier and explodes into a great ball of flame, devouring the glacier. The water from the melting glacier rushes downstream, carrying the torch with it. In the place of the glacier, there is a passageway leading west.');
   language.addMessage(GlacierMessages.THROW_COLD, 'The torch bounces off the glacier harmlessly. Perhaps if it were lit, it might have more effect.');
-  language.addMessage(GlacierMessages.THROW_WRONG_ITEM, 'The {item} bounces off the glacier and falls to the ground.');
+  language.addMessage(GlacierMessages.THROW_WRONG_ITEM, 'The glacier is unmoved by your ridiculous attempt.');
+
+  // Melt verb (MDL act1.mud:389-398)
+  language.addMessage(GlacierMessages.MELT_DEATH, 'Part of the glacier melts, drowning you under a torrent of water.');
+  language.addMessage(GlacierMessages.MELT_NO_FLAME, "You certainly won't melt it with a {instrument}.");
+  language.addMessage(GlacierMessages.MELT_NOTHING, "You can't melt that.");
+  language.addMessage(GlacierMessages.MELT_NO_INSTRUMENT, 'Melt it with what?');
 
   // ==========================================================================
   // Boat Puncture (carrying sharp object into boat)
@@ -159,4 +164,11 @@ export function registerObjectMessages(language: LanguageProvider): void {
     // Register any basket-specific messages if defined
     // The actual lowering/raising behaviors use semantic events
   }
+
+  // ==========================================================================
+  // Safe Opening Interceptor (rusted shut / blown open)
+  // ==========================================================================
+
+  language.addMessage('dungeo.safe.rusted_shut', 'The box is rusted and will not open.');
+  language.addMessage('dungeo.safe.no_door', 'The box has no door!');
 }

@@ -131,8 +131,9 @@ export function registerActionMessages(language: LanguageProvider): void {
 
   language.addMessage(BurnMessages.BURN_SUCCESS, 'You burn the {target}.');
   language.addMessage(BurnMessages.BURN_INCENSE, 'The incense begins to smolder, releasing fragrant smoke that fills the room.');
+  language.addMessage(BurnMessages.BURN_FUSE, 'The wire starts to burn.');
   language.addMessage(BurnMessages.ALREADY_BURNING, 'It is already burning.');
-  language.addMessage(BurnMessages.BURNED_OUT, 'The incense has already burned out.');
+  language.addMessage(BurnMessages.BURNED_OUT, 'It has already burned out.');
   language.addMessage(BurnMessages.CANT_BURN, "You can't burn that.");
   language.addMessage(BurnMessages.NO_TARGET, 'Burn what?');
   language.addMessage(BurnMessages.NOT_VISIBLE, "You don't see that here.");

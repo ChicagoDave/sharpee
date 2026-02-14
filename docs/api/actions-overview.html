@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Actions Overview - Sharpee API</title>
+  <link rel="stylesheet" href="css/pico.min.css">
+  <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <main>
+    <header>
+      <hgroup>
+        <h1>Actions</h1>
+        <p>The four-phase action pattern that drives all player commands</p>
+      </hgroup>
+      <nav aria-label="breadcrumb">
+        <a href="index.html">API</a>
+        <span class="separator">/</span>
+        <a href="actions-overview.html">Actions</a>
+        <span class="separator">/</span>
+        Overview
+      </nav>
+    </header>
+
+    <!-- Overview -->
+    <section id="overview">
+      <h2>Overview</h2>
+      <p>Every player command in Sharpee maps to an <strong>Action</strong>. When the parser resolves a command, the engine finds the matching action and runs it through a four-phase lifecycle: <em>validate</em> (can it happen?), <em>execute</em> (mutate the world), <em>report</em> (generate success events), and <em>blocked</em> (generate error events when validation fails).</p>
+      <p>Actions never emit text directly. Instead, they return <strong>semantic events</strong> carrying message IDs and parameters. The language layer (e.g., <code>lang-en-us</code>) renders those events into actual prose. This separation means the same action logic works across languages without modification.</p>
+      <p>Sharpee ships with 43 stdlib actions covering standard interactive fiction verbs &mdash; taking, dropping, opening, going, looking, and so on. Stories can extend the system with custom actions for game-specific commands like <code>SAY</code>, <code>RING</code>, or <code>PRAY</code>.</p>
+    </section>
+
+    <!-- Quick Reference -->
+    <section class="quick-ref">
+      <h2>Quick Reference</h2>
+      <table>
+        <thead>
+          <tr><th>Phase</th><th>Called when</th><th>Returns</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>validate</code></td>
+            <td>Always</td>
+            <td><code>ValidationResult</code></td>
+            <td>Check preconditions &mdash; entity exists, has required traits, state allows it</td>
+          </tr>
+          <tr>
+            <td><code>execute</code></td>
+            <td>validate passed</td>
+            <td><code>void</code></td>
+            <td>Mutate world state &mdash; move entities, change trait properties</td>
+          </tr>
+          <tr>
+            <td><code>report</code></td>
+            <td>execute succeeded</td>
+            <td><code>ISemanticEvent[]</code></td>
+            <td>Generate success events with captured state snapshots</td>
+          </tr>
+          <tr>
+            <td><code>blocked</code></td>
+            <td>validate failed</td>
+            <td><code>ISemanticEvent[]</code></td>
+            <td>Generate error events explaining why the action was blocked</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Action Interface -->
+    <section id="action-interface">
+      <h2>Action Interface</h2>
+      <p>Every action implements the <code>Action</code> interface. The four lifecycle methods are the core of the pattern; the remaining fields provide metadata for the parser, help system, and implicit inference.</p>
+      <pre><code>interface Action {
+  id: string;
+  defaultScope?: ActionScopeRequirements;
+
+  validate(context: ActionContext): ValidationResult;
+  execute(context: ActionContext): ISemanticEvent[] | void;
+  report?(context: ActionContext): ISemanticEvent[];
+  blocked?(context: ActionContext, result: ValidationResult): ISemanticEvent[];
+
+  group?: string;
+  priority?: number;
+  targetRequirements?: { trait?: string; condition?: string; description: string };
+  requiresHolding?: boolean;
+  allowImplicitInference?: boolean;
+  allowImplicitTake?: boolean;
+}</code></pre>
+
+      <article>
+        <details open>
+          <summary>Field descriptions</summary>
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>id</code></td>
+                <td><code>string</code></td>
+                <td>Unique identifier, e.g. <code>'if.action.taking'</code> for stdlib or <code>'dungeo.action.say'</code> for story actions</td>
+              </tr>
+              <tr>
+                <td><code>defaultScope</code></td>
+                <td><code>Record&lt;string, ScopeLevel&gt;</code></td>
+                <td>Default scope requirements per slot. Used by the parser for entity resolution hints and as a baseline for validation.</td>
+              </tr>
+              <tr>
+                <td><code>validate</code></td>
+                <td><code>(ctx) =&gt; ValidationResult</code></td>
+                <td>Check whether the action can proceed. Called on every attempt. Return <code>{ valid: true }</code> or <code>{ valid: false, error: '...' }</code>.</td>
+              </tr>
+              <tr>
+                <td><code>execute</code></td>
+                <td><code>(ctx) =&gt; void</code></td>
+                <td>Mutate world state. Only called when <code>validate()</code> returns <code>{ valid: true }</code>. Should perform mutations only &mdash; no event creation.</td>
+              </tr>
+              <tr>
+                <td><code>report</code></td>
+                <td><code>(ctx) =&gt; ISemanticEvent[]</code></td>
+                <td>Generate success events after execute succeeds. Reads <code>sharedData</code> and <code>validationResult.data</code> to build events with full context.</td>
+              </tr>
+              <tr>
+                <td><code>blocked</code></td>
+                <td><code>(ctx, result) =&gt; ISemanticEvent[]</code></td>
+                <td>Generate error events when validation fails. Receives the <code>ValidationResult</code> containing error details.</td>
+              </tr>
+              <tr>
+                <td><code>group</code></td>
+                <td><code>string?</code></td>
+                <td>Action category for organizing related actions (e.g. <code>'movement'</code>, <code>'manipulation'</code>, <code>'communication'</code>).</td>
+              </tr>
+              <tr>
+                <td><code>priority</code></td>
+                <td><code>number?</code></td>
+                <td>Priority for pattern matching when multiple actions match. Higher values are preferred. Default is 0.</td>
+              </tr>
+              <tr>
+                <td><code>targetRequirements</code></td>
+                <td><code>object?</code></td>
+                <td>Requirements the target must meet. Used by implicit inference when a pronoun resolves to something unsuitable &mdash; the system searches for a better match in scope.</td>
+              </tr>
+              <tr>
+                <td><code>requiresHolding</code></td>
+                <td><code>boolean?</code></td>
+                <td>When <code>true</code>, the target must be in inventory. If not, an implicit take is attempted before running the action.</td>
+              </tr>
+              <tr>
+                <td><code>allowImplicitInference</code></td>
+                <td><code>boolean?</code></td>
+                <td>Whether pronoun-based inference is enabled. Defaults to <code>true</code> when <code>targetRequirements</code> is set.</td>
+              </tr>
+              <tr>
+                <td><code>allowImplicitTake</code></td>
+                <td><code>boolean?</code></td>
+                <td>Whether automatic taking is enabled. Defaults to <code>true</code> when <code>requiresHolding</code> is set.</td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+    </section>
+
+    <!-- ActionContext -->
+    <section id="action-context">
+      <h2>ActionContext</h2>
+      <p><code>ActionContext</code> is the primary API surface for action authors. It is passed to every lifecycle phase and provides read-only access to the world, convenience methods for scope checking, and an event factory.</p>
+
+      <article id="context-properties">
+        <h3>Properties</h3>
+        <details open>
+          <summary>All properties</summary>
+          <table>
+            <thead>
+              <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>world</code></td>
+                <td><code>readonly WorldModel</code></td>
+                <td>The world model. Use for entity queries and mutations in <code>execute()</code>.</td>
+              </tr>
+              <tr>
+                <td><code>player</code></td>
+                <td><code>readonly IFEntity</code></td>
+                <td>The player entity performing the action.</td>
+              </tr>
+              <tr>
+                <td><code>currentLocation</code></td>
+                <td><code>readonly IFEntity</code></td>
+                <td>The room the player is currently in.</td>
+              </tr>
+              <tr>
+                <td><code>command</code></td>
+                <td><code>readonly ValidatedCommand</code></td>
+                <td>The parsed and validated command, including resolved entity slots (<code>command.target</code>, <code>command.item</code>, etc.).</td>
+              </tr>
+              <tr>
+                <td><code>scopeResolver</code></td>
+                <td><code>readonly ScopeResolver</code></td>
+                <td>The scope resolver for determining what the player can perceive.</td>
+              </tr>
+              <tr>
+                <td><code>action</code></td>
+                <td><code>readonly Action</code></td>
+                <td>The action being executed. Useful for accessing <code>action.id</code> when creating events.</td>
+              </tr>
+              <tr>
+                <td><code>sharedData</code></td>
+                <td><code>Record&lt;string, any&gt;</code></td>
+                <td>Mutable data store for passing information between phases. See <a href="#shared-data">sharedData Pattern</a>.</td>
+              </tr>
+              <tr>
+                <td><code>validationResult</code></td>
+                <td><code>ValidationResult?</code></td>
+                <td>Set by the engine after <code>validate()</code> returns. Available in <code>execute()</code>, <code>report()</code>, and <code>blocked()</code>. Access data from validation via <code>validationResult.data</code>.</td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <article id="context-methods">
+        <h3>Methods</h3>
+        <details open>
+          <summary>Scope query methods</summary>
+          <table>
+            <thead>
+              <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>canSee(entity)</code></td>
+                <td><code>boolean</code></td>
+                <td>Whether the player can see the entity</td>
+              </tr>
+              <tr>
+                <td><code>canReach(entity)</code></td>
+                <td><code>boolean</code></td>
+                <td>Whether the player can physically reach the entity</td>
+              </tr>
+              <tr>
+                <td><code>canTake(entity)</code></td>
+                <td><code>boolean</code></td>
+                <td>Whether the player can take the entity</td>
+              </tr>
+              <tr>
+                <td><code>isInScope(entity)</code></td>
+                <td><code>boolean</code></td>
+                <td>Whether the entity is in the player&rsquo;s scope at all</td>
+              </tr>
+              <tr>
+                <td><code>getVisible()</code></td>
+                <td><code>IFEntity[]</code></td>
+                <td>All entities currently visible to the player</td>
+              </tr>
+              <tr>
+                <td><code>getInScope()</code></td>
+                <td><code>IFEntity[]</code></td>
+                <td>All entities in the player&rsquo;s scope (includes non-visible)</td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+
+        <details open>
+          <summary>Scope validation methods</summary>
+          <table>
+            <thead>
+              <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>getEntityScope(entity)</code></td>
+                <td><code>ScopeLevel</code></td>
+                <td>Get the scope level of an entity relative to the player (UNAWARE through CARRIED)</td>
+              </tr>
+              <tr>
+                <td><code>getSlotScope(slot)</code></td>
+                <td><code>ScopeLevel</code></td>
+                <td>Get the scope level for the entity in a command slot (e.g., <code>'target'</code>)</td>
+              </tr>
+              <tr>
+                <td><code>requireScope(entity, required)</code></td>
+                <td><code>ScopeCheckResult</code></td>
+                <td>Check if an entity meets a required scope level. Returns <code>{ ok: true }</code> or an error object usable directly as a <code>ValidationResult</code>.</td>
+              </tr>
+              <tr>
+                <td><code>requireSlotScope(slot, required)</code></td>
+                <td><code>ScopeCheckResult</code></td>
+                <td>Convenience: get entity from command slot and check its scope in one call</td>
+              </tr>
+              <tr>
+                <td><code>requireCarriedOrImplicitTake(entity)</code></td>
+                <td><code>ImplicitTakeResult</code></td>
+                <td>Check if entity is carried; if not and it is reachable, attempt an implicit take. Returns success with optional events to prepend, or an error.</td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+
+        <details open>
+          <summary>Event creation</summary>
+          <table>
+            <thead>
+              <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>event(type, data)</code></td>
+                <td><code>ISemanticEvent</code></td>
+                <td>Create a semantic event with automatic entity injection and metadata enrichment. The <code>type</code> is a string like <code>'if.event.taken'</code> or <code>'action.error'</code>.</td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+
+        <pre><code>// Typical validate() using scope helpers
+validate(context: ActionContext): ValidationResult {
+  const target = context.command.target;
+  if (!target) return { valid: false, error: 'no_target' };
+
+  const scopeCheck = context.requireScope(target, ScopeLevel.REACHABLE);
+  if (!scopeCheck.ok) return scopeCheck.error!;
+
+  if (!target.has(TraitType.OPENABLE))
+    return { valid: false, error: 'not_openable', params: { name: target.name } };
+
+  return { valid: true };
+}</code></pre>
+      </article>
+    </section>
+
+    <!-- ValidationResult -->
+    <section id="validation-result">
+      <h2>ValidationResult</h2>
+      <p>Returned by <code>validate()</code> to indicate whether the action can proceed. When valid, optional <code>data</code> can pass discovered information to later phases without re-querying the world.</p>
+      <pre><code>interface ValidationResult {
+  valid: boolean;
+  error?: string;
+  params?: Record&lt;string, any&gt;;
+  messageId?: string;
+  data?: Record&lt;string, any&gt;;
+}</code></pre>
+
+      <article>
+        <details open>
+          <summary>Field descriptions</summary>
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>valid</code></td>
+                <td><code>boolean</code></td>
+                <td>Whether the action can proceed. If <code>true</code>, <code>execute()</code> is called next. If <code>false</code>, <code>blocked()</code> is called instead.</td>
+              </tr>
+              <tr>
+                <td><code>error</code></td>
+                <td><code>string?</code></td>
+                <td>Error code for message lookup when validation fails (e.g., <code>'not_openable'</code>, <code>'already_open'</code>).</td>
+              </tr>
+              <tr>
+                <td><code>params</code></td>
+                <td><code>Record&lt;string, any&gt;?</code></td>
+                <td>Parameters for error message formatting (e.g., <code>{ name: 'wooden chest' }</code>).</td>
+              </tr>
+              <tr>
+                <td><code>messageId</code></td>
+                <td><code>string?</code></td>
+                <td>Optional custom message ID to use instead of the default derived from <code>error</code>.</td>
+              </tr>
+              <tr>
+                <td><code>data</code></td>
+                <td><code>Record&lt;string, any&gt;?</code></td>
+                <td>Data to pass from <code>validate()</code> to <code>execute()</code> and <code>report()</code>. Accessed via <code>context.validationResult.data</code>. Use this for entities, traits, or behaviors discovered during validation.</td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <pre><code>// Passing data from validate to later phases
+validate(context) {
+  const target = context.command.target;
+  const trait = target.get&lt;BasketElevatorTrait&gt;('dungeo.trait.basket_elevator');
+  if (!trait) return { valid: false, error: 'not_an_elevator' };
+
+  // Pass discovered trait to execute/report so they don't re-query
+  return { valid: true, data: { trait, previousPosition: trait.position } };
+}
+
+execute(context) {
+  const { trait } = context.validationResult!.data!;
+  trait.position = 'bottom';
+}</code></pre>
+    </section>
+
+    <!-- sharedData Pattern -->
+    <section id="shared-data">
+      <h2>sharedData Pattern</h2>
+      <p><code>context.sharedData</code> is a mutable key-value store that persists across all four phases of a single action execution. Its primary use is passing information from <code>execute()</code> to <code>report()</code> &mdash; capturing state <em>before</em> a mutation so the report phase can describe what changed.</p>
+      <p>For data discovered in <code>validate()</code>, prefer <code>ValidationResult.data</code> instead, since it is the more explicit mechanism. Use <code>sharedData</code> when <code>execute()</code> needs to capture pre-mutation snapshots that <code>report()</code> will read.</p>
+
+      <pre><code>// In execute() — capture state before mutating
+execute(context: ActionContext): void {
+  const item = context.command.target!;
+
+  // Snapshot before the mutation
+  context.sharedData.previousLocation = context.world.getLocation(item.id);
+  context.sharedData.wasWorn = item.has(TraitType.WEARABLE)
+    &amp;&amp; item.get&lt;WearableTrait&gt;(TraitType.WEARABLE)!.worn;
+
+  // Perform the mutation
+  context.world.moveEntity(item.id, context.player.id);
+}
+
+// In report() — use captured data for rich events
+report(context: ActionContext): ISemanticEvent[] {
+  const item = context.command.target!;
+  const { previousLocation, wasWorn } = context.sharedData;
+  const events: ISemanticEvent[] = [];
+
+  if (wasWorn) {
+    events.push(context.event('if.event.removed', { item: item.name }));
+  }
+
+  events.push(context.event('if.event.taken', {
+    item: item.name,
+    from: previousLocation,
+  }));
+
+  return events;
+}</code></pre>
+    </section>
+
+    <!-- Creating a Story Action -->
+    <section id="story-action">
+      <h2>Creating a Story Action</h2>
+      <p>When stdlib does not include the verb you need, create a full story-specific action. Here is a complete example of a <code>SAY</code> action that lets the player speak a word aloud:</p>
+
+      <pre><code>// stories/dungeo/src/actions/say/say-action.ts
+import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
+import { ISemanticEvent } from '@sharpee/core';
+
+export const SAY_ACTION_ID = 'dungeo.action.say';
+
+export const sayAction: Action = {
+  id: SAY_ACTION_ID,
+  group: 'communication',
+
+  validate(context: ActionContext): ValidationResult {
+    const word = context.command.rawArgs?.[0];
+    if (!word) {
+      return { valid: false, error: 'say_what' };
+    }
+    // Pass the word to later phases
+    return { valid: true, data: { word: word.toLowerCase() } };
+  },
+
+  execute(context: ActionContext): void {
+    const { word } = context.validationResult!.data!;
+
+    // Check for magic words that trigger puzzle effects
+    if (word === 'plugh' &amp;&amp; isInCave(context)) {
+      context.sharedData.teleported = true;
+      context.world.moveEntity(context.player.id, 'house-interior');
+    }
+  },
+
+  report(context: ActionContext): ISemanticEvent[] {
+    const { word } = context.validationResult!.data!;
+
+    if (context.sharedData.teleported) {
+      return [
+        context.event('dungeo.event.magic_word', { word }),
+        context.event('if.event.look', {}),  // describe new room
+      ];
+    }
+
+    return [
+      context.event('dungeo.event.said', { word }),
+    ];
+  },
+
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    return [
+      context.event('action.blocked', {
+        actionId: SAY_ACTION_ID,
+        messageId: result.error,
+        params: result.params,
+      }),
+    ];
+  },
+};</code></pre>
+      <p>Register the action in your story&rsquo;s <code>initializeWorld()</code> and add a grammar pattern in <code>extendParser()</code> (see <a href="#grammar-extension">Grammar Extension</a> below).</p>
+    </section>
+
+    <!-- Grammar Extension -->
+    <section id="grammar-extension">
+      <h2>Grammar Extension</h2>
+      <p>Stories add new commands by extending the parser grammar. There are two approaches depending on the pattern complexity:</p>
+
+      <article>
+        <h3>Story grammar with <code>.define()</code></h3>
+        <p>Use <code>.define()</code> for story-specific verbs, phrasal verbs, and literal patterns. Story patterns should use priority 150+ to take precedence over stdlib defaults.</p>
+        <pre><code>// In your story's extendParser() method
+extendParser(parser: Parser): void {
+  const grammar = parser.getStoryGrammar();
+
+  // Simple verb with argument slot
+  grammar
+    .define('say :arg')
+    .mapsTo(SAY_ACTION_ID)
+    .withPriority(150)
+    .build();
+
+  // Literal pattern (no slots)
+  grammar
+    .define('turn switch')
+    .mapsTo(TURN_SWITCH_ACTION_ID)
+    .withPriority(150)
+    .build();
+
+  // Phrasal verb with scope constraint
+  grammar
+    .define('pick up :item')
+    .where('item', (scope) =&gt; scope.visible().matching({ portable: true }))
+    .mapsTo('if.action.taking')
+    .build();
+}</code></pre>
+      </article>
+
+      <article>
+        <h3>Stdlib grammar with <code>.forAction()</code></h3>
+        <p>The action-centric <code>.forAction()</code> API is used by stdlib to define verb families. It generates all alias combinations automatically:</p>
+        <pre><code>// In packages/parser-en-us/src/grammar.ts
+grammar
+  .forAction('if.action.pushing')
+  .verbs(['push', 'press', 'shove', 'move'])
+  .pattern(':target')
+  .where('target', (scope) =&gt; scope.touchable())
+  .build();
+// Generates: push :target, press :target, shove :target, move :target</code></pre>
+        <p>See <a href="actions-objects.html">Object Handling</a>, <a href="actions-movement.html">Movement</a>, and the other action group pages for the specific grammar patterns each stdlib action uses.</p>
+      </article>
+    </section>
+
+    <!-- Decision Tree -->
+    <section id="decision-tree">
+      <h2>Decision Tree</h2>
+      <p>When implementing new game mechanics, choose the right pattern based on the verb and its semantics:</p>
+
+      <article>
+        <h3>Existing verb with standard semantics</h3>
+        <p>Verbs like <strong>TAKE</strong>, <strong>DROP</strong>, <strong>OPEN</strong>, <strong>CLOSE</strong>, <strong>LOCK</strong>, <strong>UNLOCK</strong>, <strong>PUT IN/ON</strong>, <strong>ENTER</strong>, <strong>EXIT</strong>, and <strong>SWITCH ON/OFF</strong> always perform the same mutation regardless of entity. Use the stdlib action and attach the appropriate trait to the entity.</p>
+        <pre><code>// "PUT COAL IN MACHINE" — stdlib putting action handles this
+// Just give the machine a ContainerTrait
+machine.add(new ContainerTrait({ capacity: 100 }));</code></pre>
+      </article>
+
+      <article>
+        <h3>Existing verb with entity-specific meaning</h3>
+        <p>Verbs like <strong>LOWER</strong>, <strong>RAISE</strong>, <strong>TURN</strong>, <strong>WAVE</strong>, and <strong>WIND</strong> mean different things for different entities. Use <strong>capability dispatch</strong>: create a trait that declares which actions it handles, and a behavior that implements the four-phase logic.</p>
+        <pre><code>// "LOWER BASKET" — basket-specific lowering behavior
+class BasketElevatorTrait implements ITrait {
+  static readonly type = 'dungeo.trait.basket_elevator';
+  static readonly capabilities = ['if.action.lowering', 'if.action.raising'];
+  position: 'top' | 'bottom';
+}
+registerCapabilityBehavior(
+  BasketElevatorTrait.type, 'if.action.lowering', BasketLoweringBehavior
+);</code></pre>
+        <p>See <a href="capabilities.html">Capabilities</a> for the full capability dispatch API.</p>
+      </article>
+
+      <article>
+        <h3>New verb</h3>
+        <p>Verbs like <strong>SAY</strong>, <strong>RING</strong>, <strong>PRAY</strong>, and <strong>INCANT</strong> have no stdlib action at all. Create a full story-specific action (see <a href="#story-action">Creating a Story Action</a> above) and register a grammar pattern.</p>
+      </article>
+
+      <article>
+        <h3>Reacting to an existing action</h3>
+        <p>When you need custom side effects <em>after</em> a stdlib action succeeds &mdash; for example, scoring when a treasure is placed in the trophy case &mdash; use an <strong>interceptor</strong>. Interceptors hook into the action lifecycle without modifying the action itself.</p>
+        <pre><code>// React to items being thrown at the glacier
+export const glacierThrowingInterceptor: ActionInterceptor = {
+  actionId: 'if.action.throwing',
+  postExecute(context) {
+    if (context.command.target?.id === glacierId) {
+      // glacier-specific side effects
+    }
+  },
+};</code></pre>
+        <p>See <a href="events.html">Events</a> for more on event handlers and interceptors.</p>
+      </article>
+    </section>
+
+    <!-- See Also -->
+    <section id="see-also">
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="actions-movement.html">Movement Actions</a> &mdash; going, entering, exiting, climbing</li>
+        <li><a href="actions-objects.html">Object Handling Actions</a> &mdash; taking, dropping, putting, inserting, removing</li>
+        <li><a href="actions-state.html">State Change Actions</a> &mdash; opening, closing, locking, unlocking, switching</li>
+        <li><a href="actions-physical.html">Physical Actions</a> &mdash; pushing, pulling, attacking, throwing, touching</li>
+        <li><a href="actions-sensory.html">Sensory &amp; Query Actions</a> &mdash; looking, examining, searching, reading, listening, smelling</li>
+        <li><a href="actions-meta.html">Meta Actions</a> &mdash; inventory, scoring, saving, restoring, help, quitting</li>
+        <li><a href="capabilities.html">Capabilities</a> &mdash; entity-specific action dispatch via traits and behaviors</li>
+        <li><a href="events.html">Events</a> &mdash; semantic events, interceptors, and the rendering pipeline</li>
+        <li><a href="scope.html">Scope</a> &mdash; scope levels, visibility, reachability, and the scope resolver</li>
+      </ul>
+    </section>
+  </main>
+  <script src="js/docs.js"></script>
+</body>
+</html>

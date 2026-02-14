@@ -11,6 +11,7 @@
  * - 'incense': Burns for fixed duration via fuse (3 turns)
  * - 'candle': Burns via LightSourceTrait + fuse (50 turns)
  * - 'flammable': Burns based on size (size * 20 turns)
+ * - 'fuse': Fuse wire for brick explosion (2-turn countdown)
  */
 
 import { ITrait, ITraitConstructor } from '@sharpee/world-model';
@@ -20,7 +21,7 @@ import { ITrait, ITraitConstructor } from '@sharpee/world-model';
  */
 export interface BurnableTraitConfig {
   /** Type of burnable item - affects behavior */
-  burnableType: 'incense' | 'candle' | 'flammable';
+  burnableType: 'incense' | 'candle' | 'flammable' | 'fuse';
 
   /** Whether the entity is currently burning (default: false) */
   isBurning?: boolean;
@@ -53,7 +54,7 @@ export class BurnableTrait implements ITrait {
   readonly type = BurnableTrait.type;
 
   /** Type of burnable item - affects behavior */
-  burnableType: 'incense' | 'candle' | 'flammable';
+  burnableType: 'incense' | 'candle' | 'flammable' | 'fuse';
 
   /** Whether the entity is currently burning */
   isBurning: boolean;

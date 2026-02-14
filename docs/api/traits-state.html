@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>State Traits - Sharpee API</title>
+  <link rel="stylesheet" href="css/pico.min.css">
+  <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <main>
+    <header>
+      <hgroup>
+        <h1>State Traits</h1>
+        <p>Traits that track open/closed, locked/unlocked, on/off, and lit/unlit states</p>
+      </hgroup>
+      <nav aria-label="breadcrumb">
+        <a href="index.html">API</a>
+        <span class="separator">/</span>
+        <a href="traits-core.html">Traits</a>
+        <span class="separator">/</span>
+        State
+      </nav>
+    </header>
+
+    <!-- Overview -->
+    <section id="overview">
+      <h2>Overview</h2>
+      <p>State traits add toggleable states to entities. Each trait tracks a boolean condition &mdash; open/closed, locked/unlocked, on/off, or lit/unlit &mdash; and provides properties for custom messages at each state transition. They work with the matching stdlib actions (<code>opening</code>/<code>closing</code>, <code>locking</code>/<code>unlocking</code>, <code>switching_on</code>/<code>switching_off</code>, etc.) and follow the standard four-phase action pattern.</p>
+      <p>State traits are composable: a locked chest typically combines <code>OpenableTrait</code> with <code>LockableTrait</code>, while a lantern combines <code>SwitchableTrait</code> with <code>LightSourceTrait</code>.</p>
+    </section>
+
+    <!-- Quick Reference -->
+    <section class="quick-ref">
+      <h2>Quick Reference</h2>
+      <table>
+        <thead>
+          <tr><th>Trait</th><th>Type String</th><th>Key State</th><th>Stdlib Actions</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>OpenableTrait</code></td>
+            <td><code>'openable'</code></td>
+            <td><code>isOpen</code></td>
+            <td>opening, closing</td>
+          </tr>
+          <tr>
+            <td><code>LockableTrait</code></td>
+            <td><code>'lockable'</code></td>
+            <td><code>isLocked</code></td>
+            <td>locking, unlocking</td>
+          </tr>
+          <tr>
+            <td><code>SwitchableTrait</code></td>
+            <td><code>'switchable'</code></td>
+            <td><code>isOn</code></td>
+            <td>switching_on, switching_off</td>
+          </tr>
+          <tr>
+            <td><code>LightSourceTrait</code></td>
+            <td><code>'lightSource'</code></td>
+            <td><code>isLit</code></td>
+            <td>(uses SwitchableTrait actions)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- OpenableTrait -->
+    <article id="openable-trait">
+      <h2>OpenableTrait</h2>
+      <p>Gives an entity an open/closed state. Doors, containers, windows, and any object that can be opened or closed should have this trait. The <code>isOpen</code> property is initialized from <code>startsOpen</code> during entity creation.</p>
+
+      <details>
+        <summary>Properties</summary>
+        <table>
+          <thead>
+            <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>isOpen</code></td><td><code>boolean</code></td><td>from <code>startsOpen</code></td><td>Current open/closed state</td></tr>
+            <tr><td><code>startsOpen</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Initial state at world creation</td></tr>
+            <tr><td><code>openMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Custom message when opened</td></tr>
+            <tr><td><code>closeMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Custom message when closed</td></tr>
+            <tr><td><code>alreadyOpenMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Message when trying to open something already open</td></tr>
+            <tr><td><code>alreadyClosedMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Message when trying to close something already closed</td></tr>
+            <tr><td><code>revealsContents</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Whether opening lists the contents inside</td></tr>
+            <tr><td><code>canClose</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Whether the entity can be closed again after opening</td></tr>
+            <tr><td><code>openSound</code></td><td><code>string?</code></td><td>&mdash;</td><td>Sound effect identifier played on open</td></tr>
+            <tr><td><code>closeSound</code></td><td><code>string?</code></td><td>&mdash;</td><td>Sound effect identifier played on close</td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <pre><code>import { OpenableTrait } from '@sharpee/world-model';
+
+// A door that starts closed
+const door = world.createEntity('oak door', EntityType.DOOR);
+door.add(new OpenableTrait({
+  startsOpen: false,
+  openMessage: 'The oak door swings open with a creak.',
+  closeMessage: 'You push the door shut.',
+  openSound: 'door-creak',
+}));
+
+// A window that cannot be closed once opened
+const window = world.createEntity('stained glass window', EntityType.SCENERY);
+window.add(new OpenableTrait({
+  startsOpen: false,
+  canClose: false,
+  openMessage: 'You push the window open. Fresh air rushes in.',
+}));</code></pre>
+
+      <p><strong>Note:</strong> Works with the <code>opening</code> and <code>closing</code> stdlib actions. When <code>revealsContents</code> is true, opening a container automatically lists its contents in the action report. Set <code>canClose</code> to false for things like lids that cannot be re-sealed.</p>
+    </article>
+
+    <!-- LockableTrait -->
+    <article id="lockable-trait">
+      <h2>LockableTrait</h2>
+      <p>Gives an entity a locked/unlocked state, optionally requiring a specific key to unlock. Usually paired with <code>OpenableTrait</code> &mdash; a locked entity cannot be opened until it is unlocked first.</p>
+
+      <details>
+        <summary>Properties</summary>
+        <table>
+          <thead>
+            <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>isLocked</code></td><td><code>boolean</code></td><td>from <code>startsLocked</code></td><td>Current locked/unlocked state</td></tr>
+            <tr><td><code>startsLocked</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Initial state at world creation</td></tr>
+            <tr><td><code>keyId</code></td><td><code>string?</code></td><td>&mdash;</td><td>Entity ID of the key that unlocks this</td></tr>
+            <tr><td><code>keyIds</code></td><td><code>string[]?</code></td><td>&mdash;</td><td>Multiple keys that can unlock this (alternative to keyId)</td></tr>
+            <tr><td><code>acceptsMasterKey</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Whether a master key (if one exists) works on this lock</td></tr>
+            <tr><td><code>lockMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Custom message when locked</td></tr>
+            <tr><td><code>unlockMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Custom message when unlocked</td></tr>
+            <tr><td><code>alreadyLockedMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Message when trying to lock something already locked</td></tr>
+            <tr><td><code>alreadyUnlockedMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Message when trying to unlock something already unlocked</td></tr>
+            <tr><td><code>lockedMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Message when trying to open while locked</td></tr>
+            <tr><td><code>wrongKeyMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Message when using the wrong key</td></tr>
+            <tr><td><code>autoLock</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Whether the entity re-locks automatically after closing</td></tr>
+            <tr><td><code>lockSound</code></td><td><code>string?</code></td><td>&mdash;</td><td>Sound effect identifier played on lock</td></tr>
+            <tr><td><code>unlockSound</code></td><td><code>string?</code></td><td>&mdash;</td><td>Sound effect identifier played on unlock</td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <pre><code>import { LockableTrait, OpenableTrait } from '@sharpee/world-model';
+
+// A door locked with a specific key
+const door = world.createEntity('iron gate', EntityType.DOOR);
+door
+  .add(new OpenableTrait({ startsOpen: false }))
+  .add(new LockableTrait({
+    startsLocked: true,
+    keyId: 'skeleton-key',
+    lockedMessage: 'The iron gate is securely locked.',
+    wrongKeyMessage: 'That key does not fit this lock.',
+    unlockMessage: 'Click! The lock turns smoothly.',
+  }));
+
+// A chest that re-locks when closed
+const chest = world.createEntity('jeweled chest', EntityType.CONTAINER);
+chest
+  .add(new OpenableTrait({ startsOpen: false }))
+  .add(new LockableTrait({
+    startsLocked: true,
+    keyId: 'gold-key',
+    autoLock: true,
+  }));</code></pre>
+
+      <p><strong>Note:</strong> Works with the <code>locking</code> and <code>unlocking</code> stdlib actions. The locking action checks that the player is holding the correct key. When <code>autoLock</code> is true, closing the entity automatically re-locks it. Use <code>keyIds</code> instead of <code>keyId</code> when multiple keys should work (e.g., a master key ring).</p>
+    </article>
+
+    <!-- SwitchableTrait -->
+    <article id="switchable-trait">
+      <h2>SwitchableTrait</h2>
+      <p>Gives an entity an on/off state. Machines, buttons, devices, and anything that can be switched on or off. The <code>isOn</code> property is computed based on <code>startsOn</code> and subsequent toggles.</p>
+
+      <details>
+        <summary>Properties</summary>
+        <table>
+          <thead>
+            <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>isOn</code></td><td><code>boolean</code></td><td>computed</td><td>Current on/off state</td></tr>
+            <tr><td><code>startsOn</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Initial state at world creation</td></tr>
+            <tr><td><code>powerConsumption</code></td><td><code>number</code></td><td><code>1</code></td><td>Power units consumed per turn when on</td></tr>
+            <tr><td><code>requiresPower</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Whether the device needs an external power source</td></tr>
+            <tr><td><code>hasPower</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Whether the device currently has power</td></tr>
+            <tr><td><code>onMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Custom message when switched on</td></tr>
+            <tr><td><code>offMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Custom message when switched off</td></tr>
+            <tr><td><code>alreadyOnMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Message when trying to switch on something already on</td></tr>
+            <tr><td><code>alreadyOffMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Message when trying to switch off something already off</td></tr>
+            <tr><td><code>noPowerMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Message when trying to switch on without power</td></tr>
+            <tr><td><code>autoOffTime</code></td><td><code>number</code></td><td><code>0</code></td><td>Turns until automatic switch-off (0 = never)</td></tr>
+            <tr><td><code>autoOffCounter</code></td><td><code>number</code></td><td>&mdash;</td><td>Internal counter tracking turns remaining until auto-off</td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <pre><code>import { SwitchableTrait } from '@sharpee/world-model';
+
+// A machine with a switch
+const machine = world.createEntity('coal machine', EntityType.ITEM);
+machine.add(new SwitchableTrait({
+  startsOn: false,
+  onMessage: 'The machine whirs to life.',
+  offMessage: 'The machine shudders to a halt.',
+}));
+
+// A device that requires external power
+const pump = world.createEntity('water pump', EntityType.SCENERY);
+pump.add(new SwitchableTrait({
+  requiresPower: true,
+  hasPower: false,
+  noPowerMessage: 'Nothing happens. The pump has no power source.',
+}));</code></pre>
+
+      <p><strong>Note:</strong> Works with the <code>switching_on</code> and <code>switching_off</code> stdlib actions. When <code>requiresPower</code> is true and <code>hasPower</code> is false, the switching action blocks with the <code>noPowerMessage</code>. The <code>autoOffTime</code> property works with the engine's daemon system to automatically switch off after a set number of turns.</p>
+    </article>
+
+    <!-- LightSourceTrait -->
+    <article id="light-source-trait">
+      <h2>LightSourceTrait</h2>
+      <p>Marks an entity as a light source that can illuminate dark rooms. Usually paired with <code>SwitchableTrait</code> &mdash; when <code>isLit</code> is undefined, the light source uses the switchable <code>isOn</code> state to determine whether it is currently lit.</p>
+
+      <details>
+        <summary>Properties</summary>
+        <table>
+          <thead>
+            <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>brightness</code></td><td><code>number</code></td><td><code>5</code></td><td>Light intensity (range 1&ndash;10)</td></tr>
+            <tr><td><code>isLit</code></td><td><code>boolean?</code></td><td><code>undefined</code></td><td>Explicit lit state; when undefined, uses <code>SwitchableTrait.isOn</code></td></tr>
+            <tr><td><code>fuelRemaining</code></td><td><code>number?</code></td><td><code>undefined</code></td><td>Fuel units remaining; undefined means infinite fuel</td></tr>
+            <tr><td><code>maxFuel</code></td><td><code>number?</code></td><td>&mdash;</td><td>Maximum fuel capacity (for refueling mechanics)</td></tr>
+            <tr><td><code>fuelConsumptionRate</code></td><td><code>number?</code></td><td>&mdash;</td><td>Fuel units consumed per turn while lit</td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <pre><code>import { LightSourceTrait, SwitchableTrait } from '@sharpee/world-model';
+
+// A brass lantern with limited fuel
+const lantern = world.createEntity('brass lantern', EntityType.ITEM);
+lantern
+  .add(new SwitchableTrait({ startsOn: false }))
+  .add(new LightSourceTrait({
+    brightness: 7,
+    fuelRemaining: 400,
+    maxFuel: 400,
+    fuelConsumptionRate: 1,
+  }));
+
+// A torch that is always lit (no switchable needed)
+const torch = world.createEntity('flaming torch', EntityType.ITEM);
+torch.add(new LightSourceTrait({
+  isLit: true,
+  brightness: 8,
+  fuelRemaining: 200,
+  fuelConsumptionRate: 2,
+}));
+
+// A magic crystal that glows forever
+const crystal = world.createEntity('glowing crystal', EntityType.ITEM);
+crystal.add(new LightSourceTrait({
+  isLit: true,
+  brightness: 3,
+  // fuelRemaining is undefined = infinite
+}));</code></pre>
+
+      <p><strong>Note:</strong> Room darkness is determined by <code>RoomTrait.isDark</code>. When a room is dark, the engine checks whether any entity in scope has an active <code>LightSourceTrait</code>. If no light source is present, the player cannot see and most actions are blocked.</p>
+      <p>When <code>isLit</code> is left as <code>undefined</code>, the light source delegates to <code>SwitchableTrait.isOn</code>, so "switch on lantern" both switches it on and makes it emit light. Set <code>isLit</code> explicitly for objects that are always lit (torches, glowing items) or that have independent lit/on states.</p>
+    </article>
+
+    <!-- Common Patterns -->
+    <section id="common-patterns">
+      <h2>Common Patterns</h2>
+
+      <article id="locked-container">
+        <h3>Locked Container</h3>
+        <p>Combining <code>OpenableTrait</code> and <code>LockableTrait</code> on a container creates a locked box puzzle. The player must find the key, unlock the container, then open it to access the contents.</p>
+        <pre><code>const strongbox = world.createEntity('strongbox', EntityType.CONTAINER);
+strongbox
+  .add(new IdentityTrait({
+    name: 'strongbox',
+    description: 'A heavy iron strongbox with a complex lock.',
+  }))
+  .add(new ContainerTrait({ capacity: 50 }))
+  .add(new OpenableTrait({ startsOpen: false, revealsContents: true }))
+  .add(new LockableTrait({ startsLocked: true, keyId: 'iron-key' }));
+
+// Place the key elsewhere
+const key = world.createEntity('iron key', EntityType.ITEM);
+world.moveEntity(key.id, 'guard-room');</code></pre>
+      </article>
+
+      <article id="lantern-pattern">
+        <h3>Switchable Light Source</h3>
+        <p>The standard lantern pattern pairs <code>SwitchableTrait</code> with <code>LightSourceTrait</code>. Switching on the lantern automatically lights it; fuel depletes each turn while lit.</p>
+        <pre><code>const lantern = world.createEntity('brass lantern', EntityType.ITEM);
+lantern
+  .add(new IdentityTrait({
+    name: 'brass lantern',
+    description: 'A battery-powered brass lantern.',
+  }))
+  .add(new SwitchableTrait({
+    startsOn: false,
+    onMessage: 'The lantern glows brightly.',
+    offMessage: 'The lantern fades to darkness.',
+  }))
+  .add(new LightSourceTrait({
+    brightness: 7,
+    fuelRemaining: 400,
+    maxFuel: 400,
+    fuelConsumptionRate: 1,
+  }));</code></pre>
+      </article>
+    </section>
+
+    <!-- See Also -->
+    <section id="see-also">
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="traits-core.html">Core Traits</a> &mdash; IdentityTrait, RoomTrait, ContainerTrait, and more</li>
+        <li><a href="actions-state.html">State Actions</a> &mdash; opening, closing, locking, unlocking, switching actions</li>
+        <li><a href="entities.html">Entities</a> &mdash; entity creation, trait management, convenience properties</li>
+      </ul>
+    </section>
+  </main>
+  <script src="js/docs.js"></script>
+</body>
+</html>

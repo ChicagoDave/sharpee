@@ -1,0 +1,198 @@
+---
+layout: ../../../../../layouts/DocsLayout.astro
+title: "Building a Client"
+---
+
+# Building a Client
+
+A client is anything that accepts user input, feeds it to the engine, and renders output. Sharpee ships three: CLI, Browser (DOM), and Zifmia. You can build your own for any platform: mobile, Slack bot, voice assistant, etc.
+
+## The Minimal Client
+
+A working client needs three things: send input, receive text, handle save/restore.
+
+```typescript
+// 1. Create and start the engine
+const engine = new GameEngine({ world, player, parser, language });
+engine.setStory(story);
+engine.start();
+
+// 2. Listen for text output
+engine.on('text:output', (text: string, turn: number) => {
+  display(text);  // Your rendering logic
+});
+
+// 3. Send player input
+async function onPlayerInput(input: string) {
+  const result = await engine.executeTurn(input);
+  // result.events — all events from this turn
+  // result.textBlocks — structured text output
+}
+
+// 4. Register save/restore hooks
+engine.registerSaveRestoreHooks({
+  onSaveRequested: async (saveData) => {
+    localStorage.setItem('save', JSON.stringify(saveData));
+  },
+  onRestoreRequested: async () => {
+    return JSON.parse(localStorage.getItem('save'));
+  },
+});
+```
+
+## Engine Events
+
+The engine emits several event types your client can listen for:
+
+| Event | Payload | Use For |
+|-------|---------|---------|
+| `text:output` | `(text: string, turn: number)` | Main text display |
+| `event` | `(event: SequencedEvent)` | React to game events (score, death, sounds) |
+| `state:changed` | `(context: GameContext)` | Update status line, minimap, inventory |
+| `game:started` | — | Show initial UI, enable input |
+
+## Text Blocks
+
+For richer rendering, use text blocks instead of raw strings. Blocks are semantic channels with decorated content.
+
+```typescript
+interface ITextBlock {
+  readonly key: string;             // Semantic channel
+  readonly content: TextContent[];  // Strings + decorations
+}
+```
+
+### Block Keys (Channels)
+
+| Key | Content |
+|-----|---------|
+| `room.name` | Room title |
+| `room.description` | Full room description |
+| `room.contents` | Visible objects |
+| `action.result` | Action output |
+| `action.blocked` | Why action failed |
+| `status.room` | Status bar: location |
+| `status.score` | Status bar: score |
+| `status.turns` | Status bar: turn count |
+| `game.banner` | Game title/version |
+| `error` | Error messages |
+
+### Decorations
+
+Decorations provide semantic markup for styling:
+
+```typescript
+interface IDecoration {
+  readonly type: string;          // 'em', 'item', 'room', 'npc', etc.
+  readonly content: TextContent[];
+}
+```
+
+| Type | Meaning |
+|------|---------|
+| `em` | Emphasis (italic) |
+| `strong` | Bold |
+| `item` | Game object name |
+| `room` | Room name |
+| `npc` | NPC name |
+| `command` | Player command |
+| `direction` | Compass direction |
+
+## Custom Rendering
+
+Route text blocks by key to different UI areas. This is the FyreVM channel pattern.
+
+```typescript
+function renderBlocks(blocks: ITextBlock[]) {
+  for (const block of blocks) {
+    switch (block.key) {
+      case 'room.name':
+        titleBar.textContent = blockToString(block);
+        break;
+      case 'room.description':
+      case 'room.contents':
+      case 'action.result':
+      case 'action.blocked':
+        transcript.append(blockToHtml(block));
+        break;
+      case 'status.score':
+        scoreDisplay.textContent = blockToString(block);
+        break;
+    }
+  }
+}
+
+function blockToHtml(block: ITextBlock): HTMLElement {
+  const div = document.createElement('div');
+  div.className = `block-${block.key.replace('.', '-')}`;
+  for (const content of block.content) {
+    if (typeof content === 'string') {
+      div.append(content);
+    } else {
+      const span = document.createElement('span');
+      span.className = `dec-${content.type}`;
+      span.textContent = contentToString(content.content);
+      div.append(span);
+    }
+  }
+  return div;
+}
+```
+
+## Platform Operations
+
+Handle meta-commands (save, restore, quit, restart, undo) through the hook system. These are out-of-turn operations — they don't increment the turn counter or trigger NPC actions.
+
+```typescript
+engine.registerSaveRestoreHooks({
+  // Called when player types SAVE
+  onSaveRequested: async (saveData) => {
+    await myStorage.save(saveData);
+  },
+
+  // Called when player types RESTORE
+  onRestoreRequested: async () => {
+    return await myStorage.load();
+  },
+
+  // Called when player types QUIT (return true to allow)
+  onQuitRequested: async (context) => {
+    return confirm('Really quit?');
+  },
+
+  // Called when player types RESTART (return true to allow)
+  onRestartRequested: async (context) => {
+    return confirm('Restart from the beginning?');
+  },
+});
+```
+
+## Disambiguation
+
+When the parser can't resolve an ambiguous reference (e.g., "take cake" when there are four cakes), the engine asks the client to disambiguate.
+
+```typescript
+engine.on('event', (event) => {
+  if (event.type === 'client.query') {
+    // event.data.options = ['blue cake', 'red cake', 'orange cake']
+    const choice = showDisambiguationUI(event.data.options);
+    engine.resolveQuery(choice);
+  }
+});
+```
+
+## File Structure
+
+```
+packages/my-client/
+  src/
+    index.ts              # Public API
+    my-client.ts          # Main client class
+    renderer.ts           # Text block rendering
+    input-handler.ts      # Input capture
+    storage.ts            # Save/restore persistence
+    ui/
+      status-line.ts      # Status bar component
+      transcript.ts       # Text display area
+      input-field.ts      # Command input
+```

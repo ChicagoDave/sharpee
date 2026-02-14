@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Physical Actions - Sharpee API</title>
+  <link rel="stylesheet" href="css/pico.min.css">
+  <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <main>
+    <header>
+      <hgroup>
+        <h1>Physical Actions</h1>
+        <p>Eating, drinking, pushing, pulling, climbing, and attacking</p>
+      </hgroup>
+      <nav aria-label="breadcrumb">
+        <a href="index.html">API</a>
+        <span class="separator">/</span>
+        <a href="actions-overview.html">Actions</a>
+        <span class="separator">/</span>
+        Physical
+      </nav>
+    </header>
+
+    <!-- Quick Reference -->
+    <section class="quick-ref">
+      <h2>Quick Reference</h2>
+      <table>
+        <thead>
+          <tr><th>Action</th><th>ID</th><th>Required Trait</th><th>Group</th><th>Scope</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="#eating">Eating</a></td>
+            <td><code>if.action.eating</code></td>
+            <td><code>EdibleTrait</code></td>
+            <td>interaction</td>
+            <td>REACHABLE</td>
+          </tr>
+          <tr>
+            <td><a href="#drinking">Drinking</a></td>
+            <td><code>if.action.drinking</code></td>
+            <td><code>EdibleTrait</code> (isDrink) or <code>ContainerTrait</code> (containsLiquid)</td>
+            <td>interaction</td>
+            <td>REACHABLE</td>
+          </tr>
+          <tr>
+            <td><a href="#pushing">Pushing</a></td>
+            <td><code>if.action.pushing</code></td>
+            <td><code>PushableTrait</code></td>
+            <td>device_manipulation</td>
+            <td>REACHABLE</td>
+          </tr>
+          <tr>
+            <td><a href="#pulling">Pulling</a></td>
+            <td><code>if.action.pulling</code></td>
+            <td><code>PullableTrait</code></td>
+            <td>interaction</td>
+            <td>REACHABLE</td>
+          </tr>
+          <tr>
+            <td><a href="#climbing">Climbing</a></td>
+            <td><code>if.action.climbing</code></td>
+            <td><code>ClimbableTrait</code> or <code>SupporterTrait</code> (enterable)</td>
+            <td>movement</td>
+            <td>REACHABLE</td>
+          </tr>
+          <tr>
+            <td><a href="#attacking">Attacking</a></td>
+            <td><code>if.action.attacking</code></td>
+            <td><code>CombatantTrait</code> (NPCs) or none (objects)</td>
+            <td>interaction</td>
+            <td>REACHABLE</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- EATING -->
+    <!-- ================================================================ -->
+    <section id="eating">
+      <h2>Eating</h2>
+      <p>The eating action consumes edible items. It validates that the target has <code>EdibleTrait</code>, is not a liquid (use <a href="#drinking">drinking</a> instead), and still has servings remaining. The action supports implicit take &mdash; typing <code>eat apple</code> when the apple is on the ground will automatically pick it up first.</p>
+
+      <article>
+        <h3>Grammar Patterns</h3>
+        <pre><code>// Registered via forAction (ADR-087)
+grammar
+  .forAction('if.action.eating')
+  .verbs(['eat', 'consume', 'devour'])
+  .pattern(':item')
+  .build();
+// Generates: eat :item, consume :item, devour :item</code></pre>
+      </article>
+
+      <article>
+        <h3>Validation</h3>
+        <p>The validate phase checks the following preconditions in order:</p>
+        <ol>
+          <li>A direct object must be specified (<code>no_item</code> error if missing)</li>
+          <li>The item must be within REACHABLE scope</li>
+          <li>The item must have <code>EdibleTrait</code> (<code>not_edible</code> error)</li>
+          <li>The item must not be a liquid &mdash; checked via <code>EdibleBehavior.isLiquid()</code> (<code>is_drink</code> error)</li>
+          <li>The item must have servings remaining &mdash; checked via <code>EdibleBehavior.canConsume()</code> (<code>already_consumed</code> error)</li>
+          <li>The item must be held or an implicit take must succeed</li>
+        </ol>
+      </article>
+
+      <article>
+        <h3>Execution</h3>
+        <p>The execute phase captures pre-mutation state (servings, nutrition, taste, effects, hunger satisfaction) then delegates to <code>EdibleBehavior.consume()</code> which decrements servings. The message ID is chosen based on priority: effects (poison) &gt; taste (delicious, tasty, bland, awful) &gt; servings (eaten_some, eaten_all) &gt; hunger (filling, still_hungry) &gt; default (eaten).</p>
+      </article>
+
+      <article>
+        <details>
+          <summary>Events</summary>
+          <table>
+            <thead>
+              <tr><th>Event</th><th>Data</th><th>When</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>if.event.eaten</code></td>
+                <td><code>EatenEventData</code></td>
+                <td>Always emitted on success</td>
+              </tr>
+              <tr>
+                <td><code>if.event.taken</code></td>
+                <td><code>ImplicitTakenEventData</code></td>
+                <td>Prepended when implicit take occurs</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h4>EatenEventData</h4>
+          <pre><code>interface EatenEventData {
+  item: EntityId;        // Entity ID of the consumed item
+  itemName: string;      // Display name
+  nutrition?: number;    // Nutritional value (omitted if default 1)
+  servings?: number;     // Total servings (only for multi-serving food)
+  servingsRemaining?: number;  // Remaining after eating
+  effects?: string[];    // e.g., ['poison', 'heal']
+  satisfiesHunger?: boolean;
+}</code></pre>
+        </details>
+      </article>
+
+      <article>
+        <details>
+          <summary>Example: Creating an edible item</summary>
+          <pre><code>import { EdibleTrait, TraitType } from '@sharpee/world-model';
+
+const apple = world.createEntity('apple', 'object');
+apple.add({
+  type: TraitType.EDIBLE,
+  servings: 1,
+  isDrink: false,
+  taste: 'delicious',
+  nutrition: 2,
+  effects: [],
+  consumed: false,
+  satisfiesHunger: true
+} as EdibleTrait);
+
+// Player types: "eat apple"
+// Result: implicit take (if needed) + "Delicious!" message</code></pre>
+        </details>
+      </article>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- DRINKING -->
+    <!-- ================================================================ -->
+    <section id="drinking">
+      <h2>Drinking</h2>
+      <p>The drinking action consumes drinkable items. An item is drinkable if it has <code>EdibleTrait</code> with <code>isDrink: true</code>, or if it has a <code>ContainerTrait</code> with <code>containsLiquid: true</code>. When drinking from a container, the container must be open. The action performs an implicit take if the item is not already held.</p>
+
+      <article>
+        <h3>Grammar Patterns</h3>
+        <pre><code>// Registered via forAction (ADR-087)
+grammar
+  .forAction('if.action.drinking')
+  .verbs(['drink', 'sip', 'quaff'])
+  .pattern(':item')
+  .build();
+// Generates: drink :item, sip :item, quaff :item</code></pre>
+      </article>
+
+      <article>
+        <h3>Validation</h3>
+        <p>The validate phase checks the following preconditions:</p>
+        <ol>
+          <li>A direct object must be specified (<code>no_item</code> error)</li>
+          <li>The item must be within REACHABLE scope</li>
+          <li>The item must be drinkable: <code>EdibleTrait.isDrink === true</code> or <code>ContainerTrait.containsLiquid === true</code> (<code>not_drinkable</code> error)</li>
+          <li>The item must not have been already consumed (<code>already_consumed</code> error)</li>
+          <li>If the item is a container with <code>OpenableTrait</code>, it must be open (<code>container_closed</code> error)</li>
+        </ol>
+      </article>
+
+      <article>
+        <h3>Execution</h3>
+        <p>The execute phase performs up to three mutations: an implicit take if the item is not held, consumption via <code>EdibleBehavior.consume()</code> for items with <code>EdibleTrait</code>, and decrementing <code>liquidAmount</code> for containers. The message is chosen based on verb (sip &rarr; sipped, quaff &rarr; quaffed, swallow &rarr; gulped), taste (refreshing, bitter, sweet, strong), effects (magical, healing), thirst satisfaction, and container state (from_container, empty_now).</p>
+      </article>
+
+      <article>
+        <details>
+          <summary>Events</summary>
+          <table>
+            <thead>
+              <tr><th>Event</th><th>Data</th><th>When</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>if.event.drunk</code></td>
+                <td><code>DrunkEventData</code></td>
+                <td>Always emitted on success</td>
+              </tr>
+              <tr>
+                <td><code>if.event.taken</code></td>
+                <td><code>ImplicitTakenEventData</code></td>
+                <td>Emitted when item was not held and implicit take occurred</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h4>DrunkEventData</h4>
+          <pre><code>interface DrunkEventData {
+  item: EntityId;
+  itemName: string;
+  nutrition?: number;
+  portions?: number;            // Total portions
+  portionsRemaining?: number;   // After drinking
+  effects?: string[];           // e.g., ['magic', 'healing']
+  satisfiesThirst?: boolean;
+  fromContainer?: boolean;      // Drinking from a container
+  liquidType?: string;          // e.g., 'water', 'ale'
+  liquidAmount?: number;        // Amount before drinking
+  liquidRemaining?: number;     // Amount after drinking
+}</code></pre>
+        </details>
+      </article>
+
+      <article>
+        <details>
+          <summary>Example: Drinkable item vs. liquid container</summary>
+          <pre><code>// Direct drinkable item (potion, etc.)
+const potion = world.createEntity('potion', 'object');
+potion.add({
+  type: TraitType.EDIBLE,
+  isDrink: true,
+  taste: 'bitter',
+  effects: ['healing'],
+  servings: 1,
+  consumed: false
+} as EdibleTrait);
+
+// Container with liquid (bottle of water)
+const bottle = world.createEntity('bottle', 'object');
+bottle.add({
+  type: TraitType.CONTAINER,
+  containsLiquid: true,
+  liquidType: 'water',
+  liquidAmount: 3
+} as ContainerTrait);
+bottle.add({
+  type: TraitType.OPENABLE,
+  isOpen: false
+} as OpenableTrait);
+
+// "drink potion" -> "The bitter liquid courses through you."
+// "drink bottle" (closed) -> "The bottle is closed."
+// "open bottle" then "drink bottle" -> "You drink from the bottle."</code></pre>
+        </details>
+      </article>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- PUSHING -->
+    <!-- ================================================================ -->
+    <section id="pushing">
+      <h2>Pushing</h2>
+      <p>The pushing action handles pressing buttons, shoving heavy objects, and pushing moveable items. The behavior varies based on the <code>pushType</code> property of <code>PushableTrait</code>: <strong>button</strong> (activates something), <strong>heavy</strong> (may or may not budge), or <strong>moveable</strong> (can be pushed in a direction, may reveal passages). This action supports interceptor hooks (ADR-118) for entity-specific behavior.</p>
+
+      <article>
+        <h3>Grammar Patterns</h3>
+        <pre><code>// Registered via forAction (ADR-087)
+grammar
+  .forAction('if.action.pushing')
+  .verbs(['push', 'press', 'shove', 'move'])
+  .pattern(':target')
+  .build();
+// Generates: push :target, press :target, shove :target, move :target</code></pre>
+      </article>
+
+      <article>
+        <h3>Validation</h3>
+        <p>The validate phase runs interceptor hooks around standard checks:</p>
+        <ol>
+          <li><strong>preValidate hook</strong> &mdash; interceptor can block early (e.g., custom state check)</li>
+          <li>Target must be specified and within REACHABLE scope</li>
+          <li>Target must not be a worn item (<code>wearing_it</code> error)</li>
+          <li>Target must have <code>PushableTrait</code>; scenery without it yields <code>fixed_in_place</code>, other objects yield <code>pushing_does_nothing</code></li>
+          <li><strong>postValidate hook</strong> &mdash; interceptor can add entity-specific conditions</li>
+        </ol>
+      </article>
+
+      <article>
+        <h3>Execution by Push Type</h3>
+        <table>
+          <thead>
+            <tr><th>Push Type</th><th>Behavior</th><th>Messages</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>button</code></td>
+              <td>Activates the button. If also <code>SwitchableTrait</code>, toggles on/off state via <code>SwitchableBehavior.toggle()</code>. Plays optional <code>pushSound</code>.</td>
+              <td><code>button_pushed</code>, <code>button_clicks</code>, <code>switch_toggled</code></td>
+            </tr>
+            <tr>
+              <td><code>heavy</code></td>
+              <td>Requires direction to move. Without a direction, reports the object won't budge. May require a minimum strength value.</td>
+              <td><code>pushed_with_effort</code>, <code>wont_budge</code></td>
+            </tr>
+            <tr>
+              <td><code>moveable</code></td>
+              <td>Can be pushed in a direction. May reveal hidden passages (<code>revealsPassage</code> property). Without a direction, the object is merely nudged. Plays optional <code>pushSound</code>.</td>
+              <td><code>pushed_direction</code>, <code>pushed_nudged</code>, <code>reveals_passage</code></td>
+            </tr>
+          </tbody>
+        </table>
+        <p>After standard execution, the <strong>postExecute hook</strong> runs, allowing interceptors to perform additional mutations.</p>
+      </article>
+
+      <article>
+        <details>
+          <summary>Events</summary>
+          <table>
+            <thead>
+              <tr><th>Event</th><th>Data</th><th>When</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>if.event.pushed</code></td>
+                <td><code>PushedEventData</code></td>
+                <td>Always emitted on success</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h4>PushedEventData</h4>
+          <pre><code>interface PushedEventData {
+  target: EntityId;
+  targetName: string;
+  direction?: string;
+  pushType?: 'button' | 'heavy' | 'moveable';
+  activated?: boolean;    // Button was activated
+  willToggle?: boolean;   // Will toggle switchable state
+  currentState?: boolean; // Switchable state before push
+  newState?: boolean;     // Switchable state after push
+  sound?: string;         // Push sound effect
+  moved?: boolean;        // Object moved in a direction
+  moveDirection?: string; // Direction of movement
+  nudged?: boolean;       // Object was nudged (no direction given)
+  revealsPassage?: boolean; // Push revealed a hidden passage
+  requiresStrength?: number; // Minimum strength to push
+}</code></pre>
+        </details>
+      </article>
+
+      <article>
+        <details>
+          <summary>Example: Pushable button with switch</summary>
+          <pre><code>import { PushableTrait, SwitchableTrait, TraitType } from '@sharpee/world-model';
+
+const redButton = world.createEntity('red button', 'object');
+redButton.add({
+  type: TraitType.PUSHABLE,
+  pushType: 'button',
+  pushSound: 'click'
+} as PushableTrait);
+redButton.add({
+  type: TraitType.SWITCHABLE,
+  isOn: false
+} as SwitchableTrait);
+
+// "push red button" -> toggles switch on, emits click sound
+// "press button" -> same result (verb alias)</code></pre>
+        </details>
+      </article>
+
+      <article>
+        <details>
+          <summary>Example: Interceptor for custom push behavior</summary>
+          <pre><code>import { ActionInterceptor } from '@sharpee/world-model';
+
+// Custom interceptor that performs side effects when a
+// specific object is pushed (e.g., opening a secret door)
+const secretDoorInterceptor: ActionInterceptor = {
+  postExecute(target, world, actorId, data) {
+    // When the statue is pushed, open the secret passage
+    if (target.id === statueId) {
+      const passage = world.getEntity(secretPassageId);
+      if (passage) {
+        OpenableBehavior.open(passage);
+        data.revealedPassage = true;
+      }
+    }
+  },
+  postReport(target, world, actorId, data) {
+    if (data.revealedPassage) {
+      return [createEffect('if.event.exit_revealed', {
+        direction: 'north',
+        room: world.getLocation(actorId)
+      })];
+    }
+    return [];
+  }
+};</code></pre>
+        </details>
+      </article>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- PULLING -->
+    <!-- ================================================================ -->
+    <section id="pulling">
+      <h2>Pulling</h2>
+      <p>The pulling action handles pulling objects with <code>PullableTrait</code>. It tracks pull state (<code>'pulled'</code> or neutral) and maintains a pull count. The action is intentionally minimal &mdash; story authors handle entity-specific pulling logic through traits and interceptors. Pull types include <strong>lever</strong>, <strong>cord</strong>, <strong>attached</strong>, and <strong>heavy</strong>.</p>
+
+      <article>
+        <h3>Grammar Patterns</h3>
+        <pre><code>// Registered via forAction (ADR-087)
+grammar
+  .forAction('if.action.pulling')
+  .verbs(['pull', 'drag', 'yank'])
+  .pattern(':target')
+  .build();
+// Generates: pull :target, drag :target, yank :target</code></pre>
+      </article>
+
+      <article>
+        <h3>Validation</h3>
+        <ol>
+          <li>Target must be specified (<code>no_target</code> error)</li>
+          <li>Target must be within REACHABLE scope</li>
+          <li>Target must have <code>PullableTrait</code> (<code>cant_pull_that</code> error)</li>
+          <li>Target must not be a worn item (<code>worn</code> error)</li>
+          <li>Target must not already be in <code>'pulled'</code> state (<code>already_pulled</code> error)</li>
+        </ol>
+      </article>
+
+      <article>
+        <h3>Execution</h3>
+        <p>The execute phase sets <code>PullableTrait.state</code> to <code>'pulled'</code> and increments <code>pullCount</code>. The shared data captures the pull type and count for the report phase.</p>
+      </article>
+
+      <article>
+        <details>
+          <summary>Events</summary>
+          <table>
+            <thead>
+              <tr><th>Event</th><th>Data</th><th>When</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>if.event.pulled</code></td>
+                <td><code>PulledEventData</code></td>
+                <td>Always emitted on success</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h4>PulledEventData</h4>
+          <pre><code>interface PulledEventData {
+  target: EntityId;
+  targetName: string;
+  pullType?: 'lever' | 'cord' | 'attached' | 'heavy';
+  pullCount: number;       // Total times pulled
+  direction?: string;
+  activated?: boolean;
+  // Lever-specific
+  oldPosition?: 'up' | 'down' | 'neutral';
+  newPosition?: 'up' | 'down' | 'neutral';
+  springLoaded?: boolean;
+  controls?: string;
+  // Cord-specific
+  cordType?: 'rope' | 'chain' | 'cable' | 'wire' | 'string';
+  tension?: 'slack' | 'taut' | 'tight';
+  breaks?: boolean;
+  activates?: string;
+  // Bell-related
+  rings?: boolean;
+  bellSound?: string;
+  ringCount?: number;
+  // Attachment
+  attachedTo?: EntityId;
+  willDetach?: boolean;
+  detached?: boolean;
+}</code></pre>
+        </details>
+      </article>
+
+      <article>
+        <details>
+          <summary>Example: Lever puzzle</summary>
+          <pre><code>import { PullableTrait, TraitType } from '@sharpee/world-model';
+
+const lever = world.createEntity('rusty lever', 'object');
+lever.add({
+  type: TraitType.PULLABLE,
+  pullType: 'lever',
+  state: 'neutral',
+  pullCount: 0
+} as PullableTrait);
+lever.add({ type: TraitType.SCENERY });
+
+// "pull lever" -> sets state to 'pulled', pullCount becomes 1
+// "pull lever" again -> "already_pulled" error
+
+// Story interceptor can react to the pull and
+// trigger puzzle effects (open gate, drain water, etc.)</code></pre>
+        </details>
+      </article>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- CLIMBING -->
+    <!-- ================================================================ -->
+    <section id="climbing">
+      <h2>Climbing</h2>
+      <p>The climbing action supports two modes: <strong>directional climbing</strong> (climb up/down) which moves the player through room exits, and <strong>object climbing</strong> (climb tree, climb ladder) which moves the player onto a climbable entity. Directional climbing checks for <code>up</code>/<code>down</code> exits in the current room. Object climbing requires <code>ClimbableTrait</code> or an enterable <code>SupporterTrait</code>.</p>
+
+      <article>
+        <h3>Grammar Patterns</h3>
+        <p>The climbing action uses directional grammar (climb up, climb down) handled via the direction system, and object patterns for climbable entities. Note that <code>climb in/into</code> maps to the <em>entering</em> action and <code>climb out</code> maps to the <em>exiting</em> action.</p>
+        <pre><code>// Directional climbing uses direction system
+// "climb up" -> if.action.climbing with direction 'up'
+// "climb down" -> if.action.climbing with direction 'down'
+
+// "climb :target" -> if.action.climbing with target entity
+
+// These map to DIFFERENT actions:
+// "climb in :portal" -> if.action.entering
+// "climb into :portal" -> if.action.entering
+// "climb out" -> if.action.exiting</code></pre>
+      </article>
+
+      <article>
+        <h3>Validation</h3>
+        <p>Validation branches based on the command form:</p>
+
+        <h4>Directional climbing (climb up / climb down)</h4>
+        <ol>
+          <li>Direction must be <code>up</code> or <code>down</code> (<code>cant_go_that_way</code> error for other directions)</li>
+          <li>Current room must have a <code>RoomTrait</code></li>
+          <li>Room must have an exit in the specified direction (<code>cant_go_that_way</code> error)</li>
+        </ol>
+
+        <h4>Object climbing (climb tree, climb ladder)</h4>
+        <ol>
+          <li>Target must have <code>ClimbableTrait</code> (checked via <code>ClimbableBehavior.climb()</code>) or an enterable <code>SupporterTrait</code> (<code>not_climbable</code> error)</li>
+          <li>Player must not already be on the target (<code>already_there</code> error)</li>
+        </ol>
+      </article>
+
+      <article>
+        <h3>Execution</h3>
+        <p>For directional climbing, the player is moved to the destination room via <code>world.moveEntity()</code>. For object climbing, the player is moved onto the target entity. Both modes capture the origin location in shared data for event reporting.</p>
+      </article>
+
+      <article>
+        <details>
+          <summary>Events</summary>
+          <table>
+            <thead>
+              <tr><th>Event</th><th>Data</th><th>When</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>if.event.climbed</code></td>
+                <td><code>ClimbedEventData</code></td>
+                <td>Always emitted on success</td>
+              </tr>
+              <tr>
+                <td><code>if.event.moved</code></td>
+                <td>direction, fromRoom, toRoom, method</td>
+                <td>Emitted for directional climbing when destination exists</td>
+              </tr>
+              <tr>
+                <td><code>if.event.entered</code></td>
+                <td>targetId, method, preposition</td>
+                <td>Emitted for object climbing (preposition is <code>'onto'</code>)</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h4>ClimbedEventData</h4>
+          <pre><code>interface ClimbedEventData {
+  direction?: string;       // 'up' or 'down' for directional
+  targetId?: EntityId;      // Target entity for object climbing
+  method: 'directional' | 'onto';
+  destinationId?: EntityId; // Room ID for directional climbing
+}</code></pre>
+        </details>
+      </article>
+
+      <article>
+        <details>
+          <summary>Example: Climbable tree and directional climb</summary>
+          <pre><code>import { ClimbableTrait, TraitType } from '@sharpee/world-model';
+
+// Object climbing: a tree
+const tree = world.createEntity('oak tree', 'object');
+tree.add({
+  type: TraitType.CLIMBABLE,
+  climbDifficulty: 'easy'
+} as ClimbableTrait);
+
+// "climb tree" -> player moves onto the tree entity
+
+// Directional climbing: room with up/down exits
+const tower = world.createEntity('tower-base', 'room');
+const towerTrait = {
+  type: TraitType.ROOM,
+  exits: {
+    up: { to: 'tower-top', description: 'A spiral staircase leads up.' }
+  }
+};
+tower.add(towerTrait);
+
+// "climb up" -> player moves to tower-top room</code></pre>
+        </details>
+      </article>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- ATTACKING -->
+    <!-- ================================================================ -->
+    <section id="attacking">
+      <h2>Attacking</h2>
+      <p>The attacking action handles combat and destructive actions. Its behavior differs significantly based on whether the target is an NPC (has <code>CombatantTrait</code>) or an object:</p>
+      <ul>
+        <li><strong>NPCs with CombatantTrait</strong>: Requires a registered combat interceptor (ADR-118). Without one, the action blocks with "Violence is not the answer." This ensures all combat flows through story-defined logic.</li>
+        <li><strong>Objects</strong>: Uses <code>AttackBehavior</code> for destruction mechanics (breaking, damaging, destroying).</li>
+      </ul>
+      <p>The action infers a weapon from inventory when none is specified explicitly, particularly for combat verbs like <code>stab</code>, <code>slash</code>, or <code>cut</code>.</p>
+
+      <article>
+        <h3>Grammar Patterns</h3>
+        <pre><code>// Simple attack (ADR-087: forAction)
+grammar
+  .forAction('if.action.attacking')
+  .verbs(['attack', 'kill', 'fight', 'slay', 'murder', 'hit', 'strike'])
+  .pattern(':target')
+  .build();
+// Generates: attack :target, kill :target, fight :target, ...
+
+// Attack with weapon (higher priority, uses .define())
+grammar.define('attack :target with :weapon')
+  .mapsTo('if.action.attacking').withPriority(110).build();
+grammar.define('kill :target with :weapon')
+  .mapsTo('if.action.attacking').withPriority(110).build();
+grammar.define('hit :target with :weapon')
+  .mapsTo('if.action.attacking').withPriority(110).build();
+grammar.define('strike :target with :weapon')
+  .mapsTo('if.action.attacking').withPriority(110).build();</code></pre>
+      </article>
+
+      <article>
+        <h3>Validation</h3>
+        <p>The validate phase runs interceptor hooks around standard checks:</p>
+        <ol>
+          <li>Target must be specified (<code>no_target</code> error)</li>
+          <li><strong>preValidate hook</strong> &mdash; interceptor can block early (e.g., attacker is staggered)</li>
+          <li>Target must be visible and reachable</li>
+          <li>Target must not be the player (<code>self</code> error)</li>
+          <li>Specified weapon must be held or implicitly takeable</li>
+          <li>If target has <code>CombatantTrait</code>:
+            <ul>
+              <li>Target must be alive (<code>already_dead</code> error)</li>
+              <li>A combat interceptor must be registered (<code>violence_not_the_answer</code> error if not)</li>
+            </ul>
+          </li>
+          <li><strong>postValidate hook</strong> &mdash; interceptor can add entity-specific conditions</li>
+        </ol>
+      </article>
+
+      <article>
+        <h3>Execution</h3>
+        <p>Execution branches based on the target type:</p>
+
+        <h4>NPC combat (CombatantTrait present)</h4>
+        <p>The interceptor's <code>postExecute</code> hook handles all combat resolution. Weapon info is passed to the interceptor via shared data. The interceptor must populate <code>attackResult</code> in <code>interceptorData</code> with an <code>AttackResult</code> object. If no weapon was specified, the action searches for a wielded weapon via <code>findWieldedWeapon()</code> or falls back to <code>AttackBehavior.inferWeapon()</code> from inventory.</p>
+
+        <h4>Object destruction (no CombatantTrait)</h4>
+        <p>Uses <code>AttackBehavior.attack(target, weapon, world)</code> which returns an <code>IAttackResult</code> describing what happened (broke, damaged, destroyed, etc.).</p>
+
+        <details>
+          <summary>AttackResult</summary>
+          <pre><code>interface AttackResult {
+  success: boolean;
+  type: 'broke' | 'damaged' | 'destroyed' | 'killed'
+      | 'hit' | 'ineffective' | 'missed' | 'knocked_out';
+  damage?: number;
+  remainingHitPoints?: number;
+  targetDestroyed?: boolean;
+  targetKilled?: boolean;
+  targetKnockedOut?: boolean;
+  itemsDropped?: EntityId[];    // Items dropped by killed NPC
+  debrisCreated?: EntityId[];   // Debris from broken object
+  exitRevealed?: string;        // Direction of newly revealed exit
+  transformedTo?: EntityId;     // Entity the target transformed into
+}</code></pre>
+        </details>
+      </article>
+
+      <article>
+        <details>
+          <summary>Events</summary>
+          <table>
+            <thead>
+              <tr><th>Event</th><th>Data</th><th>When</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>if.event.attacked</code></td>
+                <td><code>AttackedEventData</code></td>
+                <td>Always emitted on success</td>
+              </tr>
+              <tr>
+                <td><code>if.event.taken</code></td>
+                <td>implicit take data</td>
+                <td>Prepended when weapon is implicitly taken</td>
+              </tr>
+              <tr>
+                <td><code>if.event.dropped</code></td>
+                <td>item, dropper info</td>
+                <td>Emitted for each item dropped by killed target</td>
+              </tr>
+              <tr>
+                <td><code>if.event.exit_revealed</code></td>
+                <td>direction, room</td>
+                <td>Emitted when destroying an object reveals an exit</td>
+              </tr>
+              <tr>
+                <td><code>if.event.death</code></td>
+                <td>target, killedBy</td>
+                <td>Emitted when target is killed</td>
+              </tr>
+              <tr>
+                <td><code>if.event.knocked_out</code></td>
+                <td>target, knockedOutBy</td>
+                <td>Emitted when target is knocked out</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h4>AttackedEventData</h4>
+          <pre><code>interface AttackedEventData {
+  target: EntityId;
+  targetName: string;
+  weapon?: EntityId;
+  weaponName?: string;
+  unarmed: boolean;  // true when no weapon was used
+}</code></pre>
+        </details>
+      </article>
+
+      <article>
+        <details>
+          <summary>Example: Combat interceptor for NPC</summary>
+          <pre><code>import { ActionInterceptor, CombatantTrait, TraitType,
+  createEffect } from '@sharpee/world-model';
+
+// Register combat interceptor for the troll
+const trollCombatInterceptor: ActionInterceptor = {
+  preValidate(target, world, actorId, data) {
+    // Custom pre-combat check
+    const combatant = target.get(TraitType.COMBATANT) as CombatantTrait;
+    if (combatant.isStaggered) {
+      data.staggered = true;
+      // Allow attack to proceed (staggered enemy is easier to hit)
+    }
+    return null; // Continue standard validation
+  },
+
+  postExecute(target, world, actorId, data) {
+    const weapon = data.weaponId
+      ? world.getEntity(data.weaponId) : undefined;
+    const combatant = target.get(TraitType.COMBATANT) as CombatantTrait;
+
+    // Calculate damage based on weapon and defender state
+    const damage = weapon ? 10 : 2; // Unarmed does less
+    combatant.health = Math.max(0, combatant.health - damage);
+
+    if (combatant.health === 0) {
+      combatant.isAlive = false;
+      data.attackResult = {
+        success: true, type: 'killed',
+        damage, targetKilled: true
+      };
+    } else {
+      data.attackResult = {
+        success: true, type: 'hit',
+        damage, remainingHitPoints: combatant.health
+      };
+    }
+  },
+
+  postReport(target, world, actorId, data) {
+    // Add troll-specific flavor text
+    if (data.attackResult?.targetKilled) {
+      return [createEffect('dungeo.event.troll_dies', {
+        message: 'The troll collapses in a puff of smoke.'
+      })];
+    }
+    return [];
+  }
+};
+
+// Register on the troll entity
+registerInterceptorForAction(troll, 'if.action.attacking',
+  trollCombatInterceptor);</code></pre>
+        </details>
+      </article>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- Interceptor Pattern -->
+    <!-- ================================================================ -->
+    <section id="interceptor-pattern">
+      <h2>Interceptor Hooks</h2>
+      <p>The pushing and attacking actions support the interceptor pattern (ADR-118), which allows entity-specific behavior without modifying the action itself. Interceptors are registered on individual entities and hook into the action lifecycle at defined points:</p>
+
+      <table>
+        <thead>
+          <tr><th>Hook</th><th>Phase</th><th>Returns</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>preValidate</code></td>
+            <td>Before standard validation</td>
+            <td><code>ValidationResult | null</code></td>
+            <td>Block the action early based on entity-specific state. Return <code>null</code> to continue.</td>
+          </tr>
+          <tr>
+            <td><code>postValidate</code></td>
+            <td>After standard validation passes</td>
+            <td><code>ValidationResult | null</code></td>
+            <td>Add entity-specific conditions after standard checks pass. Return <code>null</code> to continue.</td>
+          </tr>
+          <tr>
+            <td><code>postExecute</code></td>
+            <td>After standard execution</td>
+            <td><code>void</code></td>
+            <td>Perform additional world mutations (e.g., combat resolution, triggered effects).</td>
+          </tr>
+          <tr>
+            <td><code>onBlocked</code></td>
+            <td>When validation fails</td>
+            <td><code>CapabilityEffect[] | null</code></td>
+            <td>Provide custom blocked events. Return <code>null</code> for default handling.</td>
+          </tr>
+          <tr>
+            <td><code>postReport</code></td>
+            <td>After standard events are generated</td>
+            <td><code>CapabilityEffect[]</code></td>
+            <td>Append additional semantic events (flavor text, side effects).</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>See <a href="actions-overview.html#decision-tree">Decision Tree</a> for guidance on when to use interceptors versus other extension patterns.</p>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- See Also -->
+    <!-- ================================================================ -->
+    <section id="see-also">
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="actions-overview.html">Actions Overview</a> &mdash; four-phase lifecycle, ActionContext, sharedData pattern, decision tree</li>
+        <li><a href="traits-interaction.html">Interaction Traits</a> &mdash; EdibleTrait, PushableTrait, PullableTrait, ClimbableTrait</li>
+        <li><a href="traits-combat.html">Combat Traits</a> &mdash; CombatantTrait, WeaponTrait, AttackBehavior</li>
+        <li><a href="actions-movement.html">Movement Actions</a> &mdash; going, entering, exiting (related to climbing)</li>
+        <li><a href="actions-objects.html">Object Handling Actions</a> &mdash; taking, dropping, putting, inserting, removing</li>
+        <li><a href="actions-state.html">State Change Actions</a> &mdash; opening, closing, locking, unlocking, switching</li>
+        <li><a href="actions-sensory.html">Sensory &amp; Query Actions</a> &mdash; looking, examining, searching, reading, listening, smelling</li>
+        <li><a href="actions-meta.html">Meta Actions</a> &mdash; inventory, scoring, saving, restoring, help, quitting</li>
+      </ul>
+    </section>
+  </main>
+  <script src="js/docs.js"></script>
+</body>
+</html>

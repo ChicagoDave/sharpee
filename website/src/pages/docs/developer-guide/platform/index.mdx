@@ -1,0 +1,100 @@
+---
+layout: ../../../../layouts/DocsLayout.astro
+title: "Platform Guide"
+---
+
+# Platform Developer Guide
+
+Extend Sharpee by implementing any of its four pluggable extension points. Each can be built independently and composed together at runtime.
+
+## Architecture
+
+```
+                    +-----------+
+  User Input ------>|  Parser   |----> IParsedCommand
+                    | (en-US)   |
+                    +-----------+
+                         |
+                         v
+                    +-----------+
+                    |  Engine   |----> SequencedEvent[]
+                    | (turns,   |
+                    |  actions) |
+                    +-----------+
+                     /    |    \
+                    /     |     \
+          +--------+ +--------+ +-----------+
+          | Story  | | Text   | | Language  |
+          | (world,| | Service| | Provider  |
+          |  logic)| | (render| | (messages)|
+          +--------+ |  pipe) | +-----------+
+                      +--------+
+                         |
+                         v
+                    +-----------+
+                    |  Client   |----> Display
+                    | (CLI, web,|
+                    |  custom)  |
+                    +-----------+
+```
+
+The engine is the orchestrator. It loads a story, accepts input through a parser, executes actions, and emits events. The text service transforms events into structured text blocks. The language provider supplies all user-facing strings. The client renders output and captures input.
+
+## Extension Points
+
+| Extension | Interface | You Provide |
+|-----------|-----------|-------------|
+| [Story](/docs/developer-guide/platform/stories/) | `Story` | World content, custom actions, grammar, messages |
+| [Language Pack](/docs/developer-guide/platform/languages/) | `ParserLanguageProvider` | Messages, verbs, vocabulary, linguistic operations |
+| [Client](/docs/developer-guide/platform/clients/) | Event listeners | Input handling, text rendering, save/restore |
+| [Text Service](/docs/developer-guide/platform/text-service/) | `TextService` handlers | Custom event-to-text rendering pipeline |
+
+## Full Bootstrap Example
+
+This wires all four extension points together:
+
+```typescript
+import { WorldModel, EntityType } from '@sharpee/world-model';
+import { GameEngine } from '@sharpee/engine';
+import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
+import { ParserFactory } from '@sharpee/if-domain';
+import { PerceptionService } from '@sharpee/stdlib';
+import { story } from '@sharpee/my-story';
+
+// 1. Create core services
+const world = new WorldModel();
+const player = world.createEntity('player', EntityType.ACTOR);
+world.setPlayer(player.id);
+
+const language = new EnglishLanguageProvider();
+const parser = ParserFactory.createParser('en-US', language);
+const perceptionService = new PerceptionService();
+
+// 2. Create engine
+const engine = new GameEngine({
+  world, player, parser, language, perceptionService,
+});
+
+// 3. Load story (calls all lifecycle hooks)
+engine.setStory(story);
+
+// 4. Connect client
+engine.on('text:output', (text, turn) => {
+  console.log(text);
+});
+
+engine.registerSaveRestoreHooks({
+  onSaveRequested: async (data) => { /* persist */ },
+  onRestoreRequested: async () => { /* retrieve */ },
+});
+
+// 5. Start the game
+engine.start();
+
+// 6. Game loop
+const readline = require('readline');
+const rl = readline.createInterface({ input: process.stdin });
+rl.on('line', async (input) => {
+  await engine.executeTurn(input.trim());
+});
+```

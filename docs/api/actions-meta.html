@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Meta Actions - Sharpee API</title>
+  <link rel="stylesheet" href="css/pico.min.css">
+  <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <main>
+    <header>
+      <hgroup>
+        <h1>Meta Actions</h1>
+        <p>Help, scoring, saving, restoring, quitting, waiting, and other system commands</p>
+      </hgroup>
+      <nav aria-label="breadcrumb">
+        <a href="index.html">API</a>
+        <span class="separator">/</span>
+        <a href="actions-overview.html">Actions</a>
+        <span class="separator">/</span>
+        Meta
+      </nav>
+    </header>
+
+    <!-- Overview -->
+    <section id="overview">
+      <h2>Overview</h2>
+      <p>Meta actions handle system-level commands that exist outside the fiction of the game world. They display information, manage persistence, control the session, and advance time. Unlike object or movement actions, meta actions generally require <strong>no entity traits</strong> and perform <strong>no world mutations</strong> &mdash; they query state and emit events for the engine or text service to handle.</p>
+      <p>All meta actions belong to the <code>"meta"</code> action group. They follow the standard four-phase pattern (validate, execute, report, blocked) but most always pass validation. Their execute phases typically analyze game state and store results in <code>sharedData</code> for the report phase. Several emit <strong>platform events</strong> that the engine intercepts after turn completion to perform operations like saving, restoring, or quitting.</p>
+    </section>
+
+    <!-- Quick Reference -->
+    <section class="quick-ref">
+      <h2>Quick Reference</h2>
+      <table>
+        <thead>
+          <tr><th>Action</th><th>ID</th><th>Verbs</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="#help"><code>help</code></a></td>
+            <td><code>if.action.help</code></td>
+            <td>help, hint, hints</td>
+            <td>Display help text and command reference</td>
+          </tr>
+          <tr>
+            <td><a href="#about"><code>about</code></a></td>
+            <td><code>if.action.about</code></td>
+            <td>about, info</td>
+            <td>Show game title, author, and version</td>
+          </tr>
+          <tr>
+            <td><a href="#version"><code>version</code></a></td>
+            <td><code>if.action.version</code></td>
+            <td>version</td>
+            <td>Display engine and story version details</td>
+          </tr>
+          <tr>
+            <td><a href="#scoring"><code>scoring</code></a></td>
+            <td><code>if.action.scoring</code></td>
+            <td>score</td>
+            <td>Show current score, rank, and progress</td>
+          </tr>
+          <tr>
+            <td><a href="#inventory"><code>inventory</code></a></td>
+            <td><code>if.action.inventory</code></td>
+            <td>inventory, i, inv</td>
+            <td>List items the player is carrying and wearing</td>
+          </tr>
+          <tr>
+            <td><a href="#saving"><code>saving</code></a></td>
+            <td><code>if.action.saving</code></td>
+            <td>save</td>
+            <td>Save the current game state</td>
+          </tr>
+          <tr>
+            <td><a href="#restoring"><code>restoring</code></a></td>
+            <td><code>if.action.restoring</code></td>
+            <td>restore, load</td>
+            <td>Restore a previously saved game</td>
+          </tr>
+          <tr>
+            <td><a href="#restarting"><code>restarting</code></a></td>
+            <td><code>if.action.restarting</code></td>
+            <td>restart, reset</td>
+            <td>Start the game over from the beginning</td>
+          </tr>
+          <tr>
+            <td><a href="#quitting"><code>quitting</code></a></td>
+            <td><code>if.action.quitting</code></td>
+            <td>quit, exit</td>
+            <td>End the current session</td>
+          </tr>
+          <tr>
+            <td><a href="#waiting"><code>waiting</code></a></td>
+            <td><code>if.action.waiting</code></td>
+            <td>wait, z</td>
+            <td>Pass one turn without acting</td>
+          </tr>
+          <tr>
+            <td><a href="#sleeping"><code>sleeping</code></a></td>
+            <td><code>if.action.sleeping</code></td>
+            <td>sleep, nap</td>
+            <td>Rest or sleep, advancing time</td>
+          </tr>
+          <tr>
+            <td><a href="#again"><code>again</code></a></td>
+            <td><code>if.action.again</code></td>
+            <td>again, g</td>
+            <td>Repeat the previous command</td>
+          </tr>
+          <tr>
+            <td><a href="#undoing"><code>undoing</code></a></td>
+            <td><code>if.action.undoing</code></td>
+            <td>undo</td>
+            <td>Undo the most recent turn</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Informational Actions -->
+    <section id="informational">
+      <h2>Informational Actions</h2>
+      <p>These actions display game information without changing any state.</p>
+
+      <!-- Help -->
+      <article id="help">
+        <h3><code>help</code> &mdash; Display Help</h3>
+        <p>Shows gameplay instructions and command information. Supports both general help and topic-specific help (<code>help movement</code>, <code>help objects</code>). Tracks whether this is the player's first help request so the text service can provide an extended introduction.</p>
+        <p><strong>ID:</strong> <code>if.action.help</code><br>
+        <strong>Validate:</strong> Always succeeds<br>
+        <strong>Execute:</strong> Analyzes the help request (general vs. topic-specific), checks first-time status, gathers available help sections<br>
+        <strong>Event:</strong> <code>if.event.help_displayed</code></p>
+
+        <details>
+          <summary>Event data fields</summary>
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>generalHelp</code></td><td><code>boolean?</code></td><td>Whether general (no topic) help was requested</td></tr>
+              <tr><td><code>specificHelp</code></td><td><code>boolean?</code></td><td>Whether a specific topic was requested</td></tr>
+              <tr><td><code>helpRequest</code></td><td><code>string?</code></td><td>The topic the player asked about</td></tr>
+              <tr><td><code>firstTime</code></td><td><code>boolean?</code></td><td>True on the first help request of the session</td></tr>
+              <tr><td><code>sections</code></td><td><code>string[]?</code></td><td>Available help section IDs (e.g., <code>basic_commands</code>, <code>movement</code>)</td></tr>
+              <tr><td><code>hintsAvailable</code></td><td><code>boolean?</code></td><td>Whether the game provides context-sensitive hints</td></tr>
+            </tbody>
+          </table>
+        </details>
+
+        <details>
+          <summary>Story customization</summary>
+          <p>Stories can customize help by setting shared data on the world model:</p>
+          <pre><code>// In initializeWorld()
+const sharedData = world.getCapability('sharedData') || {};
+sharedData.helpSections = ['basic_commands', 'movement', 'objects', 'puzzles'];
+sharedData.hintsEnabled = true;</code></pre>
+          <p>Custom help text is provided through the language layer by mapping message IDs like <code>if.action.help.general</code>, <code>if.action.help.topic</code>, and <code>if.action.help.first_time</code>.</p>
+        </details>
+      </article>
+
+      <!-- About -->
+      <article id="about">
+        <h3><code>about</code> &mdash; Game Information</h3>
+        <p>Displays the game title, author, version, and description. Reads from the <code>StoryInfoTrait</code> or falls back to the story configuration object on the world model.</p>
+        <p><strong>ID:</strong> <code>if.action.about</code><br>
+        <strong>Validate:</strong> Always succeeds<br>
+        <strong>Execute:</strong> No-op<br>
+        <strong>Event:</strong> <code>if.event.about_displayed</code></p>
+
+        <details>
+          <summary>Event data fields</summary>
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>params.title</code></td><td><code>string</code></td><td>Game title</td></tr>
+              <tr><td><code>params.author</code></td><td><code>string</code></td><td>Author name(s), comma-separated if multiple</td></tr>
+              <tr><td><code>params.version</code></td><td><code>string</code></td><td>Story version</td></tr>
+              <tr><td><code>params.description</code></td><td><code>string</code></td><td>Game description or blurb</td></tr>
+              <tr><td><code>params.engineVersion</code></td><td><code>string</code></td><td>Sharpee engine version</td></tr>
+              <tr><td><code>params.portedBy</code></td><td><code>string</code></td><td>Credit for port/adaptation (if applicable)</td></tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <!-- Version -->
+      <article id="version">
+        <h3><code>version</code> &mdash; Version Details</h3>
+        <p>Displays detailed version information for the story, engine, and client. Uses the same <code>StoryInfoTrait</code> as the about action but focuses on technical version strings and build dates.</p>
+        <p><strong>ID:</strong> <code>if.action.version</code><br>
+        <strong>Validate:</strong> Always succeeds<br>
+        <strong>Execute:</strong> No-op<br>
+        <strong>Event:</strong> <code>if.event.version_displayed</code></p>
+
+        <details>
+          <summary>Event data fields</summary>
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>storyTitle</code></td><td><code>string</code></td><td>Game title</td></tr>
+              <tr><td><code>storyVersion</code></td><td><code>string</code></td><td>Story version string (e.g., <code>'1.2.0-beta'</code>)</td></tr>
+              <tr><td><code>engineVersion</code></td><td><code>string</code></td><td>Sharpee engine version</td></tr>
+              <tr><td><code>clientVersion</code></td><td><code>string</code></td><td>Client version (CLI, browser, etc.)</td></tr>
+              <tr><td><code>buildDate</code></td><td><code>string?</code></td><td>Build timestamp, if available</td></tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <!-- Scoring -->
+      <article id="scoring">
+        <h3><code>scoring</code> &mdash; Display Score</h3>
+        <p>Shows the player's current score, maximum possible score, rank title, move count, and optionally a list of achievements. Scoring data comes from the <code>StandardCapabilities.SCORING</code> capability and the world model's score ledger (ADR-129). If scoring is not registered or is disabled, a "no scoring" message is shown instead.</p>
+        <p><strong>ID:</strong> <code>if.action.scoring</code><br>
+        <strong>Validate:</strong> Always succeeds<br>
+        <strong>Execute:</strong> Reads score, max score, moves, rank, and achievements from the scoring capability and ledger<br>
+        <strong>Event:</strong> <code>if.event.score_displayed</code></p>
+
+        <details>
+          <summary>Event data fields</summary>
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>score</code></td><td><code>number</code></td><td>Current score</td></tr>
+              <tr><td><code>maxScore</code></td><td><code>number</code></td><td>Maximum possible score</td></tr>
+              <tr><td><code>moves</code></td><td><code>number</code></td><td>Number of moves taken</td></tr>
+              <tr><td><code>percentage</code></td><td><code>number?</code></td><td>Score as percentage of max</td></tr>
+              <tr><td><code>rank</code></td><td><code>string?</code></td><td>Current rank title (Novice, Amateur, Proficient, Expert, Master)</td></tr>
+              <tr><td><code>achievements</code></td><td><code>string[]?</code></td><td>List of earned achievements</td></tr>
+              <tr><td><code>progress</code></td><td><code>string?</code></td><td>Progress phase: <code>early_game</code>, <code>mid_game</code>, <code>late_game</code>, or <code>game_complete</code></td></tr>
+            </tbody>
+          </table>
+        </details>
+
+        <details>
+          <summary>Enabling scoring in your story</summary>
+          <p>Register the scoring capability during world initialization. The score ledger tracks individual point awards while the capability provides metadata like moves, rank, and achievements.</p>
+          <pre><code>// In initializeWorld()
+world.registerCapability(StandardCapabilities.SCORING, {
+  enabled: true,
+  maxScore: 616,
+  moves: 0,
+  rank: 'Beginner',
+  achievements: []
+});
+
+// Award points via the score ledger
+world.addScore('treasure_found', 10);</code></pre>
+          <p>If the scoring capability is not registered, the action shows a friendly "no scoring in this game" message. If <code>enabled</code> is set to <code>false</code>, the same message appears.</p>
+        </details>
+
+        <details>
+          <summary>Default rank thresholds</summary>
+          <p>When the scoring capability does not provide a custom rank, the action computes one from the score percentage:</p>
+          <table>
+            <thead>
+              <tr><th>Percentage</th><th>Rank</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>0 &ndash; 24%</td><td>Novice</td></tr>
+              <tr><td>25 &ndash; 49%</td><td>Amateur</td></tr>
+              <tr><td>50 &ndash; 74%</td><td>Proficient</td></tr>
+              <tr><td>75 &ndash; 89%</td><td>Expert</td></tr>
+              <tr><td>90 &ndash; 100%</td><td>Master</td></tr>
+            </tbody>
+          </table>
+          <p>Stories can override this by providing a <code>rank</code> string directly in the scoring capability data.</p>
+        </details>
+      </article>
+
+      <!-- Inventory -->
+      <article id="inventory">
+        <h3><code>inventory</code> &mdash; Check Inventory</h3>
+        <p>Lists items the player is carrying and wearing. Unlike most meta actions, inventory is treated as an <strong>observable action</strong> &mdash; NPCs can notice the player checking their pockets. Queries the world model directly for the player's contents and separates items into held and worn categories using <code>WearableTrait</code>.</p>
+        <p><strong>ID:</strong> <code>if.action.inventory</code><br>
+        <strong>Validate:</strong> Always succeeds<br>
+        <strong>Execute:</strong> Queries player contents, separates held from worn items, calculates weight burden<br>
+        <strong>Event:</strong> <code>if.event.inventory</code> (multiple events: header, holding list, worn list, burden)</p>
+
+        <details>
+          <summary>Event data fields</summary>
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>totalItems</code></td><td><code>number</code></td><td>Total items carried (held + worn)</td></tr>
+              <tr><td><code>heldItems</code></td><td><code>number</code></td><td>Number of held items</td></tr>
+              <tr><td><code>wornItems</code></td><td><code>number</code></td><td>Number of worn items</td></tr>
+              <tr><td><code>isEmpty</code></td><td><code>boolean</code></td><td>True when carrying nothing</td></tr>
+              <tr><td><code>carried</code></td><td><code>Array</code></td><td>List of held items (<code>{ id, name }</code>)</td></tr>
+              <tr><td><code>worn</code></td><td><code>Array</code></td><td>List of worn items (<code>{ id, name }</code>)</td></tr>
+              <tr><td><code>burden</code></td><td><code>string?</code></td><td>Weight status: <code>light</code>, <code>heavy</code>, or <code>overloaded</code></td></tr>
+              <tr><td><code>brief</code></td><td><code>boolean?</code></td><td>True when the short form (<code>i</code> or <code>inv</code>) was used</td></tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+    </section>
+
+    <!-- Persistence Actions -->
+    <section id="persistence">
+      <h2>Persistence Actions</h2>
+      <p>These actions manage game state persistence. They emit <strong>platform events</strong> that the engine processes after turn completion. The engine delegates the actual I/O to the client (CLI, browser, etc.).</p>
+
+      <!-- Saving -->
+      <article id="saving">
+        <h3><code>saving</code> &mdash; Save Game</h3>
+        <p>Triggers a game save. The action validates save restrictions and the save name, then emits a platform <code>save_requested</code> event. The engine intercepts this event after the turn completes and delegates to the client for file or storage I/O. Supports named saves, quick saves, and auto saves.</p>
+        <p><strong>ID:</strong> <code>if.action.saving</code><br>
+        <strong>Validate:</strong> Checks save restrictions (disabled, in-progress), validates save name (max 50 chars, no special characters)<br>
+        <strong>Execute:</strong> Builds save context with metadata (score, moves, turn count, timestamp)<br>
+        <strong>Events:</strong> Platform <code>save_requested</code> event + <code>if.event.save_requested</code></p>
+
+        <details>
+          <summary>Validation errors</summary>
+          <table>
+            <thead>
+              <tr><th>Error</th><th>Condition</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>save_not_allowed</code></td><td>Saving has been disabled (e.g., during certain puzzles)</td></tr>
+              <tr><td><code>save_in_progress</code></td><td>A save operation is already running</td></tr>
+              <tr><td><code>invalid_save_name</code></td><td>Name is too long or contains forbidden characters</td></tr>
+            </tbody>
+          </table>
+        </details>
+
+        <details>
+          <summary>Restricting saves</summary>
+          <p>Stories can temporarily disable saving by setting restrictions in the shared data:</p>
+          <pre><code>// Disable saving during a timed puzzle
+const sharedData = world.getCapability('sharedData') || {};
+sharedData.saveRestrictions = { disabled: true };
+
+// Re-enable after the puzzle
+sharedData.saveRestrictions = {};</code></pre>
+        </details>
+      </article>
+
+      <!-- Restoring -->
+      <article id="restoring">
+        <h3><code>restoring</code> &mdash; Restore Game</h3>
+        <p>Triggers a game restore. Validates that saves exist and that restoring is allowed, then emits a platform <code>restore_requested</code> event. The engine handles the actual state replacement after turn completion. Supports named slots and defaults to the most recent save.</p>
+        <p><strong>ID:</strong> <code>if.action.restoring</code><br>
+        <strong>Validate:</strong> Checks restore restrictions and verifies at least one user save exists (autosave excluded)<br>
+        <strong>Execute:</strong> Builds restore context with available saves list and last save info<br>
+        <strong>Events:</strong> Platform <code>restore_requested</code> event + <code>if.event.restore_requested</code></p>
+
+        <details>
+          <summary>Validation errors</summary>
+          <table>
+            <thead>
+              <tr><th>Error</th><th>Condition</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>restore_not_allowed</code></td><td>Restoring has been disabled</td></tr>
+              <tr><td><code>no_saves</code></td><td>No user saves are available (autosave does not count)</td></tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <!-- Restarting -->
+      <article id="restarting">
+        <h3><code>restarting</code> &mdash; Restart Game</h3>
+        <p>Requests a full game restart. Emits a platform <code>restart_requested</code> event that the engine handles after turn completion. If the player has significant progress (more than 10 moves or unsaved changes), the engine prompts for confirmation unless force-restart is used.</p>
+        <p><strong>ID:</strong> <code>if.action.restarting</code><br>
+        <strong>Validate:</strong> Always succeeds (confirmation is handled by the engine)<br>
+        <strong>Execute:</strong> Gathers current progress (score, moves, location) for the confirmation dialog<br>
+        <strong>Events:</strong> Platform <code>restart_requested</code> event + <code>if.event.restart_requested</code></p>
+
+        <details>
+          <summary>Event data fields</summary>
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>hasUnsavedChanges</code></td><td><code>boolean</code></td><td>Whether there are unsaved changes</td></tr>
+              <tr><td><code>force</code></td><td><code>boolean</code></td><td>Whether confirmation was bypassed</td></tr>
+              <tr><td><code>currentProgress.score</code></td><td><code>number</code></td><td>Current score at time of restart</td></tr>
+              <tr><td><code>currentProgress.moves</code></td><td><code>number</code></td><td>Moves taken so far</td></tr>
+              <tr><td><code>currentProgress.location</code></td><td><code>string</code></td><td>Current room name</td></tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <!-- Quitting -->
+      <article id="quitting">
+        <h3><code>quitting</code> &mdash; Quit Game</h3>
+        <p>Ends the game session. Emits a platform <code>quit_requested</code> event along with a <code>client.query</code> event that prompts the player for confirmation. Tracks unsaved progress and near-completion status so the text service can show appropriate warnings.</p>
+        <p><strong>ID:</strong> <code>if.action.quitting</code><br>
+        <strong>Validate:</strong> Always succeeds<br>
+        <strong>Execute:</strong> Analyzes quit context (unsaved progress, score, near-completion)<br>
+        <strong>Events:</strong> Platform <code>quit_requested</code> + <code>client.query</code> (confirmation) + <code>if.event.quit_requested</code></p>
+
+        <details>
+          <summary>Event data fields</summary>
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>hasUnsavedChanges</code></td><td><code>boolean</code></td><td>Whether progress would be lost</td></tr>
+              <tr><td><code>force</code></td><td><code>boolean</code></td><td>Whether the quit command bypassed confirmation</td></tr>
+              <tr><td><code>score</code></td><td><code>number</code></td><td>Score at time of quitting</td></tr>
+              <tr><td><code>moves</code></td><td><code>number</code></td><td>Total moves taken</td></tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+    </section>
+
+    <!-- Time-Passing Actions -->
+    <section id="time-passing">
+      <h2>Time-Passing Actions</h2>
+      <p>These actions advance the turn counter without the player performing a meaningful in-world action. Daemons, fuses, and NPC behaviors still execute during these turns.</p>
+
+      <!-- Waiting -->
+      <article id="waiting">
+        <h3><code>waiting</code> &mdash; Wait</h3>
+        <p>Passes one turn. The player does nothing, but the game world advances &mdash; daemons tick, NPCs take their turns, and timed events count down. This is the standard way to let time pass while watching for something to happen.</p>
+        <p><strong>ID:</strong> <code>if.action.waiting</code><br>
+        <strong>Validate:</strong> Always succeeds<br>
+        <strong>Execute:</strong> Records current location in <code>sharedData</code><br>
+        <strong>Event:</strong> <code>if.event.waited</code></p>
+
+        <details>
+          <summary>Event data fields</summary>
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>turnsPassed</code></td><td><code>number</code></td><td>Number of turns that passed (always <code>1</code>)</td></tr>
+              <tr><td><code>location</code></td><td><code>string</code></td><td>Room ID where the player waited</td></tr>
+              <tr><td><code>locationName</code></td><td><code>string</code></td><td>Room name where the player waited</td></tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <!-- Sleeping -->
+      <article id="sleeping">
+        <h3><code>sleeping</code> &mdash; Sleep</h3>
+        <p>Similar to waiting, but narratively the player is sleeping or dozing. By default, sleeping always succeeds and advances one turn. Stories can add restrictions (e.g., "too dangerous to sleep here") by overriding the validate phase or using interceptors to block the action in certain locations.</p>
+        <p><strong>ID:</strong> <code>if.action.sleeping</code><br>
+        <strong>Validate:</strong> Checks if sleeping is allowed (default: always allowed)<br>
+        <strong>Execute:</strong> Analyzes sleep context (location, rest status)<br>
+        <strong>Event:</strong> <code>if.event.slept</code></p>
+
+        <details>
+          <summary>Event data fields</summary>
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>turnsPassed</code></td><td><code>number</code></td><td>Number of turns that passed (default <code>1</code>)</td></tr>
+              <tr><td><code>location</code></td><td><code>string?</code></td><td>Room ID where the player slept</td></tr>
+              <tr><td><code>locationName</code></td><td><code>string?</code></td><td>Room name where the player slept</td></tr>
+              <tr><td><code>wakeRefreshed</code></td><td><code>boolean?</code></td><td>Whether the player woke feeling refreshed</td></tr>
+            </tbody>
+          </table>
+        </details>
+
+        <details>
+          <summary>Possible validation errors</summary>
+          <table>
+            <thead>
+              <tr><th>Error</th><th>Condition</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>cant_sleep_here</code></td><td>Location is unsuitable for sleeping</td></tr>
+              <tr><td><code>too_dangerous_to_sleep</code></td><td>Enemies or hazards are present</td></tr>
+              <tr><td><code>already_well_rested</code></td><td>Player is already rested (if fatigue system is in use)</td></tr>
+            </tbody>
+          </table>
+          <p>These errors are not enforced by default. Stories implement sleep restrictions through interceptors or by extending the action.</p>
+        </details>
+      </article>
+    </section>
+
+    <!-- Replay Actions -->
+    <section id="replay">
+      <h2>Replay Actions</h2>
+      <p>These actions repeat or undo previous commands. They emit platform events that the engine processes to re-execute or roll back the game state.</p>
+
+      <!-- Again -->
+      <article id="again">
+        <h3><code>again</code> &mdash; Repeat Last Command</h3>
+        <p>Re-executes the player's most recent successful command. Checks the command history capability and fails if no previous command exists. The engine handles the actual re-execution after receiving the platform event.</p>
+        <p><strong>ID:</strong> <code>if.action.again</code><br>
+        <strong>Validate:</strong> Checks command history for a previous command<br>
+        <strong>Execute:</strong> No-op<br>
+        <strong>Event:</strong> Platform <code>again_requested</code></p>
+
+        <details>
+          <summary>Validation errors</summary>
+          <table>
+            <thead>
+              <tr><th>Error</th><th>Condition</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>nothing_to_repeat</code></td><td>No command in history (start of game or after restart)</td></tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <!-- Undoing -->
+      <article id="undoing">
+        <h3><code>undoing</code> &mdash; Undo Last Turn</h3>
+        <p>Reverts the game to the state before the most recent turn. Emits a platform <code>undo_requested</code> event; the engine determines whether undo data is available and performs the state rollback. The action itself always validates successfully &mdash; the engine handles the "nothing to undo" case.</p>
+        <p><strong>ID:</strong> <code>if.action.undoing</code><br>
+        <strong>Validate:</strong> Always succeeds<br>
+        <strong>Execute:</strong> No-op<br>
+        <strong>Event:</strong> Platform <code>undo_requested</code></p>
+      </article>
+    </section>
+
+    <!-- Common Patterns -->
+    <section id="patterns">
+      <h2>Common Patterns</h2>
+
+      <article>
+        <h3>Platform Events vs. Domain Events</h3>
+        <p>Meta actions that manage session state (save, restore, restart, quit, again, undo) emit <strong>platform events</strong> created by factory functions like <code>createSaveRequestedEvent()</code>. These events are intercepted by the engine after the turn completes and trigger side effects outside the world model. In contrast, informational actions (help, about, scoring, version, inventory) emit <strong>domain events</strong> that the text service renders into prose.</p>
+        <pre><code>// Platform event (engine intercepts after turn)
+const platformEvent = createSaveRequestedEvent(saveContext);
+events.push(platformEvent);
+
+// Domain event (text service renders)
+events.push(context.event('if.event.score_displayed', { score, maxScore }));</code></pre>
+      </article>
+
+      <article>
+        <h3>No World Mutations</h3>
+        <p>All meta actions share a key characteristic: their execute phases perform <strong>no world mutations</strong>. They query state and store analysis results in <code>sharedData</code>, but they never call <code>world.moveEntity()</code>, change trait properties, or alter the game world. This means meta actions are safe to repeat or skip without affecting game integrity.</p>
+      </article>
+
+      <article>
+        <h3>Always-Valid Pattern</h3>
+        <p>Most meta actions always validate successfully. The blocked phase exists for consistency with the four-phase pattern but is rarely invoked. Exceptions are <code>saving</code> (can be disabled or restricted), <code>restoring</code> (requires existing saves), and <code>again</code> (requires command history).</p>
+        <pre><code>validate(context: ActionContext): ValidationResult {
+  // Most meta actions: always valid
+  return { valid: true };
+}</code></pre>
+      </article>
+    </section>
+
+    <!-- See Also -->
+    <section id="see-also">
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="actions-overview.html">Actions Overview</a> &mdash; four-phase pattern, ActionContext, sharedData, creating story actions</li>
+        <li><a href="actions-movement.html">Movement Actions</a> &mdash; going, entering, exiting, climbing</li>
+        <li><a href="actions-objects.html">Object Handling Actions</a> &mdash; taking, dropping, putting, inserting, removing</li>
+        <li><a href="actions-state.html">State Change Actions</a> &mdash; opening, closing, locking, unlocking, switching</li>
+        <li><a href="actions-sensory.html">Sensory &amp; Query Actions</a> &mdash; looking, examining, searching, reading, listening, smelling</li>
+        <li><a href="world.html">World Model</a> &mdash; scoring ledger, capabilities, persistence</li>
+      </ul>
+    </section>
+  </main>
+  <script src="js/docs.js"></script>
+</body>
+</html>

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Combat Traits - Sharpee API</title>
+  <link rel="stylesheet" href="css/pico.min.css">
+  <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <main>
+    <header>
+      <hgroup>
+        <h1>Combat Traits</h1>
+        <p>Traits for combatants, weapons, destructibles, and NPCs</p>
+      </hgroup>
+      <nav aria-label="breadcrumb">
+        <a href="index.html">API</a>
+        <span class="separator">/</span>
+        <a href="traits-core.html">Traits</a>
+        <span class="separator">/</span>
+        Combat
+      </nav>
+    </header>
+
+    <!-- Overview -->
+    <section id="overview">
+      <h2>Overview</h2>
+      <p>Combat traits enable fighting, damage, and NPC behavior. <code>CombatantTrait</code> and <code>WeaponTrait</code> drive the combat system (ADR-072), while <code>NpcTrait</code> controls NPC behavior and AI. Supporting traits like <code>DestructibleTrait</code>, <code>BreakableTrait</code>, and <code>EquippedTrait</code> round out the system for destructible objects, fragile items, and equipment slots.</p>
+    </section>
+
+    <!-- CombatantTrait -->
+    <article id="combatant-trait">
+      <h2>CombatantTrait</h2>
+      <p>Type: <code>'combatant'</code></p>
+      <p>Marks an entity as a participant in combat. Tracks health, skill, damage output, and behavioral flags such as hostility and retaliation. Used by both the player and NPCs.</p>
+
+      <details>
+        <summary>Properties</summary>
+        <table>
+          <thead>
+            <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>health</code></td><td><code>number</code></td><td>10</td><td>Current hit points</td></tr>
+            <tr><td><code>maxHealth</code></td><td><code>number</code></td><td>10</td><td>Maximum hit points</td></tr>
+            <tr><td><code>skill</code></td><td><code>number</code></td><td>30</td><td>Combat skill level &mdash; affects hit chance and dodge chance</td></tr>
+            <tr><td><code>baseDamage</code></td><td><code>number</code></td><td>1</td><td>Unarmed damage dealt per hit</td></tr>
+            <tr><td><code>isConscious</code></td><td><code>boolean</code></td><td>true</td><td>Whether the combatant is awake and aware</td></tr>
+            <tr><td><code>recoveryTurns</code></td><td><code>number?</code></td><td>&mdash;</td><td>Turns remaining until consciousness is regained</td></tr>
+            <tr><td><code>armor</code></td><td><code>number</code></td><td>0</td><td>Damage reduction applied to incoming attacks</td></tr>
+            <tr><td><code>isAlive</code></td><td><code>boolean</code></td><td>true</td><td>Whether the combatant is alive</td></tr>
+            <tr><td><code>hostile</code></td><td><code>boolean</code></td><td>false</td><td>Whether the combatant attacks the player on sight</td></tr>
+            <tr><td><code>canRetaliate</code></td><td><code>boolean</code></td><td>true</td><td>Whether the combatant fights back when attacked</td></tr>
+            <tr><td><code>dropsInventory</code></td><td><code>boolean</code></td><td>true</td><td>Whether inventory is dropped on death</td></tr>
+            <tr><td><code>hitMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Custom message when this combatant is hit</td></tr>
+            <tr><td><code>deathMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Custom message when this combatant dies</td></tr>
+            <tr><td><code>attackMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Custom message when this combatant attacks</td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <details>
+        <summary>Computed Getters</summary>
+        <table>
+          <thead>
+            <tr><th>Getter</th><th>Type</th><th>Logic</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>alive</code></td><td><code>boolean</code></td><td><code>health &gt; 0</code></td></tr>
+            <tr><td><code>canAct</code></td><td><code>boolean</code></td><td><code>isAlive &amp;&amp; isConscious</code></td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <article style="border-left: 4px solid #e74c3c; padding-left: 1rem;">
+        <p><strong>Serialization Warning:</strong> Methods such as <code>kill()</code>, <code>takeDamage()</code>, <code>heal()</code>, <code>knockOut()</code>, and <code>wakeUp()</code> do <strong>not</strong> survive serialization. After save/restore, traits are plain objects &mdash; class methods are gone. Always set properties directly:</p>
+        <pre><code>// WRONG - crashes after save/restore
+combatant.kill();  // "kill is not a function"
+
+// RIGHT - direct property access
+combatant.health = 0;
+combatant.isAlive = false;
+
+// ALSO RIGHT - static Behavior methods
+CombatantBehavior.kill(combatant);</code></pre>
+      </article>
+
+      <h4>Example</h4>
+      <pre><code>const troll = world.createEntity('troll', EntityType.ACTOR);
+troll.add(new CombatantTrait({
+  health: 15,
+  maxHealth: 15,
+  skill: 40,
+  baseDamage: 3,
+  hostile: true,
+  deathMessage: 'The troll collapses in a heap.',
+}));</code></pre>
+    </article>
+
+    <!-- WeaponTrait -->
+    <article id="weapon-trait">
+      <h2>WeaponTrait</h2>
+      <p>Type: <code>'weapon'</code></p>
+      <p>Marks an item as a weapon that can be wielded in combat. Defines damage, skill bonuses, weapon type, and optional magical properties like glowing near danger.</p>
+
+      <details>
+        <summary>Properties</summary>
+        <table>
+          <thead>
+            <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>damage</code></td><td><code>number</code></td><td>1</td><td>Base damage dealt by this weapon</td></tr>
+            <tr><td><code>skillBonus</code></td><td><code>number</code></td><td>0</td><td>Bonus added to wielder's combat skill</td></tr>
+            <tr><td><code>isBlessed</code></td><td><code>boolean</code></td><td>false</td><td>Whether the weapon has a magical blessing</td></tr>
+            <tr><td><code>glowsNearDanger</code></td><td><code>boolean</code></td><td>false</td><td>Whether the weapon glows when enemies are nearby</td></tr>
+            <tr><td><code>isGlowing</code></td><td><code>boolean</code></td><td>false</td><td>Current glow state</td></tr>
+            <tr><td><code>requiredTrait</code></td><td><code>string?</code></td><td>&mdash;</td><td>Trait type the wielder must have to use this weapon</td></tr>
+            <tr><td><code>weaponType</code></td><td><code>string</code></td><td>'blunt'</td><td>Weapon category (e.g., 'blunt', 'edged', 'piercing')</td></tr>
+            <tr><td><code>twoHanded</code></td><td><code>boolean</code></td><td>false</td><td>Whether the weapon requires both hands</td></tr>
+            <tr><td><code>attackMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Custom message displayed when attacking with this weapon</td></tr>
+            <tr><td><code>breakable</code></td><td><code>boolean</code></td><td>false</td><td>Whether the weapon can break from use</td></tr>
+            <tr><td><code>durability</code></td><td><code>number?</code></td><td>&mdash;</td><td>Current durability (hits remaining before breaking)</td></tr>
+            <tr><td><code>maxDurability</code></td><td><code>number?</code></td><td>&mdash;</td><td>Maximum durability when fully repaired</td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <h4>Example</h4>
+      <pre><code>const sword = world.createEntity('elvish sword', EntityType.ITEM);
+sword.add(new WeaponTrait({
+  damage: 5,
+  skillBonus: 10,
+  isBlessed: true,
+  glowsNearDanger: true,
+  weaponType: 'edged',
+  attackMessage: 'The sword flashes brilliantly as you strike!',
+}));</code></pre>
+    </article>
+
+    <!-- DestructibleTrait -->
+    <article id="destructible-trait">
+      <h2>DestructibleTrait</h2>
+      <p>Type: <code>'destructible'</code></p>
+      <p>Makes an entity destructible &mdash; it can take damage and eventually be destroyed. Supports hit-point tracking, weapon requirements, transformation on destruction, and exit reveals.</p>
+
+      <details>
+        <summary>Properties</summary>
+        <table>
+          <thead>
+            <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>hitPoints</code></td><td><code>number</code></td><td>3</td><td>Current hit points remaining</td></tr>
+            <tr><td><code>maxHitPoints</code></td><td><code>number</code></td><td>3</td><td>Maximum hit points</td></tr>
+            <tr><td><code>requiresWeapon</code></td><td><code>boolean</code></td><td>false</td><td>Whether a weapon is needed to damage this entity</td></tr>
+            <tr><td><code>requiresType</code></td><td><code>string?</code></td><td>&mdash;</td><td>Specific weapon type required (e.g., 'edged')</td></tr>
+            <tr><td><code>transformTo</code></td><td><code>string?</code></td><td>&mdash;</td><td>Entity ID to replace this entity with upon destruction</td></tr>
+            <tr><td><code>revealExit</code></td><td><code>string?</code></td><td>&mdash;</td><td>Exit direction or ID revealed when destroyed</td></tr>
+            <tr><td><code>damageMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Custom message when this entity takes damage</td></tr>
+            <tr><td><code>destroyMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Custom message when this entity is destroyed</td></tr>
+            <tr><td><code>invulnerable</code></td><td><code>boolean</code></td><td>false</td><td>Whether the entity is immune to all damage</td></tr>
+            <tr><td><code>armor</code></td><td><code>number</code></td><td>0</td><td>Damage reduction applied to incoming attacks</td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <h4>Example</h4>
+      <pre><code>const window = world.createEntity('glass window', EntityType.SCENERY);
+window.add(new DestructibleTrait({
+  hitPoints: 1,
+  maxHitPoints: 1,
+  destroyMessage: 'The window shatters into a thousand pieces!',
+  revealExit: 'west',
+}));</code></pre>
+    </article>
+
+    <!-- BreakableTrait -->
+    <article id="breakable-trait">
+      <h2>BreakableTrait</h2>
+      <p>Type: <code>'breakable'</code></p>
+      <p>A simple binary trait indicating whether an entity is broken. Unlike <code>DestructibleTrait</code>, there are no hit points &mdash; the entity is either intact or broken. Useful for mirrors, vases, and other fragile objects that break in a single action.</p>
+
+      <details>
+        <summary>Properties</summary>
+        <table>
+          <thead>
+            <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>broken</code></td><td><code>boolean</code></td><td>false</td><td>Whether the entity is currently broken</td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <h4>Example</h4>
+      <pre><code>const mirror = world.createEntity('ornate mirror', EntityType.SCENERY);
+mirror.add(new BreakableTrait({ broken: false }));
+
+// Later, when the player drops the mirror...
+const breakable = mirror.get&lt;BreakableTrait&gt;(TraitType.BREAKABLE);
+breakable.broken = true;</code></pre>
+    </article>
+
+    <!-- EquippedTrait -->
+    <article id="equipped-trait">
+      <h2>EquippedTrait</h2>
+      <p>Type: <code>'equipped'</code></p>
+      <p>Tracks equipment state for items that can be worn or wielded in a specific slot. Supports equipment modifiers that alter combat stats when equipped.</p>
+
+      <details>
+        <summary>Properties</summary>
+        <table>
+          <thead>
+            <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>slot</code></td><td><code>string</code></td><td>'accessory'</td><td>Equipment slot: <code>'weapon'</code>, <code>'armor'</code>, <code>'shield'</code>, <code>'helmet'</code>, <code>'boots'</code>, <code>'gloves'</code>, <code>'ring'</code>, <code>'amulet'</code>, or <code>'accessory'</code></td></tr>
+            <tr><td><code>isEquipped</code></td><td><code>boolean</code></td><td>false</td><td>Whether the item is currently equipped</td></tr>
+            <tr><td><code>equipMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Custom message displayed when equipping</td></tr>
+            <tr><td><code>unequipMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Custom message displayed when unequipping</td></tr>
+            <tr><td><code>quickEquip</code></td><td><code>boolean</code></td><td>false</td><td>Whether the item can be equipped without spending a turn</td></tr>
+            <tr><td><code>modifiers</code></td><td><code>object?</code></td><td>&mdash;</td><td>Stat modifiers when equipped: <code>{ attack?, defense?, health?, speed? }</code></td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <h4>Example</h4>
+      <pre><code>const ring = world.createEntity('magic ring', EntityType.ITEM);
+ring.add(new EquippedTrait({
+  slot: 'ring',
+  equipMessage: 'The ring hums with arcane energy as you slip it on.',
+  modifiers: {
+    defense: 2,
+    attack: 1,
+  },
+}));</code></pre>
+    </article>
+
+    <!-- NpcTrait -->
+    <article id="npc-trait">
+      <h2>NpcTrait</h2>
+      <p>Type: <code>'npc'</code></p>
+      <p>Controls NPC behavior and AI. Links an entity to a registered <code>NpcBehavior</code> (ADR-070) that determines how the NPC acts each turn, responds to stimuli, and interacts with the player.</p>
+
+      <details>
+        <summary>Properties</summary>
+        <table>
+          <thead>
+            <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>isAlive</code></td><td><code>boolean</code></td><td>true</td><td>Whether the NPC is alive</td></tr>
+            <tr><td><code>isConscious</code></td><td><code>boolean</code></td><td>true</td><td>Whether the NPC is awake</td></tr>
+            <tr><td><code>isHostile</code></td><td><code>boolean</code></td><td>false</td><td>Whether the NPC is hostile toward the player</td></tr>
+            <tr><td><code>canMove</code></td><td><code>boolean</code></td><td>false</td><td>Whether the NPC can move between rooms</td></tr>
+            <tr><td><code>allowedRooms</code></td><td><code>string[]?</code></td><td>&mdash;</td><td>Room IDs the NPC is allowed to enter (if set, acts as a whitelist)</td></tr>
+            <tr><td><code>forbiddenRooms</code></td><td><code>string[]?</code></td><td>&mdash;</td><td>Room IDs the NPC is forbidden from entering</td></tr>
+            <tr><td><code>behaviorId</code></td><td><code>string?</code></td><td>&mdash;</td><td>ID of the registered <code>NpcBehavior</code> that drives this NPC's AI</td></tr>
+            <tr><td><code>conversationState</code></td><td><code>string?</code></td><td>&mdash;</td><td>Current conversation state (for dialogue tree tracking)</td></tr>
+            <tr><td><code>knowledge</code></td><td><code>Record&lt;string, unknown&gt;?</code></td><td>&mdash;</td><td>Arbitrary knowledge the NPC possesses (facts, flags, memories)</td></tr>
+            <tr><td><code>goals</code></td><td><code>string[]?</code></td><td>&mdash;</td><td>Current goal stack driving NPC decision-making</td></tr>
+            <tr><td><code>customProperties</code></td><td><code>Record&lt;string, unknown&gt;?</code></td><td>&mdash;</td><td>Story-specific data attached to this NPC</td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <details>
+        <summary>Computed Getters</summary>
+        <table>
+          <thead>
+            <tr><th>Getter</th><th>Type</th><th>Logic</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>canAct</code></td><td><code>boolean</code></td><td><code>isAlive &amp;&amp; isConscious</code></td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <article style="border-left: 4px solid #e74c3c; padding-left: 1rem;">
+        <p><strong>Serialization Warning:</strong> Methods such as <code>kill()</code>, <code>knockOut()</code>, <code>makeHostile()</code>, and others do <strong>not</strong> survive serialization. After save/restore, use direct property access:</p>
+        <pre><code>// WRONG - crashes after save/restore
+npcTrait.kill();
+
+// RIGHT - direct property access
+npcTrait.isAlive = false;
+npcTrait.isConscious = false;</code></pre>
+      </article>
+
+      <p>The <code>behaviorId</code> property links this NPC to a registered <code>NpcBehavior</code> (see ADR-070). The behavior provides <code>act()</code>, <code>react()</code>, and other callbacks that the engine invokes during the NPC turn phase.</p>
+
+      <h4>Example</h4>
+      <pre><code>const shopkeeper = world.createEntity('shopkeeper', EntityType.ACTOR);
+shopkeeper.add(new NpcTrait({
+  behaviorId: 'shopkeeper-behavior',
+  canMove: false,
+  conversationState: 'greeting',
+  knowledge: {
+    hasMetPlayer: false,
+    itemsSold: 0,
+  },
+  customProperties: {
+    shopInventory: ['lantern', 'rope', 'map'],
+  },
+}));</code></pre>
+    </article>
+
+    <!-- See Also -->
+    <section id="see-also">
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="traits-core.html">Core Traits</a> &mdash; IdentityTrait, RoomTrait, ContainerTrait, and other foundational traits</li>
+        <li><a href="actions-physical.html">Physical Actions</a> &mdash; attacking action and combat flow</li>
+        <li><a href="entities.html">Entities</a> &mdash; entity creation, trait management, and serialization</li>
+        <li><a href="capabilities.html">Capabilities</a> &mdash; entity-specific action dispatch via traits (ADR-090)</li>
+      </ul>
+    </section>
+  </main>
+  <script src="js/docs.js"></script>
+</body>
+</html>

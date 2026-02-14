@@ -23,7 +23,7 @@ import {
   WeaponTrait,
   IGameEvent
 } from '@sharpee/world-model';
-import { TrophyCaseTrait } from '../traits';
+import { TrophyCaseTrait, BurnableTrait } from '../traits';
 
 export interface HouseInteriorRoomIds {
   kitchen: string;
@@ -392,8 +392,8 @@ function createAtticObjects(world: WorldModel, atticId: string): void {
     article: 'a',
     weight: 5
   }));
-  (brick as any).isExplosive = true;
-  (brick as any).hasFuse = true;
+  brick.attributes.isExplosive = true;
+  brick.attributes.fuseAttached = true;
   world.moveEntity(brick.id, atticId);
 
   const wire = world.createEntity('shiny wire', EntityType.ITEM);
@@ -405,5 +405,6 @@ function createAtticObjects(world: WorldModel, atticId: string): void {
     article: 'a',
     weight: 5
   }));
+  wire.add(new BurnableTrait({ burnableType: 'fuse', isBurning: false, burnedOut: false }));
   world.moveEntity(wire.id, atticId);
 }

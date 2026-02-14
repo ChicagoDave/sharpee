@@ -13,7 +13,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent, EntityId } from '@sharpee/core';
-import { TraitType, OpenableBehavior, LockableBehavior, IOpenResult } from '@sharpee/world-model';
+import { TraitType, OpenableBehavior, LockableBehavior, IOpenResult, getInterceptorForAction, InterceptorSharedData } from '@sharpee/world-model';
 import { buildEventData } from '../../data-builder-types';
 import { IFActions } from '../../constants';
 import { OpenedEventData, ExitRevealedEventData } from './opening-events';
@@ -66,6 +66,24 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
     // Validate we have a target
     if (!noun) {
       return { valid: false, error: OpeningMessages.NO_TARGET };
+    }
+
+    // Check for interceptor on the target entity (ADR-118)
+    const interceptorResult = getInterceptorForAction(noun, IFActions.OPENING);
+    if (interceptorResult) {
+      const { interceptor } = interceptorResult;
+      const interceptorData: InterceptorSharedData = {};
+
+      if (interceptor.preValidate) {
+        const result = interceptor.preValidate(noun, context.world, context.player.id, interceptorData);
+        if (result !== null && !result.valid) {
+          return {
+            valid: false,
+            error: result.error,
+            params: result.params
+          };
+        }
+      }
     }
 
     // Check scope - must be able to reach the target
@@ -178,10 +196,13 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const noun = context.command.directObject?.entity;
+    const error = result.error || '';
+    // If error already contains dots (e.g., story interceptor ID), use as-is; otherwise prefix with action ID
+    const messageId = error.includes('.') ? error : `${context.action.id}.${error}`;
 
     return [context.event('if.event.open_blocked', {
       // Rendering data
-      messageId: `${context.action.id}.${result.error}`,
+      messageId,
       params: {
         ...result.params,
         item: noun?.name

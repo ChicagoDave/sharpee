@@ -1,0 +1,277 @@
+---
+layout: ../../../../../layouts/DocsLayout.astro
+title: "Writing a Story"
+---
+
+# Writing a Story
+
+Every story implements the `Story` interface from `@sharpee/engine`. Three members are required; five more are optional lifecycle hooks.
+
+## The Story Interface
+
+```typescript
+interface Story {
+  // Required
+  config: StoryConfig;
+  initializeWorld(world: WorldModel): void;
+  createPlayer(world: WorldModel): IFEntity;
+
+  // Optional hooks (called in this order)
+  getCustomActions?(): Action[];
+  extendParser?(parser: Parser): void;
+  extendLanguage?(language: LanguageProvider): void;
+  initialize?(): void;
+  onEngineReady?(engine: GameEngine): void;
+}
+```
+
+## StoryConfig
+
+Metadata about your story, used by the engine for display and identification.
+
+```typescript
+export const config: StoryConfig = {
+  id: 'my-story',
+  title: 'My Story',
+  author: 'Your Name',
+  version: '1.0.0',
+  description: 'A short description of your story.',
+
+  // Optional
+  ifid: 'UUID',
+  narrative: {
+    perspective: '2nd',       // '1st', '2nd', '3rd'
+  },
+  implicitActions: {
+    inference: true,          // Infer targets
+    implicitTake: true,       // Auto-take items
+  },
+};
+```
+
+## Lifecycle Sequence
+
+The engine calls your hooks in this order:
+
+```
+engine.setStory(story)
+  1. story.initializeWorld(world)    // Create rooms, objects, NPCs
+  2. story.createPlayer(world)       // Set up the player entity
+  3. story.getCustomActions()        // Register story-specific verbs
+  4. story.extendParser(parser)      // Add grammar patterns
+  5. story.extendLanguage(language)  // Register message text
+  6. story.initialize()              // Any additional setup
+  7. story.onEngineReady(engine)     // Engine fully wired — last hook
+
+engine.start()
+  8. Emits 'game:started'           // Game begins
+```
+
+## initializeWorld()
+
+Called first. Create your entire game world here: rooms, objects, NPCs, connections, event handlers, daemons.
+
+```typescript
+initializeWorld(world: WorldModel): void {
+  // Register capabilities
+  world.registerCapability(StandardCapabilities.SCORING, {
+    initialData: { moves: 0, deaths: 0 },
+  });
+
+  // Create rooms
+  const kitchen = world.createEntity('kitchen', EntityType.ROOM);
+  kitchen
+    .add(new IdentityTrait({ name: 'Kitchen', properName: true }))
+    .add(new RoomTrait({
+      exits: { [Direction.NORTH]: { destination: 'garden' } },
+    }));
+
+  // Create objects
+  const knife = world.createEntity('knife', EntityType.ITEM);
+  knife.add(new IdentityTrait({ name: 'knife', aliases: ['blade'] }));
+  world.moveEntity(knife.id, kitchen.id);
+
+  // Register capability behaviors (ADR-090)
+  registerCapabilityBehavior(
+    MyCustomTrait.type, 'if.action.pushing', MyPushBehavior
+  );
+
+  // Set starting location
+  const player = world.getPlayer();
+  if (player) world.moveEntity(player.id, kitchen.id);
+}
+```
+
+**Tip:** Use `AuthorModel` (wraps WorldModel) when placing objects inside closed containers during setup. It bypasses game rules that would block the operation.
+
+## createPlayer()
+
+Called second. Configure the player entity with traits.
+
+```typescript
+createPlayer(world: WorldModel): IFEntity {
+  const player = world.getPlayer()!;
+  player
+    .add(new IdentityTrait({
+      name: 'yourself',
+      aliases: ['self', 'me'],
+      properName: true,
+    }))
+    .add(new ActorTrait({
+      isPlayer: true,
+      capacity: { maxItems: 15, maxWeight: 100 },
+    }))
+    .add(new CombatantTrait({
+      health: 100, maxHealth: 100,
+      skill: 50, baseDamage: 1,
+    }));
+  return player;
+}
+```
+
+## Custom Actions
+
+Return an array of story-specific actions (verbs that don't exist in stdlib). Each follows the four-phase pattern.
+
+```typescript
+getCustomActions(): Action[] {
+  return [ringAction, sayAction, prayAction];
+}
+
+const ringAction: Action = {
+  id: 'mystory.action.ring',
+  group: 'interaction',
+
+  validate(context: ActionContext) {
+    const bell = context.target;
+    if (!bell) return context.fail('ring.no_target');
+    return context.pass();
+  },
+  execute(context: ActionContext) {
+    context.sharedData.rang = true;
+    return context.succeed();
+  },
+  report(context: ActionContext) {
+    return [context.event('ring.success', { item: context.target })];
+  },
+  blocked(context: ActionContext, result) {
+    return [context.event(result.messageId)];
+  },
+};
+```
+
+## extendParser() & extendLanguage()
+
+Register grammar patterns for your custom verbs and provide the message text.
+
+```typescript
+// Grammar
+extendParser(parser: Parser): void {
+  const grammar = parser.getStoryGrammar();
+
+  grammar
+    .define('ring :target')
+    .mapsTo('mystory.action.ring')
+    .withPriority(150)
+    .build();
+
+  grammar
+    .define('say :text')
+    .mapsTo('mystory.action.say')
+    .withPriority(150)
+    .build();
+}
+
+// Messages
+extendLanguage(language: LanguageProvider): void {
+  language.registerMessages({
+    'ring.no_target': 'Ring what?',
+    'ring.success': 'The {item} rings with a clear tone.',
+    'say.no_text': 'Say what?',
+  });
+}
+```
+
+## onEngineReady()
+
+Called last, after the engine is fully initialized. Use this for interceptors, command transformers, daemons, and event handlers.
+
+```typescript
+onEngineReady(engine: GameEngine): void {
+  // Interceptors
+  engine.registerInterceptor({
+    actionId: 'if.action.going',
+    priority: 100,
+    preValidate(context) {
+      if (context.room?.id === 'bridge' &&
+          context.direction === Direction.NORTH) {
+        return context.block('bridge.collapsed');
+      }
+    },
+  });
+
+  // Command transformers
+  engine.registerParsedCommandTransformer((parsed, world) => {
+    return parsed;
+  });
+
+  // Daemons (timed events)
+  engine.getScheduler().scheduleDaemon({
+    id: 'flood-timer',
+    interval: 3,
+    callback: (world) => { /* flood logic */ },
+  });
+}
+```
+
+## Story Export Pattern
+
+Your entry point must export either `story` or `default`.
+
+```typescript
+// stories/my-story/src/index.ts
+export class MyStory implements Story {
+  config = myConfig;
+  initializeWorld(world) { /* ... */ }
+  createPlayer(world) { /* ... */ }
+}
+
+export const story = new MyStory();
+export default story;
+```
+
+## File Structure
+
+```
+stories/my-story/
+  src/
+    index.ts                 # Story class, exports
+    version.ts               # Version info
+    regions/
+      forest.ts              # All rooms, objects for this region
+      castle/
+        index.ts             # Region exports
+        rooms/
+          throne-room.ts     # One file per room
+        objects/
+          index.ts           # Objects for this region
+    actions/
+      ring/
+        ring-action.ts       # Custom action
+        ring-messages.ts     # Messages for this action
+    npcs/
+      dragon/
+        dragon-entity.ts     # NPC creation
+        dragon-behavior.ts   # NPC AI
+    interceptors/
+      bridge-interceptor.ts  # Action interceptors
+    handlers/
+      flood-handler.ts       # Event handlers
+    grammar/
+      index.ts               # Grammar registration
+    messages/
+      region-messages.ts     # Region-specific messages
+  tests/
+    transcripts/             # Transcript test files
+  walkthroughs/              # Walkthrough chains
+```

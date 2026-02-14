@@ -47,6 +47,7 @@ import { MazeRoomIds } from '../regions/maze';
 import { EndgameRoomIds } from '../regions/endgame';
 import { RoyalPuzzleRoomIds } from '../regions/royal-puzzle';
 import { WellRoomIds } from '../regions/well-room';
+import { VolcanoRoomIds } from '../regions/volcano';
 
 /**
  * Unified configuration for all orchestration registrations
@@ -85,6 +86,9 @@ export interface OrchestrationConfig {
 
   /** Mirror room configuration (optional - only if mirror puzzle exists) */
   mirrorConfig?: MirrorRoomConfig;
+
+  /** Volcano region IDs (optional - for brick/fuse explosion) */
+  volcanoIds?: VolcanoRoomIds;
 
   /** Room visit scoring: roomId → points (RVAL from MDL) */
   roomVisitScoring?: Map<string, number>;
@@ -129,7 +133,8 @@ export function initializeOrchestration(
     mazeIds: config.mazeIds,
     houseInteriorIds: config.houseInteriorIds,
     royalPuzzleIds: config.royalPuzzleIds,
-    wellRoomIds: config.wellRoomIds
+    wellRoomIds: config.wellRoomIds,
+    volcanoIds: config.volcanoIds
   };
   registerSchedulerEvents(schedulerPlugin.getScheduler(), world, schedulerConfig);
 

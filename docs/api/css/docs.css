@@ -1,0 +1,553 @@
+/* Sharpee API Docs - Custom theme overriding Pico CSS */
+
+:root {
+  --sidebar-width: 220px;
+  --sidebar-bg: #1b1f2a;
+  --sidebar-text: #c4c9d4;
+  --sidebar-text-hover: #fff;
+  --sidebar-accent: #6c9bff;
+  --sidebar-section: #8b93a5;
+  --sidebar-divider: #2d3344;
+
+  --page-bg: #f4f5f7;
+  --content-bg: #fff;
+  --card-bg: #fff;
+  --card-border: #e2e5ea;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.06);
+
+  --heading-color: #1a1d26;
+  --text-color: #3a3f4b;
+  --muted-color: #6b7280;
+  --accent: #4f6ef7;
+  --accent-light: #eef1fe;
+  --accent-border: #c7d2fe;
+
+  --code-bg: #f6f7f9;
+  --code-border: #e5e7eb;
+  --code-text: #374151;
+
+  --quick-ref-bg: #f0f4ff;
+  --quick-ref-border: #c7d2fe;
+
+  --table-header-bg: #f8f9fb;
+  --table-border: #e5e7eb;
+  --table-stripe: #fafbfc;
+}
+
+[data-theme="dark"] {
+  --page-bg: #111318;
+  --content-bg: #1a1d26;
+  --card-bg: #1e2230;
+  --card-border: #2d3344;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.3);
+
+  --heading-color: #e5e7eb;
+  --text-color: #b0b7c3;
+  --muted-color: #6b7280;
+  --accent: #6c9bff;
+  --accent-light: #1e2744;
+  --accent-border: #2d4470;
+
+  --code-bg: #151822;
+  --code-border: #2d3344;
+  --code-text: #c4c9d4;
+
+  --quick-ref-bg: #1a2236;
+  --quick-ref-border: #2d4470;
+
+  --table-header-bg: #232838;
+  --table-border: #2d3344;
+  --table-stripe: #1e2230;
+}
+
+/* ---- Reset Pico bloat ---- */
+body {
+  background: var(--page-bg);
+  margin: 0;
+  padding: 0;
+}
+
+* { box-sizing: border-box; }
+
+h1, h2, h3, h4, h5, h6 { color: var(--heading-color); }
+
+/* ---- Sidebar ---- */
+#sidebar {
+  position: fixed;
+  left: 0; top: 0; bottom: 0;
+  width: var(--sidebar-width);
+  overflow-y: auto;
+  background: var(--sidebar-bg);
+  padding: 0.75rem 0.6rem;
+  z-index: 10;
+  font-size: 0.8rem;
+  scrollbar-width: thin;
+  scrollbar-color: #3a4050 transparent;
+}
+
+#sidebar .sidebar-header {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  padding: 0.25rem 0.5rem 0.5rem;
+  margin-bottom: 0.35rem;
+  border-bottom: 1px solid var(--sidebar-divider);
+}
+
+#sidebar .sidebar-header a {
+  text-decoration: none;
+  color: inherit;
+}
+
+#sidebar-search {
+  width: 100%;
+  font-size: 0.75rem;
+  padding: 0.3rem 0.5rem;
+  margin: 0 0 0.5rem;
+  border: 1px solid var(--sidebar-divider);
+  border-radius: 4px;
+  background: rgba(255,255,255,0.06);
+  color: var(--sidebar-text);
+  outline: none;
+}
+
+#sidebar-search:focus {
+  border-color: var(--sidebar-accent);
+  background: rgba(255,255,255,0.1);
+}
+
+#sidebar-search::placeholder {
+  color: #5a6170;
+}
+
+/* Sidebar sections */
+#sidebar .nav-sections details {
+  margin-bottom: 0.15rem;
+}
+
+#sidebar .nav-sections details summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sidebar-section);
+  padding: 0.3rem 0.5rem 0.2rem;
+  list-style: none;
+  user-select: none;
+}
+
+#sidebar .nav-sections details summary::before {
+  content: "\25b8";
+  display: inline-block;
+  width: 0.9em;
+  font-size: 0.7em;
+  transition: transform 0.12s;
+  color: #5a6170;
+}
+
+#sidebar .nav-sections details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+#sidebar .nav-sections ul {
+  list-style: none;
+  padding: 0 0 0 0.6rem;
+  margin: 0 0 0.25rem;
+}
+
+#sidebar .nav-sections ul li {
+  margin: 0;
+}
+
+#sidebar .nav-sections a {
+  text-decoration: none;
+  color: var(--sidebar-text);
+  font-size: 0.78rem;
+  display: block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  transition: background 0.1s, color 0.1s;
+}
+
+#sidebar .nav-sections a:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--sidebar-text-hover);
+}
+
+#sidebar .nav-sections a.active {
+  font-weight: 600;
+  color: var(--sidebar-accent);
+  background: rgba(108,155,255,0.12);
+}
+
+#sidebar .sidebar-footer {
+  margin-top: 0.5rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--sidebar-divider);
+}
+
+#sidebar .theme-toggle {
+  font-size: 0.72rem;
+  cursor: pointer;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--sidebar-divider);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  color: var(--sidebar-text);
+  width: 100%;
+  transition: background 0.15s;
+}
+
+#sidebar .theme-toggle:hover {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+}
+
+/* ---- Main content ---- */
+main {
+  margin-left: var(--sidebar-width);
+  max-width: 860px;
+  padding: 1.25rem 1.75rem 2rem;
+  color: var(--text-color);
+}
+
+/* Page header */
+main > header {
+  margin-bottom: 1rem;
+}
+
+main > header hgroup h1 {
+  margin-bottom: 0.15rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+main > header hgroup p {
+  color: var(--muted-color);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+/* Breadcrumb */
+nav[aria-label="breadcrumb"] {
+  font-size: 0.75rem;
+  margin-top: 0.35rem;
+  color: var(--muted-color);
+}
+
+nav[aria-label="breadcrumb"] a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+nav[aria-label="breadcrumb"] a:hover {
+  text-decoration: underline;
+}
+
+nav[aria-label="breadcrumb"] .separator {
+  margin: 0 0.25rem;
+  color: var(--muted-color);
+}
+
+/* ---- Section spacing ---- */
+main > section {
+  margin-bottom: 1.25rem;
+}
+
+main > section > h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Overview paragraphs */
+#overview p {
+  font-size: 0.88rem;
+  line-height: 1.55;
+  margin-bottom: 0.5rem;
+}
+
+/* ---- Quick reference card ---- */
+.quick-ref {
+  background: var(--quick-ref-bg);
+  border: 1px solid var(--quick-ref-border);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.quick-ref h2 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--accent);
+  margin-bottom: 0.4rem;
+  border: none;
+}
+
+.quick-ref table {
+  font-size: 0.8rem;
+  margin-bottom: 0;
+}
+
+/* ---- Cards (articles) ---- */
+main article {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  box-shadow: var(--card-shadow);
+  padding: 0.85rem 1rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+main article h2 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+}
+
+main article h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+main article h3 code {
+  font-size: 0.85em;
+  background: var(--code-bg);
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  border: 1px solid var(--code-border);
+}
+
+main article p {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin-bottom: 0.4rem;
+}
+
+main article > p:first-of-type {
+  color: var(--text-color);
+}
+
+/* ---- Tables ---- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  margin-bottom: 0.75rem;
+}
+
+table thead {
+  background: var(--table-header-bg);
+}
+
+table th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted-color);
+  padding: 0.35rem 0.5rem;
+  border-bottom: 2px solid var(--table-border);
+  text-align: left;
+}
+
+table td {
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid var(--table-border);
+  vertical-align: top;
+}
+
+table tbody tr:nth-child(even) {
+  background: var(--table-stripe);
+}
+
+table code {
+  font-size: 0.82em;
+  background: var(--code-bg);
+  padding: 0.08rem 0.3rem;
+  border-radius: 2px;
+}
+
+/* ---- Collapsible sections ---- */
+main article details {
+  margin: 0.4rem 0;
+  font-size: 0.82rem;
+}
+
+main article details summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 0.2rem 0;
+}
+
+main article details summary:hover {
+  text-decoration: underline;
+}
+
+main article details table {
+  margin-top: 0.35rem;
+}
+
+/* ---- Code blocks ---- */
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 5px;
+  max-height: 350px;
+  overflow-y: auto;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  margin: 0.5rem 0;
+}
+
+pre code {
+  display: block;
+  color: var(--code-text);
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+/* Inline code */
+:not(pre) > code {
+  font-size: 0.83em;
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 3px;
+  padding: 0.08rem 0.3rem;
+  color: var(--accent);
+}
+
+/* ---- See Also ---- */
+#see-also ul {
+  padding-left: 1rem;
+  margin: 0;
+}
+
+#see-also li {
+  margin-bottom: 0.25rem;
+  font-size: 0.85rem;
+}
+
+#see-also a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+#see-also a:hover {
+  text-decoration: underline;
+}
+
+/* ---- Index page: path cards ---- */
+.path-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  box-shadow: var(--card-shadow);
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.path-card h3 {
+  margin: 0 0 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.path-card p {
+  font-size: 0.82rem;
+  color: var(--muted-color);
+  margin-bottom: 0.4rem;
+}
+
+.path-card ol {
+  padding-left: 1.25rem;
+  margin-bottom: 0;
+}
+
+.path-card li {
+  margin-bottom: 0.25rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.path-card a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.path-card a:hover {
+  text-decoration: underline;
+}
+
+/* ---- All Pages grid ---- */
+.api-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.api-summary a {
+  display: block;
+  padding: 0.4rem 0.6rem;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 5px;
+  box-shadow: var(--card-shadow);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-color);
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+
+.api-summary a:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 6px rgba(79,110,247,0.12);
+  color: var(--accent);
+}
+
+/* ---- Package map table ---- */
+main > section table a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+main > section table a:hover {
+  text-decoration: underline;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 768px) {
+  #sidebar {
+    display: none;
+  }
+  main {
+    margin-left: 0;
+    max-width: 100%;
+    padding: 0.75rem;
+  }
+  .api-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media print {
+  #sidebar { display: none; }
+  main { margin-left: 0; max-width: 100%; }
+}

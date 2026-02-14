@@ -9,6 +9,9 @@ Sharpee is a parser-based Interactive Fiction authoring tool built in Typescript
 CLAUDE CODE BUG: ESC Interupt is currently broken so you need to STOP at any decision point.
 
 - **One step at a time.** Do NOT queue up multiple steps or plan ahead. Complete one thing, show the result, then ask what's next.
+- **STOP means STOP.** When the user says "stop", "wait", "hold on", or anything similar, immediately cease all actions. Do not finish the current step, do not queue one more build, do not "just try one more thing." Stop and wait for instructions.
+- **Never auto-retry failed builds or tests.** If a build or test fails, report the error and WAIT. Do not attempt to fix and rebuild without explicit user instruction. Do not loop on build-fail-fix-rebuild cycles.
+- **Never queue a build without asking.** Even if building is the obvious next step, confirm before running `./build.sh`.
 - Never delete files without confirmation. Not even "to get a build working" or "to get the other tests working".
 - Never use batch scripts (sed/awk/grep) to modify multiple files. One file at a time.
 - We never care about backward compatibility, but discuss code smells or design flaws before changing.

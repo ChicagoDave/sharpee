@@ -167,7 +167,7 @@ export function createUndergroundRegion(world: WorldModel): UndergroundRoomIds {
   setExits(rockyCrawl, {
     [Direction.EAST]: deepRavine.id,
     [Direction.WEST]: domeRoom.id,
-    // NW → Volcano Egyptian Room connected externally
+    // WEST → Volcano Egyptian Room connected externally
   });
 
   setExits(domeRoom, {

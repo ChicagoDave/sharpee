@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Movement Actions - Sharpee API</title>
+  <link rel="stylesheet" href="css/pico.min.css">
+  <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <main>
+    <header>
+      <hgroup>
+        <h1>Movement Actions</h1>
+        <p>Moving between rooms, entering/exiting vehicles, and climbing</p>
+      </hgroup>
+      <nav aria-label="breadcrumb">
+        <a href="index.html">API</a>
+        <span class="separator">/</span>
+        <a href="actions-overview.html">Actions</a>
+        <span class="separator">/</span>
+        Movement
+      </nav>
+    </header>
+
+    <!-- Quick Reference -->
+    <section class="quick-ref">
+      <h2>Quick Reference</h2>
+      <table>
+        <thead>
+          <tr><th>Action ID</th><th>Verbs</th><th>Required Trait</th><th>Group</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>if.action.going</code></td>
+            <td><code>go</code>, <code>north</code>, <code>s</code>, <code>up</code>, <code>d</code>, &hellip; (all direction words)</td>
+            <td><a href="traits-core.html#room-trait">RoomTrait</a> (on rooms)</td>
+            <td>movement</td>
+          </tr>
+          <tr>
+            <td><code>if.action.entering</code></td>
+            <td><code>enter</code>, <code>get in</code>, <code>get into</code>, <code>board</code>, <code>get on</code></td>
+            <td><a href="traits-physical.html#enterable-trait">EnterableTrait</a></td>
+            <td>movement</td>
+          </tr>
+          <tr>
+            <td><code>if.action.exiting</code></td>
+            <td><code>exit</code>, <code>get out</code>, <code>leave</code>, <code>disembark</code>, <code>get off</code>, <code>alight</code></td>
+            <td>None (inferred from current location)</td>
+            <td>movement</td>
+          </tr>
+          <tr>
+            <td><code>if.action.climbing</code></td>
+            <td><code>climb</code>, <code>climb up</code>, <code>climb down</code>, <code>scale</code></td>
+            <td><a href="traits-interaction.html#climbable-trait">ClimbableTrait</a> or enterable SupporterTrait</td>
+            <td>movement</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Going -->
+    <article id="going">
+      <h2><code>if.action.going</code> &mdash; Room-to-Room Movement</h2>
+      <p>Moves the player (or their vehicle) from one room to another through a defined exit. Validates direction, checks for blocking doors, respects locked/closed state, and supports interceptors on both the source and destination rooms (ADR-118, ADR-126).</p>
+
+      <h3>Traits involved</h3>
+      <ul>
+        <li><a href="traits-core.html#room-trait"><strong>RoomTrait</strong></a> &mdash; defines <code>exits</code> on rooms (direction &rarr; destination mapping)</li>
+        <li><a href="traits-state.html#openable-trait">OpenableTrait</a> / <a href="traits-state.html#lockable-trait">LockableTrait</a> &mdash; checked when an exit has a <code>via</code> door entity</li>
+      </ul>
+
+      <h3>Grammar patterns</h3>
+      <pre><code>go north            // "go" + direction
+north               // bare direction
+n                   // abbreviation
+go up               // vertical movement
+u                   // short form</code></pre>
+      <p>All twelve standard directions are supported: <code>north</code>/<code>n</code>, <code>south</code>/<code>s</code>, <code>east</code>/<code>e</code>, <code>west</code>/<code>w</code>, <code>northeast</code>/<code>ne</code>, <code>northwest</code>/<code>nw</code>, <code>southeast</code>/<code>se</code>, <code>southwest</code>/<code>sw</code>, <code>up</code>/<code>u</code>, <code>down</code>/<code>d</code>, <code>in</code>, <code>out</code>.</p>
+
+      <h3>Author usage</h3>
+      <pre><code>// Define room exits in RoomTrait
+const kitchen = world.createEntity('kitchen', 'room');
+kitchen.add(new RoomTrait({
+  exits: {
+    north: { destination: 'hallway' },
+    east:  { destination: 'pantry' },
+    down:  { destination: 'cellar', via: 'trapdoor' }  // blocked by door
+  }
+}));
+
+// A locked door on an exit
+const trapdoor = world.createEntity('trapdoor', 'object');
+trapdoor.add(new OpenableTrait({ isOpen: false }));
+trapdoor.add(new LockableTrait({ isLocked: true, keyId: 'cellar-key' }));</code></pre>
+
+      <h3>Interceptors</h3>
+      <p>Rooms can register interceptors for <code>if.action.going</code> (source room) or <code>if.action.entering_room</code> (destination room). These hook into pre-validate, post-validate, post-execute, post-report, and on-blocked phases. Use them for puzzles like carousels, collapsing bridges, or guards blocking entry.</p>
+
+      <details>
+        <summary>Validation checks (in order)</summary>
+        <table>
+          <thead><tr><th>Check</th><th>Error code</th></tr></thead>
+          <tbody>
+            <tr><td>Direction must be specified</td><td><code>no_direction</code></td></tr>
+            <tr><td>Player must be in a room (or walkable vehicle)</td><td><code>not_in_room</code></td></tr>
+            <tr><td>Source room interceptor pre-validate</td><td>(interceptor-defined)</td></tr>
+            <tr><td>Room must have an exit in that direction</td><td><code>no_exit_that_way</code> / <code>no_exits</code></td></tr>
+            <tr><td>Exit must not be blocked</td><td><code>movement_blocked</code></td></tr>
+            <tr><td>Door on exit must be unlocked and open</td><td><code>door_locked</code> / <code>door_closed</code></td></tr>
+            <tr><td>Destination must exist</td><td><code>destination_not_found</code></td></tr>
+            <tr><td>Destination room interceptor pre/post-validate</td><td>(interceptor-defined)</td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <details>
+        <summary>Emitted events</summary>
+        <table>
+          <thead><tr><th>Event</th><th>When</th></tr></thead>
+          <tbody>
+            <tr><td><code>if.event.actor_exited</code></td><td>Player left the source room</td></tr>
+            <tr><td><code>if.event.actor_moved</code></td><td>Player moved (carries full room snapshots)</td></tr>
+            <tr><td><code>if.event.actor_entered</code></td><td>Player arrived in destination room</td></tr>
+            <tr><td><code>if.event.went</code></td><td>Blocked or dark destination message</td></tr>
+            <tr><td><code>if.event.room.description</code></td><td>Auto-look of destination room</td></tr>
+          </tbody>
+        </table>
+      </details>
+    </article>
+
+    <!-- Entering -->
+    <article id="entering">
+      <h2><code>if.action.entering</code> &mdash; Enter a Container or Vehicle</h2>
+      <p>Moves the player into an enterable entity such as a vehicle, bed, pool, or open container. The preposition (<em>in</em> vs <em>on</em>) is determined by the target's <code>EnterableTrait</code>.</p>
+
+      <h3>Traits involved</h3>
+      <ul>
+        <li><a href="traits-physical.html#enterable-trait"><strong>EnterableTrait</strong></a> &mdash; required on the target; its <code>preposition</code> field controls "in" vs "on"</li>
+        <li><a href="traits-state.html#openable-trait">OpenableTrait</a> &mdash; if present, target must be open before entering</li>
+      </ul>
+
+      <h3>Grammar patterns</h3>
+      <pre><code>enter boat           // generic entry
+get in boat          // phrasal
+get into boat
+climb in boat
+climb into boat
+go in boat
+go into boat
+board boat           // vehicle synonym
+get on raft          // surface entry</code></pre>
+
+      <h3>Author usage</h3>
+      <pre><code>// A boat the player can board
+const boat = world.createEntity('boat', 'object');
+boat.add(new EnterableTrait({ preposition: 'in' }));
+
+// A bed the player can get on
+const bed = world.createEntity('bed', 'object');
+bed.add(new EnterableTrait({ preposition: 'on' }));
+bed.add(new SceneryTrait());  // can't be taken
+
+// A chest that must be opened first
+const chest = world.createEntity('chest', 'object');
+chest.add(new EnterableTrait({ preposition: 'in' }));
+chest.add(new OpenableTrait({ isOpen: false }));
+chest.add(new ContainerTrait());</code></pre>
+
+      <details>
+        <summary>Validation checks (in order)</summary>
+        <table>
+          <thead><tr><th>Check</th><th>Error code</th></tr></thead>
+          <tbody>
+            <tr><td>Target must be specified</td><td><code>no_target</code></td></tr>
+            <tr><td>Interceptor pre-validate hook</td><td>(interceptor-defined)</td></tr>
+            <tr><td>Target must be reachable</td><td>(scope error)</td></tr>
+            <tr><td>Player must not already be inside target</td><td><code>already_inside</code></td></tr>
+            <tr><td>Target must have EnterableTrait</td><td><code>not_enterable</code></td></tr>
+            <tr><td>If openable, target must be open</td><td><code>container_closed</code></td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <details>
+        <summary>Emitted events</summary>
+        <table>
+          <thead><tr><th>Event</th><th>Data</th></tr></thead>
+          <tbody>
+            <tr><td><code>if.event.entered</code></td><td><code>targetId</code>, <code>fromLocation</code>, <code>preposition</code> ("in" or "on")</td></tr>
+          </tbody>
+        </table>
+      </details>
+    </article>
+
+    <!-- Exiting -->
+    <article id="exiting">
+      <h2><code>if.action.exiting</code> &mdash; Exit a Container or Vehicle</h2>
+      <p>Moves the player out of whatever non-room entity they are currently inside. If the player is directly in a room, validation fails with "already outside." The preposition in the success message adapts to the container type: <em>out of</em> (container), <em>off</em> (supporter), or <em>from</em> (default).</p>
+
+      <h3>Traits involved</h3>
+      <p>No trait is required on the target. The action infers the current container from the player's location. If the container has <code>OpenableTrait</code>, it must be open.</p>
+
+      <h3>Grammar patterns</h3>
+      <pre><code>exit                // bare command
+get out
+leave
+climb out
+disembark           // vehicle synonym
+alight
+exit boat           // with explicit target
+disembark raft
+get off raft</code></pre>
+
+      <h3>Author usage</h3>
+      <pre><code>// No special setup needed beyond what "entering" already provides.
+// If the player entered a boat, "exit" or "disembark" gets them out.
+
+// For a container that traps the player when closed:
+const coffin = world.createEntity('coffin', 'object');
+coffin.add(new EnterableTrait({ preposition: 'in' }));
+coffin.add(new OpenableTrait({ isOpen: true }));
+coffin.add(new ContainerTrait());
+// If someone closes the coffin while the player is inside,
+// "exit" will fail with container_closed until it's reopened.</code></pre>
+
+      <details>
+        <summary>Validation checks (in order)</summary>
+        <table>
+          <thead><tr><th>Check</th><th>Error code</th></tr></thead>
+          <tbody>
+            <tr><td>Player must have a valid location</td><td><code>nowhere_to_go</code></td></tr>
+            <tr><td>Player must not be directly in a room</td><td><code>already_outside</code></td></tr>
+            <tr><td>Parent location must exist</td><td><code>nowhere_to_go</code></td></tr>
+            <tr><td>If container is openable, it must be open</td><td><code>container_closed</code></td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <details>
+        <summary>Emitted events</summary>
+        <table>
+          <thead><tr><th>Event</th><th>Data</th></tr></thead>
+          <tbody>
+            <tr><td><code>if.event.exited</code></td><td><code>fromLocation</code>, <code>toLocation</code>, <code>preposition</code> ("out of", "off", or "from")</td></tr>
+          </tbody>
+        </table>
+      </details>
+    </article>
+
+    <!-- Climbing -->
+    <article id="climbing">
+      <h2><code>if.action.climbing</code> &mdash; Climb Objects or Directions</h2>
+      <p>Handles two modes of climbing: <strong>directional</strong> (climb up/down, which follows room exits) and <strong>object</strong> (climb a tree or ladder, which moves the player onto the entity). Object climbing works with <code>ClimbableTrait</code> or with enterable supporters.</p>
+
+      <h3>Traits involved</h3>
+      <ul>
+        <li><a href="traits-interaction.html#climbable-trait"><strong>ClimbableTrait</strong></a> &mdash; marks an object as climbable; <code>ClimbableBehavior.climb()</code> validates</li>
+        <li><strong>SupporterTrait</strong> &mdash; enterable supporters also accept climbing (e.g., a table)</li>
+        <li><a href="traits-core.html#room-trait">RoomTrait</a> &mdash; for directional climbing, the room must have an <code>up</code> or <code>down</code> exit</li>
+      </ul>
+
+      <h3>Grammar patterns</h3>
+      <pre><code>climb tree           // object climbing
+climb up             // directional (follows room's "up" exit)
+climb down           // directional (follows room's "down" exit)
+scale wall           // synonym for climb</code></pre>
+      <p>Note: <code>climb in</code> and <code>climb into</code> map to <code>if.action.entering</code>, not climbing. <code>climb out</code> maps to <code>if.action.exiting</code>.</p>
+
+      <h3>Author usage</h3>
+      <pre><code>// A climbable tree
+const tree = world.createEntity('tree', 'object');
+tree.add(new ClimbableTrait());
+tree.add(new SceneryTrait());  // can't be taken
+
+// Directional climbing via room exits
+const clearing = world.createEntity('clearing', 'room');
+clearing.add(new RoomTrait({
+  exits: {
+    up: { destination: 'treetop' }
+  }
+}));
+// "climb up" in the clearing moves to treetop
+
+// An enterable supporter that can also be climbed
+const table = world.createEntity('table', 'object');
+table.add(new SupporterTrait({ enterable: true }));
+table.add(new SceneryTrait());
+// "climb table" moves the player onto the table</code></pre>
+
+      <details>
+        <summary>Validation checks</summary>
+        <table>
+          <thead><tr><th>Mode</th><th>Check</th><th>Error code</th></tr></thead>
+          <tbody>
+            <tr><td>Both</td><td>Target or direction must be specified</td><td><code>no_target</code></td></tr>
+            <tr><td>Directional</td><td>Direction must be "up" or "down"</td><td><code>cant_go_that_way</code></td></tr>
+            <tr><td>Directional</td><td>Room must have an exit in that direction</td><td><code>cant_go_that_way</code></td></tr>
+            <tr><td>Object</td><td>Target must have ClimbableTrait or enterable SupporterTrait</td><td><code>not_climbable</code></td></tr>
+            <tr><td>Object</td><td>Player must not already be on the target</td><td><code>already_there</code></td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <details>
+        <summary>Emitted events</summary>
+        <table>
+          <thead><tr><th>Event</th><th>Mode</th><th>Data</th></tr></thead>
+          <tbody>
+            <tr><td><code>if.event.climbed</code></td><td>Directional</td><td><code>direction</code>, <code>method: 'directional'</code>, <code>destinationId</code></td></tr>
+            <tr><td><code>if.event.moved</code></td><td>Directional</td><td><code>fromRoom</code>, <code>toRoom</code>, <code>method: 'climbing'</code></td></tr>
+            <tr><td><code>if.event.climbed</code></td><td>Object</td><td><code>targetId</code>, <code>targetName</code>, <code>method: 'onto'</code></td></tr>
+            <tr><td><code>if.event.entered</code></td><td>Object</td><td><code>targetId</code>, <code>preposition: 'onto'</code></td></tr>
+          </tbody>
+        </table>
+      </details>
+    </article>
+
+    <!-- Vehicle Movement -->
+    <section id="vehicle-movement">
+      <h2>Vehicle Movement</h2>
+      <p>When the player is inside a vehicle that allows walking (e.g., a boat), the going action moves the <em>vehicle</em> instead of the player. The player stays inside the vehicle and the vehicle is relocated to the destination room. This is automatic &mdash; no special action setup is needed.</p>
+      <pre><code>// A boat that moves with the player
+const boat = world.createEntity('boat', 'object');
+boat.add(new EnterableTrait({ preposition: 'in' }));
+boat.add(new VehicleTrait({ canWalk: true }));
+
+// Player boards boat, then types "north" &mdash;
+// the boat moves to the next room, player stays inside.</code></pre>
+      <p>If the vehicle does <em>not</em> allow walking (<code>canWalk: false</code>), the going action blocks with <code>not_in_room</code>. This is useful for stationary containers like buckets or baskets where the player must exit before moving.</p>
+    </section>
+
+    <!-- See Also -->
+    <section id="see-also">
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="actions-overview.html">Actions Overview</a> &mdash; the four-phase action pattern, ActionContext, sharedData</li>
+        <li><a href="traits-core.html">Core Traits</a> &mdash; RoomTrait (exit definitions, visited state)</li>
+        <li><a href="traits-physical.html">Physical Traits</a> &mdash; DoorTrait, VehicleTrait, EnterableTrait, ClimbableTrait</li>
+        <li><a href="traits-state.html">State Traits</a> &mdash; OpenableTrait, LockableTrait (door checks for going)</li>
+        <li><a href="events.html">Events</a> &mdash; interceptors for custom movement logic (carousels, guards, bridges)</li>
+      </ul>
+    </section>
+  </main>
+  <script src="js/docs.js"></script>
+</body>
+</html>

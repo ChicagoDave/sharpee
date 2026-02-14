@@ -1,0 +1,39 @@
+title: Melt Glacier Verb
+story: dungeo
+description: Tests the MELT verb at the glacier - non-flaming fails, flaming kills player
+
+---
+
+# Get equipped and go to Glacier Room
+> gdt
+[OK: contains "GDT"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> tk ivory torch
+[OK: contains "Taken"]
+
+> ah Glacier Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+> turn on lantern
+[OK: contains "on"]
+
+# Try to melt glacier with unlit lantern (non-flaming) - should fail
+> melt glacier with lantern
+[OK: contains "won't melt"]
+
+# Try to melt glacier without instrument
+> melt glacier
+[OK: contains "what"]
+
+# Light the torch and try to melt - should kill the player
+> turn on torch
+[OK: contains "on"]
+
+> melt glacier with torch
+[OK: contains "drowning"]

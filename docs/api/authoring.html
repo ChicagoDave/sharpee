@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Authoring Guide - Sharpee API</title>
+  <link rel="stylesheet" href="css/pico.min.css">
+  <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <main>
+    <header>
+      <hgroup>
+        <h1>Authoring Guide</h1>
+        <p>How to write an interactive fiction story with Sharpee</p>
+      </hgroup>
+      <nav aria-label="breadcrumb">
+        <a href="index.html">API</a>
+        <span class="separator">/</span>
+        Authoring Guide
+      </nav>
+    </header>
+
+    <!-- ================================================================== -->
+    <!-- 1. OVERVIEW                                                         -->
+    <!-- ================================================================== -->
+    <section id="overview">
+      <h2>Overview</h2>
+      <p>Sharpee is a parser-based Interactive Fiction engine built in TypeScript. You write a <strong>story</strong> that plugs into the engine, and the engine handles parsing player input, dispatching commands to actions, and rendering output through a language layer.</p>
+
+      <p>Four abstractions do almost all the work:</p>
+
+      <table>
+        <thead>
+          <tr><th>Abstraction</th><th>What it is</th><th>Example</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Entity</strong></td>
+            <td>A thing in the game world &mdash; a room, an item, a door, an NPC. Entities are plain containers; all behavior comes from traits.</td>
+            <td><code>world.createEntity('brass lantern', EntityType.ITEM)</code></td>
+          </tr>
+          <tr>
+            <td><strong>Trait</strong></td>
+            <td>A data component attached to an entity. Traits give an entity capabilities: a <code>ContainerTrait</code> lets it hold things, a <code>LightSourceTrait</code> lets it illuminate rooms.</td>
+            <td><code>lamp.add(new LightSourceTrait({ isLit: false }))</code></td>
+          </tr>
+          <tr>
+            <td><strong>Action</strong></td>
+            <td>A player command processed in four phases: <em>validate</em>, <em>execute</em>, <em>report</em>, <em>blocked</em>. The stdlib provides 40+ standard actions (TAKE, DROP, OPEN, GO, etc.).</td>
+            <td><code>takingAction.execute(context)</code></td>
+          </tr>
+          <tr>
+            <td><strong>Event</strong></td>
+            <td>A semantic record of what happened. Actions emit events with message IDs; the language layer turns those IDs into prose.</td>
+            <td><code>context.event('if.event.taken', { messageId: 'if.action.taken.success' })</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>Your story provides a class that implements the <code>Story</code> interface. The engine calls your methods at specific lifecycle points: <code>initializeWorld()</code> to build the map, <code>createPlayer()</code> to set up the protagonist, <code>extendParser()</code> to add custom grammar, and <code>extendLanguage()</code> to register message text.</p>
+    </section>
+
+    <!-- ================================================================== -->
+    <!-- 2. STORY STRUCTURE                                                  -->
+    <!-- ================================================================== -->
+    <section id="story-structure">
+      <h2>Story Structure</h2>
+      <p>Stories live under <code>stories/{name}/</code>. The entry point is <code>src/index.ts</code>, which exports a class implementing the <code>Story</code> interface and a default instance.</p>
+
+      <pre><code>stories/my-adventure/
+  src/
+    index.ts              # Story class: initializeWorld, createPlayer, etc.
+    version.ts            # Auto-generated version info
+    regions/
+      forest.ts           # Rooms + objects for the forest area
+      castle.ts           # Rooms + objects for the castle area
+    npcs/
+      guard/
+        guard-entity.ts   # Entity creation
+        guard-behavior.ts # NPC behavior implementation
+        guard-messages.ts # Message ID constants
+    actions/
+      cast/
+        cast-action.ts    # Custom "CAST" story action
+    handlers/
+      fountain-handler.ts # Interceptor reacting to THROW at fountain
+    traits/
+      fountain-trait.ts   # Custom trait for the fountain puzzle
+    grammar/
+      index.ts            # registerAllGrammar(parser)
+      magic-grammar.ts    # Grammar for CAST, ENCHANT, etc.
+    messages/
+      index.ts            # registerAllMessages(language)
+      action-messages.ts  # Text for story-specific actions
+      npc-messages.ts     # Text for NPC dialogue
+  tests/
+    transcripts/
+      fountain.transcript # Unit test: throw coin at fountain
+  walkthroughs/
+    wt-01-intro.transcript # End-to-end walkthrough</code></pre>
+
+      <details>
+        <summary>The Region Pattern</summary>
+        <p>Each region file exports a creation function that builds all rooms and returns their IDs, plus connector functions that wire regions together:</p>
+        <pre><code>// regions/forest.ts
+import { WorldModel, IFEntity, IdentityTrait, RoomTrait, EntityType, Direction }
+  from '@sharpee/world-model';
+
+export interface ForestRoomIds {
+  clearing: string;
+  deepForest: string;
+  stream: string;
+}
+
+export function createForestRegion(world: WorldModel): ForestRoomIds {
+  const clearing = createRoom(world, 'Forest Clearing',
+    'Sunlight filters through the canopy. Paths lead north and east.');
+
+  const deepForest = createRoom(world, 'Deep Forest',
+    'The trees close in around you. A narrow path leads south.');
+
+  const stream = createRoom(world, 'Babbling Stream',
+    'A clear stream crosses the path here. The forest continues west.');
+
+  // Wire internal connections
+  setExits(clearing, { [Direction.NORTH]: deepForest.id });
+  setExits(deepForest, { [Direction.SOUTH]: clearing.id });
+  setExits(clearing, { [Direction.EAST]: stream.id });
+  setExits(stream, { [Direction.WEST]: clearing.id });
+
+  return {
+    clearing: clearing.id,
+    deepForest: deepForest.id,
+    stream: stream.id,
+  };
+}
+
+// Connector: called from index.ts after both regions exist
+export function connectForestToCastle(
+  world: WorldModel,
+  forestIds: ForestRoomIds,
+  castleGateId: string
+): void {
+  const stream = world.getEntity(forestIds.stream);
+  if (stream) {
+    const trait = stream.get(RoomTrait);
+    if (trait) trait.exits[Direction.EAST] = { destination: castleGateId };
+  }
+}</code></pre>
+      </details>
+
+      <details>
+        <summary>The Story Entry Point</summary>
+        <p>Your <code>index.ts</code> creates regions, connects them, and registers custom mechanics:</p>
+        <pre><code>// stories/my-adventure/src/index.ts
+import { Story, StoryConfig, GameEngine } from '@sharpee/engine';
+import type { Parser } from '@sharpee/parser-en-us';
+import type { LanguageProvider } from '@sharpee/lang-en-us';
+import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait, EntityType }
+  from '@sharpee/world-model';
+
+import { createForestRegion, ForestRoomIds } from './regions/forest';
+import { createCastleRegion, connectCastleToForest, CastleRoomIds } from './regions/castle';
+import { customActions } from './actions';
+import { registerAllGrammar } from './grammar';
+import { registerAllMessages } from './messages';
+
+export const config: StoryConfig = {
+  id: 'my-adventure',
+  title: 'My Adventure',
+  author: 'Your Name',
+  version: '1.0.0',
+  description: 'A short adventure to learn Sharpee',
+};
+
+export class MyAdventureStory implements Story {
+  config = config;
+  private forestIds!: ForestRoomIds;
+  private castleIds!: CastleRoomIds;
+
+  initializeWorld(world: WorldModel): void {
+    // 1. Create regions
+    this.forestIds = createForestRegion(world);
+    this.castleIds = createCastleRegion(world);
+
+    // 2. Connect regions
+    connectCastleToForest(world, this.castleIds, this.forestIds.stream);
+
+    // 3. Create objects (see next section)
+    createForestObjects(world, this.forestIds);
+
+    // 4. Set starting location
+    const player = world.getPlayer();
+    if (player) {
+      world.moveEntity(player.id, this.forestIds.clearing);
+    }
+  }
+
+  createPlayer(world: WorldModel): IFEntity {
+    const player = world.createEntity('yourself', EntityType.ACTOR);
+    player.add(new IdentityTrait({
+      name: 'yourself',
+      description: 'A curious adventurer.',
+      aliases: ['self', 'myself', 'me'],
+      properName: true,
+      article: ''
+    }));
+    player.add(new ActorTrait({ isPlayer: true }));
+    player.add(new ContainerTrait({ capacity: { maxItems: 10, maxWeight: 50 } }));
+    return player;
+  }
+
+  extendParser(parser: Parser): void {
+    registerAllGrammar(parser);
+  }
+
+  extendLanguage(language: LanguageProvider): void {
+    registerAllMessages(language);
+  }
+
+  getCustomActions(): any[] {
+    return customActions;
+  }
+
+  initialize(): void { }
+  isComplete(): boolean { return false; }
+  onEngineReady(engine: GameEngine): void { }
+}
+
+export const story = new MyAdventureStory();
+export default story;</code></pre>
+      </details>
+    </section>
+
+    <!-- ================================================================== -->
+    <!-- 3. CREATING YOUR FIRST ROOM                                         -->
+    <!-- ================================================================== -->
+    <section id="rooms">
+      <h2>Creating Your First Room</h2>
+      <p>A room is an entity with a <code>RoomTrait</code> (exits, darkness, indoors/outdoors) and an <code>IdentityTrait</code> (name, description, aliases). Most stories define a helper function to reduce boilerplate:</p>
+
+      <pre><code>import {
+  WorldModel, IFEntity, IdentityTrait, RoomTrait, EntityType, Direction, DirectionType
+} from '@sharpee/world-model';
+
+function createRoom(
+  world: WorldModel,
+  name: string,
+  description: string,
+  isDark = false
+): IFEntity {
+  const room = world.createEntity(name, EntityType.ROOM);
+  room.add(new RoomTrait({ exits: {}, isDark, isOutdoors: false }));
+  room.add(new IdentityTrait({
+    name,
+    description,
+    properName: true,   // Room names are proper nouns ("Kitchen", not "a kitchen")
+    article: 'the'
+  }));
+  return room;
+}
+
+// Usage
+const kitchen = createRoom(world, 'Kitchen',
+  'A homey kitchen with a checkered floor. A doorway leads west.');
+
+const garden = createRoom(world, 'Garden',
+  'A small herb garden behind the house. The kitchen door is to the east.',
+  false  // not dark
+);</code></pre>
+
+      <h3>Setting Exits</h3>
+      <p>Exits are stored on the <code>RoomTrait</code> as a map from direction to destination. A helper keeps this concise:</p>
+
+      <pre><code>function setExits(room: IFEntity, exits: Partial&lt;Record&lt;DirectionType, string&gt;&gt;): void {
+  const roomTrait = room.get(RoomTrait);
+  if (roomTrait) {
+    for (const [dir, dest] of Object.entries(exits)) {
+      roomTrait.exits[dir as DirectionType] = { destination: dest! };
+    }
+  }
+}
+
+// Wire bidirectional connection
+setExits(kitchen, { [Direction.WEST]: garden.id });
+setExits(garden, { [Direction.EAST]: kitchen.id });</code></pre>
+
+      <details>
+        <summary>Blocked Exits</summary>
+        <p>An exit can exist but be blocked, showing a message instead of moving the player. Use <code>RoomBehavior.blockExit()</code>:</p>
+        <pre><code>import { RoomBehavior } from '@sharpee/world-model';
+
+// Set up the exit first
+setExits(trollRoom, { [Direction.NORTH]: passage.id });
+
+// Then block it
+RoomBehavior.blockExit(trollRoom, Direction.NORTH, 'The troll blocks your way.');
+
+// Later, when the troll is defeated:
+RoomBehavior.unblockExit(trollRoom, Direction.NORTH);</code></pre>
+      </details>
+
+      <details>
+        <summary>Dark Rooms</summary>
+        <p>Set <code>isDark: true</code> on the <code>RoomTrait</code>. The player will see a "pitch dark" message unless they carry a lit <code>LightSourceTrait</code> item. The perception system handles this automatically.</p>
+        <pre><code>const cellar = createRoom(world, 'Cellar',
+  'A dark and damp cellar with a narrow passageway leading east.',
+  true  // isDark
+);</code></pre>
+      </details>
+    </section>
+
+    <!-- ================================================================== -->
+    <!-- 4. ADDING OBJECTS                                                   -->
+    <!-- ================================================================== -->
+    <section id="objects">
+      <h2>Adding Objects</h2>
+      <p>Objects are entities with traits that define their capabilities. Items are <strong>portable by default</strong> &mdash; there is no <code>PortableTrait</code>. To make something non-portable, use <code>SceneryTrait</code>.</p>
+
+      <h3>Basic Takeable Item</h3>
+      <pre><code>const coin = world.createEntity('gold coin', EntityType.ITEM);
+coin.add(new IdentityTrait({
+  name: 'gold coin',
+  aliases: ['coin', 'gold', 'gold piece'],
+  description: 'A shiny gold coin bearing the royal crest.',
+  properName: false,
+  article: 'a',
+  weight: 2,
+  points: 10  // Score awarded when taken
+}));
+world.moveEntity(coin.id, streamRoom.id);  // Place in room</code></pre>
+
+      <h3>Container</h3>
+      <pre><code>const chest = world.createEntity('wooden chest', EntityType.CONTAINER);
+chest.add(new IdentityTrait({
+  name: 'wooden chest',
+  aliases: ['chest', 'box', 'wooden box'],
+  description: 'A sturdy oak chest with iron bands.',
+  properName: false,
+  article: 'a'
+}));
+chest.add(new ContainerTrait({ capacity: 100 }));
+chest.add(new OpenableTrait({ isOpen: false }));
+world.moveEntity(chest.id, roomId);</code></pre>
+
+      <h3>Light Source</h3>
+      <pre><code>const lantern = world.createEntity('brass lantern', EntityType.ITEM);
+lantern.add(new IdentityTrait({
+  name: 'brass lantern',
+  aliases: ['lamp', 'lantern', 'brass lamp'],
+  description: 'A battery-powered brass lantern.',
+  properName: false,
+  article: 'a',
+  weight: 15
+}));
+lantern.add(new LightSourceTrait({
+  isLit: false,
+  brightness: 3,
+  fuelRemaining: 300,
+  maxFuel: 300,
+  fuelConsumptionRate: 1  // Burns 1 fuel per turn
+}));
+lantern.add(new SwitchableTrait({ isOn: false }));  // Player can TURN ON / TURN OFF
+world.moveEntity(lantern.id, roomId);</code></pre>
+
+      <h3>Scenery (Non-Portable)</h3>
+      <pre><code>const fountain = world.createEntity('stone fountain', EntityType.SCENERY);
+fountain.add(new IdentityTrait({
+  name: 'stone fountain',
+  aliases: ['fountain', 'stone basin'],
+  description: 'An ornate stone fountain. Water trickles from the mouth of a carved fish.',
+  properName: false,
+  article: 'a'
+}));
+fountain.add(new SceneryTrait());
+world.moveEntity(fountain.id, gardenRoom.id);</code></pre>
+
+      <h3>Locked Door</h3>
+      <pre><code>const door = world.createEntity('iron door', EntityType.DOOR);
+door.add(new IdentityTrait({
+  name: 'iron door',
+  aliases: ['door', 'iron gate'],
+  description: 'A heavy iron door with a large keyhole.',
+  properName: false,
+  article: 'an'
+}));
+door.add(new OpenableTrait({ isOpen: false }));
+door.add(new LockableTrait({ isLocked: true, keyEntityId: key.id }));
+door.add(new SceneryTrait());  // Cannot be picked up
+world.moveEntity(door.id, roomId);</code></pre>
+
+      <details>
+        <summary>Using AuthorModel for Setup</summary>
+        <p>During world initialization, you sometimes need to bypass game rules &mdash; for example, putting an item inside a <em>closed</em> container. Normal <code>WorldModel.moveEntity()</code> enforces validation (you cannot put things in closed containers). Wrap the world model in an <code>AuthorModel</code> to skip these checks:</p>
+        <pre><code>import { AuthorModel } from '@sharpee/world-model';
+
+// In initializeWorld():
+const author = new AuthorModel(world);
+
+// This works even though the chest is closed
+author.moveEntity(key.id, chest.id);</code></pre>
+        <p>Use <code>AuthorModel</code> only during setup. During gameplay, mutations should go through the normal <code>WorldModel</code> so rules are enforced.</p>
+      </details>
+
+      <details>
+        <summary>Entity Attributes (Freeform Data)</summary>
+        <p>For data that must survive save/restore but does not warrant a full trait, use <code>entity.attributes</code>:</p>
+        <pre><code>// Store arbitrary key-value data
+torch.attributes.isFlame = true;     // Open flame flag
+sphere.attributes.color = 'blue';    // Disambiguating property
+room.attributes.riddleSolved = false; // Puzzle state
+
+// Read it back
+if (torch.attributes.isFlame) {
+  // dangerous near gas!
+}</code></pre>
+        <p><strong>Important:</strong> Never use <code>(entity as any).prop</code> for data that must survive serialization. Only <code>entity.attributes</code> and traits are serialized.</p>
+      </details>
+    </section>
+
+    <!-- ================================================================== -->
+    <!-- 5. CUSTOM PUZZLES                                                   -->
+    <!-- ================================================================== -->
+    <section id="puzzles">
+      <h2>Custom Puzzles</h2>
+      <p>Sharpee provides three patterns for adding custom game mechanics. Choose based on what you need:</p>
+
+      <table>
+        <thead>
+          <tr><th>Pattern</th><th>When to Use</th><th>Example</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Capability Dispatch</strong></td>
+            <td>A standard verb (LOWER, TURN, WAVE) should do something entity-specific</td>
+            <td>"LOWER BASKET" moves an elevator; "LOWER BLINDS" closes window coverings</td>
+          </tr>
+          <tr>
+            <td><strong>Interceptor</strong></td>
+            <td>You want to intercept or modify an existing action's behavior for a specific entity</td>
+            <td>"THROW TORCH AT GLACIER" melts the glacier instead of normal throwing</td>
+          </tr>
+          <tr>
+            <td><strong>Story Action</strong></td>
+            <td>An entirely new verb the stdlib does not provide</td>
+            <td>SAY, PRAY, RING, CAST &mdash; verbs with no standard IF semantics</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- 5a. Capability Dispatch -->
+      <details open>
+        <summary><strong>Pattern 1: Capability Dispatch (Trait + Behavior)</strong></summary>
+        <p>Use this when a generic verb (like LOWER or TURN) should do different things depending on the target entity. The trait declares which action IDs it handles; a behavior implements the four-phase logic; the story registers the connection.</p>
+
+        <pre><code>// 1. Define a custom trait
+import { ITrait } from '@sharpee/world-model';
+
+class WellWinchTrait implements ITrait {
+  static readonly type = 'mystory.trait.well_winch';
+  static readonly capabilities = ['if.action.turning'] as const;
+
+  bucketPosition: 'top' | 'bottom' = 'top';
+  wellRoomId: string;
+  constructor(data: { wellRoomId: string }) {
+    this.wellRoomId = data.wellRoomId;
+  }
+}
+
+// 2. Define the behavior (four-phase pattern)
+import { CapabilityBehavior, createEffect } from '@sharpee/world-model';
+
+const WinchTurningBehavior: CapabilityBehavior = {
+  validate(entity, world, actorId, sharedData) {
+    const trait = entity.get(WellWinchTrait);
+    // Always valid - turning toggles position
+    return { valid: true };
+  },
+
+  execute(entity, world, actorId, sharedData) {
+    const trait = entity.get(WellWinchTrait);
+    trait.bucketPosition = trait.bucketPosition === 'top' ? 'bottom' : 'top';
+    sharedData.newPosition = trait.bucketPosition;
+  },
+
+  report(entity, world, actorId, sharedData) {
+    return [
+      createEffect('if.event.turned', { targetId: entity.id }),
+      createEffect('action.success', {
+        actionId: 'if.action.turning',
+        messageId: sharedData.newPosition === 'bottom'
+          ? 'mystory.winch.lowered'
+          : 'mystory.winch.raised',
+        params: { target: entity.name }
+      })
+    ];
+  },
+
+  blocked(entity, world, actorId, error) {
+    return [
+      createEffect('action.blocked', {
+        actionId: 'if.action.turning',
+        messageId: error,
+        params: { target: entity.name }
+      })
+    ];
+  }
+};
+
+// 3. Register in initializeWorld()
+import { registerCapabilityBehavior, hasCapabilityBehavior } from '@sharpee/world-model';
+
+if (!hasCapabilityBehavior(WellWinchTrait.type, 'if.action.turning')) {
+  registerCapabilityBehavior(
+    WellWinchTrait.type,
+    'if.action.turning',
+    WinchTurningBehavior
+  );
+}
+
+// 4. Attach the trait to an entity
+const winch = world.createEntity('winch', EntityType.SCENERY);
+winch.add(new WellWinchTrait({ wellRoomId: wellRoom.id }));
+winch.add(new SceneryTrait());</code></pre>
+        <p>See <a href="capabilities.html">Capabilities</a> for the full API and more examples.</p>
+      </details>
+
+      <!-- 5b. Interceptor -->
+      <details>
+        <summary><strong>Pattern 2: Interceptor (React to Existing Actions)</strong></summary>
+        <p>Interceptors hook into the pipeline of an existing stdlib action for entities with a specific trait. They can block the action, replace it, or add side effects. Use this when you want "THROW X AT Y" or "TAKE X" to behave differently for a specific entity.</p>
+
+        <pre><code>// 1. Define a trait that marks interceptable entities
+class FountainTrait implements ITrait {
+  static readonly type = 'mystory.trait.fountain';
+  wishesGranted: number = 0;
+}
+
+// 2. Define the interceptor
+import { ActionInterceptor } from '@sharpee/world-model';
+
+const FountainThrowingInterceptor: ActionInterceptor = {
+  // Called before the standard throwing action runs
+  preValidate(entity, context) {
+    // entity = the fountain (target of THROW X AT FOUNTAIN)
+    const item = context.command.directObject?.entity;
+    if (!item) return { intercept: false };
+
+    // Only intercept coins
+    const identity = item.get(IdentityTrait);
+    if (!identity?.aliases?.includes('coin')) {
+      return { intercept: false };
+    }
+
+    return { intercept: true };  // We handle this
+  },
+
+  // Replace the standard action logic
+  execute(entity, context) {
+    const trait = entity.get(FountainTrait);
+    trait.wishesGranted++;
+
+    // Remove the coin from the game
+    const item = context.command.directObject!.entity!;
+    context.world.removeEntity(item.id);
+
+    context.sharedData.wishNumber = trait.wishesGranted;
+  },
+
+  // Return events for output
+  report(entity, context) {
+    return [
+      context.event('game.message', {
+        messageId: 'mystory.fountain.wish',
+        params: { wish: context.sharedData.wishNumber }
+      })
+    ];
+  }
+};
+
+// 3. Register in initializeWorld()
+import { registerActionInterceptor, hasActionInterceptor } from '@sharpee/world-model';
+
+if (!hasActionInterceptor(FountainTrait.type, 'if.action.throwing')) {
+  registerActionInterceptor(
+    FountainTrait.type,
+    'if.action.throwing',
+    FountainThrowingInterceptor
+  );
+}</code></pre>
+      </details>
+
+      <!-- 5c. Story Action -->
+      <details>
+        <summary><strong>Pattern 3: Story Action (New Verb)</strong></summary>
+        <p>When the stdlib has no action for the verb at all &mdash; like SAY, PRAY, or CAST &mdash; create a full story-specific action.</p>
+
+        <pre><code>// actions/cast/cast-action.ts
+import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
+import { ISemanticEvent } from '@sharpee/core';
+
+export const CAST_ACTION_ID = 'mystory.action.cast';
+
+export const CastMessages = {
+  NO_SPELL: 'mystory.cast.no_spell',
+  SUCCESS: 'mystory.cast.success',
+  FIZZLE: 'mystory.cast.fizzle',
+} as const;
+
+export const castAction: Action = {
+  id: CAST_ACTION_ID,
+  group: 'magic',
+
+  validate(context: ActionContext): ValidationResult {
+    // Check if player has the spellbook
+    const spellbook = context.world.findByType('item')
+      .find(e => e.name === 'spellbook');
+    const playerItems = context.world.getContents(context.player.id);
+    if (!spellbook || !playerItems.some(e => e.id === spellbook.id)) {
+      return { valid: false, error: CastMessages.NO_SPELL };
+    }
+    return { valid: true };
+  },
+
+  execute(context: ActionContext): void {
+    // Determine spell effect based on the raw text argument
+    const spellName = context.command.rawText?.replace(/^cast\s+/i, '') || '';
+    context.sharedData.spellName = spellName;
+    context.sharedData.success = spellName.toLowerCase() === 'lumos';
+  },
+
+  report(context: ActionContext): ISemanticEvent[] {
+    const events: ISemanticEvent[] = [];
+    if (context.sharedData.success) {
+      events.push(context.event('game.message', {
+        messageId: CastMessages.SUCCESS,
+        params: { spell: context.sharedData.spellName }
+      }));
+    } else {
+      events.push(context.event('game.message', {
+        messageId: CastMessages.FIZZLE,
+        params: { spell: context.sharedData.spellName }
+      }));
+    }
+    return events;
+  },
+
+  blocked(context: ActionContext, result: any): ISemanticEvent[] {
+    return [
+      context.event('action.blocked', {
+        messageId: result.error,
+      })
+    ];
+  }
+};
+
+// Export from an actions/index.ts barrel
+export const customActions = [castAction];</code></pre>
+        <p>Register the grammar pattern in your grammar module (see <a href="#parser">Extending the Parser</a> below), and add the message text in your messages module.</p>
+      </details>
+    </section>
+
+    <!-- ================================================================== -->
+    <!-- 6. EXTENDING THE PARSER                                             -->
+    <!-- ================================================================== -->
+    <section id="parser">
+      <h2>Extending the Parser</h2>
+      <p>Your story adds custom grammar patterns in the <code>extendParser()</code> method. Call <code>parser.getStoryGrammar()</code> to get a <code>GrammarBuilder</code>, then use <code>.define()</code> to register patterns that map player input to your story actions.</p>
+
+      <pre><code>// grammar/magic-grammar.ts
+import { GrammarBuilder } from '@sharpee/if-domain';
+import { CAST_ACTION_ID } from '../actions';
+
+export function registerMagicGrammar(grammar: GrammarBuilder): void {
+  // Simple literal command
+  grammar
+    .define('cast :arg')
+    .mapsTo(CAST_ACTION_ID)
+    .withPriority(150)
+    .build();
+
+  // Higher priority for known spell words
+  grammar
+    .define('cast lumos')
+    .mapsTo(CAST_ACTION_ID)
+    .withPriority(155)
+    .build();
+
+  // Bare word (no "cast" prefix needed)
+  grammar
+    .define('lumos')
+    .mapsTo(CAST_ACTION_ID)
+    .withPriority(155)
+    .build();
+}</code></pre>
+
+      <pre><code>// grammar/index.ts
+import type { Parser } from '@sharpee/parser-en-us';
+import { registerMagicGrammar } from './magic-grammar';
+
+export function registerAllGrammar(parser: Parser): void {
+  const grammar = parser.getStoryGrammar();
+
+  // Register any new prepositions your patterns need
+  parser.addPreposition('upon');
+
+  // Register all pattern groups
+  registerMagicGrammar(grammar);
+}</code></pre>
+
+      <details>
+        <summary>Pattern Syntax Reference</summary>
+        <table>
+          <thead>
+            <tr><th>Syntax</th><th>Meaning</th><th>Example</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>:target</code></td>
+              <td>A noun slot resolved against scope</td>
+              <td><code>'push :target'</code> &rarr; "push button"</td>
+            </tr>
+            <tr>
+              <td><code>:arg</code></td>
+              <td>A single-word text argument</td>
+              <td><code>'say :arg'</code> &rarr; "say hello"</td>
+            </tr>
+            <tr>
+              <td><code>:text...</code></td>
+              <td>A greedy text argument (captures everything)</td>
+              <td><code>'answer :text...'</code> &rarr; "answer forty two"</td>
+            </tr>
+            <tr>
+              <td><code>:npc</code></td>
+              <td>An NPC noun slot</td>
+              <td><code>'tell :npc to :command...'</code></td>
+            </tr>
+            <tr>
+              <td>literal words</td>
+              <td>Must match exactly</td>
+              <td><code>'knock on door'</code></td>
+            </tr>
+          </tbody>
+        </table>
+        <p>Use <code>.withPriority(N)</code> to control which pattern wins when multiple patterns match the same input. Story patterns typically use priority 150+; stdlib patterns use lower values. Higher numbers win.</p>
+      </details>
+
+      <details>
+        <summary>Scope Constraints on Slots</summary>
+        <p>You can constrain noun slots to specific scope levels using <code>.where()</code>:</p>
+        <pre><code>grammar
+  .define('unlock :door with :key')
+  .where('door', (scope) => scope.touchable())
+  .where('key', (scope) => scope.carried())
+  .mapsTo('if.action.unlocking')
+  .build();</code></pre>
+        <p>Available scope methods: <code>visible()</code>, <code>touchable()</code>, <code>carried()</code>, <code>worn()</code>, <code>inRoom()</code>.</p>
+      </details>
+    </section>
+
+    <!-- ================================================================== -->
+    <!-- 7. MESSAGES & LANGUAGE LAYER                                        -->
+    <!-- ================================================================== -->
+    <section id="messages">
+      <h2>Messages &amp; Language Layer</h2>
+      <p>Sharpee separates game logic from prose. Actions never emit text directly &mdash; they emit <strong>semantic events</strong> with a <code>messageId</code> and <code>params</code>. The language layer turns those IDs into the text the player sees.</p>
+
+      <h3>The Flow</h3>
+      <ol>
+        <li>Your action emits: <code>{ messageId: 'mystory.cast.success', params: { spell: 'lumos' } }</code></li>
+        <li>At turn end, the text service looks up <code>'mystory.cast.success'</code> in the language provider</li>
+        <li>The provider returns: <code>'You cast {spell} and the room fills with light!'</code></li>
+        <li>Parameters are interpolated: <code>"You cast lumos and the room fills with light!"</code></li>
+      </ol>
+
+      <h3>Registering Messages</h3>
+      <pre><code>// messages/action-messages.ts
+import type { LanguageProvider } from '@sharpee/lang-en-us';
+import { CastMessages } from '../actions';
+
+export function registerActionMessages(language: LanguageProvider): void {
+  language.addMessage(CastMessages.NO_SPELL,
+    'You need the spellbook to cast spells.');
+
+  language.addMessage(CastMessages.SUCCESS,
+    'You cast {spell} and the room fills with brilliant light!');
+
+  language.addMessage(CastMessages.FIZZLE,
+    'You attempt to cast {spell}, but the magic fizzles and dies.');
+}</code></pre>
+
+      <pre><code>// messages/index.ts
+import type { LanguageProvider } from '@sharpee/lang-en-us';
+import { registerActionMessages } from './action-messages';
+
+export function registerAllMessages(language: LanguageProvider): void {
+  registerActionMessages(language);
+}</code></pre>
+
+      <details>
+        <summary>Message ID Conventions</summary>
+        <p>By convention, message IDs follow a dot-separated namespace:</p>
+        <ul>
+          <li><code>mystory.cast.success</code> &mdash; story-scoped action messages</li>
+          <li><code>if.action.taken.success</code> &mdash; stdlib action messages (don't redefine these)</li>
+          <li><code>game.started.banner</code> &mdash; game lifecycle messages (override these for custom banners)</li>
+        </ul>
+        <p>Define message ID constants in your action file so they can be imported by both the action and the message registration:</p>
+        <pre><code>export const CastMessages = {
+  NO_SPELL: 'mystory.cast.no_spell',
+  SUCCESS: 'mystory.cast.success',
+  FIZZLE: 'mystory.cast.fizzle',
+} as const;</code></pre>
+      </details>
+
+      <details>
+        <summary>Overriding the Game Banner</summary>
+        <p>Override the <code>game.started.banner</code> message to customize what the player sees when the game launches:</p>
+        <pre><code>language.addMessage('game.started.banner',
+  `MY ADVENTURE
+v{version} (built {buildDate})
+Engine: Sharpee v{engineVersion}
+
+By {author}
+
+Type HELP for instructions.`);</code></pre>
+        <p>Available parameters: <code>{title}</code>, <code>{author}</code>, <code>{version}</code>, <code>{buildDate}</code>, <code>{engineVersion}</code>, <code>{clientVersion}</code>.</p>
+      </details>
+    </section>
+
+    <!-- ================================================================== -->
+    <!-- 8. TESTING                                                          -->
+    <!-- ================================================================== -->
+    <section id="testing">
+      <h2>Testing</h2>
+      <p>Sharpee uses <strong>transcript tests</strong> &mdash; plain text files that send commands and assert the output. They are the primary way to verify story behavior.</p>
+
+      <h3>Transcript Format</h3>
+      <pre><code>title: Fountain Wish Test
+story: my-adventure
+author: Your Name
+description: Test that throwing a coin into the fountain grants a wish
+
+---
+
+# Navigate to the garden
+> east
+[OK: contains "Garden"]
+
+# Pick up the coin
+> take coin
+[OK: contains "Taken"]
+
+# Throw coin into fountain
+> throw coin at fountain
+[OK: contains "wish"]
+[NOT: contains "coin"]</code></pre>
+
+      <p>Each transcript has a YAML-like header (title, story, author, description) separated from the test body by <code>---</code>. The body contains:</p>
+
+      <table>
+        <thead>
+          <tr><th>Syntax</th><th>Meaning</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code># comment</code></td><td>Ignored; documents what the test is doing</td></tr>
+          <tr><td><code>&gt; command</code></td><td>Player input sent to the game</td></tr>
+          <tr><td><code>[OK: contains "text"]</code></td><td>Assert the output contains this text (case-insensitive)</td></tr>
+          <tr><td><code>[NOT: contains "text"]</code></td><td>Assert the output does <em>not</em> contain this text</td></tr>
+          <tr><td><code>[OK: matches "regex"]</code></td><td>Assert the output matches a regular expression</td></tr>
+          <tr><td><code>[ENSURES: not entity "X" alive]</code></td><td>Post-condition: assert world state after the command</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Running Tests</h3>
+      <p>Always use the bundle for transcript testing &mdash; it loads in ~170ms versus 5+ seconds for the package version:</p>
+
+      <pre><code># Build the bundle first
+./build.sh -s my-adventure
+
+# Run a single unit test
+node dist/cli/sharpee.js --test stories/my-adventure/tests/transcripts/fountain.transcript
+
+# Run all unit tests
+node dist/cli/sharpee.js --test stories/my-adventure/tests/transcripts/*.transcript
+
+# Run a walkthrough chain (game state persists between files)
+node dist/cli/sharpee.js --test --chain stories/my-adventure/walkthroughs/wt-*.transcript
+
+# Stop on first failure
+node dist/cli/sharpee.js --test --chain stories/my-adventure/walkthroughs/wt-*.transcript --stop-on-failure
+
+# Interactive play mode (REPL)
+node dist/cli/sharpee.js --play</code></pre>
+
+      <details>
+        <summary>Unit Tests vs. Walkthroughs</summary>
+        <p><strong>Unit test transcripts</strong> (<code>tests/transcripts/*.transcript</code>) test individual mechanics in isolation. Each file starts a fresh game.</p>
+        <p><strong>Walkthrough transcripts</strong> (<code>walkthroughs/wt-*.transcript</code>) test the full game progression. They must be run with the <code>--chain</code> flag so game state persists between files. Name them with numeric prefixes (<code>wt-01-</code>, <code>wt-02-</code>) to ensure correct ordering.</p>
+      </details>
+
+      <details>
+        <summary>Build Script Reference</summary>
+        <pre><code># Build platform + story
+./build.sh -s my-adventure
+
+# Build for web browser
+./build.sh -s my-adventure -c browser
+
+# Resume from a specific package (faster rebuilds)
+./build.sh --skip stdlib -s my-adventure</code></pre>
+      </details>
+    </section>
+
+    <!-- ================================================================== -->
+    <!-- SEE ALSO                                                            -->
+    <!-- ================================================================== -->
+    <section id="see-also">
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="entities.html">Entities</a> &mdash; IFEntity internals, trait management, serialization</li>
+        <li><a href="world.html">World Model</a> &mdash; spatial relationships, queries, state management</li>
+        <li><a href="traits-core.html">Core Traits</a> &mdash; IdentityTrait, RoomTrait, ContainerTrait, and 25+ more</li>
+        <li><a href="actions-overview.html">Actions Overview</a> &mdash; the four-phase pattern and ActionContext</li>
+        <li><a href="capabilities.html">Capabilities</a> &mdash; capability dispatch, interceptors, entity-specific behaviors</li>
+        <li><a href="events.html">Events</a> &mdash; semantic events, event sources, text rendering flow</li>
+      </ul>
+    </section>
+  </main>
+  <script src="js/docs.js"></script>
+</body>
+</html>

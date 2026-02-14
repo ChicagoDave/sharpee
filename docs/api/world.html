@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>World Model - Sharpee API</title>
+  <link rel="stylesheet" href="css/pico.min.css">
+  <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <main>
+    <header>
+      <hgroup>
+        <h1>World Model</h1>
+        <p>Central state manager for entities, space, and game state</p>
+      </hgroup>
+      <nav aria-label="breadcrumb">
+        <a href="index.html">API</a>
+        <span class="separator">/</span>
+        World Model
+      </nav>
+    </header>
+
+    <!-- ================================================================ -->
+    <!-- OVERVIEW                                                          -->
+    <!-- ================================================================ -->
+    <section id="overview">
+      <h2>Overview</h2>
+      <p><code>WorldModel</code> is the central hub of every Sharpee game. It owns all entities, manages spatial relationships (what is inside what), tracks game state, handles scoring, and provides query methods for finding entities by trait, type, or custom predicate. Every action, behavior, and interceptor receives the WorldModel to read and mutate the game world.</p>
+      <p><code>AuthorModel</code> wraps a WorldModel&rsquo;s data store and provides the same creation and spatial methods <strong>without validation</strong>. Use it during world setup when you need to bypass game rules&mdash;for example, placing medicine inside a closed cabinet before the game begins.</p>
+      <p>Both classes share the same underlying <code>IDataStore</code>, so entities created via AuthorModel are immediately visible to the WorldModel and vice-versa.</p>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- QUICK REFERENCE                                                   -->
+    <!-- ================================================================ -->
+    <section id="quick-ref">
+      <div class="quick-ref">
+        <h2>Quick Reference &mdash; Top 10 Methods</h2>
+        <table>
+          <thead>
+            <tr><th>Method</th><th>Returns</th><th>Purpose</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code><a href="#createEntity">createEntity(name, type?)</a></code></td><td><code>IFEntity</code></td><td>Create a new entity</td></tr>
+            <tr><td><code><a href="#getEntity">getEntity(id)</a></code></td><td><code>IFEntity | undefined</code></td><td>Look up entity by ID</td></tr>
+            <tr><td><code><a href="#moveEntity">moveEntity(entityId, targetId)</a></code></td><td><code>boolean</code></td><td>Move entity into another entity</td></tr>
+            <tr><td><code><a href="#getContents">getContents(containerId)</a></code></td><td><code>IFEntity[]</code></td><td>Get direct children</td></tr>
+            <tr><td><code><a href="#getLocation">getLocation(entityId)</a></code></td><td><code>string | undefined</code></td><td>Get parent container ID</td></tr>
+            <tr><td><code><a href="#findByTrait">findByTrait(traitType)</a></code></td><td><code>IFEntity[]</code></td><td>Find all entities with a given trait</td></tr>
+            <tr><td><code><a href="#getPlayer">getPlayer()</a></code></td><td><code>IFEntity | undefined</code></td><td>Get the player entity</td></tr>
+            <tr><td><code><a href="#connectRooms">connectRooms(r1, r2, dir)</a></code></td><td><code>void</code></td><td>Wire bidirectional room exits</td></tr>
+            <tr><td><code><a href="#awardScore">awardScore(id, pts, desc)</a></code></td><td><code>boolean</code></td><td>Add points to the ledger</td></tr>
+            <tr><td><code><a href="#toJSON">toJSON()</a></code></td><td><code>string</code></td><td>Serialize the entire world</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- ENTITY MANAGEMENT                                                 -->
+    <!-- ================================================================ -->
+    <section id="entity-management">
+      <h2>Entity Management</h2>
+
+      <article id="createEntity">
+        <h3><code>createEntity(displayName, type?)</code></h3>
+        <p>Create a new entity with an auto-generated ID based on its type prefix (<code>r</code> for room, <code>i</code> for item, <code>o</code> for object, etc.). The entity is added to the internal store immediately.</p>
+        <details>
+          <summary>Parameters &amp; return</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>displayName</code></td><td><code>string</code></td><td>&mdash;</td><td>Human-readable name (set as both <code>displayName</code> and <code>name</code>)</td></tr>
+              <tr><td><code>type</code></td><td><code>string</code></td><td><code>'object'</code></td><td>Entity type: <code>room</code>, <code>item</code>, <code>actor</code>, <code>container</code>, <code>supporter</code>, <code>door</code>, <code>scenery</code>, <code>exit</code>, <code>object</code></td></tr>
+            </tbody>
+          </table>
+          <p><strong>Returns</strong> <code>IFEntity</code> &mdash; the newly created entity.</p>
+          <p><strong>Throws</strong> if the type is not a valid <code>EntityType</code>.</p>
+        </details>
+<pre><code>const torch = world.createEntity('Brass Lantern', 'item');
+torch.add(new IdentityTrait({ name: 'brass lantern', aliases: ['lamp', 'lantern'] }));
+world.moveEntity(torch.id, startRoom.id);</code></pre>
+      </article>
+
+      <article id="createEntityWithTraits">
+        <h3><code>createEntityWithTraits(type)</code></h3>
+        <p>Create an entity with automatic default traits for its type. A <code>room</code> gets <code>RoomTrait</code>, a <code>container</code> gets <code>ContainerTrait</code>, an <code>actor</code> gets <code>ActorTrait</code>, and so on. Useful when you want the standard trait wiring without manual <code>.add()</code> calls.</p>
+        <details>
+          <summary>Parameters &amp; return</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>type</code></td><td><code>EntityType</code></td><td>The entity type constant (e.g., <code>EntityType.ROOM</code>)</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Returns</strong> <code>IFEntity</code> with appropriate default trait already attached.</p>
+        </details>
+      </article>
+
+      <article id="getEntity">
+        <h3><code>getEntity(id)</code></h3>
+        <p>Look up an entity by its string ID. Returns <code>undefined</code> if the entity does not exist.</p>
+        <details>
+          <summary>Parameters &amp; return</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>id</code></td><td><code>string</code></td><td>The entity&rsquo;s unique ID (e.g., <code>'r01'</code>)</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Returns</strong> <code>IFEntity | undefined</code></p>
+        </details>
+      </article>
+
+      <article id="hasEntity">
+        <h3><code>hasEntity(id)</code></h3>
+        <p>Check whether an entity with the given ID exists. Faster than <code>getEntity</code> when you only need a boolean.</p>
+        <details>
+          <summary>Parameters &amp; return</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>id</code></td><td><code>string</code></td><td>Entity ID to check</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Returns</strong> <code>boolean</code></p>
+        </details>
+      </article>
+
+      <article id="removeEntity">
+        <h3><code>removeEntity(id)</code></h3>
+        <p>Remove an entity from the world. Also cleans up spatial references (removes from parent container and spatial index). Returns <code>false</code> if the entity was not found.</p>
+        <details>
+          <summary>Parameters &amp; return</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>id</code></td><td><code>string</code></td><td>ID of entity to remove</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Returns</strong> <code>boolean</code> &mdash; <code>true</code> if entity was found and removed.</p>
+        </details>
+      </article>
+
+      <article id="getAllEntities">
+        <h3><code>getAllEntities()</code></h3>
+        <p>Return an array of every entity in the world. Useful for debugging or full-world scans, but prefer <code>findByTrait</code> or <code>findWhere</code> for targeted queries.</p>
+        <p><strong>Returns</strong> <code>IFEntity[]</code></p>
+      </article>
+
+      <article id="updateEntity">
+        <h3><code>updateEntity(entityId, updater)</code></h3>
+        <p>Pass a callback that receives the entity for in-place mutation. If the entity does not exist, the call is a no-op (or throws in strict mode).</p>
+        <details>
+          <summary>Parameters</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>entityId</code></td><td><code>string</code></td><td>ID of entity to update</td></tr>
+              <tr><td><code>updater</code></td><td><code>(entity: IFEntity) =&gt; void</code></td><td>Callback that mutates the entity</td></tr>
+            </tbody>
+          </table>
+        </details>
+<pre><code>world.updateEntity(torch.id, (entity) => {
+  entity.attributes.isLit = true;
+});</code></pre>
+      </article>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SPATIAL MANAGEMENT                                                -->
+    <!-- ================================================================ -->
+    <section id="spatial-management">
+      <h2>Spatial Management</h2>
+      <p>The spatial system models containment: every entity can be &ldquo;inside&rdquo; exactly one other entity (its parent). Rooms contain items, items can be inside containers, and the player entity is inside a room. The <code>SpatialIndex</code> tracks all parent&ndash;child relationships for fast lookup.</p>
+
+      <article id="moveEntity">
+        <h3><code>moveEntity(entityId, targetId)</code></h3>
+        <p>Move an entity into another entity (room, container, supporter, actor). Validates that the target can contain the entity: checks for loops, target capacity, and open/closed state of containers. Pass <code>null</code> as the target to remove the entity from the world spatial tree entirely.</p>
+        <details>
+          <summary>Parameters &amp; return</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>entityId</code></td><td><code>string</code></td><td>ID of entity to move</td></tr>
+              <tr><td><code>targetId</code></td><td><code>string | null</code></td><td>Destination entity ID, or <code>null</code> to remove from world</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Returns</strong> <code>boolean</code> &mdash; <code>true</code> if the move succeeded.</p>
+        </details>
+<pre><code>// Pick up the sword: move it from the room to the player
+world.moveEntity(sword.id, player.id);
+
+// Drop the sword: move it from the player to the current room
+const roomId = world.getLocation(player.id);
+world.moveEntity(sword.id, roomId);</code></pre>
+      </article>
+
+      <article id="canMoveEntity">
+        <h3><code>canMoveEntity(entityId, targetId)</code></h3>
+        <p>Check whether a move <em>would</em> succeed without actually performing it. Useful in action validation phases to test preconditions before committing.</p>
+        <details>
+          <summary>Parameters &amp; return</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>entityId</code></td><td><code>string</code></td><td>ID of entity to test</td></tr>
+              <tr><td><code>targetId</code></td><td><code>string | null</code></td><td>Proposed destination (or <code>null</code>)</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Returns</strong> <code>boolean</code></p>
+        </details>
+      </article>
+
+      <article id="getLocation">
+        <h3><code>getLocation(entityId)</code></h3>
+        <p>Get the ID of the entity that directly contains this entity. Returns <code>undefined</code> if the entity has no parent (e.g., a top-level room or an entity removed from the world).</p>
+        <details>
+          <summary>Parameters &amp; return</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>entityId</code></td><td><code>string</code></td><td>ID of entity to query</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Returns</strong> <code>string | undefined</code> &mdash; parent entity ID.</p>
+        </details>
+      </article>
+
+      <article id="getContents">
+        <h3><code>getContents(containerId, options?)</code></h3>
+        <p>Get the direct children of a container, room, or actor. Does not recurse into sub-containers; use <code>getAllContents</code> for recursive traversal.</p>
+        <details>
+          <summary>Parameters &amp; return</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>containerId</code></td><td><code>string</code></td><td>&mdash;</td><td>Parent entity to query</td></tr>
+              <tr><td><code>options.visibleOnly</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Filter out scenery with <code>visible: false</code></td></tr>
+              <tr><td><code>options.includeWorn</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Include worn items (normally excluded)</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Returns</strong> <code>IFEntity[]</code></p>
+        </details>
+<pre><code>// List what the player is carrying
+const inventory = world.getContents(player.id);
+
+// List room contents, including worn items
+const everything = world.getContents(room.id, { includeWorn: true });</code></pre>
+      </article>
+
+      <article id="getAllContents">
+        <h3><code>getAllContents(entityId, options?)</code></h3>
+        <p>Recursively collect all descendants of an entity. Set <code>options.recursive = true</code> (the key flag) to traverse into sub-containers. Cycle-safe via a visited set.</p>
+        <details>
+          <summary>Parameters &amp; return</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>entityId</code></td><td><code>string</code></td><td>&mdash;</td><td>Root entity to traverse from</td></tr>
+              <tr><td><code>options.recursive</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Recurse into sub-containers</td></tr>
+              <tr><td><code>options.visibleOnly</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Filter non-visible scenery</td></tr>
+              <tr><td><code>options.includeWorn</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Include worn items at root level</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Returns</strong> <code>IFEntity[]</code></p>
+        </details>
+      </article>
+
+      <article id="getContainingRoom">
+        <h3><code>getContainingRoom(entityId)</code></h3>
+        <p>Walk up the containment hierarchy from an entity until a room is found. Useful for determining which room an item is in, even when it is nested inside a container that is inside a backpack that is carried by the player who is in a room.</p>
+        <details>
+          <summary>Parameters &amp; return</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>entityId</code></td><td><code>string</code></td><td>Starting entity (typically not a room itself)</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Returns</strong> <code>IFEntity | undefined</code> &mdash; the ancestor room entity, or <code>undefined</code> if none is found within <code>maxDepth</code>.</p>
+        </details>
+<pre><code>// Where is this item in the game world?
+const room = world.getContainingRoom(silverKey.id);
+console.log(room?.attributes.displayName); // "Treasury"</code></pre>
+      </article>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- ROOM CONNECTIONS                                                  -->
+    <!-- ================================================================ -->
+    <section id="room-connections">
+      <h2>Room Connections</h2>
+
+      <article id="connectRooms">
+        <h3><code>connectRooms(room1Id, room2Id, direction)</code></h3>
+        <p>Create a bidirectional connection between two rooms. Sets the exit in the given direction on room1 and the opposite direction on room2 automatically. Both rooms must already exist.</p>
+        <details>
+          <summary>Parameters</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>room1Id</code></td><td><code>string</code></td><td>ID of the first room</td></tr>
+              <tr><td><code>room2Id</code></td><td><code>string</code></td><td>ID of the second room</td></tr>
+              <tr><td><code>direction</code></td><td><code>DirectionType</code></td><td>Direction from room1 to room2 (e.g., <code>Direction.NORTH</code>)</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Throws</strong> if either room does not exist.</p>
+        </details>
+<pre><code>// Kitchen is north of Dining Room
+world.connectRooms(diningRoom.id, kitchen.id, Direction.NORTH);
+// Player can now "go north" from Dining Room and "go south" from Kitchen</code></pre>
+      </article>
+
+      <article id="createDoor">
+        <h3><code>createDoor(displayName, opts)</code></h3>
+        <p>Create a door entity and wire it into both rooms&rsquo; exit data. The door is placed in room1 spatially for scope resolution. Automatically adds <code>IdentityTrait</code>, <code>DoorTrait</code>, <code>SceneryTrait</code>, <code>OpenableTrait</code>, and optionally <code>LockableTrait</code>.</p>
+        <details>
+          <summary>Parameters &amp; return</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>displayName</code></td><td><code>string</code></td><td>&mdash;</td><td>Door&rsquo;s display name</td></tr>
+              <tr><td><code>opts.room1Id</code></td><td><code>string</code></td><td>&mdash;</td><td>First room ID</td></tr>
+              <tr><td><code>opts.room2Id</code></td><td><code>string</code></td><td>&mdash;</td><td>Second room ID</td></tr>
+              <tr><td><code>opts.direction</code></td><td><code>DirectionType</code></td><td>&mdash;</td><td>Direction from room1 to room2</td></tr>
+              <tr><td><code>opts.description</code></td><td><code>string</code></td><td>&mdash;</td><td>Door description text</td></tr>
+              <tr><td><code>opts.aliases</code></td><td><code>string[]</code></td><td>&mdash;</td><td>Alternative names for the door</td></tr>
+              <tr><td><code>opts.isOpen</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Initial open/closed state</td></tr>
+              <tr><td><code>opts.isLocked</code></td><td><code>boolean</code></td><td>&mdash;</td><td>If set, adds LockableTrait</td></tr>
+              <tr><td><code>opts.keyId</code></td><td><code>string</code></td><td>&mdash;</td><td>Required key entity ID</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Returns</strong> <code>IFEntity</code> &mdash; the door entity.</p>
+          <p><strong>Throws</strong> if either room does not exist.</p>
+        </details>
+<pre><code>const vaultDoor = world.createDoor('Steel Vault Door', {
+  room1Id: lobby.id,
+  room2Id: vault.id,
+  direction: Direction.EAST,
+  isLocked: true,
+  keyId: goldKey.id,
+  aliases: ['vault door', 'steel door'],
+});</code></pre>
+      </article>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- QUERIES                                                           -->
+    <!-- ================================================================ -->
+    <section id="queries">
+      <h2>Queries</h2>
+
+      <article id="findByTrait">
+        <h3><code>findByTrait(traitType)</code></h3>
+        <p>Return all entities that have a given trait type. This is a full scan of the entity store. Commonly used to find all rooms, all containers, all light sources, etc.</p>
+        <details>
+          <summary>Parameters &amp; return</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>traitType</code></td><td><code>TraitType</code></td><td>The trait type constant (e.g., <code>TraitType.ROOM</code>)</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Returns</strong> <code>IFEntity[]</code></p>
+        </details>
+<pre><code>// Find all rooms in the world
+const rooms = world.findByTrait(TraitType.ROOM);
+
+// Find all light sources
+const lights = world.findByTrait(TraitType.LIGHT_SOURCE);</code></pre>
+      </article>
+
+      <article id="findByType">
+        <h3><code>findByType(entityType)</code></h3>
+        <p>Return all entities whose <code>type</code> field matches the given string. Matches the type set at creation time (<code>'room'</code>, <code>'item'</code>, <code>'actor'</code>, etc.).</p>
+        <details>
+          <summary>Parameters &amp; return</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>entityType</code></td><td><code>string</code></td><td>Entity type string</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Returns</strong> <code>IFEntity[]</code></p>
+        </details>
+      </article>
+
+      <article id="findWhere">
+        <h3><code>findWhere(predicate)</code></h3>
+        <p>Find all entities that satisfy a custom predicate function. This is the most flexible query method.</p>
+        <details>
+          <summary>Parameters &amp; return</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>predicate</code></td><td><code>(entity: IFEntity) =&gt; boolean</code></td><td>Filter function called for every entity</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Returns</strong> <code>IFEntity[]</code></p>
+        </details>
+<pre><code>// Find all portable items in the current room
+const roomItems = world.findWhere(e =>
+  world.getLocation(e.id) === currentRoom.id &&
+  !e.hasTrait(TraitType.SCENERY)
+);</code></pre>
+      </article>
+
+      <article id="getVisible">
+        <h3><code>getVisible(observerId)</code></h3>
+        <p>Get entities that are physically visible to an observer, considering location, container state, lighting, and scenery flags. Uses <code>VisibilityBehavior</code> internally. This is for <strong>perception and display</strong>; for command resolution, use <code>getInScope()</code> instead.</p>
+        <details>
+          <summary>Parameters &amp; return</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>observerId</code></td><td><code>string</code></td><td>The entity doing the observing</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Returns</strong> <code>IFEntity[]</code></p>
+        </details>
+      </article>
+
+      <article id="getInScope">
+        <h3><code>getInScope(observerId)</code></h3>
+        <p>Get entities that can be referenced in commands by the given observer. Evaluated using the scope system (registered <code>IScopeRule</code> instances). Broader than <code>getVisible</code>&mdash;includes items in closed containers, for example.</p>
+        <details>
+          <summary>Parameters &amp; return</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>observerId</code></td><td><code>string</code></td><td>The entity whose scope to evaluate</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Returns</strong> <code>IFEntity[]</code></p>
+        </details>
+      </article>
+
+      <article id="canSee">
+        <h3><code>canSee(observerId, targetId)</code></h3>
+        <p>Check whether one entity can physically see another. Returns <code>false</code> if either entity is not found, or if the target is not within line of sight.</p>
+        <details>
+          <summary>Parameters &amp; return</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>observerId</code></td><td><code>string</code></td><td>Observer entity</td></tr>
+              <tr><td><code>targetId</code></td><td><code>string</code></td><td>Target entity</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Returns</strong> <code>boolean</code></p>
+        </details>
+      </article>
+
+      <article id="getPlayer">
+        <h3><code>getPlayer()</code> / <code>setPlayer(entityId)</code></h3>
+        <p><code>getPlayer()</code> returns the designated player entity (or <code>undefined</code> if none is set). <code>setPlayer()</code> assigns a player entity; throws if the entity does not exist.</p>
+<pre><code>const player = world.createEntity('Adventurer', 'actor');
+player.add(new ActorTrait());
+world.setPlayer(player.id);
+world.moveEntity(player.id, startRoom.id);</code></pre>
+      </article>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- STATE MANAGEMENT                                                  -->
+    <!-- ================================================================ -->
+    <section id="state-management">
+      <h2>State Management</h2>
+      <p>WorldModel maintains a key-value state dictionary (<code>WorldState</code>) for tracking global game flags, counters, and other non-entity data. This state is included in serialization.</p>
+
+      <article id="getState">
+        <h3><code>getState()</code> / <code>setState(state)</code></h3>
+        <p><code>getState()</code> returns a shallow copy of the full state dictionary. <code>setState()</code> replaces the entire state with a shallow copy of the provided object.</p>
+        <details>
+          <summary>Parameters &amp; return</summary>
+          <table>
+            <thead><tr><th>Method</th><th>Param</th><th>Type</th><th>Returns</th></tr></thead>
+            <tbody>
+              <tr><td><code>getState()</code></td><td>&mdash;</td><td>&mdash;</td><td><code>WorldState</code> (shallow copy)</td></tr>
+              <tr><td><code>setState(state)</code></td><td><code>state</code></td><td><code>WorldState</code></td><td><code>void</code></td></tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <article id="getStateValue">
+        <h3><code>getStateValue(key)</code> / <code>setStateValue(key, value)</code></h3>
+        <p>Read or write individual state values. Prefer these over <code>getState</code>/<code>setState</code> for single-value access.</p>
+        <details>
+          <summary>Parameters &amp; return</summary>
+          <table>
+            <thead><tr><th>Method</th><th>Param</th><th>Type</th><th>Returns</th></tr></thead>
+            <tbody>
+              <tr><td><code>getStateValue(key)</code></td><td><code>key</code></td><td><code>string</code></td><td><code>any</code></td></tr>
+              <tr><td><code>setStateValue(key, value)</code></td><td><code>key</code>, <code>value</code></td><td><code>string</code>, <code>any</code></td><td><code>void</code></td></tr>
+            </tbody>
+          </table>
+        </details>
+<pre><code>// Track how many times the player has visited the cave
+const visits = (world.getStateValue('cave.visits') ?? 0) + 1;
+world.setStateValue('cave.visits', visits);
+
+// Use as puzzle flags
+world.setStateValue('mirror.activated', true);
+if (world.getStateValue('mirror.activated')) {
+  // reveal the hidden passage
+}</code></pre>
+      </article>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SCORE SYSTEM                                                      -->
+    <!-- ================================================================ -->
+    <section id="score-system">
+      <h2>Score System</h2>
+      <p>The score system (ADR-129) uses a <strong>ledger</strong> model: each score award has a unique ID, point value, and description. Awards are idempotent&mdash;calling <code>awardScore</code> with the same ID twice is a no-op. Awards can also be revoked.</p>
+
+      <article id="awardScore">
+        <h3><code>awardScore(id, points, description)</code></h3>
+        <p>Add a score entry to the ledger. Returns <code>false</code> if an entry with this ID already exists (idempotent).</p>
+        <details>
+          <summary>Parameters &amp; return</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>id</code></td><td><code>string</code></td><td>Unique identifier for this award (e.g., <code>'found.gold.key'</code>)</td></tr>
+              <tr><td><code>points</code></td><td><code>number</code></td><td>Points to award</td></tr>
+              <tr><td><code>description</code></td><td><code>string</code></td><td>Human-readable reason</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Returns</strong> <code>boolean</code> &mdash; <code>true</code> if the award was new.</p>
+        </details>
+<pre><code>// Award points for finding a treasure (idempotent)
+world.awardScore('treasure.diamond', 10, 'Found the diamond');
+
+// Won't double-count
+world.awardScore('treasure.diamond', 10, 'Found the diamond'); // returns false</code></pre>
+      </article>
+
+      <article id="revokeScore">
+        <h3><code>revokeScore(id)</code></h3>
+        <p>Remove a score entry from the ledger by its ID. Returns <code>false</code> if no entry with that ID exists.</p>
+        <details>
+          <summary>Parameters &amp; return</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>id</code></td><td><code>string</code></td><td>ID of the score entry to remove</td></tr>
+            </tbody>
+          </table>
+          <p><strong>Returns</strong> <code>boolean</code></p>
+        </details>
+      </article>
+
+      <article id="hasScore">
+        <h3><code>hasScore(id)</code></h3>
+        <p>Check whether a score entry exists in the ledger.</p>
+        <p><strong>Returns</strong> <code>boolean</code></p>
+      </article>
+
+      <article id="getScore">
+        <h3><code>getScore()</code></h3>
+        <p>Get the total score by summing all ledger entries.</p>
+        <p><strong>Returns</strong> <code>number</code></p>
+      </article>
+
+      <article id="getMaxScore">
+        <h3><code>getMaxScore()</code> / <code>setMaxScore(max)</code></h3>
+        <p>Get or set the maximum possible score for the game. This is a simple numeric value used for display (<code>"Score: 42/616"</code>).</p>
+      </article>
+
+      <article id="getScoreEntries">
+        <h3><code>getScoreEntries()</code></h3>
+        <p>Return a copy of the full score ledger as an array of <code>ScoreEntry</code> objects.</p>
+        <details>
+          <summary>ScoreEntry type</summary>
+<pre><code>interface ScoreEntry {
+  id: string;       // Unique identifier
+  points: number;   // Point value
+  description: string; // Human-readable reason
+}</code></pre>
+        </details>
+      </article>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- EVENT HANDLERS                                                    -->
+    <!-- ================================================================ -->
+    <section id="event-handlers">
+      <h2>Event Handlers</h2>
+      <p>WorldModel provides registration points for event handlers that react to domain events. These are wired to the engine&rsquo;s <code>EventProcessor</code> (ADR-086) when the game starts. See the <a href="events.html">Events</a> page for the full event system documentation.</p>
+
+      <article id="registerEventHandler">
+        <h3><code>registerEventHandler(eventType, handler)</code></h3>
+        <p>Register a handler that runs when a specific event type is processed. If an <code>EventProcessor</code> is already connected, the handler is wired immediately.</p>
+        <details>
+          <summary>Parameters</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>eventType</code></td><td><code>string</code></td><td>Event type to handle (e.g., <code>'if.event.put_in'</code>)</td></tr>
+              <tr><td><code>handler</code></td><td><code>(event, world) =&gt; void</code></td><td>Handler function receiving the event and the WorldModel</td></tr>
+            </tbody>
+          </table>
+        </details>
+<pre><code>world.registerEventHandler('if.event.put_in', (event, world) => {
+  if (event.data.targetId === trophyCaseId) {
+    // Score points for putting a treasure in the case
+    const item = world.getEntity(event.data.itemId);
+    if (item?.attributes.trophyCaseValue) {
+      world.awardScore(
+        `trophy.${item.id}`,
+        item.attributes.trophyCaseValue,
+        `Put ${item.attributes.displayName} in trophy case`
+      );
+    }
+  }
+});</code></pre>
+      </article>
+
+      <article id="chainEvent">
+        <h3><code>chainEvent(triggerType, handler, options?)</code></h3>
+        <p>Register an event chain handler (ADR-094). Unlike regular handlers, chain handlers <strong>produce new events</strong> that are emitted after the trigger event. Chains support cascading (multiple handlers fire) and overriding (replace existing chains).</p>
+        <details>
+          <summary>Parameters</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>triggerType</code></td><td><code>string</code></td><td>&mdash;</td><td>Event type that triggers this chain</td></tr>
+              <tr><td><code>handler</code></td><td><code>(event, world) =&gt; event | events | null</code></td><td>&mdash;</td><td>Returns new events to emit (or null to skip)</td></tr>
+              <tr><td><code>options.mode</code></td><td><code>'cascade' | 'override'</code></td><td><code>'cascade'</code></td><td><code>cascade</code>: add to existing chains. <code>override</code>: replace all.</td></tr>
+              <tr><td><code>options.key</code></td><td><code>string</code></td><td>&mdash;</td><td>Unique key; chains with same key replace each other</td></tr>
+              <tr><td><code>options.priority</code></td><td><code>number</code></td><td><code>100</code></td><td>Execution order (lower = earlier)</td></tr>
+            </tbody>
+          </table>
+        </details>
+<pre><code>// When a treasure is taken, chain a scoring event
+world.chainEvent('if.event.taken', (event, world) => {
+  const item = world.getEntity(event.entities.target);
+  if (item?.attributes.treasureValue) {
+    return {
+      type: 'dungeo.event.treasure_found',
+      entities: { item: item.id },
+      data: { points: item.attributes.treasureValue }
+    };
+  }
+  return null; // No chain for non-treasures
+});</code></pre>
+      </article>
+
+      <article>
+        <h3><code>unregisterEventHandler(eventType)</code></h3>
+        <p>Remove a previously registered event handler for the given type.</p>
+      </article>
+
+      <article>
+        <h3><code>applyEvent(event)</code> / <code>canApplyEvent(event)</code> / <code>previewEvent(event)</code></h3>
+        <p>Low-level event sourcing methods. <code>applyEvent</code> validates and then executes the event handler, recording it in history. <code>canApplyEvent</code> runs only validation. <code>previewEvent</code> returns predicted <code>WorldChange[]</code> without committing. Most story code uses <code>registerEventHandler</code> and lets the engine apply events automatically.</p>
+      </article>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- PERSISTENCE                                                       -->
+    <!-- ================================================================ -->
+    <section id="persistence">
+      <h2>Persistence</h2>
+
+      <article id="toJSON">
+        <h3><code>toJSON()</code></h3>
+        <p>Serialize the entire world state to a JSON string. Includes entities, spatial index, state dictionary, relationships, score ledger, capabilities, and ID counters. Code registrations (event handlers, chain handlers) are <strong>not</strong> serialized&mdash;they are re-registered from code on load.</p>
+        <p><strong>Returns</strong> <code>string</code> &mdash; pretty-printed JSON.</p>
+      </article>
+
+      <article id="loadJSON">
+        <h3><code>loadJSON(json)</code></h3>
+        <p>Deserialize a JSON string and replace the current world state. Preserves code registrations (event chains, capabilities) that were registered before loading. This is the primary mechanism for save/restore.</p>
+        <details>
+          <summary>Parameters</summary>
+          <table>
+            <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>json</code></td><td><code>string</code></td><td>JSON string from <code>toJSON()</code></td></tr>
+            </tbody>
+          </table>
+        </details>
+        <p><strong>Important</strong>: After <code>loadJSON()</code>, trait objects are plain objects&mdash;class methods are gone. Always use direct property access or static behavior methods, never instance methods on deserialized traits.</p>
+      </article>
+
+      <article id="clear">
+        <h3><code>clear()</code></h3>
+        <p>Reset the world to a completely empty state. Clears all entities, spatial data, state, relationships, score ledger, capabilities, event chains, and ID counters.</p>
+      </article>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- AUTHOR MODEL                                                      -->
+    <!-- ================================================================ -->
+    <section id="author-model">
+      <h2>AuthorModel</h2>
+      <p><code>AuthorModel</code> wraps a WorldModel&rsquo;s <code>IDataStore</code> to provide <strong>unrestricted access</strong> during world setup. It bypasses all validation: you can move items into closed containers, locked containers, or any location without constraint. It shares the same underlying data, so changes are immediately visible to the WorldModel.</p>
+
+      <article>
+        <h3>When to use AuthorModel</h3>
+        <ul>
+          <li>Setting up initial world state (placing items in closed containers)</li>
+          <li>Loading saved games</li>
+          <li>Writing tests that need specific world configurations</li>
+          <li>Implementing special mechanics (magic, teleportation)</li>
+        </ul>
+<pre><code>// Create from an existing WorldModel
+const author = new AuthorModel(world.getDataStore(), world);
+
+// Place medicine inside a closed cabinet (WorldModel would reject this)
+const cabinet = world.createEntity('Medicine Cabinet', 'container');
+cabinet.add(new ContainerTrait());
+cabinet.add(new OpenableTrait({ isOpen: false }));
+
+const aspirin = world.createEntity('Aspirin', 'item');
+author.moveEntity(aspirin.id, cabinet.id); // Succeeds despite closed container</code></pre>
+      </article>
+
+      <article>
+        <h3>Key Methods</h3>
+        <p>AuthorModel mirrors the most common WorldModel methods, all without validation:</p>
+        <table>
+          <thead><tr><th>Method</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>createEntity(name, type?, recordEvent?)</code></td><td>Create entity without validation</td></tr>
+            <tr><td><code>removeEntity(entityId, recordEvent?)</code></td><td>Remove entity and clean up all references</td></tr>
+            <tr><td><code>moveEntity(entityId, targetId, recordEvent?)</code></td><td>Move without container/open/lock checks</td></tr>
+            <tr><td><code>getEntity(entityId)</code></td><td>Look up entity by ID</td></tr>
+            <tr><td><code>setEntityProperty(entityId, prop, value)</code></td><td>Set an attribute directly</td></tr>
+            <tr><td><code>addTrait(entityId, trait)</code></td><td>Add a trait to an entity</td></tr>
+            <tr><td><code>removeTrait(entityId, traitType)</code></td><td>Remove a trait from an entity</td></tr>
+            <tr><td><code>populate(containerId, entityIds)</code></td><td>Move multiple entities into a container</td></tr>
+            <tr><td><code>connect(room1Id, room2Id, direction)</code></td><td>Wire bidirectional room exits</td></tr>
+            <tr><td><code>setupContainer(id, isOpen?, isLocked?, keyId?)</code></td><td>Configure container properties</td></tr>
+            <tr><td><code>setPlayer(entityId)</code></td><td>Set the player entity</td></tr>
+            <tr><td><code>setStateValue(key, value)</code></td><td>Set a world state value</td></tr>
+            <tr><td><code>clear()</code></td><td>Reset all world data</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article>
+        <h3>Event Recording</h3>
+        <p>Most AuthorModel methods accept an optional <code>recordEvent</code> parameter (default <code>false</code>). When enabled, author events like <code>'author:entity:created'</code> and <code>'author:entity:moved'</code> are emitted to registered handlers. This is useful for debugging or auditing world setup.</p>
+<pre><code>// Listen for author events
+author.registerEventHandler('author:entity:moved', (event) => {
+  console.log(`Moved ${event.entityId} from ${event.from} to ${event.to}`);
+});
+
+// Enable event recording for specific operations
+author.moveEntity(sword.id, chest.id, true); // logs the move</code></pre>
+      </article>
+
+      <article>
+        <h3>Convenience: <code>fillContainer</code></h3>
+        <p>Create multiple items and place them inside a container in one call.</p>
+<pre><code>author.fillContainer(toolbox.id, [
+  { name: 'Screwdriver', type: 'item' },
+  { name: 'Hammer', type: 'item' },
+  { name: 'Wrench', type: 'item', attributes: { weight: 3 } },
+]);</code></pre>
+      </article>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- SEE ALSO                                                          -->
+    <!-- ================================================================ -->
+    <section id="see-also">
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="entities.html"><strong>Entities</strong></a> &mdash; IFEntity API, creation, traits, serialization</li>
+        <li><a href="traits-core.html"><strong>Core Traits</strong></a> &mdash; IdentityTrait, RoomTrait, ContainerTrait, and more</li>
+        <li><a href="events.html"><strong>Events</strong></a> &mdash; semantic event system, event chains, EventProcessor</li>
+        <li><a href="scope.html"><strong>Scope</strong></a> &mdash; scope rules, evaluation, command resolution</li>
+        <li><a href="capabilities.html"><strong>Capabilities</strong></a> &mdash; capability dispatch for entity-specific verb handling</li>
+      </ul>
+    </section>
+  </main>
+  <script src="js/docs.js"></script>
+</body>
+</html>

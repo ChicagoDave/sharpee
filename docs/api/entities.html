@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entities - Sharpee API</title>
+  <link rel="stylesheet" href="css/pico.min.css">
+  <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <main>
+    <header>
+      <hgroup>
+        <h1>Entities</h1>
+        <p>The building blocks of every game world</p>
+      </hgroup>
+      <nav aria-label="breadcrumb">
+        <a href="index.html">API</a>
+        <span class="separator">/</span>
+        Entities
+      </nav>
+    </header>
+
+    <!-- Overview -->
+    <section id="overview">
+      <h2>Overview</h2>
+      <p>Sharpee uses an entity-component-system where everything in the game world &mdash; rooms, items, doors, actors &mdash; is an <code>IFEntity</code>. Entities are plain containers with an ID, a type, and a bag of attributes. All interesting behavior comes from <strong>traits</strong> attached via composition: an entity with a <code>ContainerTrait</code> can hold things; one with a <code>LightSourceTrait</code> can illuminate a room.</p>
+      <p>You rarely construct entities directly. Instead, call <code>world.createEntity()</code> which assigns a unique ID, registers the entity in the spatial index, and returns it ready for trait attachment.</p>
+    </section>
+
+    <!-- Quick Reference -->
+    <section class="quick-ref">
+      <h2>Quick Reference</h2>
+      <table>
+        <thead>
+          <tr><th>Operation</th><th>Code</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Create an entity</td>
+            <td><code>world.createEntity(name, type)</code></td>
+          </tr>
+          <tr>
+            <td>Check for a trait</td>
+            <td><code>entity.has(TraitType.CONTAINER)</code></td>
+          </tr>
+          <tr>
+            <td>Get a typed trait</td>
+            <td><code>entity.get&lt;ContainerTrait&gt;(TraitType.CONTAINER)</code></td>
+          </tr>
+          <tr>
+            <td>Add a trait</td>
+            <td><code>entity.add(new ContainerTrait({ capacity: 10 }))</code></td>
+          </tr>
+          <tr>
+            <td>Read name / description</td>
+            <td><code>entity.name</code> / <code>entity.description</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- EntityType -->
+    <section id="entity-type">
+      <h2>EntityType</h2>
+      <p>Every entity has a <code>type</code> string set at creation. The type determines the auto-generated ID prefix and provides a quick way to classify entities without inspecting their traits.</p>
+      <table>
+        <thead>
+          <tr><th>Type</th><th>Prefix</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>ROOM</code></td><td><code>r</code></td><td>A location in the game world</td></tr>
+          <tr><td><code>DOOR</code></td><td><code>d</code></td><td>A doorway or portal between rooms</td></tr>
+          <tr><td><code>ITEM</code></td><td><code>i</code></td><td>A generic takeable object</td></tr>
+          <tr><td><code>ACTOR</code></td><td><code>a</code></td><td>A character (NPC or player)</td></tr>
+          <tr><td><code>CONTAINER</code></td><td><code>c</code></td><td>An object that can contain other objects</td></tr>
+          <tr><td><code>SUPPORTER</code></td><td><code>s</code></td><td>An object that supports other objects on top</td></tr>
+          <tr><td><code>SCENERY</code></td><td><code>y</code></td><td>Fixed decorative objects that cannot be taken</td></tr>
+          <tr><td><code>EXIT</code></td><td><code>e</code></td><td>A directional exit (rarely used as entity)</td></tr>
+          <tr><td><code>OBJECT</code></td><td><code>o</code></td><td>Generic object type (default)</td></tr>
+        </tbody>
+      </table>
+      <pre><code>import { EntityType } from '@sharpee/world-model';
+
+const lamp = world.createEntity('brass lantern', EntityType.ITEM);
+const troll = world.createEntity('troll', EntityType.ACTOR);
+const clearing = world.createEntity('forest clearing', EntityType.ROOM);</code></pre>
+    </section>
+
+    <!-- IFEntity Class -->
+    <section id="if-entity">
+      <h2>IFEntity Class</h2>
+      <p><code>IFEntity</code> implements the core <code>IEntity</code> interface and adds trait management, scope control, annotations, and serialization. Key properties available on every entity:</p>
+      <pre><code>entity.id          // EntityId - unique, auto-generated (e.g., "r01", "i03")
+entity.type        // string - the EntityType value
+entity.attributes  // Record&lt;string, unknown&gt; - freeform key/value bag
+entity.relationships // Record&lt;string, EntityId[]&gt; - named entity links</code></pre>
+
+      <!-- Trait Management -->
+      <article id="trait-management">
+        <h3>Trait Management</h3>
+        <p>Traits are stored in an internal <code>Map&lt;TraitType, ITrait&gt;</code>. Each entity can have at most one trait per type. The <code>add()</code> method is chainable.</p>
+
+        <details>
+          <summary>Methods</summary>
+          <table>
+            <thead>
+              <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>has(type)</code></td><td><code>boolean</code></td><td>Check if entity has a trait of this type</td></tr>
+              <tr><td><code>get&lt;T&gt;(type)</code></td><td><code>T | undefined</code></td><td>Get a typed trait; accepts <code>TraitType</code>, string, or constructor</td></tr>
+              <tr><td><code>add(trait)</code></td><td><code>this</code></td><td>Add a trait (warns and ignores duplicates)</td></tr>
+              <tr><td><code>remove(type)</code></td><td><code>boolean</code></td><td>Remove a trait; returns true if it existed</td></tr>
+              <tr><td><code>hasAll(...types)</code></td><td><code>boolean</code></td><td>True if entity has every listed trait</td></tr>
+              <tr><td><code>hasAny(...types)</code></td><td><code>boolean</code></td><td>True if entity has at least one listed trait</td></tr>
+              <tr><td><code>getTraits()</code></td><td><code>ITrait[]</code></td><td>Array of all attached traits</td></tr>
+              <tr><td><code>getTraitTypes()</code></td><td><code>string[]</code></td><td>Array of all trait type keys</td></tr>
+              <tr><td><code>clearTraits()</code></td><td><code>void</code></td><td>Remove all traits from the entity</td></tr>
+            </tbody>
+          </table>
+        </details>
+
+        <pre><code>const chest = world.createEntity('wooden chest', EntityType.CONTAINER);
+chest
+  .add(new IdentityTrait({ name: 'wooden chest', description: 'A sturdy oak chest.' }))
+  .add(new ContainerTrait({ capacity: 100 }))
+  .add(new OpenableTrait({ isOpen: false }))
+  .add(new LockableTrait({ isLocked: true, keyEntityId: 'skeleton-key' }));
+
+if (chest.hasAll(TraitType.OPENABLE, TraitType.LOCKABLE)) {
+  const lock = chest.get&lt;LockableTrait&gt;(TraitType.LOCKABLE);
+  // lock.isLocked === true
+}</code></pre>
+      </article>
+
+      <!-- Convenience Properties -->
+      <article id="convenience-props">
+        <h3>Convenience Properties</h3>
+        <p>Readonly getters that inspect traits without requiring you to call <code>get()</code>. Useful for quick checks in action logic and conditions.</p>
+
+        <details>
+          <summary>All properties</summary>
+          <table>
+            <thead>
+              <tr><th>Property</th><th>Type</th><th>Checks</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>isRoom</code></td><td><code>boolean</code></td><td>Has <code>RoomTrait</code></td></tr>
+              <tr><td><code>canContain</code></td><td><code>boolean</code></td><td>Has Container, Supporter, Room, or Actor trait</td></tr>
+              <tr><td><code>isTakeable</code></td><td><code>boolean</code></td><td>Not scenery, room, or door</td></tr>
+              <tr><td><code>isScenery</code></td><td><code>boolean</code></td><td>Has <code>SceneryTrait</code></td></tr>
+              <tr><td><code>isOpenable</code></td><td><code>boolean</code></td><td>Has <code>OpenableTrait</code></td></tr>
+              <tr><td><code>isOpen</code></td><td><code>boolean</code></td><td>Openable and currently open</td></tr>
+              <tr><td><code>isLockable</code></td><td><code>boolean</code></td><td>Has <code>LockableTrait</code></td></tr>
+              <tr><td><code>isLocked</code></td><td><code>boolean</code></td><td>Lockable and currently locked</td></tr>
+              <tr><td><code>isContainer</code></td><td><code>boolean</code></td><td>Has <code>ContainerTrait</code></td></tr>
+              <tr><td><code>isSupporter</code></td><td><code>boolean</code></td><td>Has <code>SupporterTrait</code></td></tr>
+              <tr><td><code>isDoor</code></td><td><code>boolean</code></td><td>Has <code>DoorTrait</code></td></tr>
+              <tr><td><code>isActor</code></td><td><code>boolean</code></td><td>Has <code>ActorTrait</code></td></tr>
+              <tr><td><code>isPlayer</code></td><td><code>boolean</code></td><td>Actor with <code>isPlayer === true</code></td></tr>
+              <tr><td><code>providesLight</code></td><td><code>boolean</code></td><td>Has lit <code>LightSourceTrait</code></td></tr>
+              <tr><td><code>isSwitchable</code></td><td><code>boolean</code></td><td>Has <code>SwitchableTrait</code></td></tr>
+              <tr><td><code>isOn</code></td><td><code>boolean</code></td><td>Switchable and currently on</td></tr>
+              <tr><td><code>enterable</code></td><td><code>boolean</code></td><td>Has <code>EnterableTrait</code> or <code>VehicleTrait</code></td></tr>
+              <tr><td><code>name</code></td><td><code>string</code></td><td>From displayName, IdentityTrait, attributes, or ID</td></tr>
+              <tr><td><code>description</code></td><td><code>string?</code></td><td>From <code>IdentityTrait</code></td></tr>
+              <tr><td><code>weight</code></td><td><code>number</code></td><td>From <code>attributes.weight</code> (default 0)</td></tr>
+            </tbody>
+          </table>
+        </details>
+
+        <pre><code>// Quick state checks without pulling traits
+if (entity.isOpen &amp;&amp; !entity.isLocked) {
+  // can access contents
+}
+
+if (entity.providesLight) {
+  // room is illuminated
+}</code></pre>
+      </article>
+
+      <!-- Scope Control -->
+      <article id="scope-control">
+        <h3>Scope Control</h3>
+        <p>Authors can influence disambiguation and visibility using scope priorities and minimum scope levels. These let you make entities easier to select for specific actions, or visible/reachable from rooms where they are not physically located.</p>
+
+        <details>
+          <summary>Methods</summary>
+          <table>
+            <thead>
+              <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>scope(actionId, priority?)</code></td><td><code>number</code></td><td>Get/set disambiguation priority for an action (default 100, higher = preferred)</td></tr>
+              <tr><td><code>clearScope(actionId)</code></td><td><code>void</code></td><td>Reset priority for one action</td></tr>
+              <tr><td><code>setMinimumScope(level, rooms?)</code></td><td><code>this</code></td><td>Entity is always at least this scope level (0-4). Optionally limited to specific rooms.</td></tr>
+              <tr><td><code>getMinimumScope(roomId)</code></td><td><code>number</code></td><td>Get the minimum scope level in a given room</td></tr>
+              <tr><td><code>clearMinimumScope(rooms?)</code></td><td><code>void</code></td><td>Clear minimum scope for specific rooms or all</td></tr>
+            </tbody>
+          </table>
+        </details>
+
+        <pre><code>// Make real apple preferred over wax apple when eating
+realApple.scope('if.action.eating', 150);
+waxApple.scope('if.action.eating', 50);
+
+// Sky is always visible everywhere (scope level 2 = VISIBLE)
+sky.setMinimumScope(2);
+
+// Mountain visible only from specific rooms
+mountain.setMinimumScope(2, ['overlook', 'mountain_trail']);
+
+// Clock audible from adjacent rooms (scope level 1 = AWARE)
+clock.setMinimumScope(1, ['hallway', 'study']);</code></pre>
+      </article>
+
+      <!-- Annotations -->
+      <article id="annotations">
+        <h3>Annotations (ADR-124)</h3>
+        <p>Annotations attach presentation metadata &mdash; illustrations, portraits, voice cues &mdash; to entities without polluting game logic. Each annotation has a <code>kind</code>, a unique <code>id</code>, a data payload, and an optional condition that controls when it is active.</p>
+
+        <details>
+          <summary>Methods</summary>
+          <table>
+            <thead>
+              <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>annotate(kind, data, condition?)</code></td><td><code>this</code></td><td>Add an annotation. <code>data</code> must include an <code>id</code> field.</td></tr>
+              <tr><td><code>getAnnotations(kind)</code></td><td><code>Annotation[]</code></td><td>Get all annotations of a kind (unfiltered)</td></tr>
+              <tr><td><code>getActiveAnnotations(kind, world)</code></td><td><code>Annotation[]</code></td><td>Get annotations whose conditions are currently met</td></tr>
+              <tr><td><code>removeAnnotation(kind, id)</code></td><td><code>boolean</code></td><td>Remove a specific annotation</td></tr>
+              <tr><td><code>hasAnnotations(kind)</code></td><td><code>boolean</code></td><td>Check if any annotations of this kind exist</td></tr>
+            </tbody>
+          </table>
+        </details>
+
+        <pre><code>dam.annotate('illustration', {
+  id: 'dam-exterior',
+  src: 'dam-dry.jpg',
+  alt: 'The massive concrete face of Flood Control Dam #3',
+  trigger: 'on-enter',
+  position: 'right',
+});
+
+// Conditional annotation: show different image when dam is open
+dam.annotate('illustration', {
+  id: 'dam-flooding',
+  src: 'dam-open.jpg',
+  alt: 'Water rushes through the open gates',
+}, {
+  scope: 'self',
+  trait: TraitType.OPENABLE,
+  property: 'isOpen',
+  value: true,
+});</code></pre>
+      </article>
+
+      <!-- Serialization -->
+      <article id="serialization">
+        <h3>Serialization</h3>
+        <p>Entities serialize to JSON for save/restore. The static <code>fromJSON()</code> factory reconstructs entities including all traits, scope priorities, minimum scopes, and annotations.</p>
+
+        <details>
+          <summary>Methods</summary>
+          <table>
+            <thead>
+              <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>toJSON()</code></td><td><code>object</code></td><td>Serialize entity, traits, scopes, and annotations</td></tr>
+              <tr><td><code>IFEntity.fromJSON(json)</code></td><td><code>IFEntity</code></td><td>Static factory &mdash; reconstruct entity from JSON</td></tr>
+              <tr><td><code>clone(newId)</code></td><td><code>IFEntity</code></td><td>Deep-copy entity with a new ID</td></tr>
+            </tbody>
+          </table>
+        </details>
+
+        <pre><code>// Save
+const json = entity.toJSON();
+
+// Restore
+const restored = IFEntity.fromJSON(json);
+
+// Clone with new identity
+const copy = entity.clone('duplicate-lamp');</code></pre>
+      </article>
+    </section>
+
+    <!-- Serialization Warning -->
+    <section id="serialization-warning">
+      <h2>Important: Serialization Warning</h2>
+      <article style="border-left: 4px solid #e74c3c; padding-left: 1rem;">
+        <p><strong>Trait methods do not survive serialization.</strong> After <code>world.loadJSON()</code>, traits are restored as plain JavaScript objects &mdash; any class methods defined on the original trait constructors are gone.</p>
+        <p>Always use <strong>direct property access</strong> rather than calling methods on trait instances:</p>
+        <pre><code>// WRONG - crashes after save/restore
+const combatant = entity.get(TraitType.COMBATANT);
+combatant.kill();  // "kill is not a function"
+
+// RIGHT - direct property access always works
+const combatant = entity.get(TraitType.COMBATANT);
+combatant.health = 0;
+combatant.isAlive = false;
+
+// ALSO RIGHT - use static Behavior methods
+CombatantBehavior.kill(combatant);</code></pre>
+        <p>This applies to <strong>all</strong> trait classes, not just CombatantTrait. If you need reusable logic on a trait, put it in a static Behavior method that accepts the trait as a plain object.</p>
+      </article>
+    </section>
+
+    <!-- ITrait Interface -->
+    <section id="itrait">
+      <h2>ITrait Interface</h2>
+      <p>All traits implement the minimal <code>ITrait</code> interface. Traits are <strong>pure data structures</strong> with no behavior &mdash; all logic belongs in behaviors.</p>
+      <pre><code>interface ITrait {
+  readonly type: TraitType | string;
+}</code></pre>
+      <p>Trait constructors can optionally declare <code>capabilities</code> (action IDs handled via capability dispatch) and <code>interceptors</code> (action IDs intercepted via hooks):</p>
+      <pre><code>interface ITraitConstructor&lt;T extends ITrait&gt; {
+  new (data?: any): T;
+  readonly type: TraitType | string;
+  readonly capabilities?: readonly string[];   // ADR-090
+  readonly interceptors?: readonly string[];   // ADR-118
+}</code></pre>
+    </section>
+
+    <!-- See Also -->
+    <section id="see-also">
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="world.html">World Model</a> &mdash; spatial relationships, entity queries, state management</li>
+        <li><a href="traits-core.html">Core Traits</a> &mdash; IdentityTrait, RoomTrait, ContainerTrait, and more</li>
+        <li><a href="actions-overview.html">Actions</a> &mdash; the four-phase action pattern and how entities participate</li>
+        <li><a href="capabilities.html">Capabilities</a> &mdash; entity-specific action dispatch via traits</li>
+      </ul>
+    </section>
+  </main>
+  <script src="js/docs.js"></script>
+</body>
+</html>

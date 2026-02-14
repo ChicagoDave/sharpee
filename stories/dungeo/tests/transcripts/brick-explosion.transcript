@@ -1,0 +1,105 @@
+title: Brick/Fuse/Safe Explosion
+story: dungeo
+description: Tests brick explosion puzzle - safe rusted shut, fuse countdown, safe blown open, room collapse
+
+---
+
+# Get equipped with lantern for light
+> gdt
+[OK: contains "GDT"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> ah Dusty Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+> turn on lantern
+[OK: contains "on"]
+
+# ============================================================
+# Test 1: Safe is rusted shut before explosion
+# ============================================================
+
+> look
+[OK: contains "Dusty Room"]
+
+> open safe
+[OK: contains "rusted"]
+
+# ============================================================
+# Test 2: Examine slot and safe
+# ============================================================
+
+> examine hole
+[OK: contains "oblong hole"]
+
+> examine safe
+[OK: contains "rusty box"]
+
+# ============================================================
+# Test 3: Get brick and wire, put brick in slot, light fuse
+# ============================================================
+
+> gdt
+[OK: contains "GDT"]
+
+> tk brick
+[OK: contains "Taken"]
+
+> tk shiny wire
+[OK: contains "Taken"]
+
+> ex
+[OK: contains "Returning"]
+
+> put brick in hole
+[OK: contains "put brick"]
+
+> burn wire
+[OK: contains "wire starts to burn"]
+
+# Two turns for fuse to burn down (FUSIN = 2 turns)
+> wait
+> wait
+[OK: contains "explosion"]
+
+# ============================================================
+# Test 4: Take crown from open safe after explosion
+# ============================================================
+
+> take crown
+[OK: contains "crown"]
+
+> examine safe
+[OK: contains "blown off"]
+
+# ============================================================
+# Test 5: Safe close blocked after explosion (no door)
+# ============================================================
+
+> close safe
+[OK: contains "no door"]
+
+# ============================================================
+# Test 6: Escape north before collapse
+# ============================================================
+
+> north
+[OK: contains "Wide Ledge"]
+
+# Wait for safe room collapse (SAFIN = 5 turns after explosion)
+> wait
+> wait
+> wait
+[OK: contains "rumbling"]
+
+# ============================================================
+# Test 7: Dusty Room is now blocked from Wide Ledge
+# ============================================================
+
+> south
+[OK: contains "no obvious exits"]

@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Platform Guide - Sharpee API</title>
+  <link rel="stylesheet" href="css/pico.min.css">
+  <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <main>
+    <header>
+      <hgroup>
+        <h1>Platform Developer Guide</h1>
+        <p>Extend Sharpee: stories, languages, clients, and text services</p>
+      </hgroup>
+      <nav aria-label="breadcrumb">
+        <a href="index.html">API</a>
+        <span class="separator">/</span>
+        Platform Guide
+      </nav>
+    </header>
+
+    <!-- Overview -->
+    <section id="overview">
+      <h2>Overview</h2>
+      <p>Sharpee is designed around four pluggable extension points. Each can be implemented independently and composed together at runtime. This guide covers the contracts, lifecycle, and patterns for each.</p>
+    </section>
+
+    <!-- Quick Reference -->
+    <section class="quick-ref">
+      <h2>Extension Points</h2>
+      <table>
+        <thead>
+          <tr><th>Extension</th><th>Interface</th><th>You Provide</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="#story">Story</a></td>
+            <td><code>Story</code></td>
+            <td>World content, custom actions, grammar, messages</td>
+          </tr>
+          <tr>
+            <td><a href="#language">Language Pack</a></td>
+            <td><code>ParserLanguageProvider</code></td>
+            <td>Messages, verbs, vocabulary, linguistic operations</td>
+          </tr>
+          <tr>
+            <td><a href="#client">Client</a></td>
+            <td>Event listeners</td>
+            <td>Input handling, text rendering, save/restore</td>
+          </tr>
+          <tr>
+            <td><a href="#text-service">Text Service</a></td>
+            <td><code>TextService</code> handlers</td>
+            <td>Custom event-to-text rendering pipeline</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Architecture diagram -->
+    <section id="architecture">
+      <h2>Architecture</h2>
+      <article>
+        <h3>How the Pieces Fit Together</h3>
+        <pre><code>                    +-----------+
+  User Input ------>|  Parser   |----> IParsedCommand
+                    | (en-US)   |
+                    +-----------+
+                         |
+                         v
+                    +-----------+
+                    |  Engine   |----> SequencedEvent[]
+                    | (turns,   |
+                    |  actions) |
+                    +-----------+
+                     /    |    \
+                    /     |     \
+          +--------+ +--------+ +-----------+
+          | Story  | | Text   | | Language  |
+          | (world,| | Service| | Provider  |
+          |  logic)| | (render| | (messages)|
+          +--------+ |  pipe) | +-----------+
+                      +--------+
+                         |
+                         v
+                    +-----------+
+                    |  Client   |----> Display
+                    | (CLI, web,|
+                    |  custom)  |
+                    +-----------+</code></pre>
+        <p>The engine is the orchestrator. It loads a story, accepts input through a parser, executes actions, and emits events. The text service transforms events into structured text blocks. The language provider supplies all user-facing strings. The client renders output and captures input.</p>
+      </article>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- STORY EXTENSION -->
+    <!-- ============================================ -->
+    <section id="story">
+      <h2>Writing a Story</h2>
+
+      <article>
+        <h3>The Story Interface</h3>
+        <p>Every story implements the <code>Story</code> interface from <code>@sharpee/engine</code>. Three members are required; five more are optional lifecycle hooks.</p>
+        <pre><code>interface Story {
+  // Required
+  config: StoryConfig;
+  initializeWorld(world: WorldModel): void;
+  createPlayer(world: WorldModel): IFEntity;
+
+  // Optional hooks (called in this order)
+  getCustomActions?(): Action[];
+  extendParser?(parser: Parser): void;
+  extendLanguage?(language: LanguageProvider): void;
+  initialize?(): void;
+  onEngineReady?(engine: GameEngine): void;
+}</code></pre>
+      </article>
+
+      <article>
+        <h3>StoryConfig</h3>
+        <p>Metadata about your story. Used by the engine for display and identification.</p>
+        <pre><code>export const config: StoryConfig = {
+  id: 'my-story',
+  title: 'My Story',
+  author: 'Your Name',
+  version: '1.0.0',
+  description: 'A short description of your story.',
+
+  // Optional
+  ifid: 'UUID',              // Interactive Fiction ID
+  narrative: {                // ADR-089
+    perspective: '2nd',       // '1st', '2nd', '3rd'
+  },
+  implicitActions: {          // ADR-104
+    inference: true,          // Infer targets
+    implicitTake: true,       // Auto-take items
+  },
+};</code></pre>
+      </article>
+
+      <article>
+        <h3>Lifecycle: Engine Initialization Sequence</h3>
+        <p>The engine calls your hooks in a specific order. Understanding this sequence is critical.</p>
+        <pre><code>engine.setStory(story)
+  1. story.initializeWorld(world)    // Create rooms, objects, NPCs
+  2. story.createPlayer(world)       // Set up the player entity
+  3. story.getCustomActions()        // Register story-specific verbs
+  4. story.extendParser(parser)      // Add grammar patterns
+  5. story.extendLanguage(language)  // Register message text
+  6. story.initialize()              // Any additional setup
+  7. story.onEngineReady(engine)     // Engine fully wired - last hook
+
+engine.start()
+  8. Emits 'game:started'           // Game begins</code></pre>
+      </article>
+
+      <article>
+        <h3>initializeWorld()</h3>
+        <p>Called first. Create your entire game world here: rooms, objects, NPCs, connections, event handlers, daemons.</p>
+        <pre><code>initializeWorld(world: WorldModel): void {
+  // Register capabilities
+  world.registerCapability(StandardCapabilities.SCORING, {
+    initialData: { moves: 0, deaths: 0 },
+  });
+
+  // Create rooms
+  const kitchen = world.createEntity('kitchen', EntityType.ROOM);
+  kitchen
+    .add(new IdentityTrait({ name: 'Kitchen', properName: true }))
+    .add(new RoomTrait({
+      exits: { [Direction.NORTH]: { destination: 'garden' } },
+    }));
+
+  // Create objects
+  const knife = world.createEntity('knife', EntityType.ITEM);
+  knife.add(new IdentityTrait({ name: 'knife', aliases: ['blade'] }));
+  world.moveEntity(knife.id, kitchen.id);
+
+  // Register capability behaviors (ADR-090)
+  registerCapabilityBehavior(
+    MyCustomTrait.type, 'if.action.pushing', MyPushBehavior
+  );
+
+  // Set starting location
+  const player = world.getPlayer();
+  if (player) world.moveEntity(player.id, kitchen.id);
+}</code></pre>
+        <p><strong>Tip:</strong> Use <code>AuthorModel</code> (wraps WorldModel) when placing objects inside closed containers during setup. It bypasses game rules that would block the operation.</p>
+      </article>
+
+      <article>
+        <h3>createPlayer()</h3>
+        <p>Called second. Configure the player entity with traits.</p>
+        <pre><code>createPlayer(world: WorldModel): IFEntity {
+  const player = world.getPlayer()!;
+  player
+    .add(new IdentityTrait({
+      name: 'yourself',
+      aliases: ['self', 'me'],
+      properName: true,
+    }))
+    .add(new ActorTrait({
+      isPlayer: true,
+      capacity: { maxItems: 15, maxWeight: 100 },
+    }))
+    .add(new CombatantTrait({
+      health: 100, maxHealth: 100,
+      skill: 50, baseDamage: 1,
+    }));
+  return player;
+}</code></pre>
+      </article>
+
+      <article>
+        <h3>Custom Actions</h3>
+        <p>Return an array of story-specific actions (verbs that don't exist in stdlib). Each action follows the four-phase pattern.</p>
+        <pre><code>getCustomActions(): Action[] {
+  return [ringAction, sayAction, prayAction];
+}
+
+// Example action
+const ringAction: Action = {
+  id: 'mystory.action.ring',
+  group: 'interaction',
+
+  validate(context: ActionContext) {
+    const bell = context.target;
+    if (!bell) return context.fail('ring.no_target');
+    return context.pass();
+  },
+  execute(context: ActionContext) {
+    context.sharedData.rang = true;
+    return context.succeed();
+  },
+  report(context: ActionContext) {
+    return [context.event('ring.success', { item: context.target })];
+  },
+  blocked(context: ActionContext, result) {
+    return [context.event(result.messageId)];
+  },
+};</code></pre>
+      </article>
+
+      <article>
+        <h3>extendParser() &amp; extendLanguage()</h3>
+        <p>Register grammar patterns for your custom verbs, and provide the message text.</p>
+        <pre><code>// Grammar
+extendParser(parser: Parser): void {
+  const grammar = parser.getStoryGrammar();
+
+  grammar
+    .define('ring :target')
+    .mapsTo('mystory.action.ring')
+    .withPriority(150)
+    .build();
+
+  grammar
+    .define('say :text')
+    .mapsTo('mystory.action.say')
+    .withPriority(150)
+    .build();
+}
+
+// Messages
+extendLanguage(language: LanguageProvider): void {
+  language.registerMessages({
+    'ring.no_target': 'Ring what?',
+    'ring.success': 'The {item} rings with a clear tone.',
+    'say.no_text': 'Say what?',
+  });
+}</code></pre>
+      </article>
+
+      <article>
+        <h3>onEngineReady()</h3>
+        <p>Called last, after the engine is fully initialized. Use this for interceptors, command transformers, daemons, and event handlers that need the engine reference.</p>
+        <pre><code>onEngineReady(engine: GameEngine): void {
+  // Register interceptors
+  engine.registerInterceptor({
+    actionId: 'if.action.going',
+    priority: 100,
+    preValidate(context) {
+      // Block going north from the bridge
+      if (context.room?.id === 'bridge' &amp;&amp;
+          context.direction === Direction.NORTH) {
+        return context.block('bridge.collapsed');
+      }
+    },
+  });
+
+  // Register parsed command transformers
+  engine.registerParsedCommandTransformer((parsed, world) => {
+    // Modify commands before execution
+    return parsed;
+  });
+
+  // Schedule daemons (timed events)
+  engine.getScheduler().scheduleDaemon({
+    id: 'flood-timer',
+    interval: 3,
+    callback: (world) => { /* flood logic */ },
+  });
+}</code></pre>
+      </article>
+
+      <article>
+        <h3>Story Export Pattern</h3>
+        <p>Your entry point must export either <code>story</code> or <code>default</code>.</p>
+        <pre><code>// stories/my-story/src/index.ts
+export class MyStory implements Story {
+  config = myConfig;
+  initializeWorld(world) { /* ... */ }
+  createPlayer(world) { /* ... */ }
+  // ...
+}
+
+export const story = new MyStory();
+export default story;</code></pre>
+      </article>
+
+      <article>
+        <h3>Story File Structure</h3>
+        <p>Recommended layout, organized by region:</p>
+        <pre><code>stories/my-story/
+  src/
+    index.ts                 # Story class, exports
+    version.ts               # Version info
+    regions/
+      forest.ts              # All rooms, objects for this region
+      castle/
+        index.ts             # Region exports
+        rooms/
+          throne-room.ts     # One file per room
+          dungeon.ts
+        objects/
+          index.ts           # Objects for this region
+    actions/
+      ring/
+        ring-action.ts       # Custom action
+        ring-messages.ts     # Messages for this action
+    npcs/
+      dragon/
+        dragon-entity.ts     # NPC creation
+        dragon-behavior.ts   # NPC AI
+    interceptors/
+      bridge-interceptor.ts  # Action interceptors
+    handlers/
+      flood-handler.ts       # Event handlers
+    grammar/
+      index.ts               # Grammar registration
+    messages/
+      region-messages.ts     # Region-specific messages
+  tests/
+    transcripts/             # Transcript test files
+  walkthroughs/              # Walkthrough chains</code></pre>
+      </article>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- LANGUAGE PACK -->
+    <!-- ============================================ -->
+    <section id="language">
+      <h2>Creating a Language Pack</h2>
+
+      <article>
+        <h3>Architecture</h3>
+        <p>A language pack has two independent halves:</p>
+        <table>
+          <thead>
+            <tr><th>Package</th><th>Responsibility</th><th>Example</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>parser-{locale}</code></td>
+              <td>Grammar patterns, tokenization, parsing</td>
+              <td><code>parser-en-us</code></td>
+            </tr>
+            <tr>
+              <td><code>lang-{locale}</code></td>
+              <td>Messages, vocabulary, linguistic operations</td>
+              <td><code>lang-en-us</code></td>
+            </tr>
+          </tbody>
+        </table>
+        <p>The parser depends on the language provider (passed in constructor). The language provider is independent of the parser. Both are registered with the engine at startup.</p>
+      </article>
+
+      <article>
+        <h3>The ParserLanguageProvider Interface</h3>
+        <p>Your language package must implement <code>ParserLanguageProvider</code> from <code>@sharpee/if-domain</code>.</p>
+        <pre><code>interface ParserLanguageProvider extends LanguageProvider {
+  readonly languageCode: string;   // e.g., 'es-ES'
+
+  // Message system
+  getMessage(messageId: string, params?: Record&lt;string, any&gt;): string;
+  hasMessage(messageId: string): boolean;
+
+  // Vocabulary
+  getVerbs(): VerbVocabulary[];
+  getDirections(): DirectionVocabulary[];
+  getSpecialVocabulary(): SpecialVocabulary;
+  getPrepositions(): string[];
+  getDeterminers(): string[];
+  getConjunctions(): string[];
+
+  // Linguistic operations
+  lemmatize(word: string): string;
+  pluralize(noun: string): string;
+  getIndefiniteArticle(noun: string): string;
+  formatList(items: string[], conjunction: 'and'|'or'): string;
+  isIgnoreWord(word: string): boolean;
+}</code></pre>
+      </article>
+
+      <article>
+        <h3>Message System</h3>
+        <p>Messages use hierarchical IDs with three types of placeholders:</p>
+        <pre><code>// Message ID format
+"if.action.taking.taken"     // stdlib action message
+"mystory.ring.success"       // story-specific message
+"if.error.dark_room"         // system error
+
+// Placeholder types:
+
+// 1. Perspective placeholders (resolved by narrative context)
+"{You} {take} {item}."
+//  2nd person: "You take the lamp."
+//  1st person: "I take the lamp."
+//  3rd person: "She takes the lamp."
+
+// 2. Formatter placeholders (apply formatting functions)
+"{a:item}"                   // Article: "a sword", "an amulet"
+"{items:list}"               // List: "a sword, a key, and a coin"
+
+// 3. Simple substitution
+"{item}"                     // Direct replacement: "the lamp"</code></pre>
+      </article>
+
+      <article>
+        <h3>Action Language Definitions</h3>
+        <p>Each stdlib action needs a language definition with messages, patterns, and help text. Create one file per action.</p>
+        <pre><code>// lang-es-es/src/actions/taking.ts
+export const tomarLanguage = {
+  actionId: 'if.action.taking',
+
+  patterns: [
+    'tomar [algo]',
+    'coger [algo]',
+    'agarrar [algo]',
+  ],
+
+  messages: {
+    'no_target': '&iquest;Tomar qu&eacute;?',
+    'taken': 'Tomado.',
+    'already_have': 'Ya {tienes} {item}.',
+    'cannot_take': 'No {puedes} tomar {item}.',
+    'taken_from': '{You} {tomar} {item} de {container}.',
+  },
+
+  help: {
+    description: 'Recoger objetos y a&ntilde;adirlos al inventario.',
+    examples: 'tomar libro, coger l&aacute;mpara',
+  },
+};</code></pre>
+        <p>You must provide definitions for all 54 standard actions. See <code>lang-en-us/src/actions/</code> for the complete list.</p>
+      </article>
+
+      <article>
+        <h3>Verb Vocabulary</h3>
+        <p>Map your language's verbs to action IDs:</p>
+        <pre><code>export const spanishVerbs: VerbDefinition[] = [
+  {
+    action: 'if.action.taking',
+    verbs: ['tomar', 'coger', 'agarrar'],
+    requiresObject: true,
+  },
+  {
+    action: 'if.action.looking',
+    verbs: ['mirar', 'ver', 'observar'],
+    requiresObject: false,
+  },
+  {
+    action: 'if.action.going',
+    verbs: ['ir', 'caminar', 'andar'],
+    requiresObject: false,
+  },
+  // ... all verbs
+];</code></pre>
+      </article>
+
+      <article>
+        <h3>Direction &amp; Special Vocabulary</h3>
+        <pre><code>// Directions
+export const spanishDirections: DirectionVocabulary[] = [
+  { direction: 'north', words: ['norte'], abbreviations: ['n'] },
+  { direction: 'south', words: ['sur'], abbreviations: ['s'] },
+  { direction: 'east',  words: ['este'], abbreviations: ['e'] },
+  { direction: 'west',  words: ['oeste'], abbreviations: ['o'] },
+  { direction: 'up',    words: ['arriba', 'subir'], abbreviations: ['ar'] },
+  { direction: 'down',  words: ['abajo', 'bajar'], abbreviations: ['ab'] },
+];
+
+// Special vocabulary
+export const spanishSpecial: SpecialVocabulary = {
+  articles: ['un', 'una', 'el', 'la', 'los', 'las'],
+  pronouns: ['lo', 'la', 'los', 'las', 'me', 'te'],
+  allWords: ['todo', 'todos', 'todas'],
+  exceptWords: ['excepto', 'menos', 'salvo'],
+};</code></pre>
+      </article>
+
+      <article>
+        <h3>Linguistic Operations</h3>
+        <p>These methods handle your language's morphology. They don't need to be perfect &mdash; reasonable defaults work for most cases.</p>
+        <pre><code>lemmatize(word: string): string {
+  // Spanish: remove verb conjugation suffixes
+  // "tomando" -> "tomar", "corrieron" -> "correr"
+  // Start simple, refine as needed
+}
+
+pluralize(noun: string): string {
+  // Spanish: add -s or -es
+  if (noun.endsWith('a') || noun.endsWith('o')) return noun + 's';
+  return noun + 'es';
+}
+
+getIndefiniteArticle(noun: string): string {
+  // Spanish: gender-based article selection
+  // This is language-specific complexity
+  return noun.endsWith('a') ? 'una' : 'un';
+}
+
+formatList(items: string[], conjunction: 'and'|'or'): string {
+  const conj = conjunction === 'and' ? 'y' : 'o';
+  if (items.length === 1) return items[0];
+  if (items.length === 2) return `${items[0]} ${conj} ${items[1]}`;
+  return items.slice(0, -1).join(', ') + ` ${conj} ` + items.at(-1);
+}</code></pre>
+      </article>
+
+      <article>
+        <h3>Perspective Resolution</h3>
+        <p>Support narrative perspective (1st/2nd/3rd person) by resolving perspective placeholders in your language.</p>
+        <pre><code>// Perspective placeholder mapping for Spanish
+const perspectiveMap = {
+  '1st': { '{You}': 'Yo', '{your}': 'mi', '{take}': 'tomo' },
+  '2nd': { '{You}': 'T&uacute;', '{your}': 'tu', '{take}': 'tomas' },
+  '3rd': { '{You}': '{subject}', '{your}': '{possessive}', '{take}': 'toma' },
+};
+
+// In your getMessage():
+function resolvePerspective(template: string, context: NarrativeContext): string {
+  const map = perspectiveMap[context.perspective];
+  for (const [placeholder, value] of Object.entries(map)) {
+    template = template.replaceAll(placeholder, value);
+  }
+  return template;
+}</code></pre>
+      </article>
+
+      <article>
+        <h3>Creating the Parser</h3>
+        <p>If your language needs custom parsing (word order, morphology), create a <code>parser-{locale}</code> package. Otherwise, you may be able to reuse the English parser with your vocabulary.</p>
+        <pre><code>// parser-es-es/src/spanish-parser.ts
+export class SpanishParser implements Parser {
+  constructor(private lang: ParserLanguageProvider) {
+    this.grammarEngine = new GrammarEngine(lang);
+  }
+
+  parse(input: string): CommandResult&lt;IParsedCommand, CoreParseError&gt; {
+    const tokens = this.tokenize(input);
+    // Spanish-specific: handle reflexive pronouns, verb position
+    return this.grammarEngine.match(tokens);
+  }
+}
+
+// Register with factory
+ParserFactory.registerParser('es-ES', SpanishParser);</code></pre>
+      </article>
+
+      <article>
+        <h3>Language Pack File Structure</h3>
+        <pre><code>packages/lang-es-es/
+  src/
+    index.ts                    # Public exports
+    language-provider.ts        # SpanishLanguageProvider class
+    actions/
+      index.ts                  # Aggregates all action definitions
+      taking.ts                 # One file per action (54 total)
+      looking.ts
+      going.ts
+      ...
+    data/
+      verbs.ts                  # Verb -> action mappings
+      words.ts                  # Articles, pronouns, nouns
+      messages.ts               # System messages
+    formatters/
+      article.ts                # {un:item} formatter
+      list.ts                   # {items:lista} formatter
+    perspective/
+      placeholder-resolver.ts   # {T&uacute;}, {tomar} resolution
+
+packages/parser-es-es/         # Optional
+  src/
+    index.ts
+    spanish-parser.ts
+    grammar.ts</code></pre>
+      </article>
+
+      <article>
+        <h3>Wiring Into the Engine</h3>
+        <pre><code>import { SpanishLanguageProvider } from '@sharpee/lang-es-es';
+import { ParserFactory } from '@sharpee/if-domain';
+
+const language = new SpanishLanguageProvider();
+const parser = ParserFactory.createParser('es-ES', language);
+
+const engine = new GameEngine({
+  world,
+  player,
+  parser,
+  language,
+  perceptionService,
+});</code></pre>
+      </article>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- CLIENT -->
+    <!-- ============================================ -->
+    <section id="client">
+      <h2>Building a Client</h2>
+
+      <article>
+        <h3>Client Role</h3>
+        <p>A client is anything that accepts user input, feeds it to the engine, and renders output. Sharpee ships three: CLI, Browser (DOM), and Zifmia. You can build your own for any platform: mobile, Slack bot, voice assistant, etc.</p>
+      </article>
+
+      <article>
+        <h3>The Minimal Client</h3>
+        <p>A working client needs three things: send input, receive text, handle save/restore.</p>
+        <pre><code>// 1. Create and start the engine
+const engine = new GameEngine({ world, player, parser, language });
+engine.setStory(story);
+engine.start();
+
+// 2. Listen for text output
+engine.on('text:output', (text: string, turn: number) =&gt; {
+  display(text);  // Your rendering logic
+});
+
+// 3. Send player input
+async function onPlayerInput(input: string) {
+  const result = await engine.executeTurn(input);
+  // result.events contains all events from this turn
+  // result.textBlocks contains structured text output
+}
+
+// 4. Register save/restore hooks
+engine.registerSaveRestoreHooks({
+  onSaveRequested: async (saveData) =&gt; {
+    localStorage.setItem('save', JSON.stringify(saveData));
+  },
+  onRestoreRequested: async () =&gt; {
+    return JSON.parse(localStorage.getItem('save'));
+  },
+});</code></pre>
+      </article>
+
+      <article>
+        <h3>Engine Events</h3>
+        <p>The engine emits several event types your client can listen for:</p>
+        <table>
+          <thead>
+            <tr><th>Event</th><th>Payload</th><th>Use For</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>text:output</code></td>
+              <td><code>(text: string, turn: number)</code></td>
+              <td>Main text display</td>
+            </tr>
+            <tr>
+              <td><code>event</code></td>
+              <td><code>(event: SequencedEvent)</code></td>
+              <td>React to specific game events (score changes, deaths, sounds)</td>
+            </tr>
+            <tr>
+              <td><code>state:changed</code></td>
+              <td><code>(context: GameContext)</code></td>
+              <td>Update status line, minimap, inventory panel</td>
+            </tr>
+            <tr>
+              <td><code>game:started</code></td>
+              <td>&mdash;</td>
+              <td>Show initial UI, enable input</td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article>
+        <h3>Text Blocks</h3>
+        <p>For richer rendering, use text blocks instead of raw strings. Blocks are semantic channels with decorated content.</p>
+        <pre><code>interface ITextBlock {
+  readonly key: string;             // Semantic channel
+  readonly content: TextContent[];  // Strings + decorations
+}
+
+// Block keys (channels):
+'room.name'         // Room title
+'room.description'  // Full room description
+'room.contents'     // Visible objects
+'action.result'     // Action output
+'action.blocked'    // Why action failed
+'status.room'       // Status bar: location
+'status.score'      // Status bar: score
+'status.turns'      // Status bar: turn count
+'game.banner'       // Game title/version
+'error'             // Error messages</code></pre>
+        <p>Decorations provide semantic markup for styling:</p>
+        <pre><code>interface IDecoration {
+  readonly type: string;          // 'em', 'item', 'room', 'npc', etc.
+  readonly content: TextContent[];
+}
+
+// Decoration types:
+'em'          // Emphasis (italic)
+'strong'      // Bold
+'item'        // Game object name
+'room'        // Room name
+'npc'         // NPC name
+'command'     // Player command
+'direction'   // Compass direction</code></pre>
+      </article>
+
+      <article>
+        <h3>Custom Rendering</h3>
+        <p>Route text blocks by key to different UI areas. This is the FyreVM channel pattern.</p>
+        <pre><code>function renderBlocks(blocks: ITextBlock[]) {
+  for (const block of blocks) {
+    switch (block.key) {
+      case 'room.name':
+        titleBar.textContent = blockToString(block);
+        break;
+      case 'room.description':
+      case 'room.contents':
+      case 'action.result':
+      case 'action.blocked':
+        transcript.append(blockToHtml(block));
+        break;
+      case 'status.score':
+        scoreDisplay.textContent = blockToString(block);
+        break;
+    }
+  }
+}
+
+function blockToHtml(block: ITextBlock): HTMLElement {
+  const div = document.createElement('div');
+  div.className = `block-${block.key.replace('.', '-')}`;
+  for (const content of block.content) {
+    if (typeof content === 'string') {
+      div.append(content);
+    } else {
+      const span = document.createElement('span');
+      span.className = `dec-${content.type}`;
+      span.textContent = contentToString(content.content);
+      div.append(span);
+    }
+  }
+  return div;
+}</code></pre>
+      </article>
+
+      <article>
+        <h3>Platform Operations</h3>
+        <p>Handle meta-commands (save, restore, quit, restart, undo) through the hook system. These are out-of-turn operations &mdash; they don't increment the turn counter or trigger NPC actions.</p>
+        <pre><code>engine.registerSaveRestoreHooks({
+  // Called when player types SAVE
+  onSaveRequested: async (saveData) =&gt; {
+    // saveData contains serialized world state
+    await myStorage.save(saveData);
+  },
+
+  // Called when player types RESTORE
+  onRestoreRequested: async () =&gt; {
+    return await myStorage.load();
+  },
+
+  // Called when player types QUIT (return true to allow)
+  onQuitRequested: async (context) =&gt; {
+    return confirm('Really quit?');
+  },
+
+  // Called when player types RESTART (return true to allow)
+  onRestartRequested: async (context) =&gt; {
+    return confirm('Restart from the beginning?');
+  },
+});</code></pre>
+      </article>
+
+      <article>
+        <h3>Disambiguation</h3>
+        <p>When the parser can't resolve an ambiguous reference (e.g., "take cake" when there are four cakes), the engine asks the client to disambiguate.</p>
+        <pre><code>// The engine will emit a client.query event
+engine.on('event', (event) =&gt; {
+  if (event.type === 'client.query') {
+    // event.data.options = ['blue cake', 'red cake', 'orange cake']
+    // Show UI for player to pick one
+    const choice = showDisambiguationUI(event.data.options);
+    engine.resolveQuery(choice);
+  }
+});</code></pre>
+      </article>
+
+      <article>
+        <h3>Client File Structure</h3>
+        <pre><code>packages/my-client/
+  src/
+    index.ts              # Public API
+    my-client.ts          # Main client class
+    renderer.ts           # Text block rendering
+    input-handler.ts      # Input capture
+    storage.ts            # Save/restore persistence
+    ui/
+      status-line.ts      # Status bar component
+      transcript.ts       # Text display area
+      input-field.ts      # Command input</code></pre>
+      </article>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- TEXT SERVICE -->
+    <!-- ============================================ -->
+    <section id="text-service">
+      <h2>Customizing the Text Service</h2>
+
+      <article>
+        <h3>What the Text Service Does</h3>
+        <p>The text service is a pure pipeline that transforms semantic events into structured text blocks. It has four stages:</p>
+        <pre><code>Events &rarr; Filter &rarr; Sort &rarr; Route &rarr; Assemble &rarr; ITextBlock[]
+
+1. Filter   Remove system/platform events, keep user-facing ones
+2. Sort     Order events for natural prose flow
+3. Route    Send each event to the appropriate handler
+4. Assemble Parse decorations, create text blocks</code></pre>
+      </article>
+
+      <article>
+        <h3>Event Handlers</h3>
+        <p>The router dispatches events to handler functions based on event type. Built-in handlers cover standard actions; you can add custom ones.</p>
+        <pre><code>// Built-in handler routing
+switch (event.type) {
+  case 'action.success':    return handleActionSuccess(event, ctx);
+  case 'action.blocked':    return handleActionBlocked(event, ctx);
+  case 'if.event.room.description': return handleRoom(event, ctx);
+  case 'game.started':      return handleGameStarted(event, ctx);
+  case 'if.event.revealed': return handleRevealed(event, ctx);
+  default:                  return handleGeneric(event, ctx);
+}
+
+// Handler context provides:
+interface HandlerContext {
+  languageProvider: LanguageProvider;  // For message lookup
+  world: WorldModel;                  // For entity queries
+  textService: TextService;           // For helper methods
+}</code></pre>
+      </article>
+
+      <article>
+        <h3>Custom Event Handlers</h3>
+        <p>Register handlers for story-specific events to control exactly how they render.</p>
+        <pre><code>// Register a custom handler
+textService.registerHandler('mystory.event.bell_ring', (event, ctx) =&gt; {
+  const message = ctx.languageProvider.getMessage(
+    'mystory.bell.ring_echo',
+    { location: event.data.roomName }
+  );
+
+  return [{
+    key: 'action.result',
+    content: [
+      message,
+      { type: 'em', content: ['The echo fades into silence.'] },
+    ],
+  }];
+});
+
+// Handler for combat events with rich formatting
+textService.registerHandler('mystory.event.combat', (event, ctx) =&gt; {
+  const { attacker, defender, damage } = event.data;
+  return [{
+    key: 'action.result',
+    content: [
+      { type: 'npc', content: [attacker] },
+      ` strikes `,
+      { type: 'npc', content: [defender] },
+      ` for ${damage} damage!`,
+    ],
+  }];
+});</code></pre>
+      </article>
+
+      <article>
+        <h3>Custom Text Block Keys</h3>
+        <p>You can define custom block keys for specialized UI channels. Clients route blocks by key, so new keys enable new display areas.</p>
+        <pre><code>// Story defines custom channels
+return [{
+  key: 'mystory.combat.log',      // Combat sidebar
+  content: ['Troll attacks! -15 HP'],
+}, {
+  key: 'mystory.puzzle.hint',      // Hint panel
+  content: ['The inscription glows faintly.'],
+}];
+
+// Client routes them
+function renderBlock(block: ITextBlock) {
+  if (block.key.startsWith('mystory.combat')) {
+    combatPanel.append(blockToHtml(block));
+  } else if (block.key.startsWith('mystory.puzzle')) {
+    hintPanel.append(blockToHtml(block));
+  } else {
+    transcript.append(blockToHtml(block));
+  }
+}</code></pre>
+      </article>
+
+      <article>
+        <h3>Custom Decoration Types</h3>
+        <p>Stories can emit decorations with custom types. Clients map types to styling.</p>
+        <pre><code>// Story emits custom decoration
+return [{
+  key: 'action.result',
+  content: [
+    { type: 'mystory.magic', content: ['The spell takes hold.'] },
+    { type: 'mystory.damage', content: ['-15 HP'] },
+  ],
+}];
+
+// Client CSS
+.dec-mystory-magic { color: #9b59b6; font-style: italic; }
+.dec-mystory-damage { color: #e74c3c; font-weight: bold; }</code></pre>
+      </article>
+
+      <article>
+        <h3>CLI vs Browser Rendering</h3>
+        <p>The text service produces the same <code>ITextBlock[]</code> regardless of client. Renderers adapt blocks to their medium.</p>
+        <table>
+          <thead>
+            <tr><th>Feature</th><th>CLI Renderer</th><th>Browser Renderer</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Emphasis</td>
+              <td>ANSI italic <code>\x1b[3m</code></td>
+              <td><code>&lt;em&gt;</code></td>
+            </tr>
+            <tr>
+              <td>Bold</td>
+              <td>ANSI bold <code>\x1b[1m</code></td>
+              <td><code>&lt;strong&gt;</code></td>
+            </tr>
+            <tr>
+              <td>Items</td>
+              <td>No styling</td>
+              <td><code>&lt;span class="item"&gt;</code></td>
+            </tr>
+            <tr>
+              <td>Custom</td>
+              <td>Plain text fallback</td>
+              <td>CSS class from type</td>
+            </tr>
+            <tr>
+              <td>Block separator</td>
+              <td><code>\n\n</code></td>
+              <td><code>&lt;div&gt;</code> elements</td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- PUTTING IT ALL TOGETHER -->
+    <!-- ============================================ -->
+    <section id="assembly">
+      <h2>Putting It All Together</h2>
+
+      <article>
+        <h3>Full Bootstrap Example</h3>
+        <p>This is the complete wiring to start a game from scratch, connecting all four extension points.</p>
+        <pre><code>import { WorldModel, EntityType } from '@sharpee/world-model';
+import { GameEngine } from '@sharpee/engine';
+import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
+import { ParserFactory } from '@sharpee/if-domain';
+import { PerceptionService } from '@sharpee/stdlib';
+import { story } from '@sharpee/my-story';
+
+// 1. Create core services
+const world = new WorldModel();
+const player = world.createEntity('player', EntityType.ACTOR);
+world.setPlayer(player.id);
+
+const language = new EnglishLanguageProvider();
+const parser = ParserFactory.createParser('en-US', language);
+const perceptionService = new PerceptionService();
+
+// 2. Create engine (wires everything together)
+const engine = new GameEngine({
+  world,
+  player,
+  parser,
+  language,
+  perceptionService,
+});
+
+// 3. Load story (calls all lifecycle hooks)
+engine.setStory(story);
+
+// 4. Connect client
+engine.on('text:output', (text, turn) =&gt; {
+  console.log(text);
+});
+
+engine.registerSaveRestoreHooks({
+  onSaveRequested: async (data) =&gt; { /* persist */ },
+  onRestoreRequested: async () =&gt; { /* retrieve */ },
+});
+
+// 5. Start the game
+engine.start();
+
+// 6. Game loop
+const readline = require('readline');
+const rl = readline.createInterface({ input: process.stdin });
+rl.on('line', async (input) =&gt; {
+  await engine.executeTurn(input.trim());
+});</code></pre>
+      </article>
+    </section>
+
+    <!-- See Also -->
+    <section id="see-also">
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="entities.html">Entities</a> &mdash; entity creation, traits, serialization</li>
+        <li><a href="world.html">World Model</a> &mdash; spatial relationships, state management</li>
+        <li><a href="actions-overview.html">Actions</a> &mdash; the four-phase action pattern</li>
+        <li><a href="capabilities.html">Capabilities</a> &mdash; capability dispatch and interceptors</li>
+        <li><a href="events.html">Events</a> &mdash; event chains, perception filtering</li>
+        <li><a href="authoring.html">Authoring Guide</a> &mdash; story author quickstart</li>
+      </ul>
+    </section>
+  </main>
+  <script src="js/docs.js"></script>
+</body>
+</html>

@@ -36,6 +36,7 @@ export { registerTrollRecoveryDaemon, isTrollRecoveryActive, getTrollState } fro
 export { registerSwordGlowDaemon, getSwordGlowState, resetSwordGlowState, SwordGlowMessages } from './sword-glow-daemon';
 export { registerCagePoisonDaemon, CAGE_POISON_DAEMON_ID } from './cage-poison-daemon';
 export { registerCureDaemon, CURE_DAEMON_ID } from './cure-daemon';
+export { startExplosionCountdown, EXPLOSION_FUSE_ID, type ExplosionConfig } from './explosion-fuse';
 
 import { WorldModel } from '@sharpee/world-model';
 import { ISchedulerService } from '@sharpee/plugin-scheduler';
@@ -46,7 +47,7 @@ import { registerForestAmbienceDaemon } from './forest-daemon';
 import { registerBankAlarmDaemon } from './bank-alarm-daemon';
 import { registerIncenseFuse } from './incense-fuse';
 import { registerBalloonDaemon } from './balloon-daemon';
-import { registerBurnDaemon } from '../handlers/balloon-handler';
+import { registerBurnDaemon, setBalloonHandlerIds } from '../handlers/balloon-handler';
 import { registerSwordGlowDaemon } from './sword-glow-daemon';
 import { ForestRoomIds } from '../regions/forest';
 import { DamRoomIds } from '../regions/dam';
@@ -100,6 +101,7 @@ export function registerScheduledEvents(
   // Register balloon movement daemon (if balloon exists)
   if (balloonIds) {
     registerBalloonDaemon(scheduler, world, balloonIds.balloonId, balloonIds.receptacleId);
+    setBalloonHandlerIds(balloonIds.balloonId, balloonIds.receptacleId);
   }
 
   // Register burn daemon (handles burn timer for all flammable objects)

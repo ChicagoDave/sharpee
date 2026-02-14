@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Object Handling Actions - Sharpee API</title>
+  <link rel="stylesheet" href="css/pico.min.css">
+  <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <main>
+    <header>
+      <hgroup>
+        <h1>Object Handling Actions</h1>
+        <p>Taking, dropping, putting, inserting, removing, giving, and throwing</p>
+      </hgroup>
+      <nav aria-label="breadcrumb">
+        <a href="index.html">API</a>
+        <span class="separator">/</span>
+        <a href="actions-overview.html">Actions</a>
+        <span class="separator">/</span>
+        Object Handling
+      </nav>
+    </header>
+
+    <!-- Quick Reference Table -->
+    <section class="quick-ref">
+      <h2>Quick Reference</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Action</th>
+            <th>ID</th>
+            <th>Required Traits</th>
+            <th>Slots</th>
+            <th>Group</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="#taking">Taking</a></td>
+            <td><code>if.action.taking</code></td>
+            <td>None (items portable by default)</td>
+            <td>direct object</td>
+            <td><code>object_manipulation</code></td>
+          </tr>
+          <tr>
+            <td><a href="#dropping">Dropping</a></td>
+            <td><code>if.action.dropping</code></td>
+            <td>None</td>
+            <td>direct object</td>
+            <td><code>object_manipulation</code></td>
+          </tr>
+          <tr>
+            <td><a href="#putting">Putting</a></td>
+            <td><code>if.action.putting</code></td>
+            <td><code>ContainerTrait</code> or <code>SupporterTrait</code> on target</td>
+            <td>direct + indirect object</td>
+            <td><code>object_manipulation</code></td>
+          </tr>
+          <tr>
+            <td><a href="#inserting">Inserting</a></td>
+            <td><code>if.action.inserting</code></td>
+            <td><code>ContainerTrait</code> on target</td>
+            <td>direct + indirect object</td>
+            <td><code>object_manipulation</code></td>
+          </tr>
+          <tr>
+            <td><a href="#removing">Removing</a></td>
+            <td><code>if.action.removing</code></td>
+            <td><code>ContainerTrait</code> or <code>SupporterTrait</code> on source</td>
+            <td>direct + indirect object</td>
+            <td><code>object_manipulation</code></td>
+          </tr>
+          <tr>
+            <td><a href="#giving">Giving</a></td>
+            <td><code>if.action.giving</code></td>
+            <td><code>ActorTrait</code> on recipient</td>
+            <td>direct + indirect object</td>
+            <td><code>social</code></td>
+          </tr>
+          <tr>
+            <td><a href="#throwing">Throwing</a></td>
+            <td><code>if.action.throwing</code></td>
+            <td>None</td>
+            <td>direct + indirect object (or direction)</td>
+            <td><code>interaction</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Taking -->
+    <section id="taking">
+      <h2>Taking</h2>
+      <p>Picks up objects and moves them to the player's inventory. Items are portable by default in Sharpee &mdash; use <code>SceneryTrait</code> to make things non-portable. Supports multi-object commands like <code>take all</code>, <code>take all but lamp</code>, and <code>take sword and shield</code>.</p>
+
+      <article>
+        <h3>Action ID</h3>
+        <p><code>if.action.taking</code></p>
+
+        <h3>Grammar Patterns</h3>
+        <pre><code>// Action-centric (ADR-087)
+grammar.forAction('if.action.taking')
+  .verbs(['take', 'get', 'grab'])
+  .pattern(':item')
+  .build();
+
+// Phrasal verb
+grammar.define('pick up :item')
+  .mapsTo('if.action.taking')
+  .withPriority(100)
+  .build();</code></pre>
+
+        <h3>Scope Requirements</h3>
+        <table>
+          <thead><tr><th>Slot</th><th>Scope Level</th></tr></thead>
+          <tbody>
+            <tr><td><code>target</code> (direct object)</td><td><code>REACHABLE</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Validation Checks</h3>
+        <ol>
+          <li>Entity interceptor pre-validate hook (ADR-118)</li>
+          <li>Item must be in <code>REACHABLE</code> scope</li>
+          <li>Cannot take yourself</li>
+          <li>Cannot take something already carried</li>
+          <li>Cannot take rooms</li>
+          <li>Cannot take scenery (blocked by <code>SceneryTrait</code>)</li>
+          <li>Entity interceptor post-validate hook</li>
+          <li>Actor inventory capacity (item count and weight limits)</li>
+        </ol>
+
+        <h3>Mutation</h3>
+        <p>Calls <code>world.moveEntity(item.id, actor.id)</code> to transfer the item into the player's inventory. If the item has <code>WearableTrait</code> and is currently worn, it is implicitly removed first via <code>WearableBehavior.remove()</code>. Awards score points if the item's <code>IdentityTrait</code> has a <code>points</code> property.</p>
+
+        <h3>Events</h3>
+        <table>
+          <thead><tr><th>Event</th><th>When</th></tr></thead>
+          <tbody>
+            <tr><td><code>if.event.taken</code></td><td>Item successfully taken</td></tr>
+            <tr><td><code>if.event.removed</code></td><td>Worn item implicitly removed before taking</td></tr>
+            <tr><td><code>if.event.take_blocked</code></td><td>Validation failed</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article>
+        <details>
+          <summary>Author example: making an item non-portable</summary>
+          <pre><code>import { SceneryTrait } from '@sharpee/world-model';
+
+// The fountain is scenery - "take fountain" will be blocked
+const fountain = world.createEntity('fountain', 'object');
+fountain.add(new SceneryTrait({
+  cantTakeMessage: 'The fountain is far too heavy to lift.'
+}));</code></pre>
+          <p>If no custom message is set, the default "fixed in place" message is used.</p>
+        </details>
+
+        <details>
+          <summary>Author example: blocking take with an interceptor</summary>
+          <pre><code>// A white-hot axe that can't be taken while the guardian lives
+import { registerInterceptor } from '@sharpee/world-model';
+
+registerInterceptor(axeEntity, 'if.action.taking', {
+  preValidate(entity, world, actorId, data) {
+    if (guardianIsAlive(world)) {
+      return {
+        valid: false,
+        error: 'The axe is white-hot! You burn your hand.'
+      };
+    }
+    return null; // allow standard validation
+  }
+});</code></pre>
+        </details>
+      </article>
+    </section>
+
+    <!-- Dropping -->
+    <section id="dropping">
+      <h2>Dropping</h2>
+      <p>Puts down a held object, moving it from inventory to the player's current location. Supports multi-object commands like <code>drop all</code> and <code>drop all but lamp</code>.</p>
+
+      <article>
+        <h3>Action ID</h3>
+        <p><code>if.action.dropping</code></p>
+
+        <h3>Grammar Patterns</h3>
+        <pre><code>// Action-centric (ADR-087)
+grammar.forAction('if.action.dropping')
+  .verbs(['drop', 'discard'])
+  .pattern(':item')
+  .build();
+
+// Phrasal verb
+grammar.define('put down :item')
+  .mapsTo('if.action.dropping')
+  .withPriority(100)
+  .build();</code></pre>
+
+        <h3>Scope Requirements</h3>
+        <table>
+          <thead><tr><th>Slot</th><th>Scope Level</th></tr></thead>
+          <tbody>
+            <tr><td><code>item</code> (direct object)</td><td><code>CARRIED</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Validation Checks</h3>
+        <ol>
+          <li>Entity interceptor pre-validate hook (ADR-118)</li>
+          <li>Item must be held (<code>ActorBehavior.isHolding()</code>)</li>
+          <li>Item must not be currently worn (<code>WearableBehavior.isWorn()</code>)</li>
+          <li>Drop location must exist and be able to accept the item</li>
+          <li>Entity interceptor post-validate hook</li>
+        </ol>
+
+        <h3>Mutation</h3>
+        <p>Calls <code>ActorBehavior.dropItem()</code> to release the item, then <code>world.moveEntity(item.id, dropLocation)</code> to place it in the player's current room. The drop location is determined by the player's current position.</p>
+
+        <h3>Events</h3>
+        <table>
+          <thead><tr><th>Event</th><th>When</th></tr></thead>
+          <tbody>
+            <tr><td><code>if.event.dropped</code></td><td>Item successfully dropped</td></tr>
+            <tr><td><code>if.event.drop_blocked</code></td><td>Validation failed</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article>
+        <details>
+          <summary>Message variants</summary>
+          <p>The dropping action selects a message based on context:</p>
+          <table>
+            <thead><tr><th>Message ID</th><th>When used</th></tr></thead>
+            <tbody>
+              <tr><td><code>dropped</code></td><td>Standard drop to room floor</td></tr>
+              <tr><td><code>dropped_in</code></td><td>Dropped into a container</td></tr>
+              <tr><td><code>dropped_on</code></td><td>Dropped onto a supporter</td></tr>
+              <tr><td><code>dropped_multi</code></td><td>Compact format for multi-object drops</td></tr>
+              <tr><td><code>dropped_quietly</code></td><td>Glass/fragile items</td></tr>
+              <tr><td><code>dropped_carelessly</code></td><td>When verb is "discard"</td></tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+    </section>
+
+    <!-- Putting -->
+    <section id="putting">
+      <h2>Putting</h2>
+      <p>Places objects into containers or onto supporters. Automatically determines the relationship based on the target's traits and any preposition the player used. Supports implicit take &mdash; <code>put apple in box</code> works even if the apple is on the ground. Supports multi-object commands like <code>put all in box</code>.</p>
+
+      <article>
+        <h3>Action ID</h3>
+        <p><code>if.action.putting</code></p>
+
+        <h3>Grammar Patterns</h3>
+        <pre><code>// Put on supporter
+grammar.define('put :item on|onto :supporter')
+  .hasTrait('supporter', TraitType.SUPPORTER)
+  .mapsTo('if.action.putting')
+  .withPriority(100)
+  .build();
+
+// Hang on hook (variant)
+grammar.define('hang :item on :hook')
+  .mapsTo('if.action.putting')
+  .withPriority(110)
+  .build();</code></pre>
+        <p><strong>Note:</strong> <code>put :item in|into|inside :container</code> maps to <code>if.action.inserting</code>, which delegates to putting internally with the <code>'in'</code> preposition.</p>
+
+        <h3>Scope Requirements</h3>
+        <table>
+          <thead><tr><th>Slot</th><th>Scope Level</th></tr></thead>
+          <tbody>
+            <tr><td><code>item</code> (direct object)</td><td><code>REACHABLE</code> (implicit take enabled)</td></tr>
+            <tr><td><code>target</code> (indirect object)</td><td><code>REACHABLE</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Validation Checks</h3>
+        <ol>
+          <li>Entity interceptor pre-validate hook (ADR-118, on the <em>target</em>)</li>
+          <li>Item must be carried or implicitly takeable (<code>requireCarriedOrImplicitTake</code>)</li>
+          <li>Cannot put an item inside/on itself</li>
+          <li>Item must not already be in/on the target</li>
+          <li>Target must have <code>ContainerTrait</code> (for "in") or <code>SupporterTrait</code> (for "on")</li>
+          <li>Container must be open (checked via <code>OpenableBehavior.isOpen()</code>)</li>
+          <li>Container/supporter must have capacity (<code>ContainerBehavior.canAccept()</code> / <code>SupporterBehavior.canAccept()</code>)</li>
+          <li>Entity interceptor post-validate hook</li>
+        </ol>
+
+        <h3>Mutation</h3>
+        <p>Delegates to <code>ContainerBehavior.addItem()</code> or <code>SupporterBehavior.addItem()</code> depending on the resolved preposition, then calls <code>world.moveEntity(item.id, target.id)</code>.</p>
+
+        <h3>Events</h3>
+        <table>
+          <thead><tr><th>Event</th><th>When</th></tr></thead>
+          <tbody>
+            <tr><td><code>if.event.put_in</code></td><td>Item placed in a container</td></tr>
+            <tr><td><code>if.event.put_on</code></td><td>Item placed on a supporter</td></tr>
+            <tr><td><code>if.event.put_blocked</code></td><td>Validation failed</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article>
+        <details>
+          <summary>Preposition resolution logic</summary>
+          <p>The putting action resolves the preposition as follows:</p>
+          <ol>
+            <li>If the player specified a preposition (<code>in</code>, <code>into</code>, <code>inside</code>, <code>on</code>, <code>onto</code>), use it if the target has the matching trait.</li>
+            <li>If no preposition was given, auto-determine: prefer <code>ContainerTrait</code> ("in") over <code>SupporterTrait</code> ("on").</li>
+            <li>If the preposition and target trait don't match (e.g., "put X in table" where table is a supporter), validation fails with <code>not_container</code> or <code>not_surface</code>.</li>
+          </ol>
+        </details>
+
+        <details>
+          <summary>Author example: container with capacity limit</summary>
+          <pre><code>import { ContainerTrait, OpenableTrait } from '@sharpee/world-model';
+
+const chest = world.createEntity('wooden chest', 'object');
+chest.add(new ContainerTrait({
+  capacity: { maxItems: 5, maxWeight: 50 }
+}));
+chest.add(new OpenableTrait({ isOpen: false }));
+
+// Player must OPEN CHEST before PUT SWORD IN CHEST</code></pre>
+        </details>
+
+        <details>
+          <summary>Author example: interceptor on a container</summary>
+          <pre><code>// React when treasure is placed in the trophy case
+import { registerInterceptor } from '@sharpee/world-model';
+
+registerInterceptor(trophyCase, 'if.action.putting', {
+  postExecute(entity, world, actorId, data) {
+    // Award points when treasure is placed in the case
+    const item = world.getEntity(data.itemId);
+    const identity = item?.getTrait('identity');
+    if (identity?.trophyCaseValue) {
+      world.awardScore(data.itemId, identity.trophyCaseValue,
+        'Placed in trophy case');
+    }
+  }
+});</code></pre>
+        </details>
+      </article>
+    </section>
+
+    <!-- Inserting -->
+    <section id="inserting">
+      <h2>Inserting</h2>
+      <p>Container-specific variant of putting. Handles <code>put X in Y</code>, <code>insert X in Y</code>, and similar patterns. Delegates entirely to the putting action with the preposition forced to <code>'in'</code>. This ensures consistent container validation and behavior.</p>
+
+      <article>
+        <h3>Action ID</h3>
+        <p><code>if.action.inserting</code></p>
+
+        <h3>Grammar Patterns</h3>
+        <pre><code>grammar.define('put :item in|into|inside :container')
+  .hasTrait('container', TraitType.CONTAINER)
+  .mapsTo('if.action.inserting')
+  .withPriority(100)
+  .build();
+
+grammar.define('insert :item in|into :container')
+  .hasTrait('container', TraitType.CONTAINER)
+  .mapsTo('if.action.inserting')
+  .withPriority(100)
+  .build();</code></pre>
+
+        <h3>Scope Requirements</h3>
+        <table>
+          <thead><tr><th>Slot</th><th>Scope Level</th></tr></thead>
+          <tbody>
+            <tr><td><code>item</code> (direct object)</td><td><code>REACHABLE</code> (implicit take enabled)</td></tr>
+            <tr><td><code>container</code> (indirect object)</td><td><code>REACHABLE</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Delegation Pattern</h3>
+        <p>The inserting action creates a modified <code>ActionContext</code> with the preposition set to <code>'in'</code> and delegates all four phases to <code>puttingAction</code>. This means all putting validation checks (open container, capacity, interceptors) apply automatically. The inserting action emits <code>if.event.put_in</code> events through the putting action's report phase.</p>
+
+        <h3>Events</h3>
+        <table>
+          <thead><tr><th>Event</th><th>When</th></tr></thead>
+          <tbody>
+            <tr><td><code>if.event.put_in</code></td><td>Item inserted into container (via putting delegation)</td></tr>
+            <tr><td><code>if.event.insert_blocked</code></td><td>Validation failed</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article>
+        <details>
+          <summary>Why inserting and putting are separate actions</summary>
+          <p>The grammar distinguishes <code>put X in Y</code> (inserting, requires container) from <code>put X on Y</code> (putting, requires supporter). The parser uses the <code>hasTrait</code> constraint to route the command to the correct action. Internally, inserting delegates to putting, but the separation allows the parser to give better error messages when the target lacks the expected trait.</p>
+        </details>
+      </article>
+    </section>
+
+    <!-- Removing -->
+    <section id="removing">
+      <h2>Removing</h2>
+      <p>Takes objects out of containers or off surfaces and moves them to the player's inventory. This is a targeted form of taking where the source container or supporter is explicit. Supports multi-object commands like <code>remove all from box</code>.</p>
+
+      <article>
+        <h3>Action ID</h3>
+        <p><code>if.action.removing</code></p>
+
+        <h3>Grammar Patterns</h3>
+        <p>Removing is triggered by language-layer patterns:</p>
+        <pre><code>// Recognized patterns (from lang-en-us):
+// remove [something] from [something]
+// take [something] from [something]
+// take [something] out of [something]
+// get [something] from [something]
+// extract [something] from [something]</code></pre>
+
+        <h3>Scope Requirements</h3>
+        <table>
+          <thead><tr><th>Slot</th><th>Scope Level</th></tr></thead>
+          <tbody>
+            <tr><td><code>item</code> (direct object)</td><td><code>REACHABLE</code></td></tr>
+            <tr><td><code>source</code> (indirect object)</td><td><code>REACHABLE</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Validation Checks</h3>
+        <ol>
+          <li>Player must not already be holding the item</li>
+          <li>Item must actually be located in/on the source</li>
+          <li>If source is a container with <code>OpenableTrait</code>, it must be open</li>
+          <li>Player must have inventory capacity to take the item (<code>ActorBehavior.canTakeItem()</code>)</li>
+        </ol>
+
+        <h3>Mutation</h3>
+        <p>Removes the item from the source using the appropriate behavior (<code>ContainerBehavior.removeItem()</code> or <code>SupporterBehavior.removeItem()</code>), then adds it to the player's inventory via <code>ActorBehavior.takeItem()</code> and <code>world.moveEntity(item.id, actor.id)</code>.</p>
+
+        <h3>Events</h3>
+        <table>
+          <thead><tr><th>Event</th><th>When</th></tr></thead>
+          <tbody>
+            <tr><td><code>if.event.taken</code></td><td>Item removed from source and taken (semantically a form of taking)</td></tr>
+            <tr><td><code>if.event.remove_blocked</code></td><td>Validation failed</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article>
+        <details>
+          <summary>Message variants</summary>
+          <table>
+            <thead><tr><th>Message ID</th><th>When used</th></tr></thead>
+            <tbody>
+              <tr><td><code>removed_from</code></td><td>Item removed from a container</td></tr>
+              <tr><td><code>removed_from_surface</code></td><td>Item removed from a supporter</td></tr>
+              <tr><td><code>not_in_container</code></td><td>Item not found in the specified container</td></tr>
+              <tr><td><code>not_on_surface</code></td><td>Item not found on the specified surface</td></tr>
+              <tr><td><code>container_closed</code></td><td>Source container is closed</td></tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+    </section>
+
+    <!-- Giving -->
+    <section id="giving">
+      <h2>Giving</h2>
+      <p>Transfers an item from the player to an NPC or other actor. The recipient must have <code>ActorTrait</code>. NPCs can express preferences about items they like, dislike, or refuse, which affects the acceptance message. Supports implicit take &mdash; <code>give apple to bob</code> works even if the apple is on the ground.</p>
+
+      <article>
+        <h3>Action ID</h3>
+        <p><code>if.action.giving</code></p>
+
+        <h3>Grammar Patterns</h3>
+        <pre><code>grammar.define('give :item to :recipient')
+  .hasTrait('recipient', TraitType.ACTOR)
+  .mapsTo('if.action.giving')
+  .withPriority(100)
+  .build();
+
+grammar.define('give :recipient :item')
+  .hasTrait('recipient', TraitType.ACTOR)
+  .mapsTo('if.action.giving')
+  .withPriority(95)
+  .build();
+
+grammar.define('offer :item to :recipient')
+  .hasTrait('recipient', TraitType.ACTOR)
+  .mapsTo('if.action.giving')
+  .withPriority(100)
+  .build();</code></pre>
+
+        <h3>Scope Requirements</h3>
+        <table>
+          <thead><tr><th>Slot</th><th>Scope Level</th></tr></thead>
+          <tbody>
+            <tr><td><code>item</code> (direct object)</td><td><code>REACHABLE</code> (implicit take enabled)</td></tr>
+            <tr><td><code>recipient</code> (indirect object)</td><td><code>REACHABLE</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Validation Checks</h3>
+        <ol>
+          <li>Item must be carried or implicitly takeable (<code>requireCarriedOrImplicitTake</code>)</li>
+          <li>Recipient must have <code>ActorTrait</code></li>
+          <li>Cannot give to yourself</li>
+          <li>Recipient inventory capacity (item count and weight limits)</li>
+          <li>Recipient preferences &mdash; checks <code>refuses</code> list on actor trait</li>
+        </ol>
+
+        <h3>Mutation</h3>
+        <p>Calls <code>world.moveEntity(item.id, recipient.id)</code> to transfer the item. Determines acceptance type (<code>normal</code>, <code>grateful</code>, or <code>reluctant</code>) based on the recipient's <code>preferences.likes</code> and <code>preferences.dislikes</code> arrays.</p>
+
+        <h3>Events</h3>
+        <table>
+          <thead><tr><th>Event</th><th>When</th></tr></thead>
+          <tbody>
+            <tr><td><code>if.event.given</code></td><td>Item successfully given to recipient</td></tr>
+            <tr><td><code>if.event.give_blocked</code></td><td>Validation failed</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article>
+        <details>
+          <summary>Author example: NPC with item preferences</summary>
+          <pre><code>import { ActorTrait } from '@sharpee/world-model';
+
+const guard = world.createEntity('guard', 'actor');
+guard.add(new ActorTrait({
+  preferences: {
+    likes: ['gold', 'coin'],      // "grateful" acceptance
+    dislikes: ['rock', 'stick'],   // "reluctant" acceptance
+    refuses: ['weapon', 'sword']   // blocks the action entirely
+  }
+}));
+
+// "give coin to guard"  -> "The guard gratefully accepts the coin."
+// "give rock to guard"  -> "The guard reluctantly accepts the rock."
+// "give sword to guard" -> "The guard isn't interested in the sword."</code></pre>
+        </details>
+
+        <details>
+          <summary>Acceptance message variants</summary>
+          <table>
+            <thead><tr><th>Message ID</th><th>Acceptance Type</th></tr></thead>
+            <tbody>
+              <tr><td><code>given</code></td><td>Normal acceptance (default)</td></tr>
+              <tr><td><code>gratefully_accepts</code></td><td>Item matches recipient's <code>likes</code></td></tr>
+              <tr><td><code>reluctantly_accepts</code></td><td>Item matches recipient's <code>dislikes</code></td></tr>
+              <tr><td><code>not_interested</code></td><td>Item matches recipient's <code>refuses</code> (blocks action)</td></tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+    </section>
+
+    <!-- Throwing -->
+    <section id="throwing">
+      <h2>Throwing</h2>
+      <p>Throws an object at a target, in a direction, or generally. The outcome depends on the throw type, target properties, and item fragility. Supports interceptors for custom throw reactions (e.g., throwing a torch at a glacier). Supports implicit take &mdash; <code>throw rock at troll</code> works even if the rock is on the ground.</p>
+
+      <article>
+        <h3>Action ID</h3>
+        <p><code>if.action.throwing</code></p>
+
+        <h3>Grammar Patterns</h3>
+        <pre><code>grammar.define('throw :item at :target')
+  .mapsTo('if.action.throwing')
+  .withPriority(100)
+  .build();
+
+grammar.define('throw :item to :recipient')
+  .mapsTo('if.action.throwing')
+  .withPriority(100)
+  .build();</code></pre>
+
+        <h3>Scope Requirements</h3>
+        <table>
+          <thead><tr><th>Slot</th><th>Scope Level</th></tr></thead>
+          <tbody>
+            <tr><td><code>item</code> (direct object)</td><td><code>REACHABLE</code> (implicit take enabled)</td></tr>
+            <tr><td><code>target</code> (indirect object)</td><td><code>VISIBLE</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Validation Checks</h3>
+        <ol>
+          <li>Entity interceptor pre-validate hook (ADR-118, on the <em>target</em>)</li>
+          <li>Item must be carried or implicitly takeable (<code>requireCarriedOrImplicitTake</code>)</li>
+          <li>If throwing at a target: target must be in the same room</li>
+          <li>Cannot throw at yourself</li>
+          <li>If throwing in a direction: exit must exist in that direction</li>
+          <li>Item must not be too heavy (weight limit: 10)</li>
+          <li>Entity interceptor post-validate hook</li>
+        </ol>
+
+        <h3>Throw Types</h3>
+        <p>The action determines one of three throw types based on the command:</p>
+        <table>
+          <thead><tr><th>Type</th><th>Triggered by</th><th>Behavior</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>at_target</code></td>
+              <td><code>throw X at Y</code></td>
+              <td>Calculates hit/miss (70% for actors, 90% for objects). Actors may duck, catch, or get angry. Item may land on/in target or bounce off.</td>
+            </tr>
+            <tr>
+              <td><code>directional</code></td>
+              <td><code>throw X north</code></td>
+              <td>Item sails through the exit to the adjacent room. May break on impact if fragile.</td>
+            </tr>
+            <tr>
+              <td><code>general</code></td>
+              <td><code>throw X</code></td>
+              <td>Item lands on the floor. Fragile items may break.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Mutation</h3>
+        <p>Moves the item to its final location via <code>world.moveEntity()</code>. The final location depends on the throw outcome: the current room floor, inside/on the target, an adjacent room (directional), or the target actor's inventory (if caught). If the item breaks, it is removed from play.</p>
+
+        <h3>Events</h3>
+        <table>
+          <thead><tr><th>Event</th><th>When</th></tr></thead>
+          <tbody>
+            <tr><td><code>if.event.thrown</code></td><td>Item thrown (always emitted on success)</td></tr>
+            <tr><td><code>if.event.item_destroyed</code></td><td>Fragile item broke on impact</td></tr>
+            <tr><td><code>if.event.throw_blocked</code></td><td>Validation failed</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article>
+        <details>
+          <summary>Fragile item detection</summary>
+          <p>Items are considered fragile based on keyword matching in their name or description. The following keywords trigger fragile behavior: <code>glass</code>, <code>crystal</code>, <code>delicate</code>, <code>fragile</code>, <code>bottle</code>, <code>vase</code>, <code>china</code>, <code>porcelain</code>. Fragile items have a chance to break when thrown, with the probability varying by throw type.</p>
+        </details>
+
+        <details>
+          <summary>Author example: interceptor for custom throw reaction</summary>
+          <pre><code>// Glacier melts when torch is thrown at it
+import { registerInterceptor } from '@sharpee/world-model';
+
+registerInterceptor(glacier, 'if.action.throwing', {
+  postValidate(entity, world, actorId, data) {
+    // Only react to the torch being thrown
+    if (data.itemId !== torchId) return null;
+    return null; // allow standard execution
+  },
+
+  postExecute(entity, world, actorId, data) {
+    // Melt the glacier and reveal the passage
+    glacier.get('identity').description =
+      'A puddle of water where the glacier once stood.';
+    // Open a new exit...
+  },
+
+  postReport(entity, world, actorId, data) {
+    return [{
+      type: 'dungeo.event.glacier_melts',
+      payload: { messageId: 'glacier_melts' }
+    }];
+  }
+});</code></pre>
+        </details>
+
+        <details>
+          <summary>Complete message ID reference</summary>
+          <table>
+            <thead><tr><th>Message ID</th><th>Situation</th></tr></thead>
+            <tbody>
+              <tr><td><code>thrown</code></td><td>Default throw</td></tr>
+              <tr><td><code>thrown_down</code></td><td>General throw, non-fragile</td></tr>
+              <tr><td><code>thrown_gently</code></td><td>General throw, fragile (didn't break)</td></tr>
+              <tr><td><code>hits_target</code></td><td>Thrown at target, hit</td></tr>
+              <tr><td><code>misses_target</code></td><td>Thrown at target, missed</td></tr>
+              <tr><td><code>bounces_off</code></td><td>Hit closed container</td></tr>
+              <tr><td><code>lands_on</code></td><td>Landed on supporter target</td></tr>
+              <tr><td><code>lands_in</code></td><td>Landed in open container target</td></tr>
+              <tr><td><code>breaks_against</code></td><td>Fragile item broke hitting target</td></tr>
+              <tr><td><code>breaks_on_impact</code></td><td>Fragile item broke after directional throw</td></tr>
+              <tr><td><code>fragile_breaks</code></td><td>Fragile item broke on general throw</td></tr>
+              <tr><td><code>sails_through</code></td><td>Item thrown through exit to next room</td></tr>
+              <tr><td><code>thrown_direction</code></td><td>Directional throw (no exit)</td></tr>
+              <tr><td><code>target_ducks</code></td><td>Agile actor dodged</td></tr>
+              <tr><td><code>target_catches</code></td><td>Actor caught the thrown item</td></tr>
+              <tr><td><code>target_angry</code></td><td>Actor hit and angry</td></tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+    </section>
+
+    <!-- Common Patterns -->
+    <section id="common-patterns">
+      <h2>Common Patterns</h2>
+
+      <article>
+        <h3>Implicit Take</h3>
+        <p>Several object handling actions support <strong>implicit take</strong>: if the player references an item they are not carrying but could reach, the engine automatically takes it first. This is enabled by <code>requireCarriedOrImplicitTake()</code> in the validate phase. Actions with implicit take: <strong>putting</strong>, <strong>inserting</strong>, <strong>giving</strong>, and <strong>throwing</strong>.</p>
+        <pre><code>&gt; put apple in box
+(first taking the apple)
+You put the apple in the box.</code></pre>
+      </article>
+
+      <article>
+        <h3>Multi-Object Commands</h3>
+        <p>Taking, dropping, putting, inserting, and removing all support multi-object commands. The engine expands the command, validates each item individually, executes all valid items, and reports both successes and failures.</p>
+        <pre><code>&gt; take all
+sword: Taken.
+shield: Taken.
+fountain: That's fixed in place.
+
+&gt; drop all but sword
+shield: Dropped.</code></pre>
+      </article>
+
+      <article>
+        <h3>Interceptor Hooks (ADR-118)</h3>
+        <p>Taking, dropping, putting, and throwing support entity-level interceptors that hook into the action lifecycle. This allows story-specific behavior without modifying stdlib actions. Interceptors are registered on the relevant entity (the item for taking/dropping, the target for putting/throwing).</p>
+        <table>
+          <thead><tr><th>Hook</th><th>Phase</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td><code>preValidate</code></td><td>Before standard validation</td><td>Block early with custom error</td></tr>
+            <tr><td><code>postValidate</code></td><td>After standard validation passes</td><td>Add entity-specific conditions</td></tr>
+            <tr><td><code>postExecute</code></td><td>After standard mutation</td><td>Perform additional side effects</td></tr>
+            <tr><td><code>postReport</code></td><td>After standard events</td><td>Append additional events</td></tr>
+            <tr><td><code>onBlocked</code></td><td>When validation fails</td><td>Override blocked events</td></tr>
+          </tbody>
+        </table>
+      </article>
+    </section>
+
+    <!-- See Also -->
+    <section id="see-also">
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="actions-overview.html">Actions Overview</a> &mdash; four-phase pattern, ActionContext, ValidationResult, sharedData</li>
+        <li><a href="traits-core.html">Core Traits</a> &mdash; ContainerTrait, SupporterTrait, SceneryTrait, ActorTrait, WearableTrait</li>
+        <li><a href="entities.html">Entities</a> &mdash; entity creation, traits, and the world model</li>
+        <li><a href="actions-state.html">State Change Actions</a> &mdash; opening, closing, locking, unlocking (often used alongside object handling)</li>
+        <li><a href="events.html">Events</a> &mdash; semantic events, interceptors, and the rendering pipeline</li>
+        <li><a href="capabilities.html">Capabilities</a> &mdash; entity-specific action dispatch for verbs with non-standard semantics</li>
+      </ul>
+    </section>
+  </main>
+  <script src="js/docs.js"></script>
+</body>
+</html>

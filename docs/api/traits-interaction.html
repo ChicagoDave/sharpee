@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Interaction Traits - Sharpee API</title>
+  <link rel="stylesheet" href="css/pico.min.css">
+  <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <main>
+    <header>
+      <hgroup>
+        <h1>Interaction Traits</h1>
+        <p>Traits for eating, wearing, pushing, pulling, climbing, reading, and pressing</p>
+      </hgroup>
+      <nav aria-label="breadcrumb">
+        <a href="index.html">API</a>
+        <span class="separator">/</span>
+        <a href="traits-core.html">Traits</a>
+        <span class="separator">/</span>
+        Interaction
+      </nav>
+    </header>
+
+    <!-- Overview -->
+    <section id="overview">
+      <h2>Overview</h2>
+      <p>Interaction traits add specific physical interactions to entities. Each trait pairs with a corresponding stdlib action &mdash; attaching an <code>EdibleTrait</code> lets the eating action work on that entity, a <code>WearableTrait</code> enables wearing and removing, and so on. These traits are pure data; all logic lives in the matching action or behavior.</p>
+    </section>
+
+    <!-- Quick Reference -->
+    <section class="quick-ref">
+      <h2>Quick Reference</h2>
+      <table>
+        <thead>
+          <tr><th>Trait</th><th>Type String</th><th>Paired Action</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><a href="#edible-trait"><code>EdibleTrait</code></a></td><td><code>'edible'</code></td><td>Eating / Drinking</td></tr>
+          <tr><td><a href="#wearable-trait"><code>WearableTrait</code></a></td><td><code>'wearable'</code></td><td>Wearing / Taking Off</td></tr>
+          <tr><td><a href="#pushable-trait"><code>PushableTrait</code></a></td><td><code>'pushable'</code></td><td>Pushing</td></tr>
+          <tr><td><a href="#pullable-trait"><code>PullableTrait</code></a></td><td><code>'pullable'</code></td><td>Pulling</td></tr>
+          <tr><td><a href="#climbable-trait"><code>ClimbableTrait</code></a></td><td><code>'climbable'</code></td><td>Climbing</td></tr>
+          <tr><td><a href="#readable-trait"><code>ReadableTrait</code></a></td><td><code>'readable'</code></td><td>Reading</td></tr>
+          <tr><td><a href="#button-trait"><code>ButtonTrait</code></a></td><td><code>'button'</code></td><td>Pushing (with PushableTrait)</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- EdibleTrait -->
+    <article id="edible-trait">
+      <h2>EdibleTrait</h2>
+      <p>Makes an entity consumable via the eating or drinking action. When <code>liquid</code> is <code>true</code>, the entity responds to "drink" rather than "eat". Supports multi-serving items, taste descriptions, and optional side effects.</p>
+
+      <details>
+        <summary>Properties</summary>
+        <table>
+          <thead>
+            <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>nutrition</code></td><td><code>number</code></td><td><code>1</code></td><td>Nutritional value per serving</td></tr>
+            <tr><td><code>servings</code></td><td><code>number</code></td><td><code>1</code></td><td>Number of servings before fully consumed</td></tr>
+            <tr><td><code>liquid</code></td><td><code>boolean</code></td><td><code>false</code></td><td>If <code>true</code>, the item is drunk rather than eaten</td></tr>
+            <tr><td><code>consumeMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Custom message shown when consumed</td></tr>
+            <tr><td><code>remainsType</code></td><td><code>string?</code></td><td>&mdash;</td><td>Entity type left behind after consumption (e.g., empty bottle)</td></tr>
+            <tr><td><code>hasEffect</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Whether consuming triggers a special effect</td></tr>
+            <tr><td><code>effectDescription</code></td><td><code>string?</code></td><td>&mdash;</td><td>Description of the effect when consumed</td></tr>
+            <tr><td><code>taste</code></td><td><code>string?</code></td><td>&mdash;</td><td>Flavor hint: <code>'delicious'</code>, <code>'tasty'</code>, <code>'good'</code>, <code>'plain'</code>, <code>'bland'</code>, <code>'awful'</code>, or <code>'terrible'</code></td></tr>
+            <tr><td><code>effects</code></td><td><code>string[]?</code></td><td>&mdash;</td><td>Effect identifiers triggered on consumption</td></tr>
+            <tr><td><code>satisfiesHunger</code></td><td><code>boolean?</code></td><td>&mdash;</td><td>Whether eating this item satisfies the player's hunger</td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <pre><code>const cake = world.createEntity('frosted cake', EntityType.ITEM);
+cake.add(new EdibleTrait({
+  servings: 3,
+  taste: 'delicious',
+  consumeMessage: 'You eat a slice of the frosted cake. Yum!',
+  satisfiesHunger: true,
+}));
+
+// A liquid item responds to "drink" instead of "eat"
+const potion = world.createEntity('healing potion', EntityType.ITEM);
+potion.add(new EdibleTrait({
+  liquid: true,
+  hasEffect: true,
+  effectDescription: 'A warm glow spreads through your body.',
+  effects: ['heal'],
+  remainsType: 'empty-vial',
+}));</code></pre>
+    </article>
+
+    <!-- WearableTrait -->
+    <article id="wearable-trait">
+      <h2>WearableTrait</h2>
+      <p>Allows an entity to be worn by an actor. Supports layering (higher <code>layer</code> values go over lower ones), body part slots, and the ability to block removal of items underneath.</p>
+
+      <details>
+        <summary>Properties</summary>
+        <table>
+          <thead>
+            <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>worn</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Whether the item is currently being worn</td></tr>
+            <tr><td><code>wornBy</code></td><td><code>string?</code></td><td>&mdash;</td><td>Entity ID of the actor wearing this item</td></tr>
+            <tr><td><code>slot</code></td><td><code>string</code></td><td><code>'clothing'</code></td><td>Equipment slot category</td></tr>
+            <tr><td><code>layer</code></td><td><code>number</code></td><td><code>1</code></td><td>Layering order &mdash; higher values are outer layers</td></tr>
+            <tr><td><code>wearMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Custom message when putting the item on</td></tr>
+            <tr><td><code>removeMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Custom message when taking the item off</td></tr>
+            <tr><td><code>wearableOver</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Whether other items can be worn over this one</td></tr>
+            <tr><td><code>blocksSlots</code></td><td><code>string[]</code></td><td><code>[]</code></td><td>Other slots blocked while wearing this item</td></tr>
+            <tr><td><code>canRemove</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Whether the item can be removed once worn</td></tr>
+            <tr><td><code>bodyPart</code></td><td><code>string</code></td><td><code>'torso'</code></td><td>Body part this item is worn on</td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <p>The <code>isWorn</code> accessor provides a getter/setter pair for the <code>worn</code> property.</p>
+
+      <pre><code>const cloak = world.createEntity('velvet cloak', EntityType.ITEM);
+cloak.add(new WearableTrait({
+  slot: 'outerwear',
+  layer: 3,
+  bodyPart: 'torso',
+  wearMessage: 'You sweep the cloak around your shoulders.',
+  blocksSlots: ['clothing'],  // can't change shirt while wearing cloak
+}));
+
+// Check if worn
+const trait = cloak.get&lt;WearableTrait&gt;(TraitType.WEARABLE);
+if (trait.isWorn) {
+  // cloak is currently being worn
+}</code></pre>
+    </article>
+
+    <!-- PushableTrait -->
+    <article id="pushable-trait">
+      <h2>PushableTrait</h2>
+      <p>Marks an entity as something that can be pushed. The <code>pushType</code> property distinguishes between buttons (small, press-like), heavy objects (require strength), and moveable items (can be pushed in a direction).</p>
+
+      <details>
+        <summary>Properties</summary>
+        <table>
+          <thead>
+            <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>pushType</code></td><td><code>'button' | 'heavy' | 'moveable'</code></td><td><code>'button'</code></td><td>Category of pushable interaction</td></tr>
+            <tr><td><code>revealsPassage</code></td><td><code>boolean?</code></td><td>&mdash;</td><td>Whether pushing reveals a hidden passage</td></tr>
+            <tr><td><code>pushSound</code></td><td><code>string?</code></td><td>&mdash;</td><td>Sound effect identifier when pushed</td></tr>
+            <tr><td><code>requiresStrength</code></td><td><code>number?</code></td><td>&mdash;</td><td>Minimum strength needed to push</td></tr>
+            <tr><td><code>repeatable</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Whether the entity can be pushed more than once</td></tr>
+            <tr><td><code>state</code></td><td><code>'default' | 'pushed' | 'activated'</code></td><td><code>'default'</code></td><td>Current push state</td></tr>
+            <tr><td><code>pushCount</code></td><td><code>number</code></td><td><code>0</code></td><td>Number of times the entity has been pushed</td></tr>
+            <tr><td><code>maxPushes</code></td><td><code>number?</code></td><td>&mdash;</td><td>Maximum number of pushes allowed</td></tr>
+            <tr><td><code>pushDirection</code></td><td><code>string?</code></td><td>&mdash;</td><td>Direction the entity can be pushed toward</td></tr>
+            <tr><td><code>activates</code></td><td><code>string?</code></td><td>&mdash;</td><td>Entity ID activated when pushed</td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <pre><code>const boulder = world.createEntity('heavy boulder', EntityType.SCENERY);
+boulder.add(new PushableTrait({
+  pushType: 'heavy',
+  requiresStrength: 5,
+  repeatable: false,
+  revealsPassage: true,
+  pushDirection: 'north',
+}));</code></pre>
+    </article>
+
+    <!-- PullableTrait -->
+    <article id="pullable-trait">
+      <h2>PullableTrait</h2>
+      <p>Marks an entity as something that can be pulled. Similar to <code>PushableTrait</code> but with pull-specific semantics like levers, cords, and objects that can detach when pulled.</p>
+
+      <details>
+        <summary>Properties</summary>
+        <table>
+          <thead>
+            <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>pullType</code></td><td><code>'lever' | 'cord' | 'attached' | 'heavy'</code></td><td><code>'lever'</code></td><td>Category of pullable interaction</td></tr>
+            <tr><td><code>activates</code></td><td><code>string?</code></td><td>&mdash;</td><td>Entity ID activated when pulled</td></tr>
+            <tr><td><code>linkedTo</code></td><td><code>string?</code></td><td>&mdash;</td><td>Entity ID this pull mechanism is linked to</td></tr>
+            <tr><td><code>pullSound</code></td><td><code>string?</code></td><td>&mdash;</td><td>Sound effect identifier when pulled</td></tr>
+            <tr><td><code>requiresStrength</code></td><td><code>number?</code></td><td>&mdash;</td><td>Minimum strength needed to pull</td></tr>
+            <tr><td><code>repeatable</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Whether the entity can be pulled more than once</td></tr>
+            <tr><td><code>state</code></td><td><code>'default' | 'pulled' | 'activated'</code></td><td><code>'default'</code></td><td>Current pull state</td></tr>
+            <tr><td><code>pullCount</code></td><td><code>number</code></td><td><code>0</code></td><td>Number of times the entity has been pulled</td></tr>
+            <tr><td><code>maxPulls</code></td><td><code>number?</code></td><td>&mdash;</td><td>Maximum number of pulls allowed</td></tr>
+            <tr><td><code>detachesOnPull</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Whether the entity detaches from its fixture when pulled</td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <pre><code>const lever = world.createEntity('rusty lever', EntityType.SCENERY);
+lever.add(new PullableTrait({
+  pullType: 'lever',
+  activates: 'portcullis',
+  linkedTo: 'portcullis',
+  pullSound: 'clank',
+}));</code></pre>
+    </article>
+
+    <!-- ClimbableTrait -->
+    <article id="climbable-trait">
+      <h2>ClimbableTrait</h2>
+      <p>Marks an entity as something that can be climbed. The <code>direction</code> property controls whether the entity can be climbed up, down, or both. An optional <code>destination</code> links climbing to room travel.</p>
+
+      <details>
+        <summary>Properties</summary>
+        <table>
+          <thead>
+            <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>canClimb</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Whether climbing is currently possible</td></tr>
+            <tr><td><code>blockedMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Message shown when climbing is blocked (<code>canClimb</code> is <code>false</code>)</td></tr>
+            <tr><td><code>direction</code></td><td><code>'up' | 'down' | 'both'</code></td><td><code>'both'</code></td><td>Which directions the entity can be climbed</td></tr>
+            <tr><td><code>destination</code></td><td><code>string?</code></td><td>&mdash;</td><td>Room entity ID the player arrives at after climbing</td></tr>
+            <tr><td><code>successMessage</code></td><td><code>string?</code></td><td>&mdash;</td><td>Custom message shown on successful climb</td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <pre><code>const tree = world.createEntity('tall oak tree', EntityType.SCENERY);
+tree.add(new ClimbableTrait({
+  direction: 'up',
+  destination: 'treetop-platform',
+  successMessage: 'You scramble up the gnarled branches to a wooden platform.',
+}));</code></pre>
+    </article>
+
+    <!-- ReadableTrait -->
+    <article id="readable-trait">
+      <h2>ReadableTrait</h2>
+      <p>Marks an entity as something that can be read. Supports single-text items (signs, notes) as well as multi-page items (books) with per-page content. The <code>preview</code> property provides a shorter glance-text for the examine action.</p>
+
+      <details>
+        <summary>Properties</summary>
+        <table>
+          <thead>
+            <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>text</code></td><td><code>string</code></td><td><code>''</code></td><td>The full readable text content</td></tr>
+            <tr><td><code>preview</code></td><td><code>string?</code></td><td>&mdash;</td><td>Short preview text shown on cursory examination</td></tr>
+            <tr><td><code>isReadable</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Whether the text is currently readable (e.g., not too dark)</td></tr>
+            <tr><td><code>language</code></td><td><code>string</code></td><td><code>'common'</code></td><td>Language the text is written in</td></tr>
+            <tr><td><code>hasBeenRead</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Tracks whether the player has read this item</td></tr>
+            <tr><td><code>readableType</code></td><td><code>string</code></td><td><code>'text'</code></td><td>Kind of readable: <code>'text'</code>, <code>'book'</code>, <code>'sign'</code>, <code>'note'</code>, or <code>'inscription'</code></td></tr>
+            <tr><td><code>pages</code></td><td><code>number?</code></td><td>&mdash;</td><td>Total number of pages (for multi-page items)</td></tr>
+            <tr><td><code>currentPage</code></td><td><code>number?</code></td><td>&mdash;</td><td>Currently open page number</td></tr>
+            <tr><td><code>pageContent</code></td><td><code>string[]?</code></td><td>&mdash;</td><td>Array of per-page text content</td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <pre><code>const leaflet = world.createEntity('leaflet', EntityType.ITEM);
+leaflet.add(new ReadableTrait({
+  readableType: 'note',
+  text: 'WELCOME TO ZORK!\n\nZORK is a game of adventure, danger, and low cunning.',
+  preview: 'A small leaflet with bold print.',
+}));
+
+// A multi-page book
+const spellbook = world.createEntity('spell book', EntityType.ITEM);
+spellbook.add(new ReadableTrait({
+  readableType: 'book',
+  pages: 3,
+  currentPage: 1,
+  pageContent: [
+    'Chapter 1: The basics of enchantment...',
+    'Chapter 2: Advanced transmutation...',
+    'Chapter 3: Forbidden necromancy...',
+  ],
+  language: 'ancient',
+}));</code></pre>
+    </article>
+
+    <!-- ButtonTrait -->
+    <article id="button-trait">
+      <h2>ButtonTrait</h2>
+      <p>Describes the physical characteristics of a button. This trait provides appearance metadata (color, size, shape, label) and tracks pressed state. Buttons should <strong>also</strong> have a <code>PushableTrait</code> to handle the actual push interaction &mdash; <code>ButtonTrait</code> adds descriptive detail and the <code>latching</code> mechanic.</p>
+
+      <details>
+        <summary>Properties</summary>
+        <table>
+          <thead>
+            <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>latching</code></td><td><code>boolean</code></td><td><code>false</code></td><td>If <code>true</code>, the button stays pressed after being pushed</td></tr>
+            <tr><td><code>color</code></td><td><code>string?</code></td><td>&mdash;</td><td>Button color for description and disambiguation</td></tr>
+            <tr><td><code>size</code></td><td><code>string?</code></td><td>&mdash;</td><td>Size: <code>'tiny'</code>, <code>'small'</code>, <code>'medium'</code>, or <code>'large'</code></td></tr>
+            <tr><td><code>shape</code></td><td><code>string?</code></td><td>&mdash;</td><td>Shape: <code>'round'</code>, <code>'square'</code>, <code>'rectangular'</code>, or <code>'oval'</code></td></tr>
+            <tr><td><code>material</code></td><td><code>string?</code></td><td>&mdash;</td><td>Material the button is made of (e.g., <code>'brass'</code>, <code>'plastic'</code>)</td></tr>
+            <tr><td><code>label</code></td><td><code>string?</code></td><td>&mdash;</td><td>Text label printed on or near the button</td></tr>
+            <tr><td><code>pressed</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Whether the button is currently pressed</td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <pre><code>const button = world.createEntity('red button', EntityType.SCENERY);
+button
+  .add(new ButtonTrait({
+    color: 'red',
+    size: 'small',
+    shape: 'round',
+    label: 'DO NOT PRESS',
+    latching: true,
+  }))
+  .add(new PushableTrait({
+    pushType: 'button',
+    activates: 'self-destruct-sequence',
+    repeatable: false,
+  }));</code></pre>
+    </article>
+
+    <!-- See Also -->
+    <section id="see-also">
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="traits-core.html">Core Traits</a> &mdash; IdentityTrait, RoomTrait, ContainerTrait, and foundational traits</li>
+        <li><a href="traits-state.html">State Traits</a> &mdash; OpenableTrait, LockableTrait, SwitchableTrait, and state-tracking traits</li>
+        <li><a href="actions-physical.html">Physical Actions</a> &mdash; eating, wearing, pushing, pulling, climbing, and reading actions</li>
+        <li><a href="entities.html">Entities</a> &mdash; the IFEntity class, trait management, and serialization</li>
+      </ul>
+    </section>
+  </main>
+  <script src="js/docs.js"></script>
+</body>
+</html>

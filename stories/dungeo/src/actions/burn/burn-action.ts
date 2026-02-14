@@ -1,24 +1,42 @@
 /**
  * Burn Action - Story-specific action for burning items
  *
- * Used for burning incense to disarm the basin trap
- * in the ghost ritual puzzle (ADR-078).
+ * Handles two burn targets:
+ * - Incense: disarms basin trap in ghost ritual (ADR-078)
+ * - Fuse wire: starts 2-turn explosion countdown (brick/safe puzzle)
  *
- * Pattern: "burn incense", "light incense"
+ * Pattern: "burn incense", "light wire", "burn fuse"
  */
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity } from '@sharpee/world-model';
+import { ISchedulerService } from '@sharpee/plugin-scheduler';
 import { BURN_ACTION_ID, BurnMessages } from './types';
 import { BurnableTrait, BasinRoomTrait } from '../../traits';
+import { startExplosionCountdown, ExplosionConfig } from '../../scheduler';
+
+// Module-level scheduler reference for explosion fuse (set during orchestration)
+let explosionSchedulerRef: ISchedulerService | null = null;
+let explosionConfigRef: ExplosionConfig | null = null;
 
 /**
- * Check if an entity is incense (has BurnableTrait with burnableType 'incense')
+ * Set the scheduler reference and explosion config.
+ * Called from scheduler-setup.ts during story initialization.
  */
-function isIncense(entity: IFEntity): boolean {
-  const burnable = entity.get(BurnableTrait);
-  return burnable?.burnableType === 'incense';
+export function setBurnActionExplosionConfig(
+  scheduler: ISchedulerService,
+  config: ExplosionConfig
+): void {
+  explosionSchedulerRef = scheduler;
+  explosionConfigRef = config;
+}
+
+/**
+ * Check if an entity has BurnableTrait (any burnable type)
+ */
+function isBurnable(entity: IFEntity): boolean {
+  return !!entity.get(BurnableTrait);
 }
 
 /**
@@ -62,7 +80,7 @@ function getDirectObject(context: ActionContext): { entity?: IFEntity; text?: st
 }
 
 /**
- * Find burnable item (incense) in current location or inventory
+ * Find any burnable item in current location or inventory
  */
 function findBurnableItem(context: ActionContext): IFEntity | undefined {
   const { world, player } = context;
@@ -70,7 +88,7 @@ function findBurnableItem(context: ActionContext): IFEntity | undefined {
   // Check player inventory
   const inventory = world.getContents(player.id);
   for (const item of inventory) {
-    if (isIncense(item)) {
+    if (isBurnable(item)) {
       return item;
     }
   }
@@ -80,7 +98,7 @@ function findBurnableItem(context: ActionContext): IFEntity | undefined {
   if (playerLocation) {
     const roomContents = world.getContents(playerLocation);
     for (const item of roomContents) {
-      if (isIncense(item)) {
+      if (isBurnable(item)) {
         return item;
       }
     }
@@ -99,44 +117,30 @@ export const burnAction: Action = {
   validate(context: ActionContext): ValidationResult {
     const directObject = getDirectObject(context);
 
-    // If no target specified, try to find incense
+    // If no target specified, try to find a burnable item
     if (!directObject || !directObject.text) {
       const burnable = findBurnableItem(context);
       if (burnable) {
-        // Check if already burning
         if (isBurning(burnable)) {
-          return {
-            valid: false,
-            error: BurnMessages.ALREADY_BURNING
-          };
+          return { valid: false, error: BurnMessages.ALREADY_BURNING };
         }
-        // Check if burned out
         if (isBurnedOut(burnable)) {
-          return {
-            valid: false,
-            error: BurnMessages.BURNED_OUT
-          };
+          return { valid: false, error: BurnMessages.BURNED_OUT };
         }
         context.sharedData.burnTarget = burnable;
         return { valid: true };
       }
-      return {
-        valid: false,
-        error: BurnMessages.NO_TARGET
-      };
+      return { valid: false, error: BurnMessages.NO_TARGET };
     }
 
     // Check if target is in scope
     const targetEntity = directObject.entity;
     if (!targetEntity) {
-      return {
-        valid: false,
-        error: BurnMessages.NOT_VISIBLE
-      };
+      return { valid: false, error: BurnMessages.NOT_VISIBLE };
     }
 
-    // Check if target is incense
-    if (!isIncense(targetEntity)) {
+    // Check if target has BurnableTrait
+    if (!isBurnable(targetEntity)) {
       return {
         valid: false,
         error: BurnMessages.CANT_BURN,
@@ -146,18 +150,12 @@ export const burnAction: Action = {
 
     // Check if already burning
     if (isBurning(targetEntity)) {
-      return {
-        valid: false,
-        error: BurnMessages.ALREADY_BURNING
-      };
+      return { valid: false, error: BurnMessages.ALREADY_BURNING };
     }
 
     // Check if burned out
     if (isBurnedOut(targetEntity)) {
-      return {
-        valid: false,
-        error: BurnMessages.BURNED_OUT
-      };
+      return { valid: false, error: BurnMessages.BURNED_OUT };
     }
 
     // Store target for execute phase
@@ -169,32 +167,39 @@ export const burnAction: Action = {
     const { world, sharedData } = context;
 
     const target = sharedData.burnTarget as IFEntity;
-    if (!target) {
-      return;
-    }
+    if (!target) return;
 
-    // Set incense to burning state via BurnableTrait
-    // The fuse will be registered separately
     const burnable = target.get(BurnableTrait);
-    if (burnable) {
-      burnable.isBurning = true;
-    }
+    if (!burnable) return;
 
-    // Store incense ID for the fuse registration
-    world.setStateValue('dungeo.incense.burning_id', target.id);
+    // Set to burning state
+    burnable.isBurning = true;
 
-    sharedData.incenseId = target.id;
+    // Type-specific execute logic
+    if (burnable.burnableType === 'incense') {
+      // Store incense ID for the fuse registration
+      world.setStateValue('dungeo.incense.burning_id', target.id);
+      sharedData.incenseId = target.id;
 
-    // If incense is being burned in the Basin Room, disarm the trap
-    const playerLocation = world.getLocation(context.player.id);
-    if (playerLocation) {
-      const room = world.getEntity(playerLocation);
-      const basinTrait = room?.get(BasinRoomTrait);
-      if (basinTrait) {
-        basinTrait.basinState = 'disarmed';
-        sharedData.basinDisarmed = true;
+      // If burned in Basin Room, disarm the trap
+      const playerLocation = world.getLocation(context.player.id);
+      if (playerLocation) {
+        const room = world.getEntity(playerLocation);
+        const basinTrait = room?.get(BasinRoomTrait);
+        if (basinTrait) {
+          basinTrait.basinState = 'disarmed';
+          sharedData.basinDisarmed = true;
+        }
       }
+    } else if (burnable.burnableType === 'fuse') {
+      // Start the explosion countdown
+      if (explosionSchedulerRef && explosionConfigRef) {
+        startExplosionCountdown(explosionSchedulerRef, explosionConfigRef);
+      }
+      sharedData.fuseId = target.id;
     }
+
+    sharedData.burnableType = burnable.burnableType;
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
@@ -211,19 +216,30 @@ export const burnAction: Action = {
     const events: ISemanticEvent[] = [];
 
     const target = sharedData.burnTarget as IFEntity;
-    if (!target) {
-      return events;
-    }
+    if (!target) return events;
 
     const identity = target.get(IdentityTrait);
     const targetName = identity?.name || 'item';
 
-    // Emit the burn event
-    events.push(context.event('game.message', {
-      messageId: BurnMessages.BURN_INCENSE,
-      target: targetName,
-      incenseId: sharedData.incenseId
-    }));
+    // Emit type-specific message
+    if (sharedData.burnableType === 'fuse') {
+      events.push(context.event('game.message', {
+        messageId: BurnMessages.BURN_FUSE,
+        target: targetName,
+        fuseId: sharedData.fuseId
+      }));
+    } else if (sharedData.burnableType === 'flammable') {
+      events.push(context.event('game.message', {
+        messageId: BurnMessages.BURN_SUCCESS,
+        target: targetName
+      }));
+    } else {
+      events.push(context.event('game.message', {
+        messageId: BurnMessages.BURN_INCENSE,
+        target: targetName,
+        incenseId: sharedData.incenseId
+      }));
+    }
 
     return events;
   }

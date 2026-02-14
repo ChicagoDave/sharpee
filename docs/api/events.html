@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Events - Sharpee API</title>
+  <link rel="stylesheet" href="css/pico.min.css">
+  <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <main>
+    <header>
+      <hgroup>
+        <h1>Events</h1>
+        <p>Semantic events, event handlers, event chains, and the rendering pipeline</p>
+      </hgroup>
+      <nav aria-label="breadcrumb">
+        <a href="index.html">API</a>
+        <span class="separator">/</span>
+        Events
+      </nav>
+    </header>
+
+    <!-- Overview -->
+    <section id="overview">
+      <h2>Overview</h2>
+      <p>Sharpee events are <strong>return values</strong> from action phases, not a pub/sub event bus. Actions never emit text directly. Instead, their <code>report()</code> and <code>blocked()</code> methods return <strong>semantic events</strong> &mdash; data objects carrying a message ID and parameters. The language layer (e.g., <code>lang-en-us</code>) maps those message IDs to prose, so the same action logic works across languages without modification.</p>
+      <p>The typical lifecycle is:</p>
+      <ol>
+        <li>Action <code>report()</code> returns <code>ISemanticEvent[]</code> describing what happened.</li>
+        <li>The engine enriches events with turn number, actor, and location metadata.</li>
+        <li>The <code>PerceptionService</code> filters events the player cannot perceive (e.g., darkness).</li>
+        <li>The language layer renders each event into displayed text.</li>
+      </ol>
+      <p>Two additional mechanisms compose events beyond the single action: <strong>event chains</strong> (one event triggers follow-up events declaratively) and <strong>action interceptors</strong> (hooks around stdlib action phases that can add side effects and extra events).</p>
+    </section>
+
+    <!-- Critical Warning -->
+    <section id="warning">
+      <h2>Entity <code>.on</code> Handlers Are Dead Code</h2>
+      <article aria-label="warning" style="border-left: 4px solid var(--pico-color-red-500, #e53935); padding-left: 1rem;">
+        <p><strong>Do not use entity <code>.on</code> handlers for side effects.</strong> The engine never dispatches events to per-entity <code>.on</code> handlers at runtime. Code like <code>entity.on = { 'if.event.death': (e, w) =&gt; { ... } }</code> will never fire.</p>
+        <p>Side effects belong in the execution flow: action <code>execute()</code> phases, capability behaviors, or action interceptors. If you find yourself writing an <code>.on</code> handler, use an interceptor instead.</p>
+      </article>
+    </section>
+
+    <!-- ISemanticEvent Interface -->
+    <section id="semantic-event">
+      <h2>ISemanticEvent Interface</h2>
+      <p>Every event in the system implements <code>ISemanticEvent</code>, defined in <code>@sharpee/core</code>. Actions create events via <code>context.event(type, data)</code>, which fills in <code>id</code>, <code>timestamp</code>, and <code>entities</code> automatically.</p>
+
+      <pre><code>interface ISemanticEvent {
+  id: string;
+  type: string;
+  timestamp: number;
+  entities: {
+    actor?: EntityId;
+    target?: EntityId;
+    instrument?: EntityId;
+    location?: EntityId;
+    others?: EntityId[];
+  };
+  data?: unknown;
+  tags?: string[];
+  priority?: number;
+  narrate?: boolean;
+}</code></pre>
+
+      <article>
+        <details open>
+          <summary>Field descriptions</summary>
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>id</code></td>
+                <td><code>string</code></td>
+                <td>Auto-generated unique identifier.</td>
+              </tr>
+              <tr>
+                <td><code>type</code></td>
+                <td><code>string</code></td>
+                <td>Event type string following the naming convention (see below).</td>
+              </tr>
+              <tr>
+                <td><code>timestamp</code></td>
+                <td><code>number</code></td>
+                <td>Creation time in milliseconds. Added automatically by <code>context.event()</code>.</td>
+              </tr>
+              <tr>
+                <td><code>entities</code></td>
+                <td><code>object</code></td>
+                <td>Entity IDs involved: <code>actor</code> (who did it), <code>target</code> (what was affected), <code>instrument</code> (tool used), <code>location</code> (where it happened), <code>others</code> (additional entities).</td>
+              </tr>
+              <tr>
+                <td><code>data</code></td>
+                <td><code>unknown</code></td>
+                <td>Payload specific to the event type. Cast to a typed interface (e.g., <code>event.data as TakenEventData</code>).</td>
+              </tr>
+              <tr>
+                <td><code>tags</code></td>
+                <td><code>string[]?</code></td>
+                <td>Category tags added during enrichment (<code>'action'</code>, <code>'system'</code>, <code>'game'</code>).</td>
+              </tr>
+              <tr>
+                <td><code>priority</code></td>
+                <td><code>number?</code></td>
+                <td>Ordering hint. Higher priority events are more important.</td>
+              </tr>
+              <tr>
+                <td><code>narrate</code></td>
+                <td><code>boolean?</code></td>
+                <td>Whether the language layer should render this event as narrated text.</td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+    </section>
+
+    <!-- Naming Convention -->
+    <section id="naming">
+      <h2>Event Naming Convention</h2>
+      <p>Event type strings follow a dotted namespace pattern. The prefix indicates the origin package:</p>
+      <table>
+        <thead>
+          <tr><th>Pattern</th><th>Origin</th><th>Examples</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>if.event.{past_tense}</code></td>
+            <td>Stdlib actions</td>
+            <td><code>if.event.taken</code>, <code>if.event.opened</code>, <code>if.event.dropped</code></td>
+          </tr>
+          <tr>
+            <td><code>if.event.{noun}.{verb}</code></td>
+            <td>Stdlib system events</td>
+            <td><code>if.event.room.description</code>, <code>if.event.contents.listed</code></td>
+          </tr>
+          <tr>
+            <td><code>action.error</code></td>
+            <td>Stdlib blocked phases</td>
+            <td>All validation failures use this type with a <code>reason</code> in data</td>
+          </tr>
+          <tr>
+            <td><code>action.blocked</code></td>
+            <td>Stdlib blocked phases</td>
+            <td>Alternative blocked type with <code>messageId</code> in data</td>
+          </tr>
+          <tr>
+            <td><code>{story}.event.{name}</code></td>
+            <td>Story-specific events</td>
+            <td><code>dungeo.event.magic_word</code>, <code>dungeo.event.glacier_melted</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Creating Events in Actions -->
+    <section id="creating-events">
+      <h2>Creating Events in Actions</h2>
+      <p>Use <code>context.event(type, data)</code> inside <code>report()</code> and <code>blocked()</code> phases. This factory method populates <code>id</code>, <code>timestamp</code>, and <code>entities</code> from the action context automatically.</p>
+
+      <pre><code>// report() phase of a taking action
+report(context: ActionContext): ISemanticEvent[] {
+  const item = context.command.target!;
+  const { previousLocation } = context.sharedData;
+
+  return [
+    context.event('if.event.taken', {
+      item: item.name,
+      fromLocation: previousLocation,
+    }),
+  ];
+}
+
+// blocked() phase when validation fails
+blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+  return [
+    context.event('action.error', {
+      actionId: 'if.action.taking',
+      reason: result.error,
+      item: context.command.target?.name,
+    }),
+  ];
+}</code></pre>
+
+      <article>
+        <h3>Typed Event Data</h3>
+        <p>Each stdlib action defines typed interfaces for its event payloads. These live alongside the action in <code>*-events.ts</code> files:</p>
+        <pre><code>// packages/stdlib/src/actions/standard/taking/taking-events.ts
+interface TakenEventData {
+  item: string;
+  fromLocation?: EntityId;
+  container?: string;
+  fromContainer?: boolean;
+  fromSupporter?: boolean;
+  itemSnapshot?: any;
+  actorSnapshot?: any;
+}</code></pre>
+        <p>The language layer casts <code>event.data</code> to the appropriate type to extract formatting parameters.</p>
+      </article>
+    </section>
+
+    <!-- Event Chains -->
+    <section id="event-chains">
+      <h2>Event Chains</h2>
+      <p>Event chains let one event automatically trigger follow-up events, providing declarative event composition. Register a chain with <code>world.chainEvent()</code>:</p>
+
+      <pre><code>world.chainEvent(triggerType, handler, options?);</code></pre>
+
+      <article>
+        <details open>
+          <summary>chainEvent parameters</summary>
+          <table>
+            <thead>
+              <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>triggerType</code></td>
+                <td><code>string</code></td>
+                <td>Event type that triggers this chain (e.g., <code>'if.event.opened'</code>).</td>
+              </tr>
+              <tr>
+                <td><code>handler</code></td>
+                <td><code>EventChainHandler</code></td>
+                <td>Function receiving <code>(event, world)</code>, returns new <code>ISemanticEvent | ISemanticEvent[] | null</code>.</td>
+              </tr>
+              <tr>
+                <td><code>options.mode</code></td>
+                <td><code>'cascade' | 'override'</code></td>
+                <td><code>'cascade'</code> (default) adds to existing chains. <code>'override'</code> replaces all chains for this trigger.</td>
+              </tr>
+              <tr>
+                <td><code>options.key</code></td>
+                <td><code>string?</code></td>
+                <td>Unique key for this chain. Chains with the same key replace each other (useful for overriding stdlib defaults).</td>
+              </tr>
+              <tr>
+                <td><code>options.priority</code></td>
+                <td><code>number</code></td>
+                <td>Execution order. Stdlib uses 100. Lower fires first, higher fires after.</td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <article>
+        <h3>Example: opened &rarr; revealed</h3>
+        <p>The stdlib registers a chain so that opening a container automatically emits a <code>if.event.revealed</code> event listing its contents:</p>
+        <pre><code>// stdlib registers this during initialization
+world.chainEvent('if.event.opened', (event, world) => {
+  const { targetId } = event.data as { targetId: string };
+  const contents = world.getContents(targetId);
+  if (contents.length === 0) return null;
+
+  return {
+    id: `revealed-${targetId}-${Date.now()}`,
+    type: 'if.event.revealed',
+    timestamp: Date.now(),
+    entities: { target: targetId, others: contents.map(i => i.id) },
+    data: {
+      containerId: targetId,
+      items: contents.map(i => ({ entityId: i.id, messageId: i.name })),
+    },
+  };
+}, { key: 'stdlib.chain.opened-revealed', priority: 100 });</code></pre>
+        <p>A story can override or extend this chain:</p>
+        <pre><code>// Override: replace the stdlib chain entirely
+world.chainEvent('if.event.opened', myCustomHandler, {
+  key: 'stdlib.chain.opened-revealed',  // same key replaces it
+  priority: 100,
+});
+
+// Cascade: add a trap trigger that fires after the stdlib chain
+world.chainEvent('if.event.opened', trapHandler, {
+  key: 'story.chain.trap-trigger',
+  priority: 200,  // fires after stdlib (100)
+});</code></pre>
+      </article>
+    </section>
+
+    <!-- Action Interceptors -->
+    <section id="interceptors">
+      <h2>Action Interceptors</h2>
+      <p>Interceptors hook into stdlib action phases without replacing standard logic. They are the primary mechanism for story-specific side effects &mdash; reacting to throws, scoring treasures, blocking entry, and more. Register an interceptor on a trait type for a specific action:</p>
+
+      <pre><code>registerActionInterceptor(traitType, actionId, interceptor);</code></pre>
+
+      <p>The interceptor fires when the action targets an entity that has the specified trait. Phase hooks run around the standard action phases:</p>
+
+      <article>
+        <details open>
+          <summary>Interceptor phase hooks</summary>
+          <table>
+            <thead>
+              <tr><th>Hook</th><th>Runs</th><th>Returns</th><th>Purpose</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>preValidate</code></td>
+                <td>Before stdlib validation</td>
+                <td><code>InterceptorResult | null</code></td>
+                <td>Block action early based on entity-specific conditions.</td>
+              </tr>
+              <tr>
+                <td><code>postValidate</code></td>
+                <td>After stdlib validation passes</td>
+                <td><code>InterceptorResult | null</code></td>
+                <td>Block otherwise-valid action, or set up data for <code>postExecute</code>.</td>
+              </tr>
+              <tr>
+                <td><code>postExecute</code></td>
+                <td>After stdlib execution</td>
+                <td><code>void</code></td>
+                <td>Perform additional mutations (cannot prevent the action).</td>
+              </tr>
+              <tr>
+                <td><code>postReport</code></td>
+                <td>After stdlib report</td>
+                <td><code>CapabilityEffect[]</code></td>
+                <td>Return additional effects to append to the standard events.</td>
+              </tr>
+              <tr>
+                <td><code>onBlocked</code></td>
+                <td>When validation failed</td>
+                <td><code>CapabilityEffect[] | null</code></td>
+                <td>Provide custom blocked message, or <code>null</code> for default handling.</td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <pre><code>// Glacier melts when a burning torch is thrown at it
+const GlacierThrowingInterceptor: ActionInterceptor = {
+  postValidate(entity, world, actorId, sharedData) {
+    const thrownItem = /* resolve thrown item */;
+    if (isBurning(thrownItem)) {
+      sharedData.willMelt = true;
+    }
+    return null; // allow the throw to proceed
+  },
+
+  postExecute(entity, world, actorId, sharedData) {
+    if (!sharedData.willMelt) return;
+    meltGlacier(world, entity.id);
+    openPassage(world, 'glacier-passage');
+  },
+
+  postReport(entity, world, actorId, sharedData) {
+    if (!sharedData.willMelt) return [];
+    return [createEffect('game.message', {
+      messageId: 'dungeo.glacier.melts'
+    })];
+  },
+};
+
+// Register on GlacierTrait for the throwing action
+registerActionInterceptor(
+  GlacierTrait.type, 'if.action.throwing', GlacierThrowingInterceptor
+);</code></pre>
+    </section>
+
+    <!-- Perception and Rendering Pipeline -->
+    <section id="perception">
+      <h2>Perception &amp; Rendering Pipeline</h2>
+      <p>After action phases return events, the engine processes them through a multi-stage pipeline before the player sees text:</p>
+      <ol>
+        <li><strong>Enrichment</strong> &mdash; The <code>EventAdapter</code> normalizes event structure and adds metadata: turn number, actor ID, location ID, and category tags (<code>'action'</code>, <code>'system'</code>, <code>'game'</code>).</li>
+        <li><strong>Sequencing</strong> &mdash; The <code>EventSequencer</code> assigns monotonic sequence numbers for deterministic ordering within a turn.</li>
+        <li><strong>Chain processing</strong> &mdash; Any registered event chains fire, producing follow-up events that are also enriched and sequenced.</li>
+        <li><strong>Perception filtering</strong> &mdash; The <code>PerceptionService</code> checks whether the player can perceive each event. Visual events (room descriptions, content lists) in darkness are replaced with <code>if.event.perception.blocked</code> events carrying a reason (<code>'darkness'</code>, <code>'blindness'</code>, <code>'blindfolded'</code>).</li>
+        <li><strong>Language rendering</strong> &mdash; The language layer (e.g., <code>lang-en-us</code>) maps each event's type and data to localized prose. The client displays the result.</li>
+      </ol>
+
+      <pre><code>// Simplified flow inside the engine
+const rawEvents = action.report(context);               // 1. Action returns events
+const enriched = rawEvents.map(e => processEvent(e, {   // 2. Enrich with metadata
+  turn, playerId, locationId
+}));
+const withChains = runChainHandlers(enriched, world);    // 3. Chain events
+const filtered = perceptionService.filterEvents(         // 4. Perception filter
+  withChains, player, world
+);
+languageLayer.render(filtered);                          // 5. Render to text</code></pre>
+    </section>
+
+    <!-- See Also -->
+    <section id="see-also">
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="actions-overview.html">Actions Overview</a> &mdash; the four-phase action pattern that produces events</li>
+        <li><a href="capabilities.html">Capabilities</a> &mdash; entity-specific action dispatch via traits and behaviors</li>
+        <li><a href="scope.html">Scope</a> &mdash; scope levels, visibility, and what the player can perceive</li>
+        <li><a href="world.html">World Model</a> &mdash; entity management, state mutations, and <code>chainEvent()</code></li>
+      </ul>
+    </section>
+  </main>
+  <script src="js/docs.js"></script>
+</body>
+</html>

@@ -19,7 +19,7 @@ import {
   ReadableTrait,
   ButtonTrait
 } from '@sharpee/world-model';
-import { TreasureTrait, InflatableTrait } from '../traits';
+import { TreasureTrait, InflatableTrait, BurnableTrait } from '../traits';
 
 export interface DamRoomIds {
   deepCanyon: string;
@@ -185,13 +185,13 @@ export function connectDamToFrigidRiver(world: WorldModel, ids: DamRoomIds, frig
 
 /**
  * Connect Stream View to Glacier Room (volcano region)
- * Stream View: S→Glacier Room (one-way until glacier melts)
- * Note: Glacier Room NORTH is reserved for Volcano View (opens when glacier melts)
+ * MDL: STREA NORTH→ICY, ICY NORTH→STREA (bidirectional via NORTH)
  */
 export function connectStreamViewToGlacier(world: WorldModel, ids: DamRoomIds, glacierRoomId: string): void {
   const sv = world.getEntity(ids.streamView);
-  if (sv) sv.get(RoomTrait)!.exits[Direction.SOUTH] = { destination: glacierRoomId };
-  // Don't set Glacier Room NORTH here - that's reserved for Volcano View when glacier melts
+  const gr = world.getEntity(glacierRoomId);
+  if (sv) sv.get(RoomTrait)!.exits[Direction.NORTH] = { destination: glacierRoomId };
+  if (gr) gr.get(RoomTrait)!.exits[Direction.NORTH] = { destination: ids.streamView };
 }
 
 export function connectSmallCaveToMirrorRoom(world: WorldModel, ids: DamRoomIds, mirrorRoomId: string): void {
@@ -250,6 +250,10 @@ Constructed in Year 783 of the Great Underground Empire, Flood Control Dam #3 wa
 The dam is controlled from the Maintenance Room. In case of emergency, the control panel can be used to open or close the sluice gates.
 
 NOTICE: Opening the sluice gates will drain the reservoir. This is not reversible without significant effort.`
+  }));
+  guidebook.add(new BurnableTrait({
+    burnableType: 'flammable',
+    size: 10               // MDL OSIZE=10 → 200 burn turns (size * 20)
   }));
   world.moveEntity(guidebook.id, roomId);
 

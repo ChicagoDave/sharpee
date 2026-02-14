@@ -22,8 +22,6 @@ import {
   OpenableTrait,
   ReadableTrait,
   ContainerTrait,
-  LockableTrait,
-  AuthorModel
 } from '@sharpee/world-model';
 import { TreasureTrait } from '../traits';
 
@@ -222,8 +220,8 @@ export function createBankObjects(world: WorldModel, roomIds: BankRoomIds): void
   // Treasures
   createPortrait(world, roomIds.chairmansOffice);
   createZorkmidBills(world, roomIds.vault);
-  createZorkmidCoin(world, roomIds.smallRoom);
-  createSafe(world, roomIds.chairmansOffice);  // Safe with Crown inside
+  // Zorkmid coin moved to Volcano Narrow Ledge (volcano.ts createVolcanoObjects)
+  // Safe with Crown moved to Volcano Dusty Room (Step 3 of volcano plan)
 
   // Scenery
   createStoneCube(world, roomIds.safetyDeposit);
@@ -277,65 +275,9 @@ function createZorkmidBills(world: WorldModel, roomId: string): IFEntity {
   return bills;
 }
 
-function createZorkmidCoin(world: WorldModel, roomId: string): IFEntity {
-  const coin = world.createEntity('zorkmid coin', EntityType.ITEM);
-  coin.add(new IdentityTrait({
-    name: 'zorkmid coin',
-    aliases: ['coin', 'zorkmid', 'gold coin'],
-    description: 'A large gold zorkmid coin. One side shows a portrait of Lord Dimwit Flathead; the other depicts the great underground dam.',
-    properName: false,
-    article: 'a',
-    weight: 5,
-    points: 10             // OFVAL from mdlzork_810722
-  }));
-  coin.add(new TreasureTrait({
-    trophyCaseValue: 12       // OTVAL from mdlzork_810722
-  }));
-  world.moveEntity(coin.id, roomId);
-  return coin;
-}
+// Zorkmid coin moved to Volcano Narrow Ledge (volcano.ts createVolcanoObjects)
 
-/**
- * Create the safe containing Lord Dimwit's Crown
- * In 1981 MDL: SAFE object contains CROWN and CARD (warning note)
- */
-function createSafe(world: WorldModel, roomId: string): IFEntity {
-  // Steel safe - container that holds the crown
-  const safe = world.createEntity('safe', EntityType.ITEM);
-  safe.add(new IdentityTrait({
-    name: 'safe',
-    aliases: ['safe', 'steel safe', 'box', 'steel box'],
-    description: 'A massive steel safe, the kind used to store valuable items. It has a complex combination lock.',
-    properName: false,
-    article: 'a'
-  }));
-  safe.add(new ContainerTrait({ capacity: { maxItems: 5 } }));
-  safe.add(new OpenableTrait({ isOpen: false }));
-  safe.add(new LockableTrait({ isLocked: true }));
-  safe.add(new SceneryTrait());  // Too heavy to take
-  world.moveEntity(safe.id, roomId);
-
-  // Lord Dimwit Flathead's Crown - treasure inside the safe
-  const crown = world.createEntity('crown', EntityType.ITEM);
-  crown.add(new IdentityTrait({
-    name: 'crown',
-    aliases: ['crown', 'gaudy crown', "lord dimwit's crown", 'flathead crown'],
-    description: "The excessively gaudy crown of Lord Dimwit Flathead. It is encrusted with diamonds, rubies, and other precious gems, all in questionable taste.",
-    properName: false,
-    article: 'a',
-    weight: 10,
-    points: 15             // OFVAL from mdlzork_810722
-  }));
-  crown.add(new TreasureTrait({
-    trophyCaseValue: 10      // OTVAL from mdlzork_810722
-  }));
-
-  // Use AuthorModel to place crown in closed safe (bypasses validation)
-  const author = new AuthorModel(world.getDataStore(), world);
-  author.moveEntity(crown.id, safe.id);
-
-  return safe;
-}
+// Safe with Crown moved to Volcano Dusty Room (volcano.ts createDustyRoomObjects)
 
 // ============= Scenery =============
 

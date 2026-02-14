@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Physical Traits - Sharpee API</title>
+  <link rel="stylesheet" href="css/pico.min.css">
+  <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <main>
+    <header>
+      <hgroup>
+        <h1>Physical Traits</h1>
+        <p>Traits for scenery, doors, vehicles, and spatial relationships</p>
+      </hgroup>
+      <nav aria-label="breadcrumb">
+        <a href="index.html">API</a>
+        <span class="separator">/</span>
+        <a href="traits-core.html">Traits</a>
+        <span class="separator">/</span>
+        Physical
+      </nav>
+    </header>
+
+    <!-- Overview -->
+    <section id="overview">
+      <h2>Overview</h2>
+      <p>Physical traits define how entities relate to space &mdash; fixed scenery that cannot be taken, connecting doors between rooms, heavy objects that can be pushed but not carried, vehicles that transport the player, and enterable surfaces like beds and pools. These traits work alongside the <a href="traits-core.html">core traits</a> to give entities their spatial behavior.</p>
+    </section>
+
+    <!-- SceneryTrait -->
+    <article id="scenery-trait">
+      <h2>SceneryTrait</h2>
+      <p>Type: <code>'scenery'</code></p>
+      <p>Objects are portable by default in Sharpee. Add <code>SceneryTrait</code> to make something non-portable &mdash; the entity becomes fixed in place and cannot be taken by the player. Scenery items are typically environmental details like fountains, signs, or furniture that should be examinable but not carryable.</p>
+
+      <details>
+        <summary>Properties</summary>
+        <table>
+          <thead>
+            <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>cantTakeMessage</code></td>
+              <td><code>string?</code></td>
+              <td>&mdash;</td>
+              <td>Optional message ID to display when the player tries to take this entity. If not set, the default "that's fixed in place" message is used.</td>
+            </tr>
+            <tr>
+              <td><code>mentioned</code></td>
+              <td><code>boolean</code></td>
+              <td><code>true</code></td>
+              <td>Whether the entity appears in room descriptions. Set to <code>false</code> for background items that exist for interaction but should not be listed.</td>
+            </tr>
+            <tr>
+              <td><code>visible</code></td>
+              <td><code>boolean</code></td>
+              <td><code>true</code></td>
+              <td>Whether the entity is visible to the player. Invisible scenery can still be interacted with if the player knows it exists.</td>
+            </tr>
+          </tbody>
+        </table>
+      </details>
+
+      <pre><code>const fountain = world.createEntity('marble fountain', EntityType.SCENERY);
+fountain
+  .add(new IdentityTrait({ name: 'marble fountain', description: 'Water cascades from a carved dolphin.' }))
+  .add(new SceneryTrait({ cantTakeMessage: 'The fountain is far too heavy to move.' }));</code></pre>
+    </article>
+
+    <!-- DoorTrait -->
+    <article id="door-trait">
+      <h2>DoorTrait</h2>
+      <p>Type: <code>'door'</code></p>
+      <p>Connects two rooms, allowing the player to pass through when the door is open. Doors are usually combined with <code>OpenableTrait</code> and optionally <code>LockableTrait</code>. Use <code>world.createDoor()</code> for convenient creation, which handles trait setup and room linking automatically.</p>
+
+      <details>
+        <summary>Properties</summary>
+        <table>
+          <thead>
+            <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>room1</code></td>
+              <td><code>string</code></td>
+              <td><em>required</em></td>
+              <td>Entity ID of the first room this door connects.</td>
+            </tr>
+            <tr>
+              <td><code>room2</code></td>
+              <td><code>string</code></td>
+              <td><em>required</em></td>
+              <td>Entity ID of the second room this door connects.</td>
+            </tr>
+            <tr>
+              <td><code>bidirectional</code></td>
+              <td><code>boolean</code></td>
+              <td><code>true</code></td>
+              <td>Whether the door can be traversed from both sides. Set to <code>false</code> for one-way doors (room1 to room2 only).</td>
+            </tr>
+          </tbody>
+        </table>
+      </details>
+
+      <pre><code>// Using the convenience factory
+const door = world.createDoor('heavy wooden door', hallway.id, chamber.id);
+door.add(new OpenableTrait({ isOpen: false }));
+door.add(new LockableTrait({ isLocked: true, keyEntityId: 'iron-key' }));
+
+// The door is now visible from both rooms and blocks passage when closed</code></pre>
+    </article>
+
+    <!-- MoveableSceneryTrait -->
+    <article id="moveable-scenery-trait">
+      <h2>MoveableSceneryTrait</h2>
+      <p>Type: <code>'moveableScenery'</code></p>
+      <p>For heavy objects that cannot be carried but can be pushed or pulled to reveal hidden items or unblock exits. Combine with <code>PushableTrait</code> and/or <code>PullableTrait</code> to enable the corresponding actions. The trait tracks whether the object has been moved and what it reveals.</p>
+
+      <details>
+        <summary>Properties</summary>
+        <table>
+          <thead>
+            <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>weightClass</code></td>
+              <td><code>'light' | 'medium' | 'heavy' | 'immense'</code></td>
+              <td><code>'heavy'</code></td>
+              <td>Determines the effort description and whether multiple people are needed.</td>
+            </tr>
+            <tr>
+              <td><code>revealsWhenMoved</code></td>
+              <td><code>boolean</code></td>
+              <td><code>false</code></td>
+              <td>Whether moving this object reveals something hidden underneath or behind it.</td>
+            </tr>
+            <tr>
+              <td><code>reveals</code></td>
+              <td><code>string?</code></td>
+              <td>&mdash;</td>
+              <td>Entity ID of the item or exit revealed when the object is moved.</td>
+            </tr>
+            <tr>
+              <td><code>blocksExits</code></td>
+              <td><code>boolean</code></td>
+              <td><code>false</code></td>
+              <td>Whether this object is currently blocking one or more exits.</td>
+            </tr>
+            <tr>
+              <td><code>blockedExits</code></td>
+              <td><code>string[]?</code></td>
+              <td>&mdash;</td>
+              <td>List of direction strings (e.g., <code>['down']</code>) that are blocked while the object has not been moved.</td>
+            </tr>
+            <tr>
+              <td><code>moved</code></td>
+              <td><code>boolean</code></td>
+              <td><code>false</code></td>
+              <td>Whether the object has been moved from its original position. Set automatically by the pushing/pulling actions.</td>
+            </tr>
+            <tr>
+              <td><code>originalRoom</code></td>
+              <td><code>string?</code></td>
+              <td>&mdash;</td>
+              <td>Entity ID of the room where this object started, for reset purposes.</td>
+            </tr>
+            <tr>
+              <td><code>moveSound</code></td>
+              <td><code>string?</code></td>
+              <td>&mdash;</td>
+              <td>Message ID for the sound produced when the object is moved.</td>
+            </tr>
+            <tr>
+              <td><code>requiresMultiplePeople</code></td>
+              <td><code>boolean</code></td>
+              <td><code>false</code></td>
+              <td>Whether more than one person is needed to move the object.</td>
+            </tr>
+            <tr>
+              <td><code>peopleRequired</code></td>
+              <td><code>number?</code></td>
+              <td>&mdash;</td>
+              <td>Exact number of people required to move the object, if <code>requiresMultiplePeople</code> is true.</td>
+            </tr>
+          </tbody>
+        </table>
+      </details>
+
+      <pre><code>const rug = world.createEntity('oriental rug', EntityType.ITEM);
+rug
+  .add(new IdentityTrait({ name: 'oriental rug', description: 'A large, ornate rug covers the floor.' }))
+  .add(new SceneryTrait())
+  .add(new MoveableSceneryTrait({
+    weightClass: 'heavy',
+    revealsWhenMoved: true,
+    reveals: 'trapdoor',
+    blocksExits: true,
+    blockedExits: ['down'],
+  }))
+  .add(new PushableTrait())
+  .add(new PullableTrait());
+
+// When the player pushes or pulls the rug, the trapdoor is revealed
+// and the "down" exit becomes unblocked</code></pre>
+    </article>
+
+    <!-- AttachedTrait -->
+    <article id="attached-trait">
+      <h2>AttachedTrait</h2>
+      <p>Type: <code>'attached'</code></p>
+      <p>Marks an entity as physically attached to another entity or fixed point. Attached objects resist being taken unless they are detachable. The attachment type determines the descriptive text and the kind of force needed to separate them.</p>
+
+      <details>
+        <summary>Properties</summary>
+        <table>
+          <thead>
+            <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>attachedTo</code></td>
+              <td><code>string?</code></td>
+              <td>&mdash;</td>
+              <td>Entity ID of the object this is attached to. If not set, the entity is attached to its containing room.</td>
+            </tr>
+            <tr>
+              <td><code>attachmentType</code></td>
+              <td><code>'glued' | 'nailed' | 'screwed' | 'tied' | 'welded' | 'magnetic' | 'stuck'</code></td>
+              <td><code>'stuck'</code></td>
+              <td>How the entity is attached, which affects descriptive messages and detachment logic.</td>
+            </tr>
+            <tr>
+              <td><code>detachable</code></td>
+              <td><code>boolean</code></td>
+              <td><code>false</code></td>
+              <td>Whether the player can detach the entity (possibly requiring a tool or force).</td>
+            </tr>
+            <tr>
+              <td><code>detachForce</code></td>
+              <td><code>number?</code></td>
+              <td>&mdash;</td>
+              <td>Amount of force needed to detach, if detachable. Used by puzzle logic to gate detachment.</td>
+            </tr>
+            <tr>
+              <td><code>loose</code></td>
+              <td><code>boolean</code></td>
+              <td><code>false</code></td>
+              <td>Whether the attachment has been loosened (e.g., by a prior action). Loose attachments are easier to break.</td>
+            </tr>
+            <tr>
+              <td><code>detachSound</code></td>
+              <td><code>string?</code></td>
+              <td>&mdash;</td>
+              <td>Message ID for the sound made when the entity is detached.</td>
+            </tr>
+          </tbody>
+        </table>
+      </details>
+
+      <pre><code>const rope = world.createEntity('rope', EntityType.ITEM);
+rope
+  .add(new IdentityTrait({ name: 'rope', description: 'A sturdy hemp rope tied to the railing.' }))
+  .add(new AttachedTrait({
+    attachedTo: 'railing',
+    attachmentType: 'tied',
+    detachable: true,
+    detachSound: 'dungeo.msg.rope_untied',
+  }));
+
+// The player must untie the rope before they can take it</code></pre>
+    </article>
+
+    <!-- VehicleTrait -->
+    <article id="vehicle-trait">
+      <h2>VehicleTrait</h2>
+      <p>Type: <code>'vehicle'</code></p>
+      <p>Marks an entity as a vehicle that can transport the player (and its contents) between rooms. Vehicles are inherently enterable &mdash; you do not need to add <code>EnterableTrait</code> separately. When the vehicle moves, everything inside it moves too.</p>
+
+      <details>
+        <summary>Properties</summary>
+        <table>
+          <thead>
+            <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>vehicleType</code></td>
+              <td><code>'counterweight' | 'watercraft' | 'aircraft' | 'cable' | 'generic'</code></td>
+              <td><code>'generic'</code></td>
+              <td>Categorizes the vehicle for movement logic and descriptive text.</td>
+            </tr>
+            <tr>
+              <td><code>movesWithContents</code></td>
+              <td><code>boolean</code></td>
+              <td><code>true</code> <em>(readonly)</em></td>
+              <td>Always true for vehicles. Everything inside the vehicle moves with it.</td>
+            </tr>
+            <tr>
+              <td><code>blocksWalkingMovement</code></td>
+              <td><code>boolean</code></td>
+              <td><code>true</code></td>
+              <td>Whether the player must exit the vehicle before walking to another room. Set to <code>false</code> for vehicles that allow disembarkation in any direction.</td>
+            </tr>
+            <tr>
+              <td><code>requiresExitBeforeLeaving</code></td>
+              <td><code>boolean</code></td>
+              <td><code>true</code></td>
+              <td>Whether the player must explicitly exit the vehicle before moving to a new room on foot.</td>
+            </tr>
+            <tr>
+              <td><code>currentPosition</code></td>
+              <td><code>string?</code></td>
+              <td>&mdash;</td>
+              <td>Named position key for vehicles that move between fixed stops (e.g., <code>'top'</code>, <code>'bottom'</code>).</td>
+            </tr>
+            <tr>
+              <td><code>positionRooms</code></td>
+              <td><code>Record&lt;string, string&gt;?</code></td>
+              <td>&mdash;</td>
+              <td>Maps position names to room IDs. Used with <code>currentPosition</code> for fixed-route vehicles like elevators.</td>
+            </tr>
+            <tr>
+              <td><code>isOperational</code></td>
+              <td><code>boolean</code></td>
+              <td><code>true</code></td>
+              <td>Whether the vehicle is currently functioning. Non-operational vehicles cannot move.</td>
+            </tr>
+            <tr>
+              <td><code>notOperationalReason</code></td>
+              <td><code>string?</code></td>
+              <td>&mdash;</td>
+              <td>Message ID explaining why the vehicle is not operational.</td>
+            </tr>
+            <tr>
+              <td><code>transparent</code></td>
+              <td><code>boolean</code></td>
+              <td><code>true</code></td>
+              <td>Whether the player can see the surrounding room while inside the vehicle.</td>
+            </tr>
+          </tbody>
+        </table>
+      </details>
+
+      <pre><code>const boat = world.createEntity('magic boat', EntityType.ITEM);
+boat
+  .add(new IdentityTrait({ name: 'magic boat', description: 'A small wooden boat with strange runes.' }))
+  .add(new VehicleTrait({
+    vehicleType: 'watercraft',
+    blocksWalkingMovement: true,
+    isOperational: true,
+    transparent: true,
+  }))
+  .add(new ContainerTrait({ capacity: 200 }));
+
+// Elevator-style vehicle with fixed positions
+const basket = world.createEntity('basket', EntityType.ITEM);
+basket
+  .add(new IdentityTrait({ name: 'wicker basket', description: 'A large basket on a rope.' }))
+  .add(new VehicleTrait({
+    vehicleType: 'counterweight',
+    currentPosition: 'top',
+    positionRooms: { top: 'shaft-top', bottom: 'shaft-bottom' },
+  }))
+  .add(new ContainerTrait({ capacity: 150 }));</code></pre>
+    </article>
+
+    <!-- EnterableTrait -->
+    <article id="enterable-trait">
+      <h2>EnterableTrait</h2>
+      <p>Type: <code>'enterable'</code></p>
+      <p>Makes a non-vehicle entity enterable, allowing the player to get in or on it. Use this for furniture, pools, alcoves, and other static objects the player can occupy. Vehicles do not need this trait &mdash; <code>VehicleTrait</code> implies enterability automatically.</p>
+
+      <details>
+        <summary>Properties</summary>
+        <table>
+          <thead>
+            <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>preposition</code></td>
+              <td><code>'in' | 'on'</code></td>
+              <td><code>'in'</code></td>
+              <td>Whether the player gets "in" or "on" the entity. Affects descriptive text (e.g., "You are in the bed" vs. "You are on the bed").</td>
+            </tr>
+          </tbody>
+        </table>
+      </details>
+
+      <pre><code>const bed = world.createEntity('large bed', EntityType.ITEM);
+bed
+  .add(new IdentityTrait({ name: 'large bed', description: 'A four-poster bed with silk sheets.' }))
+  .add(new SceneryTrait())
+  .add(new EnterableTrait({ preposition: 'on' }))
+  .add(new SupporterTrait());
+
+// "get on bed" / "get off bed" / "You are on the large bed."
+
+const pool = world.createEntity('thermal pool', EntityType.ITEM);
+pool
+  .add(new IdentityTrait({ name: 'thermal pool', description: 'Steam rises from the milky water.' }))
+  .add(new SceneryTrait())
+  .add(new EnterableTrait({ preposition: 'in' }));
+
+// "get in pool" / "get out of pool" / "You are in the thermal pool."</code></pre>
+    </article>
+
+    <!-- See Also -->
+    <section id="see-also">
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="traits-core.html">Core Traits</a> &mdash; IdentityTrait, RoomTrait, ContainerTrait, SupporterTrait, and more</li>
+        <li><a href="actions-movement.html">Movement Actions</a> &mdash; going, entering, exiting, and vehicle movement</li>
+        <li><a href="entities.html">Entities</a> &mdash; the entity system, trait management, and serialization</li>
+      </ul>
+    </section>
+  </main>
+  <script src="js/docs.js"></script>
+</body>
+</html>

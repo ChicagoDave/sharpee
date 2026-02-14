@@ -225,3 +225,9 @@ export {
 
 // Gas Room Entry Interceptor (ADR-126)
 export { GasRoomEntryInterceptor, GasRoomEntryMessages } from '../interceptors/gas-room-entry-interceptor';
+
+// Safe (rusty box in Dusty Room, brick explosion puzzle)
+export { SafeTrait, SafeTraitConstructor } from './safe-trait';
+
+// Safe Opening/Closing Interceptors
+export { SafeOpeningInterceptor, SafeClosingInterceptor, SafeOpeningMessages } from '../interceptors/safe-opening-interceptor';

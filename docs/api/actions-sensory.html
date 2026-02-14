@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sensory &amp; Query Actions - Sharpee API</title>
+  <link rel="stylesheet" href="css/pico.min.css">
+  <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <main>
+    <header>
+      <hgroup>
+        <h1>Sensory &amp; Query Actions</h1>
+        <p>Looking, examining, searching, reading, listening, smelling, touching, showing, and talking</p>
+      </hgroup>
+      <nav aria-label="breadcrumb">
+        <a href="index.html">API</a>
+        <span class="separator">/</span>
+        <a href="actions-overview.html">Actions</a>
+        <span class="separator">/</span>
+        Sensory &amp; Query
+      </nav>
+    </header>
+
+    <!-- Overview -->
+    <section id="overview">
+      <h2>Overview</h2>
+      <p>Sensory and query actions let the player observe, inspect, and interact with the world without changing it. Most are <strong>read-only</strong> &mdash; they examine state and emit events describing what the player perceives, but perform no world mutations. The exceptions are <strong>searching</strong> (reveals concealed items) and <strong>reading</strong> (marks items as read).</p>
+      <p>These actions fall into three categories: <em>observation</em> (looking, examining), <em>sensory</em> (listening, smelling, touching, searching), and <em>social</em> (showing, talking). Several have no trait requirements at all &mdash; you can always look around or listen to the environment.</p>
+    </section>
+
+    <!-- Quick Reference -->
+    <section class="quick-ref">
+      <h2>Quick Reference</h2>
+      <table>
+        <thead>
+          <tr><th>Action</th><th>ID</th><th>Group</th><th>Requires Target</th><th>Required Trait</th><th>Mutates World</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="#looking">Looking</a></td>
+            <td><code>if.action.looking</code></td>
+            <td>observation</td>
+            <td>No</td>
+            <td>None</td>
+            <td>Marks room visited</td>
+          </tr>
+          <tr>
+            <td><a href="#examining">Examining</a></td>
+            <td><code>if.action.examining</code></td>
+            <td>observation</td>
+            <td>Yes</td>
+            <td>None</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td><a href="#searching">Searching</a></td>
+            <td><code>if.action.searching</code></td>
+            <td>sensory</td>
+            <td>Optional</td>
+            <td>None</td>
+            <td>Reveals concealed items</td>
+          </tr>
+          <tr>
+            <td><a href="#reading">Reading</a></td>
+            <td><code>if.action.reading</code></td>
+            <td>&mdash;</td>
+            <td>Yes</td>
+            <td><code>ReadableTrait</code></td>
+            <td>Marks as read</td>
+          </tr>
+          <tr>
+            <td><a href="#inventory">Inventory</a></td>
+            <td><code>if.action.inventory</code></td>
+            <td>meta</td>
+            <td>No</td>
+            <td>None</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td><a href="#listening">Listening</a></td>
+            <td><code>if.action.listening</code></td>
+            <td>sensory</td>
+            <td>Optional</td>
+            <td>None</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td><a href="#smelling">Smelling</a></td>
+            <td><code>if.action.smelling</code></td>
+            <td>sensory</td>
+            <td>Optional</td>
+            <td>None</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td><a href="#touching">Touching</a></td>
+            <td><code>if.action.touching</code></td>
+            <td>sensory</td>
+            <td>Yes</td>
+            <td>None</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td><a href="#showing">Showing</a></td>
+            <td><code>if.action.showing</code></td>
+            <td>social</td>
+            <td>Yes (item + viewer)</td>
+            <td><code>ActorTrait</code> on viewer</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td><a href="#talking">Talking</a></td>
+            <td><code>if.action.talking</code></td>
+            <td>social</td>
+            <td>Yes</td>
+            <td><code>ActorTrait</code> on target</td>
+            <td>No</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Looking -->
+    <article id="looking">
+      <h2>Looking</h2>
+      <p>Describes the player's current location, listing visible exits, room contents, and container/supporter contents. Always succeeds &mdash; no target or trait required. The only mutation is marking the room as visited on first look.</p>
+
+      <details open>
+        <summary>Details</summary>
+        <table>
+          <thead>
+            <tr><th>Field</th><th>Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Action ID</td><td><code>if.action.looking</code></td></tr>
+            <tr><td>Scope</td><td>None (no target)</td></tr>
+            <tr><td>Validation</td><td>Always valid</td></tr>
+            <tr><td>Mutation</td><td>Sets <code>RoomTrait.visited = true</code></td></tr>
+            <tr><td>Events</td><td><code>if.event.looked</code>, <code>if.event.room.description</code>, <code>if.event.list.contents</code></td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <h3>Grammar Patterns</h3>
+      <pre><code>// forAction API
+grammar.forAction('if.action.looking')
+  .verbs(['look', 'l']).build();
+
+// Phrasal variant
+grammar.define('look [around]')
+  .mapsTo('if.action.looking').withPriority(101).build();</code></pre>
+
+      <h3>Behavior</h3>
+      <p>In the dark, the action emits a single <code>if.event.looked</code> with a dark-room message and returns early. Otherwise it emits three event types: the looked event (domain marker), a room description event (rendered by a specialized handler), and a contents list for items directly in the room. Open containers and supporters in the room get additional content-listing events.</p>
+
+      <pre><code>// Looking always succeeds and requires no setup:
+// > look
+// West of House
+// You are standing in an open field west of a white house...
+// There is a small mailbox here.</code></pre>
+    </article>
+
+    <!-- Examining -->
+    <article id="examining">
+      <h2>Examining</h2>
+      <p>Provides a detailed description of a specific entity. Read-only &mdash; no world mutations. The report phase selects a message variant based on what traits the target has (container, supporter, readable, switchable, wearable, door) and includes container/supporter contents if visible.</p>
+
+      <details open>
+        <summary>Details</summary>
+        <table>
+          <thead>
+            <tr><th>Field</th><th>Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Action ID</td><td><code>if.action.examining</code></td></tr>
+            <tr><td>Scope</td><td><code>VISIBLE</code></td></tr>
+            <tr><td>Validation</td><td>Target must exist and be visible (examining self always valid)</td></tr>
+            <tr><td>Mutation</td><td>None</td></tr>
+            <tr><td>Events</td><td><code>if.event.examined</code></td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <h3>Grammar Patterns</h3>
+      <pre><code>// forAction API
+grammar.forAction('if.action.examining')
+  .verbs(['examine', 'x', 'inspect'])
+  .pattern(':target').build();
+
+// Phrasal variant
+grammar.define('look at :target')
+  .mapsTo('if.action.examining').withPriority(95).build();</code></pre>
+
+      <h3>Message Variants</h3>
+      <p>The examining action selects from several message IDs depending on the target's traits:</p>
+      <ul>
+        <li><code>examined</code> &mdash; default description</li>
+        <li><code>examined_self</code> &mdash; player examines themselves</li>
+        <li><code>examined_container</code> &mdash; target has <code>ContainerTrait</code></li>
+        <li><code>examined_supporter</code> &mdash; target has <code>SupporterTrait</code></li>
+        <li><code>examined_readable</code> &mdash; target has <code>ReadableTrait</code></li>
+        <li><code>examined_switchable</code> &mdash; target has <code>SwitchableTrait</code></li>
+        <li><code>examined_wearable</code> &mdash; target has <code>WearableTrait</code></li>
+        <li><code>examined_door</code> &mdash; target has <code>DoorTrait</code></li>
+        <li><code>nothing_special</code> &mdash; no description available</li>
+      </ul>
+
+      <pre><code>// > examine mailbox
+// The small mailbox is closed.
+//
+// > x leaflet
+// A small leaflet with bold print. (Opening it reveals readable text.)</code></pre>
+    </article>
+
+    <!-- Searching -->
+    <article id="searching">
+      <h2>Searching</h2>
+      <p>Searches an entity or the current location for items, including concealed ones. This is one of the few sensory actions that <strong>mutates the world</strong> &mdash; it calls <code>IdentityBehavior.reveal()</code> on any concealed items it finds, making them permanently visible.</p>
+
+      <details open>
+        <summary>Details</summary>
+        <table>
+          <thead>
+            <tr><th>Field</th><th>Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Action ID</td><td><code>if.action.searching</code></td></tr>
+            <tr><td>Scope</td><td><code>REACHABLE</code></td></tr>
+            <tr><td>Validation</td><td>If target is an openable container, it must be open</td></tr>
+            <tr><td>Mutation</td><td>Reveals concealed items (<code>IdentityTrait.concealed = false</code>)</td></tr>
+            <tr><td>Events</td><td><code>if.event.searched</code></td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <h3>Grammar Patterns</h3>
+      <pre><code>grammar.define('search :target')
+  .mapsTo('if.action.searching').withPriority(100).build();
+
+grammar.define('search [carefully]')
+  .mapsTo('if.action.searching').withPriority(100).build();
+
+grammar.define('look in|inside :target')
+  .mapsTo('if.action.searching').withPriority(100).build();
+
+grammar.define('look through :target')
+  .mapsTo('if.action.searching').withPriority(100).build();
+
+grammar.define('rummage in|through :target')
+  .mapsTo('if.action.searching').withPriority(95).build();</code></pre>
+
+      <h3>Message Variants</h3>
+      <ul>
+        <li><code>found_items</code> / <code>found_concealed</code> &mdash; items discovered</li>
+        <li><code>container_contents</code> / <code>supporter_contents</code> &mdash; listing visible contents</li>
+        <li><code>empty_container</code> &mdash; container is empty</li>
+        <li><code>searched_location</code> &mdash; searching the room itself</li>
+        <li><code>searched_object</code> &mdash; searching a generic object</li>
+        <li><code>nothing_special</code> &mdash; nothing found</li>
+        <li><code>container_closed</code> &mdash; blocked: container is closed</li>
+      </ul>
+
+      <pre><code>// > search dead tree
+// Hidden in a knot in the tree you find a jewel-encrusted egg!
+//
+// > look in mailbox
+// The mailbox contains a small leaflet.</code></pre>
+    </article>
+
+    <!-- Reading -->
+    <article id="reading">
+      <h2>Reading</h2>
+      <p>Reads text from an entity that has a <code>ReadableTrait</code>. Supports single-text items (signs, notes), multi-page books, and different readable types. Marks the item as read and supports implicit take for portable items &mdash; scenery items (inscriptions, signs) can be read without taking.</p>
+
+      <details open>
+        <summary>Details</summary>
+        <table>
+          <thead>
+            <tr><th>Field</th><th>Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Action ID</td><td><code>if.action.reading</code></td></tr>
+            <tr><td>Scope</td><td><code>REACHABLE</code> (allows implicit take)</td></tr>
+            <tr><td>Validation</td><td>Target must have <code>ReadableTrait</code>; portable items require carrying (implicit take attempted)</td></tr>
+            <tr><td>Mutation</td><td>Sets <code>ReadableTrait.hasBeenRead = true</code></td></tr>
+            <tr><td>Events</td><td><code>if.event.read</code></td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <h3>Grammar Patterns</h3>
+      <pre><code>grammar.forAction('if.action.reading')
+  .verbs(['read', 'peruse', 'study'])
+  .pattern(':target').build();</code></pre>
+
+      <h3>Message Variants</h3>
+      <p>The message ID is selected based on the <code>readableType</code> property:</p>
+      <ul>
+        <li><code>read_text</code> &mdash; default text (notes, generic)</li>
+        <li><code>read_book</code> / <code>read_book_page</code> &mdash; single-text or paginated book</li>
+        <li><code>read_sign</code> &mdash; sign or placard</li>
+        <li><code>read_inscription</code> &mdash; carved or inscribed text</li>
+        <li><code>what_to_read</code> &mdash; blocked: no target specified</li>
+        <li><code>not_readable</code> &mdash; blocked: target lacks ReadableTrait</li>
+        <li><code>cannot_read_now</code> &mdash; blocked: <code>isReadable</code> is false</li>
+      </ul>
+
+      <pre><code>// > read leaflet
+// WELCOME TO ZORK!
+//
+// ZORK is a game of adventure, danger, and low cunning.
+
+// Implicit take for portable items:
+// > read note (note is on the ground)
+// (first taking the crumpled note)
+// "Meet me at the bridge at midnight."</code></pre>
+    </article>
+
+    <!-- Inventory -->
+    <article id="inventory">
+      <h2>Inventory</h2>
+      <p>Lists all items the player is carrying and wearing. Always succeeds with no preconditions. Separates held items from worn items and includes optional weight/burden tracking when the player entity has inventory limits configured.</p>
+
+      <details open>
+        <summary>Details</summary>
+        <table>
+          <thead>
+            <tr><th>Field</th><th>Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Action ID</td><td><code>if.action.inventory</code></td></tr>
+            <tr><td>Scope</td><td>None (no target)</td></tr>
+            <tr><td>Validation</td><td>Always valid</td></tr>
+            <tr><td>Mutation</td><td>None</td></tr>
+            <tr><td>Events</td><td><code>if.event.inventory</code></td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <h3>Grammar Patterns</h3>
+      <pre><code>grammar.forAction('if.action.inventory')
+  .verbs(['inventory', 'inv', 'i']).build();</code></pre>
+
+      <h3>Message Variants</h3>
+      <ul>
+        <li><code>carrying</code> &mdash; holding items only</li>
+        <li><code>wearing</code> &mdash; wearing items only (nothing held)</li>
+        <li><code>carrying_and_wearing</code> &mdash; both held and worn items</li>
+        <li><code>inventory_empty</code> / <code>nothing_at_all</code> / <code>hands_empty</code> / <code>pockets_empty</code> &mdash; randomly varied empty messages</li>
+        <li><code>burden_light</code> / <code>burden_heavy</code> / <code>burden_overloaded</code> &mdash; weight status (when limits configured)</li>
+      </ul>
+
+      <h3>Event Data</h3>
+      <p>The <code>if.event.inventory</code> event includes rich data for rendering:</p>
+      <pre><code>// Event data includes:
+{
+  totalItems: number;
+  heldItems: number;
+  wornItems: number;
+  isEmpty: boolean;
+  carried: [{ id, name }];    // held items
+  worn: [{ id, name }];       // worn items
+  totalWeight?: number;        // if weight tracking enabled
+  maxWeight?: number;
+  burden?: 'light' | 'heavy' | 'overloaded';
+  brief?: boolean;             // true for "i" / "inv" shorthand
+}</code></pre>
+    </article>
+
+    <!-- Listening -->
+    <article id="listening">
+      <h2>Listening</h2>
+      <p>Listens for sounds in the environment or from a specific entity. Purely read-only with no mutations. Detects active devices (switchable items that are on), liquid contents in containers, and general ambient silence.</p>
+
+      <details open>
+        <summary>Details</summary>
+        <table>
+          <thead>
+            <tr><th>Field</th><th>Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Action ID</td><td><code>if.action.listening</code></td></tr>
+            <tr><td>Scope</td><td><code>AWARE</code> (optional target)</td></tr>
+            <tr><td>Validation</td><td>Always valid</td></tr>
+            <tr><td>Mutation</td><td>None</td></tr>
+            <tr><td>Events</td><td><code>if.event.listened</code></td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <h3>Grammar Patterns</h3>
+      <p>No grammar patterns are currently defined in the core grammar for listening. Stories should add their own patterns:</p>
+      <pre><code>// Story grammar extension example:
+grammar.forAction('if.action.listening')
+  .verbs(['listen']).build();
+grammar.define('listen to :target')
+  .mapsTo('if.action.listening').withPriority(100).build();</code></pre>
+
+      <h3>Sound Detection Logic</h3>
+      <p>When listening to a <strong>specific target</strong>:</p>
+      <ul>
+        <li>Switchable device that is on: <code>device_running</code></li>
+        <li>Switchable device that is off: <code>device_off</code></li>
+        <li>Container with liquid contents: <code>liquid_sounds</code></li>
+        <li>Container with non-liquid contents: <code>container_sounds</code></li>
+        <li>Otherwise: <code>no_sound</code></li>
+      </ul>
+      <p>When listening to the <strong>environment</strong> (no target):</p>
+      <ul>
+        <li>Active switchable devices in room: <code>active_devices</code></li>
+        <li>No sound sources: <code>silence</code></li>
+      </ul>
+
+      <pre><code>// > listen
+// Silence.
+//
+// > listen to machine
+// The machine hums steadily.</code></pre>
+    </article>
+
+    <!-- Smelling -->
+    <article id="smelling">
+      <h2>Smelling</h2>
+      <p>Detects scents from a specific entity or the surrounding environment. No mutations. Analyzes trait types to infer scent categories: edible items smell like food, lit light sources smell like burning, and open containers may contain aromatic items.</p>
+
+      <details open>
+        <summary>Details</summary>
+        <table>
+          <thead>
+            <tr><th>Field</th><th>Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Action ID</td><td><code>if.action.smelling</code></td></tr>
+            <tr><td>Scope</td><td><code>AWARE</code> (optional target)</td></tr>
+            <tr><td>Validation</td><td>If target is specified, it must be in the same room</td></tr>
+            <tr><td>Mutation</td><td>None</td></tr>
+            <tr><td>Events</td><td><code>if.event.smelled</code></td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <h3>Grammar Patterns</h3>
+      <p>No grammar patterns are currently defined in the core grammar for smelling. Stories should add their own patterns:</p>
+      <pre><code>// Story grammar extension example:
+grammar.forAction('if.action.smelling')
+  .verbs(['smell', 'sniff']).build();
+grammar.define('smell :target')
+  .mapsTo('if.action.smelling').withPriority(100).build();</code></pre>
+
+      <h3>Scent Detection Logic</h3>
+      <p>When smelling a <strong>specific target</strong>:</p>
+      <ul>
+        <li>Edible (food): <code>food_scent</code></li>
+        <li>Edible (drink): <code>drink_scent</code></li>
+        <li>Lit light source: <code>burning_scent</code></li>
+        <li>Open container with edible contents: <code>container_food_scent</code></li>
+        <li>Otherwise: <code>no_particular_scent</code></li>
+      </ul>
+      <p>When smelling the <strong>environment</strong> (no target):</p>
+      <ul>
+        <li>Lit light sources in room: <code>smoke_detected</code></li>
+        <li>Edible items in room: <code>food_nearby</code></li>
+        <li>Other scent sources: <code>room_scents</code></li>
+        <li>Nothing: <code>no_scent</code></li>
+      </ul>
+
+      <pre><code>// > smell
+// You detect the faint scent of food nearby.
+//
+// > smell torch
+// The lit torch gives off an acrid, smoky smell.</code></pre>
+    </article>
+
+    <!-- Touching -->
+    <article id="touching">
+      <h2>Touching</h2>
+      <p>Lets the player touch an entity to discover tactile properties: temperature, texture, and material. No mutations. Infers properties from the target's traits &mdash; lit light sources feel hot, active devices feel warm, wearable items feel soft, and scenery feels immovable. The verb used in the command (<code>touch</code>, <code>feel</code>, <code>poke</code>, etc.) selects a verb-specific message when no special properties apply.</p>
+
+      <details open>
+        <summary>Details</summary>
+        <table>
+          <thead>
+            <tr><th>Field</th><th>Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Action ID</td><td><code>if.action.touching</code></td></tr>
+            <tr><td>Scope</td><td><code>REACHABLE</code></td></tr>
+            <tr><td>Validation</td><td>Target must exist and be reachable</td></tr>
+            <tr><td>Mutation</td><td>None</td></tr>
+            <tr><td>Events</td><td><code>if.event.touched</code></td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <h3>Grammar Patterns</h3>
+      <pre><code>grammar.forAction('if.action.touching')
+  .verbs(['touch', 'rub', 'feel', 'pat', 'stroke', 'poke', 'prod'])
+  .pattern(':target').build();</code></pre>
+
+      <h3>Tactile Property Cascade</h3>
+      <p>Properties are checked in priority order. The first match wins:</p>
+      <ol>
+        <li><strong>Lit light source</strong>: <code>feels_hot</code> (temperature: hot)</li>
+        <li><strong>Active switchable device</strong>: <code>feels_warm</code> or <code>device_vibrating</code></li>
+        <li><strong>Wearable</strong>: <code>feels_soft</code> (texture: soft)</li>
+        <li><strong>Door</strong>: <code>feels_smooth</code> (texture: smooth, material: hard)</li>
+        <li><strong>Container/supporter with liquid</strong>: <code>liquid_container</code></li>
+        <li><strong>Container/supporter</strong>: <code>feels_hard</code> (texture: solid)</li>
+        <li><strong>Edible drink</strong>: <code>feels_wet</code> (texture: liquid)</li>
+        <li><strong>Scenery</strong>: <code>immovable_object</code></li>
+        <li><strong>Default</strong>: verb-specific message (<code>touched</code>, <code>poked</code>, <code>prodded</code>, <code>patted</code>, <code>stroked</code>, <code>touched_gently</code>)</li>
+      </ol>
+
+      <pre><code>// > touch torch
+// It's very hot!
+//
+// > feel cloak
+// The velvet cloak feels soft to the touch.
+//
+// > poke troll
+// You poke the troll. It doesn't seem amused.</code></pre>
+    </article>
+
+    <!-- Showing -->
+    <article id="showing">
+      <h2>Showing</h2>
+      <p>Shows an item to an NPC. Requires two targets: the item being shown (must be carried or implicitly takeable) and the viewer (must have <code>ActorTrait</code> and be in the same room). The viewer's reaction depends on their <code>reactions</code> configuration &mdash; they may recognize, be impressed, examine, or simply nod.</p>
+
+      <details open>
+        <summary>Details</summary>
+        <table>
+          <thead>
+            <tr><th>Field</th><th>Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Action ID</td><td><code>if.action.showing</code></td></tr>
+            <tr><td>Scope</td><td>item: <code>REACHABLE</code>, viewer: <code>VISIBLE</code></td></tr>
+            <tr><td>Validation</td><td>Item must be carried (implicit take); viewer must be an Actor in same room; cannot show to self</td></tr>
+            <tr><td>Mutation</td><td>None</td></tr>
+            <tr><td>Events</td><td><code>if.event.shown</code></td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <h3>Grammar Patterns</h3>
+      <pre><code>grammar.define('show :item to :recipient')
+  .hasTrait('recipient', TraitType.ACTOR)
+  .mapsTo('if.action.showing').withPriority(100).build();
+
+grammar.define('show :recipient :item')
+  .hasTrait('recipient', TraitType.ACTOR)
+  .mapsTo('if.action.showing').withPriority(95).build();</code></pre>
+
+      <h3>Viewer Reactions</h3>
+      <p>If the viewer's <code>ActorTrait</code> has a <code>reactions</code> object, the action checks for matching item names:</p>
+      <ul>
+        <li><code>viewer_recognizes</code> &mdash; item name matches <code>reactions.recognizes</code></li>
+        <li><code>viewer_impressed</code> &mdash; item name matches <code>reactions.impressed</code></li>
+        <li><code>viewer_unimpressed</code> &mdash; item name matches <code>reactions.unimpressed</code></li>
+        <li><code>viewer_examines</code> &mdash; item name matches <code>reactions.examines</code></li>
+        <li><code>viewer_nods</code> &mdash; NPC has reactions but no specific match</li>
+        <li><code>shown</code> &mdash; NPC has no reactions configured</li>
+        <li><code>wearing_shown</code> &mdash; item is currently worn</li>
+      </ul>
+
+      <pre><code>// > show egg to troll
+// The troll examines the jewel-encrusted egg with interest.
+//
+// > show sword to thief
+// The thief's eyes widen as he recognizes the blade.</code></pre>
+    </article>
+
+    <!-- Talking -->
+    <article id="talking">
+      <h2>Talking</h2>
+      <p>Initiates conversation with an NPC. Validates that the target is visible, in the same room, is an Actor, and is available for conversation. Greeting messages vary based on conversation state: first meeting, subsequent meetings, personality type, and relationship status.</p>
+
+      <details open>
+        <summary>Details</summary>
+        <table>
+          <thead>
+            <tr><th>Field</th><th>Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Action ID</td><td><code>if.action.talking</code></td></tr>
+            <tr><td>Scope</td><td><code>AWARE</code></td></tr>
+            <tr><td>Validation</td><td>Target must be visible, in same room, have <code>ActorTrait</code>, not be self, and be available</td></tr>
+            <tr><td>Mutation</td><td>None</td></tr>
+            <tr><td>Events</td><td><code>if.event.talked</code></td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <h3>Grammar Patterns</h3>
+      <p>No grammar patterns are currently defined in the core grammar for talking. Stories should add their own patterns:</p>
+      <pre><code>// Story grammar extension example:
+grammar.define('talk to :target')
+  .mapsTo('if.action.talking').withPriority(100).build();
+grammar.define('greet :target')
+  .mapsTo('if.action.talking').withPriority(95).build();</code></pre>
+
+      <h3>Conversation State Machine</h3>
+      <p>The talking action checks the NPC's conversation system (stored in <code>ActorTrait.conversation</code> or custom properties) and selects a greeting based on state:</p>
+
+      <table>
+        <thead>
+          <tr><th>Condition</th><th>Message ID</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>First meeting, formal personality</td><td><code>formal_greeting</code></td></tr>
+          <tr><td>First meeting, casual personality</td><td><code>casual_greeting</code></td></tr>
+          <tr><td>First meeting, default</td><td><code>first_meeting</code></td></tr>
+          <tr><td>Returning, friendly relationship</td><td><code>friendly_greeting</code></td></tr>
+          <tr><td>Returning, NPC remembers player</td><td><code>remembers_you</code></td></tr>
+          <tr><td>Returning, default</td><td><code>greets_again</code></td></tr>
+          <tr><td>NPC has conversation topics</td><td><code>has_topics</code></td></tr>
+          <tr><td>NPC has no topics left</td><td><code>nothing_to_say</code></td></tr>
+          <tr><td>NPC without conversation system</td><td><code>no_response</code></td></tr>
+          <tr><td>NPC not available</td><td><code>not_available</code> (blocked)</td></tr>
+        </tbody>
+      </table>
+
+      <pre><code>// > talk to wizard
+// The old wizard looks up from his spell book. "Ah, a visitor!
+// I don't get many of those these days."
+//
+// > talk to troll
+// The troll grunts but doesn't seem interested in conversation.</code></pre>
+    </article>
+
+    <!-- Customization -->
+    <section id="customization">
+      <h2>Customizing Sensory Actions</h2>
+      <p>Because most sensory actions are read-only, the primary customization mechanism is the <strong>language layer</strong>. Override message handlers in <code>lang-en-us</code> to change how observations are described. For deeper customization, use <strong>interceptors</strong> to inject additional events or modify behavior.</p>
+
+      <h3>Story-Specific Descriptions via Interceptors</h3>
+      <p>Use <code>postExecute</code> interceptors to add custom responses to sensory actions without modifying the action itself:</p>
+      <pre><code>// Add a custom listening response for a specific room
+const waterfallListeningInterceptor: ActionInterceptor = {
+  actionId: 'if.action.listening',
+  postExecute(context) {
+    const room = context.world.getContainingRoom(context.player.id);
+    if (room?.id === 'waterfall-room') {
+      // Override the default silence message
+      context.sharedData.messageId = 'waterfall_roar';
+    }
+  },
+};</code></pre>
+
+      <h3>Custom Readable Types</h3>
+      <p>The reading action dispatches on <code>ReadableTrait.readableType</code>. Add new types by setting the property and providing a matching message in the language layer:</p>
+      <pre><code>// A map with custom readable type
+const map = world.createEntity('ancient map', EntityType.ITEM);
+map.add(new ReadableTrait({
+  readableType: 'map',       // custom type
+  text: 'The map shows...',
+  preview: 'An old parchment covered in faded markings.',
+}));
+
+// In lang-en-us, handle the custom message:
+// 'if.action.reading.read_map': ({ item, text }) =>
+//   `Unrolling the ${item}, you study its markings:\n\n${text}`</code></pre>
+    </section>
+
+    <!-- See Also -->
+    <section id="see-also">
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="actions-overview.html">Actions Overview</a> &mdash; the four-phase action pattern, ActionContext, and creating story actions</li>
+        <li><a href="traits-interaction.html">Interaction Traits</a> &mdash; ReadableTrait, EdibleTrait, and other traits used by sensory actions</li>
+        <li><a href="scope.html">Scope</a> &mdash; scope levels (VISIBLE, REACHABLE, AWARE) and how they affect action validation</li>
+        <li><a href="world.html">World Model</a> &mdash; entity queries, containment, and the WorldModel API</li>
+        <li><a href="actions-objects.html">Object Handling Actions</a> &mdash; taking, dropping, putting, and other manipulation actions</li>
+        <li><a href="actions-meta.html">Meta Actions</a> &mdash; scoring, saving, restoring, help, and other meta commands</li>
+      </ul>
+    </section>
+  </main>
+  <script src="js/docs.js"></script>
+</body>
+</html>

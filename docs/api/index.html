@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sharpee API Reference</title>
+  <link rel="stylesheet" href="css/pico.min.css">
+  <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <main>
+    <header>
+      <hgroup>
+        <h1>Sharpee API Reference</h1>
+        <p>Interactive Fiction engine &mdash; world-model &amp; stdlib documentation</p>
+      </hgroup>
+    </header>
+
+    <section id="overview">
+      <p>Sharpee is a parser-based Interactive Fiction authoring tool built in TypeScript. This reference covers the two core packages that story authors and platform developers interact with most: the <strong>world-model</strong> (entities, traits, behaviors, spatial relationships) and the <strong>stdlib</strong> (actions, scope, validation, grammar).</p>
+      <p>Choose a path below based on your goal, or browse the full page list in the sidebar.</p>
+    </section>
+
+    <div class="path-card">
+      <h3>Story Author Path</h3>
+      <p>You're writing an interactive fiction story with Sharpee.</p>
+      <ol>
+        <li><a href="authoring.html"><strong>Getting Started</strong></a> &mdash; build your first room, add objects, wire puzzles</li>
+        <li><a href="entities.html"><strong>Entities</strong></a> &mdash; rooms, items, actors, and how to create them</li>
+        <li><a href="world.html"><strong>World Model</strong></a> &mdash; spatial relationships, queries, state management</li>
+        <li><a href="traits-core.html"><strong>Traits</strong></a> &mdash; Identity, Room, Container, and 25+ more
+          (<a href="traits-state.html">State</a>,
+           <a href="traits-interaction.html">Interaction</a>,
+           <a href="traits-physical.html">Physical</a>,
+           <a href="traits-combat.html">Combat</a>)</li>
+        <li><a href="actions-overview.html"><strong>Actions</strong></a> &mdash; how commands work, creating custom actions
+          (<a href="actions-objects.html">Objects</a>,
+           <a href="actions-movement.html">Movement</a>,
+           <a href="actions-state.html">State</a>,
+           <a href="actions-physical.html">Physical</a>,
+           <a href="actions-sensory.html">Sensory</a>,
+           <a href="actions-meta.html">Meta</a>)</li>
+        <li><a href="capabilities.html"><strong>Custom Mechanics</strong></a> &mdash; capability dispatch, interceptors, entity-specific behaviors</li>
+        <li><a href="events.html"><strong>Events</strong></a> &mdash; react to actions, chain events, perception filtering</li>
+      </ol>
+    </div>
+
+    <div class="path-card">
+      <h3>Platform Developer Path</h3>
+      <p>You're extending or contributing to the Sharpee engine.</p>
+      <ol>
+        <li><a href="entities.html"><strong>Entity System</strong></a> &mdash; IFEntity internals, serialization, ID generation</li>
+        <li><a href="traits-core.html"><strong>Trait Architecture</strong></a> &mdash; ITrait interface, trait registration, composition</li>
+        <li><a href="world.html"><strong>World Model Internals</strong></a> &mdash; SpatialIndex, VisibilityBehavior, EntityStore</li>
+        <li><a href="actions-overview.html"><strong>Action Framework</strong></a> &mdash; four-phase pattern, ActionContext, command executor</li>
+        <li><a href="scope.html"><strong>Scope System</strong></a> &mdash; ScopeLevel, ScopeResolver, ScopeRule, evaluation</li>
+        <li><a href="capabilities.html"><strong>Capability Dispatch</strong></a> &mdash; registry, globalThis pattern, interceptor pipeline</li>
+        <li><a href="events.html"><strong>Event System</strong></a> &mdash; semantic events, event chains, EventProcessor</li>
+        <li><a href="platform.html"><strong>Platform Guide</strong></a> &mdash; stories, language packs, clients, text services</li>
+      </ol>
+    </div>
+
+    <section>
+      <h2>All Pages</h2>
+      <div class="api-summary">
+        <a href="entities.html">Entities</a>
+        <a href="world.html">World Model</a>
+        <a href="traits-core.html">Core Traits</a>
+        <a href="traits-state.html">State Traits</a>
+        <a href="traits-interaction.html">Interaction Traits</a>
+        <a href="traits-physical.html">Physical Traits</a>
+        <a href="traits-combat.html">Combat Traits</a>
+        <a href="actions-overview.html">Actions Overview</a>
+        <a href="actions-movement.html">Movement Actions</a>
+        <a href="actions-objects.html">Object Actions</a>
+        <a href="actions-state.html">State Actions</a>
+        <a href="actions-physical.html">Physical Actions</a>
+        <a href="actions-sensory.html">Sensory Actions</a>
+        <a href="actions-meta.html">Meta Actions</a>
+        <a href="capabilities.html">Capabilities</a>
+        <a href="events.html">Events</a>
+        <a href="scope.html">Scope</a>
+        <a href="authoring.html">Authoring Guide</a>
+        <a href="platform.html">Platform Guide</a>
+      </div>
+    </section>
+
+    <section>
+      <h2>Package Map</h2>
+      <table>
+        <thead>
+          <tr><th>Package</th><th>Provides</th><th>Key Pages</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>@sharpee/world-model</code></td>
+            <td>Entities, traits, behaviors, WorldModel, AuthorModel, capabilities, scope</td>
+            <td><a href="entities.html">Entities</a>, <a href="world.html">World</a>, <a href="traits-core.html">Traits</a>, <a href="capabilities.html">Capabilities</a>, <a href="scope.html">Scope</a></td>
+          </tr>
+          <tr>
+            <td><code>@sharpee/stdlib</code></td>
+            <td>Standard actions, ActionContext, validation, grammar extension, perception</td>
+            <td><a href="actions-overview.html">Actions</a>, <a href="events.html">Events</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+  <script src="js/docs.js"></script>
+</body>
+</html>

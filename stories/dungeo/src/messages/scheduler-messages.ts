@@ -135,4 +135,29 @@ export function registerSchedulerMessages(language: LanguageProvider): void {
 
   language.addMessage(DungeoSchedulerMessages.TROLL_KNOCKED_OUT, 'The troll is battered into unconsciousness.');
   language.addMessage(DungeoSchedulerMessages.TROLL_WAKES_UP, 'The troll stirs, quickly resuming a fighting stance.');
+
+  // ==========================================================================
+  // Brick/Fuse Explosion (MDL act2.mud:646-736)
+  // ==========================================================================
+
+  language.addMessage(DungeoSchedulerMessages.FUSE_STARTS, 'The wire starts to burn.');
+  language.addMessage(DungeoSchedulerMessages.FUSE_FIZZLES, 'The wire rapidly burns into nothingness.');
+  language.addMessage(DungeoSchedulerMessages.SAFE_BLOWN_OPEN,
+    'There is a tremendous explosion, and the door of the box is blown off!');
+  language.addMessage(DungeoSchedulerMessages.BRICK_KILLS_PLAYER,
+    "Now you've done it. It seems that the brick has other properties than weight, namely the ability to blow you to smithereens.");
+  language.addMessage(DungeoSchedulerMessages.DISTANT_EXPLOSION,
+    'You hear a distant explosion.');
+
+  // Safe room collapse (SAFIN) - MDL act2.mud:696-711
+  language.addMessage(DungeoSchedulerMessages.SAFE_COLLAPSE_DEATH,
+    'The room trembles and 50,000 pounds of rock fall on you, turning you into a pancake.');
+  language.addMessage(DungeoSchedulerMessages.SAFE_COLLAPSE_RUMBLE,
+    'You may recall that recent explosion. Well, probably as a result of that, you hear an ominous rumbling, as if one of the rooms in the dungeon had collapsed.');
+
+  // Wide Ledge collapse (LEDIN) - MDL act2.mud:713-736
+  language.addMessage(DungeoSchedulerMessages.LEDGE_COLLAPSE_DEATH,
+    'The force of the explosion has caused the ledge to collapse belatedly.');
+  language.addMessage(DungeoSchedulerMessages.LEDGE_COLLAPSE_NARROW_ESCAPE,
+    'The ledge collapses, giving you a narrow escape.');
 }

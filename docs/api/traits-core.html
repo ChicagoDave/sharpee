@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Core Traits - Sharpee API</title>
+  <link rel="stylesheet" href="css/pico.min.css">
+  <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <main>
+    <header>
+      <hgroup>
+        <h1>Core Traits</h1>
+        <p>Essential traits for rooms, items, and actors</p>
+      </hgroup>
+      <nav aria-label="breadcrumb">
+        <a href="index.html">API</a>
+        <span class="separator">/</span>
+        <a href="traits-core.html">Traits</a>
+        <span class="separator">/</span>
+        Core
+      </nav>
+    </header>
+
+    <!-- Overview -->
+    <section id="overview">
+      <h2>Overview</h2>
+      <p>These are the foundational traits that nearly every entity uses. <code>IdentityTrait</code> gives things names, <code>RoomTrait</code> makes rooms, <code>ContainerTrait</code> holds things, and so on. Most entities you create will have at least an <code>IdentityTrait</code>, and rooms will always have both <code>IdentityTrait</code> and <code>RoomTrait</code>.</p>
+      <p>Traits are pure data structures &mdash; they carry properties but no behavior logic. All logic belongs in corresponding behaviors or actions. See the <a href="entities.html#serialization-warning">serialization warning</a> for why this matters.</p>
+    </section>
+
+    <!-- Quick Reference -->
+    <section class="quick-ref">
+      <h2>Quick Reference</h2>
+      <table>
+        <thead>
+          <tr><th>Trait</th><th>Type String</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="#identity-trait"><code>IdentityTrait</code></a></td>
+            <td><code>'identity'</code></td>
+            <td>Name, description, aliases, grammar</td>
+          </tr>
+          <tr>
+            <td><a href="#room-trait"><code>RoomTrait</code></a></td>
+            <td><code>'room'</code></td>
+            <td>Exits, darkness, visited state</td>
+          </tr>
+          <tr>
+            <td><a href="#container-trait"><code>ContainerTrait</code></a></td>
+            <td><code>'container'</code></td>
+            <td>Holds items inside</td>
+          </tr>
+          <tr>
+            <td><a href="#supporter-trait"><code>SupporterTrait</code></a></td>
+            <td><code>'supporter'</code></td>
+            <td>Holds items on top</td>
+          </tr>
+          <tr>
+            <td><a href="#actor-trait"><code>ActorTrait</code></a></td>
+            <td><code>'actor'</code></td>
+            <td>Player and NPC characters</td>
+          </tr>
+          <tr>
+            <td><a href="#exit-trait"><code>ExitTrait</code></a></td>
+            <td><code>'exit'</code></td>
+            <td>Directional exit as entity</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- IdentityTrait -->
+    <section id="identity-trait">
+      <article>
+        <h2>IdentityTrait</h2>
+        <p>The most universal trait &mdash; gives an entity its name, description, aliases for parser matching, and grammatical metadata. Almost every entity should have one.</p>
+        <p><strong>Type:</strong> <code>'identity'</code></p>
+
+        <details open>
+          <summary>Properties</summary>
+          <table>
+            <thead>
+              <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>name</code></td><td><code>string</code></td><td><code>''</code></td><td>Display name shown to the player</td></tr>
+              <tr><td><code>description</code></td><td><code>string</code></td><td><code>''</code></td><td>Full description shown on examine</td></tr>
+              <tr><td><code>nameId</code></td><td><code>string?</code></td><td>&mdash;</td><td>Message ID for localized name lookup</td></tr>
+              <tr><td><code>descriptionId</code></td><td><code>string?</code></td><td>&mdash;</td><td>Message ID for localized description lookup</td></tr>
+              <tr><td><code>aliases</code></td><td><code>string[]</code></td><td><code>[]</code></td><td>Alternative names the parser recognizes (e.g., <code>['lamp', 'lantern']</code>)</td></tr>
+              <tr><td><code>brief</code></td><td><code>string?</code></td><td>&mdash;</td><td>Short description for inventory listings and room contents</td></tr>
+              <tr><td><code>properName</code></td><td><code>boolean</code></td><td><code>false</code></td><td>If true, no article is prepended (e.g., "Zork" not "a Zork")</td></tr>
+              <tr><td><code>article</code></td><td><code>string</code></td><td><code>'a'</code></td><td>Indefinite article: <code>'a'</code>, <code>'an'</code>, <code>'some'</code>, etc.</td></tr>
+              <tr><td><code>concealed</code></td><td><code>boolean</code></td><td><code>false</code></td><td>If true, hidden from scope resolution and room listings until revealed</td></tr>
+              <tr><td><code>weight</code></td><td><code>number?</code></td><td>&mdash;</td><td>Weight for capacity calculations</td></tr>
+              <tr><td><code>volume</code></td><td><code>number?</code></td><td>&mdash;</td><td>Volume for capacity calculations</td></tr>
+              <tr><td><code>size</code></td><td><code>'tiny' | 'small' | 'medium' | 'large' | 'huge'?</code></td><td>&mdash;</td><td>Abstract size category</td></tr>
+              <tr><td><code>grammaticalNumber</code></td><td><code>'singular' | 'plural'?</code></td><td>&mdash;</td><td>Override grammatical number for text generation</td></tr>
+              <tr><td><code>adjectives</code></td><td><code>string[]</code></td><td><code>[]</code></td><td>Adjectives for disambiguation (e.g., <code>['blue']</code> for "blue cake")</td></tr>
+              <tr><td><code>nounType</code></td><td><code>'common' | 'proper' | 'mass' | 'unique' | 'plural'?</code></td><td>&mdash;</td><td>Controls article usage and pluralization</td></tr>
+              <tr><td><code>points</code></td><td><code>number?</code></td><td>&mdash;</td><td>Point value associated with this entity</td></tr>
+              <tr><td><code>pointsDescription</code></td><td><code>string?</code></td><td>&mdash;</td><td>Description of how points are earned</td></tr>
+            </tbody>
+          </table>
+        </details>
+
+        <pre><code>const room = world.createEntity('west-of-house', EntityType.ROOM);
+room
+  .add(new IdentityTrait({
+    name: 'West of House',
+    description: 'You are standing in an open field west of a white house.',
+    aliases: ['field', 'open field'],
+    properName: true,
+  }))
+  .add(new RoomTrait({ /* ... */ }));
+
+// Item with disambiguation adjectives
+const blueCake = world.createEntity('blue-cake', EntityType.ITEM);
+blueCake.add(new IdentityTrait({
+  name: 'blue cake',
+  description: 'A small cake with brilliant blue icing.',
+  aliases: ['cake'],
+  adjectives: ['blue'],
+  article: 'a',
+}));</code></pre>
+      </article>
+    </section>
+
+    <!-- RoomTrait -->
+    <section id="room-trait">
+      <article>
+        <h2>RoomTrait</h2>
+        <p>Makes an entity a location in the game world. Rooms have exits to other rooms, track whether the player has visited, and can be dark, outdoors, or underground.</p>
+        <p><strong>Type:</strong> <code>'room'</code></p>
+
+        <details open>
+          <summary>Properties</summary>
+          <table>
+            <thead>
+              <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>visited</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Set to true after the player enters for the first time</td></tr>
+              <tr><td><code>exits</code></td><td><code>Partial&lt;Record&lt;Direction, IExitInfo&gt;&gt;</code></td><td><code>{}</code></td><td>Map of direction to exit information</td></tr>
+              <tr><td><code>blockedExits</code></td><td><code>Partial&lt;Record&lt;Direction, string&gt;&gt;?</code></td><td>&mdash;</td><td>Map of direction to message ID explaining why exit is blocked</td></tr>
+              <tr><td><code>isDark</code></td><td><code>boolean</code></td><td><code>false</code></td><td>If true, room requires a light source to see</td></tr>
+              <tr><td><code>isOutdoors</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Whether this room is outdoors (affects weather, sky visibility)</td></tr>
+              <tr><td><code>isUnderground</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Whether this room is underground</td></tr>
+              <tr><td><code>initialDescription</code></td><td><code>string?</code></td><td>&mdash;</td><td>Description shown on first visit only</td></tr>
+              <tr><td><code>initialDescriptionId</code></td><td><code>string?</code></td><td>&mdash;</td><td>Message ID for localized initial description</td></tr>
+              <tr><td><code>region</code></td><td><code>string?</code></td><td>&mdash;</td><td>Region identifier for grouping rooms</td></tr>
+              <tr><td><code>tags</code></td><td><code>string[]</code></td><td><code>[]</code></td><td>Arbitrary tags for querying sets of rooms</td></tr>
+            </tbody>
+          </table>
+        </details>
+
+        <details>
+          <summary>IExitInfo</summary>
+          <table>
+            <thead>
+              <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>destination</code></td><td><code>string</code></td><td>Entity ID of the target room</td></tr>
+              <tr><td><code>via</code></td><td><code>string?</code></td><td>Entity ID of a door or barrier that gates this exit</td></tr>
+            </tbody>
+          </table>
+        </details>
+
+        <pre><code>import { Direction } from '@sharpee/world-model';
+
+const kitchen = world.createEntity('kitchen', EntityType.ROOM);
+kitchen
+  .add(new IdentityTrait({
+    name: 'Kitchen',
+    description: 'A small kitchen with a table and a window.',
+    properName: true,
+  }))
+  .add(new RoomTrait({
+    exits: {
+      [Direction.NORTH]: { destination: 'living-room' },
+      [Direction.EAST]: { destination: 'pantry', via: 'pantry-door' },
+    },
+    isDark: false,
+    isOutdoors: false,
+    region: 'house',
+  }));</code></pre>
+      </article>
+    </section>
+
+    <!-- ContainerTrait -->
+    <section id="container-trait">
+      <article>
+        <h2>ContainerTrait</h2>
+        <p>Allows an entity to hold other entities inside it. Containers can have capacity limits, be transparent (contents visible when closed), and optionally be enterable (the player can go inside).</p>
+        <p><strong>Type:</strong> <code>'container'</code></p>
+        <p>Containers typically also have an <code>OpenableTrait</code> so they can be opened and closed. Without it, items can always be inserted and removed.</p>
+
+        <details open>
+          <summary>Properties</summary>
+          <table>
+            <thead>
+              <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>capacity</code></td><td><code>{ maxWeight?, maxVolume?, maxItems? }?</code></td><td>&mdash;</td><td>Limits on what can be held inside</td></tr>
+              <tr><td><code>isTransparent</code></td><td><code>boolean</code></td><td><code>false</code></td><td>If true, contents are visible even when closed (e.g., glass case)</td></tr>
+              <tr><td><code>enterable</code></td><td><code>boolean</code></td><td><code>false</code></td><td>If true, the player can enter the container</td></tr>
+              <tr><td><code>allowedTypes</code></td><td><code>string[]?</code></td><td>&mdash;</td><td>Only entities of these types can be placed inside</td></tr>
+              <tr><td><code>excludedTypes</code></td><td><code>string[]?</code></td><td>&mdash;</td><td>Entities of these types cannot be placed inside</td></tr>
+            </tbody>
+          </table>
+        </details>
+
+        <pre><code>const chest = world.createEntity('wooden-chest', EntityType.CONTAINER);
+chest
+  .add(new IdentityTrait({
+    name: 'wooden chest',
+    description: 'A sturdy oak chest with iron bands.',
+  }))
+  .add(new ContainerTrait({
+    capacity: { maxWeight: 100 },
+  }))
+  .add(new OpenableTrait({ isOpen: false }));
+
+// A glass display case - contents visible when closed
+const displayCase = world.createEntity('display-case', EntityType.CONTAINER);
+displayCase
+  .add(new IdentityTrait({ name: 'glass case' }))
+  .add(new ContainerTrait({ isTransparent: true }))
+  .add(new OpenableTrait({ isOpen: false }));</code></pre>
+      </article>
+    </section>
+
+    <!-- SupporterTrait -->
+    <section id="supporter-trait">
+      <article>
+        <h2>SupporterTrait</h2>
+        <p>Allows an entity to have other entities placed on top of it. Unlike containers, supporters do not need to be opened &mdash; items on a supporter are always visible and accessible.</p>
+        <p><strong>Type:</strong> <code>'supporter'</code></p>
+
+        <details open>
+          <summary>Properties</summary>
+          <table>
+            <thead>
+              <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>capacity</code></td><td><code>{ maxWeight?, maxItems? }?</code></td><td>&mdash;</td><td>Limits on what can be placed on top</td></tr>
+              <tr><td><code>enterable</code></td><td><code>boolean?</code></td><td><code>false</code></td><td>If true, the player can sit/stand on the supporter</td></tr>
+              <tr><td><code>allowedTypes</code></td><td><code>string[]?</code></td><td>&mdash;</td><td>Only entities of these types can be placed on top</td></tr>
+              <tr><td><code>excludedTypes</code></td><td><code>string[]?</code></td><td>&mdash;</td><td>Entities of these types cannot be placed on top</td></tr>
+            </tbody>
+          </table>
+        </details>
+
+        <pre><code>const table = world.createEntity('kitchen-table', EntityType.SUPPORTER);
+table
+  .add(new IdentityTrait({
+    name: 'kitchen table',
+    description: 'A rough wooden table scarred by years of use.',
+  }))
+  .add(new SupporterTrait({
+    capacity: { maxItems: 10, maxWeight: 200 },
+  }));
+
+// Place an item on the table
+world.moveEntity(candle.id, table.id);</code></pre>
+      </article>
+    </section>
+
+    <!-- ActorTrait -->
+    <section id="actor-trait">
+      <article>
+        <h2>ActorTrait</h2>
+        <p>Makes an entity a character in the game world &mdash; either the player or an NPC. Actors have pronouns for text generation, an optional state machine, and inventory capacity.</p>
+        <p><strong>Type:</strong> <code>'actor'</code></p>
+
+        <details open>
+          <summary>Properties</summary>
+          <table>
+            <thead>
+              <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>isPlayer</code></td><td><code>boolean</code></td><td><code>false</code></td><td>True for the player character</td></tr>
+              <tr><td><code>isPlayable</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Whether this actor can be controlled by the player</td></tr>
+              <tr><td><code>state</code></td><td><code>string?</code></td><td>&mdash;</td><td>Current state for NPC state machines (e.g., <code>'idle'</code>, <code>'hostile'</code>)</td></tr>
+              <tr><td><code>pronouns</code></td><td><code>PronounSet</code></td><td><code>THEY_THEM</code></td><td>Pronoun set for text generation</td></tr>
+              <tr><td><code>honorific</code></td><td><code>string?</code></td><td>&mdash;</td><td>Title like "Sir", "Dr.", etc.</td></tr>
+              <tr><td><code>capacity</code></td><td><code>{ maxItems?, maxWeight?, maxVolume? }?</code></td><td>&mdash;</td><td>Inventory capacity limits</td></tr>
+              <tr><td><code>customProperties</code></td><td><code>Record&lt;string, any&gt;?</code></td><td>&mdash;</td><td>Freeform properties for story-specific NPC data</td></tr>
+            </tbody>
+          </table>
+        </details>
+
+        <details>
+          <summary>PronounSet</summary>
+          <p>A <code>PronounSet</code> provides four forms used in text generation:</p>
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Example (HE_HIM)</th><th>Example (THEY_THEM)</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>subject</code></td><td>he</td><td>they</td></tr>
+              <tr><td><code>object</code></td><td>him</td><td>them</td></tr>
+              <tr><td><code>possessive</code></td><td>his</td><td>their</td></tr>
+              <tr><td><code>reflexive</code></td><td>himself</td><td>themselves</td></tr>
+            </tbody>
+          </table>
+          <p>Predefined sets: <code>HE_HIM</code>, <code>SHE_HER</code>, <code>THEY_THEM</code>, <code>XE_XEM</code></p>
+        </details>
+
+        <pre><code>import { HE_HIM, SHE_HER, THEY_THEM } from '@sharpee/world-model';
+
+// Create the player
+const player = world.createEntity('player', EntityType.ACTOR);
+player
+  .add(new IdentityTrait({ name: 'adventurer' }))
+  .add(new ActorTrait({
+    isPlayer: true,
+    pronouns: THEY_THEM,
+    capacity: { maxItems: 15, maxWeight: 100 },
+  }));
+
+// Create an NPC
+const troll = world.createEntity('troll', EntityType.ACTOR);
+troll
+  .add(new IdentityTrait({
+    name: 'troll',
+    description: 'A nasty-looking troll brandishing a bloody axe.',
+    aliases: ['nasty troll'],
+  }))
+  .add(new ActorTrait({
+    isPlayer: false,
+    pronouns: HE_HIM,
+    state: 'hostile',
+    customProperties: { strength: 8, treasure: 'troll-axe' },
+  }));</code></pre>
+      </article>
+    </section>
+
+    <!-- ExitTrait -->
+    <section id="exit-trait">
+      <article>
+        <h2>ExitTrait</h2>
+        <p>Represents a directional passage between two rooms as a standalone entity. This is rarely needed &mdash; most exits are stored directly on <code>RoomTrait.exits</code> as <code>IExitInfo</code> objects. Use <code>ExitTrait</code> only when an exit needs its own identity, traits, or special behavior (e.g., a hidden passage that must be discovered).</p>
+        <p><strong>Type:</strong> <code>'exit'</code></p>
+
+        <details open>
+          <summary>Properties</summary>
+          <table>
+            <thead>
+              <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>from</code></td><td><code>string</code></td><td><em>required</em></td><td>Entity ID of the source room</td></tr>
+              <tr><td><code>to</code></td><td><code>string</code></td><td><em>required</em></td><td>Entity ID of the destination room</td></tr>
+              <tr><td><code>direction</code></td><td><code>string?</code></td><td>&mdash;</td><td>Direction label (e.g., <code>'north'</code>)</td></tr>
+              <tr><td><code>command</code></td><td><code>string</code></td><td><em>required</em></td><td>The command that triggers this exit (e.g., <code>'go north'</code>)</td></tr>
+              <tr><td><code>aliases</code></td><td><code>string[]?</code></td><td>&mdash;</td><td>Alternative commands (e.g., <code>['n', 'north']</code>)</td></tr>
+              <tr><td><code>visible</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Whether the exit is visible in room descriptions</td></tr>
+              <tr><td><code>listed</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Whether the exit appears in exit listings</td></tr>
+              <tr><td><code>bidirectional</code></td><td><code>boolean</code></td><td><code>false</code></td><td>If true, the exit works in both directions</td></tr>
+            </tbody>
+          </table>
+        </details>
+
+        <pre><code>// A hidden passage - rarely needed, most exits use RoomTrait.exits
+const secretPassage = world.createEntity('secret-passage', EntityType.EXIT);
+secretPassage
+  .add(new IdentityTrait({
+    name: 'secret passage',
+    description: 'A narrow passage hidden behind the bookcase.',
+    concealed: true,  // hidden until discovered
+  }))
+  .add(new ExitTrait({
+    from: 'library',
+    to: 'hidden-study',
+    direction: 'north',
+    command: 'go north',
+    aliases: ['n', 'north', 'enter passage'],
+    visible: false,
+    listed: false,
+  }));</code></pre>
+      </article>
+    </section>
+
+    <!-- See Also -->
+    <section id="see-also">
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="entities.html">Entities</a> &mdash; entity creation, trait management, and serialization</li>
+        <li><a href="traits-state.html">State Traits</a> &mdash; OpenableTrait, LockableTrait, SwitchableTrait</li>
+        <li><a href="traits-interaction.html">Interaction Traits</a> &mdash; SceneryTrait, ReadableTrait, WearableTrait</li>
+        <li><a href="traits-physical.html">Physical Traits</a> &mdash; LightSourceTrait, DoorTrait, VehicleTrait</li>
+        <li><a href="traits-combat.html">Combat Traits</a> &mdash; CombatantTrait, WeaponTrait</li>
+        <li><a href="actions-overview.html">Actions</a> &mdash; the four-phase action pattern</li>
+      </ul>
+    </section>
+  </main>
+  <script src="js/docs.js"></script>
+</body>
+</html>

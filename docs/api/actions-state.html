@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>State Change Actions - Sharpee API</title>
+  <link rel="stylesheet" href="css/pico.min.css">
+  <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <main>
+    <header>
+      <hgroup>
+        <h1>State Change Actions</h1>
+        <p>Opening, closing, locking, switching, wearing, and removing clothing</p>
+      </hgroup>
+      <nav aria-label="breadcrumb">
+        <a href="index.html">API</a>
+        <span class="separator">/</span>
+        <a href="actions-overview.html">Actions</a>
+        <span class="separator">/</span>
+        State Changes
+      </nav>
+    </header>
+
+    <!-- Quick Reference -->
+    <section class="quick-ref">
+      <h2>Quick Reference</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Action</th>
+            <th>ID</th>
+            <th>Required Trait</th>
+            <th>Group</th>
+            <th>Scope</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="#opening">Opening</a></td>
+            <td><code>if.action.opening</code></td>
+            <td><a href="traits-state.html#openable-trait">OpenableTrait</a></td>
+            <td><code>container_manipulation</code></td>
+            <td>REACHABLE</td>
+          </tr>
+          <tr>
+            <td><a href="#closing">Closing</a></td>
+            <td><code>if.action.closing</code></td>
+            <td><a href="traits-state.html#openable-trait">OpenableTrait</a></td>
+            <td><code>container_manipulation</code></td>
+            <td>REACHABLE</td>
+          </tr>
+          <tr>
+            <td><a href="#locking">Locking</a></td>
+            <td><code>if.action.locking</code></td>
+            <td><a href="traits-state.html#lockable-trait">LockableTrait</a></td>
+            <td><code>lock_manipulation</code></td>
+            <td>REACHABLE (target), CARRIED (key)</td>
+          </tr>
+          <tr>
+            <td><a href="#unlocking">Unlocking</a></td>
+            <td><code>if.action.unlocking</code></td>
+            <td><a href="traits-state.html#lockable-trait">LockableTrait</a></td>
+            <td><code>lock_manipulation</code></td>
+            <td>REACHABLE (target), CARRIED (key)</td>
+          </tr>
+          <tr>
+            <td><a href="#switching-on">Switching On</a></td>
+            <td><code>if.action.switching_on</code></td>
+            <td><a href="traits-state.html#switchable-trait">SwitchableTrait</a></td>
+            <td><code>device_manipulation</code></td>
+            <td>REACHABLE</td>
+          </tr>
+          <tr>
+            <td><a href="#switching-off">Switching Off</a></td>
+            <td><code>if.action.switching_off</code></td>
+            <td><a href="traits-state.html#switchable-trait">SwitchableTrait</a></td>
+            <td><code>device_manipulation</code></td>
+            <td>REACHABLE</td>
+          </tr>
+          <tr>
+            <td><a href="#wearing">Wearing</a></td>
+            <td><code>if.action.wearing</code></td>
+            <td><a href="traits-interaction.html#wearable-trait">WearableTrait</a></td>
+            <td><code>wearable_manipulation</code></td>
+            <td>REACHABLE (implicit take)</td>
+          </tr>
+          <tr>
+            <td><a href="#taking-off">Taking Off</a></td>
+            <td><code>if.action.taking_off</code></td>
+            <td><a href="traits-interaction.html#wearable-trait">WearableTrait</a></td>
+            <td><code>wearable_manipulation</code></td>
+            <td>CARRIED</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Overview -->
+    <section id="overview">
+      <h2>Overview</h2>
+      <p>State change actions modify boolean or enumerated properties on entities &mdash; open/closed, locked/unlocked, on/off, worn/not worn. Unlike <a href="actions-objects.html">object handling actions</a> that move entities between locations, state change actions toggle trait properties in place.</p>
+      <p>All eight actions follow the standard <a href="actions-overview.html">four-phase pattern</a>: <em>validate</em>, <em>execute</em>, <em>report</em>, <em>blocked</em>. Each delegates its core mutation to a <strong>behavior</strong> (e.g., <code>OpenableBehavior.open()</code>), keeping the action itself focused on coordination and event generation.</p>
+      <p>State change actions pair naturally: opening/closing, locking/unlocking, switching on/switching off, wearing/taking off. The same trait backs both actions in each pair, and the behavior enforces that only valid transitions occur (you cannot close something that is already closed).</p>
+    </section>
+
+    <!-- Opening -->
+    <section id="opening">
+      <h2>Opening</h2>
+      <p>Opens containers and doors. Delegates state changes to <code>OpenableBehavior</code> and checks lock status via <code>LockableBehavior</code>.</p>
+
+      <article>
+        <h3>Action ID</h3>
+        <p><code>if.action.opening</code></p>
+      </article>
+
+      <article>
+        <h3>Grammar Patterns</h3>
+        <pre><code>open :door                    // "open chest", "open door"
+open :container with :tool    // "open chest with crowbar" (maps to if.action.opening_with)</code></pre>
+        <p>The parser requires the target to have <a href="traits-state.html#openable-trait">OpenableTrait</a>. Scope is <code>REACHABLE</code> &mdash; you must be able to physically reach the target.</p>
+      </article>
+
+      <article>
+        <h3>Validation</h3>
+        <details open>
+          <summary>Checks performed</summary>
+          <table>
+            <thead>
+              <tr><th>Check</th><th>Error Code</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Target exists</td><td><code>no_target</code></td><td>No direct object specified</td></tr>
+              <tr><td>Scope check</td><td><code>cant_reach</code></td><td>Target is not reachable by the player</td></tr>
+              <tr><td>Has OpenableTrait</td><td><code>not_openable</code></td><td>Target does not have the OpenableTrait</td></tr>
+              <tr><td>Not already open</td><td><code>already_open</code></td><td><code>OpenableBehavior.canOpen()</code> returns false because target is already open</td></tr>
+              <tr><td>Not locked</td><td><code>locked</code></td><td>Target has LockableTrait and <code>LockableBehavior.isLocked()</code> returns true</td></tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <article>
+        <h3>Execution</h3>
+        <p>Calls <code>OpenableBehavior.open(noun)</code> which sets <code>isOpen = true</code> on the OpenableTrait. The <code>IOpenResult</code> is stored in <code>sharedData.openResult</code> for the report phase.</p>
+      </article>
+
+      <article>
+        <h3>Events</h3>
+        <details open>
+          <summary>Emitted events</summary>
+          <table>
+            <thead>
+              <tr><th>Event</th><th>When</th><th>Key Data</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>if.event.opened</code></td>
+                <td>Success</td>
+                <td><code>targetId</code>, <code>targetName</code>, <code>actorId</code>, <code>messageId</code></td>
+              </tr>
+              <tr>
+                <td><code>opened</code></td>
+                <td>Success (backward compat)</td>
+                <td><code>targetId</code>, <code>targetName</code></td>
+              </tr>
+              <tr>
+                <td><code>if.event.open_blocked</code></td>
+                <td>Validation failed</td>
+                <td><code>targetId</code>, <code>targetName</code>, <code>reason</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+        <p>The <code>messageId</code> varies based on content: <code>opened</code> for a simple open, <code>its_empty</code> when the container has no contents. Revealed contents are handled by a separate stdlib event handler that fires on <code>if.event.opened</code>.</p>
+      </article>
+
+      <article>
+        <h3>Implicit Inference (ADR-104)</h3>
+        <p>The opening action declares <code>targetRequirements</code> with <code>trait: OpenableTrait</code> and <code>condition: 'not_open'</code>. When the player types <code>open it</code> and the pronoun resolves to something already open, the system searches scope for a better match &mdash; an entity that is openable and not yet open.</p>
+      </article>
+
+      <article>
+        <h3>Example</h3>
+        <pre><code>// Create an openable chest with contents
+const chest = world.createEntity('wooden-chest', 'object');
+chest.add(new OpenableTrait({ isOpen: false }));
+chest.add(new ContainerTrait({ capacity: 100 }));
+
+// Place a gem inside using AuthorModel (bypasses closed-container check)
+const author = new AuthorModel(world);
+author.moveEntity(gem.id, chest.id);
+
+// Player types: "open chest"
+// validate: chest has OpenableTrait, is closed, not locked -> valid
+// execute:  OpenableBehavior.open(chest) -> isOpen = true
+// report:   if.event.opened { targetId: 'wooden-chest', messageId: 'revealing' }
+//           if.event.revealed { items: [gem] }</code></pre>
+      </article>
+    </section>
+
+    <!-- Closing -->
+    <section id="closing">
+      <h2>Closing</h2>
+      <p>Closes containers and doors. The inverse of opening, this action delegates to <code>OpenableBehavior.close()</code> and checks for obstacles that might prevent closure.</p>
+
+      <article>
+        <h3>Action ID</h3>
+        <p><code>if.action.closing</code></p>
+      </article>
+
+      <article>
+        <h3>Grammar Patterns</h3>
+        <pre><code>close :door    // "close chest", "close door"</code></pre>
+        <p>The parser requires the target to have <a href="traits-state.html#openable-trait">OpenableTrait</a>. Scope is <code>REACHABLE</code>.</p>
+      </article>
+
+      <article>
+        <h3>Validation</h3>
+        <details open>
+          <summary>Checks performed</summary>
+          <table>
+            <thead>
+              <tr><th>Check</th><th>Error Code</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Target exists</td><td><code>no_target</code></td><td>No direct object specified</td></tr>
+              <tr><td>Scope check</td><td><code>cant_reach</code></td><td>Target is not reachable</td></tr>
+              <tr><td>Has OpenableTrait</td><td><code>not_closable</code></td><td>Target does not have the OpenableTrait</td></tr>
+              <tr><td>Currently open</td><td><code>already_closed</code></td><td>Target is already closed</td></tr>
+              <tr><td>No blocking obstacle</td><td><code>prevents_closing</code></td><td><code>OpenableBehavior.canClose()</code> returns false, or the trait has <code>closeRequirements.preventedBy</code></td></tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <article>
+        <h3>Execution</h3>
+        <p>Calls <code>OpenableBehavior.close(noun)</code> which sets <code>isOpen = false</code> on the OpenableTrait. The <code>ICloseResult</code> is stored in <code>sharedData.closeResult</code> for the report phase. The result may include a custom <code>closeMessage</code> and <code>closeSound</code>.</p>
+      </article>
+
+      <article>
+        <h3>Events</h3>
+        <details open>
+          <summary>Emitted events</summary>
+          <table>
+            <thead>
+              <tr><th>Event</th><th>When</th><th>Key Data</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>if.event.closed</code></td>
+                <td>Success</td>
+                <td><code>targetId</code>, <code>targetName</code>, <code>actorId</code>, <code>isContainer</code>, <code>isDoor</code>, <code>hasContents</code>, <code>contentsCount</code></td>
+              </tr>
+              <tr>
+                <td><code>closed</code></td>
+                <td>Success (backward compat)</td>
+                <td><code>targetId</code>, <code>targetName</code>, <code>customMessage</code>, <code>sound</code></td>
+              </tr>
+              <tr>
+                <td><code>if.event.close_blocked</code></td>
+                <td>Validation failed</td>
+                <td><code>targetId</code>, <code>targetName</code>, <code>reason</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <article>
+        <h3>Implicit Inference (ADR-104)</h3>
+        <p>Declares <code>targetRequirements</code> with <code>trait: OpenableTrait</code> and <code>condition: 'is_open'</code>. Pronoun resolution prefers entities that are currently open.</p>
+      </article>
+
+      <article>
+        <h3>Example</h3>
+        <pre><code>// Close a door that was opened
+// Player types: "close door"
+// validate: door has OpenableTrait, is currently open -> valid
+// execute:  OpenableBehavior.close(door) -> isOpen = false
+// report:   if.event.closed { targetId: 'front-door', isContainer: false, isDoor: true }</code></pre>
+      </article>
+    </section>
+
+    <!-- Locking -->
+    <section id="locking">
+      <h2>Locking</h2>
+      <p>Locks containers and doors. Requires the target to have <a href="traits-state.html#lockable-trait">LockableTrait</a>, be closed, and (when the trait specifies a key) the player to be carrying the correct key. Delegates to <code>LockableBehavior.lock()</code>.</p>
+
+      <article>
+        <h3>Action ID</h3>
+        <p><code>if.action.locking</code></p>
+      </article>
+
+      <article>
+        <h3>Grammar Patterns</h3>
+        <p>The locking action does not have a dedicated grammar pattern in the standard parser. It is typically triggered through story-specific grammar or as a side-effect. The unlocking action has the pattern:</p>
+        <pre><code>unlock :door with :key    // "unlock chest with skeleton key"</code></pre>
+        <p>Stories can add a matching locking pattern via <code>grammar.define()</code> in <code>extendParser()</code>.</p>
+      </article>
+
+      <article>
+        <h3>Validation</h3>
+        <details open>
+          <summary>Checks performed</summary>
+          <table>
+            <thead>
+              <tr><th>Check</th><th>Error Code</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Target exists</td><td><code>no_target</code></td><td>No direct object specified</td></tr>
+              <tr><td>Scope check</td><td><code>cant_reach</code></td><td>Target is not reachable</td></tr>
+              <tr><td>Has LockableTrait</td><td><code>not_lockable</code></td><td>Target does not have the LockableTrait</td></tr>
+              <tr><td>Not already locked</td><td><code>already_locked</code></td><td><code>LockableBehavior.isLocked()</code> returns true</td></tr>
+              <tr><td>Must be closed</td><td><code>not_closed</code></td><td>Target has OpenableTrait and <code>OpenableBehavior.isOpen()</code> returns true</td></tr>
+              <tr><td>Key provided (if required)</td><td><code>no_key</code></td><td>Trait requires a key but none was specified</td></tr>
+              <tr><td>Key is held</td><td><code>key_not_held</code></td><td>Key was specified but is not in inventory</td></tr>
+              <tr><td>Correct key</td><td><code>wrong_key</code></td><td><code>LockableBehavior.canLockWith()</code> returns false</td></tr>
+            </tbody>
+          </table>
+        </details>
+        <p>Key resolution follows ADR-080: the action first checks <code>command.instrument</code> (from <code>.instrument()</code> grammar patterns like <code>lock X with Y</code>), then falls back to <code>command.indirectObject</code>.</p>
+      </article>
+
+      <article>
+        <h3>Execution</h3>
+        <p>Calls <code>LockableBehavior.lock(noun, key)</code> which sets <code>isLocked = true</code> on the LockableTrait. The action analyzes the lock context to determine whether the target is a container or door, stores key information, and determines the success message (<code>locked</code> or <code>locked_with</code> depending on whether a key was used).</p>
+        <p>If the behavior reports failure (wrong key, already locked), the action sets <code>sharedData.failed = true</code> and maps the failure to an error message for the report phase.</p>
+      </article>
+
+      <article>
+        <h3>Events</h3>
+        <details open>
+          <summary>Emitted events</summary>
+          <table>
+            <thead>
+              <tr><th>Event</th><th>When</th><th>Key Data</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>if.event.locked</code></td>
+                <td>Success</td>
+                <td><code>targetId</code>, <code>targetName</code>, <code>actorId</code>, <code>keyId</code>, <code>keyName</code>, <code>isContainer</code>, <code>isDoor</code>, <code>sound</code></td>
+              </tr>
+              <tr>
+                <td><code>if.event.lock_blocked</code></td>
+                <td>Validation failed or behavior failure</td>
+                <td><code>targetId</code>, <code>targetName</code>, <code>reason</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <article>
+        <h3>Example</h3>
+        <pre><code>// Create a lockable chest
+const chest = world.createEntity('treasure-chest', 'object');
+chest.add(new OpenableTrait({ isOpen: false }));
+chest.add(new LockableTrait({
+  isLocked: false,
+  keyId: 'skeleton-key',
+}));
+
+// Player types: "lock chest with skeleton key"
+// validate: chest has LockableTrait, is closed, not locked, key matches -> valid
+// execute:  LockableBehavior.lock(chest, key) -> isLocked = true
+// report:   if.event.locked { targetId: 'treasure-chest', keyName: 'skeleton key' }</code></pre>
+      </article>
+    </section>
+
+    <!-- Unlocking -->
+    <section id="unlocking">
+      <h2>Unlocking</h2>
+      <p>Unlocks containers and doors. The inverse of locking, this action validates key requirements and delegates to <code>LockableBehavior.unlock()</code>. May trigger auto-open behavior on some entities.</p>
+
+      <article>
+        <h3>Action ID</h3>
+        <p><code>if.action.unlocking</code></p>
+      </article>
+
+      <article>
+        <h3>Grammar Patterns</h3>
+        <pre><code>unlock :door with :key    // "unlock chest with skeleton key" (priority 110)</code></pre>
+        <p>The <code>with :key</code> pattern has priority 110 (higher than the base pattern) so it takes precedence when a key is specified.</p>
+      </article>
+
+      <article>
+        <h3>Validation</h3>
+        <details open>
+          <summary>Checks performed</summary>
+          <table>
+            <thead>
+              <tr><th>Check</th><th>Error Code</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Target exists</td><td><code>no_target</code></td><td>No direct object specified</td></tr>
+              <tr><td>Scope check</td><td><code>cant_reach</code></td><td>Target is not reachable</td></tr>
+              <tr><td>Has LockableTrait</td><td><code>not_lockable</code></td><td>Target does not have the LockableTrait</td></tr>
+              <tr><td>Currently locked</td><td><code>already_unlocked</code></td><td><code>LockableBehavior.canUnlock()</code> returns false (already unlocked)</td></tr>
+              <tr><td>Key provided (if required)</td><td><code>no_key</code></td><td>Trait requires a key but none was specified</td></tr>
+              <tr><td>Key is held</td><td><code>key_not_held</code></td><td>Key was specified but is not in inventory</td></tr>
+              <tr><td>Correct key</td><td><code>wrong_key</code></td><td><code>LockableBehavior.canUnlockWith()</code> returns false</td></tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <article>
+        <h3>Execution</h3>
+        <p>Calls <code>LockableBehavior.unlock(noun, key)</code> which sets <code>isLocked = false</code> on the LockableTrait. After unlocking, the action checks for <strong>auto-open behavior</strong>: if the target has both OpenableTrait and a truthy <code>autoOpenOnUnlock</code> property, it flags <code>sharedData.willAutoOpen</code> so the report phase can describe the door swinging open.</p>
+        <p>The action also captures container contents (count, IDs) and determines the success message (<code>unlocked</code> or <code>unlocked_with</code>).</p>
+      </article>
+
+      <article>
+        <h3>Events</h3>
+        <details open>
+          <summary>Emitted events</summary>
+          <table>
+            <thead>
+              <tr><th>Event</th><th>When</th><th>Key Data</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>if.event.unlocked</code></td>
+                <td>Success</td>
+                <td><code>targetId</code>, <code>targetName</code>, <code>actorId</code>, <code>keyId</code>, <code>keyName</code>, <code>isContainer</code>, <code>isDoor</code>, <code>willAutoOpen</code>, <code>hasContents</code>, <code>contentsCount</code>, <code>sound</code></td>
+              </tr>
+              <tr>
+                <td><code>if.event.unlock_blocked</code></td>
+                <td>Validation failed or behavior failure</td>
+                <td><code>targetId</code>, <code>targetName</code>, <code>reason</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <article>
+        <h3>Example</h3>
+        <pre><code>// Unlock a chest that was previously locked
+// Player types: "unlock chest with skeleton key"
+// validate: chest has LockableTrait, is locked, key matches -> valid
+// execute:  LockableBehavior.unlock(chest, key) -> isLocked = false
+// report:   if.event.unlocked {
+//             targetId: 'treasure-chest',
+//             keyName: 'skeleton key',
+//             isContainer: true,
+//             willAutoOpen: false
+//           }</code></pre>
+      </article>
+    </section>
+
+    <!-- Switching On -->
+    <section id="switching-on">
+      <h2>Switching On</h2>
+      <p>Turns on devices and lights. Delegates to <code>SwitchableBehavior.switchOn()</code> and coordinates with <code>LightSourceBehavior</code> when the target is also a light source. Supports interceptors (ADR-118) for story-specific behavior.</p>
+
+      <article>
+        <h3>Action ID</h3>
+        <p><code>if.action.switching_on</code></p>
+      </article>
+
+      <article>
+        <h3>Grammar Patterns</h3>
+        <pre><code>turn on :device       // "turn on lamp"
+switch on :device     // "switch on lamp"
+flip on :device       // "flip on lamp"
+turn :device on       // "turn lamp on" (phrasal verb order)</code></pre>
+        <p>The parser requires the target to have <a href="traits-state.html#switchable-trait">SwitchableTrait</a>. All verb aliases (<code>turn</code>, <code>switch</code>, <code>flip</code>) are generated automatically by the <code>.forAction()</code> API.</p>
+      </article>
+
+      <article>
+        <h3>Validation</h3>
+        <details open>
+          <summary>Checks performed</summary>
+          <table>
+            <thead>
+              <tr><th>Check</th><th>Error Code</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Interceptor preValidate</td><td>(custom)</td><td>Entity-specific interceptor may block or override validation</td></tr>
+              <tr><td>Target exists</td><td><code>no_target</code></td><td>No direct object specified</td></tr>
+              <tr><td>Scope check</td><td>(scope error)</td><td>Target is not reachable</td></tr>
+              <tr><td>Has SwitchableTrait</td><td><code>not_switchable</code></td><td>Target does not have the SwitchableTrait</td></tr>
+              <tr><td>Not already on</td><td><code>already_on</code></td><td><code>SwitchableBehavior.canSwitchOn()</code> returns false because already on</td></tr>
+              <tr><td>Has power</td><td><code>no_power</code></td><td>Target requires power and has none</td></tr>
+              <tr><td>Interceptor postValidate</td><td>(custom)</td><td>Entity-specific interceptor may perform additional checks</td></tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <article>
+        <h3>Execution</h3>
+        <p>Performs several coordinated steps:</p>
+        <ol>
+          <li>Checks whether the current room is dark <strong>before</strong> turning on the light (for auto-LOOK)</li>
+          <li>Calls <code>SwitchableBehavior.switchOn(noun)</code> to toggle the device on</li>
+          <li>If the target has <a href="traits-state.html#light-source-trait">LightSourceTrait</a>, calls <code>LightSourceBehavior.light(noun)</code></li>
+          <li>Analyzes context for special conditions: temporary activation, power consumption, sound effects, side effects (auto-open containers)</li>
+          <li>If the room was dark and is now illuminated, captures a room snapshot for auto-LOOK</li>
+          <li>Runs the interceptor <code>postExecute</code> hook if present</li>
+        </ol>
+      </article>
+
+      <article>
+        <h3>Events</h3>
+        <details open>
+          <summary>Emitted events</summary>
+          <table>
+            <thead>
+              <tr><th>Event</th><th>When</th><th>Key Data</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>if.event.switched_on</code></td>
+                <td>Success</td>
+                <td><code>target</code>, <code>targetName</code>, <code>actorId</code>, <code>isLightSource</code>, <code>willIlluminateLocation</code>, <code>temporary</code>, <code>autoOffTime</code>, <code>sound</code>, <code>willOpen</code></td>
+              </tr>
+              <tr>
+                <td><code>if.event.room.description</code></td>
+                <td>Dark room now illuminated (auto-LOOK)</td>
+                <td><code>roomId</code>, <code>roomName</code>, <code>roomDescription</code>, <code>visibleItems</code></td>
+              </tr>
+              <tr>
+                <td><code>if.event.switch_on_blocked</code></td>
+                <td>Validation failed</td>
+                <td><code>targetId</code>, <code>targetName</code>, <code>reason</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+        <p>The <code>messageId</code> within <code>if.event.switched_on</code> varies based on context:</p>
+        <ul>
+          <li><code>switched_on</code> &mdash; generic device activation</li>
+          <li><code>light_on</code> &mdash; target is a light source</li>
+          <li><code>illuminates_darkness</code> &mdash; turning on illuminated a dark room</li>
+          <li><code>device_humming</code> &mdash; target has a running sound</li>
+          <li><code>with_sound</code> &mdash; target produces a sound on activation</li>
+          <li><code>temporary_activation</code> &mdash; target has an auto-off timer</li>
+          <li><code>door_opens</code> &mdash; activation causes a container to open</li>
+        </ul>
+      </article>
+
+      <article>
+        <h3>Auto-LOOK Behavior</h3>
+        <p>When a light source is turned on in a dark room, the switching on action performs an automatic room description. It captures the room snapshot and visible entities <em>after</em> illumination and emits <code>if.event.room.description</code> events. This gives the player a seamless experience of turning on a lantern and immediately seeing where they are.</p>
+      </article>
+
+      <article>
+        <h3>Interceptors (ADR-118)</h3>
+        <p>The switching on action supports the full interceptor lifecycle: <code>preValidate</code>, <code>postValidate</code>, <code>postExecute</code>, <code>postReport</code>, and <code>onBlocked</code>. This allows stories to customize behavior for specific devices without modifying the stdlib action.</p>
+        <pre><code>// Story-specific light source behavior
+const lanternInterceptor: ActionInterceptor = {
+  actionId: 'if.action.switching_on',
+  postExecute(entity, world, actorId, data) {
+    // Custom side effect when turning on the lantern
+    if (entity.id === 'brass-lantern') {
+      data.customMessage = 'The lantern glows with a warm amber light.';
+    }
+  },
+};</code></pre>
+      </article>
+
+      <article>
+        <h3>Example</h3>
+        <pre><code>// Create a switchable lantern that is also a light source
+const lantern = world.createEntity('brass-lantern', 'object');
+lantern.add(new SwitchableTrait({ isOn: false }));
+lantern.add(new LightSourceTrait({ lit: false, radius: 3 }));
+
+// Player types: "turn on lantern" (in a dark room)
+// validate: lantern has SwitchableTrait, is off -> valid
+// execute:  SwitchableBehavior.switchOn(lantern) -> isOn = true
+//           LightSourceBehavior.light(lantern) -> lit = true
+//           Room was dark, now illuminated -> capture room snapshot
+// report:   if.event.switched_on { isLightSource: true, willIlluminateLocation: true }
+//           if.event.room.description { ... auto-LOOK ... }</code></pre>
+      </article>
+    </section>
+
+    <!-- Switching Off -->
+    <section id="switching-off">
+      <h2>Switching Off</h2>
+      <p>Turns off devices and lights. The inverse of switching on, this action delegates to <code>SwitchableBehavior.switchOff()</code> and coordinates with <code>LightSourceBehavior.extinguish()</code> when applicable.</p>
+
+      <article>
+        <h3>Action ID</h3>
+        <p><code>if.action.switching_off</code></p>
+      </article>
+
+      <article>
+        <h3>Grammar Patterns</h3>
+        <pre><code>turn off :device       // "turn off lamp"
+switch off :device     // "switch off lamp"
+flip off :device       // "flip off lamp"
+turn :device off       // "turn lamp off" (phrasal verb order)</code></pre>
+        <p>Same verb aliases as switching on. The parser requires <a href="traits-state.html#switchable-trait">SwitchableTrait</a>.</p>
+      </article>
+
+      <article>
+        <h3>Validation</h3>
+        <details open>
+          <summary>Checks performed</summary>
+          <table>
+            <thead>
+              <tr><th>Check</th><th>Error Code</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Target exists</td><td><code>no_target</code></td><td>No direct object specified</td></tr>
+              <tr><td>Scope check</td><td>(scope error)</td><td>Target is not reachable</td></tr>
+              <tr><td>Has SwitchableTrait</td><td><code>not_switchable</code></td><td>Target does not have the SwitchableTrait</td></tr>
+              <tr><td>Currently on</td><td><code>already_off</code></td><td><code>SwitchableBehavior.canSwitchOff()</code> returns false</td></tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <article>
+        <h3>Execution</h3>
+        <p>Captures pre-mutation state (auto-off counter, running sound, power consumption) before calling <code>SwitchableBehavior.switchOff(noun)</code>. If the target has <a href="traits-state.html#light-source-trait">LightSourceTrait</a>, calls <code>LightSourceBehavior.extinguish(noun)</code>. Checks for auto-close side effects on container/openable entities.</p>
+      </article>
+
+      <article>
+        <h3>Events</h3>
+        <details open>
+          <summary>Emitted events</summary>
+          <table>
+            <thead>
+              <tr><th>Event</th><th>When</th><th>Key Data</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>if.event.switched_off</code></td>
+                <td>Success</td>
+                <td><code>target</code>, <code>targetName</code>, <code>actorId</code>, <code>isLightSource</code>, <code>willDarkenLocation</code>, <code>wasTemporary</code>, <code>remainingTime</code>, <code>sound</code>, <code>stoppedSound</code>, <code>willClose</code></td>
+              </tr>
+              <tr>
+                <td><code>if.event.switch_off_blocked</code></td>
+                <td>Validation failed</td>
+                <td><code>targetId</code>, <code>targetName</code>, <code>reason</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+        <p>Message IDs for <code>if.event.switched_off</code>:</p>
+        <ul>
+          <li><code>switched_off</code> &mdash; generic device deactivation</li>
+          <li><code>light_off</code> &mdash; target was a light source</li>
+          <li><code>light_off_still_lit</code> &mdash; light turned off but another light remains</li>
+          <li><code>device_stops</code> &mdash; device with running sound stops</li>
+          <li><code>silence_falls</code> &mdash; the room goes quiet</li>
+          <li><code>with_sound</code> &mdash; target produces a sound on deactivation</li>
+          <li><code>door_closes</code> &mdash; deactivation causes a container to close</li>
+          <li><code>was_temporary</code> &mdash; timer was still running when manually turned off</li>
+        </ul>
+      </article>
+
+      <article>
+        <h3>Example</h3>
+        <pre><code>// Turn off a lantern
+// Player types: "turn off lantern"
+// validate: lantern has SwitchableTrait, is on -> valid
+// execute:  SwitchableBehavior.switchOff(lantern) -> isOn = false
+//           LightSourceBehavior.extinguish(lantern) -> lit = false
+// report:   if.event.switched_off { isLightSource: true, willDarkenLocation: true }</code></pre>
+      </article>
+    </section>
+
+    <!-- Wearing -->
+    <section id="wearing">
+      <h2>Wearing</h2>
+      <p>Puts on clothing or wearable items. Validates body part conflicts and layering rules, then delegates to <code>WearableBehavior.wear()</code>. Supports implicit take &mdash; the player can type <code>wear hat</code> when the hat is on the ground and it will be picked up first.</p>
+
+      <article>
+        <h3>Action ID</h3>
+        <p><code>if.action.wearing</code></p>
+      </article>
+
+      <article>
+        <h3>Grammar Patterns</h3>
+        <p>The wearing action does not have dedicated grammar patterns in the standard parser. Stories typically register their own patterns when wearable items are present:</p>
+        <pre><code>// Story grammar extension
+grammar
+  .define('wear :item')
+  .mapsTo('if.action.wearing')
+  .withPriority(100)
+  .build();
+
+grammar
+  .define('put on :item')
+  .mapsTo('if.action.wearing')
+  .withPriority(100)
+  .build();</code></pre>
+      </article>
+
+      <article>
+        <h3>Validation</h3>
+        <details open>
+          <summary>Checks performed</summary>
+          <table>
+            <thead>
+              <tr><th>Check</th><th>Error Code</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Target exists</td><td><code>no_target</code></td><td>No direct object specified</td></tr>
+              <tr><td>Has WearableTrait</td><td><code>not_wearable</code></td><td>Target does not have the WearableTrait</td></tr>
+              <tr><td>Carried or implicit take</td><td>(scope error)</td><td>Item not carried and cannot be implicitly taken</td></tr>
+              <tr><td>Not already worn</td><td><code>already_wearing</code></td><td><code>WearableBehavior.canWear()</code> returns false because already worn</td></tr>
+              <tr><td>Can be worn</td><td><code>cant_wear_that</code></td><td><code>WearableBehavior.canWear()</code> returns false for other reasons</td></tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <article>
+        <h3>Execution</h3>
+        <p>Analyzes the wearable context (body part, layer) and checks for wearing conflicts using <code>checkWearingConflicts()</code>. If another item already occupies the same body part and layer, the action fails with <code>hands_full</code> or <code>already_wearing</code>. On success, calls <code>WearableBehavior.wear(item, actor)</code> which sets <code>worn = true</code> and <code>wornBy</code> on the WearableTrait.</p>
+      </article>
+
+      <article>
+        <h3>Events</h3>
+        <details open>
+          <summary>Emitted events</summary>
+          <table>
+            <thead>
+              <tr><th>Event</th><th>When</th><th>Key Data</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>(implicit take events)</td>
+                <td>Item was auto-taken first</td>
+                <td>Standard taking events prepended</td>
+              </tr>
+              <tr>
+                <td><code>if.event.worn</code></td>
+                <td>Success</td>
+                <td><code>itemId</code>, <code>itemName</code>, <code>actorId</code>, <code>bodyPart</code>, <code>layer</code></td>
+              </tr>
+              <tr>
+                <td><code>if.event.wear_blocked</code></td>
+                <td>Validation failed or conflict</td>
+                <td><code>itemId</code>, <code>itemName</code>, <code>reason</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+        <p>When an implicit take occurs, the taking action's events are prepended to the wearing action's events, giving the player feedback like "(first taking the cloak) You put on the cloak."</p>
+      </article>
+
+      <article>
+        <h3>Example</h3>
+        <pre><code>// Create a wearable cloak
+const cloak = world.createEntity('velvet-cloak', 'object');
+cloak.add(new WearableTrait({
+  worn: false,
+  bodyPart: 'torso',
+  layer: 1,
+}));
+
+// Player types: "wear cloak" (cloak is on the floor)
+// validate: cloak has WearableTrait, implicit take succeeds -> valid
+// execute:  checkWearingConflicts -> no conflict
+//           WearableBehavior.wear(cloak, player) -> worn = true
+// report:   if.event.taken { ... implicit take ... }
+//           if.event.worn { itemId: 'velvet-cloak', bodyPart: 'torso', layer: 1 }</code></pre>
+      </article>
+    </section>
+
+    <!-- Taking Off -->
+    <section id="taking-off">
+      <h2>Taking Off</h2>
+      <p>Removes worn clothing or equipment. Validates layering rules (items on top must be removed first) and checks for removal restrictions (such as cursed items). Delegates to <code>WearableBehavior.remove()</code>.</p>
+
+      <article>
+        <h3>Action ID</h3>
+        <p><code>if.action.taking_off</code></p>
+      </article>
+
+      <article>
+        <h3>Grammar Patterns</h3>
+        <p>Like wearing, the taking off action does not have dedicated grammar patterns in the standard parser. Stories register their own patterns:</p>
+        <pre><code>// Story grammar extension
+grammar
+  .define('take off :item')
+  .mapsTo('if.action.taking_off')
+  .withPriority(100)
+  .build();
+
+grammar
+  .define('remove :item')
+  .mapsTo('if.action.taking_off')
+  .withPriority(100)
+  .build();</code></pre>
+      </article>
+
+      <article>
+        <h3>Validation</h3>
+        <details open>
+          <summary>Checks performed</summary>
+          <table>
+            <thead>
+              <tr><th>Check</th><th>Error Code</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Target exists</td><td><code>no_target</code></td><td>No direct object specified</td></tr>
+              <tr><td>Has WearableTrait</td><td><code>not_wearing</code></td><td>Target does not have the WearableTrait</td></tr>
+              <tr><td>Currently worn</td><td><code>not_wearing</code></td><td>Item is not currently worn, or is worn by someone else</td></tr>
+              <tr><td>Can be removed</td><td><code>cant_remove</code></td><td><code>WearableBehavior.canRemove()</code> returns false</td></tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <article>
+        <h3>Execution</h3>
+        <p>Analyzes the wearable context and checks two blocking conditions before calling the behavior:</p>
+        <ol>
+          <li><strong>Layering blockers</strong>: Uses <code>checkRemovalBlockers()</code> to see if another item on a higher layer must be removed first. Returns <code>prevents_removal</code> with the blocking item's name.</li>
+          <li><strong>Removal restrictions</strong>: Uses <code>hasRemovalRestrictions()</code> to check for cursed or otherwise unremovable items. Returns <code>cant_remove</code>.</li>
+        </ol>
+        <p>On success, calls <code>WearableBehavior.remove(item, actor)</code> which sets <code>worn = false</code> and clears <code>wornBy</code>.</p>
+      </article>
+
+      <article>
+        <h3>Events</h3>
+        <details open>
+          <summary>Emitted events</summary>
+          <table>
+            <thead>
+              <tr><th>Event</th><th>When</th><th>Key Data</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>if.event.removed</code></td>
+                <td>Success</td>
+                <td><code>itemId</code>, <code>itemName</code>, <code>actorId</code>, <code>bodyPart</code>, <code>layer</code></td>
+              </tr>
+              <tr>
+                <td><code>if.event.take_off_blocked</code></td>
+                <td>Validation failed or removal blocked</td>
+                <td><code>itemId</code>, <code>itemName</code>, <code>reason</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <article>
+        <h3>Example</h3>
+        <pre><code>// Remove a worn cloak
+// Player types: "take off cloak"
+// validate: cloak has WearableTrait, is worn by player -> valid
+// execute:  checkRemovalBlockers -> no items blocking
+//           hasRemovalRestrictions -> no
+//           WearableBehavior.remove(cloak, player) -> worn = false
+// report:   if.event.removed { itemId: 'velvet-cloak', bodyPart: 'torso' }</code></pre>
+      </article>
+    </section>
+
+    <!-- Shared Patterns -->
+    <section id="shared-patterns">
+      <h2>Shared Patterns</h2>
+      <p>The state change actions share several internal patterns for consistent behavior.</p>
+
+      <article>
+        <h3>Behavior Delegation</h3>
+        <p>Every state change action delegates its core mutation to a <strong>behavior</strong>. The action handles coordination (scope checks, side effects, event generation) while the behavior handles the atomic state transition and its preconditions.</p>
+        <pre><code>// Pattern: action delegates to behavior
+execute(context) {
+  const noun = context.command.directObject!.entity!;
+  const result = OpenableBehavior.open(noun);  // Behavior handles mutation
+  context.sharedData.openResult = result;       // Store for report phase
+}</code></pre>
+        <table>
+          <thead>
+            <tr><th>Action</th><th>Behavior Method</th><th>Precondition Check</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Opening</td><td><code>OpenableBehavior.open()</code></td><td><code>OpenableBehavior.canOpen()</code></td></tr>
+            <tr><td>Closing</td><td><code>OpenableBehavior.close()</code></td><td><code>OpenableBehavior.canClose()</code></td></tr>
+            <tr><td>Locking</td><td><code>LockableBehavior.lock()</code></td><td><code>LockableBehavior.canLock()</code></td></tr>
+            <tr><td>Unlocking</td><td><code>LockableBehavior.unlock()</code></td><td><code>LockableBehavior.canUnlock()</code></td></tr>
+            <tr><td>Switching On</td><td><code>SwitchableBehavior.switchOn()</code></td><td><code>SwitchableBehavior.canSwitchOn()</code></td></tr>
+            <tr><td>Switching Off</td><td><code>SwitchableBehavior.switchOff()</code></td><td><code>SwitchableBehavior.canSwitchOff()</code></td></tr>
+            <tr><td>Wearing</td><td><code>WearableBehavior.wear()</code></td><td><code>WearableBehavior.canWear()</code></td></tr>
+            <tr><td>Taking Off</td><td><code>WearableBehavior.remove()</code></td><td><code>WearableBehavior.canRemove()</code></td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article>
+        <h3>Shared Helpers</h3>
+        <p>The lock/unlock and wear/take-off action pairs share helper modules for common logic:</p>
+        <ul>
+          <li><strong><code>lock-shared.ts</code></strong> &mdash; <code>analyzeLockContext()</code> determines container/door type; <code>validateKeyRequirements()</code> checks key possession and compatibility; <code>determineLockMessage()</code> selects <code>locked</code>/<code>locked_with</code> or <code>unlocked</code>/<code>unlocked_with</code></li>
+          <li><strong><code>wearable-shared.ts</code></strong> &mdash; <code>analyzeWearableContext()</code> extracts body part and layer; <code>checkWearingConflicts()</code> detects slot collisions; <code>checkRemovalBlockers()</code> detects layering violations; <code>hasRemovalRestrictions()</code> checks for cursed items</li>
+          <li><strong><code>switching-shared.ts</code></strong> &mdash; <code>analyzeSwitchingContext()</code> determines light source status and room effects; <code>determineSwitchingMessage()</code> selects the appropriate success message based on device type, sound, and side effects</li>
+        </ul>
+      </article>
+
+      <article>
+        <h3>Execute-Phase Failure Handling</h3>
+        <p>Locking, unlocking, wearing, and taking off actions include a safety pattern for behavior-level failures. Even though <code>validate()</code> checks preconditions, the behavior methods can return failure results (wrong key, conflict detected during execution). When this happens, the action sets <code>sharedData.failed = true</code> with an error message ID, and the <code>report()</code> phase emits a blocked event instead of a success event.</p>
+        <pre><code>// Safety net in report()
+report(context) {
+  const sharedData = getSharedData(context);
+  if (sharedData.failed) {
+    return [context.event('if.event.lock_blocked', {
+      messageId: `${context.action.id}.${sharedData.errorMessageId}`,
+      ...
+    })];
+  }
+  // Normal success path
+  return [context.event('if.event.locked', { ... })];
+}</code></pre>
+      </article>
+    </section>
+
+    <!-- See Also -->
+    <section id="see-also">
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="actions-overview.html">Actions Overview</a> &mdash; four-phase pattern, ActionContext, ValidationResult, sharedData</li>
+        <li><a href="traits-state.html">State Traits</a> &mdash; OpenableTrait, LockableTrait, SwitchableTrait, LightSourceTrait</li>
+        <li><a href="traits-interaction.html">Interaction Traits</a> &mdash; WearableTrait</li>
+        <li><a href="actions-objects.html">Object Handling Actions</a> &mdash; taking, dropping, putting, inserting, removing</li>
+        <li><a href="actions-movement.html">Movement Actions</a> &mdash; going, entering, exiting, climbing</li>
+        <li><a href="actions-physical.html">Physical Actions</a> &mdash; pushing, pulling, attacking, throwing, touching</li>
+        <li><a href="capabilities.html">Capabilities</a> &mdash; entity-specific action dispatch via traits and behaviors</li>
+        <li><a href="events.html">Events</a> &mdash; semantic events, interceptors, and the rendering pipeline</li>
+      </ul>
+    </section>
+  </main>
+  <script src="js/docs.js"></script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 title: Throw Torch at Glacier
 story: dungeo
-description: Tests throwing lit torch at glacier to melt it and reveal north passage
+description: Tests glacier melting mechanic - wrong item blocked, lit torch melts glacier
 
 ---
 
@@ -17,16 +17,12 @@ description: Tests throwing lit torch at glacier to melt it and reveal north pas
 > ex
 [OK: contains "Returning"]
 
-# Take the ivory torch
+# Take the ivory torch (always lit - permanent light source)
 > take torch
 [OK: contains "Taken"]
 
-# Light the lantern first (we need light to see)
+# Light the lantern (we need it for light after torch is swept away)
 > turn on lantern
-[OK: contains "on"]
-
-# Light the torch
-> turn on torch
 [OK: contains "on"]
 
 # Teleport to Glacier Room
@@ -44,19 +40,24 @@ description: Tests throwing lit torch at glacier to melt it and reveal north pas
 [OK: contains "Glacier Room"]
 [OK: contains "glacier"]
 
-# Try to go north - should be blocked (glacier blocks the passage)
-> north
+# Try to go west - should be blocked (glacier blocks the passage)
+> west
 [OK: contains "can't go that way"]
 
-# Throw the lit torch at the glacier
+# Throw the lantern at glacier - wrong item, glacier unmoved (MDL: act1.mud:387)
+> throw lantern at glacier
+[OK: contains "unmoved"]
+
+# Throw the lit torch at the glacier - SUCCESS (MDL: GLACIER-WIN)
 > throw torch at glacier
-[OK: contains "throw"]
+[OK: contains "great ball of flame"]
+[OK: contains "passageway leading west"]
 
-# Now the passage north should be open
-> north
-[OK: contains "Volcano View"]
+# Now the passage west should be open (leads to Ruby Room)
+> west
+[OK: contains "Ruby Room"]
 
-# We should be able to go back south
+# We should be able to go back south to Glacier Room
 > south
 [OK: contains "Glacier Room"]
 

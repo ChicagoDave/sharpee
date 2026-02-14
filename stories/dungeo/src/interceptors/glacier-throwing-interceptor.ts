@@ -1,14 +1,15 @@
 /**
  * Glacier Throwing Interceptor (ADR-118)
  *
- * Handles the glacier melting mechanic: when throwing a lit torch
- * at the glacier, it melts and reveals the north passage.
+ * Handles the glacier melting mechanic from MDL GLACIER function (act1.mud:369-407).
  *
- * This replaces the event handler pattern in glacier-handler.ts.
- * The interceptor hooks into the THROWING action phases to:
- * - postValidate: Check if a lit torch is being thrown, store data
- * - postExecute: Melt the glacier if lit torch was thrown
- * - postReport: Add melting message to output
+ * THROW TORCH AT GLACIER (lit torch): Melts glacier, reveals west passage to Ruby Room,
+ *   torch extinguished and carried downstream to Stream View.
+ * THROW anything else: "The glacier is unmoved by your ridiculous attempt."
+ * THROW unlit torch: "Perhaps if it were lit..."
+ *
+ * Uses preValidate to block non-torch/cold-torch throws so only
+ * the glacier-specific message shows (not the standard throw message).
  */
 
 import {
@@ -29,10 +30,12 @@ import { GlacierTrait } from '../traits/glacier-trait';
 // Message IDs for glacier puzzle
 export const GlacierMessages = {
   GLACIER_MELTS: 'dungeo.glacier.melts',
-  TORCH_CONSUMED: 'dungeo.glacier.torch_consumed',
-  PASSAGE_REVEALED: 'dungeo.glacier.passage_revealed',
   THROW_COLD: 'dungeo.glacier.throw_cold',
-  THROW_WRONG_ITEM: 'dungeo.glacier.throw_wrong_item'
+  THROW_WRONG_ITEM: 'dungeo.glacier.throw_wrong_item',
+  MELT_DEATH: 'dungeo.glacier.melt_death',
+  MELT_NO_FLAME: 'dungeo.glacier.melt_no_flame',
+  MELT_NOTHING: 'dungeo.glacier.melt_nothing',
+  MELT_NO_INSTRUMENT: 'dungeo.glacier.melt_no_instrument'
 };
 
 /**
@@ -57,42 +60,71 @@ function isLit(entity: IFEntity): boolean {
  * Glacier Throwing Interceptor
  *
  * Intercepts THROWING actions targeting the glacier.
- * Melts the glacier when a lit torch is thrown at it.
+ * Blocks non-torch and cold-torch throws via preValidate.
+ * Melts the glacier when a lit torch is thrown via postExecute.
  */
 export const GlacierThrowingInterceptor: ActionInterceptor = {
   /**
-   * Post-validate: Check if a lit torch is being thrown.
-   * Store data for postExecute - don't block the action.
+   * Pre-validate: Block throws that won't melt the glacier.
+   * Non-torch items and unlit torch get custom messages via onBlocked.
+   * Lit torch is allowed through to standard execute + postExecute.
    */
-  postValidate(
+  preValidate(
     entity: IFEntity,
     world: WorldModel,
     actorId: string,
     sharedData: InterceptorSharedData
   ): InterceptorResult | null {
     const glacierTrait = entity.get(GlacierTrait);
-    if (!glacierTrait) return null;
+    if (!glacierTrait || glacierTrait.melted) return null;
 
-    // Already melted - nothing to do
-    if (glacierTrait.melted) {
-      return null;
+    // itemId/itemName set by throwing action's validate before calling preValidate
+    const itemId = sharedData.itemId as string | undefined;
+    if (!itemId) return null;
+
+    const item = world.getEntity(itemId);
+    if (!item) return null;
+
+    if (!isTorch(item)) {
+      return { valid: false, error: 'glacier_wrong_item' };
     }
 
-    // Get the item being thrown from shared data
-    // The throwing action stores itemId in sharedData during execute
-    // But we're in postValidate, so we need to get it differently
-    // Actually, the item is available through the action context...
-    // For interceptors, we need to check the world state
+    if (!isLit(item)) {
+      return { valid: false, error: 'glacier_cold_torch' };
+    }
 
-    // The item being thrown is passed through the interceptor mechanism
-    // We store the torch check result for postExecute
-    sharedData.glacierTarget = true;
-
+    // Lit torch - allow standard throw to proceed
     return null;
   },
 
   /**
-   * Post-execute: Melt the glacier if a lit torch was thrown.
+   * On-blocked: Custom messages for glacier-specific blocks.
+   */
+  onBlocked(
+    entity: IFEntity,
+    world: WorldModel,
+    actorId: string,
+    error: string,
+    sharedData: InterceptorSharedData
+  ): CapabilityEffect[] | null {
+    if (error === 'glacier_wrong_item') {
+      return [createEffect('game.message', {
+        messageId: GlacierMessages.THROW_WRONG_ITEM,
+        params: {}
+      })];
+    }
+    if (error === 'glacier_cold_torch') {
+      return [createEffect('game.message', {
+        messageId: GlacierMessages.THROW_COLD,
+        params: {}
+      })];
+    }
+    return null;
+  },
+
+  /**
+   * Post-execute: Melt the glacier when a lit torch is thrown.
+   * At this point, preValidate already verified the item is a lit torch.
    */
   postExecute(
     entity: IFEntity,
@@ -101,81 +133,55 @@ export const GlacierThrowingInterceptor: ActionInterceptor = {
     sharedData: InterceptorSharedData
   ): void {
     const glacierTrait = entity.get(GlacierTrait);
-    if (!glacierTrait || glacierTrait.melted) {
-      return;
-    }
+    if (!glacierTrait || glacierTrait.melted) return;
 
-    // Get the thrown item from the standard throwing sharedData
-    // The throwing action stores itemId in the action's sharedData
     const itemId = sharedData.itemId as string | undefined;
     if (!itemId) return;
 
     const item = world.getEntity(itemId);
     if (!item) return;
 
-    // Check if it's a torch
-    if (!isTorch(item)) {
-      // Wrong item - no special effect (standard throw message will show)
-      return;
-    }
-
-    // Check if the torch is lit
-    if (!isLit(item)) {
-      // Torch is not lit - store for custom message
-      sharedData.torchWasCold = true;
-      return;
-    }
-
-    // SUCCESS! Lit torch thrown at glacier - melt it!
+    // Mark success for postReport
     sharedData.glacierMelted = true;
-    sharedData.torchId = itemId;
 
     // Mark glacier as melted
     glacierTrait.melted = true;
 
-    // Update glacier description
+    // Update glacier entity description (entity remains as scenery reference)
     const identity = entity.get(IdentityTrait);
     if (identity) {
-      identity.description = 'A pool of water remains where the massive glacier once stood. The north passage is now clear.';
+      identity.description = 'A pool of water remains where the massive glacier once stood. A passageway leads west.';
     }
 
-    // Add exits: Glacier Room N → Volcano View, Volcano View S → Glacier Room
+    // Add exit: Glacier Room W -> Ruby Room (MDL: CEXIT GLACIER-FLAG)
     const glacierRoom = world.getEntity(glacierTrait.glacierRoomId);
     if (glacierRoom) {
       const roomTrait = glacierRoom.get(RoomTrait);
       if (roomTrait) {
-        roomTrait.exits[Direction.NORTH] = { destination: glacierTrait.northDestination };
+        roomTrait.exits[Direction.WEST] = { destination: glacierTrait.westDestination };
       }
     }
 
-    const volcanoView = world.getEntity(glacierTrait.northDestination);
-    if (volcanoView) {
-      const roomTrait = volcanoView.get(RoomTrait);
-      if (roomTrait) {
-        roomTrait.exits[Direction.SOUTH] = { destination: glacierTrait.glacierRoomId };
-      }
-    }
-
-    // Extinguish the torch and move to stream view
+    // Extinguish the torch (MDL: TORCH-OFF)
     const lightSource = item.get(LightSourceTrait);
     if (lightSource) {
       lightSource.isLit = false;
     }
 
-    // Update torch to "burned out" state
+    // Update torch to "dead" state (MDL: ODESC1 -> "dead torch")
     const torchIdentity = item.get(IdentityTrait);
     if (torchIdentity) {
-      torchIdentity.name = 'burned out ivory torch';
-      torchIdentity.description = 'A burned out ivory torch. The flame has been extinguished.';
-      torchIdentity.aliases = ['torch', 'ivory torch', 'burned out torch', 'ivory'];
+      torchIdentity.name = 'dead torch';
+      torchIdentity.description = 'A burned out ivory torch.';
+      torchIdentity.aliases = ['torch', 'ivory torch', 'dead torch', 'ivory'];
     }
 
-    // Move torch downstream (carried by glacier melt)
+    // Move torch to Stream View (MDL: INSERT-OBJECT TORCH STREA)
     world.moveEntity(itemId, glacierTrait.torchDestination);
   },
 
   /**
-   * Post-report: Add glacier melt message to output.
+   * Post-report: Add glacier melting message to output.
    */
   postReport(
     entity: IFEntity,
@@ -183,24 +189,12 @@ export const GlacierThrowingInterceptor: ActionInterceptor = {
     actorId: string,
     sharedData: InterceptorSharedData
   ): CapabilityEffect[] {
-    const effects: CapabilityEffect[] = [];
-
     if (sharedData.glacierMelted) {
-      effects.push(
-        createEffect('game.message', {
-          messageId: GlacierMessages.GLACIER_MELTS,
-          params: {}
-        })
-      );
-    } else if (sharedData.torchWasCold) {
-      effects.push(
-        createEffect('game.message', {
-          messageId: GlacierMessages.THROW_COLD,
-          params: {}
-        })
-      );
+      return [createEffect('game.message', {
+        messageId: GlacierMessages.GLACIER_MELTS,
+        params: {}
+      })];
     }
-
-    return effects;
+    return [];
   }
 };

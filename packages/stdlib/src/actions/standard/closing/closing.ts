@@ -13,7 +13,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, OpenableBehavior, ICloseResult } from '@sharpee/world-model';
+import { TraitType, OpenableBehavior, ICloseResult, getInterceptorForAction, InterceptorSharedData } from '@sharpee/world-model';
 import { buildEventData } from '../../data-builder-types';
 import { IFActions } from '../../constants';
 import { closedDataConfig } from './closing-data';
@@ -81,6 +81,24 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
         valid: false,
         error: ClosingMessages.NO_TARGET
       };
+    }
+
+    // Check for interceptor on the target entity (ADR-118)
+    const interceptorResult = getInterceptorForAction(noun, IFActions.CLOSING);
+    if (interceptorResult) {
+      const { interceptor } = interceptorResult;
+      const interceptorData: InterceptorSharedData = {};
+
+      if (interceptor.preValidate) {
+        const result = interceptor.preValidate(noun, context.world, context.player.id, interceptorData);
+        if (result !== null && !result.valid) {
+          return {
+            valid: false,
+            error: result.error,
+            params: result.params
+          };
+        }
+      }
     }
 
     // Check scope - must be able to reach the target
@@ -222,10 +240,13 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const noun = context.command.directObject?.entity;
+    const error = result.error || '';
+    // If error already contains dots (e.g., story interceptor ID), use as-is; otherwise prefix with action ID
+    const messageId = error.includes('.') ? error : `${context.action.id}.${error}`;
 
     return [context.event('if.event.close_blocked', {
       // Rendering data
-      messageId: `${context.action.id}.${result.error}`,
+      messageId,
       params: {
         ...result.params,
         item: noun?.name

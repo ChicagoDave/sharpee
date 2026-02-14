@@ -148,6 +148,9 @@ export * from './talk-to-troll';
 // Diagnose (health status)
 export * from './diagnose';
 
+// Melt (Glacier puzzle - melt ice with flaming object)
+export * from './melt';
+
 // Room Info (ROOM, RNAME, OBJECTS)
 export * from './room-info';
 
@@ -206,6 +209,7 @@ import { commandingAction, COMMANDING_ACTION_ID, CommandingMessages } from './co
 import { launchAction, LAUNCH_ACTION_ID, LaunchMessages } from './launch';
 import { talkToTrollAction, TALK_TO_TROLL_ACTION_ID, TalkToTrollMessages } from './talk-to-troll';
 import { diagnoseAction, DIAGNOSE_ACTION_ID, DiagnoseMessages } from './diagnose';
+import { meltAction, MELT_ACTION_ID, MeltMessages } from './melt';
 import { roomInfoActions, ROOM_ACTION_ID, RNAME_ACTION_ID, OBJECTS_ACTION_ID, RoomInfoMessages } from './room-info';
 
 // Re-export press-button, turn-bolt, and turn-switch
@@ -250,6 +254,9 @@ export { TALK_TO_TROLL_ACTION_ID, TalkToTrollMessages } from './talk-to-troll';
 
 // Re-export diagnose action for use in index.ts
 export { DIAGNOSE_ACTION_ID, DiagnoseMessages } from './diagnose';
+
+// Re-export melt action for use in index.ts
+export { MELT_ACTION_ID, MeltMessages } from './melt';
 
 // Re-export room-info actions for use in index.ts
 export { ROOM_ACTION_ID, RNAME_ACTION_ID, OBJECTS_ACTION_ID, RoomInfoMessages } from './room-info';
@@ -304,5 +311,6 @@ export const customActions = [
   launchAction,
   talkToTrollAction,
   diagnoseAction,
+  meltAction,
   ...roomInfoActions
 ];

@@ -165,6 +165,15 @@ function createBurnDaemon(): Daemon {
 }
 
 /**
+ * Set the balloon and receptacle entity IDs for the exit transformer and burn daemon.
+ * Must be called during story initialization before the exit transformer runs.
+ */
+export function setBalloonHandlerIds(balloonId: string, receptacleId: string): void {
+  balloonEntityId = balloonId;
+  receptacleEntityId = receptacleId;
+}
+
+/**
  * Register the burn daemon
  */
 export function registerBurnDaemon(scheduler: ISchedulerService): void {
@@ -207,7 +216,7 @@ export const BalloonExitMessages = {
 export function createBalloonExitTransformer() {
   return (parsed: IParsedCommand, world: WorldModel): IParsedCommand => {
     // Only intercept EXITING action
-    if (parsed.action !== 'exiting') {
+    if (parsed.action !== 'if.action.exiting') {
       return parsed;
     }
 
@@ -285,8 +294,10 @@ export const balloonExitAction: Action = {
 
     const position = balloonState.position;
 
-    // Block exit in mid-air
-    if (isMidairPosition(position)) {
+    // Block exit in mid-air UNLESS at a dockable position (near a ledge)
+    // vair2 is near Narrow Ledge, vair4 is near Wide Ledge
+    const DOCKABLE_MIDAIR: Record<string, boolean> = { 'vair2': true, 'vair4': true };
+    if (isMidairPosition(position) && !DOCKABLE_MIDAIR[position]) {
       return {
         valid: false,
         error: BalloonExitMessages.EXIT_BLOCKED_MIDAIR

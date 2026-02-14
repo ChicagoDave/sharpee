@@ -1,8 +1,8 @@
 /**
  * Volcano Region - The volcanic area with balloon puzzle
  *
- * 14 rooms: Egyptian Room, Glacier Room, Volcano View, Ruby Room, Lava Room,
- * Volcano Bottom, Volcano Core, Wide Ledge, Narrow Ledge, Dusty Room, Library,
+ * 13 rooms: Egyptian Room, Glacier Room, Volcano View, Ruby Room, Lava Room,
+ * Volcano Bottom, Wide Ledge, Narrow Ledge, Dusty Room, Library,
  * Volcano Near Wide Ledge, Volcano Near Viewing Ledge, Volcano Near Small Ledge
  */
 
@@ -19,7 +19,8 @@ import {
   OpenableTrait,
   ReadableTrait,
   VehicleTrait,
-  EnterableTrait
+  EnterableTrait,
+  AuthorModel
 } from '@sharpee/world-model';
 import {
   TreasureTrait,
@@ -31,7 +32,8 @@ import {
   nextPositionUp,
   nextPositionDown,
   ledgeToMidair,
-  BalloonReceptacleTrait
+  BalloonReceptacleTrait,
+  SafeTrait
 } from '../traits';
 
 // Re-export BalloonState types for backward compatibility with existing imports
@@ -45,7 +47,6 @@ export interface VolcanoRoomIds {
   rubyRoom: string;
   lavaRoom: string;
   volcanoBottom: string;
-  volcanoCore: string;
   wideLedge: string;
   narrowLedge: string;
   dustyRoom: string;
@@ -75,37 +76,34 @@ export function createVolcanoRegion(world: WorldModel): VolcanoRoomIds {
   // === Create all rooms ===
 
   const egyptianRoom = createRoom(world, 'Egyptian Room',
-    'This is a room which looks like an Egyptian tomb. Hieroglyphics cover the walls.');
+    'This is a room which looks like an Egyptian tomb. There is an ascending staircase in the room as well as doors, east and south.');
 
   const glacierRoom = createRoom(world, 'Glacier Room',
-    'You are in a room carved from ice. The walls sparkle with reflected light.');
+    'You are in a large room, with a passage to the north and a dark, forbidding staircase leading down to the east. On the west is a small passageway which opens up quickly to the south.');
 
   const volcanoView = createRoom(world, 'Volcano View',
-    'You are on a ledge overlooking a vast volcanic crater. Molten lava bubbles far below.');
+    'You are on a ledge in the middle of a large volcano. Below you the volcano bottom can be seen and above is the rim of the volcano. A couple of ledges can be seen on the other side of the volcano; it appears that this ledge is intermediate in elevation between those on the other side. The exit from this room is to the east.');
 
   const rubyRoom = createRoom(world, 'Ruby Room',
-    'This is a small room with walls that glitter with embedded rubies.');
+    'This is a small chamber behind the remains of the Great Glacier. To the south and west are small passageways.');
 
   const lavaRoom = createRoom(world, 'Lava Room',
-    'You are in a room filled with the glow of molten lava. The heat is intense.');
+    'This is a small room, whose walls are formed by an old lava flow. There are exits here to the west and the south.');
 
   const volcanoBottom = createRoom(world, 'Volcano Bottom',
-    'You are at the bottom of the volcano. Lava pools nearby.');
-
-  const volcanoCore = createRoom(world, 'Volcano Core',
-    'You are in the very core of the volcano. The heat is almost unbearable.');
+    'You are at the bottom of a large dormant volcano. High above you light may be seen entering from the cone of the volcano. The only exit here is to the north.');
 
   const wideLedge = createRoom(world, 'Wide Ledge',
     'You are on a wide ledge overlooking the volcano interior.');
 
   const narrowLedge = createRoom(world, 'Narrow Ledge',
-    'You are on a narrow ledge. One wrong step could be fatal.');
+    'You are on a narrow ledge overlooking the inside of an old dormant volcano. This ledge appears to be about in the middle between the floor below and the rim above. There is an exit here to the south.');
 
   const dustyRoom = createRoom(world, 'Dusty Room',
     'This is a dusty room that appears to have been abandoned long ago.');
 
   const library = createRoom(world, 'Library',
-    'This is an ancient library. Dusty books line the walls.');
+    'This is a room which must have been a large library, probably for the royal family. All of the shelves appear to have been gnawed to pieces by unfriendly gnomes. To the north is an exit.');
 
   // Balloon rooms (accessible when balloon rises)
   const volcanoNearWideLedge = createRoom(world, 'Volcano Near Wide Ledge',
@@ -117,64 +115,92 @@ export function createVolcanoRegion(world: WorldModel): VolcanoRoomIds {
   const volcanoNearSmallLedge = createRoom(world, 'Volcano Near Small Ledge',
     'You are in the middle of the volcano, near a small ledge.', false);
 
-  // === Set up connections ===
+  // === Set up connections (verified against MDL dung.mud) ===
 
+  // EGYPT: UP→ICY, S→LEDG3, E→CRAW1 (conditional, connected externally)
   setExits(egyptianRoom, {
-    // SE → Underground Rocky Crawl connected externally
-    [Direction.WEST]: glacierRoom.id,
+    [Direction.UP]: glacierRoom.id,
+    [Direction.SOUTH]: volcanoView.id,
+    // EAST → Underground Rocky Crawl connected externally (conditional on coffin)
   });
 
-  // Glacier blocks the north passage initially - see glacier-handler.ts
-  // NORTH exit to Volcano View is added when glacier is melted
+  // ICY: N→STREA (connected externally), E→EGYPT, W→RUBYR (conditional on glacier melted)
+  // WEST exit to Ruby Room is added when glacier is melted (glacier-throwing-interceptor.ts)
   setExits(glacierRoom, {
+    // NORTH → Stream View connected externally via dam.ts connector
     [Direction.EAST]: egyptianRoom.id,
   });
 
+  // LEDG3: E→EGYPT only (dead-end lookout, no balloon dock)
   setExits(volcanoView, {
+    [Direction.EAST]: egyptianRoom.id,
+  });
+  // Blocked exits: DOWN and CROSS
+  {
+    const trait = volcanoView.get(RoomTrait);
+    if (trait) {
+      trait.blockedExits = {
+        [Direction.DOWN]: "I wouldn't try that.",
+      };
+    }
+  }
+
+  // RUBYR: W→LAVA, S→ICY
+  setExits(rubyRoom, {
+    [Direction.WEST]: lavaRoom.id,
     [Direction.SOUTH]: glacierRoom.id,
-    [Direction.DOWN]: wideLedge.id,
   });
 
-  setExits(wideLedge, {
-    [Direction.UP]: volcanoView.id,
-    [Direction.WEST]: narrowLedge.id,
-    [Direction.DOWN]: volcanoBottom.id,
+  // LAVA: S→VLBOT, W→RUBYR
+  setExits(lavaRoom, {
+    [Direction.SOUTH]: volcanoBottom.id,
+    [Direction.WEST]: rubyRoom.id,
   });
 
-  setExits(narrowLedge, {
-    [Direction.EAST]: wideLedge.id,
-    [Direction.WEST]: dustyRoom.id,
-  });
-
-  setExits(dustyRoom, {
-    [Direction.EAST]: narrowLedge.id,
-    [Direction.NORTH]: library.id,
-  });
-
-  setExits(library, {
-    [Direction.SOUTH]: dustyRoom.id,
-  });
-
+  // VLBOT: N→LAVA only
   setExits(volcanoBottom, {
-    [Direction.UP]: wideLedge.id,
     [Direction.NORTH]: lavaRoom.id,
   });
 
-  setExits(lavaRoom, {
-    [Direction.SOUTH]: volcanoBottom.id,
-    [Direction.NORTH]: volcanoCore.id,
+  // LEDG4: S→SAFE only (+ balloon LAUNCH handled by balloon daemon)
+  setExits(wideLedge, {
+    [Direction.SOUTH]: dustyRoom.id,
+  });
+  // Blocked exits: DOWN
+  {
+    const trait = wideLedge.get(RoomTrait);
+    if (trait) {
+      trait.blockedExits = {
+        [Direction.DOWN]: "It's a long way down.",
+      };
+    }
+  }
+
+  // LEDG2: S→LIBRA only (+ balloon LAUNCH handled by balloon daemon)
+  setExits(narrowLedge, {
+    [Direction.SOUTH]: library.id,
+  });
+  // Blocked exits: DOWN
+  {
+    const trait = narrowLedge.get(RoomTrait);
+    if (trait) {
+      trait.blockedExits = {
+        [Direction.DOWN]: "I wouldn't jump from here.",
+      };
+    }
+  }
+
+  // SAFE (Dusty Room): N→LEDG4
+  setExits(dustyRoom, {
+    [Direction.NORTH]: wideLedge.id,
   });
 
-  setExits(volcanoCore, {
-    [Direction.SOUTH]: lavaRoom.id,
-    [Direction.EAST]: rubyRoom.id,
+  // LIBRA: N→LEDG2
+  setExits(library, {
+    [Direction.NORTH]: narrowLedge.id,
   });
 
-  setExits(rubyRoom, {
-    [Direction.WEST]: volcanoCore.id,
-  });
-
-  // Balloon rooms - connections depend on balloon position
+  // Balloon shaft rooms (VAIR1-4) - connections depend on balloon position
   // These are "virtual" locations in the volcano shaft
 
   return {
@@ -184,7 +210,6 @@ export function createVolcanoRegion(world: WorldModel): VolcanoRoomIds {
     rubyRoom: rubyRoom.id,
     lavaRoom: lavaRoom.id,
     volcanoBottom: volcanoBottom.id,
-    volcanoCore: volcanoCore.id,
     wideLedge: wideLedge.id,
     narrowLedge: narrowLedge.id,
     dustyRoom: dustyRoom.id,
@@ -198,10 +223,11 @@ export function createVolcanoRegion(world: WorldModel): VolcanoRoomIds {
 // === External connectors ===
 
 export function connectVolcanoToUnderground(world: WorldModel, ids: VolcanoRoomIds, rockyCrawlId: string): void {
+  // MDL: EGYPT EAST→CRAW1 (conditional on not carrying coffin - TODO: implement coffin check)
   const er = world.getEntity(ids.egyptianRoom);
   const rc = world.getEntity(rockyCrawlId);
-  if (er) er.get(RoomTrait)!.exits[Direction.SOUTHEAST] = { destination: rockyCrawlId };
-  if (rc) rc.get(RoomTrait)!.exits[Direction.NORTHWEST] = { destination: ids.egyptianRoom };
+  if (er) er.get(RoomTrait)!.exits[Direction.EAST] = { destination: rockyCrawlId };
+  if (rc) rc.get(RoomTrait)!.exits[Direction.WEST] = { destination: ids.egyptianRoom };
 }
 
 // ============================================================================
@@ -268,8 +294,8 @@ function createGlacierRoomObjects(world: WorldModel, roomId: string): void {
   const glacier = world.createEntity('glacier', EntityType.SCENERY);
   glacier.add(new IdentityTrait({
     name: 'glacier',
-    aliases: ['ice', 'massive glacier', 'ice wall', 'wall of ice'],
-    description: 'A massive wall of ice fills the northern part of the room, blocking any passage in that direction. It glistens with an inner cold light.',
+    aliases: ['ice', 'massive glacier', 'ice wall', 'wall of ice', 'mass of ice'],
+    description: 'A mass of ice fills the western half of the room.',
     properName: false,
     article: 'a'
   }));
@@ -295,6 +321,70 @@ function createDustyRoomObjects(world: WorldModel, roomId: string): void {
     trophyCaseValue: 10,   // OTVAL from mdlzork_810722
   }));
   world.moveEntity(emerald.id, roomId);
+
+  // Safe - rusty box imbedded in wall (MDL: SAFE in SAFE room)
+  // Not lockable — it's "rusted shut". Opened by brick explosion (Step 7).
+  const safe = world.createEntity('safe', EntityType.ITEM);
+  safe.add(new IdentityTrait({
+    name: 'safe',
+    aliases: ['safe', 'box', 'rusty box', 'old box'],
+    description: 'Imbedded in the far wall is a rusty box. An oblong hole has been chipped out of the front of it.',
+    properName: false,
+    article: 'a'
+  }));
+  safe.add(new ContainerTrait({ capacity: { maxItems: 5 } }));
+  safe.add(new OpenableTrait({ isOpen: false }));
+  safe.add(new SceneryTrait());  // Imbedded in wall, can't take
+  safe.add(new SafeTrait());    // Marker for opening/closing interceptors
+  safe.attributes.rustedShut = true;   // Blocks OPEN — resolved by explosion
+  safe.attributes.safeBlownOpen = false;
+  world.moveEntity(safe.id, roomId);
+
+  // Slot - oblong hole chipped out of the safe front (MDL: SSLOT)
+  const slot = world.createEntity('slot', EntityType.SCENERY);
+  slot.add(new IdentityTrait({
+    name: 'hole',
+    aliases: ['slot', 'hole', 'oblong hole'],
+    description: 'An oblong hole has been chipped out of the front of the box.',
+    properName: false,
+    article: 'an'
+  }));
+  slot.add(new ContainerTrait({ capacity: { maxItems: 1 } }));
+  slot.add(new OpenableTrait({ isOpen: true }));
+  slot.add(new SceneryTrait());
+  world.moveEntity(slot.id, roomId);
+
+  // Lord Dimwit Flathead's Crown - treasure inside the safe (MDL: CROWN)
+  const crown = world.createEntity('crown', EntityType.ITEM);
+  crown.add(new IdentityTrait({
+    name: 'crown',
+    aliases: ['crown', 'gaudy crown', "lord dimwit's crown", 'flathead crown'],
+    description: "The excessively gaudy crown of Lord Dimwit Flathead. It is encrusted with diamonds, rubies, and other precious gems, all in questionable taste.",
+    properName: false,
+    article: 'a',
+    weight: 10,
+    points: 15             // OFVAL from mdlzork_810722
+  }));
+  crown.add(new TreasureTrait({
+    trophyCaseValue: 10      // OTVAL from mdlzork_810722
+  }));
+  const author = new AuthorModel(world.getDataStore(), world);
+  author.moveEntity(crown.id, safe.id);
+
+  // Warning card inside the safe (MDL: CARD)
+  const card = world.createEntity('card', EntityType.ITEM);
+  card.add(new IdentityTrait({
+    name: 'card',
+    aliases: ['card', 'warning', 'note', 'warning card'],
+    description: 'A small card with printing on it.',
+    properName: false,
+    article: 'a',
+    weight: 1
+  }));
+  card.add(new ReadableTrait({
+    text: 'WARNING:\n  This room was constructed over very weak rock strata. Detonation of explosives in this room is strictly prohibited!\n    -- Frobozz Magic Cave Company\n       per M. Agrippa, foreman'
+  }));
+  author.moveEntity(card.id, safe.id);
 }
 
 // ============= Ruby Room Objects =============
@@ -381,6 +471,8 @@ function createBalloonObjects(world: WorldModel, roomIds: VolcanoRoomIds): Volca
     notOperationalReason: 'The balloon is not inflated.',
     positionRooms: {
       'vlbot': roomIds.volcanoBottom,
+      'vair2': roomIds.narrowLedge,   // Mid-air near Narrow Ledge (dockable)
+      'vair4': roomIds.wideLedge,     // Mid-air near Wide Ledge (dockable)
       'ledg2': roomIds.narrowLedge,
       'ledg3': roomIds.narrowLedge,
       'ledg4': roomIds.wideLedge,
@@ -422,31 +514,50 @@ function createBalloonObjects(world: WorldModel, roomIds: VolcanoRoomIds): Volca
   clothBag.add(new InflatableTrait({ isInflated: false }));
   world.moveEntity(clothBag.id, balloon.id);
 
-  // Hook 1 - for tying rope at ledge positions
+  // Hook 1 - on Narrow Ledge rock face (MDL: HOOK1 in LEDG2)
   const hook1 = world.createEntity('hook1', EntityType.SCENERY);
   hook1.add(new IdentityTrait({
     name: 'hook',
-    aliases: ['metal hook', 'balloon hook'],
-    description: 'A sturdy metal hook attached to the side of the basket.',
+    aliases: ['metal hook', 'small hook'],
+    description: 'A small hook is embedded in the rock face.',
     properName: false,
     article: 'a'
   }));
   hook1.add(new SceneryTrait());
-  (hook1 as any).hookId = 'hook1';
-  world.moveEntity(hook1.id, balloon.id);
+  hook1.attributes.hookId = 'hook1';
+  world.moveEntity(hook1.id, roomIds.narrowLedge);
 
-  // Hook 2
+  // Zorkmid coin - on Narrow Ledge floor (MDL: COIN in LEDG2)
+  const coin = world.createEntity('zorkmid coin', EntityType.ITEM);
+  coin.add(new IdentityTrait({
+    name: 'zorkmid coin',
+    aliases: ['coin', 'zorkmid', 'gold coin'],
+    description: 'A large gold zorkmid coin. One side shows a portrait of Lord Dimwit Flathead; the other depicts the great underground dam.',
+    properName: false,
+    article: 'a',
+    weight: 5,
+    points: 10             // OFVAL from mdlzork_810722
+  }));
+  coin.add(new TreasureTrait({
+    trophyCaseValue: 12       // OTVAL from mdlzork_810722
+  }));
+  coin.add(new ReadableTrait({
+    text: 'GOLD ZORKMID -- In Frobs We Trust'
+  }));
+  world.moveEntity(coin.id, roomIds.narrowLedge);
+
+  // Hook 2 - on Wide Ledge rock face (MDL: HOOK2 in LEDG4)
   const hook2 = world.createEntity('hook2', EntityType.SCENERY);
   hook2.add(new IdentityTrait({
     name: 'hook',
-    aliases: ['metal hook', 'balloon hook'],
-    description: 'A sturdy metal hook attached to the side of the basket.',
+    aliases: ['metal hook', 'small hook'],
+    description: 'A small hook is embedded in the rock face.',
     properName: false,
     article: 'a'
   }));
   hook2.add(new SceneryTrait());
-  (hook2 as any).hookId = 'hook2';
-  world.moveEntity(hook2.id, balloon.id);
+  hook2.attributes.hookId = 'hook2';
+  world.moveEntity(hook2.id, roomIds.wideLedge);
 
   // Braided wire - for tethering balloon
   const wire = world.createEntity('braided wire', EntityType.SCENERY);

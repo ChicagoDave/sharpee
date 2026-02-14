@@ -1,0 +1,259 @@
+---
+layout: ../../../../../layouts/DocsLayout.astro
+title: "Language Packs"
+---
+
+# Creating a Language Pack
+
+A language pack has two independent halves:
+
+| Package | Responsibility | Example |
+|---------|---------------|---------|
+| `parser-{locale}` | Grammar patterns, tokenization, parsing | `parser-en-us` |
+| `lang-{locale}` | Messages, vocabulary, linguistic operations | `lang-en-us` |
+
+The parser depends on the language provider (passed in constructor). The language provider is independent of the parser.
+
+## The ParserLanguageProvider Interface
+
+Your language package must implement `ParserLanguageProvider` from `@sharpee/if-domain`.
+
+```typescript
+interface ParserLanguageProvider extends LanguageProvider {
+  readonly languageCode: string;   // e.g., 'es-ES'
+
+  // Message system
+  getMessage(messageId: string, params?: Record<string, any>): string;
+  hasMessage(messageId: string): boolean;
+
+  // Vocabulary
+  getVerbs(): VerbVocabulary[];
+  getDirections(): DirectionVocabulary[];
+  getSpecialVocabulary(): SpecialVocabulary;
+  getPrepositions(): string[];
+  getDeterminers(): string[];
+  getConjunctions(): string[];
+
+  // Linguistic operations
+  lemmatize(word: string): string;
+  pluralize(noun: string): string;
+  getIndefiniteArticle(noun: string): string;
+  formatList(items: string[], conjunction: 'and'|'or'): string;
+  isIgnoreWord(word: string): boolean;
+}
+```
+
+## Message System
+
+Messages use hierarchical IDs with three types of placeholders:
+
+```typescript
+// Message ID format
+"if.action.taking.taken"     // stdlib action message
+"mystory.ring.success"       // story-specific message
+"if.error.dark_room"         // system error
+
+// 1. Perspective placeholders (resolved by narrative context)
+"{You} {take} {item}."
+//  2nd person: "You take the lamp."
+//  1st person: "I take the lamp."
+//  3rd person: "She takes the lamp."
+
+// 2. Formatter placeholders (apply formatting functions)
+"{a:item}"                   // Article: "a sword", "an amulet"
+"{items:list}"               // List: "a sword, a key, and a coin"
+
+// 3. Simple substitution
+"{item}"                     // Direct: "the lamp"
+```
+
+## Action Language Definitions
+
+Each stdlib action needs a language definition with messages, patterns, and help text. Create one file per action.
+
+```typescript
+// lang-es-es/src/actions/taking.ts
+export const tomarLanguage = {
+  actionId: 'if.action.taking',
+
+  patterns: [
+    'tomar [algo]',
+    'coger [algo]',
+    'agarrar [algo]',
+  ],
+
+  messages: {
+    'no_target': '¿Tomar qué?',
+    'taken': 'Tomado.',
+    'already_have': 'Ya {tienes} {item}.',
+    'cannot_take': 'No {puedes} tomar {item}.',
+    'taken_from': '{You} {tomar} {item} de {container}.',
+  },
+
+  help: {
+    description: 'Recoger objetos y añadirlos al inventario.',
+    examples: 'tomar libro, coger lámpara',
+  },
+};
+```
+
+You must provide definitions for **all 54 standard actions**. See `lang-en-us/src/actions/` for the complete list.
+
+## Verb Vocabulary
+
+Map your language's verbs to action IDs:
+
+```typescript
+export const spanishVerbs: VerbDefinition[] = [
+  {
+    action: 'if.action.taking',
+    verbs: ['tomar', 'coger', 'agarrar'],
+    requiresObject: true,
+  },
+  {
+    action: 'if.action.looking',
+    verbs: ['mirar', 'ver', 'observar'],
+    requiresObject: false,
+  },
+  {
+    action: 'if.action.going',
+    verbs: ['ir', 'caminar', 'andar'],
+    requiresObject: false,
+  },
+];
+```
+
+## Direction & Special Vocabulary
+
+```typescript
+// Directions
+export const spanishDirections: DirectionVocabulary[] = [
+  { direction: 'north', words: ['norte'], abbreviations: ['n'] },
+  { direction: 'south', words: ['sur'], abbreviations: ['s'] },
+  { direction: 'east',  words: ['este'], abbreviations: ['e'] },
+  { direction: 'west',  words: ['oeste'], abbreviations: ['o'] },
+  { direction: 'up',    words: ['arriba', 'subir'], abbreviations: ['ar'] },
+  { direction: 'down',  words: ['abajo', 'bajar'], abbreviations: ['ab'] },
+];
+
+// Special vocabulary
+export const spanishSpecial: SpecialVocabulary = {
+  articles: ['un', 'una', 'el', 'la', 'los', 'las'],
+  pronouns: ['lo', 'la', 'los', 'las', 'me', 'te'],
+  allWords: ['todo', 'todos', 'todas'],
+  exceptWords: ['excepto', 'menos', 'salvo'],
+};
+```
+
+## Linguistic Operations
+
+These handle your language's morphology. They don't need to be perfect — reasonable defaults work for most cases.
+
+```typescript
+lemmatize(word: string): string {
+  // Remove verb conjugation suffixes
+  // "tomando" -> "tomar", "corrieron" -> "correr"
+}
+
+pluralize(noun: string): string {
+  if (noun.endsWith('a') || noun.endsWith('o')) return noun + 's';
+  return noun + 'es';
+}
+
+getIndefiniteArticle(noun: string): string {
+  // Gender-based article selection
+  return noun.endsWith('a') ? 'una' : 'un';
+}
+
+formatList(items: string[], conjunction: 'and'|'or'): string {
+  const conj = conjunction === 'and' ? 'y' : 'o';
+  if (items.length === 1) return items[0];
+  if (items.length === 2) return `${items[0]} ${conj} ${items[1]}`;
+  return items.slice(0, -1).join(', ') + ` ${conj} ` + items.at(-1);
+}
+```
+
+## Perspective Resolution
+
+Support narrative perspective (1st/2nd/3rd person) by resolving perspective placeholders.
+
+```typescript
+const perspectiveMap = {
+  '1st': { '{You}': 'Yo', '{your}': 'mi', '{take}': 'tomo' },
+  '2nd': { '{You}': 'Tú', '{your}': 'tu', '{take}': 'tomas' },
+  '3rd': { '{You}': '{subject}', '{your}': '{possessive}', '{take}': 'toma' },
+};
+
+function resolvePerspective(template: string, context: NarrativeContext): string {
+  const map = perspectiveMap[context.perspective];
+  for (const [placeholder, value] of Object.entries(map)) {
+    template = template.replaceAll(placeholder, value);
+  }
+  return template;
+}
+```
+
+## Creating the Parser
+
+If your language needs custom parsing (word order, morphology), create a `parser-{locale}` package. Otherwise, you may be able to reuse the English parser with your vocabulary.
+
+```typescript
+// parser-es-es/src/spanish-parser.ts
+export class SpanishParser implements Parser {
+  constructor(private lang: ParserLanguageProvider) {
+    this.grammarEngine = new GrammarEngine(lang);
+  }
+
+  parse(input: string): CommandResult<IParsedCommand, CoreParseError> {
+    const tokens = this.tokenize(input);
+    return this.grammarEngine.match(tokens);
+  }
+}
+
+// Register with factory
+ParserFactory.registerParser('es-ES', SpanishParser);
+```
+
+## File Structure
+
+```
+packages/lang-es-es/
+  src/
+    index.ts                    # Public exports
+    language-provider.ts        # SpanishLanguageProvider class
+    actions/
+      index.ts                  # Aggregates all action definitions
+      taking.ts                 # One file per action (54 total)
+      looking.ts
+      going.ts
+      ...
+    data/
+      verbs.ts                  # Verb -> action mappings
+      words.ts                  # Articles, pronouns, nouns
+      messages.ts               # System messages
+    formatters/
+      article.ts                # {un:item} formatter
+      list.ts                   # {items:lista} formatter
+    perspective/
+      placeholder-resolver.ts   # {Tú}, {tomar} resolution
+
+packages/parser-es-es/         # Optional
+  src/
+    index.ts
+    spanish-parser.ts
+    grammar.ts
+```
+
+## Wiring Into the Engine
+
+```typescript
+import { SpanishLanguageProvider } from '@sharpee/lang-es-es';
+import { ParserFactory } from '@sharpee/if-domain';
+
+const language = new SpanishLanguageProvider();
+const parser = ParserFactory.createParser('es-ES', language);
+
+const engine = new GameEngine({
+  world, player, parser, language, perceptionService,
+});
+```

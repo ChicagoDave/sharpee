@@ -20,7 +20,8 @@ import {
   PUSH_KEY_ACTION_ID,
   DIG_ACTION_ID,
   SEND_ACTION_ID,
-  WALK_THROUGH_ACTION_ID
+  WALK_THROUGH_ACTION_ID,
+  MELT_ACTION_ID
 } from '../actions';
 
 /**
@@ -457,6 +458,42 @@ export function registerPuzzleGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('mail order')
     .mapsTo(SEND_ACTION_ID)
+    .withPriority(145)
+    .build();
+
+  // ============================================================
+  // Melt action (Glacier puzzle - MDL act1.mud:389-398)
+  // Literal target patterns to avoid two-slot ambiguity
+  // ============================================================
+  grammar
+    .define('melt glacier with :instrument')
+    .instrument('instrument')
+    .mapsTo(MELT_ACTION_ID)
+    .withPriority(160)
+    .build();
+
+  grammar
+    .define('melt ice with :instrument')
+    .instrument('instrument')
+    .mapsTo(MELT_ACTION_ID)
+    .withPriority(160)
+    .build();
+
+  grammar
+    .define('melt glacier')
+    .mapsTo(MELT_ACTION_ID)
+    .withPriority(150)
+    .build();
+
+  grammar
+    .define('melt ice')
+    .mapsTo(MELT_ACTION_ID)
+    .withPriority(150)
+    .build();
+
+  grammar
+    .define('melt :target')
+    .mapsTo(MELT_ACTION_ID)
     .withPriority(145)
     .build();
 }

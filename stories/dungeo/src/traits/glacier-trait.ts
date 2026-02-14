@@ -3,7 +3,7 @@
  *
  * Tracks the state of the glacier in the Glacier Room.
  * The glacier can be melted by throwing a lit torch at it,
- * revealing the north passage to Volcano View.
+ * revealing the west passage to Ruby Room (MDL: CEXIT GLACIER-FLAG).
  */
 
 import { ITrait, ITraitConstructor } from '@sharpee/world-model';
@@ -14,11 +14,11 @@ import { ITrait, ITraitConstructor } from '@sharpee/world-model';
 export interface GlacierTraitConfig {
   /** Whether the glacier has been melted */
   melted?: boolean;
-  /** Room ID to connect north when melted */
-  northDestination: string;
+  /** Room ID to connect west when melted (Ruby Room) */
+  westDestination: string;
   /** Room ID of the glacier room itself */
   glacierRoomId: string;
-  /** Room ID where torch ends up after melting */
+  /** Room ID where torch ends up after melting (Stream View) */
   torchDestination: string;
 }
 
@@ -31,16 +31,16 @@ export class GlacierTrait implements ITrait {
 
   /** Whether the glacier has been melted */
   melted: boolean;
-  /** Room ID to connect north when melted */
-  northDestination: string;
+  /** Room ID to connect west when melted (Ruby Room) */
+  westDestination: string;
   /** Room ID of the glacier room itself */
   glacierRoomId: string;
-  /** Room ID where torch ends up after melting */
+  /** Room ID where torch ends up after melting (Stream View) */
   torchDestination: string;
 
   constructor(config: GlacierTraitConfig) {
     this.melted = config.melted ?? false;
-    this.northDestination = config.northDestination;
+    this.westDestination = config.westDestination;
     this.glacierRoomId = config.glacierRoomId;
     this.torchDestination = config.torchDestination;
   }

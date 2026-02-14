@@ -120,7 +120,11 @@ import {
   GasRoomEntryMessages,
   // Trophy Case putting interceptor (ADR-129)
   TrophyCaseTrait,
-  TrophyCasePuttingInterceptor
+  TrophyCasePuttingInterceptor,
+  // Safe opening/closing interceptor (brick explosion puzzle)
+  SafeTrait,
+  SafeOpeningInterceptor,
+  SafeClosingInterceptor
 } from './traits';
 
 // Melee combat interceptor (Phase 3) + NPC resolver
@@ -395,7 +399,7 @@ export class DungeoStory implements Story {
     if (glacier) {
       glacier.add(new GlacierTrait({
         glacierRoomId: this.volcanoIds.glacierRoom,
-        northDestination: this.volcanoIds.volcanoView,
+        westDestination: this.volcanoIds.rubyRoom,
         torchDestination: this.damIds.streamView
       }));
     }
@@ -463,6 +467,24 @@ export class DungeoStory implements Story {
         TrophyCaseTrait.type,
         'if.action.putting',
         TrophyCasePuttingInterceptor
+      );
+    }
+
+    // Safe opening interceptor (blocks OPEN when rusted shut, before explosion)
+    if (!hasActionInterceptor(SafeTrait.type, 'if.action.opening')) {
+      registerActionInterceptor(
+        SafeTrait.type,
+        'if.action.opening',
+        SafeOpeningInterceptor
+      );
+    }
+
+    // Safe closing interceptor (blocks CLOSE after explosion — no door)
+    if (!hasActionInterceptor(SafeTrait.type, 'if.action.closing')) {
+      registerActionInterceptor(
+        SafeTrait.type,
+        'if.action.closing',
+        SafeClosingInterceptor
       );
     }
 
@@ -710,6 +732,7 @@ export class DungeoStory implements Story {
         wellRoomIds: this.wellRoomIds,
         balloonIds: this.balloonIds || undefined,
         mirrorConfig: this.mirrorConfig || undefined,
+        volcanoIds: this.volcanoIds,
         roomVisitScoring: this.roomVisitScoring,
       },
     );

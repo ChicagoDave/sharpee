@@ -57,6 +57,21 @@ export const DungeoSchedulerMessages = {
   // Troll state changes - MDL act1.254 (OUT!/IN!)
   TROLL_KNOCKED_OUT: 'dungeo.troll.knocked_out',
   TROLL_WAKES_UP: 'dungeo.troll.wakes_up',
+
+  // Brick/Fuse explosion - MDL act2.mud:646-736
+  FUSE_STARTS: 'dungeo.fuse.starts',
+  FUSE_FIZZLES: 'dungeo.fuse.fizzles',
+  SAFE_BLOWN_OPEN: 'dungeo.explosion.safe_blown_open',
+  BRICK_KILLS_PLAYER: 'dungeo.explosion.brick_kills_player',
+  DISTANT_EXPLOSION: 'dungeo.explosion.distant',
+
+  // Safe room collapse (SAFIN) - 5 turns after explosion
+  SAFE_COLLAPSE_DEATH: 'dungeo.safe_collapse.death',
+  SAFE_COLLAPSE_RUMBLE: 'dungeo.safe_collapse.rumble',
+
+  // Wide Ledge collapse (LEDIN) - 8 turns after explosion
+  LEDGE_COLLAPSE_DEATH: 'dungeo.ledge_collapse.death',
+  LEDGE_COLLAPSE_NARROW_ESCAPE: 'dungeo.ledge_collapse.narrow_escape',
 } as const;
 
 export type DungeoSchedulerMessageId = typeof DungeoSchedulerMessages[keyof typeof DungeoSchedulerMessages];

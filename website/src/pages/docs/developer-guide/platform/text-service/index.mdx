@@ -1,0 +1,140 @@
+---
+layout: ../../../../../layouts/DocsLayout.astro
+title: "Text Service"
+---
+
+# Customizing the Text Service
+
+The text service is a pure pipeline that transforms semantic events into structured text blocks.
+
+## Pipeline
+
+```
+Events → Filter → Sort → Route → Assemble → ITextBlock[]
+
+1. Filter   Remove system/platform events, keep user-facing ones
+2. Sort     Order events for natural prose flow
+3. Route    Send each event to the appropriate handler
+4. Assemble Parse decorations, create text blocks
+```
+
+## Event Handlers
+
+The router dispatches events to handler functions based on event type. Built-in handlers cover standard actions; you can add custom ones.
+
+```typescript
+// Built-in handler routing
+switch (event.type) {
+  case 'action.success':    return handleActionSuccess(event, ctx);
+  case 'action.blocked':    return handleActionBlocked(event, ctx);
+  case 'if.event.room.description': return handleRoom(event, ctx);
+  case 'game.started':      return handleGameStarted(event, ctx);
+  case 'if.event.revealed': return handleRevealed(event, ctx);
+  default:                  return handleGeneric(event, ctx);
+}
+```
+
+Handler context provides:
+
+```typescript
+interface HandlerContext {
+  languageProvider: LanguageProvider;  // For message lookup
+  world: WorldModel;                  // For entity queries
+  textService: TextService;           // For helper methods
+}
+```
+
+## Custom Event Handlers
+
+Register handlers for story-specific events to control exactly how they render.
+
+```typescript
+// Simple handler
+textService.registerHandler('mystory.event.bell_ring', (event, ctx) => {
+  const message = ctx.languageProvider.getMessage(
+    'mystory.bell.ring_echo',
+    { location: event.data.roomName }
+  );
+
+  return [{
+    key: 'action.result',
+    content: [
+      message,
+      { type: 'em', content: ['The echo fades into silence.'] },
+    ],
+  }];
+});
+
+// Combat handler with rich formatting
+textService.registerHandler('mystory.event.combat', (event, ctx) => {
+  const { attacker, defender, damage } = event.data;
+  return [{
+    key: 'action.result',
+    content: [
+      { type: 'npc', content: [attacker] },
+      ' strikes ',
+      { type: 'npc', content: [defender] },
+      ` for ${damage} damage!`,
+    ],
+  }];
+});
+```
+
+## Custom Text Block Keys
+
+Define custom block keys for specialized UI channels. Clients route blocks by key, so new keys enable new display areas.
+
+```typescript
+// Story defines custom channels
+return [{
+  key: 'mystory.combat.log',      // Combat sidebar
+  content: ['Troll attacks! -15 HP'],
+}, {
+  key: 'mystory.puzzle.hint',      // Hint panel
+  content: ['The inscription glows faintly.'],
+}];
+
+// Client routes them
+function renderBlock(block: ITextBlock) {
+  if (block.key.startsWith('mystory.combat')) {
+    combatPanel.append(blockToHtml(block));
+  } else if (block.key.startsWith('mystory.puzzle')) {
+    hintPanel.append(blockToHtml(block));
+  } else {
+    transcript.append(blockToHtml(block));
+  }
+}
+```
+
+## Custom Decoration Types
+
+Stories can emit decorations with custom types. Clients map types to styling.
+
+```typescript
+// Story emits custom decoration
+return [{
+  key: 'action.result',
+  content: [
+    { type: 'mystory.magic', content: ['The spell takes hold.'] },
+    { type: 'mystory.damage', content: ['-15 HP'] },
+  ],
+}];
+```
+
+```css
+/* Client CSS */
+.dec-mystory-magic { color: #9b59b6; font-style: italic; }
+.dec-mystory-damage { color: #e74c3c; font-weight: bold; }
+```
+
+## CLI vs Browser Rendering
+
+The text service produces the same `ITextBlock[]` regardless of client. Renderers adapt blocks to their medium.
+
+| Feature | CLI Renderer | Browser Renderer |
+|---------|-------------|-----------------|
+| Emphasis | ANSI italic `\x1b[3m` | `<em>` |
+| Bold | ANSI bold `\x1b[1m` | `<strong>` |
+| Items | No styling | `<span class="item">` |
+| Custom types | Plain text fallback | CSS class from type |
+| Block separator | `\n\n` | `<div>` elements |

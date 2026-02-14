@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scope System - Sharpee API</title>
+  <link rel="stylesheet" href="css/pico.min.css">
+  <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <main>
+    <header>
+      <hgroup>
+        <h1>Scope System</h1>
+        <p>Visibility, reachability, and what the player can interact with</p>
+      </hgroup>
+      <nav aria-label="breadcrumb">
+        <a href="index.html">API</a>
+        <span class="separator">/</span>
+        Scope
+      </nav>
+    </header>
+
+    <!-- Overview -->
+    <section id="overview">
+      <h2>Overview</h2>
+      <p>Scope determines what the player can <strong>perceive</strong>, <strong>reach</strong>, and <strong>interact with</strong>. Before any action mutates the world, its <code>validate()</code> phase checks whether the target entity meets a required scope level. A sword on the far side of a locked glass case might be <em>visible</em> but not <em>reachable</em> &mdash; scope captures that distinction.</p>
+      <p>The scope system lives in two layers. The <strong>world-model</strong> layer (<code>packages/world-model/src/scope/</code>) provides the rule registry and evaluator for advanced scenarios. The <strong>stdlib</strong> layer (<code>packages/stdlib/src/scope/</code>) provides the <code>ScopeLevel</code> enum, the <code>ScopeResolver</code> interface, and the <code>StandardScopeResolver</code> implementation that actions use day-to-day.</p>
+    </section>
+
+    <!-- Quick Reference -->
+    <section class="quick-ref">
+      <h2>Quick Reference</h2>
+      <table>
+        <thead>
+          <tr><th>Level</th><th>Value</th><th>Meaning</th><th>Example verbs</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>UNAWARE</code></td><td>0</td>
+            <td>Player does not know the entity exists</td>
+            <td>&mdash;</td>
+          </tr>
+          <tr>
+            <td><code>AWARE</code></td><td>1</td>
+            <td>Player knows it exists (heard, smelled, remembered)</td>
+            <td>think about, ask about</td>
+          </tr>
+          <tr>
+            <td><code>VISIBLE</code></td><td>2</td>
+            <td>Player can see it with their eyes</td>
+            <td>examine, look at, read</td>
+          </tr>
+          <tr>
+            <td><code>REACHABLE</code></td><td>3</td>
+            <td>Player can physically touch or manipulate it</td>
+            <td>take, push, open, touch</td>
+          </tr>
+          <tr>
+            <td><code>CARRIED</code></td><td>4</td>
+            <td>Item is in the player&rsquo;s inventory</td>
+            <td>drop, eat, wear, insert</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="font-size:0.8rem; margin-top:0.5rem; margin-bottom:0;">Higher levels imply all lower levels. Compare numerically: <code>if (scope &gt;= ScopeLevel.VISIBLE) { ... }</code></p>
+    </section>
+
+    <!-- ScopeLevel Enum -->
+    <section id="scope-level">
+      <h2>ScopeLevel</h2>
+      <p>An ordered numeric enum representing increasing levels of access. Each higher level implies all lower ones &mdash; an entity that is <code>REACHABLE</code> is necessarily also <code>VISIBLE</code> and <code>AWARE</code>.</p>
+      <pre><code>enum ScopeLevel {
+  UNAWARE   = 0,  // Not known to player at all
+  AWARE     = 1,  // Knows it exists (can hear, smell, remember)
+  VISIBLE   = 2,  // Can see with eyes
+  REACHABLE = 3,  // Can physically touch/manipulate
+  CARRIED   = 4   // In actor's inventory
+}</code></pre>
+      <p>Auditory and olfactory perception map to <code>AWARE</code> in the numeric hierarchy. Being able to hear or smell something means you know it exists, but you may not be able to see or touch it.</p>
+
+      <article>
+        <h3>Scope hierarchy diagram</h3>
+        <pre><code>CARRIED (4) ──────────── inventory items
+   │
+REACHABLE (3) ────────── same room, open containers, supporters
+   │
+VISIBLE (2) ──────────── same room + line of sight (through glass, etc.)
+   │
+AWARE (1) ────────────── heard through walls, smelled, remembered
+   │
+UNAWARE (0) ──────────── does not exist in player's mental model</code></pre>
+      </article>
+    </section>
+
+    <!-- ScopeResolver -->
+    <section id="scope-resolver">
+      <h2>ScopeResolver</h2>
+      <p><code>StandardScopeResolver</code> evaluates scope by walking the containment hierarchy, checking lighting, container state, and physical proximity. It implements the <code>ScopeResolver</code> interface and is available on every <code>ActionContext</code> as <code>context.scopeResolver</code>.</p>
+
+      <article>
+        <details open>
+          <summary>Interface methods</summary>
+          <table>
+            <thead>
+              <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>getScope(actor, target)</code></td>
+                <td><code>ScopeLevel</code></td>
+                <td>Highest scope level for a target entity. Considers physical position, containers, lighting, and author-set minimum scopes.</td>
+              </tr>
+              <tr>
+                <td><code>canSee(actor, target)</code></td>
+                <td><code>boolean</code></td>
+                <td>Can the actor see the target? Checks same room, lighting, and container transparency.</td>
+              </tr>
+              <tr>
+                <td><code>canReach(actor, target)</code></td>
+                <td><code>boolean</code></td>
+                <td>Can the actor physically touch the target? Must be visible, plus not blocked by closed containers.</td>
+              </tr>
+              <tr>
+                <td><code>canHear(actor, target)</code></td>
+                <td><code>boolean</code></td>
+                <td>Can the actor hear the target? Sound travels through closed doors and some containers (loud sounds escape).</td>
+              </tr>
+              <tr>
+                <td><code>canSmell(actor, target)</code></td>
+                <td><code>boolean</code></td>
+                <td>Can the actor smell the target? Requires air path; closed containers block most scents.</td>
+              </tr>
+              <tr>
+                <td><code>getVisible(actor)</code></td>
+                <td><code>IFEntity[]</code></td>
+                <td>All entities the actor can currently see (includes minimum-scope overrides).</td>
+              </tr>
+              <tr>
+                <td><code>getReachable(actor)</code></td>
+                <td><code>IFEntity[]</code></td>
+                <td>All entities the actor can physically reach.</td>
+              </tr>
+              <tr>
+                <td><code>getAudible(actor)</code></td>
+                <td><code>IFEntity[]</code></td>
+                <td>All entities the actor can hear.</td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <article>
+        <h3>How visibility is evaluated</h3>
+        <p>The resolver walks the containment chain from the target up to the room. At each step it checks whether the containing entity blocks visibility:</p>
+        <ol>
+          <li><strong>Closed opaque container</strong> &mdash; blocks sight. Items inside are <code>UNAWARE</code>.</li>
+          <li><strong>Open container</strong> &mdash; items inside are visible and reachable.</li>
+          <li><strong>Supporter</strong> &mdash; items on top are always visible and reachable.</li>
+          <li><strong>Room reached</strong> &mdash; if actor is in the same room, the item is visible.</li>
+        </ol>
+        <p>Reachability adds one more requirement: the actor must be able to physically get to the item. Items in closed containers are visible only if the container is transparent (future feature), but never reachable through a closed container.</p>
+      </article>
+    </section>
+
+    <!-- ScopeRule -->
+    <section id="scope-rule">
+      <h2>ScopeRule (Advanced)</h2>
+      <p>The world-model layer provides a <code>ScopeRegistry</code> and <code>ScopeEvaluator</code> for registering declarative scope rules. This is an advanced feature for situations where the standard spatial logic is not sufficient &mdash; for example, making entities in adjacent rooms visible through windows, or scoping entities across magical portals.</p>
+
+      <article>
+        <details>
+          <summary>IScopeRule interface</summary>
+          <pre><code>interface IScopeRule {
+  id: string;                     // Unique rule identifier
+  fromLocations: string[] | '*';  // Where this rule applies
+  includeEntities:                // What it brings into scope
+    string[] | ((ctx: IScopeContext) =&gt; string[]);
+  includeLocations?: string[];    // Locations whose contents become visible
+  forActions?: string[] | '*';    // Restrict to specific actions
+  condition?: (ctx: IScopeContext) =&gt; boolean;  // Dynamic guard
+  priority?: number;              // Higher = evaluated first (default 100)
+  enabled?: boolean;              // Can be toggled at runtime
+  source?: string;                // 'core', 'story', 'extension'
+}</code></pre>
+        </details>
+      </article>
+
+      <article>
+        <h3>Example: window between rooms</h3>
+        <pre><code>// Items in the courtyard are visible from the tower window
+registry.addRule({
+  id: 'tower-window-view',
+  fromLocations: ['tower-room'],
+  includeLocations: ['courtyard'],
+  forActions: ['if.action.examining', 'if.action.looking'],
+  condition: (ctx) =&gt; {
+    const window = ctx.world.getEntity('tower-window');
+    return window?.get('openable')?.isOpen !== false; // open or no openable trait
+  },
+  source: 'story'
+});</code></pre>
+        <p>Most stories will not need custom scope rules. The <code>StandardScopeResolver</code> plus <code>setMinimumScope()</code> (see below) cover the vast majority of cases.</p>
+      </article>
+    </section>
+
+    <!-- Minimum Scope Override -->
+    <section id="minimum-scope">
+      <h2>Minimum Scope Override</h2>
+      <p>Sometimes an entity should be accessible regardless of its physical location. The <code>setMinimumScope()</code> method on <code>IFEntity</code> lets the author declare a floor for scope evaluation. The resolver returns the <em>higher</em> of the physical scope and the minimum scope &mdash; it is additive only and never reduces access.</p>
+
+      <pre><code>// Sky is always visible everywhere
+sky.setMinimumScope(ScopeLevel.VISIBLE);
+
+// Mountain visible only from overlook and trail
+mountain.setMinimumScope(ScopeLevel.VISIBLE, ['overlook', 'mountain-trail']);
+
+// Butterfly reachable in garden areas
+butterfly.setMinimumScope(ScopeLevel.REACHABLE, ['garden', 'meadow']);
+
+// Ticking clock audible from adjacent rooms
+clock.setMinimumScope(ScopeLevel.AWARE, ['hallway', 'study']);</code></pre>
+
+      <article>
+        <details>
+          <summary>API details</summary>
+          <table>
+            <thead>
+              <tr><th>Method</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>setMinimumScope(level)</code></td>
+                <td>Set a global minimum scope. Applies in all rooms. Pass a <code>ScopeLevel</code> value (0&ndash;4).</td>
+              </tr>
+              <tr>
+                <td><code>setMinimumScope(level, rooms)</code></td>
+                <td>Set minimum scope for specific rooms only. Pass an array of room IDs.</td>
+              </tr>
+              <tr>
+                <td><code>getMinimumScope(roomId)</code></td>
+                <td>Returns the effective minimum scope for this entity in a given room (checks room-specific first, then global). Returns 0 if not set.</td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+    </section>
+
+    <!-- Scope in Actions -->
+    <section id="scope-in-actions">
+      <h2>Scope in Actions</h2>
+      <p>Action authors rarely call the <code>ScopeResolver</code> directly. Instead, <code>ActionContext</code> provides convenience methods that check scope and return validation-ready error objects. The most common pattern is a single <code>requireScope()</code> call at the top of <code>validate()</code>.</p>
+
+      <pre><code>// Typical validate() — one line for scope checking
+validate(context: ActionContext): ValidationResult {
+  const target = context.command.directObject?.entity;
+  if (!target) return { valid: false, error: 'no_target' };
+
+  // Returns { ok, error?, actualScope }
+  const scopeCheck = context.requireScope(target, ScopeLevel.REACHABLE);
+  if (!scopeCheck.ok) return scopeCheck.error!;
+
+  // ... remaining validation
+  return { valid: true };
+}</code></pre>
+
+      <article>
+        <details open>
+          <summary>ActionContext scope methods</summary>
+          <table>
+            <thead>
+              <tr><th>Method</th><th>Returns</th><th>Use when</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>getEntityScope(entity)</code></td>
+                <td><code>ScopeLevel</code></td>
+                <td>You need the raw numeric level for conditional logic</td>
+              </tr>
+              <tr>
+                <td><code>requireScope(entity, required)</code></td>
+                <td><code>ScopeCheckResult</code></td>
+                <td>You have a specific entity and want a pass/fail with auto-generated error message</td>
+              </tr>
+              <tr>
+                <td><code>requireSlotScope(slot, required)</code></td>
+                <td><code>ScopeCheckResult</code></td>
+                <td>You want to check a command slot (e.g., <code>'target'</code>) without manually extracting the entity</td>
+              </tr>
+              <tr>
+                <td><code>requireCarriedOrImplicitTake(entity)</code></td>
+                <td><code>ImplicitTakeResult</code></td>
+                <td>The action needs the item in inventory; automatically attempts a take if it is reachable</td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <article>
+        <h3>Which scope level for which verbs?</h3>
+        <p>The <code>defaultScope</code> field on an action declares the baseline, and <code>validate()</code> can override per-situation. Standard stdlib conventions:</p>
+        <details>
+          <summary>Scope requirements by action group</summary>
+          <table>
+            <thead>
+              <tr><th>Scope</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>VISIBLE</code></td>
+                <td>examining, looking, reading</td>
+              </tr>
+              <tr>
+                <td><code>REACHABLE</code></td>
+                <td>taking, dropping, opening, closing, locking, unlocking, pushing, pulling, touching, entering, switching on/off, eating, drinking</td>
+              </tr>
+              <tr>
+                <td><code>CARRIED</code></td>
+                <td>wearing, inserting (item slot), giving (item slot), showing (item slot)</td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+    </section>
+
+    <!-- Darkness -->
+    <section id="darkness">
+      <h2>Darkness</h2>
+      <p>When a room is dark and the actor has no light source, visual perception is blocked. The resolver&rsquo;s <code>canSee()</code> returns <code>false</code> for everything in the room, which drops most entities to <code>AWARE</code> or <code>UNAWARE</code> depending on whether they can be heard or smelled.</p>
+      <p>Carried items remain at <code>CARRIED</code> scope regardless of lighting &mdash; you can always interact with things in your inventory, even in the dark.</p>
+      <pre><code>// Room darkness is set via custom properties on IdentityTrait
+const room = world.createRoom('cave');
+room.attributes.isDark = true;
+
+// Light sources: entities with LightSourceTrait + SwitchableTrait
+// When isOn === true, the actor "has a light source" and can see normally
+const lantern = world.createEntity('brass lantern');
+lantern.add(new LightSourceTrait());
+lantern.add(new SwitchableTrait({ isOn: false }));
+// After "switch on lantern", the room is effectively lit</code></pre>
+      <p>An entity with <code>LightSourceTrait</code> but no <code>SwitchableTrait</code> is treated as always lit (e.g., a torch). Light sources only count when carried by the actor.</p>
+    </section>
+
+    <!-- Concealment -->
+    <section id="concealment">
+      <h2>Concealment</h2>
+      <p>Concealed entities (<code>IdentityTrait.concealed = true</code>) are completely hidden from scope &mdash; the resolver returns <code>UNAWARE</code> regardless of physical position. The player must <code>SEARCH</code> (or trigger a story event) to reveal them via <code>IdentityBehavior.reveal(entity)</code>.</p>
+      <p>This is distinct from items in closed containers: a concealed item in plain sight on a table is still hidden until discovered. Use concealment for hidden compartments, buried objects, or items that require narrative discovery.</p>
+    </section>
+
+    <!-- See Also -->
+    <section id="see-also">
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="actions-overview.html">Actions Overview</a> &mdash; the four-phase action lifecycle and <code>ActionContext</code> methods</li>
+        <li><a href="world.html">World Model</a> &mdash; containment hierarchy, <code>moveEntity()</code>, and spatial queries</li>
+        <li><a href="entities.html">Entities</a> &mdash; <code>IFEntity</code>, traits, and <code>setMinimumScope()</code></li>
+      </ul>
+    </section>
+  </main>
+  <script src="js/docs.js"></script>
+</body>
+</html>

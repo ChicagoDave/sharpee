@@ -1,0 +1,125 @@
+title: Balloon Full Flight
+story: dungeo
+description: Tests full balloon flight: burn guidebook, inflate, rise, dock at ledges, exit, re-enter, descend
+
+---
+
+# Setup: get lantern, guidebook, teleport to Volcano Bottom
+> gdt
+[OK: contains "GDT"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> tk guidebook
+[OK: contains "Taken"]
+
+> ah Volcano Bottom
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+> turn on lantern
+[OK: contains "on"]
+
+# Verify location and balloon
+> look
+[OK: contains "Volcano Bottom"]
+[OK: contains "balloon"]
+
+# Enter the balloon
+> enter balloon
+[OK: contains "get into balloon"]
+
+# Open the receptacle (brazier)
+> open receptacle
+[OK: contains "open"]
+
+# Burn the guidebook to create heat source
+> burn guidebook
+[OK: contains "burn"]
+
+# Put burning guidebook in receptacle to inflate balloon
+# Daemon fires immediately: vlbot → vair1
+> put guidebook in receptacle
+[OK: contains "put"]
+[OK: contains "rises"]
+
+# Wait for balloon to rise: vair1 → vair2 (daemon fires every 3 turns)
+> wait
+[OK: contains "Time"]
+
+> wait
+[OK: contains "Time"]
+
+> wait
+[OK: contains "hook"]
+
+# At vair2 - tie wire to hook (should dock at Narrow Ledge)
+> tie wire
+[OK: contains "anchored"]
+
+# Exit balloon to Narrow Ledge
+> exit
+[OK: contains "Narrow Ledge"]
+
+# Verify we can see the coin and hook on the ledge
+> look
+[OK: contains "Narrow Ledge"]
+
+# Take the zorkmid coin
+> take coin
+[OK: contains "Taken"]
+
+# Go south to Library
+> south
+[OK: contains "Library"]
+
+# Take the purple book (contains stamp)
+> take book
+[OK: contains "Taken"]
+
+# Return to Narrow Ledge
+> north
+[OK: contains "Narrow Ledge"]
+
+# Re-enter balloon
+> enter balloon
+[OK: contains "get into balloon"]
+
+# Untie to resume flight
+# Daemon fires immediately on untie turn: ledg2 → vair2
+> untie wire
+[OK: contains "untie"]
+
+# Wait for balloon to rise: vair2 → vair3 (3 turns)
+> wait
+[OK: contains "Time"]
+
+> wait
+[OK: contains "Time"]
+
+> wait
+[OK: contains "rises"]
+
+# Wait for balloon to rise: vair3 → vair4 (3 more turns)
+> wait
+[OK: contains "Time"]
+
+> wait
+[OK: contains "Time"]
+
+> wait
+[OK: contains "hook"]
+
+# Tie at vair4 (near Wide Ledge)
+> tie wire
+[OK: contains "anchored"]
+
+# Exit to Wide Ledge
+> exit
+[OK: contains "Wide Ledge"]
+
+> look
+[OK: contains "Wide Ledge"]

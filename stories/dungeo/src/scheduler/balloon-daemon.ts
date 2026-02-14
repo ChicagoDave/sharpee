@@ -126,14 +126,19 @@ function getPositionMessage(position: BalloonPosition, isRising: boolean): strin
 
 /**
  * Handle balloon crash - kills player and destroys balloon
+ *
+ * Per MDL/FORTRAN: balloon hits ceiling, bag tears, plunges to ground.
+ * Player dies if inside. Balloon is destroyed (moved to limbo).
  */
 function handleCrash(world: WorldModel, ctx: SchedulerContext): ISemanticEvent[] {
   const events: ISemanticEvent[] = [];
 
+  const playerInBalloon = isPlayerInBalloon(world);
+
   // Emit crash message
   events.push({
     id: `balloon-crash-${ctx.turn}`,
-    type: 'game.death',
+    type: 'if.event.player.died',
     timestamp: Date.now(),
     entities: { target: balloonEntityId || '' },
     data: {
@@ -144,8 +149,22 @@ function handleCrash(world: WorldModel, ctx: SchedulerContext): ISemanticEvent[]
     }
   });
 
-  // TODO: Replace balloon with "dead balloon" scenery
-  // TODO: Move player to appropriate death location
+  // Kill player if inside balloon
+  if (playerInBalloon) {
+    world.setStateValue('dungeo.player.dead', true);
+    world.setStateValue('dungeo.player.death_cause', 'balloon_crash');
+  }
+
+  // Disable the balloon daemon — balloon is destroyed
+  if (balloonEntityId) {
+    const balloon = world.getEntity(balloonEntityId);
+    if (balloon) {
+      const state = balloon.get(BalloonStateTrait);
+      if (state) {
+        state.daemonEnabled = false;
+      }
+    }
+  }
 
   return events;
 }
@@ -174,7 +193,6 @@ function createBalloonDaemon(): Daemon {
     },
 
     run: (ctx: SchedulerContext): ISemanticEvent[] => {
-      lastFireTurn = ctx.turn;
       const events: ISemanticEvent[] = [];
 
       const balloon = getBalloonState(ctx.world);
@@ -195,17 +213,20 @@ function createBalloonDaemon(): Daemon {
         newPosition = nextPositionDown(state.position);
       }
 
-      // If at bottom with no heat, don't move
+      // Check for crash: rising past VAIR4 (above volcano rim)
+      if (newPosition === null && hasHeat && state.position === 'vair4') {
+        lastFireTurn = ctx.turn;
+        return handleCrash(ctx.world, ctx);
+      }
+
+      // If no movement possible (at bottom with no heat, or at top), skip
+      // Don't update lastFireTurn so the daemon fires immediately when conditions change
       if (newPosition === null) {
         return events;
       }
 
-      // Check for crash at VAIR4
-      if (newPosition === 'vair4') {
-        state.position = newPosition;
-        syncVehicleTraitPosition(ctx.world, newPosition);
-        return handleCrash(ctx.world, ctx);
-      }
+      // Balloon actually moves — update the fire timer
+      lastFireTurn = ctx.turn;
 
       // Update position
       const oldPosition = state.position;
@@ -235,8 +256,9 @@ function createBalloonDaemon(): Daemon {
           }
         });
 
-        // If we've arrived at a ledge, mention the hook
-        if (isLedgePosition(newPosition)) {
+        // If we've arrived at or near a dockable ledge, mention the hook
+        // vair2 is near Narrow Ledge, vair4 is near Wide Ledge
+        if (isLedgePosition(newPosition) || newPosition === 'vair2' || newPosition === 'vair4') {
           events.push({
             id: `balloon-ledge-${ctx.turn}`,
             type: 'daemon.message',

@@ -31,6 +31,8 @@ import { registerCarouselHandler } from '../handlers/carousel-handler';
 import { registerEndgameTriggerHandler } from '../handlers/endgame-trigger-handler';
 
 import { registerTrollRecoveryDaemon, registerCagePoisonDaemon, registerCureDaemon } from '../scheduler';
+import { setBurnActionExplosionConfig } from '../actions/burn';
+import { IdentityTrait } from '@sharpee/world-model';
 
 // Import region types to ensure type compatibility
 import { ForestRoomIds } from '../regions/forest';
@@ -45,6 +47,7 @@ import { EndgameRoomIds } from '../regions/endgame';
 import { MazeRoomIds } from '../regions/maze';
 import { HouseInteriorRoomIds } from '../regions/house-interior';
 import { WellRoomIds } from '../regions/well-room';
+import { VolcanoRoomIds } from '../regions/volcano';
 
 /**
  * Configuration for scheduler event registration
@@ -81,6 +84,8 @@ export interface SchedulerConfig {
   royalPuzzleIds: RoyalPuzzleRoomIds;
   /** Well Room IDs (cage/sphere puzzle) */
   wellRoomIds: WellRoomIds;
+  /** Volcano region IDs (brick/fuse explosion) */
+  volcanoIds?: VolcanoRoomIds;
 }
 
 /**
@@ -197,4 +202,35 @@ export function registerSchedulerEvents(
 
   // Wire press button action to scheduler (flooding sequence)
   setPressButtonScheduler(scheduler, config.damIds.maintenanceRoom);
+
+  // Wire burn action to explosion fuse (brick/safe puzzle)
+  if (config.volcanoIds) {
+    const brick = world.getAllEntities().find(e => {
+      const id = e.get(IdentityTrait);
+      return id?.name === 'brick';
+    });
+    const wire = world.getAllEntities().find(e => {
+      const id = e.get(IdentityTrait);
+      return id?.name === 'shiny wire';
+    });
+    const slot = world.getAllEntities().find(e => {
+      const id = e.get(IdentityTrait);
+      return id?.name === 'hole' && id.aliases?.includes('slot');
+    });
+    const safe = world.getAllEntities().find(e => {
+      const id = e.get(IdentityTrait);
+      return id?.name === 'safe';
+    });
+
+    if (brick && wire && slot && safe) {
+      setBurnActionExplosionConfig(scheduler, {
+        brickId: brick.id,
+        fuseWireId: wire.id,
+        dustyRoomId: config.volcanoIds.dustyRoom,
+        wideLedgeId: config.volcanoIds.wideLedge,
+        slotId: slot.id,
+        safeId: safe.id,
+      });
+    }
+  }
 }

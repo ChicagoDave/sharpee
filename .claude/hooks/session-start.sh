@@ -7,7 +7,7 @@ TIME=$(date +%H%M)
 TIMESTAMP=$(date "+%Y-%m-%d %H:%M")
 SESSION_DIR="docs/context"
 SESSION_FILE="${SESSION_DIR}/session-${TODAY}-${TIME}-${BRANCH}.md"
-TEMPLATE="${SESSION_DIR}/.session-template.md"
+TEMPLATE=".claude/.session-template.md"
 
 # Determine trigger type from stdin (SessionStart provides JSON input)
 # The field is "source" not "type" per Claude Code hook documentation

@@ -15,9 +15,26 @@
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
-import { IdentityTrait, IFEntity, RoomTrait, Direction } from '@sharpee/world-model';
+import { IdentityTrait, IFEntity, RoomTrait, Direction, VehicleTrait } from '@sharpee/world-model';
 import { TIE_ACTION_ID, TieMessages } from './types';
-import { BalloonStateTrait, isLedgePosition, RopeStateTrait } from '../../traits';
+import { BalloonStateTrait, isLedgePosition, BalloonPosition, RopeStateTrait } from '../../traits';
+
+/**
+ * Map mid-air positions to their corresponding ledge positions.
+ * vair2 is at the same altitude as Narrow Ledge (ledg2).
+ * vair4 is at the same altitude as Wide Ledge (ledg4).
+ */
+const VAIR_TO_LEDGE: Partial<Record<BalloonPosition, BalloonPosition>> = {
+  'vair2': 'ledg2',
+  'vair4': 'ledg4',
+};
+
+/**
+ * Check if position is at or near a dockable ledge
+ */
+function canDockAtPosition(pos: BalloonPosition): boolean {
+  return isLedgePosition(pos) || pos in VAIR_TO_LEDGE;
+}
 
 /**
  * Check if entity is the braided wire (FORTRAN calls it BROPE but game text says "wire")
@@ -106,8 +123,8 @@ function validateBalloonTie(context: ActionContext): ValidationResult | null {
   const balloon = locationEntity;
   const balloonState = balloon.get(BalloonStateTrait);
 
-  // Check if balloon is at a ledge position
-  if (!balloonState || !isLedgePosition(balloonState.position)) {
+  // Check if balloon is at or near a dockable ledge position
+  if (!balloonState || !canDockAtPosition(balloonState.position)) {
     return { valid: false, error: TieMessages.NOT_AT_LEDGE };
   }
 
@@ -116,14 +133,22 @@ function validateBalloonTie(context: ActionContext): ValidationResult | null {
     return { valid: false, error: TieMessages.ALREADY_TIED };
   }
 
-  // Find the wire and hook in the balloon
+  // Find the wire in the balloon
   const balloonContents = world.getContents(balloon.id);
   const wire = balloonContents.find(e => isBraidedWire(e));
-  const hook = balloonContents.find(e => isHook(e));
 
   if (!wire) {
     return { valid: false, error: TieMessages.NO_ROPE };
   }
+
+  // Find the hook in the ledge room (hooks are on rock face, not in balloon)
+  // If at a vair position, look up the corresponding ledge room
+  const vehicleTrait = balloon.get(VehicleTrait);
+  const currentPos = balloonState.position;
+  const lookupPos = VAIR_TO_LEDGE[currentPos] || currentPos;
+  const ledgeRoomId = vehicleTrait?.positionRooms?.[lookupPos];
+  const roomContents = ledgeRoomId ? world.getContents(ledgeRoomId) : [];
+  const hook = roomContents.find(e => isHook(e));
 
   if (!hook) {
     return { valid: false, error: TieMessages.NO_HOOK };
@@ -211,9 +236,15 @@ export const tieAction: Action = {
       if (!balloon || !hook) return;
 
       const balloonState = balloon.get(BalloonStateTrait);
-      const hookId = (hook as any).hookId || 'hook1';
+      const hookId = (hook.attributes?.hookId || 'hook1') as 'hook1' | 'hook2';
 
       if (!balloonState) return;
+
+      // If at a mid-air position near a ledge, move to the ledge position
+      const ledgePos = VAIR_TO_LEDGE[balloonState.position];
+      if (ledgePos) {
+        balloonState.position = ledgePos;
+      }
 
       balloonState.tetheredTo = hookId;
       balloonState.daemonEnabled = false;

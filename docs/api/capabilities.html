@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Capabilities &amp; Interceptors - Sharpee API</title>
+  <link rel="stylesheet" href="css/pico.min.css">
+  <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+  <aside id="sidebar"></aside>
+  <main>
+    <header>
+      <hgroup>
+        <h1>Capabilities &amp; Interceptors</h1>
+        <p>Entity-specific action dispatch and action lifecycle hooks</p>
+      </hgroup>
+      <nav aria-label="breadcrumb">
+        <a href="index.html">API</a>
+        <span class="separator">/</span>
+        Capabilities
+      </nav>
+    </header>
+
+    <!-- Overview -->
+    <section id="overview">
+      <h2>Overview</h2>
+      <p>Sharpee provides two complementary mechanisms for attaching entity-specific logic to stdlib actions: <strong>capability dispatch</strong> (ADR-090) and <strong>action interceptors</strong> (ADR-118). Both bind logic to traits rather than to actions, so the same LOWER action can do entirely different things depending on whether the target is a basket, a pole, or a drawbridge.</p>
+
+      <p>The key distinction:</p>
+      <ul>
+        <li><strong>Capability Dispatch</strong> &mdash; Full delegation. The trait <em>owns all logic</em> for the action. The stdlib action finds the trait, finds the registered behavior, and hands over control entirely. Use this for verbs with no standard semantics (LOWER, RAISE, TURN, WAVE, WIND).</li>
+        <li><strong>Action Interceptors</strong> &mdash; Hooks into phases. The stdlib action runs its standard logic, and the interceptor adds custom behavior before or after each phase. Use this for verbs with standard semantics that need entity-specific side effects (scoring on PUT, puncturing on ENTER, melting on THROW).</li>
+      </ul>
+
+      <article>
+        <h3>Decision Tree</h3>
+        <pre><code>Is this a new verb/command not in stdlib?
+  YES --> Create a Story-Specific Action (see actions-overview.html)
+  NO  --> Does the verb have standard semantics (same mutation for all entities)?
+    YES (TAKE, DROP, OPEN, PUT) --> Use stdlib action + traits
+        Need side effects? --> Add an ActionInterceptor
+    NO  (LOWER, TURN, WAVE)    --> Use Capability Dispatch
+        Create Trait + Behavior, register with stdlib action</code></pre>
+      </article>
+    </section>
+
+    <!-- Quick Reference -->
+    <section class="quick-ref">
+      <h2>Quick Reference</h2>
+      <table>
+        <thead>
+          <tr><th>Task</th><th>Code</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Register a behavior</td>
+            <td><code>registerCapabilityBehavior(TraitClass.type, actionId, behavior)</code></td>
+          </tr>
+          <tr>
+            <td>Register an interceptor</td>
+            <td><code>registerActionInterceptor(TraitClass.type, actionId, interceptor)</code></td>
+          </tr>
+          <tr>
+            <td>Check for duplicate before registering</td>
+            <td><code>if (!hasCapabilityBehavior(type, id)) register...()</code></td>
+          </tr>
+          <tr>
+            <td>Find trait handling an action</td>
+            <td><code>findTraitWithCapability(entity, actionId)</code></td>
+          </tr>
+          <tr>
+            <td>Get behavior for trait+action</td>
+            <td><code>getBehaviorForCapability(trait, actionId)</code></td>
+          </tr>
+          <tr>
+            <td>Get interceptor for entity+action</td>
+            <td><code>getInterceptorForAction(entity, actionId)</code></td>
+          </tr>
+          <tr>
+            <td>Create an effect (in behavior/interceptor)</td>
+            <td><code>createEffect('game.message', { messageId: '...' })</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Capability Registry -->
+    <section id="capability-registry">
+      <h2>Capability Registry</h2>
+      <p>The capability registry maps <code>traitType:actionId</code> pairs to behavior implementations. When a capability-dispatch action runs, it calls <code>findTraitWithCapability()</code> on the target entity, then <code>getBehaviorForCapability()</code> to find the registered behavior, and delegates the entire four-phase lifecycle to it.</p>
+
+      <p>Both registries use <code>globalThis</code> to store their maps, ensuring they are shared across <code>require()</code> boundaries. This is critical in bundled environments where story code and platform code may load through different module instances.</p>
+
+      <article>
+        <h3><code>registerCapabilityBehavior()</code></h3>
+        <p>Register a behavior for a trait+capability combination. Each pair can only have one behavior. Call this in your story's <code>initializeWorld()</code>.</p>
+        <pre><code>import {
+  registerCapabilityBehavior,
+  hasCapabilityBehavior
+} from '@sharpee/world-model';
+
+// Guard against duplicate registration (global registry persists across test runs)
+if (!hasCapabilityBehavior(BasketElevatorTrait.type, 'if.action.lowering')) {
+  registerCapabilityBehavior(
+    BasketElevatorTrait.type,
+    'if.action.lowering',
+    BasketLoweringBehavior
+  );
+}</code></pre>
+
+        <details>
+          <summary>Full signature and options</summary>
+          <pre><code>function registerCapabilityBehavior&lt;T extends ITrait&gt;(
+  traitType: string,       // e.g., 'dungeo.trait.basket_elevator'
+  capability: string,      // e.g., 'if.action.lowering'
+  behavior: CapabilityBehavior,
+  options?: BehaviorRegistrationOptions&lt;T&gt;
+): void;</code></pre>
+          <table>
+            <thead>
+              <tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>priority</code></td>
+                <td><code>number</code></td>
+                <td><code>0</code></td>
+                <td>Resolution priority when multiple entities claim the same capability. Higher is checked first.</td>
+              </tr>
+              <tr>
+                <td><code>resolution</code></td>
+                <td><code>CapabilityResolution</code></td>
+                <td><code>'first-wins'</code></td>
+                <td>Override global resolution strategy for this binding. Options: <code>'first-wins'</code>, <code>'any-blocks'</code>, <code>'all-must-pass'</code>, <code>'highest-priority'</code>.</td>
+              </tr>
+              <tr>
+                <td><code>mode</code></td>
+                <td><code>CapabilityMode</code></td>
+                <td><code>'blocking'</code></td>
+                <td>How validation result affects the action. Options: <code>'blocking'</code>, <code>'advisory'</code>, <code>'chain'</code>.</td>
+              </tr>
+              <tr>
+                <td><code>validateBinding</code></td>
+                <td><code>(trait: T) =&gt; boolean</code></td>
+                <td>&mdash;</td>
+                <td>Optional runtime validation function called when looking up the behavior.</td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <article>
+        <h3>Helper Functions</h3>
+        <details>
+          <summary>All capability helpers</summary>
+          <table>
+            <thead>
+              <tr><th>Function</th><th>Returns</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>findTraitWithCapability(entity, actionId)</code></td>
+                <td><code>ITrait | undefined</code></td>
+                <td>Find the trait on an entity that declares the given capability via <code>static capabilities</code>.</td>
+              </tr>
+              <tr>
+                <td><code>hasCapability(entity, actionId)</code></td>
+                <td><code>boolean</code></td>
+                <td>Check if any trait on the entity claims a capability.</td>
+              </tr>
+              <tr>
+                <td><code>getBehaviorForCapability(trait, actionId)</code></td>
+                <td><code>CapabilityBehavior | undefined</code></td>
+                <td>Look up the registered behavior for a trait+capability pair.</td>
+              </tr>
+              <tr>
+                <td><code>hasCapabilityBehavior(traitType, capability)</code></td>
+                <td><code>boolean</code></td>
+                <td>Check if a behavior is registered. Use before registering to avoid duplicates.</td>
+              </tr>
+              <tr>
+                <td><code>getEntityCapabilities(entity)</code></td>
+                <td><code>string[]</code></td>
+                <td>Get all capability action IDs declared by an entity's traits.</td>
+              </tr>
+              <tr>
+                <td><code>traitHasCapability(trait, actionId, TraitClass?)</code></td>
+                <td><code>boolean</code> (type guard)</td>
+                <td>Type guard: check if a trait declares a capability and optionally narrow to a specific class.</td>
+              </tr>
+              <tr>
+                <td><code>unregisterCapabilityBehavior(traitType, capability)</code></td>
+                <td><code>void</code></td>
+                <td>Remove a registration. Primarily for testing.</td>
+              </tr>
+              <tr>
+                <td><code>clearCapabilityRegistry()</code></td>
+                <td><code>void</code></td>
+                <td>Clear all registrations. For testing only.</td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+    </section>
+
+    <!-- CapabilityBehavior Interface -->
+    <section id="capability-behavior">
+      <h2>CapabilityBehavior Interface</h2>
+      <p>Behaviors implement a four-phase pattern that mirrors stdlib actions but operates on a single entity and trait. When a capability-dispatch action finds a behavior for the target entity, it delegates all four phases to the behavior in order.</p>
+
+      <pre><code>interface CapabilityBehavior {
+  validate(entity: IFEntity, world: WorldModel, actorId: string,
+           sharedData: CapabilitySharedData): CapabilityValidationResult;
+
+  execute(entity: IFEntity, world: WorldModel, actorId: string,
+          sharedData: CapabilitySharedData): void;
+
+  report(entity: IFEntity, world: WorldModel, actorId: string,
+         sharedData: CapabilitySharedData): CapabilityEffect[];
+
+  blocked(entity: IFEntity, world: WorldModel, actorId: string,
+          error: string, sharedData: CapabilitySharedData): CapabilityEffect[];
+}</code></pre>
+
+      <article>
+        <details open>
+          <summary>Phase descriptions</summary>
+          <table>
+            <thead>
+              <tr><th>Phase</th><th>Called when</th><th>Returns</th><th>Purpose</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>validate</code></td>
+                <td>Always (via dispatch action's validate)</td>
+                <td><code>CapabilityValidationResult</code></td>
+                <td>Check preconditions: is the basket already at the bottom? Is the mechanism jammed?</td>
+              </tr>
+              <tr>
+                <td><code>execute</code></td>
+                <td>validate passed</td>
+                <td><code>void</code></td>
+                <td>Mutate world state: move the basket, change position, transport contents</td>
+              </tr>
+              <tr>
+                <td><code>report</code></td>
+                <td>execute succeeded</td>
+                <td><code>CapabilityEffect[]</code></td>
+                <td>Return effects describing what happened (message events for rendering)</td>
+              </tr>
+              <tr>
+                <td><code>blocked</code></td>
+                <td>validate failed</td>
+                <td><code>CapabilityEffect[]</code></td>
+                <td>Return effects explaining why the action failed</td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <article>
+        <h3>CapabilityValidationResult</h3>
+        <pre><code>interface CapabilityValidationResult {
+  valid: boolean;
+  error?: string;             // Error code for message lookup
+  params?: Record&lt;string, any&gt;; // Parameters for error formatting
+  data?: Record&lt;string, any&gt;;   // Data to pass to execute/report
+}</code></pre>
+      </article>
+
+      <article>
+        <h3>CapabilityEffect</h3>
+        <p>Effects are the return type of <code>report()</code> and <code>blocked()</code>. They get converted to <code>ISemanticEvent</code> objects by the dispatch action's report phase. Use the <code>createEffect()</code> helper to create them.</p>
+        <pre><code>interface CapabilityEffect {
+  type: string;                  // Event type, e.g., 'game.message'
+  payload: Record&lt;string, any&gt;; // Event payload with messageId, params, etc.
+}
+
+// Helper
+function createEffect(type: string, payload: Record&lt;string, any&gt;): CapabilityEffect;</code></pre>
+      </article>
+
+      <article>
+        <h3>sharedData</h3>
+        <p>A mutable <code>Record&lt;string, any&gt;</code> passed to all four phases of a behavior invocation. Use it to pass data from <code>validate</code> or <code>execute</code> to <code>report</code>, just as <code>ActionContext.sharedData</code> works for regular actions.</p>
+        <pre><code>validate(entity, world, actorId, sharedData) {
+  const trait = entity.get(BasketElevatorTrait);
+  sharedData.previousPosition = trait.position;
+  return { valid: true };
+},
+
+report(entity, world, actorId, sharedData) {
+  return [createEffect('game.message', {
+    messageId: 'dungeo.basket.lowered',
+    params: { from: sharedData.previousPosition }
+  })];
+}</code></pre>
+      </article>
+    </section>
+
+    <!-- Creating a Trait with Capabilities -->
+    <section id="creating-traits">
+      <h2>Creating a Trait with Capabilities</h2>
+      <p>A trait declares which actions it responds to via a <code>static readonly capabilities</code> array. When a capability-dispatch action runs on an entity, it iterates the entity's traits looking for one whose constructor's <code>capabilities</code> array includes the action ID.</p>
+
+      <pre><code>import { ITrait, ITraitConstructor } from '@sharpee/world-model';
+
+export class BasketElevatorTrait implements ITrait {
+  // Unique type identifier for this trait
+  static readonly type = 'dungeo.trait.basket_elevator' as const;
+
+  // Declare which actions this trait responds to (ADR-090)
+  static readonly capabilities = ['if.action.lowering', 'if.action.raising'] as const;
+
+  // Instance type must match
+  readonly type = BasketElevatorTrait.type;
+
+  position: 'top' | 'bottom';
+  topRoomId: string;
+  bottomRoomId: string;
+
+  constructor(config: BasketElevatorConfig) {
+    this.topRoomId = config.topRoomId;
+    this.bottomRoomId = config.bottomRoomId;
+    this.position = config.initialPosition ?? 'top';
+  }
+}</code></pre>
+
+      <p>For interceptors, use <code>static readonly interceptors</code> instead:</p>
+      <pre><code>export class InflatableTrait implements ITrait {
+  static readonly type = 'dungeo.trait.inflatable' as const;
+
+  // Declare which actions this trait intercepts (ADR-118)
+  static readonly interceptors = ['if.action.entering'] as const;
+
+  readonly type = InflatableTrait.type;
+  isInflated: boolean;
+
+  constructor(config: { isInflated: boolean }) {
+    this.isInflated = config.isInflated;
+  }
+}</code></pre>
+
+      <article style="border-left: 4px solid #2980b9; padding-left: 1rem;">
+        <p><strong>Trait declarations are metadata only.</strong> The <code>static capabilities</code> and <code>static interceptors</code> arrays tell the lookup helpers which traits claim which actions, but they do not register any logic. You must still call <code>registerCapabilityBehavior()</code> or <code>registerActionInterceptor()</code> in <code>initializeWorld()</code> to bind the actual behavior or interceptor implementation.</p>
+      </article>
+    </section>
+
+    <!-- Capability Dispatch Action -->
+    <section id="dispatch-action">
+      <h2>Capability-Dispatch Action Factory</h2>
+      <p>Stdlib provides <code>createCapabilityDispatchAction()</code> to create actions that have no fixed semantics &mdash; they find the trait and delegate entirely. You do not typically call this yourself; the stdlib already defines actions for LOWER, RAISE, TURN, WAVE, and WIND using this factory. But if you need a new dispatch-style action, here is the API:</p>
+
+      <pre><code>import { createCapabilityDispatchAction } from '@sharpee/stdlib';
+
+export const loweringAction = createCapabilityDispatchAction({
+  actionId: 'if.action.lowering',
+  group: 'manipulation',
+  noTargetError: 'if.lower.no_target',
+  cantDoThatError: 'if.lower.cant_lower_that',
+  scope: ScopeLevel.REACHABLE  // default
+});</code></pre>
+
+      <details>
+        <summary>How the dispatch flow works internally</summary>
+        <ol>
+          <li><strong>validate</strong> &mdash; Finds the target entity from the command. Calls <code>findTraitWithCapability(entity, actionId)</code> to find the trait. Calls <code>getBehaviorForCapability(trait, actionId)</code> to find the behavior. Delegates to <code>behavior.validate()</code>. Stores trait, behavior, and sharedData in <code>ValidationResult.data</code>.</li>
+          <li><strong>execute</strong> &mdash; Reads trait and behavior from <code>validationResult.data</code>. Calls <code>behavior.execute()</code>.</li>
+          <li><strong>report</strong> &mdash; Calls <code>behavior.report()</code>. Converts returned <code>CapabilityEffect[]</code> to <code>ISemanticEvent[]</code> via <code>context.event()</code>.</li>
+          <li><strong>blocked</strong> &mdash; If behavior was found, calls <code>behavior.blocked()</code>. Otherwise emits a generic <code>if.event.capability_blocked</code> event.</li>
+        </ol>
+      </details>
+    </section>
+
+    <!-- Action Interceptors -->
+    <section id="interceptors">
+      <h2>Action Interceptors</h2>
+      <p>Interceptors hook into the phases of stdlib actions without replacing their standard logic. Where capability behaviors own the <em>entire</em> action, interceptors run <em>alongside</em> it &mdash; checking conditions before validation, performing side effects after execution, or adding extra messages after reporting.</p>
+
+      <pre><code>interface ActionInterceptor {
+  preValidate?(entity, world, actorId, sharedData): InterceptorResult | null;
+  postValidate?(entity, world, actorId, sharedData): InterceptorResult | null;
+  postExecute?(entity, world, actorId, sharedData): void;
+  postReport?(entity, world, actorId, sharedData): CapabilityEffect[];
+  onBlocked?(entity, world, actorId, error, sharedData): CapabilityEffect[] | null;
+}</code></pre>
+
+      <article>
+        <details open>
+          <summary>Hook execution order</summary>
+          <table>
+            <thead>
+              <tr><th>Hook</th><th>When</th><th>Return</th><th>Purpose</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>preValidate</code></td>
+                <td>Before standard validation</td>
+                <td><code>InterceptorResult | null</code></td>
+                <td>Block action early. Return <code>null</code> to continue, or a result to block.</td>
+              </tr>
+              <tr>
+                <td><em>(standard validation)</em></td>
+                <td>&mdash;</td>
+                <td>&mdash;</td>
+                <td>&mdash;</td>
+              </tr>
+              <tr>
+                <td><code>postValidate</code></td>
+                <td>After standard validation passes</td>
+                <td><code>InterceptorResult | null</code></td>
+                <td>Additional checks. Store data in <code>sharedData</code> for later hooks. Return <code>null</code> to continue.</td>
+              </tr>
+              <tr>
+                <td><em>(standard execute)</em></td>
+                <td>&mdash;</td>
+                <td>&mdash;</td>
+                <td>&mdash;</td>
+              </tr>
+              <tr>
+                <td><code>postExecute</code></td>
+                <td>After standard execution</td>
+                <td><code>void</code></td>
+                <td>Additional mutations (scoring, state changes, melting glaciers). Cannot prevent the action.</td>
+              </tr>
+              <tr>
+                <td><em>(standard report)</em></td>
+                <td>&mdash;</td>
+                <td>&mdash;</td>
+                <td>&mdash;</td>
+              </tr>
+              <tr>
+                <td><code>postReport</code></td>
+                <td>After standard report</td>
+                <td><code>CapabilityEffect[]</code></td>
+                <td>Additional messages appended after standard output.</td>
+              </tr>
+              <tr>
+                <td><code>onBlocked</code></td>
+                <td>When validation fails</td>
+                <td><code>CapabilityEffect[] | null</code></td>
+                <td>Custom blocked message. Return <code>null</code> to use standard blocked handling.</td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+
+      <article>
+        <h3>InterceptorResult</h3>
+        <p>Returned by <code>preValidate</code> and <code>postValidate</code>. Returning <code>null</code> means "continue with standard logic". Returning a result object blocks or allows the action.</p>
+        <pre><code>interface InterceptorResult {
+  valid: boolean;
+  error?: string;
+  params?: Record&lt;string, unknown&gt;;
+}</code></pre>
+      </article>
+
+      <article>
+        <h3>Interceptor Registry</h3>
+        <p>Mirrors the capability registry. Register in <code>initializeWorld()</code> with a guard against duplicates:</p>
+        <pre><code>import {
+  registerActionInterceptor,
+  hasActionInterceptor
+} from '@sharpee/world-model';
+
+if (!hasActionInterceptor(InflatableTrait.type, 'if.action.entering')) {
+  registerActionInterceptor(
+    InflatableTrait.type,
+    'if.action.entering',
+    InflatableEnteringInterceptor
+  );
+}</code></pre>
+
+        <details>
+          <summary>All interceptor registry functions</summary>
+          <table>
+            <thead>
+              <tr><th>Function</th><th>Returns</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>registerActionInterceptor(traitType, actionId, interceptor, options?)</code></td>
+                <td><code>void</code></td>
+                <td>Register an interceptor for a trait+action pair. Throws if already registered.</td>
+              </tr>
+              <tr>
+                <td><code>getInterceptorForAction(entity, actionId)</code></td>
+                <td><code>InterceptorLookupResult | undefined</code></td>
+                <td>Find interceptor for an entity+action. Returns interceptor, trait, and binding metadata. Resolves highest priority if multiple candidates.</td>
+              </tr>
+              <tr>
+                <td><code>hasActionInterceptor(traitType, actionId)</code></td>
+                <td><code>boolean</code></td>
+                <td>Check if an interceptor is registered. Use before registering.</td>
+              </tr>
+              <tr>
+                <td><code>findTraitWithInterceptor(entity, actionId)</code></td>
+                <td><code>ITrait | undefined</code></td>
+                <td>Find a trait on an entity that declares an interceptor for the action.</td>
+              </tr>
+              <tr>
+                <td><code>hasInterceptor(entity, actionId)</code></td>
+                <td><code>boolean</code></td>
+                <td>Check if an entity has a trait with an interceptor for the action.</td>
+              </tr>
+              <tr>
+                <td><code>getEntityInterceptors(entity)</code></td>
+                <td><code>string[]</code></td>
+                <td>Get all action IDs intercepted by an entity's traits.</td>
+              </tr>
+              <tr>
+                <td><code>unregisterActionInterceptor(traitType, actionId)</code></td>
+                <td><code>void</code></td>
+                <td>Remove a registration. For testing.</td>
+              </tr>
+              <tr>
+                <td><code>clearInterceptorRegistry()</code></td>
+                <td><code>void</code></td>
+                <td>Clear all registrations. For testing only.</td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+      </article>
+    </section>
+
+    <!-- Practical Examples -->
+    <section id="examples">
+      <h2>Practical Examples</h2>
+
+      <!-- Capability Dispatch Example: Basket Elevator -->
+      <article id="example-basket">
+        <h3>Capability Dispatch: Basket Elevator</h3>
+        <p>The coal mine basket can be lowered and raised. Since "lower" and "raise" have no standard semantics (they mean different things for different entities), this uses full capability dispatch.</p>
+
+        <details open>
+          <summary>1. Trait (declares capabilities)</summary>
+          <pre><code>// stories/dungeo/src/traits/basket-elevator-trait.ts
+export class BasketElevatorTrait implements ITrait {
+  static readonly type = 'dungeo.trait.basket_elevator' as const;
+  static readonly capabilities = ['if.action.lowering', 'if.action.raising'] as const;
+  readonly type = BasketElevatorTrait.type;
+
+  position: 'top' | 'bottom';
+  topRoomId: string;
+  bottomRoomId: string;
+
+  constructor(config: BasketElevatorConfig) {
+    this.topRoomId = config.topRoomId;
+    this.bottomRoomId = config.bottomRoomId;
+    this.position = config.initialPosition ?? 'top';
+  }
+}</code></pre>
+        </details>
+
+        <details open>
+          <summary>2. Behavior (implements four-phase logic)</summary>
+          <pre><code>// stories/dungeo/src/behaviors/basket-lowering-behavior.ts
+import { CapabilityBehavior, createEffect } from '@sharpee/world-model';
+
+export const BasketLoweringBehavior: CapabilityBehavior = {
+  validate(entity, world, actorId, sharedData) {
+    const trait = entity.get(BasketElevatorTrait);
+    if (trait.position === 'bottom') {
+      return { valid: false, error: 'dungeo.basket.already_at_bottom' };
+    }
+    sharedData.previousPosition = trait.position;
+    return { valid: true };
+  },
+
+  execute(entity, world, actorId, sharedData) {
+    const trait = entity.get(BasketElevatorTrait);
+    trait.position = 'bottom';
+    // Move basket and its contents to bottom room
+    world.moveEntity(entity.id, trait.bottomRoomId);
+  },
+
+  report(entity, world, actorId, sharedData) {
+    return [
+      createEffect('game.message', {
+        messageId: 'dungeo.basket.lowered',
+        params: { from: sharedData.previousPosition }
+      })
+    ];
+  },
+
+  blocked(entity, world, actorId, error, sharedData) {
+    return [
+      createEffect('game.message', { messageId: error })
+    ];
+  }
+};</code></pre>
+        </details>
+
+        <details open>
+          <summary>3. Registration (in initializeWorld)</summary>
+          <pre><code>// stories/dungeo/src/index.ts - inside initializeWorld()
+if (!hasCapabilityBehavior(BasketElevatorTrait.type, 'if.action.lowering')) {
+  registerCapabilityBehavior(
+    BasketElevatorTrait.type,
+    'if.action.lowering',
+    BasketLoweringBehavior
+  );
+}
+if (!hasCapabilityBehavior(BasketElevatorTrait.type, 'if.action.raising')) {
+  registerCapabilityBehavior(
+    BasketElevatorTrait.type,
+    'if.action.raising',
+    BasketRaisingBehavior
+  );
+}</code></pre>
+        </details>
+      </article>
+
+      <!-- Interceptor Example: Glacier Throwing -->
+      <article id="example-glacier">
+        <h3>Interceptor: Glacier Throwing</h3>
+        <p>Throwing a lit torch at the glacier melts it and reveals a passage. Since THROW has standard semantics (move item from inventory to location), this uses an interceptor to add side effects rather than replacing the action.</p>
+
+        <details open>
+          <summary>Interceptor implementation</summary>
+          <pre><code>// stories/dungeo/src/interceptors/glacier-throwing-interceptor.ts
+import {
+  ActionInterceptor, InterceptorSharedData, InterceptorResult,
+  CapabilityEffect, createEffect, IFEntity, WorldModel
+} from '@sharpee/world-model';
+
+export const GlacierThrowingInterceptor: ActionInterceptor = {
+  // Check conditions after standard validation passes
+  postValidate(entity, world, actorId, sharedData) {
+    const glacierTrait = entity.get(GlacierTrait);
+    if (!glacierTrait || glacierTrait.melted) return null;
+    sharedData.glacierTarget = true;
+    return null; // Allow throw to proceed normally
+  },
+
+  // Melt glacier after standard throw execution
+  postExecute(entity, world, actorId, sharedData) {
+    const glacierTrait = entity.get(GlacierTrait);
+    if (!glacierTrait || glacierTrait.melted) return;
+
+    const itemId = sharedData.itemId as string;
+    const item = world.getEntity(itemId);
+    if (!item || !isTorch(item)) return;
+    if (!isLit(item)) {
+      sharedData.torchWasCold = true;
+      return;
+    }
+
+    // Melt the glacier, reveal passage, extinguish torch
+    sharedData.glacierMelted = true;
+    glacierTrait.melted = true;
+
+    const glacierRoom = world.getEntity(glacierTrait.glacierRoomId);
+    const roomTrait = glacierRoom?.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits[Direction.WEST] = { destination: glacierTrait.westDestination };
+    }
+
+    const lightSource = item.get(LightSourceTrait);
+    if (lightSource) lightSource.isLit = false;
+
+    world.moveEntity(itemId, glacierTrait.torchDestination);
+  },
+
+  // Add melting message to output
+  postReport(entity, world, actorId, sharedData) {
+    if (sharedData.glacierMelted) {
+      return [createEffect('game.message', {
+        messageId: 'dungeo.glacier.melts'
+      })];
+    }
+    if (sharedData.torchWasCold) {
+      return [createEffect('game.message', {
+        messageId: 'dungeo.glacier.throw_cold'
+      })];
+    }
+    return [];
+  }
+};</code></pre>
+        </details>
+
+        <details>
+          <summary>Registration</summary>
+          <pre><code>// GlacierTrait does not need static interceptors declaration
+// because the interceptor is registered by trait type string
+if (!hasActionInterceptor(GlacierTrait.type, 'if.action.throwing')) {
+  registerActionInterceptor(
+    GlacierTrait.type,
+    'if.action.throwing',
+    GlacierThrowingInterceptor
+  );
+}</code></pre>
+        </details>
+      </article>
+
+      <!-- Interceptor Example: Trophy Case Scoring -->
+      <article id="example-trophy">
+        <h3>Interceptor: Trophy Case Scoring</h3>
+        <p>A compact interceptor that awards points when a treasure is placed in the trophy case. Uses only <code>postExecute</code> &mdash; no validation or reporting hooks needed.</p>
+
+        <pre><code>// stories/dungeo/src/interceptors/trophy-case-putting-interceptor.ts
+export const TrophyCasePuttingInterceptor: ActionInterceptor = {
+  postExecute(entity, world, actorId, sharedData) {
+    const itemId = sharedData.itemId as string;
+    if (!itemId) return;
+
+    const item = world.getEntity(itemId);
+    if (!item) return;
+
+    const treasure = item.get(TreasureTrait);
+    if (!treasure?.trophyCaseValue) return;
+
+    const identity = item.get(IdentityTrait);
+    const description = treasure.trophyCaseDescription
+      ?? `Placed the ${identity?.name ?? 'treasure'} in the trophy case`;
+
+    world.awardScore(`trophy:${itemId}`, treasure.trophyCaseValue, description);
+  }
+};</code></pre>
+      </article>
+    </section>
+
+    <!-- Resolution and Defaults -->
+    <section id="resolution">
+      <h2>Resolution Strategies</h2>
+      <p>When multiple entities in scope claim the same capability, the resolution strategy determines which one wins. The global default is <code>'first-wins'</code> with <code>'blocking'</code> mode, but this can be overridden per-capability or per-registration.</p>
+
+      <details>
+        <summary>Resolution options</summary>
+        <table>
+          <thead>
+            <tr><th>Strategy</th><th>Behavior</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>'first-wins'</code></td>
+              <td>First entity with the capability determines the result (default).</td>
+            </tr>
+            <tr>
+              <td><code>'any-blocks'</code></td>
+              <td>Any entity returning <code>valid: false</code> blocks the action. Use for visibility checks.</td>
+            </tr>
+            <tr>
+              <td><code>'all-must-pass'</code></td>
+              <td>All entities must return <code>valid: true</code> for the action to proceed.</td>
+            </tr>
+            <tr>
+              <td><code>'highest-priority'</code></td>
+              <td>Only the entity with the highest registered priority is checked.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table>
+          <thead>
+            <tr><th>Mode</th><th>Effect</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>'blocking'</code></td>
+              <td>Failed validation blocks the action entirely (default).</td>
+            </tr>
+            <tr>
+              <td><code>'advisory'</code></td>
+              <td>Result passed to the action but does not auto-block.</td>
+            </tr>
+            <tr>
+              <td><code>'chain'</code></td>
+              <td>All behaviors run in priority order, sharedData passed through.</td>
+            </tr>
+          </tbody>
+        </table>
+      </details>
+
+      <pre><code>import { defineCapabilityDefaults } from '@sharpee/world-model';
+
+// Visibility: if ANY entity says hidden, it's hidden
+defineCapabilityDefaults('if.scope.visible', {
+  resolution: 'any-blocks',
+  mode: 'blocking'
+});
+
+// Per-registration override
+registerCapabilityBehavior(
+  TrollAxeTrait.type,
+  'if.action.taking',
+  TrollAxeTakingBehavior,
+  { priority: 100, resolution: 'any-blocks' }
+);</code></pre>
+    </section>
+
+    <!-- See Also -->
+    <section id="see-also">
+      <h2>See Also</h2>
+      <ul>
+        <li><a href="actions-overview.html">Actions Overview</a> &mdash; the four-phase action pattern, ActionContext, and sharedData</li>
+        <li><a href="traits-core.html">Core Traits</a> &mdash; built-in trait types and the ITrait interface</li>
+        <li><a href="events.html">Events</a> &mdash; semantic events, the rendering pipeline, and message IDs</li>
+        <li><a href="entities.html">Entities</a> &mdash; IFEntity, trait management, and the ITraitConstructor interface</li>
+      </ul>
+    </section>
+  </main>
+  <script src="js/docs.js"></script>
+</body>
+</html>
