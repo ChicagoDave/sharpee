@@ -8,7 +8,7 @@
  */
 
 import { WorldModel, IWorldModel, IdentityTrait, OpenableTrait, ContainerTrait, VehicleTrait, IParsedCommand } from '@sharpee/world-model';
-import { InflatableTrait, BurnableTrait, BalloonStateTrait, isLedgePosition, isMidairPosition } from '../traits';
+import { InflatableTrait, BurnableTrait, BalloonStateTrait, BalloonPosition, isLedgePosition, isMidairPosition } from '../traits';
 import { ISemanticEvent } from '@sharpee/core';
 import { ISchedulerService, Daemon, Fuse, SchedulerContext } from '@sharpee/plugin-scheduler';
 import { DungeoSchedulerMessages } from '../scheduler/scheduler-messages';
@@ -233,10 +233,10 @@ export function createBalloonExitTransformer() {
     const balloon = world.getEntity(balloonEntityId);
     if (!balloon) return parsed;
 
-    const balloonState = balloon.get(BalloonStateTrait);
-    if (!balloonState) return parsed;
+    const vehicleTrait = balloon.get(VehicleTrait);
+    if (!vehicleTrait) return parsed;
 
-    const position = balloonState.position;
+    const position = vehicleTrait.currentPosition as BalloonPosition;
 
     // At ground level - allow normal exit
     if (position === 'vlbot') {
@@ -287,12 +287,12 @@ export const balloonExitAction: Action = {
       return { valid: false, error: 'balloon_not_found' };
     }
 
-    const balloonState = balloon.get(BalloonStateTrait);
-    if (!balloonState) {
+    const vehicleTrait = balloon.get(VehicleTrait);
+    if (!vehicleTrait) {
       return { valid: false, error: 'balloon_state_not_found' };
     }
 
-    const position = balloonState.position;
+    const position = vehicleTrait.currentPosition as BalloonPosition;
 
     // Block exit in mid-air UNLESS at a dockable position (near a ledge)
     // vair2 is near Narrow Ledge, vair4 is near Wide Ledge
@@ -362,11 +362,13 @@ export const balloonExitAction: Action = {
       preposition: 'out of'
     }));
 
-    // Success message
+    // Success message — include room name for the ledge
+    const destRoom = context.world.getEntity(context.sharedData.exitedToRoom);
+    const roomName = destRoom?.get(IdentityTrait)?.name || 'the ledge';
     events.push(context.event('action.success', {
       actionId: BALLOON_EXIT_ACTION_ID,
       messageId: BalloonExitMessages.EXIT_TO_LEDGE,
-      params: {}
+      params: { roomName }
     }));
 
     return events;

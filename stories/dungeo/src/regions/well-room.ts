@@ -192,7 +192,9 @@ export function connectWellRoomToRoundRoom(world: WorldModel, ids: WellRoomIds, 
 
 export function connectCaveToHades(world: WorldModel, ids: WellRoomIds, hadesId: string): void {
   const cave = world.getEntity(ids.cave);
+  const hades = world.getEntity(hadesId);
   if (cave) cave.get(RoomTrait)!.exits[Direction.DOWN] = { destination: hadesId };
+  if (hades) hades.get(RoomTrait)!.exits[Direction.UP] = { destination: ids.cave };
 }
 
 // ============================================================================
@@ -358,7 +360,7 @@ function createTeaRoomObjects(world: WorldModel, roomId: string): void {
     article: 'a',
     weight: 2
   }));
-  (paper as any).readText = `
+  paper.attributes.readText = `
      ============================================
               FROBOZZ MAGIC BOAT COMPANY
      ============================================

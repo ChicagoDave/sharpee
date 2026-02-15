@@ -107,6 +107,9 @@ packages/**/src/**/*.js.map
 # Unreleased story extensions (keep private)
 packages/extensions/blood-magic/
 
+# Reflections story (will move to its own repo)
+stories/reflections/
+
 # Transcript test results
 test-results/
 

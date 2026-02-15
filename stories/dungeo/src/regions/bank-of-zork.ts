@@ -311,7 +311,7 @@ function createShimmeringCurtain(world: WorldModel, roomId: string): IFEntity {
     article: 'a'
   }));
   curtain.add(new SceneryTrait());
-  (curtain as any).isPassable = true;
+  curtain.attributes.isPassable = true;
   world.moveEntity(curtain.id, roomId);
   return curtain;
 }

@@ -150,7 +150,7 @@ function revealTrunk(world: WorldModel): void {
     return id?.name === 'trunk';
   });
   if (trunk) {
-    (trunk as any).revealed = true;
+    trunk.attributes.revealed = true;
   }
 }
 
@@ -165,7 +165,7 @@ function hideTrunkIfInReservoir(world: WorldModel): void {
   if (trunk) {
     const trunkLocation = world.getLocation(trunk.id);
     if (trunkLocation === reservoirId) {
-      (trunk as any).revealed = false;
+      trunk.attributes.revealed = false;
     }
   }
 }

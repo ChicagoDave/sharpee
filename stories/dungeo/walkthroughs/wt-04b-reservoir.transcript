@@ -1,0 +1,149 @@
+title: Reservoir (Trunk and Pump)
+story: dungeo
+description: Collect trunk and pump from drained reservoir. Restores from wt-04.
+---
+
+# Restore state from wt-04 (player at Living Room with torch and lantern)
+# Reservoir already drained from wt-04 bolt turn
+$restore wt-04
+
+# ============================================================================
+# GOAL: Navigate to Reservoir via Dam
+# ============================================================================
+
+[GOAL: Get trunk and pump from reservoir]
+[ENSURES: inventory contains "pump"]
+
+# Living Room -> Cellar -> Troll Room -> EW Passage -> Deep Ravine
+# -> Chasm -> N/S Passage -> Loud Room -> Damp Cave -> Dam
+# -> Deep Canyon -> Reservoir South -> Reservoir -> Reservoir North
+> down
+[OK: contains "Cellar"]
+
+> east
+[OK: contains "Troll Room"]
+
+> north
+[OK: contains "East-West Passage"]
+
+> north
+[OK: contains "Deep Ravine"]
+
+> east
+[OK: contains "Chasm"]
+
+> east
+[OK: contains "North/South Passage"]
+
+> northeast
+[OK: contains "Loud Room"]
+
+> up
+[OK: contains "Damp Cave"]
+
+> east
+[OK: contains "Dam"]
+
+> south
+[OK: contains "Deep Canyon"]
+
+> northwest
+[OK: contains "Reservoir South"]
+
+> north
+[OK: contains "Reservoir"]
+
+# Trunk may have been stolen by the thief
+[IF: room contains "trunk"]
+> take trunk
+[OK: contains "Taken"]
+[END IF]
+
+> north
+[OK: contains "Reservoir North"]
+
+> take pump
+[OK: contains "Taken"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Return to Living Room
+# ============================================================================
+
+[GOAL: Return to Living Room]
+
+# Reservoir North -> Reservoir -> Reservoir South -> Deep Canyon
+# -> Dam -> Damp Cave -> Loud Room -> N/S Passage -> Chasm
+# -> Deep Ravine -> EW Passage -> Troll Room -> Cellar -> Living Room
+> south
+[OK: contains "Reservoir"]
+
+> south
+[OK: contains "Reservoir South"]
+
+> up
+[OK: contains "Deep Canyon"]
+
+> east
+[OK: contains "Dam"]
+
+> east
+[OK: contains "Damp Cave"]
+
+> south
+[OK: contains "Loud Room"]
+
+> west
+[OK: contains "North/South Passage"]
+
+> north
+[OK: contains "Chasm"]
+
+> south
+[OK: contains "Deep Ravine"]
+
+> south
+[OK: contains "East-West Passage"]
+
+> west
+[OK: contains "Troll Room"]
+
+> west
+[OK: contains "Cellar"]
+
+> up
+[OK: contains "Living Room"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Verify final state
+# ============================================================================
+
+[GOAL: Verify inventory for next segment]
+
+[IF: inventory contains "trunk"]
+> drop trunk
+[OK: contains "Dropped"]
+[END IF]
+
+> drop pump
+[OK: contains "Dropped"]
+
+> inventory
+[OK: contains "torch"]
+[OK: contains "lantern"]
+
+> look
+[OK: contains "Living Room"]
+
+[END GOAL]
+
+# Save checkpoint for next walkthrough
+$save wt-04b
+
+# SUCCESS! Reservoir items collected
+# Inventory: torch, lantern
+# Living Room floor: trunk, pump, guidebook, matchbook, wrench, screwdriver, incense, key
+# Ready for next segment

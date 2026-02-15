@@ -95,7 +95,7 @@ export function registerSchedulerMessages(language: LanguageProvider): void {
   };
   language.addMessage(BalloonExitMessages.EXIT_SUCCESS, 'You climb out of the balloon.');
   language.addMessage(BalloonExitMessages.EXIT_BLOCKED_MIDAIR, 'You are too high in the air to exit safely! The balloon is floating in mid-air.');
-  language.addMessage(BalloonExitMessages.EXIT_TO_LEDGE, 'You carefully climb out of the balloon onto the ledge.');
+  language.addMessage(BalloonExitMessages.EXIT_TO_LEDGE, 'You carefully climb out of the balloon onto the {roomName}.');
 
   // ==========================================================================
   // Forest Ambience

@@ -116,7 +116,7 @@ export function startFlooding(
   if (leakId) {
     const leak = world.getEntity(leakId);
     if (leak) {
-      (leak as any).isHidden = false;
+      leak.attributes.isHidden = false;
     }
   }
 

@@ -123,12 +123,16 @@ export function createTempleRegion(world: WorldModel): TempleRoomIds {
   });
 
   setExits(loudRoom, {
-    [Direction.SOUTHWEST]: northSouthPassage.id,
+    [Direction.WEST]: northSouthPassage.id,
     [Direction.UP]: dampCave.id,
     [Direction.EAST]: ancientChasm.id,
   });
 
-  setExits(dampCave, { [Direction.DOWN]: loudRoom.id });
+  setExits(dampCave, {
+    [Direction.DOWN]: loudRoom.id,
+    [Direction.SOUTH]: loudRoom.id,
+    // EAST → Dam connected externally
+  });
 
   setExits(ancientChasm, {
     [Direction.WEST]: loudRoom.id,
@@ -194,6 +198,13 @@ export function connectTempleToWellRoom(world: WorldModel, ids: TempleRoomIds, c
   if (cave) cave.get(RoomTrait)!.exits[Direction.WEST] = { destination: ids.mirrorRoom };
 }
 
+export function connectTempleToDam(world: WorldModel, ids: TempleRoomIds, damId: string): void {
+  const dc = world.getEntity(ids.dampCave);
+  const dam = world.getEntity(damId);
+  if (dc) dc.get(RoomTrait)!.exits[Direction.EAST] = { destination: damId };
+  if (dam) dam.get(RoomTrait)!.exits[Direction.EAST] = { destination: ids.dampCave };
+}
+
 export function connectTempleToFrigidRiver(world: WorldModel, ids: TempleRoomIds, rockyShoreId: string): void {
   const sc = world.getEntity(ids.smallCave);
   const rs = world.getEntity(rockyShoreId);
@@ -255,8 +266,8 @@ function createAltarObjects(world: WorldModel, roomId: string): void {
     article: 'a',
     weight: 5
   }));
-  (bell as any).isExorcismItem = true;
-  (bell as any).exorcismRole = 'bell';
+  bell.attributes.isExorcismItem = true;
+  bell.attributes.exorcismRole = 'bell';
   world.moveEntity(bell.id, roomId);
 
   // Black book - exorcism item, readable
@@ -276,8 +287,8 @@ function createAltarObjects(world: WorldModel, roomId: string): void {
 Ring the bell, read the book aloud, light the candles with a flame.
 Only then shall the gates of Hades be opened to the living."`
   }));
-  (book as any).isExorcismItem = true;
-  (book as any).exorcismRole = 'book';
+  book.attributes.isExorcismItem = true;
+  book.attributes.exorcismRole = 'book';
   world.moveEntity(book.id, roomId);
 
   // Candles - exorcism item, light source when lit
@@ -306,8 +317,8 @@ Only then shall the gates of Hades be opened to the living."`
     isBurning: false,
     burnedOut: false
   }));
-  (candles as any).isExorcismItem = true;
-  (candles as any).exorcismRole = 'candles';
+  candles.attributes.isExorcismItem = true;
+  candles.attributes.exorcismRole = 'candles';
   world.moveEntity(candles.id, roomId);
 }
 
@@ -348,7 +359,7 @@ function createGrailRoomObjects(world: WorldModel, roomId: string): void {
 function createMirrorRoomObjects(world: WorldModel, roomId: string): void {
   // Enormous mirror - touching/rubbing toggles room's exit state
   const mirror = world.createEntity('mirror', EntityType.SCENERY);
-  (mirror as any).customId = MIRROR_ID;
+  mirror.attributes.customId = MIRROR_ID;
   mirror.add(new IdentityTrait({
     name: 'enormous mirror',
     aliases: ['mirror', 'enormous mirror', 'south mirror', 'wall mirror', 'large mirror'],
@@ -389,7 +400,7 @@ function createBasinRoomObjects(world: WorldModel, roomId: string): void {
     article: 'a'
   }));
   basin.add(new SceneryTrait());
-  (basin as any).isRitualBasin = true;
+  basin.attributes.isRitualBasin = true;
   world.moveEntity(basin.id, roomId);
 }
 

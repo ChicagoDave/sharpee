@@ -558,7 +558,7 @@ function createVampireBat(world: WorldModel, roomId: string): IFEntity {
     canMove: true
   }));
 
-  (bat as any).repelledBy = 'garlic';
+  bat.attributes.repelledBy = 'garlic';
 
   world.moveEntity(bat.id, roomId);
   return bat;

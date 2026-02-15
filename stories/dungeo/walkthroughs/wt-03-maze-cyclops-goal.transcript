@@ -16,10 +16,13 @@ $restore wt-02
 
 [GOAL: Get to Troll Room]
 
-# Teleport to Troll Room (Round Room carousel makes navigation unreliable)
-$teleport Troll Room
+> south
+[OK: contains "Studio"]
 
-> look
+> north
+[OK: contains "North/South Crawlway"]
+
+> east
 [OK: contains "Troll Room"]
 
 # Drop sword to make room for skeleton key (weight limit is 100)

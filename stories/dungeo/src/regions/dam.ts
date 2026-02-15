@@ -294,7 +294,7 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
     article: 'a'
   }));
   panel.add(new SceneryTrait());
-  (panel as any).boltLoose = false;
+  panel.attributes.boltLoose = false;
   world.moveEntity(panel.id, roomId);
 
   // Wrench - loosens bolt on control panel
@@ -324,7 +324,7 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
   // Buttons - yellow (danger), brown, red, blue
   // NOTE: 'button' alias is required for CommandValidator - it searches by head noun ("button")
   // then disambiguates by modifiers ("yellow")
-  const yellowButton = world.createEntity('yellow button', EntityType.ITEM);
+  const yellowButton = world.createEntity('yellow button', EntityType.SCENERY);
   yellowButton.add(new IdentityTrait({
     name: 'yellow button',
     aliases: ['danger button', 'danger', 'button'],
@@ -333,10 +333,11 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
+  yellowButton.add(new SceneryTrait());
   yellowButton.add(new ButtonTrait({ color: 'yellow', label: 'DANGER' }));
   world.moveEntity(yellowButton.id, roomId);
 
-  const brownButton = world.createEntity('brown button', EntityType.ITEM);
+  const brownButton = world.createEntity('brown button', EntityType.SCENERY);
   brownButton.add(new IdentityTrait({
     name: 'brown button',
     aliases: ['button'],
@@ -345,10 +346,11 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
+  brownButton.add(new SceneryTrait());
   brownButton.add(new ButtonTrait({ color: 'brown' }));
   world.moveEntity(brownButton.id, roomId);
 
-  const redButton = world.createEntity('red button', EntityType.ITEM);
+  const redButton = world.createEntity('red button', EntityType.SCENERY);
   redButton.add(new IdentityTrait({
     name: 'red button',
     aliases: ['button'],
@@ -357,10 +359,11 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
+  redButton.add(new SceneryTrait());
   redButton.add(new ButtonTrait({ color: 'red' }));
   world.moveEntity(redButton.id, roomId);
 
-  const blueButton = world.createEntity('blue button', EntityType.ITEM);
+  const blueButton = world.createEntity('blue button', EntityType.SCENERY);
   blueButton.add(new IdentityTrait({
     name: 'blue button',
     aliases: ['button'],
@@ -369,6 +372,7 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
+  blueButton.add(new SceneryTrait());
   blueButton.add(new ButtonTrait({ color: 'blue' }));
   world.moveEntity(blueButton.id, roomId);
 }
@@ -377,7 +381,7 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
 
 function createDamBolt(world: WorldModel, roomId: string): void {
   // Bolt - controls sluice gates (requires wrench, yellow button pressed)
-  const bolt = world.createEntity('bolt', EntityType.ITEM);
+  const bolt = world.createEntity('bolt', EntityType.SCENERY);
   bolt.add(new IdentityTrait({
     name: 'bolt',
     aliases: ['large bolt', 'metal bolt'],
@@ -385,7 +389,8 @@ function createDamBolt(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
-  (bolt as any).turnable = true;
+  bolt.add(new SceneryTrait());
+  bolt.attributes.turnable = true;
   world.moveEntity(bolt.id, roomId);
 }
 
@@ -488,9 +493,9 @@ Good luck!`
     article: 'a',
     weight: 5
   }));
-  (stick as any).isPointy = true;
-  (stick as any).puncturesBoat = true;
-  (stick as any).isSceptre = true;  // Flag used by wave-action to identify rainbow item
+  stick.attributes.isPointy = true;
+  stick.attributes.puncturesBoat = true;
+  stick.attributes.isSceptre = true;  // Flag used by wave-action to identify rainbow item
   world.moveEntity(stick.id, roomId);
 
   // Water/River scenery at Dam Base
@@ -503,7 +508,7 @@ Good luck!`
     article: 'the'
   }));
   river.add(new SceneryTrait());
-  (river as any).isWaterBody = true;
+  river.attributes.isWaterBody = true;
   world.moveEntity(river.id, roomId);
 }
 

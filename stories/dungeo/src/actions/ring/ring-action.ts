@@ -132,7 +132,7 @@ export const ringAction: Action = {
     const playerLocation = world.getLocation(player.id) || '';
 
     // Check if this is the exorcism bell
-    const isExorcismBell = (target as any).exorcismRole === 'bell';
+    const isExorcismBell = target.attributes?.exorcismRole === 'bell';
 
     // Mark that bell was rung (for exorcism tracking)
     if (isExorcismBell) {

@@ -99,10 +99,13 @@ description: Priority path - get the torch ASAP to minimize lantern usage. Torch
 > north
 [OK: contains "East-West Passage"]
 
-# Teleport to Dome Room (Round Room carousel makes navigation unreliable)
-$teleport Dome Room
+> north
+[OK: contains "Deep Ravine"]
 
-> look
+> west
+[OK: contains "Rocky Crawl"]
+
+> east
 [OK: contains "Dome Room"]
 
 [END GOAL]

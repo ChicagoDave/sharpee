@@ -27,8 +27,6 @@ export type BalloonPosition =
  * Configuration for the balloon state trait
  */
 export interface BalloonStateTraitConfig {
-  /** Current position in the volcano shaft */
-  position: BalloonPosition;
   /** Which hook the balloon is tied to, or null if untethered */
   tetheredTo: 'hook1' | 'hook2' | null;
   /** ID of the burning object in the receptacle, or null */
@@ -41,21 +39,17 @@ export interface BalloonStateTraitConfig {
  * Balloon State Trait
  *
  * Tracks the balloon's:
- * - Position in the volcano shaft (ground, mid-air, ledge)
  * - Tether state (tied to hook or free)
  * - Burning object providing heat
  * - Daemon enabled state
  *
- * The balloon daemon and handlers check this trait to determine
- * movement behavior and operational state.
+ * Position is tracked by VehicleTrait.currentPosition (authoritative).
+ * The balloon daemon and handlers check this trait for non-position state.
  */
 export class BalloonStateTrait implements ITrait {
   static readonly type = 'dungeo.trait.balloon_state' as const;
 
   readonly type = BalloonStateTrait.type;
-
-  /** Current position in the volcano shaft */
-  position: BalloonPosition;
 
   /** Which hook the balloon is tied to, or null if untethered */
   tetheredTo: 'hook1' | 'hook2' | null;
@@ -67,7 +61,6 @@ export class BalloonStateTrait implements ITrait {
   daemonEnabled: boolean;
 
   constructor(config: BalloonStateTraitConfig) {
-    this.position = config.position;
     this.tetheredTo = config.tetheredTo;
     this.burningObject = config.burningObject;
     this.daemonEnabled = config.daemonEnabled;

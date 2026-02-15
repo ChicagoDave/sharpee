@@ -1,51 +1,40 @@
 title: Egyptian Room (Gold Coffin)
 story: dungeo
-description: Get gold coffin from Egyptian Room. Restores from wt-04.
+description: Get gold coffin from Egyptian Room. Restores from wt-04b.
 ---
 
-# Restore state from wt-04 (player at Living Room)
-$restore wt-04
+# Restore state from wt-04b (player at Living Room with torch and lantern)
+$restore wt-04b
 
 # ============================================================================
-# Ensure correct state for this segment
-# ============================================================================
-
-# Ensure we have torch and lantern
-$take torch
-$take brass lantern
-
-# Turn on light source
-> turn on lantern
-[OK: contains "on"]
-
-# ============================================================================
-# GOAL: Navigate to Egyptian Room
-# ============================================================================
-
-[GOAL: Get to Egyptian Room]
-
-$teleport Egyptian Room
-
-> look
-[OK: contains "Egyptian"]
-
-[END GOAL]
-
-# ============================================================================
-# GOAL: Get gold coffin
+# GOAL: Navigate to Egyptian Room and get coffin
 # ============================================================================
 
 [GOAL: Get gold coffin]
 [ENSURES: inventory contains "coffin"]
 
-> look
-[OK: contains "coffin"]
+# Living Room -> Cellar -> Troll Room -> EW Passage -> Deep Ravine
+# -> Rocky Crawl -> Egyptian Room
+> down
+[OK: contains "Cellar"]
+
+> east
+[OK: contains "Troll Room"]
+
+> north
+[OK: contains "East-West Passage"]
+
+> north
+[OK: contains "Deep Ravine"]
+
+> west
+[OK: contains "Rocky Crawl"]
+
+> northwest
+[OK: contains "Egyptian Room"]
 
 > take coffin
 [OK: contains "Taken"]
-
-> inventory
-[OK: contains "coffin"]
 
 [END GOAL]
 
@@ -53,21 +42,29 @@ $teleport Egyptian Room
 # GOAL: Return to Living Room
 # ============================================================================
 
-[GOAL: Return to Living Room]
+[GOAL: Return to Living Room and store treasure]
 
-$teleport Living Room
+# Egyptian Room -> Rocky Crawl -> Deep Ravine -> EW Passage
+# -> Troll Room -> Cellar -> Living Room
+> east
+[OK: contains "Rocky Crawl"]
 
-> look
+> west
+[OK: contains "Deep Ravine"]
+
+> south
+[OK: contains "East-West Passage"]
+
+> west
+[OK: contains "Troll Room"]
+
+> west
+[OK: contains "Cellar"]
+
+> up
 [OK: contains "Living Room"]
 
-[END GOAL]
-
-# ============================================================================
-# GOAL: Store treasure in trophy case
-# ============================================================================
-
-[GOAL: Store coffin in trophy case]
-
+# Store coffin in trophy case
 > open trophy case
 [OK: contains "open"]
 
@@ -96,6 +93,6 @@ $teleport Living Room
 $save wt-05
 
 # SUCCESS! Egyptian Room complete
-# Treasures stored: coffin (+ previous)
-# Player in Living Room with torch + lantern
+# Treasure stored: coffin (+ previous: portrait, painting, zorkmid, platinum bar)
+# Inventory: torch, lantern
 # Ready for next segment

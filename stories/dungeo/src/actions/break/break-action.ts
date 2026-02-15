@@ -17,14 +17,14 @@ import { createFramePiece } from '../../objects/thiefs-canvas-objects';
  * Check if an entity is breakable (currently just the empty frame)
  */
 function isBreakable(entity: IFEntity): boolean {
-  return (entity as any).isBreakable === true;
+  return entity.attributes?.isBreakable === true;
 }
 
 /**
  * Check if an entity is the empty frame
  */
 function isEmptyFrame(entity: IFEntity): boolean {
-  return (entity as any).isEmptyFrame === true;
+  return entity.attributes?.isEmptyFrame === true;
 }
 
 /**

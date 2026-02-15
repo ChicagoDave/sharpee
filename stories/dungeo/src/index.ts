@@ -57,7 +57,7 @@ import { createForestRegion, createForestObjects, connectForestToExterior, Fores
 import { createUndergroundRegion, createUndergroundObjects, connectUndergroundToHouse, connectStudioToKitchen, UndergroundRoomIds } from './regions/underground';
 import { createDamRegion, createDamObjects, connectDamToRoundRoom, connectDamToFrigidRiver, connectStreamViewToGlacier, DamRoomIds } from './regions/dam';
 import { createCoalMineRegion, createCoalMineObjects, CoalMineRoomIds, connectSlideToCellar } from './regions/coal-mine';
-import { createTempleRegion, createTempleObjects, connectTempleToUnderground, connectTempleToWellRoom, connectTempleToFrigidRiver, TempleRoomIds } from './regions/temple';
+import { createTempleRegion, createTempleObjects, connectTempleToUnderground, connectTempleToWellRoom, connectTempleToFrigidRiver, connectTempleToDam, TempleRoomIds } from './regions/temple';
 import { createVolcanoRegion, createVolcanoObjects, connectVolcanoToUnderground, VolcanoRoomIds, VolcanoObjectIds } from './regions/volcano';
 import { createBankRegion, connectBankToUnderground, createBankObjects, BankRoomIds } from './regions/bank-of-zork';
 import { createWellRoomRegion, createWellRoomObjects, connectWellRoomToRoundRoom, connectCaveToHades, WellRoomIds } from './regions/well-room';
@@ -325,6 +325,7 @@ export class DungeoStory implements Story {
     connectTempleToUnderground(world, this.templeIds, this.undergroundIds.chasm);
     connectTempleToWellRoom(world, this.templeIds, this.wellRoomIds.cave);
     connectTempleToFrigidRiver(world, this.templeIds, this.frigidRiverIds.rockyShore);
+    connectTempleToDam(world, this.templeIds, this.damIds.dam);
 
     // Volcano connects to Underground via rocky crawl
     connectVolcanoToUnderground(world, this.volcanoIds, this.undergroundIds.rockyCrawl);

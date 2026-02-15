@@ -142,9 +142,6 @@ $teleport Engravings Cave
 > drop wrench
 [OK: contains "Dropped"]
 
-> drop matchbook
-[OK: contains "Dropped"]
-
 # Go northwest to Low Room (carousel is active - compass spinning)
 > northwest
 [OK: contains "Low Room"]

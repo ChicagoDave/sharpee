@@ -1,8 +1,8 @@
 /**
  * Volcano Region - The volcanic area with balloon puzzle
  *
- * 13 rooms: Egyptian Room, Glacier Room, Volcano View, Ruby Room, Lava Room,
- * Volcano Bottom, Wide Ledge, Narrow Ledge, Dusty Room, Library,
+ * 14 rooms: Egyptian Room, Glacier Room, Volcano View, Ruby Room, Lava Room,
+ * Volcano Bottom, Wide Ledge, Narrow Ledge, Dusty Room, Library, Volcano Core,
  * Volcano Near Wide Ledge, Volcano Near Viewing Ledge, Volcano Near Small Ledge
  */
 
@@ -51,6 +51,7 @@ export interface VolcanoRoomIds {
   narrowLedge: string;
   dustyRoom: string;
   library: string;
+  volcanoCore: string;
   volcanoNearWideLedge: string;
   volcanoNearViewingLedge: string;
   volcanoNearSmallLedge: string;
@@ -114,6 +115,10 @@ export function createVolcanoRegion(world: WorldModel): VolcanoRoomIds {
 
   const volcanoNearSmallLedge = createRoom(world, 'Volcano Near Small Ledge',
     'You are in the middle of the volcano, near a small ledge.', false);
+
+  // VAIR1 - Volcano Core (MDL: ~100 feet above bottom, top visible)
+  const volcanoCore = createRoom(world, 'Volcano Core',
+    'You are about one hundred feet above the bottom of the volcano. The top of the volcano is clearly visible here.', false);
 
   // === Set up connections (verified against MDL dung.mud) ===
 
@@ -214,6 +219,7 @@ export function createVolcanoRegion(world: WorldModel): VolcanoRoomIds {
     narrowLedge: narrowLedge.id,
     dustyRoom: dustyRoom.id,
     library: library.id,
+    volcanoCore: volcanoCore.id,
     volcanoNearWideLedge: volcanoNearWideLedge.id,
     volcanoNearViewingLedge: volcanoNearViewingLedge.id,
     volcanoNearSmallLedge: volcanoNearSmallLedge.id,
@@ -227,7 +233,7 @@ export function connectVolcanoToUnderground(world: WorldModel, ids: VolcanoRoomI
   const er = world.getEntity(ids.egyptianRoom);
   const rc = world.getEntity(rockyCrawlId);
   if (er) er.get(RoomTrait)!.exits[Direction.EAST] = { destination: rockyCrawlId };
-  if (rc) rc.get(RoomTrait)!.exits[Direction.WEST] = { destination: ids.egyptianRoom };
+  if (rc) rc.get(RoomTrait)!.exits[Direction.NORTHWEST] = { destination: ids.egyptianRoom };
 }
 
 // ============================================================================
@@ -471,15 +477,16 @@ function createBalloonObjects(world: WorldModel, roomIds: VolcanoRoomIds): Volca
     notOperationalReason: 'The balloon is not inflated.',
     positionRooms: {
       'vlbot': roomIds.volcanoBottom,
-      'vair2': roomIds.narrowLedge,   // Mid-air near Narrow Ledge (dockable)
-      'vair4': roomIds.wideLedge,     // Mid-air near Wide Ledge (dockable)
+      'vair1': roomIds.volcanoCore,
+      'vair2': roomIds.volcanoNearSmallLedge,
+      'vair3': roomIds.volcanoNearViewingLedge,
+      'vair4': roomIds.volcanoNearWideLedge,
       'ledg2': roomIds.narrowLedge,
-      'ledg3': roomIds.narrowLedge,
+      'ledg3': roomIds.volcanoView,
       'ledg4': roomIds.wideLedge,
     }
   }));
   balloon.add(new BalloonStateTrait({
-    position: 'vlbot',
     tetheredTo: null,
     burningObject: null,
     daemonEnabled: true,

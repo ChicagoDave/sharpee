@@ -24,14 +24,14 @@ const PANEL_KEYWORDS: PanelType[] = ['red', 'yellow', 'mahogany', 'pine'];
  * Check if an entity is a wall panel
  */
 function isPanel(entity: IFEntity): boolean {
-  return (entity as any).isPanel === true;
+  return entity.attributes?.isPanel === true;
 }
 
 /**
  * Get the panel type from an entity
  */
 function getPanelType(entity: IFEntity): PanelType | undefined {
-  return (entity as any).panelType as PanelType | undefined;
+  return entity.attributes?.panelType as PanelType | undefined;
 }
 
 /**

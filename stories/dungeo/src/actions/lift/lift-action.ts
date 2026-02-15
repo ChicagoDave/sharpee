@@ -19,7 +19,7 @@ const POLE_RAISED = 2;
  * Check if an entity is the short pole
  */
 function isShortPole(entity: IFEntity): boolean {
-  return (entity as any).poleType === 'short';
+  return entity.attributes?.poleType === 'short';
 }
 
 /**

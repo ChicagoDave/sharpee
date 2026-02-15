@@ -592,7 +592,7 @@ function createMaze5Objects(world: WorldModel, roomId: string): void {
     weight: 25
   }));
   // Mark the key as being able to unlock the grating
-  (key as any).unlocksId = 'metal grating';
+  key.attributes.unlocksId = 'metal grating';
   world.moveEntity(key.id, roomId);
 
   // Rusty knife - RKNIF in MDL (not a great weapon)

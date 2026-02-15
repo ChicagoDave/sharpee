@@ -39,21 +39,21 @@ const SPIRITS_BANISHED_KEY = `${EXORCISM_STATE_PREFIX}spirits_banished`;
  * Check if an entity is the exorcism bell
  */
 function isExorcismBell(entity: any): boolean {
-  return entity?.exorcismRole === 'bell';
+  return entity?.attributes?.exorcismRole === 'bell';
 }
 
 /**
  * Check if an entity is the black book
  */
 function isExorcismBook(entity: any): boolean {
-  return entity?.exorcismRole === 'book';
+  return entity?.attributes?.exorcismRole === 'book';
 }
 
 /**
  * Check if an entity is the candles
  */
 function isExorcismCandles(entity: any): boolean {
-  return entity?.exorcismRole === 'candles';
+  return entity?.attributes?.exorcismRole === 'candles';
 }
 
 /**
@@ -190,7 +190,7 @@ export function registerExorcismHandler(
     const location = data?.location;
 
     // Check if this is bell being rung at Entry to Hades
-    if (messageId === 'dungeo.ring.success' && location === entryToHadesId) {
+    if (messageId === 'dungeo.ring.bell' && location === entryToHadesId) {
       w.setStateValue(BELL_RUNG_KEY, true);
     }
   });

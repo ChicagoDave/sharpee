@@ -36,9 +36,9 @@ export function createEmptyFrame(world: WorldModel): IFEntity {
   }));
 
   // Marks for puzzle logic
-  (frame as any).isEmptyFrame = true;
-  (frame as any).isBreakable = true;
-  (frame as any).backDescription = 'Carved into the back of the frame in rough letters: "Only devotion can reveal my location."';
+  frame.attributes.isEmptyFrame = true;
+  frame.attributes.isBreakable = true;
+  frame.attributes.backDescription = 'Carved into the back of the frame in rough letters: "Only devotion can reveal my location."';
 
   return frame;
 }

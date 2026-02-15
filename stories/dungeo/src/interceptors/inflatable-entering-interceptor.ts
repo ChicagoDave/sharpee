@@ -34,7 +34,7 @@ export const BoatPunctureMessages = {
  * Check if an entity punctures the boat (sharp/pointy items)
  */
 function puncturesBoat(entity: IFEntity): boolean {
-  return !!(entity as any).puncturesBoat || !!(entity as any).isPointy;
+  return !!entity.attributes?.puncturesBoat || !!entity.attributes?.isPointy;
 }
 
 /**

@@ -159,11 +159,12 @@ async function runSmartTranscript(
     }
 
     if (item.type === 'command') {
-      // For commands inside DO blocks, override auto-SKIP so the command
-      // actually executes and produces output for UNTIL matching
+      // For commands inside DO or WHILE blocks, override auto-SKIP so the command
+      // actually executes (needed for loops that rely on side effects like movement)
       let command = item.command!;
       const doBlock = findDoBlock(blockStack);
-      if (doBlock && command.assertions.length === 1 && command.assertions[0].type === 'skip') {
+      const whileBlock = findWhileBlock(blockStack);
+      if ((doBlock || whileBlock) && command.assertions.length === 1 && command.assertions[0].type === 'skip') {
         command = { ...command, assertions: [] };
       }
 
@@ -322,6 +323,18 @@ function findRetryBlock(blockStack: BlockState[]): BlockState | undefined {
 function findDoBlock(blockStack: BlockState[]): BlockState | undefined {
   for (let i = blockStack.length - 1; i >= 0; i--) {
     if (blockStack[i].type === 'do') {
+      return blockStack[i];
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Find the innermost WHILE block on the stack (if any)
+ */
+function findWhileBlock(blockStack: BlockState[]): BlockState | undefined {
+  for (let i = blockStack.length - 1; i >= 0; i--) {
+    if (blockStack[i].type === 'while') {
       return blockStack[i];
     }
   }

@@ -95,7 +95,7 @@ export function createEndgameRegion(world: WorldModel): EndgameRoomIds {
 
   const narrowCorridor = createRoom(world, 'Narrow Corridor',
     'This is a narrow north-south corridor. At the south end is a door and at the north end is an east-west corridor.');
-  (narrowCorridor as any).awardsPointsOnEntry = 20;
+  narrowCorridor.attributes.awardsPointsOnEntry = 20;
 
   const eastWestCorridor = createRoom(world, 'East-West Corridor',
     'This is a large east-west corridor which opens out to a northern parapet at its center. You can see flames and smoke as you peer towards the parapet. The corridor turns south at its east and west ends, and due south is a massive wooden door. In the door is a small window barred with iron.');
@@ -118,8 +118,8 @@ export function createEndgameRegion(world: WorldModel): EndgameRoomIds {
     properName: true,
     article: 'the'
   }));
-  (treasury as any).isVictoryRoom = true;
-  (treasury as any).awardsPointsOnEntry = 35;
+  treasury.attributes.isVictoryRoom = true;
+  treasury.attributes.awardsPointsOnEntry = 35;
 
   const entryToHades = world.createEntity('Entrance to Hades', EntityType.ROOM);
   entryToHades.add(new RoomTrait({
@@ -282,7 +282,7 @@ function createLaserBeam(world: WorldModel, roomId: string): IFEntity {
 
   world.moveEntity(beam.id, roomId);
 
-  (beam as any).isLaserBeam = true;
+  beam.attributes.isLaserBeam = true;
 
   return beam;
 }
@@ -303,8 +303,8 @@ function createStoneButton(world: WorldModel, roomId: string): IFEntity {
 
   world.moveEntity(button.id, roomId);
 
-  (button as any).isPushable = true;
-  (button as any).buttonType = 'stone';
+  button.attributes.isPushable = true;
+  button.attributes.buttonType = 'stone';
 
   return button;
 }
@@ -325,7 +325,7 @@ function createSundial(world: WorldModel, roomId: string): IFEntity {
 
   world.moveEntity(sundial.id, roomId);
 
-  (sundial as any).isDial = true;
+  sundial.attributes.isDial = true;
 
   return sundial;
 }
@@ -344,8 +344,8 @@ function createDialButton(world: WorldModel, roomId: string): IFEntity {
 
   world.moveEntity(button.id, roomId);
 
-  (button as any).isPushable = true;
-  (button as any).buttonType = 'dial';
+  button.attributes.isPushable = true;
+  button.attributes.buttonType = 'dial';
 
   return button;
 }
@@ -366,8 +366,8 @@ function createShortPole(world: WorldModel, roomId: string): IFEntity {
 
   world.moveEntity(pole.id, roomId);
 
-  (pole as any).isPole = true;
-  (pole as any).poleType = 'short';
+  pole.attributes.isPole = true;
+  pole.attributes.poleType = 'short';
 
   return pole;
 }
@@ -386,8 +386,8 @@ function createLongPole(world: WorldModel, roomId: string): IFEntity {
 
   world.moveEntity(pole.id, roomId);
 
-  (pole as any).isPole = true;
-  (pole as any).poleType = 'long';
+  pole.attributes.isPole = true;
+  pole.attributes.poleType = 'long';
 
   return pole;
 }
@@ -406,8 +406,8 @@ function createMahoganyPanel(world: WorldModel, roomId: string): IFEntity {
 
   world.moveEntity(panel.id, roomId);
 
-  (panel as any).isPanel = true;
-  (panel as any).panelType = 'mahogany';
+  panel.attributes.isPanel = true;
+  panel.attributes.panelType = 'mahogany';
 
   return panel;
 }
@@ -426,8 +426,8 @@ function createPinePanel(world: WorldModel, roomId: string): IFEntity {
 
   world.moveEntity(panel.id, roomId);
 
-  (panel as any).isPanel = true;
-  (panel as any).panelType = 'pine';
+  panel.attributes.isPanel = true;
+  panel.attributes.panelType = 'pine';
 
   return panel;
 }
@@ -446,8 +446,8 @@ function createRedPanel(world: WorldModel, roomId: string): IFEntity {
 
   world.moveEntity(panel.id, roomId);
 
-  (panel as any).isPanel = true;
-  (panel as any).panelType = 'red';
+  panel.attributes.isPanel = true;
+  panel.attributes.panelType = 'red';
 
   return panel;
 }
@@ -466,8 +466,8 @@ function createYellowPanel(world: WorldModel, roomId: string): IFEntity {
 
   world.moveEntity(panel.id, roomId);
 
-  (panel as any).isPanel = true;
-  (panel as any).panelType = 'yellow';
+  panel.attributes.isPanel = true;
+  panel.attributes.panelType = 'yellow';
 
   return panel;
 }
@@ -489,7 +489,7 @@ function createBronzeDoor(world: WorldModel, roomId: string): IFEntity {
 
   world.moveEntity(door.id, roomId);
 
-  (door as any).isTreasuryDoor = true;
+  door.attributes.isTreasuryDoor = true;
 
   return door;
 }

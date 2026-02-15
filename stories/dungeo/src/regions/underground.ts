@@ -81,7 +81,7 @@ export function createUndergroundRegion(world: WorldModel): UndergroundRoomIds {
   const trollRoom = createRoom(world, 'Troll Room',
     'This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.');
 
-  const eastWestPassage = createRoom(world, 'East/West Passage',
+  const eastWestPassage = createRoom(world, 'East-West Passage',
     'This is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.');
 
   const deepRavine = createRoom(world, 'Deep Ravine',
@@ -129,7 +129,7 @@ export function createUndergroundRegion(world: WorldModel): UndergroundRoomIds {
   RoomBehavior.blockExit(trollRoom, Direction.NORTH, 'The troll blocks your way.');
 
   setExits(eastWestPassage, {
-    [Direction.SOUTH]: trollRoom.id,
+    [Direction.WEST]: trollRoom.id,
     [Direction.NORTH]: deepRavine.id,
     [Direction.DOWN]: deepRavine.id,
     // EAST → Round Room connected externally
@@ -160,14 +160,14 @@ export function createUndergroundRegion(world: WorldModel): UndergroundRoomIds {
   });
 
   setExits(chasm, {
-    [Direction.WEST]: deepRavine.id,
+    [Direction.SOUTH]: deepRavine.id,
     // EAST → Temple N/S Passage connected externally
   });
 
   setExits(rockyCrawl, {
-    [Direction.EAST]: deepRavine.id,
-    [Direction.WEST]: domeRoom.id,
-    // WEST → Volcano Egyptian Room connected externally
+    [Direction.WEST]: deepRavine.id,
+    [Direction.EAST]: domeRoom.id,
+    // NW → Volcano Egyptian Room connected externally
   });
 
   setExits(domeRoom, {

@@ -1,25 +1,47 @@
-title: Dam and Reservoir (Loud Room, Dam Puzzle, Trunk, Pump)
+title: Dam Puzzle (Loud Room, Dam Controls, Drain Reservoir)
 story: dungeo
-description: Get platinum bar from Loud Room, drain reservoir, get trunk and pump. Restores from wt-03.
+description: Get platinum bar from Loud Room, collect dam area items, drain reservoir. Restores from wt-03.
 ---
 
 # Restore state from wt-03 (player at Living Room with torch)
+# Living Room floor: lantern, incense, skeleton key
 $restore wt-03
 
 # ============================================================================
-# GOAL: Get platinum bar from Loud Room
+# GOAL: Prepare and head to Loud Room
 # ============================================================================
 
 [GOAL: Get platinum bar]
 [ENSURES: inventory contains "bar"]
 
-# Pick up lantern for backup light
-$take brass lantern
+# Take lantern for later use
+> take lantern
+[OK: contains "Taken"]
 
-# Teleport to Loud Room (Round Room carousel makes navigation unreliable)
-$teleport Loud Room
+# Navigate to Loud Room: Living Room -> Cellar -> Troll Room -> EW Passage
+# -> Deep Ravine -> Chasm -> N/S Passage -> Loud Room
+> open trap door
+[OK: contains "open"]
 
-> look
+> down
+[OK: contains "Cellar"]
+
+> east
+[OK: contains "Troll Room"]
+
+> north
+[OK: contains "East-West Passage"]
+
+> north
+[OK: contains "Deep Ravine"]
+
+> east
+[OK: contains "Chasm"]
+
+> east
+[OK: contains "North/South Passage"]
+
+> northeast
 [OK: contains "Loud Room"]
 [OK: contains "platinum"]
 
@@ -30,28 +52,43 @@ $teleport Loud Room
 > take bar
 [OK: contains "Taken"]
 
-> inventory
-[OK: contains "bar"]
-
 [END GOAL]
 
 # ============================================================================
-# GOAL: Enable dam controls and get wrench from Maintenance Room
+# GOAL: Navigate to Dam area via Damp Cave
 # ============================================================================
 
-[GOAL: Get wrench and enable dam]
+[GOAL: Navigate to Dam and collect items]
 
-$teleport Maintenance Room
+# Loud Room -> UP -> Damp Cave -> EAST -> Dam
+> up
+[OK: contains "Damp Cave"]
 
-> look
-[OK: contains "panel"]
+> east
+[OK: contains "Dam"]
+
+# Dam -> North -> Dam Lobby (collect guidebook and matchbook)
+> north
+[OK: contains "Dam Lobby"]
+
+> take guidebook
+[OK: contains "Taken"]
+
+> take matchbook
+[OK: contains "Taken"]
+
+# Dam Lobby -> North -> Maintenance Room (press button, collect tools)
+> north
+[OK: contains "Maintenance Room"]
 
 # Press yellow button to enable the bolt at the dam
 > press yellow button
 [OK: contains "click"]
 
-# Get the wrench - needed to turn the bolt
 > take wrench
+[OK: contains "Taken"]
+
+> take screwdriver
 [OK: contains "Taken"]
 
 [END GOAL]
@@ -62,58 +99,62 @@ $teleport Maintenance Room
 
 [GOAL: Drain reservoir]
 
-$teleport Flood Control Dam #3
+# Maintenance Room -> South -> Dam Lobby -> South -> Dam
+> south
+[OK: contains "Dam Lobby"]
 
-# Turn the bolt with the wrench to open sluice gates (instant drain)
+> south
+[OK: contains "Dam"]
+
+# Turn the bolt with the wrench to open sluice gates
 > turn bolt
 [OK: contains "sluice"]
 
 [END GOAL]
 
 # ============================================================================
-# GOAL: Get trunk from drained Reservoir
+# GOAL: Return to Living Room
 # ============================================================================
 
-[GOAL: Get trunk from reservoir]
-[ENSURES: inventory contains "trunk"]
+[GOAL: Return to Living Room and store treasure]
 
-$teleport Reservoir
+# Dam -> E -> Damp Cave -> S -> Loud Room -> W -> N/S Passage
+# -> N -> Chasm -> S -> Deep Ravine -> S -> EW Passage
+# -> W -> Troll Room -> W -> Cellar -> UP -> Living Room
+> east
+[OK: contains "Damp Cave"]
 
-> look
-[OK: contains "trunk"]
+> south
+[OK: contains "Loud Room"]
 
-> take trunk
-[OK: contains "Taken"]
+> west
+[OK: contains "North/South Passage"]
+
+> north
+[OK: contains "Chasm"]
+
+> south
+[OK: contains "Deep Ravine"]
+
+> south
+[OK: contains "East-West Passage"]
+
+> west
+[OK: contains "Troll Room"]
+
+> west
+[OK: contains "Cellar"]
+
+> up
+[OK: contains "Living Room"]
 
 [END GOAL]
 
 # ============================================================================
-# GOAL: Get pump from Reservoir North
-# ============================================================================
-
-[GOAL: Get pump from Reservoir North]
-[ENSURES: inventory contains "pump"]
-
-$teleport Reservoir North
-
-> look
-[OK: contains "pump"]
-
-> take pump
-[OK: contains "Taken"]
-
-> inventory
-[OK: contains "pump"]
-
-[END GOAL]
-
-# ============================================================================
-# GOAL: Return to Living Room and store treasure
+# GOAL: Store treasure and set up for next segment
 # ============================================================================
 
 [GOAL: Store platinum bar in trophy case]
-
-$teleport Living Room
 
 > open trophy case
 [OK: contains "open"]
@@ -123,18 +164,25 @@ $teleport Living Room
 
 [END GOAL]
 
-# ============================================================================
-# GOAL: Verify final state for next segment
-# ============================================================================
+[GOAL: Drop items for next segment]
 
-[GOAL: Verify inventory for next segment]
+# Drop collected items on Living Room floor (needed in later walkthroughs)
+> drop guidebook
+[OK: contains "Dropped"]
 
+> drop matchbook
+[OK: contains "Dropped"]
+
+> drop wrench
+[OK: contains "Dropped"]
+
+> drop screwdriver
+[OK: contains "Dropped"]
+
+# Verify final state
 > inventory
 [OK: contains "torch"]
 [OK: contains "lantern"]
-[OK: contains "trunk"]
-[OK: contains "pump"]
-[OK: contains "wrench"]
 
 > look
 [OK: contains "Living Room"]
@@ -147,6 +195,6 @@ $save wt-04
 
 # SUCCESS! Dam puzzle complete
 # Treasure stored: platinum bar
-# Inventory: torch, lantern, trunk, pump, wrench
-# Player in Living Room
-# Ready for next segment
+# Inventory: torch, lantern
+# Living Room floor: guidebook, matchbook, wrench, screwdriver, incense, key
+# Reservoir drained - ready for wt-04b (trunk, pump)

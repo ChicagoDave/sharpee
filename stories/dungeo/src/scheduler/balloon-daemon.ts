@@ -18,7 +18,7 @@
  */
 
 import { ISemanticEvent } from '@sharpee/core';
-import { WorldModel, IdentityTrait, OpenableTrait, ContainerTrait, VehicleTrait } from '@sharpee/world-model';
+import { WorldModel, IdentityTrait, OpenableTrait, ContainerTrait, VehicleTrait, moveVehicle } from '@sharpee/world-model';
 import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 import { DungeoSchedulerMessages } from './scheduler-messages';
 import {
@@ -76,18 +76,16 @@ function getBalloonState(world: WorldModel): { entity: any; state: BalloonStateT
 }
 
 /**
- * Sync VehicleTrait.currentPosition with balloon state
+ * Get the balloon's current position from VehicleTrait (authoritative)
  */
-function syncVehicleTraitPosition(world: WorldModel, position: BalloonPosition): void {
-  if (!balloonEntityId) return;
+function getCurrentPosition(world: WorldModel): BalloonPosition | null {
+  if (!balloonEntityId) return null;
 
   const balloon = world.getEntity(balloonEntityId);
-  if (!balloon) return;
+  if (!balloon) return null;
 
-  const vehicleTrait = balloon.get(VehicleTrait);
-  if (vehicleTrait) {
-    vehicleTrait.currentPosition = position;
-  }
+  const vehicle = balloon.get(VehicleTrait);
+  return (vehicle?.currentPosition as BalloonPosition) || null;
 }
 
 /**
@@ -199,6 +197,9 @@ function createBalloonDaemon(): Daemon {
       if (!balloon) return events;
 
       const { state } = balloon;
+      const currentPos = getCurrentPosition(ctx.world);
+      if (!currentPos) return events;
+
       const hasHeat = hasHeatSource(ctx.world);
       const playerInBalloon = isPlayerInBalloon(ctx.world);
 
@@ -206,15 +207,13 @@ function createBalloonDaemon(): Daemon {
       let newPosition: BalloonPosition | null = null;
 
       if (hasHeat) {
-        // Rising - has heat source
-        newPosition = nextPositionUp(state.position);
+        newPosition = nextPositionUp(currentPos);
       } else {
-        // Falling - no heat source
-        newPosition = nextPositionDown(state.position);
+        newPosition = nextPositionDown(currentPos);
       }
 
       // Check for crash: rising past VAIR4 (above volcano rim)
-      if (newPosition === null && hasHeat && state.position === 'vair4') {
+      if (newPosition === null && hasHeat && currentPos === 'vair4') {
         lastFireTurn = ctx.turn;
         return handleCrash(ctx.world, ctx);
       }
@@ -228,10 +227,12 @@ function createBalloonDaemon(): Daemon {
       // Balloon actually moves — update the fire timer
       lastFireTurn = ctx.turn;
 
-      // Update position
-      const oldPosition = state.position;
-      state.position = newPosition;
-      syncVehicleTraitPosition(ctx.world, newPosition);
+      // Physically move balloon entity to the new room
+      const vehicle = balloon.entity.get(VehicleTrait);
+      const destRoomId = vehicle?.positionRooms?.[newPosition];
+      if (destRoomId) {
+        moveVehicle(ctx.world, balloonEntityId!, destRoomId);
+      }
 
       // Emit movement message if player is in balloon
       if (playerInBalloon) {
@@ -245,12 +246,12 @@ function createBalloonDaemon(): Daemon {
           data: {
             messageId,
             daemonId: BALLOON_DAEMON_ID,
-            oldPosition,
+            oldPosition: currentPos,
             newPosition,
             isRising: hasHeat,
             balloonId: balloonEntityId,
             params: {
-              from: oldPosition,
+              from: currentPos,
               to: newPosition
             }
           }
@@ -303,11 +304,10 @@ export function isBalloonDaemonActive(scheduler: ISchedulerService): boolean {
 }
 
 /**
- * Get balloon position
+ * Get balloon position (from VehicleTrait — authoritative)
  */
 export function getBalloonPosition(world: WorldModel): BalloonPosition | null {
-  const balloon = getBalloonState(world);
-  return balloon?.state.position || null;
+  return getCurrentPosition(world);
 }
 
 /**

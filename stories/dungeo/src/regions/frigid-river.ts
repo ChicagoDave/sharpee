@@ -524,8 +524,8 @@ function createRiverScenery(world: WorldModel, roomId: string): IFEntity {
     article: 'the'
   }));
   river.add(new SceneryTrait());
-  (river as any).isWaterBody = true;
-  (river as any).attributes.displayName = 'Frigid River';
+  river.attributes.isWaterBody = true;
+  river.attributes.displayName = 'Frigid River';
   world.moveEntity(river.id, roomId);
   return river;
 }

@@ -66,12 +66,26 @@ $restore wt-11
 > take nasty knife
 [OK: contains "Taken"]
 
+# Also grab volcano supplies while here (needed in wt-13)
+> take brick
+[OK: contains "Taken"]
+
+> take shiny wire
+[OK: contains "Taken"]
+
 # Attic → Kitchen → Living Room
 > down
 [OK: contains "Kitchen"]
 
 > west
 [OK: contains "Living Room"]
+
+# Drop volcano supplies at Living Room for wt-13
+> drop brick
+[OK: contains "Dropped"]
+
+> drop shiny wire
+[OK: contains "Dropped"]
 
 [END GOAL]
 

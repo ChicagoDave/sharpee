@@ -20,7 +20,7 @@ const FALLS_ROOM_PATTERNS = ['aragain falls', 'on the rainbow', 'end of rainbow'
  */
 function isRainbowStick(entity: IFEntity): boolean {
   // Check the flag first (set in dam.ts)
-  if ((entity as any).isSceptre) return true;
+  if (entity.attributes?.isSceptre) return true;
 
   // Fallback: check name/aliases
   const identity = entity.get(IdentityTrait);

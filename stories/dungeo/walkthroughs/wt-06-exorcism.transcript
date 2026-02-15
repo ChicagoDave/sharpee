@@ -3,47 +3,82 @@ story: dungeo
 description: Perform exorcism ritual at Entry to Hades. Restores from wt-05.
 ---
 
-# Restore state from wt-05 (player at Living Room)
+# Restore state from wt-05 (player at Living Room with torch + lantern)
 $restore wt-05
 
 # ============================================================================
-# GOAL: Setup - Ensure correct state from previous segment
+# GOAL: Verify starting state
 # ============================================================================
 
 [GOAL: Verify starting state]
 
-# Ensure we have torch (ivory torch is always lit - no need to turn on)
-$take torch
-$take brass lantern
-
-# Verify we have light (ivory torch is permanent light source)
 > look
 [OK: contains "Living Room"]
 
-[END GOAL]
-
-# ============================================================================
-# GOAL: Get matchbook from Dam Lobby (needed to light candles)
-# ============================================================================
-
-[GOAL: Get matchbook]
-[ENSURES: inventory contains "matchbook"]
-
-$teleport Dam Lobby
-
-> look
-[OK: contains "matchbook"]
-
-> take matchbook
-[OK: contains "Taken"]
-
 > inventory
-[OK: contains "matchbook"]
+[OK: contains "torch"]
+[OK: contains "lantern"]
 
 [END GOAL]
 
 # ============================================================================
-# GOAL: Get exorcism items from Altar (bell, book, candles)
+# GOAL: Navigate to Round Room
+# Living Room -> Cellar -> Troll Room -> EW Passage -> Round Room
+# ============================================================================
+
+[GOAL: Navigate to Round Room]
+
+> down
+[OK: contains "Cellar"]
+
+> east
+[OK: contains "Troll Room"]
+
+> north
+[OK: contains "East-West Passage"]
+
+> east
+[OK: contains "Round Room"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Traverse Round Room carousel to Grail Room
+# Carousel is spinning (isFixed=false) - exits are randomized.
+# Any direction you pick, you land at a random exit EXCEPT where you tried to go.
+# Use DO-UNTIL: go south (not east, since east=Grail Room would be excluded),
+# handle each possible landing, navigate back to Round Room, repeat.
+# ============================================================================
+
+[GOAL: Get to Grail Room via carousel]
+
+[WHILE: not location = "Grail Room"]
+  > south
+  [IF: location = "East-West Passage"]
+    > east
+  [END IF]
+  [IF: location = "Deep Canyon"]
+    > southeast
+  [END IF]
+  [IF: location = "North/South Passage"]
+    > southwest
+  [END IF]
+  [IF: location = "Winding Passage"]
+    > northwest
+  [END IF]
+  [IF: location = "Engravings Cave"]
+    > north
+  [END IF]
+  [IF: location = "Maze"]
+    > northeast
+  [END IF]
+[END WHILE]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Navigate to Altar and collect exorcism items
+# Grail Room -> UP -> Temple -> E -> Altar
 # ============================================================================
 
 [GOAL: Get exorcism items]
@@ -51,9 +86,10 @@ $teleport Dam Lobby
 [ENSURES: inventory contains "book"]
 [ENSURES: inventory contains "candles"]
 
-$teleport Altar
+> up
+[OK: contains "Temple"]
 
-> look
+> east
 [OK: contains "Altar"]
 
 > take bell
@@ -65,45 +101,55 @@ $teleport Altar
 > take candles
 [OK: contains "Taken"]
 
-> inventory
-[OK: contains "bell"]
-[OK: contains "book"]
-[OK: contains "candles"]
+[END GOAL]
+
+# ============================================================================
+# GOAL: Navigate to Entrance to Hades
+# Altar -> W -> Temple -> D -> Grail Room -> E -> Narrow Crawlway
+# -> SW -> Mirror Room -> E -> Cave -> D -> Entrance to Hades
+# ============================================================================
+
+[GOAL: Get to Entrance to Hades]
+
+> west
+[OK: contains "Temple"]
+
+> down
+[OK: contains "Grail Room"]
+
+> east
+[OK: contains "Narrow Crawlway"]
+
+> southwest
+[OK: contains "Mirror Room"]
+
+> east
+[OK: contains "Cave"]
+
+> down
+[OK: contains "Entrance to Hades"]
 
 [END GOAL]
 
 # ============================================================================
-# GOAL: Navigate to Entry to Hades
-# ============================================================================
-
-[GOAL: Get to Entry to Hades]
-
-$teleport Entrance to Hades
-
-> look
-[OK: contains "Hades"]
-
-[END GOAL]
-
-# ============================================================================
-# GOAL: Perform exorcism ritual (order doesn't matter)
-# Ring bell, read book, light candles
-# NOTE: Exorcism daemon has timing issues - using $teleport to skip for now
+# GOAL: Perform exorcism ritual
+# Ring bell, read book, light candles (order doesn't matter)
+# Daemon checks completion each turn - wait after all three steps
 # ============================================================================
 
 [GOAL: Perform exorcism]
 
 # Step 1: Ring the bell
 > ring bell
-[OK: contains "Ding"]
+[OK: contains "resonant"]
 
 # Step 2: Read the black book
 > read book
 [OK: contains "exorcism"]
 
-# Step 3: Light the candles with matchbook
+# Step 3: Light the candles
 > turn on candles
-[OK: contains "switch on"]
+[OK: contains "on"]
 
 # Wait a turn for the exorcism daemon to complete the ritual
 > wait
@@ -112,33 +158,78 @@ $teleport Entrance to Hades
 [END GOAL]
 
 # ============================================================================
-# GOAL: Verify exorcism complete - passage east should be open
-# NOTE: Exorcism daemon has timing issues - teleporting to Land of Dead
+# GOAL: Verify exorcism success - passage east should be open
 # ============================================================================
 
 [GOAL: Verify exorcism success]
 
-> look
-[OK: contains "Hades"]
-
-# Exorcism daemon timing issue - teleport directly
-$teleport Land of the Dead
-
-# We're in Land of the Dead
-> look
+> east
 [OK: contains "Land of the Dead"]
 
 [END GOAL]
 
 # ============================================================================
-# GOAL: Return to Living Room for next segment
+# GOAL: Return to Living Room
+# Land of Dead -> W -> Hades -> UP -> Cave -> W -> Mirror Room
+# -> NE -> Narrow Crawlway -> W -> Grail Room -> W -> Round Room
+# -> carousel WHILE -> Maze -> W -> Troll Room -> W -> Cellar
+# -> UP -> Living Room
 # ============================================================================
 
 [GOAL: Return to Living Room]
 
-$teleport Living Room
+# Back through Hades to Cave
+> west
+[OK: contains "Entrance to Hades"]
 
-> look
+> up
+[OK: contains "Cave"]
+
+# Cave -> Mirror Room -> Narrow Crawlway -> Grail Room
+> west
+[OK: contains "Mirror Room"]
+
+> northeast
+[OK: contains "Narrow Crawlway"]
+
+> west
+[OK: contains "Grail Room"]
+
+# Enter Round Room (carousel is still spinning)
+> west
+[OK: contains "Round Room"]
+
+# Traverse carousel to reach Maze (Maze-01 has WEST -> Troll Room)
+[WHILE: not location = "Maze"]
+  > south
+  [IF: location = "East-West Passage"]
+    > east
+  [END IF]
+  [IF: location = "Deep Canyon"]
+    > southeast
+  [END IF]
+  [IF: location = "North/South Passage"]
+    > southwest
+  [END IF]
+  [IF: location = "Winding Passage"]
+    > northwest
+  [END IF]
+  [IF: location = "Engravings Cave"]
+    > north
+  [END IF]
+  [IF: location = "Grail Room"]
+    > west
+  [END IF]
+[END WHILE]
+
+# Maze-01 -> Troll Room -> Cellar -> Living Room
+> west
+[OK: contains "Troll Room"]
+
+> west
+[OK: contains "Cellar"]
+
+> up
 [OK: contains "Living Room"]
 
 [END GOAL]
@@ -163,5 +254,5 @@ $save wt-06
 
 # SUCCESS! Exorcism complete
 # Spirits banished, passage to Land of Dead now open
-# Player in Living Room with torch + lantern
-# Ready for next segment (river-rainbow)
+# Player in Living Room with torch + lantern + bell + book + candles
+# Ready for next segment

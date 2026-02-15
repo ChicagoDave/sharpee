@@ -1,0 +1,292 @@
+title: Volcano Balloon & Treasures
+story: dungeo
+description: Melt glacier, fly balloon through volcano, collect 5 treasures (ruby, coin, stamp, emerald, crown). Restores from wt-12.
+---
+
+# Restore state from wt-12 (player at Living Room with torch and lantern)
+# Living Room floor has: guidebook, matchbook, brick, shiny wire
+$restore wt-12
+
+# ============================================================================
+# GOAL: Gather volcano supplies from Living Room floor
+# ============================================================================
+
+[GOAL: Gather volcano supplies]
+[ENSURES: inventory contains "guidebook"]
+[ENSURES: inventory contains "matchbook"]
+[ENSURES: inventory contains "brick"]
+
+> take guidebook
+[OK: contains "Taken"]
+
+> take matchbook
+[OK: contains "Taken"]
+
+> take brick
+[OK: contains "Taken"]
+
+> take shiny wire
+[OK: contains "Taken"]
+
+> inventory
+[OK: contains "torch"]
+[OK: contains "lantern"]
+[OK: contains "guidebook"]
+[OK: contains "matchbook"]
+[OK: contains "brick"]
+[OK: contains "wire"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Navigate to Glacier Room and melt glacier
+# ============================================================================
+
+[GOAL: Melt glacier to open path to Ruby Room]
+
+$teleport Egyptian Room
+
+> look
+[OK: contains "Egyptian"]
+
+# Turn on lantern (backup light - torch will be lost when thrown at glacier)
+> turn on lantern
+[OK: contains "on"]
+
+# Go up to Glacier Room
+> up
+[OK: contains "Glacier"]
+
+# Throw the lit torch at the glacier to melt it
+# Torch gets carried to Stream View by meltwater, glacier removed, WEST exit opens
+> throw torch at glacier
+[OK: contains "glacier"]
+[OK: contains "torch"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Get ruby from Ruby Room and reach Volcano Bottom
+# ============================================================================
+
+[GOAL: Get ruby and reach Volcano Bottom]
+[ENSURES: inventory contains "ruby"]
+
+# West exit now open after glacier melt
+> west
+[OK: contains "Ruby Room"]
+
+> take ruby
+[OK: contains "Taken"]
+
+> west
+[OK: contains "Lava Room"]
+
+> south
+[OK: contains "Volcano Bottom"]
+[OK: contains "balloon"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Prepare balloon for flight
+# ============================================================================
+
+[GOAL: Launch balloon]
+
+> enter balloon
+[OK: contains "balloon"]
+
+> open receptacle
+[OK: contains "open"]
+
+# Light the guidebook with matchbook, then put in receptacle to inflate balloon
+> burn guidebook
+[OK: contains "burn"]
+
+> put guidebook in receptacle
+[OK: contains "put"]
+[OK: contains "rises"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Fly to Narrow Ledge - collect coin and stamp
+# ============================================================================
+
+[GOAL: Dock at Narrow Ledge and collect treasures]
+[ENSURES: inventory contains "coin"]
+
+# Wait for balloon to rise from vair1 to vair2 (daemon fires every 3 turns)
+> wait
+[OK: contains "Time"]
+
+> wait
+[OK: contains "Time"]
+
+> wait
+[OK: contains "hook"]
+
+# At vair2 near Narrow Ledge - tie wire to hook to dock
+> tie wire
+[OK: contains "anchored"]
+
+# Exit balloon to Narrow Ledge
+> exit
+[OK: contains "Narrow Ledge"]
+
+# Collect zorkmid coin from ledge
+> take coin
+[OK: contains "Taken"]
+
+# Visit Library to get stamp from purple book
+> south
+[OK: contains "Library"]
+
+> take book
+[OK: contains "Taken"]
+
+> take stamp
+[OK: contains "Taken"]
+
+# Return to Narrow Ledge and re-enter balloon
+> north
+[OK: contains "Narrow Ledge"]
+
+> enter balloon
+[OK: contains "balloon"]
+
+# Untie wire to resume flight
+> untie wire
+[OK: contains "untie"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Fly to Wide Ledge
+# ============================================================================
+
+[GOAL: Dock at Wide Ledge]
+
+# Rise from vair2 to vair3 (3 turns)
+> wait
+[OK: contains "Time"]
+
+> wait
+[OK: contains "Time"]
+
+> wait
+[OK: contains "rises"]
+
+# Rise from vair3 to vair4 (3 more turns)
+> wait
+[OK: contains "Time"]
+
+> wait
+[OK: contains "Time"]
+
+> wait
+[OK: contains "hook"]
+
+# At vair4 near Wide Ledge - tie wire to dock
+> tie wire
+[OK: contains "anchored"]
+
+# Exit balloon to Wide Ledge
+> exit
+[OK: contains "Wide Ledge"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Dusty Room - get emerald, blow open safe, get crown
+# ============================================================================
+
+[GOAL: Get emerald and crown from Dusty Room]
+[ENSURES: inventory contains "emerald"]
+[ENSURES: inventory contains "crown"]
+
+# Go south to Dusty Room
+> south
+[OK: contains "Dusty Room"]
+
+# Take the emerald (sitting on floor)
+> take emerald
+[OK: contains "Taken"]
+
+# Put the brick in the slot (hole in safe) for the explosion
+> put brick in hole
+[OK: contains "put"]
+
+# Light the fuse wire - 2 turn countdown to explosion
+> burn wire
+[OK: contains "wire starts to burn"]
+
+# Escape north to Wide Ledge before explosion
+> north
+[OK: contains "Wide Ledge"]
+
+# Wait for explosion (fuse burns for 2 turns total)
+> wait
+[OK: contains "explosion"]
+
+# Return to Dusty Room - safe is now blown open
+> south
+[OK: contains "Dusty Room"]
+
+# Take the crown from the now-open safe
+> take crown
+[OK: contains "crown"]
+
+# Escape north before room collapse (SAFIN = 5 turns after explosion)
+> north
+[OK: contains "Wide Ledge"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Store all volcano treasures in trophy case
+# ============================================================================
+
+[GOAL: Store volcano treasures in trophy case]
+
+$teleport Living Room
+
+> look
+[OK: contains "Living Room"]
+
+> open trophy case
+
+> put ruby in trophy case
+[OK: contains "put"]
+
+> put coin in trophy case
+[OK: contains "put"]
+
+> put stamp in trophy case
+[OK: contains "put"]
+
+> put emerald in trophy case
+[OK: contains "put"]
+
+> put crown in trophy case
+[OK: contains "put"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Verify final state
+# ============================================================================
+
+[GOAL: Verify state for next segment]
+
+> inventory
+[OK: contains "lantern"]
+
+> look
+[OK: contains "Living Room"]
+[OK: contains "trophy case"]
+
+[END GOAL]
+
+$save wt-13
