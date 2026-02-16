@@ -12,7 +12,7 @@ Continued from [issues-list-03.md](issues-list-03.md) (closed 2026-02-16).
 | ISSUE-048 | Zifmia not updated to latest platform | Medium | client-zifmia | 2026-02-04 | - | - |
 | ISSUE-049 | `$seed` directive for deterministic randomization testing | Low | transcript-tester | 2026-02-07 | - | - |
 | ISSUE-050 | Consolidate all Dungeo text into dungeo-en-us.ts for i18n | Low | dungeo | 2026-02-07 | - | - |
-| ISSUE-052 | Capability registry uses module-level Map; not shared across require() | High | world-model | 2026-02-08 | - | - |
+| ISSUE-052 | Capability registry uses module-level Map; not shared across require() | High | world-model | 2026-02-08 | - | 2026-02-13 |
 
 ---
 
@@ -113,42 +113,4 @@ All English text strings in the Dungeo story are currently spread across multipl
 **Reported**: 2026-02-08
 **Severity**: High
 **Component**: Platform (world-model / capability-registry.ts)
-
-**Description**:
-`capability-registry.ts` stores registered capability behaviors in a module-level `const Map`. When the CLI bundle loads a story via dynamic `require()`, the story module gets its own copy of `@sharpee/world-model`. Capability behaviors registered by the story are stored in the story's Map instance, invisible to the platform's dispatch code (which reads from its own Map instance).
-
-In contrast, `interceptor-registry.ts` uses `globalThis` for storage, which IS shared across `require()` boundaries. This is why interceptors work correctly while capabilities do not.
-
-**Reproduction**:
-```typescript
-// Story code (loaded via require())
-import { registerCapabilityBehavior } from '@sharpee/world-model';
-registerCapabilityBehavior('my.trait', 'if.action.foo', myBehavior);
-// → Stored in story module's Map instance
-
-// Platform code (different module instance)
-import { findCapabilityBehavior } from '@sharpee/world-model';
-findCapabilityBehavior('my.trait', 'if.action.foo');
-// → Returns undefined (reads from platform's Map instance)
-```
-
-**Impact**: Any story that registers capability behaviors will silently fail. The platform falls back to stdlib action default behavior, so the game works but entity-specific behavior is lost.
-
-**Workaround**: Use action interceptors (registered via `registerActionInterceptor()` which uses `globalThis`) instead of capability behaviors. This was applied for the troll in Phase 7.
-
-**Proposed Fix**: Change `capability-registry.ts` to use `globalThis` for storage, matching the pattern in `interceptor-registry.ts`:
-```typescript
-// Before (broken):
-const capabilityBehaviors = new Map<string, Map<string, CapabilityBehavior>>();
-
-// After (fixed):
-const GLOBAL_KEY = '__sharpee_capability_behaviors__';
-function getRegistry(): Map<string, Map<string, CapabilityBehavior>> {
-  if (!(globalThis as any)[GLOBAL_KEY]) {
-    (globalThis as any)[GLOBAL_KEY] = new Map();
-  }
-  return (globalThis as any)[GLOBAL_KEY];
-}
-```
-
-**Priority**: High — this affects all stories using capability dispatch. Currently only the troll was affected (worked around), but future entities using capability behaviors will hit the same issue.
+**Status**: Fixed 2026-02-13 — `capability-registry.ts` now uses `globalThis` storage via `__sharpee_capability_behaviors__` key, matching the pattern in `interceptor-registry.ts`.
