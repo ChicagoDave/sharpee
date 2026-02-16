@@ -658,22 +658,22 @@ export class IFEntity implements IEntity {
    * Get the name of this entity
    */
   get name(): string {
-    // First check for displayName (new system)
-    if (this.attributes.displayName) {
-      return this.attributes.displayName as string;
-    }
-    
-    // Then check identity trait
+    // First check identity trait (authoritative player-facing name)
     const identity = this.get(TraitType.IDENTITY);
     if (identity && (identity as any).name) {
       return (identity as any).name;
     }
-    
+
+    // Fall back to displayName attribute
+    if (this.attributes.displayName) {
+      return this.attributes.displayName as string;
+    }
+
     // Fall back to name attribute
     if (this.attributes.name) {
       return this.attributes.name as string;
     }
-    
+
     // Last resort: use ID
     return this.id;
   }

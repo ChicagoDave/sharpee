@@ -400,6 +400,7 @@ function createAtticObjects(world: WorldModel, atticId: string): void {
   wire.add(new IdentityTrait({
     name: 'shiny wire',
     aliases: ['wire', 'thin wire', 'metal wire', 'fuse wire'],
+    adjectives: ['shiny'],
     description: 'A thin piece of shiny wire, suitable as a fuse or for various mechanical uses.',
     properName: false,
     article: 'a',

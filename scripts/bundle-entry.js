@@ -100,6 +100,8 @@ if (require.main === module) {
       chain: false,
       play: false,
       test: false,
+      exec: null,
+      debug: false,
       restore: null,
       storyPath: 'stories/dungeo',
       help: false
@@ -119,14 +121,19 @@ if (require.main === module) {
         options.play = true;
       } else if (arg === '--test' || arg === '-t') {
         options.test = true;
+      } else if (arg === '--debug') {
+        options.debug = true;
+      } else if (arg === '--exec') {
+        i++;
+        if (i < args.length) {
+          options.exec = args[i];
+        }
       } else if (arg.startsWith('--restore=')) {
         options.restore = arg.split('=')[1];
-        options.play = true;
       } else if (arg === '--restore') {
         i++;
         if (i < args.length) {
           options.restore = args[i];
-          options.play = true;
         }
       } else if (arg === '--story') {
         i++;
@@ -152,11 +159,14 @@ Sharpee CLI - Fast transcript testing and interactive play
 Usage:
   node dist/cli/sharpee.js --test [transcript-files...] [options]
   node dist/cli/sharpee.js --play [options]
+  node dist/cli/sharpee.js --exec "cmd1/cmd2/cmd3" [--debug] [--restore <name>]
 
 Options:
   --test, -t           Run transcript tests
   --play, -p           Interactive play mode (REPL)
-  --restore <name>     Restore from save file and enter play mode
+  --exec <cmds>        Run commands non-interactively (separate with /)
+  --debug              Show parsed/validated/events JSON (use with --exec)
+  --restore <name>     Restore from save file
   --chain, -c          Chain transcripts (don't reset game state between them)
   --verbose, -v        Show detailed output for each command
   --stop-on-failure, -s Stop on first failure
@@ -164,6 +174,8 @@ Options:
   --help, -h           Show this help message
 
 Examples:
+  node dist/cli/sharpee.js --exec "look" --debug
+  node dist/cli/sharpee.js --exec "wait/wait/tie wire to hook" --restore wt-13a --debug
   node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/save-restore-basic.transcript
   node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
   node dist/cli/sharpee.js --play
@@ -227,20 +239,25 @@ Examples:
       eventBuffer.push(event);
     });
 
+    let lastTurnResult = null;
+
     const testableGame = {
       engine,
       world,
       testingExtension,
       lastOutput: '',
       lastEvents: [],
+      lastTurnResult: null,
 
       async executeCommand(input) {
         outputBuffer = [];
         eventBuffer = [];
+        lastTurnResult = null;
 
         try {
-          await engine.executeTurn(input);
+          const result = await engine.executeTurn(input);
           lastEvents = eventBuffer;
+          lastTurnResult = result;
         } catch (error) {
           outputBuffer.push(`Error: ${error.message || error}`);
         }
@@ -248,6 +265,7 @@ Examples:
         lastOutput = outputBuffer.join('\n');
         testableGame.lastOutput = lastOutput;
         testableGame.lastEvents = lastEvents;
+        testableGame.lastTurnResult = lastTurnResult;
         return lastOutput;
       },
     };
@@ -261,9 +279,17 @@ Examples:
       output: process.stdout
     });
 
+    let debugMode = false;
+    let traceMode = false;
+
     console.log('\n--- Interactive Mode ---');
     console.log('Type commands to play. Special commands:');
     console.log('  /quit, /q    - Exit the game');
+    console.log('  /debug       - Toggle debug mode (show parsed/validated/events JSON)');
+    console.log('  /trace       - Toggle parser trace mode (PARSER_DEBUG env)');
+    console.log('  /events      - Show events from last command');
+    console.log('  /parsed      - Show parsed command from last turn');
+    console.log('  /validated   - Show validated command from last turn');
     console.log('  /look, /l    - Shortcut for "look"');
     console.log('  /inv, /i     - Shortcut for "inventory"');
     console.log('');
@@ -287,6 +313,59 @@ Examples:
           return;
         }
 
+        if (trimmed === '/debug') {
+          debugMode = !debugMode;
+          console.log(`Debug mode: ${debugMode ? 'ON' : 'OFF'}`);
+          prompt();
+          return;
+        }
+
+        if (trimmed === '/trace') {
+          traceMode = !traceMode;
+          process.env.PARSER_DEBUG = traceMode ? 'true' : '';
+          console.log(`Parser trace: ${traceMode ? 'ON' : 'OFF'}`);
+          prompt();
+          return;
+        }
+
+        if (trimmed === '/events') {
+          if (game.lastEvents && game.lastEvents.length > 0) {
+            console.log('\nEvents from last command:');
+            for (const event of game.lastEvents) {
+              console.log(`  ${event.type}`);
+              if (event.data && Object.keys(event.data).length > 0) {
+                console.log(`    ${JSON.stringify(event.data, null, 2).split('\n').join('\n    ')}`);
+              }
+            }
+          } else {
+            console.log('(No events from last command)');
+          }
+          prompt();
+          return;
+        }
+
+        if (trimmed === '/parsed') {
+          if (game.lastTurnResult && game.lastTurnResult.parsedCommand) {
+            console.log('\nParsed command:');
+            console.log(JSON.stringify(game.lastTurnResult.parsedCommand, null, 2));
+          } else {
+            console.log('(No parsed command from last turn)');
+          }
+          prompt();
+          return;
+        }
+
+        if (trimmed === '/validated') {
+          if (game.lastTurnResult && game.lastTurnResult.validatedCommand) {
+            console.log('\nValidated command:');
+            console.log(JSON.stringify(game.lastTurnResult.validatedCommand, null, 2));
+          } else {
+            console.log('(No validated command from last turn)');
+          }
+          prompt();
+          return;
+        }
+
         let command = trimmed;
         if (trimmed === '/look' || trimmed === '/l') {
           command = 'look';
@@ -297,6 +376,28 @@ Examples:
         try {
           const output = await game.executeCommand(command);
           console.log(output);
+
+          if (debugMode) {
+            if (game.lastTurnResult) {
+              if (game.lastTurnResult.parsedCommand) {
+                console.log('\n[Parsed]');
+                console.log(JSON.stringify(game.lastTurnResult.parsedCommand, null, 2));
+              }
+              if (game.lastTurnResult.validatedCommand) {
+                console.log('\n[Validated]');
+                console.log(JSON.stringify(game.lastTurnResult.validatedCommand, null, 2));
+              }
+            }
+            if (game.lastEvents && game.lastEvents.length > 0) {
+              console.log('\n[Events]');
+              for (const event of game.lastEvents) {
+                const data = event.data && Object.keys(event.data).length > 0
+                  ? ` ${JSON.stringify(event.data)}`
+                  : '';
+                console.log(`  ${event.type}${data}`);
+              }
+            }
+          }
         } catch (error) {
           console.error(`Error: ${error.message || error}`);
         }
@@ -313,6 +414,61 @@ Examples:
 
     if (options.help || (args.length === 0)) {
       printHelp();
+      process.exit(0);
+    }
+
+    if (options.exec) {
+      const game = loadStoryAndCreateGame(options.storyPath);
+
+      if (options.restore) {
+        const savesDir = path.join(options.storyPath, 'saves');
+        const savePath = path.join(savesDir, `${options.restore}.json`);
+        if (!fs.existsSync(savePath)) {
+          console.error(`Save file not found: ${savePath}`);
+          process.exit(1);
+        }
+        const worldState = fs.readFileSync(savePath, 'utf-8');
+        game.world.loadJSON(worldState);
+      }
+
+      // Enable parser trace when --debug
+      if (options.debug) {
+        process.env.PARSER_DEBUG = 'true';
+      }
+
+      const commands = options.exec.split('/').map(c => c.trim()).filter(c => c);
+      for (const command of commands) {
+        console.log(`> ${command}`);
+        try {
+          const output = await game.executeCommand(command);
+          console.log(output);
+
+          if (options.debug) {
+            if (game.lastTurnResult) {
+              if (game.lastTurnResult.parsedCommand) {
+                console.log('\n[Parsed]');
+                console.log(JSON.stringify(game.lastTurnResult.parsedCommand, null, 2));
+              }
+              if (game.lastTurnResult.validatedCommand) {
+                console.log('\n[Validated]');
+                console.log(JSON.stringify(game.lastTurnResult.validatedCommand, null, 2));
+              }
+            }
+            if (game.lastEvents && game.lastEvents.length > 0) {
+              console.log('\n[Events]');
+              for (const event of game.lastEvents) {
+                const data = event.data && Object.keys(event.data).length > 0
+                  ? ` ${JSON.stringify(event.data)}`
+                  : '';
+                console.log(`  ${event.type}${data}`);
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`Error: ${error.message || error}`);
+        }
+        console.log('');
+      }
       process.exit(0);
     }
 

@@ -249,11 +249,16 @@ async function runInteractiveMode(game: TestableGame): Promise<void> {
   });
 
   let debugMode = false;
+  let traceMode = false;
 
   console.log('\n--- Interactive Mode (Fast) ---');
   console.log('Type commands to play. Special commands:');
   console.log('  /quit, /q    - Exit the game');
-  console.log('  /debug       - Toggle debug mode (show events)');
+  console.log('  /debug       - Toggle debug mode (show events + parsed/validated JSON)');
+  console.log('  /trace       - Toggle parser trace mode (PARSER_DEBUG env)');
+  console.log('  /events      - Show events from last command');
+  console.log('  /parsed      - Show parsed command from last turn');
+  console.log('  /validated   - Show validated command from last turn');
   console.log('  /look, /l    - Shortcut for "look"');
   console.log('  /inv, /i     - Shortcut for "inventory"');
   console.log('');
@@ -284,6 +289,52 @@ async function runInteractiveMode(game: TestableGame): Promise<void> {
         return;
       }
 
+      if (trimmed === '/trace') {
+        traceMode = !traceMode;
+        process.env.PARSER_DEBUG = traceMode ? 'true' : '';
+        console.log(`Parser trace: ${traceMode ? 'ON' : 'OFF'}`);
+        prompt();
+        return;
+      }
+
+      if (trimmed === '/events') {
+        if (game.lastEvents && game.lastEvents.length > 0) {
+          console.log('\nEvents from last command:');
+          for (const event of game.lastEvents) {
+            console.log(`  ${event.type}`);
+            if (event.data && Object.keys(event.data).length > 0) {
+              console.log(`    ${JSON.stringify(event.data, null, 2).split('\n').join('\n    ')}`);
+            }
+          }
+        } else {
+          console.log('(No events from last command)');
+        }
+        prompt();
+        return;
+      }
+
+      if (trimmed === '/parsed') {
+        if (game.lastTurnResult && game.lastTurnResult.parsedCommand) {
+          console.log('\nParsed command:');
+          console.log(JSON.stringify(game.lastTurnResult.parsedCommand, null, 2));
+        } else {
+          console.log('(No parsed command from last turn)');
+        }
+        prompt();
+        return;
+      }
+
+      if (trimmed === '/validated') {
+        if (game.lastTurnResult && game.lastTurnResult.validatedCommand) {
+          console.log('\nValidated command:');
+          console.log(JSON.stringify(game.lastTurnResult.validatedCommand, null, 2));
+        } else {
+          console.log('(No validated command from last turn)');
+        }
+        prompt();
+        return;
+      }
+
       let command = trimmed;
       if (trimmed === '/look' || trimmed === '/l') {
         command = 'look';
@@ -295,10 +346,25 @@ async function runInteractiveMode(game: TestableGame): Promise<void> {
         const output = await game.executeCommand(command);
         console.log(output);
 
-        if (debugMode && game.lastEvents && game.lastEvents.length > 0) {
-          console.log('\n[Events]');
-          for (const event of game.lastEvents) {
-            console.log(`  ${event.type}`);
+        if (debugMode) {
+          if (game.lastTurnResult) {
+            if (game.lastTurnResult.parsedCommand) {
+              console.log('\n[Parsed]');
+              console.log(JSON.stringify(game.lastTurnResult.parsedCommand, null, 2));
+            }
+            if (game.lastTurnResult.validatedCommand) {
+              console.log('\n[Validated]');
+              console.log(JSON.stringify(game.lastTurnResult.validatedCommand, null, 2));
+            }
+          }
+          if (game.lastEvents && game.lastEvents.length > 0) {
+            console.log('\n[Events]');
+            for (const event of game.lastEvents) {
+              const data = event.data && Object.keys(event.data).length > 0
+                ? ` ${JSON.stringify(event.data)}`
+                : '';
+              console.log(`  ${event.type}${data}`);
+            }
           }
         }
       } catch (error) {

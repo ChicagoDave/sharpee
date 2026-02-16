@@ -573,6 +573,7 @@ function createBalloonObjects(world: WorldModel, roomIds: VolcanoRoomIds): Volca
   wire.add(new IdentityTrait({
     name: 'braided wire',
     aliases: ['wire', 'braided rope', 'rope', 'cord', 'line', 'tether'],
+    adjectives: ['braided'],
     description: 'A piece of braided wire dangles from the basket.',
     properName: false,
     article: 'a'

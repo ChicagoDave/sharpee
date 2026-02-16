@@ -798,11 +798,12 @@ echo ""
 # Execute build steps
 update_versions
 build_platform
-build_bundle
 
 if [ -n "$STORY" ]; then
     build_story "$STORY"
 fi
+
+build_bundle
 
 if [ "$STORY_BUNDLE" = true ]; then
     build_story_bundle "$STORY"

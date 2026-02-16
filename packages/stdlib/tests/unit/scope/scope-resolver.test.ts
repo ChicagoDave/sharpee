@@ -526,6 +526,335 @@ describe('StandardScopeResolver', () => {
       expect(reachable.some(e => e.id === hook.id)).toBe(true);
     });
 
+    test('should preserve vehicle scope through WorldModel serialization round-trip', () => {
+      // This test reproduces the exact runtime scenario:
+      // 1. Build world with player in balloon, hook in different room
+      // 2. Set minimumScope on hook
+      // 3. Serialize via WorldModel.toJSON()
+      // 4. Restore via WorldModel.loadJSON()
+      // 5. Verify scope resolution still works
+
+      const vairRoom = world.createEntity('Vair Room', EntityType.ROOM);
+      vairRoom.add({ type: TraitType.ROOM });
+
+      const ledgeRoom = world.createEntity('Narrow Ledge', EntityType.ROOM);
+      ledgeRoom.add({ type: TraitType.ROOM });
+
+      // Balloon is enterable vehicle in vairRoom
+      const balloon = world.createEntity('balloon', EntityType.ITEM);
+      balloon.add({ type: TraitType.VEHICLE });
+      balloon.add({ type: TraitType.ENTERABLE });
+      balloon.add({ type: TraitType.CONTAINER }); // Balloon also has container (like real game)
+      world.moveEntity(balloon.id, vairRoom.id);
+
+      // Player enters balloon
+      const moved = world.moveEntity(player.id, balloon.id);
+      expect(moved).toBe(true);
+
+      // Hook is scenery in ledge room
+      const hook = world.createEntity('hook', EntityType.SCENERY);
+      hook.add({ type: TraitType.SCENERY });
+      world.moveEntity(hook.id, ledgeRoom.id);
+
+      // Wire is inside balloon (carried by player or in balloon)
+      const wire = world.createEntity('braided wire', EntityType.OBJECT);
+      world.moveEntity(wire.id, balloon.id);
+
+      // Set minimum scope: hook is REACHABLE from vairRoom
+      hook.setMinimumScope(ScopeLevel.REACHABLE, [vairRoom.id]);
+
+      // TRACE: Pre-serialization state
+      const preScope = resolver.getScope(player, hook);
+      console.log('=== PRE-SERIALIZATION TRACE ===');
+      console.log('Player ID:', player.id);
+      console.log('Player location:', world.getLocation(player.id));
+      console.log('Balloon ID:', balloon.id);
+      console.log('Balloon location:', world.getLocation(balloon.id));
+      console.log('VairRoom ID:', vairRoom.id);
+      console.log('LedgeRoom ID:', ledgeRoom.id);
+      console.log('Hook ID:', hook.id);
+      console.log('Hook location:', world.getLocation(hook.id));
+      console.log('Hook minimumScopes:', hook.getMinimumScopes());
+      console.log('Hook scope (pre-serialize):', preScope);
+      expect(preScope).toBe(ScopeLevel.REACHABLE);
+
+      // Serialize the world
+      const json = world.toJSON();
+
+      // Create a fresh world and load from JSON
+      const world2 = new WorldModel();
+      world2.loadJSON(json);
+
+      // Create new resolver for the restored world
+      const resolver2 = new StandardScopeResolver(world2);
+
+      // Get restored entities
+      const player2 = world2.getPlayer()!;
+      const hook2 = world2.getEntity(hook.id)!;
+      const balloon2 = world2.getEntity(balloon.id)!;
+      const wire2 = world2.getEntity(wire.id)!;
+
+      // TRACE: Post-deserialization state
+      console.log('\n=== POST-DESERIALIZATION TRACE ===');
+      console.log('Player2 ID:', player2.id);
+      console.log('Player2 location:', world2.getLocation(player2.id));
+      console.log('Balloon2 ID:', balloon2.id);
+      console.log('Balloon2 location:', world2.getLocation(balloon2.id));
+      console.log('Hook2 ID:', hook2.id);
+      console.log('Hook2 location:', world2.getLocation(hook2.id));
+      console.log('Hook2 minimumScopes:', hook2.getMinimumScopes());
+      console.log('Hook2 has SCENERY trait:', hook2.has(TraitType.SCENERY));
+      console.log('Balloon2 has ROOM trait:', balloon2.has(TraitType.ROOM));
+      console.log('Balloon2 has VEHICLE trait:', balloon2.has(TraitType.VEHICLE));
+
+      // Verify the restored entities exist
+      expect(player2).toBeDefined();
+      expect(hook2).toBeDefined();
+      expect(balloon2).toBeDefined();
+      expect(wire2).toBeDefined();
+
+      // Verify spatial relationships survived
+      expect(world2.getLocation(player2.id)).toBe(balloon2.id);
+      expect(world2.getLocation(balloon2.id)).toBe(vairRoom.id);
+      expect(world2.getLocation(hook2.id)).toBe(ledgeRoom.id);
+
+      // Verify minimumScopes survived
+      expect(hook2.getMinimumScope(vairRoom.id)).toBe(ScopeLevel.REACHABLE);
+
+      // THE CRITICAL TEST: Does scope resolution work after deserialization?
+      const postScope = resolver2.getScope(player2, hook2);
+      console.log('Hook2 scope (post-deserialize):', postScope);
+      console.log('Expected:', ScopeLevel.REACHABLE, '(REACHABLE)');
+
+      expect(postScope).toBe(ScopeLevel.REACHABLE);
+    });
+
+    test('should resolve entities by name + scope after serialization (command validator flow)', () => {
+      // This simulates what the command validator does:
+      // 1. Find entities by name (world.findWhere matching entity.name)
+      // 2. Filter by scope
+      // This tests the FULL chain that fails at runtime with ENTITY_NOT_FOUND
+
+      const vairRoom = world.createEntity('Vair Room', EntityType.ROOM);
+      vairRoom.add({ type: TraitType.ROOM });
+
+      const ledgeRoom = world.createEntity('Narrow Ledge', EntityType.ROOM);
+      ledgeRoom.add({ type: TraitType.ROOM });
+
+      // Balloon
+      const balloon = world.createEntity('balloon', EntityType.ITEM);
+      balloon.add({ type: TraitType.VEHICLE });
+      balloon.add({ type: TraitType.ENTERABLE });
+      balloon.add({ type: TraitType.CONTAINER });
+      world.moveEntity(balloon.id, vairRoom.id);
+
+      // Player in balloon
+      world.moveEntity(player.id, balloon.id);
+
+      // Wire in balloon (with alias "wire")
+      const wire = world.createEntity('braided wire', EntityType.SCENERY);
+      wire.add({ type: TraitType.IDENTITY, name: 'braided wire', aliases: ['wire', 'rope'] });
+      wire.add({ type: TraitType.SCENERY });
+      world.moveEntity(wire.id, balloon.id);
+
+      // Hook in ledge room with minimumScope for vairRoom
+      const hook = world.createEntity('hook', EntityType.SCENERY);
+      hook.add({ type: TraitType.IDENTITY, name: 'hook', aliases: ['metal hook'] });
+      hook.add({ type: TraitType.SCENERY });
+      world.moveEntity(hook.id, ledgeRoom.id);
+      hook.setMinimumScope(ScopeLevel.REACHABLE, [vairRoom.id]);
+
+      // Serialize and restore
+      const json = world.toJSON();
+      const world2 = new WorldModel();
+      world2.loadJSON(json);
+      const resolver2 = new StandardScopeResolver(world2);
+
+      const player2 = world2.getPlayer()!;
+
+      // === SIMULATE COMMAND VALIDATOR: getEntitiesByName + filterByScope ===
+
+      // Step 1: Find entities named "hook" (like getEntitiesByName does)
+      const hookCandidates = world2.findWhere(entity => {
+        if (entity.type === 'room' || entity.id === player2.id) return false;
+        const name = entity.name?.toLowerCase();
+        return name === 'hook';
+      });
+      console.log('\n=== COMMAND VALIDATOR SIMULATION ===');
+      console.log('Hook candidates by name:', hookCandidates.length, hookCandidates.map(e => ({ id: e.id, name: e.name, type: e.type })));
+      expect(hookCandidates.length).toBeGreaterThan(0);
+
+      // Step 2: Also try synonym search (getEntitiesBySynonym)
+      const hookBySynonym = world2.findWhere(entity => {
+        if (entity.type === 'room' || entity.id === player2.id) return false;
+        const identity = entity.get('identity') as any;
+        const aliases = identity?.aliases || [];
+        return aliases.map((a: string) => a.toLowerCase()).includes('hook');
+      });
+      console.log('Hook candidates by synonym:', hookBySynonym.length);
+
+      // Step 3: Filter by scope (command validator uses VISIBLE as default)
+      const allHookCandidates = [...hookCandidates, ...hookBySynonym].filter(
+        (e, i, arr) => arr.findIndex(x => x.id === e.id) === i
+      );
+      console.log('All hook candidates (deduped):', allHookCandidates.length);
+
+      const inScope = allHookCandidates.filter(entity => {
+        const scope = resolver2.getScope(player2, entity);
+        console.log(`  Hook candidate ${entity.id} (${entity.name}): scope=${scope}, location=${world2.getLocation(entity.id)}`);
+        // VISIBLE scope check (same as command validator filterByScope)
+        return scope === ScopeLevel.CARRIED || scope === ScopeLevel.REACHABLE || scope === ScopeLevel.VISIBLE;
+      });
+      console.log('Hooks in scope:', inScope.length);
+      expect(inScope.length).toBeGreaterThan(0);
+
+      // Step 4: Find entities named "wire" (head noun from "braided wire")
+      const wireCandidatesByName = world2.findWhere(entity => {
+        if (entity.type === 'room' || entity.id === player2.id) return false;
+        const name = entity.name?.toLowerCase();
+        return name === 'wire';
+      });
+      console.log('\nWire candidates by name "wire":', wireCandidatesByName.length);
+
+      // Also check "braided wire" (full text)
+      const wireCandidatesByFullName = world2.findWhere(entity => {
+        if (entity.type === 'room' || entity.id === player2.id) return false;
+        const name = entity.name?.toLowerCase();
+        return name === 'braided wire';
+      });
+      console.log('Wire candidates by name "braided wire":', wireCandidatesByFullName.length);
+
+      // Also check by synonym "wire"
+      const wireBySynonym = world2.findWhere(entity => {
+        if (entity.type === 'room' || entity.id === player2.id) return false;
+        const identity = entity.get('identity') as any;
+        const aliases = identity?.aliases || [];
+        return aliases.map((a: string) => a.toLowerCase()).includes('wire');
+      });
+      console.log('Wire candidates by synonym "wire":', wireBySynonym.length);
+
+      // Filter wire candidates by scope
+      const allWireCandidates = [...wireCandidatesByName, ...wireCandidatesByFullName, ...wireBySynonym].filter(
+        (e, i, arr) => arr.findIndex(x => x.id === e.id) === i
+      );
+      const wireInScope = allWireCandidates.filter(entity => {
+        const scope = resolver2.getScope(player2, entity);
+        console.log(`  Wire candidate ${entity.id} (${entity.name}): scope=${scope}, location=${world2.getLocation(entity.id)}`);
+        return scope === ScopeLevel.CARRIED || scope === ScopeLevel.REACHABLE || scope === ScopeLevel.VISIBLE;
+      });
+      console.log('Wire in scope:', wireInScope.length);
+      expect(wireInScope.length).toBeGreaterThan(0);
+    });
+
+    test('REPRO: two wires with shared alias cause ENTITY_NOT_FOUND via modifier mismatch', () => {
+      // REPRODUCES the actual runtime bug:
+      // "tie braided wire to hook" fails because:
+      // 1. Parser extracts head noun "wire" from "braided wire"
+      // 2. Two entities have alias "wire": "shiny wire" and "braided wire"
+      // 3. Both found, both in scope
+      // 4. Modifier "braided" doesn't match adjectives on EITHER entity
+      //    (braided wire has name "braided wire" but no adjectives: ['braided'])
+      // 5. Command validator returns ENTITY_NOT_FOUND (modifiers not matched)
+
+      const vairRoom = world.createEntity('Vair Room', EntityType.ROOM);
+      vairRoom.add({ type: TraitType.ROOM });
+
+      const balloon = world.createEntity('balloon', EntityType.ITEM);
+      balloon.add({ type: TraitType.VEHICLE });
+      balloon.add({ type: TraitType.ENTERABLE });
+      balloon.add({ type: TraitType.CONTAINER });
+      world.moveEntity(balloon.id, vairRoom.id);
+      world.moveEntity(player.id, balloon.id);
+
+      // Wire 1: "braided wire" with alias "wire" but NO adjectives
+      const braidedWire = world.createEntity('braided wire', EntityType.SCENERY);
+      braidedWire.add({ type: TraitType.IDENTITY, name: 'braided wire', aliases: ['wire', 'rope'] });
+      braidedWire.add({ type: TraitType.SCENERY });
+      world.moveEntity(braidedWire.id, balloon.id);
+
+      // Wire 2: "shiny wire" with alias "wire" - in player inventory
+      const shinyWire = world.createEntity('shiny wire', EntityType.ITEM);
+      shinyWire.add({ type: TraitType.IDENTITY, name: 'shiny wire', aliases: ['wire', 'fuse wire'] });
+      world.moveEntity(shinyWire.id, player.id);
+
+      // Simulate what command validator does for "braided wire" with head="wire"
+      const searchTerm = 'wire'; // Parser extracts head noun
+
+      // Step 1: getEntitiesByName("wire")
+      const byName = world.findWhere(entity => {
+        if (entity.type === 'room' || entity.id === player.id) return false;
+        return entity.name?.toLowerCase() === searchTerm.toLowerCase();
+      });
+
+      // Step 2: getEntitiesBySynonym("wire")
+      const bySynonym = world.findWhere(entity => {
+        if (entity.type === 'room' || entity.id === player.id) return false;
+        const identity = entity.get('identity') as any;
+        const aliases = identity?.aliases || [];
+        return aliases.map((a: string) => a.toLowerCase()).includes(searchTerm.toLowerCase());
+      });
+
+      const candidates = [...byName, ...bySynonym].filter(
+        (e, i, arr) => arr.findIndex(x => x.id === e.id) === i
+      );
+
+      console.log('\n=== DISAMBIGUATION BUG REPRO ===');
+      console.log('Search term (head noun):', searchTerm);
+      console.log('By name:', byName.length, byName.map(e => e.name));
+      console.log('By synonym:', bySynonym.length, bySynonym.map(e => e.name));
+      console.log('Total candidates:', candidates.length, candidates.map(e => e.name));
+
+      // Step 3: Filter by scope
+      const inScope = candidates.filter(entity => {
+        const scope = resolver.getScope(player, entity);
+        return scope >= ScopeLevel.VISIBLE;
+      });
+      console.log('In scope:', inScope.length, inScope.map(e => e.name));
+
+      // Step 4: Score entities - simulate ref with text="braided wire", head="wire"
+      const ref = { text: 'braided wire', head: 'wire', modifiers: [] as string[] };
+      const modifiers = (() => {
+        const head = ref.head.toLowerCase();
+        const words = ref.text.toLowerCase().split(/\s+/).filter(w => w !== head);
+        const nonModifiers = ['the', 'a', 'an', 'all', 'some', 'every', 'any', 'my'];
+        return words.filter(w => !nonModifiers.includes(w));
+      })();
+      console.log('Inferred modifiers:', modifiers); // Should be ["braided"]
+
+      // Check if ANY entity has the modifier as an adjective
+      for (const entity of inScope) {
+        const identity = entity.get('identity') as any;
+        const adjectives = identity?.adjectives || [];
+        console.log(`  Entity "${entity.name}": adjectives=${JSON.stringify(adjectives)}`);
+      }
+
+      const anyModifierMatch = inScope.some(entity => {
+        const identity = entity.get('identity') as any;
+        const adjectives = (identity?.adjectives || []).map((a: string) => a.toLowerCase());
+        return modifiers.every(mod => adjectives.includes(mod.toLowerCase()));
+      });
+      console.log('Any modifier match?', anyModifierMatch);
+
+      // THIS IS THE BUG: anyModifierMatch is false because neither wire has adjectives: ['braided']
+      // Command validator would return ENTITY_NOT_FOUND here
+      // FIX: Add adjectives: ['braided'] to the braided wire entity
+      expect(anyModifierMatch).toBe(false); // Confirms the bug exists
+
+      // VERIFY FIX: If braided wire had adjectives: ['braided'], it would match
+      const braidedWireIdentity = braidedWire.get('identity') as any;
+      if (braidedWireIdentity) {
+        braidedWireIdentity.adjectives = ['braided'];
+      }
+
+      const fixedModifierMatch = inScope.some(entity => {
+        const identity = entity.get('identity') as any;
+        const adjectives = (identity?.adjectives || []).map((a: string) => a.toLowerCase());
+        return modifiers.every(mod => adjectives.includes(mod.toLowerCase()));
+      });
+      console.log('After fix - any modifier match?', fixedModifierMatch);
+      expect(fixedModifierMatch).toBe(true); // Fix works
+    });
+
     test('should allow dynamic scope changes during gameplay', () => {
       const clock = world.createEntity('clock', EntityType.OBJECT);
       clock.setMinimumScope(ScopeLevel.AWARE, [room.id]);
