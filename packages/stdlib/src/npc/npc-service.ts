@@ -488,6 +488,7 @@ export class NpcService implements INpcService {
               npc: npc.id,
               messageId: action.messageId,
               data: action.data,
+              params: action.data,
             },
             npc.id
           ),
@@ -501,6 +502,7 @@ export class NpcService implements INpcService {
               npc: npc.id,
               messageId: action.messageId,
               data: action.data,
+              params: action.data,
             },
             npc.id
           ),

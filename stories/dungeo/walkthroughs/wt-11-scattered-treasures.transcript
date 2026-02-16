@@ -363,7 +363,7 @@ $restore wt-10
 
 # Toggle mirror to State B (Coal Mine connections)
 > rub mirror
-[OK: contains "mirror"]
+[OK: contains "rumble"]
 
 # Navigate to Squeaky Room via Cold Passage
 > west

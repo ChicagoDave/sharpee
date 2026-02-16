@@ -241,18 +241,19 @@ export class EffectProcessor {
   }
 
   private applyMessageEffect(effect: MessageEffect): void {
+    const messageEvent: ISemanticEvent = {
+      id: `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      type: 'game.message',
+      timestamp: Date.now(),
+      entities: {},
+      data: {
+        messageId: effect.id,
+        ...effect.data
+      },
+      narrate: true
+    };
+    this.pendingEmittedEvents.push(messageEvent);
     if (this.emitEvents) {
-      const messageEvent: ISemanticEvent = {
-        id: `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        type: 'game.message',
-        timestamp: Date.now(),
-        entities: {},
-        data: {
-          messageId: effect.id,
-          ...effect.data
-        },
-        narrate: true
-      };
       this.emitEvents([messageEvent]);
     }
   }

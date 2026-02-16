@@ -37,7 +37,7 @@ $restore wt-09
 
 # Toggle mirror to State B (Coal Mine connections)
 > rub mirror
-[OK: contains "mirror"]
+[OK: contains "rumble"]
 
 # Navigate: Mirror Room → Cold Passage → Slide Room → Mine Entrance
 > west
@@ -208,7 +208,7 @@ $restore wt-09
 
 # Toggle mirror back to State A (restores upper-world connections)
 > rub mirror
-[OK: contains "mirror"]
+[OK: contains "rumble"]
 
 # Exit via Winding Passage (State A west connection)
 > west
