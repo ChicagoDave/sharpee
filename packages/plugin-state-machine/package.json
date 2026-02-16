@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/plugin-state-machine",
-  "version": "0.9.84",
+  "version": "0.9.89",
   "description": "State machine plugin for Sharpee engine - declarative puzzle and narrative orchestration (ADR-119, ADR-120)",
   "main": "./dist/index.js",
   "module": "dist/index.js",

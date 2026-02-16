@@ -28,7 +28,7 @@ export interface IEdibleData {
   /** Effect description if hasEffect is true */
   effectDescription?: string;
 
-  /** Weight of the item (since we removed PortableTrait) */
+  /** Weight of the item */
   weight?: number;
 
   /** Bulk of the item */

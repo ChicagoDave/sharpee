@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/plugins",
-  "version": "0.9.84",
+  "version": "0.9.89",
   "description": "Plugin contracts for Sharpee engine turn-cycle extensibility",
   "main": "./dist/index.js",
   "module": "dist/index.js",

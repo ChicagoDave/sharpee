@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/zifmia",
-  "version": "0.9.86",
+  "version": "0.9.89",
   "description": "Zifmia - Sharpee story runner",
   "type": "module",
   "main": "./dist/index.js",

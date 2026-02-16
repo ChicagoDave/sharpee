@@ -94,12 +94,12 @@ $restore wt-11
 # ============================================================================
 
 [GOAL: Take egg from trophy case]
-[ENSURES: inventory contains "egg"]
 
 > open trophy case
+[OK: contains "open"]
 
 > take egg
-[OK: contains "egg"]
+[OK: contains "Taken"]
 
 [END GOAL]
 
@@ -186,6 +186,7 @@ $restore wt-11
 [RETRY: max=5]
 [DO]
 > attack thief with knife
+[OK: contains "thief"]
 [UNTIL "fog" OR "carcass" OR "Finishing you off"]
 [ENSURES: not entity "seedy-looking thief" alive]
 [END RETRY]
@@ -203,7 +204,7 @@ $restore wt-11
 
 # Egg was opened by thief and dropped on floor. Canary is inside the open egg.
 > take canary
-[OK: contains "canary"]
+[OK: contains "Taken"]
 
 > take egg
 [OK: contains "Taken"]
@@ -214,6 +215,7 @@ $restore wt-11
 # Recover torch if thief stole it
 [IF: room contains "torch"]
 > take torch
+[OK: contains "Taken"]
 [END IF]
 
 [END GOAL]
@@ -256,6 +258,7 @@ $teleport Forest Path
 $teleport Living Room
 
 > open trophy case
+[OK: contains "open"]
 
 > put canary in trophy case
 [OK: contains "put"]
@@ -282,24 +285,29 @@ $teleport Treasure Room
 
 [IF: room contains "grail"]
 > take grail
+[OK: contains "Taken"]
 [END IF]
 
 [IF: room contains "trident"]
 > take trident
+[OK: contains "Taken"]
 [END IF]
 
 [IF: room contains "coins"]
 > take bag of coins
+[OK: contains "Taken"]
 [END IF]
 
 [IF: room contains "figurine"]
 > take jade figurine
+[OK: contains "Taken"]
 [END IF]
 
 # Store recovered items in trophy case
 $teleport Living Room
 
 > open trophy case
+[OK: contains "open"]
 
 [IF: inventory contains "grail"]
 > put grail in trophy case

@@ -110,8 +110,6 @@ export class ComplexWorldTestStory implements Story {
       article: name.match(/^[aeiou]/i) ? 'an' : 'a'
     }));
     obj.add(new ContainerTrait({ portable: true }));
-    // Removed PortableTrait - just use portable container
-    
     return obj;
   }
 
@@ -126,8 +124,6 @@ export class ComplexWorldTestStory implements Story {
       portable,
       capacity: { maxItems: 5 }
     }));
-    // Removed PortableTrait
-    
     return container;
   }
 

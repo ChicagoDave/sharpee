@@ -20,6 +20,7 @@
     "packages/engine/tsconfig.json",
     "packages/core/tsconfig.json",
     "packages/extensions/testing/tsconfig.json",
+    "packages/extensions/basic-combat/tsconfig.json",
     "stories/dungeo/tsconfig.json"
   ],
   "targets": {

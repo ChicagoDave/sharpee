@@ -96,7 +96,6 @@ import {
   EntityType,
   IdentityTrait,
   RoomTrait,
-  PortableTrait,
   Direction,
 } from '@sharpee/world-model';
 
@@ -132,7 +131,6 @@ export function createVillage(world: WorldModel) {
     name: 'silver coin',
     description: 'A tarnished silver coin.',
   }));
-  coin.add(new PortableTrait());
   world.moveEntity(coin.id, square.id);
 
   return { square, tavern };

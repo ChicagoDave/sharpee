@@ -532,6 +532,7 @@ function createBalloonObjects(world: WorldModel, roomIds: VolcanoRoomIds): Volca
   }));
   hook1.add(new SceneryTrait());
   hook1.attributes.hookId = 'hook1';
+  hook1.setMinimumScope(3, [roomIds.volcanoNearSmallLedge]);
   world.moveEntity(hook1.id, roomIds.narrowLedge);
 
   // Zorkmid coin - on Narrow Ledge floor (MDL: COIN in LEDG2)
@@ -564,6 +565,7 @@ function createBalloonObjects(world: WorldModel, roomIds: VolcanoRoomIds): Volca
   }));
   hook2.add(new SceneryTrait());
   hook2.attributes.hookId = 'hook2';
+  hook2.setMinimumScope(3, [roomIds.volcanoNearWideLedge]);
   world.moveEntity(hook2.id, roomIds.wideLedge);
 
   // Braided wire - for tethering balloon

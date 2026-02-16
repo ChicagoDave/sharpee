@@ -2,8 +2,8 @@
 
 ## Issues Fixed
 
-### 1. PortableTrait Issue
-✅ Removed references to non-existent `PortableTrait` from ComplexWorldTestStory
+### 1. Portability Issue
+✅ Removed references to non-existent portable trait from ComplexWorldTestStory
 ✅ Used `portable: true` flag on ContainerTrait instead
 
 ### 2. Player Creation Tracking

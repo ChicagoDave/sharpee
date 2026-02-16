@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/ext-basic-combat",
-  "version": "0.9.84",
+  "version": "0.9.89",
   "description": "Generic skill-based combat extension for Sharpee IF engine",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

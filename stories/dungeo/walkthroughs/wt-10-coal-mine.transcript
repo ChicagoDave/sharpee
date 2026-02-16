@@ -1,6 +1,6 @@
-title: Coal Mine (Diamond, Bracelet, Red Sphere)
+title: Coal Mine (Diamond, Bracelet)
 story: dungeo
-description: Navigate coal mine, collect 3 treasures (diamond, bracelet, red sphere), store in trophy case. Restores from wt-09.
+description: Navigate coal mine, collect 2 treasures (diamond, bracelet), toggle mirror back to State A. Restores from wt-09.
 ---
 
 # Restore state from wt-09 (player at Living Room with torch and lantern)
@@ -157,10 +157,12 @@ $restore wt-09
 [END GOAL]
 
 # ============================================================================
-# GOAL: Get red crystal sphere from Sooty Room (via slide)
+# GOAL: Return to Living Room via Mirror Room (toggle back to State A)
+# Route: Machine Room → Mine Entrance → Slide Room → Cold Passage → Mirror Room
+# → rub mirror → Winding Passage → Round Room → Troll Room → Cellar → Living Room
 # ============================================================================
 
-[GOAL: Get red crystal sphere]
+[GOAL: Return via Mirror Room]
 
 # Navigate back through deep mine to Mine Entrance
 # Machine Room → NW → Bottom of Shaft → NE → Timber → N → Ladder Bottom
@@ -187,66 +189,58 @@ $restore wt-09
 > east
 [OK: contains "Wooden Tunnel"]
 
-# Wooden Tunnel → S → Shaft Room → W → Mine Entrance → S → Slide Room
+# Wooden Tunnel → S → Shaft Room → W → Mine Entrance
 > south
 [OK: contains "Shaft Room"]
 
 > west
 [OK: contains "Mine Entrance"]
 
+# Mine Entrance → S → Slide Room → E → Cold Passage → E → Mirror Room
 > south
 [OK: contains "Slide Room"]
 
-# Slide down (one-way): Slide Room → Slide-1 → Slide-2 → Slide-3
-> down
-[OK: contains "Slide"]
-
-> down
-[OK: contains "Slide"]
-
-> down
-[OK: contains "Slide"]
-
-# Slide-3 → E → Slide Ledge → S → Sooty Room
 > east
-[OK: contains "Slide Ledge"]
+[OK: contains "Cold Passage"]
 
-> south
-[OK: contains "Sooty Room"]
+> east
+[OK: contains "Mirror Room"]
 
-> take red sphere
-[OK: contains "Taken"]
+# Toggle mirror back to State A (restores upper-world connections)
+> rub mirror
+[OK: contains "mirror"]
+
+# Exit via Winding Passage (State A west connection)
+> west
+[OK: contains "Winding Passage"]
+
+> northwest
+[OK: contains "Round Room"]
+
+> west
+[OK: contains "East-West Passage"]
+
+> west
+[OK: contains "Troll Room"]
+
+> west
+[OK: contains "Cellar"]
+
+> up
+[OK: contains "Living Room"]
 
 [END GOAL]
 
 # ============================================================================
-# GOAL: Exit coal mine and store treasures
+# GOAL: Store treasures in trophy case (diamond + bracelet)
+# Red sphere moved to wt-11 (collected via slide after jade figurine)
 # ============================================================================
 
 [GOAL: Store treasures in trophy case]
 
-# Exit via slide to Cellar
-> north
-[OK: contains "Slide Ledge"]
-
-> up
-[OK: contains "Slide"]
-
-> down
-[OK: contains "Slide"]
-
-> down
-[OK: contains "Cellar"]
-
-# Return to Living Room (up through trapdoor)
-> up
-[OK: contains "Living Room"]
-
-# Store all treasures in trophy case
 > inventory
 [OK: contains "diamond"]
 [OK: contains "bracelet"]
-[OK: contains "red"]
 
 > open trophy case
 [OK: contains "open"]
@@ -255,9 +249,6 @@ $restore wt-09
 [OK: contains "put"]
 
 > put bracelet in trophy case
-[OK: contains "put"]
-
-> put red crystal sphere in trophy case
 [OK: contains "put"]
 
 [END GOAL]

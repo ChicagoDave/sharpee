@@ -56,9 +56,8 @@ This checklist tracks the implementation of the new trait/behavior and action/co
   - [x] Remove behavior methods from trait
 
 - [x] Create `/world-model/traits/portable/` folder (remove if using scenery approach)
-  - [x] Evaluate if needed or if scenery is sufficient
-  - [x] Remove `PortableTrait` if redundant
-  - Note: PortableTrait is redundant with scenery approach. Weight/bulk should be separate trait if needed.
+  - [x] Evaluated: redundant with scenery approach. Items are portable by default.
+  - [x] Removed. Weight/bulk should be separate trait if needed.
 
 - [x] Create `/world-model/traits/wearable/` folder
   - [x] Move `WearableTrait` to `wearableTrait.ts`

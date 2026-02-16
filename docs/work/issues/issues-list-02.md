@@ -29,7 +29,7 @@ Catalog of known bugs and issues to be addressed.
 | ISSUE-048 | Zifmia needs graceful handling for breaking platform changes | Medium | client-zifmia | 2026-02-04 | - | - |
 | ISSUE-043 | Events panel not using full width of right panel | Low | client-react | 2026-01-24 | - | N/A |
 | ISSUE-044 | Notes panel not using full width of right panel | Low | client-react | 2026-01-24 | - | N/A |
-| ISSUE-045 | README sample code references nonexistent PortableTrait | Low | Docs | 2026-02-01 | - | 2026-02-04 |
+| ISSUE-045 | README sample code references nonexistent portable trait | Low | Docs | 2026-02-01 | - | 2026-02-04 |
 | ISSUE-046 | CLI bundle uses stale dist-npm/ instead of dist/ | Critical | Build | 2026-02-01 | - | 2026-02-01 |
 
 ---
@@ -500,14 +500,14 @@ The bundle contained **two complete copies** of every package — one from `dist
 
 ---
 
-### ISSUE-045: README sample code references nonexistent PortableTrait
+### ISSUE-045: README sample code references nonexistent portable trait
 
 **Reported**: 2026-02-01
 **Severity**: Low
 **Component**: Docs (README)
 
 **Description**:
-The README contains sample code that references `PortableTrait`, which does not exist. Items are portable by default in Sharpee — there is no `PortableTrait`. To make something non-portable, use `SceneryTrait` or handle it in the taking action's validation. The sample code needs to be rewritten to reflect the actual architecture.
+The README contained sample code that referenced a nonexistent portable trait. Items are portable by default in Sharpee. To make something non-portable, use `SceneryTrait` or handle it in the taking action's validation. The sample code needs to be rewritten to reflect the actual architecture.
 
 **Status**: Fixed 2026-02-04 — README updated with correct trait patterns.
 

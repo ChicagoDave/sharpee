@@ -134,7 +134,7 @@ The door is automatically:
 import { Story, StoryConfig } from '@sharpee/engine';
 import {
   WorldModel, IFEntity, EntityType,
-  IdentityTrait, RoomTrait, PortableTrait, ActorTrait, ContainerTrait,
+  IdentityTrait, RoomTrait, ActorTrait, ContainerTrait,
   Direction,
 } from '@sharpee/world-model';
 
@@ -158,7 +158,6 @@ export class MyStory implements Story {
 
     const lamp = world.createEntity('lamp', EntityType.OBJECT);
     lamp.add(new IdentityTrait({ name: 'brass lamp' }));
-    lamp.add(new PortableTrait());
     world.moveEntity(lamp.id, room.id);
 
     const player = world.getPlayer();

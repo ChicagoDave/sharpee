@@ -44,10 +44,25 @@ $restore wt-12
 
 [GOAL: Melt glacier to open path to Ruby Room]
 
-$teleport Egyptian Room
+# Navigate to Egyptian Room
+# Living Room → Cellar → Troll Room → E/W Passage → Deep Ravine → Rocky Crawl → Egyptian Room
+> down
+[OK: contains "Cellar"]
 
-> look
-[OK: contains "Egyptian"]
+> east
+[OK: contains "Troll Room"]
+
+> north
+[OK: contains "East-West Passage"]
+
+> north
+[OK: contains "Deep Ravine"]
+
+> west
+[OK: contains "Rocky Crawl"]
+
+> northwest
+[OK: contains "Egyptian Room"]
 
 # Turn on lantern (backup light - torch will be lost when thrown at glacier)
 > turn on lantern
@@ -128,7 +143,7 @@ $teleport Egyptian Room
 [OK: contains "hook"]
 
 # At vair2 near Narrow Ledge - tie wire to hook to dock
-> tie wire
+> tie braided wire to hook
 [OK: contains "anchored"]
 
 # Exit balloon to Narrow Ledge
@@ -157,7 +172,7 @@ $teleport Egyptian Room
 [OK: contains "balloon"]
 
 # Untie wire to resume flight
-> untie wire
+> untie braided wire from hook
 [OK: contains "untie"]
 
 [END GOAL]
@@ -189,7 +204,7 @@ $teleport Egyptian Room
 [OK: contains "hook"]
 
 # At vair4 near Wide Ledge - tie wire to dock
-> tie wire
+> tie braided wire to hook
 [OK: contains "anchored"]
 
 # Exit balloon to Wide Ledge
@@ -250,12 +265,96 @@ $teleport Egyptian Room
 
 [GOAL: Store volcano treasures in trophy case]
 
-$teleport Living Room
+# Re-enter balloon for descent
+> enter balloon
+[OK: contains "balloon"]
 
-> look
+# Close receptacle to cut heat source (guidebook still burning after ~30 turns of 200)
+> close receptacle
+[OK: contains "close"]
+
+# Untie wire to begin descent (no heat = balloon descends)
+> untie wire
+[OK: contains "untie"]
+
+# Descent: ledg4 → vair4 (on untie), then vair4 → vair3 (3 turns)
+> wait
+[OK: contains "Time"]
+
+> wait
+[OK: contains "Time"]
+
+> wait
+[OK: contains "sinks"]
+
+# vair3 → vair2 (3 turns)
+> wait
+[OK: contains "Time"]
+
+> wait
+[OK: contains "Time"]
+
+> wait
+[OK: contains "sinks"]
+
+# vair2 → vair1 (3 turns)
+> wait
+[OK: contains "Time"]
+
+> wait
+[OK: contains "Time"]
+
+> wait
+[OK: contains "sinks"]
+
+# vair1 → vlbot (3 turns)
+> wait
+[OK: contains "Time"]
+
+> wait
+[OK: contains "Time"]
+
+> wait
+[OK: contains "settles"]
+
+# Exit balloon at Volcano Bottom
+> exit
+[OK: contains "Volcano Bottom"]
+
+# Walk back: Volcano Bottom → Lava → Ruby → Glacier → Egyptian → Rocky Crawl
+# → Deep Ravine → E/W Passage → Troll Room → Cellar → Living Room
+> north
+[OK: contains "Lava Room"]
+
+> west
+[OK: contains "Ruby Room"]
+
+> south
+[OK: contains "Glacier Room"]
+
+> east
+[OK: contains "Egyptian Room"]
+
+> east
+[OK: contains "Rocky Crawl"]
+
+> west
+[OK: contains "Deep Ravine"]
+
+> south
+[OK: contains "East-West Passage"]
+
+> west
+[OK: contains "Troll Room"]
+
+> west
+[OK: contains "Cellar"]
+
+> up
 [OK: contains "Living Room"]
 
 > open trophy case
+[OK: contains "open"]
 
 > put ruby in trophy case
 [OK: contains "put"]

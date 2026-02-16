@@ -1,0 +1,847 @@
+● Read 1 file (ctrl+o to expand)
+
+● There's the previous session summary. Key state:
+
+  - wt-01 through wt-10: All 407 tests passing
+  - wt-11: Completely rewritten (removed all $teleport/$take, added ~100 commands with
+  real assertions), but awaiting first test run
+  - All walkthroughs now have real [OK: contains "..."] assertions instead of bare
+  [OK]/[SKIP]
+  - Story message override added for dropped_in semantics ("drop" not "put")
+
+  The main open item is testing wt-11 and running the full chain. What would you like to
+  work on?
+
+❯ in WT-11 we need to take the screwdriver at the start (it should be in the Living
+  Room) and I believe we should have scooped the violin in an earlier WT or it's not
+   in the box: logs/dungeo-tests.log
+
+● Read 1 file (ctrl+o to expand)
+
+● OK, I see the two issues in the log:
+
+  1. Violin (line 471): Actually succeeds (Taken.) but the assertion checks for contains
+  "violin" instead of contains "Taken" — just a bad assertion
+  2. Screwdriver (line 483): "You can't see any such thing" — the walkthrough tries to
+  take it from the Dam area, but it was dropped in the Living Room in wt-04
+
+  After the screwdriver failure, everything cascades because the player is lost in the
+  wrong area. Let me read the actual transcript to understand the intended route and fix
+  both issues.
+
+● Read 1 file (ctrl+o to expand)
+  ⎿  Loaded stories/dungeo/CLAUDE.md
+
+● Let me check the map connections to understand the routing fix needed.
+
+● Searched for 2 patterns, read 1 file (ctrl+o to expand)
+
+● Good, the map confirms Deep Canyon → S → Round Room (line 469) and Round Room → NW →
+  Deep Canyon (line 101). Now let me trace through the test log more carefully. The
+  navigation after the screwdriver failure actually keeps going — the trident route works
+   fine, but the return route fails at Deep Canyon → south → Round Room:
+
+  > up       (Reservoir South → Deep Canyon)  PASS
+  > south    (Deep Canyon → Round Room?)      FAIL: "You can't go that way."
+
+  So there are 3 issues:
+
+  1. Violin assertion: It IS in the box and gets taken (Taken.), but the assertion checks
+   contains "violin" instead of contains "Taken" — just needs a fix
+  2. Screwdriver location: It was dropped in Living Room in wt-04. Need to take it there
+  at the start, and cut the Maintenance Room detour
+  3. Deep Canyon → south → Round Room: Map says this connection exists, but it's not
+  working. This is likely a room connection bug
+
+  Let me check the Deep Canyon room implementation.
+
+● Searched for 3 patterns (ctrl+o to expand)
+
+● Found it! The connection is Deep Canyon → **SE** → Round Room (not south). Both
+  connector functions use Direction.SOUTHEAST/Direction.NORTHWEST. The map-connections.md
+   says S:Round Room but the code is correct with SE. So the walkthrough uses south when
+  it should use southeast.
+
+  Here's the summary of 3 fixes needed:
+
+  1. Violin assertion (line 47): Change contains "violin" → contains "Taken"
+  2. Screwdriver: Take it at the start from Living Room, remove the Maintenance Room
+  detour (lines 67-92)
+  3. Return route (line 150): Change south to southeast from Deep Canyon to Round Room
+
+  Want me to make these fixes?
+
+✻ Baked for 2m 48s
+
+❯ Make these fixes
+
+● Update(stories/dungeo/walkthroughs/wt-11-scattered-treasures.transcript)
+  ⎿  Added 1 line, removed 1 line
+      44  [OK: contains "open"]
+      45
+      46  > take violin
+      47 -[OK: contains "violin"]
+      47 +[OK: contains "Taken"]
+      48
+      49  [END GOAL]
+      50
+
+● Update(stories/dungeo/walkthroughs/wt-11-scattered-treasures.transcript)
+  ⎿  Added 3 lines
+      28  > west
+      29  [OK: contains "Living Room"]
+      30
+      31 +> take screwdriver
+      32 +[OK: contains "Taken"]
+      33 +
+      34  > down
+      35  [OK: contains "Cellar"]
+      36
+
+● Update(stories/dungeo/walkthroughs/wt-11-scattered-treasures.transcript)
+  ⎿  Added 1 line, removed 28 lines
+       68  [END GOAL]
+       69
+       70  # =====================================================================
+           =======
+       71 -# GOAL: Get screwdriver from Maintenance Room
+       72 -# Route: Grail Room → Round Room → Deep Canyon → Dam → Dam Lobby → Main
+          -tenance
+       73 -# =====================================================================
+          -=======
+       74 -
+       75 -[GOAL: Get screwdriver]
+       76 -
+       77 -> west
+       78 -[OK: contains "Round Room"]
+       79 -
+       80 -> northwest
+       81 -[OK: contains "Deep Canyon"]
+       82 -
+       83 -> east
+       84 -[OK: contains "Dam"]
+       85 -
+       86 -> north
+       87 -[OK: contains "Dam Lobby"]
+       88 -
+       89 -> north
+       90 -[OK: contains "Maintenance"]
+       91 -
+       92 -> take screwdriver
+       93 -[OK: contains "Taken"]
+       94 -
+       95 -[END GOAL]
+       96 -
+       97 -# =====================================================================
+          -=======
+       71  # GOAL: Get trident from Atlantis Room
+       99 -# Route: Maintenance → Dam Lobby → Dam → Deep Canyon → Reservoir South
+       72 +# Route: Grail Room → Round Room → Deep Canyon → Reservoir South
+       73  # → Reservoir → Reservoir North → Atlantis Room
+       74  # =====================================================================
+           =======
+       75
+
+● Now I need to update the trident route since it no longer starts from Maintenance Room
+  — it starts from Grail Room:
+
+● Read 1 file (ctrl+o to expand)
+
+● The trident route still has the old Maintenance Room navigation (south → Dam Lobby →
+  south → Dam → south → Deep Canyon). Now starting from Grail Room, the route should be:
+  Grail Room → west (Round Room) → northwest (Deep Canyon) → northwest (Reservoir South)
+  → north → north → north (Atlantis).
+
+● Update(stories/dungeo/walkthroughs/wt-11-scattered-treasures.transcript)
+  ⎿  Added 3 lines, removed 6 lines
+      75
+      76  [GOAL: Get trident]
+      77
+      78 -> south
+      79 -[OK: contains "Dam Lobby"]
+      78 +> west
+      79 +[OK: contains "Round Room"]
+      80
+      81 -> south
+      82 -[OK: contains "Dam"]
+      83 -
+      84 -> south
+      81 +> northwest
+      82  [OK: contains "Deep Canyon"]
+      83
+      84  > northwest
+
+● Now fix the return route — Deep Canyon → southeast (not south) → Round Room:
+
+● Read 1 file (ctrl+o to expand)
+
+● Update(stories/dungeo/walkthroughs/wt-11-scattered-treasures.transcript)
+  ⎿  Added 1 line, removed 1 line
+      120  > up
+      121  [OK: contains "Deep Canyon"]
+      122
+      123 -> south
+      123 +> southeast
+      124  [OK: contains "Round Room"]
+      125
+      126  > west
+
+● Also update the route comment to match:
+
+● Update(stories/dungeo/walkthroughs/wt-11-scattered-treasures.transcript)
+  ⎿  Added 2 lines, removed 2 lines
+       9  # ======================================================================
+          ======
+      10  # PASS 1: Collect violin, grail, screwdriver, trident
+      11  # Route: Kitchen (sack) → underground → Round Room (violin) → Grail Room
+           (grail)
+      12 -# → Deep Canyon → Dam → Maintenance (screwdriver) → Reservoir → Atlantis
+         - (trident)
+      13 -# → back to Living Room
+      12 +# → Deep Canyon → Reservoir → Atlantis (trident) → back to Living Room
+      13 +# Screwdriver taken from Living Room at start (dropped there in wt-04)
+      14  # ======================================================================
+          ======
+      15
+      16  # ======================================================================
+          ======
+
+● All 3 fixes applied:
+
+  1. Violin assertion: contains "violin" → contains "Taken" (line 47)
+  2. Screwdriver: Added take screwdriver after returning to Living Room at start; removed
+   entire Maintenance Room detour; updated trident route to go directly from Grail Room →
+   Round Room → Deep Canyon → Reservoir South
+  3. Return route: south → southeast from Deep Canyon to Round Room
+
+  Also fixed the map-connections.md discrepancy — it says S:Round Room but the code uses
+  Direction.SOUTHEAST. Want me to fix the map file too, or shall we test first?
+
+✻ Cogitated for 1m 19s
+
+❯ read logs/dungeo-tests.log
+
+● Read 1 file (ctrl+o to expand)
+
+● Big improvement — down from 75 failures to 16. The 3 fixes all worked (screwdriver at
+  start, violin assertion, Deep Canyon → southeast).
+
+  Two remaining failure clusters:
+
+  Cluster 1 (lines 526-535): Maze navigation — 2 failures
+  - Player reaches Dead End-3 via Maze-15 → east, but then east from Dead End-3 fails
+  ("You can't go that way"). The Dead End-3 → Maze-5 connection might not exist or uses a
+   different direction.
+
+  Cluster 2 (lines 577-651): Jade figurine route — 14 failures (cascade)
+  - Root failure: east from Winding Passage expects Mirror Room but gets "You can't go
+  that way." (line 577). Everything cascades from being stuck in Winding Passage.
+
+  Both are navigation routing issues in the walkthrough. Want me to check the maze
+  connections and the Winding Passage → Mirror Room connection to fix these routes?
+
+✻ Cogitated for 58s
+
+❯ yes, fix it
+
+● Explore(Check maze and winding passage connections)
+  ⎿  Done (13 tool uses · 52.0k tokens · 1m 31s)
+  (ctrl+o to expand)
+
+● Searched for 2 patterns, read 3 files (ctrl+o to expand)
+
+● Now I see both issues clearly:
+
+  1. Maze route: The actual connections are Maze-1→E→Maze-4→W→Maze-3→UP→Maze-5 (coins
+  here). The unnecessary Dead End detour is wrong.
+  2. Mirror Room State B: After wt-10's rub mirror, Winding Passage→East→Mirror Room is
+  nulled by the mirror toggle handler. The upper world is disconnected from the coal mine
+   in State B.
+
+  Let me check the wt-10 return route to see if we can add a mirror toggle back.
+
+● Read 1 file (ctrl+o to expand)
+
+● Now I see the full picture. This is a significant issue:
+
+  Mirror Room State B lock-out: In wt-10, the mirror is toggled to State B and never
+  toggled back. After sliding down to Sooty Room and exiting via Cellar, the mirror stays
+   in State B. This permanently disconnects the upper world from Mirror Room — Winding
+  Passage→east is nulled, and there's no other upper-world route to Mirror Room.
+
+  The mirror toggle handler (line 146-161) nulls all reverse connections from the
+  disconnected side. In State B, both Winding Passage EAST and Narrow Crawlway SOUTHWEST
+  are set to null.
+
+  For the maze, it's simpler — the player is already at Maze-5 (coins location) after
+  south, east, west, up. The two east commands into Dead End-2 are wrong.
+
+  Here's what needs to change:
+
+  wt-10: Restructure return path — instead of sliding down to get red sphere, backtrack
+  through Cold Passage → Mirror Room, rub mirror (restore State A), exit via Winding
+  Passage. Move red sphere to wt-11.
+
+  wt-11:
+  1. Fix maze route (remove Dead End detour)
+  2. Add coal mine trip: toggle mirror→B, get jade from Squeaky Room, slide down for red
+  sphere, exit via Cellar
+
+  This requires modifying wt-10 (currently passing). Want me to proceed with both
+  changes, or handle this differently?
+
+✻ Crunched for 9m 14s
+
+❯ Proceed with both changes
+
+● First, let me check Slide Room exits to confirm the return route through Cold Passage.
+
+● Searched for 2 patterns (ctrl+o to expand)
+
+● Slide Room has EAST→Cold Passage. The return route through Mirror Room is confirmed.
+  Let me re-read the current state of wt-11 before making edits.
+
+● Read 1 file (ctrl+o to expand)
+
+● Good, now I have the full picture. Let me make all the edits. Starting with wt-10, then
+   wt-11.
+
+● Update(stories/dungeo/walkthroughs/wt-10-coal-mine.transcript)
+  ⎿  Added 30 lines, removed 39 lines
+      157  [END GOAL]
+      158
+      159  # =====================================================================
+           =======
+      160 -# GOAL: Get red crystal sphere from Sooty Room (via slide)
+      160 +# GOAL: Return to Living Room via Mirror Room (toggle back to State A)
+      161 +# Route: Machine Room → Mine Entrance → Slide Room → Cold Passage → Mir
+          +ror Room
+      162 +# → rub mirror → Winding Passage → Round Room → Troll Room → Cellar → L
+          +iving Room
+      163  # =====================================================================
+           =======
+      164
+      163 -[GOAL: Get red crystal sphere]
+      165 +[GOAL: Return via Mirror Room]
+      166
+      167  # Navigate back through deep mine to Mine Entrance
+      168  # Machine Room → NW → Bottom of Shaft → NE → Timber → N → Ladder Bottom
+     ...
+      189  > east
+      190  [OK: contains "Wooden Tunnel"]
+      191
+      190 -# Wooden Tunnel → S → Shaft Room → W → Mine Entrance → S → Slide Room
+      192 +# Wooden Tunnel → S → Shaft Room → W → Mine Entrance
+      193  > south
+      194  [OK: contains "Shaft Room"]
+      195
+      196  > west
+      197  [OK: contains "Mine Entrance"]
+      198
+      199 +# Mine Entrance → S → Slide Room → E → Cold Passage → E → Mirror Room
+      200  > south
+      201  [OK: contains "Slide Room"]
+      202
+      200 -# Slide down (one-way): Slide Room → Slide-1 → Slide-2 → Slide-3
+      201 -> down
+      202 -[OK: contains "Slide"]
+      203 +> east
+      204 +[OK: contains "Cold Passage"]
+      205
+      204 -> down
+      205 -[OK: contains "Slide"]
+      206 -
+      207 -> down
+      208 -[OK: contains "Slide"]
+      209 -
+      210 -# Slide-3 → E → Slide Ledge → S → Sooty Room
+      206  > east
+      212 -[OK: contains "Slide Ledge"]
+      207 +[OK: contains "Mirror Room"]
+      208
+      214 -> south
+      215 -[OK: contains "Sooty Room"]
+      209 +# Toggle mirror back to State A (restores upper-world connections)
+      210 +> rub mirror
+      211 +[OK: contains "mirror"]
+      212
+      217 -> take red sphere
+      218 -[OK: contains "Taken"]
+      213 +# Exit via Winding Passage (State A west connection)
+      214 +> west
+      215 +[OK: contains "Winding Passage"]
+      216
+      220 -[END GOAL]
+      217 +> northwest
+      218 +[OK: contains "Round Room"]
+      219
+      222 -# =====================================================================
+          -=======
+      223 -# GOAL: Exit coal mine and store treasures
+      224 -# =====================================================================
+          -=======
+      220 +> west
+      221 +[OK: contains "East-West Passage"]
+      222
+      226 -[GOAL: Store treasures in trophy case]
+      223 +> west
+      224 +[OK: contains "Troll Room"]
+      225
+      228 -# Exit via slide to Cellar
+      229 -> north
+      230 -[OK: contains "Slide Ledge"]
+      226 +> west
+      227 +[OK: contains "Cellar"]
+      228
+      229  > up
+      233 -[OK: contains "Slide"]
+      230 +[OK: contains "Living Room"]
+      231
+      235 -> down
+      236 -[OK: contains "Slide"]
+      232 +[END GOAL]
+      233
+      238 -> down
+      239 -[OK: contains "Cellar"]
+      234 +# =====================================================================
+          +=======
+      235 +# GOAL: Store treasures in trophy case (diamond + bracelet)
+      236 +# Red sphere moved to wt-11 (collected via slide after jade figurine)
+      237 +# =====================================================================
+          +=======
+      238
+      241 -# Return to Living Room (up through trapdoor)
+      242 -> up
+      243 -[OK: contains "Living Room"]
+      239 +[GOAL: Store treasures in trophy case]
+      240
+      245 -# Store all treasures in trophy case
+      241  > inventory
+      242  [OK: contains "diamond"]
+      243  [OK: contains "bracelet"]
+      249 -[OK: contains "red"]
+      244
+      245  > open trophy case
+      246  [OK: contains "open"]
+     ...
+      251  > put bracelet in trophy case
+      252  [OK: contains "put"]
+      253
+      260 -> put red crystal sphere in trophy case
+      261 -[OK: contains "put"]
+      262 -
+      254  [END GOAL]
+      255
+      256  # =====================================================================
+           =======
+
+● Now fix the wt-11 maze route (remove Dead End detour):
+
+● Update(stories/dungeo/walkthroughs/wt-11-scattered-treasures.transcript)
+  ⎿  Added 5 lines, removed 17 lines
+      155
+      156  # =====================================================================
+           =======
+      157  # GOAL: Get bag of coins from Maze-5
+      158 -# Route: Living Room → Cellar → Troll Room → Maze-1 → Maze-2 → Maze-4
+      159 -# → Maze-15 → Dead End-3 → Maze-5
+      158 +# Route: Living Room → Cellar → Troll Room → Maze-1 → Maze-4 → Maze-3 →
+          + Maze-5
+      159  # =====================================================================
+           =======
+      160
+      161  [GOAL: Get bag of coins]
+     ...
+      166  > east
+      167  [OK: contains "Troll Room"]
+      168
+      169 +# Maze-1 → E → Maze-4 → W → Maze-3 → UP → Maze-5 (coins here)
+      170  > south
+      171  [OK: contains "Maze"]
+      172
+     ...
+      179  > up
+      180  [OK: contains "Maze"]
+      181
+      182 -> east
+      183 -[OK: contains "Dead End"]
+      184 -
+      185 -> east
+      186 -[OK: contains "Maze"]
+      187 -
+      182  [IF: room contains "coins"]
+      183  > take bag of coins
+      184  [OK: contains "Taken"]
+      185  [END IF]
+      186
+      193 -# Return: Maze-5 → Dead End-3 → Maze-15 → Maze-4 → Maze-2 → Maze-1 → Tr
+          -oll Room → Cellar → Living Room
+      194 -> northeast
+      195 -[OK: contains "Dead End"]
+      196 -
+      197 -> west
+      198 -[OK: contains "Maze"]
+      199 -
+      187 +# Return: Maze-5 → N → Maze-3 → W → Maze-2 → S → Maze-1 → W → Troll Roo
+          +m
+      188  > north
+      189  [OK: contains "Maze"]
+      190
+      203 -> north
+      191 +> west
+      192  [OK: contains "Maze"]
+      193
+      206 -> north
+      194 +> south
+      195  [OK: contains "Maze"]
+      196
+      197  > west
+
+● Now rewrite the jade figurine + store Pass 2 treasures sections to include mirror
+  toggle and red sphere:
+
+● Update(stories/dungeo/walkthroughs/wt-11-scattered-treasures.transcript)
+  ⎿  Added 43 lines, removed 15 lines
+      327  [END GOAL]
+      328
+      329  # =====================================================================
+           =======
+      330 -# GOAL: Get jade figurine from Squeaky Room
+      331 -# Route: Dreary Room → Tiny Room → Torch Room → N/S Crawlway → Troll Ro
+          -om
+      332 -# → E/W Passage → Round Room → Winding Passage → Mirror Room (Coal Mine
+          - state)
+      333 -# → Cold Passage → Slide Room → Mine Entrance → Squeaky Room
+      330 +# GOAL: Get jade figurine from Squeaky Room and red sphere from Sooty R
+          +oom
+      331 +# Route: Dreary Room → Tiny Room → Torch Room → Crawlway → Troll Room
+      332 +# → E/W Passage → Round Room → Winding Passage → Mirror Room (State A)
+      333 +# → rub mirror (State B) → Cold Passage → Slide Room → Mine Entrance
+      334 +# → Squeaky Room (jade) → slide down → Sooty Room (red sphere) → Cellar
+      335  # =====================================================================
+           =======
+      336
+      336 -[GOAL: Get jade figurine]
+      337 +[GOAL: Get jade figurine and red sphere]
+      338
+      339  > south
+      340  [OK: contains "Tiny Room"]
+     ...
+      357  > southeast
+      358  [OK: contains "Winding Passage"]
+      359
+      360 +# Mirror is State A (wt-10 toggled it back before exiting)
+      361  > east
+      362  [OK: contains "Mirror Room"]
+      363
+      362 -# Mirror in Coal Mine state from wt-10
+      364 +# Toggle mirror to State B (Coal Mine connections)
+      365 +> rub mirror
+      366 +[OK: contains "mirror"]
+      367 +
+      368 +# Navigate to Squeaky Room via Cold Passage
+      369  > west
+      370  [OK: contains "Cold Passage"]
+      371
+     ...
+      383  [OK: contains "Taken"]
+      384  [END IF]
+      385
+      380 -[END GOAL]
+      381 -
+      382 -# =====================================================================
+          -=======
+      383 -# GOAL: Return to Living Room and store Pass 2 treasures
+      384 -# Route: Squeaky Room → Mine Entrance → Slide Room → slides → Cellar →
+          -Living Room
+      385 -# =====================================================================
+          -=======
+      386 -
+      387 -[GOAL: Store Pass 2 treasures]
+      388 -
+      386 +# Navigate to Sooty Room via slide (one-way)
+      387  > south
+      388  [OK: contains "Mine Entrance"]
+      389
+     ...
+      399  > down
+      400  [OK: contains "Slide"]
+      401
+      402 +> east
+      403 +[OK: contains "Slide Ledge"]
+      404 +
+      405 +> south
+      406 +[OK: contains "Sooty Room"]
+      407 +
+      408 +> take red sphere
+      409 +[OK: contains "Taken"]
+      410 +
+      411 +# Exit to Cellar via slide
+      412 +> north
+      413 +[OK: contains "Slide Ledge"]
+      414 +
+      415 +> up
+      416 +[OK: contains "Slide"]
+      417 +
+      418  > down
+      419 +[OK: contains "Slide"]
+      420 +
+      421 +> down
+      422  [OK: contains "Cellar"]
+      423
+      424  > up
+      425  [OK: contains "Living Room"]
+      426
+      427 +[END GOAL]
+      428 +
+      429 +# =====================================================================
+          +=======
+      430 +# GOAL: Store Pass 2 treasures in trophy case
+      431 +# =====================================================================
+          +=======
+      432 +
+      433 +[GOAL: Store Pass 2 treasures]
+      434 +
+      435  > put blue crystal sphere in trophy case
+      436  [OK: contains "put"]
+      437
+     ...
+      440  [OK: contains "put"]
+      441  [END IF]
+      442
+      443 +> put red crystal sphere in trophy case
+      444 +[OK: contains "put"]
+      445 +
+      446  [END GOAL]
+      447
+      448  # =====================================================================
+           =======
+
+● Now update the wt-11 title to include Red Sphere:
+
+● Update(stories/dungeo/walkthroughs/wt-11-scattered-treasures.transcript)
+  ⎿  Added 2 lines, removed 2 lines
+      1 -title: Scattered Treasures (Violin, Coins, Grail, Trident, Blue Sphere, J
+        -ade Figurine)
+      1 +title: Scattered Treasures (Violin, Coins, Grail, Trident, Blue Sphere, J
+        +ade, Red Sphere)
+      2  story: dungeo
+      3 -description: Collect 6 scattered treasures from existing regions. Restore
+        -s from wt-10.
+      3 +description: Collect 7 scattered treasures from existing regions. Restore
+        +s from wt-10.
+      4  ---
+      5
+      6  # Restore state from wt-10 (player at Living Room with torch and lantern)
+
+● Also update the wt-10 title since it no longer collects the red sphere:
+
+● Update(stories/dungeo/walkthroughs/wt-10-coal-mine.transcript)
+  ⎿  Added 2 lines, removed 2 lines
+      1 -title: Coal Mine (Diamond, Bracelet, Red Sphere)
+      1 +title: Coal Mine (Diamond, Bracelet)
+      2  story: dungeo
+      3 -description: Navigate coal mine, collect 3 treasures (diamond, bracelet,
+        -red sphere), store in trophy case. Restores from wt-09.
+      3 +description: Navigate coal mine, collect 2 treasures (diamond, bracelet),
+        + toggle mirror back to State A. Restores from wt-09.
+      4  ---
+      5
+      6  # Restore state from wt-09 (player at Living Room with torch and lantern)
+
+● All edits complete. Here's a summary of changes:
+
+  wt-10 (Coal Mine):
+  - Removed red sphere collection (slide down + Sooty Room)
+  - New return route: Mine Entrance → Slide Room → Cold Passage → Mirror Room → rub
+  mirror (State A) → Winding Passage → Round Room → Troll Room → Cellar → Living Room
+  - Trophy case deposits: diamond + bracelet only (no red sphere)
+
+  wt-11 (Scattered Treasures):
+  - Fixed maze route: removed Dead End-2 detour, coins taken directly at Maze-5 (after
+  south, east, west, up)
+  - Fixed maze return: north, west, south, west (Maze-5 → Maze-3 → Maze-2 → Maze-1 →
+  Troll Room)
+  - Rewrote jade figurine section: Mirror Room now in State A → rub mirror → State B →
+  Cold Passage → Squeaky Room (jade) → slide down → Sooty Room (red sphere) → Cellar →
+  Living Room
+  - Added red sphere to trophy case deposits
+  - Updated title to include Red Sphere (7 treasures now)
+
+  Ready for you to build and test when you're ready.
+
+✻ Baked for 4m 53s
+
+❯ no story changes, right?
+
+● Correct — no story code changes. Only walkthrough transcript files were modified:
+
+  - stories/dungeo/walkthroughs/wt-10-coal-mine.transcript
+  - stories/dungeo/walkthroughs/wt-11-scattered-treasures.transcript
+
+  So no build needed — you can test directly with the existing bundle.
+
+❯ Errors in stories/dungeo/walkthroughs/wt-12-thief-fight.transcript:
+    - Line 99: Command "open trophy case" has no assertion — every command requires
+  [OK: ...], [SKIP], or similar
+    - Line 188: Command "attack thief with knife" has no assertion — every command
+  requires [OK: ...], [SKIP], or similar
+    - Line 216: Command "take torch" has no assertion — every command requires [OK:
+  ...], [SKIP], or similar
+    - Line 258: Command "open trophy case" has no assertion — every command requires
+   [OK: ...], [SKIP], or similar
+    - Line 284: Command "take grail" has no assertion — every command requires [OK:
+  ...], [SKIP], or similar
+    - Line 288: Command "take trident" has no assertion — every command requires
+  [OK: ...], [SKIP], or similar
+    - Line 292: Command "take bag of coins" has no assertion — every command
+  requires [OK: ...], [SKIP], or similar
+    - Line 296: Command "take jade figurine" has no assertion — every command
+  requires [OK: ...], [SKIP], or similar
+    - Line 302: Command "open trophy case" has no assertion — every command requires
+   [OK: ...], [SKIP], or similar
+
+● Read 1 file (ctrl+o to expand)
+
+● Update(stories/dungeo/walkthroughs/wt-12-thief-fight.transcript)
+  ⎿  Added 1 line
+       97  [ENSURES: inventory contains "egg"]
+       98
+       99  > open trophy case
+      100 +[OK: contains "open"]
+      101
+      102  > take egg
+      103  [OK: contains "egg"]
+
+● Update(stories/dungeo/walkthroughs/wt-12-thief-fight.transcript)
+  ⎿  Added 1 line
+      187  [RETRY: max=5]
+      188  [DO]
+      189  > attack thief with knife
+      190 +[OK: contains "thief"]
+      191  [UNTIL "fog" OR "carcass" OR "Finishing you off"]
+      192  [ENSURES: not entity "seedy-looking thief" alive]
+      193  [END RETRY]
+
+● Update(stories/dungeo/walkthroughs/wt-12-thief-fight.transcript)
+  ⎿  Added 1 line
+      216  # Recover torch if thief stole it
+      217  [IF: room contains "torch"]
+      218  > take torch
+      219 +[OK: contains "Taken"]
+      220  [END IF]
+      221
+      222  [END GOAL]
+
+● Update(stories/dungeo/walkthroughs/wt-12-thief-fight.transcript)
+  ⎿  Added 1 line
+      259  $teleport Living Room
+      260
+      261  > open trophy case
+      262 +[OK: contains "open"]
+      263
+      264  > put canary in trophy case
+      265  [OK: contains "put"]
+
+● Update(stories/dungeo/walkthroughs/wt-12-thief-fight.transcript)
+  ⎿  Added 5 lines
+      286
+      287  [IF: room contains "grail"]
+      288  > take grail
+      289 +[OK: contains "Taken"]
+      290  [END IF]
+      291
+      292  [IF: room contains "trident"]
+      293  > take trident
+      294 +[OK: contains "Taken"]
+      295  [END IF]
+      296
+      297  [IF: room contains "coins"]
+      298  > take bag of coins
+      299 +[OK: contains "Taken"]
+      300  [END IF]
+      301
+      302  [IF: room contains "figurine"]
+      303  > take jade figurine
+      304 +[OK: contains "Taken"]
+      305  [END IF]
+      306
+      307  # Store recovered items in trophy case
+      308  $teleport Living Room
+      309
+      310  > open trophy case
+      311 +[OK: contains "open"]
+      312
+      313  [IF: inventory contains "grail"]
+      314  > put grail in trophy case
+
+● All 9 missing assertions fixed in wt-12:
+
+  - 3x open trophy case → [OK: contains "open"]
+  - attack thief with knife → [OK: contains "thief"]
+  - take torch (IF block) → [OK: contains "Taken"]
+  - take grail, take trident, take bag of coins, take jade figurine (IF blocks) → [OK:
+  contains "Taken"]
+
+❯ > give egg to thief                                PASS
+    > down                                             PASS
+    > wait                                             PASS
+    > wait                                             PASS
+    > up                                               PASS
+    > attack thief with knife                          PASS
+    > attack thief with knife                          PASS
+    > attack thief with knife                          PASS
+    > attack thief with knife                          PASS
+    > drop knife                                       PASS
+    > take canary                                      FAIL
+      ✗ Output does not contain "canary"
+      ─── Output ───
+      Taken.
+      ─────────────
+    > take egg                                         PASS
+    > take chalice                                     PASS
+    > take torch
+
+● Same issue as the violin — assertion checks for contains "canary" but the taking
+  message is just Taken.
+
+● Searched for 1 pattern (ctrl+o to expand)
+
+● Update(stories/dungeo/walkthroughs/wt-12-thief-fight.transcript)
+  ⎿  Added 1 line, removed 1 line
+      205
+      206  # Egg was opened by thief and dropped on floor. Canary is inside the op
+           en egg.
+      207  > take canary
+      208 -[OK: contains "canary"]
+      208 +[OK: contains "Taken"]
+      209
+      210  > take egg
+      211  [OK: contains "Taken"]
+
+● Fixed — changed to [OK: contains "Taken"].
+
+❯ WT-12 passes - we need to update WT-13 (remove $teleport)
+
+● Searched for 1 pattern, read 2 files (ctrl+o to expand)
+
+● Now I need the route from Wide Ledge back to Living Room. Let me check.
+
+● Searched for 1 pattern (ctrl+o to expand)
+
+● The route to Egyptian Room is clear from wt-05. But Wide Ledge only connects to:
+  E→balloon, S→Dusty Room. There's no walking route back. Let me check if the balloon can
+   descend or if there's another exit.
+
+● Explore(Check volcano exit routes)
+  ⎿  Done (16 tool uses · 65.2k tokens · 1m 58s)
+  (ctrl+o to expand)
+
+● Good findings. The balloon can descend (no fuel = descent), and the shiny wire is still
+   tethered (fuse wire is separate). Let me check the exact volcano room connections for
+  the walking route out.
+
+● Searched for 1 pattern (ctrl+o to expand)
+
+● Good — I have all the connections now. Let me verify the Egyptian Room → Rocky Crawl
+  external connection exists.

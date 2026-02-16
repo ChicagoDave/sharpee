@@ -27,7 +27,6 @@ import {
   EntityType,
   IdentityTrait,
   RoomTrait,
-  PortableTrait,
   Direction,
 } from '@sharpee/world-model';
 
@@ -63,7 +62,6 @@ export function createHouse(world: WorldModel) {
     name: 'dusty book',
     description: 'An ancient tome with faded gold lettering. The title reads "A History of the Valley".',
   }));
-  book.add(new PortableTrait());
   world.moveEntity(book.id, library.id);
 
   const key = world.createEntity('brass-key', EntityType.OBJECT);
@@ -71,7 +69,6 @@ export function createHouse(world: WorldModel) {
     name: 'brass key',
     description: 'A small brass key with an ornate handle.',
   }));
-  key.add(new PortableTrait());
   world.moveEntity(key.id, foyer.id);
 
   return { foyer, library };
@@ -146,7 +143,6 @@ import {
   IdentityTrait,
   ContainerTrait,
   OpenableTrait,
-  PortableTrait,
   AuthorModel,
 } from '@sharpee/world-model';
 
@@ -167,8 +163,6 @@ export function createHouse(world: WorldModel) {
     name: 'sparkling gem',
     description: 'A gem that catches the light.',
   }));
-  gem.add(new PortableTrait());
-
   // AuthorModel skips "container is closed" validation
   const author = new AuthorModel(world.getDataStore(), world);
   author.moveEntity(gem.id, chest.id);

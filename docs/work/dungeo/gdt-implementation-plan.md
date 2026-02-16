@@ -157,7 +157,7 @@ GDT> DO brass-lantern
 OBJECT: brass lantern (brass-lantern)
   Location: player-inventory
   Portable: yes
-  Traits: PortableTrait, LightSourceTrait, SwitchableTrait
+  Traits: LightSourceTrait, SwitchableTrait
   Light source: lit=true, fuel=200
   Size: 10, Weight: 15
 ```

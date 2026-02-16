@@ -28,7 +28,7 @@ export interface IWearableData {
   /** Slots this item blocks when worn */
   blocksSlots?: string[];
 
-  /** Weight of the item (since we removed PortableTrait) */
+  /** Weight of the item */
   weight?: number;
 
   /** Bulk of the item */

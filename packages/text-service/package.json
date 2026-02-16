@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/text-service",
-  "version": "0.9.84",
+  "version": "0.9.89",
   "description": "Text service for Sharpee - resolves templates and produces ITextBlock output",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -378,7 +378,6 @@ cloak.add(new IdentityTrait({
   aliases: ['cloak', 'velvet cloak']
 }));
 cloak.add(new WearableTrait());
-cloak.add(new PortableTrait());
 ```
 
 ### Forge API

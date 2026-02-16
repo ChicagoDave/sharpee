@@ -21,7 +21,7 @@ CLAUDE CODE BUG: ESC Interupt is currently broken so you need to STOP at any dec
 
 ### Item Portability
 
-**Items are portable by default.** There is no `PortableTrait` - all items can be taken unless explicitly blocked. To make something non-portable, use `SceneryTrait` or handle it in the taking action's validation.
+**Items are portable by default.** All items can be taken unless explicitly blocked. To make something non-portable, use `SceneryTrait` or handle it in the taking action's validation.
 
 ### Language Layer Separation
 
@@ -203,7 +203,7 @@ These verbs do the same thing regardless of entity - stdlib handles them:
 
 | Verb          | Standard Mutation      | Trait Needed                  |
 | ------------- | ---------------------- | ----------------------------- |
-| TAKE/GET      | Move to inventory      | PortableTrait                 |
+| TAKE/GET      | Move to inventory      | (portable by default)         |
 | DROP          | Move to location       | (any portable)                |
 | OPEN/CLOSE    | Change isOpen          | OpenableTrait                 |
 | LOCK/UNLOCK   | Change isLocked        | LockableTrait                 |

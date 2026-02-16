@@ -43,7 +43,7 @@ const openable = entity.get(OpenableTrait);
 openable.isOpen = true;
 ```
 
-- Entity has standard trait (PortableTrait, OpenableTrait)
+- Entity has standard trait (OpenableTrait, ContainerTrait, etc.)
 - Stdlib behavior performs standard mutation
 - No story-specific logic needed
 

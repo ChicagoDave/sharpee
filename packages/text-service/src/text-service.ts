@@ -187,6 +187,11 @@ export class TextService implements ITextService {
       return null;
     }
 
+    // Skip client.query - needs specialized handling (disambiguation builds options from candidates)
+    if (event.type === 'client.query') {
+      return null;
+    }
+
     // Look up message via language provider
     if (!context.languageProvider) {
       return null;
