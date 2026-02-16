@@ -312,22 +312,6 @@ function createGlacierRoomObjects(world: WorldModel, roomId: string): void {
 // ============= Dusty Room Objects =============
 
 function createDustyRoomObjects(world: WorldModel, roomId: string): void {
-  // Large emerald - treasure (5 pts)
-  const emerald = world.createEntity('large emerald', EntityType.ITEM);
-  emerald.add(new IdentityTrait({
-    name: 'large emerald',
-    aliases: ['emerald', 'green gem', 'gem'],
-    description: 'A large emerald of exceptional clarity. It glows with an inner green fire.',
-    properName: false,
-    article: 'a',
-    weight: 5,
-    points: 5              // OFVAL from mdlzork_810722
-  }));
-  emerald.add(new TreasureTrait({
-    trophyCaseValue: 10,   // OTVAL from mdlzork_810722
-  }));
-  world.moveEntity(emerald.id, roomId);
-
   // Safe - rusty box imbedded in wall (MDL: SAFE in SAFE room)
   // Not lockable — it's "rusted shut". Opened by brick explosion (Step 7).
   const safe = world.createEntity('safe', EntityType.ITEM);

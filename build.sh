@@ -28,6 +28,7 @@ VERBOSE=false
 SHOW_HELP=false
 STORY_BUNDLE=false
 BUILD_RUNNER=false
+BUILD_TEST=false
 
 # ============================================================================
 # Help
@@ -50,6 +51,7 @@ Options:
       --skip PKG       Resume platform build from package
       --no-version     Skip version updates
   -b, --story-bundle   Create .sharpee story bundle (requires -s)
+      --test           Build fast test bundle: dist/cli/{story}-test.js (requires -s)
       --runner         Build Zifmia runner (loads .sharpee bundles in browser)
   -v, --verbose        Show build details
   -h, --help           Show this help
@@ -67,11 +69,13 @@ Examples:
   ./build.sh -s dungeo -c zifmia -t modern-dark  Zifmia with dark theme
   ./build.sh -s dungeo -c browser -c zifmia  Build both clients
   ./build.sh -s dungeo -b                    Create .sharpee story bundle
+  ./build.sh -s dungeo --test                Build fast test bundle
   ./build.sh --runner                        Build Zifmia runner
   ./build.sh --skip stdlib -s dungeo         Resume from stdlib package
 
 Output:
   dist/cli/sharpee.js          Platform bundle (CLI, testing)
+  dist/cli/{story}-test.js     Fast test bundle (with --test)
   dist/stories/{story}.sharpee  Story bundle (with -b)
   dist/runner/                       Zifmia client (with -c zifmia or --runner)
   dist/web/{story}/             Browser client
@@ -113,6 +117,10 @@ while [[ $# -gt 0 ]]; do
             STORY_BUNDLE=true
             shift
             ;;
+        --test)
+            BUILD_TEST=true
+            shift
+            ;;
         --runner)
             BUILD_RUNNER=true
             shift
@@ -141,6 +149,13 @@ done
 if [ "$STORY_BUNDLE" = true ] && [ -z "$STORY" ]; then
     echo -e "${RED}Error: --story-bundle requires --story${NC}"
     echo "Example: ./build.sh -s dungeo --story-bundle"
+    exit 1
+fi
+
+# Validate: test bundle requires story
+if [ "$BUILD_TEST" = true ] && [ -z "$STORY" ]; then
+    echo -e "${RED}Error: --test requires --story${NC}"
+    echo "Example: ./build.sh -s dungeo --test"
     exit 1
 fi
 
@@ -448,6 +463,59 @@ EOF
     echo -n "Load test: "
     node -e "const s=Date.now();require('./dist/cli/sharpee.js');console.log((Date.now()-s)+'ms')"
 
+    echo ""
+}
+
+# ============================================================================
+# Test Bundle (platform + story + transcript-tester in one file)
+# ============================================================================
+
+build_test_bundle() {
+    local STORY_NAME="$1"
+    local STORY_DIR="stories/${STORY_NAME}"
+    local STORY_DIST="${STORY_DIR}/dist/index.js"
+
+    log_step "Building Test Bundle: ${STORY_NAME}-test.js"
+
+    if [ ! -f "$STORY_DIST" ]; then
+        echo -e "${RED}Error: Story dist not found: $STORY_DIST (build the story first)${NC}"
+        exit 1
+    fi
+
+    mkdir -p dist/cli
+
+    # Generate entry from template with absolute paths baked in
+    local TEST_ENTRY=$(mktemp /tmp/sharpee-test-entry-XXXXXX.js)
+    sed -e "s|__REPO_ROOT__|${REPO_ROOT}|g" \
+        -e "s|__STORY_DIST_PATH__|${REPO_ROOT}/${STORY_DIST}|g" \
+        -e "s|__STORY_NAME__|${STORY_NAME}|g" \
+        scripts/test-bundle-template.js > "$TEST_ENTRY"
+
+    # Bundle everything into one file
+    run_build "${STORY_NAME}-test.js" "npx esbuild '$TEST_ENTRY' --bundle --platform=node --target=node18 --outfile=dist/cli/${STORY_NAME}-test.js --external:readline --format=cjs --sourcemap \
+      --alias:@sharpee/core=./packages/core/dist/index.js \
+      --alias:@sharpee/if-domain=./packages/if-domain/dist/index.js \
+      --alias:@sharpee/world-model=./packages/world-model/dist/index.js \
+      --alias:@sharpee/stdlib=./packages/stdlib/dist/index.js \
+      --alias:@sharpee/engine=./packages/engine/dist/index.js \
+      --alias:@sharpee/parser-en-us=./packages/parser-en-us/dist/index.js \
+      --alias:@sharpee/lang-en-us=./packages/lang-en-us/dist/index.js \
+      --alias:@sharpee/event-processor=./packages/event-processor/dist/index.js \
+      --alias:@sharpee/text-blocks=./packages/text-blocks/dist/index.js \
+      --alias:@sharpee/text-service=./packages/text-service/dist/index.js \
+      --alias:@sharpee/if-services=./packages/if-services/dist/index.js \
+      --alias:@sharpee/ext-basic-combat=./packages/extensions/basic-combat/dist/index.js \
+      --alias:@sharpee/plugins=./packages/plugins/dist/index.js \
+      --alias:@sharpee/plugin-npc=./packages/plugin-npc/dist/index.js \
+      --alias:@sharpee/plugin-scheduler=./packages/plugin-scheduler/dist/index.js \
+      --alias:@sharpee/plugin-state-machine=./packages/plugin-state-machine/dist/index.js \
+      --alias:@sharpee/transcript-tester=./packages/transcript-tester/dist/index.js"
+
+    rm -f "$TEST_ENTRY"
+
+    # Report
+    local BUNDLE_SIZE=$(ls -lh "dist/cli/${STORY_NAME}-test.js" | awk '{print $5}')
+    echo "Test bundle: dist/cli/${STORY_NAME}-test.js ($BUNDLE_SIZE)"
     echo ""
 }
 
@@ -780,6 +848,9 @@ echo "  3. Bundle -> dist/cli/sharpee.js"
 if [ -n "$STORY" ]; then
     echo "  4. Build story: $STORY"
 fi
+if [ "$BUILD_TEST" = true ]; then
+    echo "  5. Test bundle: dist/cli/${STORY}-test.js"
+fi
 if [ "$STORY_BUNDLE" = true ]; then
     echo "  5. Bundle story: ${STORY}.sharpee"
 fi
@@ -804,6 +875,10 @@ if [ -n "$STORY" ]; then
 fi
 
 build_bundle
+
+if [ "$BUILD_TEST" = true ]; then
+    build_test_bundle "$STORY"
+fi
 
 if [ "$STORY_BUNDLE" = true ]; then
     build_story_bundle "$STORY"
@@ -838,6 +913,9 @@ echo "=============="
 echo ""
 echo "Outputs:"
 echo "  dist/cli/sharpee.js - Platform bundle"
+if [ "$BUILD_TEST" = true ]; then
+    echo "  dist/cli/${STORY}-test.js - Fast test bundle"
+fi
 
 if [ "$STORY_BUNDLE" = true ]; then
     echo "  dist/stories/${STORY}.sharpee - Story bundle"
@@ -859,6 +937,9 @@ fi
 echo ""
 echo "Next steps:"
 echo "  Test CLI:     node dist/cli/sharpee.js --play"
+if [ "$BUILD_TEST" = true ]; then
+    echo "  Fast tests:   node dist/cli/${STORY}-test.js --chain stories/${STORY}/walkthroughs/wt-*.transcript"
+fi
 if [ -n "$STORY" ]; then
     for CLIENT in "${CLIENTS[@]}"; do
         if [ "$CLIENT" = "zifmia" ]; then

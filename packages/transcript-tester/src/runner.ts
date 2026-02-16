@@ -33,6 +33,8 @@ interface GameEngine {
   getOutput?(): string;
   lastEvents?: Array<{ type: string; data?: any }>;
   world?: WorldModel;
+  /** Plugin registry for save/restore of plugin state (state machines, scheduler) */
+  getPluginRegistry?(): { getStates(): Record<string, unknown>; setStates(states: Record<string, unknown>): void };
 }
 
 /**
@@ -709,12 +711,18 @@ async function handleDirective(
           fs.mkdirSync(savesDir, { recursive: true });
         }
 
-        // Serialize world state
+        // Serialize world state + plugin states in envelope
         const worldState = (world as any).toJSON();
+        const saveEnvelope: any = { worldState };
+
+        // Save plugin states if engine exposes plugin registry
+        if (engine.getPluginRegistry) {
+          saveEnvelope.pluginStates = engine.getPluginRegistry().getStates();
+        }
 
         // Write to file
         const savePath = path.join(savesDir, `${directive.saveName}.json`);
-        fs.writeFileSync(savePath, worldState, 'utf-8');
+        fs.writeFileSync(savePath, JSON.stringify(saveEnvelope), 'utf-8');
 
         if (verbose) {
           console.log(`  Saved to: ${savePath}`);
@@ -751,9 +759,30 @@ async function handleDirective(
           };
         }
 
-        // Read and restore world state
-        const worldState = fs.readFileSync(savePath, 'utf-8');
+        // Read save data and detect format
+        const rawData = fs.readFileSync(savePath, 'utf-8');
+        let worldState: string;
+        let pluginStates: Record<string, unknown> | undefined;
+
+        const parsed = JSON.parse(rawData);
+        if (parsed.worldState) {
+          // Envelope format: { worldState, pluginStates }
+          worldState = typeof parsed.worldState === 'string'
+            ? parsed.worldState
+            : JSON.stringify(parsed.worldState);
+          pluginStates = parsed.pluginStates;
+        } else {
+          // Legacy format: raw world JSON
+          worldState = rawData;
+        }
+
+        // Restore world state
         (world as any).loadJSON(worldState);
+
+        // Restore plugin states if available
+        if (pluginStates && engine.getPluginRegistry) {
+          engine.getPluginRegistry().setStates(pluginStates);
+        }
 
         if (verbose) {
           console.log(`  Restored from: ${savePath}`);

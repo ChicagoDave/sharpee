@@ -248,6 +248,8 @@ Examples:
       lastOutput: '',
       lastEvents: [],
       lastTurnResult: null,
+      // Proxy for runner save/restore plugin state
+      getPluginRegistry() { return engine.getPluginRegistry(); },
 
       async executeCommand(input) {
         outputBuffer = [];

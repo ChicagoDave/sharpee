@@ -114,6 +114,8 @@ export interface FuseState {
   turnsRemaining: number;
   isPaused: boolean;
   entityId?: EntityId;
+  /** Skip the next tick after fuse is set, so countdown matches turns value */
+  skipNextTick?: boolean;
 }
 
 /**

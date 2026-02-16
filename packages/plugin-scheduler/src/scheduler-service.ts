@@ -137,6 +137,7 @@ export class SchedulerService implements ISchedulerService {
       turnsRemaining: fuse.turns,
       isPaused: false,
       entityId: fuse.entityId,
+      skipNextTick: true,
     });
   }
 
@@ -245,6 +246,12 @@ export class SchedulerService implements ISchedulerService {
     for (const fuse of sortedFuses) {
       const state = this.fuseStates.get(fuse.id);
       if (!state || state.isPaused) continue;
+
+      // Skip fuses set this turn (they start ticking next turn)
+      if (state.skipNextTick) {
+        state.skipNextTick = false;
+        continue;
+      }
 
       // Check tick condition
       if (fuse.tickCondition && !fuse.tickCondition(context)) {

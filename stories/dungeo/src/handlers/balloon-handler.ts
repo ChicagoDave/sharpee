@@ -238,12 +238,7 @@ export function createBalloonExitTransformer() {
 
     const position = vehicleTrait.currentPosition as BalloonPosition;
 
-    // At ground level - allow normal exit
-    if (position === 'vlbot') {
-      return parsed;
-    }
-
-    // At mid-air - block exit
+    // At mid-air (not near a ledge) - block exit
     if (isMidairPosition(position)) {
       return {
         ...parsed,
@@ -252,16 +247,12 @@ export function createBalloonExitTransformer() {
       };
     }
 
-    // At ledge - redirect to balloon exit action
-    if (isLedgePosition(position)) {
-      return {
-        ...parsed,
-        action: BALLOON_EXIT_ACTION_ID,
-        structure: parsed.structure
-      };
-    }
-
-    return parsed;
+    // At ground level or ledge - redirect to balloon exit action (shows room name)
+    return {
+      ...parsed,
+      action: BALLOON_EXIT_ACTION_ID,
+      structure: parsed.structure
+    };
   };
 }
 

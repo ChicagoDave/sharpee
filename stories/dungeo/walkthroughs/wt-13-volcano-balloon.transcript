@@ -1,6 +1,6 @@
 title: Volcano Balloon & Treasures
 story: dungeo
-description: Melt glacier, fly balloon through volcano, collect 5 treasures (ruby, coin, stamp, emerald, crown). Restores from wt-12.
+description: Melt glacier, fly balloon through volcano, collect 4 treasures (ruby, coin, stamp, crown). Restores from wt-12.
 ---
 
 # Restore state from wt-12 (player at Living Room with torch and lantern)
@@ -214,20 +214,15 @@ $restore wt-12
 [END GOAL]
 
 # ============================================================================
-# GOAL: Dusty Room - get emerald, blow open safe, get crown
+# GOAL: Dusty Room - blow open safe, get crown
 # ============================================================================
 
-[GOAL: Get emerald and crown from Dusty Room]
-[ENSURES: inventory contains "emerald"]
+[GOAL: Get crown from Dusty Room]
 [ENSURES: inventory contains "crown"]
 
 # Go south to Dusty Room
 > south
 [OK: contains "Dusty Room"]
-
-# Take the emerald (sitting on floor)
-> take emerald
-[OK: contains "Taken"]
 
 # Put the brick in the slot (hole in safe) for the explosion
 > put brick in hole
@@ -251,7 +246,7 @@ $restore wt-12
 
 # Take the crown from the now-open safe
 > take crown
-[OK: contains "crown"]
+[OK: contains "Taken"]
 
 # Escape north before room collapse (SAFIN = 5 turns after explosion)
 > north
@@ -363,9 +358,6 @@ $restore wt-12
 [OK: contains "put"]
 
 > put stamp in trophy case
-[OK: contains "put"]
-
-> put emerald in trophy case
 [OK: contains "put"]
 
 > put crown in trophy case

@@ -121,7 +121,7 @@ $restore wt-06
 [OK: contains "Taken"]
 
 > drop buoy
-[OK: contains "drop the buoy in"]
+[OK: contains "drop the red buoy"]
 
 # DEBUG: Verify we're still at FR-2 before navigating
 > look
