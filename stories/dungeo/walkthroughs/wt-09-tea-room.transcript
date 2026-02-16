@@ -135,13 +135,6 @@ $teleport Engravings Cave
 
 [GOAL: Fix carousel and cage puzzle]
 
-# Drop items we don't need for cage puzzle (inventory too full otherwise)
-> drop stick
-[OK: contains "Dropped"]
-
-> drop wrench
-[OK: contains "Dropped"]
-
 # Go northwest to Low Room (carousel is active - compass spinning)
 > northwest
 [OK: contains "Low Room"]
@@ -224,7 +217,6 @@ $teleport Living Room
 
 > inventory
 [OK: contains "torch"]
-[OK: contains "lantern"]
 
 > look
 [OK: contains "Living Room"]

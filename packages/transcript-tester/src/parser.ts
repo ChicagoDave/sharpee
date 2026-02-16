@@ -500,11 +500,6 @@ function finalizeCommand(command: TranscriptCommand): void {
   if (command.assertions.length === 0 && command.expectedOutput.length > 0) {
     command.assertions.push({ type: 'ok' });
   }
-
-  // If no assertion at all, default to [SKIP]
-  if (command.assertions.length === 0) {
-    command.assertions.push({ type: 'skip' });
-  }
 }
 
 /**
@@ -524,6 +519,9 @@ export function validateTranscript(transcript: Transcript): string[] {
   for (const cmd of transcript.commands) {
     if (!cmd.input) {
       errors.push(`Line ${cmd.lineNumber}: Empty command`);
+    }
+    if (cmd.assertions.length === 0) {
+      errors.push(`Line ${cmd.lineNumber}: Command "${cmd.input}" has no assertion — every command requires [OK: ...], [SKIP], or similar`);
     }
   }
 

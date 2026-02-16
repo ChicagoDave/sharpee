@@ -14,9 +14,13 @@ $restore wt-06
 [GOAL: Prepare for river journey]
 
 > drop lantern
+[OK: contains "Dropped"]
 > drop bell
+[OK: contains "Dropped"]
 > drop book
+[OK: contains "Dropped"]
 > drop candles
+[OK: contains "Dropped"]
 
 > take pump
 [OK: contains "Taken"]
@@ -79,6 +83,7 @@ $restore wt-06
 [OK: contains "inflate"]
 
 > drop pump
+[OK: contains "Dropped"]
 
 # Now take the stick from inside the boat - bypasses puncture check
 > put stick in boat
@@ -103,7 +108,7 @@ $restore wt-06
 
 # FR-1 -> FR-2
 > down
-[OK: contains "river"]
+[OK: contains "impossible to see the dam"]
 
 # Buoy is floating at FR-2
 > take buoy
@@ -116,6 +121,11 @@ $restore wt-06
 [OK: contains "Taken"]
 
 > drop buoy
+[OK: contains "drop the buoy in"]
+
+# DEBUG: Verify we're still at FR-2 before navigating
+> look
+[OK: contains "impossible to see the dam"]
 
 [END GOAL]
 
@@ -128,12 +138,14 @@ $restore wt-06
 
 # FR-2 -> FR-3
 > down
+[OK: contains "Frigid River"]
 
 # Land at Rocky Shore (west of FR-3)
 > west
 [OK: contains "Rocky Shore"]
 
-> exit boat
+> disembark
+[OK: contains "get out"]
 
 # Walk to Small Cave
 > northwest
@@ -147,9 +159,11 @@ $restore wt-06
 [OK: contains "Rocky Shore"]
 
 > board boat
+[OK: contains "get into"]
 
 # Launch back onto the river
 > launch
+[OK: contains "on the river"]
 
 [END GOAL]
 
@@ -162,13 +176,18 @@ $restore wt-06
 
 # FR-3 -> FR-4
 > down
+[OK: contains "river"]
 
 # Land at Sandy Beach from FR-4
 > west
 [OK: contains "Sandy Beach"]
 
-# Exit the boat
-> exit boat
+# Exit the boat and take stick for later
+> disembark
+[OK: contains "get out"]
+
+> take stick
+[OK: contains "Taken"]
 
 # Dig 4 times to uncover the statue (need shovel in inventory)
 > dig
@@ -187,6 +206,7 @@ $restore wt-06
 [OK: contains "Taken"]
 
 > drop shovel
+[OK: contains "Dropped"]
 
 [END GOAL]
 
@@ -230,8 +250,8 @@ $restore wt-06
 # ============================================================================
 # GOAL: Return to Living Room via forest
 # End of Rainbow -> Canyon Bottom -> Rocky Ledge -> Canyon View
-# -> Forest -> Forest -> South of House -> Behind House -> Kitchen
-# -> Living Room
+# -> Forest Path 3 -> Forest Path 2 -> Clearing -> Forest Path 1
+# -> North of House -> Behind House -> Kitchen -> Living Room
 # ============================================================================
 
 [GOAL: Return to Living Room]
@@ -251,8 +271,14 @@ $restore wt-06
 > west
 [OK: contains "Forest"]
 
-> north
-[OK: contains "South of House"]
+> west
+[OK: contains "Clearing"]
+
+> south
+[OK: contains "Forest"]
+
+> south
+[OK: contains "North of House"]
 
 > east
 [OK: contains "Behind House"]
@@ -284,6 +310,7 @@ $restore wt-06
 [OK: contains "put"]
 
 > drop stick
+[OK: contains "Dropped"]
 
 [END GOAL]
 

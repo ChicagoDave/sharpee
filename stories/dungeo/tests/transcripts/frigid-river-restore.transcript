@@ -1,31 +1,52 @@
-title: Frigid River Full Navigation
+title: Frigid River Navigation (from restore)
 story: dungeo
-description: Full Frigid River test - boat from Dam Base to End of Rainbow via dig and wave
+description: Same as frigid-river-full but starting from $restore wt-06 to test serialization
 
 ---
 
-# Setup - get lamp and pump via GDT
-> gdt
-[OK: contains "GDT"]
+# Restore from wt-06 save (player in Living Room with torch, lantern, bell, book, candles)
+$restore wt-06
 
-# Give ourselves the lamp
-> tk brass lantern
+# Drop items we don't need, take pump
+> drop bell
+> drop book
+> drop candles
+> take pump
 [OK: contains "Taken"]
 
-# Give ourselves the pump
-> tk hand pump
-[OK: contains "Taken"]
+# ============================================================================
+# Navigate to Dam Base
+# ============================================================================
 
-# Teleport to Dam Base where boat is located
-> ah Dam Base
+> down
+[OK: contains "Cellar"]
+
+> east
+[OK: contains "Troll Room"]
+
+> north
+[OK: contains "East-West Passage"]
+
+> north
+[OK: contains "Deep Ravine"]
+
+> east
+[OK: contains "Chasm"]
+
+> east
+[OK: contains "North/South Passage"]
+
+> northeast
+[OK: contains "Loud Room"]
+
+> up
+[OK: contains "Damp Cave"]
+
+> east
+[OK: contains "Dam"]
+
+> down
 [OK: contains "Dam Base"]
-
-> ex
-[OK: contains "Returning"]
-
-# Turn on lamp for light
-> switch on lantern
-[OK: contains "lantern"]
 
 # ============================================================================
 # TEST: Verify boat, stick, and water scenery at Dam Base
@@ -36,7 +57,6 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 [OK: contains "plastic"]
 [OK: contains "stick"]
 
-# Examine the water scenery
 > x water
 [OK: contains "river"]
 
@@ -44,11 +64,9 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 # TEST: Inflate boat and put stick in it (not carry!)
 # ============================================================================
 
-> inflate boat
+> inflate boat with pump
 [OK: contains "inflate"]
 
-# Take stick then put in boat BEFORE boarding (carrying it would puncture the boat)
-# Note: Implicit take not working - explicit take required
 > get stick
 [OK: contains "Taken"]
 
@@ -63,11 +81,9 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 # TEST: Launch and navigate downstream
 # ============================================================================
 
-# Launch into the river
 > launch
 [OK: contains "river"]
 
-# Verify we're on Frigid River 1
 > look
 [OK: contains "Frigid River"]
 [OK: contains "dam"]
@@ -81,23 +97,19 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 > get buoy
 [OK: contains "Taken"]
 
-# Open the buoy to get emerald
 > open buoy
 [OK: contains "open"]
 
-# Get the emerald
 > get emerald
 [OK: contains "Taken"]
 
-# Drop the buoy (goes into boat since we're in it)
 > drop buoy
-[OK: contains "buoy"]
 
 # ============================================================================
-# TEST: Land at Rocky Shore and get shovel from Small Cave
+# TEST: Land at Rocky Shore and disembark (KEY TEST - does disembark survive restore?)
 # ============================================================================
 
-# Go downstream to FR3 - has landings E/W (Rocky Shore west)
+# Go downstream to FR3
 > d
 [OK: contains "Frigid River"]
 [OK: contains "shore"]
@@ -106,7 +118,7 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 > w
 [OK: contains "Rocky Shore"]
 
-# Disembark
+# Disembark - THIS IS THE KEY TEST
 > disembark
 [OK: contains "boat"]
 
@@ -114,7 +126,6 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 > nw
 [OK: contains "Small Cave"]
 
-# Get the shovel
 > get shovel
 [OK: contains "Taken"]
 
@@ -130,11 +141,10 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 # TEST: Navigate to Sandy Beach and dig for statue
 # ============================================================================
 
-# Go downstream (east exit from Rocky Shore leads to FR3, but we need to launch)
 > launch
 [OK: contains "river"]
 
-# Go downstream to FR4 - Sandy Beach is west
+# Go downstream to FR4
 > d
 [OK: contains "Frigid River"]
 [OK: contains "sand"]
@@ -147,7 +157,7 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 > disembark
 [OK: contains "boat"]
 
-# Dig for the statue (buried at Sandy Beach)
+# Dig for the statue
 > dig
 [OK: contains "dig"]
 
@@ -160,11 +170,9 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 > dig
 [OK: contains "statue"]
 
-# Get the statue
 > get statue
 [OK: contains "Taken"]
 
-# Get the stick from the boat (we put it there earlier)
 > get stick
 [OK: contains "Taken"]
 
@@ -172,15 +180,12 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 # TEST: Navigate to Aragain Falls and wave stick
 # ============================================================================
 
-# Go south to Shore
 > s
 [OK: contains "Shore"]
 
-# Go south to Aragain Falls
 > s
 [OK: contains "Aragain Falls"]
 
-# Wave the stick to solidify rainbow (we got stick from boat at Sandy Beach)
 > wave stick
 [OK: contains "rainbow"]
 
@@ -188,15 +193,12 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 # TEST: Cross rainbow to End of Rainbow and get pot of gold
 # ============================================================================
 
-# Go east onto rainbow
 > e
 [OK: contains "Rainbow"]
 
-# Continue east to End of Rainbow
 > e
 [OK: contains "End of Rainbow"]
 
-# Get the pot of gold
 > get pot
 [OK: contains "Taken"]
 
@@ -204,65 +206,50 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 # TEST: Return via land route
 # ============================================================================
 
-# Go southeast to Canyon Bottom
 > se
 [OK: contains "Canyon"]
 
-# Go up to Rocky Ledge
 > u
 [OK: contains "Ledge"]
 
-# Go up to Canyon View
 > u
 [OK: contains "Canyon"]
 
-# Go west to Forest Path 3
 > w
 [OK: contains "forest"]
 
-# Go west to Forest Path 2
 > w
 [OK: contains "forest"]
 
-# Go west to Clearing
 > w
 [OK: contains "clearing"]
 
-# Go south to Forest Path 1
 > s
 [OK: contains "forest"]
 
-# Go south to North of House
 > s
 [OK: contains "House"]
 
-# Go east to Behind House
 > e
 [OK: contains "Behind House"]
 
-# Open the window (starts slightly ajar but not fully open)
 > open window
 [OK: contains "open"]
 
-# Go west to Kitchen
 > w
 [OK: contains "Kitchen"]
 
-# Go west to Living Room
 > w
 [OK: contains "Living Room"]
 
-# Open trophy case
 > open trophy case
 [OK: contains "open"]
 
-# Put treasures in trophy case
 > put emerald in trophy case
 [OK: contains "put"]
 
 > put statue in trophy case
 [OK: contains "put"]
 
-# We made it from Dam Base to Living Room with treasures!
 > look
 [OK: contains "Living Room"]

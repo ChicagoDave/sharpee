@@ -7,21 +7,38 @@ description: Collect 6 scattered treasures from existing regions. Restores from 
 $restore wt-10
 
 # ============================================================================
-# PASS 1: Easy treasures (no tools needed)
+# PASS 1: Collect violin, grail, screwdriver, trident
+# Route: Kitchen (sack) → underground → Round Room (violin) → Grail Room (grail)
+# → Deep Canyon → Dam → Maintenance (screwdriver) → Reservoir → Atlantis (trident)
+# → back to Living Room
 # ============================================================================
 
 # ============================================================================
-# GOAL: Get violin from Round Room
+# GOAL: Get brown sack from Kitchen, then get violin from Round Room
 # ============================================================================
 
-[GOAL: Get violin]
-[ENSURES: inventory contains "violin"]
+[GOAL: Get brown sack and violin]
 
-$teleport Round Room
+> east
+[OK: contains "Kitchen"]
 
-> look
+> take brown sack
+[OK: contains "Taken"]
+
+> west
+[OK: contains "Living Room"]
+
+> down
+[OK: contains "Cellar"]
+
+> east
+[OK: contains "Troll Room"]
+
+> north
+[OK: contains "East-West Passage"]
+
+> east
 [OK: contains "Round Room"]
-[OK: contains "steel box"]
 
 > open box
 [OK: contains "open"]
@@ -37,9 +54,7 @@ $teleport Round Room
 
 [GOAL: Get grail]
 
-$teleport Grail Room
-
-> look
+> east
 [OK: contains "Grail Room"]
 
 [IF: room contains "grail"]
@@ -50,14 +65,59 @@ $teleport Grail Room
 [END GOAL]
 
 # ============================================================================
+# GOAL: Get screwdriver from Maintenance Room
+# Route: Grail Room → Round Room → Deep Canyon → Dam → Dam Lobby → Maintenance
+# ============================================================================
+
+[GOAL: Get screwdriver]
+
+> west
+[OK: contains "Round Room"]
+
+> northwest
+[OK: contains "Deep Canyon"]
+
+> east
+[OK: contains "Dam"]
+
+> north
+[OK: contains "Dam Lobby"]
+
+> north
+[OK: contains "Maintenance"]
+
+> take screwdriver
+[OK: contains "Taken"]
+
+[END GOAL]
+
+# ============================================================================
 # GOAL: Get trident from Atlantis Room
+# Route: Maintenance → Dam Lobby → Dam → Deep Canyon → Reservoir South
+# → Reservoir → Reservoir North → Atlantis Room
 # ============================================================================
 
 [GOAL: Get trident]
 
-$teleport Atlantis Room
+> south
+[OK: contains "Dam Lobby"]
 
-> look
+> south
+[OK: contains "Dam"]
+
+> south
+[OK: contains "Deep Canyon"]
+
+> northwest
+[OK: contains "Reservoir South"]
+
+> north
+[OK: contains "Reservoir"]
+
+> north
+[OK: contains "Reservoir North"]
+
+> north
 [OK: contains "Atlantis"]
 
 [IF: room contains "trident"]
@@ -68,30 +128,39 @@ $teleport Atlantis Room
 [END GOAL]
 
 # ============================================================================
-# GOAL: Get bag of coins from Maze-5
-# ============================================================================
-
-[GOAL: Get bag of coins]
-
-$teleport maze 5
-
-> look
-[OK: contains "Maze"]
-
-[IF: room contains "coins"]
-> take bag of coins
-[OK: contains "Taken"]
-[END IF]
-
-[END GOAL]
-
-# ============================================================================
 # GOAL: Store Pass 1 treasures in trophy case
+# Route: Atlantis → Reservoir South → Deep Canyon → Round Room → E/W Passage
+# → Troll Room → Cellar → Living Room
 # ============================================================================
 
 [GOAL: Store Pass 1 treasures]
 
-$teleport Living Room
+> southeast
+[OK: contains "Reservoir North"]
+
+> south
+[OK: contains "Reservoir"]
+
+> south
+[OK: contains "Reservoir South"]
+
+> up
+[OK: contains "Deep Canyon"]
+
+> south
+[OK: contains "Round Room"]
+
+> west
+[OK: contains "East-West Passage"]
+
+> west
+[OK: contains "Troll Room"]
+
+> west
+[OK: contains "Cellar"]
+
+> up
+[OK: contains "Living Room"]
 
 > open trophy case
 [OK: contains "open"]
@@ -109,6 +178,70 @@ $teleport Living Room
 [OK: contains "put"]
 [END IF]
 
+[END GOAL]
+
+# ============================================================================
+# GOAL: Get bag of coins from Maze-5
+# Route: Living Room → Cellar → Troll Room → Maze-1 → Maze-2 → Maze-4
+# → Maze-15 → Dead End-3 → Maze-5
+# ============================================================================
+
+[GOAL: Get bag of coins]
+
+> down
+[OK: contains "Cellar"]
+
+> east
+[OK: contains "Troll Room"]
+
+> south
+[OK: contains "Maze"]
+
+> east
+[OK: contains "Maze"]
+
+> west
+[OK: contains "Maze"]
+
+> up
+[OK: contains "Maze"]
+
+> east
+[OK: contains "Dead End"]
+
+> east
+[OK: contains "Maze"]
+
+[IF: room contains "coins"]
+> take bag of coins
+[OK: contains "Taken"]
+[END IF]
+
+# Return: Maze-5 → Dead End-3 → Maze-15 → Maze-4 → Maze-2 → Maze-1 → Troll Room → Cellar → Living Room
+> northeast
+[OK: contains "Dead End"]
+
+> west
+[OK: contains "Maze"]
+
+> north
+[OK: contains "Maze"]
+
+> north
+[OK: contains "Maze"]
+
+> north
+[OK: contains "Maze"]
+
+> west
+[OK: contains "Troll Room"]
+
+> west
+[OK: contains "Cellar"]
+
+> up
+[OK: contains "Living Room"]
+
 [IF: inventory contains "coins"]
 > put bag of coins in trophy case
 [OK: contains "put"]
@@ -121,37 +254,64 @@ $teleport Living Room
 # ============================================================================
 
 # ============================================================================
-# GOAL: Collect puzzle tools
+# GOAL: Get welcome mat from West of House
+# Route: Living Room → Kitchen → Behind House → North of House → West of House
 # ============================================================================
 
-[GOAL: Collect puzzle tools]
+[GOAL: Get welcome mat]
 
-# Welcome mat (for Tiny Room door puzzle)
-$take welcome mat
+> east
+[OK: contains "Kitchen"]
 
-# Screwdriver (for Tiny Room door puzzle)
-$take screwdriver
+> east
+[OK: contains "Behind House"]
 
-# Brown sack contains garlic (bat handler checks containers recursively)
-$take brown sack
+> north
+[OK: contains "North of House"]
 
-> inventory
-[OK: contains "torch"]
-[OK: contains "lantern"]
-[OK: contains "mat"]
-[OK: contains "screwdriver"]
-[OK: contains "sack"]
+> west
+[OK: contains "West of House"]
+
+> take welcome mat
+[OK: contains "Taken"]
+
+# Return: West of House → South of House → Behind House → Kitchen → Living Room
+> south
+[OK: contains "South of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> west
+[OK: contains "Kitchen"]
+
+> west
+[OK: contains "Living Room"]
 
 [END GOAL]
 
 # ============================================================================
 # GOAL: Solve Tiny Room door puzzle and get blue crystal sphere
+# Route: Living Room → Cellar → Troll Room → N/S Crawlway → Torch Room → Tiny Room
 # ============================================================================
 
 [GOAL: Get blue crystal sphere]
 [ENSURES: inventory contains "blue"]
 
-$teleport Tiny Room
+> down
+[OK: contains "Cellar"]
+
+> east
+[OK: contains "Troll Room"]
+
+> east
+[OK: contains "Crawlway"]
+
+> up
+[OK: contains "Torch Room"]
+
+> west
+[OK: contains "Tiny Room"]
 
 > look
 [OK: contains "Tiny Room"]
@@ -190,7 +350,7 @@ $teleport Tiny Room
 > look
 [OK: contains "blue crystal sphere"]
 
-# Drop tools before taking sphere (weight limit)
+# Drop tools before taking sphere
 > drop screwdriver
 [OK: contains "Dropped"]
 
@@ -206,14 +366,49 @@ $teleport Tiny Room
 [END GOAL]
 
 # ============================================================================
-# GOAL: Get jade figurine from Squeaky Room (bat room with garlic)
+# GOAL: Get jade figurine from Squeaky Room
+# Route: Dreary Room → Tiny Room → Torch Room → N/S Crawlway → Troll Room
+# → E/W Passage → Round Room → Winding Passage → Mirror Room (Coal Mine state)
+# → Cold Passage → Slide Room → Mine Entrance → Squeaky Room
 # ============================================================================
 
 [GOAL: Get jade figurine]
 
-$teleport Squeaky Room
+> south
+[OK: contains "Tiny Room"]
 
-> look
+> east
+[OK: contains "Torch Room"]
+
+> down
+[OK: contains "Crawlway"]
+
+> east
+[OK: contains "Troll Room"]
+
+> north
+[OK: contains "East-West Passage"]
+
+> east
+[OK: contains "Round Room"]
+
+> southeast
+[OK: contains "Winding Passage"]
+
+> east
+[OK: contains "Mirror Room"]
+
+# Mirror in Coal Mine state from wt-10
+> west
+[OK: contains "Cold Passage"]
+
+> west
+[OK: contains "Slide Room"]
+
+> north
+[OK: contains "Mine Entrance"]
+
+> northwest
 [OK: contains "Squeaky"]
 
 [IF: room contains "figurine"]
@@ -224,12 +419,32 @@ $teleport Squeaky Room
 [END GOAL]
 
 # ============================================================================
-# GOAL: Store Pass 2 treasures in trophy case
+# GOAL: Return to Living Room and store Pass 2 treasures
+# Route: Squeaky Room → Mine Entrance → Slide Room → slides → Cellar → Living Room
 # ============================================================================
 
 [GOAL: Store Pass 2 treasures]
 
-$teleport Living Room
+> south
+[OK: contains "Mine Entrance"]
+
+> south
+[OK: contains "Slide Room"]
+
+> down
+[OK: contains "Slide"]
+
+> down
+[OK: contains "Slide"]
+
+> down
+[OK: contains "Slide"]
+
+> down
+[OK: contains "Cellar"]
+
+> up
+[OK: contains "Living Room"]
 
 > put blue crystal sphere in trophy case
 [OK: contains "put"]

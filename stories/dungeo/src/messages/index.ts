@@ -59,6 +59,10 @@ export function registerAllMessages(language: LanguageProvider): void {
  * These override the platform defaults with Dungeo-specific content.
  */
 function registerGameMessages(language: LanguageProvider): void {
+  // Override platform "You take X from Y" with canonical Zork "Taken."
+  // Mainframe Zork always says "Taken." regardless of source (room, container, supporter)
+  language.addMessage('if.action.taking.taken_from', 'Taken.');
+
   // Opening banner - displayed when game starts
   // Uses story config params: {title}, {author}, {version}, {buildDate}, {engineVersion}, {clientVersion}
   language.addMessage('game.started.banner',

@@ -81,6 +81,12 @@ import {
  */
 export function registerActionMessages(language: LanguageProvider): void {
   // ==========================================================================
+  // Dropping Override — platform says "You put X in Y", we want cleaner text
+  // ==========================================================================
+
+  language.addMessage('if.action.dropping.dropped_in', 'You drop the {item} in the {container}.');
+
+  // ==========================================================================
   // SAY Action Messages
   // ==========================================================================
 

@@ -21,7 +21,7 @@ $teleport Up a Tree
 
 # Take the egg from the nest
 > take egg
-[OK: contains "egg"]
+[OK: contains "Taken."]
 
 > inventory
 [OK: contains "egg"]
@@ -58,7 +58,6 @@ $teleport Living Room
 
 > inventory
 [OK: contains "torch"]
-[OK: contains "lantern"]
 
 > look
 [OK: contains "Living Room"]

@@ -12,12 +12,28 @@ $restore wt-09
 
 [GOAL: Enter Coal Mine]
 
-# Navigate to Mirror Room (fastest route from Living Room)
-$teleport Mirror Room
+# Pick up lantern (dropped in wt-07, sitting in Living Room)
+> take lantern
+[OK: contains "Taken"]
 
-> look
+# Navigate to Mirror Room: Living Room → Cellar → Troll Room → E/W Passage → Round Room → Winding Passage → Mirror Room
+> down
+[OK: contains "Cellar"]
+
+> east
+[OK: contains "Troll Room"]
+
+> north
+[OK: contains "East-West Passage"]
+
+> east
+[OK: contains "Round Room"]
+
+> southeast
+[OK: contains "Winding Passage"]
+
+> east
 [OK: contains "Mirror Room"]
-[OK: contains "mirror"]
 
 # Toggle mirror to State B (Coal Mine connections)
 > rub mirror
@@ -136,7 +152,7 @@ $teleport Mirror Room
 [OK: contains "diamond"]
 
 > take diamond
-[OK: contains "diamond"]
+[OK: contains "Taken."]
 
 [END GOAL]
 
@@ -222,8 +238,9 @@ $teleport Mirror Room
 > down
 [OK: contains "Cellar"]
 
-# Return to Living Room
-$teleport Living Room
+# Return to Living Room (up through trapdoor)
+> up
+[OK: contains "Living Room"]
 
 # Store all treasures in trophy case
 > inventory
@@ -241,10 +258,6 @@ $teleport Living Room
 [OK: contains "put"]
 
 > put red crystal sphere in trophy case
-[OK: contains "put"]
-
-# Also store the trunk (taken in wt-04, still in inventory)
-> put trunk in trophy case
 [OK: contains "put"]
 
 [END GOAL]

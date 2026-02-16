@@ -54,23 +54,30 @@ $restore wt-05
 
 [WHILE: not location = "Grail Room"]
   > south
+  [OK: contains_any "Engravings Cave" "Grail Room" "North/South Passage" "Winding Passage" "Deep Canyon" "Maze" "East/West Passage"]
   [IF: location = "East-West Passage"]
     > east
+    [OK: contains "Round Room"]
   [END IF]
   [IF: location = "Deep Canyon"]
     > southeast
+    [OK: contains "Round Room"]
   [END IF]
   [IF: location = "North/South Passage"]
     > southwest
+    [OK: contains "Round Room"]
   [END IF]
   [IF: location = "Winding Passage"]
     > northwest
+    [OK: contains "Round Room"]
   [END IF]
   [IF: location = "Engravings Cave"]
     > north
+    [OK: contains "Round Room"]
   [END IF]
   [IF: location = "Maze"]
     > northeast
+    [OK: contains "Round Room"]
   [END IF]
 [END WHILE]
 
@@ -202,23 +209,30 @@ $restore wt-05
 # Traverse carousel to reach Maze (Maze-01 has WEST -> Troll Room)
 [WHILE: not location = "Maze"]
   > south
+  [OK: contains_any "Engravings Cave" "Grail Room" "North/South Passage" "Winding Passage" "Deep Canyon" "Maze" "East/West Passage"]
   [IF: location = "East-West Passage"]
     > east
+    [OK: contains "Round Room"]
   [END IF]
   [IF: location = "Deep Canyon"]
     > southeast
+    [OK: contains "Round Room"]
   [END IF]
   [IF: location = "North/South Passage"]
     > southwest
+    [OK: contains "Round Room"]
   [END IF]
   [IF: location = "Winding Passage"]
     > northwest
+    [OK: contains "Round Room"]
   [END IF]
   [IF: location = "Engravings Cave"]
     > north
+    [OK: contains "Round Room"]
   [END IF]
   [IF: location = "Grail Room"]
     > west
+    [OK: contains "Round Room"]
   [END IF]
 [END WHILE]
 
