@@ -429,6 +429,103 @@ describe('StandardScopeResolver', () => {
       expect(restored.getMinimumScope('distant-room')).toBe(ScopeLevel.AWARE);
     });
 
+    test('should make entity reachable from vehicle room via setMinimumScope', () => {
+      // Scenario: player is in a balloon (item) which is in vairRoom,
+      // but hook is scenery in a different room (ledgeRoom).
+      // setMinimumScope(REACHABLE, [vairRoom]) should make the hook reachable.
+
+      const vairRoom = world.createEntity('Vair Room', EntityType.ROOM);
+      vairRoom.add({ type: TraitType.ROOM });
+
+      const ledgeRoom = world.createEntity('Narrow Ledge', EntityType.ROOM);
+      ledgeRoom.add({ type: TraitType.ROOM });
+
+      // Balloon is an enterable item (vehicle) in the vair room.
+      // Must also have ENTERABLE trait so canContain() allows moveEntity.
+      const balloon = world.createEntity('balloon', EntityType.ITEM);
+      balloon.add({ type: TraitType.VEHICLE });
+      balloon.add({ type: TraitType.ENTERABLE });
+      world.moveEntity(balloon.id, vairRoom.id);
+
+      // Player is inside the balloon — verify move succeeds
+      const moved = world.moveEntity(player.id, balloon.id);
+      expect(moved).toBe(true);
+      expect(world.getLocation(player.id)).toBe(balloon.id);
+
+      // Hook is scenery in the ledge room (different room!)
+      const hook = world.createEntity('hook', EntityType.SCENERY);
+      hook.add({ type: TraitType.SCENERY });
+      world.moveEntity(hook.id, ledgeRoom.id);
+
+      // Without minimum scope, hook is UNAWARE (different rooms)
+      expect(resolver.getScope(player, hook)).toBe(ScopeLevel.UNAWARE);
+
+      // Set minimum scope: hook is REACHABLE from the vair room
+      hook.setMinimumScope(ScopeLevel.REACHABLE, [vairRoom.id]);
+
+      // Now the hook should be REACHABLE because:
+      // 1. getContainingRoom(player) walks: player → balloon → vairRoom
+      // 2. hook.getMinimumScope(vairRoom.id) returns REACHABLE (3)
+      // 3. max(UNAWARE, REACHABLE) = REACHABLE
+      expect(resolver.getScope(player, hook)).toBe(ScopeLevel.REACHABLE);
+    });
+
+    test('should NOT make entity reachable from wrong vehicle room', () => {
+      // Same setup, but the hook's minimum scope is for a different room
+      const vairRoom = world.createEntity('Vair Room', EntityType.ROOM);
+      vairRoom.add({ type: TraitType.ROOM });
+
+      const otherVairRoom = world.createEntity('Other Vair Room', EntityType.ROOM);
+      otherVairRoom.add({ type: TraitType.ROOM });
+
+      const ledgeRoom = world.createEntity('Wide Ledge', EntityType.ROOM);
+      ledgeRoom.add({ type: TraitType.ROOM });
+
+      const balloon = world.createEntity('balloon', EntityType.ITEM);
+      balloon.add({ type: TraitType.VEHICLE });
+      balloon.add({ type: TraitType.ENTERABLE });
+      world.moveEntity(balloon.id, vairRoom.id);
+
+      const moved = world.moveEntity(player.id, balloon.id);
+      expect(moved).toBe(true);
+
+      const hook = world.createEntity('hook', EntityType.SCENERY);
+      hook.add({ type: TraitType.SCENERY });
+      world.moveEntity(hook.id, ledgeRoom.id);
+
+      // Hook is reachable from otherVairRoom, NOT from vairRoom
+      hook.setMinimumScope(ScopeLevel.REACHABLE, [otherVairRoom.id]);
+
+      // Player is in vairRoom via balloon — hook should still be UNAWARE
+      expect(resolver.getScope(player, hook)).toBe(ScopeLevel.UNAWARE);
+    });
+
+    test('should include vehicle-scoped entities in getReachable', () => {
+      const vairRoom = world.createEntity('Vair Room', EntityType.ROOM);
+      vairRoom.add({ type: TraitType.ROOM });
+
+      const ledgeRoom = world.createEntity('Ledge Room', EntityType.ROOM);
+      ledgeRoom.add({ type: TraitType.ROOM });
+
+      const balloon = world.createEntity('balloon', EntityType.ITEM);
+      balloon.add({ type: TraitType.VEHICLE });
+      balloon.add({ type: TraitType.ENTERABLE });
+      world.moveEntity(balloon.id, vairRoom.id);
+
+      const moved = world.moveEntity(player.id, balloon.id);
+      expect(moved).toBe(true);
+
+      const hook = world.createEntity('hook', EntityType.SCENERY);
+      hook.add({ type: TraitType.SCENERY });
+      // Hook is in a DIFFERENT room (not the one the player came from)
+      world.moveEntity(hook.id, ledgeRoom.id);
+
+      hook.setMinimumScope(ScopeLevel.REACHABLE, [vairRoom.id]);
+
+      const reachable = resolver.getReachable(player);
+      expect(reachable.some(e => e.id === hook.id)).toBe(true);
+    });
+
     test('should allow dynamic scope changes during gameplay', () => {
       const clock = world.createEntity('clock', EntityType.OBJECT);
       clock.setMinimumScope(ScopeLevel.AWARE, [room.id]);

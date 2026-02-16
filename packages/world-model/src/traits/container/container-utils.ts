@@ -54,7 +54,9 @@ export function canContain(entity: IFEntity): boolean {
     entity.hasTrait(TraitType.CONTAINER) ||
     entity.hasTrait(TraitType.ROOM) ||
     entity.hasTrait(TraitType.ACTOR) ||
-    entity.hasTrait(TraitType.SUPPORTER) // Supporters can also hold things
+    entity.hasTrait(TraitType.SUPPORTER) || // Supporters can also hold things
+    entity.hasTrait(TraitType.ENTERABLE) ||
+    entity.hasTrait(TraitType.VEHICLE)
   );
 }
 
