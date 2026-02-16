@@ -1,54 +1,22 @@
-# Known Issues (List 03) — CLOSED
-
-**Closed**: 2026-02-16. All issues resolved or carried forward to [issues-list-04.md](issues-list-04.md).
+# Known Issues (List 04)
 
 Catalog of known bugs and issues to be addressed.
+Continued from [issues-list-03.md](issues-list-03.md) (closed 2026-02-16).
 
 ## Summary
 
 | Issue | Description | Severity | Component | Identified | Deferred | Fixed |
 |-------|-------------|----------|-----------|------------|----------|-------|
-| ISSUE-031 | UNDO command not implemented | Medium | Platform | 2026-01-22 | - | 2026-02-04 |
 | ISSUE-032 | Version transcript needs update for DUNGEON name | Low | Test | 2026-01-22 | - | - |
 | ISSUE-047 | Zifmia client needs console output panel without full Dev Tools | Medium | client-zifmia | 2026-02-01 | - | - |
 | ISSUE-048 | Zifmia not updated to latest platform | Medium | client-zifmia | 2026-02-04 | - | - |
 | ISSUE-049 | `$seed` directive for deterministic randomization testing | Low | transcript-tester | 2026-02-07 | - | - |
 | ISSUE-050 | Consolidate all Dungeo text into dungeo-en-us.ts for i18n | Low | dungeo | 2026-02-07 | - | - |
-| ISSUE-051 | TrollTrait capability declaration stale after melee interceptor | Low | dungeo | 2026-02-08 | - | 2026-02-08 |
-| ISSUE-052 | Capability registry uses module-level Map; not shared across require() | High | world-model | 2026-02-08 | - | 2026-02-13 |
-| ISSUE-053 | Scoring broken: treasures, room visits, and trophy case award 0 points | Critical | stdlib + dungeo | 2026-02-09 | - | 2026-02-09 |
-| ISSUE-054 | Cyclops say handler emits raw `{npcName}` template instead of "cyclops" | Low | dungeo | 2026-02-11 | - | 2026-02-16 |
-| ISSUE-055 | `take canary` fails — scope resolution doesn't find items inside open containers on floor | Medium | stdlib/dungeo | 2026-02-11 | - | 2026-02-16 |
-| ISSUE-056 | Treasure Room thief summoning message not displayed on entry | Low | dungeo | 2026-02-11 | - | 2026-02-16 |
+| ISSUE-052 | Capability registry uses module-level Map; not shared across require() | High | world-model | 2026-02-08 | - | - |
 
 ---
 
 ## Open Issues
-
-### ISSUE-031: UNDO command not implemented
-
-**Reported**: 2026-01-22
-**Severity**: Medium
-**Component**: Platform (Engine)
-
-**Description**:
-The UNDO command does not emit a `platform.undo_completed` event. The feature appears to be unimplemented.
-
-**Reproduction**:
-```
-> look
-> north
-> undo
-[no output]
-```
-
-**Expected**: Previous game state restored, confirmation message.
-
-**Affected transcripts**: undo-basic.transcript
-
-**Status**: Fixed 2026-02-04 — UNDO was implemented in Jan 2026. Test passes. Snapshot-based restoration working correctly.
-
----
 
 ### ISSUE-032: Version transcript needs update for DUNGEON name
 
@@ -140,20 +108,6 @@ All English text strings in the Dungeo story are currently spread across multipl
 
 ---
 
-### ISSUE-051: TrollTrait capability declaration stale after melee interceptor
-
-**Reported**: 2026-02-08
-**Severity**: Low
-**Component**: dungeo (story)
-**Status**: Fixed 2026-02-08 — Removed stale `capabilities` declaration from TrollTrait during Phase 7 interceptor conversion.
-
-**Description**:
-`TrollTrait` still declares `capabilities: ['if.action.attacking']` but no corresponding capability behavior is registered. The melee interceptor now handles all combat resolution, making this declaration vestigial.
-
-**Resolution**: Removed `capabilities` array from TrollTrait. All troll behaviors now use action interceptors (TrollTakingInterceptor, TrollAttackingInterceptor, TrollTalkingInterceptor) registered via `registerActionInterceptor()`.
-
----
-
 ### ISSUE-052: Capability registry uses module-level Map; not shared across require() boundaries
 
 **Reported**: 2026-02-08
@@ -198,93 +152,3 @@ function getRegistry(): Map<string, Map<string, CapabilityBehavior>> {
 ```
 
 **Priority**: High — this affects all stories using capability dispatch. Currently only the troll was affected (worked around), but future entities using capability behaviors will hit the same issue.
-
----
-
-### ISSUE-053: Scoring broken — treasures, room visits, and trophy case award 0 points
-
-**Reported**: 2026-02-09
-**Severity**: Critical
-**Component**: Platform (stdlib, world-model) + dungeo
-**Status**: Fixed 2026-02-09
-
-**Description**:
-After completing 9-walkthrough chain (12+ treasures collected and placed in trophy case, many rooms visited), score showed only 20/616. Only combat achievements were counting.
-
-**Root Causes**:
-1. `ScoringEventProcessor.handleTaken()/handlePutIn()` used `(item as any).isTreasure` but Dungeo uses `TreasureTrait` — the loose property never existed on entities
-2. `ScoringEventProcessor.handlePlayerMoved()` expected `toRoomId` field but going action emits `toRoom`
-3. Light-shaft event handler in Dungeo had the same `toRoomId`/`toRoom` mismatch
-
-**Resolution**:
-- Moved `TreasureTrait` from story-level (`dungeo.trait.treasure`) to platform (`packages/world-model`, type `'treasure'`)
-- Updated `ScoringEventProcessor` to use `item.get(TreasureTrait)` trait lookup instead of `(item as any).isTreasure`
-- Fixed `handlePlayerMoved()` to read `toRoom` field (matching going action events)
-- Fixed light-shaft handler to read `toRoom` field
-- Score after full walkthrough chain: 20/616 → 281/616
-
----
-
-### ISSUE-054: Cyclops say handler emits raw `{npcName}` template
-
-**Reported**: 2026-02-11
-**Severity**: Low
-**Component**: dungeo (story)
-**Status**: Fixed 2026-02-16 — Cyclops messages now render correctly ("The cyclops, hearing that dreaded name, panics!"). A related bug was found in the thief's steal message (`{itemName}` not substituted) caused by npc-service.ts emitting `data` instead of `params` for message template substitution. Fixed by adding `params: action.data` to both `npc.spoke` and `npc.emoted` events in npc-service.ts.
-
----
-
-### ISSUE-056: Treasure Room thief summoning message not displayed on entry
-
-**Reported**: 2026-02-11
-**Severity**: Low
-**Component**: Platform (event-processor)
-**Status**: Fixed 2026-02-16 — The handler correctly returns a `MessageEffect` (`{ type: 'message', id: '...' }`), which the effect processor converts to a `game.message` event. But `applyMessageEffect()` was not pushing the event to `pendingEmittedEvents` (unlike `applyEmitEffect()`), so the event was lost. Fixed by adding `this.pendingEmittedEvents.push(messageEvent)` in `effect-processor.ts`.
-
----
-
-### ISSUE-055: Scope resolution doesn't find items inside open containers on the floor
-
-**Reported**: 2026-02-11
-**Severity**: Medium
-**Component**: stdlib (scope resolver) / dungeo
-**Status**: Fixed 2026-02-16 — Verified working in wt-12-thief-fight.transcript (line 206). `take canary` succeeds from open egg on Treasure Room floor. Likely fixed by earlier scope/visibility platform fixes.
-
-**Description**:
-After the thief opens the jewel-encrusted egg (via lair deposit) and drops it on the Treasure Room floor, `take canary` fails with "You can't see any such thing." The canary is inside the open egg, which is a container (`ContainerTrait`, `OpenableTrait.isOpen = true`) sitting on the room floor.
-
-**Resolution**: No longer reproduces. The wt-12 walkthrough tests this exact scenario and passes (641/641 tests).
-
----
-
-## Deferred Issues
-
-*Issues deferred because they test features not yet implemented.*
-
-### Features Not Yet Implemented (Blocking Tests)
-
-The following transcripts test features that are not yet implemented in Dungeo. These are not bugs - they are roadmap items:
-
-| Transcript | Feature Needed |
-|------------|----------------|
-| boat-inflate-deflate | Boat/raft mechanics |
-| boat-stick-puncture | Boat puncture |
-| balloon-flight | Balloon mechanics |
-| balloon-actions | Balloon mechanics |
-| basket-elevator | Elevator mechanics |
-| robot-commands | Robot NPC |
-| maze-navigation | Maze rooms |
-| maze-loops | Maze rooms |
-| frigid-river-full | River/boat mechanics |
-| flooding | Dam flooding |
-| dam-puzzle | Dam mechanics |
-| bucket-well | Well/bucket mechanics |
-| coal-machine | Coal machine puzzle |
-| mirror-room-toggle | Mirror room mechanics |
-| royal-puzzle-* | Royal Puzzle Box |
-| tiny-room-puzzle | Bank puzzle |
-| bank-puzzle | Bank puzzle |
-| exorcism-ritual | Exorcism puzzle |
-| cyclops-magic-word | Cyclops NPC |
-| coffin-* | Coffin/Egyptian area |
-| endgame-* | Endgame content |
