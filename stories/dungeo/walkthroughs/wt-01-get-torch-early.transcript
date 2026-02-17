@@ -84,7 +84,7 @@ description: Priority path - get the torch ASAP to minimize lantern usage. Torch
 [RETRY: max=5]
 [DO]
 > attack troll with sword
-[OK: contains "troll" OR "staggering"]
+[OK: contains_any "troll" "staggering"]
 [UNTIL "slumps to the floor dead" OR "removes his head" OR "He dies" OR "You are dead"]
 [ENSURES: not entity "troll" alive]
 [END RETRY]
