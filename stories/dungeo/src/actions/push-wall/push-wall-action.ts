@@ -154,7 +154,7 @@ export const pushWallAction: Action = {
     // Room description after push
     events.push(context.event('game.message', {
       messageId: 'dungeo.puzzle.room_description',
-      text: context.sharedData.newDescription
+      params: { text: context.sharedData.newDescription }
     }));
 
     return events;

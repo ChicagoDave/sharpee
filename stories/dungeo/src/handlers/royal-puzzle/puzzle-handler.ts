@@ -274,11 +274,20 @@ export function handleTakeCard(world: WorldModel): ISemanticEvent[] | null {
     // Take the card
     takeCard(state);
 
-    // Add card to player inventory
+    // Add card to player inventory and award take points
     const cardId = world.getStateValue(GOLD_CARD_KEY);
     const player = world.getPlayer();
     if (cardId && player) {
       world.moveEntity(cardId, player.id);
+
+      // Award OFVAL points (same as stdlib taking action does)
+      const cardEntity = world.getEntity(cardId);
+      if (cardEntity) {
+        const identity = cardEntity.get(IdentityTrait);
+        if (identity?.points) {
+          world.awardScore(cardId, identity.points, identity.name ?? 'gold card');
+        }
+      }
     }
 
     events.push({
@@ -376,9 +385,11 @@ export function createPuzzleCommandTransformer(): ParsedCommandTransformer {
           }
           if (isAtCardPosition(state)) {
             // Redirect to puzzle take card action
+            // Clear directObject so validator doesn't try to resolve "card" entity
             return {
               ...parsed,
               action: 'dungeo.puzzle.take_card',
+              structure: { ...parsed.structure, directObject: undefined },
               extras: {
                 ...parsed.extras,
                 originalAction: actionId,
@@ -386,10 +397,12 @@ export function createPuzzleCommandTransformer(): ParsedCommandTransformer {
               }
             };
           } else {
-            // Not adjacent - redirect to blocking action
+            // Not at card position - redirect to blocking action
+            // Clear directObject so validator doesn't try to resolve "card" entity
             return {
               ...parsed,
               action: 'dungeo.puzzle.take_card_blocked',
+              structure: { ...parsed.structure, directObject: undefined },
               extras: {
                 ...parsed.extras,
                 originalAction: actionId,
