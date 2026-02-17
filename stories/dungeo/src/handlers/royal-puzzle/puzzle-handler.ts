@@ -23,7 +23,7 @@ import {
   canExit,
   canPush,
   executePush,
-  isAdjacentToCard,
+  isAtCardPosition,
   takeCard,
   getPuzzleDescription,
   ENTRY_POSITION,
@@ -270,7 +270,7 @@ export function handleTakeCard(world: WorldModel): ISemanticEvent[] | null {
 
   const events: ISemanticEvent[] = [];
 
-  if (isAdjacentToCard(state)) {
+  if (isAtCardPosition(state)) {
     // Take the card
     takeCard(state);
 
@@ -374,7 +374,7 @@ export function createPuzzleCommandTransformer(): ParsedCommandTransformer {
             // Card already taken - let normal TAKE fail
             return parsed;
           }
-          if (isAdjacentToCard(state)) {
+          if (isAtCardPosition(state)) {
             // Redirect to puzzle take card action
             return {
               ...parsed,

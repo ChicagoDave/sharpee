@@ -46,7 +46,7 @@ export function registerPuzzleMessages(language: LanguageProvider): void {
   language.addMessage(PuzzleHandlerMessages.MOVE_BLOCKED, 'You cannot go that way.');
   language.addMessage(PuzzleHandlerMessages.MOVE_SUCCESS, 'OK.');
   language.addMessage(PuzzleHandlerMessages.ROOM_DESCRIPTION, '{text}');
-  language.addMessage(PuzzleHandlerMessages.TAKE_CARD, 'You carefully extract the gold card from its depression in the wall.');
+  language.addMessage(PuzzleHandlerMessages.TAKE_CARD, 'You carefully extract the gold card from the depression in the floor.');
   language.addMessage(PuzzleHandlerMessages.CANT_TAKE_CARD, 'You are not close enough to reach the card.');
   language.addMessage(PuzzleHandlerMessages.PUSH_SUCCESS, 'The sandstone wall slides into the space beyond.');
   language.addMessage(PuzzleHandlerMessages.PUSH_NO_WALL, 'There is no wall there.');

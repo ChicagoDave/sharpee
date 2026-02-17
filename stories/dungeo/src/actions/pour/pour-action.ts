@@ -136,14 +136,19 @@ export const pourAction: Action = {
           const topRoomId = vehicleTrait.positionRooms['top'];
 
           if (topRoomId) {
+            // Track source room before moving
+            const fromRoomId = world.getLocation(bucket.id);
+
             // Move bucket to top
             moveVehicle(world, bucket.id, topRoomId);
             vehicleTrait.currentPosition = 'top';
             sharedData.bucketRose = true;
 
-            // If player was in bucket, emit room description event
+            // If player was in bucket, track for room scoring
             if (isActorInVehicle(world, player.id)) {
               sharedData.playerRose = true;
+              sharedData.fromRoomId = fromRoomId;
+              sharedData.toRoomId = topRoomId;
             }
           }
         } else if (vehicleTrait.currentPosition === 'top') {
@@ -180,6 +185,18 @@ export const pourAction: Action = {
         actionId: POUR_ACTION_ID,
         messageId: PourMessages.BUCKET_RISES
       }));
+
+      // Emit actor_moved so room visit scoring triggers
+      if (sharedData.fromRoomId && sharedData.toRoomId) {
+        events.push(context.event('if.event.actor_moved', {
+          actor: { id: player.id },
+          direction: 'UP',
+          fromRoom: sharedData.fromRoomId,
+          toRoom: sharedData.toRoomId,
+          oppositeDirection: 'DOWN',
+          firstVisit: true
+        }));
+      }
 
       // Emit look event to describe new location
       const vehicle = getActorVehicle(world, player.id);

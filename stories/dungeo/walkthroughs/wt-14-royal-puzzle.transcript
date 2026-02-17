@@ -1,13 +1,13 @@
 title: Royal Puzzle - Gold Card
 story: dungeo
-description: Navigate to Royal Puzzle via Treasure Room, collect gold card treasure (25 pts). Restores from wt-13.
+description: Navigate to Royal Puzzle via Treasure Room, solve the sliding block puzzle to collect the gold card treasure (25 pts). Restores from wt-13.
 ---
 
 # Restore state from wt-13 (player at Living Room with torch and lantern)
 $restore wt-13
 
 # ============================================================================
-# GOAL: Navigate to the Royal Puzzle
+# GOAL: Navigate to Puzzle Room
 # ============================================================================
 
 [GOAL: Navigate to Puzzle Room]
@@ -53,6 +53,13 @@ $restore wt-13
 > up
 [OK: contains "Treasure Room"]
 
+# The thief may have stolen the gold card from the puzzle room and dropped
+# it here when killed. Pick it up if present.
+[IF: last_output contains "gold card"]
+> take gold card
+[OK: contains "gold card"]
+[END IF]
+
 # Treasure Room → East → Square Room
 > east
 [OK: contains "Square Room"]
@@ -65,7 +72,7 @@ $restore wt-13
 [END GOAL]
 
 # ============================================================================
-# GOAL: Enter puzzle and collect gold card
+# GOAL: Enter puzzle and collect gold card (if not already held)
 # ============================================================================
 
 [GOAL: Collect gold card]
@@ -75,27 +82,192 @@ $restore wt-13
 > down
 [OK: contains "sandstone"]
 
-# Push east wall to clear path (sandstone at pos 10 slides to 11)
+# ---- Phase 1: Navigate from entry (pos 9) to card position (pos 36) ----
+
+# Push east wall: sandstone at 10 slides to 11, player moves to 10
 > push east wall
 [OK: contains "slide"]
 
-# Navigate south toward the card block (at position 33)
+# South: 10 → 18
 > south
 [OK: contains "maze"]
 
-> south
+# Southwest: 18 → 25 (diagonal, south component clear)
+> southwest
 [OK: contains "maze"]
 
-# One more south puts us at position 34, adjacent to the card at position 33
-> south
-[OK: contains "card"]
+# Push south wall: bad ladder at 33 slides to 41, player moves to 33
+> push south wall
+[OK: contains "slide"]
 
-# Take the gold card from the wall depression
+# East: 33 → 34
+> east
+[OK: contains "maze"]
+
+# East: 34 → 35
+> east
+[OK: contains "maze"]
+
+# Push south wall: sandstone at 43 slides to 51, player moves to 43
+> push south wall
+[OK: contains "slide"]
+
+# North: 43 → 35
+> north
+[OK: contains "maze"]
+
+# North: 35 → 27
+> north
+[OK: contains "maze"]
+
+# East: 27 → 28
+> east
+[OK: contains "maze"]
+
+# Push south wall: sandstone at 36 slides to 44, player moves to 36 (card position!)
+> push south wall
+[OK: contains "depressed"]
+
+# Take the gold card from the depression in the floor (if thief didn't steal it)
+[IF: not inventory contains "gold card"]
 > take card
-[OK: contains "card"]
-
-> inventory
 [OK: contains "gold card"]
+[END IF]
+
+# ---- Phase 2: Navigate back, repositioning ladder from 21 to 10 ----
+
+# Push south wall: sandstone at 44 slides to 52, player moves to 44
+> push south wall
+[OK: contains "slide"]
+
+# East: 44 → 45
+> east
+[OK: contains "maze"]
+
+# Northeast: 45 → 38 (diagonal, east component clear)
+> northeast
+[OK: contains "maze"]
+
+# Push west wall x4: push sandstone chain westward through row 4
+> push west wall
+[OK: contains "slide"]
+
+> push west wall
+[OK: contains "slide"]
+
+> push west wall
+[OK: contains "slide"]
+
+> push west wall
+[OK: contains "slide"]
+
+# Northeast x2: navigate up to row 2
+> northeast
+[OK: contains "maze"]
+
+> northeast
+[OK: contains "maze"]
+
+# North: 20 → 12
+> north
+[OK: contains "maze"]
+
+# Push east wall: sandstone at 13 slides to 14, player moves to 13
+> push east wall
+[OK: contains "slide"]
+
+# Southwest: 13 → 20 (diagonal, west component clear)
+> southwest
+[OK: contains "maze"]
+
+# South: 20 → 28
+> south
+[OK: contains "maze"]
+
+# Southeast: 28 → 37 (diagonal, south component clear)
+> southeast
+[OK: contains "maze"]
+
+# Northeast: 37 → 30 (diagonal, east component clear)
+> northeast
+[OK: contains "maze"]
+
+# North: 30 → 22
+> north
+[OK: contains "maze"]
+
+# Push west wall: LADDER at 21 slides to 20, player moves to 21
+> push west wall
+[OK: contains "slide"]
+
+# Northwest: 21 → 12 (diagonal, north component clear)
+> northwest
+[OK: contains "maze"]
+
+# Push south wall: LADDER at 20 slides to 28, player moves to 20
+> push south wall
+[OK: contains "slide"]
+
+# Push south wall: LADDER at 28 slides to 36, player moves to 28
+> push south wall
+[OK: contains "slide"]
+
+# West: 28 → 27
+> west
+[OK: contains "maze"]
+
+# Northwest x2: navigate back to entry position
+> northwest
+[OK: contains "maze"]
+
+> northwest
+[OK: contains "maze"]
+
+# Push south wall: sandstone at 17 slides to 25, player moves to 17
+> push south wall
+[OK: contains "slide"]
+
+# Southeast x3: navigate down to row 5
+> southeast
+[OK: contains "maze"]
+
+> southeast
+[OK: contains "maze"]
+
+> southeast
+[OK: contains "maze"]
+
+# Northeast: 44 → 37
+> northeast
+[OK: contains "maze"]
+
+# Push west wall x2: push LADDER westward
+> push west wall
+[OK: contains "slide"]
+
+> push west wall
+[OK: contains "slide"]
+
+# Southwest: 35 → 42
+> southwest
+[OK: contains "maze"]
+
+# Push north wall x3: push LADDER northward to exit position
+> push north wall
+[OK: contains "slide"]
+
+> push north wall
+[OK: contains "slide"]
+
+# Final push: LADDER at 18 slides to 10 (exit position!)
+> push north wall
+[OK: contains "slide"]
+
+# Northwest: 18 → 9 (entry position)
+> northwest
+[OK: contains "maze"]
+[OK: contains "ladder"]
+[OK: contains "ceiling"]
 
 [END GOAL]
 
@@ -105,27 +277,9 @@ $restore wt-13
 
 [GOAL: Exit puzzle via ladder]
 
-# The full maze solution requires 30+ push moves to reposition the ladder.
-# Use GDT to set up exit (ladder at pos 10, player at entry pos 9).
-> gdt
-[OK: contains "GDT"]
-
-> pz exit
-[OK: contains "ladder"]
-[OK: contains "exit"]
-
-> ex
-[OK: contains "Returning"]
-
-# Verify we can see the ladder reaching the ceiling
-> look
-[OK: contains "ladder"]
-[OK: contains "ceiling"]
-
-# Climb out
+# Climb out — player at pos 9, ladder at pos 10
 > up
 [OK: contains "climb"]
-[OK: contains "ladder"]
 
 # Verify back in Puzzle Room
 > look
@@ -157,8 +311,10 @@ $restore wt-13
 > open trophy case
 [OK: contains "open"]
 
+[IF: inventory contains "gold card"]
 > put gold card in trophy case
 [OK: contains "put"]
+[END IF]
 
 [END GOAL]
 

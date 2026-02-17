@@ -2,7 +2,7 @@
  * Puzzle Take Card Blocked Action
  *
  * Story-specific action for when player tries to take the gold card
- * but is not adjacent to it in the puzzle grid.
+ * but is not at the card position (position 36) in the puzzle grid.
  */
 
 import { Action, ActionContext, ValidationResult, ActionMetadata } from '@sharpee/stdlib';
@@ -30,7 +30,7 @@ export const puzzleTakeCardBlockedAction: Action & { metadata: ActionMetadata } 
   },
 
   validate(context: ActionContext): ValidationResult {
-    // Always valid - the transformer only sends here when we're not adjacent
+    // Always valid - the transformer only sends here when we're not at card position
     return { valid: true };
   },
 

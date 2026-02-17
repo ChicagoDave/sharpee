@@ -49,11 +49,13 @@ export function ZifmiaRunner({ bundleUrl, bundleData, onClose, onError, onLoaded
   const [state, setState] = useState<RunnerState>({ phase: 'loading' });
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
   const { theme, setTheme } = useTheme();
 
   const gameHandleRef = useRef<GameProviderHandle | null>(null);
   const saveManagerRef = useRef<SaveRestoreManager | null>(null);
   const storageProvider = useRef(new BrowserStorageProvider()).current;
+  const restartResolverRef = useRef<((confirmed: boolean) => void) | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -115,11 +117,17 @@ export function ZifmiaRunner({ bundleUrl, bundleData, onClose, onError, onLoaded
 
         engine.setStory(story);
 
-        // Register platform save/restore hooks (no-op - actual save handled via UI dialogs)
-        // This prevents the engine from emitting platform.save_failed errors
+        // Register platform save/restore hooks
         (engine as any).registerSaveRestoreHooks({
           onSaveRequested: async () => { /* handled by UI dialog via if.event.save_requested */ },
           onRestoreRequested: async () => null, /* handled by UI dialog */
+          onRestartRequested: async () => {
+            // Show confirmation dialog and wait for user response
+            return new Promise<boolean>((resolve) => {
+              restartResolverRef.current = resolve;
+              setShowRestartConfirm(true);
+            });
+          },
         });
 
         if (cancelled) return;
@@ -336,6 +344,31 @@ export function ZifmiaRunner({ bundleUrl, bundleData, onClose, onError, onLoaded
           onRestore={handleRestoreConfirm}
           onCancel={() => setShowRestoreDialog(false)}
         />
+      )}
+
+      {showRestartConfirm && (
+        <div className="zifmia-dialog-overlay" onClick={() => {
+          setShowRestartConfirm(false);
+          restartResolverRef.current?.(false);
+          restartResolverRef.current = null;
+        }}>
+          <div className="zifmia-dialog" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Restart Game">
+            <h2>Restart</h2>
+            <p>Are you sure you want to restart? All unsaved progress will be lost.</p>
+            <div className="zifmia-dialog-buttons">
+              <button autoFocus onClick={() => {
+                setShowRestartConfirm(false);
+                restartResolverRef.current?.(true);
+                restartResolverRef.current = null;
+              }}>Yes</button>
+              <button onClick={() => {
+                setShowRestartConfirm(false);
+                restartResolverRef.current?.(false);
+                restartResolverRef.current = null;
+              }}>No</button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

@@ -445,6 +445,46 @@ export class GameEngine {
     this.emit('game:over', this.context);
   }
 
+  /**
+   * Restart the game from scratch.
+   *
+   * Clears the world, resets engine state, and re-initializes the story.
+   * Called from both processMetaPlatformOperation and processPlatformOperations.
+   */
+  private async restartGame(): Promise<void> {
+    if (!this.story) return;
+
+    // Stop engine if running
+    if (this.running) {
+      this.stop();
+    }
+
+    // Reset pronoun context
+    if (this.parser && hasPronounContext(this.parser)) {
+      this.parser.resetPronounContext();
+    }
+
+    // Clear world state (entities, spatial index, relationships, etc.)
+    this.world.clear();
+
+    // Reset engine context
+    this.context.currentTurn = 1;
+    this.context.history = [];
+    this.context.metadata.started = new Date();
+    this.context.metadata.lastPlayed = new Date();
+
+    // Clear engine bookkeeping
+    this.turnEvents.clear();
+    this.pendingPlatformOps = [];
+    this.saveRestoreService.clearUndoSnapshots();
+    this.hasEmittedInitialized = false;
+
+    // Re-initialize the story (creates entities, player, custom actions, etc.)
+    this.setStory(this.story);
+
+    // Start the engine (emits game.initialized + game.started)
+    this.start();
+  }
 
   /**
    * Execute a turn
@@ -979,25 +1019,15 @@ export class GameEngine {
         const context = platformOp.payload.context as IRestartContext;
         if (this.saveRestoreHooks?.onRestartRequested) {
           const shouldRestart = await this.saveRestoreHooks.onRestartRequested(context);
-          if (shouldRestart && this.story) {
-            if (this.running) this.stop();
-            if (this.parser && hasPronounContext(this.parser)) {
-              this.parser.resetPronounContext();
-            }
-            await this.setStory(this.story);
-            this.start();
+          if (shouldRestart) {
+            await this.restartGame();
             completionEvents.push(createRestartCompletedEvent(true));
           } else {
             completionEvents.push(createRestartCompletedEvent(false));
           }
-        } else if (this.story) {
-          // Default: restart
-          if (this.running) this.stop();
-          if (this.parser && hasPronounContext(this.parser)) {
-            this.parser.resetPronounContext();
-          }
-          await this.setStory(this.story);
-          this.start();
+        } else {
+          // No restart hook — auto-confirm
+          await this.restartGame();
           completionEvents.push(createRestartCompletedEvent(true));
         }
         break;
@@ -1621,58 +1651,21 @@ export class GameEngine {
           
           case PlatformEventType.RESTART_REQUESTED: {
             const context = platformOp.payload.context as IRestartContext;
+            let shouldRestart = true;
+
             if (this.saveRestoreHooks?.onRestartRequested) {
-              const shouldRestart = await this.saveRestoreHooks.onRestartRequested(context);
-              if (shouldRestart) {
-                // Emit completion event
-                const completionEvent = createRestartCompletedEvent(true);
-                this.eventSource.emit(completionEvent);
-                this.turnEvents.get(currentTurn)?.push(completionEvent);
-                // Also emit through engine's event emitter for tests
-                this.emit('event', completionEvent as any);
-                
-                // Re-initialize the story
-                if (this.story) {
-                  // Stop first if running
-                  if (this.running) {
-                    this.stop();
-                  }
-                  // Reset pronoun context (ADR-089)
-                  if (this.parser && hasPronounContext(this.parser)) {
-                    this.parser.resetPronounContext();
-                  }
-                  await this.setStory(this.story);
-                  this.start();
-                }
-              } else {
-                // Restart was cancelled
-                const cancelEvent = createRestartCompletedEvent(false);
-                this.eventSource.emit(cancelEvent);
-                this.turnEvents.get(currentTurn)?.push(cancelEvent);
-                // Also emit through engine's event emitter for tests
-                this.emit('event', cancelEvent as any);
-              }
-            } else {
-              // No restart hook registered - default behavior is to restart
+              shouldRestart = await this.saveRestoreHooks.onRestartRequested(context);
+            }
+
+            if (shouldRestart) {
               const completionEvent = createRestartCompletedEvent(true);
               this.eventSource.emit(completionEvent);
-              this.turnEvents.get(currentTurn)?.push(completionEvent);
-              // Also emit through engine's event emitter for tests
               this.emit('event', completionEvent as any);
-
-              // Re-initialize the story
-              if (this.story) {
-                // Stop first if running
-                if (this.running) {
-                  this.stop();
-                }
-                // Reset pronoun context (ADR-089)
-                if (this.parser && hasPronounContext(this.parser)) {
-                  this.parser.resetPronounContext();
-                }
-                await this.setStory(this.story);
-                this.start();
-              }
+              await this.restartGame();
+            } else {
+              const cancelEvent = createRestartCompletedEvent(false);
+              this.eventSource.emit(cancelEvent);
+              this.emit('event', cancelEvent as any);
             }
             break;
           }

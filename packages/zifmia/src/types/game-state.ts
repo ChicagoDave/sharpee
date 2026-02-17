@@ -111,6 +111,7 @@ export interface GameState {
 export type GameAction =
   | { type: 'ENGINE_READY'; engine: unknown }
   | { type: 'GAME_STARTED' }
+  | { type: 'GAME_RESTARTED' }
   | { type: 'ROOM_CHANGED'; room: CurrentRoom }
   | { type: 'SCORE_CHANGED'; score: number; maxScore?: number }
   | { type: 'TURN_COMPLETED'; turn: number; text: string; command?: string; events: GameEvent[] }
@@ -149,6 +150,14 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'GAME_STARTED':
       return {
         ...state,
+        isPlaying: true,
+      };
+
+    case 'GAME_RESTARTED':
+      return {
+        ...initialGameState,
+        engine: state.engine,
+        isReady: true,
         isPlaying: true,
       };
 

@@ -17,7 +17,7 @@ import {
   canPush,
   executePush,
   isLadderVisible,
-  isAdjacentToCard,
+  isAtCardPosition,
   getPuzzleDescription,
   RoyalPuzzleState
 } from '../../regions/royal-puzzle';
@@ -125,7 +125,7 @@ export const pushWallAction: Action = {
     // Store new state info
     context.sharedData.newPosition = state.playerPos;
     context.sharedData.ladderVisible = isLadderVisible(state);
-    context.sharedData.cardVisible = isAdjacentToCard(state);
+    context.sharedData.cardVisible = isAtCardPosition(state);
     context.sharedData.newDescription = getPuzzleDescription(state);
   },
 

@@ -61,7 +61,7 @@ function displayState(state: RoyalPuzzleState): string[] {
   output.push('');
 
   // Display grid
-  output.push('Grid (M=marble, .=empty, S=sand, L=ladder, C=card):');
+  output.push('Grid (M=marble, .=empty, S=sand, L=ladder, B=bad ladder):');
   for (let row = 0; row < 8; row++) {
     let rowStr = '  ';
     for (let col = 0; col < 8; col++) {
@@ -73,7 +73,7 @@ function displayState(state: RoyalPuzzleState): string[] {
         case 0: char = pos === state.playerPos ? '@' : '.'; break;  // EMPTY
         case -1: char = 'S'; break; // SANDSTONE
         case -2: char = 'L'; break; // LADDER
-        case -3: char = 'C'; break; // CARD
+        case -3: char = 'B'; break; // BAD_LADDER
         default: char = '?';
       }
       rowStr += char + ' ';
@@ -199,11 +199,6 @@ export const pzHandler: GDTCommandHandler = {
 
       case 'CARD':
         state.cardTaken = true;
-        // Convert card block to sandstone
-        const cardIdx = state.grid.indexOf(-3);  // CARD_BLOCK
-        if (cardIdx >= 0) {
-          state.grid[cardIdx] = SANDSTONE;
-        }
         return {
           success: true,
           output: ['Card marked as taken.', ...displayState(state)]

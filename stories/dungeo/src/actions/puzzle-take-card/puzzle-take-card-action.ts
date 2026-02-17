@@ -3,7 +3,7 @@
  *
  * Story-specific action for taking the gold card from inside the Royal Puzzle.
  * This action is invoked by the puzzle command transformer when player
- * tries to take the card while inside the puzzle grid and is adjacent to it.
+ * tries to take the card while inside the puzzle grid and is at the card position.
  */
 
 import { Action, ActionContext, ValidationResult, ActionMetadata } from '@sharpee/stdlib';
@@ -31,7 +31,7 @@ export const puzzleTakeCardAction: Action & { metadata: ActionMetadata } = {
   },
 
   validate(context: ActionContext): ValidationResult {
-    // The transformer already verified we're in puzzle and adjacent
+    // The transformer already verified we're in puzzle and at card position
     // Just pass through
     return { valid: true };
   },
@@ -51,7 +51,7 @@ export const puzzleTakeCardAction: Action & { metadata: ActionMetadata } = {
       return events;
     }
 
-    // Fallback - couldn't take the card (not adjacent)
+    // Fallback - couldn't take the card (not at card position)
     return [{
       id: generateEventId(),
       type: 'game.message',

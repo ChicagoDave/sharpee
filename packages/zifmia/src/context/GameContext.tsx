@@ -203,14 +203,17 @@ export function GameProvider({ engine, children, handleRef, onTurnCompleted, onS
       const turnEvents = [...turnEventsBuffer.current];
       turnEventsBuffer.current = [];
 
-      // Detect save/restore by events OR by command (events may not fire if action validate fails)
+      // Detect save/restore/restart by events OR by command (events may not fire if action validate fails)
       const isSaveRestore = turnEvents.some(e =>
         e.type === 'if.event.save_requested' || e.type === 'if.event.restore_requested'
+      );
+      const isRestart = turnEvents.some(e =>
+        e.type === 'platform.restart_completed'
       );
       const cmd = pendingCommand.current?.trim().toLowerCase();
       const isSaveCommand = cmd === 'save';
       const isRestoreCommand = cmd === 'restore';
-      const suppressText = isSaveRestore || isSaveCommand || isRestoreCommand;
+      const suppressText = isSaveRestore || isSaveCommand || isRestoreCommand || isRestart;
 
       // Fire save/restore dialogs from command detection (fallback when events don't fire)
       if (isSaveCommand && !isSaveRestore && onSaveRequestedRef.current) {
@@ -289,6 +292,16 @@ export function GameProvider({ engine, children, handleRef, onTurnCompleted, onS
       }
       if (evt.type === 'if.event.restore_requested' && onRestoreRequestedRef.current) {
         onRestoreRequestedRef.current();
+      }
+
+      // Handle restart completed — reset UI and issue initial look
+      if (evt.type === 'platform.restart_completed') {
+        const data = evt.data as { success?: boolean };
+        if (data?.success !== false) {
+          dispatch({ type: 'GAME_RESTARTED' });
+          // Defer look to next tick to avoid nested executeTurn
+          setTimeout(() => eng.executeTurn('look'), 0);
+        }
       }
 
       // Handle game start

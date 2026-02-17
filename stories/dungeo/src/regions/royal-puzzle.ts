@@ -46,7 +46,7 @@ export const MARBLE = 1;
 export const EMPTY = 0;
 export const SANDSTONE = -1;
 export const LADDER = -2;
-export const CARD_BLOCK = -3;
+export const BAD_LADDER = -3;
 
 // Direction offsets for 8x8 grid
 export const DIRECTION_OFFSETS = {
@@ -71,7 +71,7 @@ const INITIAL_GRID: number[] = [
   1, -1, 0, 1, 0, -2, 0, 1,
   // Row 3: marble at 29
   1, 0, 0, 0, 0, 1, 0, 1,
-  // Row 4: card block at 33, sandstone at 36, 37
+  // Row 4: bad ladder at 33, sandstone at 36 (card position per CPOBJS), 37
   1, -3, 0, 0, -1, -1, 0, 1,
   // Row 5: sandstone at 43
   1, 0, 0, -1, 0, 0, 0, 1,
@@ -86,6 +86,9 @@ export const ENTRY_POSITION = 9;
 
 // Position where ladder must be for exit (east of entry)
 export const LADDER_EXIT_POSITION = 10;
+
+// Position where gold card appears (MDL CPOBJS[37] 1-based = 0-based 36)
+export const CARD_POSITION = 36;
 
 export interface RoyalPuzzleState {
   grid: number[];
@@ -307,28 +310,12 @@ export function canExit(state: RoyalPuzzleState): boolean {
   return state.grid[LADDER_EXIT_POSITION] === LADDER;
 }
 
-export function isAdjacentToCard(state: RoyalPuzzleState): boolean {
-  if (state.cardTaken) return false;
-
-  // Check all 4 cardinal directions for card block
-  for (const dir of ['north', 'south', 'east', 'west'] as const) {
-    if (crossesBoundary(state.playerPos, dir)) continue;
-
-    const adjacent = state.playerPos + DIRECTION_OFFSETS[dir];
-    if (isValidPosition(adjacent) && state.grid[adjacent] === CARD_BLOCK) {
-      return true;
-    }
-  }
-  return false;
+export function isAtCardPosition(state: RoyalPuzzleState): boolean {
+  return !state.cardTaken && state.playerPos === CARD_POSITION;
 }
 
 export function takeCard(state: RoyalPuzzleState): void {
-  // Find and convert the card block
-  const cardIndex = state.grid.indexOf(CARD_BLOCK);
-  if (cardIndex !== -1) {
-    state.grid[cardIndex] = SANDSTONE;
-    state.cardTaken = true;
-  }
+  state.cardTaken = true;
 }
 
 export function getAvailableDirections(state: RoyalPuzzleState): string[] {
@@ -402,8 +389,11 @@ export function getPuzzleDescription(state: RoyalPuzzleState): string {
     parts.push('One of the sandstone walls has a wooden ladder attached to it.');
   }
 
-  if (isAdjacentToCard(state)) {
-    parts.push('Set into one wall is a small depression. Within it rests a gold card, embossed with the royal crest.');
+  if (state.playerPos === CARD_POSITION) {
+    parts.push('The center of the floor here is noticeably depressed.');
+    if (!state.cardTaken) {
+      parts.push('Nestled in the depression is an engraved gold card.');
+    }
   }
 
   return parts.join(' ');

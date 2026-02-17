@@ -17,7 +17,7 @@ export const MARBLE = 1;
 export const EMPTY = 0;
 export const SANDSTONE = -1;
 export const LADDER = -2;
-export const CARD_BLOCK = -3;
+export const BAD_LADDER = -3;
 
 /**
  * Configuration for the royal puzzle trait
@@ -41,7 +41,7 @@ export interface RoyalPuzzleTraitConfig {
  * Royal Puzzle Trait
  *
  * Tracks the state of the sliding block puzzle.
- * Grid values: MARBLE (1), EMPTY (0), SANDSTONE (-1), LADDER (-2), CARD_BLOCK (-3)
+ * Grid values: MARBLE (1), EMPTY (0), SANDSTONE (-1), LADDER (-2), BAD_LADDER (-3)
  */
 export class RoyalPuzzleTrait implements ITrait {
   static readonly type = 'dungeo.trait.royal_puzzle' as const;
