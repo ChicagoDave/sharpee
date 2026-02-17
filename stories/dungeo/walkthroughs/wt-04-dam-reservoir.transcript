@@ -151,15 +151,85 @@ $restore wt-03
 [END GOAL]
 
 # ============================================================================
-# GOAL: Store treasure and set up for next segment
+# GOAL: Mail order puzzle - Don Woods stamp (1 trophy case point)
+# MDL: act1.254:60-61, act3.199:1423-1446
 # ============================================================================
 
-[GOAL: Store platinum bar in trophy case]
+[GOAL: Get Don Woods stamp via mail order]
+[ENSURES: inventory contains "stamp"]
+
+# Read the matchbook to see the brochure advertisement
+> read matchbook
+[OK: contains "BROCHURE"]
+
+# Send for the brochure
+> send for brochure
+[OK: contains "postal"]
+
+# Walk east to Kitchen — arms the 3-turn delivery fuse
+> east
+[OK: contains "Kitchen"]
+
+# Wait 3 turns for delivery
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+# Third wait — fuse triggers, knock at the door
+> wait
+[OK: contains "knocking"]
+
+# Kitchen -> Behind House -> South of House -> West of House
+> east
+[OK: contains "Behind House"]
+
+> south
+[OK: contains "South of House"]
+
+> west
+[OK: contains "West of House"]
+
+# Open mailbox and get the brochure
+> open mailbox
+[OK: contains "open"]
+
+> take brochure
+[OK: contains "take"]
+
+# The stamp is inside the brochure
+> take stamp
+[OK: contains "take"]
+
+# Go back inside: West of House -> North -> Behind House -> West -> Kitchen -> West -> Living Room
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> west
+[OK: contains "Kitchen"]
+
+> west
+[OK: contains "Living Room"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Store treasures and set up for next segment
+# ============================================================================
+
+[GOAL: Store platinum bar and stamp in trophy case]
 
 > open trophy case
 [OK: contains "open"]
 
 > put bar in trophy case
+[OK: contains "put"]
+
+> put stamp in trophy case
 [OK: contains "put"]
 
 [END GOAL]
@@ -171,6 +241,9 @@ $restore wt-03
 [OK: contains "Dropped"]
 
 > drop matchbook
+[OK: contains "Dropped"]
+
+> drop brochure
 [OK: contains "Dropped"]
 
 > drop wrench
@@ -193,8 +266,8 @@ $restore wt-03
 # Save checkpoint for next walkthrough
 $save wt-04
 
-# SUCCESS! Dam puzzle complete
-# Treasure stored: platinum bar
+# SUCCESS! Dam puzzle + mail order complete
+# Treasures stored: platinum bar, Don Woods stamp
 # Inventory: torch, lantern
-# Living Room floor: guidebook, matchbook, wrench, screwdriver, incense, key
+# Living Room floor: guidebook, matchbook, brochure, wrench, screwdriver, incense, key
 # Reservoir drained - ready for wt-04b (trunk, pump)

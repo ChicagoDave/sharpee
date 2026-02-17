@@ -236,7 +236,7 @@ function createDamLobbyObjects(world: WorldModel, roomId: string): void {
   const guidebook = world.createEntity('guidebook', EntityType.ITEM);
   guidebook.add(new IdentityTrait({
     name: 'guidebook',
-    aliases: ['guide book', 'guide', 'book', 'brochure', 'pamphlet'],
+    aliases: ['guide book', 'guide', 'book'],
     description: 'This is a guidebook entitled "Flood Control Dam #3" with a picture of the dam on the cover.',
     properName: false,
     article: 'a',

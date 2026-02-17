@@ -228,7 +228,7 @@ function createLeaflet(world: WorldModel): IFEntity {
 
   leaflet.add(new IdentityTrait({
     name: 'leaflet',
-    aliases: ['paper', 'pamphlet', 'advertisement', 'ad'],
+    aliases: ['paper', 'advertisement', 'ad'],
     description: 'A small leaflet with some writing on it.',
     properName: false,
     article: 'a',

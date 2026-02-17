@@ -51,7 +51,7 @@ function createBrochureWithStamp(world: WorldModel, mailboxId: EntityId): void {
   const brochure = world.createEntity('brochure', EntityType.CONTAINER);
   brochure.add(new IdentityTrait({
     name: 'large brochure',
-    aliases: ['brochure', 'MIT brochure', 'pamphlet', 'free brochure'],
+    aliases: ['brochure', 'MIT brochure', 'free brochure'],
     description: 'A large, glossy brochure from MIT Tech. Affixed loosely to it is a small stamp.',
     properName: false,
     article: 'a'
