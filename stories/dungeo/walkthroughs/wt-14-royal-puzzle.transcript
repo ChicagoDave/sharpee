@@ -1,0 +1,179 @@
+title: Royal Puzzle - Gold Card
+story: dungeo
+description: Navigate to Royal Puzzle via Treasure Room, collect gold card treasure (25 pts). Restores from wt-13.
+---
+
+# Restore state from wt-13 (player at Living Room with torch and lantern)
+$restore wt-13
+
+# ============================================================================
+# GOAL: Navigate to the Royal Puzzle
+# ============================================================================
+
+[GOAL: Navigate to Puzzle Room]
+
+# Open trapdoor if needed
+> open trap door
+[OK: contains "open"]
+
+# Living Room → Cellar
+> down
+[OK: contains "Cellar"]
+
+# Cellar → Troll Room (troll dead from wt-01)
+> east
+[OK: contains "Troll Room"]
+
+# Maze path to Cyclops Room (same as wt-03/wt-13)
+> south
+[OK: contains "Maze"]
+
+> east
+[OK: contains "Maze"]
+
+> west
+[OK: contains "Maze"]
+
+> up
+[OK: contains "Maze"]
+
+> southwest
+[OK: contains "Maze"]
+
+> east
+[OK: contains "Maze"]
+
+> south
+[OK: contains "Maze"]
+
+> northeast
+[OK: contains "Cyclops Room"]
+
+# Cyclops Room → Treasure Room
+> up
+[OK: contains "Treasure Room"]
+
+# Treasure Room → East → Square Room
+> east
+[OK: contains "Square Room"]
+
+# Square Room → Down → Puzzle Room
+> down
+[OK: contains "Puzzle Room"]
+[OK: contains "hole"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Enter puzzle and collect gold card
+# ============================================================================
+
+[GOAL: Collect gold card]
+[ENSURES: inventory contains "gold card"]
+
+# Enter the puzzle (go down through hole)
+> down
+[OK: contains "sandstone"]
+
+# Push east wall to clear path (sandstone at pos 10 slides to 11)
+> push east wall
+[OK: contains "slide"]
+
+# Navigate south toward the card block (at position 33)
+> south
+[OK: contains "maze"]
+
+> south
+[OK: contains "maze"]
+
+# One more south puts us at position 34, adjacent to the card at position 33
+> south
+[OK: contains "card"]
+
+# Take the gold card from the wall depression
+> take card
+[OK: contains "card"]
+
+> inventory
+[OK: contains "gold card"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Exit the puzzle
+# ============================================================================
+
+[GOAL: Exit puzzle via ladder]
+
+# The full maze solution requires 30+ push moves to reposition the ladder.
+# Use GDT to set up exit (ladder at pos 10, player at entry pos 9).
+> gdt
+[OK: contains "GDT"]
+
+> pz exit
+[OK: contains "ladder"]
+[OK: contains "exit"]
+
+> ex
+[OK: contains "Returning"]
+
+# Verify we can see the ladder reaching the ceiling
+> look
+[OK: contains "ladder"]
+[OK: contains "ceiling"]
+
+# Climb out
+> up
+[OK: contains "climb"]
+[OK: contains "ladder"]
+
+# Verify back in Puzzle Room
+> look
+[OK: contains "Puzzle Room"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Return to Living Room and store treasure
+# ============================================================================
+
+[GOAL: Store gold card in trophy case]
+
+# Puzzle Room → Square Room → Treasure Room → Cyclops Room → Living Room
+> up
+[OK: contains "Square Room"]
+
+> west
+[OK: contains "Treasure Room"]
+
+> down
+[OK: contains "Cyclops Room"]
+
+> north
+[OK: contains "Living Room"]
+
+> open trophy case
+[OK: contains "open"]
+
+> put gold card in trophy case
+[OK: contains "put"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Verify final state
+# ============================================================================
+
+[GOAL: Verify state for next segment]
+
+> inventory
+[OK: contains "torch"]
+[OK: contains "lantern"]
+
+> look
+[OK: contains "Living Room"]
+[OK: contains "trophy case"]
+
+[END GOAL]
+
+$save wt-14

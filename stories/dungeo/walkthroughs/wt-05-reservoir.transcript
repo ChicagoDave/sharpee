@@ -141,7 +141,7 @@ $restore wt-04
 [END GOAL]
 
 # Save checkpoint for next walkthrough
-$save wt-04b
+$save wt-05
 
 # SUCCESS! Reservoir items collected
 # Inventory: torch, lantern

@@ -1,10 +1,10 @@
 title: Scattered Treasures (Violin, Coins, Grail, Trident, Blue Sphere, Jade, Red Sphere)
 story: dungeo
-description: Collect 7 scattered treasures from existing regions. Restores from wt-10.
+description: Collect 7 scattered treasures from existing regions. Restores from wt-11.
 ---
 
-# Restore state from wt-10 (player at Living Room with torch and lantern)
-$restore wt-10
+# Restore state from wt-11 (player at Living Room with torch and lantern)
+$restore wt-11
 
 # ============================================================================
 # PASS 1: Collect violin, grail, screwdriver, trident
@@ -357,7 +357,7 @@ $restore wt-10
 > southeast
 [OK: contains "Winding Passage"]
 
-# Mirror is State A (wt-10 toggled it back before exiting)
+# Mirror is State A (wt-11 toggled it back before exiting)
 > east
 [OK: contains "Mirror Room"]
 
@@ -461,4 +461,4 @@ $restore wt-10
 
 [END GOAL]
 
-$save wt-11
+$save wt-12

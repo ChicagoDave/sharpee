@@ -1,10 +1,10 @@
 title: Egyptian Room (Gold Coffin)
 story: dungeo
-description: Get gold coffin from Egyptian Room. Restores from wt-04b.
+description: Get gold coffin from Egyptian Room. Restores from wt-05.
 ---
 
-# Restore state from wt-04b (player at Living Room with torch and lantern)
-$restore wt-04b
+# Restore state from wt-05 (player at Living Room with torch and lantern)
+$restore wt-05
 
 # ============================================================================
 # GOAL: Navigate to Egyptian Room and get coffin
@@ -90,7 +90,7 @@ $restore wt-04b
 [END GOAL]
 
 # Save checkpoint for next walkthrough
-$save wt-05
+$save wt-06
 
 # SUCCESS! Egyptian Room complete
 # Treasure stored: coffin (+ previous: portrait, painting, zorkmid, platinum bar)

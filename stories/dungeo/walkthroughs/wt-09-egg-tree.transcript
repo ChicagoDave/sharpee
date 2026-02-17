@@ -1,10 +1,10 @@
 title: Egg from Tree
 story: dungeo
-description: Climb the tree in the forest, get the jewel-encrusted egg. Restores from wt-07.
+description: Climb the tree in the forest, get the jewel-encrusted egg. Restores from wt-08.
 ---
 
-# Restore state from wt-07 (player at Living Room)
-$restore wt-07
+# Restore state from wt-08 (player at Living Room)
+$restore wt-08
 
 # ============================================================================
 # GOAL: Get the egg from Up a Tree
@@ -65,4 +65,4 @@ $teleport Living Room
 
 [END GOAL]
 
-$save wt-08
+$save wt-09

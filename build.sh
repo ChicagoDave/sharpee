@@ -51,7 +51,7 @@ Options:
       --skip PKG       Resume platform build from package
       --no-version     Skip version updates
   -b, --story-bundle   Create .sharpee story bundle (requires -s)
-      --test           Build fast test bundle: dist/cli/{story}-test.js (requires -s)
+      --test           Build fast test bundle + run walkthrough chain (requires -s)
       --runner         Build Zifmia runner (loads .sharpee bundles in browser)
   -v, --verbose        Show build details
   -h, --help           Show this help
@@ -69,7 +69,7 @@ Examples:
   ./build.sh -s dungeo -c zifmia -t modern-dark  Zifmia with dark theme
   ./build.sh -s dungeo -c browser -c zifmia  Build both clients
   ./build.sh -s dungeo -b                    Create .sharpee story bundle
-  ./build.sh -s dungeo --test                Build fast test bundle
+  ./build.sh -s dungeo --test                Build + run all tests
   ./build.sh --runner                        Build Zifmia runner
   ./build.sh --skip stdlib -s dungeo         Resume from stdlib package
 
@@ -520,6 +520,73 @@ build_test_bundle() {
 }
 
 # ============================================================================
+# Run Walkthrough Tests
+# ============================================================================
+
+run_tests() {
+    local STORY_NAME="$1"
+    local WT_DIR="stories/${STORY_NAME}/walkthroughs"
+    local UT_DIR="stories/${STORY_NAME}/tests/transcripts"
+
+    log_step "Running Tests: ${STORY_NAME}"
+
+    # Run walkthrough chain if walkthroughs exist
+    if ls "${WT_DIR}"/wt-*.transcript 1>/dev/null 2>&1; then
+        echo -n "[walkthrough chain] "
+        local START_TIME=$(date +%s%N)
+        local TEST_OUTPUT
+        if TEST_OUTPUT=$(node dist/cli/sharpee.js --test --chain ${WT_DIR}/wt-*.transcript 2>&1); then
+            local END_TIME=$(date +%s%N)
+            local ELAPSED=$(( (END_TIME - START_TIME) / 1000000 ))
+
+            # Extract summary line (last non-empty line with pass/fail counts)
+            local SUMMARY=$(echo "$TEST_OUTPUT" | grep -E "^\d+ tests" | tail -1)
+            if [ -z "$SUMMARY" ]; then
+                SUMMARY=$(echo "$TEST_OUTPUT" | tail -3 | head -1)
+            fi
+            echo -e "${GREEN}✓${NC} ${SUMMARY} (${ELAPSED}ms)"
+        else
+            echo -e "${RED}✗ FAILED${NC}"
+            echo ""
+            echo "$TEST_OUTPUT" | grep -E "(FAIL|✗|Error)" | head -20
+            echo ""
+            echo "Full output:"
+            echo "$TEST_OUTPUT"
+            exit 1
+        fi
+    else
+        echo "No walkthroughs found in ${WT_DIR}"
+    fi
+
+    # Run unit test transcripts if they exist
+    if ls "${UT_DIR}"/*.transcript 1>/dev/null 2>&1; then
+        echo -n "[unit transcripts] "
+        local START_TIME=$(date +%s%N)
+        local TEST_OUTPUT
+        if TEST_OUTPUT=$(node dist/cli/sharpee.js --test ${UT_DIR}/*.transcript 2>&1); then
+            local END_TIME=$(date +%s%N)
+            local ELAPSED=$(( (END_TIME - START_TIME) / 1000000 ))
+
+            local SUMMARY=$(echo "$TEST_OUTPUT" | grep -E "^\d+ tests" | tail -1)
+            if [ -z "$SUMMARY" ]; then
+                SUMMARY=$(echo "$TEST_OUTPUT" | tail -3 | head -1)
+            fi
+            echo -e "${GREEN}✓${NC} ${SUMMARY} (${ELAPSED}ms)"
+        else
+            echo -e "${RED}✗ FAILED${NC}"
+            echo ""
+            echo "$TEST_OUTPUT" | grep -E "(FAIL|✗|Error)" | head -20
+            echo ""
+            echo "Full output:"
+            echo "$TEST_OUTPUT"
+            exit 1
+        fi
+    fi
+
+    echo ""
+}
+
+# ============================================================================
 # Story Build
 # ============================================================================
 
@@ -850,6 +917,7 @@ if [ -n "$STORY" ]; then
 fi
 if [ "$BUILD_TEST" = true ]; then
     echo "  5. Test bundle: dist/cli/${STORY}-test.js"
+    echo "  6. Run walkthrough + unit tests"
 fi
 if [ "$STORY_BUNDLE" = true ]; then
     echo "  5. Bundle story: ${STORY}.sharpee"
@@ -878,6 +946,7 @@ build_bundle
 
 if [ "$BUILD_TEST" = true ]; then
     build_test_bundle "$STORY"
+    run_tests "$STORY"
 fi
 
 if [ "$STORY_BUNDLE" = true ]; then

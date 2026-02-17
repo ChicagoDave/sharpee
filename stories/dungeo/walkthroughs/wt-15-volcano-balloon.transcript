@@ -1,11 +1,11 @@
 title: Volcano Balloon & Treasures
 story: dungeo
-description: Melt glacier, fly balloon through volcano, collect 4 treasures (ruby, coin, stamp, crown). Restores from wt-12.
+description: Melt glacier, fly balloon through volcano, collect 4 treasures (ruby, coin, stamp, crown). Restores from wt-14.
 ---
 
-# Restore state from wt-12 (player at Living Room with torch and lantern)
+# Restore state from wt-14 (player at Living Room with torch and lantern)
 # Living Room floor has: guidebook, matchbook, brick, shiny wire
-$restore wt-12
+$restore wt-14
 
 # ============================================================================
 # GOAL: Gather volcano supplies from Living Room floor
@@ -380,4 +380,4 @@ $restore wt-12
 
 [END GOAL]
 
-$save wt-13
+$save wt-15

@@ -76,6 +76,7 @@ Examples:
   sharpee init my-adventure       Create new project in ./my-adventure/
   sharpee init-browser            Add browser support to current project
   sharpee build                   Build story bundle + browser client
+  sharpee build --test            Build and run transcript tests
   sharpee build-browser           Build web bundle only in dist/web/
 
 Run 'sharpee <command> --help' for command-specific help.

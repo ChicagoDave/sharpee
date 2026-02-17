@@ -1,10 +1,10 @@
 title: Tea Room Area
 story: dungeo
-description: Solve riddle, get necklace, well puzzle, cake puzzles, carousel fix, cage puzzle. Restores from wt-08.
+description: Solve riddle, get necklace, well puzzle, cake puzzles, carousel fix, cage puzzle. Restores from wt-09.
 ---
 
-# Restore state from wt-08 (player at Living Room with torch and lantern)
-$restore wt-08
+# Restore state from wt-09 (player at Living Room with torch and lantern)
+$restore wt-09
 
 # ============================================================================
 # GOAL: Get water bottle from Kitchen (needed for well puzzle)
@@ -224,4 +224,4 @@ $teleport Living Room
 
 [END GOAL]
 
-$save wt-09
+$save wt-10

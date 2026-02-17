@@ -1,10 +1,10 @@
 title: River & Rainbow (Emerald, Statue, Pot of Gold)
 story: dungeo
-description: Ride Frigid River for emerald, detour for shovel, dig statue at Sandy Beach, wave sceptre for rainbow, get pot of gold. Continues from wt-06.
+description: Ride Frigid River for emerald, detour for shovel, dig statue at Sandy Beach, wave sceptre for rainbow, get pot of gold. Continues from wt-07.
 ---
 
-# Restore state from wt-06 (player at Living Room with torch, lantern, bell, book, candles)
-$restore wt-06
+# Restore state from wt-07 (player at Living Room with torch, lantern, bell, book, candles)
+$restore wt-07
 
 # ============================================================================
 # GOAL: Prepare for river journey
@@ -329,7 +329,7 @@ $restore wt-06
 
 [END GOAL]
 
-$save wt-07
+$save wt-08
 
 # SUCCESS! River & Rainbow complete
 # Treasures stored: emerald, statue, pot of gold

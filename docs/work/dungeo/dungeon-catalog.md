@@ -327,10 +327,10 @@ Points are awarded for: (1) taking the treasure, (2) placing it in the trophy ca
 | Lunch         | Sack     | Eat (optional)                   |
 | Garlic        | Sack     | Repel vampire bat                |
 | Water         | Bottle   | Bucket puzzle                    |
-| Eat-me cake   | Tea Room | Grow (makes player large)        |
-| Blue cake     | Tea Room | Shrink (makes player small)      |
-| Red cake      | Tea Room | Edible, explodes (kills player)  |
-| Orange cake   | Tea Room | Edible, no special effect        |
+| Eat-me cake   | Tea Room | Grow (makes player large)             |
+| Blue cake     | Tea Room | Shrink (crushes player in Tea Room)   |
+| Red cake      | Tea Room | Tastes terrible; throw to dissolve pool |
+| Orange cake   | Tea Room | Explodes (kills player)               |
 
 ### Keys & Access Items
 
@@ -376,16 +376,19 @@ Points are awarded for: (1) taking the treasure, (2) placing it in the trophy ca
 
 ## NPCs / Creatures
 
-| Creature       | Location          | Behavior                                     | Status |
-| -------------- | ----------------- | -------------------------------------------- | ------ |
-| Troll          | Troll Room        | Guards passage, fight to pass                | Done   |
-| Thief          | Wandering         | Steals treasures, opens egg, fight late-game | Done   |
-| Cyclops        | Cyclops Room      | Say "Odysseus" or "Ulysses" to scare away    | Done   |
-| Vampire bat    | Bat Room          | Attacks without garlic, teleports player     | Done   |
-| Spirits        | Entrance to Hades | Block passage until exorcised                | Done   |
-| Dungeon Master | Endgame           | Trivia questions, opens door after 3 correct | Done   |
-| Robot          | Low Room          | Commandable NPC (walk, take, drop, push)     | Done   |
-| Gnome          | Bank              | Appears with curtain of light                | **TODO** |
+| Creature       | Location          | Behavior                                     | Status      |
+| -------------- | ----------------- | -------------------------------------------- | ----------- |
+| Troll          | Troll Room        | Guards passage, fight to pass                | Done        |
+| Thief          | Wandering         | Steals treasures, opens egg, fight late-game | Done        |
+| Cyclops        | Cyclops Room      | Say "Odysseus" or "Ulysses" to scare away    | Done        |
+| Vampire bat    | Bat Room          | Attacks without garlic, teleports player     | Done        |
+| Spirits        | Entrance to Hades | Block passage until exorcised                | Done        |
+| Dungeon Master | Endgame           | Trivia questions, opens door after 3 correct | Done        |
+| Robot          | Low Room          | Commandable NPC (walk, take, drop, push)     | Done        |
+| Volcano Gnome  | Volcano ledges    | Accepts treasure, opens chimney exit         | **Excluded** |
+| Gnome of Zurich| Bank (Twin Room)  | Accepts treasure, teleports to Bank Entrance | **Excluded** |
+
+> **Gnome Exclusion (2026-02-16):** Both gnomes are present in the MDL source (`act2.92` GNOME-FUNCTION, `act3.199` ZGNOME-FUNCTION) but have been excluded from the Sharpee implementation. Both are optional treasure-exchange NPCs — giving them any item with OTVAL > 0 permanently removes that treasure from the game, making a perfect score impossible. They provide alternate escape routes (volcano chimney, bank teleport) that are already accessible through normal gameplay (balloon, curtain of light). They are traps for the unwary, not required puzzle elements.
 
 ---
 
@@ -506,19 +509,23 @@ Questions asked at the Dungeon Entrance:
 
 ## Death Conditions
 
-| Death                    | Status   | Notes                                  |
-| ------------------------ | -------- | -------------------------------------- |
-| Killed by troll          | Done     | Combat system                          |
-| Killed by thief          | Done     | Combat system                          |
-| Killed by cyclops        | Done     | Combat system                          |
-| Eaten by grue (darkness) | Done     | Darkness handler                       |
-| Drowned at falls         | Done     | Falls death handler                    |
-| Drowned in river         | Done     | River navigation blocking              |
-| Gas room explosion       | Done     | Gas room interceptor (torch + gas)     |
-| Fell in volcano          | **TODO** | Falling off ledge without balloon      |
-| Glacier flood            | **TODO** | Possible death from glacier mechanics  |
-| Slide without rope       | **TODO** | Sliding to cellar                      |
-| Red cake explosion       | **TODO** | Eating red cake                        |
+| Death                    | Status   | Notes                                         |
+| ------------------------ | -------- | --------------------------------------------- |
+| Killed by troll          | Done     | Combat system                                 |
+| Killed by thief          | Done     | Combat system                                 |
+| Killed by cyclops        | Done     | Combat system                                 |
+| Eaten by grue (darkness) | Done     | Darkness handler                              |
+| Drowned at falls         | Done     | Falls death handler                           |
+| Drowned in river         | Done     | River navigation blocking                     |
+| Gas room explosion       | Done     | Gas room interceptor (torch + gas)            |
+| Balloon crash            | Done     | Balloon rises past volcano rim                |
+| Glacier flood            | Done     | Melt action with flaming instrument           |
+| Cage poison              | Done     | Cage poison daemon (timed death)              |
+| Safe room collapse       | Done     | Brick explosion fuse (SAFIN, 5 turns)         |
+| Wide ledge collapse      | Done     | Brick explosion fuse (LEDIN, 8 turns)         |
+| Cake explosion           | Done     | Eating orange cake (cake-handler.ts)          |
+| Blue cake crush          | Done     | Eating blue cake in Tea Room                  |
+| Slide without rope       | **TODO** | Sliding to cellar without rope anchor         |
 
 **Resurrection:** If killed, PRAY at Altar to be resurrected (once). **Status: TODO** — PRAY currently only does altar→forest teleport, not resurrection.
 
@@ -548,7 +555,7 @@ Questions asked at the Dungeon Entrance:
 
 ## Implementation Notes for Sharpee
 
-1. **Treasure tracking:** OFVAL → `points` on IdentityTrait, OTVAL → `trophyCaseValue` on TreasureTrait (ADR-129)
+1. **Treasure tracking:** Done — OFVAL → `points` on IdentityTrait, OTVAL → `trophyCaseValue` on TreasureTrait (ADR-129)
 2. **Thief behavior:** Done — wanders, steals, opens egg at lair, fight difficulty scales with score
 3. **Light timer:** Done — lantern has ~330 turns, candles limited
 4. **Puzzle room:** Done — 8x8 grid, push walls, gold card obtainable
@@ -557,12 +564,34 @@ Questions asked at the Dungeon Entrance:
 7. **Resurrection:** **TODO** — one-time prayer mechanic after death
 8. **Randomization:** Done — combat has random elements, carousel exits random
 9. **ADR-078 extension:** Done — Thief's Canvas puzzle (ghost ritual, 34 pts)
-10. **Gnome NPC:** **TODO** — bank curtain of light interaction
+10. **Gnome NPCs:** **Excluded** — both Volcano Gnome and Gnome of Zurich are optional score-reducing traps, not required
+11. **Plugin state save/restore:** Done — transcript runner preserves story plugin state across chained transcripts
+12. **Fast test bundle:** Done — 38x speedup for walkthrough testing (~170ms load vs ~5s)
 
 ## Open Issues
 
-See `docs/work/issues/issues-list-03.md` for tracked bugs:
-- ISSUE-052 (High): Capability registry not shared across require() boundaries
-- ISSUE-055 (Medium): Scope resolver doesn't find items in open containers on floor
-- ISSUE-054 (Low): Cyclops say handler emits raw {npcName} template
-- ISSUE-056 (Low): Treasure Room thief summoning message not displayed
+See `docs/work/issues/issues-list-04.md` for tracked bugs. All critical issues resolved.
+
+Remaining (Low/Medium priority):
+- ISSUE-032 (Low): Version transcript DUNGEON name
+- ISSUE-047 (Medium): Zifmia console panel
+- ISSUE-048 (Medium): Zifmia platform sync
+- ISSUE-049 (Low): $seed directive
+- ISSUE-050 (Low): i18n text consolidation
+
+Previously fixed:
+- ISSUE-052: Capability registry globalThis pattern (fixed 2026-02-13)
+- ISSUE-054: NPC message template substitution (fixed 2026-02-16, added `params` to npc events)
+- ISSUE-055: Scope resolution for items in open containers on floor (fixed by earlier platform work)
+- ISSUE-056: MessageEffect event loss (fixed 2026-02-16, applyMessageEffect now pushes to pendingEmittedEvents)
+
+## Test Coverage
+
+| Metric | Count |
+| ------ | ----- |
+| Walkthrough transcripts | 14 (wt-01 through wt-13) |
+| Unit test transcripts | 106 |
+| Total assertions (chain) | 651 pass, 0 fail |
+| Chain execution time | ~2.5s (fast test bundle) |
+
+Last verified: 2026-02-16

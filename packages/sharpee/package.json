@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/sharpee",
-  "version": "0.9.89-beta",
+  "version": "0.9.90-beta",
   "description": "Sharpee - Interactive Fiction Engine for TypeScript",
   "main": "./dist/index.js",
   "module": "dist/index.js",
@@ -37,6 +37,7 @@
     "@sharpee/text-blocks": "workspace:*",
     "@sharpee/text-service": "workspace:*",
     "@sharpee/world-model": "workspace:*",
+    "@sharpee/transcript-tester": "workspace:*",
     "fflate": "^0.8.2"
   },
   "devDependencies": {

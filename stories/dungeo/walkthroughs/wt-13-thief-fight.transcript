@@ -1,10 +1,10 @@
 title: Thief Fight + Egg/Canary/Bauble
 story: dungeo
-description: Give egg to thief at Treasure Room, kill thief, collect canary from opened egg, wind canary in forest for bauble. Restores from wt-11.
+description: Give egg to thief at Treasure Room, kill thief, collect canary from opened egg, wind canary in forest for bauble. Restores from wt-12.
 ---
 
-# Restore state from wt-11 (player at Living Room with torch and lantern)
-$restore wt-11
+# Restore state from wt-12 (player at Living Room with torch and lantern)
+$restore wt-12
 
 # ============================================================================
 # GOAL: Drop everything except torch and lantern
@@ -66,7 +66,7 @@ $restore wt-11
 > take nasty knife
 [OK: contains "Taken"]
 
-# Also grab volcano supplies while here (needed in wt-13)
+# Also grab volcano supplies while here (needed in wt-15)
 > take brick
 [OK: contains "Taken"]
 
@@ -80,7 +80,7 @@ $restore wt-11
 > west
 [OK: contains "Living Room"]
 
-# Drop volcano supplies at Living Room for wt-13
+# Drop volcano supplies at Living Room for wt-15
 > drop brick
 [OK: contains "Dropped"]
 
@@ -347,4 +347,4 @@ $teleport Living Room
 
 [END GOAL]
 
-$save wt-12
+$save wt-13

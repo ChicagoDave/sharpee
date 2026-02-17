@@ -1,10 +1,10 @@
 title: Exorcism (Bell/Book/Candle Ritual)
 story: dungeo
-description: Perform exorcism ritual at Entry to Hades. Restores from wt-05.
+description: Perform exorcism ritual at Entry to Hades. Restores from wt-06.
 ---
 
-# Restore state from wt-05 (player at Living Room with torch + lantern)
-$restore wt-05
+# Restore state from wt-06 (player at Living Room with torch + lantern)
+$restore wt-06
 
 # ============================================================================
 # GOAL: Verify starting state
@@ -264,7 +264,7 @@ $restore wt-05
 [END GOAL]
 
 # Save checkpoint for next walkthrough
-$save wt-06
+$save wt-07
 
 # SUCCESS! Exorcism complete
 # Spirits banished, passage to Land of Dead now open

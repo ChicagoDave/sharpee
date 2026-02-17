@@ -1,10 +1,10 @@
 title: Coal Mine (Diamond, Bracelet)
 story: dungeo
-description: Navigate coal mine, collect 2 treasures (diamond, bracelet), toggle mirror back to State A. Restores from wt-09.
+description: Navigate coal mine, collect 2 treasures (diamond, bracelet), toggle mirror back to State A. Restores from wt-10.
 ---
 
-# Restore state from wt-09 (player at Living Room with torch and lantern)
-$restore wt-09
+# Restore state from wt-10 (player at Living Room with torch and lantern)
+$restore wt-10
 
 # ============================================================================
 # GOAL: Enter the Coal Mine via Mirror Room
@@ -269,4 +269,4 @@ $restore wt-09
 
 [END GOAL]
 
-$save wt-10
+$save wt-11
