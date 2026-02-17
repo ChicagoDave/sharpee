@@ -221,6 +221,13 @@ $restore wt-12
 [OK: contains "Taken"]
 [END IF]
 
+# Break the frame to get the clue piece (ADR-078 canvas puzzle)
+> break frame
+[OK: contains "frame"]
+
+> take frame piece
+[OK: contains "Taken"]
+
 [END GOAL]
 
 # ============================================================================
@@ -341,6 +348,10 @@ $teleport Living Room
 # ============================================================================
 
 [GOAL: Verify state for next segment]
+
+# Drop frame piece at Living Room for wt-16 (canvas puzzle)
+> drop frame piece
+[OK: contains "Dropped"]
 
 > inventory
 [OK: contains "torch"]

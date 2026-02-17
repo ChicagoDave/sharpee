@@ -12,7 +12,9 @@ import {
   WorldModel,
   IFEntity,
   IdentityTrait,
-  EntityType
+  EntityType,
+  SceneryTrait,
+  ReadableTrait
 } from '@sharpee/world-model';
 import { TreasureTrait } from '../traits';
 import { BurnableTrait } from '../traits/burnable-trait';
@@ -24,21 +26,28 @@ import { FramePieceTrait } from '../traits/frame-piece-trait';
  * Can be examined (front/back) and broken
  */
 export function createEmptyFrame(world: WorldModel): IFEntity {
-  const frame = world.createEntity('empty frame', EntityType.ITEM);
+  const frame = world.createEntity('empty frame', EntityType.SCENERY);
 
   frame.add(new IdentityTrait({
     name: 'empty frame',
     aliases: ['frame', 'picture frame', 'ornate frame', 'empty picture frame'],
-    description: 'An ornate but empty picture frame. The craftsmanship is exquisite, though the canvas it once held is missing. There appears to be something carved on the back.',
+    description: 'An ornate but empty picture frame mounted on the wall. The craftsmanship is exquisite, though the canvas it once held is missing. There appears to be something carved on the back.',
     properName: false,
-    article: 'an',
-    weight: 5
+    article: 'an'
+  }));
+
+  frame.add(new SceneryTrait({ cantTakeMessage: 'dungeo.frame.cant_take' }));
+
+  // Readable with isReadable=false gives custom "can't read" message
+  frame.add(new ReadableTrait({
+    text: '',
+    isReadable: false,
+    cannotReadMessage: "You can make out some writing on the back of the frame, but it's too difficult to read while it's mounted on the wall."
   }));
 
   // Marks for puzzle logic
   frame.attributes.isEmptyFrame = true;
   frame.attributes.isBreakable = true;
-  frame.attributes.backDescription = 'Carved into the back of the frame in rough letters: "Only devotion can reveal my location."';
 
   return frame;
 }
@@ -61,6 +70,11 @@ export function createFramePiece(world: WorldModel): IFEntity {
 
   // Mark as frame piece for ghost ritual interceptor (ADR-118)
   piece.add(new FramePieceTrait());
+
+  // Readable — the carved clue inscription
+  piece.add(new ReadableTrait({
+    text: 'Carved into the back of the frame in rough letters: "Only devotion can reveal my location."'
+  }));
 
   return piece;
 }
@@ -95,7 +109,7 @@ export function createIncense(world: WorldModel): IFEntity {
 /**
  * Create the Thief's Canvas treasure
  * Spawns in Gallery after the ghost ritual is complete
- * Worth 34 points total (10 take + 24 case)
+ * Worth 34 points total: 10 (ritual reveal) + 10 (take) + 14 (trophy case)
  */
 export function createThiefsCanvas(world: WorldModel): IFEntity {
   const canvas = world.createEntity('rolled up canvas', EntityType.ITEM);
@@ -107,11 +121,11 @@ export function createThiefsCanvas(world: WorldModel): IFEntity {
     properName: false,
     article: 'a',
     weight: 5,
-    points: 10             // OFVAL from mdlzork_810722
+    points: 10             // 10 pts on take (ADR-078)
   }));
 
   canvas.add(new TreasureTrait({
-    trophyCaseValue: 24,   // OTVAL from mdlzork_810722
+    trophyCaseValue: 14,   // 14 pts in trophy case (ADR-078)
   }));
 
   return canvas;

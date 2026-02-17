@@ -1,0 +1,158 @@
+title: Canvas Puzzle (Ghost Ritual)
+story: dungeo
+description: Burn incense in Basin Room, pray to bless water, drop frame piece to complete ghost ritual. Canvas spawns in Gallery. Restores from wt-15.
+---
+
+# Restore state from wt-15 (player at Living Room with lantern)
+# Living Room floor has: incense, frame piece, and other items
+$restore wt-15
+
+# ============================================================================
+# GOAL: Pick up ritual items from Living Room
+# ============================================================================
+
+[GOAL: Pick up incense and frame piece]
+[ENSURES: inventory contains "incense"]
+[ENSURES: inventory contains "frame piece"]
+
+> take incense
+[OK: contains "Taken"]
+
+> take frame piece
+[OK: contains "Taken"]
+
+> inventory
+[OK: contains "incense"]
+[OK: contains "frame piece"]
+[OK: contains "lantern"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Navigate to Basin Room
+# Route: Living Room → Cellar → Troll Room → E/W Passage → Deep Ravine
+#        → Chasm → N/S Passage → Loud Room → Ancient Chasm → Basin Room
+# ============================================================================
+
+[GOAL: Navigate to Basin Room]
+
+> open trap door
+[OK: contains "open"]
+
+> down
+[OK: contains "Cellar"]
+
+> east
+[OK: contains "Troll Room"]
+
+> north
+[OK: contains "East-West Passage"]
+
+> north
+[OK: contains "Deep Ravine"]
+
+> east
+[OK: contains "Chasm"]
+
+> east
+[OK: contains "North/South Passage"]
+
+> northeast
+[OK: contains "Loud Room"]
+
+> east
+[OK: contains "Ancient Chasm"]
+
+> south
+[OK: contains "Basin Room"]
+[OK: contains "basin"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Burn incense to disarm the basin trap
+# ============================================================================
+
+[GOAL: Burn incense to disarm basin]
+
+> burn incense
+[OK: contains "incense"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Pray to bless the water
+# ============================================================================
+
+[GOAL: Pray to bless water]
+
+> pray
+[OK: contains "golden light"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Drop frame piece in basin to complete ghost ritual
+# ============================================================================
+
+[GOAL: Complete ghost ritual]
+
+> drop frame piece
+[OK: contains "ghost"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Go to Gallery and take the canvas
+# ============================================================================
+
+[GOAL: Get canvas from Gallery]
+[ENSURES: inventory contains "canvas"]
+
+$teleport Gallery
+
+> look
+[OK: contains "Gallery"]
+[OK: contains "canvas"]
+
+> take canvas
+[OK: contains "Taken"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Store canvas in trophy case
+# ============================================================================
+
+[GOAL: Store canvas in trophy case]
+
+$teleport Living Room
+
+> open trophy case
+[OK: contains "open"]
+
+> put canvas in trophy case
+[OK: contains "put"]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Verify final score
+# ============================================================================
+
+[GOAL: Verify score]
+
+> score
+[OK: contains "score"]
+
+> gdt
+[OK: contains "GDT"]
+> ds ledger
+[OK: contains "SCORE LEDGER"]
+[OK: contains "Total:"]
+> ex
+[OK: contains "Returning"]
+
+[END GOAL]
+
+$save wt-16

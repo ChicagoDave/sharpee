@@ -1,12 +1,11 @@
 /**
  * Ghost Ritual Dropping Interceptor (ADR-118)
  *
- * When the frame piece is dropped in the Basin Room while incense
- * is burning (basin disarmed), completes the ghost ritual:
+ * When the frame piece is dropped in the Basin Room while the water
+ * is blessed (incense burned + prayer said), completes the ghost ritual:
  * - Frame piece is consumed
+ * - 10 points awarded for revealing the canvas
  * - Thief's canvas spawns in Gallery
- *
- * Replaces ghost-ritual-handler.ts event handler pattern.
  *
  * Requires world state values set during story init:
  * - dungeo.ghost_ritual.basin_room_id
@@ -30,7 +29,7 @@ export const GhostRitualInterceptorMessages = {
   CANVAS_SPAWNS: 'dungeo.ghost.canvas_spawns',
 } as const;
 
-/** Legacy message IDs (kept for language layer registration) */
+/** Message IDs for language layer registration */
 export const GhostRitualMessages = {
   GHOST_APPEARS: 'dungeo.ghost.appears',
   CANVAS_SPAWNS: 'dungeo.ghost.canvas_spawns',
@@ -40,7 +39,7 @@ export const GhostRitualMessages = {
 
 export const GhostRitualDroppingInterceptor: ActionInterceptor = {
   /**
-   * Post-validate: Check if we're in Basin Room with basin disarmed.
+   * Post-validate: Check if we're in Basin Room with water blessed.
    */
   postValidate(
     entity: IFEntity,
@@ -57,12 +56,12 @@ export const GhostRitualDroppingInterceptor: ActionInterceptor = {
 
     if (roomId !== basinRoomId) return null;
 
-    // Check if basin trap is disarmed
+    // Check if basin water is blessed (incense burned + prayer said)
     const basinRoom = world.getEntity(basinRoomId);
     if (!basinRoom) return null;
 
     const basinTrait = basinRoom.get(BasinRoomTrait);
-    if (basinTrait?.basinState !== 'disarmed') return null;
+    if (basinTrait?.basinState !== 'blessed') return null;
 
     // Conditions met — store for postExecute
     sharedData.willCompleteRitual = true;
@@ -90,6 +89,9 @@ export const GhostRitualDroppingInterceptor: ActionInterceptor = {
     // Create the canvas treasure in the Gallery
     const canvas = createThiefsCanvas(world);
     world.moveEntity(canvas.id, galleryId);
+
+    // Award 10 points for revealing the canvas (ADR-078)
+    world.awardScore('ghost-ritual-canvas', 10, 'Revealed the thief\'s hidden canvas');
 
     // Mark the ritual as complete
     world.setStateValue('dungeo.ghost_ritual.complete', true);

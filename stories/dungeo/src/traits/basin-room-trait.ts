@@ -12,8 +12,8 @@
 
 import { ITrait, ITraitConstructor } from '@sharpee/world-model';
 
-/** Basin states */
-export type BasinState = 'normal' | 'disarmed';
+/** Basin states: normal (trap armed) → disarmed (incense burning) → blessed (prayer said) */
+export type BasinState = 'normal' | 'disarmed' | 'blessed';
 
 /**
  * Configuration for the basin room trait

@@ -28,27 +28,16 @@ function isEmptyFrame(entity: IFEntity): boolean {
 }
 
 /**
- * Get the direct object from context
+ * Get the direct object from context — use parser-resolved entity
  */
 function getDirectObject(context: ActionContext): { entity?: IFEntity; text?: string } | undefined {
-  const structure = context.command.parsed?.structure;
-  if (!structure?.directObject) {
+  const directObject = context.command.directObject;
+  if (!directObject) {
     return undefined;
   }
 
-  const text = structure.directObject.text || '';
-  const entity = context.world.getAllEntities().find(e => {
-    const identity = e.get(IdentityTrait);
-    if (!identity) return false;
-    const name = identity.name?.toLowerCase() || '';
-    const aliases = identity.aliases || [];
-    const lowerText = text.toLowerCase();
-    return name.includes(lowerText) ||
-           lowerText.includes(name) ||
-           aliases.some((a: string) => a.toLowerCase().includes(lowerText) || lowerText.includes(a.toLowerCase()));
-  });
-
-  return { entity, text };
+  const text = directObject.parsed?.text || directObject.entity?.name || '';
+  return { entity: directObject.entity, text };
 }
 
 /**

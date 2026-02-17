@@ -1,0 +1,41 @@
+title: Canvas Puzzle - Frame Mechanics
+story: dungeo
+description: Test ADR-078 frame spawning, scenery, reading, and breaking after thief death
+---
+
+# Restore from wt-13 (thief is dead)
+$restore wt-13
+
+$teleport Treasure Room
+
+# Frame should be visible in room
+> look
+[OK: contains "frame"]
+
+# Examine should show description with writing hint
+> examine frame
+[OK: contains "carved"]
+[OK: contains "back"]
+
+# Read while on wall should fail with custom message
+> read frame
+[OK: contains "difficult"]
+
+# Try take — should be blocked (scenery)
+> take frame
+[OK: contains "frame"]
+
+# Break frame should work
+> break frame
+[OK: contains "frame"]
+
+# Frame piece should be on floor
+> look
+[OK: contains "frame piece"]
+
+# Take and read the piece
+> take frame piece
+[OK: contains "Taken"]
+
+> read frame piece
+[OK: contains "devotion"]

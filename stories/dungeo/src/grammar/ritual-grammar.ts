@@ -57,6 +57,18 @@ export function registerRitualGrammar(grammar: GrammarBuilder): void {
     .withPriority(150)
     .build();
 
+  grammar
+    .define('hit :target')
+    .mapsTo(BREAK_ACTION_ID)
+    .withPriority(155)
+    .build();
+
+  grammar
+    .define('destroy :target')
+    .mapsTo(BREAK_ACTION_ID)
+    .withPriority(150)
+    .build();
+
   // Burn action - for burning incense
   grammar
     .define('burn :target')

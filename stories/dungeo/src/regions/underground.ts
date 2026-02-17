@@ -533,7 +533,7 @@ function createGalleryObjects(world: WorldModel, roomId: string): void {
   const painting = world.createEntity('painting', EntityType.ITEM);
   painting.add(new IdentityTrait({
     name: 'painting',
-    aliases: ['painting', 'picture', 'art', 'artwork', 'canvas'],
+    aliases: ['painting', 'picture', 'art', 'artwork'],
     description: 'A painting of remarkable beauty, depicting a woodland scene. It is the only painting remaining in the gallery.',
     properName: false,
     article: 'a',

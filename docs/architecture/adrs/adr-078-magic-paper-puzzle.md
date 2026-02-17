@@ -12,13 +12,15 @@ Dungeo needs additional puzzles to reach the ~616 point target. This ADR propose
 
 The puzzle requires the player to:
 1. **Kill the Thief** (prerequisite - frame only appears after his death)
-2. Find the empty frame in Treasure Room and read the clue on its back
-3. Break the frame and take a piece (with the carved message)
+2. Find the empty frame in Treasure Room on the wall and try to read the clue on its back
+3. The clue is hidden while the frame is on the wall
+3. Break the frame and the chunk with the carved message breaks off - read it "Only devotion..." (see below)
 4. Discover the Temple Prayer Room with its trapped basin
 5. Disarm the basin (or die trying)
 6. Bless the water via prayer
 7. Drop the frame piece in the blessed basin
-8. Interpret the hollow voice's hint to find the painting
+8. Interpret the hollow voice's hint to find the canvas
+9. Retrieve canvas and put in trophy case
 
 This is a late-game puzzle combining combat, exploration, object manipulation, and survival.
 
@@ -248,9 +250,9 @@ No cryptic hollow voice needed - the Thief himself tells you where to go. This i
 
 | Action | Points |
 |--------|--------|
-| Revealing the painting (ritual success) | 10 |
-| Taking the painting | 10 |
-| Placing painting in trophy case | 14 |
+| Revealing the canvas (ritual success) | 10 |
+| Taking the canvas | 10 |
+| Placing canvas in trophy case | 14 |
 | **Total** | **34** |
 
 Note: The frame piece is consumed in the ritual, so the painting can only be revealed once per game.

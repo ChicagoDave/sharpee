@@ -76,6 +76,8 @@ import {
   ChimneyBlockedMessages
 } from '../actions';
 
+import { GhostRitualMessages } from '../interceptors/ghost-ritual-dropping-interceptor';
+
 /**
  * Register all action-related messages with the language provider
  */
@@ -150,6 +152,9 @@ export function registerActionMessages(language: LanguageProvider): void {
 
   language.addMessage(PrayMessages.PRAY_GENERIC, 'If you pray hard enough, your prayers may be answered.');
   language.addMessage(PrayMessages.PRAY_TELEPORT, 'In a shocking development, your prayer is answered!');
+  language.addMessage(PrayMessages.PRAY_BASIN_BLESSED, 'The room fills with a warm, golden light. The fog in the basin clears, revealing holy water.');
+  language.addMessage(PrayMessages.PRAY_BASIN_ALREADY_BLESSED, 'The water has already been blessed.');
+  language.addMessage(PrayMessages.PRAY_BASIN_DEATH, "An angry spirit envelops the room and howls, 'Usurper! You have no rights here!'\n\n    **** You have died ****");
 
   // ==========================================================================
   // INCANT Action Messages (cheat command)
@@ -474,4 +479,21 @@ export function registerActionMessages(language: LanguageProvider): void {
 
   language.addMessage(ChimneyBlockedMessages.TOO_MUCH_BAGGAGE, 'The chimney is too narrow for you and all of your baggage.');
   language.addMessage(ChimneyBlockedMessages.EMPTY_HANDED, 'Going up empty-handed is a bad idea.');
+
+  // ==========================================================================
+  // FRAME Messages (ADR-078: Canvas puzzle)
+  // ==========================================================================
+
+  language.addMessage('dungeo.frame.cant_take', 'The frame is mounted on the wall.');
+
+  // ==========================================================================
+  // GHOST RITUAL Messages (ADR-078: Canvas puzzle)
+  // ==========================================================================
+
+  language.addMessage(GhostRitualMessages.GHOST_APPEARS,
+    "The angry spirit becomes the ghost of the thief in adventurer robes and says, 'Well done my friend. You are nearing the end game. Look to the Gallery for your reward.'");
+  language.addMessage(GhostRitualMessages.CANVAS_SPAWNS,
+    'Something tells you to search the Gallery.');
+  language.addMessage(GhostRitualMessages.WRONG_ITEM,
+    "The angry spirit laughs, 'As we said, you have no rights here!' The item vanishes.");
 }
