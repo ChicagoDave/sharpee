@@ -1,4 +1,9 @@
-# Sharpee Testing Guide
+---
+layout: ../../../layouts/DocsLayout.astro
+title: "Testing"
+---
+
+# Testing
 
 Sharpee uses **transcript testing** — text files that describe a sequence of player commands and expected outcomes. The transcript tester runs these against the game engine and verifies that output, events, and world state match expectations.
 
@@ -8,8 +13,6 @@ There are two kinds of transcript tests:
 - **Walkthroughs**: Long, chained playthroughs where game state persists between files. Used to verify full game progression.
 
 ## Quick Start
-
-### Using npx (published stories)
 
 From your story project directory:
 
@@ -29,31 +32,10 @@ npx sharpee build --test --stop-on-failure
 - `walkthroughs/wt-*.transcript` — run as a chain (state persists between files)
 - `tests/transcripts/*.transcript` — run individually (fresh game per file)
 
-### Using the bundle (Sharpee development)
-
-When working on Sharpee itself, the pre-built bundle is faster (~170ms load vs multi-second package resolution):
-
-```bash
-# Build the platform + story first
-./build.sh -s dungeo
-
-# Run a single unit test
-node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/basket-elevator.transcript
-
-# Run all unit tests
-node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
-
-# Run walkthrough chain (state persists between files)
-node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
-
-# Stop on first failure
-node dist/cli/sharpee.js --test --chain --stop-on-failure stories/dungeo/walkthroughs/wt-*.transcript
-```
-
 ## Project Layout
 
 ```
-stories/my-story/
+my-story/
 ├── walkthroughs/
 │   ├── wt-01-first-quest.transcript      # Walkthrough files (chained)
 │   ├── wt-02-second-quest.transcript
@@ -119,8 +101,6 @@ Lines starting with `##` are section headers. They appear in test output to orga
 > attack troll with sword
 [OK: contains "troll"]
 ```
-
----
 
 ## Assertions
 
@@ -204,8 +184,6 @@ Verify world model state after a command:
 [STATE: true, player.inventory contains lantern]
 [STATE: false, player.inventory contains sword]
 ```
-
----
 
 ## Control Flow Directives
 
@@ -294,8 +272,6 @@ Auto-pathfind to a room by name:
 
 Uses BFS pathfinding on the world model. Useful for skipping tedious navigation in long tests.
 
----
-
 ## Save and Restore
 
 Transcripts can create and load checkpoints:
@@ -324,10 +300,6 @@ $state entity.prop = val # Set entity state
 $describe entity         # Dump entity info
 ```
 
-Stories can implement their own debug tools. For example, Dungeo implements a Game Debugging Tool (GDT) with teleport and take commands — but that's story-specific, not part of Sharpee's core testing infrastructure.
-
----
-
 ## Condition Expressions
 
 Used in `REQUIRES`, `ENSURES`, `IF`, and `WHILE` directives:
@@ -343,8 +315,6 @@ Used in `REQUIRES`, `ENSURES`, `IF`, and `WHILE` directives:
 | `entity "X" alive` | Entity X is alive |
 | `not entity "X" alive` | Entity X is dead |
 
----
-
 ## Unit Tests vs Walkthroughs
 
 ### Unit Tests
@@ -353,7 +323,7 @@ Location: `tests/transcripts/*.transcript`
 
 - Test one feature, puzzle, or mechanic in isolation
 - Get a fresh game instance each run
-- Use `$teleport` and GDT to set up the scenario quickly
+- Use `$teleport` and `$take` to set up the scenario quickly
 - Keep them short and focused
 
 Example:
@@ -391,7 +361,7 @@ Location: `walkthroughs/wt-NN-description.transcript`
 
 - Test full game progression from start to finish
 - State persists between files via `$save` / `$restore`
-- Must be run with `--chain` flag (or via `npx sharpee build --test` which chains automatically)
+- Run automatically as a chain with `npx sharpee build --test`
 - Number them sequentially: `wt-01`, `wt-02`, etc.
 - Each walkthrough saves at the end so the next one can continue
 
@@ -401,7 +371,7 @@ Example pattern:
 # wt-01-get-torch-early.transcript
 
 title: Get Torch Early
-story: dungeo
+story: my-story
 description: Get the torch ASAP to save lantern battery
 
 ---
@@ -427,7 +397,7 @@ $save wt-01
 # wt-02-bank-puzzle.transcript
 
 title: Bank Puzzle
-story: dungeo
+story: my-story
 
 ---
 
@@ -439,8 +409,6 @@ $restore wt-01
 
 $save wt-02
 ```
-
----
 
 ## Test Results
 
@@ -459,11 +427,7 @@ Summary output:
 360 tests: 349 pass, 0 fail, 0 expected-fail, 11 skip (1623ms)
 ```
 
----
-
 ## CLI Reference
-
-### npx sharpee build
 
 | Flag | Description |
 |------|-------------|
@@ -472,56 +436,3 @@ Summary output:
 | `--stop-on-failure` | Stop on first test failure |
 | `--no-minify` | Skip browser client minification |
 | `--no-sourcemap` | Skip source map generation |
-
-### node dist/cli/sharpee.js (development)
-
-| Flag | Description |
-|------|-------------|
-| `--test <files>` | Run transcript test(s) |
-| `--chain` | Chain transcripts (state persists between files) |
-| `--stop-on-failure` | Stop on first failure |
-| `--verbose` | Show detailed output |
-| `--play` | Interactive play mode |
-| `--play --restore <name>` | Resume from a save checkpoint |
-| `--exec "cmd1/cmd2"` | Execute commands non-interactively |
-| `--debug` | Show parsed/validated/event debug info |
-
----
-
-## Playtesting (Manual)
-
-For manual playtesting outside of automated transcripts, see the original playtesting procedure below.
-
-### Playtest Transcripts
-
-Raw playtest output is saved to `docs/testing/tr-NNN.txt` with inline tester comments:
-
-```
-> open trap door
-The trap door opens.
-
-$ This should show a description of the staircase
-
-> look
-...
-```
-
-| Prefix | Meaning |
-|--------|---------|
-| `$` | Tester observation or issue note |
-| `$ debug-trace: filename.txt` | Debug output saved to separate file |
-
-### Fix Documentation
-
-Each `tr-NNN-fixes.md` documents issues found and their resolutions. See existing files in `docs/testing/` for examples.
-
-### Issue Categories
-
-| Category | Scope | Examples |
-|----------|-------|----------|
-| **Platform** | engine/stdlib/world-model | Action bugs, trait behavior |
-| **Map** | Room connections | Missing exits, wrong directions |
-| **Puzzle** | Game logic | Dam mechanics, scoring |
-| **Parser** | Grammar/parsing | Command not recognized |
-| **Text** | Language layer | Wrong messages |
-| **Client** | Terminal/browser | Display issues |
