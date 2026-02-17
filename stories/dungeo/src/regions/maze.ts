@@ -48,6 +48,7 @@ export interface MazeRoomIds {
   deadEnd3: string;
   deadEnd4: string;
   cyclopsRoom: string;
+  strangePassage: string;
   treasureRoom: string;
 }
 
@@ -134,6 +135,11 @@ export function createMazeRegion(world: WorldModel): MazeRoomIds {
     'This room has an exit on the northwest, and a staircase leading up.',
     ['cyclops room']);
 
+  // BLROO in MDL — passage revealed when cyclops flees
+  const strangePassage = createRoom(world, 'Strange Passage',
+    'This is a long passage. To the south is one entrance. On the east there is an old wooden door, with a large hole in it (about cyclops sized).',
+    ['strange passage', 'passage']);
+
   const treasureRoom = createRoom(world, 'Treasure Room',
     'This is a large room, whose north wall is solid marble. A doorway leads south, and a narrow chimney leads up.',
     ['treasure room', 'thief lair', 'thiefs lair']);
@@ -160,6 +166,7 @@ export function createMazeRegion(world: WorldModel): MazeRoomIds {
     deadEnd3: deadEnd3.id,
     deadEnd4: deadEnd4.id,
     cyclopsRoom: cyclopsRoom.id,
+    strangePassage: strangePassage.id,
     treasureRoom: treasureRoom.id
   };
 
@@ -383,13 +390,22 @@ function connectMazeRooms(world: WorldModel, roomIds: MazeRoomIds): void {
     });
   }
 
-  // Cyclops Room: W→MAZ15, UP→Treasure Room (conditional), N→Strange Passage (conditional/external)
+  // Cyclops Room: W→MAZ15, UP→Treasure Room, N→Strange Passage (conditional/external)
   const cyclopsRoom = world.getEntity(roomIds.cyclopsRoom);
   if (cyclopsRoom) {
     setExits(cyclopsRoom, {
       [Direction.WEST]: roomIds.maze15,
       [Direction.UP]: roomIds.treasureRoom,
-      // N→Strange Passage connected externally (conditional on MAGIC-FLAG)
+      // N→Strange Passage connected externally (conditional on cyclops fleeing)
+    });
+  }
+
+  // Strange Passage (BLROO): S→Cyclops Room, E→Living Room (external)
+  const strangePassage = world.getEntity(roomIds.strangePassage);
+  if (strangePassage) {
+    setExits(strangePassage, {
+      [Direction.SOUTH]: roomIds.cyclopsRoom,
+      // E→Living Room connected externally via connectCyclopsToLivingRoom()
     });
   }
 
@@ -434,22 +450,38 @@ export function connectMazeToClearing(
 }
 
 /**
- * Connect Cyclops Room to Living Room via Strange Passage
- * This is the shortcut out of the maze after defeating the cyclops
+ * Connect Cyclops Room to Living Room via Strange Passage (BLROO)
+ *
+ * Sets up the static east exit from Strange Passage to Living Room,
+ * and the reverse west exit from Living Room to Strange Passage.
+ * The north exit from Cyclops Room to Strange Passage is opened
+ * dynamically when the cyclops flees (see cyclops-entity.ts).
  */
 export function connectCyclopsToLivingRoom(
   world: WorldModel,
   mazeIds: MazeRoomIds,
   livingRoomId: string
 ): void {
-  // Cyclops Room NORTH leads to Living Room (via Strange Passage)
+  // Cyclops Room NORTH leads to Strange Passage (blocked until cyclops flees)
   const cyclopsRoom = world.getEntity(mazeIds.cyclopsRoom);
   if (cyclopsRoom) {
     const roomTrait = cyclopsRoom.get(RoomTrait);
     if (roomTrait) {
-      roomTrait.exits[Direction.NORTH] = { destination: livingRoomId };
+      roomTrait.exits[Direction.NORTH] = { destination: mazeIds.strangePassage };
     }
   }
+
+  // Strange Passage EAST leads to Living Room
+  const strangePassage = world.getEntity(mazeIds.strangePassage);
+  if (strangePassage) {
+    const roomTrait = strangePassage.get(RoomTrait);
+    if (roomTrait) {
+      roomTrait.exits[Direction.EAST] = { destination: livingRoomId };
+    }
+  }
+
+  // Living Room WEST → Strange Passage is opened dynamically when cyclops flees
+  // (see makeCyclopsFlee in cyclops-entity.ts — the door is "nailed shut" initially)
 }
 
 /**

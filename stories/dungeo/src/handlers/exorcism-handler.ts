@@ -160,8 +160,7 @@ function completeExorcism(
     }
   });
 
-  // Award points (exorcism is worth 10 points)
-  world.awardScore('exorcism', 10, 'Completed the exorcism');
+  // Note: No bonus points for exorcism (not in FORTRAN source)
 
   return events;
 }

@@ -20,6 +20,7 @@ import {
   CombatantTrait,
   EntityType,
   RoomBehavior,
+  RoomTrait,
   Direction
 } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
@@ -116,14 +117,30 @@ export function makeCyclopsFlee(
 ): ISemanticEvent[] {
   const events: ISemanticEvent[] = [];
 
-  // Unblock the north passage
+  // Unblock the north passage (Cyclops Room → Strange Passage)
   const cyclopsRoom = world.getEntity(roomId);
   if (cyclopsRoom) {
     RoomBehavior.unblockExit(cyclopsRoom, Direction.NORTH);
   }
 
-  // Add score for making cyclops flee
-  world.awardScore('cyclops-fled', 10, 'Frightened away the cyclops');
+  // Open the Living Room west exit (cyclops crashed through the nailed-shut door)
+  // Traverse: Cyclops Room N → Strange Passage E → Living Room
+  const strangePassageId = cyclopsRoom?.get(RoomTrait)?.exits[Direction.NORTH]?.destination;
+  if (strangePassageId) {
+    const strangePassage = world.getEntity(strangePassageId);
+    const livingRoomId = strangePassage?.get(RoomTrait)?.exits[Direction.EAST]?.destination;
+    if (livingRoomId) {
+      const livingRoom = world.getEntity(livingRoomId);
+      if (livingRoom) {
+        const livingRoomTrait = livingRoom.get(RoomTrait);
+        if (livingRoomTrait) {
+          livingRoomTrait.exits[Direction.WEST] = { destination: strangePassageId };
+        }
+      }
+    }
+  }
+
+  // Note: No bonus points for cyclops fleeing (not in FORTRAN source)
 
   // Update cyclops state
   const npcTrait = cyclops.get(NpcTrait);

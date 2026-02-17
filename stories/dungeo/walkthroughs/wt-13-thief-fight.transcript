@@ -235,6 +235,8 @@ $restore wt-12
 [OK: contains "Cyclops"]
 
 > north
+[OK: contains "Strange Passage"]
+> east
 [OK: contains "Living Room"]
 
 # Navigate to forest

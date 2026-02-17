@@ -139,7 +139,7 @@ $restore wt-13
 
 [GOAL: Store gold card in trophy case]
 
-# Puzzle Room → Square Room → Treasure Room → Cyclops Room → Living Room
+# Puzzle Room → Square Room → Treasure Room → Cyclops Room → Strange Passage → Living Room
 > up
 [OK: contains "Square Room"]
 
@@ -150,6 +150,8 @@ $restore wt-13
 [OK: contains "Cyclops Room"]
 
 > north
+[OK: contains "Strange Passage"]
+> east
 [OK: contains "Living Room"]
 
 > open trophy case

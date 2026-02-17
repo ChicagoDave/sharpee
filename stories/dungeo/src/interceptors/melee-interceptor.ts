@@ -133,9 +133,8 @@ function handleVillainDeath(
       if (room) {
         RoomBehavior.unblockExit(room, Direction.NORTH);
       }
-      // Add score: 10 points for defeating the troll
-      world.awardScore('troll-killed', 10, 'Defeated the troll');
       // Remove troll and its weapon from the game (both disappear in smoke)
+      // Note: No bonus points for killing the troll (not in FORTRAN source)
       const contents = world.getContents(villain.id);
       for (const item of contents) {
         world.removeEntity(item.id);
@@ -156,9 +155,8 @@ function handleVillainDeath(
         hasLoot = true;
       }
 
-      // 2. Award 25 points for defeating the thief
-      world.awardScore('thief-killed', 25, 'Defeated the thief');
       // ADR-078: Hidden max points — canvas treasure becomes achievable
+      // Note: No bonus points for killing the thief (not in FORTRAN source)
       world.setMaxScore(650);
       world.getDataStore().state['dungeo.thief.dead'] = true;
       world.getDataStore().state['dungeo.reality_altered_pending'] = true;

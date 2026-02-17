@@ -104,8 +104,10 @@ $restore wt-02
 > say odysseus
 [OK: contains "cyclops"]
 
-# Go north through the Strange Passage to Living Room
+# Go north to Strange Passage, then east to Living Room
 > north
+[OK: contains "Strange Passage"]
+> east
 [OK: contains "Living Room"]
 
 [END GOAL]

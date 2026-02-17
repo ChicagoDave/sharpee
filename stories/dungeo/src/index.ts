@@ -518,19 +518,21 @@ export class DungeoStory implements Story {
     // From 1981 MDL source: 13 rooms worth 215 total points
     // Stored as map, registered as event handler in onEngineReady via orchestration
     this.roomVisitScoring = new Map<string, number>([
-      [this.houseInteriorIds.kitchen, 10],       // KITCH
-      [this.undergroundIds.cellar, 25],           // CELLA
-      [this.volcanoIds.volcanoBottom, 10],        // BLROO (Balloon Room)
-      [this.mazeIds.treasureRoom, 25],            // TREAS (Trophy Room)
-      [this.endgameIds.narrowCorridor, 5],        // PASS1 (Narrow Passage)
-      [this.endgameIds.landOfDead, 30],           // LLD2 (Land of Living Dead)
-      [this.wellRoomIds.topOfWell, 10],           // TWELL (Temple Well)
-      [this.endgameIds.insideMirror, 15],         // INMIR (Inside Mirror)
-      [this.endgameIds.tomb, 5],                  // CRYPT
-      [this.undergroundIds.torchRoom, 10],        // TSTRS (Torch Room Stairs)
-      [this.endgameIds.dungeonEntrance, 20],      // BDOOR (Behind Dungeon Door)
-      [this.endgameIds.hallway, 15],              // FDOOR (Front Door/Hallway)
-      [this.endgameIds.treasury, 35],             // NIRVA (Nirvana/Treasury)
+      // Main game rooms (115 pts)
+      [this.houseInteriorIds.kitchen, 10],          // KITCH
+      [this.undergroundIds.cellar, 25],              // CELLA
+      [this.mazeIds.strangePassage, 10],             // BLROO (Strange Passage)
+      [this.mazeIds.treasureRoom, 25],               // TREAS (Treasure Room)
+      [this.undergroundIds.eastWestPassage, 5],      // PASS1 (East-West Passage)
+      [this.endgameIds.landOfDead, 30],              // LLD2 (Land of Living Dead)
+      [this.wellRoomIds.topOfWell, 10],              // TWELL (Top of Well)
+      // Endgame rooms (100 pts)
+      [this.endgameIds.insideMirror, 15],            // INMIR (Inside Mirror)
+      [this.endgameIds.tomb, 5],                     // CRYPT
+      [this.endgameIds.topOfStairs, 10],             // TSTRS (Top of Stairs)
+      [this.endgameIds.dungeonEntrance, 20],         // BDOOR (Narrow Corridor)
+      [this.endgameIds.hallway, 15],                 // FDOOR (Dungeon Entrance)
+      [this.endgameIds.treasury, 35],                // NIRVA (Treasury of Zork)
     ]);
 
     // Set max score via score ledger (ADR-129)
