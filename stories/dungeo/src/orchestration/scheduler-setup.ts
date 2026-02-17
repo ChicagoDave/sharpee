@@ -30,7 +30,7 @@ import { registerCarouselHandler } from '../handlers/carousel-handler';
 
 import { registerEndgameTriggerHandler } from '../handlers/endgame-trigger-handler';
 
-import { registerTrollRecoveryDaemon, registerCagePoisonDaemon, registerCureDaemon } from '../scheduler';
+import { registerTrollRecoveryDaemon, registerCagePoisonDaemon, registerCureDaemon, registerBrochureDelivery } from '../scheduler';
 import { setBurnActionExplosionConfig } from '../actions/burn';
 import { IdentityTrait } from '@sharpee/world-model';
 
@@ -202,6 +202,15 @@ export function registerSchedulerEvents(
 
   // Wire press button action to scheduler (flooding sequence)
   setPressButtonScheduler(scheduler, config.damIds.maintenanceRoom);
+
+  // Wire brochure delivery daemon (mail order puzzle - MDL act3.199)
+  const mailbox = world.getAllEntities().find(e => {
+    const id = e.get(IdentityTrait);
+    return id?.name === 'small mailbox';
+  });
+  if (mailbox) {
+    registerBrochureDelivery(scheduler, world, config.houseInteriorIds.kitchen, mailbox.id);
+  }
 
   // Wire burn action to explosion fuse (brick/safe puzzle)
   if (config.volcanoIds) {

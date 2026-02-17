@@ -160,4 +160,12 @@ export function registerSchedulerMessages(language: LanguageProvider): void {
     'The force of the explosion has caused the ledge to collapse belatedly.');
   language.addMessage(DungeoSchedulerMessages.LEDGE_COLLAPSE_NARROW_ESCAPE,
     'The ledge collapses, giving you a narrow escape.');
+
+  // ==========================================================================
+  // Brochure Delivery (BROIN) - MDL act3.199:1441-1444
+  // ==========================================================================
+
+  // MDL: "There is a knocking sound from the front of the house."
+  language.addMessage(DungeoSchedulerMessages.BROCHURE_KNOCK,
+    'There is a knocking sound from the front of the house.');
 }

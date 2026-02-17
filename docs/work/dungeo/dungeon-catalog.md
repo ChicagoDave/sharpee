@@ -57,7 +57,7 @@ Points are awarded for: (1) taking the treasure, (2) placing it in the trophy ca
 | 28  | Lord Dimwit Flathead stamp | 4    | 10   | 14    | Library (Volcano)            |
 | 29  | Priceless zorkmid coin     | 10   | 12   | 22    | Narrow Ledge (Volcano)       |
 | 30  | Ruby                       | 15   | 8    | 23    | Ruby Room                    |
-| 31  | Don Woods stamp            | --   | 1    | 1     | Brochure (mail order)        |
+| 31  | Don Woods stamp            | 0    | 1    | 1     | Brochure (mail order)        |
 | 32  | Brass bauble               | 1    | 1    | 2     | Forest (from canary song)    |
 | 33  | Thief's canvas (ADR-078)   | 10   | 24   | 34    | Gallery (ghost ritual)       |
 

@@ -37,6 +37,7 @@ export { registerSwordGlowDaemon, getSwordGlowState, resetSwordGlowState, SwordG
 export { registerCagePoisonDaemon, CAGE_POISON_DAEMON_ID } from './cage-poison-daemon';
 export { registerCureDaemon, CURE_DAEMON_ID } from './cure-daemon';
 export { startExplosionCountdown, EXPLOSION_FUSE_ID, type ExplosionConfig } from './explosion-fuse';
+export { registerBrochureDelivery } from './brochure-fuse';
 
 import { WorldModel } from '@sharpee/world-model';
 import { ISchedulerService } from '@sharpee/plugin-scheduler';

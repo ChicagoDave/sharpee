@@ -241,10 +241,13 @@ export function registerActionMessages(language: LanguageProvider): void {
   // SEND Action Messages (Mail order puzzle)
   // ==========================================================================
 
-  language.addMessage(SendMessages.SEND_FOR_BROCHURE, "Ok, but you know how strapped the postal service is lately...");
-  language.addMessage(SendMessages.ALREADY_SENT, "You've already sent for the brochure.");
+  // MDL: act3.199:1440 — "Ok, but you know the postal service..."
+  language.addMessage(SendMessages.SEND_FOR_BROCHURE, "Ok, but you know the postal service...");
+  // MDL: act3.199:1438 — "It's probably on the way."
+  language.addMessage(SendMessages.BROCHURE_ON_WAY, "It's probably on the way.");
+  // MDL: act3.199:1437 — "Why? Do you need another one?"
+  language.addMessage(SendMessages.BROCHURE_ALREADY_RECEIVED, "Why? Do you need another one?");
   language.addMessage(SendMessages.NO_TARGET, "Send for what?");
-  language.addMessage(SendMessages.BROCHURE_KNOCK, "There is a knocking sound from the front of the house. The postal service must be getting faster!");
 
   // ==========================================================================
   // POUR Action Messages (Bucket/Well puzzle)

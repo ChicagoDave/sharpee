@@ -1,10 +1,10 @@
 title: Mail Order Puzzle - Don Woods Stamp
 story: dungeo
-description: Tests sending for brochure to get the Don Woods stamp (1 point treasure)
+description: Tests the timed brochure delivery and Don Woods stamp (1 point treasure). MDL: act1.254:60-61, act3.199:1423-1446
 
 ---
 
-# Start by getting the matchbook from Dam Lobby
+# Setup: get a light source
 > gdt
 [OK: contains "GDT"]
 
@@ -27,26 +27,48 @@ description: Tests sending for brochure to get the Don Woods stamp (1 point trea
 > ex
 [OK: contains "Returning"]
 
-> look
-[OK: contains "Lobby"]
-
-# The matchbook should be here
 > take matchbook
 [OK: contains "take"]
 
-> inventory
-[OK: contains "matchbook"]
-
-# Read the matchbook to see the advertisement
+# Read the matchbook — hints at sending for brochure
 > read matchbook
 [OK: contains "BROCHURE"]
 
-# Send for the brochure
+# Send for the brochure — sets BRFLAG1
 > send for brochure
 [OK: contains "postal"]
-[OK: contains "knock"]
 
-# Go to West of House to check the mailbox
+# Sending again — "It's probably on the way." (MDL: BRFLAG1 check)
+> send for brochure
+[OK: contains "on the way"]
+
+# Navigate to Kitchen to arm the delivery fuse
+# Must use actual game movement, not GDT teleport (GDT doesn't tick scheduler)
+> gdt
+[OK: contains "GDT"]
+
+> ah Living Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+# Walk east to Kitchen — daemon detects player in kitchen, arms 3-turn fuse
+> east
+[OK: contains "Kitchen"]
+
+# Wait 3 turns for delivery (MDL: <CLOCK-INT ,BROIN 3>)
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+# Third wait — fuse triggers, knock message appears
+> wait
+[OK: contains "knocking"]
+
+# Go check the mailbox (use GDT since natural path is long)
 > gdt
 [OK: contains "GDT"]
 
@@ -56,11 +78,10 @@ description: Tests sending for brochure to get the Don Woods stamp (1 point trea
 > ex
 [OK: contains "Returning"]
 
-# Open the mailbox
+# Open the mailbox — brochure should be inside
 > open mailbox
 [OK: contains "open"]
 
-# The brochure should be there
 > look in mailbox
 [OK: contains "brochure"]
 
@@ -68,14 +89,12 @@ description: Tests sending for brochure to get the Don Woods stamp (1 point trea
 > take brochure
 [OK: contains "take"]
 
-> inventory
-[OK: contains "brochure"]
-
-# Read the brochure
+# Read the brochure (MDL: dung.355:374-398 — Alice in Wonderland curriculum)
 > read brochure
 [OK: contains "MIT"]
+[OK: contains "Flathead"]
 
-# The brochure contains the stamp
+# Brochure contains the stamp
 > look in brochure
 [OK: contains "stamp"]
 
@@ -83,14 +102,14 @@ description: Tests sending for brochure to get the Don Woods stamp (1 point trea
 > take stamp
 [OK: contains "take"]
 
-> inventory
-[OK: contains "stamp"]
+# Read the stamp — "One Lousy Point" ASCII art (MDL: dung.355:6058-6082)
+> read stamp
+[OK: contains "One"]
+[OK: contains "Lousy"]
+[OK: contains "Point"]
+[OK: contains "Donald Woods"]
 
-# Examine the stamp
-> examine stamp
-[OK: contains "Woods"]
-
-# Put it in the trophy case
+# Put stamp in trophy case for 1 point
 > gdt
 [OK: contains "GDT"]
 
@@ -109,6 +128,6 @@ description: Tests sending for brochure to get the Don Woods stamp (1 point trea
 > score
 [OK: contains "score"]
 
-# Try ordering again - should say already sent
+# Try ordering again after delivery — "Why? Do you need another one?" (MDL: BRFLAG2 check)
 > send for brochure
-[OK: contains "already"]
+[OK: contains "another"]

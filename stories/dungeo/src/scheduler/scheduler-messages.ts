@@ -72,6 +72,9 @@ export const DungeoSchedulerMessages = {
   // Wide Ledge collapse (LEDIN) - 8 turns after explosion
   LEDGE_COLLAPSE_DEATH: 'dungeo.ledge_collapse.death',
   LEDGE_COLLAPSE_NARROW_ESCAPE: 'dungeo.ledge_collapse.narrow_escape',
+
+  // Brochure delivery (BROIN) - 3 turns after entering kitchen
+  BROCHURE_KNOCK: 'dungeo.brochure.knock',
 } as const;
 
 export type DungeoSchedulerMessageId = typeof DungeoSchedulerMessages[keyof typeof DungeoSchedulerMessages];
