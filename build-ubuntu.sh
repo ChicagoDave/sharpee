@@ -28,6 +28,10 @@ NC='\033[0m'
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
 
+# Use home-based tmp dir to avoid noexec /tmp (common on hardened servers)
+export TMPDIR="$HOME/tmp"
+mkdir -p "$TMPDIR"
+
 # Source cargo env if present
 [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env"
 

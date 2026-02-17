@@ -17,17 +17,23 @@ There are two kinds of transcript tests:
 From your story project directory:
 
 ```bash
-# Build your story and run all transcript tests
+# Build your story with a test runner bundle
 npx sharpee build --test
 
+# Run all transcript tests
+node my-story-test.js --test tests/transcripts/*.transcript
+
+# Run walkthroughs as a chain
+node my-story-test.js --test --chain walkthroughs/wt-*.transcript
+
 # With verbose output
-npx sharpee build --test --verbose
+node my-story-test.js --test --verbose walkthroughs/wt-*.transcript
 
 # Stop on first failure
-npx sharpee build --test --stop-on-failure
+node my-story-test.js --test --stop-on-failure walkthroughs/wt-*.transcript
 ```
 
-`npx sharpee build --test` compiles your TypeScript, creates a `.sharpee` bundle, builds the browser client (if configured), then runs all transcript tests it finds:
+`npx sharpee build --test` compiles your story and produces a `{story}-test.js` bundle — a single file that includes the Sharpee engine and your story, ready to run transcript tests. The test runner finds:
 
 - `walkthroughs/wt-*.transcript` — run as a chain (state persists between files)
 - `tests/transcripts/*.transcript` — run individually (fresh game per file)
@@ -361,7 +367,7 @@ Location: `walkthroughs/wt-NN-description.transcript`
 
 - Test full game progression from start to finish
 - State persists between files via `$save` / `$restore`
-- Run automatically as a chain with `npx sharpee build --test`
+- Run as a chain with `node {story}-test.js --test --chain walkthroughs/wt-*.transcript`
 - Number them sequentially: `wt-01`, `wt-02`, etc.
 - Each walkthrough saves at the end so the next one can continue
 
@@ -429,10 +435,19 @@ Summary output:
 
 ## CLI Reference
 
+### `npx sharpee build`
+
 | Flag | Description |
 |------|-------------|
-| `--test` | Run transcript tests after building |
-| `--verbose`, `-v` | Show detailed test output |
-| `--stop-on-failure` | Stop on first test failure |
+| `--test` | Produce a `{story}-test.js` test runner bundle |
 | `--no-minify` | Skip browser client minification |
 | `--no-sourcemap` | Skip source map generation |
+
+### `node {story}-test.js`
+
+| Flag | Description |
+|------|-------------|
+| `--test <files>` | Run transcript test files |
+| `--chain` | Chain transcripts (game state persists between files) |
+| `--verbose`, `-v` | Show detailed test output |
+| `--stop-on-failure` | Stop on first test failure |
