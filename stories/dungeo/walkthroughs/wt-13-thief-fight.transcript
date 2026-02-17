@@ -199,8 +199,11 @@ $restore wt-12
 
 [GOAL: Collect canary, egg, and chalice]
 
+# Drop knife if we still have it (thief may have stolen it during combat)
+[IF: inventory contains "knife"]
 > drop knife
 [OK: contains "Dropped"]
+[END IF]
 
 # Egg was opened by thief and dropped on floor. Canary is inside the open egg.
 > take canary
