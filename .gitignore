@@ -116,6 +116,9 @@ test-results/
 # Generated source maps
 website/public/games/dungeo/dungeo.js.map
 
+# Zifmia installer binaries (distributed separately)
+website/public/downloads/Zifmia_*
+
 # Work log (local only)
 docs/context/.work-log.txt
 
