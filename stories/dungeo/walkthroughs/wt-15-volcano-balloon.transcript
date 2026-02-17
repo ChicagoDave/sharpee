@@ -327,6 +327,17 @@ $restore wt-14
 > south
 [OK: contains "Glacier Room"]
 
+# Detour north to Stream View to recover the torch (carried there by meltwater)
+# Stream View ↔ Glacier Room is a N↔N connection
+> north
+[OK: contains "Stream View"]
+
+> take torch
+[OK: contains "Taken"]
+
+> north
+[OK: contains "Glacier Room"]
+
 > east
 [OK: contains "Egyptian Room"]
 
@@ -363,6 +374,12 @@ $restore wt-14
 > put crown in trophy case
 [OK: contains "put"]
 
+> put trunk in trophy case
+[OK: contains "put"]
+
+> put torch in trophy case
+[OK: contains "put"]
+
 [END GOAL]
 
 # ============================================================================
@@ -377,6 +394,18 @@ $restore wt-14
 > look
 [OK: contains "Living Room"]
 [OK: contains "trophy case"]
+
+> score
+[OK: contains "score"]
+
+# Dump full score ledger for debugging
+> gdt
+[OK: contains "GDT"]
+> ds ledger
+[OK: contains "SCORE LEDGER"]
+[OK: contains "Total:"]
+> ex
+[OK: contains "Returning"]
 
 [END GOAL]
 

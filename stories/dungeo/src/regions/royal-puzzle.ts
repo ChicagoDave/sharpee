@@ -27,7 +27,7 @@ import {
   DirectionType,
   ReadableTrait
 } from '@sharpee/world-model';
-import { RoyalPuzzleTrait } from '../traits';
+import { RoyalPuzzleTrait, TreasureTrait } from '../traits';
 
 export interface RoyalPuzzleRoomIds {
   squareRoom: string;
@@ -549,10 +549,7 @@ export function connectRoyalPuzzleToTreasureRoom(
 // ============================================================================
 
 function createGoldCard(world: WorldModel): IFEntity {
-  // NOTE: This "gold card" does NOT exist in 1981 MDL.
-  // In MDL, the CARD is a warning note about explosives (not a treasure).
-  // The treasure in the safe is the CROWN (Lord Dimwit's crown).
-  // Keeping this as a non-treasure item for now.
+  // GCARD in FORTRAN source (object 188) — OFVAL=15, OTVAL=10
   const card = world.createEntity('gold card', EntityType.ITEM);
 
   card.add(new IdentityTrait({
@@ -561,11 +558,13 @@ function createGoldCard(world: WorldModel): IFEntity {
     description: 'This is an ornate gold card, beautifully embossed with the royal crest of the Great Underground Empire.',
     properName: false,
     article: 'a',
-    weight: 2
+    weight: 2,
+    points: 15             // OFVAL from FORTRAN source
   }));
 
-  // NOT a treasure - this item doesn't exist in 1981 MDL
-  // TODO: Replace with Crown treasure from MDL
+  card.add(new TreasureTrait({
+    trophyCaseValue: 10    // OTVAL from FORTRAN source
+  }));
 
   return card;
 }

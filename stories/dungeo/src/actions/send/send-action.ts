@@ -17,6 +17,7 @@ import {
   ReadableTrait,
   EntityType
 } from '@sharpee/world-model';
+import { TreasureTrait } from '../../traits';
 import { SEND_ACTION_ID, SendMessages } from './types';
 
 /**
@@ -84,10 +85,12 @@ Enclosed please find a valuable collector's stamp as a FREE gift!
    1 Zorkmid`,
     properName: false,
     article: 'a',
-    points: 1,              // OFVAL from mdlzork_810722
+    // OFVAL is 0 in FORTRAN source — no take points
   }));
 
-  // No TreasureTrait needed — OTVAL is 0 in mdlzork_810722
+  stamp.add(new TreasureTrait({
+    trophyCaseValue: 1     // OTVAL from FORTRAN source
+  }));
 
   // Place stamp inside brochure
   world.moveEntity(stamp.id, brochure.id);

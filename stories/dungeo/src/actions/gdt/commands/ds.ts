@@ -5,15 +5,21 @@
  */
 
 import { GDTCommandHandler, GDTContext, GDTCommandResult } from '../types';
-import { StandardCapabilities } from '@sharpee/world-model';
+import { StandardCapabilities, WorldModel } from '@sharpee/world-model';
 
 export const dsHandler: GDTCommandHandler = {
   code: 'DS',
   name: 'Display State',
-  description: 'Show game state (turn count, score, phase)',
+  description: 'Show game state (turn count, score, phase). Use DS LEDGER for full score breakdown.',
 
   execute(context: GDTContext, args: string[]): GDTCommandResult {
     const { world } = context;
+
+    // Subcommand: DS LEDGER - dump full score breakdown
+    if (args.length > 0 && args[0].toLowerCase() === 'ledger') {
+      return displayLedger(world);
+    }
+
     const output: string[] = [];
 
     // Header
@@ -95,3 +101,63 @@ export const dsHandler: GDTCommandHandler = {
     };
   }
 };
+
+/**
+ * Display full score ledger breakdown grouped by category
+ */
+function displayLedger(world: WorldModel): GDTCommandResult {
+  const entries = world.getScoreEntries();
+  const score = world.getScore();
+  const maxScore = world.getMaxScore();
+  const output: string[] = [];
+
+  output.push('=== SCORE LEDGER ===');
+  output.push('');
+
+  if (entries.length === 0) {
+    output.push('  <no score entries>');
+    output.push('');
+    output.push(`Total: 0/${maxScore}`);
+    return { success: true, output };
+  }
+
+  // Group entries by category prefix
+  const categories = new Map<string, { entries: { id: string; points: number; description: string }[]; subtotal: number }>();
+
+  for (const entry of entries) {
+    // Derive category from id prefix (e.g., "trophy:torch" → "trophy", "room:kitchen" → "room")
+    const colonIdx = entry.id.indexOf(':');
+    const category = colonIdx >= 0 ? entry.id.substring(0, colonIdx) : 'bonus';
+
+    if (!categories.has(category)) {
+      categories.set(category, { entries: [], subtotal: 0 });
+    }
+    const cat = categories.get(category)!;
+    cat.entries.push(entry);
+    cat.subtotal += entry.points;
+  }
+
+  // Display order: treasure, trophy, room, bonus (then any others)
+  const orderedKeys = ['treasure', 'trophy', 'room'];
+  const remainingKeys = [...categories.keys()].filter(k => !orderedKeys.includes(k)).sort();
+  const allKeys = [...orderedKeys.filter(k => categories.has(k)), ...remainingKeys];
+
+  for (const category of allKeys) {
+    const cat = categories.get(category)!;
+    output.push(`${category.toUpperCase()} (${cat.subtotal} pts):`);
+
+    // Sort entries by points descending, then by id
+    cat.entries.sort((a, b) => b.points - a.points || a.id.localeCompare(b.id));
+
+    for (const entry of cat.entries) {
+      const sign = entry.points >= 0 ? '+' : '';
+      const desc = entry.description ? ` - ${entry.description}` : '';
+      output.push(`  ${entry.id} = ${sign}${entry.points}${desc}`);
+    }
+    output.push('');
+  }
+
+  output.push(`Total: ${score}/${maxScore} (${entries.length} entries)`);
+
+  return { success: true, output };
+}

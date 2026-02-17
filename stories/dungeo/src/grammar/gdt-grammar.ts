@@ -24,12 +24,12 @@ export function registerGDTGrammar(grammar: GrammarBuilder): void {
 
   // Commands that don't take arguments
   const noArgCodes = [
-    'da', 'ds', 'he', 'ex', 'nd', 'rd', 'nc', 'rc', 'nr', 'rr', 'nt', 'rt'
+    'da', 'he', 'ex', 'nd', 'rd', 'nc', 'rc', 'nr', 'rr', 'nt', 'rt'
   ];
 
   // Commands that take one optional argument
   const oneArgCodes = [
-    'dr', 'dx', 'do', 'de', 'dv', 'dc', 'dh', 'dl', 'df', 'dn', 'dm', 'dt', 'dp', 'd2', 'dz',
+    'dr', 'dx', 'do', 'de', 'dv', 'dc', 'dh', 'dl', 'df', 'dn', 'dm', 'ds', 'dt', 'dp', 'd2', 'dz',
     'ah', 'tk', 'ar', 'af', 'ac', 'aa', 'ax', 'av', 'an', 'az', 'pd', 'kl', 'ko', 'wu', 'fo'
   ];
 

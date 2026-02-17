@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/parser-en-us",
-  "version": "0.9.89",
+  "version": "0.9.90",
   "description": "English (US) parser for Sharpee Interactive Fiction Platform",
   "main": "./dist/index.js",
   "module": "dist/index.js",
