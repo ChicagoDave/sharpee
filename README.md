@@ -4,9 +4,9 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.2+-blue.svg)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 
-**Version 0.9.85** — A modern, TypeScript-based platform for creating parser-based interactive fiction.
+**Version 0.9.91** — A modern, TypeScript-based platform for creating parser-based interactive fiction.
 
-**Status**: Available for author/story development. The included Dungeon story (Mainframe Zork port) is still in testing.
+**Status**: Available for author/story development. The included Dungeon story (Mainframe Zork port) was completed on February 18, 2026.
 
 **Website**: [sharpee.net](https://sharpee.net)
 
@@ -220,7 +220,7 @@ node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
 
 | Story | Status | Description |
 |-------|--------|-------------|
-| `dungeo` | Testing | Mainframe Zork implementation (~191 rooms) |
+| `dungeo` | Complete | Mainframe Zork implementation (~191 rooms, 750 points) |
 | `cloak-of-darkness` | Complete | Classic IF demo game |
 
 ## License
